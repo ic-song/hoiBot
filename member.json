@@ -1,0 +1,124 @@
+{
+    "flag": false,
+    "score": {
+        "win": {
+            "min": 10,
+            "max": 15
+        },
+        "lose": {
+            "min": 10,
+            "max": 10
+        }
+    },
+    "rank": {
+        "Almighty": {
+            "name": "🪬올마이티",
+            "scoreRequirement": 2000,
+            "limit": 1,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🪬올마이티의 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 6
+                    }
+                ],
+                "point": 0
+            }
+        },
+        "Emperor": {
+            "name": "🪽엠퍼러",
+            "scoreRequirement": 1000,
+            "limit": 2,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🪽엠퍼러의 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 5
+                    }
+                ],
+                "point": 0
+            }
+        },
+        "Master": {
+            "name": "🔮마스터",
+            "scoreRequirement": 500,
+            "limit": 5,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🔮마스터의 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 4
+                    }
+                ],
+                "point": 0
+            }
+        },
+        "Crown": {
+            "name": "👑크라운",
+            "scoreRequirement": 300,
+            "limit": 10,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "👑크라운 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 3
+                    }
+                ],
+                "point": 0
+            }
+        },
+        "Ace": {
+            "name": "🔥에이스",
+            "scoreRequirement": 100,
+            "limit": "Infinity",
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🔥에이스 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 2
+                    }
+                ],
+                "point": 0
+            }
+        },
+        "Rookie": {
+            "name": "👻루키",
+            "scoreRequirement": 0,
+            "limit": "Infinity",
+            "rewards": {
+                "items": [
+                    {
+                        "name": "👻루키 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 1
+                    }
+                ],
+                "point": 0
+            }
+        }
+    },
+    "history":[]
+}
