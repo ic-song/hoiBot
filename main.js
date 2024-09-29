@@ -2,7 +2,7 @@
 // * 상수
 // ============================================================================================
 
-const HoiBotVersion = '1.511';
+const HoiBotVersion = '1.512';
 const raidSpecialItem = {
   dept1: {
     item_0: { name: '항생제💊', exp: 50 },
