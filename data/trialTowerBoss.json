@@ -1,0 +1,2486 @@
+[
+  {
+    "minFloor": 1,
+    "maxFloor": 1,
+    "name": "신입아 어서와👋",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "전설의 돌맹이🗿",
+        "quantity": 20
+      },
+      {
+        "item": "미니펫뽑기🐹(/미니펫오픈)",
+        "quantity": 10
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 8
+      },
+      {
+        "item": "펫 강화석⭐",
+        "quantity": 700
+      },
+      {
+        "item": "양념치킨🐔",
+        "quantity": 700
+      },
+      {
+        "item": "캐슬코인🥇",
+        "quantity": 500
+      },
+      {
+        "item": "경찰과 도둑🚨(/삐뽀삐뽀)",
+        "quantity": 30
+      },
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 700
+      },
+      {
+        "item": "반지 강화석💍",
+        "quantity": 1000
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15000
+      },
+      {
+        "item": "미니펫대전리셋권🐹",
+        "quantity": 1200
+      },
+      {
+        "item": "캐슬대전리셋권🐶",
+        "quantity": 500
+      },
+      {
+        "item": "시련의탑리셋권😈",
+        "quantity": 500
+      },
+      {
+        "item": "펫던전 입장권🌋",
+        "quantity": 30
+      },
+      {
+        "item": "시탑 부스터🔮",
+        "quantity": 400
+      },
+      {
+        "item": "레이드타격대인장👑(+600👾)",
+        "quantity": 10
+      },
+      {
+        "item": "잡템상자☠",
+        "quantity": 70
+      },
+      {
+        "item": "펫먹이🍼",
+        "quantity": 100000
+      },
+      {
+        "item": "펫스킬북📙(/펫스킬오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "탐험확률UP🗻(50%)",
+        "quantity": 200
+      },
+      {
+        "item": "땅문서📜",
+        "quantity": 20
+      },
+      {
+        "item": "신입지원금",
+        "quantity": 42500
+      }
+    ]
+  },
+  {
+    "minFloor": 2,
+    "maxFloor": 10,
+    "name": "🐹호이월드",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 11,
+    "maxFloor": 50,
+    "name": "💀스켈레톤",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 3
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 51,
+    "maxFloor": 100,
+    "name": "💀스켈레톤 전사",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 101,
+    "maxFloor": 150,
+    "name": "💀스켈레톤 마법사",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 3
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 3
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 151,
+    "maxFloor": 200,
+    "name": "💀스켈레톤 부대장",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 3
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 201,
+    "maxFloor": 250,
+    "name": "💀스켈레톤 대장",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 3
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 3
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 251,
+    "maxFloor": 300,
+    "name": "💀스켈레톤왕",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 301,
+    "maxFloor": 350,
+    "name": "🎃호박 전사",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 351,
+    "maxFloor": 400,
+    "name": "🎃호박 마법사",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 401,
+    "maxFloor": 450,
+    "name": "🎃호박 고구마",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 451,
+    "maxFloor": 500,
+    "name": "🎃고구마 호박",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 501,
+    "maxFloor": 550,
+    "name": "🎃고구마 호박호박",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 551,
+    "maxFloor": 600,
+    "name": "🧙🏻견습마법사1",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 601,
+    "maxFloor": 650,
+    "name": "🧙🏻견습마법사2",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 651,
+    "maxFloor": 700,
+    "name": "🧙🏻견습마법사3",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 701,
+    "maxFloor": 750,
+    "name": "🧙🏻견습마법사4",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 751,
+    "maxFloor": 800,
+    "name": "🧙🏻견습마법사5",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 801,
+    "maxFloor": 850,
+    "name": "🧙🏻견습마법사6",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 851,
+    "maxFloor": 900,
+    "name": "🧙🏻견습마법사7",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 901,
+    "maxFloor": 950,
+    "name": "🧙🏻견습마법사8",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 2
+      }
+    ]
+  },
+  {
+    "minFloor": 951,
+    "maxFloor": 1000,
+    "name": "🧙🏻견습마법사9",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 3
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "minFloor": 1001,
+    "maxFloor": 1050,
+    "name": "🧙🏻견습마법사10",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1051,
+    "maxFloor": 1100,
+    "name": "🧙🏻수행한 마법사1",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1101,
+    "maxFloor": 1150,
+    "name": "🧙🏻수행한 마법사2",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1151,
+    "maxFloor": 1200,
+    "name": "🧙🏻수행한 마법사3",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1201,
+    "maxFloor": 1250,
+    "name": "🧙🏻중급 마법사",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1251,
+    "maxFloor": 1300,
+    "name": "🧙🏻고급 마법사",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1301,
+    "maxFloor": 1350,
+    "name": "🧙🏻고귀한 마법사",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 8
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 1351,
+    "maxFloor": 1400,
+    "name": "🧙🏻존귀한 마법사",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 1401,
+    "maxFloor": 1500,
+    "name": "👤신입",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 3
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 1501,
+    "maxFloor": 1550,
+    "name": "👤부방장",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 1551,
+    "maxFloor": 1600,
+    "name": "👤방장",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 3
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 1601,
+    "maxFloor": 1650,
+    "name": "😈오톡빌런",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 1651,
+    "maxFloor": 1700,
+    "name": "😈오톡빌런2",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "minFloor": 1701,
+    "maxFloor": 1750,
+    "name": "😈오톡빌런3",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "minFloor": 1751,
+    "maxFloor": 1800,
+    "name": "😈오톡빌런4",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "minFloor": 1801,
+    "maxFloor": 1850,
+    "name": "😈오톡빌런5",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 1851,
+    "maxFloor": 1900,
+    "name": "😈육톡빌런",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "minFloor": 1901,
+    "maxFloor": 1950,
+    "name": "😈육육톡빌런",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  }, 
+  {
+    "minFloor": 1951,
+    "maxFloor": 2000,
+    "name": "😈육육육톡빌런",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2001,
+    "maxFloor": 2050,
+    "name": "🧟굶은 좀비",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2051,
+    "maxFloor": 2100,
+    "name": "🧟여미새 좀비",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 8
+      }
+    ]
+  },
+  {
+    "minFloor": 2101,
+    "maxFloor": 2150,
+    "name": "🧟남미새 좀비",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 9
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 8
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 8
+      }
+    ]
+  },
+  {
+    "minFloor": 2151,
+    "maxFloor": 2200,
+    "name": "🧝🏻‍♀️엘프 마을",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 7
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 7
+      }
+    ]
+  },
+  {
+    "minFloor": 2201,
+    "maxFloor": 2250,
+    "name": "🧝🏻‍♀️엘프 궁수",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 6
+      }
+    ]
+  },
+  {
+    "minFloor": 2251,
+    "maxFloor": 2300,
+    "name": "🧝🏻‍♀️엘프 신궁",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2301,
+    "maxFloor": 2350,
+    "name": "🧝🏻‍♀️엘프 부족장",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2351,
+    "maxFloor": 2400,
+    "name": "🧝🏻‍♀️엘프 족장",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2401,
+    "maxFloor": 2450,
+    "name": "🧝🏻‍♀️엘프왕",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2451,
+    "maxFloor": 2500,
+    "name": "🧌오크 부락",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 3
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2501,
+    "maxFloor": 2550,
+    "name": "🧌오크 전사",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 3
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 2551,
+    "maxFloor": 2600,
+    "name": "🧌오크 광전사",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 3
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 2601,
+    "maxFloor": 2650,
+    "name": "🧌오크 마법사",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 2651,
+    "maxFloor": 2700,
+    "name": "🧌오크 부족장",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 2701,
+    "maxFloor": 2750,
+    "name": "🧌오크 족장",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 2751,
+    "maxFloor": 2800,
+    "name": "🧌오크왕",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 9
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 2801,
+    "maxFloor": 2850,
+    "name": "🤬성난 호이",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 4
+      }
+    ]
+  },
+  {
+    "minFloor": 2851,
+    "maxFloor": 2900,
+    "name": "🐯무서운 호랑이",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 2901,
+    "maxFloor": 2950,
+    "name": "💀스켈레톤킹",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 9
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 2951,
+    "maxFloor": 3000,
+    "name": "🍄당장 버섯",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 3001,
+    "maxFloor": 3050,
+    "name": "🧌오우거",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 3051,
+    "maxFloor": 3100,
+    "name": "👹도깨비",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 18
+      }
+    ]
+  },
+  {
+    "minFloor": 3101,
+    "maxFloor": 3150,
+    "name": "🐕‍🦺켈베로스",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 7
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3151,
+    "maxFloor": 3200,
+    "name": "🤡삐에로",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 9
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3201,
+    "maxFloor": 3250,
+    "name": "🧝🏿다크 사제",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 3
+      }
+    ]
+  },
+  {
+    "minFloor": 3251,
+    "maxFloor": 3300,
+    "name": "🧝🏿‍♀️타락한 엘프",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 5
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3301,
+    "maxFloor": 3350,
+    "name": "🤴🏽몰락한 왕",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3351,
+    "maxFloor": 3400,
+    "name": "🫅🏻제국의 망령",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 3401,
+    "maxFloor": 3450,
+    "name": "🗿저주받은 석상",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3451,
+    "maxFloor": 3500,
+    "name": "👾세균맨",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 23
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 12
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 12
+      }
+    ]
+  },
+  {
+    "minFloor": 3501,
+    "maxFloor": 3550,
+    "name": "🐣무시무시한 병아리",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3551,
+    "maxFloor": 3600,
+    "name": "🐓멋쟁이 수탉",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3601,
+    "maxFloor": 3650,
+    "name": "🐙맛없는 타코야끼",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 3651,
+    "maxFloor": 3700,
+    "name": "🌵날카로운 선인장",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 3701,
+    "maxFloor": 3750,
+    "name": "💃라라랜드",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 30
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3751,
+    "maxFloor": 3800,
+    "name": "🤖챗GPT",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 3801,
+    "maxFloor": 3850,
+    "name": "🫥킹찐따",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 23
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 3851,
+    "maxFloor": 3900,
+    "name": "🐲드래곤",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 15
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 3901,
+    "maxFloor": 3950,
+    "name": "👻맛탱이간 유령",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 30
+      }
+    ]
+  },
+  {
+    "minFloor": 3951,
+    "maxFloor": 4000,
+    "name": "🐰재수없는 토끼",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 30
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 4001,
+    "maxFloor": 4050,
+    "name": "🏍️배달의 민족",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 4051,
+    "maxFloor": 4100,
+    "name": "🚛도착 안하는 택배",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 18
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 18
+      }
+    ]
+  },
+  {
+    "minFloor": 4101,
+    "maxFloor": 4150,
+    "name": "🦷임플란트",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4151,
+    "maxFloor": 4200,
+    "name": "😱니 얼굴",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 15
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 4201,
+    "maxFloor": 4250,
+    "name": "🤮숙취불가",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4251,
+    "maxFloor": 4300,
+    "name": "🐸성난 개구리",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 4301,
+    "maxFloor": 4350,
+    "name": "🐩주인있는 말티즈",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 4351,
+    "maxFloor": 4400,
+    "name": "🧟배고픈 좀비",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4401,
+    "maxFloor": 4450,
+    "name": "🧟‍♂️전남친",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 8
+      }
+    ]
+  },
+  {
+    "minFloor": 4451,
+    "maxFloor": 4500,
+    "name": "🧏🏻‍♀️오빠 나 어디 바뀐거 없어?",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 8
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4501,
+    "maxFloor": 4550,
+    "name": "🤦🏻‍♀️다시 생각해봐 바뀐거 없어?",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 10
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 10
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 30
+      }
+    ]
+  },
+  {
+    "minFloor": 4551,
+    "maxFloor": 4600,
+    "name": "🧛🏻‍♀️드라큘라",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 30
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4601,
+    "maxFloor": 4650,
+    "name": "🧛🏻‍♂️대장 드라큘라",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4651,
+    "maxFloor": 4700,
+    "name": "🧛🏻보스드라큘라",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 15
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 4701,
+    "maxFloor": 4750,
+    "name": "👄술 대신 니 입술",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 4751,
+    "maxFloor": 4800,
+    "name": "👩🏿‍🌾농사 망함",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 4801,
+    "maxFloor": 4850,
+    "name": "💩변비",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 4851,
+    "maxFloor": 4900,
+    "name": "🐔대깨무",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 50
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 4901,
+    "maxFloor": 4950,
+    "name": "😈하급 마왕",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 30
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 8
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 4951,
+    "maxFloor": 5000,
+    "name": "👿중급 마왕",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 50
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 30
+      }
+    ]
+  },
+  {
+    "minFloor": 5001,
+    "maxFloor": 5050,
+    "name": "👩🏿‍🎤상급 마왕",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 25
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 30
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 5051,
+    "maxFloor": 5100,
+    "name": "🎃호박고구마",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 15
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 5101,
+    "maxFloor": 5150,
+    "name": "😶‍🌫️일주일만에 씻느중",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 30
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 5151,
+    "maxFloor": 5200,
+    "name": "👩🏻‍🦰전 여친",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 25
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 5201,
+    "maxFloor": 5300,
+    "name": "🙏기도하면 공략할거 같냐",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 5301,
+    "maxFloor": 5400,
+    "name": "🙇🏿‍♂️도둑",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 20
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 5401,
+    "maxFloor": 5500,
+    "name": "🥷하급 닌자",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 30
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "minFloor": 5501,
+    "maxFloor": 5600,
+    "name": "🥷🏽중급 닌자",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  },
+  {
+    "minFloor": 5601,
+    "maxFloor": 5700,
+    "name": "🥷🏿상급 닌자",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 15
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 15
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 15
+      }
+    ]
+  },
+  {
+    "minFloor": 5701,
+    "maxFloor": 5800,
+    "name": "🧙하급 소서리스",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 5801,
+    "maxFloor": 5900,
+    "name": "🧙🏻‍♀️중급 소서리스",
+    "pettype": "바다",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 2
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 5901,
+    "maxFloor": 6000,
+    "name": "🧙🏻‍♂️상급 소서리스",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 6001,
+    "maxFloor": 6500,
+    "name": "🧞‍♀️그냥 괴물",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 5
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 100
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "minFloor": 6501,
+    "maxFloor": 7000,
+    "name": "🧚🏼그냥 요정",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 20
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 100
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 20
+      }
+    ]
+  },
+  {
+    "minFloor": 7001,
+    "maxFloor": 7500,
+    "name": "🐦‍🔥불사조",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 50
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 50
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 7501,
+    "maxFloor": 10000,
+    "name": "🏰호랜영주",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 100
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 10001,
+    "maxFloor": 20000,
+    "name": "🏰호랜영주",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 100
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 100
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 30001,
+    "maxFloor": 99999,
+    "name": "⭐️호이",
+    "pettype": "땅",
+    "reward": [
+      {
+        "item": "정령조각🥀",
+        "quantity": 100
+      },
+      {
+        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+        "quantity": 1
+      },
+      {
+        "item": "돌멩이🪨",
+        "quantity": 100
+      },
+      {
+        "item": "마정석🔮",
+        "quantity": 100
+      }
+    ]
+  },
+  {
+    "minFloor": 10000,
+    "maxFloor": 9999999,
+    "name": "🐹전설의 포켓몬",
+    "pettype": "하늘",
+    "reward": [
+      {
+        "item": "정령 강화석🥀",
+        "quantity": 1
+      },
+      {
+        "item": "펫 강화석⭐",
+        "quantity": 1
+      },
+    {
+      "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+      "quantity": 1
+    },
+      {
+        "item": "마정석🔮",
+        "quantity": 10
+      }
+    ]
+  }
+]

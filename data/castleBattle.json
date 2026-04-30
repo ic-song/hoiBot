@@ -1,0 +1,489 @@
+{
+    "flag": false,
+    "score": {
+        "win": {
+            "min": 12,
+            "max": 15
+        },
+        "lose": {
+            "min": 10,
+            "max": 10
+        }
+    },
+    "rank": {
+        "Almighty": {
+            "name": "🪬올마이티",
+            "scoreRequirement": 5000,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🪬올마이티의 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 30
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 70
+                    }
+                ],
+                "point": 100000000
+            }
+        },
+        "Emperor": {
+            "name": "🪽엠퍼러",
+            "scoreRequirement": 3000,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🪽엠퍼러의 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 30
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 50
+                    }
+                ],
+                "point": 50000000
+            }
+        },
+        "Master": {
+            "name": "🔮마스터",
+            "scoreRequirement": 1500,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🔮마스터의 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 20
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 40
+                    }
+                ],
+                "point": 30000000
+            }
+        },
+        "Diamond": {
+            "name": "💎다이아",
+            "scoreRequirement": 1200,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "💎다이아 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 15
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 35
+                    }
+                ],
+                "point": 20000000
+            }
+        },
+        "Crown": {
+            "name": "👑크라운",
+            "scoreRequirement": 800,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "👑크라운 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 10
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 30
+                    }
+                ],
+                "point": 10000000
+            }
+        },
+        "Ruby": {
+            "name": "💠루비",
+            "scoreRequirement": 500,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "💠루비 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 7
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 25
+                    }
+                ],
+                "point": 5000000
+            }
+        },
+        "Ace": {
+            "name": "🔥에이스",
+            "scoreRequirement": 200,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "🔥에이스 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템상자☠",
+                        "count": 5
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 20
+                    }
+                ],
+                "point": 1000000
+            }
+        },
+        "Rookie": {
+            "name": "👻루키",
+            "scoreRequirement": 0,
+            "rewards": {
+                "items": [
+                    {
+                        "name": "👻루키 증표",
+                        "count": 1
+                    },
+                    {
+                        "name": "잡템☠️",
+                        "count": 10
+                    },
+                    {
+                        "name": "펫 강화석⭐",
+                        "count": 10
+                    }
+                ],
+                "point": 0
+            }
+        }
+    },
+    "history": [
+        {
+            "castleBattleDateTime": "2024-09-14T08:34:38.088Z",
+            "attackerName": "구경 여",
+            "attackerPetName": "경구상",
+            "attackerPetImg": "👮‍♀️",
+            "attackerPetExp": 5143,
+            "defenderName": "자이 남",
+            "defenderPetName": "에스",
+            "defenderPetImg": "🦈",
+            "defenderPetExp": 892,
+            "winnerName": "구경 여",
+            "winnerScore": 15,
+            "loseName": "자이 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:34:38.954Z",
+            "attackerName": "자이 남",
+            "attackerPetName": "에스",
+            "attackerPetImg": "🦈",
+            "attackerPetExp": 892,
+            "defenderName": "쏭쏭 여",
+            "defenderPetName": "ㅇㅈㅁ🤍",
+            "defenderPetImg": "🐥",
+            "defenderPetExp": 11396,
+            "winnerName": "쏭쏭 여",
+            "winnerScore": 14,
+            "loseName": "자이 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:34:53.170Z",
+            "attackerName": "구경 여",
+            "attackerPetName": "경구상",
+            "attackerPetImg": "👮‍♀️",
+            "attackerPetExp": 6686,
+            "defenderName": "오톡빌런",
+            "defenderPetName": "단소광인",
+            "defenderPetImg": [
+                "🪺"
+            ],
+            "defenderPetExp": 103000,
+            "winnerName": "오톡빌런",
+            "winnerScore": 12,
+            "loseName": "구경 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:35:01.668Z",
+            "attackerName": "우동 남",
+            "attackerPetName": "럭키세븐",
+            "attackerPetImg": "🐹",
+            "attackerPetExp": 3354,
+            "defenderName": "삼오 남",
+            "defenderPetName": "여신베라",
+            "defenderPetImg": "🦁",
+            "defenderPetExp": 14950,
+            "winnerName": "삼오 남",
+            "winnerScore": 15,
+            "loseName": "우동 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:42:54.248Z",
+            "attackerName": "콩두 여",
+            "attackerPetName": "미니콩두",
+            "attackerPetImg": "🧜‍♀️",
+            "attackerPetExp": 11919,
+            "defenderName": "꼬북 남",
+            "defenderPetName": "웅성웅성..",
+            "defenderPetImg": "👥",
+            "defenderPetExp": 6096,
+            "winnerName": "콩두 여",
+            "winnerScore": 15,
+            "loseName": "꼬북 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:42:57.754Z",
+            "attackerName": "콩두 여",
+            "attackerPetName": "미니콩두",
+            "attackerPetImg": "🧜‍♀️",
+            "attackerPetExp": 11919,
+            "defenderName": "콘트 남",
+            "defenderPetName": "남자화장실🚹",
+            "defenderPetImg": "🌺",
+            "defenderPetExp": 18258,
+            "winnerName": "콘트 남",
+            "winnerScore": 14,
+            "loseName": "콩두 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:50:29.794Z",
+            "attackerName": "콘트 남",
+            "attackerPetName": "남자화장실🚹",
+            "attackerPetImg": "🌺",
+            "attackerPetExp": 18258,
+            "defenderName": "서울 여",
+            "defenderPetName": "지구",
+            "defenderPetImg": "🌏",
+            "defenderPetExp": 3340,
+            "winnerName": "콘트 남",
+            "winnerScore": 12,
+            "loseName": "서울 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:50:56.207Z",
+            "attackerName": "레이 여",
+            "attackerPetName": "삼삼이😈",
+            "attackerPetImg": "🐦‍🔥",
+            "attackerPetExp": 36317,
+            "defenderName": "삼삼 남",
+            "defenderPetName": "🩷레이🩷",
+            "defenderPetImg": "💍",
+            "defenderPetExp": 34653,
+            "winnerName": "레이 여",
+            "winnerScore": 13,
+            "loseName": "삼삼 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:51:23.975Z",
+            "attackerName": "콩두 여",
+            "attackerPetName": "미니콩두",
+            "attackerPetImg": "🧜‍♀️",
+            "attackerPetExp": 15495,
+            "defenderName": "웨이 남",
+            "defenderPetName": "마법소녀웨이",
+            "defenderPetImg": "🌋",
+            "defenderPetExp": 7510,
+            "winnerName": "콩두 여",
+            "winnerScore": 14,
+            "loseName": "웨이 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T08:52:41.250Z",
+            "attackerName": "콩두 여",
+            "attackerPetName": "미니콩두",
+            "attackerPetImg": "🧜‍♀️",
+            "attackerPetExp": 11919,
+            "defenderName": "라이 남",
+            "defenderPetName": "뚜치와뿌꾸",
+            "defenderPetImg": "🧟‍♂️",
+            "defenderPetExp": 1170,
+            "winnerName": "콩두 여",
+            "winnerScore": 13,
+            "loseName": "라이 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:18:02.810Z",
+            "attackerName": "맥이 여",
+            "attackerPetName": "샤넬",
+            "attackerPetImg": "🧟‍♀️",
+            "attackerPetExp": 3975,
+            "defenderName": "히히 여",
+            "defenderPetName": "헤헤",
+            "defenderPetImg": "🐇",
+            "defenderPetExp": 4697,
+            "winnerName": "히히 여",
+            "winnerScore": 14,
+            "loseName": "맥이 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:18:12.218Z",
+            "attackerName": "맥이 여",
+            "attackerPetName": "샤넬",
+            "attackerPetImg": "🧟‍♀️",
+            "attackerPetExp": 5168,
+            "defenderName": "토토 남",
+            "defenderPetName": "스포츠",
+            "defenderPetImg": "🥃",
+            "defenderPetExp": 1794,
+            "winnerName": "맥이 여",
+            "winnerScore": 12,
+            "loseName": "토토 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:18:14.226Z",
+            "attackerName": "대구 여",
+            "attackerPetName": "고앵이",
+            "attackerPetImg": "🐳",
+            "attackerPetExp": 4130,
+            "defenderName": "잔다 남",
+            "defenderPetName": "잠맘보",
+            "defenderPetImg": "🐩",
+            "defenderPetExp": 1330,
+            "winnerName": "대구 여",
+            "winnerScore": 13,
+            "loseName": "잔다 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:18:38.086Z",
+            "attackerName": "예원 여",
+            "attackerPetName": "까꿍",
+            "attackerPetImg": "🐟",
+            "attackerPetExp": 1321,
+            "defenderName": "다크나이트",
+            "defenderPetName": "다크나이트",
+            "defenderPetImg": "🐙",
+            "defenderPetExp": 103000,
+            "winnerName": "다크나이트",
+            "winnerScore": 15,
+            "loseName": "예원 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:23:26.112Z",
+            "attackerName": "벨라/95/여",
+            "attackerPetName": "프린세스💖",
+            "attackerPetImg": "🧜‍♀️",
+            "attackerPetExp": 25932,
+            "defenderName": "해마 여",
+            "defenderPetName": "bbq황올",
+            "defenderPetImg": "🐖",
+            "defenderPetExp": 4698,
+            "winnerName": "벨라/95/여",
+            "winnerScore": 13,
+            "loseName": "해마 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:23:36.259Z",
+            "attackerName": "아콩 여",
+            "attackerPetName": "아기호슴🐯",
+            "attackerPetImg": "🐅",
+            "attackerPetExp": 18833,
+            "defenderName": "조블 남",
+            "defenderPetName": "폭행몬스터",
+            "defenderPetImg": "🦭",
+            "defenderPetExp": 900,
+            "winnerName": "아콩 여",
+            "winnerScore": 15,
+            "loseName": "조블 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:24:43.745Z",
+            "attackerName": "건징어/99/남",
+            "attackerPetName": "김프링",
+            "attackerPetImg": "🩵",
+            "attackerPetExp": 26155,
+            "defenderName": "고르 남",
+            "defenderPetName": "고르고르",
+            "defenderPetImg": "🐖",
+            "defenderPetExp": 904,
+            "winnerName": "건징어/99/남",
+            "winnerScore": 14,
+            "loseName": "고르 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:30:44.947Z",
+            "attackerName": "강지 여",
+            "attackerPetName": "육은영",
+            "attackerPetImg": "🎨",
+            "attackerPetExp": 1414,
+            "defenderName": "졸무 남",
+            "defenderPetName": "고라니",
+            "defenderPetImg": "🦢",
+            "defenderPetExp": 1342,
+            "winnerName": "강지 여",
+            "winnerScore": 13,
+            "loseName": "졸무 남",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:33:44.630Z",
+            "attackerName": "덕구 남",
+            "attackerPetName": "떡뀨",
+            "attackerPetImg": "🐅",
+            "attackerPetExp": 2257,
+            "defenderName": "노아 여",
+            "defenderPetName": "시모네",
+            "defenderPetImg": "🦢",
+            "defenderPetExp": 2165,
+            "winnerName": "덕구 남",
+            "winnerScore": 12,
+            "loseName": "노아 여",
+            "loseScore": 10
+        },
+        {
+            "castleBattleDateTime": "2024-09-14T09:59:45.716Z",
+            "attackerName": "마나 남",
+            "attackerPetName": "아리가또",
+            "attackerPetImg": [
+                "🪺"
+            ],
+            "attackerPetExp": 507,
+            "defenderName": "하이 여",
+            "defenderPetName": "꾸미",
+            "defenderPetImg": "🐡",
+            "defenderPetExp": 819,
+            "winnerName": "하이 여",
+            "winnerScore": 14,
+            "loseName": "마나 남",
+            "loseScore": 10
+        }
+    ]
+}
