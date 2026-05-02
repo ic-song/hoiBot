@@ -38972,3 +38972,4 @@ function buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetC
 
 	return lines.join("\n");
 }
+//바보
