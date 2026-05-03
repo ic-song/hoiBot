@@ -816,8 +816,8 @@ const ticketTierData = {
 		high: 1.5,
 		bonusP: 0.7
 	},
-	"♥️": {
-		emoji: "하트",
+	"하트": {
+		emoji: "♥️",
 		ticket: 170000,
 		highticket: 1780,
 		exp: 24000,
@@ -1095,20 +1095,20 @@ let Master = initData.master;
 let Admins = Object.keys(initData.admin);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 const GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER = 5; // 소드마스터 1명당 영지전 공격 턴
-const GUILD_TERRITORY_TURN_TIMEOUT_MS = 1000 * 15; // 길드 영토전 턴 타임아웃 (15초)
+const GUILD_TERRITORY_TURN_TIMEOUT_MS = 1000 * 13; // 길드 영토전 턴 타임아웃 (13초)
 const GUILD_TERRITORY_TIMEOUT_MISS_LIMIT = 3; // 영지전 시간초과 미공격 탈락 기준
 const GUILD_TERRITORY_TURN_FUND_REWARD = 200000000; // 영지전 공격 턴 기본보상
-const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.7; // 영지전 공격 턴 확률보상
+const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.3; // 영지전 공격 턴 확률보상
 const GUILD_CONTRIBUTION_MEDAL_ITEM = "길드공헌훈장🌟(/길드공헌 숫자)";
 const GUILD_TERRITORY_RIFT_MAX_TURN = 100; // 영지전 균열 최대 턴
 const GUILD_TERRITORY_RIFT_BASE_RATE = 70; // 영지전 균열 기본 성공 확률
 const GUILD_TERRITORY_RIFT_ITEM_STEP = 10; // 영지전 균열 아이템당 확률 증가량
 const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 1; // 영지전 불안정 아이템당 불안정도 증가/감소량
 const GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT = 10; // 영지전 불안정도 조정 최대치
-const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정 숫자)";
-const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🚑 전쟁불안정 감소권(/안정 숫자)";
-const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "🌌 균열 유도권(/균열 숫자)";
-const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균열 숫자)";
+const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정)";
+const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🚑 전쟁불안정 감소권(/안정)";
+const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "🌌 균열 유도권(/균열)";
+const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균열)";
 // const GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_UP_ITEM, "전쟁불안정 증폭권(/불안정 숫자)"];
 // const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, "전쟁안정권(/안정 숫자)", "전쟁불안정 감소권(/안정 숫자)"];
 // const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열 숫자)"];
@@ -18854,13 +18854,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 공격 대상 영지
 					var territoryNo = parseInt(attackParts[1], 10);
-					// 턴 보상 처리 (공격 횟수 증가 전에 처리해야 함)
+					
+					// 턴 보상 처리 (공격 결과 메시지에 포함)
 					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
 
 					// 공격 처리
-					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
+					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo); // 공격 결과 메시지 반환
 					var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
-					if (rewardMessage) resultMessage += "\n\n" + rewardMessage;
+					resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage); // 공격 결과 메시지에 턴 보상 메시지 추가
 					if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
 					var riftMessage = "";
 					// 공격 불가가 아닐 때만 균열 판정
@@ -30305,6 +30306,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"롤렉스🕰️ 시간은 돈이라더니, 오늘은 둘 다 제 편입니다.\n당신은 아닌가봅니다 우하하하",
 						"롤렉스🕰️ 손목에서 은은하게 성공의 향기가 납니다.\n보실래요?",
 						"롤렉스🕰️ 시계만 봤을 뿐인데 존재감이 흘러넘칩니다.",
+					    "롤렉스🕰️ 네? 뭐라구요? 아아.. 롤렉스가 없으시니 소통이 불가하군요.",
+                        "롤렉스🕰️ 천박? 아? 당신은 천씨입니까?",
+                        "롤렉스🕰️ 경박? 아? 당신은 경씨입니까?",
+                        "롤렉스🕰️ 어허! 듣기 싫습니다 당신을 롤렉스의 이름으로 내보내겠습니다.",
+                        "롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
+                        "롤렉스🕰️ 카시오라구요? 면봉 이름입니까?",
 						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
 						"롤렉스🕰️ 성공 그것은 저의 별명입니다."
 					];
@@ -30337,7 +30344,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							var packageName = "";
 
 							if (command === "가정") {
-								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/길드한테잘하자)";
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
@@ -31199,18 +31206,33 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
 		addItem(data, user, GUILD_CONTRIBUTION_MEDAL_ITEM, 1);
 	}
 
-	var out = "🎁 영지전 공격 턴 보상" + allsee + "\n";
-	out += "기본보상: 🅟" + numberWithCommas(GUILD_TERRITORY_TURN_FUND_REWARD) + " [길드자금🌾 귀속]\n";
-	out += medalSuccess ? "확률보상: [✅]공헌+1⭐️ 획득" : "확률보상: [❌]보상실패";
-	return out;
+	return "길드보상: 🅟" + formatGuildTerritoryRewardAmount(GUILD_TERRITORY_TURN_FUND_REWARD) +
+		" 확률보상:" + (medalSuccess ? "[✅]공헌+1⭐️ 획득" : "[❌]보상실패");
+}
+
+function formatGuildTerritoryRewardAmount(amount) {
+	if (amount % 100000000 === 0) return numberWithCommas(amount / 100000000) + "억";
+	if (amount % 10000 === 0) return numberWithCommas(amount / 10000) + "만";
+	return numberWithCommas(amount);
+}
+
+function addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage) {
+	if (!rewardMessage) return resultMessage;
+
+	var headerEnd = resultMessage.indexOf("\n");
+	if (headerEnd === -1) return resultMessage + "\n" + rewardMessage;
+
+	return resultMessage.slice(0, headerEnd + 1) +
+		rewardMessage + "\n\n" +
+		resultMessage.slice(headerEnd + 1);
 }
 
 function buildGuildTerritoryRiftCommandGuide() {
 	return (
-		"🌋 대균열 유도권(/대균열 숫자) -> 대균열\n" +
-		"🌌 균열 유도권(/균열 숫자) -> 균열\n" +
-		"🌪️ 전쟁불안정 증폭권(/불안정 숫자) -> 불안정\n" +
-		"🚑 전쟁불안정 감소권(/안정 숫자) -> 안정\n\n" +
+		"🌋 대균열 유도권(/대균열) -> 대균열\n" +
+		"🌌 균열 유도권(/균열) -> 균열\n" +
+		"🌪️ 전쟁불안정 증폭권(/불안정) -> 불안정\n" +
+		"🚑 전쟁불안정 감소권(/안정) -> 안정\n\n" +
 		"정리:\n" +
 		"- /대균열\n" +
 		"- /균열\n" +
@@ -31616,12 +31638,12 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 	var defenderName = ter.ownerUser || (defenderGuild ? defenderGuild.master : null);
 	var territory = getGuildTerritoryList()[territoryNo - 1];
 	var used = war.guildAttackCounts[attackerGuildInfo.guildId] || 0;
-	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
+//	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
 	var out = "";
 
 	if (defenderGuild && defenderGuild.name === attackerGuild.name) {
 		out = "🎖️길드 영지전 결과🎖️[공격 불가⚠️]\n";
-		out += baseInfo;
+//		out += baseInfo;
 		out += "[" + checkRank(data, petData, guildData, sender) + "] [" + formatGuildDisplay(attackerGuild) + "]\n";
 		out += "[" + territoryNo + "] " + territory.name + "을(를) 이미 점령 중입니다.";
 		return out;
@@ -31647,9 +31669,9 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			decreaseGuildTerritoryItem(data, defenderName, defenseItem.name);
 
 			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-			out += baseInfo;
-			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + defenseItem.label + "] 발동!";
-			out += "공격/방어 상세보기" + allsee;
+	//		out += baseInfo;
+			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + defenseItem.label + "] 발동!\n";
+			out += "공격/방어/보상 상세보기" + allsee;
 			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 			out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
 			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
@@ -31669,9 +31691,9 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			data.HoiCastle.defenseCount = 0;
 		}
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-		out += baseInfo;
-		out += "🔥 공격 성공! [" + offenseItem.label + "] 발동";
-		out += "공격/방어 상세보기" + allsee;
+	//	out += baseInfo;
+		out += "🔥 공격 성공! [" + offenseItem.label + "] 발동\n";
+		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
 		return out;
@@ -31684,8 +31706,8 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		if (territoryNo === 1 && data.HoiCastle) data.HoiCastle.lord = sender;
 
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-		out += baseInfo;
-		out += "공격/방어 상세보기" + allsee;
+		//out += baseInfo;
+		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 점령에 성공합니다!";
 		return out;
@@ -31706,15 +31728,15 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			data.HoiCastle.defenseCount = 0;
 		}
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-		out += baseInfo;
-		out += "공격/방어 상세보기" + allsee;
+		//out += baseInfo;
+		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 점령에 성공합니다!";
 	} else {
 		//방어자 승리
 		out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-		out += baseInfo;
-		out += "공격/방어 상세보기" + allsee;
+	//	out += baseInfo;
+		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
 		out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "] 이(가)\n";
