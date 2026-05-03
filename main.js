@@ -1107,8 +1107,8 @@ const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 1; // 영지전 불안정 아이�
 const GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT = 10; // 영지전 불안정도 조정 최대치
 const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정)";
 const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🌿 전쟁안정권(/안정)";
-const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "🌌 균열 유도권(/균열)";
-const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균열)";
+const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "🌌 균열 유도권(/균열 숫자)";
+const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균열 숫자)";
 const GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_UP_ITEM, "전쟁불안정 증폭권(/불안정)"];
 const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, "전쟁안정권(/안정)", "전쟁불안정 감소권(/안정)"];
 const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열)", "균열 유도권(/균열 숫자)"];
@@ -2420,6 +2420,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var swordGuild = swordGuildInfo.guild;
 					if (swordGuild.master !== sender) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 길드마스터만 소드마스터를 지정할 수 있습니다.");
+						return;
+					}
+					var swordWar = ensureGuildTerritoryWar(data, guildData);
+					if (swordWar.active && swordWar.readyGuilds && swordWar.readyGuilds[swordGuildInfo.guildId]) {
+						replier.reply("❌ 길드 영지전 진행 중에는 소드마스터를 변경할 수 없습니다.\n영지전 종료 후 다시 시도해 주세요.");
 						return;
 					}
 
@@ -18673,6 +18678,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					startWar.endedAt = null;
 					startWar.turnOrder = shuffleGuildTerritoryRows(turnRows);
 					startWar.currentTurnIndex = 0;
+					startWar.guildAttackLimits = {};
 					startWar.eliminatedUsers = {};
 					startWar.eliminatedGuilds = {};
 					startWar.timeoutMissCounts = {};
@@ -18685,6 +18691,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					startWar.instabilityUses = {};
 					startWar.riftGuideUses = {};
 					startWar.turnToken = null;
+					for (var gl = 0; gl < readyGuildIds.length; gl++) {
+						var limitGuildId = readyGuildIds[gl];
+						var limitGuild = getGuildByIdSafe(guildData, limitGuildId);
+						if (!limitGuild) continue;
+						startWar.guildAttackLimits[limitGuildId] = getGuildTerritoryAttackLimit(limitGuild);
+					}
 					guildData.castleSiegeFlag = true;
 					saveJsonFile(guildData, guildPath);
 
@@ -18815,7 +18827,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					var attackLimit = getGuildTerritoryAttackLimit(attackInfo.guild);
+					var attackLimit = getGuildTerritoryAttackLimitForWar(attackWar, attackInfo.guild, attackInfo.guildId);
 					if ((attackWar.guildAttackCounts[attackInfo.guildId] || 0) >= attackLimit) {
 						replier.reply("❌ [" + formatGuildDisplay(attackInfo.guild) + "] 길드는 공격횟수 " + attackLimit + "회를 모두 사용했습니다.");
 						return;
@@ -30853,6 +30865,7 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (!war.readyGuilds || typeof war.readyGuilds !== "object") war.readyGuilds = {};
 	if (!war.territories || typeof war.territories !== "object") war.territories = {};
 	if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};
+	if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};
 	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};
 	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};
 	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};
@@ -30911,6 +30924,13 @@ function shuffleGuildTerritoryRows(rows) {
 function getGuildTerritoryAttackLimit(g) {
 	var swordMasters = ensureGuildSwordMasters(g);
 	return Math.max(1, swordMasters.length) * GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER;
+}
+
+function getGuildTerritoryAttackLimitForWar(war, g, guildId) {
+	if (war && war.guildAttackLimits && typeof war.guildAttackLimits[guildId] === "number") {
+		return war.guildAttackLimits[guildId];
+	}
+	return getGuildTerritoryAttackLimit(g);
 }
 
 //	영지전 불안정도 기본 증가율 계산 (턴 수 기반, 최대 20%)
@@ -31039,7 +31059,7 @@ function getGuildTerritoryTurnRow(data, guildData) {
 		if (!g) continue;
 
 		var attackCount = war.guildAttackCounts[row.guildId] || 0; // 해당 길드의 현재 공격 횟수 가져오기
-		if (attackCount >= getGuildTerritoryAttackLimit(g)) continue; // 공격 횟수 초과한 길드는 공격자에서 제외
+		if (attackCount >= getGuildTerritoryAttackLimitForWar(war, g, row.guildId)) continue; // 공격 횟수 초과한 길드는 공격자에서 제외
 
 		war.currentTurnIndex = idx; // 현재 턴 인덱스 업데이트
 		return row;
@@ -31050,13 +31070,13 @@ function getGuildTerritoryTurnRow(data, guildData) {
 
 // 해당 길드에 공격 가능한 소드마스터가 있는지 체크
 function hasGuildTerritoryEligibleAttacker(data, guildData, gid) {
-	var g = getGuildByIdSafe(guildData, gid);
-	if (!g) return false;
-	var swordMasters = ensureGuildSwordMasters(g);
 	var war = guildData.territoryWar;
+	if (!war || !war.turnOrder || war.turnOrder.length === 0) return false;
 	if (war.eliminatedGuilds && war.eliminatedGuilds[gid]) return false;
-	for (var i = 0; i < swordMasters.length; i++) {
-		if (!war.eliminatedUsers[swordMasters[i]]) return true;
+	for (var i = 0; i < war.turnOrder.length; i++) {
+		var row = war.turnOrder[i];
+		if (!row || row.guildId !== gid) continue;
+		if (!war.eliminatedUsers[row.user]) return true;
 	}
 	return false;
 }
@@ -31070,7 +31090,7 @@ function isGuildTerritoryAllDone(data, guildData) {
 		var gid = ready[i];
 		var g = getGuildByIdSafe(guildData, gid);
 		if (!g || (war.eliminatedGuilds && war.eliminatedGuilds[gid])) continue;
-		if ((war.guildAttackCounts[gid] || 0) < getGuildTerritoryAttackLimit(g) && hasGuildTerritoryEligibleAttacker(data, guildData, gid)) {
+		if ((war.guildAttackCounts[gid] || 0) < getGuildTerritoryAttackLimitForWar(war, g, gid) && hasGuildTerritoryEligibleAttacker(data, guildData, gid)) {
 			return false;
 		}
 	}
@@ -31092,7 +31112,7 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	if (!row) return ["⚠️ 다음 공격 가능한 소드마스터가 없습니다."];
 	var g = getGuildByIdSafe(guildData, row.guildId);
 	var used = war.guildAttackCounts[row.guildId] || 0;
-	var attackLimit = getGuildTerritoryAttackLimit(g);
+	var attackLimit = getGuildTerritoryAttackLimitForWar(war, g, row.guildId);
 	var remain = Math.max(0, attackLimit - used);
 	var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
@@ -31490,7 +31510,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 	var defenderName = ter.ownerUser || (defenderGuild ? defenderGuild.master : null);
 	var territory = getGuildTerritoryList()[territoryNo - 1];
 	var used = war.guildAttackCounts[attackerGuildInfo.guildId] || 0;
-	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimit(attackerGuild) + ")\n\n";
+	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
 	var out = "";
 
 	if (defenderGuild && defenderGuild.name === attackerGuild.name) {
