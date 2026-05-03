@@ -34902,7 +34902,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
 	msg += "\n📚 장착 가능한 스킬 목록\n";
 	msg += "※ 이미 장착되어있는 펫스킬은 표시되지 않습니다." + allsee + "\n";
-	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]";
+	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]\n";
 	msg += "━━━━━━━━━━\n";
 
 	var equippedMap = {};
@@ -34918,7 +34918,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 		msg += "미장착 스킬이 없습니다.";
 	} else {
 		for (var j = 0; j < list.length; j++) {
-			msg += j + 1 + ". " + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
+			msg += '- ' + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
 		}
 	}
 
