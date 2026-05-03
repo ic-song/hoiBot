@@ -1180,6 +1180,7 @@ const trialTowerBoss = loadJsonFile(trialTowerBossPath);
 const eventTowerBoss = loadJsonFile(eventTowerBossPath);
 const miniPetData = loadJsonFile(miniPetPath);
 
+// 요청 과부하 방지 기능
 function isRapidUserRequest(sender) {
 	let now = Date.now();
 	let history = userRequestTracker[sender] || [];
@@ -1194,6 +1195,7 @@ function isRapidUserRequest(sender) {
 	return history.length >= USER_REQUEST_LIMIT;
 }
 
+// 요청 과부하 정보 조회
 function getUserRequestInfo(sender) {
 	let now = Date.now();
 	let history = userRequestTracker[sender] || [];
@@ -1210,6 +1212,7 @@ function getUserRequestInfo(sender) {
 	};
 }
 
+// 요청 과부하 기준 시간 설정 조회
 function getUserRequestCount(sender) {
 	return getUserRequestInfo(sender).count;
 }
@@ -1218,12 +1221,14 @@ function isDevCommandMessage(msg) {
 	return typeof msg === "string" && msg.indexOf("dev/") === 0;
 }
 
+// DEV 명령어 접두어 제거 및 명령어 형식 보정
 function stripDevCommandPrefix(msg) {
 	var command = String(msg || "").substring("dev/".length).trim();
 	if (!command) return "";
 	return command.charAt(0) === "/" ? command : "/" + command;
 }
 
+// DEV 응답 래퍼 생성
 function createDevReplier(replier) {
 	return {
 		reply: function (message) {
@@ -1232,13 +1237,15 @@ function createDevReplier(replier) {
 	};
 }
 
+// 길드 영토전 관련 명령어인지 확인
 function isMutableGuildTerritoryCommand(msg) {
 	if (typeof msg !== "string") return false;
 	return (
 		msg === "/길드영지준비" ||
 		msg === "/길드영지시작" ||
-		msg === "/개발영지시작" ||
 		msg === "/길드영지종료" ||
+		msg === "/길드영지순서" ||
+		msg === "/길드영지확인" ||
 		msg.indexOf("/영지공격") === 0 ||
 		msg.indexOf("/불안정") === 0 ||
 		msg.indexOf("/안정") === 0 ||
@@ -1247,6 +1254,7 @@ function isMutableGuildTerritoryCommand(msg) {
 	);
 }
 
+// DEV 환경에서 길드 영토전이 활성화되어 있는지 확인
 function isDevGuildTerritoryWarActive() {
 	var prevDevMode = activeDevDataMode;
 	activeDevDataMode = true;
@@ -1599,9 +1607,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var petSkillData = loadJsonFile(petSkillDataPath);
 		var guildData = loadJsonFile(guildPath);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
-		if (!isDevMode && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
-			replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
-			return;
+		if (!isDevMode && isMutableGuildTerritoryCommand(msg)) {
+			if (isDevGuildTerritoryWarActive()) {
+				replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
+				return;
+			}
 		}
 		ensureHappyFoundationData(data);
 		var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData);
@@ -18645,7 +18655,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					return;
 				}
-				if ((msg === "/길드영지시작" || (activeDevDataMode && msg === "/개발영지시작")) && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
+				if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
 					var startWar = ensureGuildTerritoryWar(data, guildData);
 					if (startWar.active) {
 						replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
@@ -18674,6 +18684,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					startWar.active = true;
+					startWar.isDevWar = activeDevDataMode;
 					startWar.startedAt = formatDateTime(new Date());
 					startWar.endedAt = null;
 					startWar.turnOrder = shuffleGuildTerritoryRows(turnRows);
@@ -18723,7 +18734,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
 					guildData.castleSiegeFlag = false;
-					saveJsonFile(guildData, guildPath);
+					withGuildTerritoryDataMode(guildData, function () {
+						saveJsonFile(guildData, guildPath);
+					});
 					return;
 				}
 
@@ -18853,8 +18866,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
 						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
-						saveJsonFile(guildData, guildPath);
-						saveJsonFile(data, filePath);
+						withGuildTerritoryDataMode(guildData, function () {
+							saveJsonFile(guildData, guildPath);
+							saveJsonFile(data, filePath);
+						});
 						return;
 					}
 
@@ -30707,6 +30722,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // JSON 파일 로드 함수
 
+// JSON 문자열을 파싱하는 함수로, 빈 문자열이나 null/undefined인 경우 예외를 던지거나 기본값을 반환하도록 처리
 function parseJsonContent(fileContent, path, emptyDefault) {
 	if (fileContent === null || typeof fileContent === "undefined") {
 		if (typeof emptyDefault !== "undefined") return emptyDefault;
@@ -30722,12 +30738,14 @@ function parseJsonContent(fileContent, path, emptyDefault) {
 	return JSON.parse(fileContent);
 }
 
+// 데이터 파일 경로에서 루트 경로를 제거하여 파일 이름만 반환하는 함수
 function getDataFileName(path) {
 	path = String(path || "");
 	if (path.indexOf(DATA_ROOT_PATH) !== 0) return null;
 	return path.substring(DATA_ROOT_PATH.length);
 }
 
+// DEV 데이터 모드 활성화 여부를 나타내는 전역 변수
 function resolveActiveDataPath(path) {
 	var fileName = getDataFileName(path);
 	if (activeDevDataMode && fileName && DEV_DATA_FILE_MAP[fileName]) {
@@ -30736,12 +30754,32 @@ function resolveActiveDataPath(path) {
 	return path;
 }
 
+// DEV 데이터 모드 활성화 여부 확인 함수
+function isDevGuildTerritoryWarData(guildData) {
+	return !!(guildData && guildData.territoryWar && guildData.territoryWar.isDevWar);
+}
+
+// 길드 영지전 데이터 모드 활성화 함수
+function withGuildTerritoryDataMode(guildData, callback) {
+	var prevDevMode = activeDevDataMode;
+	if (isDevGuildTerritoryWarData(guildData)) {
+		activeDevDataMode = true;
+	}
+	try {
+		return callback();
+	} finally {
+		activeDevDataMode = prevDevMode;
+	}
+}
+
+// 지정된 경로의 부모 폴더가 존재하는지 확인하고, 없으면 생성하는 함수
 function ensureParentFolder(path) {
 	var file = new java.io.File(path);
 	var parent = file.getParentFile();
 	if (parent && !parent.exists()) parent.mkdirs();
 }
 
+// DEV 데이터 백업 함수
 function backupDevDataFromProduction() {
 	var devFolder = new java.io.File(DEV_DATA_ROOT_PATH);
 	if (!devFolder.exists()) devFolder.mkdirs();
@@ -30762,7 +30800,7 @@ function backupDevDataFromProduction() {
 
 	return "✅ DEV 데이터 백업 완료\n\n운영 데이터를 테스트 환경으로 복사했습니다.\n\n- " + copied.join("\n- ");
 }
-
+// DEV 데이터 파일 존재 여부 확인 함수
 function getMissingDevDataFiles() {
 	var missing = [];
 	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
@@ -30773,6 +30811,7 @@ function getMissingDevDataFiles() {
 	return missing;
 }
 
+// JSON 파일 로드 함수
 function loadJsonFile(path) {
 	try {
 		path = resolveActiveDataPath(path);
@@ -31281,6 +31320,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	} else {
 		return null;
 	}
+	var bagItemName = config.item;
 
 	var parts = msg.trim().split(/\s+/);
 	var count = parts.length >= 2 ? parseInt(parts[1], 10) : 1;
@@ -31288,6 +31328,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		return { message: "사용법: " + command + " 숫자\n예) " + command + " 1" };
 	}
 
+	// 영지전 데이터 보장 및 초기화
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var blocked = canUseGuildTerritoryRiftItem(war);
 	if (blocked) return { message: blocked };
@@ -31309,6 +31350,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		return { message: "보유 중인 " + config.item + "이 없습니다.\n\n아이템을 보유한 상태에서 다시 시도해 주세요." };
 	}
 
+	// 불안정도 조정 아이템인 경우, 길드/유저별 사용 횟수 및 조정치 한도 체크 후 적용
 	if (config.deltaAdjust) {
 		var guildUsed = getGuildTerritoryUseCount(war.instabilityUses, guildInfo.guildId, config.type);
 		var userUsed = (((war.instabilityUses[guildInfo.guildId] || {})[config.type] || {})[sender] || 0);
@@ -31336,6 +31378,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		return { message: out, changed: true };
 	}
 
+	// 균열 유도 아이템인 경우, 길드/유저별 사용 횟수 체크 후 적용
 	var guideStore = war.riftGuideUses;
 	var guideUsed = (((guideStore[guildInfo.guildId] || {})[config.type] || {})[sender] || 0);
 	var guideUseCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, Math.max(0, 1 - guideUsed));
@@ -31343,6 +31386,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 	}
 
+	// 균열 유도 아이템 적용: 사용 횟수만큼 리프트 편향 조정, 균열 발생 확률 변화 계산, 결과 메시지 빌드 및 반환
 	var beforeRates = getGuildTerritoryRiftRates(war);
 	removeItem(data, sender, bagItemName, guideUseCount);
 	for (var gu = 0; gu < guideUseCount; gu++) markGuildTerritoryItemUse(guideStore, guildInfo.guildId, config.type, sender);
@@ -31359,6 +31403,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	return { message: guideOut, changed: true };
 }
 
+// 영지전 공격 제한 시간 초과 시 미공격 처리: 누적된 미공격 횟수에 따른 경고 및 탈락 처리, 결과 메시지 반환
 function applyGuildTerritoryTimeoutMiss(guildData, guildId) {
 	var war = ensureGuildTerritoryWar({}, guildData);
 	var g = getGuildByIdSafe(guildData, guildId);
@@ -31414,21 +31459,29 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	var war = guildData.territoryWar;
 	if (!war || !war.active) return;
 
+	// 기존 타이머가 있으면 초기화
 	clearGuildTerritoryWarTimer();
 
+	// 현재 공격자 정보 가져오기
 	var row = getGuildTerritoryTurnRow(data, guildData);
 	if (!row) {
 		finishGuildTerritoryWar(data, guildData, "자동 종료");
-		saveJsonFile(guildData, guildPath);
+		withGuildTerritoryDataMode(guildData, function () {
+			saveJsonFile(guildData, guildPath);
+		});
 		return;
 	}
 
+	// 턴 타이머 식별 토큰 생성 (현재 시간 + 랜덤값)
 	war.turnToken = String(new Date().getTime()) + "_" + String(Math.random());
 	var token = war.turnToken;
 	var turnGuildId = row.guildId;
 	var timerDevMode = activeDevDataMode;
-	saveJsonFile(guildData, guildPath);
+	withGuildTerritoryDataMode(guildData, function () {
+		saveJsonFile(guildData, guildPath);
+	});
 
+	// 영지전 턴 타이머 설정: 타이머 만료 시 현재 공격자의 미공격 처리, 균열 이벤트 처리, 다음 공격자 선택 및 메시지 발송, 타이머 재설정
 	guildTerritoryWarTimer = setTimeout(function () {
 		activeDevDataMode = timerDevMode;
 		try {
@@ -31440,33 +31493,45 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 			if (!latestWar || !latestWar.active) return;
 			if (latestWar.turnToken !== token) return;
 
+			// 현재 공격자 길드의 미공격 처리 및 누적 횟수 증가
 			latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
 			latestWar.turnToken = null;
 
+			// 미공격 처리 결과 메시지 빌드
 			var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
 			var riftMessage = processGuildTerritoryRiftEvent(latestData, latestGuildData);
 			if (riftMessage) {
 				timeoutMessage += "\n\n" + riftMessage;
-				saveJsonFile(latestData, filePath);
+				withGuildTerritoryDataMode(latestGuildData, function () {
+					saveJsonFile(latestData, filePath);
+				});
 			}
 
 			Api.replyRoom(room8, timerDevMode ? "[DEV 테스트환경]\n" + timeoutMessage : timeoutMessage);
 
+			// 모든 길드가 공격 횟수를 다 채웠거나 공격할 수 있는 소드마스터가 없는 경우 영지전 종료 처리
 			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
 				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
-				saveJsonFile(latestGuildData, guildPath);
-				saveJsonFile(latestData, filePath);
+				withGuildTerritoryDataMode(latestGuildData, function () {
+					saveJsonFile(latestGuildData, guildPath);
+					saveJsonFile(latestData, filePath);
+				});
 				return;
 			}
 
+			// 다음 공격자 선택 및 턴 메시지 발송
 			advanceGuildTerritoryTurn(latestData, latestGuildData);
-			saveJsonFile(latestGuildData, guildPath);
+			withGuildTerritoryDataMode(latestGuildData, function () {
+				saveJsonFile(latestGuildData, guildPath);
+			});
 
+			// 다음 공격자 정보로 턴 메시지 빌드 및 발송
 			var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
 			turnMsgs.forEach(function (m) {
 				castleMsg(m, replier, isGroupChat);
 			});
 
+			// 다음 공격자부터 새로운 타이머 시작
 			startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
 		} finally {
 			activeDevDataMode = false;
@@ -31610,36 +31675,38 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 
 // 영지전 종료 처리
 function finishGuildTerritoryWar(data, guildData, reason) {
-	var war = ensureGuildTerritoryWar(data, guildData);
-	clearGuildTerritoryWarTimer();
-	war.active = false;
-	war.endedAt = formatDateTime(new Date());
-	war.turnToken = null;
-	war.castleSiegeFlag = false;
-	guildData.castleSiegeFlag = false;
+	return withGuildTerritoryDataMode(guildData, function () {
+		var war = ensureGuildTerritoryWar(data, guildData);
+		clearGuildTerritoryWarTimer();
+		war.active = false;
+		war.endedAt = formatDateTime(new Date());
+		war.turnToken = null;
+		war.castleSiegeFlag = false;
+		guildData.castleSiegeFlag = false;
 
-	var list = getGuildTerritoryList();
-	for (var i = 0; i < list.length; i++) {
-		var territory = list[i];
-		if (territory.rewardType === "castle") continue;
-		var ter = war.territories[String(territory.no)];
-		var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
-		if (!g) continue;
-		ensureGuildWarehouseObj(g);
-		g.warehouse[territory.rewardType] += territory.rewardAmount;
-	}
+		var list = getGuildTerritoryList();
+		for (var i = 0; i < list.length; i++) {
+			var territory = list[i];
+			if (territory.rewardType === "castle") continue;
+			var ter = war.territories[String(territory.no)];
+			var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
+			if (!g) continue;
+			ensureGuildWarehouseObj(g);
+			g.warehouse[territory.rewardType] += territory.rewardAmount;
+		}
 
-	var out = "[🎖️길드 영지전 종료🎖️]\n";
-	if (reason) out += reason + "\n";
-	out += "최종 영지전 결과✌\n\n";
-	for (var j = 0; j < list.length; j++) {
-		var t = war.territories[String(list[j].no)];
-		var owner = getGuildByIdSafe(guildData, t ? t.ownerGuildId : null);
-		out += "[" + list[j].no + "] " + list[j].name + ": " + formatGuildDisplay(owner) + "\n";
-	}
-	out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
-	war.readyGuilds = {};
-	noticeMsg(out);
+		var out = "[🎖️길드 영지전 종료🎖️]\n";
+		if (reason) out += reason + "\n";
+		out += "최종 영지전 결과✌\n\n";
+		for (var j = 0; j < list.length; j++) {
+			var t = war.territories[String(list[j].no)];
+			var owner = getGuildByIdSafe(guildData, t ? t.ownerGuildId : null);
+			out += "[" + list[j].no + "] " + list[j].name + ": " + formatGuildDisplay(owner) + "\n";
+		}
+		out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
+		war.readyGuilds = {};
+		noticeMsg(out);
+	});
 }
 // 출석 /리셋 함수
 function resetAttendance(petData, data, replier) {
@@ -34115,7 +34182,6 @@ function checkRank(data, petData, guildData, user) {
 
 // 전제: normalizeItemName(itemName) 함수가 이미 존재해야 함.
 //  - 펫 친밀도🐾(숫자/1000)+숫자💕  => "펫 친밀도🐾" 로 정규화
-
 function generateBagOutput(bagItems) {
 	var bagOutput = "";
 	var sortedItemList = [];
