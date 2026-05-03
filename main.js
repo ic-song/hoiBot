@@ -1051,7 +1051,7 @@ const DEV_DATA_FILES = [
 	"board.json",
 	"carrotBoard.json"
 ];
-const DEV_BACKUP_FILES = [
+const DEV_RECOVERY_BACKUP_FILES = [
 	"member_back.json",
 	"member_pet_back.json",
 	"petSkillData_back.json"
@@ -1060,8 +1060,8 @@ var DEV_DATA_FILE_MAP = {};
 for (var devFileIndex = 0; devFileIndex < DEV_DATA_FILES.length; devFileIndex++) {
 	DEV_DATA_FILE_MAP[DEV_DATA_FILES[devFileIndex]] = true;
 }
-for (var devBackIndex = 0; devBackIndex < DEV_BACKUP_FILES.length; devBackIndex++) {
-	DEV_DATA_FILE_MAP[DEV_BACKUP_FILES[devBackIndex]] = true;
+for (var devBackIndex = 0; devBackIndex < DEV_RECOVERY_BACKUP_FILES.length; devBackIndex++) {
+	DEV_DATA_FILE_MAP[DEV_RECOVERY_BACKUP_FILES[devBackIndex]] = true;
 }
 var activeDevDataMode = false;
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
