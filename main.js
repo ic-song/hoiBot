@@ -18593,7 +18593,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply("✅ [" + formatGuildDisplay(readyInfo.guild) + "] 길드가 오늘 길드영지전 참여 준비를 완료했습니다.");
 					return;
 				}
-
+				if (msg === "/길드영지확인") {
+					if (castleSiegeFlag) {
+						replier.reply("🏰 현재 길드 영지전이 진행 중입니다.\n지금 바로 참여하실 수 있습니다!");
+					} else {
+						replier.reply("🏰 현재 진행 중인 길드 영지전이 없습니다.\n다음 영지전을 기다려 주세요.");
+					}
+				}
 				if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
 					var startWar = ensureGuildTerritoryWar(data, guildData);
 					if (startWar.active) {
@@ -31044,13 +31050,13 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	var command = msg.split(" ")[0];
 	var config = null;
 	if (command === "/불안정") {
-		config = { type: "instabilityUp", item: GUILD_TERRITORY_INSTABILITY_UP_ITEM, label: "🌪️ 전쟁불안정 증폭권", deltaAdjust: GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
+		config = { type: "instabilityUp", item: GUILD_TERRITORY_INSTABILITY_UP_ITEM, label: "🌪️ 전쟁불안정 증폭권(/불안정)", deltaAdjust: GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
 	} else if (command === "/안정") {
-		config = { type: "instabilityDown", item: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, label: "🚑 전쟁불안정 감소권", deltaAdjust: -GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
+		config = { type: "instabilityDown", item: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, label: "🚑전쟁불안정 감소권(/안정)", deltaAdjust: -GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
 	} else if (command === "/균열") {
-		config = { type: "riftGuide", item: GUILD_TERRITORY_RIFT_GUIDE_ITEM, label: "🌌 균열 유도권", deltaBias: GUILD_TERRITORY_RIFT_ITEM_STEP };
+		config = { type: "riftGuide", item: GUILD_TERRITORY_RIFT_GUIDE_ITEM, label: "🌌 균열 유도권(/균열 숫자)", deltaBias: GUILD_TERRITORY_RIFT_ITEM_STEP };
 	} else if (command === "/대균열") {
-		config = { type: "greatRiftGuide", item: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, label: "🌋 대균열 유도권", deltaBias: -GUILD_TERRITORY_RIFT_ITEM_STEP };
+		config = { type: "greatRiftGuide", item: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, label: "🌋 대균열 유도권(/대균열 숫자)", deltaBias: -GUILD_TERRITORY_RIFT_ITEM_STEP };
 	} else {
 		return null;
 	}
