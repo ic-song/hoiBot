@@ -1004,6 +1004,8 @@ roomToServer[room90] = "호이월드 운영진[GM]";
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var folder = new java.io.File(sdcard, "호이랜드");
 folder.mkdirs();
+const DATA_ROOT_PATH = "/sdcard/호이랜드/";
+const DEV_DATA_ROOT_PATH = "/sdcard/호이랜드_dev/";
 const filePath = "/sdcard/호이랜드/member.json";
 const boardPath = "/sdcard/호이랜드/board.json";
 const carrotBoardPath = "/sdcard/호이랜드/carrotBoard.json";
@@ -1033,6 +1035,37 @@ const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json
 const filePath_back = "/sdcard/호이랜드/member_back.json"; //멤버백
 const memberPetPath_back = "/sdcard/호이랜드/member_pet_back.json";
 const petSkillDataPath_back = "/sdcard/호이랜드/petSkillData_back.json";
+const DEV_DATA_FILES = [
+	"member.json",
+	"member_pet.json",
+	"petSkillData.json",
+	"guildData.json",
+	"castleBattle2.json",
+	"trialTower.json",
+	"petExploreData.json",
+	"miniPet_collection.json",
+	"member_title.json",
+	"pet_title.json",
+	"miniPet_title.json",
+	"petSweetHomeData.json",
+	"board.json",
+	"carrotBoard.json",
+	"itemInfo.json",
+	"miniPetData.json"
+];
+const DEV_RECOVERY_BACKUP_FILES = [
+	"member_back.json",
+	"member_pet_back.json",
+	"petSkillData_back.json"
+];
+var DEV_DATA_FILE_MAP = {};
+for (var devFileIndex = 0; devFileIndex < DEV_DATA_FILES.length; devFileIndex++) {
+	DEV_DATA_FILE_MAP[DEV_DATA_FILES[devFileIndex]] = true;
+}
+for (var devBackIndex = 0; devBackIndex < DEV_RECOVERY_BACKUP_FILES.length; devBackIndex++) {
+	DEV_DATA_FILE_MAP[DEV_RECOVERY_BACKUP_FILES[devBackIndex]] = true;
+}
+var activeDevDataMode = false;
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
 	windowMs: 2000,
 	limit: 3,
@@ -1072,10 +1105,14 @@ const GUILD_TERRITORY_RIFT_BASE_RATE = 70; // 영지전 균열 기본 성공 확
 const GUILD_TERRITORY_RIFT_ITEM_STEP = 10; // 영지전 균열 아이템당 확률 증가량
 const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 1; // 영지전 불안정 아이템당 불안정도 증가/감소량
 const GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT = 10; // 영지전 불안정도 조정 최대치
-const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "전쟁불안정 증폭권(/불안정)";
-const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "전쟁불안정 감소권(/안정)";
-const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "균열 유도권(/균열 숫자)";
-const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "대균열 유도권(/대균열 숫자)";
+const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정)";
+const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🌿 전쟁안정권(/안정)";
+const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "🌌 균열 유도권(/균열)";
+const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균열)";
+const GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_UP_ITEM, "전쟁불안정 증폭권(/불안정)"];
+const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, "전쟁안정권(/안정)", "전쟁불안정 감소권(/안정)"];
+const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열)", "균열 유도권(/균열 숫자)"];
+const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, "대균열 유도권(/대균열)", "대균열 유도권(/대균열 숫자)"];
 var guildTerritoryWarTimer = null;
 let isSaving = false; //메인 정보
 function isAdmin(sender) {
@@ -1177,10 +1214,81 @@ function getUserRequestCount(sender) {
 	return getUserRequestInfo(sender).count;
 }
 
+function isDevCommandMessage(msg) {
+	return typeof msg === "string" && msg.indexOf("dev/") === 0;
+}
+
+function stripDevCommandPrefix(msg) {
+	var command = String(msg || "").substring("dev/".length).trim();
+	if (!command) return "";
+	return command.charAt(0) === "/" ? command : "/" + command;
+}
+
+function createDevReplier(replier) {
+	return {
+		reply: function (message) {
+			replier.reply("[DEV 테스트환경]\n" + message);
+		}
+	};
+}
+
+function isMutableGuildTerritoryCommand(msg) {
+	if (typeof msg !== "string") return false;
+	return (
+		msg === "/길드영지준비" ||
+		msg === "/길드영지시작" ||
+		msg === "/개발영지시작" ||
+		msg === "/길드영지종료" ||
+		msg.indexOf("/영지공격") === 0 ||
+		msg.indexOf("/불안정") === 0 ||
+		msg.indexOf("/안정") === 0 ||
+		msg.indexOf("/균열") === 0 ||
+		msg.indexOf("/대균열") === 0
+	);
+}
+
+function isDevGuildTerritoryWarActive() {
+	var prevDevMode = activeDevDataMode;
+	activeDevDataMode = true;
+	try {
+		var devGuildData = loadJsonFile(guildPath);
+		if (!devGuildData) return false;
+		var devWar = ensureGuildTerritoryWar(null, devGuildData);
+		return !!(devWar && devWar.active);
+	} catch (e) {
+		return false;
+	} finally {
+		activeDevDataMode = prevDevMode;
+	}
+}
+
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
 	//데이터 검사
 	try {
+		var isDevMode = isDevCommandMessage(msg);
+		if (isDevMode) {
+			msg = stripDevCommandPrefix(msg);
+			replier = createDevReplier(replier);
+		}
+		activeDevDataMode = isDevMode;
+
+		if (isDevMode && msg === "/데이터백업") {
+			if (!isMaster(sender)) {
+				replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+				return;
+			}
+			replier.reply(backupDevDataFromProduction());
+			return;
+		}
+		if (isDevMode) {
+			var missingDevFiles = getMissingDevDataFiles();
+			if (missingDevFiles.length > 0) {
+				replier.reply("❌ DEV 데이터가 준비되지 않았습니다.\nMaster가 dev/데이터백업을 먼저 실행해 주세요.\n\n누락 파일:\n- " + missingDevFiles.join("\n- "));
+				return;
+			}
+		}
+
 		if (!isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
 			let requestInfo = getUserRequestInfo(sender);
 			if (requestInfo.isFirstDetect) {
@@ -1479,6 +1587,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var petSkillData = loadJsonFile(petSkillDataPath);
 		var guildData = loadJsonFile(guildPath);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
+		if (!isDevMode && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
+			replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
+			return;
+		}
 		ensureHappyFoundationData(data);
 		var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData);
 		if (petSkillChanged) {
@@ -18412,7 +18524,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg === "영지보상안내") {
+				if (msg === "영지보상안내" || msg === "/영지보상안내") {
 					replier.reply(
 						"🎖️길드 영지전 보상 안내🎖️\n\n" +
 						"[1] 호월킹덤🏰: 세금 시스템 5%~7% 부과\n" +
@@ -18508,13 +18620,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 				if (msg === "/길드영지확인") {
-					if (castleSiegeFlag) {
+					var confirmWar = ensureGuildTerritoryWar(data, guildData);
+					if (confirmWar.active) {
 						replier.reply("🏰 현재 길드 영지전이 진행 중입니다.\n지금 바로 참여하실 수 있습니다!");
 					} else {
 						replier.reply("🏰 현재 진행 중인 길드 영지전이 없습니다.\n다음 영지전을 기다려 주세요.");
 					}
+					return;
 				}
-				if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
+				if ((msg === "/길드영지시작" || (activeDevDataMode && msg === "/개발영지시작")) && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
 					var startWar = ensureGuildTerritoryWar(data, guildData);
 					if (startWar.active) {
 						replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
@@ -30423,6 +30537,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
 		// }
 		FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+	} finally {
+		activeDevDataMode = false;
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -30445,8 +30561,60 @@ function parseJsonContent(fileContent, path, emptyDefault) {
 	return JSON.parse(fileContent);
 }
 
+function getDataFileName(path) {
+	path = String(path || "");
+	if (path.indexOf(DATA_ROOT_PATH) !== 0) return null;
+	return path.substring(DATA_ROOT_PATH.length);
+}
+
+function resolveActiveDataPath(path) {
+	var fileName = getDataFileName(path);
+	if (activeDevDataMode && fileName && DEV_DATA_FILE_MAP[fileName]) {
+		return DEV_DATA_ROOT_PATH + fileName;
+	}
+	return path;
+}
+
+function ensureParentFolder(path) {
+	var file = new java.io.File(path);
+	var parent = file.getParentFile();
+	if (parent && !parent.exists()) parent.mkdirs();
+}
+
+function backupDevDataFromProduction() {
+	var devFolder = new java.io.File(DEV_DATA_ROOT_PATH);
+	if (!devFolder.exists()) devFolder.mkdirs();
+
+	var copied = [];
+	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
+		var fileName = DEV_DATA_FILES[i];
+		var sourcePath = DATA_ROOT_PATH + fileName;
+		var targetPath = DEV_DATA_ROOT_PATH + fileName;
+		var sourceFile = new java.io.File(sourcePath);
+		if (!sourceFile.exists()) {
+			throw new Error("DEV backup source file not found: " + sourcePath);
+		}
+		ensureParentFolder(targetPath);
+		FileStream.write(targetPath, FileStream.read(sourcePath, "utf-8"), "utf-8");
+		copied.push(fileName);
+	}
+
+	return "✅ DEV 데이터 백업 완료\n\n운영 데이터를 테스트 환경으로 복사했습니다.\n\n- " + copied.join("\n- ");
+}
+
+function getMissingDevDataFiles() {
+	var missing = [];
+	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
+		var fileName = DEV_DATA_FILES[i];
+		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
+		if (!devFile.exists()) missing.push(fileName);
+	}
+	return missing;
+}
+
 function loadJsonFile(path) {
 	try {
+		path = resolveActiveDataPath(path);
 		let file = new java.io.File(path);
 		if (file.exists()) {
 			let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
@@ -30472,7 +30640,9 @@ function saveJsonFile(data, path) {
 	if (!(data instanceof Object)) {
 		debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
 	} else {
+		path = resolveActiveDataPath(path);
 		isSaving = true;
+		ensureParentFolder(path);
 		FileStream.write(path, JSON.stringify(data), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 		isSaving = false;
 	}
@@ -30644,7 +30814,7 @@ function getGuildTerritoryTimeoutMissCount(war, guildId) {
 function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var list = getGuildTerritoryList();
-	var out = "🎖️길드 영지전 점령 보고서🏰\n\n";
+	var out = "🎖️현재 길드 영지전 상황🎖️\n\n";
 
 	for (var i = 0; i < list.length; i++) {
 		var ter = war.territories[String(list[i].no)];
@@ -30663,7 +30833,7 @@ function buildGuildTerritoryStartMessage(data, guildData) {
 		"'/영지공격 [숫자]' 명령어로 영지를 점령해보세요.\n" +
 		"길드의 '소드마스터🤺'만 영지공격이 가능하며,\n" +
 		"종료 시점에 최종 점령 중인 길드가 해당 영지를 차지합니다.\n\n" +
-		buildGuildTerritoryStatusMessage(data, guildData, false).replace("🎖️길드 영지전 점령 보고서🏰\n\n", "")
+		buildGuildTerritoryStatusMessage(data, guildData, false)
 	);
 }
 
@@ -30671,31 +30841,61 @@ function buildGuildTerritoryStartMessage(data, guildData) {
 function buildGuildTerritoryOrderMessage(data, petData, guildData) {
 	var war = guildData.territoryWar;
 	var out = "📜길드 영지전 공격 순서표📜\n" + allsee;
-	if (!war.turnOrder || war.turnOrder.length === 0) return out + "참여 소드마스터가 없습니다.";
+
+	if (!war.turnOrder || war.turnOrder.length === 0) {
+		return out + "참여 소드마스터가 없습니다.";
+	}
+
+	var orderIndex = 1;
+
 	for (var i = 0; i < war.turnOrder.length; i++) {
 		var row = war.turnOrder[i];
+
+		// 탈락 길드/유저는 순서표에서 제외
+		if (war.eliminatedGuilds && war.eliminatedGuilds[row.guildId]) continue;
+		if (war.eliminatedUsers && war.eliminatedUsers[row.user]) continue;
+
 		var g = getGuildByIdSafe(guildData, row.guildId);
-		out += i + 1 + ". [" + checkRank(data, petData, guildData, row.user) + "] [" + formatGuildDisplay(g) + "]\n";
+		if (!g) continue;
+
+		out += orderIndex + ". [" + checkRank(data, petData, guildData, row.user) + "] [" + formatGuildDisplay(g) + "]\n";
+		orderIndex++;
 	}
+
+	if (orderIndex === 1) {
+		out += "남은 공격 대상 소드마스터가 없습니다.";
+	}
+
 	return out;
 }
 
-// 현재 턴의 공격자 정보 반환, 공격 가능한 소드마스터가 없으면 null 반환
+// 영지전 현재 공격자 정보 가져오기
 function getGuildTerritoryTurnRow(data, guildData) {
-	var war = guildData.territoryWar;
+	var war = guildData.territoryWar;//
 	if (!war || !war.active || !war.turnOrder || war.turnOrder.length === 0) return null;
 
+	if (!war.eliminatedGuilds) war.eliminatedGuilds = {}; // 탈락한 길드 ID를 키로 저장하는 객체
+	if (!war.eliminatedUsers) war.eliminatedUsers = {};// 탈락한 유저 ID를 키로 저장하는 객체
+	if (!war.guildAttackCounts) war.guildAttackCounts = {};// 길드별 공격 횟수를 저장하는 객체
+
 	for (var i = 0; i < war.turnOrder.length; i++) {
-		var idx = ((war.currentTurnIndex || 0) + i) % war.turnOrder.length;
-		var row = war.turnOrder[idx];
-		var g = getGuildByIdSafe(guildData, row.guildId);
-		var attackCount = war.guildAttackCounts[row.guildId] || 0;
-		if (!g || attackCount >= getGuildTerritoryAttackLimit(g)) continue;
-		if (war.eliminatedGuilds && war.eliminatedGuilds[row.guildId]) continue;
-		if (war.eliminatedUsers[row.user]) continue;
-		war.currentTurnIndex = idx;
+		var idx = ((war.currentTurnIndex || 0) + i) % war.turnOrder.length;// 현재 턴부터 순회하면서 공격 가능한 소드마스터 찾기
+		var row = war.turnOrder[idx];// 안전성 체크는 아래에서 길드 정보 가져올 때 같이 하도록 수정
+
+		if (!row) continue;// 안전성 체크
+		if (war.eliminatedGuilds[row.guildId]) continue; // 탈락한 길드의 공격자는 모두 제외
+		if (war.eliminatedUsers[row.user]) continue;// 탈락한 유저는 공격자에서 제외
+
+		var g = getGuildByIdSafe(guildData, row.guildId); // 길드 정보 가져오기, 탈락 여부 체크도 같이
+		if (!g) continue;
+
+		var attackCount = war.guildAttackCounts[row.guildId] || 0; // 해당 길드의 현재 공격 횟수 가져오기
+		if (attackCount >= getGuildTerritoryAttackLimit(g)) continue; // 공격 횟수 초과한 길드는 공격자에서 제외
+
+		war.currentTurnIndex = idx; // 현재 턴 인덱스 업데이트
 		return row;
 	}
+
 	return null;
 }
 
@@ -30745,8 +30945,7 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	var used = war.guildAttackCounts[row.guildId] || 0;
 	var attackLimit = getGuildTerritoryAttackLimit(g);
 	var remain = Math.max(0, attackLimit - used);
-	var timeoutMissCount = getGuildTerritoryTimeoutMissCount(war, row.guildId);
-	var status = buildGuildTerritoryStatusMessage(data, guildData, false).replace("🎖️길드 영지전 점령 보고서🏰\n\n", "");
+	var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
 	var msg1 =
 		"[" +
@@ -30759,16 +30958,10 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 		"/" +
 		attackLimit +
 		"⚔)\n" +
-		"[⏳ 미공격 경고: " +
-		timeoutMissCount +
-		"/" +
-		GUILD_TERRITORY_TIMEOUT_MISS_LIMIT +
-		"]\n" +
 		buildGuildTerritoryRiftUi(war) +
 		"\n\n" +
 		"━━━━━━━━━━━━━━━━\n" +
-		"기본보상: 🅟2억 [길드자금🌾 귀속]\n" +
-		"확률보상: [✅]공헌+1⭐️ (70%확률) or [❌]보상실패(70%확률)\n\n" +
+		"\n" +
 		status;
 
 	var msg2 = "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
@@ -30903,18 +31096,27 @@ function markGuildTerritoryItemUse(store, guildId, type, user) {
 	store[guildId][type][user] = (store[guildId][type][user] || 0) + 1;
 }
 
+function findGuildTerritoryBagItem(data, user, itemNames) {
+	if (!data.member[user] || !data.member[user].bag) return null;
+	for (var i = 0; i < itemNames.length; i++) {
+		var itemName = itemNames[i];
+		if ((data.member[user].bag[itemName] || 0) > 0) return itemName;
+	}
+	return null;
+}
+
 // 영지전 균열 아이템 사용 명령 처리
 function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg) {
 	var command = msg.split(" ")[0];
 	var config = null;
 	if (command === "/불안정") {
-		config = { type: "instabilityUp", item: GUILD_TERRITORY_INSTABILITY_UP_ITEM, label: "🌪️ 전쟁불안정 증폭권(/불안정)", deltaAdjust: GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
+		config = { type: "instabilityUp", items: GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES, label: GUILD_TERRITORY_INSTABILITY_UP_ITEM, deltaAdjust: GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
 	} else if (command === "/안정") {
-		config = { type: "instabilityDown", item: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, label: "🚑전쟁불안정 감소권(/안정)", deltaAdjust: -GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
+		config = { type: "instabilityDown", items: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES, label: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, deltaAdjust: -GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
 	} else if (command === "/균열") {
-		config = { type: "riftGuide", item: GUILD_TERRITORY_RIFT_GUIDE_ITEM, label: "🌌 균열 유도권(/균열 숫자)", deltaBias: GUILD_TERRITORY_RIFT_ITEM_STEP };
+		config = { type: "riftGuide", items: GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES, label: GUILD_TERRITORY_RIFT_GUIDE_ITEM, deltaBias: GUILD_TERRITORY_RIFT_ITEM_STEP };
 	} else if (command === "/대균열") {
-		config = { type: "greatRiftGuide", item: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, label: "🌋 대균열 유도권(/대균열 숫자)", deltaBias: -GUILD_TERRITORY_RIFT_ITEM_STEP };
+		config = { type: "greatRiftGuide", items: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES, label: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, deltaBias: -GUILD_TERRITORY_RIFT_ITEM_STEP };
 	} else {
 		return null;
 	}
@@ -30942,7 +31144,8 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	if (war.eliminatedGuilds[guildInfo.guildId] || war.eliminatedUsers[sender]) {
 		return { message: "❌ 탈락한 길드 또는 유저는 사용할 수 없습니다." };
 	}
-	if (!hasItem(data, sender, config.item, 1)) {
+	var bagItemName = findGuildTerritoryBagItem(data, sender, config.items);
+	if (!bagItemName) {
 		return { message: "보유 중인 " + config.label + "이 없습니다.\n\n아이템을 보유한 상태에서 다시 시도해 주세요." };
 	}
 
@@ -30954,12 +31157,12 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		var adjustRemain = config.deltaAdjust > 0
 			? Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT - (war.instabilityAdjust || 0))
 			: Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT + (war.instabilityAdjust || 0));
-		var useCount = Math.min(count, data.member[sender].bag[config.item] || 0, guildRemain, userRemain, adjustRemain);
+		var useCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, guildRemain, userRemain, adjustRemain);
 		if (useCount <= 0) {
 			return { message: "❌ 이번 영지전에서 더 이상 " + config.label + "을 사용할 수 없습니다." };
 		}
 
-		removeItem(data, sender, config.item, useCount);
+		removeItem(data, sender, bagItemName, useCount);
 		for (var i = 0; i < useCount; i++) markGuildTerritoryItemUse(war.instabilityUses, guildInfo.guildId, config.type, sender);
 		war.instabilityAdjust += config.deltaAdjust * useCount;
 
@@ -30975,13 +31178,13 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 
 	var guideStore = war.riftGuideUses;
 	var guideUsed = (((guideStore[guildInfo.guildId] || {})[config.type] || {})[sender] || 0);
-	var guideUseCount = Math.min(count, data.member[sender].bag[config.item] || 0, Math.max(0, 1 - guideUsed));
+	var guideUseCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, Math.max(0, 1 - guideUsed));
 	if (guideUseCount <= 0) {
 		return { message: "❌ 이번 영지전에서 더 이상 " + config.label + "을 사용할 수 없습니다." };
 	}
 
 	var beforeRates = getGuildTerritoryRiftRates(war);
-	removeItem(data, sender, config.item, guideUseCount);
+	removeItem(data, sender, bagItemName, guideUseCount);
 	for (var gu = 0; gu < guideUseCount; gu++) markGuildTerritoryItemUse(guideStore, guildInfo.guildId, config.type, sender);
 	war.riftBias += config.deltaBias * guideUseCount;
 	war.riftBias = Math.max(-70, Math.min(30, war.riftBias));
@@ -31063,38 +31266,51 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	war.turnToken = String(new Date().getTime()) + "_" + String(Math.random());
 	var token = war.turnToken;
 	var turnGuildId = row.guildId;
+	var timerDevMode = activeDevDataMode;
 	saveJsonFile(guildData, guildPath);
 
 	guildTerritoryWarTimer = setTimeout(function () {
-		var latestData = loadJsonFile(filePath);
-		var latestPetData = loadJsonFile(memberPetPath);
-		var latestGuildData = loadJsonFile(guildPath);
-		ensureGuildTerritoryWar(latestData, latestGuildData);
-		var latestWar = latestGuildData ? latestGuildData.territoryWar : null;
-		if (!latestWar || !latestWar.active) return;
-		if (latestWar.turnToken !== token) return;
+		activeDevDataMode = timerDevMode;
+		try {
+			var latestData = loadJsonFile(filePath);
+			var latestPetData = loadJsonFile(memberPetPath);
+			var latestGuildData = loadJsonFile(guildPath);
+			ensureGuildTerritoryWar(latestData, latestGuildData);
+			var latestWar = latestGuildData ? latestGuildData.territoryWar : null;
+			if (!latestWar || !latestWar.active) return;
+			if (latestWar.turnToken !== token) return;
 
-		latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
-		latestWar.turnToken = null;
+			latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
+			latestWar.turnToken = null;
 
-		var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
-		Api.replyRoom(room8, timeoutMessage);
+			var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
+			var riftMessage = processGuildTerritoryRiftEvent(latestData, latestGuildData);
+			if (riftMessage) {
+				timeoutMessage += "\n\n" + riftMessage;
+				saveJsonFile(latestData, filePath);
+			}
 
-		if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
-			finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+			Api.replyRoom(room8, timerDevMode ? "[DEV 테스트환경]\n" + timeoutMessage : timeoutMessage);
+
+			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
+				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+				saveJsonFile(latestGuildData, guildPath);
+				saveJsonFile(latestData, filePath);
+				return;
+			}
+
+			advanceGuildTerritoryTurn(latestData, latestGuildData);
 			saveJsonFile(latestGuildData, guildPath);
-			return;
+
+			var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
+			turnMsgs.forEach(function (m) {
+				castleMsg(m, replier, isGroupChat);
+			});
+
+			startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+		} finally {
+			activeDevDataMode = false;
 		}
-
-		advanceGuildTerritoryTurn(latestData, latestGuildData);
-		saveJsonFile(latestGuildData, guildPath);
-
-		var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
-		turnMsgs.forEach(function (m) {
-			castleMsg(m, replier, isGroupChat);
-		});
-
-		startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
 	}, GUILD_TERRITORY_TURN_TIMEOUT_MS);
 }
 
@@ -31240,6 +31456,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 	war.endedAt = formatDateTime(new Date());
 	war.turnToken = null;
 	war.castleSiegeFlag = false;
+	guildData.castleSiegeFlag = false;
 
 	var list = getGuildTerritoryList();
 	for (var i = 0; i < list.length; i++) {
@@ -32551,6 +32768,10 @@ function calculateCriticalDamageWithPet(pet, damage) {
  * @param {String} msg - 공지 메시지
  */
 function noticeMsg(msg) {
+	if (activeDevDataMode) {
+		Api.replyRoom(isDebuggerFlag ? testRoom : room8, "[DEV 테스트환경]\n" + msg);
+		return;
+	}
 	if (isDebuggerFlag) {
 		Api.replyRoom(testRoom, msg);
 	} else {
@@ -32586,6 +32807,10 @@ function castleMsg(msg, replier, isGroupChat) {
 		return;
 	}
 
+	if (activeDevDataMode) {
+		Api.replyRoom(isDebuggerFlag ? testRoom : room8, "[DEV 테스트환경]\n" + msg);
+		return;
+	}
 	if (isDebuggerFlag) {
 		Api.replyRoom(testRoom, msg);
 	} else {
