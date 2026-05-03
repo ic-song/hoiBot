@@ -18570,28 +18570,37 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
+				// 길드 영지 공격 명령어 처리
 				if (msg.indexOf("/영지공격") === 0) {
+
+					// 현재 영지전 상태 확인
 					var attackWar = ensureGuildTerritoryWar(data, guildData);
 					if (!attackWar.active) {
 						replier.reply("현재 진행 중인 길드 영지전이 없습니다.");
 						return;
 					}
 
+					// 입력값 검증 (1~5번 영지)
 					var attackParts = msg.split(" ");
 					if (attackParts.length < 2 || !/^[1-5]$/.test(attackParts[1])) {
 						replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
 						return;
 					}
 
+					// 유저 길드 정보 확인
 					var attackInfo = getMyGuildInfo(data, guildData, sender);
 					if (!attackInfo || attackInfo.error || !attackInfo.guild) {
 						replier.reply("❌ 길드에 속하지 않아 영지공격이 불가합니다.");
 						return;
 					}
+
+					// 소드마스터 권한 체크
 					if (!isGuildSwordMaster(attackInfo.guild, sender)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺로 지정되지 않아 /영지공격을 사용할 수 없습니다.");
 						return;
 					}
+
+					// 탈락 유저 체크
 					if (attackWar.eliminatedUsers[sender]) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 이번 길드 영지전 로테이션에서 [탈락🥹]하여 공격할 수 없습니다.");
 						return;
@@ -18599,21 +18608,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					var war = ensureGuildTerritoryWar(data, guildData);
 
+					// 참여 길드 여부 체크
 					if (!war.readyGuilds[attackInfo.guildId]) {
 						replier.reply(
-							"❌ 참여 불가\n" + "━━━━━━━━━━━━━━\n" + "길드영지전에 참여하지 않은 길드는\n" + "영지전에 참여할 수 없습니다.\n" + "다음 영지전에서는 /길드영지준비 를 미리 해주세요"
+							"❌ 참여 불가\n" +
+							"━━━━━━━━━━━━━━\n" +
+							"길드영지전에 참여하지 않은 길드는\n" +
+							"영지전에 참여할 수 없습니다.\n" +
+							"다음 영지전에서는 /길드영지준비 를 미리 해주세요"
 						);
 						return;
 					}
 
+					// 턴 검증 (틀리면 탈락)
 					var currentTurn = getGuildTerritoryTurnRow(data, guildData);
 					if (!currentTurn || currentTurn.guildId !== attackInfo.guildId) {
+
 						attackWar.eliminatedUsers[sender] = {
 							guildId: attackInfo.guildId,
 							reason: "TURN_MISMATCH",
 							at: formatDateTime(new Date())
 						};
+
 						saveJsonFile(guildData, guildPath);
+
 						replier.reply(
 							"[" +
 							checkRank(data, petData, guildData, sender) +
@@ -18626,19 +18644,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
+					// 공격 횟수 제한 체크
 					if ((attackWar.guildAttackCounts[attackInfo.guildId] || 0) >= GUILD_TERRITORY_ATTACK_LIMIT_COUNT) {
 						replier.reply("❌ [" + formatGuildDisplay(attackInfo.guild) + "] 길드는 공격횟수 30회를 모두 사용했습니다.");
 						return;
 					}
 
+					// 턴 초기화 및 공격 카운트 증가
 					clearGuildTerritoryWarTimer();
 					attackWar.turnToken = null;
-					attackWar.guildAttackCounts[attackInfo.guildId] = (attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
+					attackWar.guildAttackCounts[attackInfo.guildId] =
+						(attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
 
+					// 공격 대상 영지
 					var territoryNo = parseInt(attackParts[1], 10);
+
+					// 공격 처리
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
 					castleMsg(resultMessage, replier, isGroupChat);
 
+					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
 						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
 						saveJsonFile(guildData, guildPath);
@@ -18646,16 +18671,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
+					// 턴 이동
 					advanceGuildTerritoryTurn(data, guildData);
+
 					saveJsonFile(guildData, guildPath);
 					saveJsonFile(data, filePath);
 
+					// 다음 턴 안내
 					var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
 					turnMsgs.forEach(function (m) {
 						castleMsg(m, replier, isGroupChat);
 					});
 
+					// 턴 타이머 시작
 					startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+
 					return;
 				}
 
@@ -34872,7 +34902,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
 	msg += "\n📚 장착 가능한 스킬 목록\n";
 	msg += "※ 이미 장착되어있는 펫스킬은 표시되지 않습니다." + allsee + "\n";
-	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]";
+	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]\n";
 	msg += "━━━━━━━━━━\n";
 
 	var equippedMap = {};
@@ -34888,7 +34918,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 		msg += "미장착 스킬이 없습니다.";
 	} else {
 		for (var j = 0; j < list.length; j++) {
-			msg += j + 1 + ". " + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
+			msg += '- ' + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
 		}
 	}
 
