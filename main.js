@@ -30052,7 +30052,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (msg === "/자랑") {
 					let skillName = "롤렉스";
-					if (hasPetSkill(petSkillData, sender, skillName)) {
+					if (!hasPetSkill(petSkillData, sender, skillName)) {
 						replier.reply("장착 중인 " + skillName + "📙 스킬이 없습니다.");
 						return;
 					}
