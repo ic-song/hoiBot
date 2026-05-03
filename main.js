@@ -1325,28 +1325,31 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 		//이상유무 체크 및 저장
 		if (msg == "/멤버글자수") {
-			let file = new java.io.File(filePath);
+			let activeFilePath = resolveActiveDataPath(filePath);
+			let file = new java.io.File(activeFilePath);
 			if (file.exists()) {
-				let fileContent = FileStream.read(filePath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, filePath);
+				let fileContent = FileStream.read(activeFilePath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+				parseJsonContent(fileContent, activeFilePath);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
 		}
 		if (msg == "/펫홈글자수") {
-			let file = new java.io.File(homeDataFile);
+			let activeHomeDataFile = resolveActiveDataPath(homeDataFile);
+			let file = new java.io.File(activeHomeDataFile);
 			if (file.exists()) {
-				let fileContent = FileStream.read(homeDataFile, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, homeDataFile);
+				let fileContent = FileStream.read(activeHomeDataFile, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+				parseJsonContent(fileContent, activeHomeDataFile);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
 		}
 		if (msg == "/펫멤버글자수") {
-			let file = new java.io.File(memberPetPath);
+			let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
+			let file = new java.io.File(activeMemberPetPath);
 			if (file.exists()) {
-				let fileContent = FileStream.read(memberPetPath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, memberPetPath);
+				let fileContent = FileStream.read(activeMemberPetPath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+				parseJsonContent(fileContent, activeMemberPetPath);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
@@ -1355,32 +1358,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var out = "📊 글자수 통계\n";
 
 			// 멤버
-			var f1 = new java.io.File(filePath);
+			var activePath1 = resolveActiveDataPath(filePath);
+			var f1 = new java.io.File(activePath1);
 			if (!f1.exists()) {
 				out += "- 멤버: ❌ 파일 없음\n";
 			} else {
-				var c1 = FileStream.read(filePath, "utf-8");
-				parseJsonContent(c1, filePath);
+				var c1 = FileStream.read(activePath1, "utf-8");
+				parseJsonContent(c1, activePath1);
 				out += "- 멤버: " + numberWithCommas(c1.length) + "\n";
 			}
 
 			// 펫홈
-			var f2 = new java.io.File(homeDataFile);
+			var activePath2 = resolveActiveDataPath(homeDataFile);
+			var f2 = new java.io.File(activePath2);
 			if (!f2.exists()) {
 				out += "- 펫홈: ❌ 파일 없음\n";
 			} else {
-				var c2 = FileStream.read(homeDataFile, "utf-8");
-				parseJsonContent(c2, homeDataFile);
+				var c2 = FileStream.read(activePath2, "utf-8");
+				parseJsonContent(c2, activePath2);
 				out += "- 펫홈: " + numberWithCommas(c2.length) + "\n";
 			}
 
 			// 펫멤버
-			var f3 = new java.io.File(memberPetPath);
+			var activePath3 = resolveActiveDataPath(memberPetPath);
+			var f3 = new java.io.File(activePath3);
 			if (!f3.exists()) {
 				out += "- 펫멤버: ❌ 파일 없음\n";
 			} else {
-				var c3 = FileStream.read(memberPetPath, "utf-8");
-				parseJsonContent(c3, memberPetPath);
+				var c3 = FileStream.read(activePath3, "utf-8");
+				parseJsonContent(c3, activePath3);
 				out += "- 펫멤버: " + numberWithCommas(c3.length) + "\n";
 			}
 
@@ -1508,21 +1514,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 		if (msg === "/봇살리기" && (isAdmin(sender) || isMaster(sender))) {
 			try {
-				let file = new java.io.File(filePath_back);
+				let activeFilePathBack = resolveActiveDataPath(filePath_back);
+				let activeMemberPetPathBack = resolveActiveDataPath(memberPetPath_back);
+				let activePetSkillDataPathBack = resolveActiveDataPath(petSkillDataPath_back);
+				let file = new java.io.File(activeFilePathBack);
 				if (file.exists()) {
 					// main
-					let fileContent = FileStream.read(filePath_back, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-					let mainDataBack = parseJsonContent(fileContent, filePath_back);
+					let fileContent = FileStream.read(activeFilePathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+					let mainDataBack = parseJsonContent(fileContent, activeFilePathBack);
 					saveJsonFile(mainDataBack, filePath);
 					//pet
-					let petContent = FileStream.read(memberPetPath_back, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-					let petDataBack = parseJsonContent(petContent, memberPetPath_back);
+					let petContent = FileStream.read(activeMemberPetPathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+					let petDataBack = parseJsonContent(petContent, activeMemberPetPathBack);
 					saveJsonFile(petDataBack, memberPetPath);
 					//petSkill
-					let petSkillFile = new java.io.File(petSkillDataPath_back);
+					let petSkillFile = new java.io.File(activePetSkillDataPathBack);
 					if (petSkillFile.exists()) {
-						let petSkillContent = FileStream.read(petSkillDataPath_back, "utf-8");
-						let petSkillDataBack = parseJsonContent(petSkillContent, petSkillDataPath_back, {});
+						let petSkillContent = FileStream.read(activePetSkillDataPathBack, "utf-8");
+						let petSkillDataBack = parseJsonContent(petSkillContent, activePetSkillDataPathBack, {});
 						saveJsonFile(petSkillDataBack, petSkillDataPath);
 					}
 					//homeData
@@ -1544,35 +1553,38 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg.startsWith("/")) {
 			try {
-				let mainFile = new java.io.File(filePath);
-				let petFile = new java.io.File(memberPetPath);
-				let petSkillFile = new java.io.File(petSkillDataPath);
+				let activeFilePath = resolveActiveDataPath(filePath);
+				let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
+				let activePetSkillDataPath = resolveActiveDataPath(petSkillDataPath);
+				let mainFile = new java.io.File(activeFilePath);
+				let petFile = new java.io.File(activeMemberPetPath);
+				let petSkillFile = new java.io.File(activePetSkillDataPath);
 
 				//  모든 파일 존재 체크 (없으면 즉시 throw → catch로 이동)
 				if (!mainFile.exists()) {
-					throw new Error("main file not found: " + filePath);
+					throw new Error("main file not found: " + activeFilePath);
 				}
 				if (!petFile.exists()) {
-					throw new Error("pet file not found: " + memberPetPath);
+					throw new Error("pet file not found: " + activeMemberPetPath);
 				}
 				if (!petSkillFile.exists()) {
-					throw new Error("petSkill file not found: " + petSkillDataPath);
+					throw new Error("petSkill file not found: " + activePetSkillDataPath);
 				}
 
 				// 읽기 + strict 파싱 (문제 있으면 전부 throw)
 				let parseMainBack = parseJsonContent(
-					FileStream.read(filePath, "utf-8"),
-					filePath
+					FileStream.read(activeFilePath, "utf-8"),
+					activeFilePath
 				);
 
 				let parsePetBack = parseJsonContent(
-					FileStream.read(memberPetPath, "utf-8"),
-					memberPetPath
+					FileStream.read(activeMemberPetPath, "utf-8"),
+					activeMemberPetPath
 				);
 
 				let parsePetSkillBack = parseJsonContent(
-					FileStream.read(petSkillDataPath, "utf-8"),
-					petSkillDataPath
+					FileStream.read(activePetSkillDataPath, "utf-8"),
+					activePetSkillDataPath
 				);
 
 				// 모든 과정 성공했을 때만 백업 저장
@@ -30291,6 +30303,143 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : " + ment);
 					return;
 				}
+				// package =====================
+				if (
+					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
+					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
+					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
+					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
+					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
+				) {
+					if (isMaster(sender)) {
+						var parts = msg.match(/^\/(가정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+
+						if (parts) {
+							var command = parts[1];
+							var amount = parts[2] ? parseInt(parts[2], 10) : 1;
+							var userId = parts[3].trim();
+
+							if (amount <= 0) {
+								replier.reply("지급 개수는 1개 이상이어야 합니다.");
+								return;
+							}
+
+							var packageName = "";
+
+							if (command === "가정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/길드한테잘하자)";
+							} else if (command === "노동") {
+								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
+							} else if (command === "어린") {
+								packageName = "어린이날패키지🚸(/오픈하면어린이가됩니다)";
+							} else if (command === "어버") {
+								packageName = "어버이날패키지🧧(/오픈하면어른이됩니다)";
+							} else if (command === "부처") {
+								packageName = "부처님오신날🇰🇷(/오픈하면부처가됩니다)";
+							}
+
+							if (data.member[userId] !== undefined) {
+								if (!data.member[userId].bag) {
+									data.member[userId].bag = {};
+								}
+
+								if (data.member[userId].bag[packageName] === undefined) {
+									data.member[userId].bag[packageName] = amount;
+								} else {
+									data.member[userId].bag[packageName] += amount;
+								}
+
+								replier.reply(userId + "님에게 " + packageName + " " + amount + "개를 지급했습니다.");
+							} else {
+								replier.reply("유저 아이디를 확인해 주세요.");
+							}
+						} else {
+							replier.reply("올바른 형식으로 입력해 주세요. 예: /가정10, 유저아이디");
+						}
+					}
+				}
+				if (msg === "/일어나돈벌어야지") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] !== undefined && data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] > 0) {
+							if (data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] > 1) {
+								data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"]--;
+							} else {
+								delete data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"];
+							}
+
+							let guildStarterItems = {
+								"호이베이스볼⚾️(/투수던집니다)": 30,
+								"레이드타격대인장👑(+600👾)": 10,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 5000,
+								"미니펫뽑기🐹(/미니펫오픈)": 3000,
+								"시탑 부스터🔮": 100,
+								"주간상자🦋(/주간오픈)": 1
+							};
+
+							for (let item in guildStarterItems) {
+								addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
+							}
+
+							let openMsg = "개고생한 당신 오늘은 쉬어도 되느니라\nhttps://ibb.co/6RyD4NGr\n\n";
+							openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+							for (let item in guildStarterItems) {
+								openMsg += item + " " + guildStarterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg);
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
+						}
+					}
+				}
+				if (msg === "/나한테잘하자1") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"돌멩이🪨": 15000,
+								"미니펫뽑기🐹(/미니펫오픈)": 300,
+								"1달러스토어🤑(/1일1후원)": 10,
+								"주간상자🦋(/주간오픈)": 1,
+								"정령강화확률UP🥀(30%)": 20,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
+								"확성기📢(/알림 내용 30자)": 5,
+								"펫먹이🍼": 500,
+								"호이베이스볼⚾️(/투수던집니다)": 50,
+								"양념치킨🐔": 200,
+								"타이틀선물권💝(/타이틀선물 닉네임 내용)": 1
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
+						}
+					}
+				}
 				//@# =====================
 				if (msg.startsWith("/명치한대 ") && (sender == "호이 남" || sender == "맹구 여")) {
 					var target = msg.replace("/명치한대", "").trim();
@@ -31911,11 +32060,13 @@ function loadgametxtFromFile() {
 // JSON 파일백업 저장 함수
 function savebackupJsonFile(path, data) {
 	try {
+		path = resolveActiveDataPath(path);
 		const currentDate = new Date();
 		const formattedDate = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD 형식의 날짜
 		const randomSuffix = Math.floor(Math.random() * 100); // 랜덤한 숫자 (0부터 99까지)
 		const backupFilePath = path.replace(/\.json$/, "_" + formattedDate + "_" + randomSuffix + ".json");
-		FileStream.write(backupFilePath, JSON.stringify(data));
+		ensureParentFolder(backupFilePath);
+		FileStream.write(backupFilePath, JSON.stringify(data), "utf-8");
 	} catch (error) {
 		const randomNumber = Math.floor(Math.random() * 90 + 10);
 		save("호이랜드/로그", "Log3_" + randomNumber + ".txt", "Error while saving JSON file: " + error.message);
