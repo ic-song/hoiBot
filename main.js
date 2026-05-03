@@ -36655,7 +36655,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
 			// 티어/매력/영주 가산
 			var tierP = getExploreTierBonusPercent(data, user);
-			var expP = getExploreExpBonusPercent(data, petData, homeData, user);
+			var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 			var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
 			var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
 
@@ -37326,7 +37326,7 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, dungeonKey) {
 	var baseP = 5;
 	var tierP = getExploreTierBonusPercent(data, user);
-	var expP = getExploreExpBonusPercent(data, petData, homeData, user);
+	var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 	var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
 	var traitP = getExploreTraitBonusPercent(petSkillData, user, dungeonKey);
 
