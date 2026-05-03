@@ -1004,6 +1004,8 @@ roomToServer[room90] = "호이월드 운영진[GM]";
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var folder = new java.io.File(sdcard, "호이랜드");
 folder.mkdirs();
+const DATA_ROOT_PATH = "/sdcard/호이랜드/";
+const DEV_DATA_ROOT_PATH = "/sdcard/호이랜드_dev/";
 const filePath = "/sdcard/호이랜드/member.json";
 const boardPath = "/sdcard/호이랜드/board.json";
 const carrotBoardPath = "/sdcard/호이랜드/carrotBoard.json";
@@ -1033,6 +1035,35 @@ const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json
 const filePath_back = "/sdcard/호이랜드/member_back.json"; //멤버백
 const memberPetPath_back = "/sdcard/호이랜드/member_pet_back.json";
 const petSkillDataPath_back = "/sdcard/호이랜드/petSkillData_back.json";
+const DEV_DATA_FILES = [
+	"member.json",
+	"member_pet.json",
+	"petSkillData.json",
+	"guildData.json",
+	"castleBattle2.json",
+	"trialTower.json",
+	"petExploreData.json",
+	"miniPet_collection.json",
+	"member_title.json",
+	"pet_title.json",
+	"miniPet_title.json",
+	"petSweetHomeData.json",
+	"board.json",
+	"carrotBoard.json"
+];
+const DEV_RECOVERY_BACKUP_FILES = [
+	"member_back.json",
+	"member_pet_back.json",
+	"petSkillData_back.json"
+];
+var DEV_DATA_FILE_MAP = {};
+for (var devFileIndex = 0; devFileIndex < DEV_DATA_FILES.length; devFileIndex++) {
+	DEV_DATA_FILE_MAP[DEV_DATA_FILES[devFileIndex]] = true;
+}
+for (var devBackIndex = 0; devBackIndex < DEV_RECOVERY_BACKUP_FILES.length; devBackIndex++) {
+	DEV_DATA_FILE_MAP[DEV_RECOVERY_BACKUP_FILES[devBackIndex]] = true;
+}
+var activeDevDataMode = false;
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
 	windowMs: 2000,
 	limit: 3,
@@ -1177,10 +1208,51 @@ function getUserRequestCount(sender) {
 	return getUserRequestInfo(sender).count;
 }
 
+function isDevCommandMessage(msg) {
+	return typeof msg === "string" && msg.indexOf("dev/") === 0;
+}
+
+function stripDevCommandPrefix(msg) {
+	var command = String(msg || "").substring("dev/".length).trim();
+	if (!command) return "";
+	return command.charAt(0) === "/" ? command : "/" + command;
+}
+
+function createDevReplier(replier) {
+	return {
+		reply: function (message) {
+			replier.reply("[DEV 테스트환경]\n" + message);
+		}
+	};
+}
+
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
 	//데이터 검사
 	try {
+		var isDevMode = isDevCommandMessage(msg);
+		if (isDevMode) {
+			msg = stripDevCommandPrefix(msg);
+			replier = createDevReplier(replier);
+		}
+		activeDevDataMode = isDevMode;
+
+		if (isDevMode && msg === "/데이터백업") {
+			if (!isMaster(sender)) {
+				replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+				return;
+			}
+			replier.reply(backupDevDataFromProduction());
+			return;
+		}
+		if (isDevMode) {
+			var missingDevFiles = getMissingDevDataFiles();
+			if (missingDevFiles.length > 0) {
+				replier.reply("❌ DEV 데이터가 준비되지 않았습니다.\nMaster가 dev/데이터백업을 먼저 실행해 주세요.\n\n누락 파일:\n- " + missingDevFiles.join("\n- "));
+				return;
+			}
+		}
+
 		if (!isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
 			let requestInfo = getUserRequestInfo(sender);
 			if (requestInfo.isFirstDetect) {
@@ -1209,28 +1281,31 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 		//이상유무 체크 및 저장
 		if (msg == "/멤버글자수") {
-			let file = new java.io.File(filePath);
+			let activeFilePath = resolveActiveDataPath(filePath);
+			let file = new java.io.File(activeFilePath);
 			if (file.exists()) {
-				let fileContent = FileStream.read(filePath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, filePath);
+				let fileContent = FileStream.read(activeFilePath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+				parseJsonContent(fileContent, activeFilePath);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
 		}
 		if (msg == "/펫홈글자수") {
-			let file = new java.io.File(homeDataFile);
+			let activeHomeDataFile = resolveActiveDataPath(homeDataFile);
+			let file = new java.io.File(activeHomeDataFile);
 			if (file.exists()) {
-				let fileContent = FileStream.read(homeDataFile, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, homeDataFile);
+				let fileContent = FileStream.read(activeHomeDataFile, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+				parseJsonContent(fileContent, activeHomeDataFile);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
 		}
 		if (msg == "/펫멤버글자수") {
-			let file = new java.io.File(memberPetPath);
+			let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
+			let file = new java.io.File(activeMemberPetPath);
 			if (file.exists()) {
-				let fileContent = FileStream.read(memberPetPath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, memberPetPath);
+				let fileContent = FileStream.read(activeMemberPetPath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+				parseJsonContent(fileContent, activeMemberPetPath);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
@@ -1239,32 +1314,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var out = "📊 글자수 통계\n";
 
 			// 멤버
-			var f1 = new java.io.File(filePath);
+			var activePath1 = resolveActiveDataPath(filePath);
+			var f1 = new java.io.File(activePath1);
 			if (!f1.exists()) {
 				out += "- 멤버: ❌ 파일 없음\n";
 			} else {
-				var c1 = FileStream.read(filePath, "utf-8");
-				parseJsonContent(c1, filePath);
+				var c1 = FileStream.read(activePath1, "utf-8");
+				parseJsonContent(c1, activePath1);
 				out += "- 멤버: " + numberWithCommas(c1.length) + "\n";
 			}
 
 			// 펫홈
-			var f2 = new java.io.File(homeDataFile);
+			var activePath2 = resolveActiveDataPath(homeDataFile);
+			var f2 = new java.io.File(activePath2);
 			if (!f2.exists()) {
 				out += "- 펫홈: ❌ 파일 없음\n";
 			} else {
-				var c2 = FileStream.read(homeDataFile, "utf-8");
-				parseJsonContent(c2, homeDataFile);
+				var c2 = FileStream.read(activePath2, "utf-8");
+				parseJsonContent(c2, activePath2);
 				out += "- 펫홈: " + numberWithCommas(c2.length) + "\n";
 			}
 
 			// 펫멤버
-			var f3 = new java.io.File(memberPetPath);
+			var activePath3 = resolveActiveDataPath(memberPetPath);
+			var f3 = new java.io.File(activePath3);
 			if (!f3.exists()) {
 				out += "- 펫멤버: ❌ 파일 없음\n";
 			} else {
-				var c3 = FileStream.read(memberPetPath, "utf-8");
-				parseJsonContent(c3, memberPetPath);
+				var c3 = FileStream.read(activePath3, "utf-8");
+				parseJsonContent(c3, activePath3);
 				out += "- 펫멤버: " + numberWithCommas(c3.length) + "\n";
 			}
 
@@ -1392,21 +1470,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 		if (msg === "/봇살리기" && (isAdmin(sender) || isMaster(sender))) {
 			try {
-				let file = new java.io.File(filePath_back);
+				let activeFilePathBack = resolveActiveDataPath(filePath_back);
+				let activeMemberPetPathBack = resolveActiveDataPath(memberPetPath_back);
+				let activePetSkillDataPathBack = resolveActiveDataPath(petSkillDataPath_back);
+				let file = new java.io.File(activeFilePathBack);
 				if (file.exists()) {
 					// main
-					let fileContent = FileStream.read(filePath_back, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-					let mainDataBack = parseJsonContent(fileContent, filePath_back);
+					let fileContent = FileStream.read(activeFilePathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+					let mainDataBack = parseJsonContent(fileContent, activeFilePathBack);
 					saveJsonFile(mainDataBack, filePath);
 					//pet
-					let petContent = FileStream.read(memberPetPath_back, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-					let petDataBack = parseJsonContent(petContent, memberPetPath_back);
+					let petContent = FileStream.read(activeMemberPetPathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+					let petDataBack = parseJsonContent(petContent, activeMemberPetPathBack);
 					saveJsonFile(petDataBack, memberPetPath);
 					//petSkill
-					let petSkillFile = new java.io.File(petSkillDataPath_back);
+					let petSkillFile = new java.io.File(activePetSkillDataPathBack);
 					if (petSkillFile.exists()) {
-						let petSkillContent = FileStream.read(petSkillDataPath_back, "utf-8");
-						let petSkillDataBack = parseJsonContent(petSkillContent, petSkillDataPath_back, {});
+						let petSkillContent = FileStream.read(activePetSkillDataPathBack, "utf-8");
+						let petSkillDataBack = parseJsonContent(petSkillContent, activePetSkillDataPathBack, {});
 						saveJsonFile(petSkillDataBack, petSkillDataPath);
 					}
 					//homeData
@@ -1428,35 +1509,38 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg.startsWith("/")) {
 			try {
-				let mainFile = new java.io.File(filePath);
-				let petFile = new java.io.File(memberPetPath);
-				let petSkillFile = new java.io.File(petSkillDataPath);
+				let activeFilePath = resolveActiveDataPath(filePath);
+				let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
+				let activePetSkillDataPath = resolveActiveDataPath(petSkillDataPath);
+				let mainFile = new java.io.File(activeFilePath);
+				let petFile = new java.io.File(activeMemberPetPath);
+				let petSkillFile = new java.io.File(activePetSkillDataPath);
 
 				//  모든 파일 존재 체크 (없으면 즉시 throw → catch로 이동)
 				if (!mainFile.exists()) {
-					throw new Error("main file not found: " + filePath);
+					throw new Error("main file not found: " + activeFilePath);
 				}
 				if (!petFile.exists()) {
-					throw new Error("pet file not found: " + memberPetPath);
+					throw new Error("pet file not found: " + activeMemberPetPath);
 				}
 				if (!petSkillFile.exists()) {
-					throw new Error("petSkill file not found: " + petSkillDataPath);
+					throw new Error("petSkill file not found: " + activePetSkillDataPath);
 				}
 
 				// 읽기 + strict 파싱 (문제 있으면 전부 throw)
 				let parseMainBack = parseJsonContent(
-					FileStream.read(filePath, "utf-8"),
-					filePath
+					FileStream.read(activeFilePath, "utf-8"),
+					activeFilePath
 				);
 
 				let parsePetBack = parseJsonContent(
-					FileStream.read(memberPetPath, "utf-8"),
-					memberPetPath
+					FileStream.read(activeMemberPetPath, "utf-8"),
+					activeMemberPetPath
 				);
 
 				let parsePetSkillBack = parseJsonContent(
-					FileStream.read(petSkillDataPath, "utf-8"),
-					petSkillDataPath
+					FileStream.read(activePetSkillDataPath, "utf-8"),
+					activePetSkillDataPath
 				);
 
 				// 모든 과정 성공했을 때만 백업 저장
@@ -30417,6 +30501,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
 		// }
 		FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+	} finally {
+		activeDevDataMode = false;
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -30439,8 +30525,60 @@ function parseJsonContent(fileContent, path, emptyDefault) {
 	return JSON.parse(fileContent);
 }
 
+function getDataFileName(path) {
+	path = String(path || "");
+	if (path.indexOf(DATA_ROOT_PATH) !== 0) return null;
+	return path.substring(DATA_ROOT_PATH.length);
+}
+
+function resolveActiveDataPath(path) {
+	var fileName = getDataFileName(path);
+	if (activeDevDataMode && fileName && DEV_DATA_FILE_MAP[fileName]) {
+		return DEV_DATA_ROOT_PATH + fileName;
+	}
+	return path;
+}
+
+function ensureParentFolder(path) {
+	var file = new java.io.File(path);
+	var parent = file.getParentFile();
+	if (parent && !parent.exists()) parent.mkdirs();
+}
+
+function backupDevDataFromProduction() {
+	var devFolder = new java.io.File(DEV_DATA_ROOT_PATH);
+	if (!devFolder.exists()) devFolder.mkdirs();
+
+	var copied = [];
+	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
+		var fileName = DEV_DATA_FILES[i];
+		var sourcePath = DATA_ROOT_PATH + fileName;
+		var targetPath = DEV_DATA_ROOT_PATH + fileName;
+		var sourceFile = new java.io.File(sourcePath);
+		if (!sourceFile.exists()) {
+			throw new Error("DEV backup source file not found: " + sourcePath);
+		}
+		ensureParentFolder(targetPath);
+		FileStream.write(targetPath, FileStream.read(sourcePath, "utf-8"), "utf-8");
+		copied.push(fileName);
+	}
+
+	return "✅ DEV 데이터 백업 완료\n\n운영 데이터를 테스트 환경으로 복사했습니다.\n\n- " + copied.join("\n- ");
+}
+
+function getMissingDevDataFiles() {
+	var missing = [];
+	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
+		var fileName = DEV_DATA_FILES[i];
+		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
+		if (!devFile.exists()) missing.push(fileName);
+	}
+	return missing;
+}
+
 function loadJsonFile(path) {
 	try {
+		path = resolveActiveDataPath(path);
 		let file = new java.io.File(path);
 		if (file.exists()) {
 			let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
@@ -30466,7 +30604,9 @@ function saveJsonFile(data, path) {
 	if (!(data instanceof Object)) {
 		debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
 	} else {
+		path = resolveActiveDataPath(path);
 		isSaving = true;
+		ensureParentFolder(path);
 		FileStream.write(path, JSON.stringify(data), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 		isSaving = false;
 	}
@@ -31057,38 +31197,44 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	war.turnToken = String(new Date().getTime()) + "_" + String(Math.random());
 	var token = war.turnToken;
 	var turnGuildId = row.guildId;
+	var timerDevMode = activeDevDataMode;
 	saveJsonFile(guildData, guildPath);
 
 	guildTerritoryWarTimer = setTimeout(function () {
-		var latestData = loadJsonFile(filePath);
-		var latestPetData = loadJsonFile(memberPetPath);
-		var latestGuildData = loadJsonFile(guildPath);
-		ensureGuildTerritoryWar(latestData, latestGuildData);
-		var latestWar = latestGuildData ? latestGuildData.territoryWar : null;
-		if (!latestWar || !latestWar.active) return;
-		if (latestWar.turnToken !== token) return;
+		activeDevDataMode = timerDevMode;
+		try {
+			var latestData = loadJsonFile(filePath);
+			var latestPetData = loadJsonFile(memberPetPath);
+			var latestGuildData = loadJsonFile(guildPath);
+			ensureGuildTerritoryWar(latestData, latestGuildData);
+			var latestWar = latestGuildData ? latestGuildData.territoryWar : null;
+			if (!latestWar || !latestWar.active) return;
+			if (latestWar.turnToken !== token) return;
 
-		latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
-		latestWar.turnToken = null;
+			latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
+			latestWar.turnToken = null;
 
-		var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
-		Api.replyRoom(room8, timeoutMessage);
+			var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
+			Api.replyRoom(room8, timerDevMode ? "[DEV 테스트환경]\n" + timeoutMessage : timeoutMessage);
 
-		if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
-			finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
+				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+				saveJsonFile(latestGuildData, guildPath);
+				return;
+			}
+
+			advanceGuildTerritoryTurn(latestData, latestGuildData);
 			saveJsonFile(latestGuildData, guildPath);
-			return;
+
+			var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
+			turnMsgs.forEach(function (m) {
+				castleMsg(m, replier, isGroupChat);
+			});
+
+			startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+		} finally {
+			activeDevDataMode = false;
 		}
-
-		advanceGuildTerritoryTurn(latestData, latestGuildData);
-		saveJsonFile(latestGuildData, guildPath);
-
-		var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
-		turnMsgs.forEach(function (m) {
-			castleMsg(m, replier, isGroupChat);
-		});
-
-		startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
 	}, GUILD_TERRITORY_TURN_TIMEOUT_MS);
 }
 
@@ -31610,11 +31756,13 @@ function loadgametxtFromFile() {
 // JSON 파일백업 저장 함수
 function savebackupJsonFile(path, data) {
 	try {
+		path = resolveActiveDataPath(path);
 		const currentDate = new Date();
 		const formattedDate = currentDate.toISOString().slice(0, 10); // YYYY-MM-DD 형식의 날짜
 		const randomSuffix = Math.floor(Math.random() * 100); // 랜덤한 숫자 (0부터 99까지)
 		const backupFilePath = path.replace(/\.json$/, "_" + formattedDate + "_" + randomSuffix + ".json");
-		FileStream.write(backupFilePath, JSON.stringify(data));
+		ensureParentFolder(backupFilePath);
+		FileStream.write(backupFilePath, JSON.stringify(data), "utf-8");
 	} catch (error) {
 		const randomNumber = Math.floor(Math.random() * 90 + 10);
 		save("호이랜드/로그", "Log3_" + randomNumber + ".txt", "Error while saving JSON file: " + error.message);
