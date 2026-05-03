@@ -18854,15 +18854,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 공격 대상 영지
 					var territoryNo = parseInt(attackParts[1], 10);
+					// 턴 보상 처리 (공격 횟수 증가 전에 처리해야 함)
 					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
 
 					// 공격 처리
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
-					var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;
+					var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
 					if (rewardMessage) resultMessage += "\n\n" + rewardMessage;
-					if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();
-					var riftMessage = processGuildTerritoryRiftEvent(data, guildData);
-					if (riftMessage) resultMessage += "\n\n" + riftMessage;
+					if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
+					var riftMessage = "";
+					// 공격 불가가 아닐 때만 균열 판정
+					if (!isAttackBlocked) {
+						riftMessage = processGuildTerritoryRiftEvent(data, guildData);
+
+						if (riftMessage) {
+							resultMessage += "\n\n" + riftMessage;
+						}
+					}
 					castleMsg(resultMessage, replier, isGroupChat);
 
 					// 전체 종료 여부 체크
@@ -31214,10 +31222,20 @@ function buildGuildTerritoryRiftCommandGuide() {
 // 영지전 균열 이벤트 처리: 불안정도 증가, 균열/대균열 발생 여부 판단 및 적용, 안정화 판단
 function processGuildTerritoryRiftEvent(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
-	if (!war.active || war.riftEventStatus) return "";
+	if (!war.active) {
+		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 영지전이 활성화되지 않음." + allsee);
+		return ""
+	};
+
+	if (war.riftEventStatus) {
+		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 이미 균열 이벤트 상태임: " + war.riftEventStatus + allsee);
+		return "";
+	}
 
 	war.turnCount = (war.turnCount || 0) + 1;
+
 	var instabilityRate = getGuildTerritoryInstabilityRate(war);
+
 	if (Math.random() * 100 < instabilityRate) {
 		var rates = getGuildTerritoryRiftRates(war);
 		if (Math.random() * 100 < rates.rift) {
@@ -31243,12 +31261,16 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 function applyGuildTerritoryRift(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var list = getGuildTerritoryList();
+
+	// 모든 영지 점령 초기화
 	for (var i = 0; i < list.length; i++) {
 		var ter = war.territories[String(list[i].no)];
 		if (!ter) continue;
 		ter.ownerGuildId = null;
 		ter.ownerUser = null;
 	}
+
+	// 호월킹덤 초기화
 	if (data.HoiCastle) {
 		data.HoiCastle.lord = "";
 		data.HoiCastle.earnings = 0;
@@ -31271,14 +31293,28 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 	var readyGuildIds = Object.keys(war.readyGuilds || {}).filter(function (gid) {
 		return !war.eliminatedGuilds[gid] && !!getGuildByIdSafe(guildData, gid);
 	});
-	if (readyGuildIds.length === 0) return "";
+
+	// ✅ 빈 문자열 반환 금지
+	if (readyGuildIds.length === 0) {
+		war.riftEventStatus = "stable";
+		war.riftEventAt = formatDateTime(new Date());
+
+		return (
+			"🌪️ 전쟁불안정도 안정화\n\n" +
+			"대균열이 발생하려 했으나,\n" +
+			"영향을 받을 참여 길드가 없어 전장이 안정화되었습니다.\n\n" +
+			"※ 이번 영지전에서는 더 이상 균열 이벤트가 발생하지 않습니다."
+		);
+	}
 
 	var targetGuildId = readyGuildIds[Math.floor(Math.random() * readyGuildIds.length)];
 	var targetGuild = getGuildByIdSafe(guildData, targetGuildId);
+
 	war.eliminatedGuilds[targetGuildId] = {
 		reason: "GREAT_RIFT",
 		at: formatDateTime(new Date())
 	};
+
 	war.riftEventStatus = "greatRift";
 	war.riftEventAt = formatDateTime(new Date());
 	war.riftEventGuildId = targetGuildId;
