@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "1.8.53";
+const HoiBotVersion = "2.0";
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -30050,6 +30050,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetCollectionData));
 					return;
 				}
+				if (msg === "/자랑") {
+					let skillName = "롤렉스";
+					if (!hasPetSkill(petSkillData, sender, skillName)) {
+						replier.reply("장착 중인 " + skillName + "📙 스킬이 없습니다.");
+						return;
+					}
+					var rolexMentList = [
+						"롤렉스🕰️ 오늘따라 손목이 무겁습니다.",
+						"롤렉스🕰️ 괜히 한 번 더 손을 들어봅니다.",
+						"롤렉스🕰️ 이건 못 참지... 자랑 한 번 갑니다.",
+						"롤렉스🕰️ 시간은 돈이라더니, 오늘은 둘 다 제 편입니다.\n당신은 아닌가봅니다 우하하하",
+						"롤렉스🕰️ 손목에서 은은하게 성공의 향기가 납니다.\n보실래요?",
+						"롤렉스🕰️ 시계만 봤을 뿐인데 존재감이 흘러넘칩니다.",
+						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
+						"롤렉스🕰️ 성공 그것은 저의 별명입니다."
+					];
+
+					var ment = rolexMentList[Math.floor(Math.random() * rolexMentList.length)];
+					replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : " + ment);
+					return;
+				}
 				//@# =====================
 				if (msg.startsWith("/명치한대 ") && (sender == "호이 남" || sender == "맹구 여")) {
 					var target = msg.replace("/명치한대", "").trim();
@@ -36655,7 +36676,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
 			// 티어/매력/영주 가산
 			var tierP = getExploreTierBonusPercent(data, user);
-			var expP = getExploreExpBonusPercent(data, petData, homeData, user);
+			var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 			var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
 			var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
 
@@ -37326,7 +37347,7 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, dungeonKey) {
 	var baseP = 5;
 	var tierP = getExploreTierBonusPercent(data, user);
-	var expP = getExploreExpBonusPercent(data, petData, homeData, user);
+	var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 	var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
 	var traitP = getExploreTraitBonusPercent(petSkillData, user, dungeonKey);
 
