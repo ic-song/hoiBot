@@ -33,25 +33,13 @@ var allsee = "​".repeat(500);
 //테스트데이터
 const filePath2 = "/sdcard/호이랜드/member2.json";
 const castleBattlePath2 = "/sdcard/호이랜드/castleBattle2.json";
-const DEV_DATA_FILES = [
-	"member.json",
-	"member_pet.json",
-	"petSkillData.json",
-	"guildData.json",
-	"castleBattle2.json",
-	"trialTower.json",
-	"petExploreData.json",
-	"member_title.json",
-	"pet_title.json",
-	"petSweetHomeData.json",
-	"itemInfo.json",
-	"miniPetData.json"
-];
-var DEV_DATA_FILE_MAP = {};
-for (var devFileIndex = 0; devFileIndex < DEV_DATA_FILES.length; devFileIndex++) {
-	DEV_DATA_FILE_MAP[DEV_DATA_FILES[devFileIndex]] = true;
-}
-var activeDevDataMode = false;
+var COMMON_DATA_FILE_MAP = {
+	"itemInfo.json": true,
+	"miniPetData.json": true,
+	"trialTowerBoss.json": true,
+	"petSweetHomeInfo.json": true
+};
+var commandContextThreadLocal = new java.lang.ThreadLocal();
 //진화 필요 매력치var
 requiredpoint = 10;
 var initData = loadJsonFile(filePath);
@@ -125,16 +113,16 @@ function applyItemInfoContext(nextItemInfoData) {
 	castleItem = itemInfoData.castleItem;
 }
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+	var ctx = createCommandContext(isDevCommandMessage(msg));
+	var prevCtx = enterCommandContext(ctx);
 	try {
 		msg = String(msg || "").trim();
-		var isDevMode = isDevCommandMessage(msg);
-		if (isDevMode) {
+		if (ctx.isDev) {
 			msg = stripDevCommandPrefix(msg);
-			replier = createDevReplier(replier);
+			replier = createContextReplier(replier, ctx);
 		}
-		activeDevDataMode = isDevMode;
 
-		if (isDevMode) {
+		if (ctx.isDev) {
 			var missingDevFiles = getMissingDevDataFiles();
 			if (missingDevFiles.length > 0) {
 				replier.reply("❌ DEV 데이터가 준비되지 않았습니다.\nMaster가 dev/데이터백업을 먼저 실행해 주세요.\n\n누락 파일:\n- " + missingDevFiles.join("\n- "));
@@ -1298,7 +1286,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 	} finally {
-		activeDevDataMode = false;
+		exitCommandContext(prevCtx);
 		applyItemInfoContext(productionItemInfoData);
 	}
 }
@@ -1313,10 +1301,54 @@ function stripDevCommandPrefix(msg) {
 	return command.charAt(0) === "/" ? command : "/" + command;
 }
 
-function createDevReplier(replier) {
+function createCommandContext(isDev) {
+	var rootPath = isDev ? DEV_DATA_ROOT_PATH : DATA_ROOT_PATH;
+	return {
+		isDev: !!isDev,
+		rootPath: rootPath,
+		path: function (fileName) {
+			fileName = String(fileName || "");
+			var dataFileName = getDataFileName(fileName);
+			if (!dataFileName && fileName.indexOf("/") === -1 && fileName.indexOf("\\") === -1) {
+				dataFileName = fileName;
+			}
+			if (this.isDev && dataFileName && !COMMON_DATA_FILE_MAP[dataFileName]) {
+				return this.rootPath + dataFileName;
+			}
+			if (dataFileName && fileName === dataFileName) {
+				return DATA_ROOT_PATH + dataFileName;
+			}
+			return fileName;
+		},
+		header: function (message) {
+			return this.isDev ? "[DEV 테스트환경]\n" + message : message;
+		}
+	};
+}
+
+function getCurrentContext() {
+	var ctx = commandContextThreadLocal.get();
+	return ctx || createCommandContext(false);
+}
+
+function enterCommandContext(ctx) {
+	var previous = commandContextThreadLocal.get();
+	commandContextThreadLocal.set(ctx || createCommandContext(false));
+	return previous;
+}
+
+function exitCommandContext(previous) {
+	if (previous) {
+		commandContextThreadLocal.set(previous);
+	} else {
+		commandContextThreadLocal.remove();
+	}
+}
+
+function createContextReplier(replier, ctx) {
 	return {
 		reply: function (message) {
-			replier.reply("[DEV 테스트환경]\n" + message);
+			replier.reply(ctx.header(message));
 		}
 	};
 }
@@ -1328,17 +1360,20 @@ function getDataFileName(path) {
 }
 
 function resolveActiveDataPath(path) {
-	var fileName = getDataFileName(path);
-	if (activeDevDataMode && fileName && DEV_DATA_FILE_MAP[fileName]) {
-		return DEV_DATA_ROOT_PATH + fileName;
-	}
-	return path;
+	return getCurrentContext().path(path);
 }
 
 function getMissingDevDataFiles() {
 	var missing = [];
-	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
-		var fileName = DEV_DATA_FILES[i];
+	var sourceRoot = new java.io.File(DATA_ROOT_PATH);
+	var sourceFiles = sourceRoot.listFiles();
+	if (!sourceFiles) return ["운영 데이터 폴더를 읽을 수 없습니다."];
+
+	for (var i = 0; i < sourceFiles.length; i++) {
+		var sourceFile = sourceFiles[i];
+		if (!sourceFile || !sourceFile.isFile()) continue;
+		var fileName = String(sourceFile.getName());
+		if (COMMON_DATA_FILE_MAP[fileName]) continue;
 		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
 		if (!devFile.exists()) missing.push(fileName);
 	}
