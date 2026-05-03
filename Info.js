@@ -134,14 +134,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		activeDevDataMode = isDevMode;
 
-		if (isDevMode && msg === "/데이터백업") {
-			if (!isMaster(sender)) {
-				replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
-				return;
-			}
-			replier.reply(backupDevDataFromProduction());
-			return;
-		}
 		if (isDevMode) {
 			var missingDevFiles = getMissingDevDataFiles();
 			if (missingDevFiles.length > 0) {
@@ -1341,33 +1333,6 @@ function resolveActiveDataPath(path) {
 		return DEV_DATA_ROOT_PATH + fileName;
 	}
 	return path;
-}
-
-function ensureParentFolder(path) {
-	var file = new java.io.File(path);
-	var parent = file.getParentFile();
-	if (parent && !parent.exists()) parent.mkdirs();
-}
-
-function backupDevDataFromProduction() {
-	var devFolder = new java.io.File(DEV_DATA_ROOT_PATH);
-	if (!devFolder.exists()) devFolder.mkdirs();
-
-	var copied = [];
-	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
-		var fileName = DEV_DATA_FILES[i];
-		var sourcePath = DATA_ROOT_PATH + fileName;
-		var targetPath = DEV_DATA_ROOT_PATH + fileName;
-		var sourceFile = new java.io.File(sourcePath);
-		if (!sourceFile.exists()) {
-			throw new Error("DEV backup source file not found: " + sourcePath);
-		}
-		ensureParentFolder(targetPath);
-		FileStream.write(targetPath, FileStream.read(sourcePath, "utf-8"), "utf-8");
-		copied.push(fileName);
-	}
-
-	return "✅ DEV 데이터 백업 완료\n\n운영 데이터를 테스트 환경으로 복사했습니다.\n\n- " + copied.join("\n- ");
 }
 
 function getMissingDevDataFiles() {
