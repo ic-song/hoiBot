@@ -30276,6 +30276,143 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : " + ment);
 					return;
 				}
+				// package =====================
+				if (
+					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
+					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
+					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
+					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
+					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
+				) {
+					if (isMaster(sender)) {
+						var parts = msg.match(/^\/(가정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+
+						if (parts) {
+							var command = parts[1];
+							var amount = parts[2] ? parseInt(parts[2], 10) : 1;
+							var userId = parts[3].trim();
+
+							if (amount <= 0) {
+								replier.reply("지급 개수는 1개 이상이어야 합니다.");
+								return;
+							}
+
+							var packageName = "";
+
+							if (command === "가정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/길드한테잘하자)";
+							} else if (command === "노동") {
+								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
+							} else if (command === "어린") {
+								packageName = "어린이날패키지🚸(/오픈하면어린이가됩니다)";
+							} else if (command === "어버") {
+								packageName = "어버이날패키지🧧(/오픈하면어른이됩니다)";
+							} else if (command === "부처") {
+								packageName = "부처님오신날🇰🇷(/오픈하면부처가됩니다)";
+							}
+
+							if (data.member[userId] !== undefined) {
+								if (!data.member[userId].bag) {
+									data.member[userId].bag = {};
+								}
+
+								if (data.member[userId].bag[packageName] === undefined) {
+									data.member[userId].bag[packageName] = amount;
+								} else {
+									data.member[userId].bag[packageName] += amount;
+								}
+
+								replier.reply(userId + "님에게 " + packageName + " " + amount + "개를 지급했습니다.");
+							} else {
+								replier.reply("유저 아이디를 확인해 주세요.");
+							}
+						} else {
+							replier.reply("올바른 형식으로 입력해 주세요. 예: /가정10, 유저아이디");
+						}
+					}
+				}
+				if (msg === "/일어나돈벌어야지") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] !== undefined && data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] > 0) {
+							if (data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] > 1) {
+								data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"]--;
+							} else {
+								delete data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"];
+							}
+
+							let guildStarterItems = {
+								"호이베이스볼⚾️(/투수던집니다)": 30,
+								"레이드타격대인장👑(+600👾)": 10,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 5000,
+								"미니펫뽑기🐹(/미니펫오픈)": 3000,
+								"시탑 부스터🔮": 100,
+								"주간상자🦋(/주간오픈)": 1
+							};
+
+							for (let item in guildStarterItems) {
+								addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
+							}
+
+							let openMsg = "개고생한 당신 오늘은 쉬어도 되느니라\nhttps://ibb.co/6RyD4NGr\n\n";
+							openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+							for (let item in guildStarterItems) {
+								openMsg += item + " " + guildStarterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg);
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
+						}
+					}
+				}
+				if (msg === "/나한테잘하자1") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"돌멩이🪨": 15000,
+								"미니펫뽑기🐹(/미니펫오픈)": 300,
+								"1달러스토어🤑(/1일1후원)": 10,
+								"주간상자🦋(/주간오픈)": 1,
+								"정령강화확률UP🥀(30%)": 20,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
+								"확성기📢(/알림 내용 30자)": 5,
+								"펫먹이🍼": 500,
+								"호이베이스볼⚾️(/투수던집니다)": 50,
+								"양념치킨🐔": 200,
+								"타이틀선물권💝(/타이틀선물 닉네임 내용)": 1
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
+						}
+					}
+				}
 				//@# =====================
 				if (msg.startsWith("/명치한대 ") && (sender == "호이 남" || sender == "맹구 여")) {
 					var target = msg.replace("/명치한대", "").trim();
