@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "1.8.53";
+const HoiBotVersion = "2.0";
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1428,23 +1428,48 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg.startsWith("/")) {
 			try {
-				let file = new java.io.File(filePath);
-				if (file.exists()) {
-					let mainBack = FileStream.read(filePath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-					let parseMainBack = parseJsonContent(mainBack, filePath);
-					let petBack = FileStream.read(memberPetPath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-					let parsePetBack = parseJsonContent(petBack, memberPetPath);
-					let petSkillFile = new java.io.File(petSkillDataPath);
-					let parsePetSkillBack = petSkillFile.exists() ? parseJsonContent(FileStream.read(petSkillDataPath, "utf-8"), petSkillDataPath, {}) : {};
-					//에러없으면 저장
-					saveJsonFile(parseMainBack, filePath_back);
-					saveJsonFile(parsePetBack, memberPetPath_back);
-					saveJsonFile(parsePetSkillBack, petSkillDataPath_back);
-				} else {
-					replier.reply("해당 경로에 파일 없음");
+				let mainFile = new java.io.File(filePath);
+				let petFile = new java.io.File(memberPetPath);
+				let petSkillFile = new java.io.File(petSkillDataPath);
+
+				//  모든 파일 존재 체크 (없으면 즉시 throw → catch로 이동)
+				if (!mainFile.exists()) {
+					throw new Error("main file not found: " + filePath);
 				}
+				if (!petFile.exists()) {
+					throw new Error("pet file not found: " + memberPetPath);
+				}
+				if (!petSkillFile.exists()) {
+					throw new Error("petSkill file not found: " + petSkillDataPath);
+				}
+
+				// 읽기 + strict 파싱 (문제 있으면 전부 throw)
+				let parseMainBack = parseJsonContent(
+					FileStream.read(filePath, "utf-8"),
+					filePath
+				);
+
+				let parsePetBack = parseJsonContent(
+					FileStream.read(memberPetPath, "utf-8"),
+					memberPetPath
+				);
+
+				let parsePetSkillBack = parseJsonContent(
+					FileStream.read(petSkillDataPath, "utf-8"),
+					petSkillDataPath
+				);
+
+				// 모든 과정 성공했을 때만 백업 저장
+				saveJsonFile(parseMainBack, filePath_back);
+				saveJsonFile(parsePetBack, memberPetPath_back);
+				saveJsonFile(parsePetSkillBack, petSkillDataPath_back);
+
 			} catch (e) {
-				replier.reply("호월봇을 후리셨군요?\n상태를 보니 생명엔 지장이 없어보입니다..살살 부탁드려요.\n[과부하 3번 이상 반복되면 방장,부방장 을 불러주세요]");
+				replier.reply(
+					"호월봇을 후리셨군요?\n" +
+					"상태를 보니 생명엔 지장이 없어보입니다..살살 부탁드려요.\n" +
+					"[과부하 3번 이상 반복되면 방장,부방장 을 불러주세요]"
+				);
 				debuggerLog("[ERROR : Backup error]" + allsee + JSON.stringify(e));
 				return;
 			}
@@ -1455,19 +1480,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var guildData = loadJsonFile(guildPath);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
 		ensureHappyFoundationData(data);
-		// [FIX] 안전장치: petSkillData 로드 실패(파일 없음/파싱 에러) 시 절대 빈 객체로 덮어쓰지 않음
-		// 이전 버그: `loadJsonFile(...) || {}` 폴백이 있어서 파싱 실패 시 모든 유저 펫스킬이 초기화됨
-		if (petSkillData === null || typeof petSkillData === "undefined") {
-			// 펫스킬 데이터 로드 실패 — ensurePetSkillSystemData 호출 자체를 건너뛰어 데이터 보존
-			debuggerLog(testRoom, "[CRITICAL] petSkillData 로드 실패 — 데이터 보호를 위해 펫스킬 처리 건너뜀: " + petSkillDataPath);
-			petSkillData = {}; // 메모리상 빈 객체로 만들되, 디스크엔 절대 저장 안 함
-		} else {
-			var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData);
-			if (petSkillChanged) {
-				saveJsonFile(data, filePath);
-				saveJsonFile(petData, memberPetPath);
-				saveJsonFile(petSkillData, petSkillDataPath);
-			}
+		var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData);
+		if (petSkillChanged) {
+			saveJsonFile(data, filePath);
+			saveJsonFile(petData, memberPetPath);
+			saveJsonFile(petSkillData, petSkillDataPath);
 		}
 		if (msg.startsWith("/미니펫조합 ")) {
 			var combinationArgs = msg.trim().split(/\s+/);
@@ -1518,14 +1535,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			attemptMessage += "결과 등급: " + config.outputGrade + "\n";
 			attemptMessage += "성공 확률: " + Math.round(config.successRate * 100) + "%";
 
-			// [FIX] 성공 시 보상을 먼저 생성해서 검증 (실패하면 재료 차감 안 함 — 데이터 손실 방지)
+			removeMiniPetsFromBag(bag, [firstIndex, secondIndex]);
+
 			var isSuccess = config.successRate >= 1 ? true : Math.random() < config.successRate;
 			var rewardPet = null;
 
 			if (isSuccess) {
 				rewardPet = createMiniPetFromCombination(config.outputGrade);
 				if (!rewardPet) {
-					replier.reply("❌ 조합 보상 데이터를 불러오지 못했습니다.\n재료는 차감되지 않았습니다.");
+					replier.reply("❌ 조합 보상 데이터를 불러오지 못했습니다.");
 					return;
 				}
 			}
@@ -1553,20 +1571,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		//var castleBattleData = loadJsonFile(castleBattlePath);
 		//var titleData = loadJsonFile(memberTitlePath);
 		if (isSaving == false) {
-			// [FIX] 가입/펫생성 흐름은 닉네임 길이 제한 없이 처리 (이전엔 5자 이상이면 자동 등록 안 됨)
-			var isSignupFlow = (msg === "/가입") || msg.startsWith("/펫생성 ") || (termsState[sender] && termsState[sender].step === "WAIT");
-			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupFlow) {
+			var isSignupPetFlow = msg === "/가입" || msg.startsWith("/펫생성 ") || !!termsState[sender];
+			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
 				if (!data.member[sender]) {
 					initializeMember(sender, data, petData);
-					// 가입 플로우면 다음 단계 진행을 위해 return 안 함
-					if (!isSignupFlow) return;
+					if (!isSignupPetFlow) return;
 				}
 
-				// [FIX] /펫생성 명령어일 때는 자동 펫 초기화 건너뜀
-				// (자동 초기화 후 return 하면 /펫생성 코드까지 도달 못함)
-				if (data.member[sender] && !petData[sender] && !msg.startsWith("/펫생성 ")) {
+				if (data.member[sender] && !petData[sender]) {
 					initializePet(sender, petData);
-					return;
+					if (!isSignupPetFlow) return;
 				}
 
 				initPetSkillUser(petSkillData, sender);
@@ -1627,26 +1641,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					);
 					return;
 				}
-
-				// ===========================================================
-				// [ADMIN] 펫스킬 일괄 지급 - 운영자 전용 (데이터 복구용)
-				// ===========================================================
-				// 여러 유저에게 여러 펫스킬을 한 번에 지급할 수 있는 명령어
-				//
-				// 사용법:
-				//   /펫스킬일괄지급
-				//   닉네임, 펫스킬이름 개수
-				//   닉네임, 펫스킬이름 개수
-				//   ... (여러 줄)
-				//
-				// 예시:
-				//   /펫스킬일괄지급
-				//   마라 여, 만렙헌터 1
-				//   째째 남, 건물주 5
-				//
-				// 처리 결과: 줄별로 성공/실패를 검증하여 마지막에 일괄 보고
-				//   - 형식 오류, 유저 없음, 펫스킬 없음, 가방 공간 부족 등 개별 실패 처리
-				//   - 성공한 줄만 디스크에 저장 (성능 최적화: 마지막에 한 번만 저장)
 				if (msg.startsWith("/펫스킬일괄지급") && (isAdmin(sender) || isMaster(sender))) {
 					var bulkLines = msg.split("\n");
 					// 첫 줄(/펫스킬일괄지급)은 제외
@@ -1883,15 +1877,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(petSkillData, petSkillDataPath);
 					return;
 				}
-
-				// ===========================================================
-				// [ADMIN] /스킬정보 [닉] - 운영자 전용 (데이터 복구용)
-				// ===========================================================
-				// 다른 유저의 펫스킬가방을 /펫스킬가방과 동일한 UI로 조회
-				// 데이터 손실 복구 작업 시 유저별 보유 스킬을 확인하기 위한 명령어
-				//
-				// 사용법: /스킬정보 [닉네임]
-				// 예시:   /스킬정보 구구 남
 				if (msg.startsWith("/스킬정보 ") && (isAdmin(sender) || isMaster(sender))) {
 					var skillTargetUser = msg.substring("/스킬정보 ".length).trim();
 					if (!skillTargetUser) {
@@ -5075,7 +5060,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var match = msg.match(regex);
 					if (match) {
 						var targetUserd = match[1];
-						// [FIX] 버그 수정: sender(운영자) 펫이 아니라 targetUserd(대상 유저) 펫 체크
 						if (petData[targetUserd] && petData[targetUserd].petname) {
 							initializePet(targetUserd, petData);
 							replier.reply("[" + checkRank(data, petData, guildData, targetUserd) + "] 님의 펫 정보가 제거되었습니다.");
@@ -18621,28 +18605,37 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
+				// 길드 영지 공격 명령어 처리
 				if (msg.indexOf("/영지공격") === 0) {
+
+					// 현재 영지전 상태 확인
 					var attackWar = ensureGuildTerritoryWar(data, guildData);
 					if (!attackWar.active) {
 						replier.reply("현재 진행 중인 길드 영지전이 없습니다.");
 						return;
 					}
 
+					// 입력값 검증 (1~5번 영지)
 					var attackParts = msg.split(" ");
 					if (attackParts.length < 2 || !/^[1-5]$/.test(attackParts[1])) {
 						replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
 						return;
 					}
 
+					// 유저 길드 정보 확인
 					var attackInfo = getMyGuildInfo(data, guildData, sender);
 					if (!attackInfo || attackInfo.error || !attackInfo.guild) {
 						replier.reply("❌ 길드에 속하지 않아 영지공격이 불가합니다.");
 						return;
 					}
+
+					// 소드마스터 권한 체크
 					if (!isGuildSwordMaster(attackInfo.guild, sender)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺로 지정되지 않아 /영지공격을 사용할 수 없습니다.");
 						return;
 					}
+
+					// 탈락 유저 체크
 					if (attackWar.eliminatedUsers[sender]) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 이번 길드 영지전 로테이션에서 [탈락🥹]하여 공격할 수 없습니다.");
 						return;
@@ -18654,21 +18647,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					var war = ensureGuildTerritoryWar(data, guildData);
 
+					// 참여 길드 여부 체크
 					if (!war.readyGuilds[attackInfo.guildId]) {
 						replier.reply(
-							"❌ 참여 불가\n" + "━━━━━━━━━━━━━━\n" + "길드영지전에 참여하지 않은 길드는\n" + "영지전에 참여할 수 없습니다.\n" + "다음 영지전에서는 /길드영지준비 를 미리 해주세요"
+							"❌ 참여 불가\n" +
+							"━━━━━━━━━━━━━━\n" +
+							"길드영지전에 참여하지 않은 길드는\n" +
+							"영지전에 참여할 수 없습니다.\n" +
+							"다음 영지전에서는 /길드영지준비 를 미리 해주세요"
 						);
 						return;
 					}
 
+					// 턴 검증 (틀리면 탈락)
 					var currentTurn = getGuildTerritoryTurnRow(data, guildData);
 					if (!currentTurn || currentTurn.guildId !== attackInfo.guildId) {
+
 						attackWar.eliminatedUsers[sender] = {
 							guildId: attackInfo.guildId,
 							reason: "TURN_MISMATCH",
 							at: formatDateTime(new Date())
 						};
+
 						saveJsonFile(guildData, guildPath);
+
 						replier.reply(
 							"[" +
 							checkRank(data, petData, guildData, sender) +
@@ -18687,18 +18689,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
+					// 턴 초기화 및 공격 카운트 증가
 					clearGuildTerritoryWarTimer();
 					attackWar.turnToken = null;
-					attackWar.guildAttackCounts[attackInfo.guildId] = (attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
+					attackWar.guildAttackCounts[attackInfo.guildId] =
+						(attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
 
+					// 공격 대상 영지
 					var territoryNo = parseInt(attackParts[1], 10);
 					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
+
+					// 공격 처리
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
 					if (rewardMessage) resultMessage += "\n\n" + rewardMessage;
 					var riftMessage = processGuildTerritoryRiftEvent(data, guildData);
 					if (riftMessage) resultMessage += "\n\n" + riftMessage;
 					castleMsg(resultMessage, replier, isGroupChat);
 
+					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
 						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
 						saveJsonFile(guildData, guildPath);
@@ -18706,16 +18714,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
+					// 턴 이동
 					advanceGuildTerritoryTurn(data, guildData);
+
 					saveJsonFile(guildData, guildPath);
 					saveJsonFile(data, filePath);
 
+					// 다음 턴 안내
 					var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
 					turnMsgs.forEach(function (m) {
 						castleMsg(m, replier, isGroupChat);
 					});
 
+					// 턴 타이머 시작
 					startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+
 					return;
 				}
 
@@ -18815,8 +18828,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									if (data.member[sender].bag["잡템☠️"] === 0) {
 										delete data.member[sender].bag["잡템☠️"];
 									}
-									// [FIX] saveJsonFile 누락 버그 수정
 									saveJsonFile(data, filePath);
+									return;
 								} else {
 									replier.reply("🅟100,000,000 가 필요해요!");
 								}
@@ -19428,8 +19441,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						if (data.member[sender].bag["양념치킨🐔"] === 0) {
 							delete data.member[sender].bag["양념치킨🐔"];
 						}
-						// [FIX] saveJsonFile 누락 버그 수정
 						saveJsonFile(data, filePath);
+						return;
 					} else {
 						replier.reply("양념치킨🐔 100개가 필요해요!");
 					}
@@ -19447,7 +19460,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							if (data.member[sender].bag["양념치킨🐔"] === 0) {
 								delete data.member[sender].bag["양념치킨🐔"];
 							}
-							// [FIX] saveJsonFile 누락 버그 수정
 							saveJsonFile(data, filePath);
 						} else {
 							replier.reply("양념치킨🐔 100개가 필요해요!");
@@ -21056,8 +21068,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						if (data.member[sender].bag["펫 이름변경권🎫"] <= 0) {
 							delete data.member[sender].bag["펫 이름변경권🎫"];
 						}
-						// [FIX] saveJsonFile 누락 버그 수정: 메모리만 변경되고 디스크에 저장 안 되어
-						// 다른 사람의 동시 명령으로 변경분이 묻히는 문제가 있었음
 						saveJsonFile(petData, memberPetPath);
 						saveJsonFile(data, filePath);
 						replier.reply("펫이름 변경이 완료되었습니다.");
@@ -21202,10 +21212,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						if (data.member[sender].bag[itemName] < 1) {
 							delete data.member[sender].bag[itemName];
 						}
-						// [FIX] saveJsonFile 누락 버그 수정
 						saveJsonFile(petData, memberPetPath);
 						saveJsonFile(data, filePath);
 						replier.reply("반지이름 변경이 완료되었습니다.");
+						return;
 					} else {
 						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 10글자까지 반지 이름 변경이 가능합니다.");
 					}
@@ -21230,10 +21240,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						if (data.member[sender].bag[itemName] < 1) {
 							delete data.member[sender].bag[itemName];
 						}
-						// [FIX] saveJsonFile 누락 버그 수정
 						saveJsonFile(petData, memberPetPath);
 						saveJsonFile(data, filePath);
 						replier.reply("정령이름 변경이 완료되었습니다.");
+						return;
 					} else {
 						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 10글자까지 정령 이름 변경이 가능합니다.");
 					}
@@ -22348,7 +22358,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									if (data.member[sender].point >= 8) {
 										data.member[sender].point -= 8;
 										data.member[targetUserl].like++;
-										// [FIX] 좋아요 성공 시에만 카운트 증가 (이전엔 검증 전 증가 버그)
 										data.member[sender].cntlike++;
 										replier.reply("💕");
 									} else {
@@ -22548,7 +22557,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (petData[defenderName].miniPet) {
 						defenderMiniPetExp = parseInt(petData[defenderName].miniPet.battleExp);
 					}
-					// [FIX] 장미칼 펫스킬: 캐슬 매력 +500,000 (calculateCastleExp/RaidExp 와 일치)
+
 					let attackerSkillExp = hasPetSkill(petSkillData, attackerName, "장미칼") ? 500000 : 0;
 					let defenderSkillExp = hasPetSkill(petSkillData, defenderName, "장미칼") ? 500000 : 0;
 					let attackerPetExp_origin = parseInt(Math.round(attackerPetObj.petexp) + attackerCastleItemExp + attackerGearExp) + attackerMiniPetExp + attackerHomeTotalExp + attackerIntimacyExp + attackerSkillExp; //펫매력+캐슬매력+펫장비+미니펫+펫홈+펫스킬
@@ -23100,6 +23109,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let topUser = getTopUser(data.member);
 					data.star = topUser.username;
 					saveJsonFile(data, filePath);
+					return;
 				}
 				if (msg === "/채팅순위") {
 					let chatRanking = generatechatRanking(data.member);
@@ -23109,6 +23119,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let topchatUser = getTopchatUser(data.member);
 					data.mc = topchatUser.username;
 					saveJsonFile(data, filePath);
+					return;
 				}
 				if (msg === "/레벨순위") {
 					let UsrRanking = generateRanking(data.member);
@@ -23118,6 +23129,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let toplvUser = getToplvUser(data.member);
 					data.toplv = toplvUser.username;
 					saveJsonFile(data, filePath);
+					return;
 				}
 				if (msg === "/온도순위") {
 					let thermoRanking = generateThermoRanking(data);
@@ -23126,6 +23138,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(resultMsg);
 					data.topThermo = thermoRanking.topRanker;
 					saveJsonFile(data, filePath);
+					return;
 				}
 				if (msg === "/당근순위") {
 					let carrotRanking = generateCarrotGiveRanking(data);
@@ -23134,6 +23147,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(resultMsg);
 					data.topCarrotGive = carrotRanking.topRanker;
 					saveJsonFile(data, filePath);
+					return;
 				}
 				if (msg.startsWith("/타임머신")) {
 					let args = msg.split(" ");
@@ -24894,21 +24908,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					attemptMessage += "재료: " + config.inputGrade + " 2마리\n";
 					attemptMessage += "성공 확률: " + Math.round(config.successRate * 100) + "%";
 
-					// [FIX] 성공 시 보상을 먼저 생성해서 검증 (실패하면 재료 차감 안 함 — 데이터 손실 방지)
+					removeMiniPetsFromBag(bag, [firstIndex, secondIndex]);
+
+					// 조합 성공 여부 결정
 					var isSuccess = config.successRate >= 1 ? true : Math.random() < config.successRate;
 					var rewardPet = null;
 
 					if (isSuccess) {
 						rewardPet = createMiniPetFromCombination(config.outputGrade);
 						if (!rewardPet) {
-							replier.reply("❌ 조합 보상 데이터를 불러오지 못했습니다.\n재료는 차감되지 않았습니다.");
+							replier.reply("❌ 조합 보상 데이터를 불러오지 못했습니다.");
 							return;
 						}
-					}
-
-					// 검증 통과 후 재료 차감
-					removeMiniPetsFromBag(bag, [firstIndex, secondIndex]);
-					if (isSuccess) {
 						bag.push(rewardPet);
 					}
 
@@ -26425,8 +26436,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("포인트가 부족합니다. (필요: 🅟" + numberWithCommas(cost) + ")");
 						return;
 					}
-					// [FIX] 모든 검증 통과 후 카운트 증가 (이전엔 검증 전 증가시켜 잘못된 시도가 카운트되는 버그)
-					data.member[sender].homeLikeCnt++;
+
+					data.member[sender].homeLikeCnt = (data.member[sender].homeLikeCnt || 0) + 1;
 					addPoint(data, senderName, -cost);
 					// 대상 유저 좋아홈 증가
 					targetHome.likeCnt = targetHome.likeCnt || 0;
@@ -26705,7 +26716,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var petExploreData = loadJsonFile(petExplorePath);
 
 					let homeData = loadJsonFile(homeDataFile);
-					var out = buildPetExploreStatusMessage(data, petData, homeData, guildData, sender);
+					var out = buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender);
 
 					if (!out) {
 						replier.reply("⛰️현재 진행 중인 펫 탐험 정보가 없습니다.");
@@ -26847,7 +26858,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(petExploreData, petExplorePath);
 					saveJsonFile(data, filePath);
 
-					var msgLine = buildExploreBetMessage(data, petData, homeData, guildData, petExploreData, sender, dungeonNo, prevDungeon);
+					var msgLine = buildExploreBetMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender, dungeonNo, prevDungeon);
 					replier.reply(msgLine);
 					return;
 				}
@@ -28272,6 +28283,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				// 길드 자원 전체 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
 				if (msg === "/길드분배") {
+					var syncResult = syncMemberGuild(data, guildData);
+					if (!syncResult.success) {
+						replier.reply("❌ 길드 데이터 동기화 실패\n" + syncResult.message);
+						return;
+					}
+
+					if (syncResult.missingMembers.length > 0 || syncResult.duplicatedMembers.length > 0) {
+						var syncOut = "❌ 길드 데이터 동기화 확인 필요";
+						if (syncResult.missingMembers.length > 0) {
+							syncOut += "\n\n[member에 없는 유저]\n" + syncResult.missingMembers.join("\n");
+						}
+						if (syncResult.duplicatedMembers.length > 0) {
+							syncOut += "\n\n[중복 길드 소속 의심]\n" + syncResult.duplicatedMembers.join("\n");
+						}
+						replier.reply(syncOut);
+						saveJsonFile(data, filePath);
+						return;
+					}
+					saveJsonFile(data, filePath);
+
 					var lordGuildInfo = getMyGuildInfo(data, guildData, sender);
 
 					if (!lordGuildInfo) {
@@ -28306,16 +28337,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					ensureGuildWarehouseObj(g);
 
-					var rawMembers = getGuildMemberNames(g);
-					var skippedMembers = [];
-					var members = [];
-					for (var mi = 0; mi < rawMembers.length; mi++) {
-						if (data.member[rawMembers[mi]]) {
-							members.push(rawMembers[mi]);
-						} else {
-							skippedMembers.push(rawMembers[mi]);
-						}
-					}
+					var members = getGuildMemberNames(g);
 					var memberCount = members.length;
 
 					if (memberCount <= 0) {
@@ -28328,11 +28350,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					var fundEach     = Math.floor((Number(g.warehouse.fund)     || 0) / memberCount);
-					var elementalEach = Math.floor((Number(g.warehouse.elemental) || 0) / memberCount);
-					var ringEach     = Math.floor((Number(g.warehouse.ring)     || 0) / memberCount);
-					var petEach      = Math.floor((Number(g.warehouse.pet)      || 0) / memberCount);
-					var miniPetEach  = Math.floor((Number(g.warehouse.miniPet)  || 0) / memberCount);
+					var fundEach = Math.floor((g.warehouse.fund || 0) / memberCount);
+					var elementalEach = Math.floor((g.warehouse.elemental || 0) / memberCount);
+					var ringEach = Math.floor((g.warehouse.ring || 0) / memberCount);
+					var petEach = Math.floor((g.warehouse.pet || 0) / memberCount);
+					var miniPetEach = Math.floor((g.warehouse.miniPet || 0) / memberCount);
 
 					if (fundEach <= 0 && elementalEach <= 0 && ringEach <= 0 && petEach <= 0 && miniPetEach <= 0) {
 						replier.reply("❌ 분배 가능한 길드 자원이 부족합니다.");
@@ -28364,12 +28386,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 
-					// [FIX] NaN 가드: warehouse 값이 undefined/null/문자열이어도 안전하게 차감
-					g.warehouse.fund     = Math.max(0, (Number(g.warehouse.fund)     || 0) - fundEach     * memberCount);
-					g.warehouse.elemental = Math.max(0, (Number(g.warehouse.elemental) || 0) - elementalEach * memberCount);
-					g.warehouse.ring     = Math.max(0, (Number(g.warehouse.ring)     || 0) - ringEach     * memberCount);
-					g.warehouse.pet      = Math.max(0, (Number(g.warehouse.pet)      || 0) - petEach      * memberCount);
-					g.warehouse.miniPet  = Math.max(0, (Number(g.warehouse.miniPet)  || 0) - miniPetEach  * memberCount);
+					// 길드 자원 차감 (N빵 몫만큼만 차감, 나머지는 유지)
+					g.warehouse.fund -= fundEach * memberCount;
+					g.warehouse.elemental -= elementalEach * memberCount;
+					g.warehouse.ring -= ringEach * memberCount;
+					g.warehouse.pet -= petEach * memberCount;
+					g.warehouse.miniPet -= miniPetEach * memberCount;
 
 					// 아이템 차감
 					removeItem(data, sender, itemName, 1);
@@ -28390,11 +28412,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					out += "💫 " + numberWithCommas(miniPetEach) + "\n";
 					out += "━━━━━━━━━━━━\n";
 					out += "분배 후 남은 길드자원\n";
-					out += "🅟 " + numberWithCommas(Number(g.warehouse.fund)     || 0) + "\n";
+					out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
 					out += "🥀 " + numberWithCommas(Number(g.warehouse.elemental) || 0) + "\n";
-					out += "💍 " + numberWithCommas(Number(g.warehouse.ring)     || 0) + "\n";
-					out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet)      || 0) + "\n";
-					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet)  || 0);
+					out += "💍 " + numberWithCommas(Number(g.warehouse.ring) || 0) + "\n";
+					out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
+					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0);
 					if (skippedMembers.length > 0) {
 						out += "\n━━━━━━━━━━━━\n";
 						out += "⚠️ 지급 제외: " + skippedMembers.join(", ") + "\n";
@@ -30101,6 +30123,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetCollectionData));
 					return;
 				}
+				if (msg === "/자랑") {
+					let skillName = "롤렉스";
+					if (!hasPetSkill(petSkillData, sender, skillName)) {
+						replier.reply("장착 중인 " + skillName + "📙 스킬이 없습니다.");
+						return;
+					}
+					var rolexMentList = [
+						"롤렉스🕰️ 오늘따라 손목이 무겁습니다.",
+						"롤렉스🕰️ 괜히 한 번 더 손을 들어봅니다.",
+						"롤렉스🕰️ 이건 못 참지... 자랑 한 번 갑니다.",
+						"롤렉스🕰️ 시간은 돈이라더니, 오늘은 둘 다 제 편입니다.\n당신은 아닌가봅니다 우하하하",
+						"롤렉스🕰️ 손목에서 은은하게 성공의 향기가 납니다.\n보실래요?",
+						"롤렉스🕰️ 시계만 봤을 뿐인데 존재감이 흘러넘칩니다.",
+						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
+						"롤렉스🕰️ 성공 그것은 저의 별명입니다."
+					];
+
+					var ment = rolexMentList[Math.floor(Math.random() * rolexMentList.length)];
+					replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : " + ment);
+					return;
+				}
 				//@# =====================
 				if (msg.startsWith("/명치한대 ") && (sender == "호이 남" || sender == "맹구 여")) {
 					var target = msg.replace("/명치한대", "").trim();
@@ -30403,7 +30446,6 @@ function loadJsonFile(path) {
 			let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 			return parseJsonContent(fileContent, path);
 		}
-		// 파일이 없는 경우 — null 반환 (호출부에서 명확하게 처리)
 		return null;
 	} catch (e) {
 		var errorObj = {
@@ -30416,9 +30458,7 @@ function loadJsonFile(path) {
 		// 로그 출력 (콘솔)
 		// Api.replyRoom(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
 		debuggerLog(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
-		// 파싱/IO 에러 시 null 반환 — 절대로 빈 객체로 폴백하지 않음
-		// 호출부가 || {} 등으로 폴백하면 데이터 덮어쓰기 위험
-		return null;
+		throw e;
 	}
 }
 // JSON 파일 저장 함수
@@ -32194,26 +32234,6 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
 				Api.replyRoom(room2, message);
 				Api.replyRoom(room3, message);
 				Api.replyRoom(room5, message);
-			} else if (auctionedItem == "펫 특성리롤✨") {
-				if (!petData[highestBidder] || !petData[highestBidder].petname) {
-					replier.reply("펫생성 먼저 하세요.");
-					return;
-				}
-				// [FIX] petSkillData를 안전하게 로드 (글로벌 함수 scope 문제 방지)
-				var localPetSkillData = loadJsonFile(petSkillDataPath);
-				if (localPetSkillData === null || typeof localPetSkillData === "undefined") {
-					replier.reply("❌ 펫스킬 데이터 로드 실패. 운영자에게 문의하세요.");
-					return;
-				}
-				addPetSkillToBag(localPetSkillData, highestBidder, getRandomSpecialCharacter(data), 1);
-				saveJsonFile(localPetSkillData, petSkillDataPath);
-				var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 이\n[" + auctionedItem + "] 을(를) 낙찰받았습니다.";
-				Api.replyRoom(room1, message);
-				Api.replyRoom(room2, message);
-				Api.replyRoom(room3, message);
-				Api.replyRoom(room5, message);
-				Api.replyRoom(room6, message);
-				Api.replyRoom(room7, message);
 			} else if (auctionedItem == "[펫]초급 매력포션💕+1") {
 				if (!petData[highestBidder] || !petData[highestBidder].petname) {
 					replier.reply("펫생성 먼저 하세요.");
@@ -35072,17 +35092,6 @@ function ensurePetSkillSystemData(data, petData, petSkillData) {
 	if (!data || !data.member || !petData || !petSkillData) return false;
 	if (!data.petSkillSystem) data.petSkillSystem = {};
 
-	// [FIX] 안전장치: petSkillData가 비어있는데 멤버가 많은 경우
-	// → 데이터 손실 가능성이 매우 높음. 자동 초기화 차단
-	var memberCount = Object.keys(data.member).length;
-	var existingUserCount = Object.keys(petSkillData).filter(function(k) {
-		return petSkillData[k] && petSkillData[k].petSkills;
-	}).length;
-	if (memberCount >= 5 && existingUserCount === 0 && Object.keys(petSkillData).length === 0) {
-		debuggerLog(testRoom, "[CRITICAL] petSkillData 비정상 상태 감지 — 자동 초기화 차단 (멤버 " + memberCount + "명, 펫스킬 보유자 0명)");
-		return false; // 저장 자체를 막음
-	}
-
 	var changed = false;
 	var users = Object.keys(data.member);
 	for (var i = 0; i < users.length; i++) {
@@ -35272,7 +35281,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
 	msg += "\n📚 장착 가능한 스킬 목록\n";
 	msg += "※ 이미 장착되어있는 펫스킬은 표시되지 않습니다." + allsee + "\n";
-	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]";
+	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]\n";
 	msg += "━━━━━━━━━━\n";
 
 	var equippedMap = {};
@@ -35288,7 +35297,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 		msg += "미장착 스킬이 없습니다.";
 	} else {
 		for (var j = 0; j < list.length; j++) {
-			msg += j + 1 + ". " + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
+			msg += '- ' + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
 		}
 	}
 
@@ -36608,7 +36617,6 @@ function applyStarterPet(pet, user, petSkillData) {
 	pet.upgrade = 90;
 	pet.upgradeDateTime = new Date().toISOString(); // member_pet.json 예시와 동일 형태
 
-	// 특성(요청 예시) — petSkillData가 있을 때만 적용 (안전장치)
 	if (petSkillData) {
 		addPetSkillToBag(petSkillData, user, "십원✨", 1);
 	}
@@ -37018,11 +37026,6 @@ function getExploreSuccessRewardItem(no) {
 function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
 	if (!data || !data.member) return null;
 
-	// [FIX] petSkillData가 안 넘어왔으면 직접 로드 (글로벌 함수 scope 문제 방지)
-	if (typeof petSkillData === "undefined" || petSkillData === null) {
-		petSkillData = loadJsonFile(petSkillDataPath) || {};
-	}
-
 	petExploreData = initPetExploreData(petExploreData);
 	if (!petExploreData.bet) return null;
 
@@ -37082,7 +37085,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
 			// 티어/매력/영주 가산
 			var tierP = getExploreTierBonusPercent(data, user);
-			var expP = getExploreExpBonusPercent(data, petData, homeData, user);
+			var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 			var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
 			var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
 
@@ -37526,7 +37529,7 @@ function pickAndConsumeExploreUpItem(data, user) {
 	}
 	return null;
 }
-function buildExploreBetMessage(data, petData, homeData, guildData, petExploreData, sender, dungeonNo, prevDungeon) {
+function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender, dungeonNo, prevDungeon) {
 	var nickName = checkRank(data, petData, guildData, sender);
 	var bag = data.member[sender] && data.member[sender].bag ? data.member[sender].bag : {};
 
@@ -37544,7 +37547,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petExploreDa
 	// 공용 확률(정산/지도 동일): 기본 + 티어 + 매력 + 영주
 	var p = null;
 	try {
-		p = calcExploreSuccessPercent(data, petData, homeData, sender, dungeonNo);
+		p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, dungeonNo);
 	} catch (e) {
 		p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, totalP: 5 };
 	}
@@ -37598,7 +37601,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petExploreDa
 	return out;
 }
 //지도
-function buildPetExploreStatusMessage(data, petData, homeData, guildData, sender) {
+function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender) {
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
 
@@ -37613,7 +37616,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, sender
 
 	var p = null;
 	try {
-		p = calcExploreSuccessPercent(data, petData, homeData, sender, myBet);
+		p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, myBet);
 	} catch (e) {
 		p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, totalP: 5 };
 	}
@@ -37750,22 +37753,15 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 }
 
 //확률
-function calcExploreSuccessPercent(data, petData, homeData, user, dungeonKey, usedUpItem) {
-	// [FIX] petSkillData를 안전하게 로드 (글로벌 함수 scope 문제 방지)
-	var localPetSkillData = (typeof petSkillData !== "undefined" && petSkillData !== null) ? petSkillData : loadJsonFile(petSkillDataPath) || {};
+function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, dungeonKey) {
 	var baseP = 5;
 	var tierP = getExploreTierBonusPercent(data, user);
-	var expP = getExploreExpBonusPercent(data, petData, homeData, user);
+	var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 	var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
-	var traitP = getExploreTraitBonusPercent(localPetSkillData, user, dungeonKey);
+	var traitP = getExploreTraitBonusPercent(petSkillData, user, dungeonKey);
 
-	// [FIX] 확률UP 아이템 보너스 — 이미 사용한 아이템이 있으면 그것을 우선 적용
-	var itemP;
-	if (usedUpItem) {
-		itemP = parseExploreUpPercent(usedUpItem) || 0;
-	} else {
-		itemP = getExploreItemBonusPercent(data, user);
-	}
+	//  확률UP 아이템 보너스
+	var itemP = getExploreItemBonusPercent(data, user);
 
 	var totalP = baseP + tierP + expP + lordP + traitP + itemP;
 
@@ -39352,4 +39348,3 @@ function buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetC
 
 	return lines.join("\n");
 }
-//바보
