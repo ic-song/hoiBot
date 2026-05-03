@@ -1105,14 +1105,14 @@ const GUILD_TERRITORY_RIFT_BASE_RATE = 70; // 영지전 균열 기본 성공 확
 const GUILD_TERRITORY_RIFT_ITEM_STEP = 10; // 영지전 균열 아이템당 확률 증가량
 const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 1; // 영지전 불안정 아이템당 불안정도 증가/감소량
 const GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT = 10; // 영지전 불안정도 조정 최대치
-const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정)";
-const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🌿 전쟁안정권(/안정)";
+const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정 숫자)";
+const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🚑 전쟁불안정 감소권(/안정 숫자)";
 const GUILD_TERRITORY_RIFT_GUIDE_ITEM = "🌌 균열 유도권(/균열 숫자)";
 const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균열 숫자)";
-const GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_UP_ITEM, "전쟁불안정 증폭권(/불안정)"];
-const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, "전쟁안정권(/안정)", "전쟁불안정 감소권(/안정)"];
-const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열)", "균열 유도권(/균열 숫자)"];
-const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, "대균열 유도권(/대균열)", "대균열 유도권(/대균열 숫자)"];
+// const GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_UP_ITEM, "전쟁불안정 증폭권(/불안정 숫자)"];
+// const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, "전쟁안정권(/안정 숫자)", "전쟁불안정 감소권(/안정 숫자)"];
+// const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열 숫자)"];
+// const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, "대균열 유도권(/대균열 숫자)"];
 var guildTerritoryWarTimer = null;
 let isSaving = false; //메인 정보
 function isAdmin(sender) {
@@ -31265,27 +31265,19 @@ function markGuildTerritoryItemUse(store, guildId, type, user) {
 	store[guildId][type][user] = (store[guildId][type][user] || 0) + 1;
 }
 
-function findGuildTerritoryBagItem(data, user, itemNames) {
-	if (!data.member[user] || !data.member[user].bag) return null;
-	for (var i = 0; i < itemNames.length; i++) {
-		var itemName = itemNames[i];
-		if ((data.member[user].bag[itemName] || 0) > 0) return itemName;
-	}
-	return null;
-}
-
 // 영지전 균열 아이템 사용 명령 처리
 function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg) {
 	var command = msg.split(" ")[0];
+
 	var config = null;
 	if (command === "/불안정") {
-		config = { type: "instabilityUp", items: GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES, label: GUILD_TERRITORY_INSTABILITY_UP_ITEM, deltaAdjust: GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
+		config = { type: "instabilityUp", item: GUILD_TERRITORY_INSTABILITY_UP_ITEM, deltaAdjust: GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
 	} else if (command === "/안정") {
-		config = { type: "instabilityDown", items: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES, label: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, deltaAdjust: -GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
+		config = { type: "instabilityDown", item: GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, deltaAdjust: -GUILD_TERRITORY_INSTABILITY_ITEM_STEP };
 	} else if (command === "/균열") {
-		config = { type: "riftGuide", items: GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES, label: GUILD_TERRITORY_RIFT_GUIDE_ITEM, deltaBias: GUILD_TERRITORY_RIFT_ITEM_STEP };
+		config = { type: "riftGuide", item: GUILD_TERRITORY_RIFT_GUIDE_ITEM, deltaBias: GUILD_TERRITORY_RIFT_ITEM_STEP };
 	} else if (command === "/대균열") {
-		config = { type: "greatRiftGuide", items: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES, label: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, deltaBias: -GUILD_TERRITORY_RIFT_ITEM_STEP };
+		config = { type: "greatRiftGuide", item: GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, deltaBias: -GUILD_TERRITORY_RIFT_ITEM_STEP };
 	} else {
 		return null;
 	}
@@ -31313,9 +31305,8 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	if (war.eliminatedGuilds[guildInfo.guildId] || war.eliminatedUsers[sender]) {
 		return { message: "❌ 탈락한 길드 또는 유저는 사용할 수 없습니다." };
 	}
-	var bagItemName = findGuildTerritoryBagItem(data, sender, config.items);
-	if (!bagItemName) {
-		return { message: "보유 중인 " + config.label + "이 없습니다.\n\n아이템을 보유한 상태에서 다시 시도해 주세요." };
+	if (!hasItem(data, sender, config.item, 1)) {
+		return { message: "보유 중인 " + config.item + "이 없습니다.\n\n아이템을 보유한 상태에서 다시 시도해 주세요." };
 	}
 
 	if (config.deltaAdjust) {
@@ -31328,7 +31319,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 			: Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT + (war.instabilityAdjust || 0));
 		var useCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, guildRemain, userRemain, adjustRemain);
 		if (useCount <= 0) {
-			return { message: "❌ 이번 영지전에서 더 이상 " + config.label + "을 사용할 수 없습니다." };
+			return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 		}
 
 		removeItem(data, sender, bagItemName, useCount);
@@ -31337,7 +31328,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 
 		var currentRate = getGuildTerritoryInstabilityRate(war);
 		var out = "[" + formatGuildDisplay(guildInfo.guild) + "]\n\n";
-		out += config.label + " 사용!\n\n";
+		out += config.item + " 사용!\n\n";
 		out += config.deltaAdjust > 0 ? "전장의 기운이 흔들리기 시작합니다.\n" : "전장의 기운이 차분히 가라앉습니다.\n";
 		out += "🌪️ 전쟁불안정도 " + (config.deltaAdjust > 0 ? "+" : "-") + useCount + "%\n";
 		out += "[ 🌪️ 누적 전쟁불안정도: " + formatPercent1(currentRate) + "%]\n";
@@ -31349,7 +31340,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	var guideUsed = (((guideStore[guildInfo.guildId] || {})[config.type] || {})[sender] || 0);
 	var guideUseCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, Math.max(0, 1 - guideUsed));
 	if (guideUseCount <= 0) {
-		return { message: "❌ 이번 영지전에서 더 이상 " + config.label + "을 사용할 수 없습니다." };
+		return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 	}
 
 	var beforeRates = getGuildTerritoryRiftRates(war);
@@ -31360,7 +31351,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	var afterRates = getGuildTerritoryRiftRates(war);
 
 	var guideOut = "[" + formatGuildDisplay(guildInfo.guild) + "]\n\n";
-	guideOut += config.label + " 사용!\n\n";
+	guideOut += config.item + " 사용!\n\n";
 	guideOut += config.deltaBias > 0 ? "전장의 흐름이 균열 쪽으로 기울기 시작합니다.\n\n" : "전장의 흐름이 대균열 쪽으로 기울기 시작합니다.\n\n";
 	guideOut += config.deltaBias > 0 ? "🌌 균열의 기운이 강해지고\n🌋 대균열의 기운이 약해졌습니다.\n\n" : "🌋 대균열의 기운이 강해지고\n🌌 균열의 기운이 약해졌습니다.\n\n";
 	guideOut += "🌌 균열: " + beforeRates.rift + "% → " + afterRates.rift + "%\n";
