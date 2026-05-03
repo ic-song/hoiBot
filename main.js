@@ -1063,6 +1063,7 @@ let Admins = Object.keys(initData.admin);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 const GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER = 5; // 소드마스터 1명당 영지전 공격 턴
 const GUILD_TERRITORY_TURN_TIMEOUT_MS = 1000 * 15; // 길드 영토전 턴 타임아웃 (15초)
+const GUILD_TERRITORY_TIMEOUT_MISS_LIMIT = 3; // 영지전 시간초과 미공격 탈락 기준
 const GUILD_TERRITORY_TURN_FUND_REWARD = 200000000; // 영지전 공격 턴 기본보상
 const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.7; // 영지전 공격 턴 확률보상
 const GUILD_CONTRIBUTION_MEDAL_ITEM = "길드공헌훈장🌟(/길드공헌 숫자)";
@@ -18558,6 +18559,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					startWar.currentTurnIndex = 0;
 					startWar.eliminatedUsers = {};
 					startWar.eliminatedGuilds = {};
+					startWar.timeoutMissCounts = {};
 					startWar.turnCount = 0;
 					startWar.instabilityAdjust = 0;
 					startWar.riftBias = 0;
@@ -18646,7 +18648,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					if (attackWar.eliminatedGuilds && attackWar.eliminatedGuilds[attackInfo.guildId]) {
-						replier.reply("❌ [" + formatGuildDisplay(attackInfo.guild) + "] 길드는 대균열로 탈락하여 이번 길드영지전에 참여할 수 없습니다.");
+						replier.reply("이미 길드영지전에서 탈락한 길드입니다.\n이번 영지전에서는 더 이상 공격할 수 없습니다.");
 						return;
 					}
 
@@ -30486,6 +30488,7 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (!war.readyGuilds || typeof war.readyGuilds !== "object") war.readyGuilds = {};
 	if (!war.territories || typeof war.territories !== "object") war.territories = {};
 	if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};
+	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};
 	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};
 	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};
 	if (!war.instabilityUses || typeof war.instabilityUses !== "object") war.instabilityUses = {};
@@ -30584,6 +30587,11 @@ function buildGuildTerritoryRiftUi(war) {
 	var instability = getGuildTerritoryInstabilityRate(war);
 	var rates = getGuildTerritoryRiftRates(war);
 	return "[🌪️ 누적 전쟁불안정도: " + formatPercent1(instability) + "%]\n└🌌균열 " + rates.rift + "% / 🌋대균열 " + rates.greatRift + "%";
+}
+
+function getGuildTerritoryTimeoutMissCount(war, guildId) {
+	if (!war || !war.timeoutMissCounts || !guildId) return 0;
+	return war.timeoutMissCounts[guildId] || 0;
 }
 
 // 영지전 상황 메시지 빌드
@@ -30691,6 +30699,7 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	var used = war.guildAttackCounts[row.guildId] || 0;
 	var attackLimit = getGuildTerritoryAttackLimit(g);
 	var remain = Math.max(0, attackLimit - used);
+	var timeoutMissCount = getGuildTerritoryTimeoutMissCount(war, row.guildId);
 	var status = buildGuildTerritoryStatusMessage(data, guildData, false).replace("🎖️길드 영지전 점령 보고서🏰\n\n", "");
 
 	var msg1 =
@@ -30704,6 +30713,11 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 		"/" +
 		attackLimit +
 		"⚔)\n" +
+		"[⏳ 미공격 경고: " +
+		timeoutMissCount +
+		"/" +
+		GUILD_TERRITORY_TIMEOUT_MISS_LIMIT +
+		"]\n" +
 		buildGuildTerritoryRiftUi(war) +
 		"\n\n" +
 		"━━━━━━━━━━━━━━━━\n" +
@@ -30936,6 +30950,56 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	return { message: guideOut, changed: true };
 }
 
+function applyGuildTerritoryTimeoutMiss(guildData, guildId) {
+	var war = ensureGuildTerritoryWar({}, guildData);
+	var g = getGuildByIdSafe(guildData, guildId);
+	if (!g) return "⏳ 시간초과 미공격 발생\n\n길드 정보를 찾지 못했습니다.\n다음 공격 차례로 넘어갑니다.";
+
+	war.timeoutMissCounts[guildId] = (war.timeoutMissCounts[guildId] || 0) + 1;
+	var missCount = war.timeoutMissCounts[guildId];
+	var guildName = formatGuildDisplay(g);
+
+	if (missCount >= GUILD_TERRITORY_TIMEOUT_MISS_LIMIT) {
+		war.eliminatedGuilds[guildId] = {
+			reason: "TIMEOUT_MISS",
+			at: formatDateTime(new Date()),
+			timeoutMissCount: missCount
+		};
+		return (
+			"🚫 시간초과 미공격 " +
+			GUILD_TERRITORY_TIMEOUT_MISS_LIMIT +
+			"회 누적\n\n[" +
+			guildName +
+			"] 길드가\n영지공격 미진행 " +
+			GUILD_TERRITORY_TIMEOUT_MISS_LIMIT +
+			"회를 누적했습니다.\n\n해당 길드는 길드영지전에서 탈락됩니다.\n\n탈락 길드: " +
+			guildName
+		);
+	}
+
+	if (missCount === 1) {
+		return (
+			"⏳ 시간초과 미공격 발생\n\n[" +
+			guildName +
+			"] 길드가 제한 시간 내\n영지공격을 진행하지 않았습니다.\n\n미공격 경고: " +
+			missCount +
+			"/" +
+			GUILD_TERRITORY_TIMEOUT_MISS_LIMIT +
+			"\n\n다음 공격 차례로 넘어갑니다."
+		);
+	}
+
+	return (
+		"⚠️ 시간초과 미공격 누적\n\n[" +
+		guildName +
+		"] 길드가 다시 제한 시간 내\n영지공격을 진행하지 않았습니다.\n\n미공격 경고: " +
+		missCount +
+		"/" +
+		GUILD_TERRITORY_TIMEOUT_MISS_LIMIT +
+		"\n\n한 번 더 시간초과 미공격 시\n해당 길드는 길드영지전에서 탈락됩니다."
+	);
+}
+
 // 길드 영지전 턴 타이머 시작
 function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat) {
 	var war = guildData.territoryWar;
@@ -30967,18 +31031,8 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 		latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
 		latestWar.turnToken = null;
 
-		var g = getGuildByIdSafe(latestGuildData, turnGuildId);
-		var attackLimit = getGuildTerritoryAttackLimit(g);
-		Api.replyRoom(
-			room8,
-			"⏭️ 길드 영지전 턴 스킵\n[" +
-			formatGuildDisplay(g) +
-			"] 시간초과 패널티 ❌\n━━━━━━━━━━━━━\n공격횟수 1회가 차감됩니다.\n(" +
-			latestWar.guildAttackCounts[turnGuildId] +
-			"/" +
-			attackLimit +
-			"⚔)"
-		);
+		var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
+		Api.replyRoom(room8, timeoutMessage);
 
 		if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
 			finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
