@@ -18858,7 +18858,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 공격 처리
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
+					var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;
 					if (rewardMessage) resultMessage += "\n\n" + rewardMessage;
+					if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();
 					var riftMessage = processGuildTerritoryRiftEvent(data, guildData);
 					if (riftMessage) resultMessage += "\n\n" + riftMessage;
 					castleMsg(resultMessage, replier, isGroupChat);
@@ -31161,15 +31163,14 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 		"] 님의 공격 차례입니다.\n" +
 		"[" +
 		formatGuildDisplay(g) +
-		"]길드 남은 턴(" +
+		"] 남은 턴(" +
 		remain +
 		"/" +
 		attackLimit +
 		"⚔)\n" +
 		buildGuildTerritoryRiftUi(war) +
-		"\n\n" +
-		"━━━━━━━━━━━━━━━━\n" +
 		"\n" +
+		"━━━━━━━━━━━━━━━━\n" +
 		status;
 
 	var msg2 = "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
@@ -31190,10 +31191,24 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
 		addItem(data, user, GUILD_CONTRIBUTION_MEDAL_ITEM, 1);
 	}
 
-	var out = "🎁 영지전 공격 턴 보상\n";
+	var out = "🎁 영지전 공격 턴 보상" + allsee + "\n";
 	out += "기본보상: 🅟" + numberWithCommas(GUILD_TERRITORY_TURN_FUND_REWARD) + " [길드자금🌾 귀속]\n";
 	out += medalSuccess ? "확률보상: [✅]공헌+1⭐️ 획득" : "확률보상: [❌]보상실패";
 	return out;
+}
+
+function buildGuildTerritoryRiftCommandGuide() {
+	return (
+		"🌋 대균열 유도권(/대균열 숫자) -> 대균열\n" +
+		"🌌 균열 유도권(/균열 숫자) -> 균열\n" +
+		"🌪️ 전쟁불안정 증폭권(/불안정 숫자) -> 불안정\n" +
+		"🚑 전쟁불안정 감소권(/안정 숫자) -> 안정\n\n" +
+		"정리:\n" +
+		"- /대균열 숫자\n" +
+		"- /균열 숫자\n" +
+		"- /불안정 숫자\n" +
+		"- /안정 숫자"
+	);
 }
 
 // 영지전 균열 이벤트 처리: 불안정도 증가, 균열/대균열 발생 여부 판단 및 적용, 안정화 판단
@@ -31349,17 +31364,14 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	if (!hasItem(data, sender, config.item, 1)) {
 		return { message: "보유 중인 " + config.item + "이 없습니다.\n\n아이템을 보유한 상태에서 다시 시도해 주세요." };
 	}
+	var bagItemCount = data.member[sender].bag[bagItemName] || 0;
 
-	// 불안정도 조정 아이템인 경우, 길드/유저별 사용 횟수 및 조정치 한도 체크 후 적용
+	// 불안정도 조정 아이템인 경우, 입력 수량과 조정치 한도 안에서 적용
 	if (config.deltaAdjust) {
-		var guildUsed = getGuildTerritoryUseCount(war.instabilityUses, guildInfo.guildId, config.type);
-		var userUsed = (((war.instabilityUses[guildInfo.guildId] || {})[config.type] || {})[sender] || 0);
-		var guildRemain = Math.max(0, 3 - guildUsed);
-		var userRemain = Math.max(0, 1 - userUsed);
 		var adjustRemain = config.deltaAdjust > 0
 			? Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT - (war.instabilityAdjust || 0))
 			: Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT + (war.instabilityAdjust || 0));
-		var useCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, guildRemain, userRemain, adjustRemain);
+		var useCount = Math.min(count, bagItemCount, adjustRemain);
 		if (useCount <= 0) {
 			return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 		}
@@ -31378,10 +31390,12 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		return { message: out, changed: true };
 	}
 
-	// 균열 유도 아이템인 경우, 길드/유저별 사용 횟수 체크 후 적용
+	// 균열 유도 아이템인 경우, 입력 수량과 편향 한도 안에서 적용
 	var guideStore = war.riftGuideUses;
-	var guideUsed = (((guideStore[guildInfo.guildId] || {})[config.type] || {})[sender] || 0);
-	var guideUseCount = Math.min(count, data.member[sender].bag[bagItemName] || 0, Math.max(0, 1 - guideUsed));
+	var biasRemain = config.deltaBias > 0
+		? Math.floor((30 - (war.riftBias || 0)) / config.deltaBias)
+		: Math.floor(((war.riftBias || 0) + 70) / Math.abs(config.deltaBias));
+	var guideUseCount = Math.min(count, bagItemCount, Math.max(0, biasRemain));
 	if (guideUseCount <= 0) {
 		return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 	}
