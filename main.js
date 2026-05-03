@@ -1035,37 +1035,15 @@ const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json
 const filePath_back = "/sdcard/호이랜드/member_back.json"; //멤버백
 const memberPetPath_back = "/sdcard/호이랜드/member_pet_back.json";
 const petSkillDataPath_back = "/sdcard/호이랜드/petSkillData_back.json";
-const DEV_DATA_FILES = [
-	"member.json",
-	"member_pet.json",
-	"petSkillData.json",
-	"guildData.json",
-	"castleBattle2.json",
-	"trialTower.json",
-	"petExploreData.json",
-	"miniPet_collection.json",
-	"member_title.json",
-	"pet_title.json",
-	"miniPet_title.json",
-	"petSweetHomeData.json",
-	"board.json",
-	"carrotBoard.json",
-	"itemInfo.json",
-	"miniPetData.json"
-];
-const DEV_RECOVERY_BACKUP_FILES = [
-	"member_back.json",
-	"member_pet_back.json",
-	"petSkillData_back.json"
-];
-var DEV_DATA_FILE_MAP = {};
-for (var devFileIndex = 0; devFileIndex < DEV_DATA_FILES.length; devFileIndex++) {
-	DEV_DATA_FILE_MAP[DEV_DATA_FILES[devFileIndex]] = true;
-}
-for (var devBackIndex = 0; devBackIndex < DEV_RECOVERY_BACKUP_FILES.length; devBackIndex++) {
-	DEV_DATA_FILE_MAP[DEV_RECOVERY_BACKUP_FILES[devBackIndex]] = true;
-}
-var activeDevDataMode = false;
+var COMMON_DATA_FILE_MAP = {
+	"itemInfo.json": true,
+	"miniPetData.json": true,
+	"miniPetCollectionInfo.json": true,
+	"trialTowerBoss.json": true,
+	"eventTowerBoss.json": true,
+	"petSweetHomeInfo.json": true
+};
+var commandContextThreadLocal = new java.lang.ThreadLocal();
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
 	windowMs: 2000,
 	limit: 3,
@@ -1113,7 +1091,7 @@ const GUILD_TERRITORY_INSTABILITY_UP_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY
 const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM_ALIASES = [GUILD_TERRITORY_INSTABILITY_DOWN_ITEM, "전쟁안정권(/안정)", "전쟁불안정 감소권(/안정)"];
 const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열)", "균열 유도권(/균열 숫자)"];
 const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, "대균열 유도권(/대균열)", "대균열 유도권(/대균열 숫자)"];
-var guildTerritoryWarTimer = null;
+var guildTerritoryWarTimers = {};
 let isSaving = false; //메인 정보
 function isAdmin(sender) {
 	return Admins.includes(sender);
@@ -1210,34 +1188,89 @@ function getUserRequestInfo(sender) {
 	};
 }
 
+// 특정 명령어나 방을 요청 모니터링에서 제외하는 함수
 function getUserRequestCount(sender) {
 	return getUserRequestInfo(sender).count;
 }
 
+// 요청 모니터링에서 특정 명령어나 방을 제외하는 함수
 function isDevCommandMessage(msg) {
 	return typeof msg === "string" && msg.indexOf("dev/") === 0;
 }
 
+// DEV 명령어에서 "dev/" 접두사를 제거하는 함수
 function stripDevCommandPrefix(msg) {
 	var command = String(msg || "").substring("dev/".length).trim();
 	if (!command) return "";
 	return command.charAt(0) === "/" ? command : "/" + command;
 }
 
-function createDevReplier(replier) {
+// DEV 명령어에 대한 컨텍스트를 생성하는 함수 (DEV/PROD 데이터 파일 경로 관리 및 메시지 헤더 관리)
+function createCommandContext(isDev) {
+	var rootPath = isDev ? DEV_DATA_ROOT_PATH : DATA_ROOT_PATH;
 	return {
-		reply: function (message) {
-			replier.reply("[DEV 테스트환경]\n" + message);
+		isDev: !!isDev,
+		rootPath: rootPath,
+		path: function (fileName) {
+			fileName = String(fileName || "");
+			var dataFileName = getDataFileName(fileName);
+			if (!dataFileName && fileName.indexOf("/") === -1 && fileName.indexOf("\\") === -1) {
+				dataFileName = fileName;
+			}
+			if (this.isDev && dataFileName && !COMMON_DATA_FILE_MAP[dataFileName]) {
+				return this.rootPath + dataFileName;
+			}
+			if (dataFileName && fileName === dataFileName) {
+				return DATA_ROOT_PATH + dataFileName;
+			}
+			return fileName;
+		},
+		header: function (text) {
+			return this.isDev ? "[DEV 테스트환경]\n" + text : text;
+		},
+		key: function () {
+			return this.isDev ? "dev" : "prod";
 		}
 	};
 }
 
+// 커맨드 컨텍스트 관리 (DEV/PROD 데이터 파일 경로 관리 및 메시지 헤더 관리)
+function getCurrentContext() {
+	var ctx = commandContextThreadLocal.get();
+	return ctx || createCommandContext(false);
+}
+
+// 커맨드 실행 시 컨텍스트 설정 및 복원
+function enterCommandContext(ctx) {
+	var previous = commandContextThreadLocal.get();
+	commandContextThreadLocal.set(ctx || createCommandContext(false));
+	return previous;
+}
+
+// 커맨드 실행 후 이전 컨텍스트로 복원
+function exitCommandContext(previous) {
+	if (previous) {
+		commandContextThreadLocal.set(previous);
+	} else {
+		commandContextThreadLocal.remove();
+	}
+}
+
+// replier에 컨텍스트 기반 메시지 헤더 기능 추가
+function createContextReplier(replier, ctx) {
+	return {
+		reply: function (message) {
+			replier.reply(ctx.header(message));
+		}
+	};
+}
+
+// 길드 영토전 관련 명령어인지 확인하는 함수
 function isMutableGuildTerritoryCommand(msg) {
 	if (typeof msg !== "string") return false;
 	return (
 		msg === "/길드영지준비" ||
 		msg === "/길드영지시작" ||
-		msg === "/개발영지시작" ||
 		msg === "/길드영지종료" ||
 		msg.indexOf("/영지공격") === 0 ||
 		msg.indexOf("/불안정") === 0 ||
@@ -1247,9 +1280,9 @@ function isMutableGuildTerritoryCommand(msg) {
 	);
 }
 
+// DEV 환경에서 길드 영토전이 활성화되어 있는지 확인하는 함수
 function isDevGuildTerritoryWarActive() {
-	var prevDevMode = activeDevDataMode;
-	activeDevDataMode = true;
+	var prevCtx = enterCommandContext(createCommandContext(true));
 	try {
 		var devGuildData = loadJsonFile(guildPath);
 		if (!devGuildData) return false;
@@ -1258,22 +1291,22 @@ function isDevGuildTerritoryWarActive() {
 	} catch (e) {
 		return false;
 	} finally {
-		activeDevDataMode = prevDevMode;
+		exitCommandContext(prevCtx);
 	}
 }
 
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+	var ctx = createCommandContext(isDevCommandMessage(msg));
+	var prevCtx = enterCommandContext(ctx);
 	//데이터 검사
 	try {
-		var isDevMode = isDevCommandMessage(msg);
-		if (isDevMode) {
+		if (ctx.isDev) {
 			msg = stripDevCommandPrefix(msg);
-			replier = createDevReplier(replier);
+			replier = createContextReplier(replier, ctx);
 		}
-		activeDevDataMode = isDevMode;
 
-		if (isDevMode && msg === "/데이터백업") {
+		if (ctx.isDev && msg === "/데이터백업") {
 			if (!isMaster(sender)) {
 				replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
 				return;
@@ -1281,7 +1314,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(backupDevDataFromProduction());
 			return;
 		}
-		if (isDevMode) {
+		if (ctx.isDev) {
 			var missingDevFiles = getMissingDevDataFiles();
 			if (missingDevFiles.length > 0) {
 				replier.reply("❌ DEV 데이터가 준비되지 않았습니다.\nMaster가 dev/데이터백업을 먼저 실행해 주세요.\n\n누락 파일:\n- " + missingDevFiles.join("\n- "));
@@ -1599,7 +1632,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var petSkillData = loadJsonFile(petSkillDataPath);
 		var guildData = loadJsonFile(guildPath);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
-		if (!isDevMode && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
+		if (!ctx.isDev && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
 			replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
 			return;
 		}
@@ -18640,7 +18673,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					return;
 				}
-				if ((msg === "/길드영지시작" || (activeDevDataMode && msg === "/개발영지시작")) && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
+				if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
 					var startWar = ensureGuildTerritoryWar(data, guildData);
 					if (startWar.active) {
 						replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
@@ -18685,7 +18718,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					startWar.instabilityUses = {};
 					startWar.riftGuideUses = {};
 					startWar.turnToken = null;
-					guildData.castleSiegeFlag = true;
+					if (!getCurrentContext().isDev) {
+						guildData.castleSiegeFlag = true;
+					}
 					saveJsonFile(guildData, guildPath);
 
 					castleMsg(buildGuildTerritoryStartMessage(data, guildData), replier, isGroupChat);
@@ -18710,7 +18745,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
-					guildData.castleSiegeFlag = false;
+					if (!getCurrentContext().isDev) {
+						guildData.castleSiegeFlag = false;
+					}
 					saveJsonFile(guildData, guildPath);
 					return;
 				}
@@ -30687,7 +30724,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		// }
 		FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 	} finally {
-		activeDevDataMode = false;
+		exitCommandContext(prevCtx);
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -30717,11 +30754,7 @@ function getDataFileName(path) {
 }
 
 function resolveActiveDataPath(path) {
-	var fileName = getDataFileName(path);
-	if (activeDevDataMode && fileName && DEV_DATA_FILE_MAP[fileName]) {
-		return DEV_DATA_ROOT_PATH + fileName;
-	}
-	return path;
+	return getCurrentContext().path(path);
 }
 
 function ensureParentFolder(path) {
@@ -30735,14 +30768,16 @@ function backupDevDataFromProduction() {
 	if (!devFolder.exists()) devFolder.mkdirs();
 
 	var copied = [];
-	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
-		var fileName = DEV_DATA_FILES[i];
+	var sourceRoot = new java.io.File(DATA_ROOT_PATH);
+	var sourceFiles = sourceRoot.listFiles();
+	if (!sourceFiles) return "❌ 운영 데이터 폴더를 읽을 수 없습니다.";
+
+	for (var i = 0; i < sourceFiles.length; i++) {
+		var sourceFile = sourceFiles[i];
+		if (!sourceFile || !sourceFile.isFile()) continue;
+		var fileName = String(sourceFile.getName());
 		var sourcePath = DATA_ROOT_PATH + fileName;
 		var targetPath = DEV_DATA_ROOT_PATH + fileName;
-		var sourceFile = new java.io.File(sourcePath);
-		if (!sourceFile.exists()) {
-			throw new Error("DEV backup source file not found: " + sourcePath);
-		}
 		ensureParentFolder(targetPath);
 		FileStream.write(targetPath, FileStream.read(sourcePath, "utf-8"), "utf-8");
 		copied.push(fileName);
@@ -30753,8 +30788,15 @@ function backupDevDataFromProduction() {
 
 function getMissingDevDataFiles() {
 	var missing = [];
-	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
-		var fileName = DEV_DATA_FILES[i];
+	var sourceRoot = new java.io.File(DATA_ROOT_PATH);
+	var sourceFiles = sourceRoot.listFiles();
+	if (!sourceFiles) return ["운영 데이터 폴더를 읽을 수 없습니다."];
+
+	for (var i = 0; i < sourceFiles.length; i++) {
+		var sourceFile = sourceFiles[i];
+		if (!sourceFile || !sourceFile.isFile()) continue;
+		var fileName = String(sourceFile.getName());
+		if (COMMON_DATA_FILE_MAP[fileName]) continue;
 		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
 		if (!devFile.exists()) missing.push(fileName);
 	}
@@ -30890,9 +30932,10 @@ function ensureGuildTerritoryWar(data, guildData) {
 
 // 영지전 타이머 클리어
 function clearGuildTerritoryWarTimer() {
-	if (guildTerritoryWarTimer) {
-		clearTimeout(guildTerritoryWarTimer);
-		guildTerritoryWarTimer = null;
+	var ctxKey = getCurrentContext().key();
+	if (guildTerritoryWarTimers[ctxKey]) {
+		clearTimeout(guildTerritoryWarTimers[ctxKey]);
+		delete guildTerritoryWarTimers[ctxKey];
 	}
 }
 
@@ -31415,12 +31458,14 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	war.turnToken = String(new Date().getTime()) + "_" + String(Math.random());
 	var token = war.turnToken;
 	var turnGuildId = row.guildId;
-	var timerDevMode = activeDevDataMode;
+	var timerCtx = getCurrentContext();
+	var timerCtxKey = timerCtx.key();
 	saveJsonFile(guildData, guildPath);
 
-	guildTerritoryWarTimer = setTimeout(function () {
-		activeDevDataMode = timerDevMode;
+	guildTerritoryWarTimers[timerCtxKey] = setTimeout(function () {
+		var prevCtx = enterCommandContext(timerCtx);
 		try {
+			delete guildTerritoryWarTimers[timerCtxKey];
 			var latestData = loadJsonFile(filePath);
 			var latestPetData = loadJsonFile(memberPetPath);
 			var latestGuildData = loadJsonFile(guildPath);
@@ -31439,7 +31484,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 				saveJsonFile(latestData, filePath);
 			}
 
-			Api.replyRoom(room8, timerDevMode ? "[DEV 테스트환경]\n" + timeoutMessage : timeoutMessage);
+			Api.replyRoom(room8, timerCtx.header(timeoutMessage));
 
 			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
 				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
@@ -31458,7 +31503,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 
 			startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
 		} finally {
-			activeDevDataMode = false;
+			exitCommandContext(prevCtx);
 		}
 	}, GUILD_TERRITORY_TURN_TIMEOUT_MS);
 }
@@ -31605,7 +31650,9 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 	war.endedAt = formatDateTime(new Date());
 	war.turnToken = null;
 	war.castleSiegeFlag = false;
-	guildData.castleSiegeFlag = false;
+	if (!getCurrentContext().isDev) {
+		guildData.castleSiegeFlag = false;
+	}
 
 	var list = getGuildTerritoryList();
 	for (var i = 0; i < list.length; i++) {
@@ -32919,8 +32966,9 @@ function calculateCriticalDamageWithPet(pet, damage) {
  * @param {String} msg - 공지 메시지
  */
 function noticeMsg(msg) {
-	if (activeDevDataMode) {
-		Api.replyRoom(isDebuggerFlag ? testRoom : room8, "[DEV 테스트환경]\n" + msg);
+	var ctx = getCurrentContext();
+	if (ctx.isDev) {
+		Api.replyRoom(isDebuggerFlag ? testRoom : room8, ctx.header(msg));
 		return;
 	}
 	if (isDebuggerFlag) {
@@ -32958,8 +33006,9 @@ function castleMsg(msg, replier, isGroupChat) {
 		return;
 	}
 
-	if (activeDevDataMode) {
-		Api.replyRoom(isDebuggerFlag ? testRoom : room8, "[DEV 테스트환경]\n" + msg);
+	var ctx = getCurrentContext();
+	if (ctx.isDev) {
+		Api.replyRoom(isDebuggerFlag ? testRoom : room8, ctx.header(msg));
 		return;
 	}
 	if (isDebuggerFlag) {
