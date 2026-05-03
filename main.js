@@ -1063,6 +1063,9 @@ let Admins = Object.keys(initData.admin);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 const GUILD_TERRITORY_ATTACK_LIMIT_COUNT = 30; // 길드 영토전 공격 제한 횟수
 const GUILD_TERRITORY_TURN_TIMEOUT_MS = 1000 * 15; // 길드 영토전 턴 타임아웃 (15초)
+const GUILD_TERRITORY_TURN_FUND_REWARD = 200000000; // 영지전 공격 턴 기본보상
+const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.7; // 영지전 공격 턴 확률보상
+const GUILD_CONTRIBUTION_MEDAL_ITEM = "길드공헌훈장🌟(/길드공헌 숫자)";
 var guildTerritoryWarTimer = null;
 let isSaving = false; //메인 정보
 function isAdmin(sender) {
@@ -18652,7 +18655,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					attackWar.guildAttackCounts[attackInfo.guildId] = (attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
 
 					var territoryNo = parseInt(attackParts[1], 10);
+					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
+					if (rewardMessage) resultMessage += "\n\n" + rewardMessage;
 					castleMsg(resultMessage, replier, isGroupChat);
 
 					if (isGuildTerritoryAllDone(data, guildData)) {
@@ -30589,6 +30594,8 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	if (!row) return ["⚠️ 다음 공격 가능한 소드마스터가 없습니다."];
 	var g = getGuildByIdSafe(guildData, row.guildId);
 	var used = war.guildAttackCounts[row.guildId] || 0;
+	var remain = Math.max(0, GUILD_TERRITORY_ATTACK_LIMIT_COUNT - used);
+	var status = buildGuildTerritoryStatusMessage(data, guildData, false).replace("🎖️길드 영지전 점령 보고서🏰\n\n", "");
 
 	var msg1 =
 		"[" +
@@ -30596,19 +30603,37 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 		"] 님의 공격 차례입니다.\n" +
 		"[" +
 		formatGuildDisplay(g) +
-		"] 남은 공격횟수(" +
-		used +
+		"] 남은 공격횟수\n(" +
+		remain +
 		"/" +
 		GUILD_TERRITORY_ATTACK_LIMIT_COUNT +
 		"⚔)\n\n" +
 		"━━━━━━━━━━━━━━━━\n" +
-		"/영지공격 [숫자] 입력이 가능합니다.\n" +
-		"🎖️현재 길드 영지전 상황🎖️\n" +
-		buildGuildTerritoryStatusMessage(data, guildData, false).replace("🎖️현재 길드 영지전 상황🎖️\n", "");
+		"기본보상: 🅟2억 [길드자금🌾 귀속]\n" +
+		"확률보상: [✅]공헌+1⭐️ (70%확률) or [❌]보상실패(70%확률)\n\n" +
+		status;
 
 	var msg2 = "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
 
 	return [msg1, msg2];
+}
+
+function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
+	var g = getGuildByIdSafe(guildData, guildId);
+	if (!g || !data.member[user]) return "";
+
+	ensureGuildWarehouseObj(g);
+	g.warehouse.fund += GUILD_TERRITORY_TURN_FUND_REWARD;
+
+	var medalSuccess = Math.random() < GUILD_TERRITORY_MEDAL_REWARD_RATE;
+	if (medalSuccess) {
+		addItem(data, user, GUILD_CONTRIBUTION_MEDAL_ITEM, 1);
+	}
+
+	var out = "🎁 영지전 공격 턴 보상\n";
+	out += "기본보상: 🅟" + numberWithCommas(GUILD_TERRITORY_TURN_FUND_REWARD) + " [길드자금🌾 귀속]\n";
+	out += medalSuccess ? "확률보상: [✅]공헌+1⭐️ 획득" : "확률보상: [❌]보상실패";
+	return out;
 }
 
 // 길드 영지전 턴 타이머 시작
