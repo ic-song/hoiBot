@@ -1049,7 +1049,9 @@ const DEV_DATA_FILES = [
 	"miniPet_title.json",
 	"petSweetHomeData.json",
 	"board.json",
-	"carrotBoard.json"
+	"carrotBoard.json",
+	"itemInfo.json",
+	"miniPetData.json"
 ];
 const DEV_RECOVERY_BACKUP_FILES = [
 	"member_back.json",
