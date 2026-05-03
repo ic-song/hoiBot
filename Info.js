@@ -11,6 +11,8 @@ const PET_SKILL_BOOK_ITEM = "펫스킬북📙(/펫스킬오픈)";
 const PET_SKILL_UNBIND_ITEM = "펫스킬귀속해제권🧙‍♂️(/펫스킬귀속해제 숫자)";
 //랭크.txt 로드, 오류로그 세이브용
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+const DATA_ROOT_PATH = "/sdcard/호이랜드/";
+const DEV_DATA_ROOT_PATH = "/sdcard/호이랜드_dev/";
 var folder = new java.io.File(sdcard, "호이랜드");
 //member.json 로드용
 const filePath = "/sdcard/호이랜드/member.json";
@@ -31,6 +33,25 @@ var allsee = "​".repeat(500);
 //테스트데이터
 const filePath2 = "/sdcard/호이랜드/member2.json";
 const castleBattlePath2 = "/sdcard/호이랜드/castleBattle2.json";
+const DEV_DATA_FILES = [
+	"member.json",
+	"member_pet.json",
+	"petSkillData.json",
+	"guildData.json",
+	"castleBattle2.json",
+	"trialTower.json",
+	"petExploreData.json",
+	"member_title.json",
+	"pet_title.json",
+	"petSweetHomeData.json",
+	"itemInfo.json",
+	"miniPetData.json"
+];
+var DEV_DATA_FILE_MAP = {};
+for (var devFileIndex = 0; devFileIndex < DEV_DATA_FILES.length; devFileIndex++) {
+	DEV_DATA_FILE_MAP[DEV_DATA_FILES[devFileIndex]] = true;
+}
+var activeDevDataMode = false;
 //진화 필요 매력치var
 requiredpoint = 10;
 var initData = loadJsonFile(filePath);
@@ -92,13 +113,43 @@ const ticketTierData = {
 };
 
 //아이템정보
-const itemInfoData = loadJsonFile(itemInfoPath);
-const raidSpecialItem = itemInfoData.raidSpecialItem;
-const castlePremiumItem = itemInfoData.castlePremiumItem;
-const castleItem = itemInfoData.castleItem;
+var itemInfoData = loadJsonFile(itemInfoPath);
+var productionItemInfoData = itemInfoData;
+var raidSpecialItem = itemInfoData.raidSpecialItem;
+var castlePremiumItem = itemInfoData.castlePremiumItem;
+var castleItem = itemInfoData.castleItem;
+function applyItemInfoContext(nextItemInfoData) {
+	itemInfoData = nextItemInfoData || productionItemInfoData;
+	raidSpecialItem = itemInfoData.raidSpecialItem;
+	castlePremiumItem = itemInfoData.castlePremiumItem;
+	castleItem = itemInfoData.castleItem;
+}
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
 	try {
 		msg = String(msg || "").trim();
+		var isDevMode = isDevCommandMessage(msg);
+		if (isDevMode) {
+			msg = stripDevCommandPrefix(msg);
+			replier = createDevReplier(replier);
+		}
+		activeDevDataMode = isDevMode;
+
+		if (isDevMode && msg === "/데이터백업") {
+			if (!isMaster(sender)) {
+				replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+				return;
+			}
+			replier.reply(backupDevDataFromProduction());
+			return;
+		}
+		if (isDevMode) {
+			var missingDevFiles = getMissingDevDataFiles();
+			if (missingDevFiles.length > 0) {
+				replier.reply("❌ DEV 데이터가 준비되지 않았습니다.\nMaster가 dev/데이터백업을 먼저 실행해 주세요.\n\n누락 파일:\n- " + missingDevFiles.join("\n- "));
+				return;
+			}
+			applyItemInfoContext(loadJsonFile(itemInfoPath));
+		}
 		var plainCommands = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
 		if (!msg.startsWith("/") && plainCommands.indexOf(msg) === -1) {
 			return;
@@ -1254,11 +1305,84 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			Api.replyRoom(testRoom, "[ ERROR : Info error ]" + allsee + JSON.stringify(errorObj));
 		}
 		FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+	} finally {
+		activeDevDataMode = false;
+		applyItemInfoContext(productionItemInfoData);
 	}
 }
 // JSON 파일 로드 함수
+function isDevCommandMessage(msg) {
+	return typeof msg === "string" && msg.indexOf("dev/") === 0;
+}
+
+function stripDevCommandPrefix(msg) {
+	var command = String(msg || "").substring("dev/".length).trim();
+	if (!command) return "";
+	return command.charAt(0) === "/" ? command : "/" + command;
+}
+
+function createDevReplier(replier) {
+	return {
+		reply: function (message) {
+			replier.reply("[DEV 테스트환경]\n" + message);
+		}
+	};
+}
+
+function getDataFileName(path) {
+	path = String(path || "");
+	if (path.indexOf(DATA_ROOT_PATH) !== 0) return null;
+	return path.substring(DATA_ROOT_PATH.length);
+}
+
+function resolveActiveDataPath(path) {
+	var fileName = getDataFileName(path);
+	if (activeDevDataMode && fileName && DEV_DATA_FILE_MAP[fileName]) {
+		return DEV_DATA_ROOT_PATH + fileName;
+	}
+	return path;
+}
+
+function ensureParentFolder(path) {
+	var file = new java.io.File(path);
+	var parent = file.getParentFile();
+	if (parent && !parent.exists()) parent.mkdirs();
+}
+
+function backupDevDataFromProduction() {
+	var devFolder = new java.io.File(DEV_DATA_ROOT_PATH);
+	if (!devFolder.exists()) devFolder.mkdirs();
+
+	var copied = [];
+	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
+		var fileName = DEV_DATA_FILES[i];
+		var sourcePath = DATA_ROOT_PATH + fileName;
+		var targetPath = DEV_DATA_ROOT_PATH + fileName;
+		var sourceFile = new java.io.File(sourcePath);
+		if (!sourceFile.exists()) {
+			throw new Error("DEV backup source file not found: " + sourcePath);
+		}
+		ensureParentFolder(targetPath);
+		FileStream.write(targetPath, FileStream.read(sourcePath, "utf-8"), "utf-8");
+		copied.push(fileName);
+	}
+
+	return "✅ DEV 데이터 백업 완료\n\n운영 데이터를 테스트 환경으로 복사했습니다.\n\n- " + copied.join("\n- ");
+}
+
+function getMissingDevDataFiles() {
+	var missing = [];
+	for (var i = 0; i < DEV_DATA_FILES.length; i++) {
+		var fileName = DEV_DATA_FILES[i];
+		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
+		if (!devFile.exists()) missing.push(fileName);
+	}
+	return missing;
+}
+
 function loadJsonFile(path) {
 	try {
+		path = resolveActiveDataPath(path);
 		let file = new java.io.File(path);
 		if (file.exists()) {
 			let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
