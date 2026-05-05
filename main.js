@@ -102,6 +102,7 @@ const PET_SKILL_LIST = [
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
 	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
+	{ name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
@@ -110,6 +111,7 @@ const PET_SKILL_LIST = [
 	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
 
 	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "/퀘스트완료 시 10% 확률로 3억 포인트를 받습니다." },
+	{ name: "주간루틴", grade: "B", rate: 2.5, effect: "주간퀘스트 보상 수령 시 추가 포인트를 획득합니다." },
 	{ name: "시련을 걷는 자", grade: "B", rate: 2.5, effect: "10% 확률로 시련의 탑 공략 성공" },
 	{ name: "결혼못한 대장장이", grade: "B", rate: 2.6, effect: "/반지강화 성공 확률 5% 증가" },
 	{ name: "구원", grade: "B", rate: 2.7, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
@@ -121,8 +123,10 @@ const PET_SKILL_LIST = [
 
 	{ name: "건물주", grade: "C", rate: 5.0, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
 	{ name: "악덕한 영주", grade: "C", rate: 5.0, effect: "호랜캐슬 세금 30% 강제 고정" },
+	{ name: "오픈런", grade: "C", rate: 5.0, effect: "/리셋 이후 출석 1등 시 펫먹이🍼 1,000개를 획득합니다." },
 	{ name: "야수의 본능", grade: "C", rate: 5.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
 	{ name: "탑 숭배자", grade: "C", rate: 5.0, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
+	{ name: "기도", grade: "C", rate: 5.5, effect: "하루 1회 /기도 사용 시 1% 확률로 주간상자🦋(/주간오픈) 1개를 획득합니다." },
 	{ name: "플러팅", grade: "C", rate: 5.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 5.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
 	{ name: "초월성장", grade: "C", rate: 5.5, effect: "레벨업 시 펫먹이🍼 5개 획득합니다." },
@@ -2753,6 +2757,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								Bonus.Bonusmsg += "🎊\n🅟" + numberWithCommas(BonusResult) + " 추가적립 되었습니다.";
 								data.member[sender].point += BonusResult; //랭크추가 ㅊㅊ 주사위 포인트 추가
 								replier.reply(Bonus.Bonusmsg);
+							}
+
+							// 오픈런📙: /리셋 이후 출석 1등에게 일일 1회 보상
+							if (data.attend_list[0] === sender && hasPetSkill(petSkillData, sender, "오픈런") && !data.member[sender].openRunRewardClaimed) {
+								data.member[sender].bag["펫먹이🍼"] = (data.member[sender].bag["펫먹이🍼"] || 0) + 1000;
+								data.member[sender].openRunRewardClaimed = true;
+								replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 오늘도 1등 출석 성공!");
+								replier.reply("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
+								replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 누구보다 빠르게, 남들과는 다르게!");
 							}
 						} else {
 							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 이미 출첵 하셨습니다.");
@@ -19862,6 +19875,33 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
+				if (msg === "/기도") {
+					if (castleSiegeFlag) return;
+					if (!data.member || !data.member[sender]) return;
+
+					var nickName = checkRank(data, petData, guildData, sender);
+					if (!hasPetSkill(petSkillData, sender, "기도")) {
+						replier.reply("❌ [" + nickName + "]님 당신은 기도📙 드릴 자격이 없습니다.\n기도📙 스킬을 장착해주세요");
+						return;
+					}
+
+					if (data.member[sender].isGidoFlag) {
+						replier.reply("[" + nickName + "]님\n오늘은 이미 기도를 올렸습니다.");
+						return;
+					}
+
+					data.member[sender].isGidoFlag = true;
+					var gidoSuccess = Math.random() < 0.01;
+					if (gidoSuccess) {
+						addItem(data, sender, "주간상자🦋(/주간오픈)", 1);
+						replier.reply("[" + nickName + "]님.. 호월신이 당신에게 흥미를 느낍니다.\n주간상자🦋 1개를 지급받습니다.");
+					} else {
+						replier.reply("[" + nickName + "]님.. 호월신이 당신의 기도를 씹습니다.");
+					}
+					saveJsonFile(data, filePath);
+					return;
+				}
+
 				if (msg === "/퀘스트완료" || msg === "ㅎㅎㅎ" || msg === "/ㅇ") {
 					if (!castleSiegeFlag && data.member && data.member[sender]) {
 						var status = getDailyQuestStatus(data, petData, guildData, sender);
@@ -28376,6 +28416,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					g.exp += n;
 
+					// 길드의 심장📙: /길드공헌 시 1% 확률로 길드자금🌾 100만 추가
+					var guildHeartTriggered = false;
+					if (hasPetSkill(petSkillData, sender, "길드의 심장")) {
+						guildHeartTriggered = Math.random() < 0.01;
+						if (guildHeartTriggered) {
+							ensureGuildWarehouseObj(g);
+							g.warehouse.fund = (g.warehouse.fund || 0) + 1000000;
+						}
+					}
+
 					// 레벨업 체크
 					var levelInfo = checkGuildLevelUp(data, guildData, g);
 
@@ -28399,6 +28449,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						out += "다음 길드레벨까지 남은 공헌도(" + numberWithCommas(g.exp) + "/" + numberWithCommas(levelInfo.nextNeed) + ")";
 					} else {
 						out += "현재 길드레벨은 MAX 입니다.";
+					}
+					if (guildHeartTriggered) {
+						var heartRank = checkRank(data, petData, guildData, sender);
+						out += "\n\n[" + heartRank + "] 길드의 심장이 뜨겁게 뛰기 시작합니다!";
+						out += "\n[" + heartRank + "] 길드를 위한 진심이 길드자금으로 이어집니다!";
+						out += "\n[" + heartRank + "] 길드자금🌾 100만이 추가되었습니다!";
 					}
 
 					replier.reply(out);
@@ -32215,6 +32271,12 @@ function resetAttendance(petData, data, replier) {
 		if (data.member[user].dailyQuestCnt !== undefined) {
 			delete data.member[user].dailyQuestCnt;
 		}
+		if (data.member[user].isGidoFlag !== undefined) {
+			delete data.member[user].isGidoFlag;
+		}
+		if (data.member[user].openRunRewardClaimed !== undefined) {
+			delete data.member[user].openRunRewardClaimed;
+		}
 		if (data.member[user].coincount) {
 			//슬롯코인
 			delete data.member[user].coincount;
@@ -34526,6 +34588,14 @@ function claimQuestReward(data, petData, guildData, sender) {
 		claimed = true;
 
 		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : 미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
+
+		if (hasPetSkill(petSkillData, sender, "주간루틴")) {
+			var weeklyRoutineBonusPoint = 1000000000;
+			addPoint(data, sender, weeklyRoutineBonusPoint);
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주간루틴이 완벽하게 이어집니다!");
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 꾸준함의 보상으로 추가 포인트를 획득합니다!");
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주퀘보상 보너스 발동! 🅟1,000,000,000");
+		}
 	}
 
 	if (!claimed && status.isComplete && status.dailyRewardDone) {
