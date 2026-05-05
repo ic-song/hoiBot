@@ -18832,7 +18832,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 현재 진행 중인 길드 영지전이 없습니다.");
 						return;
 					}
-					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
+					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료", replier, isGroupChat);
 					if (!getCurrentContext().isDev) {
 						guildData.castleSiegeFlag = false;
 					}
@@ -18966,18 +18966,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var riftMessage = "";
 					// 공격 불가가 아닐 때만 균열 판정
 					if (!isAttackBlocked) {
-						riftMessage = processGuildTerritoryRiftEvent(data, guildData, function (message) {
-							castleMsg(message, replier, isGroupChat);
-						});
-						if (riftMessage) {
-							resultMessage += "\n\n" + riftMessage;
-						}
+						riftMessage = processGuildTerritoryRiftEvent(data, guildData);
 					}
 					castleMsg(resultMessage, replier, isGroupChat);
+					if (riftMessage) {
+						castleMsg(riftMessage, replier, isGroupChat);
+					}
 
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
-						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
+						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진", replier, isGroupChat);
 						withGuildTerritoryDataMode(guildData, function () {
 							saveJsonFile(guildData, guildPath);
 							saveJsonFile(data, filePath);
@@ -31323,10 +31321,10 @@ function getGuildTerritoryAttackLimitForWar(war, g, guildId) {
 	return getGuildTerritoryAttackLimit(g);
 }
 
-//	영지전 불안정도 기본 증가율 계산 (턴 수 기반, 최대 20%)
+//	영지전 불안정도 기본 증가율 계산 (턴당 0.05%, 최대 5.0%)
 function getGuildTerritoryInstabilityBaseRate(turnCount) {
 	var turn = Math.max(1, Math.min(GUILD_TERRITORY_RIFT_MAX_TURN, turnCount || 1));
-	return turn / 10;
+	return turn / 20;
 }
 
 // 영지전 불안정도 계산 (턴 수 기반 + 조정치, 균열 이벤트 중이거나 턴 수 초과 시 0%)
@@ -31579,7 +31577,7 @@ function buildGuildTerritoryRiftCommandGuide() {
 }
 
 // 영지전 균열 이벤트 처리: 불안정도 증가, 균열/대균열 발생 여부 판단 및 적용, 안정화 판단
-function processGuildTerritoryRiftEvent(data, guildData, notifyMessage) {
+function processGuildTerritoryRiftEvent(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	if (!war.active) {
 		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 영지전이 활성화되지 않음." + allsee);
@@ -31598,11 +31596,9 @@ function processGuildTerritoryRiftEvent(data, guildData, notifyMessage) {
 	if (Math.random() * 100 < instabilityRate) {
 		var rates = getGuildTerritoryRiftRates(war);
 		if (Math.random() * 100 < rates.rift) {
-			applyGuildTerritoryRift(data, guildData, notifyMessage);
-			return "";
+			return applyGuildTerritoryRift(data, guildData);
 		}
-		applyGuildTerritoryGreatRift(data, guildData, notifyMessage);
-		return "";
+		return applyGuildTerritoryGreatRift(data, guildData);
 	}
 
 	if (war.turnCount >= GUILD_TERRITORY_RIFT_MAX_TURN) {
@@ -31619,7 +31615,7 @@ function processGuildTerritoryRiftEvent(data, guildData, notifyMessage) {
 }
 
 // 균열 이벤트 적용: 모든 영지 점령 초기화, 호월킹덤 초기화, 균열 이벤트 상태 설정
-function applyGuildTerritoryRift(data, guildData, notifyMessage) {
+function applyGuildTerritoryRift(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var list = getGuildTerritoryList();
 
@@ -31640,7 +31636,7 @@ function applyGuildTerritoryRift(data, guildData, notifyMessage) {
 	war.riftEventStatus = "rift";
 	war.riftEventAt = formatDateTime(new Date());
 
-	if (notifyMessage) notifyMessage(
+	return (
 		"🌌 균열 발생!\n\n" +
 		"전장의 균형이 무너지며\n점령 중이던 길드영지에 균열이 발생했습니다.\n\n" +
 		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n\n" +
@@ -31649,7 +31645,7 @@ function applyGuildTerritoryRift(data, guildData, notifyMessage) {
 }
 
 // 대균열 이벤트 적용: 랜덤한 준비된 길드 하나를 영지전에서 제거, 대균열 이벤트 상태 설정
-function applyGuildTerritoryGreatRift(data, guildData, notifyMessage) {
+function applyGuildTerritoryGreatRift(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var readyGuildIds = Object.keys(war.readyGuilds || {}).filter(function (gid) {
 		return !war.eliminatedGuilds[gid] && !!getGuildByIdSafe(guildData, gid);
@@ -31680,7 +31676,7 @@ function applyGuildTerritoryGreatRift(data, guildData, notifyMessage) {
 	war.riftEventAt = formatDateTime(new Date());
 	war.riftEventGuildId = targetGuildId;
 
-	if (notifyMessage) notifyMessage(
+	return (
 		"🌋 대균열 발생!\n\n" +
 		"전장의 균열이 걷잡을 수 없이 확산됩니다.\n\n" +
 		"거대한 균열이 전장을 집어삼키며,\n[" +
@@ -31876,7 +31872,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	// 현재 공격자 정보 가져오기
 	var row = getGuildTerritoryTurnRow(data, guildData);
 	if (!row) {
-		finishGuildTerritoryWar(data, guildData, "자동 종료");
+		finishGuildTerritoryWar(data, guildData, "자동 종료", replier, isGroupChat);
 		withGuildTerritoryDataMode(guildData, function () {
 			saveJsonFile(guildData, guildPath);
 		});
@@ -31909,21 +31905,21 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 
 			// 미공격 처리 결과 메시지 빌드
 			var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
-			var riftMessage = processGuildTerritoryRiftEvent(latestData, latestGuildData, function (message) {
-				Api.replyRoom(room8, timerCtx.header(message));
-			});
+			var riftMessage = processGuildTerritoryRiftEvent(latestData, latestGuildData);
 			if (riftMessage) {
-				timeoutMessage += "\n\n" + riftMessage;
 				withGuildTerritoryDataMode(latestGuildData, function () {
 					saveJsonFile(latestData, filePath);
 				});
 			}
 
 			Api.replyRoom(room8, timerCtx.header(timeoutMessage));
+			if (riftMessage) {
+				Api.replyRoom(room8, timerCtx.header(riftMessage));
+			}
 
 			// 모든 길드가 공격 횟수를 다 채웠거나 공격할 수 있는 소드마스터가 없는 경우 영지전 종료 처리
 			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
-				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료", replier, isGroupChat);
 				withGuildTerritoryDataMode(latestGuildData, function () {
 					saveJsonFile(latestGuildData, guildPath);
 					saveJsonFile(latestData, filePath);
@@ -32086,7 +32082,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 }
 
 // 영지전 종료 처리
-function finishGuildTerritoryWar(data, guildData, reason) {
+function finishGuildTerritoryWar(data, guildData, reason, replier, isGroupChat) {
 	return withGuildTerritoryDataMode(guildData, function () {
 		var war = ensureGuildTerritoryWar(data, guildData);
 		clearGuildTerritoryWarTimer();
@@ -32119,7 +32115,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 		}
 		out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
 		war.readyGuilds = {};
-		noticeMsg(out);
+		castleMsg(out, replier, isGroupChat);
 	});
 }
 // 출석 /리셋 함수
