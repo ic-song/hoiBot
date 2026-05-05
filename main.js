@@ -102,7 +102,7 @@ const PET_SKILL_LIST = [
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
 	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
-	{ name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
+	// { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
@@ -110,7 +110,7 @@ const PET_SKILL_LIST = [
 	{ name: "대머리 대장장이", grade: "A", rate: 1.9, effect: "/펫강화 성공 확률 5% 증가" },
 	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
 
-	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "/퀘스트완료 시 10% 확률로 3억 포인트를 받습니다." },
+	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "/퀘스트완료 시 3억 포인트를 받습니다." },
 	{ name: "주간루틴", grade: "B", rate: 2.5, effect: "주간퀘스트 보상 수령 시 추가 포인트를 획득합니다." },
 	{ name: "시련을 걷는 자", grade: "B", rate: 2.5, effect: "10% 확률로 시련의 탑 공략 성공" },
 	{ name: "결혼못한 대장장이", grade: "B", rate: 2.6, effect: "/반지강화 성공 확률 5% 증가" },
@@ -19857,11 +19857,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									saveJsonFile(data, filePath);
 								}
 								replier.reply(resultMsg.trim());
-								if (questRewardResult.claimed && Math.random() < 0.1 && hasPetSkill(petSkillData, sender, "일일루틴")) {
-									// 일일루틴B등급: 10% 확률로 추가 포인트 지급 (3억 포인트)
+								if (questRewardResult.claimed && hasPetSkill(petSkillData, sender, "일일루틴")) {
+									// 일일루틴B등급: 추가 포인트 지급 (3억 포인트)
 									var bonusPoint = 300000000; // 3억 포인트
 									addPoint(data, sender, bonusPoint);
-									replier.reply("🎉 일일루틴📙 10% 확률로 3억 포인트를 지급받습니다.");
+									replier.reply("🎉 일일루틴📙 3억 포인트를 지급받습니다.");
 								}
 							}
 						}
@@ -19909,11 +19909,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						if (rewardResult.claimed) {
 							saveJsonFile(data, filePath);
 							replier.reply(rewardResult.message);
-							if (Math.random() < 0.1 && hasPetSkill(petSkillData, sender, "일일루틴")) {
-								// 일일루틴B등급: 10% 확률로 추가 포인트 지급 (3억 포인트)
+							if (hasPetSkill(petSkillData, sender, "일일루틴")) {
+								// 일일루틴B등급: 추가 포인트 지급 (3억 포인트)
 								var bonusPoint = 300000000; // 3억 포인트
 								addPoint(data, sender, bonusPoint);
-								replier.reply("🎉 일일루틴📙 10% 확률로 3억 포인트를 지급받습니다.");
+								replier.reply("🎉 일일루틴📙 3억 포인트를 지급받습니다.");
 							}
 						} else if (status.isComplete && status.dailyRewardDone && !status.weeklyComplete) {
 							replier.reply(
