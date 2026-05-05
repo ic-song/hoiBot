@@ -111,6 +111,7 @@ const PET_SKILL_LIST = [
 	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
 
 	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "/퀘스트완료 시 10% 확률로 3억 포인트를 받습니다." },
+	{ name: "주간루틴", grade: "B", rate: 2.5, effect: "주간퀘스트 보상 수령 시 추가 포인트를 획득합니다." },
 	{ name: "시련을 걷는 자", grade: "B", rate: 2.5, effect: "10% 확률로 시련의 탑 공략 성공" },
 	{ name: "결혼못한 대장장이", grade: "B", rate: 2.6, effect: "/반지강화 성공 확률 5% 증가" },
 	{ name: "구원", grade: "B", rate: 2.7, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
@@ -34574,6 +34575,14 @@ function claimQuestReward(data, petData, guildData, sender) {
 		claimed = true;
 
 		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : 미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
+
+		if (hasPetSkill(petSkillData, sender, "주간루틴")) {
+			var weeklyRoutineBonusPoint = 1000000000;
+			addPoint(data, sender, weeklyRoutineBonusPoint);
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주간루틴이 완벽하게 이어집니다!");
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 꾸준함의 보상으로 추가 포인트를 획득합니다!");
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주퀘보상 보너스 발동! 🅟1,000,000,000");
+		}
 	}
 
 	if (!claimed && status.isComplete && status.dailyRewardDone) {
