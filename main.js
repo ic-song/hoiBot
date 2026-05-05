@@ -25002,10 +25002,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ [" + nickName + "] 님\n오픈된 미니펫이 없습니다.");
 						return;
 					}
+
+					let remainTicket = data.member[sender].bag[itemTicket] || 0; //	남은 뽑기권
+					let bagCount = petData[sender].miniPetBag.length; // 현재 가방 수
+					let bagMax = 12; // 최대 가방 수
+
 					refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
 					openedPets = sortMiniPetBag(openedPets, miniPetData.gradeTable);
 					// 출력 메시지
-					let message = "🐹[" + nickName + "] 님이 미니펫을 오픈합니다!\n확률정보: 채팅창에 '/미니펫확률'를 적어보세요" + "\n━━━━━━━━━━━━━━━\n";
+					let message =
+						"🐹[" + nickName + "] 님이 미니펫을 오픈합니다!\n" +
+						"확률정보: 채팅창에 '/미니펫확률'를 적어보세요\n" +
+						"━━━━━━━━━━━━━━━\n" +
+						"🎟️ 사용: " + numberWithCommas(openedPets.length) + "개\n" +
+						"🎫 남은 뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
+						"🎒 미니펫 가방: " + bagCount + "/" + bagMax + "\n" +
+						"━━━━━━━━━━━━━━━\n";
 					for (let i = 0; i < openedPets.length; i++) {
 						if (i === 5 && typeof allsee !== "undefined") {
 							message += allsee;
@@ -25288,49 +25300,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(msgText);
 					return;
 				}
-				// if (msg.startsWith("/미니펫가방정리")) {
-				//   let targetGrade = msg.replace("/미니펫가방정리", "").trim();
-				//   // targetGrade 인덱스 찾기
-				//   let targetIndex = miniPetData.gradeTable.findIndex(g => g.grade === targetGrade);
-				//   if (targetIndex === -1) {
-				//     replier.reply("❌ 유효하지 않은 등급입니다.\n가능 등급: " + miniPetData.gradeTable.map(g => g.grade).join(", "));
-				//     return;
-				//   }
-				//   let targetGrades = miniPetData.gradeTable.slice(0, targetIndex + 1).map(g => g.grade);
-				//   let bag = petData[sender].miniPetBag || [];
-				//   let newBag = [];
-				//   let soldCount = 0;
-				//   let earnedPoint = 0;
-				//   let targetPetNames = [];
-				//   for (let pet of bag) {
-				//     if (targetGrades.includes(pet.grade)) {
-				//       soldCount++;
-				//       earnedPoint += pet.price || 0;
-				//       targetPetNames.push(pet.name);
-				//     } else {
-				//       newBag.push(pet);
-				//     }
-				//   }
-				//   if (soldCount === 0) {
-				//     replier.reply("[" + checkRank(data, petData,guildData, sender) + "] 님\n정리 대상 미니펫이 없습니다.");
-				//     return;
-				//   }
-				//   petData[sender].miniPetBag = newBag;
-				//   // 정리 후 가방 정렬 및 sortIndex 재부여
-				//   refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-				//   // 포인트 지급
-				//   data.member[sender].point = data.member[sender].point || 0;
-				//   data.member[sender].point += earnedPoint;
-				//   let resultMsg = "✅ 정리 완료!\n[" + targetGrades[targetGrades.length - 1] + "] 등급 이하 미니펫 " + soldCount + "개 정리\n\n🅟" + numberWithCommas(earnedPoint) + " 획득\n현재 보유: 🅟" + numberWithCommas(data.member[sender].point);
-				//   resultMsg += "\n\n🐹 정리된 미니펫:" + allsee + "\n- ";
-				//   if (targetPetNames.length > 0) {
-				//     resultMsg += targetPetNames.join("\n- ");
-				//   }
-				//   replier.reply(resultMsg);
-				//   saveJsonFile(petData, memberPetPath);
-				//   saveJsonFile(data, filePath);
-				//   return;
-				// }
+				
 				if (msg.indexOf("/미니펫가방정리") === 0) {
 					var parts = String(msg).trim().split(/\s+/);
 
@@ -26138,22 +26108,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					let leftTicketAfter = data.member[sender] && data.member[sender].bag && data.member[sender].bag[ticketName] ? data.member[sender].bag[ticketName] : 0;
 					let msgOut =
-						"🎨 펫스윗홈 인테리어샵🖼️ 사용 결과\n확률정보: 채팅창에 '가구등급확률'을 적어보세요\n" +
-						"[" +
+						"🖼️[" +
 						nickName +
-						"]님이 " +
-						count +
-						"개 사용했습니다.\n\n" +
-						"남은 " +
-						ticketName +
-						": " +
-						leftTicketAfter +
+						"] 님이 인테리어샵을 오픈합니다!\n" +
+						"확률정보: 채팅창에 '/가구등급확률'을 적어보세요\n" +
+						"━━━━━━━━━━━━━━━\n" +
+						"🎟️ 사용: " +
+						numberWithCommas(results.length) +
 						"개\n" +
-						"가방: " +
+						"🎫 남은 샵오픈권: " +
+						numberWithCommas(leftTicketAfter) +
+						"개\n" +
+						"🎒 가구 가방: " +
 						userHome.furnitureBag.length +
 						"/" +
 						maxBag +
-						"\n━━━━━━━━━━━━━━━\n" +
+						"\n" +
+						"━━━━━━━━━━━━━━━\n" +
 						lines.join("\n");
 					replier.reply(msgOut);
 				}
