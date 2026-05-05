@@ -97,6 +97,7 @@ const PET_SKILL_LIST = [
 	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 20% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "인테리어 장인", grade: "S", rate: 1.0, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
+	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
@@ -33677,9 +33678,9 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 	var success = Math.random() < currentProb;
 
 	addPoint(data, sender, -upgradeCost);
-	removeItem(data, sender, "펫 강화석⭐", needItemCount);
 
 	if (success) {
+		removeItem(data, sender, "펫 강화석⭐", needItemCount);
 		petData[sender].upgrade++;
 		petData[sender].upgradeDateTime = new Date();
 
@@ -33726,8 +33727,17 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 			ok: true,
 			success: true,
 			costSpent: true,
+			stonePreservedByArtisan: false,
 			message: successMessage
 		};
+	}
+
+	var artisanBreathTriggered = false;
+	if (hasPetSkill(petSkillData, sender, "장인의 숨결")) {
+		artisanBreathTriggered = Math.random() < 0.05;
+	}
+	if (!artisanBreathTriggered) {
+		removeItem(data, sender, "펫 강화석⭐", needItemCount);
 	}
 
 	var nextLevelFail = upgradeLevel;
@@ -33742,11 +33752,12 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 		ok: true,
 		success: false,
 		costSpent: true,
+		stonePreservedByArtisan: artisanBreathTriggered,
 		message:
 			"[" +
 			petData[sender].upgrade +
 			"강⭐ 펫 강화실패]\n" +
-			"하,, 펫 강화석⭐이 소멸하였습니다...\n" +
+			(artisanBreathTriggered ? "장인의 숨결📙 [펫 강화석⭐]을 소모하지 않았습니다.\n" : "하,, 펫 강화석⭐이 소멸하였습니다...\n") +
 			"[" +
 			checkRank(data, petData, guildData, sender) +
 			"] 님의 [" +
@@ -33770,6 +33781,7 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
 	var tryCount = parseInt(count, 10) || 1;
 	var successCount = 0;
 	var failCount = 0;
+	var artisanSavedCount = 0;
 	var stoppedEarly = false;
 	var beforePetName = (petData[sender] && petData[sender].petimg ? petData[sender].petimg : "") + (petData[sender] && petData[sender].petname ? petData[sender].petname : "펫");
 	var beforePetUpgrade = petData[sender] && petData[sender].upgrade ? petData[sender].upgrade : 0;
@@ -33786,6 +33798,9 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
 			successCount++;
 		} else {
 			failCount++;
+		}
+		if (result.stonePreservedByArtisan) {
+			artisanSavedCount++;
 		}
 
 		if (tryCount === 1) {
@@ -33807,6 +33822,9 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
 	summary += "시도🔂: [" + results.length + "/" + tryCount + "회]\n";
 	summary += "성공🅾️: [" + successCount + "회]\n";
 	summary += "실패❌: [" + failCount + "회]";
+	if (artisanSavedCount > 0) {
+		summary += "\n장인의 숨결📙 발동: [" + artisanSavedCount + "회] (강화석 미소모)";
+	}
 	summary += "\n현재 포인트: 🅟" + numberWithCommas(data.member[sender].point);
 	if (stoppedEarly) {
 		summary += "\n중간 종료: 포인트 또는 재료가 부족합니다.";
@@ -34105,6 +34123,7 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 	var tryCount = parseInt(count, 10) || 1;
 	var successCount = 0;
 	var failCount = 0;
+	var artisanSavedCount = 0;
 	var stoppedEarly = false;
 	var beforeUpgradeObj =
 		petData[memberName] && petData[memberName][petFieldName]
@@ -34129,7 +34148,7 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 		}
 
 		if (pointCost) addPoint(data, memberName, -pointCost);
-		if (itemCostName && itemCost) removeItem(data, memberName, itemCostName, itemCost);
+		if (upgradeResult.shouldConsumeItem !== false && itemCostName && itemCost) removeItem(data, memberName, itemCostName, itemCost);
 		if (upgradeResult.boostItemUsedName) removeItem(data, memberName, upgradeResult.boostItemUsedName, 1);
 
 		if (upgradeResult.successFlag) {
@@ -34137,6 +34156,9 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 			successCount++;
 		} else {
 			failCount++;
+		}
+		if (upgradeResult.stonePreservedByArtisan) {
+			artisanSavedCount++;
 		}
 
 		if (tryCount === 1) {
@@ -34166,6 +34188,9 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 	summary += "시도🔂: [" + results.length + "/" + tryCount + "회]\n";
 	summary += "성공🅾️: [" + successCount + "회]\n";
 	summary += "실패❌: [" + failCount + "회]";
+	if (artisanSavedCount > 0) {
+		summary += "\n장인의 숨결📙 발동: [" + artisanSavedCount + "회] (강화석 미소모)";
+	}
 	summary += "\n현재 포인트: 🅟" + numberWithCommas(data.member[memberName].point);
 	if (stoppedEarly) {
 		summary += "\n중간 종료: 재화 또는 재료 부족가 부족합니다.";
@@ -34966,7 +34991,9 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 		noticeMessage: null,
 		probability: null,
 		boostItemUsedName: null,
-		nextSuccessChance: null
+		nextSuccessChance: null,
+		shouldConsumeItem: true,
+		stonePreservedByArtisan: false
 	};
 	function toPct(p) {
 		return (p * 100).toFixed(2) + "%";
@@ -35122,6 +35149,10 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 	// 결과 메시지 라벨(현재 확률 라벨용)
 	var label = type === "ring" ? "반지강화확률UP💍" : "정령강화확률UP🥀";
 	if (!isSuccess) {
+		var artisanBreathTriggered = false;
+		if (hasPetSkill(petSkillData, memberName, "장인의 숨결")) {
+			artisanBreathTriggered = Math.random() < 0.05;
+		}
 		var isDrop = Math.random() < dropChance;
 		// 실패 기본 문구 (+ 하락 처리)
 		if (isDrop) {
@@ -35130,6 +35161,9 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 				"[" + checkRank(data, petData, guildData, memberName) + "] 님\n" + typeObj.name + " [" + typeObj.grade + "](+" + typeObj.upgrade + ") 강화에 실패했습니다. (하락 발생)\n";
 		} else {
 			returnObj.message = "[" + checkRank(data, petData, guildData, memberName) + "] 님\n" + typeObj.name + " [" + typeObj.grade + "](+" + typeObj.upgrade + ")\n강화에 실패했습니다.\n";
+		}
+		if (artisanBreathTriggered) {
+			returnObj.message += "장인의 숨결📙 [" + upgradeItemCostName + "]을 소모하지 않았습니다.\n";
 		}
 		returnObj.message += "\n현재 포인트: 🅟" + numberWithCommas(data.member[memberName].point - upgradePointCost);
 		// 실패 후 '다음 시도' 확률 계산: 같은 레벨(하락 반영된 현재 상태) 기준 + 남은 가방 + 특성
@@ -35156,6 +35190,8 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 		returnObj.pointCost = upgradePointCost;
 		returnObj.itemCost = upgradeItemCost;
 		returnObj.itemCostName = upgradeItemCostName;
+		returnObj.shouldConsumeItem = !artisanBreathTriggered;
+		returnObj.stonePreservedByArtisan = artisanBreathTriggered;
 		return returnObj;
 	}
 	typeObj.upgrade += 1;
