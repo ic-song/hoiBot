@@ -123,6 +123,7 @@ const PET_SKILL_LIST = [
 
 	{ name: "건물주", grade: "C", rate: 5.0, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
 	{ name: "악덕한 영주", grade: "C", rate: 5.0, effect: "호랜캐슬 세금 30% 강제 고정" },
+	{ name: "오픈런", grade: "C", rate: 5.0, effect: "/리셋 이후 출석 1등 시 펫먹이🍼 1,000개를 획득합니다." },
 	{ name: "야수의 본능", grade: "C", rate: 5.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
 	{ name: "탑 숭배자", grade: "C", rate: 5.0, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
 	{ name: "기도", grade: "C", rate: 5.5, effect: "하루 1회 /기도 사용 시 1% 확률로 주간상자🦋(/주간오픈) 1개를 획득합니다." },
@@ -2756,6 +2757,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								Bonus.Bonusmsg += "🎊\n🅟" + numberWithCommas(BonusResult) + " 추가적립 되었습니다.";
 								data.member[sender].point += BonusResult; //랭크추가 ㅊㅊ 주사위 포인트 추가
 								replier.reply(Bonus.Bonusmsg);
+							}
+
+							// 오픈런📙: /리셋 이후 출석 1등에게 일일 1회 보상
+							if (data.attend_list[0] === sender && hasPetSkill(petSkillData, sender, "오픈런") && !data.member[sender].openRunRewardClaimed) {
+								data.member[sender].bag["펫먹이🍼"] = (data.member[sender].bag["펫먹이🍼"] || 0) + 1000;
+								data.member[sender].openRunRewardClaimed = true;
+								replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 오늘도 1등 출석 성공!");
+								replier.reply("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
+								replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 누구보다 빠르게, 남들과는 다르게!");
 							}
 						} else {
 							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 이미 출첵 하셨습니다.");
@@ -32263,6 +32273,9 @@ function resetAttendance(petData, data, replier) {
 		}
 		if (data.member[user].isGidoFlag !== undefined) {
 			delete data.member[user].isGidoFlag;
+		}
+		if (data.member[user].openRunRewardClaimed !== undefined) {
+			delete data.member[user].openRunRewardClaimed;
 		}
 		if (data.member[user].coincount) {
 			//슬롯코인
