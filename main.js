@@ -37969,10 +37969,12 @@ function getTreasureHunterBonusReward(petSkillData, user, rewardItem) {
 // 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
 function getExploreTreasureUsageInfo(data, petSkillData, user) {
 	var hasTreasureMap = hasItem(data, user, "보물지도🗺️", 1);
-	var isGraveRobberActive = hasTreasureMap && hasPetSkill(petSkillData, user, "도굴꾼");
+	var hasGraveRobberSkill = hasPetSkill(petSkillData, user, "도굴꾼");
+	var isGraveRobberActive = hasGraveRobberSkill;
 
 	return {
-		applied: hasTreasureMap,
+		// 도굴꾼📙 보유 시 지도 유무와 무관하게 보물지도 효과 적용
+		applied: hasTreasureMap || isGraveRobberActive,
 		shouldConsume: hasTreasureMap && !isGraveRobberActive,
 		protectedBySkill: isGraveRobberActive
 	};
