@@ -123,6 +123,7 @@ const PET_SKILL_LIST = [
 	{ name: "악덕한 영주", grade: "C", rate: 5.0, effect: "호랜캐슬 세금 30% 강제 고정" },
 	{ name: "야수의 본능", grade: "C", rate: 5.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
 	{ name: "탑 숭배자", grade: "C", rate: 5.0, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
+	{ name: "기도", grade: "C", rate: 5.5, effect: "하루 1회 /기도 사용 시 1% 확률로 주간상자🦋(/주간오픈) 1개를 획득합니다." },
 	{ name: "플러팅", grade: "C", rate: 5.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 5.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
 	{ name: "초월성장", grade: "C", rate: 5.5, effect: "레벨업 시 펫먹이🍼 5개 획득합니다." },
@@ -19862,6 +19863,33 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
+				if (msg === "/기도") {
+					if (castleSiegeFlag) return;
+					if (!data.member || !data.member[sender]) return;
+
+					var nickName = checkRank(data, petData, guildData, sender);
+					if (!hasPetSkill(petSkillData, sender, "기도")) {
+						replier.reply("❌ [" + nickName + "]님 당신은 기도📙 드릴 자격이 없습니다.\n기도📙 스킬을 장착해주세요");
+						return;
+					}
+
+					if (data.member[sender].isGidoFlag) {
+						replier.reply("[" + nickName + "]님\n오늘은 이미 기도를 올렸습니다.");
+						return;
+					}
+
+					data.member[sender].isGidoFlag = true;
+					var gidoSuccess = Math.random() < 0.01;
+					if (gidoSuccess) {
+						addItem(data, sender, "주간상자🦋(/주간오픈)", 1);
+						replier.reply("[" + nickName + "]님.. 호월신이 당신에게 흥미를 느낍니다.\n주간상자🦋 1개를 지급받습니다.");
+					} else {
+						replier.reply("[" + nickName + "]님.. 호월신이 당신의 기도를 씹습니다.");
+					}
+					saveJsonFile(data, filePath);
+					return;
+				}
+
 				if (msg === "/퀘스트완료" || msg === "ㅎㅎㅎ" || msg === "/ㅇ") {
 					if (!castleSiegeFlag && data.member && data.member[sender]) {
 						var status = getDailyQuestStatus(data, petData, guildData, sender);
@@ -32214,6 +32242,9 @@ function resetAttendance(petData, data, replier) {
 		}
 		if (data.member[user].dailyQuestCnt !== undefined) {
 			delete data.member[user].dailyQuestCnt;
+		}
+		if (data.member[user].isGidoFlag !== undefined) {
+			delete data.member[user].isGidoFlag;
 		}
 		if (data.member[user].coincount) {
 			//슬롯코인
