@@ -102,6 +102,7 @@ const PET_SKILL_LIST = [
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
 	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
+	{ name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
@@ -28404,6 +28405,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					g.exp += n;
 
+					// 길드의 심장📙: /길드공헌 시 1% 확률로 길드자금🌾 100만 추가
+					var guildHeartTriggered = false;
+					if (hasPetSkill(petSkillData, sender, "길드의 심장")) {
+						guildHeartTriggered = Math.random() < 0.01;
+						if (guildHeartTriggered) {
+							ensureGuildWarehouseObj(g);
+							g.warehouse.fund = (g.warehouse.fund || 0) + 1000000;
+						}
+					}
+
 					// 레벨업 체크
 					var levelInfo = checkGuildLevelUp(data, guildData, g);
 
@@ -28427,6 +28438,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						out += "다음 길드레벨까지 남은 공헌도(" + numberWithCommas(g.exp) + "/" + numberWithCommas(levelInfo.nextNeed) + ")";
 					} else {
 						out += "현재 길드레벨은 MAX 입니다.";
+					}
+					if (guildHeartTriggered) {
+						var heartRank = checkRank(data, petData, guildData, sender);
+						out += "\n\n[" + heartRank + "] 길드의 심장이 뜨겁게 뛰기 시작합니다!";
+						out += "\n[" + heartRank + "] 길드를 위한 진심이 길드자금으로 이어집니다!";
+						out += "\n[" + heartRank + "] 길드자금🌾 100만이 추가되었습니다!";
 					}
 
 					replier.reply(out);
