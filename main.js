@@ -26108,22 +26108,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					let leftTicketAfter = data.member[sender] && data.member[sender].bag && data.member[sender].bag[ticketName] ? data.member[sender].bag[ticketName] : 0;
 					let msgOut =
-						"🎨 펫스윗홈 인테리어샵🖼️ 사용 결과\n확률정보: 채팅창에 '가구등급확률'을 적어보세요\n" +
-						"[" +
+						"🖼️[" +
 						nickName +
-						"]님이 " +
-						count +
-						"개 사용했습니다.\n\n" +
-						"남은 " +
-						ticketName +
-						": " +
-						leftTicketAfter +
+						"] 님이 인테리어샵을 오픈합니다!\n" +
+						"확률정보: 채팅창에 '/가구등급확률'을 적어보세요\n" +
+						"━━━━━━━━━━━━━━━\n" +
+						"🎟️ 사용: " +
+						numberWithCommas(results.length) +
 						"개\n" +
-						"가방: " +
+						"🎫 남은 샵오픈권: " +
+						numberWithCommas(leftTicketAfter) +
+						"개\n" +
+						"🎒 가구 가방: " +
 						userHome.furnitureBag.length +
 						"/" +
 						maxBag +
-						"\n━━━━━━━━━━━━━━━\n" +
+						"\n" +
+						"━━━━━━━━━━━━━━━\n" +
 						lines.join("\n");
 					replier.reply(msgOut);
 				}
