@@ -101,7 +101,7 @@ const PET_SKILL_LIST = [
 
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
-	{ name: "로열하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
+	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
@@ -2213,7 +2213,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					removePetSkillFromBag(petSkillData, sender, equipName, 1);
 					skillStore.equipped.push(equipName);
 					saveJsonFile(petSkillData, petSkillDataPath);
-					replier.reply("✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.");
+					var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
+					if (normalizePetSkillName(equipName) === "로열 하우스") {
+						var homeDataForRoyal = loadJsonFile(homeDataFile);
+						var royalCount = getPlacedFurnitureCountByGrade(homeDataForRoyal, sender, "로열 루미에르");
+						if (royalCount >= 10) {
+							equipMsg += "\n\n로열하우스📙 어떠십니까? 아름답지 않습니까?";
+						} else {
+							equipMsg += "\n(로열 루미에르 배치: " + royalCount + "/10)";
+						}
+					}
+					replier.reply(equipMsg);
 					return;
 				}
 
@@ -25747,6 +25757,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (hasPetSkill(petSkillData, targetName, "인테리어 장인")) {
 						totalExp = Math.floor(totalExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 					}
+					if (hasPetSkill(petSkillData, targetName, "로열 하우스")) {
+						var royalLumiereCountForHome = getPlacedFurnitureCountByGrade(homeData, targetName, "로열 루미에르");
+						if (royalLumiereCountForHome >= 10) {
+							totalExp += 300000;
+						}
+					}
 					////////////////////////////////////////
 					var placedArr = userHome.placedFurniture || [];
 					var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
@@ -26476,7 +26492,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"적용 매력: " +
 						numberWithCommas(placedExp) +
 						"💕";
-					if (hasPetSkill(petSkillData, sender, "로열하우스")) {
+					if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
 						var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
 						if (royalLumiereCount >= 10) {
 							replyMsg += "\n\n로열하우스📙 어떠십니까? 아름답지 않습니까?";
@@ -34880,9 +34896,16 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
+
+	// 펫 스킬 
 	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
-
+	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			skillExp += 150000;
+		}
+	}
 	return castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp;
 }
 
@@ -34895,9 +34918,15 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
+	// 펫스킬
 	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
-
+	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			skillExp += 150000;
+		}
+	}
 	return itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 아이템 정보의 레이드 경험치 + 펫 경험치 + 미니펫 레이드 경험치 + 홈 경험치
 }
 function calculateItemInfoAll(memberName, data, petData) {
@@ -35949,6 +35978,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "야수의본능") return "야수의 본능";
 	else if (skillName === "펫스킬학개론") return "펫스킬 학개론";
 	else if (skillName === "호이행복재단회원권") return "호이행복재단 회원권";
+	else if (skillName === "로열하우스") return "로열 하우스";
 	return skillName;
 }
 
@@ -37615,13 +37645,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 
 	var total = totalCastle + totalRaid + upgradeBonus;
 
-	// 로열하우스📙: [로열 루미에르] 10개 이상 배치 시 종합매력 +300,000
-	if (hasPetSkill(petSkillData, sender, "로열하우스")) {
-		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
-		if (royalLumiereCount >= 10) {
-			total += 300000;
-		}
-	}
+
 
 	// 혹시 NaN 방지
 	total = parseInt(total, 10);
