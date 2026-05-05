@@ -1533,6 +1533,7 @@ function generateElementalRanking(petData, members) {
 		rankingMsg2: rankingMsg2
 	};
 }
+
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	let castleItem = calculateCastleItem(memberName, data) || 0;
 	let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
@@ -1545,9 +1546,16 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
+
+	// 펫 스킬 
 	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
-
+	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			skillExp += 150000;
+		}
+	}
 	return castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp;
 }
 
@@ -1560,9 +1568,15 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
+	// 펫스킬
 	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
-
+	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			skillExp += 150000;
+		}
+	}
 	return itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 아이템 정보의 레이드 경험치 + 펫 경험치 + 미니펫 레이드 경험치 + 홈 경험치
 }
 
@@ -3067,13 +3081,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	var upgradeBonus = (petInfo.upgrade || 0) * 300;
 
 	var total = totalCastle + totalRaid + upgradeBonus;
-	if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
-		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
-		if (royalLumiereCount >= 10) {
-			total += 300000;
-		}
-	}
-
+	
 	// 혹시 NaN 방지
 	total = parseInt(total, 10);
 	if (isNaN(total)) total = 0;
