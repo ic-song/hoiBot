@@ -25774,12 +25774,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 가구 매력 계산 (placedFurniture 기준 합산)
 					let furnitureExp = getFurnitureExp(userHome); // 없으면 0 나와도 괜찮게 작성돼 있음
 					let totalExp = exp + furnitureExp;
-					if (hasPetSkill(petSkillData, sender, "인테리어 장인")) {
+					if (hasPetSkill(petSkillData, targetName, "인테리어 장인")) {
 						totalExp = Math.floor(totalExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 					}
 					////////////////////////////////////////
 					var placedArr = userHome.placedFurniture || [];
-					var maxSlots = getFurnitureMaxSlots(petData, sender, userHome.floor || 0, petSkillData);
+					var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
 					////////
 					let header = "🏡[ " + nickName + " ]님의 펫하우스🏡\n\n";
 					let lineLike = "좋아홈💌x" + likeCnt + "개 | ";
