@@ -97,12 +97,14 @@ const PET_SKILL_LIST = [
 	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 20% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "인테리어 장인", grade: "S", rate: 1.0, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
+	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
+	{ name: "로열하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
-	// { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "탐험 보상 보조" },
-	// { name: "도굴꾼", grade: "A", rate: 1.7, effect: "탐험 보상 보조" },
+	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
+	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
 	{ name: "대머리 대장장이", grade: "A", rate: 1.9, effect: "/펫강화 성공 확률 5% 증가" },
 	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
@@ -26503,6 +26505,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"적용 매력: " +
 						numberWithCommas(placedExp) +
 						"💕";
+					if (hasPetSkill(petSkillData, sender, "로열하우스")) {
+						var royalLumiereCount = getPlacedFurnitureCountByName(homeData, sender, "로열 루미에르");
+						if (royalLumiereCount >= 10) {
+							replyMsg += "\n\n로열하우스📙 어떠십니까? 아름답지 않습니까?";
+						}
+					}
 					replier.reply(replyMsg);
 				}
 				if (msg.startsWith("/가구판매")) {
@@ -33677,9 +33685,9 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 	var success = Math.random() < currentProb;
 
 	addPoint(data, sender, -upgradeCost);
-	removeItem(data, sender, "펫 강화석⭐", needItemCount);
 
 	if (success) {
+		removeItem(data, sender, "펫 강화석⭐", needItemCount);
 		petData[sender].upgrade++;
 		petData[sender].upgradeDateTime = new Date();
 
@@ -33726,8 +33734,17 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 			ok: true,
 			success: true,
 			costSpent: true,
+			stonePreservedByArtisan: false,
 			message: successMessage
 		};
+	}
+
+	var artisanBreathTriggered = false;
+	if (hasPetSkill(petSkillData, sender, "장인의 숨결")) {
+		artisanBreathTriggered = Math.random() < 0.05;
+	}
+	if (!artisanBreathTriggered) {
+		removeItem(data, sender, "펫 강화석⭐", needItemCount);
 	}
 
 	var nextLevelFail = upgradeLevel;
@@ -33742,11 +33759,12 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 		ok: true,
 		success: false,
 		costSpent: true,
+		stonePreservedByArtisan: artisanBreathTriggered,
 		message:
 			"[" +
 			petData[sender].upgrade +
 			"강⭐ 펫 강화실패]\n" +
-			"하,, 펫 강화석⭐이 소멸하였습니다...\n" +
+			(artisanBreathTriggered ? "장인의 숨결📙 [펫 강화석⭐]을 소모하지 않았습니다.\n" : "하,, 펫 강화석⭐이 소멸하였습니다...\n") +
 			"[" +
 			checkRank(data, petData, guildData, sender) +
 			"] 님의 [" +
@@ -33770,6 +33788,7 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
 	var tryCount = parseInt(count, 10) || 1;
 	var successCount = 0;
 	var failCount = 0;
+	var artisanSavedCount = 0;
 	var stoppedEarly = false;
 	var beforePetName = (petData[sender] && petData[sender].petimg ? petData[sender].petimg : "") + (petData[sender] && petData[sender].petname ? petData[sender].petname : "펫");
 	var beforePetUpgrade = petData[sender] && petData[sender].upgrade ? petData[sender].upgrade : 0;
@@ -33786,6 +33805,9 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
 			successCount++;
 		} else {
 			failCount++;
+		}
+		if (result.stonePreservedByArtisan) {
+			artisanSavedCount++;
 		}
 
 		if (tryCount === 1) {
@@ -33807,6 +33829,9 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
 	summary += "시도🔂: [" + results.length + "/" + tryCount + "회]\n";
 	summary += "성공🅾️: [" + successCount + "회]\n";
 	summary += "실패❌: [" + failCount + "회]";
+	if (artisanSavedCount > 0) {
+		summary += "\n장인의 숨결📙 발동: [" + artisanSavedCount + "회] (강화석 미소모)";
+	}
 	summary += "\n현재 포인트: 🅟" + numberWithCommas(data.member[sender].point);
 	if (stoppedEarly) {
 		summary += "\n중간 종료: 포인트 또는 재료가 부족합니다.";
@@ -34105,6 +34130,7 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 	var tryCount = parseInt(count, 10) || 1;
 	var successCount = 0;
 	var failCount = 0;
+	var artisanSavedCount = 0;
 	var stoppedEarly = false;
 	var beforeUpgradeObj =
 		petData[memberName] && petData[memberName][petFieldName]
@@ -34129,7 +34155,7 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 		}
 
 		if (pointCost) addPoint(data, memberName, -pointCost);
-		if (itemCostName && itemCost) removeItem(data, memberName, itemCostName, itemCost);
+		if (upgradeResult.shouldConsumeItem !== false && itemCostName && itemCost) removeItem(data, memberName, itemCostName, itemCost);
 		if (upgradeResult.boostItemUsedName) removeItem(data, memberName, upgradeResult.boostItemUsedName, 1);
 
 		if (upgradeResult.successFlag) {
@@ -34137,6 +34163,9 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 			successCount++;
 		} else {
 			failCount++;
+		}
+		if (upgradeResult.stonePreservedByArtisan) {
+			artisanSavedCount++;
 		}
 
 		if (tryCount === 1) {
@@ -34166,6 +34195,9 @@ function runRepeatUpgrade(type, petFieldName, memberName, data, petData, guildDa
 	summary += "시도🔂: [" + results.length + "/" + tryCount + "회]\n";
 	summary += "성공🅾️: [" + successCount + "회]\n";
 	summary += "실패❌: [" + failCount + "회]";
+	if (artisanSavedCount > 0) {
+		summary += "\n장인의 숨결📙 발동: [" + artisanSavedCount + "회] (강화석 미소모)";
+	}
 	summary += "\n현재 포인트: 🅟" + numberWithCommas(data.member[memberName].point);
 	if (stoppedEarly) {
 		summary += "\n중간 종료: 재화 또는 재료 부족가 부족합니다.";
@@ -34966,7 +34998,9 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 		noticeMessage: null,
 		probability: null,
 		boostItemUsedName: null,
-		nextSuccessChance: null
+		nextSuccessChance: null,
+		shouldConsumeItem: true,
+		stonePreservedByArtisan: false
 	};
 	function toPct(p) {
 		return (p * 100).toFixed(2) + "%";
@@ -35122,6 +35156,10 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 	// 결과 메시지 라벨(현재 확률 라벨용)
 	var label = type === "ring" ? "반지강화확률UP💍" : "정령강화확률UP🥀";
 	if (!isSuccess) {
+		var artisanBreathTriggered = false;
+		if (hasPetSkill(petSkillData, memberName, "장인의 숨결")) {
+			artisanBreathTriggered = Math.random() < 0.05;
+		}
 		var isDrop = Math.random() < dropChance;
 		// 실패 기본 문구 (+ 하락 처리)
 		if (isDrop) {
@@ -35130,6 +35168,9 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 				"[" + checkRank(data, petData, guildData, memberName) + "] 님\n" + typeObj.name + " [" + typeObj.grade + "](+" + typeObj.upgrade + ") 강화에 실패했습니다. (하락 발생)\n";
 		} else {
 			returnObj.message = "[" + checkRank(data, petData, guildData, memberName) + "] 님\n" + typeObj.name + " [" + typeObj.grade + "](+" + typeObj.upgrade + ")\n강화에 실패했습니다.\n";
+		}
+		if (artisanBreathTriggered) {
+			returnObj.message += "장인의 숨결📙 [" + upgradeItemCostName + "]을 소모하지 않았습니다.\n";
 		}
 		returnObj.message += "\n현재 포인트: 🅟" + numberWithCommas(data.member[memberName].point - upgradePointCost);
 		// 실패 후 '다음 시도' 확률 계산: 같은 레벨(하락 반영된 현재 상태) 기준 + 남은 가방 + 특성
@@ -35156,6 +35197,8 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 		returnObj.pointCost = upgradePointCost;
 		returnObj.itemCost = upgradeItemCost;
 		returnObj.itemCostName = upgradeItemCostName;
+		returnObj.shouldConsumeItem = !artisanBreathTriggered;
+		returnObj.stonePreservedByArtisan = artisanBreathTriggered;
 		return returnObj;
 	}
 	typeObj.upgrade += 1;
@@ -37080,6 +37123,20 @@ function getHomeTotalExp(homeData, username) {
 	var furnitureExp = getFurnitureExp(userHome) || 0;
 	return parseInt(exp) + parseInt(furnitureExp);
 }
+
+// 특정 가구가 배치된 개수 조회
+function getPlacedFurnitureCountByName(homeData, username, furnitureName) {
+	if (!homeData || !homeData[username] || !homeData[username].placedFurniture) return 0;
+	var placed = homeData[username].placedFurniture;
+	var target = String(furnitureName || "").trim();
+	if (!target) return 0;
+	var count = 0;
+	for (var i = 0; i < placed.length; i++) {
+		var itemName = String((placed[i] && placed[i].name) || "").trim();
+		if (itemName === target) count++;
+	}
+	return count;
+}
 //샵오픈 관련
 // 등급별 확률 테이블 만들기 (grade, rate)
 function buildGradeRates(furnitureList) {
@@ -37573,6 +37630,14 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 
 	var total = totalCastle + totalRaid + upgradeBonus;
 
+	// 로열하우스📙: [로열 루미에르] 10개 이상 배치 시 종합매력 +300,000
+	if (hasPetSkill(petSkillData, sender, "로열하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByName(homeData, sender, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			total += 300000;
+		}
+	}
+
 	// 혹시 NaN 방지
 	total = parseInt(total, 10);
 	if (isNaN(total)) total = 0;
@@ -37893,6 +37958,26 @@ function getExploreSuccessRewardItem(no) {
 	return map[no] || null;
 }
 
+// 보물 사냥꾼 스킬 보너스: 성공 보상 아이템과 동일한 아이템을 15% 확률로 추가 획득
+function getTreasureHunterBonusReward(petSkillData, user, rewardItem) {
+	if (!rewardItem) return null;
+	if (!hasPetSkill(petSkillData, user, "보물 사냥꾼")) return null;
+	if (Math.random() >= 0.15) return null;
+	return rewardItem;
+}
+
+// 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
+function getExploreTreasureUsageInfo(data, petSkillData, user) {
+	var hasTreasureMap = hasItem(data, user, "보물지도🗺️", 1);
+	var isGraveRobberActive = hasTreasureMap && hasPetSkill(petSkillData, user, "도굴꾼");
+
+	return {
+		applied: hasTreasureMap,
+		shouldConsume: hasTreasureMap && !isGraveRobberActive,
+		protectedBySkill: isGraveRobberActive
+	};
+}
+
 /** 정산 1회 실행 */
 function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
 	if (!data || !data.member) return null;
@@ -37942,11 +38027,14 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 				if (Math.random() < 0.05) finalDungeon = "E";
 			}
 
-			var usedTreasure = false;
-			var treasureDrop = false;
+			var usedTreasure = false;// 보물지도 사용 여부 계산
+			var treasureDrop = false;// 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
+			var treasureInfo = getExploreTreasureUsageInfo(data, petSkillData, user); // 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
 
-			if (hasItem(data, user, "보물지도🗺️", 1)) {
-				removeItem(data, user, "보물지도🗺️", 1);
+			if (treasureInfo.applied) {
+				if (treasureInfo.shouldConsume) {
+					removeItem(data, user, "보물지도🗺️", 1);
+				}
 				usedTreasure = true;
 				if (Math.random() < 0.02) {
 					treasureDrop = true;
@@ -37976,11 +38064,17 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
 			// 보상 지급(아이템은 data에)
 			var rewardText = "";
+			var bonusRewardText = "";
 			if (success) {
 				var rewardItem = getExploreSuccessRewardItem(finalDungeon);
 				if (rewardItem) {
 					addItem(data, user, rewardItem, 1);
 					rewardText = rewardItem;
+					var bonusRewardItem = getTreasureHunterBonusReward(petSkillData, user, rewardItem); // 보물 사냥꾼 스킬 보너스
+					if (bonusRewardItem) {
+						addItem(data, user, bonusRewardItem, 1);
+						bonusRewardText = "보물 사냥꾼📙 +1개 더 획득";
+					}
 				} else {
 					addItem(data, user, "펫먹이🍼", 2);
 					rewardText = "펫먹이🍼 2개";
@@ -37994,6 +38088,9 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			var memberFormat = checkRank(data, petData, guildData, user);
 			var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon) + (success ? "성공(✅)" : "실패(❌)");
 			line += "\n획득: " + rewardText;
+			if (bonusRewardText) {
+				line += "\n" + bonusRewardText;
+			}
 
 			if ((dk === "4" || dk === "5" || dk === "6" || dk === "7") && !usedTicket) {
 				line += "\n입장권 없음: 광산 랜덤 이동";
@@ -38443,20 +38540,21 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 
 	// 입장권 표기
 	if (dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6" || dungeonNo === "7") {
-		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 현재 보유 " + (bag["펫던전 입장권🌋"] || 0) + "개(정산 시 재확인)\n";
+		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 광산으로 랜덤 이동합니다.\n";
 	} else {
-		out += "입장🌋: 사용 없음(탐1~3)\n";
+		out += "입장🌋: 0개 사용(탐1~3)\n";
 	}
 
 	// 보물지도 표기
-	if (hasItem(data, sender, "보물지도🗺️", 1)) out += "보물🗺️: 현재 보유 " + (bag["보물지도🗺️"] || 0) + "개(정산 시 재확인)\n";
+	var treasureInfo = getExploreTreasureUsageInfo(data, petSkillData, sender);
+	if (treasureInfo.protectedBySkill) out += "보물🗺️: 도굴꾼📙 적용중\n";
+	else if (treasureInfo.applied) out += "보물🗺️: 1개 사용(보물지도🗺️)\n";
 	else out += "보물지도🗺️ 이(가) 없습니다.\n";
 
 	// 확률UP 표기
 	if (nextUpItem) {
-		out += "확률UP🗻: 현재 보유 기준 적용(" + nextUpItem + ")\n";
-		out += "보유: " + (bag[nextUpItem] || 0) + "개\n";
+		out += "확률UP🗻: 1개 사용(" + nextUpItem + ")\n";
 	} else {
 		out += "확률UP🗻 이(가) 없습니다.\n";
 	}
@@ -38573,7 +38671,12 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag["보물지도🗺️"]) {
 		treasureCnt = data.member[sender].bag["보물지도🗺️"];
 	}
-	out += "보물지도🗺️: " + (treasureCnt > 0 ? treasureCnt + "개" : "X") + " (정산 시 보유하면 소모/적용)\n";
+	var treasureStatus = treasureCnt > 0 ? treasureCnt + "개" : "X";
+	if (treasureCnt > 0 && hasPetSkill(petSkillData, sender, "도굴꾼")) {
+		out += "보물지도🗺️: " + treasureStatus + " (도굴꾼📙 적용 시 소모 없이 효과 적용)\n";
+	} else {
+		out += "보물지도🗺️: " + treasureStatus + " (정산 시 보유하면 소모/적용)\n";
+	}
 
 	var exploreBoostItems = ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"];
 
@@ -38600,7 +38703,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	var winRate = totalGame > 0 ? ((win / totalGame) * 100).toFixed(1) : "0.0";
 
 	out += "내 전적📈: " + win + "승 " + lose + "패 (승률 " + winRate + "%)\n";
-	out += "※ 확률은 현재 보유 기준이며, 확률UP/보물지도/입장권은 실제 탐험 정산 시 다시 확인 후 소모됩니다.\n";
+	out += "※ 확률은 현재 보유 기준이며, 확률UP/보물지도/입장권은 실제 탐험 정산 시 다시 확인됩니다.\n";
 
 	return out;
 }
