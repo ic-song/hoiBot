@@ -25310,7 +25310,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(msgText);
 					return;
 				}
-				
+
 				if (msg.indexOf("/미니펫가방정리") === 0) {
 					var parts = String(msg).trim().split(/\s+/);
 
@@ -26143,6 +26143,68 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"━━━━━━━━━━━━━━━\n" +
 						lines.join("\n");
 					replier.reply(msgOut);
+				}
+				if (msg.indexOf("/가구제거 ") === 0) {
+					if (!(isMaster(sender) || isAdmin(sender) || sender == "오픈채팅봇")) {
+						return;
+					}
+
+					var args = msg.split(" ");
+					if (args.length < 3) {
+						replier.reply("명령어 형식이 잘못되었습니다.\n\n사용법:\n/가구제거 닉네임 가구가방번호");
+						return;
+					}
+
+					var furnNo = parseInt(args[args.length - 1], 10);
+					var targetName = args.slice(1, args.length - 1).join(" ").trim();
+
+					if (!targetName || isNaN(furnNo) || furnNo < 1) {
+						replier.reply("가구가방 번호가 올바르지 않습니다.");
+						return;
+					}
+
+					if (!data.member[targetName]) {
+						replier.reply("해당 유저를 찾을 수 없습니다.");
+						return;
+					}
+
+					var homeData = loadJsonFile(homeDataFile);
+					homeData = initSweetHomeUser(homeData, targetName);
+
+					var userHome = homeData[targetName];
+					var bagArr = userHome.furnitureBag || [];
+
+					if (!bagArr.length) {
+						replier.reply("해당 유저의 가구가방이 비어있거나 존재하지 않습니다.");
+						return;
+					}
+
+					userHome.furnitureBag = sortFurnitureList(bagArr);
+					bagArr = userHome.furnitureBag;
+
+					var idx = furnNo - 1;
+					if (idx < 0 || idx >= bagArr.length) {
+						replier.reply("해당 번호의 가구가 존재하지 않습니다.");
+						return;
+					}
+
+					var removedFurniture = bagArr.splice(idx, 1)[0];
+					userHome.furnitureBag = sortFurnitureList(bagArr);
+
+					saveJsonFile(homeData, homeDataFile);
+
+					var removedName =
+						(removedFurniture.display || removedFurniture.displayName) ||
+						(removedFurniture.name + "(+" + numberWithCommas(removedFurniture.exp || 0) + "💕)[" + (removedFurniture.grade || "등급없음") + "]");
+
+					replier.reply(
+						"✅ 가구 삭제 완료\n\n" +
+						"대상 유저: " + targetName + "\n" +
+						"삭제 번호: " + furnNo + "번\n" +
+						"삭제 가구: " + removedName + "\n\n" +
+						"해당 가구가 유저의 가구가방에서 제거되었습니다."
+					);
+					return;
 				}
 				if (msg.startsWith("/가구추가 ") && (isAdmin(sender) || isMaster(sender))) {
 					var data = loadJsonFile(filePath);
