@@ -19850,7 +19850,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									}
 								}
 
-								var questRewardResult = claimQuestReward(data, petData, guildData, sender);
+								var questRewardResult = claimQuestReward(data, petData, guildData, petSkillData, sender);
 								if (questRewardResult.message) {
 									resultMsg += "\n━━━━━━━━━━━━━━━\n";
 									resultMsg += "\n\n" + questRewardResult.message;
@@ -19905,7 +19905,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg === "/퀘스트완료" || msg === "ㅎㅎㅎ" || msg === "/ㅇ") {
 					if (!castleSiegeFlag && data.member && data.member[sender]) {
 						var status = getDailyQuestStatus(data, petData, guildData, sender);
-						var rewardResult = claimQuestReward(data, petData, guildData, sender);
+						var rewardResult = claimQuestReward(data, petData, guildData, petSkillData, sender);
 						if (rewardResult.claimed) {
 							saveJsonFile(data, filePath);
 							replier.reply(rewardResult.message);
@@ -28452,9 +28452,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					if (guildHeartTriggered) {
 						var heartRank = checkRank(data, petData, guildData, sender);
-						out += "\n\n[" + heartRank + "] 길드의 심장이 뜨겁게 뛰기 시작합니다!";
-						out += "\n[" + heartRank + "] 길드를 위한 진심이 길드자금으로 이어집니다!";
-						out += "\n[" + heartRank + "] 길드자금🌾 100만이 추가되었습니다!";
+						var heartMessages = [
+							"길드의 심장이 뜨겁게 뛰기 시작합니다!",
+							"길드를 위한 진심이 길드자금으로 이어집니다!",
+							"길드자금🌾 100만이 추가되었습니다!"
+						];
+						var randomHeartMsg = heartMessages[Math.floor(Math.random() * heartMessages.length)];
+						out += "\n\n[" + heartRank + "] " + randomHeartMsg;
 					}
 
 					replier.reply(out);
@@ -34560,7 +34564,7 @@ function getWeeklyQuestRemainText(weeklyUsed, weeklyMax) {
 	return "주간 보상까지 " + remain + "번 일퀘 남음";
 }
 
-function claimQuestReward(data, petData, guildData, sender) {
+function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 	var status = getDailyQuestStatus(data, petData, guildData, sender);
 	var member = data.member[sender];
 	var messages = [];
@@ -36111,6 +36115,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "펫스킬학개론") return "펫스킬 학개론";
 	else if (skillName === "호이행복재단회원권") return "호이행복재단 회원권";
 	else if (skillName === "로열하우스") return "로열 하우스";
+	else if (skillName === "길드의심장") return "길드의 심장";
 	return skillName;
 }
 
