@@ -18954,7 +18954,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 공격 대상 영지
 					var territoryNo = parseInt(attackParts[1], 10);
-					
+
 					// 턴 보상 처리 (공격 결과 메시지에 포함)
 					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
 
@@ -29170,6 +29170,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(out);
 					return;
 				}
+				if (msg.indexOf("/길드보상지급") === 0) {
+					var allowedSenders = ["오픈채팅봇", "호이 남", "감자 여"];
+
+					if (allowedSenders.indexOf(sender) === -1) {
+						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
+						return;
+					}
+
+					if (!guildData || !guildData.guilds) {
+						replier.reply("❌ 등록된 길드가 없습니다.");
+						return;
+					}
+
+					var guildRewardHomeData = loadJsonFile(homeDataFile);
+					var payoutResult = runGuildRankReward(data, petData, guildData, guildRewardHomeData, petSkillData);
+
+					if (payoutResult.error === "NO_GUILD") {
+						replier.reply("❌ 등록된 길드가 없습니다.");
+						return;
+					}
+
+					saveJsonFile(data, filePath);
+					saveJsonFile(guildData, guildPath);
+
+					var payoutMessage = buildGuildRankRewardPayoutMessage(payoutResult);
+					noticeMsg(payoutMessage);
+
+					return;
+				}
 				if (msg === "/길드계급표") {
 					var out = "";
 					out += "👑 길드 계급표 👑\n\n";
@@ -31949,12 +31978,12 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 	var defenderName = ter.ownerUser || (defenderGuild ? defenderGuild.master : null);
 	var territory = getGuildTerritoryList()[territoryNo - 1];
 	var used = war.guildAttackCounts[attackerGuildInfo.guildId] || 0;
-//	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
+	//	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
 	var out = "";
 
 	if (defenderGuild && defenderGuild.name === attackerGuild.name) {
 		out = "🎖️길드 영지전 결과🎖️[공격 불가⚠️]\n";
-//		out += baseInfo;
+		//		out += baseInfo;
 		out += "[" + checkRank(data, petData, guildData, sender) + "] [" + formatGuildDisplay(attackerGuild) + "]\n";
 		out += "[" + territoryNo + "] " + territory.name + "을(를) 이미 점령 중입니다.";
 		return out;
@@ -31980,7 +32009,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			decreaseGuildTerritoryItem(data, defenderName, defenseItem.name);
 
 			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-	//		out += baseInfo;
+			//		out += baseInfo;
 			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + defenseItem.label + "] 발동!\n";
 			out += "공격/방어/보상 상세보기" + allsee;
 			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
@@ -32002,7 +32031,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			data.HoiCastle.defenseCount = 0;
 		}
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-	//	out += baseInfo;
+		//	out += baseInfo;
 		out += "🔥 공격 성공! [" + offenseItem.label + "] 발동\n";
 		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
@@ -32046,7 +32075,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 	} else {
 		//방어자 승리
 		out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-	//	out += baseInfo;
+		//	out += baseInfo;
 		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
@@ -39633,6 +39662,126 @@ function buildGuildRankingRows(guildData, data, petData, homeData, petSkillData)
 	}
 
 	return rows;
+}
+
+// 길드 랭킹 보상 테이블 반환 (1등 100개 → 20등 8개)
+function getGuildRankRewardTable() {
+	return [
+		{ rank: 1, count: 100 },
+		{ rank: 2, count: 90 },
+		{ rank: 3, count: 80 },
+		{ rank: 4, count: 70 },
+		{ rank: 5, count: 60 },
+		{ rank: 6, count: 55 },
+		{ rank: 7, count: 50 },
+		{ rank: 8, count: 45 },
+		{ rank: 9, count: 40 },
+		{ rank: 10, count: 35 },
+		{ rank: 11, count: 30 },
+		{ rank: 12, count: 25 },
+		{ rank: 13, count: 22 },
+		{ rank: 14, count: 20 },
+		{ rank: 15, count: 18 },
+		{ rank: 16, count: 16 },
+		{ rank: 17, count: 14 },
+		{ rank: 18, count: 12 },
+		{ rank: 19, count: 10 },
+		{ rank: 20, count: 8 }
+	];
+}
+
+// 길드 랭킹 보상 지급 처리 함수
+function runGuildRankReward(data, petData, guildData, homeData, petSkillData) {
+	var rewardItemName = "펫스윗홈인테리어샵🖼️(/샵오픈)";
+	var rewardTable = getGuildRankRewardTable();
+	var rows = buildGuildRankingRows(guildData, data, petData, homeData, petSkillData).slice(0, rewardTable.length);
+	var result = {
+		rewardItemName: rewardItemName, // 보상 아이템명
+		rows: rows, // 랭킹 보상 대상 길드 데이터 (길드명, 길드마크, 서버명, 길드마스터, 길드레벨, 총 매력, 순위 등)
+		results: [], // 지급 결과 배열 (길드별로 지급된 유저 목록과 제외된 유저 목록 포함)
+		totalPaidUsers: 0, // 총 지급된 유저 수
+		totalSkippedUsers: 0 // 총 제외된 유저 수
+	};
+
+	if (!rows.length) {
+		result.error = "NO_GUILD";
+		return result;
+	}
+
+	for (var i = 0; i < rows.length; i++) {
+		var row = rows[i];
+		var rewardInfo = rewardTable[i];
+		var guild = guildData && guildData.guilds ? guildData.guilds[row.gid] : null;
+		var members = guild && guild.members ? Object.keys(guild.members) : [];
+		var paidUsers = [];
+		var skippedUsers = [];
+
+		for (var j = 0; j < members.length; j++) {
+			var userName = members[j];
+			var memberData = data.member ? data.member[userName] : null;
+
+			if (!memberData) {
+				skippedUsers.push(userName + "(데이터없음)");
+				continue;
+			}
+
+			if (!memberData.guild || memberData.guild.id !== row.gid) {
+				skippedUsers.push(userName + "(길드불일치)");
+				continue;
+			}
+
+			addItem(data, userName, rewardItemName, rewardInfo.count);
+			paidUsers.push(userName);
+			result.totalPaidUsers++;
+		}
+
+		result.totalSkippedUsers += skippedUsers.length;
+		result.results.push({
+			rank: rewardInfo.rank,
+			gid: row.gid,
+			name: row.name,
+			mark: row.mark || "",
+			count: rewardInfo.count,
+			paidUsers: paidUsers,
+			skippedUsers: skippedUsers
+		});
+	}
+
+	return result;
+}
+
+// 길드 랭킹 보상 지급 결과 메시지 생성 함수
+function buildGuildRankRewardPayoutMessage(payoutResult) {
+	var lines = [];
+	var rewardItemName = payoutResult.rewardItemName;
+	var rows = payoutResult.results || [];
+
+	lines.push("🎖️길드순위 보상지급🎖️");
+	lines.push("[1등~20등의 길드원에게만 지급됩니다.]");
+	lines.push("");
+
+	for (var i = 0; i < rows.length; i++) {
+		var row = rows[i];
+		lines.push(row.rank + "등 " + row.name + (row.mark || ""));
+		lines.push(rewardItemName + " " + row.count + "개");
+		lines.push("지급: " + row.paidUsers.length + "명 / 제외: " + row.skippedUsers.length + "명");
+
+		if (row.skippedUsers.length > 0) {
+			lines.push("제외대상: " + row.skippedUsers.join(", "));
+		}
+
+		if (i === 4 && rows.length > 5) {
+			lines.push("6등~20등 보상 확인하기.. // + alllsee");
+			lines.push(allsee);
+		}
+
+		lines.push("");
+	}
+
+	lines.push("총 지급 인원: " + payoutResult.totalPaidUsers + "명");
+	lines.push("총 제외 인원: " + payoutResult.totalSkippedUsers + "명");
+
+	return lines.join("\n").trim();
 }
 
 // 길드명 → 길드ID 매핑 재생성 (guildData.guilds 기반으로 guildData.nameToId 다시 구축)
