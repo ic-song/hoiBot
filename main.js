@@ -101,7 +101,7 @@ const PET_SKILL_LIST = [
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
-	// { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "탐험 보상 보조" },
+	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
 	// { name: "도굴꾼", grade: "A", rate: 1.7, effect: "탐험 보상 보조" },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
 	{ name: "대머리 대장장이", grade: "A", rate: 1.9, effect: "/펫강화 성공 확률 5% 증가" },
@@ -37893,6 +37893,14 @@ function getExploreSuccessRewardItem(no) {
 	return map[no] || null;
 }
 
+// 보물 사냥꾼 스킬 보너스: 성공 보상 아이템과 동일한 아이템을 15% 확률로 추가 획득
+function getTreasureHunterBonusReward(petSkillData, user, rewardItem) {
+	if (!rewardItem) return null;
+	if (!hasPetSkill(petSkillData, user, "보물 사냥꾼")) return null;
+	if (Math.random() >= 0.15) return null;
+	return rewardItem;
+}
+
 /** 정산 1회 실행 */
 function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
 	if (!data || !data.member) return null;
@@ -37976,11 +37984,17 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
 			// 보상 지급(아이템은 data에)
 			var rewardText = "";
+			var bonusRewardText = "";
 			if (success) {
 				var rewardItem = getExploreSuccessRewardItem(finalDungeon);
 				if (rewardItem) {
 					addItem(data, user, rewardItem, 1);
 					rewardText = rewardItem;
+					var bonusRewardItem = getTreasureHunterBonusReward(petSkillData, user, rewardItem); // 보물 사냥꾼 스킬 보너스
+					if (bonusRewardItem) {
+						addItem(data, user, bonusRewardItem, 1);
+						bonusRewardText = "보물 사냥꾼📙 +1개 더 획득";
+					}
 				} else {
 					addItem(data, user, "펫먹이🍼", 2);
 					rewardText = "펫먹이🍼 2개";
@@ -37994,6 +38008,9 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			var memberFormat = checkRank(data, petData, guildData, user);
 			var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon) + (success ? "성공(✅)" : "실패(❌)");
 			line += "\n획득: " + rewardText;
+			if (bonusRewardText) {
+				line += "\n" + bonusRewardText;
+			}
 
 			if ((dk === "4" || dk === "5" || dk === "6" || dk === "7") && !usedTicket) {
 				line += "\n입장권 없음: 광산 랜덤 이동";
