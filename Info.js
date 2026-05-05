@@ -1965,6 +1965,7 @@ function normalizePetSkillName(skillName) {
 		.replace(/✨/g, "")
 		.trim();
 	if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
+	if (skillName === "로열하우스") return "로열 하우스";
 	return skillName;
 }
 function initPetSkillUser(petSkillData, user) {
@@ -2908,6 +2909,19 @@ function getHomeTotalExp(homeData, username) {
 	return exp + furnitureExp;
 }
 
+function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
+	if (!homeData || !homeData[username] || !homeData[username].placedFurniture) return 0;
+	var placed = homeData[username].placedFurniture;
+	var target = String(furnitureGrade || "").trim();
+	if (!target) return 0;
+	var count = 0;
+	for (var i = 0; i < placed.length; i++) {
+		var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
+		if (itemGrade === target) count++;
+	}
+	return count;
+}
+
 function getHomeLikeRank(sender, homeData) {
 	var users = Object.keys(homeData);
 	if (users.length === 0) return null;
@@ -3053,6 +3067,12 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	var upgradeBonus = (petInfo.upgrade || 0) * 300;
 
 	var total = totalCastle + totalRaid + upgradeBonus;
+	if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			total += 300000;
+		}
+	}
 
 	// 혹시 NaN 방지
 	total = parseInt(total, 10);
