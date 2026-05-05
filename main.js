@@ -102,7 +102,7 @@ const PET_SKILL_LIST = [
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
-	// { name: "도굴꾼", grade: "A", rate: 1.7, effect: "탐험 보상 보조" },
+	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
 	{ name: "대머리 대장장이", grade: "A", rate: 1.9, effect: "/펫강화 성공 확률 5% 증가" },
 	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
@@ -37901,6 +37901,18 @@ function getTreasureHunterBonusReward(petSkillData, user, rewardItem) {
 	return rewardItem;
 }
 
+// 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
+function getExploreTreasureUsageInfo(data, petSkillData, user) {
+	var hasTreasureMap = hasItem(data, user, "보물지도🗺️", 1);
+	var isGraveRobberActive = hasTreasureMap && hasPetSkill(petSkillData, user, "도굴꾼");
+
+	return {
+		applied: hasTreasureMap,
+		shouldConsume: hasTreasureMap && !isGraveRobberActive,
+		protectedBySkill: isGraveRobberActive
+	};
+}
+
 /** 정산 1회 실행 */
 function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
 	if (!data || !data.member) return null;
@@ -37950,11 +37962,14 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 				if (Math.random() < 0.05) finalDungeon = "E";
 			}
 
-			var usedTreasure = false;
-			var treasureDrop = false;
+			var usedTreasure = false;// 보물지도 사용 여부 계산
+			var treasureDrop = false;// 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
+			var treasureInfo = getExploreTreasureUsageInfo(data, petSkillData, user); // 보물지도 사용 여부 및 도굴꾼 스킬 보호 여부 계산
 
-			if (hasItem(data, user, "보물지도🗺️", 1)) {
-				removeItem(data, user, "보물지도🗺️", 1);
+			if (treasureInfo.applied) {
+				if (treasureInfo.shouldConsume) {
+					removeItem(data, user, "보물지도🗺️", 1);
+				}
 				usedTreasure = true;
 				if (Math.random() < 0.02) {
 					treasureDrop = true;
@@ -38460,20 +38475,21 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 
 	// 입장권 표기
 	if (dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6" || dungeonNo === "7") {
-		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 현재 보유 " + (bag["펫던전 입장권🌋"] || 0) + "개(정산 시 재확인)\n";
+		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 광산으로 랜덤 이동합니다.\n";
 	} else {
-		out += "입장🌋: 사용 없음(탐1~3)\n";
+		out += "입장🌋: 0개 사용(탐1~3)\n";
 	}
 
 	// 보물지도 표기
-	if (hasItem(data, sender, "보물지도🗺️", 1)) out += "보물🗺️: 현재 보유 " + (bag["보물지도🗺️"] || 0) + "개(정산 시 재확인)\n";
+	var treasureInfo = getExploreTreasureUsageInfo(data, petSkillData, sender);
+	if (treasureInfo.protectedBySkill) out += "보물🗺️: 도굴꾼📙 적용중\n";
+	else if (treasureInfo.applied) out += "보물🗺️: 1개 사용(보물지도🗺️)\n";
 	else out += "보물지도🗺️ 이(가) 없습니다.\n";
 
 	// 확률UP 표기
 	if (nextUpItem) {
-		out += "확률UP🗻: 현재 보유 기준 적용(" + nextUpItem + ")\n";
-		out += "보유: " + (bag[nextUpItem] || 0) + "개\n";
+		out += "확률UP🗻: 1개 사용(" + nextUpItem + ")\n";
 	} else {
 		out += "확률UP🗻 이(가) 없습니다.\n";
 	}
@@ -38590,7 +38606,12 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag["보물지도🗺️"]) {
 		treasureCnt = data.member[sender].bag["보물지도🗺️"];
 	}
-	out += "보물지도🗺️: " + (treasureCnt > 0 ? treasureCnt + "개" : "X") + " (정산 시 보유하면 소모/적용)\n";
+	var treasureStatus = treasureCnt > 0 ? treasureCnt + "개" : "X";
+	if (treasureCnt > 0 && hasPetSkill(petSkillData, sender, "도굴꾼")) {
+		out += "보물지도🗺️: " + treasureStatus + " (도굴꾼📙 적용 시 소모 없이 효과 적용)\n";
+	} else {
+		out += "보물지도🗺️: " + treasureStatus + " (정산 시 보유하면 소모/적용)\n";
+	}
 
 	var exploreBoostItems = ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"];
 
@@ -38617,7 +38638,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	var winRate = totalGame > 0 ? ((win / totalGame) * 100).toFixed(1) : "0.0";
 
 	out += "내 전적📈: " + win + "승 " + lose + "패 (승률 " + winRate + "%)\n";
-	out += "※ 확률은 현재 보유 기준이며, 확률UP/보물지도/입장권은 실제 탐험 정산 시 다시 확인 후 소모됩니다.\n";
+	out += "※ 확률은 현재 보유 기준이며, 확률UP/보물지도/입장권은 실제 탐험 정산 시 다시 확인됩니다.\n";
 
 	return out;
 }
