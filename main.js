@@ -1075,13 +1075,13 @@ let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 
 const GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER = 5; // 소드마스터 1명당 영지전 공격 턴
 const GUILD_TERRITORY_TURN_TIMEOUT_MS = 1000 * 13; // 길드 영토전 턴 타임아웃 (13초)
 const GUILD_TERRITORY_TIMEOUT_MISS_LIMIT = 3; // 영지전 시간초과 미공격 탈락 기준
-const GUILD_TERRITORY_TURN_FUND_REWARD = 200000000; // 영지전 공격 턴 기본보상
-const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.3; // 영지전 공격 턴 확률보상
+const GUILD_TERRITORY_TURN_FUND_REWARD = 100000000; // 영지전 공격 턴 기본보상
+const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.15; // 영지전 공격 턴 확률보상
 const GUILD_CONTRIBUTION_MEDAL_ITEM = "길드공헌훈장🌟(/길드공헌 숫자)";
 const GUILD_TERRITORY_RIFT_MAX_TURN = 100; // 영지전 균열 최대 턴
 const GUILD_TERRITORY_RIFT_BASE_RATE = 70; // 영지전 균열 기본 성공 확률
 const GUILD_TERRITORY_RIFT_ITEM_STEP = 10; // 영지전 균열 아이템당 확률 증가량
-const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 1; // 영지전 불안정 아이템당 불안정도 증가/감소량
+const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 0.5; // 영지전 불안정 아이템당 불안정도 증가/감소량
 const GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT = 10; // 영지전 불안정도 조정 최대치
 const GUILD_TERRITORY_INSTABILITY_UP_ITEM = "🌪️ 전쟁불안정 증폭권(/불안정)";
 const GUILD_TERRITORY_INSTABILITY_DOWN_ITEM = "🚑 전쟁불안정 감소권(/안정)";
@@ -3384,7 +3384,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					"칠가 남",
 					"리도 여",
 					"티모 여",
-					"비쟈 남",
 					"으어 남",
 					"네간 남",
 					"스킷 남",
@@ -4799,11 +4798,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (authorizedUsers.includes(sender)) {
 						// 포인트를 받을 사용자 목록
 						const allowedUsers = [
+							"디르 남",
 							"퍼플 여",
 							"여름 여",
+							"오성 남",
 							"유유 여",
 							"뿌뿌 여",
 							"랄랄 여",
+							"콩콩 여",
 							"코몽 여",
 							"결정 남",
 							"오이 여",
@@ -4815,7 +4817,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							"알보 남",
 							"파이 여",
 							"빙빙 남",
-							"원이 남",
 							"뮤뮤 여",
 							"프리 여",
 							"빵미 여",
@@ -4859,8 +4860,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							"감자 여",
 							"라니 남",
 							"리도 여",
-							"티모 여",
-							"비쟈 남",
 							"으어 남",
 							"네간 남",
 							"스킷 남",
@@ -4954,13 +4953,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/선물전달" && sender == "호이 남") {
 					for (let user in data.member) {
-						if (data.member[user].bag["무료패키지10(/호이월드활동에감사드립니다.)"]) {
-							data.member[user].bag["무료패키지10(/호이월드활동에감사드립니다.)"]++;
+						if (data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"]) {
+							data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"]++;
 						} else {
-							data.member[user].bag["무료패키지10(/호이월드활동에감사드립니다.)"] = 1;
+							data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"] = 1;
 						}
 					}
-					var message = "무료패키지10(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
+					var message = "무료패키지11(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
 					Api.replyRoom(room1, message);
 					Api.replyRoom(room2, message);
 					Api.replyRoom(room3, message);
@@ -5001,9 +5000,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg.startsWith("/부방상여")) {
 					const authorizedUser = "호이 남"; // 명령어를 사용할 수 있는 유일한 관리자
 					const adminUsers = [
+						"디르 남",
 						"퍼플 여",
 						"여름 여",
 						"유유 여",
+						"오성 남",
+						"콩콩 여",
 						"랄랄 여",
 						"뿌뿌 여",
 						"코몽 여",
@@ -5025,7 +5027,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"아오 남",
 						"와이 남",
 						"멍멍 남",
-						"원이 남",
 						"늘보 여",
 						"수달 여",
 						"하든 남",
@@ -5063,8 +5064,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"맹구 여",
 						"칠가 남",
 						"리도 여",
-						"티모 여",
-						"비쟈 남",
 						"으어 남",
 						"네간 남",
 						"스킷 남",
@@ -8848,6 +8847,31 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+				if (msg.trim().startsWith("/도파민,") || msg.trim().match(/^\/도파민\d*,/)) {
+					if (isMaster(sender)) {
+						var parts = msg.match(/^\/도파민(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
+						if (parts) {
+							var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
+							var userId = parts[2].trim();
+							if (amount <= 0) {
+								replier.reply("지급 개수는 1개 이상이어야 합니다.");
+								return;
+							}
+							if (data.member[userId] !== undefined) {
+								if (data.member[userId].bag["도파민패키지🤩[1](/도파민오픈1)"] === undefined) {
+									data.member[userId].bag["도파민패키지🤩[1](/도파민오픈1)"] = amount;
+								} else {
+									data.member[userId].bag["도파민패키지🤩[1](/도파민오픈1)"] += amount;
+								}
+								replier.reply(userId + "님에게 도파민패키지🤩[1](/도파민오픈1) " + amount + "개를 지급했습니다.");
+							} else {
+								replier.reply("유저 아이디를 확인해 주세요.");
+							}
+						} else {
+							replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
+						}
+					}
+				}
 				if (msg.trim().startsWith("/창세패키지,") || msg.trim().match(/^\/창세패키지\d*,/)) {
 					if (isMaster(sender)) {
 						var parts = msg.match(/^\/창세패키지(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
@@ -10350,6 +10374,56 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									data.member[userId].bag["길드공헌훈장🌟(/길드공헌 숫자)"] += amount;
 								}
 								replier.reply(userId + "님에게 길드공헌훈장🌟(/길드공헌 숫자) " + amount + "개를 지급했습니다.");
+							} else {
+								replier.reply("유저 아이디를 확인해 주세요.");
+							}
+						} else {
+							replier.reply("올바른 형식으로 입력해 주세요. 예: /땅10, 유저아이디");
+						}
+					}
+				}
+				if (msg.trim().startsWith("/길영,") || msg.trim().match(/^\/길영\d*,/)) {
+					if (isMaster(sender)) {
+						var parts = msg.match(/^\/길영(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
+						if (parts) {
+							var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
+							var userId = parts[2].trim();
+							if (amount <= 0) {
+								replier.reply("지급 개수는 1개 이상이어야 합니다.");
+								return;
+							}
+							if (data.member[userId] !== undefined) {
+								if (data.member[userId].bag["길드영지전쟁패키지🏰[1](/길드영지오픈1)"] === undefined) {
+									data.member[userId].bag["길드영지전쟁패키지🏰[1](/길드영지오픈1)"] = amount;
+								} else {
+									data.member[userId].bag["길드영지전쟁패키지🏰[1](/길드영지오픈1)"] += amount;
+								}
+								replier.reply(userId + "님에게 길드영지전쟁패키지🏰[1](/길드영지오픈1) " + amount + "개를 지급했습니다.");
+							} else {
+								replier.reply("유저 아이디를 확인해 주세요.");
+							}
+						} else {
+							replier.reply("올바른 형식으로 입력해 주세요. 예: /땅10, 유저아이디");
+						}
+					}
+				}
+				if (msg.trim().startsWith("/소멸,") || msg.trim().match(/^\/소멸\d*,/)) {
+					if (isMaster(sender)) {
+						var parts = msg.match(/^\/소멸(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
+						if (parts) {
+							var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
+							var userId = parts[2].trim();
+							if (amount <= 0) {
+								replier.reply("지급 개수는 1개 이상이어야 합니다.");
+								return;
+							}
+							if (data.member[userId] !== undefined) {
+								if (data.member[userId].bag["펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"] === undefined) {
+									data.member[userId].bag["펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"] = amount;
+								} else {
+									data.member[userId].bag["펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"] += amount;
+								}
+								replier.reply(userId + "님에게 펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호) " + amount + "개를 지급했습니다.");
 							} else {
 								replier.reply("유저 아이디를 확인해 주세요.");
 							}
@@ -17286,19 +17360,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (msg === "/호이월드활동에감사드립니다.") {
 					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["무료패키지10(/호이월드활동에감사드립니다.)"] !== undefined && data.member[sender].bag["무료패키지10(/호이월드활동에감사드립니다.)"] > 0) {
-							if (data.member[sender].bag["무료패키지10(/호이월드활동에감사드립니다.)"] > 1) {
-								data.member[sender].bag["무료패키지10(/호이월드활동에감사드립니다.)"]--;
+						if (data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] !== undefined && data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] > 0) {
+							if (data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] > 1) {
+								data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"]--;
 							} else {
-								delete data.member[sender].bag["무료패키지10(/호이월드활동에감사드립니다.)"];
+								delete data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"];
 							}
 							var hangawiItems = {
 								"보물지도🗺️": 30,
-								"경찰과 도둑🚨(/삐뽀삐뽀)": 20,
-								"가구귀속해제권🛋️(/가구해제 숫자)": 2,
 								"펫스킬북📙(/펫스킬오픈)": 1,
-								"길드창고패키지🧳(/길드창고패키지오픈)": 3,
-								"땅문서📜": 3,
+								"호이베이스볼⚾️(/투수던집니다)": 30,
 								"탐험확률UP🗻(30%)": 3,
 								"탐험확률UP🗻(40%)": 3,
 								"탐험확률UP🗻(50%)": 10,
@@ -17308,7 +17379,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								addItemToBag(data.member[sender].bag, item, hangawiItems[item]);
 							}
 							let openMsg =
-								"무료패키지10 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
+								"무료패키지11 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
 							for (let item in hangawiItems) {
 								openMsg += item + " " + hangawiItems[item] + "개\n";
 							}
@@ -18895,8 +18966,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var riftMessage = "";
 					// 공격 불가가 아닐 때만 균열 판정
 					if (!isAttackBlocked) {
-						riftMessage = processGuildTerritoryRiftEvent(data, guildData);
-
+						riftMessage = processGuildTerritoryRiftEvent(data, guildData, function (message) {
+							castleMsg(message, replier, isGroupChat);
+						});
 						if (riftMessage) {
 							resultMessage += "\n\n" + riftMessage;
 						}
@@ -30335,12 +30407,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"롤렉스🕰️ 시간은 돈이라더니, 오늘은 둘 다 제 편입니다.\n당신은 아닌가봅니다 우하하하",
 						"롤렉스🕰️ 손목에서 은은하게 성공의 향기가 납니다.\n보실래요?",
 						"롤렉스🕰️ 시계만 봤을 뿐인데 존재감이 흘러넘칩니다.",
-					    "롤렉스🕰️ 네? 뭐라구요? 아아.. 롤렉스가 없으시니 소통이 불가하군요.",
-                        "롤렉스🕰️ 천박? 아? 당신은 천씨입니까?",
-                        "롤렉스🕰️ 경박? 아? 당신은 경씨입니까?",
-                        "롤렉스🕰️ 어허! 듣기 싫습니다 당신을 롤렉스의 이름으로 내보내겠습니다.",
-                        "롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
-                        "롤렉스🕰️ 카시오라구요? 면봉 이름입니까?",
+						"롤렉스🕰️ 네? 뭐라구요? 아아.. 롤렉스가 없으시니 소통이 불가하군요.",
+						"롤렉스🕰️ 천박? 아? 당신은 천씨입니까?",
+						"롤렉스🕰️ 경박? 아? 당신은 경씨입니까?",
+						"롤렉스🕰️ 어허! 듣기 싫습니다 당신을 롤렉스의 이름으로 내보내겠습니다.",
+						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
+						"롤렉스🕰️ 카시오라구요? 면봉 이름입니까?",
 						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
 						"롤렉스🕰️ 성공 그것은 저의 별명입니다."
 					];
@@ -30352,13 +30424,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				// package =====================
 				if (
 					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
+					msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
 					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
 					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
 					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
 					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
 				) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/(가정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+						var parts = msg.match(/^\/(가정|가정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
 
 						if (parts) {
 							var command = parts[1];
@@ -30374,6 +30447,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 							if (command === "가정") {
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)";
+							} else if (command === "가정정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
@@ -30439,6 +30514,150 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+				if (msg === "/도파민오픈1") {
+					if (castleSiegeFlag) return;
+
+					var member = data.member[sender];
+					if (!member) return;
+
+					var packItem = "도파민패키지🤩[1](/도파민오픈1)";
+
+					if (!member.bag) {
+						member.bag = {};
+					}
+
+					if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
+						return;
+					}
+
+					// 패키지 1개 차감
+					if (member.bag[packItem] > 1) {
+						member.bag[packItem]--;
+					} else {
+						delete member.bag[packItem];
+					}
+
+					var rewardItems = {
+						"미니펫뽑기🐹(/미니펫오픈)": 5000,
+						"펫스윗홈인테리어샵🖼️(/샵오픈)": 10000,
+						"호이베이스볼⚾️(/투수던집니다)": 150
+					};
+
+					for (var item in rewardItems) {
+						addItemToBag(member.bag, item, rewardItems[item]);
+					}
+
+					var openMsg = "도파민이 폭발합니다🤩\n";
+					openMsg += "https://ibb.co/c5ddT9L\n";
+					openMsg += "짜릿한 구성품이 쏟아집니다!\n\n";
+					openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+					for (var rewardName in rewardItems) {
+						openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
+					}
+
+					replier.reply(openMsg);
+				}
+				if (msg === "/오픈하면어린이가됩니다") {
+					if (castleSiegeFlag) return;
+
+					var member = data.member[sender];
+					if (!member) return;
+
+					var packItem = "어린이날패키지🚸(/오픈하면어린이가됩니다)";
+
+					if (!member.bag) {
+						member.bag = {};
+					}
+
+					if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
+						return;
+					}
+
+					// 패키지 1개 차감
+					if (member.bag[packItem] > 1) {
+						member.bag[packItem]--;
+					} else {
+						delete member.bag[packItem];
+					}
+
+					var rewardItems = {
+						"타이틀선물권💝(/타이틀선물 닉네임 내용)": 2,
+						"탐험확률UP🗻(40%)": 15,
+						"1달러스토어🤑(/1일1후원)": 5,
+						"경찰과 도둑🚨(/삐뽀삐뽀)": 10,
+						"호이베이스볼⚾️(/투수던집니다)": 20,
+						"펫먹이🍼": 1000,
+						"보물지도🗺️": 30,
+						"펫 강화석⭐": 500,
+						"펫스윗홈인테리어샵🖼️(/샵오픈)": 3000
+					};
+
+					for (var item in rewardItems) {
+						addItemToBag(member.bag, item, rewardItems[item]);
+					}
+
+					var openMsg = "어린이날 선물이 도착했습니다🚸\n";
+					openMsg += "https://ibb.co/Ngb0GYNF\n";
+					openMsg += "오늘만큼은 모두가 어린이입니다!\n\n";
+					openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+					for (var rewardName in rewardItems) {
+						openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
+					}
+
+					replier.reply(openMsg);
+				}
+				if (msg === "/길드영지오픈1") {
+					if (castleSiegeFlag) return;
+
+					var member = data.member[sender];
+					if (!member) return;
+
+					var packItem = "길드영지전쟁패키지🏰[1](/길드영지오픈1)";
+
+					if (!member.bag) {
+						member.bag = {};
+					}
+
+					if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
+						return;
+					}
+
+					if (member.bag[packItem] > 1) {
+						member.bag[packItem]--;
+					} else {
+						delete member.bag[packItem];
+					}
+
+					var rewardItems = {
+						"길드공헌훈장🌟(/길드공헌 숫자)": 200,
+						"영지기습공격권🔥(90%)": 20,
+						"영지절대방어권🛡(80%)": 20,
+						"🌪️ 전쟁불안정 증폭권(/불안정)": 10,
+						"🚑 전쟁불안정 감소권(/안정)": 10,
+						"🌌 균열 유도권(/균열)": 10,
+						"🌋 대균열 유도권(/대균열)": 10
+					};
+
+					for (var item in rewardItems) {
+						addItemToBag(member.bag, item, rewardItems[item]);
+					}
+
+					var openMsg = "길드 영지전쟁 보급품이 도착했습니다🏰\n";
+					openMsg = "https://ibb.co/yLXcrRL\n";
+					openMsg += "전장을 뒤흔들 준비를 시작합니다.\n\n";
+					openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+					for (var rewardName in rewardItems) {
+						openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
+					}
+
+					replier.reply(openMsg);
+				}
 				if (msg === "/나한테잘하자1") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)"] > 0) {
@@ -30461,6 +30680,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								"호이베이스볼⚾️(/투수던집니다)": 50,
 								"양념치킨🐔": 200,
 								"타이틀선물권💝(/타이틀선물 닉네임 내용)": 1
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/나한테잘하자2") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"돌멩이🪨": 15000,
+								"미니펫뽑기🐹(/미니펫오픈)": 300,
+								"1달러스토어🤑(/1일1후원)": 10,
+								"주간상자🦋(/주간오픈)": 1,
+								"반지강화확률UP💍(30%)": 20,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
+								"확성기📢(/알림 내용 30자)": 5,
+								"펫먹이🍼": 500,
+								"호이베이스볼⚾️(/투수던집니다)": 50,
+								"양념치킨🐔": 200,
+								"🥕당근이세요?": 15
 
 							};
 
@@ -31245,16 +31511,18 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
 		addItem(data, user, GUILD_CONTRIBUTION_MEDAL_ITEM, 1);
 	}
 
-	return "길드보상: 🅟" + formatGuildTerritoryRewardAmount(GUILD_TERRITORY_TURN_FUND_REWARD) +
-		" 확률보상:" + (medalSuccess ? "[✅]공헌+1⭐️ 획득" : "[❌]보상실패");
+	return "길드 보상🤑: 🅟" + formatGuildTerritoryRewardAmount(GUILD_TERRITORY_TURN_FUND_REWARD) +
+		" 확률 보상🎊: " + (medalSuccess ? "\n[⭐️]공헌+1 획득" : "[❌]보상실패");
 }
 
+// 영지전 균열 이벤트 보상 금액 포맷 함수 (억, 만 단위로 콤마와 함께 포맷)
 function formatGuildTerritoryRewardAmount(amount) {
 	if (amount % 100000000 === 0) return numberWithCommas(amount / 100000000) + "억";
 	if (amount % 10000 === 0) return numberWithCommas(amount / 10000) + "만";
 	return numberWithCommas(amount);
 }
 
+// 영지전 균열 이벤트 보상 메시지를 결과 메시지에 추가하여 반환
 function addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage) {
 	if (!rewardMessage) return resultMessage;
 
@@ -31266,6 +31534,7 @@ function addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage) {
 		resultMessage.slice(headerEnd + 1);
 }
 
+// 영지전 균열 이벤트 가이드 메시지 빌드
 function buildGuildTerritoryRiftCommandGuide() {
 	return (
 		"🌋 대균열 유도권(/대균열) -> 대균열\n" +
@@ -31281,7 +31550,7 @@ function buildGuildTerritoryRiftCommandGuide() {
 }
 
 // 영지전 균열 이벤트 처리: 불안정도 증가, 균열/대균열 발생 여부 판단 및 적용, 안정화 판단
-function processGuildTerritoryRiftEvent(data, guildData) {
+function processGuildTerritoryRiftEvent(data, guildData, notifyMessage) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	if (!war.active) {
 		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 영지전이 활성화되지 않음." + allsee);
@@ -31300,9 +31569,11 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 	if (Math.random() * 100 < instabilityRate) {
 		var rates = getGuildTerritoryRiftRates(war);
 		if (Math.random() * 100 < rates.rift) {
-			return applyGuildTerritoryRift(data, guildData);
+			applyGuildTerritoryRift(data, guildData, notifyMessage);
+			return "";
 		}
-		return applyGuildTerritoryGreatRift(data, guildData);
+		applyGuildTerritoryGreatRift(data, guildData, notifyMessage);
+		return "";
 	}
 
 	if (war.turnCount >= GUILD_TERRITORY_RIFT_MAX_TURN) {
@@ -31319,7 +31590,7 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 }
 
 // 균열 이벤트 적용: 모든 영지 점령 초기화, 호월킹덤 초기화, 균열 이벤트 상태 설정
-function applyGuildTerritoryRift(data, guildData) {
+function applyGuildTerritoryRift(data, guildData, notifyMessage) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var list = getGuildTerritoryList();
 
@@ -31340,7 +31611,7 @@ function applyGuildTerritoryRift(data, guildData) {
 	war.riftEventStatus = "rift";
 	war.riftEventAt = formatDateTime(new Date());
 
-	return (
+	if (notifyMessage) notifyMessage(
 		"🌌 균열 발생!\n\n" +
 		"전장의 균형이 무너지며\n점령 중이던 길드영지에 균열이 발생했습니다.\n\n" +
 		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n\n" +
@@ -31349,7 +31620,7 @@ function applyGuildTerritoryRift(data, guildData) {
 }
 
 // 대균열 이벤트 적용: 랜덤한 준비된 길드 하나를 영지전에서 제거, 대균열 이벤트 상태 설정
-function applyGuildTerritoryGreatRift(data, guildData) {
+function applyGuildTerritoryGreatRift(data, guildData, notifyMessage) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	var readyGuildIds = Object.keys(war.readyGuilds || {}).filter(function (gid) {
 		return !war.eliminatedGuilds[gid] && !!getGuildByIdSafe(guildData, gid);
@@ -31380,7 +31651,7 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 	war.riftEventAt = formatDateTime(new Date());
 	war.riftEventGuildId = targetGuildId;
 
-	return (
+	if (notifyMessage) notifyMessage(
 		"🌋 대균열 발생!\n\n" +
 		"전장의 균열이 걷잡을 수 없이 확산됩니다.\n\n" +
 		"거대한 균열이 전장을 집어삼키며,\n[" +
@@ -31609,7 +31880,9 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 
 			// 미공격 처리 결과 메시지 빌드
 			var timeoutMessage = applyGuildTerritoryTimeoutMiss(latestGuildData, turnGuildId);
-			var riftMessage = processGuildTerritoryRiftEvent(latestData, latestGuildData);
+			var riftMessage = processGuildTerritoryRiftEvent(latestData, latestGuildData, function (message) {
+				Api.replyRoom(room8, timerCtx.header(message));
+			});
 			if (riftMessage) {
 				timeoutMessage += "\n\n" + riftMessage;
 				withGuildTerritoryDataMode(latestGuildData, function () {
