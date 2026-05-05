@@ -101,6 +101,7 @@ const PET_SKILL_LIST = [
 
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
+	{ name: "로열하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
@@ -26504,6 +26505,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"적용 매력: " +
 						numberWithCommas(placedExp) +
 						"💕";
+					if (hasPetSkill(petSkillData, sender, "로열하우스")) {
+						var royalLumiereCount = getPlacedFurnitureCountByName(homeData, sender, "로열 루미에르");
+						if (royalLumiereCount >= 10) {
+							replyMsg += "\n\n로열하우스📙 어떠십니까? 아름답지 않습니까?";
+						}
+					}
 					replier.reply(replyMsg);
 				}
 				if (msg.startsWith("/가구판매")) {
@@ -37116,6 +37123,20 @@ function getHomeTotalExp(homeData, username) {
 	var furnitureExp = getFurnitureExp(userHome) || 0;
 	return parseInt(exp) + parseInt(furnitureExp);
 }
+
+// 특정 가구가 배치된 개수 조회
+function getPlacedFurnitureCountByName(homeData, username, furnitureName) {
+	if (!homeData || !homeData[username] || !homeData[username].placedFurniture) return 0;
+	var placed = homeData[username].placedFurniture;
+	var target = String(furnitureName || "").trim();
+	if (!target) return 0;
+	var count = 0;
+	for (var i = 0; i < placed.length; i++) {
+		var itemName = String((placed[i] && placed[i].name) || "").trim();
+		if (itemName === target) count++;
+	}
+	return count;
+}
 //샵오픈 관련
 // 등급별 확률 테이블 만들기 (grade, rate)
 function buildGradeRates(furnitureList) {
@@ -37608,6 +37629,14 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	var upgradeBonus = (petInfo.upgrade || 0) * 300;
 
 	var total = totalCastle + totalRaid + upgradeBonus;
+
+	// 로열하우스📙: [로열 루미에르] 10개 이상 배치 시 종합매력 +300,000
+	if (hasPetSkill(petSkillData, sender, "로열하우스")) {
+		var royalLumiereCount = getPlacedFurnitureCountByName(homeData, sender, "로열 루미에르");
+		if (royalLumiereCount >= 10) {
+			total += 300000;
+		}
+	}
 
 	// 혹시 NaN 방지
 	total = parseInt(total, 10);
