@@ -26506,7 +26506,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						numberWithCommas(placedExp) +
 						"💕";
 					if (hasPetSkill(petSkillData, sender, "로열하우스")) {
-						var royalLumiereCount = getPlacedFurnitureCountByName(homeData, sender, "로열 루미에르");
+						var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
 						if (royalLumiereCount >= 10) {
 							replyMsg += "\n\n로열하우스📙 어떠십니까? 아름답지 않습니까?";
 						}
@@ -37137,6 +37137,20 @@ function getPlacedFurnitureCountByName(homeData, username, furnitureName) {
 	}
 	return count;
 }
+
+// 특정 등급의 가구가 배치된 개수 조회
+function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
+	if (!homeData || !homeData[username] || !homeData[username].placedFurniture) return 0;
+	var placed = homeData[username].placedFurniture;
+	var target = String(furnitureGrade || "").trim();
+	if (!target) return 0;
+	var count = 0;
+	for (var i = 0; i < placed.length; i++) {
+		var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
+		if (itemGrade === target) count++;
+	}
+	return count;
+}
 //샵오픈 관련
 // 등급별 확률 테이블 만들기 (grade, rate)
 function buildGradeRates(furnitureList) {
@@ -37632,7 +37646,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 
 	// 로열하우스📙: [로열 루미에르] 10개 이상 배치 시 종합매력 +300,000
 	if (hasPetSkill(petSkillData, sender, "로열하우스")) {
-		var royalLumiereCount = getPlacedFurnitureCountByName(homeData, sender, "로열 루미에르");
+		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
 			total += 300000;
 		}
