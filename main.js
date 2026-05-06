@@ -1281,6 +1281,7 @@ function isMutableGuildTerritoryCommand(msg) {
 		msg === "/길드영지준비" ||
 		msg === "/길드영지시작" ||
 		msg === "/길드영지종료" ||
+		msg === "/길드영지초기화" ||
 		msg === "/길드영지순서" ||
 		msg === "/길드영지확인" ||
 		msg.indexOf("/영지공격") === 0 ||
@@ -18868,13 +18869,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(guildData, guildPath);
 					return;
 				}
+				if (msg === "/길드영지초기화") {
+					if (!isMaster(sender)) {
+						return;
+					}
+
+					var resetWar = resetGuildTerritoryOccupation(data, guildData); // 영지 점령 상태 초기화 (모든 영지 중립으로, 호월킹덤 영주 정보 초기화)
+					saveJsonFile(guildData, guildPath);
+					saveJsonFile(data, filePath);
+					replier.reply(
+						"✅ 길드영지 점령 상태가 초기화되었습니다.\n" +
+						"- 모든 영지가 중립 상태로 변경되었습니다.\n" +
+						"- 호월킹덤 영주 정보가 초기화되었습니다.\n" +
+						"- 길드영지전 진행 상태: " +
+						(resetWar.active ? "진행 중 유지" : "대기 중")
+					);
+					return;
+				}
 
 				if (msg === "/길드영지") {
 					ensureGuildTerritoryWar(data, guildData);
-					//if (!statusWar.active) {
-					//  replier.reply("현재 진행 중인 길드 영지전이 없습니다.");
-					//  return;
-					// }
 					replier.reply(buildGuildTerritoryStatusMessage(data, guildData, true));
 					return;
 				}
@@ -31817,23 +31831,7 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 
 // 균열 이벤트 적용: 모든 영지 점령 초기화, 호월킹덤 초기화, 균열 이벤트 상태 설정
 function applyGuildTerritoryRift(data, guildData) {
-	var war = ensureGuildTerritoryWar(data, guildData);
-	var list = getGuildTerritoryList();
-
-	// 모든 영지 점령 초기화
-	for (var i = 0; i < list.length; i++) {
-		var ter = war.territories[String(list[i].no)];
-		if (!ter) continue;
-		ter.ownerGuildId = null;
-		ter.ownerUser = null;
-	}
-
-	// 호월킹덤 초기화
-	if (data.HoiCastle) {
-		data.HoiCastle.lord = "";
-		data.HoiCastle.earnings = 0;
-		data.HoiCastle.defenseCount = 0;
-	}
+	var war = resetGuildTerritoryOccupation(data, guildData);
 	var limitText = markGuildTerritoryRiftEvent(war, "rift");
 
 	return (
@@ -31842,6 +31840,27 @@ function applyGuildTerritoryRift(data, guildData) {
 		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n\n" +
 		limitText
 	);
+}
+
+// 영지전 균열 이벤트 발생 시 점령 상태 초기화 및 호월킹덤 초기화
+function resetGuildTerritoryOccupation(data, guildData) {
+	var war = ensureGuildTerritoryWar(data, guildData);
+	var list = getGuildTerritoryList();
+
+	for (var i = 0; i < list.length; i++) {
+		var ter = war.territories[String(list[i].no)];
+		if (!ter) continue;
+		ter.ownerGuildId = null;
+		ter.ownerUser = null;
+	}
+
+	if (data.HoiCastle) {
+		data.HoiCastle.lord = "";
+		data.HoiCastle.earnings = 0;
+		data.HoiCastle.defenseCount = 0;
+	}
+
+	return war;
 }
 
 // 대균열 이벤트 적용: 랜덤한 준비된 길드 하나를 영지전에서 제거, 대균열 이벤트 상태 설정
