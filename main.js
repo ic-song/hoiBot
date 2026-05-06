@@ -2206,7 +2206,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 					var skillStore = initPetSkillUser(petSkillData, sender);
 					if (skillStore.equipped.length >= skillSlot) {
-						replier.reply("❌ 장착 슬롯이 부족합니다.\n펫 친밀도 Lv.100당 1칸, 최대 " + PET_SKILL_MAX_EQUIP_SLOT + "칸입니다.");
+						var maxSlotGuide = PET_SKILL_MAX_EQUIP_SLOT + (hasPetSkill(petSkillData, sender, "펫스킬 학개론") ? 3 : 0);
+						replier.reply("❌ 장착 슬롯이 부족합니다.\n펫 친밀도 Lv.100당 1칸, 최대 " + maxSlotGuide + "칸입니다.");
 						return;
 					}
 					var compat = isPetSkillCompatible(petSkillData, sender, equipName);
@@ -25376,8 +25377,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					for (var i = 0; i < bag.length; i++) {
 						var pet = bag[i];
 						var charm = parseInt(pet && pet.battleExp, 10) || 0;
+						var grade = String((pet && pet.grade) || "").trim();
+						var isProtectedGrade = grade === "창조" || grade === "창세" || isEliteMiniPet(pet);
 
-						if (charm <= threshold) {
+						if (!isProtectedGrade && charm <= threshold) {
 							soldCount++;
 							var price = parseInt(pet && pet.price, 10) || basicPrice;
 							earnedPoint += price;
@@ -31881,7 +31884,8 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		var adjustRemain = config.deltaAdjust > 0
 			? Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT - (war.instabilityAdjust || 0))
 			: Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT + (war.instabilityAdjust || 0));
-		var useCount = Math.min(count, bagItemCount, adjustRemain);
+		var maxUseByAdjust = Math.floor(adjustRemain / Math.abs(config.deltaAdjust));
+		var useCount = Math.min(count, bagItemCount, maxUseByAdjust);
 		if (useCount <= 0) {
 			return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 		}
@@ -31891,10 +31895,11 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 		war.instabilityAdjust += config.deltaAdjust * useCount;
 
 		var currentRate = getGuildTerritoryInstabilityRate(war);
+		var appliedDelta = Math.abs(config.deltaAdjust * useCount);
 		var out = "[" + formatGuildDisplay(guildInfo.guild) + "]\n\n";
 		out += config.item + " 사용!\n\n";
 		out += config.deltaAdjust > 0 ? "전장의 기운이 흔들리기 시작합니다.\n" : "전장의 기운이 차분히 가라앉습니다.\n";
-		out += "🌪️ 전쟁불안정도 " + (config.deltaAdjust > 0 ? "+" : "-") + useCount + "%\n";
+		out += "🌪️ 전쟁불안정도 " + (config.deltaAdjust > 0 ? "+" : "-") + formatPercent1(appliedDelta) + "%\n";
 		out += "[ 🌪️ 누적 전쟁불안정도: " + formatPercent1(currentRate) + "%]\n";
 		out += config.deltaAdjust > 0 ? "🌌균열/🌋대균열 발생할 가능성이 조금 증가했습니다." : "🌌균열/🌋대균열 발생할 가능성이 조금 감소했습니다.";
 		return { message: out, changed: true };
@@ -36240,10 +36245,12 @@ function hasPetSkill(petSkillData, user, skillName) {
 function getPetSkillSlotCount(data, petSkillData, user) {
 	var info = getUserIntimacyInfo(data, user);
 	var level = info && info.level ? info.level : 0;
+	var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론");
+	var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0);
 	var slots = Math.floor(level / 100);
-	slots += hasPetSkill(petSkillData, user, "펫스킬 학개론") ? 3 : 0;
+	slots += hasIntro ? 3 : 0;
 
-	if (slots > PET_SKILL_MAX_EQUIP_SLOT) slots = PET_SKILL_MAX_EQUIP_SLOT;
+	if (slots > maxSlot) slots = maxSlot;
 	if (slots < 0) slots = 0;
 	return slots;
 }
@@ -39807,7 +39814,9 @@ function getGuildMasterRankTitle(rank) {
 	if (rank === 17) return "일꾼◌";
 	if (rank === 18) return "견습생△";
 	if (rank === 19) return "떠돌이◇";
-	if (rank === 20) return "외곽민◻︎";
+	if (rank >= 20) return "외곽민◻︎";
+
+	return "외곽민◻︎";
 
 	return null; // 21등 이후 없음
 }
