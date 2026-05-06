@@ -90,10 +90,10 @@ const PET_SKILL_COMPAT_GROUPS = [
 ];
 const PET_SKILL_LIST = [
 
-	{ name: "청룡언월도", grade: "SS", rate: 0.1, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+	{ name: "청룡언월도", grade: "S", rate: 0.1, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)" },
 	{ name: "하느님 위에 갓물주", grade: "S", rate: 0.9, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
 	{ name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
-	{ name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+	{ name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)" },
 	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 20% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "인테리어 장인", grade: "S", rate: 1.0, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
@@ -101,17 +101,17 @@ const PET_SKILL_LIST = [
 
 	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
-	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
 	// { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
-	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
-	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
+	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
+	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
 	{ name: "대머리 대장장이", grade: "A", rate: 1.9, effect: "/펫강화 성공 확률 5% 증가" },
 	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
 
-	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "일일퀘스트 완료 시 100%로 포인트 1억을 획득합니다." },
-	{ name: "주간루틴", grade: "B", rate: 2.5, effect: "주간퀘스트 완료 시 100%로 포인트 10억을 획득합니다." },
+	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "/퀘스트완료 시 3억 포인트를 받습니다." },
+	{ name: "주간루틴", grade: "B", rate: 2.5, effect: "주간퀘스트 보상 수령 시 추가 포인트를 획득합니다." },
 	{ name: "시련을 걷는 자", grade: "B", rate: 2.5, effect: "10% 확률로 시련의 탑 공략 성공" },
 	{ name: "결혼못한 대장장이", grade: "B", rate: 2.6, effect: "/반지강화 성공 확률 5% 증가" },
 	{ name: "구원", grade: "B", rate: 2.7, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
@@ -123,13 +123,13 @@ const PET_SKILL_LIST = [
 
 	{ name: "건물주", grade: "C", rate: 5.0, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
 	{ name: "악덕한 영주", grade: "C", rate: 5.0, effect: "호랜캐슬 세금 30% 강제 고정" },
-	{ name: "오픈런", grade: "C", rate: 5.0, effect: "명령어: ㅊㅊ 1등시 펫먹이🍼1,000개를 획득합니다.\n출석목록 기준 1등" },
+	{ name: "오픈런", grade: "C", rate: 5.0, effect: "/리셋 이후 출석 1등 시 펫먹이🍼 1,000개를 획득합니다." },
 	{ name: "야수의 본능", grade: "C", rate: 5.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
 	{ name: "탑 숭배자", grade: "C", rate: 5.0, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
-	{ name: "기도", grade: "C", rate: 5.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🦋 1개를 획득합니다." },
+	{ name: "기도", grade: "C", rate: 5.5, effect: "하루 1회 /기도 사용 시 1% 확률로 주간상자🦋(/주간오픈) 1개를 획득합니다." },
 	{ name: "플러팅", grade: "C", rate: 5.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 5.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
-	{ name: "초월성장", grade: "C", rate: 5.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
+	{ name: "초월성장", grade: "C", rate: 5.5, effect: "레벨업 시 펫먹이🍼 5개 획득합니다." },
 
 	{ name: "정신승리", grade: "C", rate: 6.5, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
 	{ name: "무소유", grade: "D", rate: 24.9, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
@@ -2206,8 +2206,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 					var skillStore = initPetSkillUser(petSkillData, sender);
 					if (skillStore.equipped.length >= skillSlot) {
-						var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasPetSkill(petSkillData, sender, "펫스킬 학개론") ? 3 : 0);
-						replier.reply("❌ 장착 슬롯이 부족합니다.\n펫 친밀도 Lv.100당 1칸, 최대 " + maxSlot + "칸입니다.");
+						var maxSlotGuide = PET_SKILL_MAX_EQUIP_SLOT + (hasPetSkill(petSkillData, sender, "펫스킬 학개론") ? 3 : 0);
+						replier.reply("❌ 장착 슬롯이 부족합니다.\n펫 친밀도 Lv.100당 1칸, 최대 " + maxSlotGuide + "칸입니다.");
 						return;
 					}
 					var compat = isPetSkillCompatible(petSkillData, sender, equipName);
@@ -2695,8 +2695,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(lvlupmsg);
 					replier.reply(congratmsg);
 					if (levelUpFlag && hasPetSkill(petSkillData, sender, "초월성장")) {
-						addItem(data, sender, "펫먹이🍼", 10);
-						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님의\n초월성장📙 응애 응애!\n펫먹이🍼 10개를 추가 획득합니다.");
+						addItem(data, sender, "펫먹이🍼", 5);
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n초월성장📙 초월의 성장.. 펫먹이🍼 10개를 추가 획득합니다.");
 					}
 				}
 
@@ -4824,7 +4824,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (authorizedUsers.includes(sender)) {
 						// 포인트를 받을 사용자 목록
 						const allowedUsers = [
-							"계란 남",
 							"디르 남",
 							"퍼플 여",
 							"여름 여",
@@ -5027,7 +5026,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg.startsWith("/부방상여")) {
 					const authorizedUser = "호이 남"; // 명령어를 사용할 수 있는 유일한 관리자
 					const adminUsers = [
-						"계란 남",
 						"디르 남",
 						"퍼플 여",
 						"여름 여",
@@ -18839,7 +18837,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					saveJsonFile(guildData, guildPath);
 
-					noticeMsg(buildGuildTerritoryStartMessage(data, guildData), replier, isGroupChat);
+					castleMsg(buildGuildTerritoryStartMessage(data, guildData), replier, isGroupChat);
 					castleMsg(buildGuildTerritoryOrderMessage(data, petData, guildData), replier, isGroupChat);
 
 					var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
@@ -18860,7 +18858,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 현재 진행 중인 길드 영지전이 없습니다.");
 						return;
 					}
-					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
+					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료", replier, isGroupChat);
 					if (!getCurrentContext().isDev) {
 						guildData.castleSiegeFlag = false;
 					}
@@ -19003,7 +19001,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
-						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
+						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진", replier, isGroupChat);
 						withGuildTerritoryDataMode(guildData, function () {
 							saveJsonFile(guildData, guildPath);
 							saveJsonFile(data, filePath);
@@ -19862,9 +19860,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								replier.reply(resultMsg.trim());
 								if (questRewardResult.claimed && hasPetSkill(petSkillData, sender, "일일루틴")) {
 									// 일일루틴B등급: 추가 포인트 지급 (3억 포인트)
-									var bonusPoint = 100000000; // 3억 포인트
+									var bonusPoint = 300000000; // 3억 포인트
 									addPoint(data, sender, bonusPoint);
-									replier.reply("🎉 일일루틴📙 1억 포인트를 지급받습니다.");
+									replier.reply("🎉 일일루틴📙 3억 포인트를 지급받습니다.");
 								}
 							}
 						}
@@ -19894,7 +19892,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					data.member[sender].isGidoFlag = true;
-					var gidoSuccess = Math.random() < 0.03;
+					var gidoSuccess = Math.random() < 0.01;
 					if (gidoSuccess) {
 						addItem(data, sender, "주간상자🦋(/주간오픈)", 1);
 						replier.reply("[" + nickName + "]님.. 호월신이 당신에게 흥미를 느낍니다.\n주간상자🦋 1개를 지급받습니다.");
@@ -25378,17 +25376,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					for (var i = 0; i < bag.length; i++) {
 						var pet = bag[i];
-						var exp = parseInt(pet && pet.battleExp, 10) || 0; // 매력도가 없는 경우 0으로 처리
-						var grade = String((pet && pet.grade) || "").trim(); // 등급이 없는 경우 빈 문자열로 처리
-						var isProtectedGrade = grade === "창조" || grade === "창세" || isElite(pet); // 보호 등급 여부 판단
+						var charm = parseInt(pet && pet.battleExp, 10) || 0;
+						var grade = String((pet && pet.grade) || "").trim();
+						var isProtectedGrade = grade === "창조" || grade === "창세" || isEliteMiniPet(pet);
 
-						// 정리 대상: 보호 등급이 아니면서 매력도가 기준 이하인 경우
-						if (!isProtectedGrade && exp <= threshold) {
+						if (!isProtectedGrade && charm <= threshold) {
 							soldCount++;
 							var price = parseInt(pet && pet.price, 10) || basicPrice;
 							earnedPoint += price;
 
-							removedNames.push(pet.name + pet.emoji + " (매력 " + exp + ")");
+							removedNames.push(pet.name + pet.emoji + " (매력 " + charm + ")");
 						} else {
 							newBag.push(pet);
 						}
@@ -27432,7 +27429,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					out += "길드명(마크)[서버][길드장][길드인원][🎖️길드레벨][매력조건]\n\n";
 					out += "✅가입방법:\n/길드상점 에서 길드가입권🍭 구매 후\n/길드가입 [번호] 를 입력해주세요.\n";
 					out += "━━━━━━━━━━━━\n";
-					out += "가입 가능 길드 상세보기🪧" + allsee + "\n";
 
 					if (rows.length === 0) {
 						out += "표시할 길드가 없습니다.";
@@ -27490,7 +27486,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								rr.level +
 								"][" +
 								(rr.joinConditionExp > 0 ? numberWithCommas(rr.joinConditionExp) + "💕이상(⬆️)" : "제한없음") +
-								"]\n\n";
+								"]\n";
 						}
 					}
 
@@ -29276,12 +29272,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					out += "[길드명(마크)][서버][길드장][길드레벨][종합매력합산]\n";
 					out += '※ 길드계급표가 궁금하신가요?\n"/길드계급표"를 입력해보세요\n\n';
 
-
 					var i, row;
 
 					for (i = 0; i < rows.length; i++) {
-						if (i === 3) {
-							out += "⭐ 다른길드 보러가기.. 👉 (4등부터~)\n" + allsee;
+						if (i === 5) {
+							out += "⭐ 다른길드 보러가기.. 👉 (6등부터~)\n" + allsee;
 						}
 
 						row = rows[i];
@@ -29334,7 +29329,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						out += title + "  " + i + "등\n";
 					}
 
-					out += "\n21등 이후는 외곽민◻︎ 계급으로 표시됩니다.";
+					out += "\n21등 이후부터는 길드계급표시가 없습니다.";
 
 					replier.reply(out);
 					return;
@@ -30577,7 +30572,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (
 					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
 					msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
-					msg.trim().startsWith("/가정정정,") || msg.trim().match(/^\/가정정정\d*,/) ||
 					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
 					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
 					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
@@ -30602,8 +30596,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)";
 							} else if (command === "가정정") {
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)";
-							} else if (command === "가정정") {
-								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
@@ -30657,79 +30649,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 
 							let openMsg = "개고생한 당신 오늘은 쉬어도 되느니라\nhttps://ibb.co/6RyD4NGr\n\n";
-							openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-							for (let item in guildStarterItems) {
-								openMsg += item + " " + guildStarterItems[item] + "개\n";
-							}
-
-							replier.reply(openMsg);
-						} else {
-							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
-						}
-					}
-				}
-				if (msg === "/오픈하면부처가됩니다") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] !== undefined && data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 0) {
-							if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 1) {
-								data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"]--;
-							} else {
-								delete data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"];
-							}
-
-							let guildStarterItems = {
-								"펫던전 입장권🌋": 100,
-								"펫스윗홈인테리어샵🖼️(/샵오픈)": 5000,
-								"탐험확률UP🗻(50%)": 100,
-								"월간상자🌸(/월간오픈)": 1,
-								"주간상자🦋(/주간오픈)": 1
-							};
-
-							for (let item in guildStarterItems) {
-								addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
-							}
-
-							let openMsg = "하이!\nhttps://ibb.co/Swv59rpb\n\n";
-							openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-							for (let item in guildStarterItems) {
-								openMsg += item + " " + guildStarterItems[item] + "개\n";
-							}
-
-							replier.reply(openMsg);
-						} else {
-							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
-						}
-					}
-				}
-				if (msg === "/오픈하면어른이됩니다") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["어버이날패키지🧧(/오픈하면어른이됩니다)"] !== undefined && data.member[sender].bag["어버이날패키지🧧(/오픈하면어른이됩니다)"] > 0) {
-							if (data.member[sender].bag["어버이날패키지🧧(/오픈하면어른이됩니다)"] > 1) {
-								data.member[sender].bag["어버이날패키지🧧(/오픈하면어른이됩니다)"]--;
-							} else {
-								delete data.member[sender].bag["어버이날패키지🧧(/오픈하면어른이됩니다)"];
-							}
-
-							let guildStarterItems = {
-								"길드공헌훈장🌟(/길드공헌 숫자)": 300,
-								"펫스윗홈인테리어샵🖼️(/샵오픈)": 10000,
-								"미니펫뽑기🐹(/미니펫오픈)": 10000,
-								"호이베이스볼⚾️(/투수던집니다)": 300,
-								"주간상자🦋(/주간오픈)": 5,
-								"정령 강화석🥀": 3000,
-								"반지 강화석": 3000,
-								"강화확률뽑기⚒️(/강화뽑기)": 100,
-								"펫먹이🍼": 10000,
-								"펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)": 1
-							};
-
-							for (let item in guildStarterItems) {
-								addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
-							}
-
-							let openMsg = "하이!\nhttps://ibb.co/Swv59rpb\n\n";
 							openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
 
 							for (let item in guildStarterItems) {
@@ -30955,53 +30874,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								"호이베이스볼⚾️(/투수던집니다)": 50,
 								"양념치킨🐔": 200,
 								"🥕당근이세요?": 15
-
-							};
-
-							for (let item in starterItems) {
-								addItemToBag(data.member[sender].bag, item, starterItems[item]);
-							}
-
-							let memberPoint = 1000000000;
-							data.member[sender].point += memberPoint;
-
-							let openMsg = "https://ibb.co/PstSX3hV\n\n";
-							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
-							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
-							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
-
-							for (let item in starterItems) {
-								openMsg += item + " " + starterItems[item] + "개\n";
-							}
-
-							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-						} else {
-							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
-						}
-					}
-				}
-				if (msg === "/나한테잘하자3") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 0) {
-							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 1) {
-								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"]--;
-							} else {
-								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"];
-							}
-
-							let starterItems = {
-								"땅문서📜": 5,
-								"돌멩이🪨": 15000,
-								"미니펫뽑기🐹(/미니펫오픈)": 300,
-								"1달러스토어🤑(/1일1후원)": 10,
-								"주간상자🦋(/주간오픈)": 1,
-								"정령강화확률UP🥀(30%)": 20,
-								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
-								"확성기📢(/알림 내용 30자)": 5,
-								"펫먹이🍼": 500,
-								"호이베이스볼⚾️(/투수던집니다)": 50,
-								"양념치킨🐔": 200,
-								"미니펫 강화석💫": 100
 
 							};
 
@@ -31787,7 +31659,7 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
 	}
 
 	return "길드 보상🤑: 🅟" + formatGuildTerritoryRewardAmount(GUILD_TERRITORY_TURN_FUND_REWARD) +
-		"\n확률 보상🎊: " + (medalSuccess ? "[⭐️]공헌+1 획득" : "[🥺]보상실패");
+		" 확률 보상🎊: " + (medalSuccess ? "\n[⭐️]공헌+1 획득" : "[❌]보상실패");
 }
 
 // 영지전 균열 이벤트 보상 금액 포맷 함수 (억, 만 단위로 콤마와 함께 포맷)
@@ -31828,12 +31700,12 @@ function buildGuildTerritoryRiftCommandGuide() {
 function processGuildTerritoryRiftEvent(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	if (!war.active) {
-		// Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 영지전이 활성화되지 않음." + allsee);
+		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 영지전이 활성화되지 않음." + allsee);
 		return ""
 	};
 
 	if (war.riftEventStatus) {
-		// Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 이미 균열 이벤트 상태임: " + war.riftEventStatus + allsee);
+		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 이미 균열 이벤트 상태임: " + war.riftEventStatus + allsee);
 		return "";
 	}
 
@@ -31986,7 +31858,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 
 	// 영지전 데이터 보장 및 초기화
 	var war = ensureGuildTerritoryWar(data, guildData);
-	var blocked = canUseGuildTerritoryRiftItem(war); // 사용 가능 여부 체크
+	var blocked = canUseGuildTerritoryRiftItem(war);
 	if (blocked) return { message: blocked };
 
 	var guildInfo = getMyGuildInfo(data, guildData, sender);
@@ -32010,20 +31882,20 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	// 불안정도 조정 아이템인 경우, 입력 수량과 조정치 한도 안에서 적용
 	if (config.deltaAdjust) {
 		var adjustRemain = config.deltaAdjust > 0
-			? Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT - (war.instabilityAdjust || 0)) // 조정치 잔여량 계산 (증폭)
-			: Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT + (war.instabilityAdjust || 0)); // 조정치 잔여량 계산
-		var maxUseByAdjust = Math.floor(adjustRemain / Math.abs(config.deltaAdjust)); // 현재 조정치 잔여량으로 계산한 최대 사용 가능 횟수
-		var useCount = Math.min(count, bagItemCount, maxUseByAdjust); // 최종 사용 가능 횟수 계산: 입력 수량, 보유 수량, 조정치 한도 모두 고려
+			? Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT - (war.instabilityAdjust || 0))
+			: Math.max(0, GUILD_TERRITORY_INSTABILITY_ADJUST_LIMIT + (war.instabilityAdjust || 0));
+		var maxUseByAdjust = Math.floor(adjustRemain / Math.abs(config.deltaAdjust));
+		var useCount = Math.min(count, bagItemCount, maxUseByAdjust);
 		if (useCount <= 0) {
 			return { message: "❌ 이번 영지전에서 더 이상 " + config.item + "을 사용할 수 없습니다." };
 		}
 
-		removeItem(data, sender, bagItemName, useCount); // 아이템 차감
-		for (var i = 0; i < useCount; i++) markGuildTerritoryItemUse(war.instabilityUses, guildInfo.guildId, config.type, sender); //
-		war.instabilityAdjust += config.deltaAdjust * useCount; // 조정치 업데이트
+		removeItem(data, sender, bagItemName, useCount);
+		for (var i = 0; i < useCount; i++) markGuildTerritoryItemUse(war.instabilityUses, guildInfo.guildId, config.type, sender);
+		war.instabilityAdjust += config.deltaAdjust * useCount;
 
-		var currentRate = getGuildTerritoryInstabilityRate(war); // 조정 후 현재 불안정도 계산
-		var appliedDelta = Math.abs(config.deltaAdjust * useCount); // 적용된 조정치 계산 (항상 양수로 표시)
+		var currentRate = getGuildTerritoryInstabilityRate(war);
+		var appliedDelta = Math.abs(config.deltaAdjust * useCount);
 		var out = "[" + formatGuildDisplay(guildInfo.guild) + "]\n\n";
 		out += config.item + " 사용!\n\n";
 		out += config.deltaAdjust > 0 ? "전장의 기운이 흔들리기 시작합니다.\n" : "전장의 기운이 차분히 가라앉습니다.\n";
@@ -32122,7 +31994,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	// 현재 공격자 정보 가져오기
 	var row = getGuildTerritoryTurnRow(data, guildData);
 	if (!row) {
-		finishGuildTerritoryWar(data, guildData, "자동 종료");
+		finishGuildTerritoryWar(data, guildData, "자동 종료", replier, isGroupChat);
 		withGuildTerritoryDataMode(guildData, function () {
 			saveJsonFile(guildData, guildPath);
 		});
@@ -32169,7 +32041,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 
 			// 모든 길드가 공격 횟수를 다 채웠거나 공격할 수 있는 소드마스터가 없는 경우 영지전 종료 처리
 			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
-				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료", replier, isGroupChat);
 				withGuildTerritoryDataMode(latestGuildData, function () {
 					saveJsonFile(latestGuildData, guildPath);
 					saveJsonFile(latestData, filePath);
@@ -32332,7 +32204,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 }
 
 // 영지전 종료 처리
-function finishGuildTerritoryWar(data, guildData, reason) {
+function finishGuildTerritoryWar(data, guildData, reason, replier, isGroupChat) {
 	return withGuildTerritoryDataMode(guildData, function () {
 		var war = ensureGuildTerritoryWar(data, guildData);
 		clearGuildTerritoryWarTimer();
@@ -32365,7 +32237,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 		}
 		out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
 		war.readyGuilds = {};
-		noticeMsg(out);
+		castleMsg(out, replier, isGroupChat);
 	});
 }
 // 출석 /리셋 함수
@@ -34724,13 +34596,14 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 		member.weeklyQuestCnt = 0;
 		claimed = true;
 
-		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : 펫스킬북📙(/펫스킬오픈) 1개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
+		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : 미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
 
 		if (hasPetSkill(petSkillData, sender, "주간루틴")) {
 			var weeklyRoutineBonusPoint = 1000000000;
 			addPoint(data, sender, weeklyRoutineBonusPoint);
-			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주간루틴📙 수슴다 10억 획득!");
-
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주간루틴이 완벽하게 이어집니다!");
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 꾸준함의 보상으로 추가 포인트를 획득합니다!");
+			messages.push("[" + checkRank(data, petData, guildData, sender) + "] 주퀘보상 보너스 발동! 🅟1,000,000,000");
 		}
 	}
 
@@ -36370,12 +36243,12 @@ function hasPetSkill(petSkillData, user, skillName) {
 
 // 사용자의 친밀도 레벨에 따라 장착 가능한 펫 스킬 슬롯 개수를 계산하여 반환
 function getPetSkillSlotCount(data, petSkillData, user) {
-	var info = getUserIntimacyInfo(data, user);// 친밀도 레벨 정보 조회
-	var level = info && info.level ? info.level : 0;// 친밀도 레벨로 얻을 수 있는 슬롯 수 계산
-	var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론"); // 친밀도 레벨로 얻을 수 있는 슬롯 수에 영향을 주는 스킬 보유 여부
-	var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0); // 친밀도 레벨로 얻을 수 있는 최대 슬롯 수
-	var slots = Math.floor(level / 100);// 친밀도 레벨 100당 1개의 슬롯을 제공
-	slots += hasIntro ? 3 : 0;// "펫스킬 학개론" 스킬을 보유한 경우 추가로 3개의 슬롯 제공
+	var info = getUserIntimacyInfo(data, user);
+	var level = info && info.level ? info.level : 0;
+	var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론");
+	var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0);
+	var slots = Math.floor(level / 100);
+	slots += hasIntro ? 3 : 0;
 
 	if (slots > maxSlot) slots = maxSlot;
 	if (slots < 0) slots = 0;
@@ -37828,7 +37701,7 @@ function getPetUpgradeCritMul(upgrade) {
  */
 function applyStarterPet(pet, user, petSkillData) {
 	// 펫강화
-	pet.upgrade = 101;
+	pet.upgrade = 90;
 	pet.upgradeDateTime = new Date().toISOString(); // member_pet.json 예시와 동일 형태
 
 	if (petSkillData) {
@@ -37837,7 +37710,7 @@ function applyStarterPet(pet, user, petSkillData) {
 
 	// 정령(키 이름: elemental)
 	pet.elemental = {
-		upgrade: 90,
+		upgrade: 70,
 		name: "피닉스🐦‍🔥",
 		grade: "정령왕"
 	};
@@ -37846,9 +37719,9 @@ function applyStarterPet(pet, user, petSkillData) {
 
 	// 반지
 	pet.ring = {
-		upgrade: 20,
-		name: "보라핑 반지🦄",
-		grade: "서사급"
+		upgrade: 50,
+		name: "사파이어 반지🔮",
+		grade: "최상급"
 	};
 
 	// 미니펫 가방
@@ -37858,11 +37731,11 @@ function applyStarterPet(pet, user, petSkillData) {
 	pet.miniPet = {
 		name: "초보자전용미니펫",
 		emoji: "🌱",
-		grade: "전설",
+		grade: "고급",
 		price: 0,
-		battleExp: 100000,
-		castleExp: 100000,
-		raidExp: 100000
+		battleExp: 55000,
+		castleExp: 55000,
+		raidExp: 55000
 	};
 	return pet;
 }
@@ -37880,8 +37753,8 @@ function applyStarterHome(homeData, userName) {
 	}
 
 	u.houseName = "산이 보이는 텐트집🏕️";
-	u.exp = 3510; // (+3510💕) → 네 UI에서 exp + furnitureExp로 totalExp 계산됨
-	u.floor = 18; // [+18평]
+	u.exp = 3510; // (+1940💕) → 네 UI에서 exp + furnitureExp로 totalExp 계산됨
+	u.floor = 18; // [+10평]
 
 	// 기타 필드들 안전 초기화(없어도 되지만 스타터팩에서 깔끔하게)
 	u.likeCnt = u.likeCnt || 0;
@@ -39944,6 +39817,8 @@ function getGuildMasterRankTitle(rank) {
 	if (rank >= 20) return "외곽민◻︎";
 
 	return "외곽민◻︎";
+
+	return null; // 21등 이후 없음
 }
 // 길드마스터 랭크에 따른 이모지 반환
 function getGuildMasterRankEmoji(rank) {
