@@ -1084,7 +1084,8 @@ const GUILD_TERRITORY_TIMEOUT_MISS_LIMIT = 3; // 영지전 시간초과 미공�
 const GUILD_TERRITORY_TURN_FUND_REWARD = 100000000; // 영지전 공격 턴 기본보상
 const GUILD_TERRITORY_MEDAL_REWARD_RATE = 0.15; // 영지전 공격 턴 확률보상
 const GUILD_CONTRIBUTION_MEDAL_ITEM = "길드공헌훈장🌟(/길드공헌 숫자)";
-const GUILD_TERRITORY_RIFT_MAX_TURN = 100; // 영지전 균열 최대 턴
+const GUILD_TERRITORY_RIFT_MAX_TURN = 120; // 영지전 균열 최대 턴
+const GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT = 2; // 영지전 균열/대균열 최대 발생 횟수
 const GUILD_TERRITORY_RIFT_BASE_RATE = 70; // 영지전 균열 기본 성공 확률
 const GUILD_TERRITORY_RIFT_ITEM_STEP = 10; // 영지전 균열 아이템당 확률 증가량
 const GUILD_TERRITORY_INSTABILITY_ITEM_STEP = 0.5; // 영지전 불안정 아이템당 불안정도 증가/감소량
@@ -18807,25 +18808,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					startWar.active = true;
-					startWar.isDevWar = getCurrentContext().isDev;
-					startWar.startedAt = formatDateTime(new Date());
-					startWar.endedAt = null;
-					startWar.turnOrder = shuffleGuildTerritoryRows(turnRows);
-					startWar.currentTurnIndex = 0;
-					startWar.guildAttackLimits = {};
-					startWar.eliminatedUsers = {};
-					startWar.eliminatedGuilds = {};
-					startWar.timeoutMissCounts = {};
-					startWar.turnCount = 0;
-					startWar.instabilityAdjust = 0;
-					startWar.riftBias = 0;
-					startWar.riftEventStatus = null;
-					startWar.riftEventAt = null;
-					startWar.riftEventGuildId = null;
-					startWar.instabilityUses = {};
-					startWar.riftGuideUses = {};
-					startWar.turnToken = null;
+					startWar.active = true;// 영지전 활성화
+					startWar.isDevWar = getCurrentContext().isDev;// 개발자 모드 여부 기록
+					startWar.startedAt = formatDateTime(new Date());// 영지전 시작 시간 기록
+					startWar.endedAt = null;// 턴 진행 순서 초기화
+					startWar.turnOrder = shuffleGuildTerritoryRows(turnRows);// 턴 진행 순서 (소드마스터🤺 기준)
+					startWar.currentTurnIndex = 0;// 현재 턴 진행 중인 소드마스터🤺의 인덱스
+					startWar.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
+					startWar.eliminatedUsers = {};// 탈락한 유저 기록 초기화
+					startWar.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
+					startWar.timeoutMissCounts = {};//	턴 타임아웃 미스 횟수 기록
+					startWar.turnCount = 0;// 전체 턴 횟수
+					startWar.instabilityAdjust = 0;// 불안정성 조정치 초기화
+					startWar.riftBias = 0;// 균열 이벤트 관련 초기화
+					startWar.riftEventCount = 0; // 균열 이벤트 발생 횟수 초기화
+					startWar.riftEventHistory = []; // 균열/대균열 발생 이력 초기화
+					startWar.riftEventStatus = null;// 균열 이벤트 상태 초기화
+					startWar.riftEventAt = null;// 균열 이벤트 발생 시간 초기화
+					startWar.riftEventGuildId = null;// 균열 이벤트 대상 길드 초기화
+					startWar.instabilityUses = {};	// 불안정성 사용 기록 초기화
+					startWar.riftGuideUses = {};// 균열 가이드 사용 기록 초기화
+					startWar.turnToken = null;// 턴 토큰 초기화
 					for (var gl = 0; gl < readyGuildIds.length; gl++) {
 						var limitGuildId = readyGuildIds[gl];
 						var limitGuild = getGuildByIdSafe(guildData, limitGuildId);
@@ -31381,6 +31384,15 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (typeof war.turnCount !== "number") war.turnCount = 0;
 	if (typeof war.instabilityAdjust !== "number") war.instabilityAdjust = 0;
 	if (typeof war.riftBias !== "number") war.riftBias = 0;
+	if (typeof war.riftEventCount !== "number") {
+		war.riftEventCount = (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift") ? 1 : 0;
+	}
+	if (!Array.isArray(war.riftEventHistory)) {
+		war.riftEventHistory = [];
+		if (war.riftEventCount > 0 && (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift")) {
+			war.riftEventHistory.push(war.riftEventStatus);
+		}
+	}
 	if (!war.riftEventStatus) war.riftEventStatus = null;
 
 	var list = getGuildTerritoryList();
@@ -31434,6 +31446,7 @@ function getGuildTerritoryAttackLimit(g) {
 	return Math.max(1, swordMasters.length) * GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER;
 }
 
+// 길드 영지전 공격 제한 계산 (길드별 설정이 있으면 우선, 없으면 소드마스터 수 기반)
 function getGuildTerritoryAttackLimitForWar(war, g, guildId) {
 	if (war && war.guildAttackLimits && typeof war.guildAttackLimits[guildId] === "number") {
 		return war.guildAttackLimits[guildId];
@@ -31441,15 +31454,61 @@ function getGuildTerritoryAttackLimitForWar(war, g, guildId) {
 	return getGuildTerritoryAttackLimit(g);
 }
 
-//	영지전 불안정도 기본 증가율 계산 (턴당 0.05%, 최대 5.0%)
+// 길드 영지전 균열 이벤트 발생 횟수 계산 및 보장
+function getGuildTerritoryRiftEventCount(war) {
+	return Math.max(0, Math.min(GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT, (war && war.riftEventCount) || 0));
+}
+
+// 길드 영지전 균열 이벤트 발생 횟수 한도 도달 여부 확인
+function isGuildTerritoryRiftEventLimitReached(war) {
+	return getGuildTerritoryRiftEventCount(war) >= GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT;
+}
+
+// 길드 영지전 균열 이벤트 발생 횟수 및 남은 횟수 텍스트 빌드
+function buildGuildTerritoryRiftEventLimitText(war) {
+	var count = getGuildTerritoryRiftEventCount(war);
+	var remain = Math.max(0, GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT - count);
+	if (remain <= 0) {
+		return "※ 균열 이벤트 발생 횟수: " + count + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "\n※ 이번 영지전에서는 더 이상 균열 이벤트가 발생하지 않습니다.";
+	}
+	return "※ 균열 이벤트 발생 횟수: " + count + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "\n※ 이번 영지전에서는 균열 이벤트가 " + remain + "회 더 발생할 수 있습니다.";
+}
+
+// 길드 영지전 균열 이벤트 발생 시 상태 업데이트 및 안내 텍스트 빌드
+function markGuildTerritoryRiftEvent(war, status, guildId) {
+	war.riftEventCount = getGuildTerritoryRiftEventCount(war) + 1;
+	if (!Array.isArray(war.riftEventHistory)) war.riftEventHistory = [];
+	war.riftEventHistory.push(status);
+	war.riftEventStatus = status;
+	war.riftEventAt = formatDateTime(new Date());
+	war.riftEventGuildId = guildId || null;
+	return buildGuildTerritoryRiftEventLimitText(war);
+}
+
+function getGuildTerritoryRiftEventHistory(war) {
+	if (!war) return [];
+	if (Array.isArray(war.riftEventHistory)) return war.riftEventHistory.slice(0, GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT);
+	if (getGuildTerritoryRiftEventCount(war) > 0 && (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift")) return [war.riftEventStatus];
+	return [];
+}
+
+function formatGuildTerritoryRiftEventSlot(status, index) {
+	var prefix = index === 0 ? "└" : "  └";
+	var countText = (index + 1) + "회";
+	if (status === "rift") return prefix + "[🌌균열 " + countText + " 발생🔒]";
+	if (status === "greatRift") return prefix + "[🌋대균열 " + countText + " 발생🔒]";
+	return prefix + "[🌌미발생🔒]";
+}
+
+//	영지전 불안정도 기본 증가율 계산 (턴당 0.05%, 최대 6.0%)
 function getGuildTerritoryInstabilityBaseRate(turnCount) {
 	var turn = Math.max(1, Math.min(GUILD_TERRITORY_RIFT_MAX_TURN, turnCount || 1));
 	return turn / 20;
 }
 
-// 영지전 불안정도 계산 (턴 수 기반 + 조정치, 균열 이벤트 중이거나 턴 수 초과 시 0%)
+// 영지전 불안정도 계산 (턴 수 기반 + 조정치, 균열 한도 도달이거나 턴 수 초과 시 0%)
 function getGuildTerritoryInstabilityRate(war) {
-	if (!war || war.riftEventStatus) return 0;
+	if (!war || war.riftEventStatus === "stable" || isGuildTerritoryRiftEventLimitReached(war)) return 0;
 	if ((war.turnCount || 0) > GUILD_TERRITORY_RIFT_MAX_TURN) return 0;
 	var turn = war.turnCount || 0;
 	var rate = (turn > 0 ? getGuildTerritoryInstabilityBaseRate(turn) : 0) + (war.instabilityAdjust || 0);
@@ -31473,13 +31532,15 @@ function formatPercent1(value) {
 // 영지전 균열 이벤트 UI 빌드
 function buildGuildTerritoryRiftUi(war) {
 	if (!war) return "";
-	if (war.riftEventStatus === "rift") return "[🌪️ 누적 전쟁불안정도: 0]\n└[🌌균열 발생완료🔒]";
-	if (war.riftEventStatus === "greatRift") return "[🌪️ 누적 전쟁불안정도: 0]\n└[🌋대균열 발생완료🔒]";
 	if (war.riftEventStatus === "stable") return "[🌪️ 누적 전쟁불안정도: 0]\n└[전장 안정화🔒]";
 
 	var instability = getGuildTerritoryInstabilityRate(war);
-	var rates = getGuildTerritoryRiftRates(war);
-	return "[🌪️ 누적 전쟁불안정도: " + formatPercent1(instability) + "%]\n└🌌균열 " + rates.rift + "% / 🌋대균열 " + rates.greatRift + "%";
+	var history = getGuildTerritoryRiftEventHistory(war);
+	var out = "[🌪️ 누적 전쟁불안정도: " + formatPercent1(instability) + "%]";
+	for (var i = 0; i < GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT; i++) {
+		out += "\n" + formatGuildTerritoryRiftEventSlot(history[i], i);
+	}
+	return out;
 }
 
 function getGuildTerritoryTimeoutMissCount(war, guildId) {
@@ -31700,26 +31761,40 @@ function buildGuildTerritoryRiftCommandGuide() {
 function processGuildTerritoryRiftEvent(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	if (!war.active) {
-		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 영지전이 활성화되지 않음." + allsee);
+		
 		return ""
 	};
 
-	if (war.riftEventStatus) {
-		Api.replyRoom(testRoom, "[Guild Territory War] 균열 이벤트 시도했으나 이미 균열 이벤트 상태임: " + war.riftEventStatus + allsee);
+	if (war.riftEventStatus === "stable" || isGuildTerritoryRiftEventLimitReached(war)) {
+		
 		return "";
 	}
 
 	war.turnCount = (war.turnCount || 0) + 1;
 
 	var instabilityRate = getGuildTerritoryInstabilityRate(war);
+	var rates = getGuildTerritoryRiftRates(war);
+	var instabilityRoll = Math.random() * 100;
+	var riftRoll = null;
+	var riftDebugMsg =
+		"[Guild Territory War] 균열 확률 체크" + allsee + "\n" +
+		"- 턴: " + war.turnCount + "/" + GUILD_TERRITORY_RIFT_MAX_TURN + "\n" +
+		"- 발생횟수: " + getGuildTerritoryRiftEventCount(war) + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "\n" +
+		"- 누적 전쟁불안정도: " + formatPercent1(instabilityRate) + "%\n" +
+		"- 발생 판정: " + formatPercent1(instabilityRoll) + " < " + formatPercent1(instabilityRate) + "\n" +
+		"- 균열/대균열 확률: 🌌" + rates.rift + "% / 🌋" + rates.greatRift + "%";
 
-	if (Math.random() * 100 < instabilityRate) {
-		var rates = getGuildTerritoryRiftRates(war);
-		if (Math.random() * 100 < rates.rift) {
+	if (instabilityRoll < instabilityRate) {
+		riftRoll = Math.random() * 100;
+		riftDebugMsg += "\n- 분기 판정: " + formatPercent1(riftRoll) + " < " + rates.rift;
+		if (riftRoll < rates.rift) {
+			Api.replyRoom(testRoom, riftDebugMsg + "\n- 결과: 🌌균열 발생");
 			return applyGuildTerritoryRift(data, guildData);
 		}
+		Api.replyRoom(testRoom, riftDebugMsg + "\n- 결과: 🌋대균열 발생");
 		return applyGuildTerritoryGreatRift(data, guildData);
 	}
+	Api.replyRoom(testRoom, riftDebugMsg + "\n- 결과: 미발생");
 
 	if (war.turnCount >= GUILD_TERRITORY_RIFT_MAX_TURN) {
 		war.riftEventStatus = "stable";
@@ -31753,14 +31828,13 @@ function applyGuildTerritoryRift(data, guildData) {
 		data.HoiCastle.earnings = 0;
 		data.HoiCastle.defenseCount = 0;
 	}
-	war.riftEventStatus = "rift";
-	war.riftEventAt = formatDateTime(new Date());
+	var limitText = markGuildTerritoryRiftEvent(war, "rift");
 
 	return (
 		"🌌 균열 발생!\n\n" +
 		"전장의 균형이 무너지며\n점령 중이던 길드영지에 균열이 발생했습니다.\n\n" +
 		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n\n" +
-		"※ 이번 영지전에서는 더 이상 균열 이벤트가 발생하지 않습니다."
+		limitText
 	);
 }
 
@@ -31792,9 +31866,7 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 		at: formatDateTime(new Date())
 	};
 
-	war.riftEventStatus = "greatRift";
-	war.riftEventAt = formatDateTime(new Date());
-	war.riftEventGuildId = targetGuildId;
+	var limitText = markGuildTerritoryRiftEvent(war, "greatRift", targetGuildId);
 
 	return (
 		"🌋 대균열 발생!\n\n" +
@@ -31803,15 +31875,15 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 		formatGuildDisplay(targetGuild) +
 		"] 길드가 겁에 질려 영지전에서 후다닥 도망갑니다.\n\n" +
 		"해당 길드는 이번 길드영지전에서\n더 이상 공격 및 점령에 참여할 수 없습니다.\n\n" +
-		"※ 이번 영지전에서는 더 이상 균열 이벤트가 발생하지 않습니다."
+		limitText
 	);
 }
 
 // 영지전 균열 아이템 사용 가능 여부 체크, 사용 불가 시 이유 메시지 반환
 function canUseGuildTerritoryRiftItem(war) {
 	if (!war || !war.active) return "현재 진행 중인 길드 영지전이 없습니다.";
-	if (war.riftEventStatus) return "이미 균열 이벤트가 발생하여 사용할 수 없습니다.\n\n이번 영지전에서는 더 이상\n균열/대균열 확률을 변경할 수 없습니다.";
-	if ((war.turnCount || 0) >= GUILD_TERRITORY_RIFT_MAX_TURN) return "100턴이 지나 전장이 안정화되었습니다.\n\n이번 영지전에서는 더 이상\n균열 유도권을 사용할 수 없습니다.";
+	if (war.riftEventStatus === "stable" || isGuildTerritoryRiftEventLimitReached(war)) return "균열 이벤트가 최대 " + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "회 발생하여 사용할 수 없습니다.\n\n이번 영지전에서는 더 이상\n균열/대균열 확률을 변경할 수 없습니다.";
+	if ((war.turnCount || 0) >= GUILD_TERRITORY_RIFT_MAX_TURN) return GUILD_TERRITORY_RIFT_MAX_TURN + "턴이 지나 전장이 안정화되었습니다.\n\n이번 영지전에서는 더 이상\n균열 유도권을 사용할 수 없습니다.";
 	return "";
 }
 
