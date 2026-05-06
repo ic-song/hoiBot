@@ -31492,12 +31492,13 @@ function getGuildTerritoryRiftEventHistory(war) {
 	return [];
 }
 
-function formatGuildTerritoryRiftEventSlot(status, index) {
+function formatGuildTerritoryRiftEventSlot(status, index, locked) {
 	var prefix = index === 0 ? "└" : "  └";
 	var countText = (index + 1) + "회";
-	if (status === "rift") return prefix + "[🌌균열 " + countText + " 발생🔒]";
-	if (status === "greatRift") return prefix + "[🌋대균열 " + countText + " 발생🔒]";
-	return prefix + "[🌌미발생🔒]";
+	var lockText = locked ? "🔒" : "";
+	if (status === "rift") return prefix + "[🌌균열 " + countText + " 발생" + lockText + "]";
+	if (status === "greatRift") return prefix + "[🌋대균열 " + countText + " 발생" + lockText + "]";
+	return prefix + "[🌌미발생" + lockText + "]";
 }
 
 //	영지전 불안정도 기본 증가율 계산 (턴당 0.05%, 최대 6.0%)
@@ -31536,9 +31537,10 @@ function buildGuildTerritoryRiftUi(war) {
 
 	var instability = getGuildTerritoryInstabilityRate(war);
 	var history = getGuildTerritoryRiftEventHistory(war);
+	var locked = isGuildTerritoryRiftEventLimitReached(war);
 	var out = "[🌪️ 누적 전쟁불안정도: " + formatPercent1(instability) + "%]";
 	for (var i = 0; i < GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT; i++) {
-		out += "\n" + formatGuildTerritoryRiftEventSlot(history[i], i);
+		out += "\n" + formatGuildTerritoryRiftEventSlot(history[i], i, locked);
 	}
 	return out;
 }
