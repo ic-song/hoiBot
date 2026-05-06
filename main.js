@@ -25378,14 +25378,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					for (var i = 0; i < bag.length; i++) {
 						var pet = bag[i];
-						var charm = parseInt(pet && pet.battleExp, 10) || 0;
+						var exp = parseInt(pet && pet.battleExp, 10) || 0; // 매력도가 없는 경우 0으로 처리
+						var grade = String((pet && pet.grade) || "").trim(); // 등급이 없는 경우 빈 문자열로 처리
+						var isProtectedGrade = grade === "창조" || grade === "창세" || isElite(pet); // 보호 등급 여부 판단
 
-						if (charm <= threshold) {
+						// 정리 대상: 보호 등급이 아니면서 매력도가 기준 이하인 경우
+						if (!isProtectedGrade && exp <= threshold) {
 							soldCount++;
 							var price = parseInt(pet && pet.price, 10) || basicPrice;
 							earnedPoint += price;
 
-							removedNames.push(pet.name + pet.emoji + " (매력 " + charm + ")");
+							removedNames.push(pet.name + pet.emoji + " (매력 " + exp + ")");
 						} else {
 							newBag.push(pet);
 						}
