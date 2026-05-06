@@ -31492,9 +31492,9 @@ function getGuildTerritoryRiftEventHistory(war) {
 	return [];
 }
 
-function formatGuildTerritoryRiftEventSlot(status, index, locked) {
+function formatGuildTerritoryRiftEventSlot(status, index, occurrenceCount, locked) {
 	var prefix = index === 0 ? "└" : "  └";
-	var countText = (index + 1) + "회";
+	var countText = occurrenceCount + "회";
 	var lockText = locked ? "🔒" : "";
 	if (status === "rift") return prefix + "[🌌균열 " + countText + " 발생" + lockText + "]";
 	if (status === "greatRift") return prefix + "[🌋대균열 " + countText + " 발생" + lockText + "]";
@@ -31538,10 +31538,14 @@ function buildGuildTerritoryRiftUi(war) {
 	var instability = getGuildTerritoryInstabilityRate(war);
 	var history = getGuildTerritoryRiftEventHistory(war);
 	var locked = isGuildTerritoryRiftEventLimitReached(war);
+	var eventCounts = { rift: 0, greatRift: 0 };
 	var out = "[🌪️ 누적 전쟁불안정도: " + formatPercent1(instability) + "%]";
 	for (var i = 0; i < GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT; i++) {
-		out += "\n" + formatGuildTerritoryRiftEventSlot(history[i], i, locked);
+		var status = history[i];
+		if (status === "rift" || status === "greatRift") eventCounts[status]++;
+		out += "\n" + formatGuildTerritoryRiftEventSlot(status, i, eventCounts[status] || 0, locked);
 	}
+	if (locked) out += "\n     └[🌌🌋균열발생 종료🔐]";
 	return out;
 }
 
