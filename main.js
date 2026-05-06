@@ -25395,7 +25395,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						var pet = bag[i];
 						var charm = parseInt(pet && pet.battleExp, 10) || 0;
 						var grade = String((pet && pet.grade) || "").trim();
-						var isProtectedGrade = grade === "창조" || grade === "창세" || isEliteMiniPet(pet);
+						var isProtectedGrade = grade === "창조" || grade === "창세" || isElite(pet);
 
 						if (!isProtectedGrade && charm <= threshold) {
 							soldCount++;
