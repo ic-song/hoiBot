@@ -18565,7 +18565,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo); // 공격 결과 메시지 반환
 					var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
 					resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage); // 공격 결과 메시지에 턴 보상 메시지 추가
-					if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
+					// if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
 					var riftMessage = "";
 					// 공격 불가가 아닐 때만 균열 판정
 					if (!isAttackBlocked) {
