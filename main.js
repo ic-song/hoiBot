@@ -18422,7 +18422,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 현재 진행 중인 길드 영지전이 없습니다.");
 						return;
 					}
-					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료", replier, isGroupChat);
+					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
 					if (!getCurrentContext().isDev) {
 						guildData.castleSiegeFlag = false;
 					}
@@ -18578,7 +18578,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
-						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진", replier, isGroupChat);
+						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
 						withGuildTerritoryDataMode(guildData, function () {
 							saveJsonFile(guildData, guildPath);
 							saveJsonFile(data, filePath);
@@ -31787,7 +31787,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 	// 현재 공격자 정보 가져오기
 	var row = getGuildTerritoryTurnRow(data, guildData);
 	if (!row) {
-		finishGuildTerritoryWar(data, guildData, "자동 종료", replier, isGroupChat);
+		finishGuildTerritoryWar(data, guildData, "자동 종료");
 		withGuildTerritoryDataMode(guildData, function () {
 			saveJsonFile(guildData, guildPath);
 		});
@@ -31834,7 +31834,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 
 			// 모든 길드가 공격 횟수를 다 채웠거나 공격할 수 있는 소드마스터가 없는 경우 영지전 종료 처리
 			if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
-				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료", replier, isGroupChat);
+				finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
 				withGuildTerritoryDataMode(latestGuildData, function () {
 					saveJsonFile(latestGuildData, guildPath);
 					saveJsonFile(latestData, filePath);
@@ -31997,7 +31997,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 }
 
 // 영지전 종료 처리
-function finishGuildTerritoryWar(data, guildData, reason, replier, isGroupChat) {
+function finishGuildTerritoryWar(data, guildData, reason) {
 	return withGuildTerritoryDataMode(guildData, function () {
 		var war = ensureGuildTerritoryWar(data, guildData);
 		clearGuildTerritoryWarTimer();
