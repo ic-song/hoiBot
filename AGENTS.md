@@ -68,6 +68,14 @@ node --check Info.js
 
 - 보호 브랜치 직접 푸시는 피하고, 작업 브랜치 + PR로 진행합니다.
 - 커밋 메시지와 PR 제목/본문은 한글로 작성합니다.
+- 작업 브랜치는 `feature/main`을 기준으로 생성합니다.
+- 브랜치 용도는 아래 기준으로 구분합니다:
+  - `feature/hoi`: 호이 요청사항 반영
+  - `feature/bugFix`: 버그 수정
+  - `feature/bm`: 패키지 관련 작업
+  - `feature/dev-setting`: 개발 환경 설정
+  - `feature/doc`: `README.md`, `AGENTS.md`, `.gitignore` 등 문서/설정 문서 수정
+  - `feature/<기능명>`: 기능 단위 개발
 - 권장 흐름:
 
 ```bash
