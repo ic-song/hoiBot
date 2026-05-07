@@ -1,4 +1,4 @@
-﻿// 버전
+// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
 const HoiBotVersion = "2.0";
 let isDebuggerFlag = false; //
@@ -90,49 +90,51 @@ const PET_SKILL_COMPAT_GROUPS = [
 ];
 const PET_SKILL_LIST = [
 
-	{ name: "청룡언월도", grade: "S", rate: 0.1, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)" },
-	{ name: "하느님 위에 갓물주", grade: "S", rate: 0.9, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
+	{ name: "청룡언월도", grade: "SS", rate: 0.2, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+	{ name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
+	{ name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
 	{ name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
-	{ name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)" },
+	{ name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
 	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 20% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
-	{ name: "인테리어 장인", grade: "S", rate: 1.0, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 
-	{ name: "십원", grade: "A", rate: 1.6, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
-	{ name: "개통령", grade: "A", rate: 1.8, effect: "/미니펫강화 성공 확률 10% 증가" },
-	{ name: "로열 하우스", grade: "A", rate: 1.8, effect: "가구 [로열 루미에르]를 10개 이상 장착하면 종합매력 +300,000 보너스를 획득합니다." },
+	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
+	{ name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
+	{ name: "로열 하우스", grade: "A", rate: 1.6, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
 	// { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
-	{ name: "쇼핑광", grade: "A", rate: 1.8, effect: "상점 20% 할인" },
-	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 기본 보상 1개를 추가 획득" },
-	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다." },
+	{ name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
+	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
+	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
-	{ name: "대머리 대장장이", grade: "A", rate: 1.9, effect: "/펫강화 성공 확률 5% 증가" },
-	{ name: "꽃집 대장장이", grade: "A", rate: 1.9, effect: "/정령강화 성공 확률 5% 증가" },
+	{ name: "대머리 대장장이", grade: "A", rate: 1.7, effect: "/펫강화 성공 확률 5% 증가" },
+	{ name: "꽃집 대장장이", grade: "A", rate: 1.7, effect: "/정령강화 성공 확률 5% 증가" },
 
-	{ name: "일일루틴", grade: "B", rate: 2.5, effect: "/퀘스트완료 시 3억 포인트를 받습니다." },
-	{ name: "주간루틴", grade: "B", rate: 2.5, effect: "주간퀘스트 보상 수령 시 추가 포인트를 획득합니다." },
-	{ name: "시련을 걷는 자", grade: "B", rate: 2.5, effect: "10% 확률로 시련의 탑 공략 성공" },
-	{ name: "결혼못한 대장장이", grade: "B", rate: 2.6, effect: "/반지강화 성공 확률 5% 증가" },
-	{ name: "구원", grade: "B", rate: 2.7, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
-	{ name: "나 혼자만 레벨업", grade: "B", rate: 2.7, effect: "레벨업 시 3업당 매력 +10" },
-	{ name: "숙련된 전사", grade: "B", rate: 2.7, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
-	{ name: "헌터", grade: "B", rate: 2.7, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
-	{ name: "광산탐험가", grade: "B", rate: 2.8, effect: "티켓/펫강화/돌멩이 탐험 성공확률 5% 상승" },
+	{ name: "일일루틴", grade: "B", rate: 2.0, effect: "일일퀘스트 완료 시 100%로 포인트 1억을 획득합니다." },
+	{ name: "주간루틴", grade: "B", rate: 2.0, effect: "주간퀘스트 완료 시 100%로 포인트 10억을 획득합니다." },
+	{ name: "시련을 걷는 자", grade: "B", rate: 2.0, effect: "10% 확률로 시련의 탑 공략 성공" },
+	{ name: "결혼못한 대장장이", grade: "B", rate: 2.0, effect: "/반지강화 성공 확률 5% 증가" },
+	{ name: "구원", grade: "B", rate: 2.3, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
+	{ name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨업 시 3업당 매력 +10" },
+	{ name: "숙련된 전사", grade: "B", rate: 2.3, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
+	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
+	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "티켓/펫강화/돌멩이 탐험 성공확률 5% 상승" },
 	// { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
+    
+	{ name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑"},
+	{ name: "건물주", grade: "C", rate: 4.4, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
+	{ name: "악덕한 영주", grade: "C", rate: 4.0, effect: "호랜캐슬 세금 30% 강제 고정" },
+	{ name: "오픈런", grade: "C", rate: 4.0, effect: "명령어: ㅊㅊ 1등시 펫먹이🍼1,000개를 획득합니다.\n출석목록 기준 1등" },
+	{ name: "야수의 본능", grade: "C", rate: 4.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
+	{ name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
+	{ name: "기도", grade: "C", rate: 4.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🦋 1개를 획득합니다." },
+	{ name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
+	{ name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
+	{ name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
+	
 
-	{ name: "건물주", grade: "C", rate: 5.0, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
-	{ name: "악덕한 영주", grade: "C", rate: 5.0, effect: "호랜캐슬 세금 30% 강제 고정" },
-	{ name: "오픈런", grade: "C", rate: 5.0, effect: "/리셋 이후 출석 1등 시 펫먹이🍼 1,000개를 획득합니다." },
-	{ name: "야수의 본능", grade: "C", rate: 5.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
-	{ name: "탑 숭배자", grade: "C", rate: 5.0, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
-	{ name: "기도", grade: "C", rate: 5.5, effect: "하루 1회 /기도 사용 시 1% 확률로 주간상자🦋(/주간오픈) 1개를 획득합니다." },
-	{ name: "플러팅", grade: "C", rate: 5.5, effect: "@멘션 호출 시 멘트 출력" },
-	{ name: "펫스킬 학개론", grade: "C", rate: 5.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
-	{ name: "초월성장", grade: "C", rate: 5.5, effect: "레벨업 시 펫먹이🍼 5개 획득합니다." },
-
-	{ name: "정신승리", grade: "C", rate: 6.5, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
-	{ name: "무소유", grade: "D", rate: 24.9, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
+	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
+	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
 ];
 
 var bidItems = [];
@@ -2697,8 +2699,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(lvlupmsg);
 					replier.reply(congratmsg);
 					if (levelUpFlag && hasPetSkill(petSkillData, sender, "초월성장")) {
-						addItem(data, sender, "펫먹이🍼", 5);
-						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n초월성장📙 초월의 성장.. 펫먹이🍼 10개를 추가 획득합니다.");
+						addItem(data, sender, "펫먹이🍼", 10);
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n초월성장📙 응애! 응애! 펫먹이🍼 10개를 추가 획득합니다.");
 					}
 				}
 
@@ -7802,115 +7804,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/어버이, ")) {
-					var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눔
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /어버이, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옴
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								var packageName = "어버이날패키지🧧(/어버이오픈)";
-								if (data.member[targetUserId].bag[packageName] === undefined) {
-									data.member[targetUserId].bag[packageName] = 1;
-								} else {
-									data.member[targetUserId].bag[packageName] += 1;
-								}
-								replier.reply("[" + targetUserId + "]님에게 " + packageName + "가 지급되었습니다.");
-							}
-						}
-					}
-				}
-				if (
-					msg.startsWith("/다이소1, ") ||
-					msg.startsWith("/다이소2, ") ||
-					msg.startsWith("/다이소3, ") ||
-					msg.startsWith("/다이소4, ") ||
-					msg.startsWith("/다이소5, ") ||
-					msg.startsWith("/다이소6, ") ||
-					msg.startsWith("/다이소7, ") ||
-					msg.startsWith("/다이소8, ") ||
-					msg.startsWith("/다이소9, ") ||
-					msg.startsWith("/다이소마지막, ")
-				) {
-					var commandParts = msg.split(", ");
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /다이소X, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim();
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								let packageName = "";
-								if (msg.startsWith("/다이소1")) {
-									packageName = "다이소 패키지📕[1](/다이소오픈1)";
-								} else if (msg.startsWith("/다이소2")) {
-									packageName = "다이소 패키지📕[2](/다이소오픈2)";
-								} else if (msg.startsWith("/다이소3")) {
-									packageName = "다이소 패키지📕[3](/다이소오픈3)";
-								} else if (msg.startsWith("/다이소4")) {
-									packageName = "다이소 패키지📕[4](/다이소오픈4)";
-								} else if (msg.startsWith("/다이소5")) {
-									packageName = "다이소 패키지📕[5](/다이소오픈5)";
-								} else if (msg.startsWith("/다이소6")) {
-									packageName = "다이소 패키지📕[6](/다이소오픈6)";
-								} else if (msg.startsWith("/다이소7")) {
-									packageName = "다이소 패키지📕[7](/다이소오픈7)";
-								} else if (msg.startsWith("/다이소8")) {
-									packageName = "다이소 패키지📕[8](/다이소오픈8)";
-								} else if (msg.startsWith("/다이소9")) {
-									packageName = "다이소 패키지📕[9](/다이소오픈9)";
-								} else if (msg.startsWith("/다이소마지막")) {
-									packageName = "다이소 패키지📕[10](/다이소오픈10)";
-								}
-								if (packageName !== "") {
-									if (data.member[targetUserId].bag[packageName] === undefined) {
-										data.member[targetUserId].bag[packageName] = 1;
-									} else {
-										data.member[targetUserId].bag[packageName] += 1;
-									}
-									replier.reply("[" + targetUserId + "]님에게 " + packageName + "가 지급되었습니다.");
-								}
-							}
-						}
-					}
-				}
-				if (msg.startsWith("/다이소모두, ")) {
-					var commandParts = msg.split(", ");
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다.\n올바른 형식: /다이소모두, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim();
-							var amount = 1; // 항상 1개 지급
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								if (!data.member[targetUserId].bag) data.member[targetUserId].bag = {};
-								let givenList = [];
-								for (let i = 1; i <= 10; i++) {
-									var packageName = "다이소 패키지📕[" + i + "](/다이소오픈" + i + ")";
-									if (data.member[targetUserId].bag[packageName] === undefined) {
-										data.member[targetUserId].bag[packageName] = amount;
-									} else {
-										data.member[targetUserId].bag[packageName] += amount;
-									}
-									givenList.push(packageName + " x " + amount);
-								}
-								replier.reply("[" + targetUserId + "]님에게 다음 패키지가 지급되었습니다.\n" + givenList.join("\n"));
-							}
-						}
-					}
-				}
+				
 				if (
 					msg.startsWith("/반지1, ") ||
 					msg.startsWith("/반지2, ") ||
@@ -8089,341 +7983,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (
-					msg.startsWith("/똥, ") ||
-					msg.startsWith("/넘어, ") ||
-					msg.startsWith("/뭐든, ") ||
-					msg.startsWith("/벨붕, ") ||
-					msg.startsWith("/ㅋㅋ, ") ||
-					msg.startsWith("/감자, ") ||
-					msg.startsWith("/뭔말, ") ||
-					msg.startsWith("/ㅗㅗ, ") ||
-					msg.startsWith("/전체서버, ")
-				) {
-					let commandParts = msg.split(", ");
-					// 권한 체크
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						// 형식 체크
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /똥, 아이디");
-						} else {
-							let targetUserId = commandParts[1].trim();
-							// 유저 존재 여부 체크
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								// 어떤 패키지를 줄지 정리
-								let packageList = [];
-								if (msg.startsWith("/똥")) {
-									packageList = ["호이패키지💩(/똥오픈)"];
-								} else if (msg.startsWith("/넘어")) {
-									packageList = ["맹구패키지👟(/넘어지면좋겠다오픈)"];
-								} else if (msg.startsWith("/뭐든")) {
-									packageList = ["리리패키지👸🏻(/뭐든오픈)"];
-								} else if (msg.startsWith("/벨붕")) {
-									packageList = ["벨라패키지🦄(/우리벨붕이들오픈)"];
-								} else if (msg.startsWith("/ㅋㅋ")) {
-									packageList = ["티모패키지🍄(/ㅋㅋㅗㅗ오픈)"];
-								} else if (msg.startsWith("/감자")) {
-									packageList = ["감자패키지🍟(/대머리감자오픈)"];
-								} else if (msg.startsWith("/뭔말")) {
-									packageList = ["진주패키지🐚(/뭔말인지알지오픈)"];
-								} else if (msg.startsWith("/ㅗㅗ")) {
-									packageList = ["칠가오픈7️⃣(/ㅗㅗㅋㅋ오픈)"];
-								} else if (msg.startsWith("/전체서버")) {
-									// 여기서 전체 패키지 한 번에 지급
-									packageList = [
-										"호이패키지💩(/똥오픈)",
-										"맹구패키지👟(/넘어지면좋겠다오픈)",
-										"리리패키지👸🏻(/뭐든오픈)",
-										"벨라패키지🦄(/우리벨붕이들오픈)",
-										"티모패키지🍄(/ㅋㅋㅗㅗ오픈)",
-										"감자패키지🍟(/대머리감자오픈)",
-										"진주패키지🐚(/뭔말인지알지오픈)",
-										"칠가오픈7️⃣(/ㅗㅗㅋㅋ오픈)"
-									];
-								}
-								if (packageList.length > 0) {
-									packageList.forEach(function (packageName) {
-										if (data.member[targetUserId].bag[packageName] === undefined) {
-											data.member[targetUserId].bag[packageName] = 1;
-										} else {
-											data.member[targetUserId].bag[packageName] += 1;
-										}
-									});
-									let pkgText = packageList.join(", ");
-									replier.reply("[" + targetUserId + "]님에게 " + pkgText + "가 지급되었습니다.");
-								}
-							}
-						}
-					}
-				}
-				if (
-					msg.startsWith("/펫강1, ") ||
-					msg.startsWith("/펫강2, ") ||
-					msg.startsWith("/펫강3, ") ||
-					msg.startsWith("/펫강4, ") ||
-					msg.startsWith("/펫강5, ") ||
-					msg.startsWith("/펫강6, ") ||
-					msg.startsWith("/펫강7, ") ||
-					msg.startsWith("/펫강8, ") ||
-					msg.startsWith("/펫강9, ") ||
-					msg.startsWith("/펫강10, ")
-				) {
-					var commandParts = msg.split(", ");
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /펫강X, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim();
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								var packageName = "";
-								if (msg.startsWith("/펫강10")) {
-									packageName = "펫강화패키지2⭐️[10](/펫강화패키지오픈10)";
-								} else if (msg.startsWith("/펫강1")) {
-									packageName = "펫강화패키지2⭐️[1](/펫강화패키지오픈1)";
-								} else if (msg.startsWith("/펫강2")) {
-									packageName = "펫강화패키지2⭐️[2](/펫강화패키지오픈2)";
-								} else if (msg.startsWith("/펫강3")) {
-									packageName = "펫강화패키지2⭐️[3](/펫강화패키지오픈3)";
-								} else if (msg.startsWith("/펫강4")) {
-									packageName = "펫강화패키지2⭐️[4](/펫강화패키지오픈4)";
-								} else if (msg.startsWith("/펫강5")) {
-									packageName = "펫강화패키지2⭐️[5](/펫강화패키지오픈5)";
-								} else if (msg.startsWith("/펫강6")) {
-									packageName = "펫강화패키지2⭐️[6](/펫강화패키지오픈6)";
-								} else if (msg.startsWith("/펫강7")) {
-									packageName = "펫강화패키지2⭐️[7](/펫강화패키지오픈7)";
-								} else if (msg.startsWith("/펫강8")) {
-									packageName = "펫강화패키지2⭐️[8](/펫강화패키지오픈8)";
-								} else if (msg.startsWith("/펫강9")) {
-									packageName = "펫강화패키지2⭐️[9](/펫강화패키지오픈9)";
-								}
-								if (packageName !== "") {
-									if (!data.member[targetUserId].bag) data.member[targetUserId].bag = {};
-									if (data.member[targetUserId].bag[packageName] === undefined) {
-										data.member[targetUserId].bag[packageName] = 1;
-									} else {
-										data.member[targetUserId].bag[packageName] += 1;
-									}
-									replier.reply("[" + targetUserId + "]님에게 " + packageName + "가 지급되었습니다.");
-									saveJsonFile(data, filePath);
-								}
-							}
-						}
-					}
-				}
-				if (
-					msg.startsWith("/간바레1, ") ||
-					msg.startsWith("/간바레2, ") ||
-					msg.startsWith("/간바레3, ") ||
-					msg.startsWith("/간바레4, ") ||
-					msg.startsWith("/간바레5, ") ||
-					msg.startsWith("/간바레6, ") ||
-					msg.startsWith("/간바레7, ") ||
-					msg.startsWith("/간바레8, ") ||
-					msg.startsWith("/간바레9, ") ||
-					msg.startsWith("/간바레10, ")
-				) {
-					var commandParts = msg.split(", ");
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /간바레X, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim();
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								let packageName = "";
-								if (msg.startsWith("/간바레10")) {
-									packageName = "간바레 호이상🍾[10](/간빠이10)";
-								} else if (msg.startsWith("/간바레1")) {
-									packageName = "간바레 호이상🍾[1](/간빠이1)";
-								} else if (msg.startsWith("/간바레2")) {
-									packageName = "간바레 호이상🍾[2](/간빠이2)";
-								} else if (msg.startsWith("/간바레3")) {
-									packageName = "간바레 호이상🍾[3](/간빠이3)";
-								} else if (msg.startsWith("/간바레4")) {
-									packageName = "간바레 호이상🍾[4](/간빠이4)";
-								} else if (msg.startsWith("/간바레5")) {
-									packageName = "간바레 호이상🍾[5](/간빠이5)";
-								} else if (msg.startsWith("/간바레6")) {
-									packageName = "간바레 호이상🍾[6](/간빠이6)";
-								} else if (msg.startsWith("/간바레7")) {
-									packageName = "간바레 호이상🍾[7](/간빠이7)";
-								} else if (msg.startsWith("/간바레8")) {
-									packageName = "간바레 호이상🍾[8](/간빠이8)";
-								} else if (msg.startsWith("/간바레9")) {
-									packageName = "간바레 호이상🍾[9](/간빠이9)";
-								}
-								if (packageName !== "") {
-									if (data.member[targetUserId].bag[packageName] === undefined) {
-										data.member[targetUserId].bag[packageName] = 1;
-									} else {
-										data.member[targetUserId].bag[packageName] += 1;
-									}
-									replier.reply("[" + targetUserId + "]님에게 " + packageName + "가 지급되었습니다.");
-								}
-							}
-						}
-					}
-				}
-				if (
-					msg.startsWith("/돈키1, ") ||
-					msg.startsWith("/돈키2, ") ||
-					msg.startsWith("/돈키3, ") ||
-					msg.startsWith("/돈키4, ") ||
-					msg.startsWith("/돈키5, ") ||
-					msg.startsWith("/돈키6, ") ||
-					msg.startsWith("/돈키7, ") ||
-					msg.startsWith("/돈키8, ") ||
-					msg.startsWith("/돈키9, ") ||
-					msg.startsWith("/돈키마지막, ")
-				) {
-					var commandParts = msg.split(", ");
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /돈키X, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim();
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								let packageName = "";
-								if (msg.startsWith("/돈키1")) {
-									packageName = "돈키호테🛒 패키지[1](/돈키오픈1)";
-								} else if (msg.startsWith("/돈키2")) {
-									packageName = "돈키호테🛒 패키지[2](/돈키오픈2)";
-								} else if (msg.startsWith("/돈키3")) {
-									packageName = "돈키호테🛒 패키지[3](/돈키오픈3)";
-								} else if (msg.startsWith("/돈키4")) {
-									packageName = "돈키호테🛒 패키지[4](/돈키오픈4)";
-								} else if (msg.startsWith("/돈키5")) {
-									packageName = "돈키호테🛒 패키지[5](/돈키오픈5)";
-								} else if (msg.startsWith("/돈키6")) {
-									packageName = "돈키호테🛒 패키지[6](/돈키오픈6)";
-								} else if (msg.startsWith("/돈키7")) {
-									packageName = "돈키호테🛒 패키지[7](/돈키오픈7)";
-								} else if (msg.startsWith("/돈키8")) {
-									packageName = "돈키호테🛒 패키지[8](/돈키오픈8)";
-								} else if (msg.startsWith("/돈키9")) {
-									packageName = "돈키호테🛒 패키지[9](/돈키오픈9)";
-								} else if (msg.startsWith("/돈키마지막")) {
-									packageName = "돈키호테🛒 패키지[10](/돈키오픈10)";
-								}
-								if (packageName !== "") {
-									if (data.member[targetUserId].bag[packageName] === undefined) {
-										data.member[targetUserId].bag[packageName] = 1;
-									} else {
-										data.member[targetUserId].bag[packageName] += 1;
-									}
-									replier.reply("[" + targetUserId + "]님에게 " + packageName + "가 지급되었습니다.");
-								}
-							}
-						}
-					}
-				}
-				if (
-					msg.startsWith("/계란1, ") ||
-					msg.startsWith("/계란2, ") ||
-					msg.startsWith("/계란3, ") ||
-					msg.startsWith("/계란4, ") ||
-					msg.startsWith("/계란5, ") ||
-					msg.startsWith("/호이1, ") ||
-					msg.startsWith("/호이2, ") ||
-					msg.startsWith("/호이3, ") ||
-					msg.startsWith("/호이4, ") ||
-					msg.startsWith("/호이5, ") ||
-					msg.startsWith("/여름1, ") ||
-					msg.startsWith("/여름2, ") ||
-					msg.startsWith("/여름3, ") ||
-					msg.startsWith("/여름4, ") ||
-					msg.startsWith("/여름5, ") ||
-					msg.startsWith("/여름다, ") ||
-					msg.startsWith("/호이다, ") ||
-					msg.startsWith("/계란다, ") ||
-					msg.startsWith("/로즈, ")
-				) {
-					var commandParts = msg.split(", ");
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /계란X, 사용자아이디 또는 /호이X, 사용자아이디 또는 /로즈, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim();
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								// 다 지급 명령어 처리
-								if (msg.startsWith("/여름다")) {
-									let summerPackages = [
-										"여름휴가패키지😎[1](/여름오픈1)",
-										"여름휴가패키지😎[2](/여름오픈2)",
-										"여름휴가패키지😎[3](/여름오픈3)",
-										"여름휴가패키지😎[4](/여름오픈4)",
-										"여름휴가패키지😎[5](/여름오픈5)"
-									];
-									summerPackages.forEach((pkg) => {
-										data.member[targetUserId].bag[pkg] = (data.member[targetUserId].bag[pkg] || 0) + 1;
-									});
-									replier.reply("[" + targetUserId + "]님에게 여름휴가패키지 1~5가 모두 지급되었습니다.");
-								} else if (msg.startsWith("/호이다")) {
-									let hoiPackages = ["호이패키지1🤪(/1줄요약)", "호이패키지2🤪(/2줄요약)", "호이패키지3🤪(/3줄요약)", "호이패키지4🤪(/4줄요약)", "호이패키지5🤪(/5줄요약)"];
-									hoiPackages.forEach((pkg) => {
-										data.member[targetUserId].bag[pkg] = (data.member[targetUserId].bag[pkg] || 0) + 1;
-									});
-									replier.reply("[" + targetUserId + "]님에게 호이패키지 1~5가 모두 지급되었습니다.");
-								} else if (msg.startsWith("/계란다")) {
-									let eggPackages = [
-										"계란말이패키지🐣[1](/주문요1)",
-										"계란말이패키지🐣[2](/주문요2)",
-										"계란말이패키지🐣[3](/주문요3)",
-										"계란말이패키지🐣[4](/주문요4)",
-										"계란말이패키지🐣[5](/주문요5)"
-									];
-									eggPackages.forEach((pkg) => {
-										data.member[targetUserId].bag[pkg] = (data.member[targetUserId].bag[pkg] || 0) + 1;
-									});
-									replier.reply("[" + targetUserId + "]님에게 계란말이패키지 1~5가 모두 지급되었습니다.");
-								} else {
-									// 단일 패키지 처리
-									let packageName = "";
-									if (msg.startsWith("/계란1")) packageName = "계란말이패키지🐣[1](/주문요1)";
-									else if (msg.startsWith("/계란2")) packageName = "계란말이패키지🐣[2](/주문요2)";
-									else if (msg.startsWith("/계란3")) packageName = "계란말이패키지🐣[3](/주문요3)";
-									else if (msg.startsWith("/계란4")) packageName = "계란말이패키지🐣[4](/주문요4)";
-									else if (msg.startsWith("/계란5")) packageName = "계란말이패키지🐣[5](/주문요5)";
-									else if (msg.startsWith("/호이1")) packageName = "호이패키지1🤪(/1줄요약)";
-									else if (msg.startsWith("/호이2")) packageName = "호이패키지2🤪(/2줄요약)";
-									else if (msg.startsWith("/호이3")) packageName = "호이패키지3🤪(/3줄요약)";
-									else if (msg.startsWith("/호이4")) packageName = "호이패키지4🤪(/4줄요약)";
-									else if (msg.startsWith("/호이5")) packageName = "호이패키지5🤪(/5줄요약)";
-									else if (msg.startsWith("/여름1")) packageName = "여름휴가패키지😎[1](/여름오픈1)";
-									else if (msg.startsWith("/여름2")) packageName = "여름휴가패키지😎[2](/여름오픈2)";
-									else if (msg.startsWith("/여름3")) packageName = "여름휴가패키지😎[3](/여름오픈3)";
-									else if (msg.startsWith("/여름4")) packageName = "여름휴가패키지😎[4](/여름오픈4)";
-									else if (msg.startsWith("/여름5")) packageName = "여름휴가패키지😎[5](/여름오픈5)";
-									else if (msg.startsWith("/로즈")) packageName = "로즈데이패키지🌹(/의미없다)";
-									if (packageName !== "") {
-										data.member[targetUserId].bag[packageName] = (data.member[targetUserId].bag[packageName] || 0) + 1;
-										replier.reply("[" + targetUserId + "]님에게 " + packageName + "가 지급되었습니다.");
-									}
-								}
-							}
-						}
-					}
-				}
+				
 				if (msg === "/고생하셨습니다") {
 					if (data.member[sender] && data.member[sender].bag["부방상여패키지3(/고생하셨습니다)"] > 0) {
 						// 패키지 개수 감소
@@ -18841,7 +18401,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					saveJsonFile(guildData, guildPath);
 
-					castleMsg(buildGuildTerritoryStartMessage(data, guildData), replier, isGroupChat);
+					noticeMsg(buildGuildTerritoryStartMessage(data, guildData), replier, isGroupChat);
 					castleMsg(buildGuildTerritoryOrderMessage(data, petData, guildData), replier, isGroupChat);
 
 					var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
@@ -19876,10 +19436,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								}
 								replier.reply(resultMsg.trim());
 								if (questRewardResult.claimed && hasPetSkill(petSkillData, sender, "일일루틴")) {
-									// 일일루틴B등급: 추가 포인트 지급 (3억 포인트)
-									var bonusPoint = 300000000; // 3억 포인트
+									// 일일루틴B등급: 추가 포인트 지급 (1억 포인트)
+									var bonusPoint = 100000000; // 1억 포인트
 									addPoint(data, sender, bonusPoint);
-									replier.reply("🎉 일일루틴📙 3억 포인트를 지급받습니다.");
+									replier.reply("🎉 일일루틴📙 1억 포인트를 지급받습니다.");
 								}
 							}
 						}
@@ -19909,7 +19469,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					data.member[sender].isGidoFlag = true;
-					var gidoSuccess = Math.random() < 0.01;
+					var gidoSuccess = Math.random() < 0.03;
 					if (gidoSuccess) {
 						addItem(data, sender, "주간상자🦋(/주간오픈)", 1);
 						replier.reply("[" + nickName + "]님.. 호월신이 당신에게 흥미를 느낍니다.\n주간상자🦋 1개를 지급받습니다.");
@@ -19929,9 +19489,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							replier.reply(rewardResult.message);
 							if (hasPetSkill(petSkillData, sender, "일일루틴")) {
 								// 일일루틴B등급: 추가 포인트 지급 (3억 포인트)
-								var bonusPoint = 300000000; // 3억 포인트
+								var bonusPoint = 100000000; // 3억 포인트
 								addPoint(data, sender, bonusPoint);
-								replier.reply("🎉 일일루틴📙 3억 포인트를 지급받습니다.");
+								replier.reply("🎉 일일루틴📙 1억 포인트를 지급받습니다.");
 							}
 						} else if (status.isComplete && status.dailyRewardDone && !status.weeklyComplete) {
 							replier.reply(
@@ -27446,6 +27006,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					out += "길드명(마크)[서버][길드장][길드인원][🎖️길드레벨][매력조건]\n\n";
 					out += "✅가입방법:\n/길드상점 에서 길드가입권🍭 구매 후\n/길드가입 [번호] 를 입력해주세요.\n";
 					out += "━━━━━━━━━━━━\n";
+					out += "가입 가능 길드 상세보기🪧" + allsee + "\n";
 
 					if (rows.length === 0) {
 						out += "표시할 길드가 없습니다.";
@@ -27503,7 +27064,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								rr.level +
 								"][" +
 								(rr.joinConditionExp > 0 ? numberWithCommas(rr.joinConditionExp) + "💕이상(⬆️)" : "제한없음") +
-								"]\n";
+								"]\n\n";
 						}
 					}
 
@@ -29292,8 +28853,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var i, row;
 
 					for (i = 0; i < rows.length; i++) {
-						if (i === 5) {
-							out += "⭐ 다른길드 보러가기.. 👉 (6등부터~)\n" + allsee;
+						if (i === 3) {
+							out += "⭐ 다른길드 보러가기.. 👉 (4등부터~)\n" + allsee;
 						}
 
 						row = rows[i];
@@ -30589,13 +30150,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (
 					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
 					msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
+					msg.trim().startsWith("/가정정정,") || msg.trim().match(/^\/가정정정\d*,/) ||
 					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
 					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
 					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
 					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
 				) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/(가정|가정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+						var parts = msg.match(/^\/(가정|가정정|가정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
 
 						if (parts) {
 							var command = parts[1];
@@ -30613,6 +30175,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[1](/나한테잘하자1)";
 							} else if (command === "가정정") {
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)";
+							} else if (command === "가정정정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
@@ -30643,6 +30207,138 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+							if (msg === "/오픈하면부처가됩니다") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] !== undefined && data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 0) {
+							if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 1) {
+								data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"]--;
+							} else {
+								delete data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"];
+							}
+
+							let guildStarterItems = {
+								"펫던전 입장권🌋": 100,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 5000,
+								"탐험확률UP🗻(50%)": 100,
+								"월간상자🌸(/월간오픈)": 1,
+								"주간상자🦋(/주간오픈)": 1
+							};
+
+							for (let item in guildStarterItems) {
+								addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
+							}
+
+							let openMsg = "하이!\nhttps://ibb.co/Swv59rpb\n\n";
+							openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+							for (let item in guildStarterItems) {
+								openMsg += item + " " + guildStarterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg);
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
+						}
+					}
+				}
+if (msg === "/나한테잘하자3") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"돌멩이🪨": 15000,
+								"미니펫뽑기🐹(/미니펫오픈)": 300,
+								"1달러스토어🤑(/1일1후원)": 10,
+								"주간상자🦋(/주간오픈)": 1,
+								"정령강화확률UP🥀(30%)": 20,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
+								"확성기📢(/알림 내용 30자)": 5,
+								"펫먹이🍼": 500,
+								"호이베이스볼⚾️(/투수던집니다)": 50,
+								"양념치킨🐔": 200,
+								"미니펫 강화석💫": 100
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/오픈하면어른이됩니다") {
+    if (castleSiegeFlag) return;
+
+    var member = data.member[sender];
+    if (!member) return;
+
+    var packItem = "어버이날패키지🧧(/오픈하면어른이됩니다)";
+
+    if (!member.bag) {
+        member.bag = {};
+    }
+
+    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
+        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
+        return;
+    }
+
+    // 패키지 1개 차감
+    if (member.bag[packItem] > 1) {
+        member.bag[packItem]--;
+    } else {
+        delete member.bag[packItem];
+    }
+
+    var rewardItems = {
+        "길드공헌훈장🌟(/길드공헌 숫자)": 300,
+        "펫스윗홈인테리어샵🖼️(/샵오픈)": 12000,
+        "미니펫뽑기🐹(/미니펫오픈)": 10000,
+        "호이베이스볼⚾️(/투수던집니다)": 400,
+        "주간상자🦋(/주간오픈)": 5,
+        "정령 강화석🥀": 3000,
+        "반지 강화석💍": 3000,
+        "강화확률뽑기⚒️(/강화뽑기)": 100,
+        "펫먹이🍼": 10000,
+        "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)": 1
+    };
+
+    for (var item in rewardItems) {
+        addItemToBag(member.bag, item, rewardItems[item]);
+    }
+
+    var openMsg = "어버이날 감사 패키지가 열렸습니다🧧\n";
+    openMsg += "오늘은 어른이 되는 날입니다.\n\n";
+    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+
+    for (var rewardName in rewardItems) {
+        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
+    }
+
+    replier.reply(openMsg);
+}
 				if (msg === "/일어나돈벌어야지") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] !== undefined && data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] > 0) {
@@ -31483,9 +31179,9 @@ function buildGuildTerritoryRiftEventLimitText(war) {
 	var count = getGuildTerritoryRiftEventCount(war);
 	var remain = Math.max(0, GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT - count);
 	if (remain <= 0) {
-		return "※ 균열 이벤트 발생 횟수: " + count + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "\n※ 이번 영지전에서는 더 이상 균열 이벤트가 발생하지 않습니다.";
+		return "※ 균열 이벤트 발생 횟수: (" + count + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + ")\n※ 이번 영지전에서는 더 이상 균열 이벤트가 발생하지 않습니다.";
 	}
-	return "※ 균열 이벤트 발생 횟수: " + count + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "\n※ 이번 영지전에서는 균열 이벤트가 " + remain + "회 더 발생할 수 있습니다.";
+	return "※ 균열 이벤트 발생 횟수: (" + count + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + ")\n※ 이번 영지전에서는 균열 이벤트가 " + remain + "회 더 발생할 수 있습니다.";
 }
 
 // 길드 영지전 균열 이벤트 발생 시 상태 업데이트 및 안내 텍스트 빌드
@@ -31509,7 +31205,7 @@ function getGuildTerritoryRiftEventHistory(war) {
 function formatGuildTerritoryRiftEventSlot(status, index, occurrenceCount, locked) {
 	var prefix = index === 0 ? "└" : "  └";
 	var countText = occurrenceCount + "회";
-	var lockText = locked ? "🔒" : "";
+	var lockText = locked ? "💥" : "";
 	if (status === "rift") return prefix + "[🌌균열 " + countText + " 발생" + lockText + "]";
 	if (status === "greatRift") return prefix + "[🌋대균열 " + countText + " 발생" + lockText + "]";
 	return prefix + "[🌌미발생" + lockText + "]";
@@ -31559,7 +31255,7 @@ function buildGuildTerritoryRiftUi(war) {
 		if (status === "rift" || status === "greatRift") eventCounts[status]++;
 		out += "\n" + formatGuildTerritoryRiftEventSlot(status, i, eventCounts[status] || 0, locked);
 	}
-	if (locked) out += "\n     └[🌌🌋균열발생 종료🔐]";
+	if (locked) out += "\n     └[🌌🌋균열발생 종료🔒]";
 	return out;
 }
 
@@ -31705,10 +31401,10 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	var remain = Math.max(0, attackLimit - used);
 	var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
-	var msg1 =
-		"[" +
-		checkRank(data, petData, guildData, row.user) +
-		"] 님의 공격 차례입니다.\n" +
+	var turnLine = "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
+
+	var msg =
+		turnLine + "\n" +
 		"[" +
 		formatGuildDisplay(g) +
 		"] 남은 턴(" +
@@ -31719,11 +31415,11 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 		buildGuildTerritoryRiftUi(war) +
 		"\n" +
 		"━━━━━━━━━━━━━━━━\n" +
-		status;
+		status +
+		"━━━━━━━━━━━━━━━━\n" +
+		turnLine;
 
-	var msg2 = "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
-
-	return [msg1, msg2];
+	return [msg];
 }
 
 // 영지전 공격 턴 보상 적용: 길드 자금 보상, 공헌 메달 보상 확률 계산 및 적용, 보상 메시지 반환
@@ -31740,7 +31436,7 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
 	}
 
 	return "길드 보상🤑: 🅟" + formatGuildTerritoryRewardAmount(GUILD_TERRITORY_TURN_FUND_REWARD) +
-		" 확률 보상🎊: " + (medalSuccess ? "\n[⭐️]공헌+1 획득" : "[❌]보상실패");
+		"\n확률 보상🎊: " + (medalSuccess ? "[⭐️]공헌+1 획득" : "[🥺]보상실패");
 }
 
 // 영지전 균열 이벤트 보상 금액 포맷 함수 (억, 만 단위로 콤마와 함께 포맷)
@@ -34693,7 +34389,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 		member.weeklyQuestCnt = 0;
 		claimed = true;
 
-		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : 미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
+		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : 펫스킬북📙(/펫스킬오픈) 1개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
 
 		if (hasPetSkill(petSkillData, sender, "주간루틴")) {
 			var weeklyRoutineBonusPoint = 1000000000;
