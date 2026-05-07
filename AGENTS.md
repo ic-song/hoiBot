@@ -33,6 +33,10 @@
 - 명령어/분기 로직 수정 시 기존 명령들과 충돌 여부를 함께 점검합니다.
 - `data/` 구조를 변경하면 해당 데이터를 읽는 코드(`main.js`, `Info.js`)도 같이 업데이트합니다.
 - 인코딩은 UTF-8 기준을 유지합니다.
+- 한글/이모지 포함 파일(`main.js`, `Info.js`, `AGENTS.md`, `README.md`, `data/*.json`)은 PowerShell `Get-Content`/`Set-Content`, `cmd > file`, 파이프 리다이렉션으로 복구/일괄수정하지 않습니다. 인코딩이 깨질 수 있습니다.
+- 위 파일을 스크립트로 수정해야 하면 Node.js `fs.readFileSync(path, "utf8")` / `fs.writeFileSync(path, text, "utf8")` 또는 `apply_patch`만 사용합니다.
+- Git의 파일 내용을 복구할 때는 셸 리다이렉션 대신 `git restore -- <file>`을 우선 사용하고, 불가피하면 `git archive --output=<tmp.tar> HEAD <file>` 후 압축 해제처럼 바이트를 보존하는 방식을 사용합니다.
+- 한글/이모지 파일 수정 후에는 `node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('Info.js','utf8').slice(0,80)))"`처럼 UTF-8로 직접 읽어 깨짐 여부를 확인합니다.
 - 새 함수는 같은 도메인 함수 근처에 둡니다.
 - 확률, 보상, 랭킹, 길드, 펫스킬 로직은 밸런스 영향이 크므로 가능하면 상수로 관리합니다.
 - 봇 메시지는 유저가 바로 보는 UI입니다. 줄바꿈, 이모지, `allsee` 사용 위치를 조심해서 유지합니다.
