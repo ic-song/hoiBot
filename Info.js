@@ -1136,7 +1136,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				let bag = udata.furnitureBag;
 
 				for (let j = 0; j < bag.length; j++) {
-					let g = bag[j].grade || "기타";
+					let g = (bag[j] && bag[j].grade) || "기타";
 					if (!gradeCount[g]) gradeCount[g] = 0;
 					gradeCount[g]++;
 					total++;
