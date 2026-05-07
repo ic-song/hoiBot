@@ -79,6 +79,7 @@ node --check Info.js
   - `feature/bm`: 패키지 관련 작업
   - `feature/dev-setting`: 개발 환경 설정
   - `feature/doc`: `README.md`, `AGENTS.md`, `.gitignore` 등 문서/설정 문서 수정
+  - `feature/guildTerritoryWar`: 길드 영토전 관련 기능 개발
   - `feature/<기능명>`: 기능 단위 개발
 - 권장 흐름:
 
