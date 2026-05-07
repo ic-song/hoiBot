@@ -32030,7 +32030,7 @@ function finishGuildTerritoryWar(data, guildData, reason, replier, isGroupChat) 
 		}
 		out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
 		war.readyGuilds = {};
-		castleMsg(out, replier, isGroupChat);
+		noticeMsg(out);
 	});
 }
 // 출석 /리셋 함수
