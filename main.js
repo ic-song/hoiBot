@@ -31495,7 +31495,6 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 
 	if (instabilityRoll < instabilityRate) {
 		riftRoll = Math.random() * 100;
-		 += "\n- 분기 판정: " + formatPercent1(riftRoll) + " < " + rates.rift;
 		if (riftRoll < rates.rift) {
 			return applyGuildTerritoryRift(data, guildData);
 		}
