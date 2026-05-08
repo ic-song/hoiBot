@@ -1,201 +1,465 @@
 # AGENTS.md
 
-This document defines dedicated rules for AI agents working in the `hoiBot` repository.
-Project guidance for human operators/developers is maintained in `README.md`.
+This document defines the working rules for AI agents operating in the `hoiBot` repository.
+Project explanations for human operators/developers are managed in `README.md`.
 
-## 1) Project Overview
+---
 
-- This repository is a game operation script project running in an Android Messenger Bot JavaScript environment.
+# 1) Project Overview
+
+- This repository is a game operation script project running in an Android MessengerBot JavaScript environment.
 - Core entry files:
-  - `main.js`: Command handling and main game logic
-  - `Info.js`: Lookup/support features
-  - `data/`: Game operation data (JSON/TXT)
+  - `main.js`: command handling and core game logic
+  - `Info.js`: query/helper features
+  - `data/`: game operation data snapshots (JSON/TXT)
+  - `COMMAND_REGISTRY.md`: command/helper/data-flow index document
 
-## 2) Runtime Environment Assumptions
+---
 
-- Runtime: Android-based Messenger Bot script engine
-- Main callback:
-  - `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`
-- Example APIs:
-  - `Api.replyRoom`
-  - `FileStream`
-  - `Device`
-  - `android.os.*`
-  - `java.io.*`
-- Production data path:
-  - `/sdcard/호이랜드/`
-- Development/test data path:
-  - `/sdcard/호이랜드_dev/`
+# 2) Runtime Environment
 
-## 3) Working Principles
+## Runtime
 
-- ALWAYS preserve existing behavior whenever possible.
-- Minimize modification scope when editing large single files such as `main.js`.
-- ALWAYS validate JSON syntax and encoding after modifying data files.
-- NEVER commit sensitive information such as personal data, tokens, or private operational data.
-- NEVER overwrite or revert user changes unless explicitly requested.
-- When modifying save logic, ALWAYS verify DEV/PROD context handling together with `saveJsonFile` and `loadJsonFile` call flows.
+- Android MessengerBot Rhino JavaScript engine
 
-## 4) Code Modification Guidelines
-
-- Prefer small, isolated changes.
-- Keep one logical purpose per commit.
-- When modifying command/branch logic, check for conflicts with existing commands.
-- If `data/` structures are changed, also update all related readers (`main.js`, `Info.js`).
-- ALWAYS preserve UTF-8 encoding.
-
-### Korean/Emoji File Safety Rules
-
-The following files may contain Korean text and emojis:
-
-- `main.js`
-- `Info.js`
-- `AGENTS.md`
-- `README.md`
-- `data/*.json`
-
-NEVER use the following methods on these files:
-
-- PowerShell `Get-Content` / `Set-Content`
-- `cmd > file`
-- Pipe redirection
-
-These methods may corrupt UTF-8 encoding.
-
-If scripted modification is required, ONLY use:
+## Main Callback
 
 ```js
-fs.readFileSync(path, "utf8")
-fs.writeFileSync(path, text, "utf8")
+response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 ```
 
-or `apply_patch`.
+## Common APIs
 
-### Git Restore Safety
+- `Api.replyRoom`
+- `FileStream`
+- `Device`
+- `android.os.*`
+- `java.io.*`
 
-When restoring file contents from Git:
+## Data Paths
 
-- Prefer:
-  ```bash
-  git restore -- <file>
-  ```
+### Production Data
 
-- Avoid shell redirection restore methods.
-
-If byte-preserving recovery is required, prefer approaches such as:
-
-```bash
-git archive --output=<tmp.tar> HEAD <file>
+```text
+/sdcard/호이랜드/
 ```
 
-followed by extraction.
+### DEV/Test Data
 
-### Encoding Verification
-
-After modifying Korean/emoji files, ALWAYS verify UTF-8 integrity directly:
-
-```bash
-node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('Info.js','utf8').slice(0,80)))"
+```text
+/sdcard/호이랜드_dev/
 ```
 
-### Additional Guidelines
+---
 
-- Place new functions near related domain functions.
-- Probability, reward, ranking, guild, and pet-skill logic are balance-sensitive. Prefer constants/config-based management whenever possible.
-- Bot messages are direct user-facing UI. Preserve formatting, line breaks, emojis, and `allsee` behavior carefully.
-- NEVER perform broad regex replacements across `main.js` unless explicitly requested.
-- Avoid unnecessary refactoring of large sections.
-- Prefer additive changes over structural rewrites.
+# 3) Rhino JS Environment Notes
 
-## 5) Data File Guidelines
+- This is NOT a modern Node.js/browser JavaScript environment.
+- Rhino JS behavior may differ from standard Node.js/browser JavaScript behavior.
 
-- `data/*.json` files may also serve as operational samples/backups. Be careful with deletion or reset operations.
-- Renaming keys may introduce backward compatibility issues. Add migration logic when necessary.
-- Preserve existing schema types. Avoid mixing number/string types inconsistently.
+## Forbidden Features
 
-## 6) Validation Checklist
+- ESM `import/export`
+- `fs/promises`
+- npm package install assumptions
+- `fetch`-dependent runtime logic
+- terminal/shell-based runtime assumptions
+- worker threads
+- modern ECMAScript-only syntax
+- browser/React/Web API assumptions
 
-Minimum syntax validation after modification:
+---
+
+# 4) Global Rules
+
+- Preserve existing behavior whenever possible.
+- Prefer minimal modifications over structural rewrites.
+- NEVER modify unrelated files.
+- ALWAYS preserve UTF-8 encoding.
+- NEVER revert user changes unless explicitly requested.
+- NEVER commit sensitive information (tokens, private operational data, personal information).
+- When modifying save logic, verify:
+  - `saveJsonFile`
+  - `loadJsonFile`
+  - DEV/PROD path flow
+- NEVER perform full-file regex replacement or large-scale refactoring on `main.js` unless explicitly requested.
+- Preserve user-facing UI formatting:
+  - line breaks
+  - emojis
+  - `allsee` formatting
+
+---
+
+# 5) COMMAND_REGISTRY.md Rules
+
+## Purpose
+
+`COMMAND_REGISTRY.md` is a secondary index document for command/helper/data-flow exploration.
+
+## Core Principles
+
+- The actual source of truth is ALWAYS the current codebase.
+- The registry is NOT the source of truth.
+- The registry is a helper index for exploration/navigation.
+- NEVER assume a helper/function/command does not exist solely because it is missing from the registry.
+- If the registry conflicts with the actual code, trust the code.
+- After completing a task, update the registry based on the modified code.
+
+## Status Values
+
+| Status | Meaning |
+|---|---|
+| `VERIFIED` | Confirmed synchronized with code |
+| `PARTIAL` | Partially verified |
+| `STALE` | Outdated, requires re-validation |
+| `UNKNOWN` | Unverified |
+
+## Recommended Structure Example
+
+    # /가방
+
+    Status: VERIFIED
+
+    ## Files
+    - main.js
+
+    ## Related Helpers
+    - addItemToBag
+    - removeItem
+    - hasItem
+
+    ## Data Usage
+    - data.member[sender].bag
+
+    ## Save Flow
+    - saveJsonFile
+
+    ## Related Commands
+    - /가구가방
+    - /미니펫가방
+
+---
+
+# 6) Sub-Agent System
+
+## Structure
+
+```text
+head-agent
+ ├─ task-agent
+ ├─ explorer-agent
+ ├─ coding-agent
+ ├─ reviewer-agent
+ ├─ test-agent
+ ├─ encoding-agent
+ └─ doc-agent
+```
+
+## General Principles
+
+- Sub-agents are specialized support agents with isolated responsibilities.
+- Each sub-agent operates only within its assigned scope.
+- Exploration results are treated as investigation results, not guaranteed facts.
+- "Not found" means "unverified", NOT "does not exist".
+- Reusing existing logic is preferred over creating new logic.
+
+---
+
+# 7) task-agent
+
+## Role
+
+- Handles task queue and task state management.
+- Retrieves tasks from Notion or external task sources.
+- Selects tasks with `🛠 READY` status.
+- Changes task status to `🧪 DEV` when development starts.
+- Passes task metadata to `head-agent`.
+
+## Modification Permission
+
+- May modify task states and task documents.
+- MUST NOT modify source code files.
+
+## Task Lifecycle
+
+```text
+🛠 READY
+ ↓
+Task Started
+ ↓
+🧪 DEV
+ ↓
+Development / Validation
+```
+
+## Rules
+
+- Only `🛠 READY` tasks may enter execution flow.
+- Task status MUST be changed to `🧪 DEV` before coding begins.
+- If task-state update fails, code modification MUST NOT begin.
+- If the task description is insufficient, report it as unverified instead of proceeding.
+- Report possible duplicate work to `head-agent`.
+- Organize and pass:
+  - title
+  - description
+  - status
+  - priority
+  - related files
+  - reference links
+- MUST NOT directly modify code files.
+
+---
+
+# 8) explorer-agent
+
+## Role
+
+- Read-only code/data exploration.
+- Explores:
+  - commands
+  - helpers
+  - data flow
+  - save flow
+
+## Modification Permission
+
+- MUST NOT modify files.
+
+## Rules
+
+- Check `COMMAND_REGISTRY.md` before large-scale source scanning.
+- Use the registry only as a starting point.
+- ALWAYS re-verify findings against the actual source code.
+- Missing registry entries mean "unregistered", NOT "nonexistent".
+- Record exploration keywords.
+- NEVER conclude nonexistence solely from failed searches.
+- Explore related:
+  - helper functions
+  - output messages
+  - save flows
+  - connected commands
+
+## Exploration Result Must Include
+
+- searched keywords
+- discovered files/functions
+- uncertain areas
+- possible duplicate logic
+
+---
+
+# 9) coding-agent
+
+## Role
+
+- Performs actual code modifications.
+- Implements features with minimal scope changes.
+
+## Modification Permission
+
+- May modify source code.
+
+## Rules
+
+- NEVER create new functions solely based on a single failed exploration.
+- Re-check existing logic using multiple exploration methods.
+- Reuse existing helpers whenever possible.
+- Prefer minimal modifications over structural changes.
+- Avoid unnecessary large-scale refactoring.
+- Preserve:
+  - command UI
+  - line breaks
+  - emojis
+  - `allsee` formatting
+- Use only Rhino JS compatible syntax/features.
+
+---
+
+# 10) reviewer-agent
+
+## Role
+
+- Reviews modifications.
+- Detects regression risks and duplicate logic.
+
+## Modification Permission
+
+- MUST NOT modify files.
+
+## Rules
+
+- Verify that new functions do not duplicate existing logic.
+- Verify existing commands still behave correctly.
+- Detect unrelated file modifications.
+- Detect excessive formatting changes.
+- Verify:
+  - `saveJsonFile`
+  - `loadJsonFile`
+  - DEV/PROD flow
+- Verify Rhino JS compatibility.
+- Verify consistency between actual code and `COMMAND_REGISTRY.md`.
+
+## Main Review Targets
+
+- duplicate helpers
+- command conflicts
+- save-flow omissions
+- DEV/PROD path issues
+- unnecessary structural changes
+
+---
+
+# 11) test-agent
+
+## Role
+
+- Performs runtime and execution validation.
+- Validates:
+  - command flow
+  - JSON parsing
+  - syntax correctness
+
+## Modification Permission
+
+- MUST NOT modify files.
+
+## Rules
+
+- Treat `data/*.json` as production-like operational snapshots.
+- Validate against real operational snapshot structures.
+- NEVER overwrite original snapshot files.
+- Use copies or DEV contexts when data mutation is required.
+
+## Recommended Validation
 
 ```bash
 node --check main.js
-```
-
-If `Info.js` was modified:
-
-```bash
 node --check Info.js
 ```
 
-Minimum verification items:
+## Additional Validation
 
-- No script loading errors
-- Frequently used commands respond correctly
-- No data read/write path issues
-- No JSON parsing errors
+- JSON parse validation
+- `saveJsonFile`
+- `loadJsonFile`
+- DEV/PROD path handling
 
-Whenever possible, verify changes in a test room or sandbox environment before production deployment.
+## Limitations
 
-## 7) Git Workflow Rules
+- Commands requiring Android MessengerBot runtime APIs may not be fully testable in Node.js.
 
-- Avoid direct pushes to protected branches.
-- Use working branches + PR workflow.
-- Commit messages and PR titles/descriptions should be written in Korean.
+## Test Result Must Include
 
-Create branches from:
+- tested commands
+- used data files
+- expected behavior
+- actual behavior
+- unverified areas
 
-```text
-feature/main
-```
+---
 
-### Branch Naming Conventions
+# 12) encoding-agent
 
-- `feature/hoi`
-  - Hoi-requested feature work
+## Role
 
-- `feature/bugFix`
-  - Bug fixes
+- Protects UTF-8/Korean/emoji integrity.
+- Prevents encoding-related corruption.
 
-- `feature/bm`
-  - Package/BM related work
+## Modification Permission
 
-- `feature/dev-setting`
-  - Development environment setup
+- MUST NOT modify files.
 
-- `feature/doc`
-  - Documentation/config updates
-  - (`README.md`, `AGENTS.md`, `.gitignore`, etc.)
+## Target Files
 
-- `feature/guildTerritoryWar`
-  - Guild territory war related features
+- `main.js`
+- `Info.js`
+- `README.md`
+- `AGENTS.md`
+- `COMMAND_REGISTRY.md`
+- `data/*.json`
 
-- `feature/<feature-name>`
-  - General feature development
+## Rules
 
-### Recommended Flow
+- Verify UTF-8 integrity.
+- Verify Korean/emoji integrity.
+- Detect usage of:
+  - PowerShell `Get-Content`
+  - PowerShell `Set-Content`
+  - `cmd > file`
+  - pipe redirection
+
+## UTF-8 Validation Example
 
 ```bash
-git checkout -b feature/<task-name>
-git add -A
-git commit -m "type: change summary"
-git push origin feature/<task-name>
+node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('main.js','utf8').slice(0,80)))"
 ```
 
-### PR Description Requirements
+---
 
-Include:
+# 13) doc-agent
 
-- Purpose of changes
-- Main modified files
-- User impact (commands/data/operations)
-- Verified test items
+## Role
 
-## 8) Agent Behavior Rules
+- Maintains Markdown documentation and code-document synchronization.
+- Updates related documentation when commands/helpers/data-flow change.
 
-- NEVER guess when code/data can be directly inspected.
-- DO NOT modify unrelated files.
-- STOP immediately if unexpected large-scale formatting or structural changes appear.
-- ALWAYS include failure logs and reproduction steps clearly in the final report.
-- Preserve user-facing UI formatting whenever possible.
-- Treat operational game balance logic as sensitive.
-- Prefer minimal-risk modifications.
+## Modification Permission
+
+- May modify Markdown files.
+- MUST NOT modify source code files.
+
+## Scope
+
+- `README.md`
+- `AGENTS.md`
+- `COMMAND_REGISTRY.md`
+- other registry-style `*.md` files
+
+## Rules
+
+- NEVER update documentation based purely on assumptions.
+- Verify documentation synchronization whenever commands/helpers/data-flow change.
+- If documentation conflicts with code, update documentation based on code.
+- After task completion, update registry information based on modified code.
+- If synchronization cannot be completed, report:
+  - "documentation synchronization required"
+- Preserve:
+  - Markdown heading structure
+  - code block formatting
+
+---
+
+# 14) head-agent
+
+## Role
+
+- Overall orchestration.
+- Task distribution and final decision-making.
+- Integrates sub-agent outputs.
+
+## Modification Permission
+
+- May coordinate tasks/workflow.
+
+## Rules
+
+- NEVER blindly trust sub-agent results.
+- NEVER conclude nonexistence from failed searches.
+- If exploration uncertainty exists, pause or report before modification.
+- Prioritize reuse of existing logic.
+- Request additional exploration/review if sub-agent outputs conflict.
+- Use `task-agent` for task-state transitions.
+
+---
+
+# 15) Final Principle
+
+```text
+Not found ≠ Does not exist
+```
+
+Prioritize:
+- existing logic reuse
+- minimal modifications
+- UTF-8 preservation
+- Rhino JS compatibility
