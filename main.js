@@ -31045,12 +31045,16 @@ function ensureGuildWarehouseObj(g) {
 
 // 길드 영지전 데이터 구조 보장 및 초기화
 function ensureGuildTerritoryWar(data, guildData) {
+	// castleSiegeFlag 초기화
 	if (guildData.castleSiegeFlag == undefined) {
 		guildData.castleSiegeFlag = false;
 	}
+
+	// territoryWar 객체 초기화
 	if (!guildData.territoryWar || typeof guildData.territoryWar !== "object") {
 		guildData.territoryWar = {};
 	}
+	// 기존 데이터에서 guildTerritoryWar 객체가 있으면 territoryWar로 이동
 	if (data && data.guildTerritoryWar && typeof data.guildTerritoryWar === "object") {
 		guildData.territoryWar = data.guildTerritoryWar;
 		delete data.guildTerritoryWar;
@@ -31058,32 +31062,36 @@ function ensureGuildTerritoryWar(data, guildData) {
 		saveJsonFile(guildData, guildPath);
 	}
 
-	var war = guildData.territoryWar;
-	if (!war.readyGuilds || typeof war.readyGuilds !== "object") war.readyGuilds = {};
-	if (!war.territories || typeof war.territories !== "object") war.territories = {};
-	if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};
-	if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};
-	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};
-	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};
-	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};
-	if (!war.instabilityUses || typeof war.instabilityUses !== "object") war.instabilityUses = {};
-	if (!war.riftGuideUses || typeof war.riftGuideUses !== "object") war.riftGuideUses = {};
-	if (typeof war.turnCount !== "number") war.turnCount = 0;
-	if (typeof war.instabilityAdjust !== "number") war.instabilityAdjust = 0;
-	if (typeof war.riftBias !== "number") war.riftBias = 0;
-	if (typeof war.pendingStart !== "boolean") war.pendingStart = false;
-	if (typeof war.pendingStartAt !== "string") war.pendingStartAt = null;
-	if (typeof war.pendingStartToken !== "string") war.pendingStartToken = null;
-	if (typeof war.pendingStartRequestedAt !== "number") war.pendingStartRequestedAt = 0;
+	var war = guildData.territoryWar; // 이제 war 객체는 guildData.territoryWar을 참조하며, 필요한 초기화 작업을 수행
+	if (!war.readyGuilds || typeof war.readyGuilds !== "object") war.readyGuilds = {};// 준비한 길드 정보
+	if (!war.territories || typeof war.territories !== "object") war.territories = {};// 영지 정보
+	if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};// 길드별 공격 횟수
+	if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};// 길드별 공격 횟수 제한
+	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};// 타임아웃으로 공격 실패한 횟수
+	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};// 제거된 사용자 정보
+	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};// 제거된 길드 정보
+	if (!war.instabilityUses || typeof war.instabilityUses !== "object") war.instabilityUses = {};// 불안정 사용 정보
+	if (!war.riftGuideUses || typeof war.riftGuideUses !== "object") war.riftGuideUses = {};// 균열 유도 사용 정보
+	if (!war.riftCommandUses || typeof war.riftCommandUses !== "object") war.riftCommandUses = {};// 균열 명령 사용 정보
+	if (typeof war.turnCount !== "number") war.turnCount = 0;// 진행된 턴 수
+	if (typeof war.instabilityAdjust !== "number") war.instabilityAdjust = 0;// 불안정 조정치
+	if (typeof war.riftBias !== "number") war.riftBias = 0;// 균열 편향치
+	if (typeof war.pendingStart !== "boolean") war.pendingStart = false;// 영지전 준비 시작 여부
+	if (typeof war.pendingStartAt !== "string") war.pendingStartAt = null;// 영지전 준비 시작 시각 (ISO 문자열)
+	if (typeof war.pendingStartToken !== "string") war.pendingStartToken = null;// 영지전 준비 시작 토큰 (중복 시작 방지용)
+	if (typeof war.pendingStartRequestedAt !== "number") war.pendingStartRequestedAt = 0;// 영지전 준비 시작 요청 시각 (타임아웃 판정용)
 	if (typeof war.riftEventCount !== "number") {
+		// riftEventStatus가 "rift" 또는 "greatRift"인 경우에만 riftEventCount를 1로 설정, 그렇지 않으면 0으로 설정
 		war.riftEventCount = (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift") ? 1 : 0;
 	}
 	if (!Array.isArray(war.riftEventHistory)) {
 		war.riftEventHistory = [];
 		if (war.riftEventCount > 0 && (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift")) {
+			// 현재 균열 이벤트 상태를 히스토리에 추가하여 기록
 			war.riftEventHistory.push(war.riftEventStatus);
 		}
 	}
+	// riftEventStatus가 "rift", "greatRift", null 중 하나인지 확인하고, 그렇지 않으면 null로 초기화
 	if (!war.riftEventStatus) war.riftEventStatus = null;
 
 	var list = getGuildTerritoryList();
@@ -31217,6 +31225,7 @@ function beginGuildTerritoryWarNow(data, petData, guildData, replier, isGroupCha
 	war.riftEventGuildId = null;// 균열 이벤트 대상 길드 초기화
 	war.instabilityUses = {};	// 불안정성 사용 기록 초기화
 	war.riftGuideUses = {};// 균열 가이드 사용 기록 초기화
+	war.riftCommandUses = {};// 길드별 균열 명령 사용 기록 초기화
 	war.turnToken = null;// 턴 토큰 초기화
 	clearGuildTerritoryPendingStartState(war); // 영지전 준비 상태 초기화
 
@@ -31350,7 +31359,7 @@ function formatGuildTerritoryRiftEventSlot(status, index, occurrenceCount, locke
 	return prefix + "[🌌미발생" + lockText + "]";
 }
 
-//	영지전 불안정도 기본 증가율 계산 (턴당 0.05%, 최대 6.0%)
+//	영지전 불안정도 기본 증가율 계산 
 function getGuildTerritoryInstabilityBaseRate(turnCount) {
 	var turn = Math.max(1, Math.min(GUILD_TERRITORY_RIFT_MAX_TURN, turnCount || 1));
 	return turn / 20;
@@ -31753,6 +31762,33 @@ function markGuildTerritoryItemUse(store, guildId, type, user) {
 	store[guildId][type][user] = (store[guildId][type][user] || 0) + 1;
 }
 
+// 영지전 균열 명령의 길드별 1회 사용 여부 확인
+function hasGuildTerritoryCommandBeenUsed(store, guildId, type) {
+	return !!(store && store[guildId] && store[guildId][type] && store[guildId][type].used);
+}
+
+// 영지전 균열 명령의 길드별 1회 사용 기록 저장
+function markGuildTerritoryCommandUsed(store, guildId, type, user, count) {
+	if (!store[guildId]) store[guildId] = {};
+	store[guildId][type] = {
+		used: true,
+		user: user,
+		count: count,
+		at: formatDateTime(new Date())
+	};
+}
+
+// 영지전 균열 명령 재사용 거부 메시지
+function buildGuildTerritoryCommandReuseBlockedMessage(guild, command) {
+	return (
+		"❌ [" + formatGuildDisplay(guild) + "]\n\n" +
+		"[" + command + "]은 이번 영지전에서\n" +
+		"이미 사용하셨습니다.\n\n" +
+		"각 명령어는 영지전당 1회만\n" +
+		"사용 가능합니다."
+	);
+}
+
 // 영지전 균열 아이템 사용 명령 처리
 function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg) {
 	var command = msg.split(" ")[0];
@@ -31776,6 +31812,9 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	if (isNaN(count) || count <= 0) {
 		return { message: "사용법: " + command + " 숫자\n예) " + command + " 1" };
 	}
+	if (count > 10) {
+		return { message: "❌ " + command + "은 한 번에 최대 10회까지만 사용할 수 있습니다." };
+	}
 
 	// 영지전 데이터 보장 및 초기화
 	var war = ensureGuildTerritoryWar(data, guildData);
@@ -31788,6 +31827,9 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	}
 	if (!war.readyGuilds[guildInfo.guildId]) {
 		return { message: "❌ 길드영지전에 참여하지 않은 길드는 사용할 수 없습니다." };
+	}
+	if (hasGuildTerritoryCommandBeenUsed(war.riftCommandUses, guildInfo.guildId, config.type)) {
+		return { message: buildGuildTerritoryCommandReuseBlockedMessage(guildInfo.guild, command) };
 	}
 	if (!isGuildSwordMaster(guildInfo.guild, sender)) {
 		return { message: "❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺가 아니어서 사용할 수 없습니다." };
@@ -31813,6 +31855,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 
 		removeItem(data, sender, bagItemName, useCount);
 		for (var i = 0; i < useCount; i++) markGuildTerritoryItemUse(war.instabilityUses, guildInfo.guildId, config.type, sender);
+		markGuildTerritoryCommandUsed(war.riftCommandUses, guildInfo.guildId, config.type, sender, useCount);
 		war.instabilityAdjust += config.deltaAdjust * useCount;
 
 		var currentRate = getGuildTerritoryInstabilityRate(war);
@@ -31840,6 +31883,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	var beforeRates = getGuildTerritoryRiftRates(war);
 	removeItem(data, sender, bagItemName, guideUseCount);
 	for (var gu = 0; gu < guideUseCount; gu++) markGuildTerritoryItemUse(guideStore, guildInfo.guildId, config.type, sender);
+	markGuildTerritoryCommandUsed(war.riftCommandUses, guildInfo.guildId, config.type, sender, guideUseCount);
 	war.riftBias += config.deltaBias * guideUseCount;
 	war.riftBias = Math.max(-70, Math.min(30, war.riftBias));
 	var afterRates = getGuildTerritoryRiftRates(war);
@@ -32160,6 +32204,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 		}
 		out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
 		war.readyGuilds = {};
+		war.riftCommandUses = {};
 		noticeMsg(out);
 	});
 }
