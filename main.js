@@ -31492,25 +31492,14 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 	var rates = getGuildTerritoryRiftRates(war);
 	var instabilityRoll = Math.random() * 100;
 	var riftRoll = null;
-	var riftDebugMsg =
-		"[Guild Territory War] 균열 확률 체크" + allsee + "\n" +
-		"- 턴: " + war.turnCount + "/" + GUILD_TERRITORY_RIFT_MAX_TURN + "\n" +
-		"- 발생횟수: " + getGuildTerritoryRiftEventCount(war) + "/" + GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT + "\n" +
-		"- 누적 전쟁불안정도: " + formatPercent1(instabilityRate) + "%\n" +
-		"- 발생 판정: " + formatPercent1(instabilityRoll) + " < " + formatPercent1(instabilityRate) + "\n" +
-		"- 균열/대균열 확률: 🌌" + rates.rift + "% / 🌋" + rates.greatRift + "%";
 
 	if (instabilityRoll < instabilityRate) {
 		riftRoll = Math.random() * 100;
-		riftDebugMsg += "\n- 분기 판정: " + formatPercent1(riftRoll) + " < " + rates.rift;
 		if (riftRoll < rates.rift) {
-			Api.replyRoom(testRoom, riftDebugMsg + "\n- 결과: 🌌균열 발생");
 			return applyGuildTerritoryRift(data, guildData);
 		}
-		Api.replyRoom(testRoom, riftDebugMsg + "\n- 결과: 🌋대균열 발생");
 		return applyGuildTerritoryGreatRift(data, guildData);
 	}
-	Api.replyRoom(testRoom, riftDebugMsg + "\n- 결과: 미발생");
 
 	if (war.turnCount >= GUILD_TERRITORY_RIFT_MAX_TURN) {
 		war.riftEventStatus = "stable";
