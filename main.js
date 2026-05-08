@@ -1101,6 +1101,9 @@ const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM = "🌋 대균열 유도권(/대균�
 // const GUILD_TERRITORY_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_RIFT_GUIDE_ITEM, "균열 유도권(/균열 숫자)"];
 // const GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM_ALIASES = [GUILD_TERRITORY_GREAT_RIFT_GUIDE_ITEM, "대균열 유도권(/대균열 숫자)"];
 var guildTerritoryWarTimers = {};
+var guildTerritoryPendingStartTimers = {};
+const GUILD_TERRITORY_START_DELAY_MS = 20000;
+const GUILD_TERRITORY_PENDING_STALE_MS = 30000;
 let isSaving = false; //메인 정보
 function isAdmin(sender) {
 	return Admins.includes(sender);
@@ -18347,69 +18350,31 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
 						return;
 					}
-
-					var readyGuildIds = Object.keys(startWar.readyGuilds || {});
-					var turnRows = [];
-					for (var rg = 0; rg < readyGuildIds.length; rg++) {
-						var readyGid = readyGuildIds[rg];
-						var readyGuild = getGuildByIdSafe(guildData, readyGid);
-						if (!readyGuild) continue;
-						var swordMasters = ensureGuildSwordMasters(readyGuild);
-						for (var sm = 0; sm < swordMasters.length; sm++) {
-							turnRows.push({
-								guildId: readyGid,
-								user: swordMasters[sm]
-							});
-						}
-						startWar.guildAttackCounts[readyGid] = 0;
+					if (isGuildTerritoryPendingStartStale(startWar)) {
+						clearGuildTerritoryPendingStartState(startWar);
+						clearGuildTerritoryPendingStartTimer();
+					}
+					if (startWar.pendingStart) {
+						replier.reply("❌ 길드 영지전 시작이 이미 예약되어 있습니다.\n20초 준비 시간이 끝날 때까지 기다려 주세요.");
+						return;
 					}
 
-					if (turnRows.length === 0) {
+					var startRows = buildGuildTerritoryTurnRows(guildData, startWar);
+					if (startRows.turnRows.length === 0) {
 						replier.reply("❌ 준비 완료된 길드 또는 소드마스터🤺가 없습니다.\n길드마스터가 먼저 /길드영지준비 를 입력해야 합니다.");
 						return;
 					}
 
-					startWar.active = true;// 영지전 활성화
-					startWar.isDevWar = getCurrentContext().isDev;// 개발자 모드 여부 기록
-					startWar.startedAt = formatDateTime(new Date());// 영지전 시작 시간 기록
-					startWar.endedAt = null;// 턴 진행 순서 초기화
-					startWar.turnOrder = shuffleGuildTerritoryRows(turnRows);// 턴 진행 순서 (소드마스터🤺 기준)
-					startWar.currentTurnIndex = 0;// 현재 턴 진행 중인 소드마스터🤺의 인덱스
-					startWar.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
-					startWar.eliminatedUsers = {};// 탈락한 유저 기록 초기화
-					startWar.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
-					startWar.timeoutMissCounts = {};//	턴 타임아웃 미스 횟수 기록
-					startWar.turnCount = 0;// 전체 턴 횟수
-					startWar.instabilityAdjust = 0;// 불안정성 조정치 초기화
-					startWar.riftBias = 0;// 균열 이벤트 관련 초기화
-					startWar.riftEventCount = 0; // 균열 이벤트 발생 횟수 초기화
-					startWar.riftEventHistory = []; // 균열/대균열 발생 이력 초기화
-					startWar.riftEventStatus = null;// 균열 이벤트 상태 초기화
-					startWar.riftEventAt = null;// 균열 이벤트 발생 시간 초기화
-					startWar.riftEventGuildId = null;// 균열 이벤트 대상 길드 초기화
-					startWar.instabilityUses = {};	// 불안정성 사용 기록 초기화
-					startWar.riftGuideUses = {};// 균열 가이드 사용 기록 초기화
-					startWar.turnToken = null;// 턴 토큰 초기화
-					for (var gl = 0; gl < readyGuildIds.length; gl++) {
-						var limitGuildId = readyGuildIds[gl];
-						var limitGuild = getGuildByIdSafe(guildData, limitGuildId);
-						if (!limitGuild) continue;
-						startWar.guildAttackLimits[limitGuildId] = getGuildTerritoryAttackLimit(limitGuild);
-					}
-					if (!getCurrentContext().isDev) {
-						guildData.castleSiegeFlag = true;
-					}
+					startWar.pendingStart = true;
+					startWar.pendingStartAt = formatDateTime(new Date());
+					startWar.pendingStartRequestedAt = new Date().getTime();
+					startWar.pendingStartToken = String(new Date().getTime()) + "_" + String(Math.random());
 					saveJsonFile(guildData, guildPath);
 
-					noticeMsg(buildGuildTerritoryStartMessage(data, guildData), replier, isGroupChat);
-					castleMsg(buildGuildTerritoryOrderMessage(data, petData, guildData), replier, isGroupChat);
-
-					var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
-					turnMsgs.forEach(function (m) {
-						castleMsg(m, replier, isGroupChat);
-					});
-
-					startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+					// 영지전 시작 준비 공지
+					noticeMsg(buildGuildTerritoryPrepareMessage()); 
+					// 20초 후 영지전 시작 예약
+					scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGroupChat);
 					return;
 				}
 				if (msg == "/길드영지순서") {
@@ -18418,8 +18383,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (msg === "/길드영지종료" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
 					var endWar = ensureGuildTerritoryWar(data, guildData);
-					if (!endWar.active) {
+					if (!endWar.active && !endWar.pendingStart) {
 						replier.reply("❌ 현재 진행 중인 길드 영지전이 없습니다.");
+						return;
+					}
+					if (endWar.pendingStart && !endWar.active) {
+						clearGuildTerritoryPendingStartState(endWar);
+						clearGuildTerritoryPendingStartTimer();
+						if (!getCurrentContext().isDev) {
+							guildData.castleSiegeFlag = false;
+						}
+						saveJsonFile(guildData, guildPath);
+						replier.reply("✅ 예약된 길드 영지전 시작이 취소되었습니다.");
 						return;
 					}
 					finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
@@ -18435,6 +18410,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					var resetWar = resetGuildTerritoryOccupation(data, guildData); // 영지 점령 상태 초기화 (모든 영지 중립으로, 호월킹덤 영주 정보 초기화)
+					clearGuildTerritoryPendingStartState(resetWar);
+					clearGuildTerritoryPendingStartTimer();
 					saveJsonFile(guildData, guildPath);
 					saveJsonFile(data, filePath);
 					replier.reply(
@@ -31094,6 +31071,10 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (typeof war.turnCount !== "number") war.turnCount = 0;
 	if (typeof war.instabilityAdjust !== "number") war.instabilityAdjust = 0;
 	if (typeof war.riftBias !== "number") war.riftBias = 0;
+	if (typeof war.pendingStart !== "boolean") war.pendingStart = false;
+	if (typeof war.pendingStartAt !== "string") war.pendingStartAt = null;
+	if (typeof war.pendingStartToken !== "string") war.pendingStartToken = null;
+	if (typeof war.pendingStartRequestedAt !== "number") war.pendingStartRequestedAt = 0;
 	if (typeof war.riftEventCount !== "number") {
 		war.riftEventCount = (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift") ? 1 : 0;
 	}
@@ -31137,6 +31118,164 @@ function clearGuildTerritoryWarTimer() {
 		clearTimeout(guildTerritoryWarTimers[ctxKey]);
 		delete guildTerritoryWarTimers[ctxKey];
 	}
+}
+
+// 영지전 준비 타이머 클리어
+function clearGuildTerritoryPendingStartTimer(ctx) {
+	var ctxKey = (ctx || getCurrentContext()).key();
+	if (guildTerritoryPendingStartTimers[ctxKey]) {
+		clearTimeout(guildTerritoryPendingStartTimers[ctxKey]);
+		delete guildTerritoryPendingStartTimers[ctxKey];
+	}
+}
+
+// 영지전 준비 상태 초기화
+function clearGuildTerritoryPendingStartState(war) {
+	if (!war) return;
+	war.pendingStart = false;
+	war.pendingStartAt = null;
+	war.pendingStartToken = null;
+	war.pendingStartRequestedAt = 0;
+}
+
+// 영지전 준비 시작 여부 확인
+function isGuildTerritoryPendingStartStale(war) {
+	if (!war || !war.pendingStart) return false;
+	if (!war.pendingStartRequestedAt) return false;
+	return (new Date().getTime() - war.pendingStartRequestedAt) > GUILD_TERRITORY_PENDING_STALE_MS;
+}
+
+// 영지전 준비 메시지 빌드
+function buildGuildTerritoryPrepareMessage() {
+	return (
+		"[🏰 길드 영지전 준비 🏰]\n" +
+		"[길드 영지전 20초뒤 시작🏰]\n\n" +
+		"길드영지전쟁에 참여해주신\n" +
+		"길드 여러분 환영합니다.\n\n" +
+		"※ 20초뒤 길드영지전이 시작됩니다.\n" +
+		"https://open.kakao.com/o/gaP4Xybh"
+	);
+}
+
+// 영지전 턴 진행 순서 빌드
+function buildGuildTerritoryTurnRows(guildData, war) {
+	var readyGuildIds = Object.keys((war && war.readyGuilds) || {});
+	var turnRows = [];
+
+	for (var rg = 0; rg < readyGuildIds.length; rg++) {
+		var readyGid = readyGuildIds[rg];
+		var readyGuild = getGuildByIdSafe(guildData, readyGid);
+		if (!readyGuild) continue;
+		var swordMasters = ensureGuildSwordMasters(readyGuild);
+		for (var sm = 0; sm < swordMasters.length; sm++) {
+			turnRows.push({
+				guildId: readyGid,
+				user: swordMasters[sm]
+			});
+		}
+	}
+
+	return {
+		readyGuildIds: readyGuildIds,
+		turnRows: turnRows
+	};
+}
+
+// 영지전 시작 처리 함수
+function beginGuildTerritoryWarNow(data, petData, guildData, replier, isGroupChat) {
+	var war = ensureGuildTerritoryWar(data, guildData);
+	var startRows = buildGuildTerritoryTurnRows(guildData, war);
+	var readyGuildIds = startRows.readyGuildIds;
+	var turnRows = startRows.turnRows;
+
+	if (turnRows.length === 0) {
+		clearGuildTerritoryPendingStartState(war);
+		return {
+			started: false,
+			message: "❌ 준비 완료된 길드 또는 소드마스터🤺가 없어 길드 영지전을 시작하지 못했습니다."
+		};
+	}
+
+	war.active = true;// 영지전 활성화
+	war.isDevWar = getCurrentContext().isDev;// 개발자 모드 여부 기록
+	war.startedAt = formatDateTime(new Date());// 영지전 시작 시간 기록
+	war.endedAt = null;// 턴 진행 순서 초기화
+	war.turnOrder = shuffleGuildTerritoryRows(turnRows);// 턴 진행 순서 (소드마스터🤺 기준)
+	war.currentTurnIndex = 0;// 현재 턴 진행 중인 소드마스터🤺의 인덱스
+	war.guildAttackCounts = {};// 길드별 영지 공격 횟수 기록 초기화
+	war.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
+	war.eliminatedUsers = {};// 탈락한 유저 기록 초기화
+	war.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
+	war.timeoutMissCounts = {};// 턴 타임아웃 미스 횟수 기록
+	war.turnCount = 0;// 전체 턴 횟수
+	war.instabilityAdjust = 0;// 불안정성 조정치 초기화
+	war.riftBias = 0;// 균열 이벤트 관련 초기화
+	war.riftEventCount = 0; // 균열 이벤트 발생 횟수 초기화
+	war.riftEventHistory = []; // 균열/대균열 발생 이력 초기화
+	war.riftEventStatus = null;// 균열 이벤트 상태 초기화
+	war.riftEventAt = null;// 균열 이벤트 발생 시간 초기화
+	war.riftEventGuildId = null;// 균열 이벤트 대상 길드 초기화
+	war.instabilityUses = {};	// 불안정성 사용 기록 초기화
+	war.riftGuideUses = {};// 균열 가이드 사용 기록 초기화
+	war.turnToken = null;// 턴 토큰 초기화
+	clearGuildTerritoryPendingStartState(war); // 영지전 준비 상태 초기화
+
+	for (var gl = 0; gl < readyGuildIds.length; gl++) {
+		var limitGuildId = readyGuildIds[gl];
+		var limitGuild = getGuildByIdSafe(guildData, limitGuildId);
+		if (!limitGuild) continue;
+		war.guildAttackCounts[limitGuildId] = 0;
+		war.guildAttackLimits[limitGuildId] = getGuildTerritoryAttackLimit(limitGuild);
+	}
+
+	if (!getCurrentContext().isDev) {
+		guildData.castleSiegeFlag = true;
+	}
+	saveJsonFile(guildData, guildPath);
+
+	castleMsg(buildGuildTerritoryOrderMessage(data, petData, guildData), replier, isGroupChat); // 영지전 시작 메시지 (공격 순서 안내)
+	noticeMsg(buildGuildTerritoryStartMessage(data, guildData));// 영지전 시작 메시지 (영지전 시작 안내)
+
+	var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+	turnMsgs.forEach(function (m) {
+		castleMsg(m, replier, isGroupChat);
+	});
+
+	startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+	return { started: true };
+}
+
+// 영지전 준비 시작 처리 함수 (20초 뒤 영지전 시작)
+function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGroupChat) {
+	var war = ensureGuildTerritoryWar(data, guildData);
+	var startToken = war.pendingStartToken;
+	var timerCtx = getCurrentContext();
+	var timerCtxKey = timerCtx.key();
+
+	clearGuildTerritoryPendingStartTimer(timerCtx);
+
+	guildTerritoryPendingStartTimers[timerCtxKey] = setTimeout(function () {
+		var prevCtx = enterCommandContext(timerCtx);
+		try {
+			delete guildTerritoryPendingStartTimers[timerCtxKey];
+			var latestData = loadJsonFile(filePath);
+			var latestPetData = loadJsonFile(memberPetPath);
+			var latestGuildData = loadJsonFile(guildPath);
+			var latestWar = ensureGuildTerritoryWar(latestData, latestGuildData);
+
+			if (!latestWar.pendingStart) return;
+			if (latestWar.pendingStartToken !== startToken) return;
+			if (latestWar.active) return;
+
+			var startResult = beginGuildTerritoryWarNow(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+			if (!startResult.started && startResult.message) {
+				Api.replyRoom(room8, timerCtx.header(startResult.message));
+				saveJsonFile(latestGuildData, guildPath);
+			}
+		} finally {
+			exitCommandContext(prevCtx);
+		}
+	}, GUILD_TERRITORY_START_DELAY_MS);
 }
 
 // 길드 영지전 공격 순서 섞기 (Fisher-Yates Shuffle)
@@ -31990,10 +32129,12 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 	return withGuildTerritoryDataMode(guildData, function () {
 		var war = ensureGuildTerritoryWar(data, guildData);
 		clearGuildTerritoryWarTimer();
+		clearGuildTerritoryPendingStartTimer();
 		war.active = false;
 		war.endedAt = formatDateTime(new Date());
 		war.turnToken = null;
 		war.castleSiegeFlag = false;
+		clearGuildTerritoryPendingStartState(war);
 		if (!getCurrentContext().isDev) {
 			guildData.castleSiegeFlag = false;
 		}
