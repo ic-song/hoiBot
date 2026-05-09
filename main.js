@@ -145,6 +145,7 @@ const PET_SKILL_LIST = [
 
 	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
 	{ name: "기분탓", grade: "D", rate: 14.5, effect: "'?' 채팅 입력 시 연출 멘트를 출력합니다." },
+	{ name: "종의 본능", grade: "D", rate: 14.5, effect: "'이쁘다' 채팅 입력 시 연출 멘트를 출력합니다." },
 	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
 ];
 
@@ -1770,6 +1771,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				
 				if (msg === "?" && hasPetSkill(petSkillData, sender, "기분탓")) {
 					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "기분탓"));
+					return;
+				}
+				if (msg === "이쁘다" && hasPetSkill(petSkillData, sender, "종의 본능")) {
+					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "종의 본능"));
 					return;
 				}
 
@@ -31517,6 +31522,9 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		],
 		"기분탓": [
 			"기분탓📙 [{rank}]: 라고 할뻔~"
+		],
+		"종의 본능": [
+			"종의 본능📙 [{rank}] : 어디?"
 		],
 		"징집명령": [
 			"징집명령📙 [{rank}] 징집명령이 내려졌습니다!길드 정원이 1칸 확장됩니다!"
