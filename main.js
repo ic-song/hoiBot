@@ -106,6 +106,7 @@ const PET_SKILL_LIST = [
 	{ name: "로열 하우스", grade: "A", rate: 1.6, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
 	// { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
+	{ name: "탈세자", grade: "A", rate: 1.7, effect: "상점(길드상점 제외) 구매 시 세금을 면제받습니다." },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
@@ -22053,13 +22054,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						var taxRate = data.HoiCastle && data.HoiCastle.taxRate ? data.HoiCastle.taxRate : 0;
 						var taxAmount = 0;
 						var itemTotalCost = 0;
+						var taxExempt = false;
 
 						if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
 							itemPrice = itemPrice * 0.8;
 							replier.reply("쇼핑광 [" + petData[sender].petimg + petData[sender].petname + "] 이(가)\nVIP카드를 제시합니다.\n상품가 20%할인 적용.");
 						}
 
-						taxRate = parseInt(taxRate, 10) || 0;
+						if (hasPetSkill(petSkillData, sender, "탈세자")) {
+							taxExempt = true;
+							replier.reply(buildTaxEvaderTriggerMessage(data, petData, guildData, sender) + "\n상점 세금이 면제됩니다.");
+						}
+
+						taxRate = taxExempt ? 0 : (parseInt(taxRate, 10) || 0);
 						taxAmount = Math.round(itemPrice * (taxRate / 100));
 						itemTotalCost = itemPrice + taxAmount;
 						if (!hasPoint(data, sender, itemTotalCost)) {
@@ -31422,16 +31429,38 @@ function buildGuildTerritoryCommanderTriggerMessage(data, petData, guildData, se
 	return lines[Math.floor(Math.random() * lines.length)];
 }
 
+// 길드 영지전 기사단 증원 트리거 메시지 빌드 함수 (기사단 증원 스킬 발동 시 랜덤 메시지 반환)
 function buildGuildTerritoryKnightOrderTriggerMessage(data, petData, guildData, user) {
 	return "기사단 증원📙 [" + checkRank(data, petData, guildData, user) + "] 기사단 증원이 발동했습니다!";
 }
 
+// 길드 영지전 철벽수호자 트리거 메시지 빌드 함수 (철벽수호자 스킬 발동 시 랜덤 메시지 반환)
 function buildGuildTerritoryIronWallTriggerMessage(data, petData, guildData, user) {
 	return "철벽수호자📙 [" + checkRank(data, petData, guildData, user) + "] 어디 한번 더 쳐 보시지!";
 }
 
+// 길드 영지전 바바리안 트리거 메시지 빌드 함수 (바바리안 스킬 발동 시 랜덤 메시지 반환)
 function buildGuildTerritoryBarbarianTriggerMessage(data, petData, guildData, user) {
 	return "바바리안📙 [" + checkRank(data, petData, guildData, user) + "] 바할라ㅏㅏㅏㅏ!!!!!!!!!!!!!!";
+}
+
+// 탈세자 트리거 메시지 빌드 함수 (탈세자 스킬 발동 시 랜덤 메시지 반환)
+function buildTaxEvaderTriggerMessage(data, petData, guildData, user) {
+	var rank = checkRank(data, petData, guildData, user);
+	var lines = [
+		"탈세자📙 [" + rank + "] 님이 세금 고지서를 보고 조용히 눈을 돌렸습니다.",
+		"탈세자📙 [" + rank + "] 님의 수상한 세무 감각이 발동했습니다!",
+		"탈세자📙 [" + rank + "] 님이 납부서를 접고 불에 태웁니다.",
+		"탈세자📙 [" + rank + "] 님이 세금 계산표의 빈틈을 발견했습니다.",
+		"탈세자📙 [" + rank + "] 님의 절세 본능이 폭주합니다.",
+		"탈세자📙 [" + rank + "] 님이 세무관의 눈을 피합니다.",
+		"탈세자📙 [" + rank + "] 님이 말합니다. \"세금은 냈습니다… 조금만요.\"",
+		"탈세자📙 [" + rank + "] 님의 납세 회피 본능이 꿈틀거립니다.",
+		"탈세자📙 [" + rank + "] 님이 세금 폭탄을 요리조리 피합니다.",
+		"탈세자📙 [" + rank + "] 님이 세무서를 지나치며 식은땀을 흘립니다.",
+		"탈세자📙 [" + rank + "] 님이 말합니다. \"이건 탈세가 아니라 생활의 지혜입니다.\""
+	];
+	return lines[Math.floor(Math.random() * lines.length)];
 }
 
 // 길드의 소드마스터 수 계산 및 보장
@@ -36271,6 +36300,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "길드의심장") return "길드의 심장";
 	else if (skillName === "전투형지휘관") return "전투형 지휘관";
 	else if (skillName === "기사단증원") return "기사단 증원";
+	else if (skillName === "탈세자") return "탈세자";
 	return skillName;
 }
 

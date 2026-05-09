@@ -2052,6 +2052,52 @@ Status: VERIFIED
 
 ---
 
+# /구매 [번호] [개수]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:22030`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasPetSkill`
+- `buildTaxEvaderTriggerMessage`
+- `buildPointShopBuyMessage`
+- `applyTax`
+
+## Data Usage
+
+- `data.shop`
+- `data.HoiCastle.taxRate`
+- `data.member[sender].point`
+- `data.member[sender].bag`
+- `petSkillData`
+
+## Save Flow
+
+- Deducts point-shop cost from member points
+- Applies castle tax earnings through `applyTax(itemPrice, data, guildData)` when tax is not exempt
+- Saves updated member/pet/guild state through the surrounding response flow
+
+## Related Commands
+
+- `/상점`
+- `/길드상점`
+- `/길드상점구매`
+
+## AI Notes
+
+- `쇼핑광📙` discount applies before tax calculation
+- `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
+
+---
+
 # Registry Expansion Queue
 
 Status: PARTIAL
