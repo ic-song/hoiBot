@@ -2294,6 +2294,8 @@ function checkRank(data, petData, guildData, user) {
  * @param {Object} bagItems - 가방에 있는 아이템 객체
  * @returns {Object} - 정렬된 아이템 목록과 출력 문자열
  */
+// 전제: normalizeItemName(itemName) 함수가 이미 존재해야 함.
+//  - 펫 친밀도🐾(숫자/1000)+숫자💕  => "펫 친밀도🐾" 로 정규화
 function generateBagOutput(bagItems) {
 	var bagOutput = "";
 	var sortedItemList = [];
@@ -2365,7 +2367,7 @@ function generateBagOutput(bagItems) {
 			"타이틀선물권💝(/타이틀선물 닉네임 내용)",
 			"펫타이틀권🦊(/펫타이틀이름)",
 			"펫스킬북📙(/펫스킬오픈)",
-			"펫스킬소멸권🧙‍♂️(/펫스킬소멸 숫자)",
+			"펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
 			"펫특성뽑기권🃏(/특성오픈)",
 			"반지 이름변경권🗯(/반지이름)",
 			"정령 이름변경권📝(/정령이름)",
