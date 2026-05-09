@@ -22,7 +22,7 @@ if /I not "%CONFIRM%"=="RESET" goto CANCEL
 
 echo.
 echo [1/5] 프로젝트 폴더로 이동 중...
-cd /d "%~dp0..\.."
+cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
 
 echo [OK] 프로젝트 폴더 이동 완료
@@ -80,7 +80,7 @@ echo.
 echo ========================================
 echo [FAIL] 프로젝트 폴더 이동 실패
 echo BAT 파일 위치를 확인하세요.
-echo 예상 위치: hoiBot/tools/planner/
+echo 예상 위치: HOIBOT/bat/
 echo ========================================
 pause
 exit /b 1
