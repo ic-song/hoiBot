@@ -99,6 +99,7 @@ const PET_SKILL_LIST = [
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
+	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가되고, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
@@ -2209,10 +2210,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var equipName = skillBagList[equipIndex - 1];
-					if (normalizePetSkillName(equipName) === "전투형 지휘관") {
+					if (normalizePetSkillName(equipName) === "전투형 지휘관" || normalizePetSkillName(equipName) === "기사단 증원") {
 						var commanderGuildInfo = getMyGuildInfo(data, guildData, sender);
 						if (!commanderGuildInfo || commanderGuildInfo.error || !commanderGuildInfo.guild || !isGuildMaster(commanderGuildInfo.guild, sender)) {
-							replier.reply("❌ 전투형 지휘관📙는 길드마스터만 장착할 수 있습니다.");
+							replier.reply("❌ " + formatPetSkillName(equipName) + "는 길드마스터만 장착할 수 있습니다.");
 							return;
 						}
 					}
@@ -2496,8 +2497,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					var swordArgs = msg.trim().split(/\s+/).slice(1);
-					if (swordArgs.length !== 3) {
-						replier.reply("❌ 사용법: /길드정보 길드원 번호입력\n/소드마스터 [번호] [번호] [번호]");
+					var swordLimit = getGuildSwordMasterLimit(swordGuild, petSkillData);
+					var minSwordCount = 3;
+					if (swordArgs.length < minSwordCount || swordArgs.length > swordLimit) {
+						var usage = swordLimit >= 4
+							? "❌ 사용법: /길드정보 길드원 번호입력\n/소드마스터 [번호] [번호] [번호] ([번호])"
+							: "❌ 사용법: /길드정보 길드원 번호입력\n/소드마스터 [번호] [번호] [번호]";
+						replier.reply(usage);
 						return;
 					}
 
@@ -2521,16 +2527,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					swordGuild.swordMasters = pickedMembers;
 					saveJsonFile(guildData, guildPath);
+					var pickedMsg = [];
+					for (var smp = 0; smp < pickedMembers.length; smp++) {
+						pickedMsg.push((smp + 1) + ". " + checkRank(data, petData, guildData, pickedMembers[smp]));
+					}
 					replier.reply(
 						"✅ 소드마스터🤺로 임명되었습니다.\n당신은 호월킹덤을 점령해야 할 책임을 부여받습니다.\nhttps://ibb.co/TDxxfXpV\n" +
-						"1. " +
-						checkRank(data, petData, guildData, pickedMembers[0]) +
-						"\n" +
-						"2. " +
-						checkRank(data, petData, guildData, pickedMembers[1]) +
-						"\n" +
-						"3. " +
-						checkRank(data, petData, guildData, pickedMembers[2])
+						pickedMsg.join("\n")
 					);
 					return;
 				}
@@ -18565,6 +18568,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							resultMessage = commanderTriggerMessage + "\n" + resultMessage;
 						}
 					}
+					if (hasGuildTerritoryKnightOrderSkill(attackInfo.guild, petSkillData, attackInfo.guild.master)) {
+						resultMessage = buildGuildTerritoryKnightOrderTriggerMessage(data, petData, guildData, attackInfo.guild.master) + "\n" + resultMessage;
+					}
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
 						castleMsg(resultMessage, replier, isGroupChat);
@@ -31375,6 +31381,17 @@ function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
 	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
 }
 
+// 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 기사단 증원 스킬 보유 여부)`
+function hasGuildTerritoryKnightOrderSkill(g, petSkillData, user) {
+	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "기사단 증원"));
+}
+
+// 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 기사단 증원 스킬 보유 여부)
+function getGuildSwordMasterLimit(g, skillDataArg) {
+	var skillData = skillDataArg || (typeof petSkillData !== "undefined" ? petSkillData : null);
+	return 3 + (hasGuildTerritoryKnightOrderSkill(g, skillData, g && g.master) ? 1 : 0);
+}
+
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이거나 소드마스터이면서 전투형 지휘관 스킬 보유 여부)
 function isGuildTerritoryAttacker(g, petSkillData, user) {
 	if (!g || !user) return false;
@@ -31384,7 +31401,7 @@ function isGuildTerritoryAttacker(g, petSkillData, user) {
 
 // 길드 영지전 공격자 이름 목록 가져오기 (소드마스터와 전투형 지휘관 스킬 보유 길드 마스터 포함)
 function getGuildTerritoryAttackerNames(g, petSkillData) {
-	var attackers = ensureGuildSwordMasters(g).slice();
+	var attackers = ensureGuildSwordMasters(g, petSkillData).slice();
 	var commander = g && g.master ? g.master : "";
 	if (hasGuildTerritoryCommanderSkill(g, petSkillData, commander) && attackers.indexOf(commander) === -1) {
 		attackers.push(commander);
@@ -31403,11 +31420,18 @@ function buildGuildTerritoryCommanderTriggerMessage(data, petData, guildData, se
 	return lines[Math.floor(Math.random() * lines.length)];
 }
 
+function buildGuildTerritoryKnightOrderTriggerMessage(data, petData, guildData, user) {
+	return "기사단 증원📙 [" + checkRank(data, petData, guildData, user) + "] 기사단 증원이 발동했습니다!";
+}
+
 // 길드의 소드마스터 수 계산 및 보장
 function getGuildTerritoryAttackLimit(g, petSkillData) {
-	var swordMasters = ensureGuildSwordMasters(g);
+	var swordMasters = ensureGuildSwordMasters(g, petSkillData);
 	var limit = Math.max(1, swordMasters.length) * GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER;
 	if (hasGuildTerritoryCommanderSkill(g, petSkillData, g && g.master)) {
+		limit += 5;
+	}
+	if (hasGuildTerritoryKnightOrderSkill(g, petSkillData, g && g.master)) {
 		limit += 5;
 	}
 	return limit;
@@ -36208,9 +36232,11 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "로열하우스") return "로열 하우스";
 	else if (skillName === "길드의심장") return "길드의 심장";
 	else if (skillName === "전투형지휘관") return "전투형 지휘관";
+	else if (skillName === "기사단증원") return "기사단 증원";
 	return skillName;
 }
 
+// 펫 스킬 이름을 정규화하여 이모지와 함께 표시할 수 있는 형태로 반환
 function formatPetSkillName(skillName) {
 	skillName = normalizePetSkillName(skillName);
 	return skillName ? skillName + "📙" : "";
@@ -39497,8 +39523,8 @@ function canTransferGuildMaster(g, sender) {
 	return !!(g && g.master === sender);
 }
 
-// 길드의 소드마스터 목록을 보정하여 반환 (유효한 멤버 이름만, 최대 3명)
-function ensureGuildSwordMasters(g) {
+// 길드의 소드마스터 목록을 보정하여 반환 (유효한 멤버 이름만, 최대 3명 또는 기사단 증원 시 4명)
+function ensureGuildSwordMasters(g, petSkillData) {
 	if (!g || typeof g !== "object") return [];
 	if (!Array.isArray(g.swordMasters)) {
 		g.swordMasters = [];
@@ -39507,7 +39533,7 @@ function ensureGuildSwordMasters(g) {
 		.filter(function (name, index, arr) {
 			return typeof name === "string" && name && g.members && g.members[name] && arr.indexOf(name) === index;
 		})
-		.slice(0, 3);
+		.slice(0, getGuildSwordMasterLimit(g, petSkillData));
 	return g.swordMasters;
 }
 
@@ -39524,7 +39550,7 @@ function getGuildOrderedMemberKeys(g) {
 
 // 길드 소드마스터 표시 문자열 생성 (기여도 순으로 정렬, 최대 3명)
 function getGuildSwordMasterDisplay(data, petData, guildData, g) {
-	var swordMasters = ensureGuildSwordMasters(g);
+	var swordMasters = ensureGuildSwordMasters(g, petSkillData);
 	if (swordMasters.length === 0) {
 		return "없음";
 	}
@@ -39537,7 +39563,7 @@ function getGuildSwordMasterDisplay(data, petData, guildData, g) {
 
 // 현재 유저가 길드 소드마스터인지 여부 반환
 function isGuildSwordMaster(g, user) {
-	return ensureGuildSwordMasters(g).indexOf(user) !== -1;
+	return ensureGuildSwordMasters(g, petSkillData).indexOf(user) !== -1;
 }
 
 // 현재 유저의 길드 정보 반환 (길드 객체 + 길드 데이터)
