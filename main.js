@@ -98,6 +98,7 @@ const PET_SKILL_LIST = [
 	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 20% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
+	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
@@ -2208,6 +2209,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var equipName = skillBagList[equipIndex - 1];
+					if (normalizePetSkillName(equipName) === "전투형 지휘관") {
+						var commanderGuildInfo = getMyGuildInfo(data, guildData, sender);
+						if (!commanderGuildInfo || commanderGuildInfo.error || !commanderGuildInfo.guild || !isGuildMaster(commanderGuildInfo.guild, sender)) {
+							replier.reply("❌ 전투형 지휘관📙는 길드마스터만 장착할 수 있습니다.");
+							return;
+						}
+					}
 					var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 					var skillStore = initPetSkillUser(petSkillData, sender);
 					if (skillStore.equipped.length >= skillSlot) {
@@ -18304,9 +18312,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
 						return;
 					}
-					ensureGuildSwordMasters(readyInfo.guild);
-					if (readyInfo.guild.swordMasters.length === 0) {
-						replier.reply("❌ 소드마스터🤺가 지정되어 있지 않아 준비할 수 없습니다.");
+					var territoryAttackers = getGuildTerritoryAttackerNames(readyInfo.guild, petSkillData);
+					if (territoryAttackers.length === 0) {
+						replier.reply("❌ 소드마스터🤺 또는 전투형 지휘관📙 길드마스터가 없어 준비할 수 없습니다.");
 						return;
 					}
 					if (readyWar.readyGuilds[readyInfo.guildId]) {
@@ -18357,9 +18365,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					var startRows = buildGuildTerritoryTurnRows(guildData, startWar);
+					var startRows = buildGuildTerritoryTurnRows(guildData, petSkillData, startWar);
 					if (startRows.turnRows.length === 0) {
-						replier.reply("❌ 준비 완료된 길드 또는 소드마스터🤺가 없습니다.\n길드마스터가 먼저 /길드영지준비 를 입력해야 합니다.");
+						replier.reply("❌ 준비 완료된 길드 또는 참여 가능한 공격자가 없습니다.\n길드마스터가 먼저 /길드영지준비 를 입력해야 합니다.");
 						return;
 					}
 
@@ -18469,8 +18477,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					// 소드마스터 권한 체크
-					if (!isGuildSwordMaster(attackInfo.guild, sender)) {
-						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺로 지정되지 않아 /영지공격을 사용할 수 없습니다.");
+					if (!isGuildTerritoryAttacker(attackInfo.guild, petSkillData, sender)) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺 또는 전투형 지휘관📙 권한이 없어 /영지공격을 사용할 수 없습니다.");
 						return;
 					}
 
@@ -18549,6 +18557,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 공격 불가가 아닐 때만 균열 판정
 					if (!isAttackBlocked) {
 						riftMessage = processGuildTerritoryRiftEvent(data, guildData);
+					}
+					var commanderTriggerMessage = "";
+					if (hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender)) {
+						commanderTriggerMessage = buildGuildTerritoryCommanderTriggerMessage(data, petData, guildData, sender);
+						if (commanderTriggerMessage) {
+							resultMessage = commanderTriggerMessage + "\n" + resultMessage;
+						}
 					}
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
@@ -31188,7 +31203,7 @@ function buildGuildTerritoryPrepareMessage() {
 }
 
 // 영지전 턴 진행 순서 빌드
-function buildGuildTerritoryTurnRows(guildData, war) {
+function buildGuildTerritoryTurnRows(guildData, petSkillData, war) {
 	var readyGuildIds = Object.keys((war && war.readyGuilds) || {});
 	var turnRows = [];
 
@@ -31196,11 +31211,11 @@ function buildGuildTerritoryTurnRows(guildData, war) {
 		var readyGid = readyGuildIds[rg];
 		var readyGuild = getGuildByIdSafe(guildData, readyGid);
 		if (!readyGuild) continue;
-		var swordMasters = ensureGuildSwordMasters(readyGuild);
-		for (var sm = 0; sm < swordMasters.length; sm++) {
+		var attackers = getGuildTerritoryAttackerNames(readyGuild, petSkillData);
+		for (var sm = 0; sm < attackers.length; sm++) {
 			turnRows.push({
 				guildId: readyGid,
-				user: swordMasters[sm]
+				user: attackers[sm]
 			});
 		}
 	}
@@ -31212,9 +31227,9 @@ function buildGuildTerritoryTurnRows(guildData, war) {
 }
 
 // 영지전 시작 처리 함수
-function beginGuildTerritoryWarNow(data, petData, guildData, replier, isGroupChat) {
+function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, replier, isGroupChat) {
 	var war = ensureGuildTerritoryWar(data, guildData);
-	var startRows = buildGuildTerritoryTurnRows(guildData, war);
+	var startRows = buildGuildTerritoryTurnRows(guildData, petSkillData, war);
 	var readyGuildIds = startRows.readyGuildIds;
 	var turnRows = startRows.turnRows;
 
@@ -31222,7 +31237,7 @@ function beginGuildTerritoryWarNow(data, petData, guildData, replier, isGroupCha
 		clearGuildTerritoryPendingStartState(war);
 		return {
 			started: false,
-			message: "❌ 준비 완료된 길드 또는 소드마스터🤺가 없어 길드 영지전을 시작하지 못했습니다."
+			message: "❌ 준비 완료된 길드 또는 참여 가능한 공격자가 없어 길드 영지전을 시작하지 못했습니다."
 		};
 	}
 
@@ -31258,7 +31273,7 @@ function beginGuildTerritoryWarNow(data, petData, guildData, replier, isGroupCha
 		var limitGuild = getGuildByIdSafe(guildData, limitGuildId);
 		if (!limitGuild) continue;
 		war.guildAttackCounts[limitGuildId] = 0;
-		war.guildAttackLimits[limitGuildId] = getGuildTerritoryAttackLimit(limitGuild);
+		war.guildAttackLimits[limitGuildId] = getGuildTerritoryAttackLimit(limitGuild, petSkillData);
 	}
 
 	if (!getCurrentContext().isDev) {
@@ -31286,6 +31301,7 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
 			delete guildTerritoryPendingStartTimers[timerCtxKey];
 			var latestData = loadJsonFile(filePath);
 			var latestPetData = loadJsonFile(memberPetPath);
+			var latestPetSkillData = loadJsonFile(petSkillDataPath);
 			var latestGuildData = loadJsonFile(guildPath);
 			var latestWar = ensureGuildTerritoryWar(latestData, latestGuildData);
 
@@ -31293,7 +31309,7 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
 			if (latestWar.pendingStartToken !== startToken) return;
 			if (latestWar.active) return;
 
-			var startResult = beginGuildTerritoryWarNow(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+			var startResult = beginGuildTerritoryWarNow(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat);
 			if (!startResult.started && startResult.message) {
 				Api.replyRoom(room8, timerCtx.header(startResult.message));
 				saveJsonFile(latestGuildData, guildPath);
@@ -31354,10 +31370,47 @@ function shuffleGuildTerritoryRows(rows) {
 	return rows;
 }
 
+// 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 전투형 지휘관 스킬 보유 여부)
+function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
+	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
+}
+
+// 길드 영지전 공격자 여부 확인 함수 (길드 마스터이거나 소드마스터이면서 전투형 지휘관 스킬 보유 여부)
+function isGuildTerritoryAttacker(g, petSkillData, user) {
+	if (!g || !user) return false;
+	if (isGuildSwordMaster(g, user)) return true;
+	return hasGuildTerritoryCommanderSkill(g, petSkillData, user);
+}
+
+// 길드 영지전 공격자 이름 목록 가져오기 (소드마스터와 전투형 지휘관 스킬 보유 길드 마스터 포함)
+function getGuildTerritoryAttackerNames(g, petSkillData) {
+	var attackers = ensureGuildSwordMasters(g).slice();
+	var commander = g && g.master ? g.master : "";
+	if (hasGuildTerritoryCommanderSkill(g, petSkillData, commander) && attackers.indexOf(commander) === -1) {
+		attackers.push(commander);
+	}
+	return attackers;
+}
+
+// 길드 영지전 공격자 랭크 계산 함수 (전투형 지휘관 스킬 보유 여부에 따라 "지휘관" 또는 "소드마스터" 반환)
+function buildGuildTerritoryCommanderTriggerMessage(data, petData, guildData, sender) {
+	var rank = checkRank(data, petData, guildData, sender);
+	var lines = [
+		"전투형 지휘관📙 [" + rank + "] 길드마스터가 직접 전장에 나섭니다!",
+		"전투형 지휘관📙 [" + rank + "] 지휘관의 출전으로 길드 사기가 상승합니다!",
+		"전투형 지휘관📙 [" + rank + "] 전투형 지휘관의 권한이 발동했습니다!"
+	];
+	return lines[Math.floor(Math.random() * lines.length)];
+}
+
 // 길드의 소드마스터 수 계산 및 보장
-function getGuildTerritoryAttackLimit(g) {
+function getGuildTerritoryAttackLimit(g, petSkillData) {
 	var swordMasters = ensureGuildSwordMasters(g);
-	return Math.max(1, swordMasters.length) * GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER;
+	var limit = Math.max(1, swordMasters.length) * GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER;
+	if (hasGuildTerritoryCommanderSkill(g, petSkillData, g && g.master)) {
+		limit += 5;
+	}
+	return limit;
 }
 
 // 길드 영지전 공격 제한 계산 (길드별 설정이 있으면 우선, 없으면 소드마스터 수 기반)
@@ -31365,7 +31418,7 @@ function getGuildTerritoryAttackLimitForWar(war, g, guildId) {
 	if (war && war.guildAttackLimits && typeof war.guildAttackLimits[guildId] === "number") {
 		return war.guildAttackLimits[guildId];
 	}
-	return getGuildTerritoryAttackLimit(g);
+	return getGuildTerritoryAttackLimit(g, null);
 }
 
 // 길드 영지전 균열 이벤트 발생 횟수 계산 및 보장
@@ -31489,7 +31542,7 @@ function buildGuildTerritoryStartMessage(data, guildData) {
 		"[🎖️길드 영지전 시작🎖️]\n" +
 		"길드 영지전이 시작되었습니다.\n\n" +
 		"'/영지공격 [숫자]' 명령어로 영지를 점령해보세요.\n" +
-		"길드의 '소드마스터🤺'만 영지공격이 가능하며,\n" +
+		"길드의 '소드마스터🤺' 또는 전투형 지휘관📙 길드마스터만 영지공격이 가능하며,\n" +
 		"종료 시점에 최종 점령 중인 길드가 해당 영지를 차지합니다."
 	);
 }
@@ -31500,7 +31553,7 @@ function buildGuildTerritoryOrderMessage(data, petData, guildData) {
 	var out = "📜길드 영지전 공격 순서표📜\n" + allsee;
 
 	if (!war.turnOrder || war.turnOrder.length === 0) {
-		return out + "참여 소드마스터가 없습니다.";
+		return out + "참여 공격자가 없습니다.";
 	}
 
 	var orderIndex = 1;
@@ -31520,7 +31573,7 @@ function buildGuildTerritoryOrderMessage(data, petData, guildData) {
 	}
 
 	if (orderIndex === 1) {
-		out += "남은 공격 대상 소드마스터가 없습니다.";
+		out += "남은 공격 대상이 없습니다.";
 	}
 
 	return out;
@@ -36154,6 +36207,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "호이행복재단회원권") return "호이행복재단 회원권";
 	else if (skillName === "로열하우스") return "로열 하우스";
 	else if (skillName === "길드의심장") return "길드의 심장";
+	else if (skillName === "전투형지휘관") return "전투형 지휘관";
 	return skillName;
 }
 

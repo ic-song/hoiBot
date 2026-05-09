@@ -201,6 +201,8 @@ Status: VERIFIED
 - `ensureGuildTerritoryWar`
 - `buildGuildTerritoryPrepareMessage`
 - `buildGuildTerritoryTurnRows`
+- `getGuildTerritoryAttackerNames`
+- `getGuildTerritoryAttackLimit`
 - `scheduleGuildTerritoryWarStart`
 - `beginGuildTerritoryWarNow`
 - `scheduleGuildTerritoryOpening`
@@ -235,6 +237,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Start flow is staged: `NoticeMsg` prepare notice -> 20s wait -> castle-room order output -> 5s grace -> status output -> start notice -> first turn timer
+- Turn order and guild attack limits may include `전투형 지휘관📙` 길드마스터 effects at start time
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 
@@ -257,9 +260,12 @@ Status: VERIFIED
 - `ensureGuildTerritoryWar`
 - `getMyGuildInfo`
 - `isGuildSwordMaster`
+- `isGuildTerritoryAttacker`
+- `hasGuildTerritoryCommanderSkill`
 - `getGuildTerritoryTurnRow`
 - `getGuildTerritoryAttackLimitForWar`
 - `applyGuildTerritoryTurnReward`
+- `buildGuildTerritoryCommanderTriggerMessage`
 - `resolveGuildTerritoryAttack`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
@@ -292,6 +298,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Rejects attacks while the war is active but not yet start-ready
+- `전투형 지휘관📙` 길드마스터는 소드마스터가 아니어도 공격 가능하며, 직접 공격 시 랜덤 발동 멘트를 prepend한다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
@@ -1815,6 +1822,8 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬`
 - `/펫스킬가방`
+## AI Notes
+- `전투형 지휘관📙`는 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
 
 ---
 
