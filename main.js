@@ -144,6 +144,7 @@ const PET_SKILL_LIST = [
 
 
 	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
+	{ name: "기분탓", grade: "D", rate: 14.5, effect: "'?' 채팅 입력 시 연출 멘트를 출력합니다." },
 	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
 ];
 
@@ -1766,6 +1767,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 
 				initPetSkillUser(petSkillData, sender);
+				
+				if (msg === "?" && hasPetSkill(petSkillData, sender, "기분탓")) {
+					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "기분탓"));
+					return;
+				}
 
 				if (msg.startsWith("/펫스킬가방추가 ") && (isAdmin(sender) || isMaster(sender))) {
 					var addSkillMatch = msg.match(/^\/펫스킬가방추가\s+([^,]+),\s+(.+)\s+(\d+)\s*$/);
@@ -31508,6 +31514,9 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 			"지휘관의 재량📙 [{rank}]: 지휘관의 재량으로 실수를 만회합니다!",
 			"지휘관의 재량📙 [{rank}]: 이번 오입력은 무효 처리됩니다!",
 			"지휘관의 재량📙 [{rank}]: 아직 끝나지 않았습니다. 다시 지휘를 이어갑니다!"
+		],
+		"기분탓": [
+			"기분탓📙 [{rank}]: 라고 할뻔~"
 		],
 		"징집명령": [
 			"징집명령📙 [{rank}] 징집명령이 내려졌습니다!길드 정원이 1칸 확장됩니다!"

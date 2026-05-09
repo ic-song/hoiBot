@@ -1993,6 +1993,7 @@ function normalizePetSkillName(skillName) {
 	if (skillName === "탈세자") return "탈세자";
 	if (skillName === "티어상승론") return "티어 상승론";
 	if (skillName === "지휘관의재량") return "지휘관의 재량";
+	if (skillName === "기분탓") return "기분탓";
 	if (skillName === "징집명령") return "징집명령";
 	return skillName;
 }
