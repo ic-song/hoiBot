@@ -125,6 +125,7 @@ const PET_SKILL_LIST = [
 	{ name: "숙련된 전사", grade: "B", rate: 2.3, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
 	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "티켓/펫강화/돌멩이 탐험 성공확률 5% 상승" },
+	{ name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
 	{ name: "철벽수호자", grade: "B", rate: 2.3, effect: "영지 방어 시 5% 확률로 영지절대방어권🛡️(80%) 보정 효과를 획득합니다." },
 	{ name: "바바리안", grade: "B", rate: 2.3, effect: "영지 공격 시 5% 확률로 영지기습공격권🔥(80%) 보정 효과를 획득합니다." },
 	// { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
@@ -24529,27 +24530,38 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					let maxLength = 30;
 					let useItemName = "확성기📢(/알림 내용 30자)";
-					// 아이템 보유 여부 확인
-					if (!hasItem(data, sender, useItemName, 1)) {
-						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 [" + useItemName + "] 아이템이 없습니다.");
-						return;
-					}
 					let noticeMessage = match[1]; // 알림 메시지
 					if (noticeMessage.length > maxLength) {
 						replier.reply("알림 메시지는 " + maxLength + "자 이하여야 합니다.");
 						return;
 					}
+					if (typeof data.member[sender].noticeYahoCount !== "number") {
+						data.member[sender].noticeYahoCount = 0;
+					}
 					if (typeof data.member[sender].noticeItemCount !== "number") {
 						data.member[sender].noticeItemCount = 0;
 					}
-					if (data.member[sender].noticeItemCount >= 2) {
-						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 오늘은 이미 공지 아이템을 사용하셨습니다.");
-						return;
+					let useYahoFreeNotice = hasPetSkill(petSkillData, sender, "야호") && data.member[sender].noticeYahoCount < 3;
+					if (!useYahoFreeNotice) {
+						// 아이템 보유 여부 확인
+						if (!hasItem(data, sender, useItemName, 1)) {
+							replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 [" + useItemName + "] 아이템이 없습니다.");
+							return;
+						}
+						if (data.member[sender].noticeItemCount >= 2) {
+							replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 오늘은 이미 공지 아이템을 사용하셨습니다.");
+							return;
+						}
+						data.member[sender].noticeItemCount++; // 오늘 공지 아이템 사용 횟수 증가
+						removeItem(data, sender, useItemName, 1); // 아이템 사용
+					} else {
+						data.member[sender].noticeYahoCount++;
 					}
-					data.member[sender].noticeItemCount++; // 오늘 공지 아이템 사용 횟수 증가
-					removeItem(data, sender, useItemName, 1); // 아이템 사용
 					// 알림 메시지 전송
 					noticeMsg("[확성기📢]\n[" + checkRank(data, petData, guildData, sender) + "] : " + noticeMessage);
+					if (useYahoFreeNotice) {
+						replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "야호"));
+					}
 				}
 				if (msg.startsWith("/미니펫삭제 ") && sender == "호이 남") {
 					let args = msg.replace("/미니펫삭제", "").trim().split(" ");
@@ -31472,6 +31484,11 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		"티어 상승론": [
 			"티어 상승론📙 [{rank}]: 훌륭한 티켓의 표본이로군."
 		],
+		"야호": [
+			"[{rank}] 야호! 오늘은 무료 확성이다!",
+			"[{rank}] 확성기 아이템이 소모되지 않았습니다!",
+			"[{rank}] 기분 좋게 외쳐봅니다!"
+		],
 		"징집명령": [
 			"징집명령📙 [{rank}] 징집명령이 내려졌습니다!길드 정원이 1칸 확장됩니다!"
 		],
@@ -32477,6 +32494,9 @@ function resetAttendance(petData, data, replier) {
 		}
 		if (data.member[user].noticeItemCount !== undefined) {
 			delete data.member[user].noticeItemCount;
+		}
+		if (data.member[user].noticeYahoCount !== undefined) {
+			delete data.member[user].noticeYahoCount;
 		}
 		if (data.member[user].carrotBuyCount !== undefined) {
 			delete data.member[user].carrotBuyCount;
