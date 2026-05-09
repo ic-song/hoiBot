@@ -146,6 +146,7 @@ const PET_SKILL_LIST = [
 	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
 	{ name: "기분탓", grade: "D", rate: 14.5, effect: "'?' 채팅 입력 시 연출 멘트를 출력합니다." },
 	{ name: "종의 본능", grade: "D", rate: 14.5, effect: "'이쁘다' 채팅 입력 시 연출 멘트를 출력합니다." },
+	{ name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
 	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
 ];
 
@@ -2254,6 +2255,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
 					if (normalizePetSkillName(equipName) === "징집명령") {
 						equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "징집명령");
+					}
+					if (normalizePetSkillName(equipName) === "망한건 맞아") {
+						equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "망한건 맞아");
 					}
 					if (normalizePetSkillName(equipName) === "창조림" && hasEquippedCreationMiniPet(petData, sender)) {
 						equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "창조림");
@@ -31526,6 +31530,11 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		"종의 본능": [
 			"종의 본능📙 [{rank}] : 어디?"
 		],
+		"망한건 맞아": [
+			"망한건 맞아📙 [{rank}] : 괜히 장착했습니다...",
+			"망한건 맞아📙 [{rank}] : 기분만 묘하게 나빠집니다.",
+			"망한건 맞아📙 [{rank}] : 아무 일도 없었습니다."
+		],
 		"징집명령": [
 			"징집명령📙 [{rank}] 징집명령이 내려졌습니다!길드 정원이 1칸 확장됩니다!"
 		],
@@ -36405,6 +36414,7 @@ function normalizePetSkillName(skillName) {
 		.trim();
 	if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
 	else if (skillName === "야수의본능") return "야수의 본능";
+	else if (skillName === "종의본능") return "종의 본능";
 	else if (skillName === "펫스킬학개론") return "펫스킬 학개론";
 	else if (skillName === "호이행복재단회원권") return "호이행복재단 회원권";
 	else if (skillName === "로열하우스") return "로열 하우스";
@@ -36413,6 +36423,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "기사단증원") return "기사단 증원";
 	else if (skillName === "티어상승론") return "티어 상승론";
 	else if (skillName === "지휘관의재량") return "지휘관의 재량";
+	else if (skillName === "망한건맞아") return "망한건 맞아";
 	return skillName;
 }
 

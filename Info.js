@@ -1987,11 +1987,13 @@ function normalizePetSkillName(skillName) {
 		.replace(/✨/g, "")
 		.trim();
 	if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
+	if (skillName === "종의본능") return "종의 본능";
 	if (skillName === "로열하우스") return "로열 하우스";
 	if (skillName === "전투형지휘관") return "전투형 지휘관";
 	if (skillName === "기사단증원") return "기사단 증원";
 	if (skillName === "티어상승론") return "티어 상승론";
 	if (skillName === "지휘관의재량") return "지휘관의 재량";
+	if (skillName === "망한건맞아") return "망한건 맞아";
 	return skillName;
 }
 // 펫스킬 데이터 초기화 함수
