@@ -36339,7 +36339,7 @@ function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
 	msg += "━━━━━━━━━━━━━\n";
 	msg += "※ 스킬 장착: /펫스킬장착 [번호]\n";
 	msg += "※ 스킬 판매: /펫스킬판매 [번호]\n";
-	msg += "※ 스킬 정보: /펫스킬전체판매\n";
+	msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
 	msg += "━━━━━━━━━━━━━\n";
 	if (list.length === 0) return msg + "보유 중인 펫스킬북이 없습니다.";
 	for (var i = 0; i < list.length; i++) {
