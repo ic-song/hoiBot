@@ -139,6 +139,7 @@ const PET_SKILL_LIST = [
 	{ name: "기도", grade: "C", rate: 4.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🦋 1개를 획득합니다." },
 	{ name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
+	{ name: "지휘관의 재량", grade: "C", rate: 4.5, effect: "/영지공격 오입력으로 인한 탈락을 영지전당 1회 무효 처리합니다." },
 	{ name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
 
 
@@ -18525,6 +18526,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 턴 검증 (틀리면 탈락)
 					var currentTurn = getGuildTerritoryTurnRow(data, guildData);
 					if (!currentTurn || currentTurn.guildId !== attackInfo.guildId) {
+						if (canUseGuildTerritoryCommandDiscretion(attackWar, petSkillData, sender)) {
+							attackWar.commandDiscretionUses[sender] = {
+								guildId: attackInfo.guildId,
+								at: formatDateTime(new Date()),
+								reason: "TURN_MISMATCH"
+							};
+							saveJsonFile(guildData, guildPath);
+							replier.reply(
+								buildPetSkillMsg(data, petData, guildData, sender, "지휘관의 재량")
+							);
+							return;
+						}
 
 						attackWar.eliminatedUsers[sender] = {
 							guildId: attackInfo.guildId,
@@ -31142,6 +31155,7 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};// 타임아웃으로 공격 실패한 횟수
 	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};// 제거된 사용자 정보
 	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};// 제거된 길드 정보
+	if (!war.commandDiscretionUses || typeof war.commandDiscretionUses !== "object") war.commandDiscretionUses = {};// 지휘관의 재량 사용 정보
 	if (!war.instabilityUses || typeof war.instabilityUses !== "object") war.instabilityUses = {};// 불안정 사용 정보
 	if (!war.riftGuideUses || typeof war.riftGuideUses !== "object") war.riftGuideUses = {};// 균열 유도 사용 정보
 	if (!war.riftCommandUses || typeof war.riftCommandUses !== "object") war.riftCommandUses = {};// 균열 명령 사용 정보
@@ -31297,6 +31311,7 @@ function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, repli
 	war.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
 	war.eliminatedUsers = {};// 탈락한 유저 기록 초기화
 	war.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
+	war.commandDiscretionUses = {};// 지휘관의 재량 사용 기록 초기화
 	war.timeoutMissCounts = {};// 턴 타임아웃 미스 횟수 기록
 	war.turnCount = 0;// 전체 턴 횟수
 	war.instabilityAdjust = 0;// 불안정성 조정치 초기화
@@ -31489,6 +31504,11 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 			"[{rank}] 확성기 아이템이 소모되지 않았습니다!",
 			"[{rank}] 기분 좋게 외쳐봅니다!"
 		],
+		"지휘관의 재량": [
+			"지휘관의 재량📙 [{rank}]: 지휘관의 재량으로 실수를 만회합니다!",
+			"지휘관의 재량📙 [{rank}]: 이번 오입력은 무효 처리됩니다!",
+			"지휘관의 재량📙 [{rank}]: 아직 끝나지 않았습니다. 다시 지휘를 이어갑니다!"
+		],
 		"징집명령": [
 			"징집명령📙 [{rank}] 징집명령이 내려졌습니다!길드 정원이 1칸 확장됩니다!"
 		],
@@ -31504,6 +31524,11 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		return formatPetSkillName(normalizedSkillName) + " [" + rank + "] 효과가 발동했습니다!";
 	}
 	return lines[Math.floor(Math.random() * lines.length)].replace(/\{rank\}/g, rank);
+}
+
+// 이번 영지전에서 지휘관의 재량📙으로 오입력 탈락을 무효화할 수 있는지 확인
+function canUseGuildTerritoryCommandDiscretion(war, petSkillData, user) {
+	return !!(war && user && hasPetSkill(petSkillData, user, "지휘관의 재량") && !war.commandDiscretionUses[user]);
 }
 
 // 길드 최대 정원을 계산하여 반환 (길드 레벨 기본 정원 + 징집명령📙 보정)
@@ -36371,6 +36396,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "기사단증원") return "기사단 증원";
 	else if (skillName === "탈세자") return "탈세자";
 	else if (skillName === "티어상승론") return "티어 상승론";
+	else if (skillName === "지휘관의재량") return "지휘관의 재량";
 	else if (skillName === "징집명령") return "징집명령";
 	else if (skillName === "창조림") return "창조림";
 	return skillName;

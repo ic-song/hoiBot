@@ -304,6 +304,7 @@ Status: VERIFIED
 - `철벽수호자📙`, `바바리안📙`는 영지전 소모 아이템 판정이 먼저 실행된 뒤, 미발동 시 5% 확률의 80% 보정 판정으로 처리된다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
+- `지휘관의 재량📙` 장착 유저는 wrong-turn 오입력 탈락을 영지전당 1회 무효 처리한다
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
