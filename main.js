@@ -18550,13 +18550,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (!isAttackBlocked) {
 						riftMessage = processGuildTerritoryRiftEvent(data, guildData);
 					}
-					castleMsg(resultMessage, replier, isGroupChat);
-					if (riftMessage) {
-						castleMsg(riftMessage, replier, isGroupChat);
-					}
-
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
+						castleMsg(resultMessage, replier, isGroupChat);
+						if (riftMessage) {
+							castleMsg(riftMessage, replier, isGroupChat);
+						}
 						finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
 						withGuildTerritoryDataMode(guildData, function () {
 							saveJsonFile(guildData, guildPath);
@@ -18567,6 +18566,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 턴 이동
 					advanceGuildTerritoryTurn(data, guildData);
+					// 다음 턴 안내 메시지 생성
+					var nextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+					if (nextTurnLine) {
+						resultMessage = nextTurnLine + "\n" + resultMessage;
+					}
+
+					castleMsg(resultMessage, replier, isGroupChat);
+					if (riftMessage) {
+						castleMsg(riftMessage, replier, isGroupChat);
+					}
 
 					saveJsonFile(guildData, guildPath);
 					saveJsonFile(data, filePath);
@@ -31584,6 +31593,13 @@ function advanceGuildTerritoryTurn(data, guildData) {
 	return getGuildTerritoryTurnRow(data, guildData);
 }
 
+// 영지전 현재 공격 차례 한 줄 빌드
+function buildGuildTerritoryCurrentTurnLine(data, petData, guildData) {
+	var row = getGuildTerritoryTurnRow(data, guildData);
+	if (!row) return "";
+	return "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
+}
+
 // 영지전 턴 메시지 빌드
 function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	var war = guildData.territoryWar;
@@ -31595,7 +31611,7 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
 	var remain = Math.max(0, attackLimit - used);
 	var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
-	var turnLine = "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
+	var turnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
 
 	var msg =
 		turnLine + "\n" +

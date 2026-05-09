@@ -263,6 +263,7 @@ Status: VERIFIED
 - `resolveGuildTerritoryAttack`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
+- `buildGuildTerritoryCurrentTurnLine`
 - `buildGuildTerritoryTurnMessage`
 - `startGuildTerritoryTurnTimer`
 
@@ -291,6 +292,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Rejects attacks while the war is active but not yet start-ready
+- Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
