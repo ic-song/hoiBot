@@ -1550,6 +1550,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫 스킬 
 	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -1571,6 +1574,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫스킬
 	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -1997,6 +2003,13 @@ function initPetSkillUser(petSkillData, user) {
 	if (!(petSkillData[user].petSkills.equipped instanceof Array)) petSkillData[user].petSkills.equipped = [];
 	if (!petSkillData[user].petSkills.bag || typeof petSkillData[user].petSkills.bag !== "object") petSkillData[user].petSkills.bag = {};
 	return petSkillData[user].petSkills;
+}
+
+function hasEquippedCreationMiniPet(petData, user) {
+	return !!(petData &&
+		petData[user] &&
+		petData[user].miniPet &&
+		(petData[user].miniPet.grade || "") === "창조");
 }
 // 장착된 펫스킬 이름 배열 반환 함수
 function getEquippedPetSkillNames(petSkillData, user) {

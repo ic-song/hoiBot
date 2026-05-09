@@ -498,6 +498,7 @@ Status: VERIFIED
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
+- `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
 
 ---
 
@@ -1827,6 +1828,7 @@ Status: VERIFIED
 - `/펫스킬가방`
 ## AI Notes
 - `전투형 지휘관📙`, `기사단 증원📙`는 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
+- `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
 
 ---
 

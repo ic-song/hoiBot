@@ -100,6 +100,7 @@ const PET_SKILL_LIST = [
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가되고, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
+	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
@@ -2237,6 +2238,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					skillStore.equipped.push(equipName);
 					saveJsonFile(petSkillData, petSkillDataPath);
 					var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
+					if (normalizePetSkillName(equipName) === "창조림" && hasEquippedCreationMiniPet(petData, sender)) {
+						equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "창조림");
+					}
 					if (normalizePetSkillName(equipName) === "로열 하우스") {
 						var homeDataForRoyal = loadJsonFile(homeDataFile);
 						var royalCount = getPlacedFurnitureCountByGrade(homeDataForRoyal, sender, "로열 루미에르");
@@ -24745,6 +24749,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (prevEquipped) {
 						message += "\n기존 [" + formatPetInfo(prevEquipped) + "] 미니펫은 파양되었습니다.";
 					}
+					if ((selectedPet.grade || "") === "창조" && hasPetSkill(petSkillData, sender, "창조림")) {
+						message += "\n" + buildPetSkillMsg(data, petData, guildData, sender, "창조림");
+					}
 					resetMiniPetState(sender);
 					replier.reply(message);
 					saveJsonFile(petData, memberPetPath);
@@ -31460,6 +31467,9 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		],
 		"티어 상승론": [
 			"티어 상승론📙 [{rank}]: 훌륭한 티켓의 표본이로군."
+		],
+		"창조림": [
+			"창조림📙 [{rank}] 창조림 개꿀띠! 존맛탱! 맛탱구리구리!"
 		]
 	};
 
@@ -31470,6 +31480,14 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		return formatPetSkillName(normalizedSkillName) + " [" + rank + "] 효과가 발동했습니다!";
 	}
 	return lines[Math.floor(Math.random() * lines.length)].replace(/\{rank\}/g, rank);
+}
+
+// 창조 미니펫 장착 여부 확인 함수
+function hasEquippedCreationMiniPet(petData, user) {
+	return !!(petData &&
+		petData[user] &&
+		petData[user].miniPet &&
+		(petData[user].miniPet.grade || "") === "창조");
 }
 
 // 길드의 소드마스터 수 계산 및 보장
@@ -35227,6 +35245,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫 스킬 
 	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -35248,6 +35269,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫스킬
 	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -36311,6 +36335,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "기사단증원") return "기사단 증원";
 	else if (skillName === "탈세자") return "탈세자";
 	else if (skillName === "티어상승론") return "티어 상승론";
+	else if (skillName === "창조림") return "창조림";
 	return skillName;
 }
 
