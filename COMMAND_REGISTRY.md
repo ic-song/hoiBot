@@ -2092,6 +2092,7 @@ Status: VERIFIED
 
 - `쇼핑광📙` discount applies before tax calculation
 - `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
+- `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 
 ---
 

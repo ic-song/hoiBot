@@ -1985,6 +1985,7 @@ function normalizePetSkillName(skillName) {
 	if (skillName === "전투형지휘관") return "전투형 지휘관";
 	if (skillName === "기사단증원") return "기사단 증원";
 	if (skillName === "탈세자") return "탈세자";
+	if (skillName === "티어상승론") return "티어 상승론";
 	return skillName;
 }
 // 펫스킬 데이터 초기화 함수

@@ -107,6 +107,7 @@ const PET_SKILL_LIST = [
 	// { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
 	{ name: "탈세자", grade: "A", rate: 1.7, effect: "상점(길드상점 제외) 구매 시 세금을 면제받습니다." },
+	{ name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
@@ -22247,6 +22248,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								data.member[sender].bag[itemName] += quantity;
 							}
 							replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+							if (itemName === "티어 승급티켓🎟" && hasPetSkill(petSkillData, sender, "티어 상승론")) {
+								var bonusTicketCount = Math.floor(quantity * 0.01);
+								if (bonusTicketCount > 0) {
+									addItem(data, sender, itemName, bonusTicketCount);
+									replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "티어 상승론") + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
+								}
+							}
 							isBuyFlag = true;
 						}
 						if (isBuyFlag) {
@@ -31449,6 +31457,9 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 			"탈세자📙 [{rank}] 님이 세금 폭탄을 요리조리 피합니다.",
 			"탈세자📙 [{rank}] 님이 세무서를 지나치며 식은땀을 흘립니다.",
 			"탈세자📙 [{rank}] 님이 말합니다. \"이건 탈세가 아니라 생활의 지혜입니다.\""
+		],
+		"티어 상승론": [
+			"티어 상승론📙 [{rank}]: 훌륭한 티켓의 표본이로군."
 		]
 	};
 
@@ -36299,6 +36310,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "전투형지휘관") return "전투형 지휘관";
 	else if (skillName === "기사단증원") return "기사단 증원";
 	else if (skillName === "탈세자") return "탈세자";
+	else if (skillName === "티어상승론") return "티어 상승론";
 	return skillName;
 }
 
