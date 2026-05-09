@@ -184,6 +184,120 @@ Status: VERIFIED
 
 ---
 
+# /길드영지시작
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:18349`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `ensureGuildTerritoryWar`
+- `buildGuildTerritoryPrepareMessage`
+- `buildGuildTerritoryTurnRows`
+- `scheduleGuildTerritoryWarStart`
+- `beginGuildTerritoryWarNow`
+- `scheduleGuildTerritoryOpening`
+- `buildGuildTerritoryOrderMessage`
+- `buildGuildTerritoryStatusMessage`
+- `buildGuildTerritoryStartMessage`
+- `startGuildTerritoryTurnTimer`
+
+## Data Usage
+
+- `guildData.territoryWar.pendingStart`
+- `guildData.territoryWar.pendingStartToken`
+- `guildData.territoryWar.startReady`
+- `guildData.territoryWar.openingToken`
+- `guildData.territoryWar.turnOrder`
+- `guildData.castleSiegeFlag`
+
+## Save Flow
+
+- Saves `guildData` when start reservation is created
+- Reloads latest `member/pet/guild` data inside delayed start callback
+- Saves `guildData` after turn order is created
+- Saves `guildData` again when 5-second opening grace ends and attacks become available
+
+## Related Commands
+
+- `/길드영지준비`
+- `/길드영지종료`
+- `/길드영지순서`
+- `/영지공격 [숫자]`
+
+## AI Notes
+
+- Start flow is staged: `NoticeMsg` prepare notice -> 20s wait -> castle-room order output -> 5s grace -> status output -> start notice -> first turn timer
+- During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
+- Cancellation and forced finish should clear both pending-start and opening-grace timers
+
+---
+
+# /영지공격 [숫자]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:18448`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `ensureGuildTerritoryWar`
+- `getMyGuildInfo`
+- `isGuildSwordMaster`
+- `getGuildTerritoryTurnRow`
+- `getGuildTerritoryAttackLimitForWar`
+- `applyGuildTerritoryTurnReward`
+- `resolveGuildTerritoryAttack`
+- `processGuildTerritoryRiftEvent`
+- `advanceGuildTerritoryTurn`
+- `buildGuildTerritoryCurrentTurnLine`
+- `buildGuildTerritoryTurnMessage`
+- `startGuildTerritoryTurnTimer`
+
+## Data Usage
+
+- `guildData.territoryWar.active`
+- `guildData.territoryWar.startReady`
+- `guildData.territoryWar.eliminatedUsers`
+- `guildData.territoryWar.eliminatedGuilds`
+- `guildData.territoryWar.readyGuilds`
+- `guildData.territoryWar.guildAttackCounts`
+
+## Save Flow
+
+- Clears active turn timer before resolving a valid attack
+- Saves `guildData` and `data` after attack resolution and turn advance
+- Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
+
+## Related Commands
+
+- `/길드영지시작`
+- `/길드영지준비`
+- `/길드영지순서`
+- `/길드영지종료`
+
+## AI Notes
+
+- Rejects attacks while the war is active but not yet start-ready
+- Non-final attack results prepend the next attacker's turn line before the result body
+- Wrong-turn attacks eliminate the acting user from the current territory-war rotation
+- After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
+
+---
+
 # /길드정보
 
 Status: VERIFIED
@@ -373,6 +487,7 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 
 ---
 
@@ -879,6 +994,7 @@ Status: VERIFIED
 
 - Canonical full skill inventory display
 - Best entry point for total skill count and bag listing format
+- Top guide lines should point skill lookup to `/펫스킬정보 [스킬이름]`
 
 ---
 
