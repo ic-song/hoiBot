@@ -201,6 +201,8 @@ Status: VERIFIED
 - `ensureGuildTerritoryWar`
 - `buildGuildTerritoryPrepareMessage`
 - `buildGuildTerritoryTurnRows`
+- `getGuildTerritoryAttackerNames`
+- `getGuildTerritoryAttackLimit`
 - `scheduleGuildTerritoryWarStart`
 - `beginGuildTerritoryWarNow`
 - `scheduleGuildTerritoryOpening`
@@ -235,6 +237,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Start flow is staged: `NoticeMsg` prepare notice -> 20s wait -> castle-room order output -> 5s grace -> status output -> start notice -> first turn timer
+- Turn order and guild attack limits may include `전투형 지휘관📙`, `기사단 증원📙` 길드마스터 effects at start time
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 
@@ -257,9 +260,13 @@ Status: VERIFIED
 - `ensureGuildTerritoryWar`
 - `getMyGuildInfo`
 - `isGuildSwordMaster`
+- `isGuildTerritoryAttacker`
+- `hasGuildTerritoryCommanderSkill`
+- `hasGuildTerritoryKnightOrderSkill`
 - `getGuildTerritoryTurnRow`
 - `getGuildTerritoryAttackLimitForWar`
 - `applyGuildTerritoryTurnReward`
+- `buildPetSkillTriggerMessage`
 - `resolveGuildTerritoryAttack`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
@@ -292,8 +299,12 @@ Status: VERIFIED
 ## AI Notes
 
 - Rejects attacks while the war is active but not yet start-ready
+- `전투형 지휘관📙` 길드마스터는 소드마스터가 아니어도 공격 가능하며, 직접 공격 시 랜덤 발동 멘트를 prepend한다
+- `기사단 증원📙` 길드마스터가 있으면 길드 전체 공격 횟수 `+5`가 적용되고, 공격 결과에 발동 멘트가 prepend된다
+- `철벽수호자📙`, `바바리안📙`는 영지전 소모 아이템 판정이 먼저 실행된 뒤, 미발동 시 5% 확률의 80% 보정 판정으로 처리된다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
+- `지휘관의 재량📙` 장착 유저는 wrong-turn 오입력 탈락을 영지전당 1회 무효 처리한다
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
@@ -488,6 +499,7 @@ Status: VERIFIED
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
+- `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
 
 ---
 
@@ -526,6 +538,7 @@ Status: VERIFIED
 
 - Entry point for joinable guild listing
 - Uses the same filtered guild row set as guild join flow
+- `징집명령📙`을 장착한 길드마스터의 길드는 최대 인원이 `+1` 보정된 값으로 노출된다
 
 ---
 
@@ -1298,6 +1311,9 @@ Status: VERIFIED
 - `/가입한다`
 - `/안한다`
 
+## AI Notes
+- 길드 정원 판정은 저장된 `g.maxMember`에 `징집명령📙` 길드마스터 보정 `+1`을 더한 기준을 사용한다
+
 ---
 
 # /가입한다
@@ -1815,6 +1831,13 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬`
 - `/펫스킬가방`
+## AI Notes
+- `전투형 지휘관📙`, `기사단 증원📙`, `징집명령📙`은 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
+- `야호📙`은 `/알림`에서 하루 3회까지 확성기 아이템 소모 없이 무료 사용을 허용한다
+- `기분탓📙`은 `?` 단일 채팅 입력 시 연출 멘트만 출력하며 수치 변화는 없다
+- `종의 본능📙`은 `이쁘다` 정확 일치 입력 시에만 연출 멘트를 출력하도록 현재 구현되어 있다
+- `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
+- `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
 
 ---
 
@@ -2034,6 +2057,53 @@ Status: VERIFIED
 ## Related Commands
 - `/레벨`
 - `/포인트확인`
+
+---
+
+# /구매 [번호] [개수]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:22030`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasPetSkill`
+- `buildPetSkillTriggerMessage`
+- `buildPointShopBuyMessage`
+- `applyTax`
+
+## Data Usage
+
+- `data.shop`
+- `data.HoiCastle.taxRate`
+- `data.member[sender].point`
+- `data.member[sender].bag`
+- `petSkillData`
+
+## Save Flow
+
+- Deducts point-shop cost from member points
+- Applies castle tax earnings through `applyTax(itemPrice, data, guildData)` when tax is not exempt
+- Saves updated member/pet/guild state through the surrounding response flow
+
+## Related Commands
+
+- `/상점`
+- `/길드상점`
+- `/길드상점구매`
+
+## AI Notes
+
+- `쇼핑광📙` discount applies before tax calculation
+- `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
+- `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 
 ---
 

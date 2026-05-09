@@ -1550,6 +1550,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫 스킬 
 	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -1571,6 +1574,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫스킬
 	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -1981,7 +1987,13 @@ function normalizePetSkillName(skillName) {
 		.replace(/✨/g, "")
 		.trim();
 	if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
+	if (skillName === "종의본능") return "종의 본능";
 	if (skillName === "로열하우스") return "로열 하우스";
+	if (skillName === "전투형지휘관") return "전투형 지휘관";
+	if (skillName === "기사단증원") return "기사단 증원";
+	if (skillName === "티어상승론") return "티어 상승론";
+	if (skillName === "지휘관의재량") return "지휘관의 재량";
+	if (skillName === "망한건맞아") return "망한건 맞아";
 	return skillName;
 }
 // 펫스킬 데이터 초기화 함수
@@ -1993,6 +2005,13 @@ function initPetSkillUser(petSkillData, user) {
 	if (!(petSkillData[user].petSkills.equipped instanceof Array)) petSkillData[user].petSkills.equipped = [];
 	if (!petSkillData[user].petSkills.bag || typeof petSkillData[user].petSkills.bag !== "object") petSkillData[user].petSkills.bag = {};
 	return petSkillData[user].petSkills;
+}
+
+function hasEquippedCreationMiniPet(petData, user) {
+	return !!(petData &&
+		petData[user] &&
+		petData[user].miniPet &&
+		(petData[user].miniPet.grade || "") === "창조");
 }
 // 장착된 펫스킬 이름 배열 반환 함수
 function getEquippedPetSkillNames(petSkillData, user) {
