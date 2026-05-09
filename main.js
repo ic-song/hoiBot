@@ -36403,11 +36403,8 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "길드의심장") return "길드의 심장";
 	else if (skillName === "전투형지휘관") return "전투형 지휘관";
 	else if (skillName === "기사단증원") return "기사단 증원";
-	else if (skillName === "탈세자") return "탈세자";
 	else if (skillName === "티어상승론") return "티어 상승론";
 	else if (skillName === "지휘관의재량") return "지휘관의 재량";
-	else if (skillName === "징집명령") return "징집명령";
-	else if (skillName === "창조림") return "창조림";
 	return skillName;
 }
 
