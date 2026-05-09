@@ -121,6 +121,8 @@ const PET_SKILL_LIST = [
 	{ name: "숙련된 전사", grade: "B", rate: 2.3, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
 	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "티켓/펫강화/돌멩이 탐험 성공확률 5% 상승" },
+	{ name: "철벽수호자", grade: "B", rate: 2.3, effect: "영지 방어 시 5% 확률로 영지절대방어권🛡️(80%) 보정 효과를 획득합니다." },
+	{ name: "바바리안", grade: "B", rate: 2.3, effect: "영지 공격 시 5% 확률로 영지기습공격권🔥(80%) 보정 효과를 획득합니다." },
 	// { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
     
 	{ name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑"},
@@ -31424,6 +31426,14 @@ function buildGuildTerritoryKnightOrderTriggerMessage(data, petData, guildData, 
 	return "기사단 증원📙 [" + checkRank(data, petData, guildData, user) + "] 기사단 증원이 발동했습니다!";
 }
 
+function buildGuildTerritoryIronWallTriggerMessage(data, petData, guildData, user) {
+	return "철벽수호자📙 [" + checkRank(data, petData, guildData, user) + "] 어디 한번 더 쳐 보시지!";
+}
+
+function buildGuildTerritoryBarbarianTriggerMessage(data, petData, guildData, user) {
+	return "바바리안📙 [" + checkRank(data, petData, guildData, user) + "] 바할라ㅏㅏㅏㅏ!!!!!!!!!!!!!!";
+}
+
 // 길드의 소드마스터 수 계산 및 보장
 function getGuildTerritoryAttackLimit(g, petSkillData) {
 	var swordMasters = ensureGuildSwordMasters(g, petSkillData);
@@ -32223,6 +32233,8 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		{ name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" },
 		{ name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" }
 	];
+	var ironWallSkill = { successRate: 0.8, label: "철벽🛡(80%)" };
+	var barbarianSkill = { successRate: 0.8, label: "바바리안🔥(80%)" };
 
 	if (defenderName && data.member[defenderName]) {
 		// 방어 아이템
@@ -32233,6 +32245,16 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
 			//		out += baseInfo;
 			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + defenseItem.label + "] 발동!\n";
+			out += "공격/방어/보상 상세보기" + allsee;
+			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
+			out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
+			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
+			return out;
+		}
+		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= 0.05 && Math.random() <= ironWallSkill.successRate) {
+			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
+			out += buildGuildTerritoryIronWallTriggerMessage(data, petData, guildData, defenderName) + "\n";
+			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + ironWallSkill.label + "] 발동!\n";
 			out += "공격/방어/보상 상세보기" + allsee;
 			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 			out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
@@ -32255,6 +32277,22 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
 		//	out += baseInfo;
 		out += "🔥 공격 성공! [" + offenseItem.label + "] 발동\n";
+		out += "공격/방어/보상 상세보기" + allsee;
+		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
+		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
+		return out;
+	}
+	if (hasPetSkill(petSkillData, sender, "바바리안") && Math.random() <= 0.05 && Math.random() <= barbarianSkill.successRate) {
+		ter.ownerGuildId = attackerGuildInfo.guildId;
+		ter.ownerUser = sender;
+		if (territoryNo === 1 && data.HoiCastle) {
+			data.HoiCastle.lord = sender;
+			data.HoiCastle.earnings = 0;
+			data.HoiCastle.defenseCount = 0;
+		}
+		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
+		out += buildGuildTerritoryBarbarianTriggerMessage(data, petData, guildData, sender) + "\n";
+		out += "🔥 공격 성공! [" + barbarianSkill.label + "] 발동\n";
 		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";

@@ -268,6 +268,8 @@ Status: VERIFIED
 - `applyGuildTerritoryTurnReward`
 - `buildGuildTerritoryCommanderTriggerMessage`
 - `buildGuildTerritoryKnightOrderTriggerMessage`
+- `buildGuildTerritoryIronWallTriggerMessage`
+- `buildGuildTerritoryBarbarianTriggerMessage`
 - `resolveGuildTerritoryAttack`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
@@ -302,6 +304,7 @@ Status: VERIFIED
 - Rejects attacks while the war is active but not yet start-ready
 - `전투형 지휘관📙` 길드마스터는 소드마스터가 아니어도 공격 가능하며, 직접 공격 시 랜덤 발동 멘트를 prepend한다
 - `기사단 증원📙` 길드마스터가 있으면 길드 전체 공격 횟수 `+5`가 적용되고, 공격 결과에 발동 멘트가 prepend된다
+- `철벽수호자📙`, `바바리안📙`는 영지전 소모 아이템 판정이 먼저 실행된 뒤, 미발동 시 5% 확률의 80% 보정 판정으로 처리된다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
