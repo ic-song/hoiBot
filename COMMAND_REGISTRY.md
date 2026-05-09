@@ -266,10 +266,7 @@ Status: VERIFIED
 - `getGuildTerritoryTurnRow`
 - `getGuildTerritoryAttackLimitForWar`
 - `applyGuildTerritoryTurnReward`
-- `buildGuildTerritoryCommanderTriggerMessage`
-- `buildGuildTerritoryKnightOrderTriggerMessage`
-- `buildGuildTerritoryIronWallTriggerMessage`
-- `buildGuildTerritoryBarbarianTriggerMessage`
+- `buildPetSkillTriggerMessage`
 - `resolveGuildTerritoryAttack`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
@@ -2067,7 +2064,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `hasPetSkill`
-- `buildTaxEvaderTriggerMessage`
+- `buildPetSkillTriggerMessage`
 - `buildPointShopBuyMessage`
 - `applyTax`
 

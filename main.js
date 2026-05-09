@@ -125,8 +125,8 @@ const PET_SKILL_LIST = [
 	{ name: "철벽수호자", grade: "B", rate: 2.3, effect: "영지 방어 시 5% 확률로 영지절대방어권🛡️(80%) 보정 효과를 획득합니다." },
 	{ name: "바바리안", grade: "B", rate: 2.3, effect: "영지 공격 시 5% 확률로 영지기습공격권🔥(80%) 보정 효과를 획득합니다." },
 	// { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
-    
-	{ name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑"},
+
+	{ name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑" },
 	{ name: "건물주", grade: "C", rate: 4.4, effect: "/펫홈에 장착할 수 있는 가구를 10개 늘려줍니다." },
 	{ name: "악덕한 영주", grade: "C", rate: 4.0, effect: "호랜캐슬 세금 30% 강제 고정" },
 	{ name: "오픈런", grade: "C", rate: 4.0, effect: "명령어: ㅊㅊ 1등시 펫먹이🍼1,000개를 획득합니다.\n출석목록 기준 1등" },
@@ -136,7 +136,7 @@ const PET_SKILL_LIST = [
 	{ name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
 	{ name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
-	
+
 
 	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
 	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
@@ -7819,7 +7819,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				
+
 				if (
 					msg.startsWith("/반지1, ") ||
 					msg.startsWith("/반지2, ") ||
@@ -7998,7 +7998,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				
+
 				if (msg === "/고생하셨습니다") {
 					if (data.member[sender] && data.member[sender].bag["부방상여패키지3(/고생하셨습니다)"] > 0) {
 						// 패키지 개수 감소
@@ -18384,7 +18384,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(guildData, guildPath);
 
 					// 영지전 시작 준비 공지
-					noticeMsg(buildGuildTerritoryPrepareMessage()); 
+					noticeMsg(buildGuildTerritoryPrepareMessage());
 					// 20초 후 영지전 시작 예약
 					scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGroupChat);
 					return;
@@ -18566,13 +18566,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					var commanderTriggerMessage = "";
 					if (hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender)) {
-						commanderTriggerMessage = buildGuildTerritoryCommanderTriggerMessage(data, petData, guildData, sender);
+						commanderTriggerMessage = buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관");
 						if (commanderTriggerMessage) {
 							resultMessage = commanderTriggerMessage + "\n" + resultMessage;
 						}
 					}
 					if (hasGuildTerritoryKnightOrderSkill(attackInfo.guild, petSkillData, attackInfo.guild.master)) {
-						resultMessage = buildGuildTerritoryKnightOrderTriggerMessage(data, petData, guildData, attackInfo.guild.master) + "\n" + resultMessage;
+						resultMessage = buildPetSkillMsg(data, petData, guildData, attackInfo.guild.master, "기사단 증원") + "\n" + resultMessage;
 					}
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
@@ -22063,7 +22063,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 						if (hasPetSkill(petSkillData, sender, "탈세자")) {
 							taxExempt = true;
-							replier.reply(buildTaxEvaderTriggerMessage(data, petData, guildData, sender) + "\n상점 세금이 면제됩니다.");
+							replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
 						}
 
 						taxRate = taxExempt ? 0 : (parseInt(taxRate, 10) || 0);
@@ -30225,7 +30225,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-							if (msg === "/오픈하면부처가됩니다") {
+				if (msg === "/오픈하면부처가됩니다") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] !== undefined && data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 0) {
 							if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 1) {
@@ -30259,7 +30259,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-if (msg === "/나한테잘하자3") {
+				if (msg === "/나한테잘하자3") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 0) {
 							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)"] > 1) {
@@ -30307,56 +30307,56 @@ if (msg === "/나한테잘하자3") {
 					}
 				}
 				if (msg === "/오픈하면어른이됩니다") {
-    if (castleSiegeFlag) return;
+					if (castleSiegeFlag) return;
 
-    var member = data.member[sender];
-    if (!member) return;
+					var member = data.member[sender];
+					if (!member) return;
 
-    var packItem = "어버이날패키지🧧(/오픈하면어른이됩니다)";
+					var packItem = "어버이날패키지🧧(/오픈하면어른이됩니다)";
 
-    if (!member.bag) {
-        member.bag = {};
-    }
+					if (!member.bag) {
+						member.bag = {};
+					}
 
-    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
-        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
-        return;
-    }
+					if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
+						return;
+					}
 
-    // 패키지 1개 차감
-    if (member.bag[packItem] > 1) {
-        member.bag[packItem]--;
-    } else {
-        delete member.bag[packItem];
-    }
+					// 패키지 1개 차감
+					if (member.bag[packItem] > 1) {
+						member.bag[packItem]--;
+					} else {
+						delete member.bag[packItem];
+					}
 
-    var rewardItems = {
-        "길드공헌훈장🌟(/길드공헌 숫자)": 300,
-        "펫스윗홈인테리어샵🖼️(/샵오픈)": 12000,
-        "미니펫뽑기🐹(/미니펫오픈)": 10000,
-        "호이베이스볼⚾️(/투수던집니다)": 400,
-        "주간상자🦋(/주간오픈)": 5,
-        "정령 강화석🥀": 3000,
-        "반지 강화석💍": 3000,
-        "강화확률뽑기⚒️(/강화뽑기)": 100,
-        "펫먹이🍼": 10000,
-        "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)": 1
-    };
+					var rewardItems = {
+						"길드공헌훈장🌟(/길드공헌 숫자)": 300,
+						"펫스윗홈인테리어샵🖼️(/샵오픈)": 12000,
+						"미니펫뽑기🐹(/미니펫오픈)": 10000,
+						"호이베이스볼⚾️(/투수던집니다)": 400,
+						"주간상자🦋(/주간오픈)": 5,
+						"정령 강화석🥀": 3000,
+						"반지 강화석💍": 3000,
+						"강화확률뽑기⚒️(/강화뽑기)": 100,
+						"펫먹이🍼": 10000,
+						"펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)": 1
+					};
 
-    for (var item in rewardItems) {
-        addItemToBag(member.bag, item, rewardItems[item]);
-    }
+					for (var item in rewardItems) {
+						addItemToBag(member.bag, item, rewardItems[item]);
+					}
 
-    var openMsg = "어버이날 감사 패키지가 열렸습니다🧧\n";
-    openMsg += "오늘은 어른이 되는 날입니다.\n\n";
-    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
+					var openMsg = "어버이날 감사 패키지가 열렸습니다🧧\n";
+					openMsg += "오늘은 어른이 되는 날입니다.\n\n";
+					openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
 
-    for (var rewardName in rewardItems) {
-        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
-    }
+					for (var rewardName in rewardItems) {
+						openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
+					}
 
-    replier.reply(openMsg);
-}
+					replier.reply(openMsg);
+				}
 				if (msg === "/일어나돈벌어야지") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] !== undefined && data.member[sender].bag["노동절패키지🪏(/일어나돈벌어야지)"] > 0) {
@@ -31418,49 +31418,47 @@ function getGuildTerritoryAttackerNames(g, petSkillData) {
 	return attackers;
 }
 
-// 길드 영지전 공격자 랭크 계산 함수 (전투형 지휘관 스킬 보유 여부에 따라 "지휘관" 또는 "소드마스터" 반환)
-function buildGuildTerritoryCommanderTriggerMessage(data, petData, guildData, sender) {
-	var rank = checkRank(data, petData, guildData, sender);
-	var lines = [
-		"전투형 지휘관📙 [" + rank + "] 길드마스터가 직접 전장에 나섭니다!",
-		"전투형 지휘관📙 [" + rank + "] 지휘관의 출전으로 길드 사기가 상승합니다!",
-		"전투형 지휘관📙 [" + rank + "] 전투형 지휘관의 권한이 발동했습니다!"
-	];
-	return lines[Math.floor(Math.random() * lines.length)];
-}
 
-// 길드 영지전 기사단 증원 트리거 메시지 빌드 함수 (기사단 증원 스킬 발동 시 랜덤 메시지 반환)
-function buildGuildTerritoryKnightOrderTriggerMessage(data, petData, guildData, user) {
-	return "기사단 증원📙 [" + checkRank(data, petData, guildData, user) + "] 기사단 증원이 발동했습니다!";
-}
 
-// 길드 영지전 철벽수호자 트리거 메시지 빌드 함수 (철벽수호자 스킬 발동 시 랜덤 메시지 반환)
-function buildGuildTerritoryIronWallTriggerMessage(data, petData, guildData, user) {
-	return "철벽수호자📙 [" + checkRank(data, petData, guildData, user) + "] 어디 한번 더 쳐 보시지!";
-}
+// 펫 스킬 발동 메시지 빌드 함수
+function buildPetSkillMsg(data, petData, guildData, user, skillName) {
+	var PET_SKILL_TRIGGER_MESSAGES = {
+		"전투형 지휘관": [
+			"전투형 지휘관📙 [{rank}] 길드마스터가 직접 전장에 나섭니다!",
+			"전투형 지휘관📙 [{rank}] 지휘관의 출전으로 길드 사기가 상승합니다!",
+			"전투형 지휘관📙 [{rank}] 전투형 지휘관의 권한이 발동했습니다!"
+		],
+		"기사단 증원": [
+			"기사단 증원📙 [{rank}] 기사단 증원이 발동했습니다!"
+		],
+		"철벽수호자": [
+			"철벽수호자📙 [{rank}] 어디 한번 더 쳐 보시지!"
+		],
+		"바바리안": [
+			"바바리안📙 [{rank}] 바할라ㅏㅏㅏㅏ!!!!!!!!!!!!!!"
+		],
+		"탈세자": [
+			"탈세자📙 [{rank}] 님이 세금 고지서를 보고 조용히 눈을 돌렸습니다.",
+			"탈세자📙 [{rank}] 님의 수상한 세무 감각이 발동했습니다!",
+			"탈세자📙 [{rank}] 님이 납부서를 접고 불에 태웁니다.",
+			"탈세자📙 [{rank}] 님이 세금 계산표의 빈틈을 발견했습니다.",
+			"탈세자📙 [{rank}] 님의 절세 본능이 폭주합니다.",
+			"탈세자📙 [{rank}] 님이 세무관의 눈을 피합니다.",
+			"탈세자📙 [{rank}] 님이 말합니다. \"세금은 냈습니다… 조금만요.\"",
+			"탈세자📙 [{rank}] 님의 납세 회피 본능이 꿈틀거립니다.",
+			"탈세자📙 [{rank}] 님이 세금 폭탄을 요리조리 피합니다.",
+			"탈세자📙 [{rank}] 님이 세무서를 지나치며 식은땀을 흘립니다.",
+			"탈세자📙 [{rank}] 님이 말합니다. \"이건 탈세가 아니라 생활의 지혜입니다.\""
+		]
+	};
 
-// 길드 영지전 바바리안 트리거 메시지 빌드 함수 (바바리안 스킬 발동 시 랜덤 메시지 반환)
-function buildGuildTerritoryBarbarianTriggerMessage(data, petData, guildData, user) {
-	return "바바리안📙 [" + checkRank(data, petData, guildData, user) + "] 바할라ㅏㅏㅏㅏ!!!!!!!!!!!!!!";
-}
-
-// 탈세자 트리거 메시지 빌드 함수 (탈세자 스킬 발동 시 랜덤 메시지 반환)
-function buildTaxEvaderTriggerMessage(data, petData, guildData, user) {
 	var rank = checkRank(data, petData, guildData, user);
-	var lines = [
-		"탈세자📙 [" + rank + "] 님이 세금 고지서를 보고 조용히 눈을 돌렸습니다.",
-		"탈세자📙 [" + rank + "] 님의 수상한 세무 감각이 발동했습니다!",
-		"탈세자📙 [" + rank + "] 님이 납부서를 접고 불에 태웁니다.",
-		"탈세자📙 [" + rank + "] 님이 세금 계산표의 빈틈을 발견했습니다.",
-		"탈세자📙 [" + rank + "] 님의 절세 본능이 폭주합니다.",
-		"탈세자📙 [" + rank + "] 님이 세무관의 눈을 피합니다.",
-		"탈세자📙 [" + rank + "] 님이 말합니다. \"세금은 냈습니다… 조금만요.\"",
-		"탈세자📙 [" + rank + "] 님의 납세 회피 본능이 꿈틀거립니다.",
-		"탈세자📙 [" + rank + "] 님이 세금 폭탄을 요리조리 피합니다.",
-		"탈세자📙 [" + rank + "] 님이 세무서를 지나치며 식은땀을 흘립니다.",
-		"탈세자📙 [" + rank + "] 님이 말합니다. \"이건 탈세가 아니라 생활의 지혜입니다.\""
-	];
-	return lines[Math.floor(Math.random() * lines.length)];
+	var normalizedSkillName = normalizePetSkillName(skillName);
+	var lines = PET_SKILL_TRIGGER_MESSAGES[normalizedSkillName] || [];
+	if (lines.length === 0) {
+		return formatPetSkillName(normalizedSkillName) + " [" + rank + "] 효과가 발동했습니다!";
+	}
+	return lines[Math.floor(Math.random() * lines.length)].replace(/\{rank\}/g, rank);
 }
 
 // 길드의 소드마스터 수 계산 및 보장
@@ -31803,12 +31801,12 @@ function buildGuildTerritoryRiftCommandGuide() {
 function processGuildTerritoryRiftEvent(data, guildData) {
 	var war = ensureGuildTerritoryWar(data, guildData);
 	if (!war.active) {
-		
+
 		return ""
 	};
 
 	if (war.riftEventStatus === "stable" || isGuildTerritoryRiftEventLimitReached(war)) {
-		
+
 		return "";
 	}
 
@@ -32282,7 +32280,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		}
 		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= 0.05 && Math.random() <= ironWallSkill.successRate) {
 			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-			out += buildGuildTerritoryIronWallTriggerMessage(data, petData, guildData, defenderName) + "\n";
+			out += buildPetSkillMsg(data, petData, guildData, defenderName, "철벽수호자") + "\n";
 			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + ironWallSkill.label + "] 발동!\n";
 			out += "공격/방어/보상 상세보기" + allsee;
 			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
@@ -32320,7 +32318,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			data.HoiCastle.defenseCount = 0;
 		}
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-		out += buildGuildTerritoryBarbarianTriggerMessage(data, petData, guildData, sender) + "\n";
+		out += buildPetSkillMsg(data, petData, guildData, sender, "바바리안") + "\n";
 		out += "🔥 공격 성공! [" + barbarianSkill.label + "] 발동\n";
 		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
