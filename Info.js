@@ -957,7 +957,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var upgradeLine = "펫강화⭐️: " + (petInfo.upgrade || 0) + "강(💥" + critChance + "%)[" + critMul + "배]";
 
 			var skillStore = initPetSkillUser(petSkillData, sender);
-			var skillSlot = getPetSkillSlotCount(data, sender);
+			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 
 			// 기록: 시련탑(요구사항: 10)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
@@ -1950,6 +1950,7 @@ function formatDate2(dateString) {
 		return month + "월 " + day + "일";
 	}
 }
+// 날짜와 시간 형식 변환 함수
 function formatDateTime(dateString) {
 	var date = new Date(dateString);
 	var year = date.getFullYear();
@@ -1972,6 +1973,7 @@ function getTitle(memberInfo, titleInfo) {
 		return "";
 	}
 }
+// 펫스킬 이름 정규화 함수
 function normalizePetSkillName(skillName) {
 	skillName = String(skillName || "")
 		.replace(/^\[펫스킬북\]/, "")
@@ -1982,6 +1984,7 @@ function normalizePetSkillName(skillName) {
 	if (skillName === "로열하우스") return "로열 하우스";
 	return skillName;
 }
+// 펫스킬 데이터 초기화 함수
 function initPetSkillUser(petSkillData, user) {
 	if (!petSkillData[user]) petSkillData[user] = {};
 	if (!petSkillData[user].petSkills || typeof petSkillData[user].petSkills !== "object") {
@@ -1991,6 +1994,7 @@ function initPetSkillUser(petSkillData, user) {
 	if (!petSkillData[user].petSkills.bag || typeof petSkillData[user].petSkills.bag !== "object") petSkillData[user].petSkills.bag = {};
 	return petSkillData[user].petSkills;
 }
+// 장착된 펫스킬 이름 배열 반환 함수
 function getEquippedPetSkillNames(petSkillData, user) {
 	if (!petSkillData || !petSkillData[user]) return [];
 	var skills = initPetSkillUser(petSkillData, user);
@@ -1998,22 +2002,30 @@ function getEquippedPetSkillNames(petSkillData, user) {
 		return !!name;
 	});
 }
+// 특정 스킬이 장착되어 있는지 확인하는 함수
 function hasPetSkill(petSkillData, user, skillName) {
 	skillName = normalizePetSkillName(skillName);
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
 }
-function getPetSkillSlotCount(data, user) {
+// 펫스킬 슬롯 개수 계산 함수
+function getPetSkillSlotCount(data, petSkillData, user) {
 	var info = getUserIntimacyInfo(data, user);
 	var level = info && info.level ? info.level : 0;
+	var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론");
+	var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0);
 	var slots = Math.floor(level / 100);
-	if (slots > PET_SKILL_MAX_EQUIP_SLOT) slots = PET_SKILL_MAX_EQUIP_SLOT;
-	return slots < 0 ? 0 : slots;
+	slots += hasIntro ? 3 : 0;
+
+	if (slots > maxSlot) slots = maxSlot;
+	if (slots < 0) slots = 0;
+	return slots;
 }
 // 숫자 3자리마다 쉼표 추가 함수
 function numberWithCommas(x) {
 	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+// 조건 충족 여부에 따라 체크 표시 반환 함수
 function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	var status = getDailyQuestStatus(data, petData, guildData, sender);
 	var lines = [];

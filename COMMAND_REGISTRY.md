@@ -487,6 +487,7 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 
 ---
 
