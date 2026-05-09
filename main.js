@@ -109,6 +109,7 @@ const PET_SKILL_LIST = [
 	{ name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
 	{ name: "탈세자", grade: "A", rate: 1.7, effect: "상점(길드상점 제외) 구매 시 세금을 면제받습니다." },
 	{ name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
+	{ name: "징집명령", grade: "A", rate: 1.7, effect: "길드마스터 전용 스킬입니다.\n길드에 가입할 수 있는 최대 인원이 1명 증가합니다." },
 	{ name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	{ name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
 	// { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
@@ -2215,7 +2216,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var equipName = skillBagList[equipIndex - 1];
-					if (normalizePetSkillName(equipName) === "전투형 지휘관" || normalizePetSkillName(equipName) === "기사단 증원") {
+					if (normalizePetSkillName(equipName) === "전투형 지휘관" || normalizePetSkillName(equipName) === "기사단 증원" || normalizePetSkillName(equipName) === "징집명령") {
 						var commanderGuildInfo = getMyGuildInfo(data, guildData, sender);
 						if (!commanderGuildInfo || commanderGuildInfo.error || !commanderGuildInfo.guild || !isGuildMaster(commanderGuildInfo.guild, sender)) {
 							replier.reply("❌ " + formatPetSkillName(equipName) + "는 길드마스터만 장착할 수 있습니다.");
@@ -2238,6 +2239,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					skillStore.equipped.push(equipName);
 					saveJsonFile(petSkillData, petSkillDataPath);
 					var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
+					if (normalizePetSkillName(equipName) === "징집명령") {
+						equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "징집명령");
+					}
 					if (normalizePetSkillName(equipName) === "창조림" && hasEquippedCreationMiniPet(petData, sender)) {
 						equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "창조림");
 					}
@@ -27032,7 +27036,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					// /길드가입 과 동일한 기준 사용
-					var rows = getJoinableGuildRows(guildData);
+					var rows = getJoinableGuildRows(guildData, petSkillData);
 
 					var out = "";
 					out += "🏰 현재 가입 가능한 길드 목록 🏰\n\n";
@@ -27152,7 +27156,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (guildRankTitle) {
 						out += " (길드계급: " + guildRankTitle + ")\n";
 					}
-					out += "길드원👥: " + memberCount + "명 (최대인원: " + g.maxMember + "명)\n";
+					out += "길드원👥: " + memberCount + "명 (최대인원: " + getGuildMaxMemberLimit(g, petSkillData) + "명)\n";
 					out += "소드마스터🤺:\n[" + getGuildSwordMasterDisplay(data, petData, guildData, g) + "]\n";
 					out += "━━━━━━━━━━━━\n";
 					if (guildRank) {
@@ -27289,7 +27293,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					var rows = getJoinableGuildRows(guildData);
+					var rows = getJoinableGuildRows(guildData, petSkillData);
 
 					if (guildNo > rows.length) {
 						replier.reply("❌ 해당 번호의 길드가 없습니다.");
@@ -27310,7 +27314,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					if (mCnt >= (g.maxMember || 0)) {
+					if (mCnt >= getGuildMaxMemberLimit(g, petSkillData)) {
 						replier.reply("❌ 길드 정원이 가득 찼습니다.");
 						return;
 					}
@@ -27413,7 +27417,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 
-					if (mCnt >= (g.maxMember || 0)) {
+					if (mCnt >= getGuildMaxMemberLimit(g, petSkillData)) {
 						delete userState[sender].guildJoin;
 						replier.reply("❌ 길드 정원이 가득 찼습니다.");
 						return;
@@ -28266,7 +28270,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					out += "가입조건: " + (g.joinConditionExp || 0) + "\n";
 					out += "마감상태: " + (g.memberClose ? "마감" : "모집중") + "\n";
 
-					out += "인원: " + memberCount + "/" + (g.maxMember || 0) + "\n";
+					out += "인원: " + memberCount + "/" + getGuildMaxMemberLimit(g, petSkillData) + "\n";
 
 					out += "━━━━━━━━━━━━\n";
 					out += "길드원 목록\n";
@@ -31468,6 +31472,9 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		"티어 상승론": [
 			"티어 상승론📙 [{rank}]: 훌륭한 티켓의 표본이로군."
 		],
+		"징집명령": [
+			"징집명령📙 [{rank}] 징집명령이 내려졌습니다!길드 정원이 1칸 확장됩니다!"
+		],
 		"창조림": [
 			"창조림📙 [{rank}] 창조림 개꿀띠! 존맛탱! 맛탱구리구리!"
 		]
@@ -31480,6 +31487,15 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		return formatPetSkillName(normalizedSkillName) + " [" + rank + "] 효과가 발동했습니다!";
 	}
 	return lines[Math.floor(Math.random() * lines.length)].replace(/\{rank\}/g, rank);
+}
+
+// 길드 최대 정원을 계산하여 반환 (길드 레벨 기본 정원 + 징집명령📙 보정)
+function getGuildMaxMemberLimit(g, petSkillData) {
+	var maxMember = g ? (g.maxMember || 5) : 0;
+	if (g && hasPetSkill(petSkillData, g.master, "징집명령")) {
+		maxMember += 1;
+	}
+	return maxMember;
 }
 
 // 창조 미니펫 장착 여부 확인 함수
@@ -36335,6 +36351,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "기사단증원") return "기사단 증원";
 	else if (skillName === "탈세자") return "탈세자";
 	else if (skillName === "티어상승론") return "티어 상승론";
+	else if (skillName === "징집명령") return "징집명령";
 	else if (skillName === "창조림") return "창조림";
 	return skillName;
 }
@@ -39562,7 +39579,7 @@ function ensureUserState(sender) {
 }
 
 // /길드가입에서 사용: /길드목록에 표시되는 "가입 가능한 길드" 목록
-function getJoinableGuildRows(guildData) {
+function getJoinableGuildRows(guildData, petSkillData) {
 	var rows = [];
 	if (!guildData) return rows;
 	if (!guildData.guilds) return rows;
@@ -39578,7 +39595,8 @@ function getJoinableGuildRows(guildData) {
 
 		// 정원 꽉 찬 길드 제외
 		var mCnt = Object.keys(g.members || {}).length;
-		if (mCnt >= (g.maxMember || 0)) continue;
+		var maxMember = getGuildMaxMemberLimit(g, petSkillData);
+		if (mCnt >= maxMember) continue;
 
 		rows.push({
 			id: gid,
@@ -39587,7 +39605,7 @@ function getJoinableGuildRows(guildData) {
 			server: g.server || "",
 			master: g.master || "",
 			memberCount: mCnt,
-			maxMember: g.maxMember || 0,
+			maxMember: maxMember,
 			level: g.level || 1,
 			joinConditionExp: g.joinConditionExp || 0
 		});
