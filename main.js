@@ -6100,6 +6100,61 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+				if (msg === "/티어뽑기오픈") {
+    if (castleSiegeFlag) return;
+
+    var member = data.member[sender];
+    if (!member) return;
+
+    var packageItem = "티어뽑기패키지🎟️(/티어뽑기오픈)";
+
+    if (!member.bag[packageItem] || member.bag[packageItem] <= 0) {
+        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packageItem + " 아이템이 없습니다.");
+        return;
+    }
+
+    if (member.bag[packageItem] > 1) {
+        member.bag[packageItem]--;
+    } else {
+        delete member.bag[packageItem];
+    }
+
+    var tierPackageItems = {
+        "티어 승급티켓🎟": 10000,
+        "고급 티어 승급티켓🎫": 100,
+        "럭키박스🍀(/럭키오픈)": 30,
+        "강화확률뽑기⚒️(/강화뽑기)": 30,
+        "확성기📢(/알림 내용 30자)": 10,
+        "🥕당근이세요?": 50,
+        "펫먹이🍼": 3000,
+        "펫 강화석⭐": 1000
+    };
+
+    for (var item in tierPackageItems) {
+        addItemToBag(member.bag, item, tierPackageItems[item]);
+    }
+
+    var memberPoint = 300000000;
+    member.point += memberPoint;
+
+    var openMsg = "🎟️ 티어뽑기패키지 오픈 🎟️\n";
+    openMsg += "━━━━━━━━━━━━\n";
+    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
+    openMsg += "티어뽑기패키지🎟️를 오픈했습니다.\n\n";
+    openMsg += "🎁 획득 구성품\n";
+    openMsg += "━━━━━━━━━━━━\n";
+
+    for (var itemName in tierPackageItems) {
+        openMsg += itemName + " " + numberWithCommas(tierPackageItems[itemName]) + "개\n";
+    }
+
+    openMsg += "🅟" + numberWithCommas(memberPoint) + "\n";
+    openMsg += "━━━━━━━━━━━━\n";
+    openMsg += "티어 상승의 기운이 느껴집니다 🎟️";
+
+    replier.reply(openMsg);
+    return;
+}
 				if (msg.startsWith("/초보5, ")) {
 					var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
 					if (sender !== "호이 남") {
