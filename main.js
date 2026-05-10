@@ -22152,6 +22152,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						var basePrice = data.shop[itemName] * quantity;
 						var itemPrice = basePrice;
 						var taxRate = data.HoiCastle && data.HoiCastle.taxRate ? data.HoiCastle.taxRate : 0;
+						var baseTaxRate = parseInt(taxRate, 10) || 0;
 						var taxAmount = 0;
 						var itemTotalCost = 0;
 						var taxExempt = false;
@@ -22163,10 +22164,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 						if (hasPetSkill(petSkillData, sender, "탈세자")) {
 							taxExempt = true;
-							replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
 						}
 
-						taxRate = taxExempt ? 0 : (parseInt(taxRate, 10) || 0);
+						taxRate = taxExempt ? 0 : baseTaxRate;
 						taxAmount = Math.round(itemPrice * (taxRate / 100));
 						itemTotalCost = itemPrice + taxAmount;
 						if (!hasPoint(data, sender, itemTotalCost)) {
@@ -22357,8 +22357,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							isBuyFlag = true;
 						}
 						if (isBuyFlag) {
-							applyTax(itemPrice, data, guildData);
+							if (taxAmount > 0) {
+								applyTax(itemPrice, data, guildData);
+							}
 							addPoint(data, sender, -itemTotalCost); // 상품가격 point 차감
+							if (taxExempt && baseTaxRate > 0) {
+								replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
+							}
 						}
 					}
 				}
@@ -30264,25 +30269,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("장착 중인 " + skillName + "📙 스킬이 없습니다.");
 						return;
 					}
-					var rolexMentList = [
-						"롤렉스🕰️ 오늘따라 손목이 무겁습니다.",
-						"롤렉스🕰️ 괜히 한 번 더 손을 들어봅니다.",
-						"롤렉스🕰️ 이건 못 참지... 자랑 한 번 갑니다.",
-						"롤렉스🕰️ 시간은 돈이라더니, 오늘은 둘 다 제 편입니다.\n당신은 아닌가봅니다 우하하하",
-						"롤렉스🕰️ 손목에서 은은하게 성공의 향기가 납니다.\n보실래요?",
-						"롤렉스🕰️ 시계만 봤을 뿐인데 존재감이 흘러넘칩니다.",
-						"롤렉스🕰️ 네? 뭐라구요? 아아.. 롤렉스가 없으시니 소통이 불가하군요.",
-						"롤렉스🕰️ 천박? 아? 당신은 천씨입니까?",
-						"롤렉스🕰️ 경박? 아? 당신은 경씨입니까?",
-						"롤렉스🕰️ 어허! 듣기 싫습니다 당신을 롤렉스의 이름으로 내보내겠습니다.",
-						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
-						"롤렉스🕰️ 카시오라구요? 면봉 이름입니까?",
-						"롤렉스🕰️ 쿨하게 손목 한번 들어봅니다.",
-						"롤렉스🕰️ 성공 그것은 저의 별명입니다."
-					];
-
-					var ment = rolexMentList[Math.floor(Math.random() * rolexMentList.length)];
-					replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : " + ment);
+					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, skillName));
 					return;
 				}
 				if (msg.startsWith("/맞짱")) {
@@ -31602,6 +31589,22 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		],
 		"티어 상승론": [
 			"티어 상승론📙 [{rank}]: 훌륭한 티켓의 표본이로군."
+		],
+		"롤렉스": [
+			"롤렉스🕰️ [{rank}] 오늘따라 손목이 무겁습니다.",
+			"롤렉스🕰️ [{rank}] 괜히 한 번 더 손을 들어봅니다.",
+			"롤렉스🕰️ [{rank}] 이건 못 참지... 자랑 한 번 갑니다.",
+			"롤렉스🕰️ [{rank}] 시간은 돈이라더니, 오늘은 둘 다 제 편입니다.\n당신은 아닌가봅니다 우하하하",
+			"롤렉스🕰️ [{rank}] 손목에서 은은하게 성공의 향기가 납니다.\n보실래요?",
+			"롤렉스🕰️ [{rank}] 시계만 봤을 뿐인데 존재감이 흘러넘칩니다.",
+			"롤렉스🕰️ [{rank}] 네? 뭐라구요? 아아.. 롤렉스가 없으시니 소통이 불가하군요.",
+			"롤렉스🕰️ [{rank}] 천박? 아? 당신은 천씨입니까?",
+			"롤렉스🕰️ [{rank}] 경박? 아? 당신은 경씨입니까?",
+			"롤렉스🕰️ [{rank}] 어허! 듣기 싫습니다 당신을 롤렉스의 이름으로 내보내겠습니다.",
+			"롤렉스🕰️ [{rank}] 쿨하게 손목 한번 들어봅니다.",
+			"롤렉스🕰️ [{rank}] 카시오라구요? 면봉 이름입니까?",
+			"롤렉스🕰️ [{rank}] 쿨하게 손목 한번 들어봅니다.",
+			"롤렉스🕰️ [{rank}] 성공 그것은 저의 별명입니다."
 		],
 		"야호": [
 			"[{rank}] 야호! 오늘은 무료 확성이다!",
