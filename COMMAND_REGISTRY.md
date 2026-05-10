@@ -35,15 +35,87 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ## Shared Data Files
 
-- `filePath`: member data, backed by `data/member.json`
-- `memberPetPath`: pet and mini-pet data, backed by `data/member_pet.json`
-- `guildPath`: guild data, backed by `data/guildData.json`
-- `homeDataFile`: sweet-home data, backed by `data/petSweetHomeData.json`
-- `petSkillDataPath`: pet skill data, backed by `data/petSkillData.json`
-- `trialTowerPath`: trial tower data, backed by `data/trialTower.json`
-- `castleBattlePath`: castle battle data, backed by `data/castleBattle.json`
-- `petTitlePath`: pet title data, backed by `data/pet_title.json`
-- `memberTitlePath`: member title data, backed by `data/member_title.json`
+- `filePath`: member data, runtime path `/sdcard/호이랜드/member.json`, repo snapshot `data/member.json`
+- `memberPetPath`: pet and mini-pet data, runtime path `/sdcard/호이랜드/member_pet.json`, repo snapshot `data/member_pet.json`
+- `guildPath`: guild data, runtime path `/sdcard/호이랜드/guildData.json`, repo snapshot `data/guildData.json`
+- `homeDataFile`: sweet-home data, runtime path `/sdcard/호이랜드/petSweetHomeData.json`, repo snapshot `data/petSweetHomeData.json`
+- `petSkillDataPath`: pet skill data, runtime path `/sdcard/호이랜드/petSkillData.json`, repo snapshot `data/petSkillData.json`
+- `trialTowerPath`: trial tower data, runtime path `/sdcard/호이랜드/trialTower.json`, repo snapshot `data/trialTower.json`
+- `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle.json`
+- `petTitlePath`: pet title data, runtime path `/sdcard/호이랜드/pet_title.json`, repo snapshot `data/pet_title.json`
+- `memberTitlePath`: member title data, runtime path `/sdcard/호이랜드/member_title.json`, repo snapshot `data/member_title.json`
+- `boardPath`: public letter board, runtime path `/sdcard/호이랜드/board.json`, repo snapshot `data/board.json`
+- `carrotBoardPath`: carrot market board, runtime path `/sdcard/호이랜드/carrotBoard.json`, repo snapshot `data/carrotBoard.json`
+- `miniPetCollectionPath`: mini-pet collection data, runtime path `/sdcard/호이랜드/miniPet_collection.json`, repo snapshot `data/miniPet_collection.json`
+
+## Runtime / Save-Flow Hotspots
+
+- `main.js:1328`: main `response(...)` entry point for almost all mutable gameplay commands
+- `Info.js:115`: info/query-oriented `response(...)` entry point
+- `main.js:31185`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
+- `main.js:31209`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
+- `Info.js:1383`: separate `loadJsonFile(path)` implementation used by info commands
+- `main.js:1029-1059`: production/DEV root constants and major runtime data-file constants
+
+## DEV / PROD Path Rules
+
+- `main.js` creates a command context with `createCommandContext(isDevCommandMessage(msg))` near the top of `response(...)`
+- DEV-prefixed messages are normalized through `stripDevCommandPrefix(msg)` before regular command branching continues
+- Both `loadJsonFile(...)` and `saveJsonFile(...)` pass through `resolveActiveDataPath(...)`, so save-flow verification should check path resolution rather than only literal file constants
+- `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing
+- If a command looks read-only but still writes, inspect whether it sanitizes or normalizes data before display
+
+## Core Helper Hotspots
+
+| Helper | Anchor | Why it matters |
+| --- | --- | --- |
+| `generateBagOutput` | `main.js:35217`, `Info.js:2330` | Canonical bag numbering and text renderer |
+| `initSweetHomeUser` | `main.js:37569`, `Info.js:2999` | Normalizes home/sweet-home user state before access |
+| `getHomeTotalExp` | `main.js:37749`, `Info.js:2948` | Home ranking and profile summary calculation |
+| `buildMiniPetBagMessage` | `main.js:40722` | Main mini-pet bag formatter and viewer/target split |
+| `initPetSkillUser` | `main.js:36606`, `Info.js:2000` | Normalizes pet-skill storage before use |
+| `getPetSkillSlotCount` | `main.js:36730`, `Info.js:2031` | Slot-count source for pet-skill display/equip rules |
+| `calculateTotalExp` | `main.js:38263`, `Info.js:3104` | High-value aggregate formula for user progression/rank output |
+| `getMyGuildId` | `main.js:39821`, `Info.js:3342` | Fastest guild membership lookup anchor |
+| `getMyGuildInfo` | `main.js:39943`, `Info.js:3347` | Guild object + sender membership validation hub |
+| `getJoinableGuildRows` | `main.js:39834` | Joinable guild filtering and listing logic |
+| `findGuildIdByNameSafe` | `main.js:39879` | Safer guild-name-to-id resolution |
+| `ensureGuildWarehouseObj` | `main.js:31244` | Warehouse/fund branches should usually pass here first |
+| `ensureGuildTerritoryWar` | `main.js:31259` | Canonical territory-war state normalizer |
+| `ensureGuildBoard` | `main.js:40695` | Guild board schema normalization |
+| `buildGuildRankingRows` | `main.js:40353` | Cross-store guild ranking aggregation |
+| `syncMemberGuild` | `main.js:40570` | Member/guild mismatch repair path |
+| `trialTowerRanking` | `Info.js:1888` | Ranking renderer for tower-related info output |
+| `getMiniPetGradeStats` | `Info.js:2865` | Aggregate mini-pet grade statistics |
+| `getTitle` | `Info.js:1970` | Member/pet title display helper used by info summaries |
+
+## Command Family Hotspots
+
+| Family | Primary files | Good first anchors |
+| --- | --- | --- |
+| Inventory / bag / trade | `main.js`, `Info.js` | `/가방`, `generateBagOutput`, `/당근`, `/구매` |
+| Guild / territory / warehouse | `main.js`, `Info.js` | `/길드정보`, `/길드목록`, `/길드영지시작`, `ensureGuildTerritoryWar` |
+| Mini-pet / collection | `main.js`, `Info.js` | `/미니펫가방`, `buildMiniPetBagMessage`, `/컬렉션등록`, `/미니펫컬렉션` |
+| Pet skill | `main.js`, `Info.js` | `/펫스정보`, `initPetSkillUser`, `getPetSkillSlotCount`, `/펫스장착` |
+| Sweet home / furniture | `main.js`, `Info.js` | `/가구가방`, `initSweetHomeUser`, `getHomeTotalExp`, `/가구순위` |
+| Ranking / profile / info | `Info.js`, `main.js` | `/내정보`, `/정보 [닉네임]`, `/펫정보`, `calculateTotalExp` |
+| Board / social / letters | `main.js` | `/게시판`, `/편지`, `boardPath`, `carrotBoardPath` |
+
+## Quick Search Recipes
+
+- Entry-point scan: `rg -n "function response|if \\(msg ==|msg\\.startsWith\\(" main.js Info.js`
+- Save-flow scan: `rg -n "saveJsonFile\\(|loadJsonFile\\(" main.js Info.js`
+- Guild scan: `rg -n "Guild|guild|영지" main.js Info.js`
+- Mini-pet scan: `rg -n "miniPet|미니펫|컬렉션" main.js Info.js`
+- Home scan: `rg -n "SweetHome|furniture|가구|homeData" main.js Info.js`
+- Pet-skill scan: `rg -n "petSkill|펫스" main.js Info.js`
+
+## Coverage Snapshot
+
+- Current heuristic command-pattern count across `main.js` + `Info.js`: about `1010`
+- This registry is strongest on representative high-traffic commands, helper anchors, and save-flow notes
+- Mutation-heavy admin tooling still has broader coverage gaps than user-facing info commands
+- `명령어_분리.md` is better for breadth; this file is better for "where should I inspect first?" decisions
 
 ---
 

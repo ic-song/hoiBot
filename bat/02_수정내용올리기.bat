@@ -2,13 +2,15 @@
 chcp 65001 > nul
 
 set BRANCH_NAME=feature/bm
+set BASE_BRANCH=main
 
 echo.
 echo ========================================
 echo [START] 수정내용 올리기
 echo ========================================
 echo.
-echo 이 작업은 현재 수정한 내용을 저장소에 올립니다.
+echo 이 작업은 현재 수정한 내용을 저장소에 올리고
+echo PR 요청까지 자동으로 진행합니다.
 echo 코드 붙여넣기 후 파일 저장을 했는지 확인하세요.
 echo ========================================
 echo.
@@ -50,9 +52,13 @@ echo 변경된 파일 목록:
 git status --short
 
 echo.
-set /p COMMIT_MSG=수정내용 제목을 입력하세요. 그냥 엔터 시 기본값 사용: 
+set /p WORK_MSG=수정내용 제목을 입력하세요. 그냥 엔터 시 기본값 사용: 
 
-if "%COMMIT_MSG%"=="" set COMMIT_MSG=BM 코드 수정 반영
+if "%WORK_MSG%"=="" set WORK_MSG=BM 코드 수정 반영
+
+set COMMIT_MSG=%WORK_MSG%
+set PR_TITLE=%WORK_MSG%
+set PR_BODY=%WORK_MSG%
 
 echo.
 echo [4/7] 변경내용 담는 중...
@@ -73,46 +79,25 @@ echo [6/7] 원격 저장소에 올리는 중...
 git push -u origin %BRANCH_NAME% --force-with-lease
 if errorlevel 1 goto FAIL_PUSH
 
-echo [OK] 원격 저장소 업로드 완료
+echo [OK] 원격 저장소 올리기 완료
 
 echo.
-echo [7/7] PR 생성 요청 중...
+echo [7/7] PR 요청 생성 중...
+where gh > nul 2>&1
+if errorlevel 1 goto FAIL_GH
 
-where gh >nul 2>nul
-if errorlevel 1 goto FAIL_GH_NOT_FOUND
-
-gh auth status >nul 2>nul
-if errorlevel 1 goto FAIL_GH_AUTH
-
-echo.
-set /p PR_TITLE=PR 제목을 입력하세요. 그냥 엔터 시 커밋 제목 사용: 
-
-if "%PR_TITLE%"=="" set PR_TITLE=%COMMIT_MSG%
-
-echo.
-set /p PR_BODY=PR 설명을 입력하세요. 그냥 엔터 시 기본값 사용: 
-
-if "%PR_BODY%"=="" set PR_BODY=BM 코드 수정 반영 요청드립니다.
-
-echo.
-echo PR 생성 중...
-
-gh pr create ^
-  --base main ^
-  --head %BRANCH_NAME% ^
-  --title "%PR_TITLE%" ^
-  --body "%PR_BODY%"
-
+gh pr create --base %BASE_BRANCH% --head %BRANCH_NAME% --title "%PR_TITLE%" --body "%PR_BODY%"
 if errorlevel 1 goto FAIL_PR
 
 echo.
 echo ========================================
-echo [SUCCESS] 수정내용 올리기 및 PR 생성 완료
+echo [SUCCESS] 수정내용 올리기 + PR 요청 완료
 echo ========================================
 echo.
 echo 브랜치: %BRANCH_NAME%
 echo 커밋 제목: %COMMIT_MSG%
 echo PR 제목: %PR_TITLE%
+echo PR 내용: %PR_BODY%
 echo ========================================
 pause
 exit /b 0
@@ -184,21 +169,11 @@ echo ========================================
 pause
 exit /b 1
 
-:FAIL_GH_NOT_FOUND
+:FAIL_GH
 echo.
 echo ========================================
-echo [FAIL] GitHub CLI를 찾을 수 없습니다.
-echo 먼저 GitHub CLI(gh)를 설치하세요.
-echo ========================================
-pause
-exit /b 1
-
-:FAIL_GH_AUTH
-echo.
-echo ========================================
-echo [FAIL] GitHub CLI 로그인이 필요합니다.
-echo 아래 명령어로 로그인하세요:
-echo gh auth login
+echo [FAIL] GitHub CLI(gh)를 찾을 수 없습니다.
+echo gh 설치 후 다시 실행하세요.
 echo ========================================
 pause
 exit /b 1
@@ -206,8 +181,8 @@ exit /b 1
 :FAIL_PR
 echo.
 echo ========================================
-echo [FAIL] PR 생성 실패
-echo 이미 PR이 있거나 GitHub 권한 문제가 있을 수 있습니다.
+echo [FAIL] PR 요청 생성 실패
+echo gh 로그인 상태 또는 저장소 권한을 확인하세요.
 echo ========================================
 pause
 exit /b 1
