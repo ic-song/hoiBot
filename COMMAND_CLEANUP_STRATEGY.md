@@ -30,9 +30,10 @@ Codex supports exploration, synchronization, and approved code cleanup.
 
 1. Collect commands from actual source code.
 2. Register and manage command status in `COMMAND_REGISTRY.md`.
-3. Use `COMMAND_INDEX.md` for code exploration and impact checking.
-4. Remove commands only when explicitly approved.
-5. Synchronize related Markdown documents after changes.
+3. Record verification level in `COMMAND_REGISTRY.md`.
+4. Use `COMMAND_INDEX.md` for code exploration and impact checking.
+5. Remove commands only when explicitly approved.
+6. Synchronize related Markdown documents after changes.
 
 ---
 
@@ -48,6 +49,22 @@ Recommended statuses:
 - `REMOVE`
 
 Only commands marked `REMOVE` are deletion candidates.
+
+---
+
+## Verification Level
+
+Recommended verification levels:
+
+- `패턴수집`
+- `분기확인`
+- `실행확인`
+
+Meaning:
+
+- `패턴수집`: command-like string collected first, not yet confirmed as a real branch
+- `분기확인`: actual command branch confirmed in source code
+- `실행확인`: runtime behavior or output flow also checked
 
 ---
 

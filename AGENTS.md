@@ -175,6 +175,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - The actual source of truth is ALWAYS the current codebase.
 - `COMMAND_REGISTRY.md` is for human-facing command management, not primary code exploration.
 - Use it to track command lifecycle states such as `ACTIVE`, `UNUSED`, and `REMOVE`.
+- Use it to track verification level such as pattern collection, branch confirmation, and execution confirmation.
 - Human operators may directly review and maintain command statuses in this document.
 - Preserve it as an ongoing maintenance document rather than a one-time cleanup artifact.
 - NEVER treat registry status alone as proof that code cleanup, removal, or migration is already complete.
