@@ -18673,7 +18673,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					var triggerMessages = [];
 					
-					if (hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender)) {
+					// 소드마스터 트리거 체크
+					if (shouldShowGuildTerritoryCommanderTrigger(attackInfo.guild, petSkillData, sender)) {
 						triggerMessages.push(buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관"));
 					}
 					var rewardBlock = rewardMessage;
@@ -31544,6 +31545,11 @@ function shuffleGuildTerritoryRows(rows) {
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 전투형 지휘관 스킬 보유 여부)
 function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
 	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
+}
+
+// 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 전투형 지휘관 스킬 보유 여부)
+function shouldShowGuildTerritoryCommanderTrigger(g, petSkillData, user) {
+	return !!(hasGuildTerritoryCommanderSkill(g, petSkillData, user) && !isGuildSwordMaster(g, user, petSkillData));
 }
 
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 기사단 증원 스킬 보유 여부)`
