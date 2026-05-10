@@ -22,6 +22,14 @@ echo 현재 위치:
 cd
 
 echo.
+echo Git 작성자 정보 설정 중...
+git config —global user.name "jinminy2"
+git config —global user.email "jinminy2@gmail.com"
+if errorlevel 1 goto FAIL_GIT_CONFIG
+
+echo [OK] Git 작성자 정보 설정 완료
+
+echo.
 echo [2/6] 현재 브랜치 확인 중...
 for /f "tokens=*" %%i in ('git branch --show-current') do set CURRENT_BRANCH=%%i
 
@@ -85,6 +93,15 @@ echo ========================================
 echo [FAIL] 프로젝트 폴더 이동 실패
 echo BAT 파일 위치를 확인하세요.
 echo 예상 위치: HOIBOT/bat/
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_GIT_CONFIG
+echo.
+echo ========================================
+echo [FAIL] Git 작성자 정보 설정 실패
+echo user.name / user.email 설정 중 문제가 발생했습니다.
 echo ========================================
 pause
 exit /b 1
