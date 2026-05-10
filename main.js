@@ -32253,8 +32253,8 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSki
 	if (hasGuildTerritoryCommandBeenUsed(war.riftCommandUses, guildInfo.guildId, config.type)) {
 		return { message: buildGuildTerritoryCommandReuseBlockedMessage(guildInfo.guild, command) };
 	}
-	if (!isGuildSwordMaster(guildInfo.guild, sender, petSkillData)) {
-		return { message: "❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺가 아니어서 사용할 수 없습니다." };
+	if (!isGuildTerritoryAttacker(guildInfo.guild, petSkillData, sender)) {
+		return { message: "❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺 또는 전투형 지휘관📙 권한이 없어 사용할 수 없습니다." };
 	}
 	if (war.eliminatedGuilds[guildInfo.guildId] || war.eliminatedUsers[sender]) {
 		return { message: "❌ 탈락한 길드 또는 유저는 사용할 수 없습니다." };
