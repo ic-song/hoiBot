@@ -18608,7 +18608,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 턴 검증 (틀리면 탈락)
 					var currentTurn = getGuildTerritoryTurnRow(data, guildData);
-					if (!currentTurn || currentTurn.guildId !== attackInfo.guildId) {
+					var isWrongGuildTurn = !currentTurn || currentTurn.guildId !== attackInfo.guildId;
+					var isWrongUserTurn = !!currentTurn && currentTurn.guildId === attackInfo.guildId && currentTurn.user !== sender;
+					if (isWrongGuildTurn || isWrongUserTurn) {
 						if (canUseGuildTerritoryCommandDiscretion(attackWar, petSkillData, sender)) {
 							attackWar.commandDiscretionUses[sender] = {
 								guildId: attackInfo.guildId,
