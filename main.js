@@ -24630,8 +24630,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (typeof data.member[sender].noticeItemCount !== "number") {
 						data.member[sender].noticeItemCount = 0;
 					}
-					let useYahoFreeNotice = hasPetSkill(petSkillData, sender, "야호") && data.member[sender].noticeYahoCount < 3;
+					let hasYahoSkill = hasPetSkill(petSkillData, sender, "야호");
+					let todayNoticeTotalCount = data.member[sender].noticeYahoCount + data.member[sender].noticeItemCount;
+					let useYahoFreeNotice = hasYahoSkill && todayNoticeTotalCount < 3;
 					if (!useYahoFreeNotice) {
+						if (hasYahoSkill && todayNoticeTotalCount >= 3) {
+							replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 야호📙 효과를 포함한 오늘 /알림 사용은 총 3회까지 가능합니다.");
+							return;
+						}
 						// 아이템 보유 여부 확인
 						if (!hasItem(data, sender, useItemName, 1)) {
 							replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 [" + useItemName + "] 아이템이 없습니다.");
@@ -31576,9 +31582,9 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 			"티어 상승론📙 [{rank}]: 훌륭한 티켓의 표본이로군."
 		],
 		"야호": [
-			"[{rank}] 야호! 오늘은 무료 확성이다!",
-			"[{rank}] 확성기 아이템이 소모되지 않았습니다!",
-			"[{rank}] 기분 좋게 외쳐봅니다!"
+			"야호📙 [{rank}] 야호! 오늘은 무료 확성이다!",
+			"야호📙 [{rank}] 확성기 아이템이 소모되지 않았습니다!",
+			"야호📙 [{rank}] 기분 좋게 외쳐봅니다!"
 		],
 		"지휘관의 재량": [
 			"지휘관의 재량📙 [{rank}]: 지휘관의 재량으로 실수를 만회합니다!",
