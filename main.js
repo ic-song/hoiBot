@@ -30308,7 +30308,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 존재하지 않는 유저입니다.");
 						return;
 					}
-					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, Math.random() < 0.7 ? "품행제로성공" : "품행제로실패"));
+					let senderRank = checkRank(data, petData, guildData, sender);
+					let targetRank = checkRank(data, petData, guildData, target);
+					let skillMsg = buildPetSkillMsg(data, petData, guildData, sender, Math.random() < 0.7 ? "품행제로성공" : "품행제로실패");
+					let skillBody = skillMsg.replace(new RegExp("^품행제로📙 \\[" + senderRank.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\] :\\s*"), "");
+					replier.reply(
+						"품행제로📙 \n" +
+						"🎯 대상: [" + targetRank + "]\n" +
+						"━━━━━━━━━━━━━━\n" +
+						"[" + senderRank + "] : " + skillBody
+					);
 					return;
 				}
 				// package =====================
