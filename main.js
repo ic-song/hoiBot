@@ -18536,6 +18536,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
+				if (getCurrentContext().isDev && (msg === "/강제균열" || msg === "/강제대균열")) {
+					var forcedWar = ensureGuildTerritoryWar(data, guildData);
+					if (!forcedWar.active) {
+						replier.reply("현재 진행 중인 길드 영지전이 없습니다.");
+						return;
+					}
+					var forcedMsg = msg === "/강제균열"
+						? applyGuildTerritoryRift(data, guildData)
+						: applyGuildTerritoryGreatRift(data, guildData);
+					saveJsonFile(guildData, guildPath);
+					saveJsonFile(data, filePath);
+					castleMsg(forcedMsg, replier, isGroupChat);
+					return;
+				}
+
 				if (msg.indexOf("/불안정") === 0 || msg.indexOf("/안정") === 0 || msg.indexOf("/균열") === 0 || msg.indexOf("/대균열") === 0) {
 					var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg);
 					if (riftControlResult) {
