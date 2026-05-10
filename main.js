@@ -18537,7 +18537,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 
 				if (msg.indexOf("/불안정") === 0 || msg.indexOf("/안정") === 0 || msg.indexOf("/균열") === 0 || msg.indexOf("/대균열") === 0) {
-					var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg);
+					var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg);
 					if (riftControlResult) {
 						replier.reply(riftControlResult.message);
 						if (riftControlResult.changed) {
@@ -32212,7 +32212,7 @@ function buildGuildTerritoryCommandReuseBlockedMessage(guild, command) {
 }
 
 // 영지전 균열 아이템 사용 명령 처리
-function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg) {
+function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg) {
 	var command = msg.split(" ")[0];
 
 	var config = null;
