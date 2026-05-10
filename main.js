@@ -100,7 +100,7 @@ const PET_SKILL_LIST = [
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
-	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가되고, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
+	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
 	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -18537,7 +18537,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 
 				if (msg.indexOf("/불안정") === 0 || msg.indexOf("/안정") === 0 || msg.indexOf("/균열") === 0 || msg.indexOf("/대균열") === 0) {
-					var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg);
+					var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg);
 					if (riftControlResult) {
 						replier.reply(riftControlResult.message);
 						if (riftControlResult.changed) {
@@ -31517,7 +31517,6 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 			latestWar.openingToken = null;
 			saveJsonFile(latestGuildData, guildPath);
 
-			castleMsg(buildGuildTerritoryStatusMessage(latestData, latestGuildData, false), replier, isGroupChat);
 			noticeMsg(buildGuildTerritoryStartMessage(latestData, latestGuildData));
 
 			var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
@@ -31716,9 +31715,6 @@ function getGuildTerritoryAttackLimit(g, petSkillData) {
 	var swordMasters = ensureGuildSwordMasters(g, petSkillData);
 	var limit = Math.max(1, swordMasters.length) * GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER;
 	if (hasGuildTerritoryCommanderSkill(g, petSkillData, g && g.master)) {
-		limit += 5;
-	}
-	if (hasGuildTerritoryKnightOrderSkill(g, petSkillData, g && g.master)) {
 		limit += 5;
 	}
 	return limit;
@@ -32216,7 +32212,7 @@ function buildGuildTerritoryCommandReuseBlockedMessage(guild, command) {
 }
 
 // 영지전 균열 아이템 사용 명령 처리
-function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender, msg) {
+function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg) {
 	var command = msg.split(" ")[0];
 
 	var config = null;
