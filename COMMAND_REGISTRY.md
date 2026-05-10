@@ -305,11 +305,8 @@ Status: VERIFIED
 - `🌌균열` 또는 `🌋대균열`이 실제 발생하면 누적 전쟁불안정도는 즉시 0으로 초기화된다
 - `기사단 증원📙` 길드마스터가 있으면 소드마스터 슬롯이 1명 추가되며, 공격 결과에 발동 멘트가 prepend된다
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
-- `철벽수호자📙`, `바바리안📙`는 영지전에서 소모 아이템보다 먼저 판정되며, 미발동 시에만 영지 방어/공격 아이템 판정으로 넘어간다
-- DEV 영지전(`dev/` 컨텍스트)에서는 `철벽수호자📙`, `바바리안📙` 테스트를 위해 위 보정이 100%/100%로 동작한다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
-- `지휘관의 재량📙` 장착 유저는 wrong-turn 오입력 탈락을 영지전당 1회 무효 처리하며, wrong-turn은 길드 차례 불일치뿐 아니라 같은 길드 내 현재 차례 유저 불일치도 포함한다
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---

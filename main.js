@@ -126,8 +126,6 @@ const PET_SKILL_LIST = [
 	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "티켓/펫강화/돌멩이 탐험 성공확률 5% 상승" },
 	{ name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
-	{ name: "철벽수호자", grade: "B", rate: 2.3, effect: "영지 방어 시 5% 확률로 영지절대방어권🛡️(80%) 보정 효과를 획득합니다." },
-	{ name: "바바리안", grade: "B", rate: 2.3, effect: "영지 공격 시 5% 확률로 영지기습공격권🔥(80%) 보정 효과를 획득합니다." },
 	// { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
 
 	{ name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑" },
@@ -139,7 +137,6 @@ const PET_SKILL_LIST = [
 	{ name: "기도", grade: "C", rate: 4.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🦋 1개를 획득합니다." },
 	{ name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
-	{ name: "지휘관의 재량", grade: "C", rate: 4.5, effect: "/영지공격 오입력으로 인한 탈락을 영지전당 1회 무효 처리합니다." },
 	{ name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
 
 
@@ -18626,19 +18623,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var isWrongGuildTurn = !currentTurn || currentTurn.guildId !== attackInfo.guildId;
 					var isWrongUserTurn = !!currentTurn && currentTurn.guildId === attackInfo.guildId && currentTurn.user !== sender;
 					if (isWrongGuildTurn || isWrongUserTurn) {
-						if (canUseGuildTerritoryCommandDiscretion(attackWar, petSkillData, sender)) {
-							attackWar.commandDiscretionUses[sender] = {
-								guildId: attackInfo.guildId,
-								at: formatDateTime(new Date()),
-								reason: "TURN_MISMATCH"
-							};
-							saveJsonFile(guildData, guildPath);
-							replier.reply(
-								buildPetSkillMsg(data, petData, guildData, sender, "지휘관의 재량")
-							);
-							return;
-						}
-
 						attackWar.eliminatedUsers[sender] = {
 							guildId: attackInfo.guildId,
 							reason: "TURN_MISMATCH",
@@ -31282,7 +31266,6 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};// 타임아웃으로 공격 실패한 횟수
 	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};// 제거된 사용자 정보
 	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};// 제거된 길드 정보
-	if (!war.commandDiscretionUses || typeof war.commandDiscretionUses !== "object") war.commandDiscretionUses = {};// 지휘관의 재량 사용 정보
 	if (!war.instabilityUses || typeof war.instabilityUses !== "object") war.instabilityUses = {};// 불안정 사용 정보
 	if (!war.riftGuideUses || typeof war.riftGuideUses !== "object") war.riftGuideUses = {};// 균열 유도 사용 정보
 	if (!war.riftCommandUses || typeof war.riftCommandUses !== "object") war.riftCommandUses = {};// 균열 명령 사용 정보
@@ -31438,7 +31421,6 @@ function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, repli
 	war.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
 	war.eliminatedUsers = {};// 탈락한 유저 기록 초기화
 	war.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
-	war.commandDiscretionUses = {};// 지휘관의 재량 사용 기록 초기화
 	war.timeoutMissCounts = {};// 턴 타임아웃 미스 횟수 기록
 	war.turnCount = 0;// 전체 턴 횟수
 	war.instabilityAdjust = 0;// 불안정성 조정치 초기화
@@ -31608,12 +31590,6 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		"기사단 증원": [
 			"기사단 증원📙 [{rank}] 기사단 증원이 발동했습니다!"
 		],
-		"철벽수호자": [
-			"철벽수호자📙 [{rank}] 어디 한번 더 쳐 보시지!"
-		],
-		"바바리안": [
-			"바바리안📙 [{rank}] 바할라ㅏㅏㅏㅏ!!!!!!!!!!!!!!"
-		],
 		"탈세자": [
 			"탈세자📙 [{rank}] 님이 세금 고지서를 보고 조용히 눈을 돌렸습니다.",
 			"탈세자📙 [{rank}] 님의 수상한 세무 감각이 발동했습니다!",
@@ -31650,11 +31626,6 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 			"야호📙 [{rank}] 야호! 오늘은 무료 확성이다!",
 			"야호📙 [{rank}] 확성기 아이템이 소모되지 않았습니다!",
 			"야호📙 [{rank}] 기분 좋게 외쳐봅니다!"
-		],
-		"지휘관의 재량": [
-			"지휘관의 재량📙 [{rank}]: 지휘관의 재량으로 실수를 만회합니다!",
-			"지휘관의 재량📙 [{rank}]: 이번 오입력은 무효 처리됩니다!",
-			"지휘관의 재량📙 [{rank}]: 아직 끝나지 않았습니다. 다시 지휘를 이어갑니다!"
 		],
 		"기분탓": [
 			"기분탓📙 [{rank}]: 라고 할뻔~"
@@ -31706,11 +31677,6 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		return formatPetSkillName(normalizedSkillName) + " [" + rank + "] 효과가 발동했습니다!";
 	}
 	return lines[Math.floor(Math.random() * lines.length)].replace(/\{rank\}/g, rank);
-}
-
-// 이번 영지전에서 지휘관의 재량📙으로 오입력 탈락을 무효화할 수 있는지 확인
-function canUseGuildTerritoryCommandDiscretion(war, petSkillData, user) {
-	return !!(war && user && hasPetSkill(petSkillData, user, "지휘관의 재량") && !war.commandDiscretionUses[user]);
 }
 
 // 길드 최대 정원을 계산하여 반환 (길드 레벨 기본 정원 + 징집명령📙 보정)
@@ -32539,23 +32505,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		{ name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" },
 		{ name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" }
 	];
-	var isDevTerritoryWar = !!getCurrentContext().isDev;
-	var ironWallSkill = { successRate: isDevTerritoryWar ? 1 : 0.8, label: isDevTerritoryWar ? "철벽🛡(100%)" : "철벽🛡(80%)" };
-	var barbarianSkill = { successRate: isDevTerritoryWar ? 1 : 0.8, label: isDevTerritoryWar ? "바바리안🔥(100%)" : "바바리안🔥(80%)" };
-	var ironWallTriggerRate = isDevTerritoryWar ? 1 : 0.05;
-	var barbarianTriggerRate = isDevTerritoryWar ? 1 : 0.05;
-
 	if (defenderName && data.member[defenderName]) {
-		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= ironWallTriggerRate && Math.random() <= ironWallSkill.successRate) {
-			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-			out += buildPetSkillMsg(data, petData, guildData, defenderName, "철벽수호자") + "\n";
-			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + ironWallSkill.label + "] 발동!\n";
-			out += "공격/방어/보상 상세보기" + allsee;
-			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
-			out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
-			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
-			return out;
-		}
 		// 방어 아이템
 		var defenseItem = getGuildTerritorySpecialItem(data.member[defenderName].bag, defenseItems);
 		if (defenseItem && Math.random() <= defenseItem.successRate) {
@@ -32572,22 +32522,6 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		}
 	}
 
-	if (hasPetSkill(petSkillData, sender, "바바리안") && Math.random() <= barbarianTriggerRate && Math.random() <= barbarianSkill.successRate) {
-		ter.ownerGuildId = attackerGuildInfo.guildId;
-		ter.ownerUser = sender;
-		if (territoryNo === 1 && data.HoiCastle) {
-			data.HoiCastle.lord = sender;
-			data.HoiCastle.earnings = 0;
-			data.HoiCastle.defenseCount = 0;
-		}
-		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-		out += buildPetSkillMsg(data, petData, guildData, sender, "바바리안") + "\n";
-		out += "🔥 공격 성공! [" + barbarianSkill.label + "] 발동\n";
-		out += "공격/방어/보상 상세보기" + allsee;
-		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
-		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
-		return out;
-	}
 	var offenseItem = getGuildTerritorySpecialItem(data.member[sender].bag, offenseItems);
 	if (offenseItem && Math.random() <= offenseItem.successRate) {
 		// 공격 아이템
@@ -36591,7 +36525,6 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "전투형지휘관") return "전투형 지휘관";
 	else if (skillName === "기사단증원") return "기사단 증원";
 	else if (skillName === "티어상승론") return "티어 상승론";
-	else if (skillName === "지휘관의재량") return "지휘관의 재량";
 	else if (skillName === "망한건맞아") return "망한건 맞아";
 	return skillName;
 }
