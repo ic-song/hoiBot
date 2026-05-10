@@ -22152,6 +22152,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						var basePrice = data.shop[itemName] * quantity;
 						var itemPrice = basePrice;
 						var taxRate = data.HoiCastle && data.HoiCastle.taxRate ? data.HoiCastle.taxRate : 0;
+						var baseTaxRate = parseInt(taxRate, 10) || 0;
 						var taxAmount = 0;
 						var itemTotalCost = 0;
 						var taxExempt = false;
@@ -22163,10 +22164,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 						if (hasPetSkill(petSkillData, sender, "탈세자")) {
 							taxExempt = true;
-							replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
 						}
 
-						taxRate = taxExempt ? 0 : (parseInt(taxRate, 10) || 0);
+						taxRate = taxExempt ? 0 : baseTaxRate;
 						taxAmount = Math.round(itemPrice * (taxRate / 100));
 						itemTotalCost = itemPrice + taxAmount;
 						if (!hasPoint(data, sender, itemTotalCost)) {
@@ -22357,8 +22357,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							isBuyFlag = true;
 						}
 						if (isBuyFlag) {
-							applyTax(itemPrice, data, guildData);
+							if (taxAmount > 0) {
+								applyTax(itemPrice, data, guildData);
+							}
 							addPoint(data, sender, -itemTotalCost); // 상품가격 point 차감
+							if (taxExempt && baseTaxRate > 0) {
+								replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
+							}
 						}
 					}
 				}
