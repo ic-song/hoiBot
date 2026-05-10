@@ -36710,23 +36710,29 @@ function pickRandomPetSkill() {
 
 // 사용자의 펫 스킬 가방에 있는 스킬 목록과 총 개수를 포맷팅하여 메시지로 반환
 function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
-	var skills = initPetSkillUser(petSkillData, user);
-	var list = getPetSkillBagList(petSkillData, user);
-	var total = getPetSkillBagTotalCount(petSkillData, user);
-	var msg = "[" + checkRank(data, petData, guildData, user) + "] 보유 스킬가방📙[" + numberWithCommas(total) + "/" + PET_SKILL_BAG_MAX_COUNT + "]\n";
-	msg += "━━━━━━━━━━━━━\n";
-	msg += "※ 스킬 장착: /펫스킬장착 [번호]\n";
-	msg += "※ 스킬 판매: /펫스킬판매 [번호]\n";
-	msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
-	msg += "━━━━━━━━━━━━━\n";
-	if (list.length === 0) return msg + "보유 중인 펫스킬북이 없습니다.";
-	for (var i = 0; i < list.length; i++) {
-		if (i == 10) {
-			msg += "\n" + allsee;
-		}
-		msg += i + 1 + ". " + formatPetSkillName(list[i]) + " x" + numberWithCommas(skills.bag[list[i]]) + "\n";
-	}
-	return msg.trim();
+   var skills = initPetSkillUser(petSkillData, user);
+   var list = getPetSkillBagList(petSkillData, user);
+   var total = getPetSkillBagTotalCount(petSkillData, user);
+
+   var msg = "[" + checkRank(data, petData, guildData, user) + "] 보유 스킬가방📙[" + numberWithCommas(total) + "/" + PET_SKILL_BAG_MAX_COUNT + "]\n";
+   msg += "━━━━━━━━━━━━━\n";
+   msg += "※ 스킬 장착: /펫스킬장착 [번호]\n";
+   msg += "※ 스킬 판매: /펫스킬판매 [번호]\n";
+   msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
+   msg += "━━━━━━━━━━━━━\n";
+
+   if (list.length === 0) {
+      return msg + "보유 중인 펫스킬북이 없습니다.";
+   }
+
+   // 안내문까지만 먼저 보이고, 스킬 목록은 전체보기 뒤로 숨김
+   msg += allsee + "\n";
+
+   for (var i = 0; i < list.length; i++) {
+      msg += (i + 1) + ". " + formatPetSkillName(list[i]) + " x" + numberWithCommas(skills.bag[list[i]]) + "\n";
+   }
+
+   return msg.trim();
 }
 
 // 사용자의 장착된 펫 스킬과 가방에 있는 스킬 목록을 포맷팅하여 메시지로 반환
@@ -36734,12 +36740,12 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 	var skills = initPetSkillUser(petSkillData, user);
 	var slot = getPetSkillSlotCount(data, petSkillData, user);
 
-	var msg = "[" + checkRank(data, petData, guildData, user) + "] 님의\n";
-	msg += "🧙‍♂️현재 장착 중인 펫스킬🧙‍♂️[" + skills.equipped.length + "/" + slot + "]\n";
-	msg += "━━━━━━━━━━━\n";
-	msg += "※ 스킬 제거: /펫스킬소멸 [번호]\n";
-	msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
-	msg += "━━━━━━━━━━━\n";
+	   var msg = "[" + checkRank(data, petData, guildData, user) + "] 님의\n";
+   msg += "🧙‍♂️현재 장착 중인 펫스킬🧙‍♂️[" + skills.equipped.length + "/" + slot + "]\n"; 
+   msg += "━━━━━━━━━━━\n";
+   msg += "※ 스킬 제거: /펫스킬소멸 [번호]\n";
+   msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
+   msg += "━━━━━━━━━━━\n" + allsee;
 
 	if (skills.equipped.length === 0) {
 		msg += "장착 중인 펫스킬이 없습니다.\n";
