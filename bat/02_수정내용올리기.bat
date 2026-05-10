@@ -23,8 +23,8 @@ cd
 
 echo.
 echo Git 작성자 정보 설정 중...
-git config —global user.name "jinminy2"
-git config —global user.email "jinminy2@gmail.com"
+git config user.name "jinminy2"
+git config user.email "jinminy2@gmail.com"
 if errorlevel 1 goto FAIL_GIT_CONFIG
 
 echo [OK] Git 작성자 정보 설정 완료
