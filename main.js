@@ -31758,6 +31758,7 @@ function markGuildTerritoryRiftEvent(war, status, guildId) {
 	return buildGuildTerritoryRiftEventLimitText(war);
 }
 
+// 길드 영지전 균열 이벤트 히스토리 가져오기 (최대 GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT개까지)
 function getGuildTerritoryRiftEventHistory(war) {
 	if (!war) return [];
 	if (Array.isArray(war.riftEventHistory)) return war.riftEventHistory.slice(0, GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT);
@@ -31765,12 +31766,14 @@ function getGuildTerritoryRiftEventHistory(war) {
 	return [];
 }
 
+// 길드 영지전 균열 이벤트 상태 초기화
 function resetGuildTerritoryInstability(war) {
 	if (!war) return;
 	war.turnCount = 0;
 	war.instabilityAdjust = 0;
 }
 
+// 길드 영지전 균열 이벤트 슬롯 텍스트 포맷 함수
 function formatGuildTerritoryRiftEventSlot(status, index, occurrenceCount, locked) {
 	var prefix = index === 0 ? "└" : "  └";
 	var countText = occurrenceCount + "회";
