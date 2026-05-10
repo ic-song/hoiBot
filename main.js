@@ -18620,8 +18620,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 턴 검증 (틀리면 탈락)
 					var currentTurn = getGuildTerritoryTurnRow(data, guildData);
+					var isCommanderOverrideTurn = !!(currentTurn &&
+						currentTurn.guildId === attackInfo.guildId &&
+						currentTurn.user !== sender &&
+						hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender));
 					var isWrongGuildTurn = !currentTurn || currentTurn.guildId !== attackInfo.guildId;
-					var isWrongUserTurn = !!currentTurn && currentTurn.guildId === attackInfo.guildId && currentTurn.user !== sender;
+					var isWrongUserTurn = !!currentTurn && currentTurn.guildId === attackInfo.guildId && currentTurn.user !== sender && !isCommanderOverrideTurn;
 					if (isWrongGuildTurn || isWrongUserTurn) {
 						attackWar.eliminatedUsers[sender] = {
 							guildId: attackInfo.guildId,
