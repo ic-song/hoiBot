@@ -27228,7 +27228,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 
-					ensureGuildSwordMasters(g);
+					ensureGuildSwordMasters(g, petSkillData);
 					var memberKeys = Object.keys(g.members || {});
 					var memberCount = memberKeys.length;
 					var homeData = loadJsonFile(homeDataFile);
@@ -27252,7 +27252,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						out += " (길드계급: " + guildRankTitle + ")\n";
 					}
 					out += "길드원👥: " + memberCount + "명 (최대인원: " + getGuildMaxMemberLimit(g, petSkillData) + "명)\n";
-					out += "소드마스터🤺:\n[" + getGuildSwordMasterDisplay(data, petData, guildData, g) + "]\n";
+					out += "소드마스터🤺:\n[" + getGuildSwordMasterDisplay(data, petData, guildData, g, petSkillData) + "]\n";
 					out += "━━━━━━━━━━━━\n";
 					if (guildRank) {
 						out += "길드순위👑: " + numberWithCommas(guildTotalCharm) + "💞 (" + guildRank + "등)\n";
@@ -31520,7 +31520,7 @@ function getGuildSwordMasterLimit(g, skillDataArg) {
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이거나 소드마스터이면서 전투형 지휘관 스킬 보유 여부)
 function isGuildTerritoryAttacker(g, petSkillData, user) {
 	if (!g || !user) return false;
-	if (isGuildSwordMaster(g, user)) return true;
+	if (isGuildSwordMaster(g, user, petSkillData)) return true;
 	return hasGuildTerritoryCommanderSkill(g, petSkillData, user);
 }
 
@@ -32175,7 +32175,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, sender
 	if (hasGuildTerritoryCommandBeenUsed(war.riftCommandUses, guildInfo.guildId, config.type)) {
 		return { message: buildGuildTerritoryCommandReuseBlockedMessage(guildInfo.guild, command) };
 	}
-	if (!isGuildSwordMaster(guildInfo.guild, sender)) {
+	if (!isGuildSwordMaster(guildInfo.guild, sender, petSkillData)) {
 		return { message: "❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 소드마스터🤺가 아니어서 사용할 수 없습니다." };
 	}
 	if (war.eliminatedGuilds[guildInfo.guildId] || war.eliminatedUsers[sender]) {
@@ -39796,7 +39796,7 @@ function getGuildOrderedMemberKeys(g) {
 }
 
 // 길드 소드마스터 표시 문자열 생성 (기여도 순으로 정렬, 최대 3명)
-function getGuildSwordMasterDisplay(data, petData, guildData, g) {
+function getGuildSwordMasterDisplay(data, petData, guildData, g, petSkillData) {
 	var swordMasters = ensureGuildSwordMasters(g, petSkillData);
 	if (swordMasters.length === 0) {
 		return "없음";
@@ -39809,7 +39809,7 @@ function getGuildSwordMasterDisplay(data, petData, guildData, g) {
 }
 
 // 현재 유저가 길드 소드마스터인지 여부 반환
-function isGuildSwordMaster(g, user) {
+function isGuildSwordMaster(g, user, petSkillData) {
 	return ensureGuildSwordMasters(g, petSkillData).indexOf(user) !== -1;
 }
 
