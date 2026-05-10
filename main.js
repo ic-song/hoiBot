@@ -32505,8 +32505,11 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		{ name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" },
 		{ name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" }
 	];
-	var ironWallSkill = { successRate: 0.8, label: "철벽🛡(80%)" };
-	var barbarianSkill = { successRate: 0.8, label: "바바리안🔥(80%)" };
+	var isDevTerritoryWar = !!getCurrentContext().isDev;
+	var ironWallSkill = { successRate: isDevTerritoryWar ? 1 : 0.8, label: isDevTerritoryWar ? "철벽🛡(100%)" : "철벽🛡(80%)" };
+	var barbarianSkill = { successRate: isDevTerritoryWar ? 1 : 0.8, label: isDevTerritoryWar ? "바바리안🔥(100%)" : "바바리안🔥(80%)" };
+	var ironWallTriggerRate = isDevTerritoryWar ? 1 : 0.05;
+	var barbarianTriggerRate = isDevTerritoryWar ? 1 : 0.05;
 
 	if (defenderName && data.member[defenderName]) {
 		// 방어 아이템
@@ -32523,7 +32526,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
 			return out;
 		}
-		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= 0.05 && Math.random() <= ironWallSkill.successRate) {
+		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= ironWallTriggerRate && Math.random() <= ironWallSkill.successRate) {
 			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
 			out += buildPetSkillMsg(data, petData, guildData, defenderName, "철벽수호자") + "\n";
 			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + ironWallSkill.label + "] 발동!\n";
@@ -32554,7 +32557,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
 		return out;
 	}
-	if (hasPetSkill(petSkillData, sender, "바바리안") && Math.random() <= 0.05 && Math.random() <= barbarianSkill.successRate) {
+	if (hasPetSkill(petSkillData, sender, "바바리안") && Math.random() <= barbarianTriggerRate && Math.random() <= barbarianSkill.successRate) {
 		ter.ownerGuildId = attackerGuildInfo.guildId;
 		ter.ownerUser = sender;
 		if (territoryNo === 1 && data.HoiCastle) {

@@ -304,6 +304,7 @@ Status: VERIFIED
 - `기사단 증원📙` 길드마스터가 있으면 소드마스터 슬롯이 1명 추가되며, 공격 결과에 발동 멘트가 prepend된다
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
 - `철벽수호자📙`, `바바리안📙`는 영지전 소모 아이템 판정이 먼저 실행된 뒤, 미발동 시 5% 확률의 80% 보정 판정으로 처리된다
+- DEV 영지전(`dev/` 컨텍스트)에서는 `철벽수호자📙`, `바바리안📙` 테스트를 위해 위 보정이 100%/100%로 동작한다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - `지휘관의 재량📙` 장착 유저는 wrong-turn 오입력 탈락을 영지전당 1회 무효 처리하며, wrong-turn은 길드 차례 불일치뿐 아니라 같은 길드 내 현재 차례 유저 불일치도 포함한다
