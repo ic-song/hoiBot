@@ -3,7 +3,7 @@ chcp 65001 > nul
 
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_DEVICE=emulator-5556
-set TARGET_FILE=/storage/emulated/0/hoiland/Bots/main/main.js
+set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/main/main.js
 set BOT_NAME=main
 
 echo.
