@@ -1770,12 +1770,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				initPetSkillUser(petSkillData, sender);
 				
-				if (msg === "?" && hasPetSkill(petSkillData, sender, "기분탓")) {
-					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "기분탓"));
+				var moodSkillUsers = msg === "?" ? findPetSkillOwners(petSkillData, "기분탓") : [];
+				if (moodSkillUsers.length > 0) {
+					replier.reply(moodSkillUsers.map(function (user) {
+						return buildPetSkillMsg(data, petData, guildData, user, "기분탓");
+					}).join("\n"));
 					return;
 				}
-				if (msg === "이쁘다" && hasPetSkill(petSkillData, sender, "종의 본능")) {
-					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "종의 본능"));
+				var instinctSkillUsers = msg === "이쁘다" ? findPetSkillOwners(petSkillData, "종의 본능") : [];
+				if (instinctSkillUsers.length > 0) {
+					replier.reply(instinctSkillUsers.map(function (user) {
+						return buildPetSkillMsg(data, petData, guildData, user, "종의 본능");
+					}).join("\n"));
 					return;
 				}
 
@@ -36598,6 +36604,18 @@ function hasPetSkill(petSkillData, user, skillName) {
 	skillName = normalizePetSkillName(skillName);
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
+}
+
+// 전체 유저 중 특정 펫스킬을 장착한 유저명 목록을 반환
+function findPetSkillOwners(petSkillData, skillName) {
+	var owners = [];
+	if (!petSkillData) return owners;
+	for (var user in petSkillData) {
+		if (hasPetSkill(petSkillData, user, skillName)) {
+			owners.push(user);
+		}
+	}
+	return owners;
 }
 
 // 사용자의 친밀도 레벨에 따라 장착 가능한 펫 스킬 슬롯 개수를 계산하여 반환
