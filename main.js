@@ -18663,23 +18663,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 공격 처리
 					var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo); // 공격 결과 메시지 반환
 					var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
-					resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage); // 공격 결과 메시지에 턴 보상 메시지 추가
 					// if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
 					var riftMessage = "";
 					// 공격 불가가 아닐 때만 균열 판정
 					if (!isAttackBlocked) {
 						riftMessage = processGuildTerritoryRiftEvent(data, guildData);
 					}
-					var commanderTriggerMessage = "";
+					var triggerMessages = [];
+					
 					if (hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender)) {
-						commanderTriggerMessage = buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관");
-						if (commanderTriggerMessage) {
-							resultMessage = commanderTriggerMessage + "\n" + resultMessage;
-						}
+						triggerMessages.push(buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관"));
 					}
-					if (hasGuildTerritoryKnightOrderSkill(attackInfo.guild, petSkillData, attackInfo.guild.master)) {
-						resultMessage = buildPetSkillMsg(data, petData, guildData, attackInfo.guild.master, "기사단 증원") + "\n" + resultMessage;
-					}
+					var rewardBlock = rewardMessage;
+					if (triggerMessages.length > 0) rewardBlock += "\n" + triggerMessages.join("\n");
+					resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardBlock); // 공격 결과 메시지에 턴 보상/스킬 메시지 추가
 					// 전체 종료 여부 체크
 					if (isGuildTerritoryAllDone(data, guildData)) {
 						castleMsg(resultMessage, replier, isGroupChat);
