@@ -18620,12 +18620,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					// 턴 검증 (틀리면 탈락)
 					var currentTurn = getGuildTerritoryTurnRow(data, guildData);
-					var isCommanderOverrideTurn = !!(currentTurn &&
-						currentTurn.guildId === attackInfo.guildId &&
-						currentTurn.user !== sender &&
-						hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender));
 					var isWrongGuildTurn = !currentTurn || currentTurn.guildId !== attackInfo.guildId;
-					var isWrongUserTurn = !!currentTurn && currentTurn.guildId === attackInfo.guildId && currentTurn.user !== sender && !isCommanderOverrideTurn;
+					var isWrongUserTurn = false;
 					if (isWrongGuildTurn || isWrongUserTurn) {
 						attackWar.eliminatedUsers[sender] = {
 							guildId: attackInfo.guildId,
@@ -31550,7 +31546,7 @@ function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
 
 // 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 전투형 지휘관 스킬 보유 여부)
 function shouldShowGuildTerritoryCommanderTrigger(g, petSkillData, user) {
-	return !!(hasGuildTerritoryCommanderSkill(g, petSkillData, user) && !isGuildSwordMaster(g, user, petSkillData));
+	return !!hasGuildTerritoryCommanderSkill(g, petSkillData, user);
 }
 
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 기사단 증원 스킬 보유 여부)`
