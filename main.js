@@ -2564,8 +2564,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					swordGuild.swordMasters = pickedMembers;
 					saveJsonFile(guildData, guildPath);
 					var pickedMsg = [];
+					var addedSwordMaster = pickedMembers[3];
+					var showKnightOrderSwordMasterMsg = hasGuildTerritoryKnightOrderSkill(swordGuild, petSkillData, swordGuild.master) && swordArgs.length === 4 && !!addedSwordMaster;
 					for (var smp = 0; smp < pickedMembers.length; smp++) {
 						pickedMsg.push((smp + 1) + ". " + checkRank(data, petData, guildData, pickedMembers[smp]));
+					}
+					if (showKnightOrderSwordMasterMsg) {
+						pickedMsg.push("");
+						pickedMsg.push("기사단 증원📙 [" + checkRank(data, petData, guildData, addedSwordMaster) + "] 소드마스터가 길드를 위하여 헌신합니다");
 					}
 					replier.reply(
 						"✅ 소드마스터🤺로 임명되었습니다.\n당신은 호월킹덤을 점령해야 할 책임을 부여받습니다.\nhttps://ibb.co/TDxxfXpV\n" +
