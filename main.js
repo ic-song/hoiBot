@@ -31765,6 +31765,12 @@ function getGuildTerritoryRiftEventHistory(war) {
 	return [];
 }
 
+function resetGuildTerritoryInstability(war) {
+	if (!war) return;
+	war.turnCount = 0;
+	war.instabilityAdjust = 0;
+}
+
 function formatGuildTerritoryRiftEventSlot(status, index, occurrenceCount, locked) {
 	var prefix = index === 0 ? "└" : "  └";
 	var countText = occurrenceCount + "회";
@@ -32086,12 +32092,14 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 // 균열 이벤트 적용: 모든 영지 점령 초기화, 호월킹덤 초기화, 균열 이벤트 상태 설정
 function applyGuildTerritoryRift(data, guildData) {
 	var war = resetGuildTerritoryOccupation(data, guildData);
+	resetGuildTerritoryInstability(war);
 	var limitText = markGuildTerritoryRiftEvent(war, "rift");
 
 	return (
 		"🌌 균열 발생!\n\n" +
 		"전장의 균형이 무너지며\n점령 중이던 길드영지에 균열이 발생했습니다.\n\n" +
-		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n\n" +
+		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n" +
+		"🌪️ 누적 전쟁불안정도는 0으로 초기화됩니다.\n\n" +
 		limitText
 	);
 }
@@ -32144,6 +32152,7 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 		reason: "GREAT_RIFT",
 		at: formatDateTime(new Date())
 	};
+	resetGuildTerritoryInstability(war);
 
 	var limitText = markGuildTerritoryRiftEvent(war, "greatRift", targetGuildId);
 
@@ -32154,6 +32163,7 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 		formatGuildDisplay(targetGuild) +
 		"] 길드가 겁에 질려 영지전에서 후다닥 도망갑니다.\n\n" +
 		"해당 길드는 이번 길드영지전에서\n더 이상 공격 및 점령에 참여할 수 없습니다.\n\n" +
+		"🌪️ 누적 전쟁불안정도는 0으로 초기화됩니다.\n\n" +
 		limitText
 	);
 }
