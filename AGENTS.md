@@ -12,7 +12,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `main.js`: command handling and core game logic
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
-  - `COMMAND_REGISTRY.md`: command/helper/data-flow index document
+  - `COMMAND_INDEX.md`: command/helper/data-flow index document
 
 ---
 
@@ -90,11 +90,11 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ---
 
-# 5) COMMAND_REGISTRY.md Rules
+# 5) COMMAND_INDEX.md Rules
 
 ## Purpose
 
-`COMMAND_REGISTRY.md` is a secondary index document for command/helper/data-flow exploration.
+`COMMAND_INDEX.md` is a secondary index document for command/helper/data-flow exploration.
 
 ## Core Principles
 
@@ -227,7 +227,7 @@ Development / Validation
 
 ## Rules
 
-- Check `COMMAND_REGISTRY.md` before large-scale source scanning.
+- Check `COMMAND_INDEX.md` before large-scale source scanning.
 - Use the registry only as a starting point.
 - ALWAYS re-verify findings against the actual source code.
 - Missing registry entries mean "unregistered", NOT "nonexistent".
@@ -297,7 +297,7 @@ Development / Validation
   - `loadJsonFile`
   - DEV/PROD flow
 - Verify Rhino JS compatibility.
-- Verify consistency between actual code and `COMMAND_REGISTRY.md`.
+- Verify consistency between actual code and `COMMAND_INDEX.md`.
 
 ## Main Review Targets
 
@@ -375,7 +375,7 @@ node --check Info.js
 - `Info.js`
 - `README.md`
 - `AGENTS.md`
-- `COMMAND_REGISTRY.md`
+- `COMMAND_INDEX.md`
 - `data/*.json`
 
 ## Rules
@@ -412,7 +412,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 - `README.md`
 - `AGENTS.md`
-- `COMMAND_REGISTRY.md`
+- `COMMAND_INDEX.md`
 - other registry-style `*.md` files
 
 ## Rules

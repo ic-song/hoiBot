@@ -1,4 +1,4 @@
-# COMMAND_REGISTRY.md
+# COMMAND_INDEX.md
 
 Status: PARTIAL
 
