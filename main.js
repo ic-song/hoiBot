@@ -146,6 +146,7 @@ const PET_SKILL_LIST = [
 	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
 	{ name: "기분탓", grade: "D", rate: 14.5, effect: "'?' 채팅 입력 시 연출 멘트를 출력합니다." },
 	{ name: "종의 본능", grade: "D", rate: 14.5, effect: "'이쁘다' 채팅 입력 시 연출 멘트를 출력합니다." },
+	{ name: "품행제로", grade: "D", rate: 14.5, effect: "/맞짱 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
 	{ name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
 	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
 ];
@@ -30284,6 +30285,33 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : " + ment);
 					return;
 				}
+				if (msg.startsWith("/맞짱")) {
+					let skillName = "품행제로";
+					let fightMatch = msg.match(/^\/맞짱\s+(.+)/);
+					if (!fightMatch) {
+						replier.reply("사용법: /맞짱 [아이디]");
+						return;
+					}
+					if (!hasPetSkill(petSkillData, sender, skillName)) {
+						replier.reply("장착 중인 " + skillName + "📙 스킬이 없습니다.");
+						return;
+					}
+					let target = fightMatch[1].trim();
+					if (!target) {
+						replier.reply("사용법: /맞짱 [아이디]");
+						return;
+					}
+					if (target === sender) {
+						replier.reply("자기 자신에게 맞짱을 걸 수는 없습니다.");
+						return;
+					}
+					if (!data.member[target]) {
+						replier.reply("❌ 존재하지 않는 유저입니다.");
+						return;
+					}
+					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, Math.random() < 0.7 ? "품행제로성공" : "품행제로실패"));
+					return;
+				}
 				// package =====================
 				if (
 					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
@@ -31590,6 +31618,30 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
 		],
 		"종의 본능": [
 			"종의 본능📙 [{rank}] : 어디?"
+		],
+		"품행제로성공": [
+			"품행제로📙 [{rank}] : 선빵은 매너 없지만, 결과는 깔끔했습니다.",
+			"품행제로📙 [{rank}] : 말보다 주먹이 빠른 하루였습니다.",
+			"품행제로📙 [{rank}] : 상대가 눈을 깜빡인 사이 승부가 끝났습니다.",
+			"품행제로📙 [{rank}] : 명치 교육이 성공적으로 완료되었습니다.",
+			"품행제로📙 [{rank}] : 오늘의 교훈, 함부로 덤비지 말자.",
+			"품행제로📙 [{rank}] : 상대의 전투 의지가 조용히 퇴근했습니다.",
+			"품행제로📙 [{rank}] : 가볍게 몸만 풀었는데 상대가 누웠습니다.",
+			"품행제로📙 [{rank}] : 이 구역 품행은 제가 책임집니다.",
+			"품행제로📙 [{rank}] : 상대가 덤볐고, 후회는 빨랐습니다.",
+			"품행제로📙 [{rank}] : 명치에 작은 진심을 담았습니다."
+		],
+		"품행제로실패": [
+			"품행제로📙 [{rank}] : 폼은 좋았는데 발이 꼬였습니다.",
+			"품행제로📙 [{rank}] : 오늘은 바람이 상대 편이었습니다.",
+			"품행제로📙 [{rank}] : 주먹보다 생각이 먼저 나가버렸습니다.",
+			"품행제로📙 [{rank}] : 상대가 예상보다 단단했습니다.",
+			"품행제로📙 [{rank}] : 큰소리친 것치고는 조용히 물러납니다.",
+			"품행제로📙 [{rank}] : 명치를 노렸지만 자존심만 다쳤습니다.",
+			"품행제로📙 [{rank}] : 오늘은 전략적 후퇴입니다. 절대 도망 아닙니다.",
+			"품행제로📙 [{rank}] : 주먹이 길을 잃었습니다.",
+			"품행제로📙 [{rank}] : 상대가 강한 게 아니라 제가 잠깐 봐준 겁니다.",
+			"품행제로📙 [{rank}] : 다음엔 준비운동부터 하고 오겠습니다."
 		],
 		"망한건 맞아": [
 			"망한건 맞아📙 [{rank}] : 괜히 장착했습니다...",
