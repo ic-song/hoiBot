@@ -18673,7 +18673,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					var triggerMessages = [];
 					
-					if (hasGuildTerritoryCommanderSkill(attackInfo.guild, petSkillData, sender)) {
+					// 소드마스터 트리거 체크
+					if (shouldShowGuildTerritoryCommanderTrigger(attackInfo.guild, petSkillData, sender)) {
 						triggerMessages.push(buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관"));
 					}
 					var rewardBlock = rewardMessage;
@@ -31546,6 +31547,11 @@ function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
 	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
 }
 
+// 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 전투형 지휘관 스킬 보유 여부)
+function shouldShowGuildTerritoryCommanderTrigger(g, petSkillData, user) {
+	return !!(hasGuildTerritoryCommanderSkill(g, petSkillData, user) && !isGuildSwordMaster(g, user, petSkillData));
+}
+
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 기사단 증원 스킬 보유 여부)`
 function hasGuildTerritoryKnightOrderSkill(g, petSkillData, user) {
 	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "기사단 증원"));
@@ -31758,6 +31764,7 @@ function markGuildTerritoryRiftEvent(war, status, guildId) {
 	return buildGuildTerritoryRiftEventLimitText(war);
 }
 
+// 길드 영지전 균열 이벤트 히스토리 가져오기 (최대 GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT개까지)
 function getGuildTerritoryRiftEventHistory(war) {
 	if (!war) return [];
 	if (Array.isArray(war.riftEventHistory)) return war.riftEventHistory.slice(0, GUILD_TERRITORY_RIFT_MAX_EVENT_COUNT);
@@ -31765,6 +31772,14 @@ function getGuildTerritoryRiftEventHistory(war) {
 	return [];
 }
 
+// 길드 영지전 균열 이벤트 상태 초기화
+function resetGuildTerritoryInstability(war) {
+	if (!war) return;
+	war.turnCount = 0;
+	war.instabilityAdjust = 0;
+}
+
+// 길드 영지전 균열 이벤트 슬롯 텍스트 포맷 함수
 function formatGuildTerritoryRiftEventSlot(status, index, occurrenceCount, locked) {
 	var prefix = index === 0 ? "└" : "  └";
 	var countText = occurrenceCount + "회";
@@ -32086,12 +32101,14 @@ function processGuildTerritoryRiftEvent(data, guildData) {
 // 균열 이벤트 적용: 모든 영지 점령 초기화, 호월킹덤 초기화, 균열 이벤트 상태 설정
 function applyGuildTerritoryRift(data, guildData) {
 	var war = resetGuildTerritoryOccupation(data, guildData);
+	resetGuildTerritoryInstability(war);
 	var limitText = markGuildTerritoryRiftEvent(war, "rift");
 
 	return (
 		"🌌 균열 발생!\n\n" +
 		"전장의 균형이 무너지며\n점령 중이던 길드영지에 균열이 발생했습니다.\n\n" +
-		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n\n" +
+		"🏰 길드영지의 점령 상태가 초기화됩니다.\n해당 영지는 다시 쟁탈 가능한 중립 상태가 되었습니다.\n" +
+		"🌪️ 누적 전쟁불안정도는 0으로 초기화됩니다.\n\n" +
 		limitText
 	);
 }
@@ -32144,6 +32161,7 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 		reason: "GREAT_RIFT",
 		at: formatDateTime(new Date())
 	};
+	resetGuildTerritoryInstability(war);
 
 	var limitText = markGuildTerritoryRiftEvent(war, "greatRift", targetGuildId);
 
@@ -32154,6 +32172,7 @@ function applyGuildTerritoryGreatRift(data, guildData) {
 		formatGuildDisplay(targetGuild) +
 		"] 길드가 겁에 질려 영지전에서 후다닥 도망갑니다.\n\n" +
 		"해당 길드는 이번 길드영지전에서\n더 이상 공격 및 점령에 참여할 수 없습니다.\n\n" +
+		"🌪️ 누적 전쟁불안정도는 0으로 초기화됩니다.\n\n" +
 		limitText
 	);
 }
@@ -32512,6 +32531,16 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 	var barbarianTriggerRate = isDevTerritoryWar ? 1 : 0.05;
 
 	if (defenderName && data.member[defenderName]) {
+		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= ironWallTriggerRate && Math.random() <= ironWallSkill.successRate) {
+			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
+			out += buildPetSkillMsg(data, petData, guildData, defenderName, "철벽수호자") + "\n";
+			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + ironWallSkill.label + "] 발동!\n";
+			out += "공격/방어/보상 상세보기" + allsee;
+			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
+			out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
+			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
+			return out;
+		}
 		// 방어 아이템
 		var defenseItem = getGuildTerritorySpecialItem(data.member[defenderName].bag, defenseItems);
 		if (defenseItem && Math.random() <= defenseItem.successRate) {
@@ -32526,18 +32555,24 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
 			return out;
 		}
-		if (hasPetSkill(petSkillData, defenderName, "철벽수호자") && Math.random() <= ironWallTriggerRate && Math.random() <= ironWallSkill.successRate) {
-			out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
-			out += buildPetSkillMsg(data, petData, guildData, defenderName, "철벽수호자") + "\n";
-			out += "[" + territoryNo + "] " + territory.name + " 방어 [" + ironWallSkill.label + "] 발동!\n";
-			out += "공격/방어/보상 상세보기" + allsee;
-			out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
-			out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
-			out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
-			return out;
-		}
 	}
 
+	if (hasPetSkill(petSkillData, sender, "바바리안") && Math.random() <= barbarianTriggerRate && Math.random() <= barbarianSkill.successRate) {
+		ter.ownerGuildId = attackerGuildInfo.guildId;
+		ter.ownerUser = sender;
+		if (territoryNo === 1 && data.HoiCastle) {
+			data.HoiCastle.lord = sender;
+			data.HoiCastle.earnings = 0;
+			data.HoiCastle.defenseCount = 0;
+		}
+		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
+		out += buildPetSkillMsg(data, petData, guildData, sender, "바바리안") + "\n";
+		out += "🔥 공격 성공! [" + barbarianSkill.label + "] 발동\n";
+		out += "공격/방어/보상 상세보기" + allsee;
+		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
+		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
+		return out;
+	}
 	var offenseItem = getGuildTerritorySpecialItem(data.member[sender].bag, offenseItems);
 	if (offenseItem && Math.random() <= offenseItem.successRate) {
 		// 공격 아이템
@@ -32552,22 +32587,6 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
 		//	out += baseInfo;
 		out += "🔥 공격 성공! [" + offenseItem.label + "] 발동\n";
-		out += "공격/방어/보상 상세보기" + allsee;
-		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
-		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
-		return out;
-	}
-	if (hasPetSkill(petSkillData, sender, "바바리안") && Math.random() <= barbarianTriggerRate && Math.random() <= barbarianSkill.successRate) {
-		ter.ownerGuildId = attackerGuildInfo.guildId;
-		ter.ownerUser = sender;
-		if (territoryNo === 1 && data.HoiCastle) {
-			data.HoiCastle.lord = sender;
-			data.HoiCastle.earnings = 0;
-			data.HoiCastle.defenseCount = 0;
-		}
-		out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
-		out += buildPetSkillMsg(data, petData, guildData, sender, "바바리안") + "\n";
-		out += "🔥 공격 성공! [" + barbarianSkill.label + "] 발동\n";
 		out += "공격/방어/보상 상세보기" + allsee;
 		out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
 		out += "[" + territoryNo + "] " + territory.name + " 공격하였습니다.\n\n";
