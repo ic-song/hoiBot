@@ -957,7 +957,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var upgradeLine = "펫강화⭐️: " + (petInfo.upgrade || 0) + "강(💥" + critChance + "%)[" + critMul + "배]";
 
 			var skillStore = initPetSkillUser(petSkillData, sender);
-			var skillSlot = getPetSkillSlotCount(data, sender);
+			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 
 			// 기록: 시련탑(요구사항: 10)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
@@ -1550,6 +1550,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫 스킬 
 	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -1571,6 +1574,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 	// 펫스킬
 	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
 	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
+		skillExp += 500000;
+	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -1950,6 +1956,7 @@ function formatDate2(dateString) {
 		return month + "월 " + day + "일";
 	}
 }
+// 날짜와 시간 형식 변환 함수
 function formatDateTime(dateString) {
 	var date = new Date(dateString);
 	var year = date.getFullYear();
@@ -1972,6 +1979,7 @@ function getTitle(memberInfo, titleInfo) {
 		return "";
 	}
 }
+// 펫스킬 이름 정규화 함수
 function normalizePetSkillName(skillName) {
 	skillName = String(skillName || "")
 		.replace(/^\[펫스킬북\]/, "")
@@ -1979,9 +1987,16 @@ function normalizePetSkillName(skillName) {
 		.replace(/✨/g, "")
 		.trim();
 	if (skillName === "하느님위에갓물주") return "하느님 위에 갓물주";
+	if (skillName === "종의본능") return "종의 본능";
 	if (skillName === "로열하우스") return "로열 하우스";
+	if (skillName === "전투형지휘관") return "전투형 지휘관";
+	if (skillName === "기사단증원") return "기사단 증원";
+	if (skillName === "티어상승론") return "티어 상승론";
+	if (skillName === "지휘관의재량") return "지휘관의 재량";
+	if (skillName === "망한건맞아") return "망한건 맞아";
 	return skillName;
 }
+// 펫스킬 데이터 초기화 함수
 function initPetSkillUser(petSkillData, user) {
 	if (!petSkillData[user]) petSkillData[user] = {};
 	if (!petSkillData[user].petSkills || typeof petSkillData[user].petSkills !== "object") {
@@ -1991,6 +2006,14 @@ function initPetSkillUser(petSkillData, user) {
 	if (!petSkillData[user].petSkills.bag || typeof petSkillData[user].petSkills.bag !== "object") petSkillData[user].petSkills.bag = {};
 	return petSkillData[user].petSkills;
 }
+
+function hasEquippedCreationMiniPet(petData, user) {
+	return !!(petData &&
+		petData[user] &&
+		petData[user].miniPet &&
+		(petData[user].miniPet.grade || "") === "창조");
+}
+// 장착된 펫스킬 이름 배열 반환 함수
 function getEquippedPetSkillNames(petSkillData, user) {
 	if (!petSkillData || !petSkillData[user]) return [];
 	var skills = initPetSkillUser(petSkillData, user);
@@ -1998,22 +2021,30 @@ function getEquippedPetSkillNames(petSkillData, user) {
 		return !!name;
 	});
 }
+// 특정 스킬이 장착되어 있는지 확인하는 함수
 function hasPetSkill(petSkillData, user, skillName) {
 	skillName = normalizePetSkillName(skillName);
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
 }
-function getPetSkillSlotCount(data, user) {
+// 펫스킬 슬롯 개수 계산 함수
+function getPetSkillSlotCount(data, petSkillData, user) {
 	var info = getUserIntimacyInfo(data, user);
 	var level = info && info.level ? info.level : 0;
+	var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론");
+	var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0);
 	var slots = Math.floor(level / 100);
-	if (slots > PET_SKILL_MAX_EQUIP_SLOT) slots = PET_SKILL_MAX_EQUIP_SLOT;
-	return slots < 0 ? 0 : slots;
+	slots += hasIntro ? 3 : 0;
+
+	if (slots > maxSlot) slots = maxSlot;
+	if (slots < 0) slots = 0;
+	return slots;
 }
 // 숫자 3자리마다 쉼표 추가 함수
 function numberWithCommas(x) {
 	return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+// 조건 충족 여부에 따라 체크 표시 반환 함수
 function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	var status = getDailyQuestStatus(data, petData, guildData, sender);
 	var lines = [];
@@ -2294,6 +2325,8 @@ function checkRank(data, petData, guildData, user) {
  * @param {Object} bagItems - 가방에 있는 아이템 객체
  * @returns {Object} - 정렬된 아이템 목록과 출력 문자열
  */
+// 전제: normalizeItemName(itemName) 함수가 이미 존재해야 함.
+//  - 펫 친밀도🐾(숫자/1000)+숫자💕  => "펫 친밀도🐾" 로 정규화
 function generateBagOutput(bagItems) {
 	var bagOutput = "";
 	var sortedItemList = [];
@@ -2365,7 +2398,7 @@ function generateBagOutput(bagItems) {
 			"타이틀선물권💝(/타이틀선물 닉네임 내용)",
 			"펫타이틀권🦊(/펫타이틀이름)",
 			"펫스킬북📙(/펫스킬오픈)",
-			"펫스킬소멸권🧙‍♂️(/펫스킬소멸 숫자)",
+			"펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
 			"펫특성뽑기권🃏(/특성오픈)",
 			"반지 이름변경권🗯(/반지이름)",
 			"정령 이름변경권📝(/정령이름)",

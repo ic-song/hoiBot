@@ -12,7 +12,9 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `main.js`: command handling and core game logic
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
-  - `COMMAND_REGISTRY.md`: command/helper/data-flow index document
+  - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
+  - `COMMAND_REGISTRY.md`: human-reviewed ongoing command management registry used for status confirmation and cleanup decisions
+  - `COMMAND_CLEANUP_STRATEGY.md`: ongoing command cleanup strategy for collecting commands, applying human-reviewed status, and removing only approved commands
 
 ---
 
@@ -90,11 +92,11 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ---
 
-# 5) COMMAND_REGISTRY.md Rules
+# 5) COMMAND_INDEX.md Rules
 
 ## Purpose
 
-`COMMAND_REGISTRY.md` is a secondary index document for command/helper/data-flow exploration.
+`COMMAND_INDEX.md` is a secondary index document for command/helper/data-flow exploration.
 
 ## Core Principles
 
@@ -137,6 +139,48 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     ## Related Commands
     - /가구가방
     - /미니펫가방
+
+---
+
+# 5-1) COMMAND_CLEANUP_STRATEGY.md Rules
+
+## Purpose
+
+`COMMAND_CLEANUP_STRATEGY.md` is a Markdown document used for ongoing command cleanup, grouping, and migration planning.
+
+## Core Principles
+
+- The actual source of truth is ALWAYS the current codebase.
+- `COMMAND_CLEANUP_STRATEGY.md` is a cleanup strategy document, NOT the primary source of truth.
+- If `COMMAND_CLEANUP_STRATEGY.md` conflicts with the actual code, trust the code.
+- Use it to organize:
+  - duplicate commands
+  - similar command groups
+  - rename/merge/remove candidates
+  - cleanup progress notes
+- NEVER assume a command is finalized, removed, or nonexistent solely because it appears in the cleanup document.
+- Update `COMMAND_CLEANUP_STRATEGY.md` whenever command cleanup decisions, grouping strategy, or migration status materially change.
+- Preserve it as an ongoing maintenance document for future command cleanup work.
+
+---
+
+# 5-2) COMMAND_REGISTRY.md Rules
+
+## Purpose
+
+`COMMAND_REGISTRY.md` is a human-reviewed ongoing command management registry used for status confirmation and cleanup decisions.
+
+## Core Principles
+
+- The actual source of truth is ALWAYS the current codebase.
+- `COMMAND_REGISTRY.md` is for human-facing command management, not primary code exploration.
+- Use it to track command lifecycle states such as `ACTIVE`, `UNUSED`, and `REMOVE`.
+- Use it to track verification level such as pattern collection, branch confirmation, and execution confirmation.
+- Human operators may directly review and maintain command statuses in this document.
+- Preserve it as an ongoing maintenance document rather than a one-time cleanup artifact.
+- NEVER treat registry status alone as proof that code cleanup, removal, or migration is already complete.
+- If `COMMAND_REGISTRY.md` conflicts with the actual code, trust the code and update the registry accordingly.
+- Synchronize `COMMAND_REGISTRY.md` whenever command status, cleanup decisions, or management notes materially change.
 
 ---
 
@@ -227,7 +271,8 @@ Development / Validation
 
 ## Rules
 
-- Check `COMMAND_REGISTRY.md` before large-scale source scanning.
+- Check `COMMAND_INDEX.md` before large-scale source scanning.
+- Use `COMMAND_REGISTRY.md` as a human-maintained status reference when cleanup state or removal intent needs context.
 - Use the registry only as a starting point.
 - ALWAYS re-verify findings against the actual source code.
 - Missing registry entries mean "unregistered", NOT "nonexistent".
@@ -297,7 +342,8 @@ Development / Validation
   - `loadJsonFile`
   - DEV/PROD flow
 - Verify Rhino JS compatibility.
-- Verify consistency between actual code and `COMMAND_REGISTRY.md`.
+- Verify consistency between actual code and `COMMAND_INDEX.md`.
+- Verify consistency between actual code and `COMMAND_REGISTRY.md` when command status or cleanup decisions are involved.
 
 ## Main Review Targets
 
@@ -375,7 +421,7 @@ node --check Info.js
 - `Info.js`
 - `README.md`
 - `AGENTS.md`
-- `COMMAND_REGISTRY.md`
+- `COMMAND_INDEX.md`
 - `data/*.json`
 
 ## Rules
@@ -412,7 +458,9 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 - `README.md`
 - `AGENTS.md`
+- `COMMAND_INDEX.md`
 - `COMMAND_REGISTRY.md`
+- `COMMAND_CLEANUP_STRATEGY.md`
 - other registry-style `*.md` files
 
 ## Rules
@@ -421,6 +469,8 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - Verify documentation synchronization whenever commands/helpers/data-flow change.
 - If documentation conflicts with code, update documentation based on code.
 - After task completion, update registry information based on modified code.
+- Keep `COMMAND_REGISTRY.md` synchronized when command lifecycle status or cleanup decisions change.
+- Treat `COMMAND_CLEANUP_STRATEGY.md` as an ongoing maintenance document and keep it synchronized when cleanup strategy or command organization changes.
 - If synchronization cannot be completed, report:
   - "documentation synchronization required"
 - Preserve:
