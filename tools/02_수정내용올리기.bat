@@ -10,7 +10,7 @@ echo [START] 수정내용 올리기
 echo ========================================
 echo.
 echo 이 작업은 현재 수정한 내용을 저장소에 올리고
-echo feature/prod 반영 요청까지 자동으로 진행합니다.
+echo feature/prod 직접 병합과 push까지 자동으로 진행합니다.
 echo 코드 붙여넣기 후 파일 저장을 했는지 확인하세요.
 echo ========================================
 echo.
@@ -35,6 +35,19 @@ echo.
 echo [2/7] 현재 브랜치 확인 중...
 for /f "tokens=*" %%i in ('git branch --show-current') do set CURRENT_BRANCH=%%i
 
+if not "%CURRENT_BRANCH%"=="%BRANCH_NAME%" (
+  git switch %BRANCH_NAME%
+  if errorlevel 1 goto FAIL_BRANCH_SWITCH
+)
+
+git fetch origin
+if errorlevel 1 goto FAIL_FETCH
+
+git merge --ff-only origin/%BASE_BRANCH%
+if errorlevel 1 goto FAIL_BASE_SYNC
+
+for /f "tokens=*" %%i in ('git branch --show-current') do set CURRENT_BRANCH=%%i
+
 if not "%CURRENT_BRANCH%"=="%BRANCH_NAME%" goto FAIL_BRANCH
 
 echo [OK] 현재 브랜치: %CURRENT_BRANCH%
@@ -57,8 +70,6 @@ set /p WORK_MSG=수정내용 제목을 입력하세요. 그냥 엔터 시 기본
 if "%WORK_MSG%"=="" set WORK_MSG=BM 코드 수정 반영
 
 set COMMIT_MSG=%WORK_MSG%
-set PR_TITLE=%WORK_MSG%
-set PR_BODY=%WORK_MSG%
 
 echo.
 echo [4/7] 변경내용 담는 중...
@@ -82,22 +93,27 @@ if errorlevel 1 goto FAIL_PUSH
 echo [OK] 원격 저장소 올리기 완료
 
 echo.
-echo [7/7] feature/prod 반영 요청 생성 중...
-where gh > nul 2>&1
-if errorlevel 1 goto FAIL_GH
+echo [7/7] feature/prod 직접 병합 및 push 중...
+git switch %BASE_BRANCH%
+if errorlevel 1 goto FAIL_PROD_SWITCH
 
-gh pr create --base %BASE_BRANCH% --head %BRANCH_NAME% --title "%PR_TITLE%" --body "%PR_BODY%"
-if errorlevel 1 goto FAIL_PR
+git pull origin %BASE_BRANCH%
+if errorlevel 1 goto FAIL_PROD_PULL
+
+git merge %BRANCH_NAME%
+if errorlevel 1 goto FAIL_PROD_MERGE
+
+git push origin %BASE_BRANCH%
+if errorlevel 1 goto FAIL_PROD_PUSH
 
 echo.
 echo ========================================
-echo [SUCCESS] 수정내용 올리기 + feature/prod 반영 요청 완료
+echo [SUCCESS] 수정내용 올리기 + feature/prod 직접 반영 완료
 echo ========================================
 echo.
 echo 브랜치: %BRANCH_NAME%
 echo 커밋 제목: %COMMIT_MSG%
-echo PR 제목: %PR_TITLE%
-echo PR 내용: %PR_BODY%
+echo feature/prod push complete.
 echo ========================================
 pause
 exit /b 0
@@ -129,6 +145,33 @@ echo 현재 브랜치: %CURRENT_BRANCH%
 echo 필요한 브랜치: %BRANCH_NAME%
 echo.
 echo 먼저 01_새작업시작.bat 를 실행하세요.
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_BRANCH_SWITCH
+echo.
+echo ========================================
+echo [FAIL] feature/hoi branch switch failed.
+echo Run 01 first, or check branch state.
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_FETCH
+echo.
+echo ========================================
+echo [FAIL] git fetch origin failed.
+echo Check network or GitHub permission.
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_BASE_SYNC
+echo.
+echo ========================================
+echo [FAIL] feature/hoi could not fast-forward from origin/feature/prod.
+echo Resolve branch divergence or conflicts first.
 echo ========================================
 pause
 exit /b 1
@@ -169,20 +212,38 @@ echo ========================================
 pause
 exit /b 1
 
-:FAIL_GH
+:FAIL_PROD_SWITCH
 echo.
 echo ========================================
-echo [FAIL] GitHub CLI(gh)를 찾을 수 없습니다.
-echo gh 설치 후 다시 실행하세요.
+echo [FAIL] feature/prod branch switch failed.
+echo Check feature/prod branch state.
 echo ========================================
 pause
 exit /b 1
 
-:FAIL_PR
+:FAIL_PROD_PULL
 echo.
 echo ========================================
-echo [FAIL] feature/prod 반영 요청 생성 실패
-echo gh 로그인 상태 또는 저장소 권한을 확인하세요.
+echo [FAIL] feature/prod pull failed.
+echo Check conflicts, network, or GitHub permission.
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_PROD_MERGE
+echo.
+echo ========================================
+echo [FAIL] feature/hoi merge into feature/prod failed.
+echo Resolve merge conflicts before pushing prod.
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_PROD_PUSH
+echo.
+echo ========================================
+echo [FAIL] feature/prod push failed.
+echo Check GitHub permission or remote branch state.
 echo ========================================
 pause
 exit /b 1

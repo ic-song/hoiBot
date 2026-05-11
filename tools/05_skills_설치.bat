@@ -10,7 +10,8 @@ echo CODEX_HOME=%CODEX_HOME%
 
 if not exist "%ROOT%\.codex\skills" (
   echo [ERROR] repo skill source not found: %ROOT%\.codex\skills
-  exit /b 1
+  set "EXIT_CODE=1"
+  goto finish
 )
 
 if not exist "%CODEX_HOME%\skills" mkdir "%CODEX_HOME%\skills"
@@ -20,7 +21,8 @@ robocopy "%ROOT%\.codex\skills" "%CODEX_HOME%\skills" /E /NFL /NDL /NJH /NJS /NP
 set "RC1=%ERRORLEVEL%"
 if !RC1! GEQ 8 (
   echo [ERROR] failed to sync skills. robocopy exit code=!RC1!
-  exit /b !RC1!
+  set "EXIT_CODE=!RC1!"
+  goto finish
 )
 
 if exist "%ROOT%\.codex\skill-drafts-ko" (
@@ -28,9 +30,15 @@ if exist "%ROOT%\.codex\skill-drafts-ko" (
   set "RC2=%ERRORLEVEL%"
   if !RC2! GEQ 8 (
     echo [ERROR] failed to sync Korean drafts. robocopy exit code=!RC2!
-    exit /b !RC2!
+    set "EXIT_CODE=!RC2!"
+    goto finish
   )
 )
 
 echo [OK] Codex skills synced.
-exit /b 0
+set "EXIT_CODE=0"
+
+:finish
+echo.
+pause
+exit /b %EXIT_CODE%

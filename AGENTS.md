@@ -95,7 +95,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 ## Branch Workflow
 
 - `feature/prod` is the operational base branch for production-facing code.
-- `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload/PR scripts.
+- `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload and `feature/prod` direct-merge scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
 - `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify and use the exact branch casing requested by the user.

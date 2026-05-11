@@ -104,7 +104,7 @@ tools\05_skills_설치.bat
 | --- | --- |
 | `main` | 안정/보관 기준 브랜치입니다. 실제 운영 반영 기준으로 바로 사용하지 않습니다. |
 | `feature/prod` | 운영 봇에 반영할 기준 브랜치입니다. 운영 반영과 운영 PR의 대상입니다. |
-| `feature/hoi` | hoi 작업용 브랜치입니다. `tools/`를 통한 업로드/PR 생성에 사용하며, `feature/prod`에서 분기하고 PR도 `feature/prod`로 요청합니다. |
+| `feature/hoi` | hoi 작업용 브랜치입니다. `tools/`를 통한 업로드와 `feature/prod` 직접 병합에 사용하며, `feature/prod`에서 분기합니다. |
 | `feature/workflow` | 문서, 에이전트 전략, 브랜치 전략, `tools/` 운영 방식 변경을 처리하는 브랜치입니다. |
 | `feature/bugFix` | 버그 수정 전용 브랜치입니다. 원인 분석, 최소 수정, 회귀 검증을 묶어서 처리합니다. |
 
@@ -117,7 +117,7 @@ feature/hoi 작업 브랜치 생성
 ↓
 코드 수정 및 검증
 ↓
-feature/prod 대상으로 PR 생성
+feature/prod 직접 병합/push
 ↓
 검토 후 운영 반영
 ```
