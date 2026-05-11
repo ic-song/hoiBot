@@ -10,7 +10,7 @@ echo [START] 수정내용 올리기
 echo ========================================
 echo.
 echo 이 작업은 현재 수정한 내용을 저장소에 올리고
-echo PR 요청까지 자동으로 진행합니다.
+echo feature/prod 반영 요청까지 자동으로 진행합니다.
 echo 코드 붙여넣기 후 파일 저장을 했는지 확인하세요.
 echo ========================================
 echo.
@@ -82,7 +82,7 @@ if errorlevel 1 goto FAIL_PUSH
 echo [OK] 원격 저장소 올리기 완료
 
 echo.
-echo [7/7] PR 요청 생성 중...
+echo [7/7] feature/prod 반영 요청 생성 중...
 where gh > nul 2>&1
 if errorlevel 1 goto FAIL_GH
 
@@ -91,7 +91,7 @@ if errorlevel 1 goto FAIL_PR
 
 echo.
 echo ========================================
-echo [SUCCESS] 수정내용 올리기 + PR 요청 완료
+echo [SUCCESS] 수정내용 올리기 + feature/prod 반영 요청 완료
 echo ========================================
 echo.
 echo 브랜치: %BRANCH_NAME%
@@ -181,7 +181,7 @@ exit /b 1
 :FAIL_PR
 echo.
 echo ========================================
-echo [FAIL] PR 요청 생성 실패
+echo [FAIL] feature/prod 반영 요청 생성 실패
 echo gh 로그인 상태 또는 저장소 권한을 확인하세요.
 echo ========================================
 pause
