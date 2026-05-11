@@ -5031,13 +5031,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/선물전달" && sender == "호이 남") {
 					for (let user in data.member) {
-						if (data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"]) {
-							data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"]++;
+						if (data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"]) {
+							data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"]++;
 						} else {
-							data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"] = 1;
+							data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"] = 1;
 						}
 					}
-					var message = "무료패키지11(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
+					var message = "무료패키지12(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
 					Api.replyRoom(room1, message);
 					Api.replyRoom(room2, message);
 					Api.replyRoom(room3, message);
@@ -8535,7 +8535,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.trim().startsWith("/도파민,") || msg.trim().match(/^\/도파민\d*,/)) {
+							if (msg.trim().startsWith("/도파민,") || msg.trim().match(/^\/도파민\d*,/)) {
 					if (isMaster(sender)) {
 						var parts = msg.match(/^\/도파민(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
 						if (parts) {
@@ -11127,6 +11127,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+	
 				if (msg === "/딴딴따라") {
 					if (data.member[sender].bag["결혼해듀호이🤵👰(/딴딴따라)"] !== undefined && data.member[sender].bag["결혼해듀호이🤵👰(/딴딴따라)"] > 0) {
 						// 사용권 차감
@@ -17054,11 +17055,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								delete data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"];
 							}
 							var hangawiItems = {
-								"보물지도🗺️": 30,
-								"펫스킬북📙(/펫스킬오픈)": 1,
+								"보물지도🗺️": 40,
 								"호이베이스볼⚾️(/투수던집니다)": 30,
-								"탐험확률UP🗻(30%)": 3,
-								"탐험확률UP🗻(40%)": 3,
+								"탐험확률UP🗻(30%)": 5,
+								"탐험확률UP🗻(40%)": 5,
 								"탐험확률UP🗻(50%)": 10,
 								"펫던전 입장권🌋": 10
 							};
@@ -17066,7 +17066,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								addItemToBag(data.member[sender].bag, item, hangawiItems[item]);
 							}
 							let openMsg =
-								"무료패키지11 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
+								"무료패키지12 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
 							for (let item in hangawiItems) {
 								openMsg += item + " " + hangawiItems[item] + "개\n";
 							}
@@ -26120,7 +26120,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let houseName = userHome.houseName || "서울역 4번출구🚉";
 					let totalExp = getHomeTotalExp(homeData, sender);
 					let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
-					let maxBag = 15;
+					let maxBag = 10;
 					// 헤더
 					var out = "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
 					"좋아홈💌x" +
@@ -26182,10 +26182,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						let bagArr = userHome.furnitureBag;
 						let count = bagArr.length;
 						// 9개 미만 → 스킵
-						if (count < 16) continue;
+						if (count < 11) continue;
 						bagArr = sortFurnitureList(bagArr);
 						userHome.furnitureBag = bagArr;
-						let keepCount = 15;
+						let keepCount = 10;
 						let removedCount = count - keepCount;
 						let kept = bagArr.slice(0, keepCount);
 						// let removed = bagArr.slice(keepCount); // 필요시 상세 로그용
@@ -26207,8 +26207,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					msgText += "━━━━━━━━━━━━━━━\n";
 					msgText += "정리 대상 유저 수 : " + totalUserCount + "명\n";
 					msgText += "전체 삭제된 가구 : " + totalRemovedCount + "개\n";
-					msgText += "※ 각 유저별로 가방 기준 16개 이상일 때,\n";
-					msgText += "   정렬 상위 15개만 남기고 나머지는 영구 삭제되었습니다.\n";
+					msgText += "※ 각 유저별로 가방 기준 11개 이상일 때,\n";
+					msgText += "   정렬 상위 10개만 남기고 나머지는 영구 삭제되었습니다.\n";
 					msgText += "━━━━━━━━━━━━━━━\n";
 					msgText += allsee + userLogLines.join("\n");
 					replier.reply(msgText);
@@ -30317,13 +30317,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
 					msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
 					msg.trim().startsWith("/가정정정,") || msg.trim().match(/^\/가정정정\d*,/) ||
+					msg.trim().startsWith("/가정정정정,") || msg.trim().match(/^\/가정정정정\d*,/) ||
 					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
 					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
 					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
 					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
 				) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/(가정|가정정|가정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+						var parts = msg.match(/^\/(가정|가정정|가정정정|가정정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
 
 						if (parts) {
 							var command = parts[1];
@@ -30343,6 +30344,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)";
 							} else if (command === "가정정정") {
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)";
+								} else if (command === "가정정정정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
@@ -30404,6 +30407,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							replier.reply(openMsg);
 						} else {
 							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
+						}
+					}
+				}
+				if (msg === "/나한테잘하자4") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"미니펫뽑기🐹(/미니펫오픈)": 1000,
+								"주간상자🦋(/주간오픈)": 1,
+								"정령 강화석🥀": 300,
+								"정령강화확률UP🥀(30%)": 20,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 700,
+								"펫먹이🍼": 500,
+                                "펫 강화석⭐": 300,
+								"호이베이스볼⚾️(/투수던집니다)": 30,
+								"양념치킨🐔": 200,
+								"미니펫 강화석💫": 100,
+								"길드공헌훈장🌟(/길드공헌 숫자)": 10
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
 						}
 					}
 				}
