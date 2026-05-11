@@ -8,6 +8,18 @@
 - `feature/bugFix` or requested bugfix casing: bug fixes, root-cause analysis, minimal fixes, and regression validation.
 - `main`: stable/reference branch, not the active production source.
 
+## Production Guard
+
+Do not commit directly on `feature/prod`, and do not push direct local edits to
+`feature/prod`. Like `main`, `feature/prod` is a protected integration target.
+Update it only by reflecting validated task-branch work through merge,
+cherry-pick, or an approved PR-style merge flow.
+
+Classify changed files before production reflection. Use `feature/workflow` for
+documentation, workflow, branch strategy, tools, or Codex skill changes unless
+the user explicitly confirms `feature/prod` reflection for that specific
+workflow change.
+
 ## Freshness Rule
 
 When starting work on a specific branch:

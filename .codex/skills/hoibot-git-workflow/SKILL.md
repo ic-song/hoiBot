@@ -13,6 +13,9 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Commit messages should be written in Korean as clear, human-readable summaries.
 - Do not push directly to `main`.
 - Do not merge directly into `main`.
+- Do not commit directly on `feature/prod`.
+- Do not push direct local edits to `feature/prod`.
+- Update `feature/prod` only by reflecting validated task-branch work through merge, cherry-pick, or an approved PR-style merge flow.
 - `feature/prod` is the operational branch.
 - Documentation, workflow, branch strategy, and tools changes belong on `feature/workflow`.
 - Bug fixes belong on the requested bugfix branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
@@ -31,12 +34,14 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 
 When the user says "prod까지 올려줘" or "운영반영해줘":
 
-1. Commit on the current task branch.
-2. Push the current task branch.
-3. Switch to `feature/prod`.
-4. Pull `feature/prod`.
-5. Reflect only the validated work into `feature/prod`.
-6. Push `feature/prod`.
+1. Classify the changed files before touching `feature/prod`.
+2. If the change is documentation, workflow, branch strategy, tools, or Codex skill work, use `feature/workflow` instead. Do not reflect it into `feature/prod` without explicit confirmation.
+3. Commit on the current task branch.
+4. Push the current task branch.
+5. Switch to `feature/prod`.
+6. Pull `feature/prod`.
+7. Reflect only the validated production-facing work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
+8. Push `feature/prod`.
 
 ## Merge Versus Cherry-Pick
 
