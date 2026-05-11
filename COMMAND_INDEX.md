@@ -2182,30 +2182,716 @@ Status: VERIFIED
 
 ---
 
+# /타이틀목록
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:495`
+- `Info.js:519` target-user admin path
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `checkRank`
+- `isAdmin`
+
+## Data Usage
+
+- `titleData.member[sender].title.list`
+- `titleData.member[sender].title.num`
+- `titleData.member[targetUser].title.list`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/내정보`
+- `/정보 [닉네임]`
+- `/펫타이틀목록`
+
+## AI Notes
+
+- Primary member-title inventory viewer
+- Admin path can inspect another user's title list without impersonating sender
+
+---
+
+# /펫타이틀목록
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:551`
+- `Info.js:574` target-user admin path
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `checkRank`
+- `isAdmin`
+
+## Data Usage
+
+- `petTitleData.member[sender].title.list`
+- `petTitleData.member[sender].title.num`
+- `petTitleData.member[targetUser].title.list`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/펫정보`
+- `/펫상태`
+- `/타이틀목록`
+
+## AI Notes
+
+- Pet-title inventory viewer parallel to `/타이틀목록`
+- Useful when checking title-equip state mismatches between pet profile output and title storage
+
+---
+
+# /출석목록
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:606`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- direct branch formatting only
+
+## Data Usage
+
+- `data.attend_list`
+- `data.member[user].rank.emoji`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/내정보`
+
+## AI Notes
+
+- Simple attendance snapshot output
+- Good first anchor when debugging daily attendance ordering or missing users
+
+---
+
+# /상점
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:624`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `numberWithCommas`
+- `getMyGuildInfo`
+
+## Data Usage
+
+- `data.shop`
+- `data.HoiCastle.taxRate`
+- `data.HoiCastle.lord`
+- `guildData.guilds`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/구매 [번호] [개수]`
+- `/길드상점`
+
+## AI Notes
+
+- Canonical read path for point-shop item list and visible tax text
+- If shop tax or lord-guild display looks wrong, inspect this branch before `/구매`
+
+---
+
+# /펫강순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:763`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generatePetUpgradeRanking`
+
+## Data Usage
+
+- `petData`
+- `data.member`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/펫정보`
+- `/펫매력순위`
+
+## AI Notes
+
+- Ranking output focused on pet upgrade values
+- Best first anchor when upgrade-based ordering and displayed ranking diverge
+
+---
+
+# /누좋순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:768`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generatelike2Ranking`
+
+## Data Usage
+
+- `data.member`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/내정보`
+- `/종합순위`
+
+## AI Notes
+
+- Legacy cumulative-like ranking output
+- Good quick anchor for total-like counter sorting bugs
+
+---
+
+# /누렙순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:773`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generate2Ranking`
+
+## Data Usage
+
+- `data.member`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/내정보`
+- `/종합순위`
+
+## AI Notes
+
+- Legacy cumulative-level ranking output
+- Useful when user total-level ordering looks inconsistent with profile displays
+
+---
+
+# /영주수익순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:778`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generateEarningsRanking`
+
+## Data Usage
+
+- `data.member`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/종합순위`
+- `/길드정보`
+
+## AI Notes
+
+- Ranking output for stored lord-earnings totals
+- Good first anchor if castle/lord income leaderboard and member summaries disagree
+
+---
+
+# /정령순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:783`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generateElementalRanking`
+
+## Data Usage
+
+- `petData`
+- `data.member`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/펫정보`
+- `/종합순위`
+
+## AI Notes
+
+- Ranking output for elemental/spirit enhancement state
+- Investigate here before checking broader pet-summary commands
+
+---
+
+# /반지순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:788`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generateRingRanking`
+
+## Data Usage
+
+- `petData`
+- `data.member`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/펫정보`
+- `/종합순위`
+
+## AI Notes
+
+- Ring-enhancement leaderboard
+- Useful when ring-related contribution in pet/profile output needs isolation
+
+---
+
+# /티어확인
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:845`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `ticketTierData`
+
+## Data Usage
+
+- `data.member[*].rank.tier`
+- `ticketTierData`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/티어순위`
+- `/내정보`
+
+## AI Notes
+
+- Bucketed view of current member tier distribution
+- Best first anchor when tier assignment looks present in data but wrong in grouped output
+
+---
+
+# /펫매력순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1089`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `generatePetRanking`
+
+## Data Usage
+
+- `petData`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/펫정보`
+- `/펫강순위`
+- `/캐슬매력순위`
+
+## AI Notes
+
+- Pure pet-charm leaderboard
+- Good anchor when pet-only charm should be isolated from castle/raid/home bonuses
+
+---
+
+# /캐슬매력순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1095`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `loadJsonFile`
+- `initSweetHomeUser`
+- `generateCastleRanking`
+
+## Data Usage
+
+- `petData`
+- `data.member`
+- `homeData`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/캐슬전적`
+- `/레이드매력순위`
+- `/펫매력순위`
+
+## AI Notes
+
+- Castle-focused charm leaderboard that depends on loaded home data
+- Re-check `initSweetHomeUser` when home normalization affects ranking totals
+
+---
+
+# /레이드매력순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1105`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `loadJsonFile`
+- `initSweetHomeUser`
+- `generateRaidRanking`
+
+## Data Usage
+
+- `petData`
+- `data.member`
+- `homeData`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/캐슬매력순위`
+- `/펫매력순위`
+- `/종합순위`
+
+## AI Notes
+
+- Raid-focused charm leaderboard parallel to `/캐슬매력순위`
+- Good anchor when raid total calculations diverge from displayed pet/home state
+
+---
+
+# /가구통계
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1120`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `loadJsonFile`
+- `numberWithCommas`
+
+## Data Usage
+
+- `homeData[*].furnitureBag[*].grade`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/가구가방`
+- `/가구순위`
+- `/가구정보 [닉네임]`
+
+## AI Notes
+
+- Aggregate furniture-grade distribution viewer across all users
+- Best first anchor for furniture-grade count mismatches before per-user bag inspection
+
+---
+
+# /서버통계
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1170`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `numberWithCommas`
+
+## Data Usage
+
+- `data.member[*].server`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/내정보`
+- `/종합순위`
+
+## AI Notes
+
+- Aggregates server-name distribution from member profiles
+- Missing or blank `member.server` values are folded into unknown counts
+
+---
+
+# /캐슬전적
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1243`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `checkRank`
+- `numberWithCommas`
+- `calculateCastleItem`
+- `calculateItemInfoAll`
+- `getCastleBattleRank`
+- `getCastleBattleRankEmoji`
+
+## Data Usage
+
+- `data.member[sender].battle.win`
+- `data.member[sender].battle.lose`
+- `data.member[sender].battle.score`
+- `petData[sender].miniPet.castleExp`
+- `castleBattleData`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/캐슬대전순위`
+- `/캐슬매력순위`
+
+## AI Notes
+
+- Primary self-profile for castle battle record and CP display
+- Good first anchor when win-rate, castle rank emoji, or CP totals look inconsistent
+
+---
+
+# /캐슬대전순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js:1265`
+
+## Files
+
+- `Info.js`
+
+## Related Helpers
+
+- `sortCastleBattle`
+- `getCastleBattleRankEmoji`
+- `getRankEmoji`
+- `checkRank`
+
+## Data Usage
+
+- `data.member[*].battle.score`
+- `castleBattleData`
+
+## Save Flow
+
+- Read-only in the confirmed branch
+
+## Related Commands
+
+- `/캐슬전적`
+- `/캐슬매력순위`
+
+## AI Notes
+
+- Ranking view for castle battle CP standings
+- Open `sortCastleBattle` first when order or top-rank badge output is wrong
+
+---
+
 # Registry Expansion Queue
 
 Status: PARTIAL
 
 ## Recommended Next Commands To Verify
 
-- `/레벨`
-- `/타이틀목록`
-- `/펫타이틀목록`
-- `/출석목록`
-- `/상점`
-- `/누좋순위`
-- `/누렙순위`
-- `/영주수익순위`
-- `/정령순위`
-- `/반지순위`
-- `/티어확인`
-- `/가구통계`
-- `/서버통계`
-- `/캐슬전적`
-- `/캐슬대전순위`
-- `/펫매력순위`
-- `/캐슬매력순위`
-- `/레이드매력순위`
+- `/상점추가 [물건] [가격]`
+- `/상점삭제 [번호]`
+- `/영주수익순위초기화`
+- `/타이틀지급`
+- `/타이틀제거`
+- `/펫타이틀지급`
+- `/펫타이틀제거`
+- `/출석`
+- `/캐슬대전`
+- `/가구장착 [번호]`
+- `/가구판매 [번호]`
+- `/이체`
 
 ## Known Gaps
 
