@@ -35,13 +35,15 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 When the user says "prod까지 올려줘" or "운영반영해줘":
 
 1. Classify the changed files before touching `feature/prod`.
-2. If the change is documentation, workflow, branch strategy, tools, or Codex skill work, use `feature/workflow` instead. Do not reflect it into `feature/prod` without explicit confirmation.
-3. Commit on the current task branch.
-4. Push the current task branch.
-5. Switch to `feature/prod`.
-6. Pull `feature/prod`.
-7. Reflect only the validated production-facing work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
-8. Push `feature/prod`.
+2. Treat the user's production-reflection keyword as a request for the work to end up on `feature/prod`; do not stop after pushing only the source task branch unless you explicitly tell the user `feature/prod` was not updated.
+3. If the change is documentation, workflow, branch strategy, tools, or Codex skill work, commit and push it on `feature/workflow` first.
+4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow when the user has requested production reflection.
+5. For production-facing code/data work, commit and push the current task branch first.
+6. Switch to `feature/prod`.
+7. Pull `feature/prod`.
+8. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
+9. Push `feature/prod`.
+10. In the final response, explicitly state whether `feature/prod` was updated and which commit(s) were reflected.
 
 ## Merge Versus Cherry-Pick
 
