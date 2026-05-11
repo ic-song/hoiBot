@@ -1,7 +1,8 @@
 @echo off
 chcp 65001 > nul
 
-set BRANCH_NAME=feature/bm
+set BRANCH_NAME=feature/hoi
+set BASE_BRANCH=feature/prod
 
 echo.
 echo ========================================
@@ -9,7 +10,7 @@ echo [WARNING] 작업내용 초기화
 echo ========================================
 echo.
 echo 이 작업은 현재 수정한 내용을 전부 삭제하고
-echo origin/main 기준으로 되돌립니다.
+echo origin/%BASE_BRANCH% 기준으로 되돌립니다.
 echo.
 echo 방금 붙여넣은 코드, 새로 만든 파일이 사라질 수 있습니다.
 echo 정말 망했을 때만 사용하세요.
@@ -38,14 +39,14 @@ echo [OK] 원격 정보 갱신 완료
 
 echo.
 echo [3/5] 작업 브랜치로 이동/생성 중...
-git switch -C %BRANCH_NAME% origin/main
+git switch -C %BRANCH_NAME% origin/%BASE_BRANCH%
 if errorlevel 1 goto FAIL_BRANCH
 
 echo [OK] 작업 브랜치 준비 완료
 
 echo.
 echo [4/5] 수정내용 되돌리는 중...
-git reset --hard origin/main
+git reset --hard origin/%BASE_BRANCH%
 if errorlevel 1 goto FAIL_RESET
 
 echo [OK] 수정내용 되돌리기 완료
@@ -60,7 +61,7 @@ echo ========================================
 echo [SUCCESS] 초기화 완료
 echo ========================================
 echo.
-echo 현재 상태는 origin/main 기준으로 되돌아갔습니다.
+echo 현재 상태는 origin/%BASE_BRANCH% 기준으로 되돌아갔습니다.
 echo 다시 작업하려면 01_새작업시작.bat 를 실행하세요.
 echo ========================================
 pause
@@ -98,7 +99,7 @@ exit /b 1
 echo.
 echo ========================================
 echo [FAIL] 작업 브랜치 이동/생성 실패
-echo feature/bm 브랜치 처리 중 문제가 발생했습니다.
+echo feature/hoi 브랜치 처리 중 문제가 발생했습니다.
 echo ========================================
 pause
 exit /b 1

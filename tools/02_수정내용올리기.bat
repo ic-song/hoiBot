@@ -1,8 +1,8 @@
 @echo off
 chcp 65001 > nul
 
-set BRANCH_NAME=feature/bm
-set BASE_BRANCH=main
+set BRANCH_NAME=feature/hoi
+set BASE_BRANCH=feature/prod
 
 echo.
 echo ========================================

@@ -90,6 +90,17 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   - emojis
   - `allsee` formatting
 
+## Branch Workflow
+
+- `feature/prod` is the operational base branch for production-facing code.
+- `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload/PR scripts.
+- `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
+- Create task branches from `feature/prod`, not directly from `main`.
+- Open PRs back into `feature/prod` for operational changes.
+- Test reflection scripts should use `feature/prod` as their source branch.
+- `main` is a stable/reference branch and should not be assumed to be the active production source.
+- After validated operational changes settle, synchronize `feature/prod` back to `main` when explicitly requested.
+
 ---
 
 # 5) COMMAND_INDEX.md Rules
@@ -174,6 +185,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ```text
 head-agent
+ ├─ git-agent
  ├─ explorer-agent
  ├─ coding-agent
  ├─ reviewer-agent
@@ -190,7 +202,42 @@ head-agent
 - "Not found" means "unverified", NOT "does not exist".
 - Reusing existing logic is preferred over creating new logic.
 
-# 7) explorer-agent
+# 7) git-agent
+
+## Role
+
+- Manages Git branch, push, PR, and merge workflows.
+- Chooses the appropriate branch based on the task.
+- Pushes task branches and creates PRs with human-readable titles and bodies.
+- May merge approved PRs into `feature/prod`.
+- May create PRs from `feature/prod` to `main` after operational stabilization.
+
+## Modification Permission
+
+- May modify Git workflow documentation and helper scripts.
+- MUST NOT modify game source logic unless explicitly requested.
+
+## Rules
+
+- `feature/prod` is the operational base branch.
+- Task branches should branch from `feature/prod`.
+- Operational PRs should target `feature/prod`.
+- Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
+- PRs to `main` are allowed for stabilization/synchronization.
+- Do not directly push to `main`.
+- Do not directly merge into `main`.
+- Merge into `feature/prod` only after explicit user approval.
+- Before pushing, creating PRs, or merging, check the current branch and working tree status.
+- Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
+- PR titles and bodies must summarize:
+  - changed files or areas
+  - user-visible behavior changes
+  - validation performed
+  - unverified risks
+
+---
+
+# 8) explorer-agent
 
 ## Role
 
@@ -229,7 +276,7 @@ head-agent
 
 ---
 
-# 8) coding-agent
+# 9) coding-agent
 
 ## Role
 
@@ -260,7 +307,7 @@ head-agent
 
 ---
 
-# 9) reviewer-agent
+# 10) reviewer-agent
 
 ## Role
 
@@ -299,7 +346,7 @@ head-agent
 
 ---
 
-# 10) test-agent
+# 11) test-agent
 
 ## Role
 
@@ -348,7 +395,7 @@ node --check Info.js
 
 ---
 
-# 11) encoding-agent
+# 12) encoding-agent
 
 ## Role
 
@@ -386,7 +433,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 ---
 
-# 12) doc-agent
+# 13) doc-agent
 
 ## Role
 
@@ -422,7 +469,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 ---
 
-# 13) head-agent
+# 14) head-agent
 
 ## Role
 
@@ -444,7 +491,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 ---
 
-# 14) Final Principle
+# 15) Final Principle
 
 ```text
 Not found ≠ Does not exist

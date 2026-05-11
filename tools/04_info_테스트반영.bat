@@ -5,13 +5,14 @@ set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_DEVICE=emulator-5556
 set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/info/Info.js
 set BOT_NAME=info
+set BASE_BRANCH=feature/prod
 
 echo.
 echo ========================================
 echo [START] Info.js 테스트 반영
 echo ========================================
 echo.
-echo 이 작업은 최신 main 코드를 받은 뒤
+echo 이 작업은 최신 %BASE_BRANCH% 코드를 받은 뒤
 echo LD플레이어의 Info.js에 반영합니다.
 echo ========================================
 echo.
@@ -26,10 +27,10 @@ cd
 
 echo.
 echo [2/5] Git 최신화 중...
-git switch main
+git switch %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_SWITCH
 
-git pull origin main
+git pull origin %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_PULL
 
 echo [OK] Git 최신화 완료
@@ -76,8 +77,8 @@ exit /b 1
 :FAIL_GIT_SWITCH
 echo.
 echo ========================================
-echo [FAIL] main 브랜치 이동 실패
-echo main 브랜치가 있는지 확인하세요.
+echo [FAIL] %BASE_BRANCH% 브랜치 이동 실패
+echo %BASE_BRANCH% 브랜치가 있는지 확인하세요.
 echo ========================================
 pause
 exit /b 1

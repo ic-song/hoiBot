@@ -14,6 +14,7 @@ README에서는 사람이 전체 협업 구조를 빠르게 이해할 수 있도
 | 에이전트 | 역할 |
 | --- | --- |
 | `head-agent` | 전체 작업을 조율하고 최종 판단을 담당합니다. |
+| `git-agent` | 브랜치 선택, push, PR 생성, 승인된 `feature/prod` 병합, `main` 동기화 PR 정리를 담당합니다. |
 | `explorer-agent` | 코드를 읽기 전용으로 탐색하며 명령어, 헬퍼, 데이터 흐름, 저장 흐름을 조사합니다. |
 | `coding-agent` | 실제 코드 수정을 담당합니다. 기존 로직 재사용과 최소 변경을 우선합니다. |
 | `reviewer-agent` | 변경 후 중복 로직, 회귀 위험, 저장 흐름, 문서 정합성을 검토합니다. |
@@ -75,6 +76,45 @@ README에서는 사람이 전체 협업 구조를 빠르게 이해할 수 있도
 - `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)` 함수를 호출하는 봇 런타임
 - `Api.replyRoom`, `FileStream`, `Device`, `android.os.*`, `java.io.*` API를 지원하는 환경
 - 데이터 저장 경로: `/sdcard/호이랜드/`
+
+## 브랜치 운영 전략
+
+운영 반영 기준 브랜치는 `feature/prod`입니다.
+
+| 브랜치 | 용도 |
+| --- | --- |
+| `main` | 안정/보관 기준 브랜치입니다. 실제 운영 반영 기준으로 바로 사용하지 않습니다. |
+| `feature/prod` | 운영 봇에 반영할 기준 브랜치입니다. 테스트 반영과 운영 PR의 대상입니다. |
+| `feature/hoi` | hoi 작업용 브랜치입니다. `tools/`를 통한 업로드/PR 생성에 사용하며, `feature/prod`에서 분기하고 PR도 `feature/prod`로 요청합니다. |
+| `feature/workflow` | 문서, 에이전트 전략, 브랜치 전략, `tools/` 운영 방식 변경을 처리하는 브랜치입니다. |
+
+기본 작업 흐름은 아래와 같습니다.
+
+```text
+feature/prod 최신화
+↓
+feature/hoi 작업 브랜치 생성
+↓
+코드 수정 및 검증
+↓
+feature/prod 대상으로 PR 생성
+↓
+검토 후 운영 반영
+```
+
+문서/전략/도구 운영 방식 변경은 아래 흐름을 사용합니다.
+
+```text
+feature/prod 최신화
+↓
+feature/workflow 작업 브랜치 생성
+↓
+README.md / AGENTS.md / tools/ 수정 및 검증
+↓
+feature/prod 대상으로 PR 생성
+↓
+검토 후 운영 흐름 반영
+```
 
 ## 운영 메모
 
