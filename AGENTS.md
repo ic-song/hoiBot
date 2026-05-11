@@ -12,9 +12,9 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `main.js`: command handling and core game logic
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
+  - `tools/`: local helper scripts for development/operation workflows
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
-  - `COMMAND_REGISTRY.md`: human-reviewed ongoing command management registry used for status confirmation and cleanup decisions
-  - `COMMAND_CLEANUP_STRATEGY.md`: ongoing command cleanup strategy for collecting commands, applying human-reviewed status, and removing only approved commands
+  - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
 
 ---
 
@@ -90,6 +90,20 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   - emojis
   - `allsee` formatting
 
+## Branch Workflow
+
+- `feature/prod` is the operational base branch for production-facing code.
+- `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload/PR scripts.
+- `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
+- `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
+- Agents MUST follow the role of each existing branch.
+- If no existing branch role fits the task, create a new broad content branch such as `feature/<content-name>`.
+- Create task branches from `feature/prod`, not directly from `main`.
+- Open PRs back into `feature/prod` for operational changes.
+- Test reflection scripts should use `feature/prod` as their source branch.
+- `main` is a stable/reference branch and should not be assumed to be the active production source.
+- After validated operational changes settle, synchronize `feature/prod` back to `main` when explicitly requested.
+
 ---
 
 # 5) COMMAND_INDEX.md Rules
@@ -101,11 +115,11 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 ## Core Principles
 
 - The actual source of truth is ALWAYS the current codebase.
-- The registry is NOT the source of truth.
-- The registry is a helper index for exploration/navigation.
-- NEVER assume a helper/function/command does not exist solely because it is missing from the registry.
-- If the registry conflicts with the actual code, trust the code.
-- After completing a task, update the registry based on the modified code.
+- `COMMAND_INDEX.md` is NOT the source of truth.
+- `COMMAND_INDEX.md` is a helper index for exploration/navigation.
+- NEVER assume a helper/function/command does not exist solely because it is missing from `COMMAND_INDEX.md`.
+- If `COMMAND_INDEX.md` conflicts with the actual code, trust the code.
+- After completing a task, update `COMMAND_INDEX.md` based on the modified code when command/helper/data-flow information changes.
 
 ## Status Values
 
@@ -140,47 +154,31 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     - /가구가방
     - /미니펫가방
 
----
-
-# 5-1) COMMAND_CLEANUP_STRATEGY.md Rules
+# 5-1) COMMAND_REGISTRY.md Rules
 
 ## Purpose
 
-`COMMAND_CLEANUP_STRATEGY.md` is a Markdown document used for ongoing command cleanup, grouping, and migration planning.
+`COMMAND_REGISTRY.md` is a human-facing command source, unused, removal, and note checklist.
 
 ## Core Principles
 
 - The actual source of truth is ALWAYS the current codebase.
-- `COMMAND_CLEANUP_STRATEGY.md` is a cleanup strategy document, NOT the primary source of truth.
-- If `COMMAND_CLEANUP_STRATEGY.md` conflicts with the actual code, trust the code.
-- Use it to organize:
-  - duplicate commands
-  - similar command groups
-  - rename/merge/remove candidates
-  - cleanup progress notes
-- NEVER assume a command is finalized, removed, or nonexistent solely because it appears in the cleanup document.
-- Update `COMMAND_CLEANUP_STRATEGY.md` whenever command cleanup decisions, grouping strategy, or migration status materially change.
-- Preserve it as an ongoing maintenance document for future command cleanup work.
-
----
-
-# 5-2) COMMAND_REGISTRY.md Rules
-
-## Purpose
-
-`COMMAND_REGISTRY.md` is a human-reviewed ongoing command management registry used for status confirmation and cleanup decisions.
-
-## Core Principles
-
-- The actual source of truth is ALWAYS the current codebase.
-- `COMMAND_REGISTRY.md` is for human-facing command management, not primary code exploration.
-- Use it to track command lifecycle states such as `ACTIVE`, `UNUSED`, and `REMOVE`.
-- Use it to track verification level such as pattern collection, branch confirmation, and execution confirmation.
-- Human operators may directly review and maintain command statuses in this document.
-- Preserve it as an ongoing maintenance document rather than a one-time cleanup artifact.
-- NEVER treat registry status alone as proof that code cleanup, removal, or migration is already complete.
-- If `COMMAND_REGISTRY.md` conflicts with the actual code, trust the code and update the registry accordingly.
-- Synchronize `COMMAND_REGISTRY.md` whenever command status, cleanup decisions, or management notes materially change.
+- `COMMAND_REGISTRY.md` is for human usage/removal confirmation, not primary code exploration.
+- It tracks commands only as a table with source file, `미사용`, `삭제유무`, and `비고`.
+- Unchecked `미사용` means the command is treated as `사용` by default.
+- Check `미사용` only when the command needs deletion review.
+- Check `삭제유무` only after source-code removal is verified.
+- Treat values connected by `||` in the same condition as aliases of the same command.
+- Do not treat broad outer gate conditions as aliases; split them by the actual inner command branches.
+- Do not treat `else if` branches as the same command group.
+- Record aliases and trigger notes in `비고`.
+- Do not record implementation patterns such as `startsWith(...)` in `비고`.
+- Do not add lifecycle states such as `ACTIVE`, `UNUSED`, `REMOVE`, `DEV`, or `ADMIN`.
+- Do not add verification levels such as pattern collection, branch confirmation, or execution confirmation.
+- `미사용` does NOT automatically mean the command should be removed.
+- Command removal requires an explicit user request and source-code re-verification.
+- If `COMMAND_REGISTRY.md` conflicts with the actual code about command existence, trust the code.
+- Synchronize `COMMAND_REGISTRY.md` only when the command list, `미사용`, `삭제유무`, or `비고` materially changes.
 
 ---
 
@@ -190,7 +188,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ```text
 head-agent
- ├─ task-agent
+ ├─ git-agent
  ├─ explorer-agent
  ├─ coding-agent
  ├─ reviewer-agent
@@ -207,50 +205,41 @@ head-agent
 - "Not found" means "unverified", NOT "does not exist".
 - Reusing existing logic is preferred over creating new logic.
 
----
-
-# 7) task-agent
+# 7) git-agent
 
 ## Role
 
-- Handles task queue and task state management.
-- Retrieves tasks from Notion or external task sources.
-- Selects tasks with `🛠 READY` status.
-- Changes task status to `🧪 DEV` when development starts.
-- Passes task metadata to `head-agent`.
+- Manages Git branch, push, PR, and merge workflows.
+- Chooses the appropriate branch based on the task.
+- Pushes task branches and creates PRs with human-readable titles and bodies.
+- May merge approved PRs into `feature/prod`.
+- May create PRs from `feature/prod` to `main` after operational stabilization.
 
 ## Modification Permission
 
-- May modify task states and task documents.
-- MUST NOT modify source code files.
-
-## Task Lifecycle
-
-```text
-🛠 READY
- ↓
-Task Started
- ↓
-🧪 DEV
- ↓
-Development / Validation
-```
+- May modify Git workflow documentation and helper scripts.
+- MUST NOT modify game source logic unless explicitly requested.
 
 ## Rules
 
-- Only `🛠 READY` tasks may enter execution flow.
-- Task status MUST be changed to `🧪 DEV` before coding begins.
-- If task-state update fails, code modification MUST NOT begin.
-- If the task description is insufficient, report it as unverified instead of proceeding.
-- Report possible duplicate work to `head-agent`.
-- Organize and pass:
-  - title
-  - description
-  - status
-  - priority
-  - related files
-  - reference links
-- MUST NOT directly modify code files.
+- `feature/prod` is the operational base branch.
+- Task branches should branch from `feature/prod`.
+- Operational PRs should target `feature/prod`.
+- Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
+- Bug fixes should use `feature/bugFix`.
+- Follow the role of each existing branch before choosing or creating a branch.
+- If no existing branch role fits the work, create a new broad content branch from `feature/prod` using `feature/<content-name>`.
+- PRs to `main` are allowed for stabilization/synchronization.
+- Do not directly push to `main`.
+- Do not directly merge into `main`.
+- Merge into `feature/prod` only after explicit user approval.
+- Before pushing, creating PRs, or merging, check the current branch and working tree status.
+- Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
+- PR titles and bodies must summarize:
+  - changed files or areas
+  - user-visible behavior changes
+  - validation performed
+  - unverified risks
 
 ---
 
@@ -272,8 +261,8 @@ Development / Validation
 ## Rules
 
 - Check `COMMAND_INDEX.md` before large-scale source scanning.
-- Use `COMMAND_REGISTRY.md` as a human-maintained status reference when cleanup state or removal intent needs context.
-- Use the registry only as a starting point.
+- Use `COMMAND_REGISTRY.md` only as a human-maintained source, `미사용`, `삭제유무`, and `비고` reference.
+- Use the registry only as a starting point, not as proof of command existence or removal approval.
 - ALWAYS re-verify findings against the actual source code.
 - Missing registry entries mean "unregistered", NOT "nonexistent".
 - Record exploration keywords.
@@ -311,6 +300,10 @@ Development / Validation
 - Reuse existing helpers whenever possible.
 - Prefer minimal modifications over structural changes.
 - Avoid unnecessary large-scale refactoring.
+- `COMMAND_REGISTRY.md` tracks only source file, `미사용`, `삭제유무`, and `비고`.
+- Do not remove command code solely because a command is marked `미사용`.
+- Remove command code only when the user explicitly requests removal and source-code impact is re-verified.
+- Mark `삭제유무` only after the command removal is verified against the actual source code.
 - Preserve:
   - command UI
   - line breaks
@@ -343,7 +336,11 @@ Development / Validation
   - DEV/PROD flow
 - Verify Rhino JS compatibility.
 - Verify consistency between actual code and `COMMAND_INDEX.md`.
-- Verify consistency between actual code and `COMMAND_REGISTRY.md` when command status or cleanup decisions are involved.
+- Verify consistency between actual code and `COMMAND_REGISTRY.md` when command lists, `미사용`, `삭제유무`, or `비고` are involved.
+- Verify that `미사용` was not treated as automatic deletion approval.
+- Verify command removal had explicit user approval.
+- Verify `삭제유무` is checked only for commands actually removed from source code.
+- Verify `COMMAND_REGISTRY.md` still uses only source file, `미사용`, `삭제유무`, and `비고`.
 
 ## Main Review Targets
 
@@ -460,7 +457,6 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - `AGENTS.md`
 - `COMMAND_INDEX.md`
 - `COMMAND_REGISTRY.md`
-- `COMMAND_CLEANUP_STRATEGY.md`
 - other registry-style `*.md` files
 
 ## Rules
@@ -468,9 +464,9 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - NEVER update documentation based purely on assumptions.
 - Verify documentation synchronization whenever commands/helpers/data-flow change.
 - If documentation conflicts with code, update documentation based on code.
-- After task completion, update registry information based on modified code.
-- Keep `COMMAND_REGISTRY.md` synchronized when command lifecycle status or cleanup decisions change.
-- Treat `COMMAND_CLEANUP_STRATEGY.md` as an ongoing maintenance document and keep it synchronized when cleanup strategy or command organization changes.
+- Maintain `COMMAND_INDEX.md` as the AI-oriented command/helper/data-flow navigation index.
+- Maintain `COMMAND_REGISTRY.md` as the human-facing source file, `미사용`, `삭제유무`, and `비고` command checklist.
+- Do not use `COMMAND_REGISTRY.md` for lifecycle states, verification levels, or deletion approval.
 - If synchronization cannot be completed, report:
   - "documentation synchronization required"
 - Preserve:
@@ -498,7 +494,6 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - If exploration uncertainty exists, pause or report before modification.
 - Prioritize reuse of existing logic.
 - Request additional exploration/review if sub-agent outputs conflict.
-- Use `task-agent` for task-state transitions.
 
 ---
 

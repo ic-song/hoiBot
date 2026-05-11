@@ -1,8 +1,8 @@
 @echo off
 chcp 65001 > nul
 
-set BRANCH_NAME=feature/bm
-set BASE_BRANCH=main
+set BRANCH_NAME=feature/hoi
+set BASE_BRANCH=feature/prod
 
 echo.
 echo ========================================
@@ -107,7 +107,7 @@ echo.
 echo ========================================
 echo [FAIL] 프로젝트 폴더 이동 실패
 echo BAT 파일 위치를 확인하세요.
-echo 예상 위치: HOIBOT/bat/
+echo 예상 위치: HOIBOT/tools/
 echo ========================================
 pause
 exit /b 1
