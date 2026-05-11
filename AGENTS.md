@@ -95,6 +95,9 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - `feature/prod` is the operational base branch for production-facing code.
 - `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload/PR scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
+- `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
+- Agents MUST follow the role of each existing branch.
+- If no existing branch role fits the task, create a new broad content branch such as `feature/<content-name>`.
 - Create task branches from `feature/prod`, not directly from `main`.
 - Open PRs back into `feature/prod` for operational changes.
 - Test reflection scripts should use `feature/prod` as their source branch.
@@ -223,6 +226,9 @@ head-agent
 - Task branches should branch from `feature/prod`.
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
+- Bug fixes should use `feature/bugFix`.
+- Follow the role of each existing branch before choosing or creating a branch.
+- If no existing branch role fits the work, create a new broad content branch from `feature/prod` using `feature/<content-name>`.
 - PRs to `main` are allowed for stabilization/synchronization.
 - Do not directly push to `main`.
 - Do not directly merge into `main`.

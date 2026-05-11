@@ -87,6 +87,7 @@ README에서는 사람이 전체 협업 구조를 빠르게 이해할 수 있도
 | `feature/prod` | 운영 봇에 반영할 기준 브랜치입니다. 테스트 반영과 운영 PR의 대상입니다. |
 | `feature/hoi` | hoi 작업용 브랜치입니다. `tools/`를 통한 업로드/PR 생성에 사용하며, `feature/prod`에서 분기하고 PR도 `feature/prod`로 요청합니다. |
 | `feature/workflow` | 문서, 에이전트 전략, 브랜치 전략, `tools/` 운영 방식 변경을 처리하는 브랜치입니다. |
+| `feature/bugFix` | 버그 수정 전용 브랜치입니다. 원인 분석, 최소 수정, 회귀 검증을 묶어서 처리합니다. |
 
 기본 작업 흐름은 아래와 같습니다.
 
@@ -96,6 +97,20 @@ feature/prod 최신화
 feature/hoi 작업 브랜치 생성
 ↓
 코드 수정 및 검증
+↓
+feature/prod 대상으로 PR 생성
+↓
+검토 후 운영 반영
+```
+
+버그 수정은 아래 흐름을 사용합니다.
+
+```text
+feature/prod 최신화
+↓
+feature/bugFix 작업 브랜치 생성
+↓
+원인 분석, 최소 수정, 회귀 검증
 ↓
 feature/prod 대상으로 PR 생성
 ↓
@@ -115,6 +130,14 @@ feature/prod 대상으로 PR 생성
 ↓
 검토 후 운영 흐름 반영
 ```
+
+작업이 위 브랜치 역할에 맞지 않으면 큰 컨텐츠 단위로 새 브랜치를 만듭니다.
+
+```text
+feature/<content-name>
+```
+
+예시는 `feature/event`, `feature/shop`, `feature/guild`처럼 한 PR에서 함께 검토할 수 있는 기능/컨텐츠 단위로 정합니다.
 
 ## 운영 메모
 
