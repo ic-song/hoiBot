@@ -96,10 +96,13 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload/PR scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
 - `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
+- If both `feature/bugFix` and `feature/bugfix` exist, verify and use the exact branch casing requested by the user.
 - Agents MUST follow the role of each existing branch.
 - If no existing branch role fits the task, create a new broad content branch such as `feature/<content-name>`.
 - Create task branches from `feature/prod`, not directly from `main`.
+- Before starting work on a specific branch, update that branch with `origin/main` first to reduce later merge conflicts.
 - Open PRs back into `feature/prod` for operational changes.
+- When the user says "prod까지 올려줘" or "운영반영해줘", treat it as a request to push the current task branch and then reflect the validated work into `feature/prod`.
 - Test reflection scripts should use `feature/prod` as their source branch.
 - `main` is a stable/reference branch and should not be assumed to be the active production source.
 - After validated operational changes settle, synchronize `feature/prod` back to `main` when explicitly requested.
@@ -227,12 +230,16 @@ head-agent
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
 - Bug fixes should use `feature/bugFix`.
+- If both `feature/bugFix` and `feature/bugfix` exist, verify the intended remote/local branch and use the exact branch casing requested by the user.
 - Follow the role of each existing branch before choosing or creating a branch.
 - If no existing branch role fits the work, create a new broad content branch from `feature/prod` using `feature/<content-name>`.
+- Before starting work after switching to a task branch, bring `origin/main` into that branch first and resolve any conflicts before editing.
 - PRs to `main` are allowed for stabilization/synchronization.
 - Do not directly push to `main`.
 - Do not directly merge into `main`.
 - Merge into `feature/prod` only after explicit user approval.
+- For "prod까지 올려줘" or "운영반영해줘", push the current task branch first, then merge or cherry-pick the validated task changes into `feature/prod`, and push `feature/prod`.
+- If the task branch contains unrelated historical commits or is far ahead of its upstream, do not merge the whole branch into `feature/prod`; cherry-pick only the validated task commit(s).
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
 - Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
 - PR titles and bodies must summarize:
