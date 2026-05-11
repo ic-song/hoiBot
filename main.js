@@ -18824,7 +18824,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg.startsWith("/캐슬대전조합")) {
+				if (msg === "/캐슬대전조합" || /^\/캐슬대전조합\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let chickenCombineCount = 1; // 기본값 1
@@ -18853,7 +18853,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/레이드인장조합")) {
+				if (msg === "/레이드인장조합" || /^\/레이드인장조합\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						var rArgs = msg.split(" ");
 						var numToCraft = 1; // 조합 갯수 기본값
@@ -18890,7 +18890,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/펫먹이조합")) {
+				if (msg === "/펫먹이조합" || /^\/펫먹이조합\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						var cArgs = msg.split(" ");
 						var numToCraft = 1; // 몇 개 조합할지 (기본 1개)
@@ -18924,7 +18924,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg.startsWith("/랜덤조합")) {
+				if (msg === "/랜덤조합" || /^\/랜덤조합\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let heartCombineCount = 1; // 기본값 1
@@ -18954,7 +18954,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 				// 🧳 부띠끄상자 조합
-				if (msg.startsWith("/부띠끄조합")) {
+				if (msg === "/부띠끄조합" || /^\/부띠끄조합\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) {
 						return;
 					}
@@ -19355,7 +19355,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg.startsWith("/고급티켓조합")) {
+				if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) return;
 
 					let commandParts = msg.trim().split(/\s+/);
@@ -19408,7 +19408,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					replier.reply(successMsg);
 				}
-				if (msg.startsWith("/반지이름조합")) {
+				if (msg === "/반지이름조합") {
 					if (castleSiegeFlag) {
 						return;
 					}
@@ -19429,7 +19429,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("양념치킨🐔 100개가 필요해요!");
 					}
 				}
-				if (msg.startsWith("/정령이름조합")) {
+				if (msg === "/정령이름조합") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["양념치킨🐔"] && data.member[sender].bag["양념치킨🐔"] >= 100) {
 							data.member[sender].bag["양념치킨🐔"] -= 100;
@@ -19628,7 +19628,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg.startsWith("/카드오픈")) {
+				if (msg === "/카드오픈" || /^\/카드오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.trim().split(" ");
 						let openCount = 1;
@@ -19765,7 +19765,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				var lastResults = {};
 
 				// /강화뽑기 명령어
-				if (msg.startsWith("/강화뽑기")) {
+				if (msg === "/강화뽑기" || /^\/강화뽑기\s+\d+$/.test(msg)) {
 					var args = msg.trim().split(" ");
 					var openCount = 1;
 
@@ -19821,7 +19821,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}, 800);
 				}
 
-				if (msg.startsWith("/캐슬오픈")) {
+				if (msg === "/캐슬오픈" || /^\/캐슬오픈\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) return;
 					var args = msg.trim().split(" ");
 					var count = 1;
@@ -19899,7 +19899,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("[" + rank + "] 님의 펫먹이상자📦(/상자오픈) " + count + "개 개봉 결과:\n" + lines);
 					}
 				}
-				if (msg.startsWith("/잡템오픈")) {
+				if (msg === "/잡템오픈" || /^\/잡템오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let openCount = 1; // 기본값 1
@@ -19933,7 +19933,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/선물오픈")) {
+				if (msg === "/선물오픈" || /^\/선물오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let giftOpenCount = 1; // 기본 1개
@@ -19974,7 +19974,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/미니오ㅋㅎㅎㅎ")) {
+				if (msg === "/미니오ㅋㅎㅎㅎ" || /^\/미니오ㅋㅎㅎㅎ\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let miniOpenCount = 1; // 기본 1개
@@ -20015,7 +20015,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/정령오픈")) {
+				if (msg === "/정령오픈" || /^\/정령오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let openCount = 1; // 기본값 1
@@ -20049,7 +20049,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/치킨오픈")) {
+				if (msg === "/치킨오픈" || /^\/치킨오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let openCount = 1; // 기본값 1
@@ -20083,7 +20083,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/랜덤오픈")) {
+				if (msg === "/랜덤오픈" || /^\/랜덤오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let openCount = 1; // 기본값은 1개
@@ -20124,7 +20124,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/극락오픈")) {
+				if (msg === "/극락오픈" || /^\/극락오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let gift2OpenCount = 1; // 기본 1개
@@ -20165,7 +20165,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.startsWith("/나락오픈")) {
+				if (msg === "/나락오픈" || /^\/나락오픈\s+\d+$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let args = msg.split(" ");
 						let gift3OpenCount = 1; // 기본 1개
@@ -20206,7 +20206,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg === "/펫강화" || msg.startsWith("/펫강화 ")) {
+				if (msg === "/펫강화" || /^\/펫강화\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) return;
 					if (!petData[sender]) {
 						replier.reply("펫이 없습니다.");
@@ -20270,7 +20270,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(petData, memberPetPath);
 					return;
 				}
-				if (msg.startsWith("/미니펫강화")) {
+				if (msg === "/미니펫강화" || /^\/미니펫강화\s+\d+(?:\s+\d+)?$/.test(msg)) {
 					if (castleSiegeFlag) return;
 					var user = data.member[sender];
 					if (!user) return;
@@ -23748,7 +23748,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(trialTower, trialTowerPath);
 					return;
 				}
-				if (msg.startsWith("/정령강화")) {
+				if (msg === "/정령강화" || /^\/정령강화\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) return;
 					if (!petData[sender]) {
 						replier.reply("펫이 없습니다.");
@@ -23772,7 +23772,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg.startsWith("/반지강화")) {
+				if (msg === "/반지강화" || /^\/반지강화\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) return;
 					if (!petData[sender]) {
 						replier.reply("펫이 없습니다.");
@@ -24178,7 +24178,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("❌ 조합 가능한 재료가 없습니다.");
 					}
 				}
-				if (msg.startsWith("/마정석조합")) {
+				if (msg === "/마정석조합" || /^\/마정석조합\s+\d+$/.test(msg)) {
 					let args = msg.split(" ");
 					let combineCount = args.length > 1 ? parseInt(args[1]) : 1; // 기본값 1개 조합
 					// 입력값 검증
@@ -24199,7 +24199,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 조합 메시지 출력
 					replier.reply("✨ 무언가 영롱하게 빛납니다!!\n[" + checkRank(data, petData, guildData, sender) + "]님이 마정석상자🔮(/마정석오픈) " + combineCount + "개 조합 성공!");
 				}
-				if (msg.startsWith("/마정석오픈")) {
+				if (msg === "/마정석오픈" || /^\/마정석오픈\s+\d+$/.test(msg)) {
 					let args = msg.split(" ");
 					let openCount = args.length > 1 ? parseInt(args[1]) : 1; // 기본값 1개
 					if (isNaN(openCount) || openCount < 1) {
@@ -24728,7 +24728,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					message += "\n총 확률: " + adjustedTotal.toFixed(4);
 					replier.reply(message);
 				}
-				if (msg.startsWith("/미니펫오픈")) {
+				if (msg === "/미니펫오픈" || /^\/미니펫오픈\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) return;
 					let args = msg.split(" ");
 					let count = 1;
@@ -24804,7 +24804,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						noticeMsg("🐹[전체알림]🎉\n\n[" + nickName + "] 님이 " + p.grade + " 등급 미니펫 [" + p.name + p.emoji + "] 을(를) 뽑았습니다!\n(매력도: " + (p.battleExp || 0) + "💕)");
 					}
 				}
-				if (msg.startsWith("/미니펫장착 ")) {
+				if (/^\/미니펫장착\s+\d+$/.test(msg)) {
 					var index = parseInt(msg.split(" ")[1], 10); // sortIndex
 					refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable); // 장착 전 정렬
 					let bag = petData[sender].miniPetBag || [];
@@ -25188,7 +25188,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
-				if (msg.startsWith("/미니펫판매 ")) {
+				if (/^\/미니펫판매\s+\d+$/.test(msg)) {
 					let petIndex = parseInt(msg.split(" ")[1], 10); // sortIndex
 					if (!petData[sender]) petData[sender] = {};
 					if (!petData[sender].miniPetBag) petData[sender].miniPetBag = [];
@@ -25705,7 +25705,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply("📣 [" + nickName + '] 님의 한줄평이 등록되었습니다!\n\n💬 "' + comment + '"\n🅟' + numberWithCommas(cost) + " 차감되었습니다.");
 					return;
 				}
-				if (msg.startsWith("/집청소")) {
+				if (msg === "/집청소" || /^\/집청소\s+\d+$/.test(msg)) {
 					var homeData = loadJsonFile(homeDataFile);
 					var nickName = checkRank(data, petData, guildData, sender);
 					homeData = initSweetHomeUser(homeData, sender);
@@ -25755,7 +25755,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(homeData, homeDataFile);
 					replier.reply(resultMsg);
 				}
-				if (msg.startsWith("/가구해제")) {
+				if (msg === "/가구해제" || /^\/가구해제\s+\d+$/.test(msg)) {
 					let itemName = "가구귀속해제권🛋️(/가구해제 숫자)";
 					let needCnt = 1;
 
@@ -25811,7 +25811,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						maxBag;
 					replier.reply(resultMsg);
 				}
-				if (msg.startsWith("/샵오픈")) {
+				if (msg === "/샵오픈" || /^\/샵오픈\s+\d+$/.test(msg)) {
 					let parts = msg.trim().split(/\s+/);
 					let count = 1;
 					if (parts.length > 1) {
@@ -26259,7 +26259,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(lines.join("\n"));
 					return;
 				}
-				if (msg.startsWith("/가구장착")) {
+				if (msg === "/가구장착" || /^\/가구장착\s+\d+$/.test(msg)) {
 					var parts = msg.trim().split(/\s+/);
 					if (parts.length < 2) {
 						replier.reply("사용법: /가구장착 번호\n예) /가구장착 2");
@@ -26330,7 +26330,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					replier.reply(replyMsg);
 				}
-				if (msg.startsWith("/가구판매")) {
+				if (msg === "/가구판매" || /^\/가구판매\s+\d+$/.test(msg)) {
 					var parts = msg.trim().split(/\s+/);
 					var idxStr = parts.length > 1 ? parts[1] : null;
 					var nickName = checkRank(data, petData, guildData, sender);
@@ -26543,42 +26543,42 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(replyMsg);
 					return;
 				}
-				if (msg === "/정령박스오픈" || msg.startsWith("/정령박스오픈 ")) {
+				if (msg === "/정령박스오픈" || /^\/정령박스오픈\s+\d+$/.test(msg)) {
 					runflowerBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/강화박스오픈" || msg.startsWith("/강화박스오픈 ")) {
+				if (msg === "/강화박스오픈" || /^\/강화박스오픈\s+\d+$/.test(msg)) {
 					runEnhanceBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/반지박스오픈" || msg.startsWith("/반지박스오픈 ")) {
+				if (msg === "/반지박스오픈" || /^\/반지박스오픈\s+\d+$/.test(msg)) {
 					runStoneBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/이벤박스오픈" || msg.startsWith("/이벤박스오픈 ")) {
+				if (msg === "/이벤박스오픈" || /^\/이벤박스오픈\s+\d+$/.test(msg)) {
 					runEventBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/펫먹이박스오픈" || msg.startsWith("/펫먹이박스오픈 ")) {
+				if (msg === "/펫먹이박스오픈" || /^\/펫먹이박스오픈\s+\d+$/.test(msg)) {
 					runPetFoodBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/전도르박스오픈" || msg.startsWith("/전도르박스오픈 ")) {
+				if (msg === "/전도르박스오픈" || /^\/전도르박스오픈\s+\d+$/.test(msg)) {
 					runJeondorBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/양계장박스오픈" || msg.startsWith("/양계장박스오픈 ")) {
+				if (msg === "/양계장박스오픈" || /^\/양계장박스오픈\s+\d+$/.test(msg)) {
 					runMiniPetDungeonBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/행운의박스오픈" || msg.startsWith("/행운의박스오픈 ")) {
+				if (msg === "/행운의박스오픈" || /^\/행운의박스오픈\s+\d+$/.test(msg)) {
 					runDdangDungeonBox(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
 					return;
@@ -38855,6 +38855,7 @@ function updatePetExploreRecord(petExploreData, user, isSuccess) {
 function parseOpenCountFromMsg(msg) {
 	var parts = (msg || "").trim().split(/\s+/);
 	if (parts.length === 1) return null; // 전부 오픈
+	if (parts.length > 2 || !/^\d+$/.test(parts[1])) return -1;
 	var n = parseInt(parts[1], 10);
 	if (isNaN(n) || n <= 0) return -1;
 	return n;
