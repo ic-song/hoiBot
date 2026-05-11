@@ -13,6 +13,8 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
   - `tools/`: local helper scripts for development/operation workflows
+  - `.codex/skills/`: repo-managed source copies of hoiBot Codex skills
+  - `.codex/skill-drafts-ko/`: Korean review drafts for hoiBot Codex skills, not auto-loaded skill sources
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
 
@@ -243,6 +245,7 @@ head-agent
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
 - Commit messages should be written in Korean as clear, human-readable summaries of the change.
 - Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
+- Keep repo-managed Codex skill sources in `.codex/skills/` synchronized with workflow changes when those skills encode the affected workflow.
 - PR titles and bodies must summarize:
   - changed files or areas
   - user-visible behavior changes

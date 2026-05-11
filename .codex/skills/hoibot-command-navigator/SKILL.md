@@ -1,0 +1,59 @@
+---
+name: hoibot-command-navigator
+description: Use for hoiBot command exploration, similar command conflict checks, startsWith/indexOf command guard fixes, helper/save-flow tracing, COMMAND_INDEX.md synchronization, and COMMAND_REGISTRY.md validation.
+---
+
+# hoiBot Command Navigator
+
+Use this skill when working with hoiBot commands.
+
+## Core Rules
+
+- The current source code is always the source of truth.
+- `COMMAND_INDEX.md` is a navigation helper, not the source of truth.
+- `COMMAND_REGISTRY.md` is a human-facing command checklist, not deletion approval.
+- A failed search means unverified, not nonexistent.
+- Reuse existing helpers and command flows before adding new logic.
+- Avoid broad rewrites or large-scale replacements in `main.js`.
+- Preserve user-facing formatting, line breaks, emoji, and `allsee` behavior.
+
+## Required Flow
+
+1. Check `COMMAND_INDEX.md` first when it exists and the task involves command/helper/data-flow exploration.
+2. Re-verify all findings in `main.js`, `Info.js`, and related helper definitions.
+3. Search related command aliases, output messages, helper calls, data usage, and save flow.
+4. For modifications, make the smallest safe change that preserves current behavior.
+5. If command/helper/save-flow information changes and `COMMAND_INDEX.md` exists in the active branch, update it from the verified code.
+6. Update `COMMAND_REGISTRY.md` only when the command list, `미사용`, `삭제유무`, or `비고` materially changes.
+
+## Guard Rules
+
+For mutation-heavy or execution commands, prefer exact or full-pattern command guards over broad prefix checks.
+
+Risky:
+
+```js
+if (msg.startsWith("/집청소")) {
+```
+
+Safer:
+
+```js
+if (msg === "/집청소" || /^\/집청소\s+\d+$/.test(msg)) {
+```
+
+Messages with guide text after numeric arguments must not execute.
+
+Examples that should not execute:
+
+```text
+/집청소 1 해볼래
+/고급티켓조합방법
+/마정석조합 3 알려줘
+```
+
+## References
+
+- Read `references/command-index-workflow.md` for the command exploration checklist.
+- Read `references/command-registry-rules.md` when touching `COMMAND_REGISTRY.md`.
+- Read `references/risky-command-guards.md` when fixing accidental command execution.
