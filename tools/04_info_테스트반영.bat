@@ -3,16 +3,16 @@ chcp 65001 > nul
 
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_DEVICE=emulator-5556
-set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/main/main.js
-set BOT_NAME=main
+set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/info/Info.js
+set BOT_NAME=info
 
 echo.
 echo ========================================
-echo [START] main.js 테스트 반영
+echo [START] Info.js 테스트 반영
 echo ========================================
 echo.
 echo 이 작업은 최신 main 코드를 받은 뒤
-echo LD플레이어의 main.js에 반영합니다.
+echo LD플레이어의 Info.js에 반영합니다.
 echo ========================================
 echo.
 
@@ -42,23 +42,23 @@ if errorlevel 1 goto FAIL_ADB
 echo [OK] ADB 확인 완료
 
 echo.
-echo [4/5] main.js 파일 업로드 중...
-"%ADB_EXE%" -s %TARGET_DEVICE% push main.js "%TARGET_FILE%"
+echo [4/5] Info.js 파일 업로드 중...
+"%ADB_EXE%" -s %TARGET_DEVICE% push Info.js "%TARGET_FILE%"
 if errorlevel 1 goto FAIL_PUSH
 
-echo [OK] main.js 업로드 완료
+echo [OK] Info.js 업로드 완료
 
 echo.
-echo [5/5] 메신저봇R main 컴파일 중...
+echo [5/5] 메신저봇R info 컴파일 중...
 "%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%
 if errorlevel 1 goto FAIL_COMPILE
 
 echo.
 echo ========================================
-echo [SUCCESS] main.js 테스트 반영 완료
+echo [SUCCESS] Info.js 테스트 반영 완료
 echo ========================================
 echo.
-echo LD플레이어에 main.js 업로드 및 컴파일까지 완료했습니다.
+echo LD플레이어에 Info.js 업로드 및 컴파일까지 완료했습니다.
 echo ========================================
 pause
 exit /b 0
@@ -68,7 +68,7 @@ echo.
 echo ========================================
 echo [FAIL] 프로젝트 폴더 이동 실패
 echo BAT 파일 위치를 확인하세요.
-echo 예상 위치: HOIBOT/bat/
+echo 예상 위치: HOIBOT/tools/
 echo ========================================
 pause
 exit /b 1
@@ -104,7 +104,7 @@ exit /b 1
 :FAIL_PUSH
 echo.
 echo ========================================
-echo [FAIL] main.js 업로드 실패
+echo [FAIL] Info.js 업로드 실패
 echo LD플레이어 기기명 또는 파일 경로를 확인하세요.
 echo DEVICE: %TARGET_DEVICE%
 echo FILE: %TARGET_FILE%

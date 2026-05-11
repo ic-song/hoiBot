@@ -19,7 +19,7 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - If a command appears in both `main.js` and `Info.js`, trust the actual branch handling in code.
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
-- `명령어_분리.md` is the human-friendly command list. This file is the AI-friendly code navigation index.
+- `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
 ## Shared Search Anchors
 
@@ -115,7 +115,7 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - Current heuristic command-pattern count across `main.js` + `Info.js`: about `1010`
 - This registry is strongest on representative high-traffic commands, helper anchors, and save-flow notes
 - Mutation-heavy admin tooling still has broader coverage gaps than user-facing info commands
-- `명령어_분리.md` is better for breadth; this file is better for "where should I inspect first?" decisions
+- `COMMAND_REGISTRY.md` is better for human usage/removal checks; this file is better for "where should I inspect first?" decisions
 
 ---
 
