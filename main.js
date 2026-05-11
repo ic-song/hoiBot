@@ -5031,13 +5031,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/선물전달" && sender == "호이 남") {
 					for (let user in data.member) {
-						if (data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"]) {
-							data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"]++;
+						if (data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"]) {
+							data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"]++;
 						} else {
-							data.member[user].bag["무료패키지11(/호이월드활동에감사드립니다.)"] = 1;
+							data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"] = 1;
 						}
 					}
-					var message = "무료패키지11(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
+					var message = "무료패키지12(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
 					Api.replyRoom(room1, message);
 					Api.replyRoom(room2, message);
 					Api.replyRoom(room3, message);
@@ -8535,7 +8535,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.trim().startsWith("/도파민,") || msg.trim().match(/^\/도파민\d*,/)) {
+							if (msg.trim().startsWith("/도파민,") || msg.trim().match(/^\/도파민\d*,/)) {
 					if (isMaster(sender)) {
 						var parts = msg.match(/^\/도파민(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
 						if (parts) {
@@ -11127,6 +11127,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+	
 				if (msg === "/딴딴따라") {
 					if (data.member[sender].bag["결혼해듀호이🤵👰(/딴딴따라)"] !== undefined && data.member[sender].bag["결혼해듀호이🤵👰(/딴딴따라)"] > 0) {
 						// 사용권 차감
@@ -14070,7 +14071,362 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-			
+				if (msg === "/2026년병오년") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["신년패키지🌅(/2026년병오년)"] !== undefined && data.member[sender].bag["신년패키지🌅(/2026년병오년)"] > 0) {
+							if (data.member[sender].bag["신년패키지🌅(/2026년병오년)"] > 1) {
+								data.member[sender].bag["신년패키지🌅(/2026년병오년)"]--;
+							} else {
+								delete data.member[sender].bag["신년패키지🌅(/2026년병오년)"];
+							}
+							let starterItems = {
+								"땅문서📜": 5,
+								"🥕당근이세요?": 100,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 3000,
+								"펫 강화석⭐": 2000,
+								"펫강화확률UP🌟(100%)": 10,
+								"돌멩이🪨": 35000,
+								"반지 강화석💍": 500,
+								"정령 강화석🥀": 550,
+								"주간상자🦋(/주간오픈)": 1,
+								"캐슬영웅유닛💠(+300💕)": 3,
+								"캐슬전설유닛🧝🏻‍♀(+500💕)": 2,
+								"캐슬신화유닛🧚🏻‍♀(+1000💕)": 2,
+								"캐슬불멸유닛🐉(+1500💕)": 1
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/60GcKTdq\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/2026년") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["무료신년패키지🌅(/2026년)"] !== undefined && data.member[sender].bag["무료신년패키지🌅(/2026년)"] > 0) {
+							if (data.member[sender].bag["무료신년패키지🌅(/2026년)"] > 1) {
+								data.member[sender].bag["무료신년패키지🌅(/2026년)"]--;
+							} else {
+								delete data.member[sender].bag["무료신년패키지🌅(/2026년)"];
+							}
+							let starterItems = {
+								"땅문서📜": 5,
+								"🥕당근이세요?": 100,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
+								"펫 강화석⭐": 500,
+								"펫강화확률UP🌟(100%)": 5,
+								"돌멩이🪨": 5000
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 100000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/60GcKTdq\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/잔말말고파워냉방으로틀어") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워냉방패키지👨‍🦲(/잔말말고파워냉방으로틀어)"] !== undefined && data.member[sender].bag["파워냉방패키지👨‍🦲(/잔말말고파워냉방으로틀어)"] > 0) {
+							if (data.member[sender].bag["파워냉방패키지👨‍🦲(/잔말말고파워냉방으로틀어)"] > 1) {
+								data.member[sender].bag["파워냉방패키지👨‍🦲(/잔말말고파워냉방으로틀어)"]--;
+							} else {
+								delete data.member[sender].bag["파워냉방패키지👨‍🦲(/잔말말고파워냉방으로틀어)"];
+							}
+							let starterItems = {
+								"럭키박스🍀(/럭키오픈)": 20,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 100,
+								"영지기습공격권🔥(60%)": 20,
+								"영지절대방어권🛡(50%)": 20,
+								"캐슬신화유닛🧚🏻‍♀(+1000💕)": 1,
+								"시련의탑리셋권😈": 30,
+								"확성기📢(/알림 내용 30자)": 10,
+								"🥕당근이세요?": 50
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/XxTGkP0w\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/잔말말고파워난방으로틀어1") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어1)"] !== undefined && data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어1)"] > 0) {
+							if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어1)"] > 1) {
+								data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어1)"]--;
+							} else {
+								delete data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어1)"];
+							}
+							let starterItems = {
+								"럭키박스🍀(/럭키오픈)": 20,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 100,
+								"펫먹이특식🥡(/특식오픈)": 20,
+								"땅문서📜": 2,
+								"시탑 부스터🔮": 100,
+								"레이드타격대인장👑(+600👾)": 3,
+								"시련의탑리셋권😈": 30,
+								"확성기📢(/알림 내용 30자)": 10,
+								"🥕당근이세요?": 50
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/mrJPGdV9\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/잔말말고파워난방으로틀어2") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어2)"] !== undefined && data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어2)"] > 0) {
+							if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어2)"] > 1) {
+								data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어2)"]--;
+							} else {
+								delete data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어2)"];
+							}
+							let starterItems = {
+								"미니펫 강화석💫": 100,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 100,
+								"펫먹이특식🥡(/특식오픈)": 25,
+								"땅문서📜": 2,
+								"시탑 부스터🔮": 100,
+								"레이드타격대인장👑(+600👾)": 3,
+								"시련의탑리셋권😈": 35,
+								"럭키박스🍀(/럭키오픈)": 100,
+								"펫강화확률UP🌟(30%)": 7
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/mrJPGdV9\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/잔말말고파워난방으로틀어3") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어3)"] !== undefined && data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어3)"] > 0) {
+							if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어3)"] > 1) {
+								data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어3)"]--;
+							} else {
+								delete data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어3)"];
+							}
+							let starterItems = {
+								"미니펫 강화석💫": 100,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 100,
+								"땅문서📜": 2,
+								"시탑 부스터🔮": 100,
+								"레이드타격대인장👑(+600👾)": 3,
+								"시련의탑리셋권😈": 100,
+								"럭키박스🍀(/럭키오픈)": 120,
+								"펫강화확률UP🌟(50%)": 10
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/mrJPGdV9\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/잔말말고파워난방으로틀어4") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어4)"] !== undefined && data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어4)"] > 0) {
+							if (data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어4)"] > 1) {
+								data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어4)"]--;
+							} else {
+								delete data.member[sender].bag["파워난방패키지🥵(/잔말말고파워난방으로틀어4)"];
+							}
+							let starterItems = {
+								"정령 강화석🥀": 700,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 100,
+								"땅문서📜": 2,
+								"시탑 부스터🔮": 100,
+								"레이드타격대인장👑(+600👾)": 3,
+								"캐슬코인🥇": 200,
+								"럭키박스🍀(/럭키오픈)": 120,
+								"캐슬대전리셋권🐶": 200,
+								"펫강화확률UP🌟(50%)": 10
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/mrJPGdV9\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/크리스마솔로시죠?") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["도레미파솔로시죠?🎶(/크리스마솔로시죠?)"] !== undefined && data.member[sender].bag["도레미파솔로시죠?🎶(/크리스마솔로시죠?)"] > 0) {
+							if (data.member[sender].bag["도레미파솔로시죠?🎶(/크리스마솔로시죠?)"] > 1) {
+								data.member[sender].bag["도레미파솔로시죠?🎶(/크리스마솔로시죠?)"]--;
+							} else {
+								delete data.member[sender].bag["도레미파솔로시죠?🎶(/크리스마솔로시죠?)"];
+							}
+							let starterItems = {
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 100,
+								"1달러스토어🤑(/1일1후원)": 10,
+								"땅문서📜": 1,
+								"시탑 부스터🔮": 100
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 100000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/htFPSSY\n\n";
+							openMsg += "[" + checkRank(data, petData, guildData, sender) + "]님 솔로시죠?\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/크리스마스오픈") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["크리스마스패키지🎄(/크리스마스오픈)"] !== undefined && data.member[sender].bag["크리스마스패키지🎄(/크리스마스오픈)"] > 0) {
+							if (data.member[sender].bag["크리스마스패키지🎄(/크리스마스오픈)"] > 1) {
+								data.member[sender].bag["크리스마스패키지🎄(/크리스마스오픈)"]--;
+							} else {
+								delete data.member[sender].bag["크리스마스패키지🎄(/크리스마스오픈)"];
+							}
+							let starterItems = {
+								"땅문서📜": 2,
+								"펫특성뽑기권🃏(/특성오픈)": 10,
+								"전설의 돌맹이🗿": 3,
+								"펫먹이특식🥡(/특식오픈)": 30,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 50,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 100,
+								"헤이 헤이 유~ 예스 유~ 후원 유~": 100
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 100000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/FLYxjzV5\n\n";
+							openMsg += "[" + checkRank(data, petData, guildData, sender) + "]님 미리 메리크리스마스🎄\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/메리크리스마스오픈") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["메리크리스마스패키지🎄(/메리크리스마스오픈)"] !== undefined && data.member[sender].bag["메리크리스마스패키지🎄(/메리크리스마스오픈)"] > 0) {
+							if (data.member[sender].bag["메리크리스마스패키지🎄(/메리크리스마스오픈)"] > 1) {
+								data.member[sender].bag["메리크리스마스패키지🎄(/메리크리스마스오픈)"]--;
+							} else {
+								delete data.member[sender].bag["메리크리스마스패키지🎄(/메리크리스마스오픈)"];
+							}
+							let starterItems = {
+								"땅문서📜": 5,
+								"🥕당근이세요?": 100,
+								"전설의 돌맹이🗿": 5,
+								"펫먹이특식🥡(/특식오픈)": 30,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 300,
+								"미니펫뽑기4🐹(/미니펫뽑기)": 50,
+								"정령 강화석🥀": 500,
+								"잡템상자☠": 30,
+								"시련의탑리셋권😈": 100
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "https://ibb.co/FLYxjzV5\n\n";
+							openMsg += "[" + checkRank(data, petData, guildData, sender) + "]님 미리 메리크리스마스🎄\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/XxTGkP0w\n대머리세요?");
+						}
+					}
+				}
 				if (msg === "/과로오픈") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["과로패키지😓(/과로오픈)"] !== undefined && data.member[sender].bag["과로패키지😓(/과로오픈)"] > 0) {
@@ -16699,11 +17055,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								delete data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"];
 							}
 							var hangawiItems = {
-								"보물지도🗺️": 30,
-								"펫스킬북📙(/펫스킬오픈)": 1,
+								"보물지도🗺️": 40,
 								"호이베이스볼⚾️(/투수던집니다)": 30,
-								"탐험확률UP🗻(30%)": 3,
-								"탐험확률UP🗻(40%)": 3,
+								"탐험확률UP🗻(30%)": 5,
+								"탐험확률UP🗻(40%)": 5,
 								"탐험확률UP🗻(50%)": 10,
 								"펫던전 입장권🌋": 10
 							};
@@ -16711,7 +17066,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								addItemToBag(data.member[sender].bag, item, hangawiItems[item]);
 							}
 							let openMsg =
-								"무료패키지11 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
+								"무료패키지12 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
 							for (let item in hangawiItems) {
 								openMsg += item + " " + hangawiItems[item] + "개\n";
 							}
@@ -25765,7 +26120,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let houseName = userHome.houseName || "서울역 4번출구🚉";
 					let totalExp = getHomeTotalExp(homeData, sender);
 					let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
-					let maxBag = 15;
+					let maxBag = 10;
 					// 헤더
 					var out = "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
 					"좋아홈💌x" +
@@ -25827,10 +26182,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						let bagArr = userHome.furnitureBag;
 						let count = bagArr.length;
 						// 9개 미만 → 스킵
-						if (count < 16) continue;
+						if (count < 11) continue;
 						bagArr = sortFurnitureList(bagArr);
 						userHome.furnitureBag = bagArr;
-						let keepCount = 15;
+						let keepCount = 10;
 						let removedCount = count - keepCount;
 						let kept = bagArr.slice(0, keepCount);
 						// let removed = bagArr.slice(keepCount); // 필요시 상세 로그용
@@ -25852,8 +26207,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					msgText += "━━━━━━━━━━━━━━━\n";
 					msgText += "정리 대상 유저 수 : " + totalUserCount + "명\n";
 					msgText += "전체 삭제된 가구 : " + totalRemovedCount + "개\n";
-					msgText += "※ 각 유저별로 가방 기준 16개 이상일 때,\n";
-					msgText += "   정렬 상위 15개만 남기고 나머지는 영구 삭제되었습니다.\n";
+					msgText += "※ 각 유저별로 가방 기준 11개 이상일 때,\n";
+					msgText += "   정렬 상위 10개만 남기고 나머지는 영구 삭제되었습니다.\n";
 					msgText += "━━━━━━━━━━━━━━━\n";
 					msgText += allsee + userLogLines.join("\n");
 					replier.reply(msgText);
@@ -29962,13 +30317,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					msg.trim().startsWith("/가정,") || msg.trim().match(/^\/가정\d*,/) ||
 					msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
 					msg.trim().startsWith("/가정정정,") || msg.trim().match(/^\/가정정정\d*,/) ||
+					msg.trim().startsWith("/가정정정정,") || msg.trim().match(/^\/가정정정정\d*,/) ||
 					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
 					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
 					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
 					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
 				) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/(가정|가정정|가정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+						var parts = msg.match(/^\/(가정|가정정|가정정정|가정정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
 
 						if (parts) {
 							var command = parts[1];
@@ -29988,6 +30344,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[2](/나한테잘하자2)";
 							} else if (command === "가정정정") {
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)";
+								} else if (command === "가정정정정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
@@ -30049,6 +30407,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							replier.reply(openMsg);
 						} else {
 							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n노동절패키지🪏 아이템이 없습니다.");
+						}
+					}
+				}
+				if (msg === "/나한테잘하자4") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"미니펫뽑기🐹(/미니펫오픈)": 1000,
+								"주간상자🦋(/주간오픈)": 1,
+								"정령 강화석🥀": 300,
+								"정령강화확률UP🥀(30%)": 20,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 700,
+								"펫먹이🍼": 500,
+                                "펫 강화석⭐": 300,
+								"호이베이스볼⚾️(/투수던집니다)": 30,
+								"양념치킨🐔": 200,
+								"미니펫 강화석💫": 100,
+								"길드공헌훈장🌟(/길드공헌 숫자)": 10
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
 						}
 					}
 				}
