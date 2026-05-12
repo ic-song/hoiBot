@@ -2403,7 +2403,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					foundationMsg += "행복누적금액금💸: 🅟" + formatPointValue(happyFoundationView.totalAmount) + "\n";
 					foundationMsg += "※ 이체수수료 변경방법 안내\n" + allsee;
 					foundationMsg += "※ /이체수수료변경 [숫자] 행복단장은 이체 수수료 변경이 가능합니다.\n";
-					foundationMsg += "※ 이체수수료 최소 0.5단위 0.5~5% 사이 변경 가능";
+					foundationMsg += "※ 이체수수료 최소 0.5단위 0.5~10% 사이 변경 가능";
 					replier.reply(foundationMsg);
 					saveJsonFile(data, filePath);
 					return;
@@ -2494,8 +2494,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var feeInput = parseFloat(msg.replace("/이체수수료변경", "").trim());
-					if (isNaN(feeInput) || feeInput < 0.5 || feeInput > 5 || Math.round(feeInput * 10) % 5 !== 0) {
-						replier.reply("❌ 이체 수수료는 0.5% ~ 5% 사이로만 설정할 수 있습니다.");
+					if (isNaN(feeInput) || feeInput < 0.5 || feeInput > 10 || Math.round(feeInput * 10) % 5 !== 0) {
+						replier.reply("❌ 이체 수수료는 0.5% ~ 10% 사이로만 설정할 수 있습니다.");
 						return;
 					}
 					var oldFeeRate = happyFoundationEdit.feeRate;
