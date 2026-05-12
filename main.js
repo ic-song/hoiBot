@@ -17048,11 +17048,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (msg === "/호이월드활동에감사드립니다.") {
 					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] !== undefined && data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] > 0) {
-							if (data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] > 1) {
-								data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"]--;
+						if (data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"] !== undefined && data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"] > 0) {
+							if (data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"] > 1) {
+								data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"]--;
 							} else {
-								delete data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"];
+								delete data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"];
 							}
 							var hangawiItems = {
 								"보물지도🗺️": 40,
