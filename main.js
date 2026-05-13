@@ -11173,7 +11173,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-\
+
 				if (msg === "/마지막선물") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] !== undefined && data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] > 0) {
