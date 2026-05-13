@@ -2434,13 +2434,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
-				if (msg === "/자유시장") {
+				if (msg === "/자유시장" || msg === "ㅈㅈ") { 
 					var freeMarketView = ensureFreeMarketData(loadJsonFile(freeMarketPath));
 					replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView));
 					return;
 				}
 
-				if (msg === "/자유시장현황" || msg === "/거래현황") {
+				if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") {
 					var freeMarketHistory = ensureFreeMarketData(loadJsonFile(freeMarketPath));
 					replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory));
 					return;
@@ -10727,103 +10727,200 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						let mentList = [];
 						let imageLink = "";
 
-							if (loveScore <= 20) {
-								loveRank = "대화 단절💔";
-								imageLink = "https://ibb.co/7BRfwpj";
-								mentList = [
-									"첫 질문부터 정적이 흘렀습니다...",
-									"서로 휴대폰만 바라보는 시간이 더 길었습니다.",
-									"물 한 잔 마시는 소리만 크게 들렸습니다.",
-									"상대가 급한 약속이 생겼다고 합니다.",
-									"분위기가 차갑게 식어버렸습니다.",
-									"소개팅 장소에 찬바람이 불었습니다.",
-									"서로의 취향이 너무 달랐습니다.",
-									"눈을 마주치는 시간이 거의 없었습니다.",
-									"첫인사 후 대화 주제가 실종되었습니다.",
-									"상대의 웃음이 예의상으로만 느껴졌습니다.",
-									"오톡 알림보다 대화가 더 조용했습니다."
-								];
-							} else if (loveScore <= 40) {
-								loveRank = "어색한 첫만남😶";
-								imageLink = "https://ibb.co/T9ZCc6m";
-								mentList = [
-									"나쁘진 않았지만 아직은 어색합니다.",
-									"대화는 했지만 웃음은 조금 부족했습니다.",
-									"서로 눈치를 보는 시간이 많았습니다.",
-									"공통 관심사를 찾는 중입니다.",
-									"애프터를 고민하게 되는 만남이었습니다.",
-									"분위기는 조용했지만 가능성은 남아 있습니다.",
-									"첫 만남이라 그런지 살짝 긴장했습니다.",
-									"서로 조금 더 알아갈 시간이 필요합니다.",
-									"대화방에 말풍선보다 침묵이 더 많았습니다.",
-									"상대의 취향을 맞추려다 서로 헷갈렸습니다.",
-									"좋은 사람 같지만 아직 설렘은 부족했습니다."
-								];
-							} else if (loveScore <= 60) {
-								loveRank = "무난한 소개팅🤝";
-								imageLink = "https://ibb.co/rKTG6zg5";
-								mentList = [
-									"생각보다 대화가 잘 이어졌습니다.",
-									"편안한 분위기로 첫만남을 마쳤습니다.",
-									"서로 나쁘지 않은 인상을 받았습니다.",
-									"친구처럼 편한 느낌이 들었습니다.",
-									"애프터 가능성이 살짝 보입니다.",
-									"처음치고는 꽤 괜찮은 만남이었습니다.",
-									"가벼운 웃음이 오가며 분위기가 풀렸습니다.",
-									"서로에게 좋은 첫인상을 남겼습니다.",
-									"대화 온도는 미지근하지만 안정적이었습니다.",
-									"상대가 생각보다 리액션을 잘해줬습니다.",
-									"부담 없는 대화로 첫 만남을 마무리했습니다."
-								];
-							} else if (loveScore <= 80) {
-								loveRank = "설레는 분위기💗";
-								imageLink = "https://ibb.co/8gV0XcMx";
-								mentList = [
-									"대화 중간중간 웃음이 끊이지 않았습니다.",
-									"묘하게 설레는 기류가 흘렀습니다.",
-									"상대가 은근히 관심을 보였습니다.",
-									"시간 가는 줄 모르고 대화했습니다.",
-									"다음 만남이 기대되는 분위기입니다.",
-									"둘 사이에 부드러운 호감이 피어났습니다.",
-									"소개팅 분위기가 점점 달달해졌습니다.",
-									"서로의 말에 자연스럽게 웃음이 나왔습니다.",
-									"오톡 말풍선마다 설렘이 묻어났습니다.",
-									"상대가 마지막까지 대화를 이어갔습니다.",
-									"첫 만남인데도 오래 알고 지낸 느낌이 들었습니다."
-								];
-							} else if (loveScore <= 98) {
-								loveRank = "애프터 각💞";
-								imageLink = "https://ibb.co/zWHJs6xB";
-								mentList = [
-									"상대가 먼저 다음 약속을 물어볼지도 모릅니다.",
-									"분위기가 아주 좋았습니다.",
-									"둘 사이에 핑크빛 기류가 흘렀습니다.",
-									"이 정도면 애프터 성공 가능성이 높습니다.",
-									"소개팅이 아니라 운명의 예고편 같았습니다.",
-									"서로의 취향이 꽤 잘 맞았습니다.",
-									"연락을 이어가고 싶은 분위기입니다.",
-									"오늘 만남은 꽤 성공적이었습니다.",
-									"상대가 헤어지기 아쉬워하는 눈치였습니다.",
-									"오톡 프로필을 다시 확인하게 되는 만남이었습니다.",
-									"다음 약속 장소를 상상하게 되는 분위기였습니다."
-								];
-							} else {
-								loveRank = "운명적 첫만남💍";
-								imageLink = "https://ibb.co/MxrJw24c";
-								mentList = [
-									"첫눈에 서로를 알아본 듯했습니다.",
-									"호이월드가 이어준 운명의 만남입니다.",
-									"이건 소개팅이 아니라 운명입니다.",
-									"둘 사이에 전설급 설렘이 폭발했습니다.",
-									"오늘부터 1일이 될지도 모릅니다.",
-									"소개팅 장소가 순간 웨딩홀처럼 느껴졌습니다.",
-									"서로의 심장이 같은 박자로 뛰었습니다.",
-									"호이월드 공식 천생연분급 만남입니다.",
-									"오톡 역사에 남을 첫만남이 탄생했습니다.",
-									"상대의 첫마디부터 운명처럼 느껴졌습니다.",
-									"이 만남은 저장각입니다. 놓치면 후회합니다."
-								];
-							}
+							if (loveScore <= 20) {
+
+								loveRank = "대화 단절💔";
+
+								imageLink = "https://ibb.co/7BRfwpj";
+
+								mentList = [
+
+									"첫 질문부터 정적이 흘렀습니다...",
+
+									"서로 휴대폰만 바라보는 시간이 더 길었습니다.",
+
+									"물 한 잔 마시는 소리만 크게 들렸습니다.",
+
+									"상대가 급한 약속이 생겼다고 합니다.",
+
+									"분위기가 차갑게 식어버렸습니다.",
+
+									"소개팅 장소에 찬바람이 불었습니다.",
+
+									"서로의 취향이 너무 달랐습니다.",
+
+									"눈을 마주치는 시간이 거의 없었습니다.",
+
+									"첫인사 후 대화 주제가 실종되었습니다.",
+
+									"상대의 웃음이 예의상으로만 느껴졌습니다.",
+
+									"오톡 알림보다 대화가 더 조용했습니다."
+
+								];
+
+							} else if (loveScore <= 40) {
+
+								loveRank = "어색한 첫만남😶";
+
+								imageLink = "https://ibb.co/T9ZCc6m";
+
+								mentList = [
+
+									"나쁘진 않았지만 아직은 어색합니다.",
+
+									"대화는 했지만 웃음은 조금 부족했습니다.",
+
+									"서로 눈치를 보는 시간이 많았습니다.",
+
+									"공통 관심사를 찾는 중입니다.",
+
+									"애프터를 고민하게 되는 만남이었습니다.",
+
+									"분위기는 조용했지만 가능성은 남아 있습니다.",
+
+									"첫 만남이라 그런지 살짝 긴장했습니다.",
+
+									"서로 조금 더 알아갈 시간이 필요합니다.",
+
+									"대화방에 말풍선보다 침묵이 더 많았습니다.",
+
+									"상대의 취향을 맞추려다 서로 헷갈렸습니다.",
+
+									"좋은 사람 같지만 아직 설렘은 부족했습니다."
+
+								];
+
+							} else if (loveScore <= 60) {
+
+								loveRank = "무난한 소개팅🤝";
+
+								imageLink = "https://ibb.co/rKTG6zg5";
+
+								mentList = [
+
+									"생각보다 대화가 잘 이어졌습니다.",
+
+									"편안한 분위기로 첫만남을 마쳤습니다.",
+
+									"서로 나쁘지 않은 인상을 받았습니다.",
+
+									"친구처럼 편한 느낌이 들었습니다.",
+
+									"애프터 가능성이 살짝 보입니다.",
+
+									"처음치고는 꽤 괜찮은 만남이었습니다.",
+
+									"가벼운 웃음이 오가며 분위기가 풀렸습니다.",
+
+									"서로에게 좋은 첫인상을 남겼습니다.",
+
+									"대화 온도는 미지근하지만 안정적이었습니다.",
+
+									"상대가 생각보다 리액션을 잘해줬습니다.",
+
+									"부담 없는 대화로 첫 만남을 마무리했습니다."
+
+								];
+
+							} else if (loveScore <= 80) {
+
+								loveRank = "설레는 분위기💗";
+
+								imageLink = "https://ibb.co/8gV0XcMx";
+
+								mentList = [
+
+									"대화 중간중간 웃음이 끊이지 않았습니다.",
+
+									"묘하게 설레는 기류가 흘렀습니다.",
+
+									"상대가 은근히 관심을 보였습니다.",
+
+									"시간 가는 줄 모르고 대화했습니다.",
+
+									"다음 만남이 기대되는 분위기입니다.",
+
+									"둘 사이에 부드러운 호감이 피어났습니다.",
+
+									"소개팅 분위기가 점점 달달해졌습니다.",
+
+									"서로의 말에 자연스럽게 웃음이 나왔습니다.",
+
+									"오톡 말풍선마다 설렘이 묻어났습니다.",
+
+									"상대가 마지막까지 대화를 이어갔습니다.",
+
+									"첫 만남인데도 오래 알고 지낸 느낌이 들었습니다."
+
+								];
+
+							} else if (loveScore <= 98) {
+
+								loveRank = "애프터 각💞";
+
+								imageLink = "https://ibb.co/zWHJs6xB";
+
+								mentList = [
+
+									"상대가 먼저 다음 약속을 물어볼지도 모릅니다.",
+
+									"분위기가 아주 좋았습니다.",
+
+									"둘 사이에 핑크빛 기류가 흘렀습니다.",
+
+									"이 정도면 애프터 성공 가능성이 높습니다.",
+
+									"소개팅이 아니라 운명의 예고편 같았습니다.",
+
+									"서로의 취향이 꽤 잘 맞았습니다.",
+
+									"연락을 이어가고 싶은 분위기입니다.",
+
+									"오늘 만남은 꽤 성공적이었습니다.",
+
+									"상대가 헤어지기 아쉬워하는 눈치였습니다.",
+
+									"오톡 프로필을 다시 확인하게 되는 만남이었습니다.",
+
+									"다음 약속 장소를 상상하게 되는 분위기였습니다."
+
+								];
+
+							} else {
+
+								loveRank = "운명적 첫만남💍";
+
+								imageLink = "https://ibb.co/MxrJw24c";
+
+								mentList = [
+
+									"첫눈에 서로를 알아본 듯했습니다.",
+
+									"호이월드가 이어준 운명의 만남입니다.",
+
+									"이건 소개팅이 아니라 운명입니다.",
+
+									"둘 사이에 전설급 설렘이 폭발했습니다.",
+
+									"오늘부터 1일이 될지도 모릅니다.",
+
+									"소개팅 장소가 순간 웨딩홀처럼 느껴졌습니다.",
+
+									"서로의 심장이 같은 박자로 뛰었습니다.",
+
+									"호이월드 공식 천생연분급 만남입니다.",
+
+									"오톡 역사에 남을 첫만남이 탄생했습니다.",
+
+									"상대의 첫마디부터 운명처럼 느껴졌습니다.",
+
+									"이 만남은 저장각입니다. 놓치면 후회합니다."
+
+								];
+
+							}
+
 
 						let loveMent = mentList[Math.floor(Math.random() * mentList.length)];
 
@@ -31017,16 +31114,21 @@ function getFreeMarketItemText(listing) {
 function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var listings = getFreeMarketActiveListings(freeMarketData);
 	var out = "🏪호이월드 자유시장🏪\n";
-	out += "※ 거래수수료는 판매자에게 10% 부담됩니다.\n";
-	out += "※ [아이템명x갯수][판매금액][판매자]\n";
 	out += "━━━━━━━━━━━━\n";
+	out += "※ 거래수수료는 판매자에게 10% 부담됩니다.\n";
+	out += "양식: [아이템명x갯수][판매금액][판매자]\n";
+	out += "※ 판매: 채팅창에 '자유시장 판매가이드'\n";
+	out += "※ 취소: /자유시장취소 [번호] 당근환불❌\n";
+	out += "※ 구매: /자유시장구매 [번호]\n\ㅜ";
+	out += "━━━━━━━━━━━━\n";
+	out += "\n자유시장 거래하러 가기👈" + allsee + "\n";
 	if (listings.length === 0) {
 		return out + "현재 판매 중인 물품이 없습니다.";
 	}
 	for (var i = 0; i < listings.length; i++) {
-		if (i === 5) out += "\n다른 자유시장 물품 보기..👈" + allsee + "\n";
+	//	if (i === 0) 
 		var listing = listings[i];
-		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "][" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]\n\n";
+		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "]\n[" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]\n\n";
 	}
 	return out.trim();
 }
@@ -31041,17 +31143,19 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 		return (b.id || 0) - (a.id || 0);
 	});
 	var out = "🤝호월 자유시장 거래현황🤝\n\n";
+	out += "━━━━━━━━━━━━\n";
 	out += "※ 판매금액은 수수료 10%를 제외한 금액이 표시 됩니다\n";
 	out += "※ [아이템명x갯수][판매금액][판매자]🤝[구매자]\n";
 	out += "━━━━━━━━━━━━\n";
+	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
 	out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
 	if (logs.length === 0) {
 		return out + "판매 완료된 거래가 없습니다.";
 	}
 	for (var i = 0; i < logs.length; i++) {
-		if (i === 5) out += "다른 거래현황 보기..👈" + allsee + "\n";
+	//	if (i === 0) 
 		var log = logs[i];
-		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개][" + formatFreeMarketPoint(log.sellerReceive || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n[" + formatFreeMarketPoint(log.sellerReceive || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
 	}
 	return out.trim();
 }
