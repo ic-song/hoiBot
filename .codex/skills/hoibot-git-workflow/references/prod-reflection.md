@@ -8,7 +8,9 @@ Update `feature/prod` only by reflecting validated task-branch work through
 merge, cherry-pick, or an approved PR-style merge flow.
 Documentation, workflow, branch strategy, tools, and Codex skill changes belong
 on `feature/workflow` unless the user explicitly confirms direct `feature/prod`
-reflection for that workflow change.
+reflection for that workflow change. After validated workflow changes are
+committed and pushed on `feature/workflow`, reflect those commits into
+`feature/prod` by default unless the user explicitly says not to.
 
 A production-reflection keyword means the user expects `feature/prod` to be
 updated. Branch classification decides the source branch and reflection method;
@@ -35,14 +37,15 @@ If the task branch contains unrelated commits, cherry-pick only the validated ta
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.
 
-For workflow changes with explicit production reflection:
+For workflow changes:
 
 1. commit and push the workflow change on `feature/workflow`
 2. switch to `feature/prod`
 3. pull `feature/prod`
 4. cherry-pick or merge only the validated workflow commit(s)
 5. push `feature/prod`
-6. report both the workflow source commit and the `feature/prod` reflected commit
+6. if `.codex/skills/` changed, update the corresponding local Codex skill files when possible
+7. report both the workflow source commit and the `feature/prod` reflected commit, plus whether local skills were updated
 
 ## Commit Messages
 

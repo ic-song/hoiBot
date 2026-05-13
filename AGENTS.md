@@ -91,12 +91,17 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   - line breaks
   - emojis
   - `allsee` formatting
+- When creating or modifying slash commands, avoid broad prefix guards for execution commands.
+- Commands with no arguments must use exact equality such as `msg === "/명령어"`.
+- Commands with numeric arguments must use full-pattern guards such as `msg === "/명령어" || /^\/명령어\s+\d+$/.test(msg)` or `/^\/명령어\s+\d+$/.test(msg)` when the argument is required.
+- Inputs with extra guide text after valid arguments, such as `/명령어 1 해봐`, must not execute command logic unless that command explicitly accepts free-form text.
 
 ## Branch Workflow
 
 - `feature/prod` is the operational base branch for production-facing code.
 - `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload and `feature/prod` direct-merge scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
+- Validated changes made on `feature/workflow` should be reflected into `feature/prod` by default after the workflow branch is pushed, unless the user explicitly says not to reflect them.
 - `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
 - Bug fixes should be performed on `feature/bugFix` unless the user explicitly requests another exact branch.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify and use the exact branch casing requested by the user.
@@ -235,6 +240,7 @@ head-agent
 - Task branches should branch from `feature/prod`.
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
+- After validated documentation, agent strategy, branch strategy, `tools/`, or Codex skill changes are committed and pushed on `feature/workflow`, reflect those commits into `feature/prod` by default unless the user explicitly says not to.
 - Bug fixes should use `feature/bugFix` unless the user explicitly requests another exact branch.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify the intended remote/local branch and use the exact branch casing requested by the user.
 - Follow the role of each existing branch before choosing or creating a branch.
@@ -248,11 +254,13 @@ head-agent
 - Do not directly merge into `main`.
 - Merge into `feature/prod` only after explicit user approval.
 - For "prod까지 올려줘" or "운영반영해줘", push the current task branch first, then merge or cherry-pick the validated task changes into `feature/prod`, and push `feature/prod`.
+- For workflow/documentation changes, do not wait for a separate production-reflection phrase; push `feature/workflow`, then reflect the validated workflow commit(s) into `feature/prod`.
 - If the task branch contains unrelated historical commits or is far ahead of its upstream, do not merge the whole branch into `feature/prod`; cherry-pick only the validated task commit(s).
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
 - Commit messages should be written in Korean as clear, human-readable summaries of the change.
 - Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
 - Keep repo-managed Codex skill sources in `.codex/skills/` synchronized with workflow changes when those skills encode the affected workflow.
+- When repo-managed Codex skill sources in `.codex/skills/` change, after `feature/prod` is updated, update the corresponding local Codex skill files under the user's Codex skills directory when filesystem permissions allow it.
 - PR titles and bodies must summarize:
   - changed files or areas
   - user-visible behavior changes
@@ -327,6 +335,8 @@ head-agent
   - line breaks
   - emojis
   - `allsee` formatting
+- For new or edited slash commands, never rely on `msg.startsWith("/명령어")` or `msg.indexOf("/명령어") === 0` for mutation, purchase, sale, equip, open, combine, or cleanup logic.
+- Use exact or full-pattern guards so suffix text cannot be interpreted as a valid command.
 - Use only Rhino JS compatible syntax/features.
 
 ---

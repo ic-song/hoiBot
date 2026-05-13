@@ -29,6 +29,8 @@ Use this skill when working with hoiBot commands.
 ## Guard Rules
 
 For mutation-heavy or execution commands, prefer exact or full-pattern command guards over broad prefix checks.
+When creating a new slash command, choose the guard before implementing the body and make the guard match the documented usage exactly.
+Do not use `msg.startsWith("/명령어")` or `msg.indexOf("/명령어") === 0` for commands that consume items, spend points, sell, remove, equip, open, combine, clean up, or mutate data.
 
 Risky:
 
@@ -43,6 +45,7 @@ if (msg === "/집청소" || /^\/집청소\s+\d+$/.test(msg)) {
 ```
 
 Messages with guide text after numeric arguments must not execute.
+Invalid arguments should also be ignored unless the existing command intentionally replies with a usage error.
 
 Examples that should not execute:
 
@@ -50,6 +53,15 @@ Examples that should not execute:
 /집청소 1 해볼래
 /고급티켓조합방법
 /마정석조합 3 알려줘
+```
+
+Before finishing a command change, validate both valid and suffix-text cases:
+
+```text
+/명령어
+/명령어 1
+/명령어 1 해봐
+/명령어 번호
 ```
 
 ## References

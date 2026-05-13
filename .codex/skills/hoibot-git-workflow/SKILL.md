@@ -20,6 +20,8 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - `feature/prod` is the operational branch.
 - Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
 - Documentation, workflow, branch strategy, and tools changes belong on `feature/workflow`.
+- Validated `feature/workflow` changes should be reflected into `feature/prod` by default after `feature/workflow` is pushed, unless the user explicitly says not to reflect them.
+- When `.codex/skills/` files change, update the corresponding local Codex skill files after `feature/prod` is updated, if filesystem permissions allow it.
 - Bug fixes belong on `feature/bugFix` unless the user explicitly requests another exact branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
 - Before starting work on a specific branch, update local `feature/prod` from `origin/feature/prod`, then bring that local `feature/prod` into the branch.
 - Other task branches should be based on the updated local `feature/prod`, not on `origin/main`.
@@ -38,18 +40,19 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 
 ## Production Reflection
 
-When the user says "prod까지 올려줘" or "운영반영해줘":
+When the user says "prod까지 올려줘" or "운영반영해줘", or when validated workflow/documentation changes have been committed and pushed on `feature/workflow`:
 
 1. Classify the changed files before touching `feature/prod`.
 2. Treat the user's production-reflection keyword as a request for the work to end up on `feature/prod`; do not stop after pushing only the source task branch unless you explicitly tell the user `feature/prod` was not updated.
 3. If the change is documentation, workflow, branch strategy, tools, or Codex skill work, commit and push it on `feature/workflow` first.
-4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow when the user has requested production reflection.
+4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
 5. For production-facing code/data work, commit and push the current task branch first.
 6. Switch to `feature/prod`.
 7. Pull `feature/prod`.
 8. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
 9. Push `feature/prod`.
-10. In the final response, explicitly state whether `feature/prod` was updated and which commit(s) were reflected.
+10. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
+11. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, and whether local skills were updated.
 
 ## Merge Versus Cherry-Pick
 

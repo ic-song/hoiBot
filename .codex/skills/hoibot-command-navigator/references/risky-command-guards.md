@@ -1,6 +1,7 @@
 # Risky Command Guards
 
 Broad prefix checks can accidentally execute commands when users or GMs explain usage in chat.
+For new slash commands, define the exact accepted input shape first and make the guard match only that shape.
 
 ## High-Risk Patterns
 
@@ -17,6 +18,10 @@ These are risky when the command:
 - equips or unequips objects
 - starts a confirmation flow
 - mutates game data
+
+Do not use broad prefix checks for mutation, purchase, sale, equip, open,
+combine, cleanup, or inventory/point-changing commands unless the command
+explicitly accepts free-form text after the command name.
 
 ## Safer Patterns
 
@@ -55,3 +60,20 @@ When fixing guards, test examples like:
 ```
 
 They should not execute mutation logic.
+
+Also validate the positive cases so normal usage still works:
+
+```text
+/명령어
+/명령어 1
+/명령어 10
+```
+
+Free-form text commands must be explicit about where free-form text starts,
+for example by requiring a space after the command name:
+
+```js
+msg.indexOf("/공지 ") === 0
+```
+
+Do not use the free-form style for numeric command variants.
