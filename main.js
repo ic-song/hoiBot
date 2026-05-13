@@ -13730,7 +13730,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(msgOut);
 				}
 
-				if (msg.startsWith("/정령조합")) {
+				if (msg === "/정령조합" || /^\/정령조합\s+\d+$/.test(msg)) {
 					if (castleSiegeFlag) {
 						return;
 					}
