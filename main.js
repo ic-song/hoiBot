@@ -2399,6 +2399,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
+				if (msg === "/자유시장생성") {
+					if (!(isAdmin(sender) || isMaster(sender))) {
+						replier.reply("❌ 해당 명령어는 Admin/Master만 사용할 수 있습니다.");
+						return;
+					}
+					var freeMarketFile = new java.io.File(resolveActiveDataPath(freeMarketPath));
+					if (freeMarketFile.exists()) {
+						replier.reply("✅ 자유시장 파일이 이미 존재합니다.\n" + resolveActiveDataPath(freeMarketPath));
+						return;
+					}
+					var newFreeMarketData = ensureFreeMarketData(null);
+					saveJsonFile(newFreeMarketData, freeMarketPath);
+					replier.reply("✅ 자유시장 파일 생성 완료\n" + resolveActiveDataPath(freeMarketPath));
+					return;
+				}
+
 				if (msg === "/자유시장") {
 					var freeMarketView = ensureFreeMarketData(loadJsonFile(freeMarketPath));
 					replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView));

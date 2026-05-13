@@ -2932,6 +2932,7 @@ Status: VERIFIED
 ## Save Flow
 
 - `/자유시장` and `/자유시장현황` read `freeMarketPath`
+- `/자유시장생성` creates `freeMarketPath` only when the file does not already exist
 - Registration saves `freeMarketPath` and the mutated owner storage file
 - Purchase saves `freeMarketPath`, `filePath`, and the purchased item storage file
 - Cancel/force-cancel saves `freeMarketPath` and the restored item storage file
@@ -2946,6 +2947,7 @@ Status: VERIFIED
 - `/자유시장구매 [번호]`
 - `/자유시장취소 [번호]`
 - `/거래소강제취소 [번호]`
+- `/자유시장생성`
 - `/자유시장현황`
 - `/거래현황`
 
