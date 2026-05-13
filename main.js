@@ -1092,6 +1092,7 @@ let Master = initData.master;
 let Admins = Object.keys(initData.admin);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 const GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER = 5; // 소드마스터 1명당 영지전 공격 턴
+const GUILD_TERRITORY_WRONG_TURN_PENALTY = 5; // 영지공격 오입력 패널티 턴
 const GUILD_TERRITORY_TURN_TIMEOUT_MS = 1000 * 13; // 길드 영토전 턴 타임아웃 (13초)
 const GUILD_TERRITORY_TIMEOUT_MISS_LIMIT = 3; // 영지전 시간초과 미공격 탈락 기준
 const GUILD_TERRITORY_TURN_FUND_REWARD = 100000000; // 영지전 공격 턴 기본보상
@@ -1298,7 +1299,7 @@ function isMutableGuildTerritoryCommand(msg) {
 		msg === "/길드영지초기화" ||
 		msg === "/길드영지순서" ||
 		msg === "/길드영지확인" ||
-		msg.indexOf("/영지공격") === 0 ||
+		/^\/영지공격\s+[1-5]$/.test(msg) ||
 		msg.indexOf("/불안정") === 0 ||
 		msg.indexOf("/안정") === 0 ||
 		msg.indexOf("/균열") === 0 ||
@@ -13001,7 +13002,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 
 				// 길드 영지 공격 명령어 처리
-				if (msg.indexOf("/영지공격") === 0) {
+				if (/^\/영지공격\s+[1-5]$/.test(msg)) {
 
 					// 현재 영지전 상태 확인
 					var attackWar = ensureGuildTerritoryWar(data, guildData);
@@ -13015,7 +13016,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					// 입력값 검증 (1~5번 영지)
-					var attackParts = msg.split(" ");
+					var attackParts = msg.trim().split(/\s+/);
 					if (attackParts.length < 2 || !/^[1-5]$/.test(attackParts[1])) {
 						replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
 						return;
@@ -13063,23 +13064,89 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var isWrongGuildTurn = !currentTurn || currentTurn.guildId !== attackInfo.guildId;
 					var isWrongUserTurn = false;
 					if (isWrongGuildTurn || isWrongUserTurn) {
-						attackWar.eliminatedUsers[sender] = {
-							guildId: attackInfo.guildId,
-							reason: "TURN_MISMATCH",
-							at: formatDateTime(new Date())
-						};
+						var wrongTurnAttackLimit = getGuildTerritoryAttackLimitForWar(attackWar, attackInfo.guild, attackInfo.guildId);
+						var wrongTurnUsed = attackWar.guildAttackCounts[attackInfo.guildId] || 0;
+						var wrongTurnRemain = Math.max(0, wrongTurnAttackLimit - wrongTurnUsed);
+						var wrongTurnMessage = "";
+
+						if (wrongTurnRemain < GUILD_TERRITORY_WRONG_TURN_PENALTY) {
+							attackWar.eliminatedGuilds[attackInfo.guildId] = {
+								reason: "WRONG_TURN_PENALTY",
+								at: formatDateTime(new Date()),
+								remainingTurns: wrongTurnRemain,
+								penaltyTurns: GUILD_TERRITORY_WRONG_TURN_PENALTY
+							};
+							attackWar.eliminatedUsers[sender] = {
+								guildId: attackInfo.guildId,
+								reason: "TURN_MISMATCH",
+								at: formatDateTime(new Date()),
+								remainingTurns: wrongTurnRemain,
+								penaltyTurns: GUILD_TERRITORY_WRONG_TURN_PENALTY
+							};
+							wrongTurnMessage =
+								"[" +
+								checkRank(data, petData, guildData, sender) +
+								"] 님 탈락🥹\n" +
+								"⚠️ 영지전 규칙 위반 ⚠️\n" +
+								"해당 유저는 이번 길드 영지전 로테이션에서 탈락합니다.\n\n" +
+								"[" +
+								formatGuildDisplay(attackInfo.guild) +
+								"] (" +
+								wrongTurnRemain +
+								"/" +
+								wrongTurnAttackLimit +
+								"⚔)(턴 -" +
+								GUILD_TERRITORY_WRONG_TURN_PENALTY +
+								")\n" +
+								"→ -5회 차감 불가\n" +
+								"→ [" +
+								formatGuildDisplay(attackInfo.guild) +
+								"] 길드 탈락";
+						} else {
+							var wrongTurnAfterRemain = Math.max(0, wrongTurnRemain - GUILD_TERRITORY_WRONG_TURN_PENALTY);
+							attackWar.guildAttackCounts[attackInfo.guildId] = wrongTurnUsed + GUILD_TERRITORY_WRONG_TURN_PENALTY;
+							attackWar.eliminatedUsers[sender] = {
+								guildId: attackInfo.guildId,
+								reason: "TURN_MISMATCH",
+								at: formatDateTime(new Date()),
+								remainingTurns: wrongTurnRemain,
+								penaltyTurns: GUILD_TERRITORY_WRONG_TURN_PENALTY
+							};
+							wrongTurnMessage =
+								"[" +
+								checkRank(data, petData, guildData, sender) +
+								"] 님 탈락🥹\n" +
+								"⚠️ 영지전 규칙 위반 ⚠️\n" +
+								"해당 유저는 이번 길드 영지전 로테이션에서 탈락합니다.\n\n" +
+								"[" +
+								formatGuildDisplay(attackInfo.guild) +
+								"] (" +
+								wrongTurnRemain +
+								"/" +
+								wrongTurnAttackLimit +
+								"⚔)(턴 -" +
+								GUILD_TERRITORY_WRONG_TURN_PENALTY +
+								")\n" +
+								"→ [" +
+								formatGuildDisplay(attackInfo.guild) +
+								"] 남은 턴(" +
+								wrongTurnAfterRemain +
+								"/" +
+								wrongTurnAttackLimit +
+								"⚔)\n\n" +
+								"턴을 다 소모하며 탈락합니다.";
+						}
 
 						saveJsonFile(guildData, guildPath);
 
-						replier.reply(
-							"[" +
-							checkRank(data, petData, guildData, sender) +
-							"] 님 탈락🥹\n" +
-							"⚠️ 영지전 규칙 위반 ⚠️\n" +
-							"현재 본인 길드 차례가 아니거나,\n" +
-							"공격 순서에 맞지 않은 상태에서 '/영지공격'을 입력하였습니다.\n\n" +
-							"해당 유저는 이번 길드 영지전 로테이션에서 탈락합니다."
-						);
+						replier.reply(wrongTurnMessage);
+						if (isGuildTerritoryAllDone(data, guildData)) {
+							finishGuildTerritoryWar(data, guildData, "오입력 패널티");
+							withGuildTerritoryDataMode(guildData, function () {
+								saveJsonFile(guildData, guildPath);
+								saveJsonFile(data, filePath);
+							});
+						}
 						return;
 					}
 
@@ -25687,7 +25754,27 @@ function buildGuildTerritoryStartMessage(data, guildData) {
 		"길드 영지전이 시작되었습니다.\n\n" +
 		"'/영지공격 [숫자]' 명령어로 영지를 점령해보세요.\n" +
 		"길드의 '소드마스터🤺' 또는 전투형 지휘관📙 길드마스터만 영지공격이 가능하며,\n" +
-		"종료 시점에 최종 점령 중인 길드가 해당 영지를 차지합니다."
+		"종료 시점에 최종 점령 중인 길드가 해당 영지를 차지합니다.\n\n" +
+		"🏰 캐슬공격 규칙 안내\n" +
+		"━━━━━━━━━━━━━━━\n\n" +
+		"⚔️ 공격 참여 인원\n" +
+		"- 소드마스터\n" +
+		"- 전투형 지휘관(길마)\n" +
+		"- 기사단 증원(소마)\n\n" +
+		"━━━━━━━━━━━━━━━\n" +
+		"⚠️ 오입력 패널티\n" +
+		"공격 명령 오입력 시\n" +
+		"공격 횟수 -5회 차감\n\n" +
+		"━━━━━━━━━━━━━━━\n" +
+		"😵 길드 탈락 조건\n" +
+		"남은 공격 턴이 오입력 패널티 \n" +
+		"차감 횟수보다 적을 경우\n" +
+		"공격 횟수 차감이 불가능하므로 \n" +
+		"길드 탈락 처리\n\n" +
+		"예시)\n" +
+		"남은 턴 4회 상태에서 오입력 발생\n" +
+		"→ -5회 차감 불가\n" +
+		"→ 길드 탈락"
 	);
 }
 
