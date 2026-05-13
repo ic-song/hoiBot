@@ -143,34 +143,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var titleData = loadJsonFile(memberTitlePath);
 		var petTitleData = loadJsonFile(petTitlePath);
 		var guildData = loadJsonFile(guildPath);
-		if (msg === "/소지품유닛검사" && (sender === "호이 남" || sender === "젤리 남")) {
-			var itemList = "모든 유저의 캐슬 관련 아이템:\n";
-			for (var user in data.member) {
-				var userDisplay = data.member[user].rank.emoji + user;
-				var userItems = data.member[user].bag;
-				var filteredItems = [];
-				for (var itemKey in castleItem) {
-					if (parseInt(itemKey.replace("item_", "")) >= 5 && parseInt(itemKey.replace("item_", "")) <= 98) {
-						var itemName = castleItem[itemKey].name;
-
-						if (userItems[itemName]) {
-							filteredItems.push([itemName, userItems[itemName]]);
-						}
-					}
-				}
-				if (filteredItems.length > 0) {
-					var responseMessage = "🧳 [" + userDisplay + "] 의 가방:\n";
-					filteredItems.forEach(function (item, index) {
-						responseMessage += index + 1 + ". " + item[0] + " : " + item[1] + "개\n";
-					});
-					itemList += responseMessage + "\n";
-				}
-			}
-			if (itemList === "모든 유저의 캐슬 관련 아이템:\n") {
-				itemList += "캐슬 관련 아이템을 가진 멤버가 없습니다.\n";
-			}
-			replier.reply(itemList);
-		}
 
 		if (msg.startsWith("/정보") && (isAdmin(sender) || isMaster(sender))) {
 			var targetUser = msg.substring("/정보".length).trim();

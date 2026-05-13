@@ -152,7 +152,6 @@ Status: VERIFIED
 - `/가방속성`
 - `/가방추가`
 - `/당근`
-- `/돌가방`
 
 ## AI Notes
 
@@ -1693,22 +1692,6 @@ Status: VERIFIED
 
 ---
 
-# /돌가방
-Status: VERIFIED
-## Command Anchors
-- `main.js:21589`
-## Files
-- `main.js`
-## Related Helpers
-- `checkRank`
-## Data Usage
-- `data.member[sender].bag[STONE_NAME]`
-## Save Flow
-- Read-only
-## Related Commands
-- `/가방`
-
----
 
 # /가방속성 [유저명] [아이템번호] [갯수]
 Status: VERIFIED
