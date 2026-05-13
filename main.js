@@ -11201,397 +11201,303 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				// ━━━━━━━━━━━━━━━━━━━━
-// 안전 함수
-// ━━━━━━━━━━━━━━━━━━━━
-
-// 안전한 allsee
-function safeAllSee(enable) {
-
-   if (!enable) {
-      return "";
-   }
-
-   // 너무 길면 다른 코드까지 버퍼 꼬임 발생
-   return "\u200b".repeat(80);
-}
-
-// 안전한 reply
-function safeReply(msgText) {
-
-   if (!msgText) {
-      return;
-   }
-
-   msgText = String(msgText);
-
-   // 카카오 최대 길이 방어
-   if (msgText.length > 3500) {
-      msgText = msgText.slice(0, 3500) + "\n...";
-   }
-
-   replier.reply(msgText);
-}
-
-// 성별 체크
-function getGender(name) {
-
-   if (!name) return null;
-
-   if (name.indexOf(" 남") !== -1) {
-      return "남";
-   }
-
-   if (name.indexOf(" 여") !== -1) {
-      return "여";
-   }
-
-   return null;
-}
-
-
-
-// ━━━━━━━━━━━━━━━━━━━━
-// 오톡 소개팅
-// ━━━━━━━━━━━━━━━━━━━━
-
-if (msg === "/안녕하세요?") {
-
-   // 유저 데이터 체크
-   if (!data.member[sender]) {
-      replier.reply("유저 데이터를 찾을 수 없습니다.");
-      return;
-   }
-
-   // bag 없으면 생성
-   if (!data.member[sender].bag) {
-      data.member[sender].bag = {};
-   }
-
-   // point 없으면 생성
-   if (data.member[sender].point == null) {
-      data.member[sender].point = 0;
-   }
-
-   var datingItemName = "오톡소개팅💘(/안녕하세요?)";
-
-   // 아이템 체크
-   if (
-      data.member[sender].bag[datingItemName] === undefined ||
-      data.member[sender].bag[datingItemName] <= 0
-   ) {
-      replier.reply(datingItemName + " 이(가) 없습니다.");
-      return;
-   }
-
-   // 사용권 차감
-   if (data.member[sender].bag[datingItemName] > 1) {
-      data.member[sender].bag[datingItemName]--;
-   } else {
-      delete data.member[sender].bag[datingItemName];
-   }
-
-   // 보상
-   var blindDateItems = {
-      "돌멩이🪨": 200,
-      "펫스윗홈인테리어샵🖼️(/샵오픈)": 100,
-      "티어 승급티켓🎟": 5
-   };
-
-   // 닉네임 목록
-   var titleText =
-   "쟈기 여, 빵미 여, 오늘 여, 콩콩 여, 해인 남, 퍼플 여, 희재 남, 반지 여, 베라 여, 호이 남";
-
-   var titleList = titleText.split(", ");
-
-   // 유저 성별
-   var userGender = getGender(sender);
-
-   var targetGender = null;
-
-   if (userGender === "남") {
-      targetGender = "여";
-   } else if (userGender === "여") {
-      targetGender = "남";
-   }
-
-   // 성별 필터
-   var filteredTitleList = [];
-
-   for (var i = 0; i < titleList.length; i++) {
-
-      if (getGender(titleList[i]) === targetGender) {
-         filteredTitleList.push(titleList[i]);
-      }
-   }
-
-   // fallback
-   if (filteredTitleList.length <= 0) {
-      filteredTitleList = titleList;
-   }
-
-   // 최종 체크
-   if (filteredTitleList.length <= 0) {
-      replier.reply("소개팅 상대를 찾을 수 없습니다.");
-      return;
-   }
-
-   // 랜덤 상대
-   var finalTitle =
-      filteredTitleList[
-         Math.floor(Math.random() * filteredTitleList.length)
-      ];
-
-   if (!finalTitle) {
-      replier.reply("소개팅 생성 실패");
-      return;
-   }
-
-   var genderToken = getGender(finalTitle);
-
-   var randomEmoji = "💘";
-   var partnerText = "소개팅상대";
-
-   if (genderToken === "남") {
-      randomEmoji = "💓";
-      partnerText = "소개팅남";
-   }
-
-   if (genderToken === "여") {
-      randomEmoji = "💞";
-      partnerText = "소개팅녀";
-   }
-
-   var titleName = randomEmoji + finalTitle;
-
-   // 점수
-   var loveScore = Math.floor(Math.random() * 101);
-
-   var loveRank = "";
-   var imageLink = "";
-   var mentList = [];
-
-   // 점수 구간
-   if (loveScore <= 20) {
-
-      loveRank = "대화 단절💔";
-      imageLink = "https://ibb.co/7BRfwpj";
-
-      mentList = [
-         "첫 질문부터 정적이 흘렀습니다...",
-         "소개팅 장소에 찬바람이 불었습니다.",
-         "서로의 취향이 너무 달랐습니다."
-      ];
-
-   } else if (loveScore <= 40) {
-
-      loveRank = "어색한 첫만남😶";
-      imageLink = "https://ibb.co/T9ZCc6m";
-
-      mentList = [
-         "아직은 조금 어색한 분위기입니다.",
-         "공통 관심사를 찾는 중입니다.",
-         "조금 더 알아갈 시간이 필요합니다."
-      ];
-
-   } else if (loveScore <= 60) {
-
-      loveRank = "무난한 소개팅🤝";
-      imageLink = "https://ibb.co/rKTG6zg5";
-
-      mentList = [
-         "생각보다 대화가 잘 이어졌습니다.",
-         "첫만남치고는 나쁘지 않았습니다.",
-         "편안한 분위기였습니다."
-      ];
-
-   } else if (loveScore <= 80) {
-
-      loveRank = "설레는 분위기💗";
-      imageLink = "https://ibb.co/8gV0XcMx";
-
-      mentList = [
-         "묘하게 설레는 기류가 흘렀습니다.",
-         "둘 사이 분위기가 달달해졌습니다.",
-         "다음 만남이 기대됩니다."
-      ];
-
-   } else if (loveScore <= 95) {
-
-      loveRank = "애프터 각💞";
-      imageLink = "https://ibb.co/zWHJs6xB";
-
-      mentList = [
-         "분위기가 아주 좋았습니다.",
-         "애프터 성공 가능성이 높아보입니다.",
-         "핑크빛 기류가 흘렀습니다."
-      ];
-
-   } else {
-
-      loveRank = "운명적 첫만남💍";
-      imageLink = "https://ibb.co/MxrJw24c";
-
-      mentList = [
-         "첫눈에 서로를 알아본 듯했습니다.",
-         "이건 운명입니다.",
-         "오늘부터 1일이 될지도 모릅니다."
-      ];
-   }
-
-   // 랜덤 멘트
-   var loveMent =
-      mentList[
-         Math.floor(Math.random() * mentList.length)
-      ];
-
-   // 애프터
-   var afterSuccess = Math.random() < 0.5;
-
-   // 운명 여부
-   var isDestiny = loveScore >= 96;
-
-   // 타이틀 지급 여부
-   var titleGiven = afterSuccess || isDestiny;
-
-   // 애프터 문구
-   var afterText = "";
-
-   if (afterSuccess) {
-      afterText =
-      "애프터 신청 성공! 연락처 교환까지 완료했습니다💌";
-   } else {
-      afterText =
-      "애프터 신청 실패... 좋은 인연으로 남기로 했습니다📵";
-   }
-
-   // 보상 지급
-   for (var item in blindDateItems) {
-
-      addItemToBag(
-         data.member[sender].bag,
-         item,
-         blindDateItems[item]
-      );
-   }
-
-   // 운명 보너스
-   if (isDestiny) {
-      data.member[sender].point += 10000000000;
-   }
-
-   // 타이틀 데이터
-   var titleData = loadJsonFile(memberTitlePath);
-
-   if (!titleData.member) {
-      titleData.member = {};
-   }
-
-   if (!titleData.member[sender]) {
-
-      titleData.member[sender] = {
-         title: {
-            list: [],
-            num: null
-         }
-      };
-   }
-
-   if (!titleData.member[sender].title) {
-
-      titleData.member[sender].title = {
-         list: [],
-         num: null
-      };
-   }
-
-   if (!titleData.member[sender].title.list) {
-      titleData.member[sender].title.list = [];
-   }
-
-   // 타이틀 지급
-   if (titleGiven) {
-
-      titleData.member[sender].title.list.push({
-         name: titleName,
-         inDate: new Date(),
-         price: 50000000
-      });
-
-      saveJsonFile(titleData, memberTitlePath);
-   }
-
-   // allsee
-   var allsee = safeAllSee(false);
-
-   // 결과 메시지
-   var resultMsg = "";
-
-   resultMsg += imageLink + "\n\n";
-   resultMsg += "💘 호이월드 소개팅 💘\n";
-   resultMsg += "━━━━━━━━━━━━\n";
-   resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님의\n";
-   resultMsg += partnerText + ": " + titleName + "\n";
-   resultMsg += "💞 궁합점수: " + loveScore + "점 [" + loveRank + "]\n";
-   resultMsg += loveMent + "\n\n";
-
-   resultMsg += "💌 애프터 결과\n";
-   resultMsg += "━━━━━━━━━━━━\n";
-   resultMsg += afterText + "\n";
-
-   if (titleGiven) {
-      resultMsg += "타이틀지급: " + titleName;
-   } else {
-      resultMsg += "타이틀지급: 실패";
-   }
-
-   if (isDestiny) {
-
-      resultMsg += "\n\n💰 운명 보너스\n";
-      resultMsg += "━━━━━━━━━━━━\n";
-      resultMsg += "100억 포인트를 획득했습니다!";
-   }
-
-   // 보상 메시지
-   var rewardMsg = "";
-
-   rewardMsg += "🎁 기본 보상\n";
-   rewardMsg += "━━━━━━━━━━━━\n";
-   rewardMsg += "돌멩이🪨 x200\n";
-   rewardMsg += "펫스윗홈인테리어샵🖼️(/샵오픈) x100\n";
-   rewardMsg += "티어 승급티켓🎟 x5";
-
-   // allsee는 반드시 마지막
-   rewardMsg += "\n" + allsee;
-
-   // 출력
-   safeReply(resultMsg);
-   safeReply(rewardMsg);
-
-   // 월드 알림
-   if (isDestiny) {
-
-      var noticeText = "";
-
-      noticeText += "📢 운명의 장난.. 진작 너라 할 걸 그랬어\n";
-      noticeText += "━━━━━━━━━━━━\n";
-      noticeText += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
-      noticeText += "오톡소개팅💘에서 운명적인 첫만남을 만났습니다!\n\n";
-      noticeText += "상대: " + titleName + "\n";
-      noticeText += "궁합점수: " + loveScore + "점 💍\n";
-      noticeText += "보너스: 100억 포인트";
-
-      if (noticeText.length > 1500) {
-         noticeText = noticeText.slice(0, 1500);
-      }
-
-      noticeMsg(noticeText);
-   }
-
-   saveJsonFile(data, filePath);
-
-   return;
-}
+				if (msg === "/안녕하세요?") {
+					let datingItemName = "오톡소개팅💘(/안녕하세요?)";
+
+					if (
+						data.member[sender].bag[datingItemName] !== undefined &&
+						data.member[sender].bag[datingItemName] > 0
+					) {
+						if (data.member[sender].bag[datingItemName] > 1) {
+							data.member[sender].bag[datingItemName]--;
+						} else {
+							delete data.member[sender].bag[datingItemName];
+						}
+
+						let blindDateItems = {
+							"돌멩이🪨": 200,
+							"펫스윗홈인테리어샵🖼️(/샵오픈)": 100,
+							"티어 승급티켓🎟": 5
+						};
+
+						let titleText =
+						"쟈기 여, 빵미 여, 오늘 여, 콩콩 여, 해인 남, 퍼플 여, 희재 남, 반지 여, 베라 여, 호이 남, 마라 여, 잠자 남, 아오 남, 감자 여, 유유 여, 조사 남, 웨이 남, 뽀얌 여, 맹구 여, 하은 남, 자두 여, 멍멍 남, 사월 여, 윤아 여, 라면 남, 오오 여, 아라 여, 도도 여, 파이 여, 띠잉 여, 매실 여, 와이 남, 째째 남, 순희 여, 무지 여, 쿠키 여, 요정 남, 뒹굴 남, 콘트 남, 메메 남, 리치 여, 지노 남, 토끼 여, 비토 남, 키류 남, 거덩 남, 오성 남, 테디 남, 디브 남, 해치 여, 또또 여, 하든 남, 결정 남, 로키 남, 여름 여, 뭉이 남, 벨라 여, 몬드 남, 겨울 남, 이나 여, 푸딩 남, 잠결 남, 히야 여, 리리 여, 땅콩 여, 행춘 여, 나나 남, 원이 남, 뮤뮤 여, 비쟈 남, 하트 여, 카피 남, 거품 남, 네네 남, 빵티 남, 크롱 남, 크크 여, 돌팔 남, 계란 남, 달이 남, 콜라 남, 문다 남, 승묵 여, 공이 남, 팬주 여, 으니 여, 스킷 남, 오이 여, 악동 남, 알보 남, 쪼쪼 여, 하품 남, 반꼬 남, 프리 여, 늘보 여, 라니 남, 라떼 여, 삼삼 남, 포트 남, 라임 여, 켈리 여, 솜테 여, 크앙 남, 빙빙 남, 수달 여, 바다 남, 러쉬 여, 누렁 여, 신이 남, 민고 여, 악어 남, 깨꼬 여, 짱구 남, 디르 남, 케샤 남, 빈디 남, 베리 여, 블랙 남, 플라 여, 사자 남, 리안 여, 이다 남, 비트 남, 뿌뿌 여, 야호 남, 한별 남, 비누 여, 다퇴 남, 제이 남, 자헨 남, 루미 여, 랄랄 여, 코몽 여, 닻별 여, 츠짱 남, 꼬기 남, 좋아 여, 보보 남, 공통 여, 떨어 여, 리도 여, 동동 남, 해바 여, 콩이 여, 숑숑 여, 지하 여, 이로 남, 댕청 남, 소란 남, 이언 남, 빠루 남, 만쥬 여, 브로 남, 푸우 남, 깡깡 남, 라시 여, 쉬야 남, 포니 여, 콩두 여, 토토 남, 쇼지 남, 조로 남, 거지 남, 네간 남, 비따 남, 흐잉 남, 다딩 남, 데일 남, 기역 남, 펭귄 여, 루루 여, 티제 여, 흑백 여, 아아 여, 냥덕 여, 꽃잎 여, 마루 남, 에그 남, 콩순 여, 유후 여, 채채 여, 호흡 남, 삼오 남, 추냥 여, 먀아 여, 두아 여, 으어 남, 영화 여, 니즈 남, 유녕 남, 둘리 여, 낭만 남, 물음 남, 왕식 남, 초코 여, 맥이 여, 봉투 남, 갈비 남, 욤이 남, 꼬북 여, 석봉 남, 찐만 여, 죠니 여, 노을 남, 총총 여, 탕아 남, 지운 남, 그래 여, 하잉 여, 시루 남, 새우 여, 말복 남, 로나 여, 린코 여, 커치 남, 맥심 남, 슬이 여, 밍밍 여, 고굼 여, 보리 여, 디어 남, 써니 여, 아나 여, 자유 남, 햇살 여, 진동 남, 챱츄 여, 테라 남, 예하 여, 훈이 남, 키리 여, 와니 여, 리퐁 남, 오션 여, 만보 여, 구경 여, 레르 남, 베트 남, 만월 남, 택택 남, 시월 남, 냥이 여, 별별 여, 아연 여, 멜론 여, 춘배 남, 맴밈 남, 쿵야 여, 또리 여, 두콩 남, 휴가 남, 로즈 여, 누누 남, 곰탱 남, 곧봄 여, 은섭 남, 라언 남, 치쿵 여, 성준 남, 악사 남, 몽멍 여, 러드 남, 노아 남, 밤톨 남, 중식 여, 쏘쏘 여, 레이 여, 토리 남, 벼리 여, 뚜압 남, 후니 남, 슈아 여, 호랭 남, 자몽 여, 성현 남, 꿍띠 여, 달빛 남, 경도 남, 이연 남, 땡주 남, 빈이 여, 미칸 여, 고장 남, 앙꼬 여, 나연 여, 베베 여, 다람 여, 실비 남, 허브 남, 타로 남, 다롱 여, 캬라 남, 풀잎 여, 나무 남, 마크 남, 에몽 여, 아지 여, 바기 남";
+
+						let titleList = titleText.split(", ");
+
+						const getGender = function(name) {
+							let parts = name.trim().split(/\s+/);
+							let last = parts[parts.length - 1];
+
+							if (last === "남") return "남";
+							if (last === "여") return "여";
+
+							return null;
+						};
+
+						let userGender = getGender(sender);
+						let targetGender = null;
+
+						if (userGender === "남") {
+							targetGender = "여";
+						} else if (userGender === "여") {
+							targetGender = "남";
+						}
+
+						let filteredTitleList = [];
+
+						for (let i = 0; i < titleList.length; i++) {
+							if (getGender(titleList[i]) === targetGender) {
+								filteredTitleList.push(titleList[i]);
+							}
+						}
+
+						if (filteredTitleList.length === 0) {
+							filteredTitleList = titleList;
+						}
+
+						let finalTitle = filteredTitleList[Math.floor(Math.random() * filteredTitleList.length)];
+						let genderToken = getGender(finalTitle);
+
+						let randomEmoji = "";
+						let partnerText = "";
+
+						if (genderToken === "남") {
+							randomEmoji = "💓";
+							partnerText = "소개팅남";
+						} else if (genderToken === "여") {
+							randomEmoji = "💞";
+							partnerText = "소개팅녀";
+						} else {
+							randomEmoji = "💘";
+							partnerText = "소개팅상대";
+						}
+
+						let titleName = randomEmoji + finalTitle;
+
+						let loveScore = Math.floor(Math.random() * 101);
+						let loveRank = "";
+						let mentList = [];
+						let imageLink = "";
+
+						if (loveScore <= 20) {
+							loveRank = "대화 단절💔";
+							imageLink = "https://ibb.co/7BRfwpj";
+							mentList = [
+								"첫 질문부터 정적이 흘렀습니다...",
+								"서로 휴대폰만 바라보는 시간이 더 길었습니다.",
+								"물 한 잔 마시는 소리만 크게 들렸습니다.",
+								"상대가 급한 약속이 생겼다고 합니다.",
+								"분위기가 차갑게 식어버렸습니다.",
+								"소개팅 장소에 찬바람이 불었습니다.",
+								"서로의 취향이 너무 달랐습니다.",
+								"눈을 마주치는 시간이 거의 없었습니다.",
+								"첫인사 후 대화 주제가 실종되었습니다.",
+								"상대의 웃음이 예의상으로만 느껴졌습니다.",
+								"오톡 알림보다 대화가 더 조용했습니다."
+							];
+						} else if (loveScore <= 40) {
+							loveRank = "어색한 첫만남😶";
+							imageLink = "https://ibb.co/T9ZCc6m";
+							mentList = [
+								"나쁘진 않았지만 아직은 어색합니다.",
+								"대화는 했지만 웃음은 조금 부족했습니다.",
+								"서로 눈치를 보는 시간이 많았습니다.",
+								"공통 관심사를 찾는 중입니다.",
+								"애프터를 고민하게 되는 만남이었습니다.",
+								"분위기는 조용했지만 가능성은 남아 있습니다.",
+								"첫 만남이라 그런지 살짝 긴장했습니다.",
+								"서로 조금 더 알아갈 시간이 필요합니다.",
+								"대화방에 말풍선보다 침묵이 더 많았습니다.",
+								"상대의 취향을 맞추려다 서로 헷갈렸습니다.",
+								"좋은 사람 같지만 아직 설렘은 부족했습니다."
+							];
+						} else if (loveScore <= 60) {
+							loveRank = "무난한 소개팅🤝";
+							imageLink = "https://ibb.co/rKTG6zg5";
+							mentList = [
+								"생각보다 대화가 잘 이어졌습니다.",
+								"편안한 분위기로 첫만남을 마쳤습니다.",
+								"서로 나쁘지 않은 인상을 받았습니다.",
+								"친구처럼 편한 느낌이 들었습니다.",
+								"애프터 가능성이 살짝 보입니다.",
+								"처음치고는 꽤 괜찮은 만남이었습니다.",
+								"가벼운 웃음이 오가며 분위기가 풀렸습니다.",
+								"서로에게 좋은 첫인상을 남겼습니다.",
+								"대화 온도는 미지근하지만 안정적이었습니다.",
+								"상대가 생각보다 리액션을 잘해줬습니다.",
+								"부담 없는 대화로 첫 만남을 마무리했습니다."
+							];
+						} else if (loveScore <= 80) {
+							loveRank = "설레는 분위기💗";
+							imageLink = "https://ibb.co/8gV0XcMx";
+							mentList = [
+								"대화 중간중간 웃음이 끊이지 않았습니다.",
+								"묘하게 설레는 기류가 흘렀습니다.",
+								"상대가 은근히 관심을 보였습니다.",
+								"시간 가는 줄 모르고 대화했습니다.",
+								"다음 만남이 기대되는 분위기입니다.",
+								"둘 사이에 부드러운 호감이 피어났습니다.",
+								"소개팅 분위기가 점점 달달해졌습니다.",
+								"서로의 말에 자연스럽게 웃음이 나왔습니다.",
+								"오톡 말풍선마다 설렘이 묻어났습니다.",
+								"상대가 마지막까지 대화를 이어갔습니다.",
+								"첫 만남인데도 오래 알고 지낸 느낌이 들었습니다."
+							];
+						} else if (loveScore <= 95) {
+							loveRank = "애프터 각💞";
+							imageLink = "https://ibb.co/zWHJs6xB";
+							mentList = [
+								"상대가 먼저 다음 약속을 물어볼지도 모릅니다.",
+								"분위기가 아주 좋았습니다.",
+								"둘 사이에 핑크빛 기류가 흘렀습니다.",
+								"이 정도면 애프터 성공 가능성이 높습니다.",
+								"소개팅이 아니라 운명의 예고편 같았습니다.",
+								"서로의 취향이 꽤 잘 맞았습니다.",
+								"연락을 이어가고 싶은 분위기입니다.",
+								"오늘 만남은 꽤 성공적이었습니다.",
+								"상대가 헤어지기 아쉬워하는 눈치였습니다.",
+								"오톡 프로필을 다시 확인하게 되는 만남이었습니다.",
+								"다음 약속 장소를 상상하게 되는 분위기였습니다."
+							];
+						} else {
+							loveRank = "운명적 첫만남💍";
+							imageLink = "https://ibb.co/MxrJw24c";
+							mentList = [
+								"첫눈에 서로를 알아본 듯했습니다.",
+								"호이월드가 이어준 운명의 만남입니다.",
+								"이건 소개팅이 아니라 운명입니다.",
+								"둘 사이에 전설급 설렘이 폭발했습니다.",
+								"오늘부터 1일이 될지도 모릅니다.",
+								"소개팅 장소가 순간 웨딩홀처럼 느껴졌습니다.",
+								"서로의 심장이 같은 박자로 뛰었습니다.",
+								"호이월드 공식 천생연분급 만남입니다.",
+								"오톡 역사에 남을 첫만남이 탄생했습니다.",
+								"상대의 첫마디부터 운명처럼 느껴졌습니다.",
+								"이 만남은 저장각입니다. 놓치면 후회합니다."
+							];
+						}
+
+						let loveMent = mentList[Math.floor(Math.random() * mentList.length)];
+
+						let afterSuccess = Math.random() < 0.5;
+						let isDestiny = loveScore >= 96;
+						let titleGiven = afterSuccess || isDestiny;
+
+						let afterText = "";
+
+						if (afterSuccess) {
+							afterText = "애프터 신청 성공! 연락처 교환까지 완료했습니다💌";
+						} else {
+							afterText = "애프터 신청 실패... 좋은 인연으로 남기로 했습니다📵";
+						}
+
+						for (let item in blindDateItems) {
+							addItemToBag(data.member[sender].bag, item, blindDateItems[item]);
+						}
+
+						let jackpotPoint = 0;
+
+						if (isDestiny) {
+							jackpotPoint = 10000000000;
+							data.member[sender].point += jackpotPoint;
+						}
+
+						let titleData = loadJsonFile(memberTitlePath);
+
+						if (!titleData.member) titleData.member = {};
+
+						if (!titleData.member[sender]) {
+							titleData.member[sender] = {
+								title: {
+									list: [],
+									num: null
+								}
+							};
+						}
+
+						if (!titleData.member[sender].title) {
+							titleData.member[sender].title = {
+								list: [],
+								num: null
+							};
+						}
+
+						if (!titleData.member[sender].title.list) {
+							titleData.member[sender].title.list = [];
+						}
+
+						if (titleGiven) {
+							let newTitle = {
+								name: titleName,
+								inDate: new Date(),
+								price: 50000000
+							};
+
+							titleData.member[sender].title.list.push(newTitle);
+							saveJsonFile(titleData, memberTitlePath);
+						}
+
+
+						let resultMsg = "";
+						resultMsg += imageLink + "\n\n";
+						resultMsg += "💘 호이월드 소개팅 💘\n";
+						resultMsg += "━━━━━━━━━━━━\n";
+						resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + partnerText + ": " + titleName + "\n";
+						resultMsg += "💞 궁합점수: " + loveScore + "점 [" + loveRank + "]\n";
+						resultMsg += loveMent + "\n\n";
+						resultMsg += "💌 애프터 결과\n";
+						resultMsg += "━━━━━━━━━━━━\n";
+						resultMsg += afterText + "\n";
+
+						if (titleGiven) {
+							resultMsg += "타이틀지급: " + titleName;
+
+							if (isDestiny && !afterSuccess) {
+								resultMsg += "\n※ 운명적 첫만남으로 타이틀이 지급되었습니다.";
+							}
+						} else {
+							resultMsg += "타이틀지급: 실패";
+						}
+
+						if (jackpotPoint > 0) {
+							resultMsg += "\n\n💰 운명 보너스\n";
+							resultMsg += "━━━━━━━━━━━━\n";
+							resultMsg += "100억 포인트를 획득했습니다!";
+						}
+
+						let rewardMsg = "";
+						rewardMsg += "🎁 기본 보상" + allsee + "\n";
+						rewardMsg += "━━━━━━━━━━━━\n";
+						rewardMsg += "돌멩이🪨 x" + blindDateItems["돌멩이🪨"] + "\n";
+						rewardMsg += "펫스윗홈인테리어샵🖼️(/샵오픈) x" + blindDateItems["펫스윗홈인테리어샵🖼️(/샵오픈)"] + "\n";
+						rewardMsg += "티어 승급티켓🎟 x" + blindDateItems["티어 승급티켓🎟"];
+
+						replier.reply(resultMsg);
+						replier.reply(rewardMsg);
+
+						if (isDestiny) {
+							noticeMsg(
+								"📢 운명의 장난.. 진작 너라 할 걸 그랬어\n" +
+							"https://ibb.co/MxrJw24c\n" +
+								"━━━━━━━━━━━━\n" +
+								"[" + checkRank(data, petData, guildData, sender) + "] 님이\n" +
+								"오톡소개팅💘에서 운명적인 첫만남을 만났습니다!\n\n" +
+								"상대: " + titleName + "\n" +
+								"궁합점수: " + loveScore + "점 💍\n" +
+								"보너스: 100억 포인트\n" +
+								"타이틀: " + titleName
+							);
+						}
+
+						saveJsonFile(data, filePath);
+
+						return;
+					} else {
+						replier.reply(datingItemName + " 이(가) 없습니다.");
+						return;
+					}
+				}
 				if (msg === "/티켓오픈2") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] !== undefined && data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] > 0) {
