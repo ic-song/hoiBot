@@ -17119,7 +17119,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 							var hangawiItems = {
 								"보물지도🗺️": 40,
-								"호이베이스볼⚾️(/투수던집니다)": 30,
+								"오톡소개팅💘(/안녕하세요?)": 3,
 								"탐험확률UP🗻(30%)": 5,
 								"탐험확률UP🗻(40%)": 5,
 								"탐험확률UP🗻(50%)": 10,
