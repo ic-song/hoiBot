@@ -11173,230 +11173,205 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-if (msg === "/딴딴따라") {
-   var weddingItemName = "결혼해듀호이🤵👰(/딴딴따라)";
+if (msg === "/안녕하세요?") {
+   var datingItemName = "오톡소개팅💘(/안녕하세요?)";
 
    if (
-      data.member[sender].bag[weddingItemName] !== undefined &&
-      data.member[sender].bag[weddingItemName] > 0
+      data.member[sender].bag[datingItemName] !== undefined &&
+      data.member[sender].bag[datingItemName] > 0
    ) {
-      // 사용권 차감
-      if (data.member[sender].bag[weddingItemName] > 1) {
-         data.member[sender].bag[weddingItemName]--;
+      if (data.member[sender].bag[datingItemName] > 1) {
+         data.member[sender].bag[datingItemName]--;
       } else {
-         delete data.member[sender].bag[weddingItemName];
+         delete data.member[sender].bag[datingItemName];
       }
 
-      // 기본 지급 아이템
       var blindDateItems = {
          "돌멩이🪨": 200,
          "펫스윗홈인테리어샵🖼️(/샵오픈)": 15,
          "티어 승급티켓🎟": 5
       };
 
-      // 타이틀 목록
-      var titleList = [
-         "이불 여",
-         "라면 남",
-         "해인 남",
-         "신이 남",
-         "웨이 남",
-         "조사 남",
-         "오늘 여",
-         "감자 여",
-         "보보 남",
-         "테디 남",
-         "사월 여",
-         "똥통 남",
-         "달이 남",
-         "아라 여",
-         "밍이 여",
-         "라뷰 여",
-         "겸둥 남",
-         "콘트 남",
-         "희재 남",
-         "꼬기 남",
-         "비쟈 남",
-         "베라 여",
-         "쟈기 여",
-         "하든 남",
-         "원이 남",
-         "로또⭐️",
-         "또또 여",
-         "맹구 여",
-         "미칸 여",
-         "뿜뿜 여",
-         "짱구 남",
-         "악동 남",
-         "초밥 남",
-         "나나 남",
-         "뿡붕 남",
-         "진주 여",
-         "라라 여",
-         "벨라 여",
-         "우끼 남",
-         "꿀꿀 남",
-         "거품 남",
-         "자헨 남",
-         "감감 남",
-         "뿌뿌 여",
-         "라비 여",
-         "무지 여",
-         "원두 남",
-         "꼬막 남",
-         "하루 여",
-         "으어 남",
-         "냥이 여",
-         "허브 남",
-         "쏭쏭 여",
-         "비따 남",
-         "째째 남",
-         "멜론 여",
-         "할루 남",
-         "루카 남",
-         "유하 여",
-         "하은 남",
-         "구리 남",
-         "하품 남",
-         "소란 남",
-         "해치 여",
-         "아담 남",
-         "코몽 여",
-         "겨단 남",
-         "댕댕 남",
-         "매실 여",
-         "비트 남",
-         "냠냠 남",
-         "유유 여",
-         "하후 여",
-         "키리 여",
-         "야호 남",
-         "소떡 여",
-         "빠루 남",
-         "물음 남",
-         "스킷 남",
-         "제이 남",
-         "여름 여",
-         "부끄 여",
-         "볼베 여",
-         "리리 여",
-         "콩두 여",
-         "잠결 남",
-         "먀아 여",
-         "소솜 여",
-         "한글 남",
-         "카피 남",
-         "성빈 남",
-         "랄랄 여",
-         "씽씽 여",
-         "열심 남",
-         "켈리 여",
-         "불면 남",
-         "토토 남",
-         "거덩 남",
-         "두쫀 남",
-         "포니 여",
-         "후니 남",
-         "와니 여",
-         "뿡빵 여",
-         "탕아 남",
-         "히호 여",
-         "칠가 남",
-         "레르 남",
-         "몰루 남",
-         "라언 남",
-         "벱비 남",
-         "구름 여",
-         "티모 여",
-         "죠단 남",
-         "쿠키 여",
-         "꾸꾸 남",
-         "휴이 여",
-         "딸기 남",
-         "린코 여",
-         "동동 남",
-         "로로 여",
-         "사야 여",
-         "버블 남",
-         "악녀 여",
-         "혀니 여",
-         "꽃잎 여",
-         "히야 여",
-         "찐이 여",
-         "다람 여",
-         "국밥 남",
-         "네간 남",
-         "죠니 여",
-         "노을 남",
-         "지하 여",
-         "가을 여",
-         "그래 여",
-         "모모 여",
-         "써니 여",
-         "벌서 남",
-         "응즈 여",
-         "쪼쪼 여",
-         "오이 여",
-         "이삼 여",
-         "반꼬 남",
-         "디어 남",
-         "조로 남",
-         "떨어 여",
-         "새우 여",
-         "나무 남",
-         "리도 여",
-         "캐리 남",
-         "이슬 여",
-         "튜브 여",
-         "리퐁 남",
-         "노트 남",
-         "봉투 남",
-         "숑숑 여",
-         "로키 남",
-         "스날 여",
-         "마라 여",
-         "루루 남",
-         "자몽 여",
-         "토리 남",
-         "데일 남",
-         "모린 남",
-         "시루 남",
-         "추워 남",
-         "젤리 여",
-         "레드 남",
-         "찐만 여",
-         "도비 여",
-         "아아 여",
-         "갱갱 남",
-         "총총 여",
-         "삼오 남",
-         "유후 여",
-         "살구 여",
-         "악사 남",
-         "랭이 남",
-         "마녀 남",
-         "악어 남",
-         "절미 여",
-         "모카 남",
-         "땡주 남",
-         "춘봉 남",
-         "끼룩 남",
-         "새중 남",
-         "맥이 여",
-         "노랑 여",
-         "봄봄 여",
-         "실비 남",
-         "쓱싹 여",
-         "기역 남",
-         "쿵야 여",
-         "꼄이 여",
-         "흐하 남",
-         "미덴 남",
-         "두콩 남",
-         "댕청 남"
-      ];
+      var titleText =
+      "쟈기 여, 빵미 여, 오늘 여, 콩콩 여, 해인 남, 퍼플 여, 희재 남, 반지 여, 베라 여, 호이 남, 마라 여, 잠자 남, 아오 남, 감자 여, 유유 여, 조사 남, 웨이 남, 뽀얌 여, 맹구 여, 하은 남, 자두 여, 멍멍 남, 사월 여, 윤아 여, 라면 남, 오오 여, 아라 여, 도도 여, 파이 여, 띠잉 여, 매실 여, 와이 남, 째째 남, 순희 여, 무지 여, 쿠키 여, 요정 남, 뒹굴 남, 콘트 남, 메메 남, 리치 여, 지노 남, 토끼 여, 비토 남, 키류 남, 거덩 남, 오성 남, 테디 남, 디브 남, 해치 여, 또또 여, 하든 남, 결정 남, 로키 남, 여름 여, 뭉이 남, 벨라 여, 몬드 남, 겨울 남, 이나 여, 푸딩 남, 잠결 남, 히야 여, 리리 여, 땅콩 여, 행춘 여, 나나 남, 원이 남, 뮤뮤 여, 비쟈 남, 하트 여, 카피 남, 거품 남, 네네 남, 빵티 남, 크롱 남, 크크 여, 돌팔 남, 계란 남, 달이 남, 콜라 남, 문다 남, 승묵 여, 공이 남, 팬주 여, 으니 여, 스킷 남, 오이 여, 악동 남, 알보 남, 쪼쪼 여, 하품 남, 반꼬 남, 프리 여, 늘보 여, 라니 남, 라떼 여, 삼삼 남, 포트 남, 라임 여, 켈리 여, 솜테 여, 크앙 남, 빙빙 남, 수달 여, 바다 남, 러쉬 여, 누렁 여, 신이 남, 민고 여, 악어 남, 깨꼬 여, 짱구 남, 디르 남, 케샤 남, 빈디 남, 베리 여, 블랙 남, 플라 여, 사자 남, 리안 여, 이다 남, 비트 남, 뿌뿌 여, 야호 남, 한별 남, 비누 여, 다퇴 남, 제이 남, 자헨 남, 루미 여, 랄랄 여, 코몽 여, 닻별 여, 츠짱 남, 꼬기 남, 좋아 여, 보보 남, 공통 여, 떨어 여, 리도 여, 동동 남, 해바 여, 콩이 여, 숑숑 여, 지하 여, 이로 남, 댕청 남, 소란 남, 이언 남, 빠루 남, 만쥬 여, 브로 남, 푸우 남, 깡깡 남, 라시 여, 쉬야 남, 포니 여, 콩두 여, 토토 남, 쇼지 남, 조로 남, 거지 남, 네간 남, 비따 남, 흐잉 남, 다딩 남, 데일 남, 기역 남, 펭귄 여, 루루 여, 티제 여, 흑백 여, 아아 여, 냥덕 여, 꽃잎 여, 마루 남, 에그 남, 콩순 여, 유후 여, 채채 여, 호흡 남, 삼오 남, 추냥 여, 먀아 여, 두아 여, 으어 남, 영화 여, 니즈 남, 유녕 남, 둘리 여, 낭만 남, 물음 남, 왕식 남, 초코 여, 맥이 여, 봉투 남, 갈비 남, 욤이 남, 꼬북 여, 석봉 남, 찐만 여, 죠니 여, 노을 남, 총총 여, 탕아 남, 지운 남, 그래 여, 하잉 여, 시루 남, 새우 여, 말복 남, 로나 여, 린코 여, 커치 남, 맥심 남, 슬이 여, 밍밍 여, 고굼 여, 보리 여, 디어 남, 써니 여, 아나 여, 자유 남, 햇살 여, 진동 남, 챱츄 여, 테라 남, 예하 여, 훈이 남, 키리 여, 와니 여, 리퐁 남, 오션 여, 만보 여, 구경 여, 레르 남, 베트 남, 만월 남, 택택 남, 시월 남, 냥이 여, 별별 여, 아연 여, 멜론 여, 춘배 남, 맴밈 남, 쿵야 여, 또리 여, 두콩 남, 휴가 남, 로즈 여, 누누 남, 곰탱 남, 곧봄 여, 은섭 남, 라언 남, 치쿵 여, 성준 남, 악사 남, 몽멍 여, 러드 남, 노아 남, 밤톨 남, 중식 여, 쏘쏘 여, 레이 여, 토리 남, 벼리 여, 뚜압 남, 후니 남, 슈아 여, 호랭 남, 자몽 여, 성현 남, 꿍띠 여, 달빛 남, 경도 남, 이연 남, 땡주 남, 빈이 여, 미칸 여, 고장 남, 앙꼬 여, 나연 여, 베베 여, 다람 여, 실비 남, 허브 남, 타로 남, 다롱 여, 캬라 남, 풀잎 여, 나무 남, 마크 남, 에몽 여, 아지 여, 바기 남";
 
-      // 타이틀 데이터 불러오기
+      var titleList = titleText.split(", ");
+
+      function getGender(name) {
+         var parts = name.trim().split(/\s+/);
+         var last = parts[parts.length - 1];
+
+         if (last === "남") return "남";
+         if (last === "여") return "여";
+
+         return null;
+      }
+
+      var userGender = getGender(sender);
+      var targetGender = null;
+
+      if (userGender === "남") {
+         targetGender = "여";
+      } else if (userGender === "여") {
+         targetGender = "남";
+      }
+
+      var filteredTitleList = [];
+
+      for (var i = 0; i < titleList.length; i++) {
+         if (getGender(titleList[i]) === targetGender) {
+            filteredTitleList.push(titleList[i]);
+         }
+      }
+
+      if (filteredTitleList.length === 0) {
+         filteredTitleList = titleList;
+      }
+
+      var finalTitle = filteredTitleList[Math.floor(Math.random() * filteredTitleList.length)];
+      var genderToken = getGender(finalTitle);
+
+      var randomEmoji = "";
+      var partnerText = "";
+
+      if (genderToken === "남") {
+         randomEmoji = "🤵";
+         partnerText = "소개팅남";
+      } else if (genderToken === "여") {
+         randomEmoji = "👰";
+         partnerText = "소개팅녀";
+      } else {
+         randomEmoji = "💘";
+         partnerText = "소개팅상대";
+      }
+
+      var titleName = randomEmoji + finalTitle;
+
+      var loveScore = Math.floor(Math.random() * 101);
+      var loveRank = "";
+      var mentList = [];
+      var imageLink = "";
+
+      if (loveScore <= 20) {
+         loveRank = "대화 단절💔";
+         imageLink = "https://ibb.co/7BRfwpj";
+         mentList = [
+            "첫 질문부터 정적이 흘렀습니다...",
+            "서로 휴대폰만 바라보는 시간이 더 길었습니다.",
+            "물 한 잔 마시는 소리만 크게 들렸습니다.",
+            "상대가 급한 약속이 생겼다고 합니다.",
+            "분위기가 차갑게 식어버렸습니다.",
+            "소개팅 장소에 찬바람이 불었습니다.",
+            "서로의 취향이 너무 달랐습니다.",
+            "눈을 마주치는 시간이 거의 없었습니다.",
+            "첫인사 후 대화 주제가 실종되었습니다.",
+            "상대의 웃음이 예의상으로만 느껴졌습니다.",
+            "오톡 알림보다 대화가 더 조용했습니다."
+         ];
+      } else if (loveScore <= 40) {
+         loveRank = "어색한 첫만남😶";
+         imageLink = "https://ibb.co/T9ZCc6m";
+         mentList = [
+            "나쁘진 않았지만 아직은 어색합니다.",
+            "대화는 했지만 웃음은 조금 부족했습니다.",
+            "서로 눈치를 보는 시간이 많았습니다.",
+            "공통 관심사를 찾는 중입니다.",
+            "애프터를 고민하게 되는 만남이었습니다.",
+            "분위기는 조용했지만 가능성은 남아 있습니다.",
+            "첫 만남이라 그런지 살짝 긴장했습니다.",
+            "서로 조금 더 알아갈 시간이 필요합니다.",
+            "대화방에 말풍선보다 침묵이 더 많았습니다.",
+            "상대의 취향을 맞추려다 서로 헷갈렸습니다.",
+            "좋은 사람 같지만 아직 설렘은 부족했습니다."
+         ];
+      } else if (loveScore <= 60) {
+         loveRank = "무난한 소개팅🤝";
+         imageLink = "https://ibb.co/rKTG6zg5";
+         mentList = [
+            "생각보다 대화가 잘 이어졌습니다.",
+            "편안한 분위기로 첫만남을 마쳤습니다.",
+            "서로 나쁘지 않은 인상을 받았습니다.",
+            "친구처럼 편한 느낌이 들었습니다.",
+            "애프터 가능성이 살짝 보입니다.",
+            "처음치고는 꽤 괜찮은 만남이었습니다.",
+            "가벼운 웃음이 오가며 분위기가 풀렸습니다.",
+            "서로에게 좋은 첫인상을 남겼습니다.",
+            "대화 온도는 미지근하지만 안정적이었습니다.",
+            "상대가 생각보다 리액션을 잘해줬습니다.",
+            "부담 없는 대화로 첫 만남을 마무리했습니다."
+         ];
+      } else if (loveScore <= 80) {
+         loveRank = "설레는 분위기💗";
+         imageLink = "https://ibb.co/8gV0XcMx";
+         mentList = [
+            "대화 중간중간 웃음이 끊이지 않았습니다.",
+            "묘하게 설레는 기류가 흘렀습니다.",
+            "상대가 은근히 관심을 보였습니다.",
+            "시간 가는 줄 모르고 대화했습니다.",
+            "다음 만남이 기대되는 분위기입니다.",
+            "둘 사이에 부드러운 호감이 피어났습니다.",
+            "소개팅 분위기가 점점 달달해졌습니다.",
+            "서로의 말에 자연스럽게 웃음이 나왔습니다.",
+            "오톡 말풍선마다 설렘이 묻어났습니다.",
+            "상대가 마지막까지 대화를 이어갔습니다.",
+            "첫 만남인데도 오래 알고 지낸 느낌이 들었습니다."
+         ];
+      } else if (loveScore <= 95) {
+         loveRank = "애프터 각💞";
+         imageLink = "https://ibb.co/zWHJs6xB";
+         mentList = [
+            "상대가 먼저 다음 약속을 물어볼지도 모릅니다.",
+            "분위기가 아주 좋았습니다.",
+            "둘 사이에 핑크빛 기류가 흘렀습니다.",
+            "이 정도면 애프터 성공 가능성이 높습니다.",
+            "소개팅이 아니라 운명의 예고편 같았습니다.",
+            "서로의 취향이 꽤 잘 맞았습니다.",
+            "연락을 이어가고 싶은 분위기입니다.",
+            "오늘 만남은 꽤 성공적이었습니다.",
+            "상대가 헤어지기 아쉬워하는 눈치였습니다.",
+            "오톡 프로필을 다시 확인하게 되는 만남이었습니다.",
+            "다음 약속 장소를 상상하게 되는 분위기였습니다."
+         ];
+      } else {
+         loveRank = "운명적 첫만남💍";
+         imageLink = "https://ibb.co/MxrJw24c";
+         mentList = [
+            "첫눈에 서로를 알아본 듯했습니다.",
+            "호이월드가 이어준 운명의 만남입니다.",
+            "이건 소개팅이 아니라 운명입니다.",
+            "둘 사이에 전설급 설렘이 폭발했습니다.",
+            "오늘부터 1일이 될지도 모릅니다.",
+            "소개팅 장소가 순간 웨딩홀처럼 느껴졌습니다.",
+            "서로의 심장이 같은 박자로 뛰었습니다.",
+            "호이월드 공식 천생연분급 만남입니다.",
+            "오톡 역사에 남을 첫만남이 탄생했습니다.",
+            "상대의 첫마디부터 운명처럼 느껴졌습니다.",
+            "이 만남은 저장각입니다. 놓치면 후회합니다."
+         ];
+      }
+
+      var loveMent = mentList[Math.floor(Math.random() * mentList.length)];
+
+      var afterSuccess = Math.random() < 0.5;
+      var afterText = "";
+
+      if (afterSuccess) {
+         afterText = "애프터 신청 성공! 연락처 교환까지 완료했습니다💌";
+      } else {
+         afterText = "애프터 신청 실패... 좋은 인연으로 남기로 했습니다📵";
+      }
+
+      for (var item in blindDateItems) {
+         addItemToBag(data.member[sender].bag, item, blindDateItems[item]);
+      }
+
+      var jackpotPoint = 0;
+
+      if (loveScore >= 96) {
+         jackpotPoint = 10000000000;
+         data.member[sender].point += jackpotPoint;
+      }
+
       var titleData = loadJsonFile(memberTitlePath);
 
       if (!titleData.member) titleData.member = {};
@@ -11421,202 +11396,69 @@ if (msg === "/딴딴따라") {
          titleData.member[sender].title.list = [];
       }
 
-      // 성별이 없는 칭호는 랜덤 성별 부여
-      function ensureGenderTagged(title) {
-         var parts = title.trim().split(/\s+/);
-         var last = parts[parts.length - 1];
+      if (afterSuccess) {
+         var newTitle = {
+            name: titleName,
+            inDate: new Date(),
+            price: 50000000
+         };
 
-         if (last === "남" || last === "여") {
-            return title;
-         }
-
-         var gender = Math.random() < 0.5 ? "남" : "여";
-         return title + " " + gender;
+         titleData.member[sender].title.list.push(newTitle);
+         saveJsonFile(titleData, memberTitlePath);
       }
 
-      // 랜덤 결혼대상자 선택
-      var rawTitle = titleList[Math.floor(Math.random() * titleList.length)];
-      var finalTitle = ensureGenderTagged(rawTitle);
+      var allsee = "\u200b".repeat(500);
 
-      var tokens = finalTitle.split(" ");
-      var genderToken = tokens[tokens.length - 1];
+      var resultMsg = "";
+      resultMsg += imageLink + "\n\n";
+      resultMsg += "💘 호이월드 소개팅 💘\n";
+      resultMsg += "━━━━━━━━━━━━\n";
+      resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님의 " + partnerText + ": " + titleName + "\n";
+      resultMsg += "💞 궁합점수: " + loveScore + "점 [" + loveRank + "]\n";
+      resultMsg += loveMent + "\n\n";
+      resultMsg += "💌 애프터 결과\n";
+      resultMsg += "━━━━━━━━━━━━\n";
+      resultMsg += afterText + "\n";
 
-      // 성별별 이모지 / 문구
-      var randomEmoji = "";
-      var partnerLine = "";
-
-      if (genderToken === "남") {
-         randomEmoji = "🤵";
-         partnerLine = "💍 미래의 신랑감을 찾았어요!";
-      } else if (genderToken === "여") {
-         randomEmoji = "👰";
-         partnerLine = "💐 미래의 신부감을 찾았어요!";
+      if (afterSuccess) {
+         resultMsg += "타이틀지급: " + titleName;
       } else {
-         randomEmoji = "💞";
-         partnerLine = "이상형을 찾았어요!";
+         resultMsg += "타이틀지급: 실패";
       }
 
-      // 궁합점수 미니게임
-      var loveScore = Math.floor(Math.random() * 101);
-      var loveRank = "";
-      var loveComment = "";
-      var lovePieceReward = 0;
-      var stoneBonus = 0;
-
-      if (loveScore <= 20) {
-         loveRank = "파혼 위기💔";
-         loveComment = "첫 만남부터 분위기가 싸늘합니다...";
-         lovePieceReward = 0;
-         stoneBonus = 0;
-      } else if (loveScore <= 40) {
-         loveRank = "어색한 사이😶";
-         loveComment = "아직은 서로를 알아가는 시간이 필요합니다.";
-         lovePieceReward = 0;
-         stoneBonus = 20;
-      } else if (loveScore <= 60) {
-         loveRank = "친구 같은 사이🤝";
-         loveComment = "연인보다는 친구 같은 편안함이 느껴집니다.";
-         lovePieceReward = 0;
-         stoneBonus = 50;
-      } else if (loveScore <= 80) {
-         loveRank = "설레는 사이💗";
-         loveComment = "두근두근 설렘이 피어나기 시작했습니다.";
-         lovePieceReward = 1;
-         stoneBonus = 0;
-      } else if (loveScore <= 95) {
-         loveRank = "천생연분💞";
-         loveComment = "호이월드가 인정한 찰떡궁합입니다!";
-         lovePieceReward = 2;
-         stoneBonus = 0;
-      } else {
-         loveRank = "운명 그 자체💍";
-         loveComment = "이 만남은 운명입니다. 전설의 커플 탄생!";
-         lovePieceReward = 5;
-         stoneBonus = 0;
+      if (jackpotPoint > 0) {
+         resultMsg += "\n\n💰 운명 보너스\n";
+         resultMsg += "━━━━━━━━━━━━\n";
+         resultMsg += "100억 포인트를 획득했습니다!";
       }
 
-      // 부케잡기 미니게임
-      var bouquetRand = Math.random();
-      var bouquetResult = "";
-      var bouquetReward = 0;
-      var bouquetStoneBonus = 0;
+      var rewardMsg = "";
+      rewardMsg += "🎁 기본 보상" + allsee + "\n";
+      rewardMsg += "━━━━━━━━━━━━\n";
+      rewardMsg += "돌멩이🪨 x" + blindDateItems["돌멩이🪨"] + "\n";
+      rewardMsg += "펫스윗홈인테리어샵🖼️(/샵오픈) x" + blindDateItems["펫스윗홈인테리어샵🖼️(/샵오픈)"] + "\n";
+      rewardMsg += "티어 승급티켓🎟 x" + blindDateItems["티어 승급티켓🎟"];
 
-      if (bouquetRand < 0.40) {
-         bouquetResult = "부케를 놓쳤습니다...💨";
-         bouquetReward = 0;
-         bouquetStoneBonus = 10;
-      } else if (bouquetRand < 0.75) {
-         bouquetResult = "부케를 아슬아슬하게 잡았습니다!💐";
-         bouquetReward = 1;
-         bouquetStoneBonus = 0;
-      } else if (bouquetRand < 0.95) {
-         bouquetResult = "부케를 정확히 잡았습니다!💐";
-         bouquetReward = 2;
-         bouquetStoneBonus = 0;
-      } else {
-         bouquetResult = "호이부케💐를 잡았습니다! 사랑운 폭발!";
-         bouquetReward = 5;
-         bouquetStoneBonus = 0;
-      }
+      replier.reply(resultMsg);
+      replier.reply(rewardMsg);
 
-      // 추가 보상 합산
-      var totalLovePiece = lovePieceReward + bouquetReward;
-      var totalStoneBonus = stoneBonus + bouquetStoneBonus;
-
-      // 기본 아이템 지급
-      for (var item in blindDateItems) {
-         addItemToBag(data.member[sender].bag, item, blindDateItems[item]);
-      }
-
-      // 궁합/부케 추가 보상 지급
-      if (totalLovePiece > 0) {
-         addItemToBag(data.member[sender].bag, "사랑의 조각💞", totalLovePiece);
-      }
-
-      if (totalStoneBonus > 0) {
-         addItemToBag(data.member[sender].bag, "돌멩이🪨", totalStoneBonus);
-      }
-
-      // 타이틀 저장
-      var newTitle = {
-         name: randomEmoji + finalTitle,
-         inDate: new Date(),
-         price: 50000000
-      };
-
-      titleData.member[sender].title.list.push(newTitle);
-
-      // 메시지 구성
-      var openMsg = "https://ibb.co/Q2BzNQw\n\n";
-      openMsg += "💒 호이월드 결혼대상자 발표회 💒\n";
-      openMsg += "━━━━━━━━━━━━\n";
-      openMsg += "딴 딴따라~🎶\n";
-      openMsg += "딴 딴따라~🎵\n\n";
-
-      openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
-      openMsg += weddingItemName + "를 사용했습니다.\n\n";
-
-      openMsg += "🎁 신혼 준비 선물\n";
-      openMsg += "━━━━━━━━━━━━\n";
-      openMsg += "신혼집 공사 재료: 돌멩이🪨 x" + blindDateItems["돌멩이🪨"] + "\n";
-      openMsg += "신혼집 인테리어권: 펫스윗홈인테리어샵🖼️(/샵오픈) x" + blindDateItems["펫스윗홈인테리어샵🖼️(/샵오픈)"] + "\n";
-      openMsg += "축하 승급 티켓: 티어 승급티켓🎟 x" + blindDateItems["티어 승급티켓🎟"] + "\n\n";
-
-      openMsg += "🎓 당신의 결혼대상자 발표회\n";
-      openMsg += "━━━━━━━━━━━━\n";
-      openMsg += partnerLine + "\n";
-      openMsg += "그의 이름은~ " + randomEmoji + finalTitle + " 💞\n\n";
-
-      openMsg += "💞 궁합 측정 결과\n";
-      openMsg += "━━━━━━━━━━━━\n";
-      openMsg += "궁합점수: " + loveScore + "점\n";
-      openMsg += "판정: " + loveRank + "\n";
-      openMsg += loveComment + "\n\n";
-
-      openMsg += "💐 부케잡기 보너스\n";
-      openMsg += "━━━━━━━━━━━━\n";
-      openMsg += bouquetResult + "\n\n";
-
-      openMsg += "🎁 추가 보상\n";
-      openMsg += "━━━━━━━━━━━━\n";
-
-      if (totalLovePiece > 0) {
-         openMsg += "사랑의 조각💞 x" + totalLovePiece + "\n";
-      }
-
-      if (totalStoneBonus > 0) {
-         openMsg += "돌멩이🪨 x" + totalStoneBonus + "\n";
-      }
-
-      if (totalLovePiece <= 0 && totalStoneBonus <= 0) {
-         openMsg += "추가 보상 없음\n";
-      }
-
-      openMsg += "\n💞 결혼대상자 칭호 획득!\n";
-      openMsg += "━━━━━━━━━━━━\n";
-      openMsg += "칭호명: " + randomEmoji + finalTitle + "\n";
-      openMsg += "칭호가치: 🅟50,000,000";
-
-      replier.reply(openMsg);
-
-      // 96점 이상 월드공지
-      if (loveScore >= 96) {
+      if (loveScore >= 96 && afterSuccess) {
          noticeMsg(
             "📢 월드 알림\n" +
             "━━━━━━━━━━━━\n" +
             "[" + checkRank(data, petData, guildData, sender) + "] 님이\n" +
-            "결혼해듀호이🤵👰에서 운명 그 자체를 만났습니다!\n\n" +
-            "상대: " + randomEmoji + finalTitle + "\n" +
-            "궁합점수: " + loveScore + "점 💍"
+            "오톡소개팅💘에서 운명적인 첫만남을 성공시켰습니다!\n\n" +
+            "상대: " + titleName + "\n" +
+            "궁합점수: " + loveScore + "점 💍\n" +
+            "보너스: 100억 포인트"
          );
       }
 
-      saveJsonFile(titleData, memberTitlePath);
       saveJsonFile(data, filePath);
 
       return;
    } else {
-      replier.reply("결혼해듀호이🤵👰(/딴딴따라) 이(가) 없습니다.");
+      replier.reply(datingItemName + " 이(가) 없습니다.");
       return;
    }
 }
