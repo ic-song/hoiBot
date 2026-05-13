@@ -11344,7 +11344,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								"상대가 마지막까지 대화를 이어갔습니다.",
 								"첫 만남인데도 오래 알고 지낸 느낌이 들었습니다."
 							];
-						} else if (loveScore <= 95) {
+						} else if (loveScore <= 98) {
 							loveRank = "애프터 각💞";
 							imageLink = "https://ibb.co/zWHJs6xB";
 							mentList = [
@@ -11381,7 +11381,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						let loveMent = mentList[Math.floor(Math.random() * mentList.length)];
 
 						let afterSuccess = Math.random() < 0.5;
-						let isDestiny = loveScore >= 96;
+						let isDestiny = loveScore >= 99;
 						let titleGiven = afterSuccess || isDestiny;
 
 						let afterText = "";
@@ -11475,20 +11475,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 						replier.reply(resultMsg);
 						replier.reply(rewardMsg);
-
-						if (isDestiny) {
-							noticeMsg(
-								"📢 운명의 장난.. 진작 너라 할 걸 그랬어\n" +
-							"https://ibb.co/MxrJw24c\n" +
-								"━━━━━━━━━━━━\n" +
-								"[" + checkRank(data, petData, guildData, sender) + "] 님이\n" +
-								"오톡소개팅💘에서 운명적인 첫만남을 만났습니다!\n\n" +
-								"상대: " + titleName + "\n" +
-								"궁합점수: " + loveScore + "점 💍\n" +
-								"보너스: 100억 포인트\n" +
-								"타이틀: " + titleName
-							);
-						}
 
 						saveJsonFile(data, filePath);
 
