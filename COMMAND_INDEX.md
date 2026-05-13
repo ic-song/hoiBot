@@ -2896,9 +2896,9 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2401`
-- Registration commands: `main.js:2413`
-- Purchase/cancel commands: `main.js:2662`
+- `main.js:2404`
+- Registration commands: `main.js:2449`
+- Purchase/cancel commands: `main.js:2732`
 
 ## Files
 
@@ -2944,6 +2944,8 @@ Status: VERIFIED
 - `/미니펫거래등록 [미니펫가방번호] [갯수] [판매금액]`
 - `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
 - `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
+- `/자유시장확인`
+- `/자유시장확인취소`
 - `/자유시장구매 [번호]`
 - `/자유시장취소 [번호]`
 - `/거래소강제취소 [번호]`
@@ -2954,7 +2956,9 @@ Status: VERIFIED
 ## AI Notes
 
 - Free-market storage is isolated in `freeMarket.json`; item ownership still mutates the original owner/buyer storage files
-- Active listing numbers are display-order numbers from recent-first `/자유시장`, not immutable listing ids
+- Active listing numbers are display-order numbers from recent-first `/자유시장`; purchase confirmation stores the immutable listing id to avoid buying a shifted listing
+- Registration and purchase commands show a confirmation UI first; `/자유시장확인` re-runs validation before mutation, and `/자유시장확인취소` clears the pending request
+- Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
 - Registration fees consume `🥕당근이세요?` immediately and are not refunded on cancel/force-cancel
 - Sale fee is 10%, paid by the seller from proceeds and recorded through `addHappyFoundationFee`
