@@ -5,8 +5,11 @@
 - `feature/prod`: operational branch for production-facing code.
 - `feature/hoi`: primary hoi-managed task branch used by operation scripts.
 - `feature/workflow`: documentation, agent strategy, branch strategy, and tools workflow changes.
-- `feature/bugFix` or requested bugfix casing: bug fixes, root-cause analysis, minimal fixes, and regression validation.
+- `feature/bugFix`: bug fixes, root-cause analysis, minimal fixes, and regression validation, unless the user explicitly requests another exact branch.
 - `main`: stable/reference branch, not the active production source.
+
+Local `feature/prod` is the active operational baseline. Other task branches
+should be based on the updated local `feature/prod`, not on `origin/main`.
 
 ## Production Guard
 
@@ -24,8 +27,16 @@ workflow change.
 
 When starting work on a specific branch:
 
-1. update the target branch from its upstream
-2. bring `origin/main` into the target branch
-3. start task edits only after freshness/conflicts are handled
+1. update local `feature/prod` from `origin/feature/prod`
+2. update the target branch from its upstream
+3. bring local `feature/prod` into the target branch
+4. start task edits only after freshness/conflicts are handled
+
+Do not use `origin/main` as the freshness baseline for production-facing or
+bug-fix work. `main` is a stable/reference branch and should be synchronized
+only when explicitly requested.
+
+Do not proactively synchronize `feature/prod` into `main`. After operational
+stabilization, wait for the user to request a PR from `feature/prod` to `main`.
 
 This reduces later conflicts.

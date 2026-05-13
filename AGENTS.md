@@ -98,11 +98,15 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload and `feature/prod` direct-merge scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
 - `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
+- Bug fixes should be performed on `feature/bugFix` unless the user explicitly requests another exact branch.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify and use the exact branch casing requested by the user.
 - Agents MUST follow the role of each existing branch.
 - If no existing branch role fits the task, create a new broad content branch such as `feature/<content-name>`.
 - Create task branches from `feature/prod`, not directly from `main`.
-- Before starting work on a specific branch, update that branch with `origin/main` first to reduce later merge conflicts.
+- Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
+- Before starting work on a specific branch, update local `feature/prod` from `origin/feature/prod` first, then bring that local `feature/prod` into the target branch.
+- Do not use `origin/main` as the freshness baseline for production-facing or bug-fix work; `main` is only a stable/reference branch.
+- Do not proactively synchronize `feature/prod` into `main`; after operational stabilization, wait for the user to request a PR from `feature/prod` to `main`.
 - Open PRs back into `feature/prod` for operational changes.
 - When the user says "prod까지 올려줘" or "운영반영해줘", treat it as a request to push the current task branch and then reflect the validated work into `feature/prod`.
 - Test reflection scripts should use `feature/prod` as their source branch.
@@ -231,12 +235,15 @@ head-agent
 - Task branches should branch from `feature/prod`.
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
-- Bug fixes should use `feature/bugFix`.
+- Bug fixes should use `feature/bugFix` unless the user explicitly requests another exact branch.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify the intended remote/local branch and use the exact branch casing requested by the user.
 - Follow the role of each existing branch before choosing or creating a branch.
 - If no existing branch role fits the work, create a new broad content branch from `feature/prod` using `feature/<content-name>`.
-- Before starting work after switching to a task branch, bring `origin/main` into that branch first and resolve any conflicts before editing.
+- Local `feature/prod` is the active operational baseline; other task branches should be based on the updated local `feature/prod`, not on `origin/main`.
+- Before starting work after switching to a task branch, update local `feature/prod` from `origin/feature/prod`, bring that local `feature/prod` into the task branch, and resolve any conflicts before editing.
+- Do not bring `origin/main` into bug-fix or production-facing task branches unless the user explicitly requests main synchronization.
 - PRs to `main` are allowed for stabilization/synchronization.
+- Create PRs from `feature/prod` to `main` only when the user explicitly requests that stable synchronization after operational stabilization.
 - Do not directly push to `main`.
 - Do not directly merge into `main`.
 - Merge into `feature/prod` only after explicit user approval.

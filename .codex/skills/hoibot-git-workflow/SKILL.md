@@ -1,6 +1,6 @@
 ---
 name: hoibot-git-workflow
-description: Use for hoiBot branch selection, origin/main freshness updates, Korean commit messages, pushing task branches, reflecting changes into feature/prod, and choosing merge versus cherry-pick.
+description: Use for hoiBot branch selection, feature/prod baseline updates, Korean commit messages, pushing task branches, reflecting changes into feature/prod, and choosing merge versus cherry-pick.
 ---
 
 # hoiBot Git Workflow
@@ -13,22 +13,28 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Commit messages should be written in Korean as clear, human-readable summaries.
 - Do not push directly to `main`.
 - Do not merge directly into `main`.
+- Do not proactively synchronize `feature/prod` into `main`; wait for the user to request a `feature/prod` to `main` PR after operational stabilization.
 - Do not commit directly on `feature/prod`.
 - Do not push direct local edits to `feature/prod`.
 - Update `feature/prod` only by reflecting validated task-branch work through merge, cherry-pick, or an approved PR-style merge flow.
 - `feature/prod` is the operational branch.
+- Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
 - Documentation, workflow, branch strategy, and tools changes belong on `feature/workflow`.
-- Bug fixes belong on the requested bugfix branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
-- Before starting work on a specific branch, bring `origin/main` into that branch first.
+- Bug fixes belong on `feature/bugFix` unless the user explicitly requests another exact branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
+- Before starting work on a specific branch, update local `feature/prod` from `origin/feature/prod`, then bring that local `feature/prod` into the branch.
+- Other task branches should be based on the updated local `feature/prod`, not on `origin/main`.
+- Do not use `origin/main` as the freshness baseline for production-facing or bug-fix work unless the user explicitly requests main synchronization.
+- Create PRs from `feature/prod` to `main` only when the user explicitly requests stable synchronization after operational stabilization.
 
 ## Starting Work On A Branch
 
 1. Run `git status --short --branch`.
 2. Switch to the target branch.
 3. Pull the target branch with fast-forward only when possible.
-4. Fetch `origin/main`.
-5. Merge or otherwise bring `origin/main` into the target branch before editing.
-6. Resolve conflicts before making task changes.
+4. Switch to `feature/prod` and update it from `origin/feature/prod`.
+5. Switch back to the target branch.
+6. Merge or otherwise bring local `feature/prod` into the target branch before editing.
+7. Resolve conflicts before making task changes.
 
 ## Production Reflection
 
