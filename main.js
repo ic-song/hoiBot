@@ -101,6 +101,7 @@ const PET_SKILL_LIST = [
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
+	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수가 늘어납니다." },
 	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -1048,6 +1049,12 @@ const homeInfoFile = "/sdcard/호이랜드/petSweetHomeInfo.json"; // 펫스윗�
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
+const freeMarketPath = "/sdcard/호이랜드/freeMarket.json"; // 자유시장 데이터
+const FREE_MARKET_CARROT_ITEM = "🥕당근이세요?";
+const FREE_MARKET_MEMBER_TICKET_ITEM = "자유시장회원권🏪";
+const FREE_MARKET_MERCHANT_SKILL = "타고난 장사꾼";
+const FREE_MARKET_TRADE_FEE_RATE = 0.10;
+const FREE_MARKET_MAX_COMPLETED_LOGS = 100;
 const guildPath = "/sdcard/호이랜드/guildData.json"; // 길드 데이터
 const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json"; // 요청 모니터링 설정
 // backup
@@ -2382,12 +2389,401 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var foundationMsg = "♥️호이행복재단♥️\n\n";
 					foundationMsg += "행복단장♥️: " + getHappyFoundationCaptainDisplay(data, petData, guildData) + "\n";
 					foundationMsg += "현재 이체 수수료🅟: " + formatTransferFeeRate(happyFoundationView.feeRate) + "%\n";
+					foundationMsg += "자유시장 거래 수수료🅟: 10%\n";
 					foundationMsg += "행복누적금액금💸: 🅟" + formatPointValue(happyFoundationView.totalAmount) + "\n";
 					foundationMsg += "※ 이체수수료 변경방법 안내\n" + allsee;
 					foundationMsg += "※ /이체수수료변경 [숫자] 행복단장은 이체 수수료 변경이 가능합니다.\n";
 					foundationMsg += "※ 이체수수료 최소 0.5단위 0.5~10% 사이 변경 가능";
 					replier.reply(foundationMsg);
 					saveJsonFile(data, filePath);
+					return;
+				}
+
+				if (msg === "/자유시장") {
+					var freeMarketView = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					replier.reply(buildFreeMarketListMessage(data, petData, guildData, freeMarketView));
+					return;
+				}
+
+				if (msg === "/자유시장현황" || msg === "/거래현황") {
+					var freeMarketHistory = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory));
+					return;
+				}
+
+				if (/^\/가방거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+					var bagMarketParts = msg.trim().split(/\s+/);
+					var bagMarketIndex = parseInt(bagMarketParts[1], 10);
+					var bagMarketCount = parseInt(bagMarketParts[2], 10);
+					var bagMarketPrice = parseInt(bagMarketParts[3], 10);
+					var freeMarketBagData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					if (!data.member[sender] || !data.member[sender].bag) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 가방이 비어있습니다.");
+						return;
+					}
+					if (bagMarketCount <= 0 || bagMarketPrice <= 0) {
+						replier.reply("❌ 등록 수량과 판매금액은 1 이상이어야 합니다.");
+						return;
+					}
+					var bagMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
+					var bagMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketBagData, sender);
+					if (bagMarketActiveCount >= bagMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + bagMarketActiveCount + "/" + bagMarketLimit);
+						return;
+					}
+					var bagMarketInfo = generateBagOutput(data.member[sender].bag);
+					var bagMarketList = bagMarketInfo.sortedItemList;
+					if (!bagMarketList || bagMarketIndex < 1 || bagMarketIndex > bagMarketList.length) {
+						replier.reply("❌ 유효하지 않은 가방 번호입니다.");
+						return;
+					}
+					var bagMarketItemName = bagMarketList[bagMarketIndex - 1];
+					if (!isTradableItem(bagMarketItemName)) {
+						replier.reply("❌ [" + bagMarketItemName + "] 아이템은 자유시장 거래가 불가능합니다.");
+						return;
+					}
+					if (!hasItem(data, sender, bagMarketItemName, bagMarketCount)) {
+						replier.reply("❌ 아이템 수량이 부족합니다.\n보유: " + numberWithCommas(data.member[sender].bag[bagMarketItemName] || 0) + "개");
+						return;
+					}
+					var bagMarketCarrotFee = getFreeMarketCarrotFee("bag", bagMarketCount);
+					if (!hasItem(data, sender, FREE_MARKET_CARROT_ITEM, bagMarketCarrotFee)) {
+						replier.reply("❌ 자유시장 등록 수수료 당근🥕이 부족합니다.\n필요: " + numberWithCommas(bagMarketCarrotFee) + "개");
+						return;
+					}
+					removeItem(data, sender, bagMarketItemName, bagMarketCount);
+					removeItem(data, sender, FREE_MARKET_CARROT_ITEM, bagMarketCarrotFee);
+					addFreeMarketListing(freeMarketBagData, "bag", sender, bagMarketItemName, bagMarketCount, bagMarketPrice, null, bagMarketCarrotFee);
+					saveJsonFile(data, filePath);
+					saveJsonFile(freeMarketBagData, freeMarketPath);
+					replier.reply(
+						"[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+						"🏪 자유시장 등록 완료\n" +
+						"━━━━━━━━━━━━\n" +
+						"[" + bagMarketItemName + "] " + numberWithCommas(bagMarketCount) + "개가\n" +
+						"🅟" + numberWithCommas(bagMarketPrice) + "에 등록되었습니다.\n\n" +
+						"※ 등록 수수료 [당근🥕 " + numberWithCommas(bagMarketCarrotFee) + "개]가 차감되었습니다.\n" +
+						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+					);
+					return;
+				}
+
+				if (/^\/미니펫거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+					var miniMarketParts = msg.trim().split(/\s+/);
+					var miniMarketIndex = parseInt(miniMarketParts[1], 10);
+					var miniMarketCount = parseInt(miniMarketParts[2], 10);
+					var miniMarketPrice = parseInt(miniMarketParts[3], 10);
+					var freeMarketMiniData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					if (miniMarketCount <= 0 || miniMarketPrice <= 0) {
+						replier.reply("❌ 등록 수량과 판매금액은 1 이상이어야 합니다.");
+						return;
+					}
+					var miniMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
+					var miniMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketMiniData, sender);
+					if (miniMarketActiveCount >= miniMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + miniMarketActiveCount + "/" + miniMarketLimit);
+						return;
+					}
+					if (!petData[sender] || !Array.isArray(petData[sender].miniPetBag)) {
+						replier.reply("❌ 미니펫가방이 비어있습니다.");
+						return;
+					}
+					refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+					var miniMarketBag = petData[sender].miniPetBag;
+					var miniMarketTarget = null;
+					for (var mp = 0; mp < miniMarketBag.length; mp++) {
+						if (miniMarketBag[mp].sortIndex === miniMarketIndex) {
+							miniMarketTarget = miniMarketBag[mp];
+							break;
+						}
+					}
+					if (!miniMarketTarget) {
+						replier.reply("❌ 유효하지 않은 미니펫가방 번호입니다.");
+						return;
+					}
+					if (miniMarketTarget.isEquipped || miniMarketTarget.equipped || miniMarketTarget.locked || miniMarketTarget.bind) {
+						replier.reply("❌ 장착 중이거나 귀속된 미니펫은 자유시장에 등록할 수 없습니다.");
+						return;
+					}
+					var miniMarketPicked = [];
+					for (var mi = miniMarketBag.length - 1; mi >= 0; mi--) {
+						var miniMarketPet = miniMarketBag[mi];
+						if (isSameFreeMarketMiniPet(miniMarketPet, miniMarketTarget) && !miniMarketPet.isEquipped && !miniMarketPet.equipped && !miniMarketPet.locked && !miniMarketPet.bind) {
+							miniMarketPicked.push(cloneFreeMarketObject(miniMarketPet));
+							miniMarketBag.splice(mi, 1);
+							if (miniMarketPicked.length >= miniMarketCount) break;
+						}
+					}
+					if (miniMarketPicked.length < miniMarketCount) {
+						for (var mr = 0; mr < miniMarketPicked.length; mr++) miniMarketBag.push(miniMarketPicked[mr]);
+						refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+						replier.reply("❌ 등록 가능한 동일 미니펫 수량이 부족합니다.");
+						return;
+					}
+					var miniMarketCarrotFee = getFreeMarketCarrotFee("miniPet", miniMarketCount);
+					if (!hasItem(data, sender, FREE_MARKET_CARROT_ITEM, miniMarketCarrotFee)) {
+						for (var mb = 0; mb < miniMarketPicked.length; mb++) miniMarketBag.push(miniMarketPicked[mb]);
+						refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+						replier.reply("❌ 자유시장 등록 수수료 당근🥕이 부족합니다.\n필요: " + numberWithCommas(miniMarketCarrotFee) + "개");
+						return;
+					}
+					removeItem(data, sender, FREE_MARKET_CARROT_ITEM, miniMarketCarrotFee);
+					refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+					addFreeMarketListing(freeMarketMiniData, "miniPet", sender, getFreeMarketMiniPetDisplayName(miniMarketTarget), miniMarketCount, miniMarketPrice, { pets: miniMarketPicked }, miniMarketCarrotFee);
+					saveJsonFile(data, filePath);
+					saveJsonFile(petData, memberPetPath);
+					saveJsonFile(freeMarketMiniData, freeMarketPath);
+					replier.reply(
+						"[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+						"🏪 자유시장 등록 완료\n" +
+						"━━━━━━━━━━━━\n" +
+						"[" + getFreeMarketMiniPetDisplayName(miniMarketTarget) + "] " + numberWithCommas(miniMarketCount) + "개가\n" +
+						"🅟" + numberWithCommas(miniMarketPrice) + "에 등록되었습니다.\n\n" +
+						"※ 등록 수수료 [당근🥕 " + numberWithCommas(miniMarketCarrotFee) + "개]가 차감되었습니다.\n" +
+						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+					);
+					return;
+				}
+
+				if (/^\/가구거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+					var furnitureMarketParts = msg.trim().split(/\s+/);
+					var furnitureMarketIndex = parseInt(furnitureMarketParts[1], 10);
+					var furnitureMarketCount = parseInt(furnitureMarketParts[2], 10);
+					var furnitureMarketPrice = parseInt(furnitureMarketParts[3], 10);
+					var freeMarketFurnitureData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					if (furnitureMarketCount <= 0 || furnitureMarketPrice <= 0) {
+						replier.reply("❌ 등록 수량과 판매금액은 1 이상이어야 합니다.");
+						return;
+					}
+					var furnitureMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
+					var furnitureMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketFurnitureData, sender);
+					if (furnitureMarketActiveCount >= furnitureMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit);
+						return;
+					}
+					var furnitureHomeData = loadJsonFile(homeDataFile) || {};
+					furnitureHomeData = initSweetHomeUser(furnitureHomeData, sender);
+					var furnitureMarketBag = sortFurnitureList(furnitureHomeData[sender].furnitureBag || []);
+					if (furnitureMarketIndex < 1 || furnitureMarketIndex > furnitureMarketBag.length) {
+						replier.reply("❌ 유효하지 않은 가구가방 번호입니다.");
+						return;
+					}
+					var furnitureMarketTarget = furnitureMarketBag[furnitureMarketIndex - 1];
+					var furnitureMarketPicked = [];
+					for (var fi = furnitureMarketBag.length - 1; fi >= 0; fi--) {
+						if (isSameFreeMarketFurniture(furnitureMarketBag[fi], furnitureMarketTarget)) {
+							var furnitureClone = cloneFreeMarketObject(furnitureMarketBag[fi]);
+							if (furnitureClone.display !== undefined) delete furnitureClone.display;
+							furnitureMarketPicked.push(furnitureClone);
+							furnitureMarketBag.splice(fi, 1);
+							if (furnitureMarketPicked.length >= furnitureMarketCount) break;
+						}
+					}
+					if (furnitureMarketPicked.length < furnitureMarketCount) {
+						for (var fr = 0; fr < furnitureMarketPicked.length; fr++) furnitureMarketBag.push(furnitureMarketPicked[fr]);
+						sortFurnitureList(furnitureMarketBag);
+						replier.reply("❌ 등록 가능한 동일 가구 수량이 부족합니다.");
+						return;
+					}
+					var furnitureMarketCarrotFee = getFreeMarketCarrotFee("furniture", furnitureMarketCount);
+					if (!hasItem(data, sender, FREE_MARKET_CARROT_ITEM, furnitureMarketCarrotFee)) {
+						for (var fb = 0; fb < furnitureMarketPicked.length; fb++) furnitureMarketBag.push(furnitureMarketPicked[fb]);
+						sortFurnitureList(furnitureMarketBag);
+						replier.reply("❌ 자유시장 등록 수수료 당근🥕이 부족합니다.\n필요: " + numberWithCommas(furnitureMarketCarrotFee) + "개");
+						return;
+					}
+					removeItem(data, sender, FREE_MARKET_CARROT_ITEM, furnitureMarketCarrotFee);
+					sortFurnitureList(furnitureMarketBag);
+					addFreeMarketListing(freeMarketFurnitureData, "furniture", sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, { furnitures: furnitureMarketPicked }, furnitureMarketCarrotFee);
+					saveJsonFile(data, filePath);
+					saveJsonFile(furnitureHomeData, homeDataFile);
+					saveJsonFile(freeMarketFurnitureData, freeMarketPath);
+					replier.reply(
+						"[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+						"🏪 자유시장 등록 완료\n" +
+						"━━━━━━━━━━━━\n" +
+						"[" + getFreeMarketFurnitureDisplayName(furnitureMarketTarget) + "] " + numberWithCommas(furnitureMarketCount) + "개가\n" +
+						"🅟" + numberWithCommas(furnitureMarketPrice) + "에 등록되었습니다.\n\n" +
+						"※ 등록 수수료 [당근🥕 " + numberWithCommas(furnitureMarketCarrotFee) + "개]가 차감되었습니다.\n" +
+						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+					);
+					return;
+				}
+
+				if (/^\/스킬거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+					var skillMarketParts = msg.trim().split(/\s+/);
+					var skillMarketIndex = parseInt(skillMarketParts[1], 10);
+					var skillMarketCount = parseInt(skillMarketParts[2], 10);
+					var skillMarketPrice = parseInt(skillMarketParts[3], 10);
+					var freeMarketSkillData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					if (skillMarketCount <= 0 || skillMarketPrice <= 0) {
+						replier.reply("❌ 등록 수량과 판매금액은 1 이상이어야 합니다.");
+						return;
+					}
+					var skillMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
+					var skillMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketSkillData, sender);
+					if (skillMarketActiveCount >= skillMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + skillMarketActiveCount + "/" + skillMarketLimit);
+						return;
+					}
+					var skillMarketList = getPetSkillBagList(petSkillData, sender);
+					if (skillMarketIndex < 1 || skillMarketIndex > skillMarketList.length) {
+						replier.reply("❌ 유효하지 않은 스킬가방 번호입니다.");
+						return;
+					}
+					var skillMarketName = skillMarketList[skillMarketIndex - 1];
+					var skillMarketStore = initPetSkillUser(petSkillData, sender);
+					if ((skillMarketStore.bag[skillMarketName] || 0) < skillMarketCount) {
+						replier.reply("❌ 스킬북 수량이 부족합니다.");
+						return;
+					}
+					var skillMarketCarrotFee = getFreeMarketCarrotFee("skill", skillMarketCount);
+					if (!hasItem(data, sender, FREE_MARKET_CARROT_ITEM, skillMarketCarrotFee)) {
+						replier.reply("❌ 자유시장 등록 수수료 당근🥕이 부족합니다.\n필요: " + numberWithCommas(skillMarketCarrotFee) + "개");
+						return;
+					}
+					removePetSkillFromBag(petSkillData, sender, skillMarketName, skillMarketCount);
+					removeItem(data, sender, FREE_MARKET_CARROT_ITEM, skillMarketCarrotFee);
+					addFreeMarketListing(freeMarketSkillData, "skill", sender, normalizePetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, null, skillMarketCarrotFee);
+					saveJsonFile(data, filePath);
+					saveJsonFile(petSkillData, petSkillDataPath);
+					saveJsonFile(freeMarketSkillData, freeMarketPath);
+					replier.reply(
+						"[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+						"🏪 자유시장 등록 완료\n" +
+						"━━━━━━━━━━━━\n" +
+						"[" + formatPetSkillName(skillMarketName) + "] " + numberWithCommas(skillMarketCount) + "개가\n" +
+						"🅟" + numberWithCommas(skillMarketPrice) + "에 등록되었습니다.\n\n" +
+						"※ 등록 수수료 [당근🥕 " + numberWithCommas(skillMarketCarrotFee) + "개]가 차감되었습니다.\n" +
+						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+					);
+					return;
+				}
+
+				if (/^\/자유시장취소\s+\d+$/.test(msg)) {
+					var cancelNo = parseInt(msg.trim().split(/\s+/)[1], 10);
+					var freeMarketCancelData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					var cancelListing = getFreeMarketListingByDisplayNo(freeMarketCancelData, cancelNo);
+					if (!cancelListing) {
+						replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
+						return;
+					}
+					if (cancelListing.seller !== sender) {
+						replier.reply("❌ 본인이 등록한 물품만 취소할 수 있습니다.");
+						return;
+					}
+					var cancelHomeData = loadJsonFile(homeDataFile) || {};
+					returnFreeMarketItemToOwner(data, petData, petSkillData, cancelHomeData, cancelListing, sender);
+					removeFreeMarketListing(freeMarketCancelData, cancelListing.id);
+					saveJsonFile(data, filePath);
+					if (cancelListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
+					if (cancelListing.type === "furniture") saveJsonFile(cancelHomeData, homeDataFile);
+					if (cancelListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+					saveJsonFile(freeMarketCancelData, freeMarketPath);
+					replier.reply(
+						"🏪 자유시장 등록 취소\n" +
+						"━━━━━━━━━━━━\n" +
+						"등록한 [" + getFreeMarketItemText(cancelListing) + "] 이(가) 회수되었습니다.\n\n" +
+						"※ 등록 시 사용된 당근🥕은 환불되지 않습니다."
+					);
+					return;
+				}
+
+				if (/^\/거래소강제취소\s+\d+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) {
+						replier.reply("❌ 해당 명령어는 Admin/Master만 사용할 수 있습니다.");
+						return;
+					}
+					var forceNo = parseInt(msg.trim().split(/\s+/)[1], 10);
+					var freeMarketForceData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					var forceListing = getFreeMarketListingByDisplayNo(freeMarketForceData, forceNo);
+					if (!forceListing) {
+						replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
+						return;
+					}
+					var forceHomeData = loadJsonFile(homeDataFile) || {};
+					returnFreeMarketItemToOwner(data, petData, petSkillData, forceHomeData, forceListing, forceListing.seller);
+					removeFreeMarketListing(freeMarketForceData, forceListing.id);
+					saveJsonFile(data, filePath);
+					if (forceListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
+					if (forceListing.type === "furniture") saveJsonFile(forceHomeData, homeDataFile);
+					if (forceListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+					saveJsonFile(freeMarketForceData, freeMarketPath);
+					replier.reply(
+						"🛠 자유시장 강제취소 완료\n" +
+						"━━━━━━━━━━━━\n" +
+						"거래번호: " + forceNo + "번\n" +
+						"물품: " + forceListing.itemName + " x" + numberWithCommas(forceListing.quantity) + "개\n" +
+						"판매자: [" + checkRank(data, petData, guildData, forceListing.seller) + "]\n\n" +
+						"관리자 권한으로 거래가 취소되었습니다.\n" +
+						"물품은 판매자 보관소로 복귀되었습니다.\n\n" +
+						"※ 등록 시 사용된 당근🥕은 환불되지 않습니다."
+					);
+					return;
+				}
+
+				if (/^\/자유시장구매\s+\d+$/.test(msg)) {
+					var buyNo = parseInt(msg.trim().split(/\s+/)[1], 10);
+					var freeMarketBuyData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					var buyListing = getFreeMarketListingByDisplayNo(freeMarketBuyData, buyNo);
+					if (!buyListing) {
+						replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
+						return;
+					}
+					if (buyListing.seller === sender) {
+						replier.reply("❌ 본인이 등록한 물품은 구매할 수 없습니다.");
+						return;
+					}
+					if (!data.member[buyListing.seller]) {
+						replier.reply("❌ 판매자 계정이 존재하지 않아 구매할 수 없습니다.");
+						return;
+					}
+					var buyPrice = parseInt(buyListing.price, 10) || 0;
+					if ((data.member[sender].point || 0) < buyPrice) {
+						replier.reply("❌ 포인트가 부족합니다.\n필요: 🅟" + numberWithCommas(buyPrice) + "\n보유: 🅟" + numberWithCommas(data.member[sender].point || 0));
+						return;
+					}
+					var buyHomeData = loadJsonFile(homeDataFile) || {};
+					if (buyListing.type === "miniPet") {
+						if (!petData[sender]) petData[sender] = {};
+						if (!Array.isArray(petData[sender].miniPetBag)) petData[sender].miniPetBag = [];
+						if (petData[sender].miniPetBag.length + buyListing.quantity > 12) {
+							replier.reply("❌ 미니펫가방 공간이 부족합니다.");
+							return;
+						}
+					}
+					if (buyListing.type === "furniture") {
+						buyHomeData = initSweetHomeUser(buyHomeData, sender);
+						if ((buyHomeData[sender].furnitureBag || []).length + buyListing.quantity > 32) {
+							replier.reply("❌ 가구가방 공간이 부족합니다.");
+							return;
+						}
+					}
+					if (buyListing.type === "skill" && getPetSkillBagRemainCount(petSkillData, sender) < buyListing.quantity) {
+						replier.reply("❌ 스킬가방 공간이 부족합니다.");
+						return;
+					}
+					var marketFee = Math.floor(buyPrice * FREE_MARKET_TRADE_FEE_RATE);
+					var sellerReceive = buyPrice - marketFee;
+					data.member[sender].point = (data.member[sender].point || 0) - buyPrice;
+					data.member[buyListing.seller].point = (data.member[buyListing.seller].point || 0) + sellerReceive;
+					addHappyFoundationFee(data, marketFee);
+					returnFreeMarketItemToOwner(data, petData, petSkillData, buyHomeData, buyListing, sender);
+					addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee);
+					removeFreeMarketListing(freeMarketBuyData, buyListing.id);
+					saveJsonFile(data, filePath);
+					if (buyListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
+					if (buyListing.type === "furniture") saveJsonFile(buyHomeData, homeDataFile);
+					if (buyListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+					saveJsonFile(freeMarketBuyData, freeMarketPath);
+					replier.reply(
+						"[" + checkRank(data, petData, guildData, sender) + "]님\n" +
+						"🏪 자유시장 구매 완료\n" +
+						"━━━━━━━━━━━━\n" +
+						"[" + buyListing.itemName + "] " + numberWithCommas(buyListing.quantity) + "개를\n" +
+						"🅟" + numberWithCommas(buyPrice) + "에 구매했습니다.\n\n" +
+						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+					);
 					return;
 				}
 
@@ -4212,6 +4608,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var trialTower = loadJsonFile(trialTowerPath);
 					var homeData = loadJsonFile(homeDataFile);
 					var petData = loadJsonFile(memberPetPath);
+					var freeMarketData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
 
 					var successList = [];
 					var failList = [];
@@ -4256,6 +4653,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								delete homeData[target];
 							}
 
+							// 자유시장
+							removeFreeMarketDataByUser(freeMarketData, target);
+
 							successList.push(target);
 						} catch (e) {
 							failList.push(target + "(오류)");
@@ -4270,6 +4670,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(trialTower, trialTowerPath);
 					saveJsonFile(petTitleData, petTitlePath);
 					saveJsonFile(homeData, homeDataFile);
+					saveJsonFile(freeMarketData, freeMarketPath);
 
 					//결과 출력
 					var out = "✅ 계정삭제 완료\n";
@@ -30424,6 +30825,255 @@ function addItem(data, user, itemName, count) {
 	data.member[user].bag[itemName] += count;
 }
 
+function ensureFreeMarketData(freeMarketData) {
+	if (!freeMarketData || typeof freeMarketData !== "object") freeMarketData = {};
+	if (!Array.isArray(freeMarketData.listings)) freeMarketData.listings = [];
+	if (!Array.isArray(freeMarketData.completedLogs)) freeMarketData.completedLogs = [];
+	if (typeof freeMarketData.nextId !== "number" || isNaN(freeMarketData.nextId) || freeMarketData.nextId < 1) {
+		freeMarketData.nextId = 1;
+	}
+	return freeMarketData;
+}
+
+function getFreeMarketActiveListings(freeMarketData) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	var rows = [];
+	for (var i = 0; i < freeMarketData.listings.length; i++) {
+		var listing = freeMarketData.listings[i];
+		if (!listing || listing.status !== "SELLING") continue;
+		rows.push(listing);
+	}
+	rows.sort(function (a, b) {
+		var ta = parseInt(a.createdAtMs || 0, 10);
+		var tb = parseInt(b.createdAtMs || 0, 10);
+		if (tb !== ta) return tb - ta;
+		return (b.id || 0) - (a.id || 0);
+	});
+	return rows;
+}
+
+function getFreeMarketListingByDisplayNo(freeMarketData, displayNo) {
+	var listings = getFreeMarketActiveListings(freeMarketData);
+	displayNo = parseInt(displayNo, 10);
+	if (isNaN(displayNo) || displayNo < 1 || displayNo > listings.length) return null;
+	return listings[displayNo - 1];
+}
+
+function removeFreeMarketListing(freeMarketData, listingId) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	for (var i = freeMarketData.listings.length - 1; i >= 0; i--) {
+		if (freeMarketData.listings[i] && freeMarketData.listings[i].id === listingId) {
+			freeMarketData.listings.splice(i, 1);
+			return true;
+		}
+	}
+	return false;
+}
+
+function countFreeMarketActiveListingsBySeller(freeMarketData, seller) {
+	var listings = getFreeMarketActiveListings(freeMarketData);
+	var count = 0;
+	for (var i = 0; i < listings.length; i++) {
+		if (listings[i].seller === seller) count++;
+	}
+	return count;
+}
+
+function hasFreeMarketMerchantSkill(petSkillData, user) {
+	if (hasPetSkill(petSkillData, user, FREE_MARKET_MERCHANT_SKILL)) return true;
+	var skills = initPetSkillUser(petSkillData, user);
+	return (skills.bag[FREE_MARKET_MERCHANT_SKILL] || 0) > 0;
+}
+
+function getFreeMarketRegisterLimit(data, petSkillData, user) {
+	var hasTicket = hasItem(data, user, FREE_MARKET_MEMBER_TICKET_ITEM, 1);
+	var hasMerchant = hasFreeMarketMerchantSkill(petSkillData, user);
+	if (hasTicket && hasMerchant) return 8;
+	if (hasTicket) return 5;
+	if (hasMerchant) return 2;
+	return 1;
+}
+
+function getFreeMarketCarrotFee(type, quantity) {
+	var perOne = 1;
+	if (type === "miniPet") perOne = 20;
+	else if (type === "furniture") perOne = 5;
+	else if (type === "skill") perOne = 50;
+	return perOne * quantity;
+}
+
+function getFreeMarketTypeLabel(type) {
+	if (type === "bag") return "가방";
+	if (type === "miniPet") return "미니펫";
+	if (type === "furniture") return "가구";
+	if (type === "skill") return "스킬북";
+	return "물품";
+}
+
+function formatFreeMarketPoint(price) {
+	return "🅟" + formatKoreanShort(parseInt(price, 10) || 0);
+}
+
+function getFreeMarketItemText(listing) {
+	if (!listing) return "";
+	var itemName = listing.type === "skill" ? formatPetSkillName(listing.itemName) : listing.itemName;
+	return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개";
+}
+
+function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
+	var listings = getFreeMarketActiveListings(freeMarketData);
+	var out = "🏪호이월드 자유시장🏪\n";
+	out += "※ 거래수수료는 판매자에게 10% 부담됩니다.\n";
+	out += "※ [아이템명x갯수][판매금액][판매자]\n";
+	out += "━━━━━━━━━━━━\n";
+	if (listings.length === 0) {
+		return out + "현재 판매 중인 물품이 없습니다.";
+	}
+	for (var i = 0; i < listings.length; i++) {
+		if (i === 5) out += "\n다른 자유시장 물품 보기..👈" + allsee + "\n";
+		var listing = listings[i];
+		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "][" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]\n\n";
+	}
+	return out.trim();
+}
+
+function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	var logs = freeMarketData.completedLogs.slice(0);
+	logs.sort(function (a, b) {
+		var ta = parseInt(a.completedAtMs || 0, 10);
+		var tb = parseInt(b.completedAtMs || 0, 10);
+		if (tb !== ta) return tb - ta;
+		return (b.id || 0) - (a.id || 0);
+	});
+	var out = "🤝호월 자유시장 거래현황🤝\n\n";
+	out += "※ 판매금액은 수수료 10%를 제외한 금액이 표시 됩니다\n";
+	out += "※ [아이템명x갯수][판매금액][판매자]🤝[구매자]\n";
+	out += "━━━━━━━━━━━━\n";
+	out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
+	if (logs.length === 0) {
+		return out + "판매 완료된 거래가 없습니다.";
+	}
+	for (var i = 0; i < logs.length; i++) {
+		if (i === 5) out += "다른 거래현황 보기..👈" + allsee + "\n";
+		var log = logs[i];
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개][" + formatFreeMarketPoint(log.sellerReceive || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
+	}
+	return out.trim();
+}
+
+function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	freeMarketData.completedLogs.unshift({
+		id: listing.id,
+		type: listing.type,
+		itemName: listing.itemName,
+		quantity: listing.quantity,
+		price: listing.price,
+		sellerReceive: sellerReceive,
+		feeAmount: feeAmount,
+		seller: listing.seller,
+		buyer: buyer,
+		completedAt: formatDateTime(new Date()),
+		completedAtMs: new Date().getTime()
+	});
+	while (freeMarketData.completedLogs.length > FREE_MARKET_MAX_COMPLETED_LOGS) {
+		freeMarketData.completedLogs.pop();
+	}
+}
+
+function addFreeMarketListing(freeMarketData, type, seller, itemName, quantity, price, payload, carrotFee) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	var listing = {
+		id: freeMarketData.nextId++,
+		status: "SELLING",
+		type: type,
+		seller: seller,
+		itemName: itemName,
+		quantity: quantity,
+		price: price,
+		payload: payload || null,
+		carrotFee: carrotFee,
+		createdAt: formatDateTime(new Date()),
+		createdAtMs: new Date().getTime()
+	};
+	freeMarketData.listings.push(listing);
+	return listing;
+}
+
+function cloneFreeMarketObject(obj) {
+	return JSON.parse(JSON.stringify(obj));
+}
+
+function isSameFreeMarketMiniPet(a, b) {
+	return !!(a && b && a.name === b.name && (a.emoji || "") === (b.emoji || "") && (a.grade || "") === (b.grade || ""));
+}
+
+function isSameFreeMarketFurniture(a, b) {
+	return !!(a && b && a.name === b.name && (a.emoji || "") === (b.emoji || "") && String(a.grade || "") === String(b.grade || "") && Number(a.exp || 0) === Number(b.exp || 0));
+}
+
+function getFreeMarketMiniPetDisplayName(pet) {
+	return pet.name + (pet.emoji || "");
+}
+
+function getFreeMarketFurnitureDisplayName(furniture) {
+	return furniture.name + (furniture.emoji || "");
+}
+
+function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, listing, owner) {
+	if (listing.type === "bag") {
+		addItem(data, owner, listing.itemName, listing.quantity);
+		return;
+	}
+	if (listing.type === "miniPet") {
+		if (!petData[owner]) petData[owner] = {};
+		if (!Array.isArray(petData[owner].miniPetBag)) petData[owner].miniPetBag = [];
+		var pets = listing.payload && listing.payload.pets ? listing.payload.pets : [];
+		for (var i = 0; i < pets.length; i++) {
+			petData[owner].miniPetBag.push(cloneFreeMarketObject(pets[i]));
+		}
+		refreshMiniPetSortIndex(petData, owner, miniPetData.gradeTable);
+		return;
+	}
+	if (listing.type === "furniture") {
+		homeData = initSweetHomeUser(homeData, owner);
+		var furnitures = listing.payload && listing.payload.furnitures ? listing.payload.furnitures : [];
+		for (var j = 0; j < furnitures.length; j++) {
+			homeData[owner].furnitureBag.push(cloneFreeMarketObject(furnitures[j]));
+		}
+		sortFurnitureList(homeData[owner].furnitureBag);
+		return;
+	}
+	if (listing.type === "skill") {
+		addPetSkillToBag(petSkillData, owner, listing.itemName, listing.quantity);
+	}
+}
+
+function removeFreeMarketListingsBySeller(freeMarketData, seller) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	var removed = 0;
+	for (var i = freeMarketData.listings.length - 1; i >= 0; i--) {
+		if (freeMarketData.listings[i] && freeMarketData.listings[i].seller === seller) {
+			freeMarketData.listings.splice(i, 1);
+			removed++;
+		}
+	}
+	return removed;
+}
+
+function removeFreeMarketDataByUser(freeMarketData, user) {
+	freeMarketData = ensureFreeMarketData(freeMarketData);
+	removeFreeMarketListingsBySeller(freeMarketData, user);
+	for (var i = freeMarketData.completedLogs.length - 1; i >= 0; i--) {
+		var log = freeMarketData.completedLogs[i];
+		if (log && (log.seller === user || log.buyer === user)) {
+			freeMarketData.completedLogs.splice(i, 1);
+		}
+	}
+	return freeMarketData;
+}
+
 // 펫 스킬 이름을 기준으로 PET_SKILL_LIST에서 해당 스킬 데이터를 찾아 반환하는 함수
 function getPetSkillData(skillName) {
 	skillName = normalizePetSkillName(skillName);
@@ -30449,6 +31099,7 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "길드의심장") return "길드의 심장";
 	else if (skillName === "전투형지휘관") return "전투형 지휘관";
 	else if (skillName === "기사단증원") return "기사단 증원";
+	else if (skillName === "타고난장사꾼") return "타고난 장사꾼";
 	else if (skillName === "티어상승론") return "티어 상승론";
 	else if (skillName === "망한건맞아") return "망한건 맞아";
 	return skillName;

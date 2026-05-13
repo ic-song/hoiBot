@@ -46,6 +46,7 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - `memberTitlePath`: member title data, runtime path `/sdcard/호이랜드/member_title.json`, repo snapshot `data/member_title.json`
 - `boardPath`: public letter board, runtime path `/sdcard/호이랜드/board.json`, repo snapshot `data/board.json`
 - `carrotBoardPath`: carrot market board, runtime path `/sdcard/호이랜드/carrotBoard.json`, repo snapshot `data/carrotBoard.json`
+- `freeMarketPath`: free-market listing/log data, runtime path `/sdcard/호이랜드/freeMarket.json`, repo snapshot `data/freeMarket.json`
 - `miniPetCollectionPath`: mini-pet collection data, runtime path `/sdcard/호이랜드/miniPet_collection.json`, repo snapshot `data/miniPet_collection.json`
 
 ## Runtime / Save-Flow Hotspots
@@ -2886,3 +2887,73 @@ Status: PARTIAL
 - Most mutation-heavy commands are not indexed yet
 - Admin-only maintenance commands are not indexed yet
 - Save-flow cross-file interactions are only documented for representative commands
+
+---
+
+# /자유시장
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:2401`
+- Registration commands: `main.js:2413`
+- Purchase/cancel commands: `main.js:2662`
+
+## Files
+
+- `main.js`
+- `data/freeMarket.json`
+
+## Related Helpers
+
+- `ensureFreeMarketData`
+- `getFreeMarketActiveListings`
+- `addFreeMarketListing`
+- `returnFreeMarketItemToOwner`
+- `addFreeMarketCompletedLog`
+- `removeFreeMarketDataByUser`
+- `generateBagOutput`
+- `refreshMiniPetSortIndex`
+- `initSweetHomeUser`
+- `initPetSkillUser`
+- `addHappyFoundationFee`
+
+## Data Usage
+
+- `freeMarketPath`
+- `data.member[*].bag`
+- `data.member[*].point`
+- `petData[*].miniPetBag`
+- `homeData[*].furnitureBag`
+- `petSkillData[*].petSkills.bag`
+- `data.hoiHappyFoundation.totalAmount`
+
+## Save Flow
+
+- `/자유시장` and `/자유시장현황` read `freeMarketPath`
+- Registration saves `freeMarketPath` and the mutated owner storage file
+- Purchase saves `freeMarketPath`, `filePath`, and the purchased item storage file
+- Cancel/force-cancel saves `freeMarketPath` and the restored item storage file
+- Account deletion removes related free-market listings/logs and saves `freeMarketPath`
+
+## Related Commands
+
+- `/가방거래등록 [가방번호] [갯수] [판매금액]`
+- `/미니펫거래등록 [미니펫가방번호] [갯수] [판매금액]`
+- `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
+- `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
+- `/자유시장구매 [번호]`
+- `/자유시장취소 [번호]`
+- `/거래소강제취소 [번호]`
+- `/자유시장현황`
+- `/거래현황`
+
+## AI Notes
+
+- Free-market storage is isolated in `freeMarket.json`; item ownership still mutates the original owner/buyer storage files
+- Active listing numbers are display-order numbers from recent-first `/자유시장`, not immutable listing ids
+- Completed logs keep only sold trades, newest first, capped at 100 entries
+- Registration fees consume `🥕당근이세요?` immediately and are not refunded on cancel/force-cancel
+- Sale fee is 10%, paid by the seller from proceeds and recorded through `addHappyFoundationFee`
+- `타고난 장사꾼📙` is recognized when equipped or present in the pet-skill bag for free-market slot expansion
