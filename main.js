@@ -10541,9 +10541,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.trim().startsWith("/결혼,") || msg.trim().match(/^\/결혼\d*,/)) {
+				if (msg.trim().startsWith("/안녕,") || msg.trim().match(/^\/안녕\d*,/)) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/결혼(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
+						var parts = msg.match(/^\/안녕(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
 						if (parts) {
 							var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
 							var userId = parts[2].trim();
@@ -10552,12 +10552,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								return;
 							}
 							if (data.member[userId] !== undefined) {
-								if (data.member[userId].bag["결혼해듀호이🤵👰(/딴딴따라)"] === undefined) {
-									data.member[userId].bag["결혼해듀호이🤵👰(/딴딴따라)"] = amount;
+								if (data.member[userId].bag["오톡소개팅💘(/안녕하세요?)"] === undefined) {
+									data.member[userId].bag["오톡소개팅💘(/안녕하세요?)"] = amount;
 								} else {
-									data.member[userId].bag["결혼해듀호이🤵👰(/딴딴따라)"] += amount;
+									data.member[userId].bag["오톡소개팅💘(/안녕하세요?)"] += amount;
 								}
-								replier.reply(userId + "님에게 결혼해듀호이🤵👰(/딴딴따라) " + amount + "개를 지급했습니다.");
+								replier.reply(userId + "님에게 오톡소개팅💘(/안녕하세요?) " + amount + "개를 지급했습니다.");
 							} else {
 								replier.reply("유저 아이디를 확인해 주세요.");
 							}
@@ -11173,6 +11173,61 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+\
+				if (msg === "/마지막선물") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] !== undefined && data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] > 0) {
+							if (data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] > 1) {
+								data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"]--;
+							} else {
+								delete data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"];
+							}
+							let biginnerItems1 = {
+								"캐슬대전리셋권🐶": 50,
+								"반지 강화석💍": 30
+							};
+							for (let item in biginnerItems1) {
+								addItemToBag(data.member[sender].bag, item, biginnerItems1[item]);
+							}
+							let memberPoint = 10000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "너에게 마지막 선물이야..\n자니..?\n\n";
+							for (let item in biginnerItems1) {
+								openMsg += item + " " + biginnerItems1[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("ㅋㅋ?");
+						}
+					}
+				}
+				if (msg === "/티켓오픈2") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] !== undefined && data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] > 0) {
+							if (data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] > 1) {
+								data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"]--;
+							} else {
+								delete data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"];
+							}
+							let biginnerItems1 = {
+								"티어 승급티켓🎟": 60,
+								"슬롯코인🪙": 200
+							};
+							for (let item in biginnerItems1) {
+								addItemToBag(data.member[sender].bag, item, biginnerItems1[item]);
+							}
+							let memberPoint = 70000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "초보자님 이거 먹고 힘내세요 알아요 알아 그 고통 알아요 지금까지 많이 힘들었죠 울지마요 왜 울어요 뚝 눈물 뚝!\n\n";
+							for (let item in biginnerItems1) {
+								openMsg += item + " " + biginnerItems1[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("티켓 갖고싶어? 다시 시작할래?^___^");
+						}
+					}
+				}
 if (msg === "/안녕하세요?") {
    var datingItemName = "오톡소개팅💘(/안녕하세요?)";
 
@@ -11235,10 +11290,10 @@ if (msg === "/안녕하세요?") {
       var partnerText = "";
 
       if (genderToken === "남") {
-         randomEmoji = "🤵";
+         randomEmoji = "💓";
          partnerText = "소개팅남";
       } else if (genderToken === "여") {
-         randomEmoji = "👰";
+         randomEmoji = "💞";
          partnerText = "소개팅녀";
       } else {
          randomEmoji = "💘";
@@ -11353,6 +11408,9 @@ if (msg === "/안녕하세요?") {
       var loveMent = mentList[Math.floor(Math.random() * mentList.length)];
 
       var afterSuccess = Math.random() < 0.5;
+      var isDestiny = loveScore >= 96;
+      var titleGiven = afterSuccess || isDestiny;
+
       var afterText = "";
 
       if (afterSuccess) {
@@ -11367,7 +11425,7 @@ if (msg === "/안녕하세요?") {
 
       var jackpotPoint = 0;
 
-      if (loveScore >= 96) {
+      if (isDestiny) {
          jackpotPoint = 10000000000;
          data.member[sender].point += jackpotPoint;
       }
@@ -11396,7 +11454,7 @@ if (msg === "/안녕하세요?") {
          titleData.member[sender].title.list = [];
       }
 
-      if (afterSuccess) {
+      if (titleGiven) {
          var newTitle = {
             name: titleName,
             inDate: new Date(),
@@ -11413,15 +11471,19 @@ if (msg === "/안녕하세요?") {
       resultMsg += imageLink + "\n\n";
       resultMsg += "💘 호이월드 소개팅 💘\n";
       resultMsg += "━━━━━━━━━━━━\n";
-      resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님의 " + partnerText + ": " + titleName + "\n";
+      resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + partnerText + ": " + titleName + "\n";
       resultMsg += "💞 궁합점수: " + loveScore + "점 [" + loveRank + "]\n";
       resultMsg += loveMent + "\n\n";
       resultMsg += "💌 애프터 결과\n";
       resultMsg += "━━━━━━━━━━━━\n";
       resultMsg += afterText + "\n";
 
-      if (afterSuccess) {
+      if (titleGiven) {
          resultMsg += "타이틀지급: " + titleName;
+
+         if (isDestiny && !afterSuccess) {
+            resultMsg += "\n※ 운명적 첫만남으로 타이틀이 지급되었습니다.";
+         }
       } else {
          resultMsg += "타이틀지급: 실패";
       }
@@ -11442,15 +11504,16 @@ if (msg === "/안녕하세요?") {
       replier.reply(resultMsg);
       replier.reply(rewardMsg);
 
-      if (loveScore >= 96 && afterSuccess) {
+      if (isDestiny) {
          noticeMsg(
             "📢 월드 알림\n" +
             "━━━━━━━━━━━━\n" +
             "[" + checkRank(data, petData, guildData, sender) + "] 님이\n" +
-            "오톡소개팅💘에서 운명적인 첫만남을 성공시켰습니다!\n\n" +
+            "오톡소개팅💘에서 운명적인 첫만남을 만났습니다!\n\n" +
             "상대: " + titleName + "\n" +
             "궁합점수: " + loveScore + "점 💍\n" +
-            "보너스: 100억 포인트"
+            "보너스: 100억 포인트\n" +
+            "타이틀: " + titleName
          );
       }
 
@@ -11462,61 +11525,6 @@ if (msg === "/안녕하세요?") {
       return;
    }
 }
-				if (msg === "/마지막선물") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] !== undefined && data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] > 0) {
-							if (data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"] > 1) {
-								data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"]--;
-							} else {
-								delete data.member[sender].bag["화이트데이 패키지🍬(/마지막선물)"];
-							}
-							let biginnerItems1 = {
-								"캐슬대전리셋권🐶": 50,
-								"반지 강화석💍": 30
-							};
-							for (let item in biginnerItems1) {
-								addItemToBag(data.member[sender].bag, item, biginnerItems1[item]);
-							}
-							let memberPoint = 10000000;
-							data.member[sender].point += memberPoint;
-							let openMsg = "너에게 마지막 선물이야..\n자니..?\n\n";
-							for (let item in biginnerItems1) {
-								openMsg += item + " " + biginnerItems1[item] + "개\n";
-							}
-							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-						} else {
-							replier.reply("ㅋㅋ?");
-						}
-					}
-				}
-				if (msg === "/티켓오픈2") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] !== undefined && data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] > 0) {
-							if (data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"] > 1) {
-								data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"]--;
-							} else {
-								delete data.member[sender].bag["초보티켓패키지2🎟(/티켓오픈2)"];
-							}
-							let biginnerItems1 = {
-								"티어 승급티켓🎟": 60,
-								"슬롯코인🪙": 200
-							};
-							for (let item in biginnerItems1) {
-								addItemToBag(data.member[sender].bag, item, biginnerItems1[item]);
-							}
-							let memberPoint = 70000000;
-							data.member[sender].point += memberPoint;
-							let openMsg = "초보자님 이거 먹고 힘내세요 알아요 알아 그 고통 알아요 지금까지 많이 힘들었죠 울지마요 왜 울어요 뚝 눈물 뚝!\n\n";
-							for (let item in biginnerItems1) {
-								openMsg += item + " " + biginnerItems1[item] + "개\n";
-							}
-							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
-						} else {
-							replier.reply("티켓 갖고싶어? 다시 시작할래?^___^");
-						}
-					}
-				}
-
 				if (msg === "/막타오픈") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["레이드막타패키지👾(/막타오픈)"] !== undefined && data.member[sender].bag["레이드막타패키지👾(/막타오픈)"] > 0) {
