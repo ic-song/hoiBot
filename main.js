@@ -25273,11 +25273,7 @@ function isGuildTerritoryPendingStartStale(war) {
 function buildGuildTerritoryPrepareMessage() {
 	return (
 		"[🏰 길드 영지전 준비 🏰]\n" +
-		"[길드 영지전 20초뒤 시작🏰]\n\n" +
-		"길드영지전쟁에 참여해주신\n" +
-		"길드 여러분 환영합니다.\n\n" +
-		"※ 20초뒤 길드영지전이 시작됩니다.\n" +
-		"https://open.kakao.com/o/gaP4Xybh"
+		"[길드 영지전 20초뒤 시작🏰]"
 	);
 }
 
@@ -25423,7 +25419,7 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 			latestWar.openingToken = null;
 			saveJsonFile(latestGuildData, guildPath);
 
-			noticeMsg(buildGuildTerritoryStartMessage(latestData, latestGuildData));
+			castleMsg(buildGuildTerritoryStartMessage(latestData, latestGuildData), replier, isGroupChat);
 
 			var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
 			turnMsgs.forEach(function (m) {
@@ -25781,7 +25777,7 @@ function buildGuildTerritoryStartMessage(data, guildData) {
 // 영지전 공격 순서표 빌드
 function buildGuildTerritoryOrderMessage(data, petData, guildData) {
 	var war = guildData.territoryWar;
-	var out = "📜길드 영지전 공격 순서표📜\n" + allsee;
+	var out = "📜 길드 영지전 공격 순서표 📜\n" + allsee;
 
 	if (!war.turnOrder || war.turnOrder.length === 0) {
 		return out + "참여 공격자가 없습니다.";

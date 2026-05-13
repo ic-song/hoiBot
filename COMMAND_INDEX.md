@@ -307,7 +307,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Start flow is staged: `NoticeMsg` prepare notice -> 20s wait -> castle-room order output -> 5s grace -> status output -> start notice -> first turn timer
+- Start flow is staged: `NoticeMsg` two-line prepare notice -> 20s wait -> castle-room order output -> 5s grace -> castle-room start notice -> first turn timer
 - Turn order and guild attack limits may include `전투형 지휘관📙`, `기사단 증원📙` 길드마스터 effects at start time
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
