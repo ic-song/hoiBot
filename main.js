@@ -5002,9 +5002,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-
-				for (let i = 1; i <= 5; i++) {
-				}
 				// /슬롯모두 지급 (1~5 패키지 전부, 개수 기본 1)
 				if (msg.startsWith("/초보1, ")) {
 					var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
@@ -5816,8 +5813,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 						break;
 					}
-				}
-				for (var i = 1; i <= 10; i++) {
 				}
 				if (msg.trim().startsWith("/데이,") || msg.trim().match(/^\/데이\d*,/)) {
 					if (isMaster(sender)) {
@@ -10822,11 +10817,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-
-				for (var i = 1; i <= 10; i++) {
-				}
-				for (var i = 1; i <= 10; i++) {
-				}
 				if (msg === "/호이월드활동에감사드립니다.") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] !== undefined && data.member[sender].bag["무료패키지11(/호이월드활동에감사드립니다.)"] > 0) {
