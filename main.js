@@ -31114,12 +31114,12 @@ function getFreeMarketItemText(listing) {
 function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var listings = getFreeMarketActiveListings(freeMarketData);
 	var out = "🏪호이월드 자유시장🏪\n";
-	out += "━━━━━━━━━━━━\n";
+	out += "━━━━━━━━━━━━\n"; 
 	out += "※ 거래수수료는 판매자에게 10% 부담됩니다.\n";
 	out += "양식: [아이템명x갯수][판매금액][판매자]\n";
 	out += "※ 판매: 채팅창에 '자유시장 판매가이드'\n";
 	out += "※ 취소: /자유시장취소 [번호] 당근환불❌\n";
-	out += "※ 구매: /자유시장구매 [번호]\n\ㅜ";
+	out += "※ 구매: /자유시장구매 [번호]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "\n자유시장 거래하러 가기👈" + allsee + "\n";
 	if (listings.length === 0) {
