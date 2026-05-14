@@ -101,7 +101,7 @@ const PET_SKILL_LIST = [
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
-	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수가 늘어납니다." },
+	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수 2개 늘어납니다." },
 	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -2401,14 +2401,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				var freeMarketConfirmState = null;
 				var isFreeMarketConfirmed = false;
-				if (msg === "/자유시장확인취소") {
+				if (msg === "자유시장거래취소") {
 					if (getFreeMarketConfirmState(sender)) {
 						clearFreeMarketConfirmState(sender);
 						replier.reply("✅ 자유시장 확인 요청이 취소되었습니다.");
 					}
 					return;
 				}
-				if (msg === "/자유시장확인") {
+				if (msg === "자유시장거래") {
 					freeMarketConfirmState = getFreeMarketConfirmState(sender);
 					if (!freeMarketConfirmState) {
 						replier.reply("❌ 확인할 자유시장 요청이 없습니다.");
@@ -31113,22 +31113,22 @@ function getFreeMarketItemText(listing) {
 
 function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var listings = getFreeMarketActiveListings(freeMarketData);
-	var out = "🏪호이월드 자유시장🏪\n";
+	var out = "🏪━호이월드 자유시장━🏪\n";
 	out += "━━━━━━━━━━━━\n"; 
-	out += "※ 거래수수료는 판매자에게 10% 부담됩니다.\n";
-	out += "양식: [아이템명x갯수][판매금액][판매자]\n";
-	out += "※ 판매: 채팅창에 '자유시장 판매가이드'\n";
-	out += "※ 취소: /자유시장취소 [번호] 당근환불❌\n";
-	out += "※ 구매: /자유시장구매 [번호]\n";
+	out += "💰 수수료: 판매금액의 10%\n";
+	out += "📖 판매: 채팅창에 자유시장 판매가이드'\n";
+	out += "❌ 취소: /자유시장취소 [번호] 당근환불❌\n";
+	out += "🛒 구매: /자유시장구매 [번호]\n";
+	out += "📋 양식: [아이템x갯수][판매금액][판매자]\n";
 	out += "━━━━━━━━━━━━\n";
-	out += "\n자유시장 거래하러 가기👈" + allsee + "\n";
+	out += "자유시장 거래하러 가기👈" + allsee + "\n";
 	if (listings.length === 0) {
 		return out + "현재 판매 중인 물품이 없습니다.";
 	}
 	for (var i = 0; i < listings.length; i++) {
 	//	if (i === 0) 
 		var listing = listings[i];
-		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "]\n[" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]\n\n";
+		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "]\n└[" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]\n\n";
 	}
 	return out.trim();
 }
@@ -31142,10 +31142,10 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 		if (tb !== ta) return tb - ta;
 		return (b.id || 0) - (a.id || 0);
 	});
-	var out = "🤝호월 자유시장 거래현황🤝\n\n";
+	var out = "🤝━호월 자유시장 거래현황━🤝\n";
 	out += "━━━━━━━━━━━━\n";
-	out += "※ 판매금액은 수수료 10%를 제외한 금액이 표시 됩니다\n";
-	out += "※ [아이템명x갯수][판매금액][판매자]🤝[구매자]\n";
+	out += "📖 판매금액은 수수료 10%를 제외한 금액이 표시 됩니다\n";
+	out += "📋 [아이템x갯수][판매금액][판매자]🤝[구매자]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
 	out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -31155,7 +31155,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	for (var i = 0; i < logs.length; i++) {
 	//	if (i === 0) 
 		var log = logs[i];
-		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n[" + formatFreeMarketPoint(log.sellerReceive || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.sellerReceive || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
 	}
 	return out.trim();
 }
@@ -31316,7 +31316,8 @@ function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender,
 	msg += "판매금액: 🅟" + numberWithCommas(price) + "\n";
 	msg += "등록 수수료: 당근🥕 " + numberWithCommas(carrotFee) + "개\n";
 	if (extraLine) msg += extraLine + "\n";
-	msg += "\n등록하려면 /자유시장확인\n취소하려면 /자유시장확인취소";
+	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]";
+	msg += "※ [거래/취소] 명령어를 입력해주세요.";
 	return msg;
 }
 
@@ -31328,7 +31329,8 @@ function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, list
 	msg += "물품: [" + getFreeMarketItemText(listing) + "]\n";
 	msg += "판매자: [" + checkRank(data, petData, guildData, listing.seller) + "]\n";
 	msg += "판매금액: 🅟" + numberWithCommas(listing.price) + "\n";
-	msg += "\n구매하려면 /자유시장확인\n취소하려면 /자유시장확인취소";
+	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]";
+	msg += "※ [거래/취소] 명령어를 입력해주세요.";
 	return msg;
 }
 
