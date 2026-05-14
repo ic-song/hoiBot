@@ -31115,11 +31115,11 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var listings = getFreeMarketActiveListings(freeMarketData);
 	var out = "🏪 호이월드 자유시장 🏪\n";
 	out += "━━━━━━━━━━━━\n"; 
-	out += "💰 수수료: 판매금액의 10%\n";
-	out += "📖 판매: 채팅창에 자유시장 판매가이드'\n";
-	out += "❌ 취소: /자유시장취소 [번호] 당근환불❌\n";
-	out += "🛒 구매: /자유시장구매 [번호]\n";
-	out += "📋 양식: [아이템x갯수][판매금액][판매자]\n";
+	out += "💰수수료: 판매금액의 10%\n";
+	out += "🛒구매: /자유시장구매 [번호]\n";
+	out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
+	out += "❌취소: /자유시장취소 [번호] 당근환불❌\n";
+	out += "📋양식: [아이템x갯수][판매금액][판매자]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래하러 가기👈" + allsee + "\n";
 	if (listings.length === 0) {
@@ -31144,8 +31144,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	});
 	var out = "🤝 호월 자유시장 거래현황 🤝\n";
 	out += "━━━━━━━━━━━━\n";
-	out += "📖 판매금액은 수수료 10%를 제외한 금액이 표시 됩니다\n";
-	out += "📋 [아이템x갯수][판매금액][판매자]🤝[구매자]\n";
+	out += "📖수수료 10%를 제외한 판매금액이 표시 됩니다\n";
+	out += "📋[아이템x갯수][판매금액][판매자]🤝[구매자]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
 	out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
