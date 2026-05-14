@@ -31117,8 +31117,8 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	out += "━━━━━━━━━━━━\n"; 
 	out += "💰수수료: 판매금액의 10%\n";
 	out += "🛒구매: /자유시장구매 [번호]\n";
+	out += "❌취소: /자유시장취소 [번호]\n";
 	out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
-	out += "❌취소: /자유시장취소 [번호] 당근환불❌\n";
 	out += "📋양식: [아이템x갯수][판매금액][판매자]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래하러 가기👈" + allsee + "\n";
