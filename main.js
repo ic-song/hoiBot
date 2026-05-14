@@ -21568,7 +21568,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 				// /길드정보 : 내 길드 정보
-				if (msg === "/길드정보" || msg === "ㅗㅗㅗ") {
+				if (msg === "/길드정보" || msg === "ㄱㄱㄱ") {
 					var myGid = getMyGuildId(data, sender);
 					if (!myGid) {
 						replier.reply("❌ 가입된 길드가 없습니다.\n/길드목록 으로 길드를 확인하세요.");
