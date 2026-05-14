@@ -31113,7 +31113,7 @@ function getFreeMarketItemText(listing) {
 
 function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var listings = getFreeMarketActiveListings(freeMarketData);
-	var out = "🏪━호이월드 자유시장━🏪\n";
+	var out = "🏪 호이월드 자유시장 🏪\n";
 	out += "━━━━━━━━━━━━\n"; 
 	out += "💰 수수료: 판매금액의 10%\n";
 	out += "📖 판매: 채팅창에 자유시장 판매가이드'\n";
@@ -31142,7 +31142,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 		if (tb !== ta) return tb - ta;
 		return (b.id || 0) - (a.id || 0);
 	});
-	var out = "🤝━호월 자유시장 거래현황━🤝\n";
+	var out = "🤝 호월 자유시장 거래현황 🤝\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "📖 판매금액은 수수료 10%를 제외한 금액이 표시 됩니다\n";
 	out += "📋 [아이템x갯수][판매금액][판매자]🤝[구매자]\n";
@@ -31316,7 +31316,8 @@ function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender,
 	msg += "판매금액: 🅟" + numberWithCommas(price) + "\n";
 	msg += "등록 수수료: 당근🥕 " + numberWithCommas(carrotFee) + "개\n";
 	if (extraLine) msg += extraLine + "\n";
-	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]";
+	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
+	msg += "━━━━━━━━━━━━\n";
 	msg += "※ [거래/취소] 명령어를 입력해주세요.";
 	return msg;
 }
@@ -31329,7 +31330,8 @@ function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, list
 	msg += "물품: [" + getFreeMarketItemText(listing) + "]\n";
 	msg += "판매자: [" + checkRank(data, petData, guildData, listing.seller) + "]\n";
 	msg += "판매금액: 🅟" + numberWithCommas(listing.price) + "\n";
-	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]";
+	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
+	msg += "━━━━━━━━━━━━\n";
 	msg += "※ [거래/취소] 명령어를 입력해주세요.";
 	return msg;
 }
