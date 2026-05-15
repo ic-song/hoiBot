@@ -4811,6 +4811,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (authorizedUsers.includes(sender)) {
 						// 포인트를 받을 사용자 목록
 						const allowedUsers = [
+							"매실 여",
 							"빠루 남",
 							"디르 남",
 							"퍼플 여",
@@ -4984,6 +4985,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg.startsWith("/부방상여")) {
 					const authorizedUser = "호이 남"; // 명령어를 사용할 수 있는 유일한 관리자
 					const adminUsers = [
+						"매실 여",
 						"빠루 남",
 						"디르 남",
 						"퍼플 여",
@@ -5895,6 +5897,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+				
 				if (msg.startsWith("/초보1, ")) {
 					var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
 					if (sender !== "호이 남") {
@@ -8173,6 +8176,31 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									data.member[userId].bag["시련의상자😈(/시련오픈)"] += amount;
 								}
 								replier.reply(userId + "님에게 시련의상자😈(/시련오픈) " + amount + "개를 지급했습니다.");
+							} else {
+								replier.reply("유저 아이디를 확인해 주세요.");
+							}
+						} else {
+							replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
+						}
+					}
+				}
+				if (msg.trim().startsWith("/펫탐,") || msg.trim().match(/^\/펫탐\d*,/)) {
+					if (isMaster(sender)) {
+						var parts = msg.match(/^\/펫탐(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
+						if (parts) {
+							var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
+							var userId = parts[2].trim();
+							if (amount <= 0) {
+								replier.reply("지급 개수는 1개 이상이어야 합니다.");
+								return;
+							}
+							if (data.member[userId] !== undefined) {
+								if (data.member[userId].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] === undefined) {
+									data.member[userId].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] = amount;
+								} else {
+									data.member[userId].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] += amount;
+								}
+								replier.reply(userId + "님에게 펫탐험패키지⛰️[1](/펫탐험오픈1) " + amount + "개를 지급했습니다.");
 							} else {
 								replier.reply("유저 아이디를 확인해 주세요.");
 							}
@@ -13249,12 +13277,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							delete data.member[sender].bag["전도르 익스펙토 패트로넘🧙(/전도르오픈)"];
 						}
 						var rewardItems = {
-							"돌멩이🪨": 8000,
+							"펫 강화석⭐": 700,
 							"전설의 돌맹이🗿": 8,
-							"펫먹이특식🥡(/특식오픈)": 100,
-							"고급 티어 승급티켓🎫": 1,
+							"펫먹이🍼": 10000,
 							"정령 강화석🥀": 150,
-							"주간상자🦋(/주간오픈)": 1
+							"주간상자🦋(/주간오픈)": 2
 						};
 						for (var item in rewardItems) {
 							addItemToBag(data.member[sender].bag, item, rewardItems[item]);
@@ -13710,7 +13737,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								"/" +
 								wrongTurnAttackLimit +
 								"⚔)\n\n" +
-								"턴을 다 소모하며 탈락합니다.";
+								"턴을 다 소모하면 탈락합니다.";
 						}
 
 						saveJsonFile(guildData, guildPath);
@@ -24664,6 +24691,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					msg.trim().startsWith("/가정정,") || msg.trim().match(/^\/가정정\d*,/) ||
 					msg.trim().startsWith("/가정정정,") || msg.trim().match(/^\/가정정정\d*,/) ||
 					msg.trim().startsWith("/가정정정정,") || msg.trim().match(/^\/가정정정정\d*,/) ||
+					msg.trim().startsWith("/가정정정정정,") || msg.trim().match(/^\/가정정정정정\d*,/) ||
 					msg.trim().startsWith("/노동,") || msg.trim().match(/^\/노동\d*,/) ||
 					msg.trim().startsWith("/어린,") || msg.trim().match(/^\/어린\d*,/) ||
 					msg.trim().startsWith("/어버,") || msg.trim().match(/^\/어버\d*,/) ||
@@ -24722,6 +24750,43 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+
+ if (msg === "/펫탐험오픈1") {
+   if (!castleSiegeFlag) {
+      if (data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] !== undefined && data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] > 0) {
+         if (data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"] > 1) {
+            data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"]--;
+         } else {
+            delete data.member[sender].bag["펫탐험패키지⛰️[1](/펫탐험오픈1)"];
+         }
+
+         let petExploreItems = {
+            "탐험확률UP🗻(50%)": 20,
+            "탐험확률UP🗻(40%)": 35,
+            "탐험확률UP🗻(30%)": 50,
+            "펫던전 입장권🌋": 40,
+            "보물지도🗺️": 50
+         };
+
+         for (let item in petExploreItems) {
+            addItemToBag(data.member[sender].bag, item, petExploreItems[item]);
+         }
+
+         let openMsg = "펫탐험패키지⛰️[1] 패키지오픈!!\n\n";
+         openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+         openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+         openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+         for (let item in petExploreItems) {
+            openMsg += item + " " + petExploreItems[item] + "개\n";
+         }
+
+         replier.reply(openMsg);
+      } else {
+         replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
+      }
+   }
+}
 				if (msg === "/오픈하면부처가됩니다") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] !== undefined && data.member[sender].bag["부처님오신날🇰🇷(/오픈하면부처가됩니다)"] > 0) {
@@ -24772,6 +24837,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								"정령 강화석🥀": 300,
 								"정령강화확률UP🥀(30%)": 20,
 								"펫스윗홈인테리어샵🖼️(/샵오픈)": 700,
+								"펫먹이🍼": 500,
+                                "펫 강화석⭐": 300,
+								"호이베이스볼⚾️(/투수던집니다)": 30,
+								"양념치킨🐔": 200,
+								"미니펫 강화석💫": 100,
+								"길드공헌훈장🌟(/길드공헌 숫자)": 10
+
+							};
+
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+
+							let memberPoint = 1000000000;
+							data.member[sender].point += memberPoint;
+
+							let openMsg = "https://ibb.co/PstSX3hV\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\nhttps://ibb.co/TqxWDszW\n대머리세요?");
+						}
+					}
+				}
+				if (msg === "/나한테잘하자5") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)"] !== undefined && data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)"] > 0) {
+							if (data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)"] > 1) {
+								data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)"]--;
+							} else {
+								delete data.member[sender].bag["파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)"];
+							}
+
+							let starterItems = {
+								"땅문서📜": 5,
+								"미니펫뽑기🐹(/미니펫오픈)": 1000,
+								"펫스윗홈인테리어샵🖼️(/샵오픈)": 700,
+								"주간상자🦋(/주간오픈)": 1,
+								"반지 강화석💍": 300,
+								"반지강화확률UP💍(30%)": 20,
 								"펫먹이🍼": 500,
                                 "펫 강화석⭐": 300,
 								"호이베이스볼⚾️(/투수던집니다)": 30,
@@ -26322,27 +26434,28 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
 // 영지전 시작 메시지 빌드
 function buildGuildTerritoryStartMessage(data, guildData) {
 	return (
-		"[🎖️길드 영지전 시작🎖️]\n" +
-		"길드 영지전이 시작되었습니다.\n\n" +
+		"[🎖️길드 영지전 시작🎖️]\n" + 
+		"[💡]규칙설명 안내\n\n" + allsee + 
+		"길드 영지전이 시작되었습니다.\n" +
 		"'/영지공격 [숫자]' 명령어로 영지를 점령해보세요.\n" +
 		"길드의 '소드마스터🤺' 또는 전투형 지휘관📙 길드마스터만 영지공격이 가능하며,\n" +
-		"종료 시점에 최종 점령 중인 길드가 해당 영지를 차지합니다.\n\n" +
+		"종료 시점에 최종 점령 중인 길드가 해당 영지를 차지합니다.\n" +
 		"🏰 캐슬공격 규칙 안내\n" +
-		"━━━━━━━━━━━━━━━\n\n" +
+		"━━━━━━━━━━━━━━━\n" +
 		"⚔️ 공격 참여 인원\n" +
 		"- 소드마스터\n" +
 		"- 전투형 지휘관(길마)\n" +
-		"- 기사단 증원(소마)\n\n" +
+		"- 기사단 증원(소마)\n" +
 		"━━━━━━━━━━━━━━━\n" +
 		"⚠️ 오입력 패널티\n" +
 		"공격 명령 오입력 시\n" +
-		"공격 횟수 -5회 차감\n\n" +
+		"공격 횟수 -5회 차감\n" +
 		"━━━━━━━━━━━━━━━\n" +
 		"😵 길드 탈락 조건\n" +
 		"남은 공격 턴이 오입력 패널티 \n" +
 		"차감 횟수보다 적을 경우\n" +
 		"공격 횟수 차감이 불가능하므로 \n" +
-		"길드 탈락 처리\n\n" +
+		"길드 탈락 처리\n" +
 		"예시)\n" +
 		"남은 턴 4회 상태에서 오입력 발생\n" +
 		"→ -5회 차감 불가\n" +
