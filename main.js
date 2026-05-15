@@ -24698,7 +24698,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					msg.trim().startsWith("/부처,") || msg.trim().match(/^\/부처\d*,/)
 				) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/(가정|가정정|가정정정|가정정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
+						var parts = msg.match(/^\/(가정|가정정|가정정정|가정정정정|가정정정정정|노동|어린|어버|부처)(\d*)?,\s*(.+)$/);
 
 						if (parts) {
 							var command = parts[1];
