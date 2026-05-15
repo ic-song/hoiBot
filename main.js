@@ -24720,6 +24720,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[3](/나한테잘하자3)";
 								} else if (command === "가정정정정") {
 								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[4](/나한테잘하자4)";
+									} else if (command === "가정정정정정") {
+								packageName = "파워가정의달패키지🧑‍🧑‍🧒‍🧒[5](/나한테잘하자5)";
 							} else if (command === "노동") {
 								packageName = "노동절패키지🪏(/일어나돈벌어야지)";
 							} else if (command === "어린") {
