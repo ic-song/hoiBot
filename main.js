@@ -12049,6 +12049,48 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+				if (msg === "/초보오픈26") {
+					if (!castleSiegeFlag) {
+						if (data.member[sender].bag["초보자 스타터패키지🌟[26](/초보오픈26)"] !== undefined && data.member[sender].bag["초보자 스타터패키지🌟[26](/초보오픈26)"] > 0) {
+							if (data.member[sender].bag["초보자 스타터패키지🌟[26](/초보오픈26)"] > 1) {
+								data.member[sender].bag["초보자 스타터패키지🌟[26](/초보오픈26)"]--;
+							} else {
+								delete data.member[sender].bag["초보자 스타터패키지🌟[26](/초보오픈26)"];
+							}
+							let starterItems = {
+								"티어 승급티켓🎟": 500,
+								"정령 강화석🥀": 700,
+								"반지 강화석💍": 750,
+								"펫 강화석⭐": 1000,
+								"캐슬대전리셋권🐶": 100,
+								"시탑 부스터🔮": 200,
+								"양념치킨🐔": 100,
+								"펫먹이특식🥡(/특식오픈)": 100,
+								"펫먹이🍼": 1000,
+								"레이드타격대인장👑(+600👾)": 10,
+								"전설의 돌맹이🗿": 5,
+								"강화확률뽑기⚒️(/강화뽑기)": 50,
+								"펫던전 입장권🌋": 30,
+								"🥕당근이세요?": 50
+							};
+							for (let item in starterItems) {
+								addItemToBag(data.member[sender].bag, item, starterItems[item]);
+							}
+							let memberPoint = 300000000;
+							data.member[sender].point += memberPoint;
+							let openMsg = "초보자 스타터패키지🌟[26] 패키지오픈!!\n\n";
+							openMsg += "후원자 [" + checkRank(data, petData, guildData, sender) + "]님 감사합니다.\n";
+							openMsg += "본 후원은 봇개발 기획 및 외주 비용입니다\n";
+							openMsg += "더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n";
+							for (let item in starterItems) {
+								openMsg += item + " " + starterItems[item] + "개\n";
+							}
+							replier.reply(openMsg + "🅟" + numberWithCommas(memberPoint));
+						} else {
+							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
+						}
+					}
+				}
 				if (msg === "/길드스타터오픈5") {
 					if (!castleSiegeFlag) {
 						if (data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"] !== undefined && data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"] > 0) {
