@@ -6564,7 +6564,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						data.member[targetUserId].bag = {};
 					}
 
-					for (let i = 1; i <= 25; i++) {
+					for (let i = 1; i <= 26; i++) {
 						let itemName = "초보자 스타터패키지🌟[" + i + "](/초보오픈" + i + ")";
 
 						if (data.member[targetUserId].bag[itemName] === undefined) {
@@ -6752,6 +6752,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 									data.member[targetUserId].bag["초보자 스타터패키지🌟[25](/초보오픈25)"] += 1;
 								}
 								replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[25](/초보오픈25)가 지급되었습니다.");
+							}
+						}
+					}
+				}
+				if (msg.startsWith("/초보26, ")) {
+					var commandParts = msg.split(", ");
+					if (sender !== "호이 남") {
+						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
+					} else {
+						if (commandParts.length !== 2) {
+							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보25, 사용자아이디");
+						} else {
+							var targetUserId = commandParts[1].trim();
+							if (!data.member.hasOwnProperty(targetUserId)) {
+								replier.reply("해당 사용자를 찾을 수 없습니다.");
+							} else {
+								if (data.member[targetUserId].bag["초보자 스타터패키지🌟[26](/초보오픈26)"] === undefined) {
+									data.member[targetUserId].bag["초보자 스타터패키지🌟[26](/초보오픈26)"] = 1;
+								} else {
+									data.member[targetUserId].bag["초보자 스타터패키지🌟[26](/초보오픈26)"] += 1;
+								}
+								replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[26](/초보오픈26)가 지급되었습니다.");
 							}
 						}
 					}
