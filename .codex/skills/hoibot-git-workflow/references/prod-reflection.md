@@ -46,6 +46,11 @@ If the task branch contains unrelated commits, cherry-pick only the validated ta
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.
 
+For bug-fix work on `feature/bugFix`, delete local and remote `feature/bugFix`
+after the validated commit has been pushed, reflected into `feature/prod`, and
+`feature/prod` has been pushed. The next bug fix should recreate
+`feature/bugFix` from the latest `feature/prod`.
+
 For workflow changes:
 
 1. commit and push the workflow change on `feature/workflow`

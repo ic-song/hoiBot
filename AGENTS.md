@@ -106,8 +106,10 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload and `feature/prod` direct-merge scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
 - Validated changes made on `feature/workflow` should be reflected into `feature/prod` by default after the workflow branch is pushed, unless the user explicitly says not to reflect them.
-- `feature/bugFix` is the branch for bug fixes, root-cause analysis, minimal fixes, and regression validation.
-- Bug fixes should be performed on `feature/bugFix` unless the user explicitly requests another exact branch.
+- `feature/bugFix` is a short-lived branch for one bug-fix cycle: root-cause analysis, minimal fix, regression validation, source-branch push, and production reflection.
+- Bug fixes should be performed on a freshly created `feature/bugFix` from the latest `feature/prod` unless the user explicitly requests another exact branch.
+- After the validated bug-fix commit is pushed and reflected into `feature/prod`, delete local and remote `feature/bugFix` by default so the next bug fix starts from a clean branch.
+- If `feature/bugFix` already exists when starting a new bug fix, verify that its previous work is reflected into `feature/prod`; then delete/recreate it from the latest `feature/prod` unless the user asks to preserve it.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify and use the exact branch casing requested by the user.
 - Agents MUST follow the role of each existing branch.
 - If no existing branch role fits the task, create a new broad content branch such as `feature/<content-name>`.
@@ -248,7 +250,9 @@ head-agent
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
 - After validated documentation, agent strategy, branch strategy, `tools/`, or Codex skill changes are committed and pushed on `feature/workflow`, reflect those commits into `feature/prod` by default unless the user explicitly says not to.
-- Bug fixes should use `feature/bugFix` unless the user explicitly requests another exact branch.
+- Bug fixes should use a fresh `feature/bugFix` created from the latest `feature/prod` unless the user explicitly requests another exact branch.
+- After the bug-fix commit is pushed and reflected into `feature/prod`, delete local and remote `feature/bugFix` by default.
+- If an old `feature/bugFix` exists, verify reflected commits before deleting/recreating it from `feature/prod`.
 - If both `feature/bugFix` and `feature/bugfix` exist, verify the intended remote/local branch and use the exact branch casing requested by the user.
 - Follow the role of each existing branch before choosing or creating a branch.
 - If no existing branch role fits the work, create a new broad content branch from `feature/prod` using `feature/<content-name>`.

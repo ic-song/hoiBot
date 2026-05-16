@@ -24,7 +24,9 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Documentation, workflow, branch strategy, and tools changes belong on `feature/workflow`.
 - Validated `feature/workflow` changes should be reflected into `feature/prod` by default after `feature/workflow` is pushed, unless the user explicitly says not to reflect them.
 - When `.codex/skills/` files change, update the corresponding local Codex skill files after `feature/prod` is updated, if filesystem permissions allow it.
-- Bug fixes belong on `feature/bugFix` unless the user explicitly requests another exact branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
+- Bug fixes belong on a freshly created `feature/bugFix` from the latest `feature/prod` unless the user explicitly requests another exact branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
+- Treat `feature/bugFix` as short-lived: after the validated bug-fix commit is pushed and reflected into `feature/prod`, delete local and remote `feature/bugFix` by default so the next bug fix starts cleanly from `feature/prod`.
+- If `feature/bugFix` already exists when starting a new bug fix, verify whether its previous commits are already reflected into `feature/prod`; then delete/recreate it from latest `feature/prod` unless the user asks to preserve it.
 - Before starting work on a specific branch, update local `feature/prod` from `origin/feature/prod`, then bring that local `feature/prod` into the branch.
 - Other task branches should be based on the updated local `feature/prod`, not on `origin/main`.
 - Do not use `origin/main` as the freshness baseline for production-facing or bug-fix work unless the user explicitly requests main synchronization.

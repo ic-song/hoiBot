@@ -5,7 +5,7 @@
 - `feature/prod`: operational branch for production-facing code.
 - `feature/hoi`: primary hoi-managed task branch used by operation scripts.
 - `feature/workflow`: documentation, agent strategy, branch strategy, and tools workflow changes.
-- `feature/bugFix`: bug fixes, root-cause analysis, minimal fixes, and regression validation, unless the user explicitly requests another exact branch.
+- `feature/bugFix`: short-lived bug-fix branch created fresh from the latest `feature/prod` for one bug-fix cycle, unless the user explicitly requests another exact branch.
 - `main`: stable/reference branch, not the active production source.
 
 Local `feature/prod` is the active operational baseline. Other task branches
@@ -44,3 +44,19 @@ Do not proactively synchronize `feature/prod` into `main`. After operational
 stabilization, wait for the user to request a PR from `feature/prod` to `main`.
 
 This reduces later conflicts.
+
+## Bug-Fix Branch Lifecycle
+
+Use `feature/bugFix` as a disposable branch, not a long-lived integration branch.
+
+1. Start from the latest `feature/prod`.
+2. Delete/recreate local `feature/bugFix` if an old one exists and its previous work is already reflected into `feature/prod`.
+3. Implement and validate the bug fix on `feature/bugFix`.
+4. Push `feature/bugFix`.
+5. Reflect only the validated bug-fix commit into `feature/prod`.
+6. Push `feature/prod`.
+7. Delete local and remote `feature/bugFix` by default.
+
+If the old `feature/bugFix` contains unreflected commits, stop and decide whether
+to preserve, back up, or explicitly discard those commits before recreating the
+branch.
