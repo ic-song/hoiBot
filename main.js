@@ -29665,6 +29665,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 	};
 }
 
+// 자동일퀘 내부 실행 메시지를 모으는 replier 생성 함수
 function createAutoDailyCaptureReplier() {
 	return {
 		messages: [],
@@ -29674,6 +29675,7 @@ function createAutoDailyCaptureReplier() {
 	};
 }
 
+// 기존 일퀘 명령어를 자동일퀘 내부에서 무음 실행하는 함수
 function runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB, packageName) {
 	var ctx = getCurrentContext();
 	var capture = createAutoDailyCaptureReplier();
@@ -29687,6 +29689,7 @@ function runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB
 	return capture.messages;
 }
 
+// 자동일퀘 전후 비교용 유저 상태 스냅샷 반환 함수
 function getAutoDailyQuestSnapshot(sender) {
 	var data = loadJsonFile(filePath);
 	var petData = loadJsonFile(memberPetPath);
@@ -29718,6 +29721,7 @@ function getAutoDailyQuestSnapshot(sender) {
 	};
 }
 
+// 숫자형 맵 데이터를 복사하는 함수
 function copyNumberMap(source) {
 	var copy = {};
 	if (!source) return copy;
@@ -29728,6 +29732,7 @@ function copyNumberMap(source) {
 	return copy;
 }
 
+// 자동일퀘 전후 증가한 아이템 수량만 계산하는 함수
 function diffPositiveNumberMap(beforeMap, afterMap) {
 	var result = {};
 	afterMap = afterMap || {};
@@ -29739,6 +29744,7 @@ function diffPositiveNumberMap(beforeMap, afterMap) {
 	return result;
 }
 
+// 자동일퀘 획득 아이템 목록 출력 문자열 생성 함수
 function formatAutoDailyItemLines(items) {
 	var keys = Object.keys(items || {});
 	if (keys.length < 1) return "- 없음";
@@ -29750,6 +29756,7 @@ function formatAutoDailyItemLines(items) {
 	}).join("\n");
 }
 
+// 자동일퀘 대상 명령어를 잔여 횟수만큼 반복 실행하는 함수
 function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, command, usedKey, maxKey) {
 	var first = getAutoDailyQuestSnapshot(sender);
 	var remain = Math.max(0, (first.status[maxKey] || 0) - (first.status[usedKey] || 0));
@@ -29766,6 +29773,7 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 	return captured;
 }
 
+// 자동일퀘 진행 결과 요약 메시지 생성 함수
 function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages) {
 	var status = after.status;
 	var nickName = checkRank(after.data, after.petData, after.guildData, sender);
@@ -29835,6 +29843,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
 	return lines.join("\n");
 }
 
+// 자동일퀘 전체 흐름 실행 함수
 function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
 	var before = getAutoDailyQuestSnapshot(sender);
 	if (!before.data.member || !before.data.member[sender]) {
