@@ -14720,8 +14720,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/패키지초기화") {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoData = loadJsonFile(packageInfoPath); // 초기화 전 패키지 정보 데이터
-					var packageLogData = loadJsonFile(packageLogPath); // 초기화 전 패키지 로그 데이터
+					var packageInfoFile = new java.io.File(resolveActiveDataPath(packageInfoPath)); // 현재 컨텍스트의 패키지 정보 파일
+					var packageLogFile = new java.io.File(resolveActiveDataPath(packageLogPath)); // 현재 컨텍스트의 패키지 로그 파일
+					var packageInfoData = packageInfoFile.exists() && packageInfoFile.length() > 0 ? loadJsonFile(packageInfoPath) : null; // 기존 파일이 있을 때만 로드
+					var packageLogData = packageLogFile.exists() && packageLogFile.length() > 0 ? loadJsonFile(packageLogPath) : null; // 기존 파일이 있을 때만 로드
 					var packageInitResult = buildPackageInitResult(packageInfoData, packageLogData);
 					if (packageInitResult.packageInfoData) saveJsonFile(packageInitResult.packageInfoData, packageInfoPath);
 					if (packageInitResult.packageLogData) saveJsonFile(packageInitResult.packageLogData, packageLogPath);
@@ -25980,7 +25982,7 @@ function loadJsonFile(path) {
 }
 // JSON 파일 저장 함수
 function saveJsonFile(data, path) {
-	if (!(data instanceof Object)) {
+	if (data === null || (typeof data !== "object" && typeof data !== "function")) {
 		debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
 	} else {
 		path = resolveActiveDataPath(path);
