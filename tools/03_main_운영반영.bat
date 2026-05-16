@@ -1,9 +1,12 @@
-@echo off
+﻿@echo off
 chcp 65001 > nul
 
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_DEVICE=emulator-5556
 set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/main/main.js
+set CHANGELOG_SOURCE=data\hoiBotChangeLog.json
+set TARGET_CHANGELOG=/storage/emulated/0/호이랜드/hoiBotChangeLog.json
+set TARGET_CHANGELOG_DIR=/storage/emulated/0/호이랜드
 set BOT_NAME=main
 set BASE_BRANCH=feature/prod
 
@@ -12,12 +15,12 @@ echo ========================================
 echo [START] main.js 운영 반영
 echo ========================================
 echo.
-echo 이 작업은 최신 %BASE_BRANCH% 코드를 받은 뒤
-echo LD플레이어의 main.js에 반영합니다.
+echo 현재 작업은 최신 %BASE_BRANCH% 코드를 받은 후
+echo LD플레이어의 main.js와 수정이력 파일에 반영합니다.
 echo ========================================
 echo.
 
-echo [1/5] 프로젝트 폴더로 이동 중...
+echo [1/6] 프로젝트 폴더로 이동 중...
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
 
@@ -26,7 +29,7 @@ echo 현재 위치:
 cd
 
 echo.
-echo [2/5] Git 최신화 중...
+echo [2/6] Git 최신화 중...
 git switch %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_SWITCH
 
@@ -36,21 +39,31 @@ if errorlevel 1 goto FAIL_GIT_PULL
 echo [OK] Git 최신화 완료
 
 echo.
-echo [3/5] ADB 기기 확인 중...
+echo [3/6] ADB 기기 확인 중...
 "%ADB_EXE%" devices
 if errorlevel 1 goto FAIL_ADB
 
 echo [OK] ADB 확인 완료
 
 echo.
-echo [4/5] main.js 파일 업로드 중...
+echo [4/6] main.js 파일 업로드 중...
 "%ADB_EXE%" -s %TARGET_DEVICE% push main.js "%TARGET_FILE%"
 if errorlevel 1 goto FAIL_PUSH
 
 echo [OK] main.js 업로드 완료
 
 echo.
-echo [5/5] 메신저봇R main 컴파일 중...
+echo [5/6] hoiBotChangeLog.json 업로드 중...
+if not exist "%CHANGELOG_SOURCE%" goto FAIL_CHANGELOG_SOURCE
+"%ADB_EXE%" -s %TARGET_DEVICE% shell mkdir -p "%TARGET_CHANGELOG_DIR%"
+if errorlevel 1 goto FAIL_CHANGELOG
+"%ADB_EXE%" -s %TARGET_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%"
+if errorlevel 1 goto FAIL_CHANGELOG
+
+echo [OK] hoiBotChangeLog.json 업로드 완료
+
+echo.
+echo [6/6] 메신저봇 main 컴파일 중...
 "%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%
 if errorlevel 1 goto FAIL_COMPILE
 
@@ -59,7 +72,7 @@ echo ========================================
 echo [SUCCESS] main.js 운영 반영 완료
 echo ========================================
 echo.
-echo LD플레이어에 main.js 업로드 및 컴파일까지 완료했습니다.
+echo LD플레이어에 main.js, 수정이력 업로드 및 컴파일까지 완료했습니다.
 echo ========================================
 pause
 exit /b 0
@@ -113,11 +126,30 @@ echo ========================================
 pause
 exit /b 1
 
+:FAIL_CHANGELOG_SOURCE
+echo.
+echo ========================================
+echo [FAIL] hoiBotChangeLog.json 파일 없음
+echo FILE: %CHANGELOG_SOURCE%
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_CHANGELOG
+echo.
+echo ========================================
+echo [FAIL] hoiBotChangeLog.json 업로드 실패
+echo DEVICE: %TARGET_DEVICE%
+echo FILE: %TARGET_CHANGELOG%
+echo ========================================
+pause
+exit /b 1
+
 :FAIL_COMPILE
 echo.
 echo ========================================
-echo [FAIL] 메신저봇R 컴파일 실패
-echo 봇 이름 또는 메신저봇R 패키지명을 확인하세요.
+echo [FAIL] 메신저봇 컴파일 실패
+echo 봇 이름 또는 메신저봇 패키지명을 확인하세요.
 echo BOT_NAME: %BOT_NAME%
 echo ========================================
 pause

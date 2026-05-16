@@ -1,6 +1,13 @@
 {
   "entries": [
     {
+      "version": "2.116",
+      "date": "2026-05-17",
+      "changes": [
+        "03_main_운영반영과 04_info_운영반영 스크립트에서 hoiBotChangeLog.json도 함께 운영 기기에 업로드하도록 변경"
+      ]
+    },
+    {
       "version": "2.115",
       "date": "2026-05-17",
       "changes": [
