@@ -33,6 +33,15 @@ Do not commit directly on `feature/prod`.
 
 Do not push direct local edits to `feature/prod`.
 
+If the current checkout is `feature/prod`, do not make task or follow-up
+commits there. Switch to the original task branch, `feature/workflow`, or a
+new task branch first, then commit and push that source branch before touching
+`feature/prod`.
+
+Before pushing `feature/prod`, verify the commit(s) being pushed already exist
+on a pushed source branch. If they do not, stop and move the work to the correct
+source branch first.
+
 If the task branch contains unrelated commits, cherry-pick only the validated task commit(s).
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.
@@ -43,9 +52,10 @@ For workflow changes:
 2. switch to `feature/prod`
 3. pull `feature/prod`
 4. cherry-pick or merge only the validated workflow commit(s)
-5. push `feature/prod`
-6. if `.codex/skills/` changed, update the corresponding local Codex skill files when possible
-7. report both the workflow source commit and the `feature/prod` reflected commit, plus whether local skills were updated
+5. verify those commit(s) already exist on the pushed `feature/workflow`
+6. push `feature/prod`
+7. if `.codex/skills/` changed, update the corresponding local Codex skill files when possible
+8. report both the workflow source commit and the `feature/prod` reflected commit, plus whether local skills were updated
 
 ## Commit Messages
 

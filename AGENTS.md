@@ -109,6 +109,9 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - If no existing branch role fits the task, create a new broad content branch such as `feature/<content-name>`.
 - Create task branches from `feature/prod`, not directly from `main`.
 - Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
+- Do not create task commits directly on `feature/prod`, even when the current checkout is already `feature/prod`.
+- Do not push direct local edits to `feature/prod`; the same commit must first exist on a pushed source branch such as `feature/hoi`, `feature/bugFix`, `feature/workflow`, or another task branch.
+- If a follow-up fix is needed after work was already reflected into `feature/prod`, apply the fix on the original task branch or a new task branch first, push that branch, then reflect the validated commit into `feature/prod`.
 - Before starting work on a specific branch, update local `feature/prod` from `origin/feature/prod` first, then bring that local `feature/prod` into the target branch.
 - Do not use `origin/main` as the freshness baseline for production-facing or bug-fix work; `main` is only a stable/reference branch.
 - Do not proactively synchronize `feature/prod` into `main`; after operational stabilization, wait for the user to request a PR from `feature/prod` to `main`.
@@ -252,6 +255,8 @@ head-agent
 - Create PRs from `feature/prod` to `main` only when the user explicitly requests that stable synchronization after operational stabilization.
 - Do not directly push to `main`.
 - Do not directly merge into `main`.
+- Do not commit task or follow-up fixes directly on `feature/prod`.
+- Before pushing `feature/prod`, verify the commit(s) being pushed already exist on a pushed source branch; if they do not, move the work to the correct task branch first.
 - Merge into `feature/prod` only after explicit user approval.
 - For "prod까지 올려줘" or "운영반영해줘", push the current task branch first, then merge or cherry-pick the validated task changes into `feature/prod`, and push `feature/prod`.
 - For workflow/documentation changes, do not wait for a separate production-reflection phrase; push `feature/workflow`, then reflect the validated workflow commit(s) into `feature/prod`.

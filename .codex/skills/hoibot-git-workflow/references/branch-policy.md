@@ -18,6 +18,10 @@ Do not commit directly on `feature/prod`, and do not push direct local edits to
 Update it only by reflecting validated task-branch work through merge,
 cherry-pick, or an approved PR-style merge flow.
 
+If work is requested while the current checkout is already `feature/prod`,
+switch to the correct source branch before editing. The commit being pushed to
+`feature/prod` must first exist on a pushed source branch.
+
 Classify changed files before production reflection. Use `feature/workflow` for
 documentation, workflow, branch strategy, tools, or Codex skill changes unless
 the user explicitly confirms `feature/prod` reflection for that specific

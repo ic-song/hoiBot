@@ -16,6 +16,8 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Do not proactively synchronize `feature/prod` into `main`; wait for the user to request a `feature/prod` to `main` PR after operational stabilization.
 - Do not commit directly on `feature/prod`.
 - Do not push direct local edits to `feature/prod`.
+- If the current checkout is `feature/prod` and the user asks for a task change or follow-up fix, switch to the original task branch or create a new task branch before editing or committing.
+- Before pushing `feature/prod`, verify the commit(s) being pushed already exist on a pushed source branch; if they do not, stop and move the work to the correct task branch first.
 - Update `feature/prod` only by reflecting validated task-branch work through merge, cherry-pick, or an approved PR-style merge flow.
 - `feature/prod` is the operational branch.
 - Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
@@ -49,10 +51,11 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 5. For production-facing code/data work, commit and push the current task branch first.
 6. Switch to `feature/prod`.
 7. Pull `feature/prod`.
-8. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
-9. Push `feature/prod`.
-10. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
-11. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, and whether local skills were updated.
+8. Verify the commit(s) to reflect already exist on the pushed source branch.
+9. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
+10. Push `feature/prod`.
+11. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
+12. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, and whether local skills were updated.
 
 ## Merge Versus Cherry-Pick
 
