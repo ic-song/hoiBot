@@ -35,6 +35,56 @@ function isExcludedRequestMonitoring(room, msg) {
 	return false;
 }
 
+function getAdminPayoutUsers(data) {
+	if (!data || !data.admin || typeof data.admin !== "object") return [];
+	return Object.keys(data.admin);
+}
+
+function migrateAdminPayoutList(data) {
+	var result = {
+		changed: false,
+		addedCount: 0
+	};
+	if (!data || typeof data !== "object") return result;
+	if (!data.admin || typeof data.admin !== "object") {
+		data.admin = {};
+		result.changed = true;
+	}
+	if (data.adminPayoutMigrationVersion >= ADMIN_PAYOUT_MIGRATION_VERSION) return result;
+
+	var source = data.allowedUsers2;
+	if (!Array.isArray(source) || source.length === 0) return result;
+
+	for (var i = 0; i < source.length; i++) {
+		var name = source[i];
+		if (!name) continue;
+		if (!data.admin.hasOwnProperty(name)) {
+			data.admin[name] = "";
+			result.addedCount++;
+			result.changed = true;
+		}
+	}
+	data.adminPayoutMigrationVersion = ADMIN_PAYOUT_MIGRATION_VERSION;
+	data.adminPayoutMigrationCount = source.length;
+	result.changed = true;
+	return result;
+}
+
+function buildAdminListMessage(admins) {
+	var list = admins.slice().sort(function (a, b) {
+		return a.localeCompare(b, "ko");
+	});
+	var msg = "🛠 관리자 명단\n";
+	msg += "━━━━━━━━━━━━\n";
+	msg += "총 관리자 수: " + numberWithCommas(list.length) + "명\n";
+	msg += "━━━━━━━━━━━━\n";
+	msg += "관리자 명단 보기👈" + allsee + "\n";
+	for (var i = 0; i < list.length; i++) {
+		msg += i + 1 + ". " + list[i] + "\n";
+	}
+	return msg.trim();
+}
+
 function saveRequestMonitorConfig() {
 	requestMonitorConfig.windowMs = USER_REQUEST_WINDOW_MS;
 	requestMonitorConfig.limit = USER_REQUEST_LIMIT;
@@ -376,6 +426,7 @@ const STONE_SELL_PRICE = 95000; // 판매가
 const STONE_NAME = "돌멩이🪨"; // 인벤토리 아이템명
 const TITLE_GIFT_ITEM_NAME = "타이틀선물권💝(/타이틀선물 닉네임 내용)";
 const TITLE_GIFT_MAX_LENGTH = 30;
+const ADMIN_PAYOUT_MIGRATION_VERSION = 1;
 // 등급별(엘리트/그외) 도달 레벨 기준 매력 증가량
 var MINI_CHARM_ELITE = [
 	null,
@@ -1091,8 +1142,12 @@ USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
 let initData = loadJsonFile(filePath);
+let adminPayoutMigrationResult = migrateAdminPayoutList(initData);
+if (adminPayoutMigrationResult.changed) {
+	saveJsonFile(initData, filePath);
+}
 let Master = initData.master;
-let Admins = Object.keys(initData.admin);
+let Admins = getAdminPayoutUsers(initData);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 const GUILD_TERRITORY_ATTACK_COUNT_PER_SWORD_MASTER = 5; // 소드마스터 1명당 영지전 공격 턴
 const GUILD_TERRITORY_WRONG_TURN_PENALTY = 5; // 영지공격 오입력 패널티 턴
@@ -4838,17 +4893,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var match = msg.match(regex);
 					if (match) {
 						var targetUserz = match[1];
+						if (!data.admin) data.admin = {};
 						if (data.member[targetUserz]) {
 							var img = ""; //현재 프로필 이미지 가져오는거 오류인듯
 							if (data.admin.hasOwnProperty(targetUserz)) {
 								data.admin[targetUserz] = img;
 								replier.reply(targetUserz + "님의 프로필 이미지가 업데이트되었습니다.");
-								Admins = Object.keys(data.admin);
+								Admins = getAdminPayoutUsers(data);
 							} else {
 								data.admin[targetUserz] = img;
 								replier.reply("[" + targetUserz + "] 님이 어드민으로 추가되었습니다.");
-								Admins = Object.keys(data.admin);
+								Admins = getAdminPayoutUsers(data);
 							}
+							saveJsonFile(data, filePath);
 						} else {
 							replier.reply(targetUserz + "는(은) 존재하지 않는 사용자입니다.");
 						}
@@ -4863,20 +4920,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							if (data.admin && data.admin.hasOwnProperty(targetUser)) {
 								delete data.admin[targetUser];
 								replier.reply("[" + targetUser + "] 님이 관리자에서 삭제되었습니다.");
+								saveJsonFile(data, filePath);
 							} else {
 								replier.reply("[" + targetUser + "] 님은 관리자가 아닙니다.");
 							}
 						} else {
 							replier.reply(targetUser + "는(은) 존재하지 않는 사용자입니다.");
 						}
-						Admins = Object.keys(data.admin || {});
+						Admins = getAdminPayoutUsers(data);
 					}
 				}
-				if (msg.startsWith("/관리자명단")) {
-					Admins = Object.keys(data.admin);
+				if (msg === "/관리자명단") {
+					Admins = getAdminPayoutUsers(data);
 					if (Admins.length > 0) {
-						var adminListString = Admins.join(", ");
-						replier.reply("현재 관리자 리스트: " + adminListString);
+						replier.reply(buildAdminListMessage(Admins));
 					} else {
 						replier.reply("현재 관리자가 없습니다.");
 					}
@@ -4886,85 +4943,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 권한을 가진 사용자 목록에 '오픈채팅봇' 추가
 					const authorizedUsers = ["호이 남", "오픈채팅봇"];
 					if (authorizedUsers.includes(sender)) {
-						// 포인트를 받을 사용자 목록
-						const allowedUsers = [
-							"매실 여",
-							"빠루 남",
-							"디르 남",
-							"퍼플 여",
-							"여름 여",
-							"오성 남",
-							"유유 여",
-							"뿌뿌 여",
-							"랄랄 여",
-							"콩콩 여",
-							"코몽 여",
-							"결정 남",
-							"오이 여",
-							"잠자 남",
-							"메메 남",
-							"물음 남",
-							"뽀얌 여",
-							"알보 남",
-							"파이 여",
-							"빙빙 남",
-							"뮤뮤 여",
-							"프리 여",
-							"빵미 여",
-							"잠결 남",
-							"짱구 남",
-							"아오 남",
-							"와이 남",
-							"멍멍 남",
-							"늘보 여",
-							"수달 여",
-							"하든 남",
-							"히야 여",
-							"테디 남",
-							"반지 여",
-							"악동 남",
-							"토끼 여",
-							"밍이 여",
-							"쟈기 여",
-							"베라 여",
-							"벌서 남",
-							"숑숑 여",
-							"달이 남",
-							"먀아 여",
-							"하은 남",
-							"무지 여",
-							"해치 여",
-							"웨이 남",
-							"조사 남",
-							"몬드 남",
-							"빵티 남",
-							"해인 남",
-							"기역 남",
-							"사월 여",
-							"희재 남",
-							"거덩 남",
-							"마라 여",
-							"나나 남",
-							"감자 여",
-							"리도 여",
-							"으어 남",
-							"네간 남",
-							"스킷 남",
-							"제이 남",
-							"벨라 여",
-							"호이 남",
-							"거품 남",
-							"콘트 남",
-							"리리 여",
-							"콩두 여"
-						];
-						allowedUsers.forEach((username) => {
+						var payoutAdmins = getAdminPayoutUsers(data);
+						var paidAdminCount = 0;
+						payoutAdmins.forEach((username) => {
 							if (data.member[username]) {
 								// 사용자가 존재하는지 확인
-								data.member[username].point += 300000000; // 해당 사용자에게 10,000,000 포인트 추가
+								data.member[username].point += 300000000;
+								paidAdminCount++;
 							}
 						});
-						replier.reply("호이 남: 일당 받아가라 노예들아\n🅟3억 포인트를 던졌습니다.");
+						saveJsonFile(data, filePath);
+						replier.reply("호이 남: 일당 받아가라 노예들아\n🅟3억 포인트를 던졌습니다.\n지급 관리자 수: " + paidAdminCount + "명");
 					} else {
 						replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
 					}
@@ -5059,85 +5048,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg.startsWith("/부방상여")) {
+				if (msg === "/부방상여") {
 					const authorizedUser = "호이 남"; // 명령어를 사용할 수 있는 유일한 관리자
-					const adminUsers = [
-						"매실 여",
-						"빠루 남",
-						"디르 남",
-						"퍼플 여",
-						"여름 여",
-						"유유 여",
-						"오성 남",
-						"콩콩 여",
-						"랄랄 여",
-						"뿌뿌 여",
-						"코몽 여",
-						"결정 남",
-						"오이 여",
-						"잠자 남",
-						"물음 남",
-						"메메 남",
-						"뽀얌 여",
-						"알보 남",
-						"파이 여",
-						"빙빙 남",
-						"뮤뮤 여",
-						"프리 여",
-						"빵미 여",
-						"잠결 남",
-						"짱구 남",
-						"아오 남",
-						"와이 남",
-						"멍멍 남",
-						"늘보 여",
-						"수달 여",
-						"하든 남",
-						"히야 여",
-						"테디 남",
-						"반지 여",
-						"악동 남",
-						"토끼 여",
-						"몬드 남",
-						"밍이 여",
-						"베라 여",
-						"쟈기 여",
-						"벌서 남",
-						"숑숑 여",
-						"달이 남",
-						"하은 남",
-						"먀아 여",
-						"무지 여",
-						"해치 여",
-						"웨이 남",
-						"조사 남",
-						"빵티 남",
-						"해인 남",
-						"기역 남",
-						"거덩 남",
-						"사월 여",
-						"희재 남",
-						"마라 여",
-						"나나 남",
-						"감자 여",
-						"맹구 여",
-						"칠가 남",
-						"리도 여",
-						"으어 남",
-						"네간 남",
-						"스킷 남",
-						"제이 남",
-						"벨라 여",
-						"호이 남",
-						"거품 남",
-						"콘트 남",
-						"리리 여",
-						"콩두 여"
-					]; // 부방상여패키지를 받을 수 있는 사용자 목록
 					if (sender == authorizedUser) {
 						// 명령어 사용 권한 확인
 						let rewardedUsers = [];
-						adminUsers.forEach((targetUsername9) => {
+						getAdminPayoutUsers(data).forEach((targetUsername9) => {
 							if (data.member[targetUsername9]) {
 								// 사용자 존재 확인
 								const itemName = "미니펫뽑기🐹(/미니펫오픈)";
@@ -5150,7 +5066,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 						});
 						if (rewardedUsers.length > 0) {
-							const rewardMessage9 = "다음 사용자들에게 미니펫 미니펫뽑기🐹(/미니펫오픈) 1000개 이(가) 지급되었습니다: " + rewardedUsers.join(", ");
+							saveJsonFile(data, filePath);
+							const rewardMessage9 = "다음 관리자 " + rewardedUsers.length + "명에게 미니펫뽑기🐹(/미니펫오픈) 1000개 이(가) 지급되었습니다: " + rewardedUsers.join(", ");
 							replier.reply(rewardMessage9);
 						} else {
 							replier.reply("지급 가능한 사용자가 없습니다.");
