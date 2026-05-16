@@ -2987,7 +2987,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var sellerReceive = buyPrice - marketFee;
 					data.member[sender].point = (data.member[sender].point || 0) - buyPrice;
 					data.member[buyListing.seller].point = (data.member[buyListing.seller].point || 0) + sellerReceive;
-					addHappyFoundationFee(data, marketFee);
+					addHappyFoundationLedgerAmount(data, marketFee);
 					returnFreeMarketItemToOwner(data, petData, petSkillData, buyHomeData, buyListing, sender);
 					addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee);
 					removeFreeMarketListing(freeMarketBuyData, buyListing.id);
@@ -29627,6 +29627,14 @@ function addHappyFoundationFee(data, feeAmount) {
 	}
 	return "";
 }
+
+// 호이 해피 재단 장부에 수수료만 적립하는 함수
+function addHappyFoundationLedgerAmount(data, feeAmount) {
+	var foundation = ensureHappyFoundationData(data);
+	var roundedFee = Math.round(Number(feeAmount) || 0); // 적립할 수수료 금액
+	foundation.totalAmount = Math.round((foundation.totalAmount || 0) + roundedFee);
+}
+
 // 호이 해피 재단 대장 표시 함수
 function getHappyFoundationCaptainDisplay(data, petData, guildData) {
 	var foundation = ensureHappyFoundationData(data);
