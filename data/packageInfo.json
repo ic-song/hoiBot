@@ -1,0 +1,87 @@
+[
+  {
+    "id": "castle_basic",
+    "name": "캐슬패키지🏰",
+    "itemName": "캐슬패키지🏰(/캐슬패키지오픈)",
+    "desc": "캐슬 전용 공격/방어 패키지",
+    "enabled": true,
+    "maxUseOnce": 100,
+    "blockCastle": true,
+    "rewards": [
+      {
+        "type": "item",
+        "name": "캐슬기습공격권🔥(100%)",
+        "count": 10
+      },
+      {
+        "type": "item",
+        "name": "캐슬절대방어권🛡(100%)",
+        "count": 10
+      },
+      {
+        "type": "item",
+        "name": "캐슬공격권⚔",
+        "count": 15
+      }
+    ]
+  },
+  {
+    "id": "trial_box",
+    "name": "시련의상자😈",
+    "itemName": "시련의상자😈(/시련오픈)",
+    "desc": "시련의탑 공략 지원 패키지",
+    "enabled": true,
+    "maxUseOnce": 100,
+    "rewards": [
+      {
+        "type": "item",
+        "name": "시탑 공략서📜",
+        "count": 20
+      },
+      {
+        "type": "item",
+        "name": "시탑 부스터🔮",
+        "count": 15
+      },
+      {
+        "type": "item",
+        "name": "주사위🎲(/해피)",
+        "count": 10
+      },
+      {
+        "type": "item",
+        "name": "시련의탑리셋권😈",
+        "count": 3
+      }
+    ]
+  },
+  {
+    "id": "rocket_delivery_7",
+    "name": "로켓배송패키지🚀[7]",
+    "itemName": "로켓배송패키지🚀[7](/호팡오픈7)",
+    "desc": "후원/이벤트 종합 패키지",
+    "enabled": true,
+    "maxUseOnce": 100,
+    "rewards": [
+      {
+        "type": "point",
+        "count": 100000000
+      },
+      {
+        "type": "item",
+        "name": "양념치킨🐔",
+        "count": 30
+      },
+      {
+        "type": "item",
+        "name": "펫 강화석⭐",
+        "count": 30
+      },
+      {
+        "type": "item",
+        "name": "주사위🎲(/해피)",
+        "count": 30
+      }
+    ]
+  }
+]

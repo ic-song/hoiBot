@@ -1071,6 +1071,8 @@ const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗�
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
 const freeMarketPath = "/sdcard/호이랜드/freeMarket.json"; // 자유시장 데이터
+const packageInfoPath = "/sdcard/호이랜드/packageInfo.json"; // 패키지 정보 데이터
+const packageLogPath = "/sdcard/호이랜드/packageLog.json"; // 패키지 지급/사용 로그 데이터
 const FREE_MARKET_CARROT_ITEM = "🥕당근이세요?";
 const FREE_MARKET_MEMBER_TICKET_ITEM = "자유시장회원권🏪";
 const FREE_MARKET_MERCHANT_SKILL = "타고난 장사꾼";
@@ -14672,6 +14674,72 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (!data.member || !data.member[sender]) return;
 					var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
 					replier.reply(autoDailyResult.message);
+					return;
+				}
+
+				if (msg === "/패키지리스트") {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var packageInfoList = ensurePackageInfoData(loadJsonFile(packageInfoPath));
+					replier.reply(buildPackageListMessage(packageInfoList));
+					return;
+				}
+
+				if (msg === "/패키지추가방법") {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					replier.reply(buildPackageAddGuideMessage());
+					return;
+				}
+
+				if (/^\/패키지추가\s+.+\|.+\|.+\|.+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var packageAddResult = addPackageInfoByCommand(sender, msg);
+					if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
+					replier.reply(packageAddResult.message);
+					return;
+				}
+
+				if (/^\/패키지제거\s+\d+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var packageDisableResult = setPackageEnabledByCommand(sender, msg, false);
+					if (packageDisableResult.ok) saveJsonFile(packageDisableResult.packageInfoData, packageInfoPath);
+					replier.reply(packageDisableResult.message);
+					return;
+				}
+
+				if (/^\/패키지활성\s+\d+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var packageEnableResult = setPackageEnabledByCommand(sender, msg, true);
+					if (packageEnableResult.ok) saveJsonFile(packageEnableResult.packageInfoData, packageInfoPath);
+					replier.reply(packageEnableResult.message);
+					return;
+				}
+
+				if (/^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var packageGrantResult = grantPackageToUser(data, sender, msg);
+					if (packageGrantResult.ok) {
+						saveJsonFile(data, filePath);
+						saveJsonFile(packageGrantResult.packageLogData, packageLogPath);
+					}
+					replier.reply(packageGrantResult.message);
+					return;
+				}
+
+				if (msg === "/패키지가방") {
+					if (!data.member || !data.member[sender]) return;
+					var packageBagInfoList = ensurePackageInfoData(loadJsonFile(packageInfoPath));
+					replier.reply(buildUserPackageBagMessage(data, petData, guildData, sender, packageBagInfoList));
+					return;
+				}
+
+				if (msg === "/패키지사용" || /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg)) {
+					if (!data.member || !data.member[sender]) return;
+					var packageUseResult = usePackageFromBag(data, petData, guildData, sender, msg);
+					if (packageUseResult.ok) {
+						saveJsonFile(data, filePath);
+						saveJsonFile(packageUseResult.packageLogData, packageLogPath);
+					}
+					replier.reply(packageUseResult.message);
 					return;
 				}
 
@@ -29881,6 +29949,424 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
 	var after = getAutoDailyQuestSnapshot(sender);
 	return {
 		message: buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages)
+	};
+}
+
+// 패키지 정보 데이터 기본 구조 반환 함수
+function ensurePackageInfoData(packageInfoData) {
+	if (!(packageInfoData instanceof Array)) return [];
+	return packageInfoData;
+}
+
+// 패키지 로그 데이터 기본 구조 반환 함수
+function ensurePackageLogData(packageLogData) {
+	if (!packageLogData || typeof packageLogData !== "object") packageLogData = {};
+	if (typeof packageLogData.lastId !== "number" || isNaN(packageLogData.lastId)) packageLogData.lastId = 0;
+	if (!(packageLogData.logs instanceof Array)) packageLogData.logs = [];
+	return packageLogData;
+}
+
+// 패키지 리스트 번호로 패키지 정보 조회 함수
+function getPackageByListNumber(packageInfoData, listNumber) {
+	var index = parseInt(listNumber, 10) - 1; // 패키지리스트 표시 번호를 배열 인덱스로 변환
+	if (isNaN(index) || index < 0 || index >= packageInfoData.length) return null;
+	return packageInfoData[index];
+}
+
+// 유저 가방에서 패키지 아이템만 추출하는 함수
+function getUserPackageBagList(data, user, packageInfoData) {
+	var member = data.member && data.member[user] ? data.member[user] : null; // 패키지가방을 확인할 유저 데이터
+	var bag = member && member.bag ? member.bag : {}; // 기존 member bag 저장소
+	var list = []; // 패키지가방 표시 목록
+	for (var i = 0; i < packageInfoData.length; i++) {
+		var packageInfo = packageInfoData[i]; // packageInfo.json 기준 패키지 항목
+		if (!packageInfo || !packageInfo.itemName) continue;
+		var count = parseInt(bag[packageInfo.itemName], 10) || 0; // 유저가 보유한 패키지 수량
+		if (count > 0) {
+			list.push({
+				listNumber: i + 1,
+				packageInfo: packageInfo,
+				count: count
+			});
+		}
+	}
+	return list;
+}
+
+// 패키지 지급/사용 로그 항목 추가 함수
+function appendPackageLog(packageLogData, type, packageInfo, target, count, by, beforeCount, afterCount) {
+	packageLogData = ensurePackageLogData(packageLogData);
+	packageLogData.lastId += 1;
+	packageLogData.logs.push({
+		id: packageLogData.lastId,
+		type: type,
+		packageId: packageInfo.id || "",
+		packageName: packageInfo.name || packageInfo.itemName || "",
+		target: target,
+		count: count,
+		by: by,
+		before: beforeCount,
+		after: afterCount,
+		date: new Date().toISOString()
+	});
+	if (packageLogData.logs.length > 1000) {
+		packageLogData.logs = packageLogData.logs.slice(packageLogData.logs.length - 1000);
+	}
+	return packageLogData;
+}
+
+// 패키지 보상 구성 요약 문자열 생성 함수
+function formatPackageRewardSummary(rewards) {
+	if (!(rewards instanceof Array) || rewards.length < 1) return "-";
+	var parts = [];
+	for (var i = 0; i < rewards.length; i++) {
+		var reward = rewards[i]; // packageInfo.json에 등록된 보상 항목
+		if (!reward) continue;
+		if (reward.type === "point") {
+			parts.push("포인트 x" + numberWithCommas(reward.count || 0));
+		} else {
+			parts.push((reward.name || reward.type || "보상") + " x" + numberWithCommas(reward.count || 0));
+		}
+	}
+	return parts.join(", ");
+}
+
+// 관리자용 패키지 리스트 메시지 생성 함수
+function buildPackageListMessage(packageInfoData) {
+	var lines = ["📦 패키지 리스트", ""];
+	if (packageInfoData.length < 1) {
+		lines.push("등록된 패키지가 없습니다.");
+	} else {
+		for (var i = 0; i < packageInfoData.length; i++) {
+			var packageInfo = packageInfoData[i]; // 리스트에 표시할 패키지 정보
+			var enabledText = packageInfo.enabled === false ? " [비활성]" : "";
+			lines.push(i + 1 + ". " + (packageInfo.name || packageInfo.itemName || "이름없음") + enabledText);
+			lines.push("설명: " + (packageInfo.desc || "-"));
+			lines.push("구성: " + formatPackageRewardSummary(packageInfo.rewards));
+			lines.push("");
+		}
+	}
+	lines.push("지급 방법:");
+	lines.push("/패키지지급 이름 리스트번호 갯수");
+	lines.push("추가/제거 방법:");
+	lines.push("/패키지추가방법");
+	lines.push("/패키지제거 리스트번호");
+	lines.push("/패키지활성 리스트번호");
+	lines.push("");
+	lines.push("예시:");
+	lines.push("/패키지지급 거품 남 1 3");
+	return lines.join("\n");
+}
+
+// 패키지 추가 방법 안내 메시지 생성 함수
+function buildPackageAddGuideMessage() {
+	var lines = [];
+	lines.push("📦 패키지 추가/제거 방법");
+	lines.push("");
+	lines.push("추가:");
+	lines.push("/패키지추가 패키지명 | 가방아이템명 | 설명 | 보상목록");
+	lines.push("");
+	lines.push("보상목록 형식:");
+	lines.push("item:아이템명:수량, point:포인트수량");
+	lines.push("");
+	lines.push("예시:");
+	lines.push("/패키지추가 이벤트패키지🎁 | 이벤트패키지🎁(/이벤트오픈) | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
+	lines.push("");
+	lines.push("제거:");
+	lines.push("/패키지제거 리스트번호");
+	lines.push("※ 번호 유지를 위해 삭제하지 않고 enabled:false로 비활성화합니다.");
+	lines.push("");
+	lines.push("재활성:");
+	lines.push("/패키지활성 리스트번호");
+	return lines.join("\n");
+}
+
+// 패키지 id 후보 문자열 생성 함수
+function createPackageIdFromName(name, packageInfoData) {
+	var base = "package_" + (packageInfoData.length + 1);
+	var id = base;
+	var suffix = 1;
+	var exists = true;
+	while (exists) {
+		exists = false;
+		for (var i = 0; i < packageInfoData.length; i++) {
+			if (packageInfoData[i] && packageInfoData[i].id === id) {
+				exists = true;
+				break;
+			}
+		}
+		if (exists) {
+			suffix++;
+			id = base + "_" + suffix;
+		}
+	}
+	return id;
+}
+
+// 패키지 보상 입력 문자열 파싱 함수
+function parsePackageRewardSpec(rewardSpec) {
+	var rewards = [];
+	var parts = String(rewardSpec || "").split(","); // 쉼표 기준 보상 항목 목록
+	for (var i = 0; i < parts.length; i++) {
+		var raw = parts[i].trim(); // 보상 항목 원문
+		if (!raw) continue;
+		if (raw.indexOf("point:") === 0) {
+			var pointCount = parseInt(raw.substring("point:".length).trim(), 10); // 포인트 보상 수량
+			if (isNaN(pointCount) || pointCount < 1) return { error: "포인트 보상 수량이 올바르지 않습니다." };
+			rewards.push({ type: "point", count: pointCount });
+		} else if (raw.indexOf("item:") === 0) {
+			var itemBody = raw.substring("item:".length).trim(); // item: 제거 후 아이템명:수량 본문
+			var lastColon = itemBody.lastIndexOf(":"); // 아이템명에 공백이 있어도 마지막 콜론으로 수량 분리
+			if (lastColon <= 0) return { error: "아이템 보상 형식이 올바르지 않습니다: " + raw };
+			var itemName = itemBody.substring(0, lastColon).trim(); // 보상 아이템명
+			var itemCount = parseInt(itemBody.substring(lastColon + 1).trim(), 10); // 보상 아이템 수량
+			if (!itemName) return { error: "아이템명이 비어 있습니다." };
+			if (isNaN(itemCount) || itemCount < 1) return { error: "아이템 보상 수량이 올바르지 않습니다: " + itemName };
+			rewards.push({ type: "item", name: itemName, count: itemCount });
+		} else {
+			return { error: "지원하지 않는 보상 형식입니다: " + raw };
+		}
+	}
+	if (rewards.length < 1) return { error: "보상목록을 1개 이상 입력해야 합니다." };
+	return { rewards: rewards };
+}
+
+// 관리자 패키지 추가 명령어 처리 함수
+function addPackageInfoByCommand(sender, msg) {
+	var body = String(msg || "").replace(/^\/패키지추가\s+/, "").trim(); // 명령어를 제거한 패키지 추가 본문
+	var parts = body.split("|").map(function (part) {
+		return part.trim();
+	});
+	if (parts.length !== 4) {
+		return { ok: false, message: "❌ 사용법:\n/패키지추가 패키지명 | 가방아이템명 | 설명 | 보상목록\n\n자세한 예시는 /패키지추가방법" };
+	}
+
+	var packageName = parts[0]; // /패키지리스트 표시명
+	var itemName = parts[1]; // member bag에 저장될 패키지 아이템명
+	var desc = parts[2]; // 패키지 설명
+	var rewardParseResult = parsePackageRewardSpec(parts[3]); // 보상목록 파싱 결과
+	if (!packageName || !itemName || !desc) return { ok: false, message: "❌ 패키지명, 가방아이템명, 설명은 비울 수 없습니다." };
+	if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
+
+	var packageInfoData = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 기존 패키지 정보 목록
+	for (var i = 0; i < packageInfoData.length; i++) {
+		var exists = packageInfoData[i]; // 중복 확인 대상 패키지
+		if (exists && (exists.itemName === itemName || exists.name === packageName)) {
+			return { ok: false, message: "❌ 같은 패키지명 또는 가방아이템명이 이미 등록되어 있습니다." };
+		}
+	}
+
+	var newPackage = {
+		id: createPackageIdFromName(packageName, packageInfoData),
+		name: packageName,
+		itemName: itemName,
+		desc: desc,
+		enabled: true,
+		maxUseOnce: 100,
+		rewards: rewardParseResult.rewards
+	};
+	packageInfoData.push(newPackage);
+	var lines = [];
+	lines.push("✅ 패키지 추가 완료");
+	lines.push("");
+	lines.push("번호: " + packageInfoData.length);
+	lines.push("패키지: " + newPackage.name);
+	lines.push("가방아이템명: " + newPackage.itemName);
+	lines.push("구성: " + formatPackageRewardSummary(newPackage.rewards));
+	lines.push("추가자: " + sender);
+	return {
+		ok: true,
+		message: lines.join("\n"),
+		packageInfoData: packageInfoData
+	};
+}
+
+// 관리자 패키지 활성/비활성 처리 함수
+function setPackageEnabledByCommand(sender, msg, enabled) {
+	var parts = String(msg || "").trim().split(/\s+/); // /패키지제거 번호 또는 /패키지활성 번호
+	var listNumber = parseInt(parts[1], 10); // 패키지리스트 번호
+	var packageInfoData = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 패키지 정보 목록
+	var packageInfo = getPackageByListNumber(packageInfoData, listNumber); // 상태 변경 대상 패키지
+	if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
+	packageInfo.enabled = !!enabled;
+	var lines = [];
+	lines.push(enabled ? "✅ 패키지 활성 완료" : "✅ 패키지 제거 완료");
+	lines.push("");
+	lines.push("번호: " + listNumber);
+	lines.push("패키지: " + (packageInfo.name || packageInfo.itemName));
+	lines.push("상태: " + (packageInfo.enabled ? "활성" : "비활성"));
+	lines.push("처리자: " + sender);
+	if (!enabled) lines.push("※ 번호 유지를 위해 삭제하지 않고 비활성화했습니다.");
+	return {
+		ok: true,
+		message: lines.join("\n"),
+		packageInfoData: packageInfoData
+	};
+}
+
+// 유저 패키지가방 메시지 생성 함수
+function buildUserPackageBagMessage(data, petData, guildData, sender, packageInfoData) {
+	var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저가 보유한 패키지 목록
+	var lines = ["🎁 [" + checkRank(data, petData, guildData, sender) + "] 님의 패키지가방", ""];
+	if (packageBagList.length < 1) {
+		lines.push("보유한 패키지가 없습니다.");
+	} else {
+		for (var i = 0; i < packageBagList.length; i++) {
+			var row = packageBagList[i]; // 패키지가방 표시 행
+			var packageInfo = row.packageInfo;
+			var disabledText = packageInfo.enabled === false ? " [비활성]" : "";
+			lines.push(i + 1 + ". " + (packageInfo.name || packageInfo.itemName) + disabledText + " x " + numberWithCommas(row.count));
+		}
+	}
+	lines.push("");
+	lines.push("사용 방법:");
+	lines.push("/패키지사용 가방번호 갯수");
+	lines.push("");
+	lines.push("예시:");
+	lines.push("/패키지사용 1 1");
+	lines.push("/패키지사용 2 5");
+	return lines.join("\n");
+}
+
+// 패키지 지급 명령어 파싱 함수
+function parsePackageGrantCommand(msg) {
+	var body = String(msg || "").replace(/^\/패키지지급\s+/, "").trim(); // 명령어를 제거한 입력 본문
+	var parts = body.split(/\s+/); // 뒤에서부터 번호/갯수를 파싱하기 위한 토큰 배열
+	if (parts.length < 3) return null;
+	var count = parseInt(parts.pop(), 10); // 지급 수량
+	var listNumber = parseInt(parts.pop(), 10); // 패키지리스트 번호
+	var target = parts.join(" "); // 공백 포함 유저 이름
+	if (!target || isNaN(listNumber) || isNaN(count)) return null;
+	return {
+		target: target,
+		listNumber: listNumber,
+		count: count
+	};
+}
+
+// 관리자 패키지 지급 처리 함수
+function grantPackageToUser(data, sender, msg) {
+	var parsed = parsePackageGrantCommand(msg); // 지급 명령어 파싱 결과
+	if (!parsed) return { ok: false, message: "❌ 사용법: /패키지지급 이름 리스트번호 갯수" };
+	if (parsed.count < 1 || parsed.count > 10000) return { ok: false, message: "❌ 지급 수량은 1 이상 10000 이하만 가능합니다." };
+
+	var packageInfoData = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 지급 가능한 패키지 목록
+	var packageInfo = getPackageByListNumber(packageInfoData, parsed.listNumber); // 지급 대상 패키지 정보
+	if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
+	if (packageInfo.enabled === false) return { ok: false, message: "❌ 비활성화된 패키지는 지급할 수 없습니다." };
+	if (!data.member || !data.member[parsed.target]) return { ok: false, message: "❌ 대상 유저가 존재하지 않습니다: " + parsed.target };
+	if (!data.member[parsed.target].bag) data.member[parsed.target].bag = {};
+
+	var beforeCount = parseInt(data.member[parsed.target].bag[packageInfo.itemName], 10) || 0; // 지급 전 보유 수량
+	var afterCount = beforeCount + parsed.count; // 지급 후 보유 수량
+	data.member[parsed.target].bag[packageInfo.itemName] = afterCount;
+
+	var packageLogData = appendPackageLog(loadJsonFile(packageLogPath), "GRANT", packageInfo, parsed.target, parsed.count, sender, beforeCount, afterCount);
+	var lines = [];
+	lines.push("✅ 패키지 지급 완료");
+	lines.push("");
+	lines.push("대상: " + parsed.target);
+	lines.push("패키지: " + (packageInfo.name || packageInfo.itemName));
+	lines.push("지급 수량: " + numberWithCommas(parsed.count) + "개");
+	lines.push("보유 수량: " + numberWithCommas(beforeCount) + "개 → " + numberWithCommas(afterCount) + "개");
+	lines.push("지급자: " + sender);
+	return {
+		ok: true,
+		message: lines.join("\n"),
+		packageLogData: packageLogData
+	};
+}
+
+// 패키지 사용 명령어 파싱 함수
+function parsePackageUseCommand(msg) {
+	var parts = String(msg || "").trim().split(/\s+/); // /패키지사용 번호 갯수 토큰
+	if (parts.length < 2 || parts.length > 3) return null;
+	var bagNumber = parseInt(parts[1], 10); // 패키지가방 번호
+	var count = parts.length >= 3 ? parseInt(parts[2], 10) : 1; // 사용 수량, 생략 시 1개
+	if (isNaN(bagNumber) || isNaN(count)) return null;
+	return {
+		bagNumber: bagNumber,
+		count: count
+	};
+}
+
+// 패키지 사용 전 보상 타입과 사용 조건 검사 함수
+function validatePackageUse(packageInfo, useCount) {
+	if (!packageInfo) return "패키지 정보가 없습니다.";
+	if (packageInfo.enabled === false) return "비활성화된 패키지는 사용할 수 없습니다.";
+	if (packageInfo.blockCastle && castleSiegeFlag) return "이벤트 진행 중에는 해당 패키지를 사용할 수 없습니다.";
+	if (useCount < 1) return "사용 수량은 1개 이상이어야 합니다.";
+	var maxUseOnce = parseInt(packageInfo.maxUseOnce, 10) || 100; // 패키지별 1회 최대 사용량
+	if (useCount > maxUseOnce) return "1회 최대 사용 수량(" + numberWithCommas(maxUseOnce) + "개)을 초과했습니다.";
+	var rewards = packageInfo.rewards || []; // 사용 시 지급할 보상 목록
+	for (var i = 0; i < rewards.length; i++) {
+		var reward = rewards[i]; // 사전 검사 대상 보상 항목
+		if (!reward || (reward.type !== "item" && reward.type !== "point")) {
+			return "아직 지원하지 않는 보상 타입이 포함되어 있습니다: " + (reward && reward.type ? reward.type : "unknown");
+		}
+		var rewardCount = parseInt(reward.count, 10) || 0; // 보상 기본 수량
+		if (rewardCount < 1) return "보상 수량이 올바르지 않습니다.";
+		if (reward.type === "item" && !reward.name) return "보상 아이템명이 없습니다.";
+	}
+	return "";
+}
+
+// 패키지 보상 지급 함수
+function applyPackageRewards(data, user, packageInfo, useCount) {
+	var rewards = packageInfo.rewards || []; // 패키지 보상 목록
+	var rewardLines = []; // 지급 결과 메시지 라인
+	for (var i = 0; i < rewards.length; i++) {
+		var reward = rewards[i]; // 지급할 보상 항목
+		var totalCount = (parseInt(reward.count, 10) || 0) * useCount; // 사용 수량을 곱한 최종 지급량
+		if (reward.type === "item") {
+			addItem(data, user, reward.name, totalCount);
+			rewardLines.push(reward.name + " x" + numberWithCommas(totalCount));
+		} else if (reward.type === "point") {
+			if (typeof data.member[user].point !== "number") data.member[user].point = 0;
+			addPoint(data, user, totalCount);
+			rewardLines.push("포인트 🅟" + numberWithCommas(totalCount));
+		}
+	}
+	return rewardLines;
+}
+
+// 유저 패키지 사용 처리 함수
+function usePackageFromBag(data, petData, guildData, sender, msg) {
+	var parsed = parsePackageUseCommand(msg); // 사용 명령어 파싱 결과
+	if (!parsed) return { ok: false, message: "❌ 사용법: /패키지사용 가방번호 갯수" };
+	var packageInfoData = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 패키지 정보 목록
+	var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저 패키지가방 목록
+	if (packageBagList.length < 1) return { ok: false, message: "❌ 보유한 패키지가 없습니다." };
+	if (parsed.bagNumber < 1 || parsed.bagNumber > packageBagList.length) return { ok: false, message: "❌ 패키지가방 번호가 올바르지 않습니다." };
+
+	var selected = packageBagList[parsed.bagNumber - 1]; // 사용 대상 패키지가방 행
+	var packageInfo = selected.packageInfo; // 사용 대상 패키지 정보
+	var beforeCount = selected.count; // 사용 전 보유 수량
+	if (parsed.count > beforeCount) return { ok: false, message: "❌ 보유 수량이 부족합니다. (보유: " + numberWithCommas(beforeCount) + "개)" };
+	var validationMessage = validatePackageUse(packageInfo, parsed.count); // 차감 전 사전 검사 결과
+	if (validationMessage) return { ok: false, message: "❌ " + validationMessage };
+
+	var afterCount = beforeCount - parsed.count; // 사용 후 보유 수량
+	if (afterCount > 0) {
+		data.member[sender].bag[packageInfo.itemName] = afterCount;
+	} else {
+		delete data.member[sender].bag[packageInfo.itemName];
+	}
+	var rewardLines = applyPackageRewards(data, sender, packageInfo, parsed.count); // 패키지 보상 지급 결과
+	var packageLogData = appendPackageLog(loadJsonFile(packageLogPath), "USE", packageInfo, sender, parsed.count, sender, beforeCount, afterCount);
+	var lines = [];
+	lines.push("🎁 패키지 사용 완료!");
+	lines.push("");
+	lines.push("사용자: " + sender);
+	lines.push("사용 패키지: " + (packageInfo.name || packageInfo.itemName));
+	lines.push("사용 수량: " + numberWithCommas(parsed.count) + "개");
+	lines.push("");
+	lines.push("획득 보상:");
+	lines.push(rewardLines.join("\n"));
+	return {
+		ok: true,
+		message: lines.join("\n"),
+		packageLogData: packageLogData
 	};
 }
 

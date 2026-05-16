@@ -1105,6 +1105,65 @@ Status: VERIFIED
 
 ---
 
+# /패키지리스트
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:14681`
+
+## Files
+
+- `main.js`
+- `data/packageInfo.json`
+- `data/packageLog.json`
+
+## Related Helpers
+
+- `ensurePackageInfoData`
+- `ensurePackageLogData`
+- `buildPackageListMessage`
+- `buildPackageAddGuideMessage`
+- `addPackageInfoByCommand`
+- `setPackageEnabledByCommand`
+- `grantPackageToUser`
+- `buildUserPackageBagMessage`
+- `usePackageFromBag`
+
+## Data Usage
+
+- `packageInfo.json`
+- `packageLog.json`
+- `data.member[user].bag`
+- `data.member[user].point`
+
+## Save Flow
+
+- `/패키지추가`, `/패키지제거`, `/패키지활성` mutate and save `packageInfo.json`
+- `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
+- `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
+
+## Related Commands
+
+- `/패키지추가방법`
+- `/패키지추가`
+- `/패키지제거`
+- `/패키지활성`
+- `/패키지지급`
+- `/패키지가방`
+- `/패키지사용`
+
+## AI Notes
+
+- `packageInfo.json` is order-sensitive; never delete entries to preserve list numbers
+- `/패키지제거` sets `enabled:false`; `/패키지활성` restores `enabled:true`
+- 1차 지원 보상 타입은 `item`, `point` only
+- New package command format: `/패키지추가 패키지명 | 가방아이템명 | 설명 | 보상목록`
+- Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
+
+---
+
 # /펫스킬가방
 
 Status: VERIFIED
