@@ -31347,7 +31347,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	});
 	var out = "🤝 호월 자유시장 거래현황 🤝\n";
 	out += "━━━━━━━━━━━━\n";
-	out += "📖수수료 10%를 제외한 판매금액이 표시 됩니다\n";
+	out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
 	out += "📋[아이템x갯수][판매금액][판매자]🤝[구매자]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
@@ -31358,7 +31358,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	for (var i = 0; i < logs.length; i++) {
 	//	if (i === 0) 
 		var log = logs[i];
-		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.sellerReceive || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
 	}
 	return out.trim();
 }
