@@ -1105,6 +1105,56 @@ Status: VERIFIED
 
 ---
 
+# /일퀘횟수수정
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:3020`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `editDailyQuestCountsForTest`
+- `isValidDailyQuestCount`
+- `getDailyQuestStatus`
+
+## Data Usage
+
+- `data.member[targetUser].towerCnt`
+- `data.member[targetUser].battle.count`
+- `data.member[targetUser].battle.ticket`
+- `data.member[targetUser].exploreCnt`
+- `data.member[targetUser].dailyQuestCnt`
+- `petData[targetUser].miniPetBattle.count`
+
+## Save Flow
+
+- Saves `member.json` through `saveJsonFile(data, filePath)`
+- Saves `memberPet.json` through `saveJsonFile(petData, memberPetPath)`
+
+## Related Commands
+
+- `/자동일퀘`
+- `/퀘스트`
+- `/퀘스트완료`
+- `/캐슬대전횟수리셋`
+- `/미니펫대전횟수`
+- `/탐험횟수수정`
+
+## AI Notes
+
+- Master-only test helper for setting daily quest counters in one command
+- Usage: `/일퀘횟수수정 유저명 시탑 캐대전 미대전 펫탐험 [일일보상횟수]`
+- Count values must be 0~10
+- Castle `battle.ticket` is normalized to `min(캐대전, 3)` so test state matches free-battle usage
+
+---
+
 # /펫스킬가방
 
 Status: VERIFIED
