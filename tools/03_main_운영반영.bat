@@ -1,156 +1,200 @@
 ﻿@echo off
 chcp 65001 > nul
+setlocal EnableExtensions
 
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_DEVICE=emulator-5556
 set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/main/main.js
+set SOURCE_FILE=main.js
 set CHANGELOG_SOURCE=data\hoiBotChangeLog.json
 set TARGET_CHANGELOG=/storage/emulated/0/호이랜드/hoiBotChangeLog.json
 set TARGET_CHANGELOG_DIR=/storage/emulated/0/호이랜드
 set BOT_NAME=main
 set BASE_BRANCH=feature/prod
 
+title hoiBot main deploy
+
 echo.
-echo ========================================
-echo [START] main.js 운영 반영
-echo ========================================
-echo.
-echo 현재 작업은 최신 %BASE_BRANCH% 코드를 받은 후
-echo LD플레이어의 main.js와 수정이력 파일에 반영합니다.
-echo ========================================
+echo ============================================================
+echo  hoiBot 운영 반영 - main.js
+echo ============================================================
+echo  1. 최신 %BASE_BRANCH% 받기
+echo  2. main.js 업로드
+echo  3. hoiBotChangeLog.json 업로드
+echo  4. MessengerBot main 컴파일
+echo ============================================================
 echo.
 
-echo [1/6] 프로젝트 폴더로 이동 중...
+echo [CONFIG]
+echo  ADB_EXE          = %ADB_EXE%
+echo  TARGET_DEVICE    = %TARGET_DEVICE%
+echo  BOT_NAME         = %BOT_NAME%
+echo  SOURCE_FILE      = %SOURCE_FILE%
+echo  TARGET_FILE      = %TARGET_FILE%
+echo  CHANGELOG_SOURCE = %CHANGELOG_SOURCE%
+echo  TARGET_CHANGELOG = %TARGET_CHANGELOG%
+echo.
+
+echo [STEP 1/7] 프로젝트 폴더 이동
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
-
-echo [OK] 프로젝트 폴더 이동 완료
-echo 현재 위치:
-cd
-
+echo [OK] PROJECT_DIR = %CD%
 echo.
-echo [2/6] Git 최신화 중...
+
+echo [STEP 2/7] 필수 파일 확인
+if not exist "%ADB_EXE%" goto FAIL_ADB_EXE
+if not exist "%SOURCE_FILE%" goto FAIL_SOURCE
+if not exist "%CHANGELOG_SOURCE%" goto FAIL_CHANGELOG_SOURCE
+echo [OK] required files exist
+echo.
+
+echo [STEP 3/7] Git 최신화
 git switch %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_SWITCH
-
-git pull origin %BASE_BRANCH%
+git pull --ff-only origin %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_PULL
-
-echo [OK] Git 최신화 완료
-
+git status --short --branch
+echo [OK] git ready
 echo.
-echo [3/6] ADB 기기 확인 중...
+
+echo [STEP 4/7] ADB 기기 확인
 "%ADB_EXE%" devices
 if errorlevel 1 goto FAIL_ADB
-
-echo [OK] ADB 확인 완료
-
+echo [OK] adb ready
 echo.
-echo [4/6] main.js 파일 업로드 중...
-"%ADB_EXE%" -s %TARGET_DEVICE% push main.js "%TARGET_FILE%"
+
+echo [STEP 5/7] main.js 업로드
+echo  FROM: %SOURCE_FILE%
+echo  TO  : %TARGET_FILE%
+"%ADB_EXE%" -s %TARGET_DEVICE% push "%SOURCE_FILE%" "%TARGET_FILE%"
 if errorlevel 1 goto FAIL_PUSH
-
-echo [OK] main.js 업로드 완료
-
+"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_FILE%"
+echo [OK] main.js uploaded
 echo.
-echo [5/6] hoiBotChangeLog.json 업로드 중...
-if not exist "%CHANGELOG_SOURCE%" goto FAIL_CHANGELOG_SOURCE
+
+echo [STEP 6/7] hoiBotChangeLog.json 업로드
+echo  FROM: %CHANGELOG_SOURCE%
+echo  TO  : %TARGET_CHANGELOG%
 "%ADB_EXE%" -s %TARGET_DEVICE% shell mkdir -p "%TARGET_CHANGELOG_DIR%"
 if errorlevel 1 goto FAIL_CHANGELOG
 "%ADB_EXE%" -s %TARGET_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%"
 if errorlevel 1 goto FAIL_CHANGELOG
-
-echo [OK] hoiBotChangeLog.json 업로드 완료
-
+"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_CHANGELOG%"
+echo [OK] hoiBotChangeLog.json uploaded
 echo.
-echo [6/6] 메신저봇 main 컴파일 중...
+
+echo [STEP 7/7] MessengerBot main 컴파일
 "%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%
 if errorlevel 1 goto FAIL_COMPILE
+echo [OK] compile requested
+echo.
 
-echo.
-echo ========================================
-echo [SUCCESS] main.js 운영 반영 완료
-echo ========================================
-echo.
-echo LD플레이어에 main.js, 수정이력 업로드 및 컴파일까지 완료했습니다.
-echo ========================================
+echo ============================================================
+echo  SUCCESS - main.js 운영 반영 완료
+echo ============================================================
+echo  main.js와 hoiBotChangeLog.json 업로드를 확인했습니다.
+echo ============================================================
 pause
 exit /b 0
 
 :FAIL_PATH
 echo.
-echo ========================================
-echo [FAIL] 프로젝트 폴더 이동 실패
-echo BAT 파일 위치를 확인하세요.
-echo 예상 위치: HOIBOT/tools/
-echo ========================================
+echo ============================================================
+echo  FAIL - 프로젝트 폴더 이동 실패
+echo ============================================================
+echo  BAT 파일 위치가 HOIBOT\tools\ 인지 확인하세요.
+echo ============================================================
 pause
 exit /b 1
 
-:FAIL_GIT_SWITCH
+:FAIL_ADB_EXE
 echo.
-echo ========================================
-echo [FAIL] %BASE_BRANCH% 브랜치 이동 실패
-echo %BASE_BRANCH% 브랜치가 있는지 확인하세요.
-echo ========================================
+echo ============================================================
+echo  FAIL - ADB 파일 없음
+echo ============================================================
+echo  ADB_EXE 경로가 실제 LDPlayer adb.exe 위치와 다릅니다.
+echo  ADB_EXE = %ADB_EXE%
+echo ============================================================
 pause
 exit /b 1
 
-:FAIL_GIT_PULL
+:FAIL_SOURCE
 echo.
-echo ========================================
-echo [FAIL] Git 최신화 실패
-echo 인터넷 연결 또는 GitHub 권한을 확인하세요.
-echo ========================================
-pause
-exit /b 1
-
-:FAIL_ADB
-echo.
-echo ========================================
-echo [FAIL] ADB 확인 실패
-echo ADB_EXE 경로 또는 LD플레이어 실행 상태를 확인하세요.
-echo ADB 경로: %ADB_EXE%
-echo ========================================
-pause
-exit /b 1
-
-:FAIL_PUSH
-echo.
-echo ========================================
-echo [FAIL] main.js 업로드 실패
-echo LD플레이어 기기명 또는 파일 경로를 확인하세요.
-echo DEVICE: %TARGET_DEVICE%
-echo FILE: %TARGET_FILE%
-echo ========================================
+echo ============================================================
+echo  FAIL - main.js 파일 없음
+echo ============================================================
+echo  SOURCE_FILE = %SOURCE_FILE%
+echo ============================================================
 pause
 exit /b 1
 
 :FAIL_CHANGELOG_SOURCE
 echo.
-echo ========================================
-echo [FAIL] hoiBotChangeLog.json 파일 없음
-echo FILE: %CHANGELOG_SOURCE%
-echo ========================================
+echo ============================================================
+echo  FAIL - hoiBotChangeLog.json 파일 없음
+echo ============================================================
+echo  CHANGELOG_SOURCE = %CHANGELOG_SOURCE%
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_GIT_SWITCH
+echo.
+echo ============================================================
+echo  FAIL - 브랜치 이동 실패
+echo ============================================================
+echo  BASE_BRANCH = %BASE_BRANCH%
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_GIT_PULL
+echo.
+echo ============================================================
+echo  FAIL - Git 최신화 실패
+echo ============================================================
+echo  충돌, 네트워크, GitHub 권한을 확인하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_ADB
+echo.
+echo ============================================================
+echo  FAIL - ADB 기기 확인 실패
+echo ============================================================
+echo  LDPlayer 실행 상태와 TARGET_DEVICE 값을 확인하세요.
+echo  TARGET_DEVICE = %TARGET_DEVICE%
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_PUSH
+echo.
+echo ============================================================
+echo  FAIL - main.js 업로드 실패
+echo ============================================================
+echo  TARGET_FILE = %TARGET_FILE%
+echo ============================================================
 pause
 exit /b 1
 
 :FAIL_CHANGELOG
 echo.
-echo ========================================
-echo [FAIL] hoiBotChangeLog.json 업로드 실패
-echo DEVICE: %TARGET_DEVICE%
-echo FILE: %TARGET_CHANGELOG%
-echo ========================================
+echo ============================================================
+echo  FAIL - hoiBotChangeLog.json 업로드 실패
+echo ============================================================
+echo  TARGET_CHANGELOG = %TARGET_CHANGELOG%
+echo ============================================================
 pause
 exit /b 1
 
 :FAIL_COMPILE
 echo.
-echo ========================================
-echo [FAIL] 메신저봇 컴파일 실패
-echo 봇 이름 또는 메신저봇 패키지명을 확인하세요.
-echo BOT_NAME: %BOT_NAME%
-echo ========================================
+echo ============================================================
+echo  FAIL - MessengerBot 컴파일 요청 실패
+echo ============================================================
+echo  BOT_NAME = %BOT_NAME%
+echo ============================================================
 pause
 exit /b 1
