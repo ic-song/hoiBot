@@ -15,6 +15,8 @@ Use this skill when a change mutates game data or touches persistence.
 - Never overwrite original snapshot files during validation.
 - Use copies or DEV contexts when mutation testing is required.
 - Mutation-heavy commands need careful input guards.
+- Do not convert `loadJsonFile` failures into empty/default data. Missing, invalid, or unparsable JSON should follow the existing error path unless explicit recovery is requested.
+- Avoid file IO inside helpers. Command/entry branches should load once, pass data into helpers, then save once after successful mutation.
 
 ## Save Flow Checklist
 
@@ -24,6 +26,7 @@ Use this skill when a change mutates game data or touches persistence.
 4. Verify no unrelated file is saved or mutated.
 5. Check DEV/PROD path handling if paths are touched.
 6. Validate JSON parsing for any changed data file or generated snapshot.
+7. Confirm helpers do not perform repeated `loadJsonFile` / `saveJsonFile` calls in loops or reusable calculation paths.
 
 ## References
 

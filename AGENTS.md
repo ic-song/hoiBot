@@ -86,6 +86,8 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   - `saveJsonFile`
   - `loadJsonFile`
   - DEV/PROD path flow
+- Do not hide or normalize `loadJsonFile` failures. If a JSON file is missing, invalid, or cannot be parsed, let the existing load/error flow fail naturally unless the user explicitly requests recovery behavior.
+- Avoid `loadJsonFile` / `saveJsonFile` calls inside helper functions. Load and save in the command/entry flow, then pass already-loaded data into helpers so repeated helper calls do not cause repeated file IO.
 - NEVER perform full-file regex replacement or large-scale refactoring on `main.js` unless explicitly requested.
 - Preserve user-facing UI formatting:
   - line breaks
