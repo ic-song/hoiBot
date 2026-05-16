@@ -14799,7 +14799,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (/^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
 					var packageInfoData = loadJsonFile(packageInfoPath); // 지급 가능한 패키지 목록
-					var packageLogData = ensurePackageLogData(loadJsonFile(packageLogPath)); // 지급 로그 데이터
+					var packageLogData = loadJsonFile(packageLogPath); // 지급 로그 데이터
 					var packageGrantResult = grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
 					if (packageGrantResult.ok) {
 						saveJsonFile(data, filePath);
@@ -14819,7 +14819,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg === "/패키지사용" || /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg)) {
 					if (!data.member || !data.member[sender]) return;
 					var packageInfoData = loadJsonFile(packageInfoPath); // 사용 가능한 패키지 목록
-					var packageLogData = ensurePackageLogData(loadJsonFile(packageLogPath)); // 사용 로그 데이터
+					var packageLogData = loadJsonFile(packageLogPath); // 사용 로그 데이터
 					var packageUseResult = usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData);
 					if (packageUseResult.ok) {
 						saveJsonFile(data, filePath);
@@ -30043,18 +30043,10 @@ function getDefaultPackageInfoData() {
 	return JSON.parse(JSON.stringify(DEFAULT_PACKAGE_INFO_DATA));
 }
 
-// 패키지 로그 데이터 기본 구조 반환 함수
-function ensurePackageLogData(packageLogData) {
-	if (!packageLogData || typeof packageLogData !== "object") packageLogData = {};
-	if (typeof packageLogData.lastId !== "number" || isNaN(packageLogData.lastId)) packageLogData.lastId = 0;
-	if (!(packageLogData.logs instanceof Array)) packageLogData.logs = [];
-	return packageLogData;
-}
-
 // 패키지 기본 데이터 초기화 결과 생성 함수
 function buildPackageInitResult(packageInfoData, packageLogData) {
 	var shouldInitInfo = !(packageInfoData instanceof Array) || packageInfoData.length < 1; // 패키지 정보 초기화 필요 여부
-	var shouldInitLog = !packageLogData || typeof packageLogData !== "object" || !(packageLogData.logs instanceof Array); // 패키지 로그 초기화 필요 여부
+	var shouldInitLog = !packageLogData || typeof packageLogData !== "object" || typeof packageLogData.lastId !== "number" || isNaN(packageLogData.lastId) || !(packageLogData.logs instanceof Array); // 패키지 로그 초기화 필요 여부
 	var infoStatus = shouldInitInfo ? "기본 패키지 생성" : "이미 존재";
 	var logStatus = shouldInitLog ? "빈 로그 생성" : "이미 존재";
 
@@ -30066,6 +30058,13 @@ function buildPackageInitResult(packageInfoData, packageLogData) {
 		packageInfoData: shouldInitInfo ? getDefaultPackageInfoData() : null,
 		packageLogData: shouldInitLog ? { lastId: 0, logs: [] } : null
 	};
+}
+
+// 패키지 로그 데이터 구조 검증 함수
+function assertPackageLogData(packageLogData) {
+	if (!packageLogData || typeof packageLogData !== "object" || typeof packageLogData.lastId !== "number" || isNaN(packageLogData.lastId) || !(packageLogData.logs instanceof Array)) {
+		throw new Error("packageLogData structure is invalid");
+	}
 }
 
 // 패키지 리스트 번호로 패키지 정보 조회 함수
@@ -30103,7 +30102,7 @@ function getUserPackageBagList(data, user, packageInfoData) {
 
 // 패키지 지급/사용 로그 항목 추가 함수
 function appendPackageLog(packageLogData, type, packageInfo, target, count, by, beforeCount, afterCount) {
-	packageLogData = ensurePackageLogData(packageLogData);
+	assertPackageLogData(packageLogData);
 	packageLogData.lastId += 1;
 	packageLogData.logs.push({
 		id: packageLogData.lastId,
