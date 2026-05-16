@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.117"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.118"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1101,47 +1101,6 @@ const FREE_MARKET_MEMBER_TICKET_ITEM = "자유시장회원권🏪";
 const FREE_MARKET_MERCHANT_SKILL = "타고난 장사꾼";
 const FREE_MARKET_TRADE_FEE_RATE = 0.10;
 const FREE_MARKET_MAX_COMPLETED_LOGS = 100;
-const DEFAULT_PACKAGE_INFO_DATA = [
-	{
-		id: "castle_basic",
-		name: "캐슬패키지🏰",
-		desc: "캐슬 전용 공격/방어 패키지",
-		enabled: true,
-		maxUseOnce: 100,
-		blockCastle: true,
-		rewards: [
-			{ type: "item", name: "캐슬기습공격권🔥(100%)", count: 10 },
-			{ type: "item", name: "캐슬절대방어권🛡(100%)", count: 10 },
-			{ type: "item", name: "캐슬공격권⚔", count: 15 }
-		]
-	},
-	{
-		id: "trial_box",
-		name: "시련의상자😈",
-		desc: "시련의탑 공략 지원 패키지",
-		enabled: true,
-		maxUseOnce: 100,
-		rewards: [
-			{ type: "item", name: "시탑 공략서📜", count: 20 },
-			{ type: "item", name: "시탑 부스터🔮", count: 15 },
-			{ type: "item", name: "주사위🎲(/해피)", count: 10 },
-			{ type: "item", name: "시련의탑리셋권😈", count: 3 }
-		]
-	},
-	{
-		id: "rocket_delivery_7",
-		name: "로켓배송패키지🚀[7]",
-		desc: "후원/이벤트 종합 패키지",
-		enabled: true,
-		maxUseOnce: 100,
-		rewards: [
-			{ type: "point", count: 100000000 },
-			{ type: "item", name: "양념치킨🐔", count: 30 },
-			{ type: "item", name: "펫 강화석⭐", count: 30 },
-			{ type: "item", name: "주사위🎲(/해피)", count: 30 }
-		]
-	}
-];
 const guildPath = "/sdcard/호이랜드/guildData.json"; // 길드 데이터
 const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json"; // 요청 모니터링 설정
 // backup
@@ -14761,19 +14720,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (!data.member || !data.member[sender]) return;
 					var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
 					replier.reply(autoDailyResult.message);
-					return;
-				}
-
-				if (msg === "/패키지초기화") {
-					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoFile = new java.io.File(resolveActiveDataPath(packageInfoPath)); // 현재 컨텍스트의 패키지 정보 파일
-					var packageLogFile = new java.io.File(resolveActiveDataPath(packageLogPath)); // 현재 컨텍스트의 패키지 로그 파일
-					var packageInfoData = packageInfoFile.exists() && packageInfoFile.length() > 0 ? loadJsonFile(packageInfoPath) : null; // 기존 파일이 있을 때만 로드
-					var packageLogData = packageLogFile.exists() && packageLogFile.length() > 0 ? loadJsonFile(packageLogPath) : null; // 기존 파일이 있을 때만 로드
-					var packageInitResult = buildPackageInitResult(packageInfoData, packageLogData);
-					if (packageInitResult.packageInfoData) saveJsonFile(packageInitResult.packageInfoData, packageInfoPath);
-					if (packageInitResult.packageLogData) saveJsonFile(packageInitResult.packageLogData, packageLogPath);
-					replier.reply(packageInitResult.message);
 					return;
 				}
 
@@ -30184,28 +30130,6 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
 	};
 }
 
-// 기본 패키지 정보 초기 데이터 복사본 생성 함수
-function getDefaultPackageInfoData() {
-	return JSON.parse(JSON.stringify(DEFAULT_PACKAGE_INFO_DATA));
-}
-
-// 패키지 기본 데이터 초기화 결과 생성 함수
-function buildPackageInitResult(packageInfoData, packageLogData) {
-	var shouldInitInfo = !(packageInfoData instanceof Array) || packageInfoData.length < 1; // 패키지 정보 초기화 필요 여부
-	var shouldInitLog = !packageLogData || typeof packageLogData !== "object" || typeof packageLogData.lastId !== "number" || isNaN(packageLogData.lastId) || !(packageLogData.logs instanceof Array); // 패키지 로그 초기화 필요 여부
-	var infoStatus = shouldInitInfo ? "기본 패키지 생성" : "이미 존재";
-	var logStatus = shouldInitLog ? "빈 로그 생성" : "이미 존재";
-
-	return {
-		message: "✅ 패키지 초기화 완료\n\n"
-		+ "packageInfo.json: " + infoStatus + "\n"
-		+ "packageLog.json: " + logStatus + "\n\n"
-		+ "확인:\n/패키지리스트",
-		packageInfoData: shouldInitInfo ? getDefaultPackageInfoData() : null,
-		packageLogData: shouldInitLog ? { lastId: 0, logs: [] } : null
-	};
-}
-
 // 패키지 로그 데이터 구조 검증 함수
 function assertPackageLogData(packageLogData) {
 	if (!packageLogData || typeof packageLogData !== "object" || typeof packageLogData.lastId !== "number" || isNaN(packageLogData.lastId) || !(packageLogData.logs instanceof Array)) {
@@ -30289,8 +30213,6 @@ function buildPackageListMessage(packageInfoData) {
 	var lines = ["📦 패키지 리스트", ""];
 	if (packageInfoData.length < 1) {
 		lines.push("등록된 패키지가 없습니다.");
-		lines.push("최초 1회 초기화:");
-		lines.push("/패키지초기화");
 	} else {
 		for (var i = 0; i < packageInfoData.length; i++) {
 			var packageInfo = packageInfoData[i]; // 리스트에 표시할 패키지 정보
@@ -30317,9 +30239,6 @@ function buildPackageListMessage(packageInfoData) {
 function buildPackageAddGuideMessage() {
 	var lines = [];
 	lines.push("📦 패키지 추가/제거 방법");
-	lines.push("");
-	lines.push("최초 1회 초기화:");
-	lines.push("/패키지초기화");
 	lines.push("");
 	lines.push("단계별 추가:");
 	lines.push("/패키지추가시작");

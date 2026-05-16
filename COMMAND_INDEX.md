@@ -1211,8 +1211,6 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `buildPackageInitResult`
-- `getDefaultPackageInfoData`
 - `assertPackageLogData`
 - `buildPackageListMessage`
 - `buildPackageAddGuideMessage`
@@ -1231,14 +1229,12 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/패키지초기화` loads package data in the command branch, then creates `packageInfo.json` from default package data and empty `packageLog.json` only when missing, empty, or structurally invalid
 - `/패키지추가`, `/패키지제거`, `/패키지활성` mutate and save `packageInfo.json`
 - `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
 
 ## Related Commands
 
-- `/패키지초기화`
 - `/패키지추가방법`
 - `/패키지추가시작`
 - `/패키지추가취소`
@@ -1257,9 +1253,8 @@ Status: VERIFIED
 - 1차 지원 보상 타입은 `item`, `point` only
 - Package name is also the bag item name; package data no longer needs a separate `itemName`
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
-- Default package data is initialized by `/패키지초기화`; package helpers receive loaded data and do not perform file IO
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
-- `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should be initialized through `/패키지초기화`
+- `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
