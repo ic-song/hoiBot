@@ -3197,6 +3197,6 @@ Status: VERIFIED
 - Sale fee is 10%, paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
-- Free-market listing limit is additive: base 1 + `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so both together allow 10 listings
+- Free-market quantity limit is additive: base 1 + `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so both together allow 10 active registered items
 - Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, and `/스킬거래등록` input now replies with the exact numeric-index registration usage guide
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists

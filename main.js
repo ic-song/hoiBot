@@ -2597,9 +2597,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var bagMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var bagMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketBagData, sender);
-					if (bagMarketActiveCount >= bagMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + bagMarketActiveCount + "/" + bagMarketLimit);
+					var bagMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketBagData, sender);
+					if (bagMarketActiveCount + bagMarketCount > bagMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + bagMarketActiveCount + "/" + bagMarketLimit + "\n요청: +" + bagMarketCount);
 						return;
 					}
 					var bagMarketInfo = generateBagOutput(data.member[sender].bag);
@@ -2656,9 +2656,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var miniMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var miniMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketMiniData, sender);
-					if (miniMarketActiveCount >= miniMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + miniMarketActiveCount + "/" + miniMarketLimit);
+					var miniMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketMiniData, sender);
+					if (miniMarketActiveCount + miniMarketCount > miniMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + miniMarketActiveCount + "/" + miniMarketLimit + "\n요청: +" + miniMarketCount);
 						return;
 					}
 					if (!petData[sender] || !Array.isArray(petData[sender].miniPetBag)) {
@@ -2744,9 +2744,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var furnitureMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var furnitureMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketFurnitureData, sender);
-					if (furnitureMarketActiveCount >= furnitureMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit);
+					var furnitureMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketFurnitureData, sender);
+					if (furnitureMarketActiveCount + furnitureMarketCount > furnitureMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit + "\n요청: +" + furnitureMarketCount);
 						return;
 					}
 					var furnitureHomeData = loadJsonFile(homeDataFile) || {};
@@ -2820,9 +2820,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var skillMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var skillMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketSkillData, sender);
-					if (skillMarketActiveCount >= skillMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + skillMarketActiveCount + "/" + skillMarketLimit);
+					var skillMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketSkillData, sender);
+					if (skillMarketActiveCount + skillMarketCount > skillMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + skillMarketActiveCount + "/" + skillMarketLimit + "\n요청: +" + skillMarketCount);
 						return;
 					}
 					var skillMarketList = getPetSkillBagList(petSkillData, sender);
@@ -2983,8 +2983,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply(buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, buyListing));
 						return;
 					}
-					var marketFee = Math.floor(buyPrice * FREE_MARKET_TRADE_FEE_RATE);
-					var sellerReceive = buyPrice - marketFee;
+					var sellerReceive = Math.floor(buyPrice * (1 - FREE_MARKET_TRADE_FEE_RATE));
+					var marketFee = buyPrice - sellerReceive;
 					data.member[sender].point = (data.member[sender].point || 0) - buyPrice;
 					data.member[buyListing.seller].point = (data.member[buyListing.seller].point || 0) + sellerReceive;
 					addHappyFoundationLedgerAmount(data, marketFee);
@@ -32371,6 +32371,18 @@ function countFreeMarketActiveListingsBySeller(freeMarketData, seller) {
 	var count = 0;
 	for (var i = 0; i < listings.length; i++) {
 		if (listings[i].seller === seller) count++;
+	}
+	return count;
+}
+
+// 판매자별 자유시장 활성 등록 수량 합계를 반환하는 함수
+function countFreeMarketActiveQuantityBySeller(freeMarketData, seller) {
+	var listings = getFreeMarketActiveListings(freeMarketData);
+	var count = 0;
+	for (var i = 0; i < listings.length; i++) {
+		if (listings[i].seller === seller) {
+			count += parseInt(listings[i].quantity, 10) || 0;
+		}
 	}
 	return count;
 }
