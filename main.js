@@ -101,7 +101,7 @@ const PET_SKILL_LIST = [
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
-	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수 3개 늘어납니다." },
+	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수가 +2개 늘어납니다." },
 	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -31263,10 +31263,10 @@ function hasFreeMarketMerchantSkill(petSkillData, user) {
 function getFreeMarketRegisterLimit(data, petSkillData, user) {
 	var hasTicket = hasItem(data, user, FREE_MARKET_MEMBER_TICKET_ITEM, 1);
 	var hasMerchant = hasFreeMarketMerchantSkill(petSkillData, user);
-	if (hasTicket && hasMerchant) return 8;
-	if (hasTicket) return 5;
-	if (hasMerchant) return 3;
-	return 1;
+	var limit = 1;
+	if (hasMerchant) limit += 2;
+	if (hasTicket) limit += 7;
+	return limit;
 }
 
 function buildFreeMarketRegisterUsageMessage() {
