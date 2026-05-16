@@ -1755,6 +1755,73 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(resultMessage);
 			return;
 		}
+		if (/^\/미니펫조합엘리트(\s|$)/.test(msg)) {
+			var eliteCombinationArgs = msg.trim().split(/\s+/);
+			var eliteNickName = checkRank(data, petData, guildData, sender);
+
+			if (!data.member[sender]) {
+				replier.reply(buildEliteMiniPetCombinationConditionFailMessage(eliteNickName));
+				return;
+			}
+
+			if (eliteCombinationArgs.length !== 3) {
+				replier.reply("❌ 사용법:\n/미니펫조합엘리트 [미니펫가방번호] [미니펫가방번호]");
+				return;
+			}
+
+			if (!petData[sender] || !Array.isArray(petData[sender].miniPetBag) || petData[sender].miniPetBag.length < 2) {
+				replier.reply(buildEliteMiniPetCombinationConditionFailMessage(eliteNickName));
+				return;
+			}
+
+			refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+
+			var eliteBag = petData[sender].miniPetBag || [];
+			var eliteFirstIndex = parseInt(eliteCombinationArgs[1], 10);
+			var eliteSecondIndex = parseInt(eliteCombinationArgs[2], 10);
+
+			if (isNaN(eliteFirstIndex) || isNaN(eliteSecondIndex)) {
+				replier.reply("❌ 미니펫가방 번호는 숫자로 입력해주세요.");
+				return;
+			}
+
+			if (eliteFirstIndex === eliteSecondIndex) {
+				replier.reply("❌ 동일한 번호의 미니펫은 조합할 수 없습니다.");
+				return;
+			}
+
+			var eliteFirstPet = getMiniPetBySortIndex(eliteBag, eliteFirstIndex);
+			var eliteSecondPet = getMiniPetBySortIndex(eliteBag, eliteSecondIndex);
+
+			if (!isEliteMiniPetCombinationMaterial(eliteFirstPet) || !isEliteMiniPetCombinationMaterial(eliteSecondPet)) {
+				replier.reply(buildEliteMiniPetCombinationConditionFailMessage(eliteNickName));
+				return;
+			}
+
+			if ((data.member[sender].point || 0) < ELITE_MINIPET_COMBINATION_COST) {
+				replier.reply(buildEliteMiniPetCombinationConditionFailMessage(eliteNickName));
+				return;
+			}
+
+			data.member[sender].point = (data.member[sender].point || 0) - ELITE_MINIPET_COMBINATION_COST;
+
+			var eliteCombinationSuccess = Math.random() < ELITE_MINIPET_COMBINATION_SUCCESS_RATE;
+			if (!eliteCombinationSuccess) {
+				saveJsonFile(data, filePath);
+				replier.reply(buildEliteMiniPetCombinationFailMessage());
+				return;
+			}
+
+			var eliteRewardData = pickEliteMiniPetCombinationReward();
+			var eliteRewardPet = createEliteMiniPetFromCombination(eliteRewardData);
+			removeMiniPetsFromBag(eliteBag, [eliteFirstIndex, eliteSecondIndex]);
+			eliteBag.push(eliteRewardPet);
+			refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+			saveJsonFile(data, filePath);
+			saveJsonFile(petData, memberPetPath);
+			replier.reply(buildEliteMiniPetCombinationSuccessMessage(eliteRewardData, eliteNickName));
+			return;
+		}
 		//var castleBattleData = loadJsonFile(castleBattlePath);
 		//var titleData = loadJsonFile(memberTitlePath);
 		if (isSaving == false) {
@@ -33145,6 +33212,66 @@ const MINI_PET_COMBINATION_REWARDS = {
 	창조: [["컬렉션창조 미니펫", "🐹", 1]]
 };
 
+var ELITE_MINIPET_COMBINATION_COST = 50000000000;
+var ELITE_MINIPET_COMBINATION_SUCCESS_RATE = 0.5;
+var ELITE_MINIPET_COMBINATION_REWARDS = [
+	{
+		name: "아르케",
+		emoji: "🌌",
+		charm: 12000000,
+		price: 100000000000,
+		icon: "🌌",
+		meaning: "만물의 근원, 모든 시작의 첫 원리.",
+		history: "아르케는 모든 세계가 태어나기 전부터 존재한 근원의 힘이다.\n가이아, 카오스, 시간, 질서보다도 앞선\n“시작 그 자체”에 가까운 존재로 설정한다.",
+		line: "아르케🌌:\n태초가 무릎 꿇고,\n모든 시작의 근원이 부름에 응답한다.",
+		finalLine: "필멸자여 근원의 이름을 손에 넣었다."
+	},
+	{
+		name: "카오스",
+		emoji: "🕳️",
+		charm: 11500000,
+		price: 100000000000,
+		icon: "🕳️",
+		meaning: "창조 이전의 혼돈, 질서가 생기기 전의 공허.",
+		history: "카오스는 세계가 만들어지기 전 존재한 혼돈의 심연이다.\n모든 질서와 생명이 태어나기 전의 어둠이며,\n파괴와 탄생을 동시에 품은 존재로 설정한다.",
+		line: "카오스🕳️:\n질서는 무너지고 세계는 침묵한다.\n창조 이전의 혼돈이 네 편에 선다.",
+		finalLine: "필멸자여 혼돈마저 따르는 존재가 되었다."
+	},
+	{
+		name: "데미우르고스",
+		emoji: "👁️",
+		charm: 11000000,
+		price: 100000000000,
+		icon: "👁️",
+		meaning: "세계를 설계하고 빚는 조물주, 창조의 설계자.",
+		history: "데미우르고스는 혼돈 속에서 세계의 형태를 설계한 존재다.\n무에서 질서를 만들고,\n생명과 세계의 구조를 짜는\n“창조자의 손” 같은 존재로 설정한다.",
+		line: "데미우르고스👁️:\n세계의 설계도가 다시 펼쳐지고,\n만물을 빚던 손길이 네 앞에 고개를 숙인다.",
+		finalLine: "필멸자여 창조자의 권능을 거머쥐었다."
+	},
+	{
+		name: "아이온",
+		emoji: "♾️",
+		charm: 10500000,
+		price: 100000000000,
+		icon: "♾️",
+		meaning: "영원, 끝없는 시간, 순환하는 우주의 흐름.",
+		history: "아이온은 시작과 끝이 없는 영원의 시간이다.\n과거, 현재, 미래를 모두 관통하는 존재이며,\n시간을 초월한 불멸의 흐름으로 설정한다.",
+		line: "아이온♾️:\n시간은 흐름을 멈추고,\n영원의 순환조차 네 명령을 기다린다.",
+		finalLine: "필멸자여 영원을 다스릴 자격을 증명했다."
+	},
+	{
+		name: "로고스",
+		emoji: "🔱",
+		charm: 10000000,
+		price: 100000000000,
+		icon: "🔱",
+		meaning: "우주의 질서, 법칙, 이성, 세계를 움직이는 원리.",
+		history: "로고스는 혼돈을 질서로 바꾸는 우주의 법칙이다.\n모든 규칙과 균형,\n세계가 유지되는 원리를 상징하며\n법칙 그 자체가 의지를 가진 존재로 설정한다.",
+		line: "로고스🔱:\n흩어진 질서가 강제로 정렬되고,\n우주의 법칙이 네 이름 아래 재작성된다.",
+		finalLine: "필멸자여법칙 위에 서는 자가 되었다."
+	}
+];
+
 function getMiniPetCombinationConfig(commandName) {
 	if (commandName === "태초+") return { commandLabel: "태초+", inputGrade: "태초", outputGrade: "태초+", successRate: 0.5 };
 	if (commandName === "창세") return { commandLabel: "창세", inputGrade: "태초+", outputGrade: "창세", successRate: 0.3 };
@@ -33179,6 +33306,84 @@ function createMiniPetFromCombination(grade) {
 	if (!pool.length) return null;
 	var picked = pool[Math.floor(Math.random() * pool.length)];
 	return { name: picked[0], emoji: picked[1], grade: grade, price: picked[2], battleExp: picked[2], castleExp: picked[2], raidExp: picked[2] };
+}
+
+function isEliteMiniPetCombinationMaterial(pet) {
+	if (!pet) return false;
+	if ((pet.name || "") === "컬렉션창조 미니펫") return false;
+	if ((pet.grade || "") !== "창조") return false;
+	return parseInt(pet.upgrade || 0, 10) >= 300;
+}
+
+function pickEliteMiniPetCombinationReward() {
+	return ELITE_MINIPET_COMBINATION_REWARDS[Math.floor(Math.random() * ELITE_MINIPET_COMBINATION_REWARDS.length)];
+}
+
+function createEliteMiniPetFromCombination(reward) {
+	return {
+		name: reward.name,
+		emoji: reward.emoji,
+		grade: "엘리트",
+		price: reward.price,
+		battleExp: reward.charm,
+		castleExp: reward.charm,
+		raidExp: reward.charm
+	};
+}
+
+function formatEliteMiniPetCombinationReward(reward) {
+	return reward.name + reward.emoji + "(+" + reward.charm + "💕)[엘리트]";
+}
+
+function buildEliteMiniPetCombinationConditionFailMessage(nickName) {
+	return (
+		"❌ [" +
+		nickName +
+		"]님\n" +
+		"엘리트 미니펫 조합 조건을 만족하지 못했습니다.\n\n" +
+		"조합 조건:\n" +
+		"창조등급 300강 미니펫 2개\n" +
+		"조합 비용:\n" +
+		"500억 포인트"
+	);
+}
+
+function buildEliteMiniPetCombinationFailMessage() {
+	return (
+		"❌ 엘리트 미니펫 조합 실패\n" +
+		"━━━━━━━━━━━━\n" +
+		"태초의 힘이 불안정하게 흩어진다.\n\n" +
+		"조합비용 500억 포인트가 소모되었다.\n" +
+		"선택한 미니펫은 소멸하지 않는다.\n" +
+		"━━━━━━━━━━━━\n" +
+		"다시 근원의 문을 두드려라."
+	);
+}
+
+function buildEliteMiniPetCombinationSuccessMessage(reward, nickName) {
+	return (
+		reward.icon +
+		" 엘리트 미니펫 조합 성공 " +
+		reward.icon +
+		"\n" +
+		"[" +
+		formatEliteMiniPetCombinationReward(reward) +
+		"]\n" +
+		"━━━━━━━━━━━━\n" +
+		"의미:\n" +
+		reward.meaning +
+		"\n\n" +
+		"히스토리:\n" +
+		reward.history +
+		"\n" +
+		"━━━━━━━━━━━━\n" +
+		reward.line +
+		"\n\n" +
+		"[" +
+		nickName +
+		"]" +
+		reward.finalLine
+	);
 }
 // 미니펫 가방에서 sortIndex로 특정 미니펫 찾기
 function getMiniPetBySortIndex(bag, sortIndex) {

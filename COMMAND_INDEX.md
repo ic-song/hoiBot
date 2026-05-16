@@ -1968,6 +1968,35 @@ Status: VERIFIED
 
 ---
 
+# /미니펫조합엘리트
+Status: VERIFIED
+## Command Anchors
+- `main.js`
+## Files
+- `main.js`
+## Related Helpers
+- `isEliteMiniPetCombinationMaterial`
+- `pickEliteMiniPetCombinationReward`
+- `createEliteMiniPetFromCombination`
+- `removeMiniPetsFromBag`
+- `refreshMiniPetSortIndex`
+## Data Usage
+- `petData[sender].miniPetBag`
+- `data.member[sender].point`
+## Save Flow
+- Failure consumes only 500억 points and saves `filePath`
+- Success consumes 500억 points, removes the selected two 창조 300강 mini-pets, adds one 엘리트 mini-pet, saves `filePath` and `memberPetPath`
+## Related Commands
+- `/미니펫조합엘리트 [미니펫가방번호] [미니펫가방번호]`
+- `/미니펫가방`
+- `/미니펫강화`
+## AI Notes
+- `컬렉션창조 미니펫🐹(+1💕)[창조]` is explicitly excluded from elite-combination materials
+- Elite reward pool contains 아르케, 카오스, 데미우르고스, 아이온, 로고스
+- Existing upgrade cap logic was not changed by this command entry
+
+---
+
 # /미니펫전체정리
 Status: VERIFIED
 ## Command Anchors
