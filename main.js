@@ -29775,23 +29775,23 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 
 // 자동일퀘 진행 결과 요약 메시지 생성 함수
 function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages) {
-	var status = after.status;
-	var nickName = checkRank(after.data, after.petData, after.guildData, sender);
-	var towerAttempts = Math.max(0, status.towerUsed - before.status.towerUsed);
-	var towerSuccess = Math.max(0, after.towerFloor - before.towerFloor);
-	var towerFail = Math.max(0, towerAttempts - towerSuccess);
-	var castleAttempts = Math.max(0, status.castleUsed - before.status.castleUsed);
-	var castleWin = Math.max(0, after.castleWin - before.castleWin);
-	var castleLose = Math.max(0, after.castleLose - before.castleLose);
-	var castleScoreDelta = after.castleScore - before.castleScore;
-	var miniAttempts = Math.max(0, status.miniUsed - before.status.miniUsed);
-	var miniWin = Math.max(0, after.miniWin - before.miniWin);
-	var miniLose = Math.max(0, after.miniLose - before.miniLose);
-	var expDelta = after.exp - before.exp;
-	var pointDelta = after.point - before.point;
-	var itemDelta = diffPositiveNumberMap(before.bag, after.bag);
-	var progressed = towerAttempts + castleAttempts + miniAttempts > 0;
-	var lines = [];
+	var status = after.status; // 자동일퀘 실행 후 일퀘 진행 상태
+	var nickName = checkRank(after.data, after.petData, after.guildData, sender); // 출력용 체크랭크
+	var towerAttempts = Math.max(0, status.towerUsed - before.status.towerUsed); // 시련탑 도전 횟수 계산
+	var towerSuccess = Math.max(0, after.towerFloor - before.towerFloor); // 시련탑 성공 횟수 계산
+	var towerFail = Math.max(0, towerAttempts - towerSuccess); // 시련탑 실패 횟수 계산
+	var castleAttempts = Math.max(0, status.castleUsed - before.status.castleUsed); // 캐슬대전 진행 횟수 계산
+	var castleWin = Math.max(0, after.castleWin - before.castleWin); // 캐슬대전 승리 횟수 계산
+	var castleLose = Math.max(0, after.castleLose - before.castleLose); // 캐슬대전 패배 횟수 계산
+	var castleScoreDelta = after.castleScore - before.castleScore; // 캐슬대전 점수 증감 계산
+	var miniAttempts = Math.max(0, status.miniUsed - before.status.miniUsed); // 미니펫대전 진행 횟수 계산
+	var miniWin = Math.max(0, after.miniWin - before.miniWin); // 미니펫대전 승리 횟수 계산
+	var miniLose = Math.max(0, after.miniLose - before.miniLose); // 미니펫대전 패배 횟수 계산
+	var expDelta = after.exp - before.exp; // 자동일퀘 후 경험치 증감 계산
+	var pointDelta = after.point - before.point; // 자동일퀘 후 포인트 증감 계산
+	var itemDelta = diffPositiveNumberMap(before.bag, after.bag); // 자동일퀘로 증가한 아이템 계산
+	var progressed = towerAttempts + castleAttempts + miniAttempts > 0; // 자동 진행된 콘텐츠 존재 여부
+	var lines = []; // 결과 메시지 조립 배열
 
 	lines.push("[" + nickName + "]");
 	lines.push(progressed ? "자동 일퀘 진행 결과 🐶" : "자동 일퀘 보상 수령 완료 🐶");
