@@ -2442,6 +2442,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
+				if (isFreeMarketRegisterCommand(msg) && !canRegisterFreeMarketByTier(data, sender)) {
+					replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 거래등록은 티어 \"킹\" 이상만 가능합니다.");
+					return;
+				}
+
 				if (/^\/가방거래등록\s+\d+\s+\d+\s+\d+$/.test(msg)) {
 					var bagMarketParts = msg.trim().split(/\s+/);
 					var bagMarketIndex = parseInt(bagMarketParts[1], 10);
@@ -2725,7 +2730,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
-				if (/^\/(가방거래등록|미니펫거래등록|가구거래등록|스킬거래등록)(\s|$)/.test(msg)) {
+				if (isFreeMarketRegisterCommand(msg)) {
 					replier.reply(buildFreeMarketRegisterUsageMessage());
 					return;
 				}
@@ -31252,6 +31257,15 @@ function countFreeMarketActiveListingsBySeller(freeMarketData, seller) {
 		if (listings[i].seller === seller) count++;
 	}
 	return count;
+}
+
+function isFreeMarketRegisterCommand(msg) {
+	return /^\/(가방거래등록|미니펫거래등록|가구거래등록|스킬거래등록)(\s|$)/.test(msg);
+}
+
+function canRegisterFreeMarketByTier(data, user) {
+	var tier = data && data.member && data.member[user] && data.member[user].rank ? data.member[user].rank.tier : "";
+	return isTierMasterOrAbove(tier);
 }
 
 function hasFreeMarketMerchantSkill(petSkillData, user) {
