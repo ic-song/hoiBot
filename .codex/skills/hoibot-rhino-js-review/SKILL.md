@@ -23,6 +23,12 @@ Use this skill when reviewing or changing JavaScript that runs in the Android Me
 - browser or React APIs
 - modern-only syntax that Rhino may not support
 
+## Commenting Rules
+
+- Add a brief one-line purpose comment directly above new helpers/functions.
+- When a function declares several derived or summary variables, add short inline comments beside the non-obvious variables explaining what each value calculates.
+- Keep comments practical and concise; avoid restating trivial assignments.
+
 ## Validation
 
 Run syntax checks when JavaScript changes:

@@ -23,3 +23,5 @@ Report unverified runtime areas clearly.
 - no unintended save-flow changes
 - no unrelated formatting churn
 - user-facing output formatting preserved
+- new helpers/functions have brief purpose comments
+- calculation-heavy variable groups have short inline comments for non-obvious values

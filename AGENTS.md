@@ -95,6 +95,8 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Commands with no arguments must use exact equality such as `msg === "/명령어"`.
 - Commands with numeric arguments must use full-pattern guards such as `msg === "/명령어" || /^\/명령어\s+\d+$/.test(msg)` or `/^\/명령어\s+\d+$/.test(msg)` when the argument is required.
 - Inputs with extra guide text after valid arguments, such as `/명령어 1 해봐`, must not execute command logic unless that command explicitly accepts free-form text.
+- When adding a new helper/function, add a brief one-line purpose comment directly above it, for example `// 현재 날짜 문자열 반환 함수`.
+- When a function declares several derived or summary variables, add short inline comments beside the non-obvious variables explaining what each value calculates, for example `var towerAttempts = ...; // 시련탑 도전 횟수 계산`.
 
 ## Branch Workflow
 
@@ -343,6 +345,8 @@ head-agent
 - For new or edited slash commands, never rely on `msg.startsWith("/명령어")` or `msg.indexOf("/명령어") === 0` for mutation, purchase, sale, equip, open, combine, or cleanup logic.
 - Use exact or full-pattern guards so suffix text cannot be interpreted as a valid command.
 - Use only Rhino JS compatible syntax/features.
+- Add a concise one-line purpose comment above each new helper/function.
+- In calculation-heavy blocks with many derived variables, add short inline comments for non-obvious variables so future maintainers can quickly read what each value means.
 
 ---
 
