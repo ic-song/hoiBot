@@ -40,36 +40,6 @@ function getAdminPayoutUsers(data) {
 	return Object.keys(data.admin);
 }
 
-function migrateAdminPayoutList(data) {
-	var result = {
-		changed: false,
-		addedCount: 0
-	};
-	if (!data || typeof data !== "object") return result;
-	if (!data.admin || typeof data.admin !== "object") {
-		data.admin = {};
-		result.changed = true;
-	}
-	if (data.adminPayoutMigrationVersion >= ADMIN_PAYOUT_MIGRATION_VERSION) return result;
-
-	var source = data.allowedUsers2;
-	if (!Array.isArray(source) || source.length === 0) return result;
-
-	for (var i = 0; i < source.length; i++) {
-		var name = source[i];
-		if (!name) continue;
-		if (!data.admin.hasOwnProperty(name)) {
-			data.admin[name] = "";
-			result.addedCount++;
-			result.changed = true;
-		}
-	}
-	data.adminPayoutMigrationVersion = ADMIN_PAYOUT_MIGRATION_VERSION;
-	data.adminPayoutMigrationCount = source.length;
-	result.changed = true;
-	return result;
-}
-
 function buildAdminListMessage(admins) {
 	var list = admins.slice().sort(function (a, b) {
 		return a.localeCompare(b, "ko");
@@ -426,7 +396,6 @@ const STONE_SELL_PRICE = 95000; // 판매가
 const STONE_NAME = "돌멩이🪨"; // 인벤토리 아이템명
 const TITLE_GIFT_ITEM_NAME = "타이틀선물권💝(/타이틀선물 닉네임 내용)";
 const TITLE_GIFT_MAX_LENGTH = 30;
-const ADMIN_PAYOUT_MIGRATION_VERSION = 1;
 // 등급별(엘리트/그외) 도달 레벨 기준 매력 증가량
 var MINI_CHARM_ELITE = [
 	null,
@@ -1142,10 +1111,6 @@ USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
 let initData = loadJsonFile(filePath);
-let adminPayoutMigrationResult = migrateAdminPayoutList(initData);
-if (adminPayoutMigrationResult.changed) {
-	saveJsonFile(initData, filePath);
-}
 let Master = initData.master;
 let Admins = getAdminPayoutUsers(initData);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)

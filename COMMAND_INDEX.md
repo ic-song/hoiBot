@@ -2005,17 +2005,12 @@ Status: VERIFIED
 - `main.js`
 ## Related Helpers
 - `getAdminPayoutUsers`
-- `migrateAdminPayoutList`
 - `buildAdminListMessage`
 ## Data Usage
 - `data.admin`
-- `data.allowedUsers2`
-- `data.adminPayoutMigrationVersion`
-- `data.adminPayoutMigrationCount`
 - `data.member[*].point`
 - `data.member[*].bag["미니펫뽑기🐹(/미니펫오픈)"]`
 ## Save Flow
-- Boot migration copies one-time legacy `allowedUsers2` names into `data.admin`, sets migration version/count, and saves `filePath`
 - `/관리자추가` and `/관리자삭제` mutate `data.admin` and save `filePath`
 - `/관리자일당` reads `data.admin`, gives existing members 3억 points, reports actual paid count, and saves `filePath`
 - `/부방상여` reads `data.admin`, gives existing members 미니펫뽑기 1000개, reports actual rewarded count, and saves `filePath`
