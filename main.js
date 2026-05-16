@@ -101,7 +101,7 @@ const PET_SKILL_LIST = [
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
-	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수 2개 늘어납니다." },
+	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수 3개 늘어납니다." },
 	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -2722,6 +2722,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"※ 등록 수수료 [당근🥕 " + numberWithCommas(skillMarketCarrotFee) + "개]가 차감되었습니다.\n" +
 						"※ 거래수수료는 판매자에게 10% 부담됩니다."
 					);
+					return;
+				}
+
+				if (/^\/(가방거래등록|미니펫거래등록|가구거래등록|스킬거래등록)(\s|$)/.test(msg)) {
+					replier.reply(buildFreeMarketRegisterUsageMessage());
 					return;
 				}
 
@@ -31260,8 +31265,21 @@ function getFreeMarketRegisterLimit(data, petSkillData, user) {
 	var hasMerchant = hasFreeMarketMerchantSkill(petSkillData, user);
 	if (hasTicket && hasMerchant) return 8;
 	if (hasTicket) return 5;
-	if (hasMerchant) return 2;
+	if (hasMerchant) return 3;
 	return 1;
+}
+
+function buildFreeMarketRegisterUsageMessage() {
+	return (
+		"❌ 자유시장 등록 양식이 올바르지 않습니다.\n\n" +
+		"사용 예시:\n" +
+		"/가방거래등록 1 100 5000000\n\n" +
+		"양식:\n" +
+		"/가방거래등록 [가방번호] [수량] [판매금액]\n" +
+		"/미니펫거래등록 [미니펫가방번호] [수량] [판매금액]\n" +
+		"/가구거래등록 [가구가방번호] [수량] [판매금액]\n" +
+		"/스킬거래등록 [스킬가방번호] [수량] [판매금액]"
+	);
 }
 
 function getFreeMarketCarrotFee(type, quantity) {
@@ -31289,6 +31307,9 @@ function getFreeMarketItemText(listing) {
 	var itemName = listing.type === "skill" ? formatPetSkillName(listing.itemName) : listing.itemName;
 	if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
 		itemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
+	}
+	if (listing.type === "furniture" && listing.payload && listing.payload.furnitures && listing.payload.furnitures.length > 0) {
+		itemName = formatFreeMarketFurnitureDetail(listing.payload.furnitures[0]);
 	}
 	return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개";
 }
@@ -31350,6 +31371,9 @@ function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive
 	}
 	if (listing.type === "skill") {
 		completedItemName = formatPetSkillName(listing.itemName);
+	}
+	if (listing.type === "furniture" && listing.payload && listing.payload.furnitures && listing.payload.furnitures.length > 0) {
+		completedItemName = formatFreeMarketFurnitureDetail(listing.payload.furnitures[0]);
 	}
 	freeMarketData.completedLogs.unshift({
 		id: listing.id,
@@ -31435,6 +31459,18 @@ function formatFreeMarketMiniPetDetail(pet) {
 
 function getFreeMarketFurnitureDisplayName(furniture) {
 	return furniture.name + (furniture.emoji || "");
+}
+
+function formatFreeMarketFurnitureDetail(furniture) {
+	if (!furniture) return "";
+	return (
+		getFreeMarketFurnitureDisplayName(furniture) +
+		"(+" +
+		numberWithCommas(Number(furniture.exp) || 0) +
+		"💕)[" +
+		(furniture.grade || "-") +
+		"]"
+	);
 }
 
 function returnFreeMarketItemToOwner(data, petData, petSkillData, homeData, listing, owner) {
