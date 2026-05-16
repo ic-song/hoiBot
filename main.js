@@ -6,6 +6,7 @@ let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
 let requestMonitorConfig = null;
+let autoDailyQuestInternalDepth = 0;
 
 let USER_REQUEST_WINDOW_MS = 2000; // 2초
 let USER_REQUEST_LIMIT = 3; // 2초에 3회 이상 요청 시 과부하로 간주
@@ -19,6 +20,10 @@ function getUserRequestBlockMessage() {
 }
 
 function isExcludedRequestMonitoring(room, msg) {
+	if (autoDailyQuestInternalDepth > 0) {
+		return true;
+	}
+
 	let excludedCommands = (requestMonitorConfig && requestMonitorConfig.excludedCommands) || [];
 	let excludedRooms = (requestMonitorConfig && requestMonitorConfig.excludedRooms) || [];
 
@@ -1626,7 +1631,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				return;
 			}
 		}
-		if (msg.startsWith("/")) {
+		if (autoDailyQuestInternalDepth <= 0 && msg.startsWith("/")) {
 			try {
 				let activeFilePath = resolveActiveDataPath(filePath);
 				let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
@@ -14660,6 +14665,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (!castleSiegeFlag && data.member && data.member[sender]) {
 						replier.reply(buildDailyQuestInfoMessage(data, petData, guildData, sender));
 					}
+				}
+
+				if (msg === "/자동일퀘" || msg === "ㅇㅋ" || msg === "ㅇㅋㅋ") {
+					if (castleSiegeFlag) return;
+					if (!data.member || !data.member[sender]) return;
+					var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
+					replier.reply(autoDailyResult.message);
+					return;
 				}
 
 				if (msg === "/기도") {
@@ -29649,6 +29662,216 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 	return {
 		claimed: claimed,
 		message: messages.join("\n\n")
+	};
+}
+
+function createAutoDailyCaptureReplier() {
+	return {
+		messages: [],
+		reply: function (message) {
+			this.messages.push(String(message || ""));
+		}
+	};
+}
+
+function runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB, packageName) {
+	var ctx = getCurrentContext();
+	var capture = createAutoDailyCaptureReplier();
+	var internalCommand = ctx && ctx.isDev ? "dev" + command : command;
+	autoDailyQuestInternalDepth++;
+	try {
+		response(room, internalCommand, sender, isGroupChat, capture, imageDB, packageName);
+	} finally {
+		autoDailyQuestInternalDepth--;
+	}
+	return capture.messages;
+}
+
+function getAutoDailyQuestSnapshot(sender) {
+	var data = loadJsonFile(filePath);
+	var petData = loadJsonFile(memberPetPath);
+	var guildData = loadJsonFile(guildPath);
+	var trialTower = loadJsonFile(trialTowerPath);
+	var castleBattleData = loadJsonFile(castleBattlePath);
+	var member = data.member && data.member[sender] ? data.member[sender] : {};
+	var pet = petData[sender] || {};
+	var bag = member.bag || {};
+	var towerFloor = trialTower && trialTower.user && trialTower.user[sender] ? parseInt(trialTower.user[sender].floor, 10) || 0 : 0;
+	var battle = member.battle || {};
+	var miniBattle = pet.miniPetBattle || { win: 0, lose: 0, count: 0 };
+	return {
+		data: data,
+		petData: petData,
+		guildData: guildData,
+		trialTower: trialTower,
+		castleBattleData: castleBattleData,
+		status: getDailyQuestStatus(data, petData, guildData, sender),
+		point: parseInt(member.point, 10) || 0,
+		exp: parseInt(member.exp, 10) || 0,
+		bag: copyNumberMap(bag),
+		towerFloor: towerFloor,
+		castleScore: parseInt(battle.score, 10) || 0,
+		castleWin: parseInt(battle.win, 10) || 0,
+		castleLose: parseInt(battle.lose, 10) || 0,
+		miniWin: parseInt(miniBattle.win, 10) || 0,
+		miniLose: parseInt(miniBattle.lose, 10) || 0
+	};
+}
+
+function copyNumberMap(source) {
+	var copy = {};
+	if (!source) return copy;
+	Object.keys(source).forEach(function (key) {
+		var value = parseInt(source[key], 10) || 0;
+		if (value !== 0) copy[key] = value;
+	});
+	return copy;
+}
+
+function diffPositiveNumberMap(beforeMap, afterMap) {
+	var result = {};
+	afterMap = afterMap || {};
+	beforeMap = beforeMap || {};
+	Object.keys(afterMap).forEach(function (key) {
+		var diff = (parseInt(afterMap[key], 10) || 0) - (parseInt(beforeMap[key], 10) || 0);
+		if (diff > 0) result[key] = diff;
+	});
+	return result;
+}
+
+function formatAutoDailyItemLines(items) {
+	var keys = Object.keys(items || {});
+	if (keys.length < 1) return "- 없음";
+	keys.sort(function (a, b) {
+		return a.localeCompare(b, "ko");
+	});
+	return keys.map(function (key) {
+		return "- " + key + " x " + numberWithCommas(items[key]);
+	}).join("\n");
+}
+
+function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, command, usedKey, maxKey) {
+	var first = getAutoDailyQuestSnapshot(sender);
+	var remain = Math.max(0, (first.status[maxKey] || 0) - (first.status[usedKey] || 0));
+	var captured = [];
+	for (var i = 0; i < remain; i++) {
+		var before = getAutoDailyQuestSnapshot(sender);
+		var messages = runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB, packageName);
+		captured = captured.concat(messages);
+		var after = getAutoDailyQuestSnapshot(sender);
+		if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
+			break;
+		}
+	}
+	return captured;
+}
+
+function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages) {
+	var status = after.status;
+	var nickName = checkRank(after.data, after.petData, after.guildData, sender);
+	var towerAttempts = Math.max(0, status.towerUsed - before.status.towerUsed);
+	var towerSuccess = Math.max(0, after.towerFloor - before.towerFloor);
+	var towerFail = Math.max(0, towerAttempts - towerSuccess);
+	var castleAttempts = Math.max(0, status.castleUsed - before.status.castleUsed);
+	var castleWin = Math.max(0, after.castleWin - before.castleWin);
+	var castleLose = Math.max(0, after.castleLose - before.castleLose);
+	var castleScoreDelta = after.castleScore - before.castleScore;
+	var miniAttempts = Math.max(0, status.miniUsed - before.status.miniUsed);
+	var miniWin = Math.max(0, after.miniWin - before.miniWin);
+	var miniLose = Math.max(0, after.miniLose - before.miniLose);
+	var expDelta = after.exp - before.exp;
+	var pointDelta = after.point - before.point;
+	var itemDelta = diffPositiveNumberMap(before.bag, after.bag);
+	var progressed = towerAttempts + castleAttempts + miniAttempts > 0;
+	var lines = [];
+
+	lines.push("[" + nickName + "]");
+	lines.push(progressed ? "자동 일퀘 진행 결과 🐶" : "자동 일퀘 보상 수령 완료 🐶");
+	if (rewardResult && rewardResult.claimed) {
+		lines.push("✅ 일일퀘스트 보상 지급 완료!");
+	} else if (status.isComplete && status.dailyRewardDone) {
+		lines.push("✅ 오늘 이미 일일퀘스트 보상을 받았습니다.");
+	} else if (status.exploreUsed < status.exploreMax) {
+		lines.push("⏳ 펫탐험 완료 대기 중 (일퀘 보상 미수령)");
+	} else {
+		lines.push("⏳ 일일퀘스트 미완료");
+	}
+	lines.push("[😈시탑,🐹미대전,🏆캐대전]");
+	lines.push("✨ 총 획득 경험치: " + numberWithCommas(Math.max(0, expDelta)) + " exp");
+	lines.push("🤑 총 포인트 변동: 🅟" + numberWithCommas(pointDelta) + " " + allsee);
+	lines.push("━━━━━━━━━━━━");
+	lines.push("😈 시련의탑");
+	lines.push("- " + numberWithCommas(before.towerFloor) + "층 → " + numberWithCommas(after.towerFloor) + "층 도전");
+	lines.push("- 성공 " + numberWithCommas(towerSuccess) + "회 / 실패 " + numberWithCommas(towerFail) + "회");
+	lines.push("");
+	lines.push("🏆 캐슬대전");
+	lines.push("- " + numberWithCommas(castleAttempts) + "전 " + numberWithCommas(castleWin) + "승 " + numberWithCommas(castleLose) + "패");
+	lines.push("- 점수 " + numberWithCommas(before.castleScore) + " → " + numberWithCommas(after.castleScore) + " [" + (castleScoreDelta >= 0 ? "+" : "") + numberWithCommas(castleScoreDelta) + "]");
+	lines.push("");
+	lines.push("🐹 미니펫대전");
+	lines.push("- " + numberWithCommas(miniAttempts) + "전 " + numberWithCommas(miniWin) + "승 " + numberWithCommas(miniLose) + "패");
+	lines.push("━━━━━━━━━━━━");
+	lines.push("포인트 변동🤑 🅟" + numberWithCommas(pointDelta));
+	lines.push("획득 아이템💰");
+	lines.push(formatAutoDailyItemLines(itemDelta));
+	lines.push("━━━━━━━━━━━━");
+	if (rewardResult && rewardResult.message) {
+		lines.push(rewardResult.message);
+	} else if (!status.isComplete) {
+		lines.push("⏳ 일일퀘스트 미완료");
+		lines.push("- 시련탑😈[" + status.towerUsed + "/" + status.towerMax + "]");
+		lines.push("- 캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "]");
+		lines.push("- 미대전🐹[" + status.miniUsed + "/" + status.miniMax + "]");
+		lines.push("- 펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "]");
+		if (status.exploreUsed < status.exploreMax) {
+			lines.push("펫탐험 10/10 완료 후 /자동일퀘 또는 ㅇㅋ 재입력 시 보상 수령 가능");
+		}
+	}
+	if (capturedMessages && capturedMessages.length > 0 && !progressed && !(rewardResult && rewardResult.claimed)) {
+		lines.push("━━━━━━━━━━━━");
+		lines.push("ℹ️ 자동 진행 안내");
+		lines.push(capturedMessages[capturedMessages.length - 1]);
+	}
+	return lines.join("\n");
+}
+
+function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
+	var before = getAutoDailyQuestSnapshot(sender);
+	if (!before.data.member || !before.data.member[sender]) {
+		return { message: "❌ 등록된 유저 정보가 없습니다." };
+	}
+	if (!hasItem(before.data, sender, "자동일퀘권📝", 1)) {
+		return { message: "❌ [" + checkRank(before.data, before.petData, before.guildData, sender) + "]님\n자동일퀘권📝이 필요합니다." };
+	}
+	var beforePetSkillData = loadJsonFile(petSkillDataPath);
+	saveJsonFile(before.data, filePath_back);
+	saveJsonFile(before.petData, memberPetPath_back);
+	if (beforePetSkillData) {
+		saveJsonFile(beforePetSkillData, petSkillDataPath_back);
+	}
+
+	var capturedMessages = [];
+	capturedMessages = capturedMessages.concat(runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/시련의탑", "towerUsed", "towerMax"));
+	capturedMessages = capturedMessages.concat(runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/캐슬대전", "castleUsed", "castleMax"));
+	capturedMessages = capturedMessages.concat(runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/미니펫대전", "miniUsed", "miniMax"));
+
+	var rewardData = loadJsonFile(filePath);
+	var rewardPetData = loadJsonFile(memberPetPath);
+	var rewardPetSkillData = loadJsonFile(petSkillDataPath);
+	var rewardGuildData = loadJsonFile(guildPath);
+	var rewardResult = claimQuestReward(rewardData, rewardPetData, rewardGuildData, rewardPetSkillData, sender);
+	if (rewardResult.claimed) {
+		if (hasPetSkill(rewardPetSkillData, sender, "일일루틴")) {
+			var bonusPoint = 100000000;
+			addPoint(rewardData, sender, bonusPoint);
+			rewardResult.message += "\n\n🎉 일일루틴📙 1억 포인트를 지급받습니다.";
+		}
+		saveJsonFile(rewardData, filePath);
+	}
+
+	var after = getAutoDailyQuestSnapshot(sender);
+	return {
+		message: buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages)
 	};
 }
 

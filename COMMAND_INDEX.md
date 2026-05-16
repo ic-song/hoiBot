@@ -1052,6 +1052,59 @@ Status: VERIFIED
 
 ---
 
+# /자동일퀘
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:14670`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runAutoDailyQuest`
+- `runAutoDailyInternalCommand`
+- `runAutoDailyQuestCommands`
+- `buildAutoDailyQuestMessage`
+- `getDailyQuestStatus`
+- `claimQuestReward`
+
+## Data Usage
+
+- `data.member[sender].bag["자동일퀘권📝"]`
+- `data.member[sender].towerCnt`
+- `data.member[sender].battle`
+- `petData[sender].miniPetBattle`
+- `trialTower.user[sender]`
+- `petExploreData.record[sender]`
+
+## Save Flow
+
+- Creates member, pet, and pet-skill backup snapshots before automated mutation
+- Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
+- Reloads data after automated runs and saves member data when daily/weekly quest reward is claimed
+
+## Related Commands
+
+- `/시련의탑`
+- `/캐슬대전`
+- `/미니펫대전`
+- `/퀘스트`
+- `/퀘스트완료`
+
+## AI Notes
+
+- Triggers: `/자동일퀘`, `ㅇㅋ`, `ㅇㅋㅋ`
+- Requires `자동일퀘권📝` in the user bag
+- Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
+- Internal command execution is excluded from rapid request monitoring and command backup duplication
+
+---
+
 # /펫스킬가방
 
 Status: VERIFIED
