@@ -47,6 +47,7 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - `boardPath`: public letter board, runtime path `/sdcard/호이랜드/board.json`, repo snapshot `data/board.json`
 - `carrotBoardPath`: carrot market board, runtime path `/sdcard/호이랜드/carrotBoard.json`, repo snapshot `data/carrotBoard.json`
 - `freeMarketPath`: free-market listing/log data, runtime path `/sdcard/호이랜드/freeMarket.json`, repo snapshot `data/freeMarket.json`
+- `hoiBotChangeLogPath`: bot change-log data, runtime path `/sdcard/호이랜드/hoiBotChangeLog.json`, repo snapshot `data/hoiBotChangeLog.json`
 - `miniPetCollectionPath`: mini-pet collection data, runtime path `/sdcard/호이랜드/miniPet_collection.json`, repo snapshot `data/miniPet_collection.json`
 
 ## Runtime / Save-Flow Hotspots
@@ -1052,6 +1053,44 @@ Status: VERIFIED
 
 ---
 
+# /호이봇버전, /수정내용
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:3939`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `buildHoiBotChangeLogMessage`
+
+## Data Usage
+
+- `hoiBotChangeLogPath`
+
+## Save Flow
+
+- `/수정내용` reads `hoiBotChangeLogPath`
+- Read-only; no save
+
+## Related Commands
+
+- `/호이봇버전`
+- `/수정내용`
+
+## AI Notes
+
+- `/호이봇버전` replies with `ver_` + `HoiBotVersion`
+- `/수정내용` is admin/master-only and shows the manually maintained `data/hoiBotChangeLog.json`
+- `HoiBotVersion` should be increased by `0.001` whenever source changes are intentionally reflected
+
+---
+
 # /자동일퀘
 
 Status: VERIFIED
@@ -1150,6 +1189,7 @@ Status: VERIFIED
 
 - Master-only test helper for setting daily quest counters in one command
 - Usage: `/일퀘횟수수정 유저명 시탑 캐대전 미대전 펫탐험 [일일보상횟수]`
+- The outer command guard accepts `/일퀘횟수수정` and spaced arguments, then `editDailyQuestCountsForTest` returns usage/validation errors
 - Count values must be 0~10
 - Castle `battle.ticket` is normalized to `min(캐대전, 3)` so test state matches free-battle usage
 
@@ -3197,7 +3237,7 @@ Status: VERIFIED
 - Sale fee is 10%, paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
-- Free-market quantity limit is additive: base 1 + `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so both together allow 10 active registered items
+- Free-market quantity limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 and both active bonuses allow 10 active registered items
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
 - Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, and `/스킬거래등록` input now replies with the exact numeric-index registration usage guide
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists
