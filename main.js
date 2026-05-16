@@ -2322,7 +2322,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var senderTierForSkill = data.member[sender].rank.tier;
-					if (!isTierMasterOrAbove(senderTierForSkill)) {
+					if (!isTierKing(senderTierForSkill)) {
 						replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 당근 거래는 티어 👑킹 이상부터 가능합니다.");
 						return;
 					}
@@ -3401,7 +3401,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var senderTier = data.member[sender].rank.tier;
-					if (!isTierMasterOrAbove(senderTier)) {
+					if (!isTierKing(senderTier)) {
 						replier.reply("❌[" + checkRank(data, petData, guildData, sender) + ']님 당근 거래는 티어 👑킹 이상부터 가능합니다.\n채팅창에 "티어 컨텐츠"를 입력해보세요.');
 						return;
 					}
@@ -3476,7 +3476,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 중간 = 닉네임
 					let receiver = args.slice(1, args.length - 1).join(" ");
 					var senderTier = data.member[sender].rank.tier;
-					if (!isTierMasterOrAbove(senderTier)) {
+					if (!isTierKing(senderTier)) {
 						replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 당근 거래는 티어 👑킹 이상부터 가능합니다.");
 						return;
 					}
@@ -3558,7 +3558,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let receiver = args.slice(1, args.length - 1).join(" "); // 받는사람
 					// 티어 확인 (킹 이상)
 					var senderTier = data.member[sender].rank.tier;
-					if (!isTierMasterOrAbove(senderTier)) {
+					if (!isTierKing(senderTier)) {
 						replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님, 가구 거래는 티어 👑킹 이상부터 가능합니다.");
 						return;
 					}
@@ -16571,7 +16571,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var totalRequiredPoint = roundToTwo(transferAmount + transferFee);
 
 					var senderTier = data.member[sender].rank.tier;
-					if (!isTierMasterOrAbove(senderTier)) {
+					if (!isTierKing(senderTier)) {
 						replier.reply("❌[" + senderRankText + "]님 포인트 이체는\n" + "👑킹 이상부터 가능합니다.\n" + '채팅창에 "티어 컨텐츠"를 입력해보세요.');
 						return;
 					}
@@ -31265,7 +31265,7 @@ function isFreeMarketRegisterCommand(msg) {
 
 function canRegisterFreeMarketByTier(data, user) {
 	var tier = data && data.member && data.member[user] && data.member[user].rank ? data.member[user].rank.tier : "";
-	return isTierMasterOrAbove(tier);
+	return isTierKing(tier);
 }
 
 function hasFreeMarketMerchantSkill(petSkillData, user) {
@@ -31907,11 +31907,12 @@ function isTradableItem(itemName) {
 	return true;
 }
 
-// 티어가 마스터 이상인지 확인하는 함수 (당근거래)
-function isTierMasterOrAbove(tier) {
+// 티어가 킹 이상인지 확인하는 함수 (당근거래/자유시장 등록)
+function isTierKing(tier) {
 	const rankOrder = Object.keys(ticketTierData);
 	return rankOrder.indexOf(tier) >= rankOrder.indexOf("킹");
 }
+
 // 당근온도순위 생성 함수
 function generateThermoRanking(data) {
 	let members = data.member;
