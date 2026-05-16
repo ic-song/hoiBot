@@ -30331,9 +30331,8 @@ function handlePackageAddFlowMessage(sender, msg, packageInfoData) {
 	if (text === "취소") return { ok: true, message: cancelPackageAddFlow(sender) };
 
 	if (state.step === "NAME") {
-		var packageInfoDataForName = packageInfoData; // 이름 중복 확인용 패키지 목록
-		for (var n = 0; n < packageInfoDataForName.length; n++) {
-			if (packageInfoDataForName[n] && packageInfoDataForName[n].name === text) {
+		for (var n = 0; n < packageInfoData.length; n++) {
+			if (packageInfoData[n] && packageInfoData[n].name === text) {
 				return { ok: false, message: "❌ 같은 패키지명이 이미 등록되어 있습니다." };
 			}
 		}
