@@ -14720,9 +14720,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/패키지초기화") {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoDataForInit = loadJsonFile(packageInfoPath); // 초기화 전 패키지 정보 데이터
-					var packageLogDataForInit = loadJsonFile(packageLogPath); // 초기화 전 패키지 로그 데이터
-					var packageInitResult = buildPackageInitResult(packageInfoDataForInit, packageLogDataForInit);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 초기화 전 패키지 정보 데이터
+					var packageLogData = loadJsonFile(packageLogPath); // 초기화 전 패키지 로그 데이터
+					var packageInitResult = buildPackageInitResult(packageInfoData, packageLogData);
 					if (packageInitResult.packageInfoData) saveJsonFile(packageInitResult.packageInfoData, packageInfoPath);
 					if (packageInitResult.packageLogData) saveJsonFile(packageInitResult.packageLogData, packageLogPath);
 					replier.reply(packageInitResult.message);
@@ -14731,8 +14731,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/패키지리스트") {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoList = ensurePackageInfoData(loadJsonFile(packageInfoPath));
-					replier.reply(buildPackageListMessage(packageInfoList));
+					var packageInfoData = loadJsonFile(packageInfoPath); // 패키지 정보 데이터
+					replier.reply(buildPackageListMessage(packageInfoData));
 					return;
 				}
 
@@ -14756,8 +14756,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (userState[sender] && userState[sender].packageAdd && !isPackageAddStartCommand(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageFlowInfoData = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 단계형 추가 중복 확인용 패키지 목록
-					var packageFlowResult = handlePackageAddFlowMessage(sender, msg, packageFlowInfoData);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 단계형 추가 중복 확인용 패키지 목록
+					var packageFlowResult = handlePackageAddFlowMessage(sender, msg, packageInfoData);
 					if (packageFlowResult.ok && packageFlowResult.packageInfoData) saveJsonFile(packageFlowResult.packageInfoData, packageInfoPath);
 					replier.reply(packageFlowResult.message);
 					return;
@@ -14771,8 +14771,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (/^\/패키지추가\s+.+\|.+\|.+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoDataForAdd = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 빠른 추가용 패키지 목록
-					var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoDataForAdd);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 빠른 추가용 패키지 목록
+					var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData);
 					if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
 					replier.reply(packageAddResult.message);
 					return;
@@ -14780,8 +14780,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (/^\/패키지제거\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoDataForDisable = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 비활성화 대상 패키지 목록
-					var packageDisableResult = setPackageEnabledByCommand(sender, msg, false, packageInfoDataForDisable);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 비활성화 대상 패키지 목록
+					var packageDisableResult = setPackageEnabledByCommand(sender, msg, false, packageInfoData);
 					if (packageDisableResult.ok) saveJsonFile(packageDisableResult.packageInfoData, packageInfoPath);
 					replier.reply(packageDisableResult.message);
 					return;
@@ -14789,8 +14789,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (/^\/패키지활성\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoDataForEnable = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 활성화 대상 패키지 목록
-					var packageEnableResult = setPackageEnabledByCommand(sender, msg, true, packageInfoDataForEnable);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 활성화 대상 패키지 목록
+					var packageEnableResult = setPackageEnabledByCommand(sender, msg, true, packageInfoData);
 					if (packageEnableResult.ok) saveJsonFile(packageEnableResult.packageInfoData, packageInfoPath);
 					replier.reply(packageEnableResult.message);
 					return;
@@ -14798,9 +14798,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (/^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoDataForGrant = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 지급 가능한 패키지 목록
-					var packageLogDataForGrant = ensurePackageLogData(loadJsonFile(packageLogPath)); // 지급 로그 데이터
-					var packageGrantResult = grantPackageToUser(data, sender, msg, packageInfoDataForGrant, packageLogDataForGrant);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 지급 가능한 패키지 목록
+					var packageLogData = ensurePackageLogData(loadJsonFile(packageLogPath)); // 지급 로그 데이터
+					var packageGrantResult = grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
 					if (packageGrantResult.ok) {
 						saveJsonFile(data, filePath);
 						saveJsonFile(packageGrantResult.packageLogData, packageLogPath);
@@ -14811,16 +14811,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/패키지가방") {
 					if (!data.member || !data.member[sender]) return;
-					var packageBagInfoList = ensurePackageInfoData(loadJsonFile(packageInfoPath));
-					replier.reply(buildUserPackageBagMessage(data, petData, guildData, sender, packageBagInfoList));
+					var packageInfoData = loadJsonFile(packageInfoPath); // 패키지가방 필터링용 패키지 목록
+					replier.reply(buildUserPackageBagMessage(data, petData, guildData, sender, packageInfoData));
 					return;
 				}
 
 				if (msg === "/패키지사용" || /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg)) {
 					if (!data.member || !data.member[sender]) return;
-					var packageInfoDataForUse = ensurePackageInfoData(loadJsonFile(packageInfoPath)); // 사용 가능한 패키지 목록
-					var packageLogDataForUse = ensurePackageLogData(loadJsonFile(packageLogPath)); // 사용 로그 데이터
-					var packageUseResult = usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDataForUse, packageLogDataForUse);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 사용 가능한 패키지 목록
+					var packageLogData = ensurePackageLogData(loadJsonFile(packageLogPath)); // 사용 로그 데이터
+					var packageUseResult = usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData);
 					if (packageUseResult.ok) {
 						saveJsonFile(data, filePath);
 						saveJsonFile(packageUseResult.packageLogData, packageLogPath);
@@ -30038,12 +30038,6 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
 	};
 }
 
-// 패키지 정보 데이터 기본 구조 반환 함수
-function ensurePackageInfoData(packageInfoData) {
-	if (!(packageInfoData instanceof Array)) return [];
-	return packageInfoData;
-}
-
 // 기본 패키지 정보 초기 데이터 복사본 생성 함수
 function getDefaultPackageInfoData() {
 	return JSON.parse(JSON.stringify(DEFAULT_PACKAGE_INFO_DATA));
@@ -30337,7 +30331,7 @@ function handlePackageAddFlowMessage(sender, msg, packageInfoData) {
 	if (text === "취소") return { ok: true, message: cancelPackageAddFlow(sender) };
 
 	if (state.step === "NAME") {
-		var packageInfoDataForName = ensurePackageInfoData(packageInfoData); // 이름 중복 확인용 패키지 목록
+		var packageInfoDataForName = packageInfoData; // 이름 중복 확인용 패키지 목록
 		for (var n = 0; n < packageInfoDataForName.length; n++) {
 			if (packageInfoDataForName[n] && packageInfoDataForName[n].name === text) {
 				return { ok: false, message: "❌ 같은 패키지명이 이미 등록되어 있습니다." };
@@ -30403,7 +30397,6 @@ function handlePackageAddFlowMessage(sender, msg, packageInfoData) {
 
 	if (state.step === "CONFIRM") {
 		if (text === "등록") {
-			packageInfoData = ensurePackageInfoData(packageInfoData); // 등록 직전 최신 패키지 목록
 			for (var i = 0; i < packageInfoData.length; i++) {
 				if (packageInfoData[i] && packageInfoData[i].name === state.name) {
 					return { ok: false, message: "❌ 같은 패키지명이 이미 등록되어 있습니다." };
@@ -30497,7 +30490,6 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
 	if (!packageName || !desc) return { ok: false, message: "❌ 패키지명, 설명은 비울 수 없습니다." };
 	if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
 
-	packageInfoData = ensurePackageInfoData(packageInfoData); // 기존 패키지 정보 목록
 	for (var i = 0; i < packageInfoData.length; i++) {
 		var exists = packageInfoData[i]; // 중복 확인 대상 패키지
 		if (exists && getPackageBagItemName(exists) === packageName) {
@@ -30532,7 +30524,6 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
 function setPackageEnabledByCommand(sender, msg, enabled, packageInfoData) {
 	var parts = String(msg || "").trim().split(/\s+/); // /패키지제거 번호 또는 /패키지활성 번호
 	var listNumber = parseInt(parts[1], 10); // 패키지리스트 번호
-	packageInfoData = ensurePackageInfoData(packageInfoData); // 패키지 정보 목록
 	var packageInfo = getPackageByListNumber(packageInfoData, listNumber); // 상태 변경 대상 패키지
 	if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
 	packageInfo.enabled = !!enabled;
@@ -30597,7 +30588,6 @@ function grantPackageToUser(data, sender, msg, packageInfoData, packageLogData) 
 	if (!parsed) return { ok: false, message: "❌ 사용법: /패키지지급 이름 리스트번호 갯수" };
 	if (parsed.count < 1 || parsed.count > 10000) return { ok: false, message: "❌ 지급 수량은 1 이상 10000 이하만 가능합니다." };
 
-	packageInfoData = ensurePackageInfoData(packageInfoData); // 지급 가능한 패키지 목록
 	var packageInfo = getPackageByListNumber(packageInfoData, parsed.listNumber); // 지급 대상 패키지 정보
 	var packageBagItemName = getPackageBagItemName(packageInfo); // member bag에 저장할 패키지명
 	if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
@@ -30683,7 +30673,6 @@ function applyPackageRewards(data, user, packageInfo, useCount) {
 function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData) {
 	var parsed = parsePackageUseCommand(msg); // 사용 명령어 파싱 결과
 	if (!parsed) return { ok: false, message: "❌ 사용법: /패키지사용 가방번호 갯수" };
-	packageInfoData = ensurePackageInfoData(packageInfoData); // 패키지 정보 목록
 	var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저 패키지가방 목록
 	if (packageBagList.length < 1) return { ok: false, message: "❌ 보유한 패키지가 없습니다." };
 	if (parsed.bagNumber < 1 || parsed.bagNumber > packageBagList.length) return { ok: false, message: "❌ 패키지가방 번호가 올바르지 않습니다." };

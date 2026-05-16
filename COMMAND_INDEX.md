@@ -1121,7 +1121,6 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `ensurePackageInfoData`
 - `ensurePackageLogData`
 - `buildPackageInitResult`
 - `getDefaultPackageInfoData`
@@ -1169,6 +1168,7 @@ Status: VERIFIED
 - Package name is also the bag item name; package data no longer needs a separate `itemName`
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
 - Default package data is initialized by `/패키지초기화`; package helpers receive loaded data and do not perform file IO
+- `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
