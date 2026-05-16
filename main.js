@@ -14722,7 +14722,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (msg === "/자동일퀘" || msg === "ㅇㅋ" || msg === "ㅇㅋㅋ") {
+				if (msg === "/자동일퀘" || msg === "ㅇㅋㅋ") {
 					if (castleSiegeFlag) return;
 					if (!data.member || !data.member[sender]) return;
 					var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
@@ -29842,7 +29842,7 @@ function editDailyQuestCountsForTest(data, petData, sender, msg) {
 	lines.push("펫탐험⛰️: " + exploreCnt + "/10");
 	if (dailyRewardCnt !== null) lines.push("일일보상횟수: " + dailyRewardCnt);
 	lines.push("");
-	lines.push("테스트 예시: /자동일퀘 또는 ㅇㅋ");
+	lines.push("테스트 예시: /자동일퀘 또는 ㅇㅋㅋ");
 	return { ok: true, message: lines.join("\n") };
 }
 
@@ -30091,7 +30091,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
 			}
 		}
 		if (autoTargetsComplete && status.exploreUsed < status.exploreMax) {
-			lines.push("펫탐험 10/10 완료 후 /자동일퀘 또는 ㅇㅋ 재입력 시 보상 수령 가능");
+			lines.push("펫탐험 10/10 완료 후 /자동일퀘 또는 ㅇㅋㅋ 재입력 시 보상 수령 가능");
 		}
 	}
 	if (capturedMessages && capturedMessages.length > 0 && !progressed && !(rewardResult && rewardResult.claimed)) {
@@ -32403,12 +32403,37 @@ function hasFreeMarketMerchantSkill(petSkillData, user) {
 }
 
 function getFreeMarketRegisterLimit(data, petSkillData, user) {
-	var hasTicket = hasItem(data, user, FREE_MARKET_MEMBER_TICKET_ITEM, 1);
+	var hasTicket = hasFreeMarketMemberTicket(data, user);
 	var hasMerchant = hasFreeMarketMerchantSkill(petSkillData, user);
 	var limit = 1;
 	if (hasMerchant) limit += 2;
 	if (hasTicket) limit += 7;
 	return limit;
+}
+
+// 자유시장회원권 보유 여부를 가방 키 정규화 기준으로 확인하는 함수
+function hasFreeMarketMemberTicket(data, user) {
+	return getFreeMarketMemberTicketCount(data, user) > 0;
+}
+
+// 자유시장회원권 수량을 가방 키 변형까지 포함해 계산하는 함수
+function getFreeMarketMemberTicketCount(data, user) {
+	if (!data.member[user] || !data.member[user].bag) return 0;
+	var bag = data.member[user].bag;
+	var count = 0;
+	for (var itemName in bag) {
+		if (!bag.hasOwnProperty(itemName)) continue;
+		if (normalizeFreeMarketMemberTicketName(itemName) === FREE_MARKET_MEMBER_TICKET_ITEM) {
+			count += parseInt(bag[itemName], 10) || 0;
+		}
+	}
+	return count;
+}
+
+// 자유시장회원권 아이템명을 비교 가능한 형태로 정규화하는 함수
+function normalizeFreeMarketMemberTicketName(itemName) {
+	var normalized = String(itemName || "").replace(/\([^)]*\)/g, "").replace(/\s+/g, "");
+	return normalized === FREE_MARKET_MEMBER_TICKET_ITEM ? FREE_MARKET_MEMBER_TICKET_ITEM : normalized;
 }
 
 function buildFreeMarketRegisterUsageMessage() {
