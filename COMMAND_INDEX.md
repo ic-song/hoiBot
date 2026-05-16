@@ -3144,7 +3144,7 @@ Status: VERIFIED
 - Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
 - Registration fees consume `🥕당근이세요?` immediately and are not refunded on cancel/force-cancel
-- Sale fee is 10%, paid by the seller from proceeds and recorded through `addHappyFoundationFee`
+- Sale fee is 10%, paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market listing limit is additive: base 1 + `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so both together allow 10 listings
