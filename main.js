@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.11"; // 테스트~~
+const HoiBotVersion = "2.115"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17,6 +17,28 @@ function getUserRequestWindowSeconds() {
 
 function getUserRequestBlockMessage() {
 	return "님의 요청이 " + getUserRequestWindowSeconds() + "초 내 " + USER_REQUEST_LIMIT + "회 감지되어 잠시 차단되었습니다.";
+}
+
+// 호이봇 수정 이력 안내 메시지 생성 함수
+function buildHoiBotChangeLogMessage(changeLogData) {
+	let lines = [];
+	let entries = changeLogData.entries;
+	lines.push("🛠 호이봇 수정내용");
+	lines.push("현재 버전: ver_" + HoiBotVersion);
+	lines.push("━━━━━━━━━━━━");
+
+	for (let i = 0; i < entries.length; i++) {
+		let entry = entries[i];
+		lines.push("ver_" + entry.version + " (" + entry.date + ")");
+		for (let j = 0; j < entry.changes.length; j++) {
+			lines.push("- " + entry.changes[j]);
+		}
+		if (i < entries.length - 1) {
+			lines.push("");
+		}
+	}
+
+	return lines.join("\n");
 }
 
 function isExcludedRequestMonitoring(room, msg) {
@@ -1070,6 +1092,7 @@ const homeInfoFile = "/sdcard/호이랜드/petSweetHomeInfo.json"; // 펫스윗�
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
+const hoiBotChangeLogPath = "/sdcard/호이랜드/hoiBotChangeLog.json"; // 호이봇 수정 이력
 const freeMarketPath = "/sdcard/호이랜드/freeMarket.json"; // 자유시장 데이터
 const packageInfoPath = "/sdcard/호이랜드/packageInfo.json"; // 패키지 정보 데이터
 const packageLogPath = "/sdcard/호이랜드/packageLog.json"; // 패키지 지급/사용 로그 데이터
@@ -1131,6 +1154,7 @@ var COMMON_DATA_FILE_MAP = {
 	"miniPetCollectionInfo.json": true,
 	"trialTowerBoss.json": true,
 	"eventTowerBoss.json": true,
+	"hoiBotChangeLog.json": true,
 	"petSweetHomeInfo.json": true
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
@@ -3074,7 +3098,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
-				if (/^\/일퀘횟수수정\s+.+\s+\d+\s+\d+\s+\d+\s+\d+(?:\s+\d+)?$/.test(msg) && isMaster(sender)) {
+				if (/^\/일퀘횟수수정(?:\s+.*)?$/.test(msg) && isMaster(sender)) {
 					var dailyQuestEditResult = editDailyQuestCountsForTest(data, petData, sender, msg);
 					if (!dailyQuestEditResult.ok) {
 						replier.reply(dailyQuestEditResult.message);
@@ -3907,6 +3931,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/호이봇버전") {
 					replier.reply("ver_" + HoiBotVersion);
+				}
+				if (msg === "/수정내용") {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var hoiBotChangeLogData = loadJsonFile(hoiBotChangeLogPath);
+					if (!hoiBotChangeLogData || !Array.isArray(hoiBotChangeLogData.entries)) {
+						replier.reply("❌ 수정내용 파일을 확인할 수 없습니다.\n" + resolveActiveDataPath(hoiBotChangeLogPath));
+						return;
+					}
+					replier.reply(buildHoiBotChangeLogMessage(hoiBotChangeLogData));
+					return;
 				}
 				if (!data.allowedUsers2) {
 					data.allowedUsers2 = ["호이 남"];
@@ -32396,15 +32430,9 @@ function canRegisterFreeMarketByTier(data, user) {
 	return isTierKing(tier);
 }
 
-function hasFreeMarketMerchantSkill(petSkillData, user) {
-	if (hasPetSkill(petSkillData, user, FREE_MARKET_MERCHANT_SKILL)) return true;
-	var skills = initPetSkillUser(petSkillData, user);
-	return (skills.bag[FREE_MARKET_MERCHANT_SKILL] || 0) > 0;
-}
-
 function getFreeMarketRegisterLimit(data, petSkillData, user) {
 	var hasTicket = hasFreeMarketMemberTicket(data, user);
-	var hasMerchant = hasFreeMarketMerchantSkill(petSkillData, user);
+	var hasMerchant = hasPetSkill(petSkillData, user, FREE_MARKET_MERCHANT_SKILL);
 	var limit = 1;
 	if (hasMerchant) limit += 2;
 	if (hasTicket) limit += 7;
