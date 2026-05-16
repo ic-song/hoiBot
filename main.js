@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.118"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.119"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -23,17 +23,19 @@ function getUserRequestBlockMessage() {
 function buildHoiBotChangeLogMessage(changeLogData) {
 	let lines = [];
 	let entries = changeLogData.entries;
+	let displayCount = Math.min(entries.length, 10); // 최근 수정 이력 표시 개수
 	lines.push("🛠 호이봇 수정내용");
 	lines.push("현재 버전: ver_" + HoiBotVersion);
 	lines.push("━━━━━━━━━━━━");
+	lines.push(allsee);
 
-	for (let i = 0; i < entries.length; i++) {
+	for (let i = 0; i < displayCount; i++) {
 		let entry = entries[i];
 		lines.push("ver_" + entry.version + " (" + entry.date + ")");
 		for (let j = 0; j < entry.changes.length; j++) {
 			lines.push("- " + entry.changes[j]);
 		}
-		if (i < entries.length - 1) {
+		if (i < displayCount - 1) {
 			lines.push("");
 		}
 	}

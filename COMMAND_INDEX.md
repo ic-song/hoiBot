@@ -1086,7 +1086,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `/호이봇버전` replies with `ver_` + `HoiBotVersion`
-- `/수정내용` is admin/master-only and shows the manually maintained `data/hoiBotChangeLog.json`
+- `/수정내용` is admin/master-only and shows the latest 10 entries from the manually maintained `data/hoiBotChangeLog.json` after an `allsee` fold marker
 - `HoiBotVersion` should be increased by `0.001` whenever source changes are intentionally reflected
 
 ---
