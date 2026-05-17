@@ -29987,7 +29987,10 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 		captured = captured.concat(messages);
 		var after = getAutoDailyQuestSnapshot(sender);
 		if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
+			var fallbackMessage = buildAutoDailyBlockedFallbackMessage(sender, command, before, usedKey, maxKey);
 			blockedMessage = getLastAutoDailyCapturedMessage(messages);
+			if (fallbackMessage) blockedMessage = fallbackMessage;
+			if (!blockedMessage) blockedMessage = "진행 횟수가 증가하지 않아 자동 진행이 중단되었습니다.";
 			break;
 		}
 	}
@@ -29995,6 +29998,32 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 		captured: captured,
 		blockedMessage: blockedMessage
 	};
+}
+
+// 자동일퀘 내부 실행 중단 사유가 비어 있을 때 보조 안내 메시지 생성 함수
+function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey, maxKey) {
+	var status = snapshot && snapshot.status ? snapshot.status : {};
+	var used = status[usedKey] || 0; // 현재 진행 횟수
+	var max = status[maxKey] || 0; // 목표 진행 횟수
+	var remain = Math.max(0, max - used); // 남은 일퀘 횟수
+	var data = snapshot && snapshot.data ? snapshot.data : {};
+	if (command === "/캐슬대전") {
+		var member = data.member && data.member[sender] ? data.member[sender] : null;
+		var bag = member && member.bag ? member.bag : {};
+		var castleTicket = parseInt(bag["캐슬대전리셋권🐶"], 10) || 0; // 보유 캐슬 리셋권
+		if (used >= castleTicketCnt && remain > castleTicket) {
+			return "캐슬대전리셋권🐶 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + castleTicket + "개";
+		}
+	}
+	if (command === "/미니펫대전") {
+		var miniMember = data.member && data.member[sender] ? data.member[sender] : null;
+		var miniBag = miniMember && miniMember.bag ? miniMember.bag : {};
+		var miniTicket = parseInt(miniBag["미니펫대전리셋권🐹"], 10) || 0; // 보유 미니펫 리셋권
+		if (used >= 3 && remain > miniTicket) {
+			return "미니펫대전리셋권🐹 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + miniTicket + "개";
+		}
+	}
+	return "";
 }
 
 // 자동일퀘 내부 실행 중 마지막 안내 메시지를 반환하는 함수
