@@ -9,6 +9,14 @@ const CRIT_CHANCE_PER_UPGRADE = 0.005; // 1강당 크리티컬 확률 0.5% 증�
 const PET_SKILL_MAX_EQUIP_SLOT = 20;
 const PET_SKILL_BOOK_ITEM = "펫스킬북📙(/펫스킬오픈)";
 const PET_SKILL_UNBIND_ITEM = "펫스킬귀속해제권🧙‍♂️(/펫스킬귀속해제 숫자)";
+const DAILY_CONTENT_LIMITS = {
+	trialTowerMax: 5, // 시련의탑 하루 최대 횟수
+	castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
+	castleBattleFree: 1, // 캐슬대전 무료 횟수
+	miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
+	miniPetBattleFree: 1, // 미니펫대전 무료 횟수
+	petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
+};
 //랭크.txt 로드, 오류로그 세이브용
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 const DATA_ROOT_PATH = "/sdcard/호이랜드/";
@@ -933,13 +941,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 			// 기록: 시련탑(요구사항: 5)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-			var towerMax = 5;
+			var towerMax = DAILY_CONTENT_LIMITS.trialTowerMax;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
 			// 기록: 캐슬대전(요구사항: 5)
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
-			var castleMax = 5;
+			var castleMax = DAILY_CONTENT_LIMITS.castleBattleMax;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
@@ -950,7 +958,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var miniTotal = miniWin + miniLose;
 			var miniRate = miniTotal > 0 ? ((miniWin / miniTotal) * 100).toFixed(2) : "0.00";
 			var miniUsed = miniBattle.count || 0;
-			var miniMax = 5;
+			var miniMax = DAILY_CONTENT_LIMITS.miniPetBattleMax;
 
 			// 기록: 레이드(요구사항: 5)
 			var raidUsed = petData[sender] && petData[sender].raidItemCount ? petData[sender].raidItemCount : 0;
@@ -1003,7 +1011,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				getC(miniUsed >= miniMax) +
 				"]" +
 				"[⛰️" +
-				getC(exploreCount >= 10) +
+				getC(exploreCount >= DAILY_CONTENT_LIMITS.petExploreMax) +
 				"]" +
 				"\n" +
 				dailyQuestRewardMsg +
@@ -2051,15 +2059,15 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
 	var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-	var towerMax = 5;
+	var towerMax = DAILY_CONTENT_LIMITS.trialTowerMax;
 
 	var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 	var castleUsed = battleObj ? battleObj.count || 0 : 0;
-	var castleMax = 5;
+	var castleMax = DAILY_CONTENT_LIMITS.castleBattleMax;
 
 	var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 	var miniUsed = miniBattle.count || 0;
-	var miniMax = 5;
+	var miniMax = DAILY_CONTENT_LIMITS.miniPetBattleMax;
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
@@ -2067,7 +2075,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	var win = typeof rec.win === "number" ? rec.win : 0;
 	var lose = typeof rec.lose === "number" ? rec.lose : 0;
 	var exploreUsed = data.member[sender] && typeof data.member[sender].exploreCnt === "number" ? data.member[sender].exploreCnt : 0;
-	var exploreMax = 10;
+	var exploreMax = DAILY_CONTENT_LIMITS.petExploreMax;
 
 	var rankInfo = getPetExploreRank(data, petExploreData, sender);
 	var rankText = rankInfo ? rankInfo.rank + "등" : "순위없음";
@@ -2114,74 +2122,6 @@ function getCurrentDate() {
 	day = day < 10 ? "0" + day : day;
 	return year + "" + month + "" + day;
 }
-//////주사위관련함수///////////////////////////////////////////////
-// function calculateUserRankings(data) {
-//   var userRankings = [];
-//   var userNames = Object.keys(data.member);
-//   for (var i = 0; i < userNames.length; i++) {
-//     var WinCnt = data.member[userNames[i]].bet.WinCnt;
-//     var DiceCnt = data.member[userNames[i]].bet.DiceCnt;
-//     var TotalWin = parseInt(data.member[userNames[i]].bet.TotalWin);
-//     var TotalBet = parseInt(data.member[userNames[i]].bet.TotalBet);
-//     var xresultR = TotalWin - TotalBet;
-//     userRankings.push({
-//       username: userNames[i],
-//       xresultR: xresultR
-//     });
-//   }
-//   // 유저 수익순으로 순서변경
-//   userRankings.sort(function (a, b) {
-//     return b.xresultR - a.xresultR;
-//   });
-//   return userRankings;
-// }
-// function calculateUserRankings2(data) {
-//   var userRankings2 = [];
-//   var userNames = Object.keys(data.member);
-//   for (var i = 0; i < userNames.length; i++) {
-//     var WinCnt = data.member[userNames[i]].bet.WinCnt;
-//     var DiceCnt = data.member[userNames[i]].bet.DiceCnt;
-//     var TotalWin = data.member[userNames[i]].bet.TotalWin;
-//     var TotalBet = data.member[userNames[i]].bet.TotalBet;
-
-//     // TotalBet이 0인 경우 예외 처리
-//     var xresultR = parseInt(TotalWin) - parseInt(TotalBet);
-//     var IncomeRate = TotalBet !== 0 ? (xresultR / parseInt(TotalBet)) * 100 : 0;
-
-//     if (WinCnt > 49) {
-//       userRankings2.push({
-//         username: userNames[i],
-//         IncomeRate: IncomeRate
-//       });
-//     }
-//   }
-//   // IncomeRate 값을 기준으로 사용자 랭킹 정렬
-//   userRankings2.sort(function (a, b) {
-//     return b.IncomeRate - a.IncomeRate;
-//   });
-//   return userRankings2;
-// }
-
-// function Ranker(data) {
-//   var topRanker = [];
-//   var userRankings2 = [];
-//   var userNames = Object.keys(data.member);
-//   for (var i = 0; i < userNames.length; i++) {
-//     var WinCnt = data.member[userNames[i]].bet.WinCnt;
-//     var DiceCnt = data.member[userNames[i]].bet.DiceCnt;
-//     var winrate = (WinCnt / DiceCnt) * 100;
-//     winrate = winrate.toFixed(2);
-//     topRanker.push({
-//       username: userNames[i],
-//       winrate: winrate,
-//       Count: DiceCnt
-//     });
-//   }
-//   topRanker.sort(function (a, b) {
-//     return b.winrate - a.winrate;
-//   });
-//   return topRanker;
-// }
 function checkFee(data, user) {
 	var tierName = data.member[user].rank.tier || "새싹";
 	var tierData = ticketTierData[tierName] || ticketTierData["새싹"];

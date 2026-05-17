@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.123"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.125"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1182,9 +1182,15 @@ function isMaster(sender) {
 var attendBonusPoint = 1000000;
 var attendBonusExp = 100;
 var lvlpoint = 1200000;
-//미니펫대전
-const miniPetBattleCnt = 10; // 하루 최대 10회
-const MINI_PET_BATTLE_FREE_CNT = 1; // 미니펫대전 무료 횟수
+// 일일 전투/탑/탐험 진행 기준
+const DAILY_CONTENT_LIMITS = {
+	trialTowerMax: 5, // 시련의탑 하루 최대 횟수
+	castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
+	castleBattleFree: 1, // 캐슬대전 무료 횟수
+	miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
+	miniPetBattleFree: 1, // 미니펫대전 무료 횟수
+	petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
+};
 // 펫탐험
 let exploreInterval = false;
 
@@ -1227,8 +1233,6 @@ const petTypes3 = [
 		emojis: ["🧜‍♂️", "🧜‍♀️", "🧜", "🐳"]
 	}
 ];
-
-const castleTicketCnt = 1; // 캐슬대전 무료 횟수
 
 const itemInfoData = loadJsonFile(itemInfoPath);
 const miniPetCollectionInfo = loadJsonFile(miniPetCollectionInfoPath);
@@ -17134,7 +17138,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 
 				if (msg === "/캐슬대전") {
-					let joinMaxCnt = 9; // 최대 참여 횟수
+					let joinMaxCnt = DAILY_CONTENT_LIMITS.castleBattleMax; // 최대 참여 횟수
 					var castleBattleData = loadJsonFile(castleBattlePath);
 					if (!castleBattleData.flag) {
 						replier.reply("현재 캐슬대전시즌이 아닙니다.");
@@ -17149,8 +17153,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					ensureCastleBattleRecord(data, sender);
-					if (data.member[sender].battle.count > joinMaxCnt) {
-						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n캐대리🐶는 하루에 10회만 가능합니다.");
+					if (data.member[sender].battle.count >= joinMaxCnt) {
+						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n캐대리🐶는 하루에 " + DAILY_CONTENT_LIMITS.castleBattleMax + "회만 가능합니다.");
 						return;
 					}
 					let myTier;
@@ -17257,7 +17261,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					let resetTicketName = "캐슬대전리셋권🐶";
 					let resetTicketFlag = false;
-					if (data.member[sender].battle.ticket >= castleTicketCnt) {
+					if (data.member[sender].battle.ticket >= DAILY_CONTENT_LIMITS.castleBattleFree) {
 						if (data.member[sender].bag[resetTicketName] > 0) {
 							data.member[sender].bag[resetTicketName]--;
 							data.member[sender].battle.ticket--;
@@ -17266,7 +17270,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 							resetTicketFlag = true;
 						} else {
-							replier.reply("오늘 무료대전 " + castleTicketCnt + "회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 10회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/340");
+							replier.reply("오늘 무료대전 " + DAILY_CONTENT_LIMITS.castleBattleFree + "회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 " + DAILY_CONTENT_LIMITS.castleBattleMax + "회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/340");
 							return;
 						}
 					}
@@ -17401,7 +17405,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					result +=
 						"(남은 대전횟수: " +
 						(isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) +
-						"/10)" +
+						"/" + DAILY_CONTENT_LIMITS.castleBattleMax + ")" +
 						" (잔여 :" +
 						(data.member[sender].bag[resetTicketName] || 0) +
 						"개)" +
@@ -17989,7 +17993,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					let userRank = "[" + checkRank(data, petData, guildData, sender) + "]";
 					let resetItemName = "미니펫대전리셋권🐹";
-					let joinMaxCnt = MINI_PET_BATTLE_FREE_CNT; // 기본 무료 횟수
+					let joinMaxCnt = DAILY_CONTENT_LIMITS.miniPetBattleFree; // 기본 무료 횟수
 					// 미니펫 장착 확인
 					if (!petData[sender] || !petData[sender].miniPet) {
 						replier.reply("❌ " + userRank + "님\n미니펫을 장착 중이어야 대전을 진행할 수 있습니다.");
@@ -18005,8 +18009,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					if (petData[sender].miniPetBattle.count >= joinMaxCnt) {
 						if (hasItem(data, sender, resetItemName, 1)) {
-							if (petData[sender].miniPetBattle.count >= miniPetBattleCnt) {
-								replier.reply("❌ " + userRank + "님 오늘 대전 최대 가능 횟수(" + miniPetBattleCnt + "회)를 초과했습니다.");
+							if (petData[sender].miniPetBattle.count >= DAILY_CONTENT_LIMITS.miniPetBattleMax) {
+								replier.reply("❌ " + userRank + "님 오늘 대전 최대 가능 횟수(" + DAILY_CONTENT_LIMITS.miniPetBattleMax + "회)를 초과했습니다.");
 								return;
 							}
 							removeItem(data, sender, resetItemName, 1);
@@ -18015,7 +18019,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							replier.reply(
 								"❌ " +
 								userRank +
-								"님\n오늘 무료대전 " + MINI_PET_BATTLE_FREE_CNT + "회를 모두 사용했습니다.\n미니펫대전리셋권🐹 소지시 최대 10회 가능합니다.\n\n미대리🐹 이 부족하신가요?\nhttps://hoiland123.tistory.com/309"
+								"님\n오늘 무료대전 " + DAILY_CONTENT_LIMITS.miniPetBattleFree + "회를 모두 사용했습니다.\n미니펫대전리셋권🐹 소지시 최대 " + DAILY_CONTENT_LIMITS.miniPetBattleMax + "회 가능합니다.\n\n미대리🐹 이 부족하신가요?\nhttps://hoiland123.tistory.com/309"
 							);
 							return;
 						}
@@ -18077,7 +18081,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let remain = petData[sender].miniPetBattle.count || 0;
 					let resetItemCount = (data.member[sender].bag && data.member[sender].bag[resetItemName]) || 0;
 					// 반환할 메시지
-					let resultMsg = "🐹미니펫 대전🐹\n" + "(남은 대전횟수: " + remain + "/" + miniPetBattleCnt + ") " + "(잔여: " + resetItemCount + "개)\n\n";
+					let resultMsg = "🐹미니펫 대전🐹\n" + "(남은 대전횟수: " + remain + "/" + DAILY_CONTENT_LIMITS.miniPetBattleMax + ") " + "(잔여: " + resetItemCount + "개)\n\n";
 					resultMsg += isWin ? "🏆대전결과🏆\n[승리✅] 경험치 " + finalExp + "(⤴️)\n" : "🏆대전결과🏆\n[패배❌] 경험치 " + finalExp + "(⤴️)\n";
 					resultMsg +=
 						"\n[" +
@@ -18832,7 +18836,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					let message = ""; // 리턴할 메시지
-					let maxEnter = 10; // 최대입장
+					let maxEnter = DAILY_CONTENT_LIMITS.trialTowerMax; // 최대입장
 					// 카운트가 없으면 0으로 초기화
 					if (!data.member[sender].towerCnt) {
 						data.member[sender].towerCnt = 0;
@@ -29744,15 +29748,15 @@ function getPetExploreRank(data, petExploreData, sender) {
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
 	var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-	var towerMax = 5;
+	var towerMax = DAILY_CONTENT_LIMITS.trialTowerMax;
 
 	var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 	var castleUsed = battleObj ? battleObj.count || 0 : 0;
-	var castleMax = 5;
+	var castleMax = DAILY_CONTENT_LIMITS.castleBattleMax;
 
 	var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 	var miniUsed = miniBattle.count || 0;
-	var miniMax = 5;
+	var miniMax = DAILY_CONTENT_LIMITS.miniPetBattleMax;
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
@@ -29760,7 +29764,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	var win = typeof rec.win === "number" ? rec.win : 0;
 	var lose = typeof rec.lose === "number" ? rec.lose : 0;
 	var exploreUsed = data.member[sender] && typeof data.member[sender].exploreCnt === "number" ? data.member[sender].exploreCnt : 0;
-	var exploreMax = 10;
+	var exploreMax = DAILY_CONTENT_LIMITS.petExploreMax;
 
 	var rankInfo = getPetExploreRank(data, petExploreData, sender);
 	var rankText = rankInfo ? rankInfo.rank + "등" : "순위없음";
@@ -29817,8 +29821,8 @@ function editDailyQuestCountsForTest(data, petData, sender, msg) {
 	if (!targetUser || !data.member || !data.member[targetUser]) {
 		return { ok: false, message: "❌ 존재하지 않는 유저입니다." };
 	}
-	if (!isValidDailyQuestCount(towerCnt) || !isValidDailyQuestCount(castleCnt) || !isValidDailyQuestCount(miniCnt) || !isValidDailyQuestCount(exploreCnt)) {
-		return { ok: false, message: "❌ 일퀘 카운트는 0~10 숫자로 입력해주세요." };
+	if (!isValidDailyQuestCount(towerCnt, DAILY_CONTENT_LIMITS.trialTowerMax) || !isValidDailyQuestCount(castleCnt, DAILY_CONTENT_LIMITS.castleBattleMax) || !isValidDailyQuestCount(miniCnt, DAILY_CONTENT_LIMITS.miniPetBattleMax) || !isValidDailyQuestCount(exploreCnt, DAILY_CONTENT_LIMITS.petExploreMax)) {
+		return { ok: false, message: "❌ 일퀘 카운트는 시탑/캐대전/미대전 0~5, 펫탐험 0~10 숫자로 입력해주세요." };
 	}
 	if (dailyRewardCnt !== null && (isNaN(dailyRewardCnt) || dailyRewardCnt < 0)) {
 		return { ok: false, message: "❌ 일일보상횟수는 0 이상의 숫자로 입력해주세요." };
@@ -29828,7 +29832,7 @@ function editDailyQuestCountsForTest(data, petData, sender, msg) {
 	if (!member.battle) member.battle = {};
 	member.towerCnt = towerCnt;
 	member.battle.count = castleCnt;
-	member.battle.ticket = Math.min(castleCnt, castleTicketCnt);
+	member.battle.ticket = Math.min(castleCnt, DAILY_CONTENT_LIMITS.castleBattleFree);
 	member.exploreCnt = exploreCnt;
 	if (dailyRewardCnt !== null) member.dailyQuestCnt = dailyRewardCnt;
 
@@ -29841,19 +29845,19 @@ function editDailyQuestCountsForTest(data, petData, sender, msg) {
 	var lines = [];
 	lines.push("✅ 일퀘횟수 수정 완료");
 	lines.push("대상: [" + checkRank(data, petData, null, targetUser) + "]");
-	lines.push("시련탑😈: " + towerCnt + "/5");
-	lines.push("캐대전🏆: " + castleCnt + "/5 (무료대전 사용: " + member.battle.ticket + "/" + castleTicketCnt + ")");
-	lines.push("미대전🐹: " + miniCnt + "/5");
-	lines.push("펫탐험⛰️: " + exploreCnt + "/10");
+	lines.push("시련탑😈: " + towerCnt + "/" + DAILY_CONTENT_LIMITS.trialTowerMax);
+	lines.push("캐대전🏆: " + castleCnt + "/" + DAILY_CONTENT_LIMITS.castleBattleMax + " (무료대전 사용: " + member.battle.ticket + "/" + DAILY_CONTENT_LIMITS.castleBattleFree + ")");
+	lines.push("미대전🐹: " + miniCnt + "/" + DAILY_CONTENT_LIMITS.miniPetBattleMax);
+	lines.push("펫탐험⛰️: " + exploreCnt + "/" + DAILY_CONTENT_LIMITS.petExploreMax);
 	if (dailyRewardCnt !== null) lines.push("일일보상횟수: " + dailyRewardCnt);
 	lines.push("");
 	lines.push("테스트 예시: /자동일퀘 또는 ㅇㅋㅋ");
 	return { ok: true, message: lines.join("\n") };
 }
 
-// 일퀘 테스트 카운트가 0~10 범위인지 확인하는 함수
-function isValidDailyQuestCount(count) {
-	return !isNaN(count) && count >= 0 && count <= 10;
+// 일퀘 테스트 카운트가 지정된 범위 안인지 확인하는 함수
+function isValidDailyQuestCount(count, max) {
+	return !isNaN(count) && count >= 0 && count <= max;
 }
 
 function claimQuestReward(data, petData, guildData, petSkillData, sender) {
@@ -30069,11 +30073,11 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 		if (!castleBattleData || !castleBattleData.flag) return "캐슬대전 시즌이 진행 중이 아니라 자동 진행이 중단되었습니다.";
 		if (!castlePet) return "펫이 없어 캐슬대전 자동 진행이 중단되었습니다.";
 		if ((parseInt(castlePet.petexp, 10) || 0) <= 499) return "펫 매력💕 500 미만이라 캐슬대전 자동 진행이 중단되었습니다.";
-		if (member && member.battle && (parseInt(member.battle.count, 10) || 0) > 9) return "캐슬대전 오늘 최대 가능 횟수(10회)에 도달했습니다.";
-		if (castleFreeUsed >= castleTicketCnt && castleTicket < 1) {
-			return "오늘 무료대전 " + castleTicketCnt + "회를 모두 사용했고 캐슬대전리셋권🐶이 없어 중단되었습니다. 현재 " + used + "/" + max;
+		if (member && member.battle && (parseInt(member.battle.count, 10) || 0) >= DAILY_CONTENT_LIMITS.castleBattleMax) return "캐슬대전 오늘 최대 가능 횟수(" + DAILY_CONTENT_LIMITS.castleBattleMax + "회)에 도달했습니다.";
+		if (castleFreeUsed >= DAILY_CONTENT_LIMITS.castleBattleFree && castleTicket < 1) {
+			return "오늘 무료대전 " + DAILY_CONTENT_LIMITS.castleBattleFree + "회를 모두 사용했고 캐슬대전리셋권🐶이 없어 중단되었습니다. 현재 " + used + "/" + max;
 		}
-		if (used >= castleTicketCnt && remain > castleTicket) {
+		if (used >= DAILY_CONTENT_LIMITS.castleBattleFree && remain > castleTicket) {
 			return "캐슬대전리셋권🐶 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + castleTicket + "개";
 		}
 	}
@@ -30086,8 +30090,8 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 		if (!miniPetUser || !miniPetUser.miniPet) return "미니펫을 장착하지 않아 미니펫대전 자동 진행이 중단되었습니다.";
 		if (!miniPetBag || miniPetBag.length < 5) return "미니펫가방이 5마리 미만이라 미니펫대전 자동 진행이 중단되었습니다.";
 		if (miniPetBag.length > 13) return "미니펫가방이 13마리 이상이라 미니펫대전 자동 진행이 중단되었습니다.";
-		if (used >= miniPetBattleCnt) return "미니펫대전 오늘 최대 가능 횟수(" + miniPetBattleCnt + "회)에 도달했습니다.";
-		if (used >= MINI_PET_BATTLE_FREE_CNT && remain > miniTicket) {
+		if (used >= DAILY_CONTENT_LIMITS.miniPetBattleMax) return "미니펫대전 오늘 최대 가능 횟수(" + DAILY_CONTENT_LIMITS.miniPetBattleMax + "회)에 도달했습니다.";
+		if (used >= DAILY_CONTENT_LIMITS.miniPetBattleFree && remain > miniTicket) {
 			return "미니펫대전리셋권🐹 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + miniTicket + "개";
 		}
 		var candidates = Object.keys(petData || {}).filter(function (user) {
@@ -35641,7 +35645,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	// out += "(기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + ";
 	// out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 특성" + p.traitP + "% = " + p.totalP + "%\n";
 	// out += "영주" + p.lordP + "% + UP" + upP + "% = " + p.totalP + "%)";
-	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 특성" + p.traitP + "% + 확률UP" + upP + "% = " + p.totalP + "%\n";
+	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 확률UP" + upP + "% = " + p.totalP + "%\n";
 
 	return out;
 }
@@ -35721,7 +35725,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
 	out += "(내 탐험 아이템 상세보기..👈)\n";
 	out += allsee + "\n";
-	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 특성" + p.traitP + "% + 확률UP" + upP + "% = " + p.totalP + "%\n";
+	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 확률UP" + upP + "% = " + p.totalP + "%\n";
 
 	var bagUpHas = null;
 	for (var u = 0; u < exploreUpItems.length; u++) {
@@ -37246,7 +37250,7 @@ function buildMiniPetBagMessage(targetName, viewerName, data, petData, guildData
 	}
 
 	output += "미대전🆚: " + battle.win + "승 " + battle.lose + "패(" + winPercent + "%)(" + battleRank + ")\n";
-	output += "미대전 횟수(" + remainBattle + "/10)*무료 " + MINI_PET_BATTLE_FREE_CNT + "회가능\n";
+	output += "미대전 횟수(" + remainBattle + "/" + DAILY_CONTENT_LIMITS.miniPetBattleMax + ")*무료 " + DAILY_CONTENT_LIMITS.miniPetBattleFree + "회가능\n";
 	output += "(미니펫장착+5개 총매력이 적용됩니다.)\n";
 	output += "━━━━━━━━━━━━━━━\n";
 

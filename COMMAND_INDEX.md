@@ -1190,6 +1190,7 @@ Status: VERIFIED
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
+- Daily quest and battle limits are grouped in `DAILY_CONTENT_LIMITS` in `main.js`; mirrored display logic in `Info.js` uses the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
 ---
@@ -1240,8 +1241,8 @@ Status: VERIFIED
 - Master-only test helper for setting daily quest counters in one command
 - Usage: `/일퀘횟수수정 유저명 시탑 캐대전 미대전 펫탐험 [일일보상횟수]`
 - The outer command guard accepts `/일퀘횟수수정` and spaced arguments, then `editDailyQuestCountsForTest` returns usage/validation errors
-- Count values must be 0~10
-- Castle `battle.ticket` is normalized to `min(캐대전, 3)` so test state matches free-battle usage
+- Count values must be 시탑/캐대전/미대전 0~5, 펫탐험 0~10
+- Castle `battle.ticket` is normalized to `min(캐대전, 1)` so test state matches free-battle usage
 
 ---
 
