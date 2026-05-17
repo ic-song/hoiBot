@@ -30007,10 +30007,32 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 	var max = status[maxKey] || 0; // 목표 진행 횟수
 	var remain = Math.max(0, max - used); // 남은 일퀘 횟수
 	var data = snapshot && snapshot.data ? snapshot.data : {};
+	var petData = snapshot && snapshot.petData ? snapshot.petData : {};
+	var guildData = snapshot && snapshot.guildData ? snapshot.guildData : {};
+	if (used >= max) return "";
+	if (command === "/시련의탑") {
+		var trialTower = snapshot && snapshot.trialTower ? snapshot.trialTower : null;
+		var towerMember = data.member && data.member[sender] ? data.member[sender] : null;
+		var towerBag = towerMember && towerMember.bag ? towerMember.bag : {};
+		var towerPet = petData && petData[sender] ? petData[sender] : null;
+		var towerTicket = parseInt(towerBag["시련의탑리셋권😈"], 10) || 0; // 보유 시탑 리셋권
+		if (guildData && guildData.castleSiegeFlag) return "공성전 진행 중이라 시련의탑 자동 진행이 중단되었습니다.";
+		if (!trialTower || !trialTower.flag) return "시련의탑 시즌이 진행 중이 아니라 자동 진행이 중단되었습니다.";
+		if (!towerPet || !towerPet.petname) return "펫이 없어 시련의탑 자동 진행이 중단되었습니다.";
+		if (towerMember && towerTicket < 1 && (parseInt(towerMember.point, 10) || 0) < 5500000) {
+			return "시련의탑 입장 포인트/리셋권 부족으로 중단되었습니다. 필요 🅟5,500,000 / 보유 🅟" + numberWithCommas(towerMember.point || 0) + " / 리셋권 " + towerTicket + "개";
+		}
+	}
 	if (command === "/캐슬대전") {
 		var member = data.member && data.member[sender] ? data.member[sender] : null;
 		var bag = member && member.bag ? member.bag : {};
+		var castlePet = petData && petData[sender] ? petData[sender] : null;
+		var castleBattleData = snapshot && snapshot.castleBattleData ? snapshot.castleBattleData : null;
 		var castleTicket = parseInt(bag["캐슬대전리셋권🐶"], 10) || 0; // 보유 캐슬 리셋권
+		if (!castleBattleData || !castleBattleData.flag) return "캐슬대전 시즌이 진행 중이 아니라 자동 진행이 중단되었습니다.";
+		if (!castlePet) return "펫이 없어 캐슬대전 자동 진행이 중단되었습니다.";
+		if ((parseInt(castlePet.petexp, 10) || 0) <= 499) return "펫 매력💕 500 미만이라 캐슬대전 자동 진행이 중단되었습니다.";
+		if (member && member.battle && (parseInt(member.battle.count, 10) || 0) > 9) return "캐슬대전 오늘 최대 가능 횟수(10회)에 도달했습니다.";
 		if (used >= castleTicketCnt && remain > castleTicket) {
 			return "캐슬대전리셋권🐶 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + castleTicket + "개";
 		}
@@ -30018,10 +30040,20 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 	if (command === "/미니펫대전") {
 		var miniMember = data.member && data.member[sender] ? data.member[sender] : null;
 		var miniBag = miniMember && miniMember.bag ? miniMember.bag : {};
+		var miniPetUser = petData && petData[sender] ? petData[sender] : null;
+		var miniPetBag = miniPetUser && miniPetUser.miniPetBag ? miniPetUser.miniPetBag : [];
 		var miniTicket = parseInt(miniBag["미니펫대전리셋권🐹"], 10) || 0; // 보유 미니펫 리셋권
+		if (!miniPetUser || !miniPetUser.miniPet) return "미니펫을 장착하지 않아 미니펫대전 자동 진행이 중단되었습니다.";
+		if (!miniPetBag || miniPetBag.length < 5) return "미니펫가방이 5마리 미만이라 미니펫대전 자동 진행이 중단되었습니다.";
+		if (miniPetBag.length > 13) return "미니펫가방이 13마리 이상이라 미니펫대전 자동 진행이 중단되었습니다.";
+		if (used >= miniPetBattleCnt) return "미니펫대전 오늘 최대 가능 횟수(" + miniPetBattleCnt + "회)에 도달했습니다.";
 		if (used >= 3 && remain > miniTicket) {
 			return "미니펫대전리셋권🐹 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + miniTicket + "개";
 		}
+		var candidates = Object.keys(petData || {}).filter(function (user) {
+			return user !== sender && petData[user] && petData[user].miniPetBag && petData[user].miniPetBag.length >= 10 && petData[user].miniPet;
+		});
+		if (candidates.length === 0) return "현재 대전 가능한 상대가 없어 미니펫대전 자동 진행이 중단되었습니다.";
 	}
 	return "";
 }
