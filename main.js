@@ -150,7 +150,7 @@ const PET_SKILL_LIST = [
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
-	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 개수가 +2개 늘어납니다." },
+	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
 	{ name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -2582,9 +2582,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var bagMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var bagMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketBagData, sender);
-					if (bagMarketActiveCount + bagMarketCount > bagMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + bagMarketActiveCount + "/" + bagMarketLimit + "\n요청: +" + bagMarketCount);
+					var bagMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketBagData, sender);
+					if (bagMarketActiveCount + 1 > bagMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + bagMarketActiveCount + "/" + bagMarketLimit + "건\n요청: +1건");
 						return;
 					}
 					var bagMarketInfo = generateBagOutput(data.member[sender].bag);
@@ -2641,9 +2641,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var miniMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var miniMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketMiniData, sender);
-					if (miniMarketActiveCount + miniMarketCount > miniMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + miniMarketActiveCount + "/" + miniMarketLimit + "\n요청: +" + miniMarketCount);
+					var miniMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketMiniData, sender);
+					if (miniMarketActiveCount + 1 > miniMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + miniMarketActiveCount + "/" + miniMarketLimit + "건\n요청: +1건");
 						return;
 					}
 					if (!petData[sender] || !Array.isArray(petData[sender].miniPetBag)) {
@@ -2729,9 +2729,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var furnitureMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var furnitureMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketFurnitureData, sender);
-					if (furnitureMarketActiveCount + furnitureMarketCount > furnitureMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit + "\n요청: +" + furnitureMarketCount);
+					var furnitureMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketFurnitureData, sender);
+					if (furnitureMarketActiveCount + 1 > furnitureMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit + "건\n요청: +1건");
 						return;
 					}
 					var furnitureHomeData = loadJsonFile(homeDataFile) || {};
@@ -2805,9 +2805,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var skillMarketLimit = getFreeMarketRegisterLimit(data, petSkillData, sender);
-					var skillMarketActiveCount = countFreeMarketActiveQuantityBySeller(freeMarketSkillData, sender);
-					if (skillMarketActiveCount + skillMarketCount > skillMarketLimit) {
-						replier.reply("❌ 자유시장 등록 가능 개수를 초과했습니다.\n현재: " + skillMarketActiveCount + "/" + skillMarketLimit + "\n요청: +" + skillMarketCount);
+					var skillMarketActiveCount = countFreeMarketActiveListingsBySeller(freeMarketSkillData, sender);
+					if (skillMarketActiveCount + 1 > skillMarketLimit) {
+						replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + skillMarketActiveCount + "/" + skillMarketLimit + "건\n요청: +1건");
 						return;
 					}
 					var skillMarketList = getPetSkillBagList(petSkillData, sender);
@@ -32350,18 +32350,6 @@ function countFreeMarketActiveListingsBySeller(freeMarketData, seller) {
 	var count = 0;
 	for (var i = 0; i < listings.length; i++) {
 		if (listings[i].seller === seller) count++;
-	}
-	return count;
-}
-
-// 판매자별 자유시장 활성 등록 수량 합계를 반환하는 함수
-function countFreeMarketActiveQuantityBySeller(freeMarketData, seller) {
-	var listings = getFreeMarketActiveListings(freeMarketData);
-	var count = 0;
-	for (var i = 0; i < listings.length; i++) {
-		if (listings[i].seller === seller) {
-			count += parseInt(listings[i].quantity, 10) || 0;
-		}
 	}
 	return count;
 }
