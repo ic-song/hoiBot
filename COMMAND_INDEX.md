@@ -18,6 +18,47 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - Prefer jumping to listed command anchors first, then inspect related helpers.
 - If a command appears in both `main.js` and `Info.js`, trust the actual branch handling in code.
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
+
+---
+
+# /캐슬대전
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:17133`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasPetSkill`
+- `getRandomScore2`
+- `setCastleBattleTier`
+- `petgameplay`
+- `calculateCastleItem`
+- `calculateItemInfoAll`
+
+## Data Usage
+
+- `data.member[sender].battle`
+- `data.member[sender].point`
+- `data.member[sender].exp`
+- `petData[sender].petexp`
+- `castleBattleData`
+
+## Save Flow
+
+- Saves `castleBattleData` through `saveJsonFile(castleBattleData, castleBattlePath)`
+- Saves member data through `saveJsonFile(data, filePath)`
+- Saves pet data through `saveJsonFile(petData, memberPetPath)` so `숙련된 전사` pet charm gain is persisted
+
+## AI Notes
+
+- `숙련된 전사` can add pet charm before battle resolution; keep `memberPetPath` save in this command flow when changing castle battle rewards.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
