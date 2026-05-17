@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.122"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.123"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -174,7 +174,8 @@ const PET_SKILL_LIST = [
 	{ name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨업 시 3업당 매력 +10" },
 	{ name: "숙련된 전사", grade: "B", rate: 2.3, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
 	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
-	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "티켓/펫강화/돌멩이 탐험 성공확률 5% 상승" },
+	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "정령강화/반지강화/펫강화 탐험 성공확률 5% 상승" },
+	{ name: "던전탐험가", grade: "B", rate: 2.5, effect: "친밀도/전도르/양계장/행운 탐험 성공확률 5% 상승" },
 	{ name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
 	// { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
 
@@ -32880,6 +32881,8 @@ function normalizePetSkillName(skillName) {
 	else if (skillName === "타고난장사꾼") return "타고난 장사꾼";
 	else if (skillName === "티어상승론") return "티어 상승론";
 	else if (skillName === "망한건맞아") return "망한건 맞아";
+	else if (skillName === "광산 탐험가") return "광산탐험가";
+	else if (skillName === "던전 탐험가") return "던전탐험가";
 	return skillName;
 }
 
@@ -35784,14 +35787,14 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 	if (!dungeonKey) return 0;
 
-	// 광산(1~3): 티켓/펫강화/돌멩이
-	if (hasPetSkill(petSkillData, user, "광산 탐험가")) {
+	// 광산(1~3): 정령강화/반지강화/펫강화
+	if (hasPetSkill(petSkillData, user, "광산탐험가")) {
 		if (dungeonKey === "1" || dungeonKey === "2" || dungeonKey === "3") return 5;
 		return 0;
 	}
 
-	// 던전(4~6): 매력/전도르/미니펫
-	if (hasPetSkill(petSkillData, user, "던전 탐험가")) {
+	// 던전(4~7): 친밀도/전도르/양계장/행운
+	if (hasPetSkill(petSkillData, user, "던전탐험가")) {
 		if (dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "7") return 5;
 		return 0;
 	}
