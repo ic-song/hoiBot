@@ -1190,7 +1190,7 @@ Status: VERIFIED
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
-- Daily quest and battle limits are grouped in `DAILY_CONTENT_LIMITS` in `main.js`; mirrored display logic in `Info.js` uses the same object shape
+- Daily quest, battle, command-use, and related display limits are grouped in `GLOBAL_LIMITS` in `main.js`; mirrored display logic in `Info.js` uses the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
 ---
