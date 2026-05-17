@@ -931,26 +931,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 
-			// 기록: 시련탑(요구사항: 10)
+			// 기록: 시련탑(요구사항: 5)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-			var towerMax = 10;
+			var towerMax = 5;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
-			// 기록: 캐슬대전(요구사항: 10)
+			// 기록: 캐슬대전(요구사항: 5)
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
-			var castleMax = 10;
+			var castleMax = 5;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
-			// 기록: 미니펫대전(요구사항: 10)
+			// 기록: 미니펫대전(요구사항: 5)
 			var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 			var miniWin = miniBattle.win || 0;
 			var miniLose = miniBattle.lose || 0;
 			var miniTotal = miniWin + miniLose;
 			var miniRate = miniTotal > 0 ? ((miniWin / miniTotal) * 100).toFixed(2) : "0.00";
 			var miniUsed = miniBattle.count || 0;
-			var miniMax = 10;
+			var miniMax = 5;
 
 			// 기록: 레이드(요구사항: 5)
 			var raidUsed = petData[sender] && petData[sender].raidItemCount ? petData[sender].raidItemCount : 0;
@@ -2051,15 +2051,15 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
 	var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-	var towerMax = 10;
+	var towerMax = 5;
 
 	var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 	var castleUsed = battleObj ? battleObj.count || 0 : 0;
-	var castleMax = 10;
+	var castleMax = 5;
 
 	var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 	var miniUsed = miniBattle.count || 0;
-	var miniMax = 10;
+	var miniMax = 5;
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);

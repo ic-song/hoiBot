@@ -1167,7 +1167,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Creates member, pet, and pet-skill backup snapshots before automated mutation
-- Repeats each target until the daily count reaches 10 or the underlying command stops progressing; reset-ticket shortages are summarized in the final message
+- Repeats each target until the daily count reaches 5 for 시탑/캐대전/미대전 or the underlying command stops progressing; reset-ticket shortages are summarized in the final message
 - Filters successful internal battle/result output out of auto-stop reasons, so only blocking messages or concise fallback progress messages are shown
 - Captures internal command exceptions as auto-stop messages instead of falling through to a generic no-progress reason
 - Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
@@ -1189,6 +1189,8 @@ Status: VERIFIED
 - Requires `자동일퀘권📝` in the user bag
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
+- Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
+- 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
 ---
 
