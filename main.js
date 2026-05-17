@@ -17156,12 +17156,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						data.member[sender].battle.tierPoint = 1;
 						myTier = 1;
 					}
-					if (hasPetSkill(petSkillData, sender, "숙련된 전사")) {
-						if (Math.random() <= 0.5) {
-							petData[sender].petexp += 10;
-							replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력10💕을 획득하셨습니다");
-						}
-					}
 					let matchingGroup = [];
 					let matchingBonus = [];
 					let randomMatchPoint = Math.random();
@@ -17270,6 +17264,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						} else {
 							replier.reply("오늘 무료대전 3회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 10회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/340");
 							return;
+						}
+					}
+					if (hasPetSkill(petSkillData, sender, "숙련된 전사")) {
+						if (Math.random() <= 0.5) {
+							petData[sender].petexp += 10;
+							replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력10💕을 획득하셨습니다");
 						}
 					}
 					data.member[sender].battle.ticket++; // 횟수 증가

@@ -58,7 +58,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `숙련된 전사` can add pet charm before battle resolution; keep `memberPetPath` save in this command flow when changing castle battle rewards.
+- `숙련된 전사` adds pet charm only after matching and ticket validation pass; keep `memberPetPath` save in this command flow when changing castle battle rewards.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
