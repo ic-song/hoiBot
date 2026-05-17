@@ -89,6 +89,11 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Do not hide or normalize `loadJsonFile` failures. If a JSON file is missing, invalid, or cannot be parsed, let the existing load/error flow fail naturally unless the user explicitly requests recovery behavior.
 - Avoid `loadJsonFile` / `saveJsonFile` calls inside helper functions. Load and save in the command/entry flow, then pass already-loaded data into helpers so repeated helper calls do not cause repeated file IO.
 - NEVER perform full-file regex replacement or large-scale refactoring on `main.js` unless explicitly requested.
+- Structural cleanup must be gradual. Do not reorganize all of `main.js` in one task unless the user explicitly requests a full-file migration.
+- Keep the preferred high-level order as global configuration and required bootstrap values first, then `response(...)`, then helper sections grouped by domain.
+- New operational constants should be added to centralized global objects such as `GLOBAL_LIMITS`, `GLOBAL_ITEMS`, or `GLOBAL_PATHS` instead of scattering raw numbers or repeated strings.
+- Promote existing hard-coded values to global objects only when the touched logic already needs modification; avoid broad mechanical sweeps for unrelated constants.
+- Keep feature changes and pure structure cleanup in separate commits when practical.
 - Preserve user-facing UI formatting:
   - line breaks
   - emojis
