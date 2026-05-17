@@ -32427,7 +32427,10 @@ function getFreeMarketTypeLabel(type) {
 }
 
 function formatFreeMarketPoint(price) {
-	return "🅟" + numberWithCommas(parseInt(price, 10) || 0);
+	var point = parseInt(price, 10) || 0;
+	var text = "🅟" + numberWithCommas(point);
+	if (point >= 100000000) text += "(" + formatKoreanShort(point) + ")";
+	return text;
 }
 
 function getFreeMarketItemText(listing) {
@@ -36922,10 +36925,9 @@ function formatKoreanShort(num) {
 	num = Number(num) || 0;
 
 	if (num >= 100000000) {
-		var man = Math.floor(num / 10000); // 만 단위
-		var eok = Math.floor(num / 100000000); // 억 단위
-
-		return numberWithCommas(man) + "만(" + eok + "억)";
+		var eok = Math.round((num / 100000000) * 10) / 10; // 억 단위 소수 1자리
+		if (eok % 1 === 0) return numberWithCommas(eok.toFixed(0)) + "억";
+		return numberWithCommas(eok.toFixed(1)) + "억";
 	}
 
 	if (num >= 10000) {
