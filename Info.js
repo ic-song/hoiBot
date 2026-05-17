@@ -9,13 +9,27 @@ const CRIT_CHANCE_PER_UPGRADE = 0.005; // 1강당 크리티컬 확률 0.5% 증�
 const PET_SKILL_MAX_EQUIP_SLOT = 20;
 const PET_SKILL_BOOK_ITEM = "펫스킬북📙(/펫스킬오픈)";
 const PET_SKILL_UNBIND_ITEM = "펫스킬귀속해제권🧙‍♂️(/펫스킬귀속해제 숫자)";
-const DAILY_CONTENT_LIMITS = {
-	trialTowerMax: 5, // 시련의탑 하루 최대 횟수
-	castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
-	castleBattleFree: 1, // 캐슬대전 무료 횟수
-	miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
-	miniPetBattleFree: 1, // 미니펫대전 무료 횟수
-	petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
+const GLOBAL_LIMITS = {
+	display: {
+		changeLogMax: 10 // 최근 수정 이력 표시 개수
+	},
+	daily: {
+		trialTowerMax: 5, // 시련의탑 하루 최대 횟수
+		castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
+		castleBattleFree: 1, // 캐슬대전 무료 횟수
+		miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
+		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
+		petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
+	},
+	command: {
+		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
+	},
+	miniPet: {
+		battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
+		battleBagMax: 13, // 미니펫대전 최대 가방 보유 수
+		cleanupTriggerCount: 13, // 미니펫 가방 정리 대상 기준
+		cleanupKeepCount: 12 // 미니펫 가방 정리 후 유지 수
+	}
 };
 //랭크.txt 로드, 오류로그 세이브용
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -941,13 +955,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 			// 기록: 시련탑(요구사항: 5)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-			var towerMax = DAILY_CONTENT_LIMITS.trialTowerMax;
+			var towerMax = GLOBAL_LIMITS.daily.trialTowerMax;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
 			// 기록: 캐슬대전(요구사항: 5)
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
-			var castleMax = DAILY_CONTENT_LIMITS.castleBattleMax;
+			var castleMax = GLOBAL_LIMITS.daily.castleBattleMax;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
@@ -958,7 +972,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var miniTotal = miniWin + miniLose;
 			var miniRate = miniTotal > 0 ? ((miniWin / miniTotal) * 100).toFixed(2) : "0.00";
 			var miniUsed = miniBattle.count || 0;
-			var miniMax = DAILY_CONTENT_LIMITS.miniPetBattleMax;
+			var miniMax = GLOBAL_LIMITS.daily.miniPetBattleMax;
 
 			// 기록: 레이드(요구사항: 5)
 			var raidUsed = petData[sender] && petData[sender].raidItemCount ? petData[sender].raidItemCount : 0;
@@ -1011,7 +1025,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				getC(miniUsed >= miniMax) +
 				"]" +
 				"[⛰️" +
-				getC(exploreCount >= DAILY_CONTENT_LIMITS.petExploreMax) +
+				getC(exploreCount >= GLOBAL_LIMITS.daily.petExploreMax) +
 				"]" +
 				"\n" +
 				dailyQuestRewardMsg +
@@ -2059,15 +2073,15 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
 	var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-	var towerMax = DAILY_CONTENT_LIMITS.trialTowerMax;
+	var towerMax = GLOBAL_LIMITS.daily.trialTowerMax;
 
 	var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 	var castleUsed = battleObj ? battleObj.count || 0 : 0;
-	var castleMax = DAILY_CONTENT_LIMITS.castleBattleMax;
+	var castleMax = GLOBAL_LIMITS.daily.castleBattleMax;
 
 	var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 	var miniUsed = miniBattle.count || 0;
-	var miniMax = DAILY_CONTENT_LIMITS.miniPetBattleMax;
+	var miniMax = GLOBAL_LIMITS.daily.miniPetBattleMax;
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
@@ -2075,7 +2089,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	var win = typeof rec.win === "number" ? rec.win : 0;
 	var lose = typeof rec.lose === "number" ? rec.lose : 0;
 	var exploreUsed = data.member[sender] && typeof data.member[sender].exploreCnt === "number" ? data.member[sender].exploreCnt : 0;
-	var exploreMax = DAILY_CONTENT_LIMITS.petExploreMax;
+	var exploreMax = GLOBAL_LIMITS.daily.petExploreMax;
 
 	var rankInfo = getPetExploreRank(data, petExploreData, sender);
 	var rankText = rankInfo ? rankInfo.rank + "등" : "순위없음";
