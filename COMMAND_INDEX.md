@@ -38,6 +38,7 @@ Status: VERIFIED
 - `hasPetSkill`
 - `getRandomScore2`
 - `setCastleBattleTier`
+- `ensureCastleBattleRecord`
 - `petgameplay`
 - `calculateCastleItem`
 - `calculateItemInfoAll`
@@ -1152,6 +1153,7 @@ Status: VERIFIED
 - `buildAutoDailyQuestMessage`
 - `getDailyQuestStatus`
 - `claimQuestReward`
+- `ensureCastleBattleRecord` via `/캐슬대전`
 
 ## Data Usage
 
@@ -1167,6 +1169,7 @@ Status: VERIFIED
 - Creates member, pet, and pet-skill backup snapshots before automated mutation
 - Repeats each target until the daily count reaches 10 or the underlying command stops progressing; reset-ticket shortages are summarized in the final message
 - Filters successful internal battle/result output out of auto-stop reasons, so only blocking messages or concise fallback progress messages are shown
+- Captures internal command exceptions as auto-stop messages instead of falling through to a generic no-progress reason
 - Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
 - Reloads data after automated runs and saves member data when daily/weekly quest reward is claimed
 

@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.119"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.120"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17145,6 +17145,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("펫 매력💕 500이상 부터 캐슬대전이 가능합니다.");
 						return;
 					}
+					ensureCastleBattleRecord(data, sender);
 					if (data.member[sender].battle.count > joinMaxCnt) {
 						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n캐대리🐶는 하루에 10회만 가능합니다.");
 						return;
@@ -17282,6 +17283,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					// 대전로직
 					let attackerName = sender; // 공격자명
 					let defenderName = randomMemberName; // 방어자명
+					ensureCastleBattleRecord(data, attackerName);
+					ensureCastleBattleRecord(data, defenderName);
 					let attackerPetObj = petData[attackerName];
 					let defenderPetObj = petData[defenderName];
 					// 펫홈 계산 로직
@@ -25842,6 +25845,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			sender: sender
 		};
 		debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
+		if (autoDailyQuestInternalDepth > 0 && replier && typeof replier.reply === "function") {
+			replier.reply("❌ 자동일퀘 내부 실행 오류가 발생했습니다.\n명령어: " + msg + "\n관리자 로그 확인이 필요합니다.");
+		}
 		// }
 		FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 	} finally {
@@ -27620,6 +27626,19 @@ function getCastleBattleRankEmoji2(score, castleBattleData) {
 		}
 	}
 	return rankName;
+}
+// 캐슬대전 전적 필드를 숫자 기본값으로 보정하는 함수
+function ensureCastleBattleRecord(data, userName) {
+	if (!data || !data.member || !data.member[userName]) return null;
+	if (!data.member[userName].battle) data.member[userName].battle = {};
+	var battle = data.member[userName].battle;
+	battle.win = parseInt(battle.win, 10) || 0;
+	battle.lose = parseInt(battle.lose, 10) || 0;
+	battle.score = parseInt(battle.score, 10) || 0;
+	battle.ticket = parseInt(battle.ticket, 10) || 0;
+	battle.count = parseInt(battle.count, 10) || 0;
+	battle.tierPoint = parseInt(battle.tierPoint, 10) || 1;
+	return battle;
 }
 // 전투후 스코어로 티어 조정
 function setCastleBattleTier(atkScore, defScore, castleBattleData) {
