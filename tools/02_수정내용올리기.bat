@@ -4,35 +4,43 @@ chcp 65001 > nul
 set BRANCH_NAME=feature/hoi
 set BASE_BRANCH=feature/prod
 
+title hoiBot workflow 02 - 수정내용 올리기
+
 echo.
-echo ========================================
-echo [START] 수정내용 올리기
-echo ========================================
+echo ============================================================
+echo  hoiBot Workflow 02 - 수정내용 올리기
+echo ============================================================
 echo.
-echo 이 작업은 현재 수정한 내용을 저장소에 올리고
-echo feature/prod 직접 병합과 push까지 자동으로 진행합니다.
-echo 코드 붙여넣기 후 파일 저장을 했는지 확인하세요.
-echo ========================================
+echo  작업 브랜치 : %BRANCH_NAME%
+echo  운영 브랜치 : %BASE_BRANCH%
+echo.
+echo  현재 수정한 내용을 커밋/푸시한 뒤
+echo  %BASE_BRANCH% 직접 병합과 push까지 진행합니다.
+echo.
+echo  코드 붙여넣기 후 파일 저장을 했는지 확인하세요.
+echo ============================================================
 echo.
 
-echo [1/7] 프로젝트 폴더로 이동 중...
+echo [STEP 1/7] 프로젝트 폴더 이동
+echo ------------------------------------------------------------
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
 
-echo [OK] 프로젝트 폴더 이동 완료
-echo 현재 위치:
+echo [OK] PROJECT_DIR
 cd
 
 echo.
-echo Git 작성자 정보 설정 중...
+echo [SETUP] Git 작성자 정보 설정
+echo ------------------------------------------------------------
 git config user.name "jinminy2"
 git config user.email "jinminy2@gmail.com"
 if errorlevel 1 goto FAIL_GIT_CONFIG
 
-echo [OK] Git 작성자 정보 설정 완료
+echo [OK] git author ready
 
 echo.
-echo [2/7] 현재 브랜치 확인 중...
+echo [STEP 2/7] 현재 브랜치 확인
+echo ------------------------------------------------------------
 for /f "tokens=*" %%i in ('git branch --show-current') do set CURRENT_BRANCH=%%i
 
 if not "%CURRENT_BRANCH%"=="%BRANCH_NAME%" (
@@ -42,9 +50,11 @@ if not "%CURRENT_BRANCH%"=="%BRANCH_NAME%" (
 
 git fetch origin
 if errorlevel 1 goto FAIL_FETCH
+echo.
 
 git merge --ff-only origin/%BASE_BRANCH%
 if errorlevel 1 goto FAIL_BASE_SYNC
+echo.
 
 for /f "tokens=*" %%i in ('git branch --show-current') do set CURRENT_BRANCH=%%i
 
@@ -53,7 +63,8 @@ if not "%CURRENT_BRANCH%"=="%BRANCH_NAME%" goto FAIL_BRANCH
 echo [OK] 현재 브랜치: %CURRENT_BRANCH%
 
 echo.
-echo [3/7] 변경된 파일 확인 중...
+echo [STEP 3/7] 변경 파일 확인
+echo ------------------------------------------------------------
 git status --porcelain > "%TEMP%\hoi_git_status.txt"
 
 for %%A in ("%TEMP%\hoi_git_status.txt") do set STATUS_SIZE=%%~zA
@@ -65,56 +76,63 @@ echo 변경된 파일 목록:
 git status --short
 
 echo.
-set /p WORK_MSG=수정내용 제목을 입력하세요. 그냥 엔터 시 기본값 사용: 
+set /p "WORK_MSG=수정내용 제목을 입력하세요. 그냥 엔터 시 기본값 사용 > "
 
 if "%WORK_MSG%"=="" set WORK_MSG=BM 코드 수정 반영
 
 set COMMIT_MSG=%WORK_MSG%
 
 echo.
-echo [4/7] 변경내용 담는 중...
+echo [STEP 4/7] 변경내용 담기
+echo ------------------------------------------------------------
 git add .
 if errorlevel 1 goto FAIL_ADD
 
 echo [OK] 변경내용 담기 완료
 
 echo.
-echo [5/7] 수정내용 기록 중...
+echo [STEP 5/7] 수정내용 기록
+echo ------------------------------------------------------------
 git commit -m "%COMMIT_MSG%"
 if errorlevel 1 goto FAIL_COMMIT
 
 echo [OK] 수정내용 기록 완료
 
 echo.
-echo [6/7] 원격 저장소에 올리는 중...
+echo [STEP 6/7] 원격 저장소 올리기
+echo ------------------------------------------------------------
 git push -u origin %BRANCH_NAME% --force-with-lease
 if errorlevel 1 goto FAIL_PUSH
 
 echo [OK] 원격 저장소 올리기 완료
 
 echo.
-echo [7/7] feature/prod 직접 병합 및 push 중...
+echo [STEP 7/7] %BASE_BRANCH% 직접 병합 및 push
+echo ------------------------------------------------------------
 git switch %BASE_BRANCH%
 if errorlevel 1 goto FAIL_PROD_SWITCH
+echo.
 
 git pull origin %BASE_BRANCH%
 if errorlevel 1 goto FAIL_PROD_PULL
+echo.
 
 git merge %BRANCH_NAME%
 if errorlevel 1 goto FAIL_PROD_MERGE
+echo.
 
 git push origin %BASE_BRANCH%
 if errorlevel 1 goto FAIL_PROD_PUSH
 
 echo.
-echo ========================================
-echo [SUCCESS] 수정내용 올리기 + feature/prod 직접 반영 완료
-echo ========================================
+echo ============================================================
+echo  SUCCESS - 수정내용 올리기 + %BASE_BRANCH% 반영 완료
+echo ============================================================
 echo.
-echo 브랜치: %BRANCH_NAME%
-echo 커밋 제목: %COMMIT_MSG%
-echo feature/prod push complete.
-echo ========================================
+echo  작업 브랜치 : %BRANCH_NAME%
+echo  커밋 제목   : %COMMIT_MSG%
+echo  운영 반영   : %BASE_BRANCH% push complete
+echo ============================================================
 pause
 exit /b 0
 

@@ -26,6 +26,7 @@ echo ============================================================
 echo.
 
 echo [CONFIG]
+echo ------------------------------------------------------------
 echo  ADB_EXE          = %ADB_EXE%
 echo  TARGET_DEVICE    = %TARGET_DEVICE%
 echo  BOT_NAME         = %BOT_NAME%
@@ -33,15 +34,18 @@ echo  SOURCE_FILE      = %SOURCE_FILE%
 echo  TARGET_FILE      = %TARGET_FILE%
 echo  CHANGELOG_SOURCE = %CHANGELOG_SOURCE%
 echo  TARGET_CHANGELOG = %TARGET_CHANGELOG%
+echo ------------------------------------------------------------
 echo.
 
 echo [STEP 1/7] 프로젝트 폴더 이동
+echo ------------------------------------------------------------
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
 echo [OK] PROJECT_DIR = %CD%
 echo.
 
 echo [STEP 2/7] 필수 파일 확인
+echo ------------------------------------------------------------
 if not exist "%ADB_EXE%" goto FAIL_ADB_EXE
 if not exist "%SOURCE_FILE%" goto FAIL_SOURCE
 if not exist "%CHANGELOG_SOURCE%" goto FAIL_CHANGELOG_SOURCE
@@ -49,43 +53,60 @@ echo [OK] required files exist
 echo.
 
 echo [STEP 3/7] Git 최신화
+echo ------------------------------------------------------------
 git switch %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_SWITCH
+echo.
 git pull --ff-only origin %BASE_BRANCH%
 if errorlevel 1 goto FAIL_GIT_PULL
+echo.
 git status --short --branch
+echo.
 echo [OK] git ready
 echo.
 
 echo [STEP 4/7] ADB 기기 확인
+echo ------------------------------------------------------------
 "%ADB_EXE%" devices
 if errorlevel 1 goto FAIL_ADB
+echo.
 echo [OK] adb ready
 echo.
 
 echo [STEP 5/7] main.js 업로드
+echo ------------------------------------------------------------
 echo  FROM: %SOURCE_FILE%
 echo  TO  : %TARGET_FILE%
+echo.
 "%ADB_EXE%" -s %TARGET_DEVICE% push "%SOURCE_FILE%" "%TARGET_FILE%"
 if errorlevel 1 goto FAIL_PUSH
+echo.
 "%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_FILE%"
+echo.
 echo [OK] main.js uploaded
 echo.
 
 echo [STEP 6/7] hoiBotChangeLog.json 업로드
+echo ------------------------------------------------------------
 echo  FROM: %CHANGELOG_SOURCE%
 echo  TO  : %TARGET_CHANGELOG%
+echo.
 "%ADB_EXE%" -s %TARGET_DEVICE% shell mkdir -p "%TARGET_CHANGELOG_DIR%"
 if errorlevel 1 goto FAIL_CHANGELOG
+echo.
 "%ADB_EXE%" -s %TARGET_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%"
 if errorlevel 1 goto FAIL_CHANGELOG
+echo.
 "%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_CHANGELOG%"
+echo.
 echo [OK] hoiBotChangeLog.json uploaded
 echo.
 
 echo [STEP 7/7] MessengerBot main 컴파일
+echo ------------------------------------------------------------
 "%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%
 if errorlevel 1 goto FAIL_COMPILE
+echo.
 echo [OK] compile requested
 echo.
 
