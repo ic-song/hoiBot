@@ -29988,9 +29988,9 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 		var after = getAutoDailyQuestSnapshot(sender);
 		if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
 			var fallbackMessage = buildAutoDailyBlockedFallbackMessage(sender, command, before, usedKey, maxKey);
-			blockedMessage = getLastAutoDailyCapturedMessage(messages);
+			blockedMessage = getLastAutoDailyBlockedMessage(messages);
 			if (fallbackMessage) blockedMessage = fallbackMessage;
-			if (!blockedMessage) blockedMessage = "진행 횟수가 증가하지 않아 자동 진행이 중단되었습니다.";
+			if (!blockedMessage) blockedMessage = "진행 횟수가 증가하지 않아 자동 진행이 중단되었습니다. 현재 " + (before.status[usedKey] || 0) + "/" + (before.status[maxKey] || 0);
 			break;
 		}
 	}
@@ -30058,12 +30058,52 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 	return "";
 }
 
-// 자동일퀘 내부 실행 중 마지막 안내 메시지를 반환하는 함수
-function getLastAutoDailyCapturedMessage(messages) {
+// 자동일퀘 내부 실행 성공 결과 메시지인지 확인하는 함수
+function isAutoDailySuccessResultMessage(message) {
+	message = String(message || "");
+	var successPatterns = [
+		"😈시련의 탑",
+		"🏆데일리 캐슬매력 대전",
+		"🐹미니펫 대전",
+		"🛡대전결과🛡",
+		"💰공략 아이템 획득",
+		"획득 포인트🤑",
+		"캐슬포인트(CP)"
+	];
+	for (var i = 0; i < successPatterns.length; i++) {
+		if (message.indexOf(successPatterns[i]) !== -1) return true;
+	}
+	return false;
+}
+
+// 자동일퀘 내부 실행 중 중단 사유로 쓸 수 있는 메시지인지 확인하는 함수
+function isAutoDailyBlockedMessage(message) {
+	message = String(message || "").trim();
+	if (!message || isAutoDailySuccessResultMessage(message)) return false;
+	if (message.indexOf("❌") === 0) return true;
+	var blockPatterns = [
+		"부족",
+		"초과",
+		"없습니다",
+		"아닙니다",
+		"중단",
+		"진행할 수 없습니다",
+		"무료대전",
+		"공사안내",
+		"매칭 상대"
+	];
+	for (var i = 0; i < blockPatterns.length; i++) {
+		if (message.indexOf(blockPatterns[i]) !== -1) return true;
+	}
+	return false;
+}
+
+// 자동일퀘 내부 실행 중 마지막 중단 안내 메시지를 반환하는 함수
+function getLastAutoDailyBlockedMessage(messages) {
 	if (!(messages instanceof Array) || messages.length < 1) return "";
 	for (var i = messages.length - 1; i >= 0; i--) {
 		var message = String(messages[i] || "").trim();
-		if (message) return message;
+		if (isAutoDailyBlockedMessage(message)) return message;
 	}
 	return "";
 }
