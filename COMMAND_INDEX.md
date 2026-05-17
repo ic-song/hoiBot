@@ -3233,6 +3233,7 @@ Status: VERIFIED
 - Registration fees consume `🥕당근이세요?` immediately and are not refunded on cancel/force-cancel
 - Sale fee is 10%, paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
+- `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts, e.g. `🅟350,000,000`, not Korean short units such as `35,000만(3억)`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text

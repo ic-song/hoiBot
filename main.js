@@ -32427,7 +32427,7 @@ function getFreeMarketTypeLabel(type) {
 }
 
 function formatFreeMarketPoint(price) {
-	return "🅟" + formatKoreanShort(parseInt(price, 10) || 0);
+	return "🅟" + numberWithCommas(parseInt(price, 10) || 0);
 }
 
 function getFreeMarketItemText(listing) {
