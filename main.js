@@ -14720,6 +14720,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg === "/자동일퀘" || msg === "ㅇㅋㅋ") {
 					if (castleSiegeFlag) return;
 					if (!data.member || !data.member[sender]) return;
+					replier.reply("⏳ 자동일퀘 계산 중입니다.\n시탑/캐대전/미대전을 순서대로 진행하고 있어요.\n잠시만 기다려주세요.");
 					var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
 					replier.reply(autoDailyResult.message);
 					return;
@@ -30048,10 +30049,14 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 		var castlePet = petData && petData[sender] ? petData[sender] : null;
 		var castleBattleData = snapshot && snapshot.castleBattleData ? snapshot.castleBattleData : null;
 		var castleTicket = parseInt(bag["캐슬대전리셋권🐶"], 10) || 0; // 보유 캐슬 리셋권
+		var castleFreeUsed = member && member.battle ? parseInt(member.battle.ticket, 10) || 0 : used; // 캐슬 무료대전 사용 횟수
 		if (!castleBattleData || !castleBattleData.flag) return "캐슬대전 시즌이 진행 중이 아니라 자동 진행이 중단되었습니다.";
 		if (!castlePet) return "펫이 없어 캐슬대전 자동 진행이 중단되었습니다.";
 		if ((parseInt(castlePet.petexp, 10) || 0) <= 499) return "펫 매력💕 500 미만이라 캐슬대전 자동 진행이 중단되었습니다.";
 		if (member && member.battle && (parseInt(member.battle.count, 10) || 0) > 9) return "캐슬대전 오늘 최대 가능 횟수(10회)에 도달했습니다.";
+		if (castleFreeUsed >= castleTicketCnt && castleTicket < 1) {
+			return "오늘 무료대전 3회를 모두 사용했고 캐슬대전리셋권🐶이 없어 중단되었습니다. 현재 " + used + "/" + max;
+		}
 		if (used >= castleTicketCnt && remain > castleTicket) {
 			return "캐슬대전리셋권🐶 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + castleTicket + "개";
 		}
@@ -30108,6 +30113,8 @@ function isAutoDailyBlockedMessage(message) {
 		"중단",
 		"진행할 수 없습니다",
 		"무료대전",
+		"캐대리",
+		"최대 가능 횟수",
 		"공사안내",
 		"매칭 상대"
 	];
