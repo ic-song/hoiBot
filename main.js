@@ -1,6 +1,6 @@
 ﻿// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.120"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.121"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -29928,6 +29928,15 @@ function runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB
 	return capture.messages;
 }
 
+// 자동일퀘 내부 실행 후 저장 반영을 잠시 기다리는 함수
+function waitAutoDailySnapshotFlush(waitMs) {
+	try {
+		java.lang.Thread.sleep(waitMs);
+	} catch (e) {
+		sleep(waitMs);
+	}
+}
+
 // 자동일퀘 전후 비교용 유저 상태 스냅샷 반환 함수
 function getAutoDailyQuestSnapshot(sender) {
 	var data = loadJsonFile(filePath);
@@ -30005,7 +30014,12 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 		var before = getAutoDailyQuestSnapshot(sender);
 		var messages = runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB, packageName);
 		captured = captured.concat(messages);
+		waitAutoDailySnapshotFlush(150);
 		var after = getAutoDailyQuestSnapshot(sender);
+		if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
+			waitAutoDailySnapshotFlush(600);
+			after = getAutoDailyQuestSnapshot(sender);
+		}
 		if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
 			var fallbackMessage = buildAutoDailyBlockedFallbackMessage(sender, command, before, usedKey, maxKey);
 			blockedMessage = getLastAutoDailyBlockedMessage(messages);

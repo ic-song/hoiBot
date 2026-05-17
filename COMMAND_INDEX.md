@@ -1139,7 +1139,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:14670`
+- `main.js:14720`
 
 ## Files
 
@@ -1172,6 +1172,7 @@ Status: VERIFIED
 - Captures internal command exceptions as auto-stop messages instead of falling through to a generic no-progress reason
 - Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
 - Sends an immediate "자동일퀘 계산 중" progress notice before long-running internal command execution
+- Waits briefly and rechecks snapshots after each internal command so delayed save reflection does not look like no progress
 - Reloads data after automated runs and saves member data when daily/weekly quest reward is claimed
 
 ## Related Commands
