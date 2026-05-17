@@ -1215,6 +1215,7 @@ Status: VERIFIED
 - `buildPackageListMessage`
 - `buildPackageAddGuideMessage`
 - `addPackageInfoByCommand`
+- `removePackageByCommand`
 - `setPackageEnabledByCommand`
 - `grantPackageToUser`
 - `buildUserPackageBagMessage`
@@ -1229,7 +1230,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/패키지추가`, `/패키지제거`, `/패키지활성` mutate and save `packageInfo.json`
+- `/패키지추가`, `/패키지제거`, `/패키지리스트제거`, `/패키지활성` mutate and save `packageInfo.json`
 - `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
 
@@ -1241,6 +1242,7 @@ Status: VERIFIED
 - `/패키지추가상태`
 - `/패키지추가`
 - `/패키지제거`
+- `/패키지리스트제거`
 - `/패키지활성`
 - `/패키지지급`
 - `/패키지가방`
@@ -1248,8 +1250,8 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `packageInfo.json` is order-sensitive; never delete entries to preserve list numbers
-- `/패키지제거` sets `enabled:false`; `/패키지활성` restores `enabled:true`
+- `packageInfo.json` list numbers are order-sensitive; removing a package shifts later list numbers
+- `/패키지제거` and `/패키지리스트제거` physically remove the selected package entry; `/패키지활성` only restores entries that still exist with `enabled:false`
 - 1차 지원 보상 타입은 `item`, `point` only
 - Package name is also the bag item name; package data no longer needs a separate `itemName`
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`

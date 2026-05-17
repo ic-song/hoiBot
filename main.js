@@ -14774,12 +14774,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 
-				if (/^\/패키지제거\s+\d+$/.test(msg)) {
+				if (/^\/(패키지제거|패키지리스트제거)\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
-					var packageInfoData = loadJsonFile(packageInfoPath); // 비활성화 대상 패키지 목록
-					var packageDisableResult = setPackageEnabledByCommand(sender, msg, false, packageInfoData);
-					if (packageDisableResult.ok) saveJsonFile(packageDisableResult.packageInfoData, packageInfoPath);
-					replier.reply(packageDisableResult.message);
+					var packageInfoData = loadJsonFile(packageInfoPath); // 제거 대상 패키지 목록
+					var packageRemoveResult = removePackageByCommand(sender, msg, packageInfoData);
+					if (packageRemoveResult.ok) saveJsonFile(packageRemoveResult.packageInfoData, packageInfoPath);
+					replier.reply(packageRemoveResult.message);
 					return;
 				}
 
@@ -30230,6 +30230,7 @@ function buildPackageListMessage(packageInfoData) {
 	lines.push("추가/제거 방법:");
 	lines.push("/패키지추가방법");
 	lines.push("/패키지제거 리스트번호");
+	lines.push("/패키지리스트제거 리스트번호");
 	lines.push("/패키지활성 리스트번호");
 	lines.push("");
 	lines.push("예시:");
@@ -30257,7 +30258,8 @@ function buildPackageAddGuideMessage() {
 	lines.push("");
 	lines.push("제거:");
 	lines.push("/패키지제거 리스트번호");
-	lines.push("※ 번호 유지를 위해 삭제하지 않고 enabled:false로 비활성화합니다.");
+	lines.push("/패키지리스트제거 리스트번호");
+	lines.push("※ 패키지 목록에서 실제 삭제되며 이후 리스트 번호가 당겨집니다.");
 	lines.push("");
 	lines.push("재활성:");
 	lines.push("/패키지활성 리스트번호");
@@ -30578,6 +30580,28 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
 	lines.push("패키지: " + newPackage.name);
 	lines.push("구성: " + formatPackageRewardSummary(newPackage.rewards));
 	lines.push("추가자: " + sender);
+	return {
+		ok: true,
+		message: lines.join("\n"),
+		packageInfoData: packageInfoData
+	};
+}
+
+// 관리자 패키지 리스트 항목 실제 제거 처리 함수
+function removePackageByCommand(sender, msg, packageInfoData) {
+	var parts = String(msg || "").trim().split(/\s+/); // /패키지제거 번호 또는 /패키지리스트제거 번호
+	var listNumber = parseInt(parts[1], 10); // 패키지리스트 번호
+	var packageInfo = getPackageByListNumber(packageInfoData, listNumber); // 제거 대상 패키지
+	if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
+	packageInfoData.splice(listNumber - 1, 1);
+	var lines = [];
+	lines.push("✅ 패키지 제거 완료");
+	lines.push("");
+	lines.push("번호: " + listNumber);
+	lines.push("패키지: " + (packageInfo.name || getPackageBagItemName(packageInfo)));
+	lines.push("상태: 목록에서 삭제");
+	lines.push("처리자: " + sender);
+	lines.push("※ 이후 패키지 리스트 번호가 당겨집니다.");
 	return {
 		ok: true,
 		message: lines.join("\n"),
