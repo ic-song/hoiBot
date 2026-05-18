@@ -29632,7 +29632,7 @@ function ensureHappyFoundationData(data) {
 		data.hoiHappyFoundation.feeRate = 1.5;
 	}
 	data.hoiHappyFoundation.feeRate = roundToTwo(data.hoiHappyFoundation.feeRate);
-	if (data.hoiHappyFoundation.feeRate < 0.5 || data.hoiHappyFoundation.feeRate > 10) {
+	if (data.hoiHappyFoundation.feeRate < 0.5 || data.hoiHappyFoundation.feeRate > 16) {
 		data.hoiHappyFoundation.feeRate = 1.5;
 	}
 	if (typeof data.hoiHappyFoundation.captain !== "string") {
