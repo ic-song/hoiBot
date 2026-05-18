@@ -41,6 +41,9 @@ const GLOBAL_CONFIG = {
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
 		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"
 	},
+	freeMarket: { // 자유시장 설정
+		memberTicketItemName: "자유시장회원권🏪"
+	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
 		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"

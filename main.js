@@ -19539,7 +19539,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					return;
 				}
 				if (msg === "/미니펫확률") {
-					let filteredTable = typeof GLOBAL_CONFIG.miniPet.allowedGrades !== "undefined" ? miniPetData.gradeTable.filter((entry) => GLOBAL_CONFIG.miniPet.allowedGrades.includes(entry.name || entry.grade)) : miniPetData.gradeTable;
+					let filteredTable = typeof GLOBAL_CONFIG.miniPet.allowedGrades !== "undefined" ? miniPetData.gradeTable.filter(function (entry) {
+						return GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(entry.name || entry.grade) !== -1;
+					}) : miniPetData.gradeTable;
 					let totalProb = filteredTable.reduce((sum, entry) => sum + entry.probability, 0);
 					if (totalProb === 0) {
 						replier.reply("❌ 현재 허용된 등급에 대한 확률 총합이 0입니다.");
@@ -32862,6 +32864,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
 	out += "📋양식: [아이템x갯수][판매금액][판매자]\n";
 	out += "━━━━━━━━━━━━\n";
+	out += "[현재 등록 아이템🧳: " + numberWithCommas(listings.length) + "개]\n";
 	out += "자유시장 거래하러 가기👈" + allsee + "\n";
 	if (listings.length === 0) {
 		return out + "현재 판매 중인 물품이 없습니다.";
@@ -33536,7 +33539,9 @@ function getThermoRank(username, data) {
 // 등급별 미니펫 중 랜덤 선택
 // 등급 추첨
 function getRandomGrade(gradeTable) {
-	let filteredTable = typeof GLOBAL_CONFIG.miniPet.allowedGrades !== "undefined" ? gradeTable.filter((entry) => GLOBAL_CONFIG.miniPet.allowedGrades.includes(entry.name || entry.grade)) : gradeTable;
+	let filteredTable = typeof GLOBAL_CONFIG.miniPet.allowedGrades !== "undefined" ? gradeTable.filter(function (entry) {
+		return GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(entry.name || entry.grade) !== -1;
+	}) : gradeTable;
 	if (filteredTable.length === 0) return null;
 	let totalProb = filteredTable.reduce((sum, entry) => sum + entry.probability, 0);
 	if (totalProb === 0) return null;
