@@ -184,7 +184,7 @@ const PET_SKILL_LIST = [
 	{ name: "악덕한 영주", grade: "C", rate: 4.0, effect: "호랜캐슬 세금 30% 강제 고정" },
 	{ name: "오픈런", grade: "C", rate: 4.0, effect: "명령어: ㅊㅊ 1등시 펫먹이🍼1,000개를 획득합니다.\n출석목록 기준 1등" },
 	{ name: "야수의 본능", grade: "C", rate: 4.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
-	{ name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +1 획득" },
+	{ name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +2 획득" },
 	{ name: "기도", grade: "C", rate: 4.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🦋 1개를 획득합니다." },
 	{ name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
 	{ name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
@@ -3110,8 +3110,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var feeInput = parseFloat(msg.replace("/이체수수료변경", "").trim());
-					if (isNaN(feeInput) || feeInput < 0.5 || feeInput > 10 || Math.round(feeInput * 10) % 5 !== 0) {
-						replier.reply("❌ 이체 수수료는 0.5% ~ 10% 사이로만 설정할 수 있습니다.");
+					if (isNaN(feeInput) || feeInput < 0.5 || feeInput > 16 || Math.round(feeInput * 10) % 5 !== 0) {
+						replier.reply("❌ 이체 수수료는 0.5% ~ 16% 사이로만 설정할 수 있습니다.");
 						return;
 					}
 					var oldFeeRate = happyFoundationEdit.feeRate;
@@ -17291,7 +17291,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (hasPetSkill(petSkillData, sender, "숙련된 전사")) {
 						if (Math.random() <= 0.5) {
 							petData[sender].petexp += 10;
-							replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력10💕을 획득하셨습니다");
+							replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력 20💕을 획득하셨습니다");
 						}
 					}
 					data.member[sender].battle.ticket++; // 횟수 증가
@@ -32612,6 +32612,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var out = "🏪 호이월드 자유시장 🏪\n";
 	out += "━━━━━━━━━━━━\n"; 
 	out += "💰수수료: 판매금액의 10%\n";
+	out += "🏪 자유시장회원권: 소지시 수수료 7%(준비중)\n";
 	out += "🛒구매: /자유시장구매 [번호]\n";
 	out += "❌취소: /자유시장취소 [번호]\n";
 	out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -32641,7 +32642,9 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	var out = "🤝 호월 자유시장 거래현황 🤝\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
-	out += "📋[아이템x갯수][판매금액][판매자]🤝[구매자]\n";
+	out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
+	out += "💰수수료는 판매금액의 10%\n";
+	out += "🏪 자유시장회원권 소지시 수수료 7%(준비중)\n"
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
 	out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -32827,9 +32830,9 @@ function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender,
 	msg += "판매금액: 🅟" + numberWithCommas(price) + "\n";
 	msg += "등록 수수료: 당근🥕 " + numberWithCommas(carrotFee) + "개\n";
 	if (extraLine) msg += extraLine + "\n";
-	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
+	msg += "\등록✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
 	msg += "━━━━━━━━━━━━\n";
-	msg += "※ [거래/취소] 명령어를 입력해주세요.";
+	msg += "※ [등록/취소] 명령어를 입력해주세요.";
 	return msg;
 }
 
@@ -32843,7 +32846,7 @@ function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, list
 	msg += "판매금액: 🅟" + numberWithCommas(listing.price) + "\n";
 	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
 	msg += "━━━━━━━━━━━━\n";
-	msg += "※ [거래/취소] 명령어를 입력해주세요.";
+	msg += "※ [구매/취소] 명령어를 입력해주세요.";
 	return msg;
 }
 
