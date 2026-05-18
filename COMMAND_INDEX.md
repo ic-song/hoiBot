@@ -424,8 +424,8 @@ Status: VERIFIED
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
-- Wrong-turn attacks subtract `GUILD_TERRITORY_WRONG_TURN_PENALTY` turns from the user's guild when remaining turns are at least 5
-- Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GUILD_TERRITORY_WRONG_TURN_PENALTY`
+- Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
+- Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - `/영지공격` is accepted only as `/영지공격 [1-5]`; suffix text such as `/영지공격 2 해봐` must not execute
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
@@ -1190,7 +1190,7 @@ Status: VERIFIED
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
-- Daily quest, battle, command-use, and related display limits are grouped in `GLOBAL_LIMITS` in `main.js`; mirrored display logic in `Info.js` uses the same object shape
+- Daily quest, battle, command-use, display, happy-foundation, title-gift, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
 ---

@@ -91,7 +91,12 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - NEVER perform full-file regex replacement or large-scale refactoring on `main.js` unless explicitly requested.
 - Structural cleanup must be gradual. Do not reorganize all of `main.js` in one task unless the user explicitly requests a full-file migration.
 - Keep the preferred high-level order as global configuration and required bootstrap values first, then `response(...)`, then helper sections grouped by domain.
-- New operational constants should be added to centralized global objects such as `GLOBAL_LIMITS`, `GLOBAL_ITEMS`, or `GLOBAL_PATHS` instead of scattering raw numbers or repeated strings.
+- Use `GLOBAL_CONFIG` as the preferred top-level object for operational constants above `response(...)` when the values include mixed configuration types.
+- Structure `GLOBAL_CONFIG` by feature/domain first, for example `GLOBAL_CONFIG.titleGift`, `GLOBAL_CONFIG.happyFoundation`, and `GLOBAL_CONFIG.guildTerritory`.
+- For large domains, group nested values by role inside the domain, for example `GLOBAL_CONFIG.guildTerritory.limits`, `GLOBAL_CONFIG.guildTerritory.timers`, `GLOBAL_CONFIG.guildTerritory.rates`, `GLOBAL_CONFIG.guildTerritory.rewards`, and `GLOBAL_CONFIG.guildTerritory.items`.
+- Do not add duplicate alias constants for values already in `GLOBAL_CONFIG` unless a runtime compatibility issue requires it.
+- Do not introduce broad ambiguous containers such as `GLOBAL_VALUE` when a clearer `GLOBAL_CONFIG` section name can express the role.
+- New operational constants should be added to centralized global objects instead of scattering raw numbers or repeated strings.
 - Promote existing hard-coded values to global objects only when the touched logic already needs modification; avoid broad mechanical sweeps for unrelated constants.
 - Keep feature changes and pure structure cleanup in separate commits when practical.
 - Preserve user-facing UI formatting:

@@ -4,16 +4,12 @@ const room91 = "통합스텝";
 
 // 크리티컬 정보
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
-const BASE_CRIT_CHANCE = 0; // 초기 크리티컬 확률 0%
-const CRIT_CHANCE_PER_UPGRADE = 0.005; // 1강당 크리티컬 확률 0.5% 증가
 const PET_SKILL_MAX_EQUIP_SLOT = 20;
-const PET_SKILL_BOOK_ITEM = "펫스킬북📙(/펫스킬오픈)";
-const PET_SKILL_UNBIND_ITEM = "펫스킬귀속해제권🧙‍♂️(/펫스킬귀속해제 숫자)";
-const GLOBAL_LIMITS = {
-	display: {
+const GLOBAL_CONFIG = {
+	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
 	},
-	daily: {
+	daily: { // 일일 콘텐츠 진행 설정
 		trialTowerMax: 5, // 시련의탑 하루 최대 횟수
 		castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
 		castleBattleFree: 1, // 캐슬대전 무료 횟수
@@ -21,14 +17,33 @@ const GLOBAL_LIMITS = {
 		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
 		petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
 	},
-	command: {
+	command: { // 명령어 입력/실행 설정
 		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
 	},
-	miniPet: {
+	miniPet: { // 미니펫 시스템 설정
 		battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
 		battleBagMax: 13, // 미니펫대전 최대 가방 보유 수
 		cleanupTriggerCount: 13, // 미니펫 가방 정리 대상 기준
 		cleanupKeepCount: 12 // 미니펫 가방 정리 후 유지 수
+	},
+	pet: { // 펫 성장 설정
+		evolutionRequiredExp: 10 // 알 진화 필요 매력치
+	},
+	happyFoundation: { // 호이행복재단 설정
+		transferFeeMax: 16 // 이체 수수료 최대 설정값
+	},
+	titleGift: { // 타이틀 선물 설정
+		itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)",
+		maxLength: 30 // 타이틀 선물 내용 최대 길이
+	},
+	petSkill: { // 펫스킬 시스템 설정
+		bookItemName: "펫스킬북📙(/펫스킬오픈)",
+		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
+		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"
+	},
+	items: { // 공통 아이템명 설정
+		carrotName: "🥕당근이세요?",
+		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"
 	}
 };
 //랭크.txt 로드, 오류로그 세이브용
@@ -62,8 +77,6 @@ var COMMON_DATA_FILE_MAP = {
 	"petSweetHomeInfo.json": true
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
-//진화 필요 매력치var
-requiredpoint = 10;
 var initData = loadJsonFile(filePath);
 var Master = Object.keys(initData.master);
 var Admins = Object.keys(initData.admin);
@@ -955,13 +968,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 			// 기록: 시련탑(요구사항: 5)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-			var towerMax = GLOBAL_LIMITS.daily.trialTowerMax;
+			var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
 			// 기록: 캐슬대전(요구사항: 5)
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
-			var castleMax = GLOBAL_LIMITS.daily.castleBattleMax;
+			var castleMax = GLOBAL_CONFIG.daily.castleBattleMax;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
@@ -972,7 +985,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var miniTotal = miniWin + miniLose;
 			var miniRate = miniTotal > 0 ? ((miniWin / miniTotal) * 100).toFixed(2) : "0.00";
 			var miniUsed = miniBattle.count || 0;
-			var miniMax = GLOBAL_LIMITS.daily.miniPetBattleMax;
+			var miniMax = GLOBAL_CONFIG.daily.miniPetBattleMax;
 
 			// 기록: 레이드(요구사항: 5)
 			var raidUsed = petData[sender] && petData[sender].raidItemCount ? petData[sender].raidItemCount : 0;
@@ -1025,7 +1038,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				getC(miniUsed >= miniMax) +
 				"]" +
 				"[⛰️" +
-				getC(exploreCount >= GLOBAL_LIMITS.daily.petExploreMax) +
+				getC(exploreCount >= GLOBAL_CONFIG.daily.petExploreMax) +
 				"]" +
 				"\n" +
 				dailyQuestRewardMsg +
@@ -2073,15 +2086,15 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
 	var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-	var towerMax = GLOBAL_LIMITS.daily.trialTowerMax;
+	var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
 
 	var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 	var castleUsed = battleObj ? battleObj.count || 0 : 0;
-	var castleMax = GLOBAL_LIMITS.daily.castleBattleMax;
+	var castleMax = GLOBAL_CONFIG.daily.castleBattleMax;
 
 	var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 	var miniUsed = miniBattle.count || 0;
-	var miniMax = GLOBAL_LIMITS.daily.miniPetBattleMax;
+	var miniMax = GLOBAL_CONFIG.daily.miniPetBattleMax;
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
@@ -2089,7 +2102,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	var win = typeof rec.win === "number" ? rec.win : 0;
 	var lose = typeof rec.lose === "number" ? rec.lose : 0;
 	var exploreUsed = data.member[sender] && typeof data.member[sender].exploreCnt === "number" ? data.member[sender].exploreCnt : 0;
-	var exploreMax = GLOBAL_LIMITS.daily.petExploreMax;
+	var exploreMax = GLOBAL_CONFIG.daily.petExploreMax;
 
 	var rankInfo = getPetExploreRank(data, petExploreData, sender);
 	var rankText = rankInfo ? rankInfo.rank + "등" : "순위없음";
@@ -2262,7 +2275,7 @@ function generateBagOutput(bagItems) {
 
 		var specialItems = [
 			"자동탐험권🌄",
-			"자유시장회원권🏪",
+			GLOBAL_CONFIG.freeMarket.memberTicketItemName,
 			"확성기📢(/알림 내용 30자)",
 			"티어 승급티켓🎟",
 			"고급 티어 승급티켓🎫",
@@ -2322,11 +2335,11 @@ function generateBagOutput(bagItems) {
 
 			"후원 지원금👌",
 
-			"타이틀선물권💝(/타이틀선물 닉네임 내용)",
+			GLOBAL_CONFIG.titleGift.itemName,
 			"펫타이틀권🦊(/펫타이틀이름)",
-			"펫스킬북📙(/펫스킬오픈)",
-			"펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
-			"펫특성뽑기권🃏(/특성오픈)",
+			GLOBAL_CONFIG.petSkill.bookItemName,
+			GLOBAL_CONFIG.petSkill.unbindItemName,
+			GLOBAL_CONFIG.petSkill.oldTraitBookItemName,
 			"반지 이름변경권🗯(/반지이름)",
 			"정령 이름변경권📝(/정령이름)",
 
@@ -2342,8 +2355,8 @@ function generateBagOutput(bagItems) {
 			"선물상자🎁",
 			"우표💌",
 
-			"🥕당근이세요?",
-			"🌡️당근온도기(/온도 아이디)",
+			GLOBAL_CONFIG.items.carrotName,
+			GLOBAL_CONFIG.items.carrotThermometerName,
 
 			"마정석상자🔮",
 			"마정석🔮",
