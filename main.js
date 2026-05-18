@@ -32824,7 +32824,7 @@ function clearFreeMarketConfirmState(sender) {
 
 function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, itemName, quantity, price, carrotFee, extraLine) {
 	var msg = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
-	msg += "🏪 자유시장 등록 확인\n";
+	msg += "🏪 자유시장 등록 확인서\n";
 	msg += "━━━━━━━━━━━━\n";
 	msg += "물품: [" + itemName + "] x" + numberWithCommas(quantity) + "개\n";
 	msg += "판매금액: 🅟" + numberWithCommas(price) + "\n";
@@ -32832,13 +32832,13 @@ function buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender,
 	if (extraLine) msg += extraLine + "\n";
 	msg += "\등록✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
 	msg += "━━━━━━━━━━━━\n";
-	msg += "※ [등록/취소] 명령어를 입력해주세요.";
+	msg += "※ [자유시장거래/자유시장거래취소]\n명령어를 입력해주세요.";
 	return msg;
 }
 
 function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, listing) {
 	var msg = "[" + checkRank(data, petData, guildData, sender) + "]님\n";
-	msg += "🏪 자유시장 구매 확인\n";
+	msg += "🏪 자유시장 구매 확인서\n";
 	msg += "━━━━━━━━━━━━\n";
 	msg += "거래번호: " + listing.id + "번\n";
 	msg += "물품: [" + getFreeMarketItemText(listing) + "]\n";
@@ -32846,7 +32846,7 @@ function buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, list
 	msg += "판매금액: 🅟" + numberWithCommas(listing.price) + "\n";
 	msg += "\n구매✅ [자유시장거래]\n취소❌ [자유시장거래취소]\n";
 	msg += "━━━━━━━━━━━━\n";
-	msg += "※ [구매/취소] 명령어를 입력해주세요.";
+	msg += "※ [자유시장거래/자유시장거래취소]\n명령어를 입력해주세요.";
 	return msg;
 }
 
