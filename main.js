@@ -1,4 +1,4 @@
-﻿// 버전
+// 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
 const HoiBotVersion = "2.126"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
@@ -145,7 +145,7 @@ const PET_SKILL_LIST = [
 	{ name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
 	{ name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
 	{ name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
-	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 20% 확률로 상대의 1000만 포인트를 훔칩니다." },
+	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
@@ -155,6 +155,7 @@ const PET_SKILL_LIST = [
 
 	{ name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
 	{ name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
+	{ name: "숙련된 전사", grade: "A", rate: 1.7, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
 	{ name: "로열 하우스", grade: "A", rate: 1.6, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
 	// { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
 	{ name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
@@ -172,7 +173,6 @@ const PET_SKILL_LIST = [
 	{ name: "결혼못한 대장장이", grade: "B", rate: 2.0, effect: "/반지강화 성공 확률 5% 증가" },
 	{ name: "구원", grade: "B", rate: 2.3, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
 	{ name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨업 시 3업당 매력 +10" },
-	{ name: "숙련된 전사", grade: "B", rate: 2.3, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
 	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
 	{ name: "광산탐험가", grade: "B", rate: 2.5, effect: "정령강화/반지강화/펫강화 탐험 성공확률 5% 상승" },
 	{ name: "던전탐험가", grade: "B", rate: 2.5, effect: "친밀도/전도르/양계장/행운 탐험 성공확률 5% 상승" },
@@ -18169,7 +18169,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 					if (hasPetSkill(petSkillData, sender, "약탈자")) {
-						if (Math.random() < 0.2) {
+						if (Math.random() < 0.7) {
 							data.member[targetName].point = (data.member[targetName].point || 0) - 10000000;
 							addPoint(data, sender, 10000000);
 							replier.reply("약탈자📙\n" + userRank + "님의 약탈 본능 발동!\n상대 [" + checkRank(data, petData, guildData, targetName) + "]에게서 🅟1000만 포인트를 약탈합니다.");
