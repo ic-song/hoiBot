@@ -1077,6 +1077,7 @@ const miniPetCollectionPath = "/sdcard/호이랜드/miniPet_collection.json"; //
 const miniPetCollectionInfoPath = "/sdcard/호이랜드/miniPetCollectionInfo.json"; //미니펫 타이틀에 대한 정보
 const memberPetPath = "/sdcard/호이랜드/member_pet.json"; //멤버펫 유저 정보
 const petSkillDataPath = "/sdcard/호이랜드/petSkillData.json"; //펫스킬 데이터
+const punchRankPath = "/sdcard/호이랜드/punchRankData.json"; // 펀치데이터
 
 const trialTowerPath = "/sdcard/호이랜드/trialTower.json"; //시련의탑 유저정보
 const miniPetPath = "/sdcard/호이랜드/miniPetData.json"; //미니펫
@@ -13367,8 +13368,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 // 비용: 1회당 100,000P
 // 보상: 미니펫뽑기🐹(/미니펫오픈)
 // 랭킹 JSON: punchRankData.json
-
-var punchRankPath = sdcardPath + "/punchRankData.json";
 
 var PUNCH_COST = 100000;
 var PUNCH_MAX_OPEN = 100;
