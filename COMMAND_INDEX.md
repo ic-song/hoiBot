@@ -1190,7 +1190,7 @@ Status: VERIFIED
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
-- Daily quest, battle, command-use, display, happy-foundation, title-gift, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
+- Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
 ---
@@ -1311,6 +1311,61 @@ Status: VERIFIED
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
+
+---
+
+# /펀치|/펀치순위|/펀치순위초기화
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js`
+
+## Files
+
+- `main.js`
+- `punchRankData.json`
+- `member_title.json`
+- `member.json`
+
+## Related Helpers
+
+- `ensurePunchRankData`
+- `updatePunchRankData`
+- `ensureTitleUserData`
+- `hasUserTitle`
+- `givePunchLegendTitle`
+- `getPunchResult`
+- `addItemToBag`
+- `checkRank`
+
+## Data Usage
+
+- `GLOBAL_CONFIG.punchMachine`
+- `data.member[sender].bag[GLOBAL_CONFIG.punchMachine.itemName]`
+- `data.member[sender].point`
+- `punchRankData.member[sender]`
+- `titleData.member[sender].title.list`
+
+## Save Flow
+
+- `/펀치` consumes `핵꿀밤🥊(/펀치)`, subtracts points, grants `미니펫뽑기🐹(/미니펫오픈)`, updates title data on first legend hit, and saves `filePath`, `memberTitlePath`, and `punchRankPath`
+- `/펀치순위` reads `punchRankPath` and does not mutate data
+- `/펀치순위초기화` is admin-only, resets `punchRankPath`, and does not mutate member or title data
+
+## Related Commands
+
+- `/펀치`
+- `/펀치 [횟수]`
+- `/펀치순위`
+- `/펀치순위초기화`
+
+## AI Notes
+
+- `/펀치` uses exact/full-pattern guards, so suffix text after a valid count should not execute
+- `GLOBAL_CONFIG.punchMachine.maxOpen` caps one batch, and available item count can reduce the actual open count
+- Missing or invalid JSON files should follow the existing `loadJsonFile` error flow; helper functions do not perform file IO
 
 ---
 
