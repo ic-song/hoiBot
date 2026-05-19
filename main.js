@@ -13475,7 +13475,7 @@ if (msg === "/펀치순위") {
 	if (max > 30) max = 30;
 
 	for (var i = 0; i < max; i++) {
-		if (i === 10) {
+		if (i === 3) {
 			msgOut += allsee + "\n";
 		}
 
