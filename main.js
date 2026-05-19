@@ -13475,6 +13475,10 @@ if (msg === "/펀치순위") {
 	if (max > 30) max = 30;
 
 	for (var i = 0; i < max; i++) {
+		if (i === 10) {
+			msgOut += allsee + "\n";
+		}
+
 		var rankIcon = "";
 
 		if (i === 0) rankIcon = "🥇";
@@ -13560,26 +13564,26 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 	titleData = ensureTitleUserData(titleData, sender);
 
 	var rounds = [];
-	var noticeMsgs = [];
 
-	var totalMiniPetTicket = 0; // 누적 미니펫뽑기 보상 수량
-	var totalCost = 0; // 실제 진행 횟수 기준 누적 이용료
+	var totalMiniPetTicket = 0;
+	var totalCost = 0;
 
-	var cBaby = 0; // 솜주먹 결과 횟수
-	var cBean = 0; // 콩알펀치 결과 횟수
-	var cBeginner = 0; // 초보 파이터 결과 횟수
-	var cTown = 0; // 동네 주먹 결과 횟수
-	var cMuscle = 0; // 불끈 주먹 결과 횟수
-	var cSteel = 0; // 강철 주먹 결과 횟수
-	var cPower = 0; // 괴력의 파이터 결과 횟수
-	var cChampion = 0; // 오락실 챔피언 결과 횟수
-	var cMonster = 0; // 괴물 주먹 결과 횟수
-	var cBreaker = 0; // 기계파괴자 결과 횟수
-	var cLegend = 0; // 전설의 핵주먹 결과 횟수
+	var cBaby = 0;
+	var cBean = 0;
+	var cBeginner = 0;
+	var cTown = 0;
+	var cMuscle = 0;
+	var cSteel = 0;
+	var cPower = 0;
+	var cChampion = 0;
+	var cMonster = 0;
+	var cBreaker = 0;
+	var cLegend = 0;
 
-	var topScore = 0; // 다회 진행 중 최고 펀치 점수
-	var topRank = ""; // 다회 진행 중 최고 점수 등급
-	var legendTitleGivenCount = 0; // 신규 전설 타이틀 지급 횟수
+	var topScore = 0;
+	var topRank = "";
+	var legendTitleGivenCount = 0;
+	var legendMsg = "";
 
 	for (var round = 0; round < openCount; round++) {
 		var result = getPunchResult();
@@ -13627,23 +13631,21 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 				legendTitleGivenCount++;
 			}
 
-			var punchLegendNoticeMsg = "";
-			punchLegendNoticeMsg += "📢 오락실 전설 탄생 📢\n";
-			punchLegendNoticeMsg += "━━━━━━━━━━━━\n";
-			punchLegendNoticeMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
-			punchLegendNoticeMsg += "오락실 펀치기계에서 전설의 핵주먹을 기록했습니다!\n\n";
-			punchLegendNoticeMsg += "💥 펀치파워: 1000점\n";
-			punchLegendNoticeMsg += "🏷 등급: [전설의 핵주먹👑]\n";
-			if (isNewTitle) {
-				punchLegendNoticeMsg += "🎖 타이틀 획득: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
-			} else {
-				punchLegendNoticeMsg += "🎖 보유 타이틀: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
-			}
-			punchLegendNoticeMsg += "🎁 보상: " + GLOBAL_CONFIG.punchMachine.rewardItemName + " x10,000\n";
-			punchLegendNoticeMsg += "━━━━━━━━━━━━\n";
-			punchLegendNoticeMsg += "기계가 고장난 게 아니라 항복한 것이다.";
+			legendMsg += "\n\n📢 오락실 전설 탄생 📢\n";
+			legendMsg += "━━━━━━━━━━━━\n";
+			legendMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
+			legendMsg += "전설의 핵주먹👑을 기록했습니다!\n";
+			legendMsg += "💥 펀치파워: 1000점\n";
 
-			noticeMsgs.push(punchLegendNoticeMsg);
+			if (isNewTitle) {
+				legendMsg += "🎖 신규 타이틀 획득: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
+			} else {
+				legendMsg += "🎖 보유 타이틀: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
+			}
+
+			legendMsg += "🎁 보상: " + GLOBAL_CONFIG.punchMachine.rewardItemName + " x" + numberWithCommas(result.ticket) + "\n";
+			legendMsg += "━━━━━━━━━━━━\n";
+			legendMsg += "기계가 고장난 게 아니라 항복한 것이다.";
 		}
 
 		rounds.push({
@@ -13656,10 +13658,6 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 	}
 
 	addItemToBag(data.member[sender].bag, GLOBAL_CONFIG.punchMachine.rewardItemName, totalMiniPetTicket);
-
-	for (var n = 0; n < noticeMsgs.length; n++) {
-		replier.reply(noticeMsgs[n]);
-	}
 
 	if (openCount === 1) {
 		var one = rounds[0];
@@ -13678,8 +13676,8 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 		resultMsg += "━━━━━━━━━━━━\n";
 		resultMsg += GLOBAL_CONFIG.punchMachine.rewardItemName + " x" + numberWithCommas(one.ticket);
 
-		if (one.punchRank === "전설의 핵주먹👑" && legendTitleGivenCount > 0) {
-			resultMsg += "\n🎖 신규 타이틀 획득: " + GLOBAL_CONFIG.punchMachine.legendTitleName;
+		if (one.punchRank === "전설의 핵주먹👑" && legendMsg !== "") {
+			resultMsg += legendMsg;
 		}
 
 		replier.reply(resultMsg);
@@ -13714,6 +13712,10 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 
 		if (legendTitleGivenCount > 0) {
 			resultMsg2 += "\n🎖 신규 타이틀 획득: " + GLOBAL_CONFIG.punchMachine.legendTitleName + " x" + legendTitleGivenCount;
+		}
+
+		if (legendMsg !== "") {
+			resultMsg2 += legendMsg;
 		}
 
 		replier.reply(resultMsg2);
