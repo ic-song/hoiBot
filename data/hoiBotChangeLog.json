@@ -1,6 +1,13 @@
 {
   "entries": [
     {
+      "version": "2.120",
+      "date": "2026-05-19",
+      "changes": [
+        "noticeMsg 지역 변수 충돌로 전체 공지 호출이 실패하던 오류 수정"
+      ]
+    },
+    {
       "version": "2.119",
       "date": "2026-05-17",
       "changes": [
