@@ -13627,23 +13627,23 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 				legendTitleGivenCount++;
 			}
 
-			var punchLegendNoticeMsg = "";
-			punchLegendNoticeMsg += "📢 오락실 전설 탄생 📢\n";
-			punchLegendNoticeMsg += "━━━━━━━━━━━━\n";
-			punchLegendNoticeMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
-			punchLegendNoticeMsg += "오락실 펀치기계에서 전설의 핵주먹을 기록했습니다!\n\n";
-			punchLegendNoticeMsg += "💥 펀치파워: 1000점\n";
-			punchLegendNoticeMsg += "🏷 등급: [전설의 핵주먹👑]\n";
+			var noticeMsg = "";
+			noticeMsg += "📢 오락실 전설 탄생 📢\n";
+			noticeMsg += "━━━━━━━━━━━━\n";
+			noticeMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
+			noticeMsg += "오락실 펀치기계에서 전설의 핵주먹을 기록했습니다!\n\n";
+			noticeMsg += "💥 펀치파워: 1000점\n";
+			noticeMsg += "🏷 등급: [전설의 핵주먹👑]\n";
 			if (isNewTitle) {
-				punchLegendNoticeMsg += "🎖 타이틀 획득: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
+				noticeMsg += "🎖 타이틀 획득: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
 			} else {
-				punchLegendNoticeMsg += "🎖 보유 타이틀: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
+				noticeMsg += "🎖 보유 타이틀: " + GLOBAL_CONFIG.punchMachine.legendTitleName + "\n";
 			}
-			punchLegendNoticeMsg += "🎁 보상: " + GLOBAL_CONFIG.punchMachine.rewardItemName + " x10,000\n";
-			punchLegendNoticeMsg += "━━━━━━━━━━━━\n";
-			punchLegendNoticeMsg += "기계가 고장난 게 아니라 항복한 것이다.";
+			noticeMsg += "🎁 보상: " + GLOBAL_CONFIG.punchMachine.rewardItemName + " x10,000\n";
+			noticeMsg += "━━━━━━━━━━━━\n";
+			noticeMsg += "기계가 고장난 게 아니라 항복한 것이다.";
 
-			noticeMsgs.push(punchLegendNoticeMsg);
+			noticeMsgs.push(noticeMsg);
 		}
 
 		rounds.push({
