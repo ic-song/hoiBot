@@ -1186,7 +1186,7 @@ const GLOBAL_CONFIG = {
 	happyFoundation: { // 호이행복재단 설정
 		transferFeeMin: 0.5, // 이체 수수료 최소 설정값
 		transferFeeStep: 0.5, // 이체 수수료 변경 단위
-		transferFeeMax: 16 // 이체 수수료 최대 설정값
+		transferFeeMax: 20 // 이체 수수료 최대 설정값
 	},
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪",
@@ -1204,8 +1204,8 @@ const GLOBAL_CONFIG = {
 	},
 	miniPetCombination: { // 미니펫 조합 설정
 		elite: { // 엘리트 미니펫 조합 설정
-			cost: 50000000000,
-			successRate: 0.5
+			cost: 35000000000,
+			successRate: 0.1
 		}
 	},
 	items: { // 공통 아이템명 설정
@@ -1228,10 +1228,10 @@ const GLOBAL_CONFIG = {
 			pendingStaleMs: 30000 // 길드 영토전 대기 상태 오래 지속 시 자동 취소 시간 (30초)
 		},
 		rewards: { // 길드 영토전 보상 설정
-			turnFundReward: 100000000 // 영지전 공격 턴 기본보상
+			turnFundReward: 50000000 // 영지전 공격 턴 기본보상
 		},
 		rates: { // 길드 영토전 확률/증가량 설정
-			medalRewardRate: 0.15, // 영지전 공격 턴 확률보상
+			medalRewardRate: 0.1, // 영지전 공격 턴 확률보상
 			riftBaseRate: 70, // 영지전 균열 기본 성공 확률
 			riftItemStep: 10, // 영지전 균열 아이템당 확률 증가량
 			instabilityItemStep: 0.5 // 영지전 불안정 아이템당 불안정도 증가/감소량
@@ -13362,7 +13362,495 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply(baseMsg);
 					}, 300);
 				}
+// 🥊 호이월드 오락실 펀치기계 전체 코드
+// 명령어: /펀치, /펀치 [횟수], /펀치순위
+// 비용: 1회당 100,000P
+// 보상: 미니펫뽑기🐹(/미니펫오픈)
+// 랭킹 JSON: punchRankData.json
 
+var punchRankPath = sdcardPath + "/punchRankData.json";
+
+var PUNCH_COST = 100000;
+var PUNCH_MAX_OPEN = 100;
+var PUNCH_REWARD_ITEM = "미니펫뽑기🐹(/미니펫오픈)";
+var PUNCH_LEGEND_TITLE = "👑전설의 핵주먹";
+
+// 확률 안내
+// 원래 제안 확률: 30 + 25 + 20 + 15 + 10 + 4 + 0.8 + 0.2 = 105%
+// 총합 100%를 맞추기 위해 괴력의 파이터💥 확률을 10% -> 5%로 조정
+// 최종 확률:
+// 솜주먹 30%, 초보 25%, 동네 20%, 강철 15%, 괴력 5%, 챔피언 4%, 파괴자 0.8%, 핵주먹 0.2%
+
+function ensurePunchRankData(punchRankData) {
+	if (!punchRankData) punchRankData = {};
+	if (!punchRankData.member) punchRankData.member = {};
+	return punchRankData;
+}
+
+function updatePunchRankData(punchRankData, sender, rankName, score, rewardCount) {
+	punchRankData = ensurePunchRankData(punchRankData);
+
+	if (!punchRankData.member[sender]) {
+		punchRankData.member[sender] = {
+			bestScore: 0,
+			bestRank: "",
+			totalPlay: 0,
+			totalReward: 0,
+			lastScore: 0,
+			lastRank: "",
+			updateDate: ""
+		};
+	}
+
+	var userData = punchRankData.member[sender];
+
+	userData.totalPlay += 1;
+	userData.totalReward += rewardCount;
+	userData.lastScore = score;
+	userData.lastRank = rankName;
+	userData.updateDate = String(new Date());
+
+	if (score > userData.bestScore) {
+		userData.bestScore = score;
+		userData.bestRank = rankName;
+	}
+
+	return punchRankData;
+}
+
+function ensureTitleUserData(titleData, sender) {
+	if (!titleData.member) titleData.member = {};
+
+	if (!titleData.member[sender]) {
+		titleData.member[sender] = {
+			title: {
+				list: [],
+				num: null
+			}
+		};
+	}
+
+	if (!titleData.member[sender].title) {
+		titleData.member[sender].title = {
+			list: [],
+			num: null
+		};
+	}
+
+	if (!titleData.member[sender].title.list) {
+		titleData.member[sender].title.list = [];
+	}
+
+	return titleData;
+}
+
+function hasUserTitle(titleData, sender, titleName) {
+	if (!titleData.member) return false;
+	if (!titleData.member[sender]) return false;
+	if (!titleData.member[sender].title) return false;
+	if (!titleData.member[sender].title.list) return false;
+
+	var list = titleData.member[sender].title.list;
+
+	for (var i = 0; i < list.length; i++) {
+		if (list[i].name === titleName) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function givePunchLegendTitle(titleData, sender) {
+	titleData = ensureTitleUserData(titleData, sender);
+
+	if (!hasUserTitle(titleData, sender, PUNCH_LEGEND_TITLE)) {
+		titleData.member[sender].title.list.push({
+			name: PUNCH_LEGEND_TITLE,
+			inDate: new Date(),
+			price: 100000000
+		});
+
+		return true;
+	}
+
+	return false;
+}
+
+function getPunchResult() {
+	var r = Math.random() * 100;
+
+	if (r < 30) {
+		return {
+			rank: "솜주먹🐣",
+			ticket: 5,
+			scoreMin: 0,
+			scoreMax: 99,
+			imageLink: "https://ibb.co/솜주먹이미지",
+			mentList: [
+				"기계가 맞은 줄도 몰랐습니다.",
+				"주먹보다 바람이 더 강했습니다.",
+				"펀치기계가 조용히 한숨을 쉽니다.",
+				"오락실에 잠깐 정적이 흘렀습니다.",
+				"손목 스트레칭은 확실히 됐습니다."
+			]
+		};
+	} else if (r < 55) {
+		return {
+			rank: "초보 파이터🥊",
+			ticket: 10,
+			scoreMin: 100,
+			scoreMax: 299,
+			imageLink: "https://ibb.co/초보파이터이미지",
+			mentList: [
+				"나쁘지 않은 첫 펀치였습니다.",
+				"기계가 살짝 흔들렸습니다.",
+				"주먹에 가능성이 보입니다.",
+				"다음 펀치가 기대되는 기록입니다.",
+				"오락실 초보 딱지는 뗐습니다."
+			]
+		};
+	} else if (r < 75) {
+		return {
+			rank: "동네 주먹🤜",
+			ticket: 15,
+			scoreMin: 300,
+			scoreMax: 499,
+			imageLink: "https://ibb.co/동네주먹이미지",
+			mentList: [
+				"오락실 평균은 확실히 넘었습니다.",
+				"기계가 제법 크게 흔들렸습니다.",
+				"동네에서는 한 주먹 할 기록입니다.",
+				"기록판에 이름을 올려도 될 정도입니다.",
+				"주변 시선이 조금씩 모이기 시작합니다."
+			]
+		};
+	} else if (r < 90) {
+		return {
+			rank: "강철 주먹🔥",
+			ticket: 20,
+			scoreMin: 500,
+			scoreMax: 699,
+			imageLink: "https://ibb.co/강철주먹이미지",
+			mentList: [
+				"펀치기계가 크게 출렁였습니다.",
+				"주변에서 감탄사가 터져 나왔습니다.",
+				"주먹에 불꽃이 실린 듯했습니다.",
+				"오락실 분위기가 뜨거워졌습니다.",
+				"진짜 한 방이 무엇인지 보여줬습니다."
+			]
+		};
+	} else if (r < 95) {
+		return {
+			rank: "괴력의 파이터💥",
+			ticket: 100,
+			scoreMin: 700,
+			scoreMax: 899,
+			imageLink: "https://ibb.co/괴력파이터이미지",
+			mentList: [
+				"기계가 위험 신호를 보냅니다.",
+				"오락실 사람들이 모두 뒤돌아봤습니다.",
+				"주먹 한 방에 분위기가 뒤집혔습니다.",
+				"이건 힘이 아니라 재능입니다.",
+				"펀치기계가 다음 손님을 두려워합니다."
+			]
+		};
+	} else if (r < 99) {
+		return {
+			rank: "오락실 챔피언🏆",
+			ticket: 300,
+			scoreMin: 900,
+			scoreMax: 998,
+			imageLink: "https://ibb.co/오락실챔피언이미지",
+			mentList: [
+				"오락실 최고 기록에 도전합니다.",
+				"펀치기계가 한계까지 밀렸습니다.",
+				"기록판이 새 이름을 기다립니다.",
+				"펀치 한 방에 오락실이 술렁였습니다.",
+				"전설에 가까운 기록이 나왔습니다."
+			]
+		};
+	} else if (r < 99.8) {
+		return {
+			rank: "기계파괴자💀",
+			ticket: 1000,
+			scoreMin: 999,
+			scoreMax: 999,
+			imageLink: "https://ibb.co/기계파괴자이미지",
+			mentList: [
+				"펀치기계가 굉음을 내며 멈췄습니다.",
+				"오락실 사장님이 뛰쳐나왔습니다.",
+				"기계가 오늘부로 은퇴를 선언했습니다.",
+				"오락실 역사에 남을 한 방이 터졌습니다.",
+				"기계가 버틴 게 기적입니다."
+			]
+		};
+	}
+
+	return {
+		rank: "전설의 핵주먹👑",
+		ticket: 10000,
+		scoreMin: 1000,
+		scoreMax: 1000,
+		imageLink: "https://ibb.co/전설의핵주먹이미지",
+		mentList: [
+			"펀치기계가 점수를 표시하지 못하고 멈췄습니다.",
+			"오락실 전체가 전설의 순간을 목격했습니다.",
+			"이 주먹은 이미 인간의 영역을 벗어났습니다.",
+			"기계가 고장난 게 아니라 항복한 것입니다.",
+			"기록판이 1000점을 새기며 빛났습니다."
+		]
+	};
+}
+
+// =======================================================
+// /펀치순위
+// =======================================================
+if (msg === "/펀치순위") {
+	var punchRankData = loadJsonFile(punchRankPath);
+	punchRankData = ensurePunchRankData(punchRankData);
+
+	var list = [];
+
+	for (var user in punchRankData.member) {
+		if (!punchRankData.member.hasOwnProperty(user)) continue;
+
+		var p = punchRankData.member[user];
+
+		list.push({
+			name: user,
+			bestScore: parseInt(p.bestScore || 0, 10),
+			bestRank: p.bestRank || "기록없음",
+			totalPlay: parseInt(p.totalPlay || 0, 10),
+			totalReward: parseInt(p.totalReward || 0, 10),
+			lastScore: parseInt(p.lastScore || 0, 10),
+			lastRank: p.lastRank || "기록없음"
+		});
+	}
+
+	if (list.length === 0) {
+		replier.reply("🥊 아직 펀치기계 기록이 없습니다.");
+		return;
+	}
+
+	list.sort(function(a, b) {
+		if (b.bestScore !== a.bestScore) {
+			return b.bestScore - a.bestScore;
+		}
+		return b.totalPlay - a.totalPlay;
+	});
+
+	var msgOut = "";
+	msgOut += "🥊 호이월드 펀치기계 순위 🥊\n";
+	msgOut += "━━━━━━━━━━━━\n";
+	msgOut += "🏆 최고 점수 기준 랭킹\n";
+	msgOut += "※ 동점일 경우 참여 횟수 높은 순\n";
+	msgOut += "━━━━━━━━━━━━\n";
+
+	var max = list.length;
+	if (max > 30) max = 30;
+
+	for (var i = 0; i < max; i++) {
+		var rankIcon = "";
+
+		if (i === 0) rankIcon = "🥇";
+		else if (i === 1) rankIcon = "🥈";
+		else if (i === 2) rankIcon = "🥉";
+		else rankIcon = (i + 1) + ".";
+
+		msgOut += rankIcon + " " + list[i].name + "\n";
+		msgOut += "└ 최고기록: " + numberWithCommas(list[i].bestScore) + "점 [" + list[i].bestRank + "]\n";
+		msgOut += "└ 참여횟수: " + numberWithCommas(list[i].totalPlay) + "회";
+		msgOut += " / 누적보상: " + PUNCH_REWARD_ITEM + " x" + numberWithCommas(list[i].totalReward) + "\n\n";
+	}
+
+	replier.reply(msgOut);
+	return;
+}
+
+// =======================================================
+// /펀치, /펀치 [횟수]
+// =======================================================
+if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
+	var openCount = 1;
+
+	if (msg.trim() !== "/펀치") {
+		openCount = parseInt(msg.trim().split(" ")[1], 10);
+		if (openCount > PUNCH_MAX_OPEN) openCount = PUNCH_MAX_OPEN;
+	}
+
+	if (!data.member[sender]) {
+		replier.reply("❌ 유저 데이터가 없습니다.");
+		return;
+	}
+
+	if (!data.member[sender].bag) {
+		data.member[sender].bag = {};
+	}
+
+	if (!data.member[sender].point) {
+		data.member[sender].point = 0;
+	}
+
+	var totalCostCheck = PUNCH_COST * openCount;
+
+	if (data.member[sender].point < totalCostCheck) {
+		replier.reply(
+			"❌ [" + checkRank(data, petData, guildData, sender) + "]님\n" +
+			"펀치기계를 이용할 포인트가 부족합니다.\n\n" +
+			"필요 포인트: 🅟" + numberWithCommas(totalCostCheck) + "\n" +
+			"보유 포인트: 🅟" + numberWithCommas(data.member[sender].point)
+		);
+		return;
+	}
+
+	// 포인트 차감
+	data.member[sender].point -= totalCostCheck;
+
+	var punchRankData2 = loadJsonFile(punchRankPath);
+	punchRankData2 = ensurePunchRankData(punchRankData2);
+
+	var titleData = loadJsonFile(memberTitlePath);
+	titleData = ensureTitleUserData(titleData, sender);
+
+	var rounds = [];
+	var totalMiniPetTicket = 0;
+	var totalCost = 0;
+
+	var cBaby = 0;
+	var cBeginner = 0;
+	var cTown = 0;
+	var cSteel = 0;
+	var cPower = 0;
+	var cChampion = 0;
+	var cBreaker = 0;
+	var cLegend = 0;
+
+	var topScore = 0;
+	var topRank = "";
+	var legendTitleGivenCount = 0;
+
+	for (var round = 0; round < openCount; round++) {
+		var result = getPunchResult();
+
+		var punchPower = result.scoreMin;
+		if (result.scoreMax > result.scoreMin) {
+			punchPower = Math.floor(Math.random() * (result.scoreMax - result.scoreMin + 1)) + result.scoreMin;
+		}
+
+		var punchMent = result.mentList[Math.floor(Math.random() * result.mentList.length)];
+
+		totalMiniPetTicket += result.ticket;
+		totalCost += PUNCH_COST;
+
+		if (punchPower > topScore) {
+			topScore = punchPower;
+			topRank = result.rank;
+		}
+
+		if (result.rank === "솜주먹🐣") cBaby++;
+		else if (result.rank === "초보 파이터🥊") cBeginner++;
+		else if (result.rank === "동네 주먹🤜") cTown++;
+		else if (result.rank === "강철 주먹🔥") cSteel++;
+		else if (result.rank === "괴력의 파이터💥") cPower++;
+		else if (result.rank === "오락실 챔피언🏆") cChampion++;
+		else if (result.rank === "기계파괴자💀") cBreaker++;
+		else if (result.rank === "전설의 핵주먹👑") cLegend++;
+
+		punchRankData2 = updatePunchRankData(
+			punchRankData2,
+			sender,
+			result.rank,
+			punchPower,
+			result.ticket
+		);
+
+		if (result.rank === "전설의 핵주먹👑") {
+			var isNewTitle = givePunchLegendTitle(titleData, sender);
+			if (isNewTitle) legendTitleGivenCount++;
+
+			var noticeMsg = "";
+			noticeMsg += "📢 오락실 전설 탄생 📢\n";
+			noticeMsg += "━━━━━━━━━━━━\n";
+			noticeMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이\n";
+			noticeMsg += "오락실 펀치기계에서 전설의 핵주먹을 기록했습니다!\n\n";
+			noticeMsg += "💥 펀치파워: 1000점\n";
+			noticeMsg += "🏷 등급: [전설의 핵주먹👑]\n";
+			noticeMsg += "🎖 타이틀 획득: " + PUNCH_LEGEND_TITLE + "\n";
+			noticeMsg += "🎁 보상: " + PUNCH_REWARD_ITEM + " x10,000\n";
+			noticeMsg += "━━━━━━━━━━━━\n";
+			noticeMsg += "기계가 고장난 게 아니라 항복한 것이다.";
+
+			replier.reply(noticeMsg);
+		}
+
+		rounds.push({
+			punchPower: punchPower,
+			punchRank: result.rank,
+			punchMent: punchMent,
+			ticket: result.ticket,
+			imageLink: result.imageLink
+		});
+	}
+
+	addItemToBag(data.member[sender].bag, PUNCH_REWARD_ITEM, totalMiniPetTicket);
+
+	if (openCount === 1) {
+		var one = rounds[0];
+
+		var resultMsg = "";
+		resultMsg += one.imageLink + "\n\n";
+		resultMsg += "🥊 호이월드 오락실 펀치기계 🥊\n";
+		resultMsg += "━━━━━━━━━━━━\n";
+		resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님의 펀치 결과\n\n";
+		resultMsg += "💸 이용료: 🅟-" + numberWithCommas(PUNCH_COST) + "\n";
+		resultMsg += "💥 펀치파워: " + numberWithCommas(one.punchPower) + "점\n";
+		resultMsg += "🏷 등급: [" + one.punchRank + "]\n\n";
+		resultMsg += one.punchMent + "\n\n";
+		resultMsg += "🎁 획득 보상\n";
+		resultMsg += "━━━━━━━━━━━━\n";
+		resultMsg += PUNCH_REWARD_ITEM + " x" + numberWithCommas(one.ticket);
+
+		if (one.punchRank === "전설의 핵주먹👑") {
+			resultMsg += "\n🎖 타이틀: " + PUNCH_LEGEND_TITLE;
+		}
+
+		replier.reply(resultMsg);
+
+	} else {
+		var resultMsg2 = "";
+		resultMsg2 += "🥊 호이월드 오락실 펀치기계 🥊\n";
+		resultMsg2 += "[" + checkRank(data, petData, guildData, sender) + "] 님 " + openCount + "회 진행" + allsee + "\n";
+		resultMsg2 += "━━━━━━━━━━━━\n";
+		resultMsg2 += "💸 총 이용료: 🅟-" + numberWithCommas(totalCost) + "\n\n";
+		resultMsg2 += "📊 펀치 결과\n";
+		resultMsg2 += "솜주먹🐣: " + cBaby + "회\n";
+		resultMsg2 += "초보 파이터🥊: " + cBeginner + "회\n";
+		resultMsg2 += "동네 주먹🤜: " + cTown + "회\n";
+		resultMsg2 += "강철 주먹🔥: " + cSteel + "회\n";
+		resultMsg2 += "괴력의 파이터💥: " + cPower + "회\n";
+		resultMsg2 += "오락실 챔피언🏆: " + cChampion + "회\n";
+		resultMsg2 += "기계파괴자💀: " + cBreaker + "회\n";
+		resultMsg2 += "전설의 핵주먹👑: " + cLegend + "회\n\n";
+		resultMsg2 += "🏆 최고 기록\n";
+		resultMsg2 += numberWithCommas(topScore) + "점 [" + topRank + "]\n\n";
+		resultMsg2 += "🎁 총 획득 보상\n";
+		resultMsg2 += "━━━━━━━━━━━━\n";
+		resultMsg2 += PUNCH_REWARD_ITEM + " x" + numberWithCommas(totalMiniPetTicket);
+
+		if (legendTitleGivenCount > 0) {
+			resultMsg2 += "\n🎖 신규 타이틀 획득: " + PUNCH_LEGEND_TITLE + " x" + legendTitleGivenCount;
+		}
+
+		replier.reply(resultMsg2);
+	}
+
+	saveJsonFile(data, filePath);
+	saveJsonFile(titleData, memberTitlePath);
+	saveJsonFile(punchRankData2, punchRankPath);
+
+	return;
+}
 				if (msg.startsWith("/1일1후원")) {
 					if (!castleSiegeFlag) {
 						let packageName = "1달러스토어🤑(/1일1후원)";
@@ -32862,7 +33350,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	out += "🛒구매: /자유시장구매 [번호]\n";
 	out += "❌취소: /자유시장취소 [번호]\n";
 	out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
-	out += "📋양식: [아이템x갯수][판매금액][판매자]\n";
+	out += "📋양식: [아이템x갯수][금액][판매자]\n";
 	out += "━━━━━━━━━━━━\n";
 	out += "[현재 등록 아이템🧳: " + numberWithCommas(listings.length) + "개]\n";
 	out += "자유시장 거래하러 가기👈" + allsee + "\n";
@@ -33389,7 +33877,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
 	msg += "\n📚 장착 가능한 스킬 목록\n";
 	msg += "※ 이미 장착되어있는 펫스킬은 표시되지 않습니다." + allsee + "\n";
-	msg += "전체 펫스킬을 보시려면 [/펫스킬가방]\n";
+	msg += "※ 전체 펫스킬을 보시려면 [/펫스킬가방]\n";
 	msg += "━━━━━━━━━━\n";
 
 	var equippedMap = {};
