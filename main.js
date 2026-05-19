@@ -26602,10 +26602,10 @@ function getPunchResult() {
 	if (r < 35) {
 		return {
 			rank: "솜주먹🐣",
-			ticket: 5,
+			ticket: 3,
 			scoreMin: 0,
 			scoreMax: 99,
-			imageLink: "https://ibb.co/솜주먹이미지",
+			imageLink: "https://ibb.co/YqKxZKh",
 			mentList: [
 				"기계가 맞은 줄도 몰랐습니다.",
 				"주먹보다 바람이 더 강했습니다.",
@@ -26617,10 +26617,10 @@ function getPunchResult() {
 	} else if (r < 60) {
 		return {
 			rank: "콩알펀치🫘",
-			ticket: 7,
+			ticket: 4,
 			scoreMin: 100,
 			scoreMax: 199,
-			imageLink: "https://ibb.co/콩알펀치이미지",
+			imageLink: "https://ibb.co/jvZ1XyQ4",
 			mentList: [
 				"기계가 살짝 움찔했습니다.",
 				"주먹에 귀여운 의지가 담겼습니다.",
@@ -26632,10 +26632,10 @@ function getPunchResult() {
 	} else if (r < 78) {
 		return {
 			rank: "초보 파이터🥊",
-			ticket: 10,
+			ticket: 6,
 			scoreMin: 200,
 			scoreMax: 299,
-			imageLink: "https://ibb.co/초보파이터이미지",
+			imageLink: "https://ibb.co/b5qJnGQL",
 			mentList: [
 				"나쁘지 않은 첫 펀치였습니다.",
 				"기계가 살짝 흔들렸습니다.",
@@ -26647,10 +26647,10 @@ function getPunchResult() {
 	} else if (r < 88) {
 		return {
 			rank: "동네 주먹🤜",
-			ticket: 15,
+			ticket: 8,
 			scoreMin: 300,
 			scoreMax: 449,
-			imageLink: "https://ibb.co/동네주먹이미지",
+			imageLink: "https://ibb.co/h1H8CwYL",
 			mentList: [
 				"오락실 평균은 확실히 넘었습니다.",
 				"기계가 제법 크게 흔들렸습니다.",
@@ -26662,10 +26662,10 @@ function getPunchResult() {
 	} else if (r < 94) {
 		return {
 			rank: "불끈 주먹💪",
-			ticket: 20,
+			ticket: 12,
 			scoreMin: 450,
 			scoreMax: 599,
-			imageLink: "https://ibb.co/불끈주먹이미지",
+			imageLink: "https://ibb.co/0R1RtPg8",
 			mentList: [
 				"주먹에 힘이 제대로 실렸습니다.",
 				"기계가 한 번 크게 밀렸습니다.",
@@ -26677,10 +26677,10 @@ function getPunchResult() {
 	} else if (r < 97) {
 		return {
 			rank: "강철 주먹🔥",
-			ticket: 40,
+			ticket: 20,
 			scoreMin: 600,
 			scoreMax: 749,
-			imageLink: "https://ibb.co/강철주먹이미지",
+			imageLink: "https://ibb.co/KxTDdjqj",
 			mentList: [
 				"펀치기계가 크게 출렁였습니다.",
 				"주변에서 감탄사가 터져 나왔습니다.",
@@ -26692,10 +26692,10 @@ function getPunchResult() {
 	} else if (r < 98.5) {
 		return {
 			rank: "괴력의 파이터💥",
-			ticket: 100,
+			ticket: 50,
 			scoreMin: 750,
 			scoreMax: 879,
-			imageLink: "https://ibb.co/괴력파이터이미지",
+			imageLink: "https://ibb.co/YFJN3vZK",
 			mentList: [
 				"기계가 위험 신호를 보냅니다.",
 				"오락실 사람들이 모두 뒤돌아봤습니다.",
@@ -26707,10 +26707,10 @@ function getPunchResult() {
 	} else if (r < 99.3) {
 		return {
 			rank: "오락실 챔피언🏆",
-			ticket: 300,
+			ticket: 120,
 			scoreMin: 880,
 			scoreMax: 949,
-			imageLink: "https://ibb.co/오락실챔피언이미지",
+			imageLink: "https://ibb.co/spfPQbc3",
 			mentList: [
 				"오락실 최고 기록에 도전합니다.",
 				"펀치기계가 한계까지 밀렸습니다.",
@@ -26722,10 +26722,10 @@ function getPunchResult() {
 	} else if (r < 99.8) {
 		return {
 			rank: "괴물 주먹🦍",
-			ticket: 700,
+			ticket: 250,
 			scoreMin: 950,
 			scoreMax: 989,
-			imageLink: "https://ibb.co/괴물주먹이미지",
+			imageLink: "https://ibb.co/Kj2spcGW",
 			mentList: [
 				"펀치 소리에 오락실이 조용해졌습니다.",
 				"기계가 버티는 게 이상할 정도입니다.",
@@ -26737,10 +26737,10 @@ function getPunchResult() {
 	} else if (r < 99.95) {
 		return {
 			rank: "기계파괴자💀",
-			ticket: 1000,
+			ticket: 500,
 			scoreMin: 990,
 			scoreMax: 999,
-			imageLink: "https://ibb.co/기계파괴자이미지",
+			imageLink: "https://ibb.co/nM1nqh5s",
 			mentList: [
 				"펀치기계가 굉음을 내며 멈췄습니다.",
 				"오락실 사장님이 뛰쳐나왔습니다.",
@@ -26753,10 +26753,10 @@ function getPunchResult() {
 
 	return {
 		rank: "전설의 핵주먹👑",
-		ticket: 10000,
-		scoreMin: 1000,
+		ticket: 1000,
+		scoreMin: 2000,
 		scoreMax: 1000,
-		imageLink: "https://ibb.co/전설의핵주먹이미지",
+		imageLink: "https://ibb.co/rGQpLbSR",
 		mentList: [
 			"펀치기계가 점수를 표시하지 못하고 멈췄습니다.",
 			"오락실 전체가 전설의 순간을 목격했습니다.",
