@@ -17,6 +17,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `.codex/skill-drafts-ko/`: Korean review drafts for hoiBot Codex skills, not auto-loaded skill sources
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
+  - `ERROR_FIX_LOG.md`: runtime error investigation records for future bug-fix reference
 
 ---
 
@@ -225,6 +226,7 @@ head-agent
  ├─ explorer-agent
  ├─ coding-agent
  ├─ reviewer-agent
+ ├─ error-bugfix-agent
  ├─ test-agent
  ├─ encoding-agent
  └─ doc-agent
@@ -402,6 +404,51 @@ head-agent
 - save-flow omissions
 - DEV/PROD path issues
 - unnecessary structural changes
+
+---
+
+# 10-1) error-bugfix-agent
+
+## Role
+
+- Receives runtime error logs and turns them into reusable bug-fix investigation records.
+- Analyzes:
+  - error message
+  - file name
+  - line number
+  - triggering message
+  - room/sender context when useful
+  - suspected command/helper path
+  - root cause candidates
+  - recommended fix and validation steps
+
+## Modification Permission
+
+- May modify Markdown investigation records such as `ERROR_FIX_LOG.md`.
+- MUST NOT modify source code unless the user explicitly asks for the actual bug fix.
+
+## Rules
+
+- When the user provides an error payload such as `[ERROR : Main error] {...}`, record the analysis in `ERROR_FIX_LOG.md`.
+- Each record should include the raw error summary, affected file/line, trigger message, cause analysis, proposed solution, validation checklist, and current status.
+- Re-check the current code around the reported line and search related helper/function names before writing the cause.
+- If line numbers appear stale because the code has changed, note the mismatch and analyze the closest matching helper or call site.
+- Do not treat a single stack line as full proof of root cause; list uncertainty explicitly.
+- Do not change runtime behavior while recording an error unless the user also requests a fix.
+- If the error involves save/load, inventory, points, item mutation, or DEV/PROD path flow, also apply save-flow guard rules.
+- If a source fix is later implemented, update the same `ERROR_FIX_LOG.md` entry with the commit/branch, changed files, validation result, and remaining risk.
+
+## Error Record Must Include
+
+- date
+- status
+- raw error summary
+- reported context
+- investigated files/functions
+- suspected cause
+- recommended fix
+- validation plan
+- follow-up notes
 
 ---
 
