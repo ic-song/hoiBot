@@ -3311,7 +3311,7 @@ Status: VERIFIED
 - `/자유시장생성` creates `freeMarketPath` only when the file does not already exist
 - Registration saves `freeMarketPath` and the mutated owner storage file
 - Purchase saves `freeMarketPath`, `filePath`, and the purchased item storage file
-- Cancel/force-cancel saves `freeMarketPath` and the restored item storage file
+- Cancel/force-cancel saves `freeMarketPath`, `filePath`, and the restored item storage file
 - Account deletion removes related free-market listings/logs and saves `freeMarketPath`
 
 ## Related Commands
@@ -3327,7 +3327,8 @@ Status: VERIFIED
 - `/거래소강제취소 [번호]`
 - `/자유시장생성`
 - `/자유시장현황`
-- `/거래현황`
+- `/자유시장거래현황`
+- `ㅅㅅ`
 
 ## AI Notes
 
@@ -3336,9 +3337,10 @@ Status: VERIFIED
 - Registration and purchase commands show a confirmation UI first; `/자유시장확인` re-runs validation before mutation, and `/자유시장확인취소` clears the pending request
 - Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
-- Registration fees consume `🥕당근이세요?` immediately and are not refunded on cancel/force-cancel
-- Sale fee is 10%, paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account
+- Registration fees consume `🥕당근이세요?` immediately; cancel/force-cancel refunds the stored `carrotFee` only when the seller currently holds `자유시장회원권🏪`
+- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 10%, and sellers holding `자유시장회원권🏪` use 7%
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
+- `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit

@@ -1192,7 +1192,9 @@ const GLOBAL_CONFIG = {
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪",
 		merchantSkillName: "타고난 장사꾼",
-		tradeFeeRate: 0.10 // 자유시장 거래 수수료율
+		tradeFeeRate: 0.10, // 자유시장 기본 거래 수수료율
+		memberTradeFeeRate: 0.07, // 자유시장회원권 보유자 거래 수수료율
+		memberFeeTag: "자회원🏪(수수료 7%)"
 	},
 	titleGift: { // 타이틀 선물 설정
 		itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)",
@@ -2906,7 +2908,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"[" + bagMarketItemName + "] " + numberWithCommas(bagMarketCount) + "개가\n" +
 						"🅟" + numberWithCommas(bagMarketPrice) + "에 등록되었습니다.\n\n" +
 						"※ 등록 수수료 [당근🥕 " + numberWithCommas(bagMarketCarrotFee) + "개]가 차감되었습니다.\n" +
-						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+						buildFreeMarketTradeFeeNotice(data, sender)
 					);
 					return;
 				}
@@ -2994,7 +2996,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"[" + formatFreeMarketMiniPetDetail(miniMarketTarget) + "] " + numberWithCommas(miniMarketCount) + "개가\n" +
 						"🅟" + numberWithCommas(miniMarketPrice) + "에 등록되었습니다.\n\n" +
 						"※ 등록 수수료 [당근🥕 " + numberWithCommas(miniMarketCarrotFee) + "개]가 차감되었습니다.\n" +
-						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+						buildFreeMarketTradeFeeNotice(data, sender)
 					);
 					return;
 				}
@@ -3070,7 +3072,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"[" + getFreeMarketFurnitureDisplayName(furnitureMarketTarget) + "] " + numberWithCommas(furnitureMarketCount) + "개가\n" +
 						"🅟" + numberWithCommas(furnitureMarketPrice) + "에 등록되었습니다.\n\n" +
 						"※ 등록 수수료 [당근🥕 " + numberWithCommas(furnitureMarketCarrotFee) + "개]가 차감되었습니다.\n" +
-						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+						buildFreeMarketTradeFeeNotice(data, sender)
 					);
 					return;
 				}
@@ -3126,7 +3128,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"[" + formatPetSkillName(skillMarketName) + "] " + numberWithCommas(skillMarketCount) + "개가\n" +
 						"🅟" + numberWithCommas(skillMarketPrice) + "에 등록되었습니다.\n\n" +
 						"※ 등록 수수료 [당근🥕 " + numberWithCommas(skillMarketCarrotFee) + "개]가 차감되었습니다.\n" +
-						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+						buildFreeMarketTradeFeeNotice(data, sender)
 					);
 					return;
 				}
@@ -3150,6 +3152,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					var cancelHomeData = loadJsonFile(homeDataFile) || {};
 					returnFreeMarketItemToOwner(data, petData, petSkillData, cancelHomeData, cancelListing, sender);
+					var cancelRefundedCarrotFee = refundFreeMarketCancelCarrotFee(data, sender, cancelListing);
 					removeFreeMarketListing(freeMarketCancelData, cancelListing.id);
 					saveJsonFile(data, filePath);
 					if (cancelListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
@@ -3160,7 +3163,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"🏪 자유시장 등록 취소\n" +
 						"━━━━━━━━━━━━\n" +
 						"등록한 [" + getFreeMarketItemText(cancelListing) + "] 이(가) 회수되었습니다.\n\n" +
-						"※ 등록 시 사용된 당근🥕은 환불되지 않습니다."
+						buildFreeMarketCancelCarrotFeeNotice(cancelRefundedCarrotFee)
 					);
 					return;
 				}
@@ -3179,6 +3182,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					var forceHomeData = loadJsonFile(homeDataFile) || {};
 					returnFreeMarketItemToOwner(data, petData, petSkillData, forceHomeData, forceListing, forceListing.seller);
+					var forceRefundedCarrotFee = refundFreeMarketCancelCarrotFee(data, forceListing.seller, forceListing);
 					removeFreeMarketListing(freeMarketForceData, forceListing.id);
 					saveJsonFile(data, filePath);
 					if (forceListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
@@ -3193,7 +3197,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"판매자: [" + checkRank(data, petData, guildData, forceListing.seller) + "]\n\n" +
 						"관리자 권한으로 거래가 취소되었습니다.\n" +
 						"물품은 판매자 보관소로 복귀되었습니다.\n\n" +
-						"※ 등록 시 사용된 당근🥕은 환불되지 않습니다."
+						buildFreeMarketCancelCarrotFeeNotice(forceRefundedCarrotFee)
 					);
 					return;
 				}
@@ -3249,13 +3253,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply(buildFreeMarketBuyConfirmMessage(data, petData, guildData, sender, buyListing));
 						return;
 					}
-					var sellerReceive = Math.floor(buyPrice * (1 - GLOBAL_CONFIG.freeMarket.tradeFeeRate));
+					var freeMarketTradeFeeRate = getFreeMarketTradeFeeRate(data, buyListing.seller);
+					var sellerReceive = Math.floor(buyPrice * (1 - freeMarketTradeFeeRate));
 					var marketFee = buyPrice - sellerReceive;
 					data.member[sender].point = (data.member[sender].point || 0) - buyPrice;
 					data.member[buyListing.seller].point = (data.member[buyListing.seller].point || 0) + sellerReceive;
 					addHappyFoundationLedgerAmount(data, marketFee);
 					returnFreeMarketItemToOwner(data, petData, petSkillData, buyHomeData, buyListing, sender);
-					addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee);
+					addFreeMarketCompletedLog(freeMarketBuyData, buyListing, sender, sellerReceive, marketFee, freeMarketTradeFeeRate);
 					removeFreeMarketListing(freeMarketBuyData, buyListing.id);
 					saveJsonFile(data, filePath);
 					if (buyListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
@@ -3269,7 +3274,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"━━━━━━━━━━━━\n" +
 						"[" + getFreeMarketItemText(buyListing) + "]을\n" +
 						"🅟" + numberWithCommas(buyPrice) + "에 구매했습니다.\n\n" +
-						"※ 거래수수료는 판매자에게 10% 부담됩니다."
+						buildFreeMarketTradeFeeNotice(data, buyListing.seller)
 					);
 					return;
 				}
@@ -33424,6 +33429,32 @@ function getFreeMarketRegisterLimit(data, petSkillData, user) {
 	return limit;
 }
 
+// 자유시장 거래 수수료율을 판매자의 회원권 보유 여부에 따라 반환하는 함수
+function getFreeMarketTradeFeeRate(data, seller) {
+	return hasFreeMarketMemberTicket(data, seller) ? GLOBAL_CONFIG.freeMarket.memberTradeFeeRate : GLOBAL_CONFIG.freeMarket.tradeFeeRate;
+}
+
+// 자유시장 거래 수수료 안내 문구를 판매자의 회원권 보유 여부에 맞춰 반환하는 함수
+function buildFreeMarketTradeFeeNotice(data, seller) {
+	return "※ 거래수수료는 판매자에게 " + formatTransferFeeRate(getFreeMarketTradeFeeRate(data, seller) * 100) + "% 부담됩니다.";
+}
+
+// 자유시장 취소 시 회원권 보유 판매자에게 등록 수수료 당근을 반환하는 함수
+function refundFreeMarketCancelCarrotFee(data, seller, listing) {
+	var carrotFee = parseInt((listing && listing.carrotFee) || 0, 10);
+	if (carrotFee <= 0 || !hasFreeMarketMemberTicket(data, seller)) return 0;
+	addItem(data, seller, GLOBAL_CONFIG.items.carrotName, carrotFee);
+	return carrotFee;
+}
+
+// 자유시장 취소 수수료 반환 결과 안내 문구를 반환하는 함수
+function buildFreeMarketCancelCarrotFeeNotice(refundedCarrotFee) {
+	if (refundedCarrotFee > 0) {
+		return "※ 자유시장회원권🏪 혜택으로 등록 수수료 당근🥕 " + numberWithCommas(refundedCarrotFee) + "개가 반환되었습니다.";
+	}
+	return "※ 등록 시 사용된 당근🥕은 환불되지 않습니다.";
+}
+
 // 자유시장회원권 보유 여부를 가방 키 정규화 기준으로 확인하는 함수
 function hasFreeMarketMemberTicket(data, user) {
 	return getFreeMarketMemberTicketCount(data, user) > 0;
@@ -33502,7 +33533,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var out = "🏪 호이월드 자유시장 🏪\n";
 	out += "━━━━━━━━━━━━\n"; 
 	out += "💰수수료: 판매금액의 10%\n";
-	out += "🏪 자유시장회원권: 소지시 수수료 7%(준비중)\n";
+	out += "🏪 자유시장회원권: 소지시 수수료 7%\n";
 	out += "🛒구매: /자유시장구매 [번호]\n";
 	out += "❌취소: /자유시장취소 [번호]\n";
 	out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -33535,7 +33566,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
 	out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
 	out += "💰수수료는 판매금액의 10%\n";
-	out += "🏪 자유시장회원권 소지시 수수료 7%(준비중)\n"
+	out += "🏪 자유시장회원권 소지시 수수료 7%\n"
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
 	out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -33545,13 +33576,21 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	for (var i = 0; i < logs.length; i++) {
 	//	if (i === 0) 
 		var log = logs[i];
-		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]\n\n";
+		var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + GLOBAL_CONFIG.freeMarket.memberFeeTag : "";
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag + "\n\n";
 	}
 	return out.trim();
 }
 
-function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount) {
+// 자유시장 완료 로그가 회원권 수수료 적용 거래인지 확인하는 함수
+function isFreeMarketMemberFeeLog(log) {
+	return !!(log && log.memberFeeApplied === true);
+}
+
+function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive, feeAmount, feeRate) {
 	freeMarketData = ensureFreeMarketData(freeMarketData);
+	var appliedFeeRate = Number(feeRate);
+	var memberFeeApplied = appliedFeeRate === GLOBAL_CONFIG.freeMarket.memberTradeFeeRate;
 	var completedItemName = listing.itemName;
 	if (listing.type === "miniPet" && listing.payload && listing.payload.pets && listing.payload.pets.length > 0) {
 		completedItemName = formatFreeMarketMiniPetDetail(listing.payload.pets[0]);
@@ -33570,6 +33609,8 @@ function addFreeMarketCompletedLog(freeMarketData, listing, buyer, sellerReceive
 		price: listing.price,
 		sellerReceive: sellerReceive,
 		feeAmount: feeAmount,
+		feeRate: appliedFeeRate,
+		memberFeeApplied: memberFeeApplied,
 		seller: listing.seller,
 		buyer: buyer,
 		completedAt: formatDateTime(new Date()),
