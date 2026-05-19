@@ -13833,12 +13833,11 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 								delete data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"];
 							}
 							var hangawiItems = {
-								"보물지도🗺️": 40,
-								"오톡소개팅💘(/안녕하세요?)": 3,
+								"보물지도🗺️": 20,
+								"핵꿀밤🥊(/펀치)": 5,
 								"탐험확률UP🗻(30%)": 5,
-								"탐험확률UP🗻(40%)": 5,
-								"탐험확률UP🗻(50%)": 10,
-								"펫던전 입장권🌋": 10
+								"펫던전 입장권🌋": 5,
+								"확성기📢(/알림 내용 30자) ": 5
 							};
 							for (let item in hangawiItems) {
 								addItemToBag(data.member[sender].bag, item, hangawiItems[item]);
