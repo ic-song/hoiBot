@@ -42,6 +42,15 @@ Before pushing `feature/prod`, verify the commit(s) being pushed already exist
 on a pushed source branch. If they do not, stop and move the work to the correct
 source branch first.
 
+For production-facing code/data/bug-fix changes, verify
+`data/hoiBotChangeLog.json` has a new top entry before reflection. The entry
+must increase the latest version by `0.001`, use the reflection date, and
+summarize the user-visible fix or change in `changes`.
+
+Workflow-only, documentation-only, and internal agent rule changes may skip
+`data/hoiBotChangeLog.json` unless they change live bot behavior or the user
+explicitly requests a visible change record.
+
 If the task branch contains unrelated commits, cherry-pick only the validated task commit(s).
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.

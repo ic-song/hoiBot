@@ -51,13 +51,15 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 3. If the change is documentation, workflow, branch strategy, tools, or Codex skill work, commit and push it on `feature/workflow` first.
 4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
 5. For production-facing code/data work, commit and push the current task branch first.
-6. Switch to `feature/prod`.
-7. Pull `feature/prod`.
-8. Verify the commit(s) to reflect already exist on the pushed source branch.
-9. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
-10. Push `feature/prod`.
-11. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
-12. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, and whether local skills were updated.
+6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary.
+7. Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change live bot behavior or the user explicitly requests a visible change record.
+8. Switch to `feature/prod`.
+9. Pull `feature/prod`.
+10. Verify the commit(s) to reflect already exist on the pushed source branch.
+11. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
+12. Push `feature/prod`.
+13. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
+14. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, and whether local skills were updated.
 
 ## Merge Versus Cherry-Pick
 

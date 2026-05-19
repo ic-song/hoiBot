@@ -134,6 +134,9 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Do not proactively synchronize `feature/prod` into `main`; after operational stabilization, wait for the user to request a PR from `feature/prod` to `main`.
 - Open PRs back into `feature/prod` for operational changes.
 - When the user says "prod까지 올려줘" or "운영반영해줘", treat it as a request to push the current task branch and then reflect the validated work into `feature/prod`.
+- For production-facing code/data/bug-fix changes, add a new top entry to `data/hoiBotChangeLog.json` before production reflection.
+- Each `data/hoiBotChangeLog.json` entry must increase the latest version by `0.001`, use the reflection date, and summarize the user-visible fix or change in `changes`.
+- Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change the live bot behavior or the user explicitly requests a visible change record.
 - Test reflection scripts should use `feature/prod` as their source branch.
 - `main` is a stable/reference branch and should not be assumed to be the active production source.
 - After validated operational changes settle, synchronize `feature/prod` back to `main` when explicitly requested.
@@ -279,6 +282,7 @@ head-agent
 - Before pushing `feature/prod`, verify the commit(s) being pushed already exist on a pushed source branch; if they do not, move the work to the correct task branch first.
 - Merge into `feature/prod` only after explicit user approval.
 - For "prod까지 올려줘" or "운영반영해줘", push the current task branch first, then merge or cherry-pick the validated task changes into `feature/prod`, and push `feature/prod`.
+- Before reflecting production-facing code/data/bug-fix changes into `feature/prod`, verify `data/hoiBotChangeLog.json` has a new top entry with the latest version increased by `0.001` and a concise `changes` summary.
 - For workflow/documentation changes, do not wait for a separate production-reflection phrase; push `feature/workflow`, then reflect the validated workflow commit(s) into `feature/prod`.
 - If the task branch contains unrelated historical commits or is far ahead of its upstream, do not merge the whole branch into `feature/prod`; cherry-pick only the validated task commit(s).
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
