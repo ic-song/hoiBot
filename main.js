@@ -894,7 +894,7 @@ const ticketTierData = {
 		emoji: "♣️",
 		ticket: 230000,
 		highticket: 1990,
-		exp: 25000,
+		exp: 250000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -903,7 +903,7 @@ const ticketTierData = {
 		emoji: "🃏",
 		ticket: 260000,
 		highticket: 2190,
-		exp: 25000,
+		exp: 250000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -912,7 +912,7 @@ const ticketTierData = {
 		emoji: "🧸",
 		ticket: 300000,
 		highticket: 2390,
-		exp: 25000,
+		exp: 250000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -921,7 +921,7 @@ const ticketTierData = {
 		emoji: "🌱",
 		ticket: 350000,
 		highticket: 2550,
-		exp: 30000,
+		exp: 500000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -930,7 +930,7 @@ const ticketTierData = {
 		emoji: "🌸",
 		ticket: 400000,
 		highticket: 2750,
-		exp: 30000,
+		exp: 500000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -939,7 +939,7 @@ const ticketTierData = {
 		emoji: "🎲",
 		ticket: 500000,
 		highticket: 3000,
-		exp: 30000,
+		exp: 500000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -948,7 +948,7 @@ const ticketTierData = {
 		emoji: "😈",
 		ticket: 600000,
 		highticket: 3250,
-		exp: 30000,
+		exp: 750000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -957,7 +957,7 @@ const ticketTierData = {
 		emoji: "🦄",
 		ticket: 700000,
 		highticket: 3600,
-		exp: 40000,
+		exp: 750000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -966,7 +966,7 @@ const ticketTierData = {
 		emoji: "👻",
 		ticket: 800000,
 		highticket: 4000,
-		exp: 40000,
+		exp: 750000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -975,7 +975,7 @@ const ticketTierData = {
 		emoji: "🐶",
 		ticket: 900000,
 		highticket: 4400,
-		exp: 40000,
+		exp: 750000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -984,7 +984,7 @@ const ticketTierData = {
 		emoji: "🐉",
 		ticket: 1000000,
 		highticket: 4800,
-		exp: 40000,
+		exp: 750000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -993,7 +993,7 @@ const ticketTierData = {
 		emoji: "🐦‍🔥",
 		ticket: 2000000,
 		highticket: 5500,
-		exp: 50000,
+		exp: 1000000,
 		low: 1.0,
 		high: 1.5,
 		bonusP: 0.7
@@ -36129,9 +36129,8 @@ function runMiniPetDungeonBoxOpen(sender, data, petData, guildData, msg, replier
 }
 
 function rollJeondorBox() {
-	var qty = Math.floor(Math.random() * 2) + 1; // 1~2개
 	return {
-		gainItems: { "전설의 돌맹이🗿": qty },
+		gainItems: { "전설의 돌맹이🗿": 1 },
 		gainTextLines: []
 	};
 }
