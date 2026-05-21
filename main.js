@@ -29149,11 +29149,13 @@ function applyRanksBasedOnTickets(petData, data, replier) {
 			if (bonus > 0) {
 				resultMsg += user.userName + "님 티어 승급을 축하드립니다.\n";
 				resultMsg += "티어업 보너스 매력💕을 획득합니다.\n";
-				resultMsg += "펫매력추가💕 " + bonus + "\n\n";
+				resultMsg += "캐슬/레이드 매력추가💕 " + bonus + "\n";
+				resultMsg += "종합매력에x2배 매력이 반영됩니다.\n\n"
 			} else if (bonus < 0) {
 				resultMsg += user.userName + "님 티어가 하락되었습니다.\n";
 				resultMsg += "펫 매력이 회수됩니다.\n";
-				resultMsg += "펫매력감소💔 " + Math.abs(bonus) + "\n\n";
+				resultMsg += "캐슬/레이드 매력감소💔 " + Math.abs(bonus) + "\n";
+                resultMsg += "종합매력에x2배 매력이 반영됩니다.\n\n"
 			} else {
 				resultMsg += user.userName + "님의 티어는 변경되었지만 매력 변화는 없습니다.\n\n";
 			}
