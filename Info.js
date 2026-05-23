@@ -90,8 +90,8 @@ function isMaster(sender) {
 	return Master.includes(sender);
 }
 //미니펫
-var ELITE_MINIPET_MAX_LV = 30;
-var MINIPET_MAX_LV = ELITE_MINIPET_MAX_LV - 1;
+var MINIPET_MAX_LV = 300;
+var ELITE_MINIPET_MAX_LV = MINIPET_MAX_LV;
 
 //티어티켓정보
 const ticketTierData = {
