@@ -1297,6 +1297,7 @@ Status: VERIFIED
 - `/패키지활성`
 - `/패키지지급`
 - `/패키지가방`
+- `/패키지가방 [아이디]`
 - `/패키지사용`
 
 ## AI Notes
@@ -1311,6 +1312,7 @@ Status: VERIFIED
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
+- `/패키지가방 [아이디]` is Master-only and reads another user's package bag without mutating or saving data
 
 ---
 
@@ -2310,7 +2312,7 @@ Status: VERIFIED
 ## AI Notes
 - `컬렉션창조 미니펫🐹(+1💕)[창조]` is explicitly excluded from elite-combination materials
 - Elite reward pool contains 아르케, 카오스, 데미우르고스, 아이온, 로고스
-- Existing upgrade cap logic was not changed by this command entry
+- Elite-combination material checks rely on 창조 mini-pets reaching 300강; current mini-pet upgrade cap supports that path
 
 ---
 
@@ -2411,6 +2413,8 @@ Status: VERIFIED
 ## Related Helpers
 - `sanitizeMiniPetCollectionData`
 - collection registration helpers in nearby branch
+- `getMiniPetCollectionAutoUpgradePlan`
+- `tryAutoUpgradeMiniPetForCollection`
 ## Data Usage
 - `petData[sender].miniPetBag`
 - `miniPetCollectionData.member[sender]`
@@ -2420,6 +2424,10 @@ Status: VERIFIED
 ## Related Commands
 - `/미니펫컬렉션`
 - `/미니펫컬렉션순위`
+
+## AI Notes
+- Collection registration auto-upgrade uses `MINI_PROB`, `MINI_COST`, and `getCharmGainFor`; these tables now support 1~300강
+- Auto-upgrade guard allows enough attempts for 300강 low-probability ranges before stopping as abnormal
 
 ---
 
@@ -3342,6 +3350,7 @@ Status: VERIFIED
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
+- `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
