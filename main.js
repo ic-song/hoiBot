@@ -1192,7 +1192,7 @@ const GLOBAL_CONFIG = {
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪",
 		merchantSkillName: "타고난 장사꾼",
-		tradeFeeRate: 0.10, // 자유시장 기본 거래 수수료율
+		tradeFeeRate: 0.15, // 자유시장 기본 거래 수수료율
 		memberTradeFeeRate: 0.07, // 자유시장회원권 보유자 거래 수수료율
 		memberFeeTag: "자회원🏪(수수료 7%)"
 	},
@@ -33534,7 +33534,7 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	var listings = getFreeMarketActiveListings(freeMarketData);
 	var out = "🏪 호이월드 자유시장 🏪\n";
 	out += "━━━━━━━━━━━━\n"; 
-	out += "💰수수료: 판매금액의 10%\n";
+	out += "💰수수료: 판매금액의 15%\n";
 	out += "🏪 자유시장회원권: 소지시 수수료 7%\n";
 	out += "🛒구매: /자유시장구매 [번호]\n";
 	out += "❌취소: /자유시장취소 [번호]\n";
@@ -33567,7 +33567,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	out += "━━━━━━━━━━━━\n";
 	out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
 	out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-	out += "💰수수료는 판매금액의 10%\n";
+	out += "💰수수료는 판매금액의 15%\n";
 	out += "🏪 자유시장회원권 소지시 수수료 7%\n"
 	out += "━━━━━━━━━━━━\n";
 	out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
