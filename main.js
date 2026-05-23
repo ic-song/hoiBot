@@ -11,88 +11,9 @@ let autoDailyQuestInternalDepth = 0;
 let USER_REQUEST_WINDOW_MS = 2000; // 2초
 let USER_REQUEST_LIMIT = 3; // 2초에 3회 이상 요청 시 과부하로 간주
 
-function getUserRequestWindowSeconds() {
-	return USER_REQUEST_WINDOW_MS / 1000;
-}
 
-function getUserRequestBlockMessage() {
-	return "님의 요청이 " + getUserRequestWindowSeconds() + "초 내 " + USER_REQUEST_LIMIT + "회 감지되어 잠시 차단되었습니다.";
-}
 
 // 호이봇 수정 이력 안내 메시지 생성 함수
-function buildHoiBotChangeLogMessage(changeLogData) {
-	let lines = [];
-	let entries = changeLogData.entries;
-	let displayCount = Math.min(entries.length, GLOBAL_CONFIG.display.changeLogMax); // 최근 수정 이력 표시 개수
-	lines.push("🛠 호이봇 수정내용");
-	lines.push("현재 버전: ver_" + HoiBotVersion);
-	lines.push("━━━━━━━━━━━━");
-	lines.push(allsee);
-
-	for (let i = 0; i < displayCount; i++) {
-		let entry = entries[i];
-		lines.push("ver_" + entry.version + " (" + entry.date + ")");
-		for (let j = 0; j < entry.changes.length; j++) {
-			lines.push("- " + entry.changes[j]);
-		}
-		if (i < displayCount - 1) {
-			lines.push("");
-		}
-	}
-
-	return lines.join("\n");
-}
-
-function isExcludedRequestMonitoring(room, msg) {
-	if (autoDailyQuestInternalDepth > 0) {
-		return true;
-	}
-
-	let excludedCommands = (requestMonitorConfig && requestMonitorConfig.excludedCommands) || [];
-	let excludedRooms = (requestMonitorConfig && requestMonitorConfig.excludedRooms) || [];
-
-	if (excludedRooms.indexOf(room) !== -1) {
-		return true;
-	}
-
-	for (let i = 0; i < excludedCommands.length; i++) {
-		if (msg === excludedCommands[i] || msg.startsWith(excludedCommands[i] + " ")) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-function getAdminPayoutUsers(data) {
-	if (!data || !data.admin || typeof data.admin !== "object") return [];
-	return Object.keys(data.admin);
-}
-
-function buildAdminListMessage(admins) {
-	var list = admins.slice().sort(function (a, b) {
-		return a.localeCompare(b, "ko");
-	});
-	var msg = "🛠 관리자 명단\n";
-	msg += "━━━━━━━━━━━━\n";
-	msg += "총 관리자 수: " + numberWithCommas(list.length) + "명\n";
-	msg += "━━━━━━━━━━━━\n";
-	msg += "관리자 명단 보기👈" + allsee + "\n";
-	for (var i = 0; i < list.length; i++) {
-		msg += i + 1 + ". " + list[i] + "\n";
-	}
-	return msg.trim();
-}
-
-function saveRequestMonitorConfig() {
-	requestMonitorConfig.windowMs = USER_REQUEST_WINDOW_MS;
-	requestMonitorConfig.limit = USER_REQUEST_LIMIT;
-	saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
-}
-
-function normalizeMonitorValue(value) {
-	return (value || "").trim();
-}
 
 // 미니펫 컬렉션 등록 상태 초기값 생성 함수
 const MINI_PET_COLLECTION_ALLOWED_GRADES = ["창조", "창세", "태초+", "태초", "초월+", "초월", "신화+", "신화"];
@@ -199,433 +120,13 @@ var bidItems = [];
 const allsee = "​".repeat(500);
 // 미니펫강화
 // 목표레벨(=현재+1)별 성공확률
-var MINI_PROB = [
-	null,
+var MINIPET_MAX_LV = 300;
+var ELITE_MINIPET_MAX_LV = MINIPET_MAX_LV;
+var MINI_PROB = buildMiniUpgradeProbabilityTable(MINIPET_MAX_LV);
+var MINI_COST = buildMiniUpgradeCostTable(MINIPET_MAX_LV);
+var MINI_CHARM_ELITE = buildMiniUpgradeCharmTable(ELITE_MINIPET_MAX_LV, 12000);
+var MINI_CHARM_OTHER = buildMiniUpgradeCharmTable(MINIPET_MAX_LV, 10000);
 
-	// 1~20강 (70%)
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-	0.7,
-
-	// 21~50강 (50%)
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-	0.5,
-
-	// 51~80강 (40%)
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-	0.4,
-
-	// 81~90강 (25%)
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-	0.25,
-
-	// 91~100강 (7%)
-	0.07,
-	0.07,
-	0.07,
-	0.07,
-	0.07,
-	0.07,
-	0.07,
-	0.07,
-	0.07,
-	0.07
-];
-// 목표레벨(=현재+1)별 소모 포인트
-var MINI_COST = [
-	null,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000,
-	10000000
-];
-// 등급별(엘리트/그외) 도달 레벨 기준 매력 증가량
-var MINI_CHARM_ELITE = [
-	null,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000
-];
-var MINI_CHARM_OTHER = [
-	null,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000,
-	10000
-];
-
-//var ELITE_MINIPET_MAX_LV = 30;
-var ELITE_MINIPET_MAX_LV = 100;
-var MINIPET_MAX_LV = ELITE_MINIPET_MAX_LV - 1;
 // 미니펫강화
 // 티켓티어데이터
 const ticketTierData = {
@@ -1139,12 +640,6 @@ var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (g
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리 객체 (guildId: timerId)
 let isSaving = false; //메인 정보
-function isAdmin(sender) {
-	return Admins.includes(sender);
-}
-function isMaster(sender) {
-	return Master.includes(sender);
-}
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
 	attendance: { // 출석 보상 설정
@@ -1522,146 +1017,28 @@ const eventTowerBoss = loadJsonFile(eventTowerBossPath);
 const miniPetData = loadJsonFile(miniPetPath);
 
 // 요청 과부하 방지 기능
-function isRapidUserRequest(sender) {
-	let now = Date.now();
-	let history = userRequestTracker[sender] || [];
-
-	history = history.filter(function (timestamp) {
-		return now - timestamp <= USER_REQUEST_WINDOW_MS;
-	});
-
-	history.push(now);
-	userRequestTracker[sender] = history;
-
-	return history.length >= USER_REQUEST_LIMIT;
-}
 
 // 요청 과부하 정보 조회
-function getUserRequestInfo(sender) {
-	let now = Date.now();
-	let history = userRequestTracker[sender] || [];
-
-	history = history.filter(function (timestamp) {
-		return now - timestamp <= USER_REQUEST_WINDOW_MS;
-	});
-
-	userRequestTracker[sender] = history;
-	return {
-		count: history.length,
-		isFlood: history.length >= USER_REQUEST_LIMIT,
-		isFirstDetect: history.length === USER_REQUEST_LIMIT
-	};
-}
 
 // 요청 과부하 기준 시간 설정 조회
-function getUserRequestCount(sender) {
-	return getUserRequestInfo(sender).count;
-}
 
 // 요청 모니터링에서 특정 명령어나 방을 제외하는 함수
-function isDevCommandMessage(msg) {
-	return typeof msg === "string" && msg.indexOf("dev/") === 0;
-}
 
 // DEV 명령어 접두어 제거 및 명령어 형식 보정
-function stripDevCommandPrefix(msg) {
-	var command = String(msg || "").substring("dev/".length).trim();
-	if (!command) return "";
-	return command.charAt(0) === "/" ? command : "/" + command;
-}
 
 // DEV 명령어에 대한 컨텍스트를 생성하는 함수 (DEV/PROD 데이터 파일 경로 관리 및 메시지 헤더 관리)
-function createCommandContext(isDev) {
-	var rootPath = isDev ? DEV_DATA_ROOT_PATH : DATA_ROOT_PATH;
-	return {
-		isDev: !!isDev,
-		rootPath: rootPath,
-		path: function (fileName) {
-			fileName = String(fileName || "");
-			var dataFileName = getDataFileName(fileName);
-			if (!dataFileName && fileName.indexOf("/") === -1 && fileName.indexOf("\\") === -1) {
-				dataFileName = fileName;
-			}
-			if (this.isDev && dataFileName && !COMMON_DATA_FILE_MAP[dataFileName]) {
-				return this.rootPath + dataFileName;
-			}
-			if (dataFileName && fileName === dataFileName) {
-				return DATA_ROOT_PATH + dataFileName;
-			}
-			return fileName;
-		},
-		header: function (text) {
-			return this.isDev ? "[DEV 테스트환경]\n" + text : text;
-		},
-		key: function () {
-			return this.isDev ? "dev" : "prod";
-		}
-	};
-}
 
 // 커맨드 컨텍스트 관리 (DEV/PROD 데이터 파일 경로 관리 및 메시지 헤더 관리)
-function getCurrentContext() {
-	var ctx = commandContextThreadLocal.get();
-	return ctx || createCommandContext(false);
-}
 
 // 커맨드 실행 시 컨텍스트 설정 및 복원
-function enterCommandContext(ctx) {
-	var previous = commandContextThreadLocal.get();
-	commandContextThreadLocal.set(ctx || createCommandContext(false));
-	return previous;
-}
 
 // 커맨드 실행 후 이전 컨텍스트로 복원
-function exitCommandContext(previous) {
-	if (previous) {
-		commandContextThreadLocal.set(previous);
-	} else {
-		commandContextThreadLocal.remove();
-	}
-}
 
 // replier에 컨텍스트 기반 메시지 헤더 기능 추가
-function createContextReplier(replier, ctx) {
-	return {
-		reply: function (message) {
-			replier.reply(ctx.header(message));
-		}
-	};
-}
 
 // 길드 영토전 관련 명령어인지 확인
-function isMutableGuildTerritoryCommand(msg) {
-	if (typeof msg !== "string") return false;
-	return (
-		msg === "/길드영지준비" ||
-		msg === "/길드영지시작" ||
-		msg === "/길드영지종료" ||
-		msg === "/길드영지초기화" ||
-		msg === "/길드영지순서" ||
-		msg === "/길드영지확인" ||
-		/^\/영지공격\s+[1-5]$/.test(msg) ||
-		msg.indexOf("/불안정") === 0 ||
-		msg.indexOf("/안정") === 0 ||
-		msg.indexOf("/균열") === 0 ||
-		msg.indexOf("/대균열") === 0
-	);
-}
 
 // DEV 환경에서 길드 영토전이 활성화되어 있는지 확인
-function isDevGuildTerritoryWarActive() {
-	var prevCtx = enterCommandContext(createCommandContext(true));
-	try {
-		var devGuildData = loadJsonFile(guildPath);
-		if (!devGuildData) return false;
-		var devWar = ensureGuildTerritoryWar(null, devGuildData);
-		return !!(devWar && devWar.active);
-	} catch (e) {
-		return false;
-	} finally {
-		exitCommandContext(prevCtx);
-	}
-}
 
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
@@ -15440,10 +14817,21 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					return;
 				}
 
-				if (msg === "/패키지가방") {
+				if (msg === "/패키지가방" || /^\/패키지가방\s+.+$/.test(msg)) {
 					if (!data.member || !data.member[sender]) return;
+					var packageBagTarget = sender; // 패키지가방 조회 대상
+					if (msg !== "/패키지가방") {
+						if (!isMaster(sender)) {
+							return;
+						}
+						packageBagTarget = msg.replace(/^\/패키지가방\s+/, "").trim();
+						if (!packageBagTarget || !data.member[packageBagTarget]) {
+							replier.reply("❌ 대상 유저가 존재하지 않습니다: " + packageBagTarget);
+							return;
+						}
+					}
 					var packageInfoData = loadJsonFile(packageInfoPath); // 패키지가방 필터링용 패키지 목록
-					replier.reply(buildUserPackageBagMessage(data, petData, guildData, sender, packageInfoData));
+					replier.reply(buildUserPackageBagMessage(data, petData, guildData, packageBagTarget, packageInfoData));
 					return;
 				}
 
@@ -16119,6 +15507,10 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 					if (isNaN(newUpgrade) || newUpgrade < 0) {
 						replier.reply("❌ 올바른 강화 수치를 입력해주세요.");
+						return;
+					}
+					if (newUpgrade > getMiniPetUpgradeMaxLevel(pet)) {
+						replier.reply("❌ 최대 강화 수치는 +" + getMiniPetUpgradeMaxLevel(pet) + "💫입니다.");
 						return;
 					}
 					pet.upgrade = newUpgrade;
@@ -26493,6 +25885,248 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 /// 함수들                                                                                    ///
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+// 요청 감지 기준 시간을 초 단위로 반환하는 함수
+function getUserRequestWindowSeconds() {
+	return USER_REQUEST_WINDOW_MS / 1000;
+}
+
+// 요청 과부하 차단 안내 메시지를 생성하는 함수
+function getUserRequestBlockMessage() {
+	return "님의 요청이 " + getUserRequestWindowSeconds() + "초 내 " + USER_REQUEST_LIMIT + "회 감지되어 잠시 차단되었습니다.";
+}
+
+// 호이봇 수정 이력 안내 메시지 생성 함수
+function buildHoiBotChangeLogMessage(changeLogData) {
+	let lines = [];
+	let entries = changeLogData.entries;
+	let displayCount = Math.min(entries.length, GLOBAL_CONFIG.display.changeLogMax); // 최근 수정 이력 표시 개수
+	lines.push("🛠 호이봇 수정내용");
+	lines.push("현재 버전: ver_" + HoiBotVersion);
+	lines.push("━━━━━━━━━━━━");
+	lines.push(allsee);
+
+	for (let i = 0; i < displayCount; i++) {
+		let entry = entries[i];
+		lines.push("ver_" + entry.version + " (" + entry.date + ")");
+		for (let j = 0; j < entry.changes.length; j++) {
+			lines.push("- " + entry.changes[j]);
+		}
+		if (i < displayCount - 1) {
+			lines.push("");
+		}
+	}
+
+	return lines.join("\n");
+}
+
+// 관리자 권한 여부를 확인하는 함수
+function isAdmin(sender) {
+	return Admins.includes(sender);
+}
+
+// 마스터 권한 여부를 확인하는 함수
+function isMaster(sender) {
+	return Master.includes(sender);
+}
+
+// 유저 요청이 과부하 기준을 넘었는지 확인하는 함수
+function isRapidUserRequest(sender) {
+	let now = Date.now();
+	let history = userRequestTracker[sender] || [];
+
+	history = history.filter(function (timestamp) {
+		return now - timestamp <= USER_REQUEST_WINDOW_MS;
+	});
+
+	history.push(now);
+	userRequestTracker[sender] = history;
+
+	return history.length >= USER_REQUEST_LIMIT;
+}
+
+// 유저 요청 감지 상태 정보를 반환하는 함수
+function getUserRequestInfo(sender) {
+	let now = Date.now();
+	let history = userRequestTracker[sender] || [];
+
+	history = history.filter(function (timestamp) {
+		return now - timestamp <= USER_REQUEST_WINDOW_MS;
+	});
+
+	userRequestTracker[sender] = history;
+	return {
+		count: history.length,
+		isFlood: history.length >= USER_REQUEST_LIMIT,
+		isFirstDetect: history.length === USER_REQUEST_LIMIT
+	};
+}
+
+// 유저의 최근 요청 횟수를 반환하는 함수
+function getUserRequestCount(sender) {
+	return getUserRequestInfo(sender).count;
+}
+
+// DEV 명령어 접두사 여부를 확인하는 함수
+function isDevCommandMessage(msg) {
+	return typeof msg === "string" && msg.indexOf("dev/") === 0;
+}
+
+// DEV 명령어 접두사를 제거하고 일반 명령어 형태로 변환하는 함수
+function stripDevCommandPrefix(msg) {
+	var command = String(msg || "").substring("dev/".length).trim();
+	if (!command) return "";
+	return command.charAt(0) === "/" ? command : "/" + command;
+}
+
+// 명령 실행 컨텍스트를 생성하는 함수
+function createCommandContext(isDev) {
+	var rootPath = isDev ? DEV_DATA_ROOT_PATH : DATA_ROOT_PATH;
+	return {
+		isDev: !!isDev,
+		rootPath: rootPath,
+		path: function (fileName) {
+			fileName = String(fileName || "");
+			var dataFileName = getDataFileName(fileName);
+			if (!dataFileName && fileName.indexOf("/") === -1 && fileName.indexOf("\\") === -1) {
+				dataFileName = fileName;
+			}
+			if (this.isDev && dataFileName && !COMMON_DATA_FILE_MAP[dataFileName]) {
+				return this.rootPath + dataFileName;
+			}
+			if (dataFileName && fileName === dataFileName) {
+				return DATA_ROOT_PATH + dataFileName;
+			}
+			return fileName;
+		},
+		header: function (text) {
+			return this.isDev ? "[DEV 테스트환경]\n" + text : text;
+		},
+		key: function () {
+			return this.isDev ? "dev" : "prod";
+		}
+	};
+}
+
+// 현재 스레드의 명령 실행 컨텍스트를 반환하는 함수
+function getCurrentContext() {
+	var ctx = commandContextThreadLocal.get();
+	return ctx || createCommandContext(false);
+}
+
+// 명령 실행 컨텍스트를 진입하고 이전 컨텍스트를 반환하는 함수
+function enterCommandContext(ctx) {
+	var previous = commandContextThreadLocal.get();
+	commandContextThreadLocal.set(ctx || createCommandContext(false));
+	return previous;
+}
+
+// 명령 실행 컨텍스트를 이전 상태로 복구하는 함수
+function exitCommandContext(previous) {
+	if (previous) {
+		commandContextThreadLocal.set(previous);
+	} else {
+		commandContextThreadLocal.remove();
+	}
+}
+
+// 명령 실행 컨텍스트 헤더를 적용하는 replier 래퍼를 생성하는 함수
+function createContextReplier(replier, ctx) {
+	return {
+		reply: function (message) {
+			replier.reply(ctx.header(message));
+		}
+	};
+}
+
+// 길드 영지전 데이터를 변경하는 명령어인지 확인하는 함수
+function isMutableGuildTerritoryCommand(msg) {
+	if (typeof msg !== "string") return false;
+	return (
+		msg === "/길드영지준비" ||
+		msg === "/길드영지시작" ||
+		msg === "/길드영지종료" ||
+		msg === "/길드영지초기화" ||
+		msg === "/길드영지순서" ||
+		msg === "/길드영지확인" ||
+		/^\/영지공격\s+[1-5]$/.test(msg) ||
+		msg.indexOf("/불안정") === 0 ||
+		msg.indexOf("/안정") === 0 ||
+		msg.indexOf("/균열") === 0 ||
+		msg.indexOf("/대균열") === 0
+	);
+}
+
+// DEV 길드 영지전이 진행 중인지 확인하는 함수
+function isDevGuildTerritoryWarActive() {
+	var prevCtx = enterCommandContext(createCommandContext(true));
+	try {
+		var devGuildData = loadJsonFile(guildPath);
+		if (!devGuildData) return false;
+		var devWar = ensureGuildTerritoryWar(null, devGuildData);
+		return !!(devWar && devWar.active);
+	} catch (e) {
+		return false;
+	} finally {
+		exitCommandContext(prevCtx);
+	}
+}
+
+// 요청 모니터링 제외 대상 여부를 확인하는 함수
+function isExcludedRequestMonitoring(room, msg) {
+	if (autoDailyQuestInternalDepth > 0) {
+		return true;
+	}
+
+	let excludedCommands = (requestMonitorConfig && requestMonitorConfig.excludedCommands) || [];
+	let excludedRooms = (requestMonitorConfig && requestMonitorConfig.excludedRooms) || [];
+
+	if (excludedRooms.indexOf(room) !== -1) {
+		return true;
+	}
+
+	for (let i = 0; i < excludedCommands.length; i++) {
+		if (msg === excludedCommands[i] || msg.startsWith(excludedCommands[i] + " ")) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// 관리자 지급 대상 유저 목록을 반환하는 함수
+function getAdminPayoutUsers(data) {
+	if (!data || !data.admin || typeof data.admin !== "object") return [];
+	return Object.keys(data.admin);
+}
+
+// 관리자 명단 출력 메시지를 생성하는 함수
+function buildAdminListMessage(admins) {
+	var list = admins.slice().sort(function (a, b) {
+		return a.localeCompare(b, "ko");
+	});
+	var msg = "🛠 관리자 명단\n";
+	msg += "━━━━━━━━━━━━\n";
+	msg += "총 관리자 수: " + numberWithCommas(list.length) + "명\n";
+	msg += "━━━━━━━━━━━━\n";
+	msg += "관리자 명단 보기👈" + allsee + "\n";
+	for (var i = 0; i < list.length; i++) {
+		msg += i + 1 + ". " + list[i] + "\n";
+	}
+	return msg.trim();
+}
+
+// 요청 모니터링 설정을 저장하는 함수
+function saveRequestMonitorConfig() {
+	requestMonitorConfig.windowMs = USER_REQUEST_WINDOW_MS;
+	requestMonitorConfig.limit = USER_REQUEST_LIMIT;
+	saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
+}
+
+// 요청 모니터링 설정 입력값을 정규화하는 함수
+function normalizeMonitorValue(value) {
+	return (value || "").trim();
+}
+
 // 펀치기계 랭킹 데이터 기본 구조 보정 함수
 function ensurePunchRankData(punchRankData) {
 	if (!punchRankData) punchRankData = {};
@@ -33518,6 +33152,15 @@ function formatFreeMarketPoint(price) {
 	return text;
 }
 
+// 자유시장 표시용 월/일 시각 문자열 반환 함수
+function formatFreeMarketDisplayTime(timeText, timeMs) {
+	var normalized = timeText ? formatDateTime(timeText) : "";
+	if (!normalized && timeMs) normalized = formatDateTime(parseInt(timeMs, 10));
+	var match = normalized.match(/^\d{4}-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+	if (!match) return "";
+	return match[1] + "/" + match[2] + " " + match[3] + ":" + match[4];
+}
+
 function getFreeMarketItemText(listing) {
 	if (!listing) return "";
 	var itemName = listing.type === "skill" ? formatPetSkillName(listing.itemName) : listing.itemName;
@@ -33549,7 +33192,10 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
 	for (var i = 0; i < listings.length; i++) {
 	//	if (i === 0) 
 		var listing = listings[i];
-		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "]\n└[" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]\n\n";
+		var createdTimeText = formatFreeMarketDisplayTime(listing.createdAt, listing.createdAtMs);
+		out += (i + 1) + ". [" + getFreeMarketItemText(listing) + "]\n└[" + formatFreeMarketPoint(listing.price) + "][" + checkRank(data, petData, guildData, listing.seller) + "]";
+		if (createdTimeText) out += "\n  └ (" + createdTimeText + ")";
+		out += "\n\n";
 	}
 	return out.trim();
 }
@@ -33579,7 +33225,10 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 	//	if (i === 0) 
 		var log = logs[i];
 		var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + GLOBAL_CONFIG.freeMarket.memberFeeTag : "";
-		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag + "\n\n";
+		var completedTimeText = formatFreeMarketDisplayTime(log.completedAt, log.completedAtMs);
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
+		if (completedTimeText) out += "\n  └(" + completedTimeText + ")";
+		out += "\n\n";
 	}
 	return out.trim();
 }
@@ -34535,6 +34184,43 @@ function sleep(ms) {
 	while (Date.now() - start < ms) { }
 }
 
+// Mini-pet upgrade probability table builder
+function buildMiniUpgradeProbabilityTable(maxLevel) {
+	var table = [null];
+	for (var lv = 1; lv <= maxLevel; lv++) {
+		if (lv <= 20) table[lv] = 0.7;
+		else if (lv <= 50) table[lv] = 0.5;
+		else if (lv <= 80) table[lv] = 0.4;
+		else if (lv <= 90) table[lv] = 0.25;
+		else if (lv <= 100) table[lv] = 0.07;
+		else if (lv <= 150) table[lv] = 0.05;
+		else if (lv <= 200) table[lv] = 0.03;
+		else if (lv <= 250) table[lv] = 0.02;
+		else table[lv] = 0.01;
+	}
+	return table;
+}
+
+// Mini-pet upgrade point cost table builder
+function buildMiniUpgradeCostTable(maxLevel) {
+	var table = [null];
+	for (var lv = 1; lv <= maxLevel; lv++) {
+		if (lv <= 100) table[lv] = 10000000;
+		else if (lv <= 200) table[lv] = 20000000;
+		else table[lv] = 30000000;
+	}
+	return table;
+}
+
+// Mini-pet upgrade charm gain table builder
+function buildMiniUpgradeCharmTable(maxLevel, charmPerLevel) {
+	var table = [null];
+	for (var lv = 1; lv <= maxLevel; lv++) {
+		table[lv] = charmPerLevel;
+	}
+	return table;
+}
+
 // 가방에서 가장 높은 %의 확률UP 아이템 찾기: "미니펫강화확률UP🐷(x%)"
 function findBestMiniBoostItem(bag) {
 	var best = null,
@@ -34568,17 +34254,6 @@ function getCharmGainFor(mini, targetLv) {
 	if (!mini) return 0;
 
 	let table = isElite(mini) ? MINI_CHARM_ELITE : MINI_CHARM_OTHER;
-	let maxLv = isElite(mini) ? ELITE_MINIPET_MAX_LV : MINIPET_MAX_LV;
-
-	// 마지막 강화 시 확정 지급
-	if (targetLv === maxLv) {
-		if (isElite(mini)) {
-			return 100000; // 엘리트 마지막 강화
-		} else {
-			return 50000; // 일반 마지막 강화
-		}
-	}
-
 	return table[targetLv] || 0;
 }
 //  불변 필드 위주 동일성 체크 (battleExp 등 가변값은 제외)
@@ -34749,7 +34424,7 @@ function tryAutoUpgradeMiniPetForCollection(data, petData, petSkillData, sender,
 	var attemptCount = 0;
 	while (parseInt(mini.upgrade || 0, 10) < targetStage) {
 		attemptCount++;
-		if (attemptCount > 5000) {
+		if (attemptCount > 50000) {
 			result.failReason = "자동 강화 시도 횟수가 너무 많아 등록이 중단되었습니다.";
 			result.endUpgrade = parseInt(mini.upgrade || 0, 10);
 			return result;
