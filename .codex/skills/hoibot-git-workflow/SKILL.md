@@ -52,6 +52,8 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
 5. For production-facing code/data work, commit and push the current task branch first.
 6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary.
+   - Write change-log text for non-developers: explain what changed and what users/operators will notice, avoiding internal helper/file/key names unless they are user-facing command/data names.
+   - Verify `HoiBotVersion` in `main.js` matches the latest `data/hoiBotChangeLog.json` version so `/호이봇버전` and `/수정내용` stay consistent.
 7. Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change live bot behavior or the user explicitly requests a visible change record.
 8. Switch to `feature/prod`.
 9. Pull `feature/prod`.

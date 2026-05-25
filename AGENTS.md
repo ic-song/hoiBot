@@ -136,6 +136,8 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When the user says "prod까지 올려줘" or "운영반영해줘", treat it as a request to push the current task branch and then reflect the validated work into `feature/prod`.
 - For production-facing code/data/bug-fix changes, add a new top entry to `data/hoiBotChangeLog.json` before production reflection.
 - Each `data/hoiBotChangeLog.json` entry must increase the latest version by `0.001`, use the reflection date, and summarize the user-visible fix or change in `changes`.
+- Write `data/hoiBotChangeLog.json` entries for non-developers: describe what changed and how users/operators will notice it, avoid internal helper/file/key names unless the command or data name itself is user-facing.
+- Before production reflection, keep `HoiBotVersion` in `main.js` synchronized with the latest `data/hoiBotChangeLog.json` entry so `/호이봇버전` and `/수정내용` show the same current version.
 - Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change the live bot behavior or the user explicitly requests a visible change record.
 - Test reflection scripts should use `feature/prod` as their source branch.
 - `main` is a stable/reference branch and should not be assumed to be the active production source.
