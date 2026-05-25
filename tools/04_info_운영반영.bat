@@ -2,8 +2,8 @@
 chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
 
-set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
-set TARGET_DEVICE=emulator-5556
+set LD_CONSOLE_EXE=C:\LDPlayer\LDPlayer9\ldconsole.exe
+set TARGET_LD_INDEX=1
 set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/info/Info.js
 set SOURCE_FILE=Info.js
 set CHANGELOG_SOURCE=data\hoiBotChangeLog.json
@@ -20,13 +20,17 @@ echo  hoiBot 운영 반영 - Info.js
 echo ============================================================
 echo  LDPlayer와 MessengerBot이 켜진 상태에서 실행하세요.
 echo ============================================================
+echo  LD_CONSOLE_EXE  = %LD_CONSOLE_EXE%
+echo  TARGET_LD_INDEX = %TARGET_LD_INDEX%
+echo  TARGET_FILE     = %TARGET_FILE%
+echo ============================================================
 echo.
 
 echo [1/5] 준비 확인
 echo ------------------------------------------------------------
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
-if not exist "%ADB_EXE%" goto FAIL_ADB_EXE
+if not exist "%LD_CONSOLE_EXE%" goto FAIL_LD_CONSOLE_EXE
 if not exist "%SOURCE_FILE%" goto FAIL_SOURCE
 if not exist "%CHANGELOG_SOURCE%" goto FAIL_CHANGELOG_SOURCE
 echo [OK] 준비 완료
@@ -41,44 +45,31 @@ if errorlevel 1 goto FAIL_GIT_PULL
 echo [OK] 최신 코드 확인 완료
 echo.
 
-echo [3/5] LDPlayer 연결 확인
+echo [3/5] LDPlayer 인스턴스 연결 확인
 echo ------------------------------------------------------------
-"%ADB_EXE%" devices > nul 2>&1
+"%LD_CONSOLE_EXE%" list2 | findstr /b "%TARGET_LD_INDEX%," > nul 2>&1
+if errorlevel 1 goto FAIL_LD_INDEX
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell echo ok" > nul 2>&1
 if errorlevel 1 goto FAIL_ADB
-
-set DEVICE_COUNT=0
-set FIRST_DEVICE=
-
-for /f "skip=1 tokens=1,2" %%a in ('"%ADB_EXE%" devices') do (
-	if "%%b"=="device" (
-		set /a DEVICE_COUNT+=1
-		if "!FIRST_DEVICE!"=="" set FIRST_DEVICE=%%a
-	)
-)
-
-if "!DEVICE_COUNT!"=="0" goto FAIL_NO_DEVICE
-if not "!DEVICE_COUNT!"=="1" goto FAIL_MULTI_DEVICE
-
-set TARGET_DEVICE=!FIRST_DEVICE!
-echo [OK] 연결된 기기: !TARGET_DEVICE!
+echo [OK] LDPlayer index: %TARGET_LD_INDEX%
 echo.
 
 echo [4/5] Info.js 업로드
 echo ------------------------------------------------------------
-"%ADB_EXE%" -s %TARGET_DEVICE% push "%SOURCE_FILE%" "%TARGET_FILE%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %SOURCE_FILE% %TARGET_FILE%" > nul 2>&1
 if errorlevel 1 goto FAIL_PUSH
-"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_FILE%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%" > nul 2>&1
 echo [OK] Info.js uploaded
 echo.
 
 echo [5/5] 수정내용 업로드 및 컴파일 요청
 echo ------------------------------------------------------------
-"%ADB_EXE%" -s %TARGET_DEVICE% shell mkdir -p "%TARGET_CHANGELOG_DIR%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell mkdir -p %TARGET_CHANGELOG_DIR%" > nul 2>&1
 if errorlevel 1 goto FAIL_CHANGELOG
-"%ADB_EXE%" -s %TARGET_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %CHANGELOG_SOURCE% %TARGET_CHANGELOG%" > nul 2>&1
 if errorlevel 1 goto FAIL_CHANGELOG
-"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_CHANGELOG%" > nul 2>&1
-"%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME% > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_CHANGELOG%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%" > nul 2>&1
 if errorlevel 1 goto FAIL_COMPILE
 echo [OK] 수정내용 업로드 및 컴파일 요청 완료
 echo.
@@ -101,13 +92,13 @@ echo ============================================================
 pause
 exit /b 1
 
-:FAIL_ADB_EXE
+:FAIL_LD_CONSOLE_EXE
 echo.
 echo ============================================================
-echo  FAIL - ADB 파일 없음
+echo  FAIL - ldconsole.exe 파일 없음
 echo ============================================================
-echo  ADB_EXE 경로가 실제 LDPlayer adb.exe 위치와 다릅니다.
-echo  ADB_EXE = %ADB_EXE%
+echo  LD_CONSOLE_EXE 경로가 실제 LDPlayer ldconsole.exe 위치와 다릅니다.
+echo  LD_CONSOLE_EXE = %LD_CONSOLE_EXE%
 echo ============================================================
 pause
 exit /b 1
@@ -155,30 +146,21 @@ exit /b 1
 :FAIL_ADB
 echo.
 echo ============================================================
-echo  FAIL - ADB 기기 확인 실패
+echo  FAIL - LDPlayer ADB 명령 실패
 echo ============================================================
-echo  LDPlayer 실행 상태와 ADB 경로를 확인하세요.
-echo ============================================================
-pause
-exit /b 1
-
-:FAIL_NO_DEVICE
-echo.
-echo ============================================================
-echo  FAIL - 연결된 ADB 기기 없음
-echo ============================================================
-echo  LDPlayer가 켜져 있는지 확인한 뒤 다시 실행하세요.
+echo  TARGET_LD_INDEX = %TARGET_LD_INDEX%
+echo  LDPlayer 실행 상태와 MessengerBot 인스턴스를 확인하세요.
 echo ============================================================
 pause
 exit /b 1
 
-:FAIL_MULTI_DEVICE
+:FAIL_LD_INDEX
 echo.
 echo ============================================================
-echo  FAIL - 연결된 ADB 기기가 2개 이상입니다
+echo  FAIL - LDPlayer 인스턴스 없음
 echo ============================================================
-echo  운영 봇이 실행 중인 LDPlayer만 켜고 다시 실행하세요.
-echo  잘못된 기기에 운영반영되는 것을 막기 위해 중단합니다.
+echo  TARGET_LD_INDEX = %TARGET_LD_INDEX%
+echo  ldconsole list2에서 해당 인스턴스 번호를 확인하세요.
 echo ============================================================
 pause
 exit /b 1
