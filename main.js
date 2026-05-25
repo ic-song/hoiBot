@@ -1404,12 +1404,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		var matzangField = ensureMatzangFieldData(data);
 		var currencyLogData = ensureCurrencyLogData(loadJsonFile(currencyLogPath));
+		if (matzangField.active && matzangField.resting && matzangField.restUntil && Date.now() >= matzangField.restUntil) {
+			matzangField.resting = false;
+			matzangField.restUntil = 0;
+			saveJsonFile(data, filePath);
+		}
 		if (matzangField.active && (msg === "/미니펫오픈" || /^\/미니펫오픈\s+\d+$/.test(msg) || msg === "/샵오픈" || /^\/샵오픈\s+\d+$/.test(msg))) {
 			replier.reply("맞짱필드👊 진행 중에는 미니펫오픈/샵오픈을 사용할 수 없습니다.");
 			return;
 		}
 		if (msg === "/맞짱시작") {
-			if (!(isMaster(sender) || isAdmin(sender))) return;
+			if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 			if (room !== room8) {
 				replier.reply("맞짱필드👊는 공성전 방에서만 시작할 수 있습니다.");
 				return;
@@ -1427,12 +1432,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		if (msg === "/휴식") {
-			if (!(isMaster(sender) || isAdmin(sender))) return;
+			if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 			if (!matzangField.active) {
 				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
 				return;
 			}
 			matzangField.resting = true;
+			matzangField.restUntil = Date.now() + GLOBAL_CONFIG.matzangField.restMs;
 			saveJsonFile(data, filePath);
 			Api.replyRoom(room8, "땡🛎️땡🛎️ 떙🛎️[휴식]\n\n잠시 휴식 시간 입니다.(60초)\n※ /맞짱 or ㅁㅁ 이 불가하며\n※ /참여 or ㅊㅇ 만 가능합니다.\n━━━━━━━━━━━");
 			setTimeout(function () {
@@ -1440,6 +1446,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				var latestField = ensureMatzangFieldData(latestData);
 				if (latestField.active) {
 					latestField.resting = false;
+					latestField.restUntil = 0;
 					saveJsonFile(latestData, filePath);
 					Api.replyRoom(room8, "땡🛎️땡🛎️ 떙🛎️[시작]\n\n맞짱필드👊 휴식 시간 끝\n\n모두 맞짱뜨세요!\n\n※ /맞짱 or ㅁㅁ");
 				}
@@ -1458,6 +1465,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
 				return;
 			}
+			if (joinPart.active && !joinPart.eliminated) {
+				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 이미 맞짱필드👊에 참여 중입니다.\n대전방법: /맞짱 or ㅁㅁ");
+				return;
+			}
 			joinPart.active = true;
 			joinPart.eliminated = false;
 			var joinList = buildMatzangParticipantList(matzangField, data, petData, guildData);
@@ -1466,12 +1477,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			joinMsg += "[남은 횟수: " + joinRemain + " / " + GLOBAL_CONFIG.matzangField.maxCount + "] [누적: " + joinPart.pt + "pt]\n";
 			joinMsg += "━━━━━━━━━━━━\n";
 			joinMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 맞짱필드에 참여했습니다.\n\n";
-			joinMsg += "두들겨 맞기 전에 후리세요!\n선 빵 필 승🍞\n\n";
+			joinMsg += "두들겨 맞기 전에 후리세요!\n선 빵 필 승🍞" + allsee + "\n\n";
 			joinMsg += "━━━━━━━━━━━━\n⚔️ 진행 규칙\n";
 			joinMsg += "승리: +" + GLOBAL_CONFIG.matzangField.winPoint + "pt\n";
 			joinMsg += "패배: +" + GLOBAL_CONFIG.matzangField.losePoint + "pt\n";
 			joinMsg += "대전 보상: 다이아💎 " + GLOBAL_CONFIG.matzangField.diamondMin + "~" + GLOBAL_CONFIG.matzangField.diamondMax + "개\n\n";
-			joinMsg += "━━━━━━━━━━━━\n👥 현재 참여자: " + joinList.count + "명\n참여자 목록 보기📋" + allsee + "\n\n" + joinList.lines.join("\n");
+			joinMsg += "━━━━━━━━━━━━\n👥 현재 참여자: " + joinList.count + "명\n참여자 목록 보기📋\n\n" + joinList.lines.join("\n");
 			saveJsonFile(data, filePath);
 			replier.reply(joinMsg);
 			return;
@@ -1578,7 +1589,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		if (msg === "/맞짱종료") {
-			if (!(isMaster(sender) || isAdmin(sender))) return;
+			if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 			if (!matzangField.active) {
 				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
 				return;
@@ -1664,6 +1675,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			saveJsonFile(data, filePath);
 			saveJsonFile(currencyLogData, currencyLogPath);
 			replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buyItem.name + " " + numberWithCommas(buyItem.count * buyCount) + "개 구매 완료!\n잔여 다이아💎: " + numberWithCommas(data.member[sender].diamond) + "개");
+			return;
+		}
+		if (msg === "/다이아구매" || msg.indexOf("/다이아구매 ") === 0) {
+			replier.reply("사용법: /다이아구매 [번호] [갯수]\n예: /다이아구매 1 3");
 			return;
 		}
 		if (msg.startsWith("/다이아상점추가 ") && (isMaster(sender) || isAdmin(sender))) {
@@ -33339,6 +33354,7 @@ function ensureMatzangFieldData(data) {
 	if (!data.matzangField || typeof data.matzangField !== "object") data.matzangField = {};
 	if (typeof data.matzangField.active !== "boolean") data.matzangField.active = false;
 	if (typeof data.matzangField.resting !== "boolean") data.matzangField.resting = false;
+	if (typeof data.matzangField.restUntil !== "number" || isNaN(data.matzangField.restUntil)) data.matzangField.restUntil = 0;
 	if (!data.matzangField.participants || typeof data.matzangField.participants !== "object") data.matzangField.participants = {};
 	if (!(data.matzangField.shop instanceof Array)) {
 		data.matzangField.shop = [];
