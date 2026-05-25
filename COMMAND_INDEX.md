@@ -2216,9 +2216,10 @@ Status: VERIFIED
 ## AI Notes
 - `전투형 지휘관📙`, `기사단 증원📙`, `징집명령📙`은 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
 - `야호📙`은 `/알림`에서 확성기 아이템 사용 횟수와 합산해 하루 총 3회 한도 안에서만 무료 사용을 허용한다
-- `기분탓📙`은 `?` 단일 채팅 입력 시 전체 유저 중 해당 스킬 장착자 전원의 연출 멘트를 출력하며 수치 변화는 없다
-- `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 전체 유저 중 해당 스킬 장착자 전원의 연출 멘트를 출력한다
-- `품행제로📙`은 `/맞짱 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
+- `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
+- `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
+- `/계정삭제`와 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
+- `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
 
@@ -3356,3 +3357,124 @@ Status: VERIFIED
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
 - Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, and `/스킬거래등록` input now replies with the exact numeric-index registration usage guide
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists
+
+# /탐
+
+Status: VERIFIED
+
+## Files
+- main.js
+
+## Related Helpers
+- buildExploreBetMessage
+- buildPetExploreStatusMessage
+- doPetExploreInterval
+- calcExploreSuccessPercent
+- getExploreTraitBonusPercent
+- hasPetSkill
+
+## Data Usage
+- data.member[*].bag
+- petExploreData.bet
+- petExploreData.userBet
+- petExploreData.record
+- petSkillData[*].petSkills.equipped
+
+## Save Flow
+- `/탐` updates `petExploreData` and saves through `saveJsonFile(petExploreData, petExplorePath)`
+- `/탐` also saves `data` through `saveJsonFile(data, filePath)`
+- `doPetExploreInterval` saves reward/member changes through `saveJsonFile(data, filePath)` and exploration state through `saveJsonFile(petExploreData, petExplorePath)`
+
+## Related Commands
+- `/탐`
+- `/탐 [1~7]`
+
+## AI Notes
+- `calcExploreSuccessPercent` is used for the reservation/status success-rate display
+- `doPetExploreInterval` recalculates the same success-rate components during settlement
+- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7`
+- The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
+
+# /맞짱필드
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+- `data/currencyLog.json`
+- `data/hoiBotChangeLog.json`
+
+## Related Helpers
+
+- `ensureMatzangFieldData`
+- `ensureDiamondMemberData`
+- `ensureCurrencyLogData`
+- `ensureCurrencyLogUser`
+- `ensureMatzangParticipant`
+- `addDiamond`
+- `buildMatzangParticipantList`
+- `getMatzangBattleProfile`
+- `runMatzangBattle`
+- `getMatzangRankReward`
+- `calculateTotalExp`
+- `difftypeBuff`
+- `calculateCriticalDamage`
+- `petgameplay`
+
+## Data Usage
+
+- `data.matzangField.active`
+- `data.matzangField.resting`
+- `data.matzangField.participants`
+- `data.matzangField.shop`
+- `data.member[*].diamond`
+- `currencyLogData.user[*].diamond`
+- `currencyLogData.user[*].usedDiamond`
+- `currencyLogData.user[*].useHistory`
+- `currencyLogPath`
+- `petData[*]`
+- `homeDataFile`
+- `petSkillData`
+
+## Save Flow
+
+- Uses `filePath` member data for field state, participant event PT, diamond balances, and diamond shop
+- Uses `currencyLogPath` for cumulative earned diamond, used diamond total, and usage history logs
+- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, and `/다이아차감` save `data` through `saveJsonFile(data, filePath)`
+- `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
+- `/다이아구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
+- `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
+- Active 맞짱필드 blocks `/미니펫오픈` and `/샵오픈` before those command branches execute
+- `Info.js` reads `data.member[*].diamond` for 종합 정보 display
+
+## Related Commands
+
+- `/맞짱시작`
+- `/참여`
+- `ㅊㅇ`
+- `/맞짱`
+- `ㅁㅁ`
+- `/휴식`
+- `/맞짱종료`
+- `/맞짱필드목록`
+- `/다이아순위`
+- `/다이아상점`
+- `/다이아구매 [번호] [갯수]`
+- `/다이아상점추가 [상품명] [상품갯수] [다이아갯수]`
+- `/다이아상점삭제 [번호]`
+- `/다이아추가 [아이디] [갯수]`
+- `/다이아차감 [아이디] [갯수]`
+
+## AI Notes
+
+- `/맞짱` and `ㅁㅁ` are exact commands; suffix text does not execute battle logic
+- Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; the matched opponent can be K.O. without receiving PT from that command
+- K.O. users can re-enter with `/참여` or `ㅊㅇ`, but their event count is not reset
+- A user who reaches 10 event matches is marked field-out and cannot rejoin the active event
+- `/맞짱종료` pays top 1~50 event PT rewards as 다이아 and then clears active participant data
+- Cumulative 맞짱 win/lose storage is intentionally not used
+- `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
+- 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
+- 다이아 사용내역은 `currencyLog.json` `user[유저명].useHistory`에 시간, 구분, 사용량, 메모만 간단히 누적 저장한다

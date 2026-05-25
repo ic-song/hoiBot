@@ -111,7 +111,7 @@ const PET_SKILL_LIST = [
 	{ name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
 	{ name: "기분탓", grade: "D", rate: 14.5, effect: "'?' 채팅 입력 시 연출 멘트를 출력합니다." },
 	{ name: "종의 본능", grade: "D", rate: 14.5, effect: "'이쁘다' 채팅 입력 시 연출 멘트를 출력합니다." },
-	{ name: "품행제로", grade: "D", rate: 14.5, effect: "/맞짱 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
+	{ name: "품행제로", grade: "D", rate: 14.5, effect: "/결투 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
 	{ name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
 	{ name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
 ];
@@ -592,6 +592,7 @@ const freeMarketPath = "/sdcard/호이랜드/freeMarket.json"; // 자유시장 �
 const packageInfoPath = "/sdcard/호이랜드/packageInfo.json"; // 패키지 정보 데이터
 const packageLogPath = "/sdcard/호이랜드/packageLog.json"; // 패키지 지급/사용 로그 데이터
 const FREE_MARKET_MAX_COMPLETED_LOGS = 100;
+const currencyLogPath = "/sdcard/호이랜드/currencyLog.json"; // 누적 재화 로그 데이터
 const guildPath = "/sdcard/호이랜드/guildData.json"; // 길드 데이터
 const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json"; // 요청 모니터링 설정
 // backup
@@ -712,6 +713,19 @@ const GLOBAL_CONFIG = {
 		maxOpen: 100,
 		rewardItemName: "미니펫뽑기🐹(/미니펫오픈)",
 		legendTitleName: "👑전설의 핵주먹"
+	},
+	matzangField: { // 맞짱필드 이벤트 설정
+		maxCount: 10,
+		winPoint: 10,
+		losePoint: 5,
+		diamondMin: 1,
+		diamondMax: 5,
+		restMs: 60000,
+		defaultShop: [
+			{ name: "미니펫 강화석💫", count: 1, price: 1 },
+			{ name: "펫스킬북📙(/펫스킬오픈)", count: 1, price: 10000 }
+		],
+		rankRewards: [100, 90, 85, 80, 75, 70, 65, 60, 55, 50]
 	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
@@ -1388,6 +1402,327 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			saveJsonFile(petData, memberPetPath);
 			saveJsonFile(petSkillData, petSkillDataPath);
 		}
+		var matzangField = ensureMatzangFieldData(data);
+		var currencyLogData = ensureCurrencyLogData(loadJsonFile(currencyLogPath));
+		if (matzangField.active && (msg === "/미니펫오픈" || /^\/미니펫오픈\s+\d+$/.test(msg) || msg === "/샵오픈" || /^\/샵오픈\s+\d+$/.test(msg))) {
+			replier.reply("맞짱필드👊 진행 중에는 미니펫오픈/샵오픈을 사용할 수 없습니다.");
+			return;
+		}
+		if (msg === "/맞짱시작") {
+			if (!(isMaster(sender) || isAdmin(sender))) return;
+			if (room !== room8) {
+				replier.reply("맞짱필드👊는 공성전 방에서만 시작할 수 있습니다.");
+				return;
+			}
+			if (matzangField.active) {
+				replier.reply("이미 맞짱필드👊가 진행 중입니다.");
+				return;
+			}
+			matzangField.active = true;
+			matzangField.resting = false;
+			matzangField.startedAt = new Date();
+			matzangField.participants = {};
+			saveJsonFile(data, filePath);
+			noticeMsg("[📢전체알림📢]\n맞짱필드👊\n\n호이월드 유저의 맞짱이 시작되었습니다.\n\n맞짱에 참여하여 다이아💎를 획득해보세요.\n\n참여방법: /참여 or ㅊㅇ\n대전방법: /맞짱 or ㅁㅁ(공성전방 에서 가능)\n\nhttps://open.kakao.com/o/gaP4Xybh\n※ 맞짱필드가 궁금하신가요?\n채팅창에 \"맞짱필드 컨텐츠\"를 적어보세요.\n※ 맞짱필드 종료전까진 미니펫오픈or샵오픈불가");
+			return;
+		}
+		if (msg === "/휴식") {
+			if (!(isMaster(sender) || isAdmin(sender))) return;
+			if (!matzangField.active) {
+				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
+				return;
+			}
+			matzangField.resting = true;
+			saveJsonFile(data, filePath);
+			Api.replyRoom(room8, "땡🛎️땡🛎️ 떙🛎️[휴식]\n\n잠시 휴식 시간 입니다.(60초)\n※ /맞짱 or ㅁㅁ 이 불가하며\n※ /참여 or ㅊㅇ 만 가능합니다.\n━━━━━━━━━━━");
+			setTimeout(function () {
+				var latestData = loadJsonFile(filePath);
+				var latestField = ensureMatzangFieldData(latestData);
+				if (latestField.active) {
+					latestField.resting = false;
+					saveJsonFile(latestData, filePath);
+					Api.replyRoom(room8, "땡🛎️땡🛎️ 떙🛎️[시작]\n\n맞짱필드👊 휴식 시간 끝\n\n모두 맞짱뜨세요!\n\n※ /맞짱 or ㅁㅁ");
+				}
+			}, GLOBAL_CONFIG.matzangField.restMs);
+			return;
+		}
+		if (msg === "/참여" || msg === "ㅊㅇ") {
+			if (!matzangField.active) {
+				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
+				return;
+			}
+			if (!data.member[sender]) return;
+			ensureDiamondMemberData(data, sender);
+			var joinPart = ensureMatzangParticipant(matzangField, sender);
+			if (joinPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
+				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
+				return;
+			}
+			joinPart.active = true;
+			joinPart.eliminated = false;
+			var joinList = buildMatzangParticipantList(matzangField, data, petData, guildData);
+			var joinRemain = GLOBAL_CONFIG.matzangField.maxCount - joinPart.count;
+			var joinMsg = "👊 맞짱필드 입장 완료 👊\n";
+			joinMsg += "[남은 횟수: " + joinRemain + " / " + GLOBAL_CONFIG.matzangField.maxCount + "] [누적: " + joinPart.pt + "pt]\n";
+			joinMsg += "━━━━━━━━━━━━\n";
+			joinMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 맞짱필드에 참여했습니다.\n\n";
+			joinMsg += "두들겨 맞기 전에 후리세요!\n선 빵 필 승🍞\n\n";
+			joinMsg += "━━━━━━━━━━━━\n⚔️ 진행 규칙\n";
+			joinMsg += "승리: +" + GLOBAL_CONFIG.matzangField.winPoint + "pt\n";
+			joinMsg += "패배: +" + GLOBAL_CONFIG.matzangField.losePoint + "pt\n";
+			joinMsg += "대전 보상: 다이아💎 " + GLOBAL_CONFIG.matzangField.diamondMin + "~" + GLOBAL_CONFIG.matzangField.diamondMax + "개\n\n";
+			joinMsg += "━━━━━━━━━━━━\n👥 현재 참여자: " + joinList.count + "명\n참여자 목록 보기📋" + allsee + "\n\n" + joinList.lines.join("\n");
+			saveJsonFile(data, filePath);
+			replier.reply(joinMsg);
+			return;
+		}
+		if (msg === "/맞짱필드목록") {
+			if (!matzangField.active) {
+				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
+				return;
+			}
+			var fieldList = buildMatzangParticipantList(matzangField, data, petData, guildData);
+			replier.reply("👊 맞짱필드 참여자 목록 👊\n현재 참여자 " + fieldList.count + "명" + allsee + "\n\n" + (fieldList.lines.length ? fieldList.lines.join("\n") : "참여자가 없습니다."));
+			return;
+		}
+		if (msg === "/맞짱" || msg === "ㅁㅁ") {
+			if (!matzangField.active) {
+				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
+				return;
+			}
+			if (room !== room8) {
+				replier.reply("맞짱필드👊 대전은 공성전 방에서만 가능합니다.");
+				return;
+			}
+			if (matzangField.resting) {
+				replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ 이 불가하며\n※ /참여 or ㅊㅇ 만 가능합니다.");
+				return;
+			}
+			if (!data.member[sender]) return;
+			ensureDiamondMemberData(data, sender);
+			var myPart = ensureMatzangParticipant(matzangField, sender);
+			if (!myPart.active || myPart.eliminated) {
+				replier.reply("[미참가❌]\n[" + checkRank(data, petData, guildData, sender) + "] 님 /참여 or ㅊㅇ로\n맞짱필드👊에 참여해주세요.");
+				return;
+			}
+			if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
+				myPart.active = false;
+				myPart.eliminated = true;
+				saveJsonFile(data, filePath);
+				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진해 필드 아웃되었습니다.");
+				return;
+			}
+			if (!petData[sender] || !petData[sender].petname) {
+				replier.reply("펫을 먼저 생성해주세요.");
+				return;
+			}
+			var candidates = Object.keys(matzangField.participants).filter(function (name) {
+				var part = matzangField.participants[name];
+				return name !== sender && part && part.active && !part.eliminated && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name] && petData[name] && petData[name].petname;
+			});
+			if (candidates.length < 1) {
+				replier.reply("현재 맞짱 가능한 상대가 없습니다.\n다른 유저가 참여할 때까지 기다려주세요.");
+				return;
+			}
+			var opponentName = candidates[Math.floor(Math.random() * candidates.length)];
+			ensureDiamondMemberData(data, opponentName);
+			var opponentPart = ensureMatzangParticipant(matzangField, opponentName);
+			var homeDataForMatzang = loadJsonFile(homeDataFile);
+			var battle = runMatzangBattle(sender, opponentName, data, petData, homeDataForMatzang, petSkillData);
+			var isWin = battle.isAttackerWin;
+			var winnerName = isWin ? sender : opponentName;
+			var loserName = isWin ? opponentName : sender;
+			var loserPart = loserName === sender ? myPart : opponentPart;
+			var gainPt = isWin ? GLOBAL_CONFIG.matzangField.winPoint : GLOBAL_CONFIG.matzangField.losePoint;
+			var diamondGain = Math.floor(Math.random() * (GLOBAL_CONFIG.matzangField.diamondMax - GLOBAL_CONFIG.matzangField.diamondMin + 1)) + GLOBAL_CONFIG.matzangField.diamondMin;
+			myPart.count++;
+			myPart.pt += gainPt;
+			myPart.diamonds += diamondGain;
+			if (isWin) {
+				myPart.win++;
+				opponentPart.lose++;
+			} else {
+				myPart.lose++;
+				opponentPart.win++;
+			}
+			addDiamond(data, currencyLogData, sender, diamondGain);
+			loserPart.active = false;
+			loserPart.eliminated = true;
+			if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
+				myPart.active = false;
+				myPart.eliminated = true;
+			}
+			var remainCount = Math.max(0, GLOBAL_CONFIG.matzangField.maxCount - myPart.count);
+			var resultMsg = "[" + checkRank(data, petData, guildData, sender) + "] 의 선빵🍞\n";
+			resultMsg += "👊맞짱필드👊[남은 횟수: " + remainCount + " / " + GLOBAL_CONFIG.matzangField.maxCount + "]\n";
+			resultMsg += "━━━━━━━━━━━━\n";
+			resultMsg += "🤜맞짱결과🤛 [" + (isWin ? "✅승리" : "❌패배") + "]\n";
+			resultMsg += "[+" + gainPt + "pt 획득 | 누적: " + myPart.pt + "pt]\n";
+			resultMsg += "다이아💎 " + diamondGain + "개 획득\n\n";
+			resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 🆚 [" + checkRank(data, petData, guildData, opponentName) + "]\n";
+			resultMsg += "━━━━━━━━━━━━\n";
+			resultMsg += "💫 K.O [" + checkRank(data, petData, guildData, loserName) + "] 님 탈락\n";
+			resultMsg += "\"/참여 or ㅊㅇ\" 를 입력하면 재참여 가능합니다.";
+			if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
+				resultMsg += "\n[" + checkRank(data, petData, guildData, sender) + "] 님은 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진해 필드 아웃되었습니다.";
+			}
+			resultMsg += "\n\n맞짱결과 상세보기📋" + allsee + "\n";
+			resultMsg += "[" + checkRank(data, petData, guildData, sender) + "]\n";
+			resultMsg += battle.attacker.petLine + " " + numberWithCommas(battle.attacker.baseExp) + "💕 " + battle.attacker.message + "\n\n";
+			resultMsg += "🆚\n\n";
+			resultMsg += "[" + checkRank(data, petData, guildData, opponentName) + "]\n";
+			resultMsg += battle.defender.petLine + " " + numberWithCommas(battle.defender.baseExp) + "💕 " + battle.defender.message;
+			saveJsonFile(data, filePath);
+			saveJsonFile(currencyLogData, currencyLogPath);
+			replier.reply(resultMsg);
+			return;
+		}
+		if (msg === "/맞짱종료") {
+			if (!(isMaster(sender) || isAdmin(sender))) return;
+			if (!matzangField.active) {
+				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
+				return;
+			}
+			var ranking = Object.keys(matzangField.participants).filter(function (name) {
+				return data.member[name] && matzangField.participants[name].pt > 0;
+			}).sort(function (a, b) {
+				var pa = matzangField.participants[a].pt;
+				var pb = matzangField.participants[b].pt;
+				if (pb !== pa) return pb - pa;
+				return a > b ? 1 : a < b ? -1 : 0;
+			});
+			var endMsg = "[📢맞짱필드👊 종료]\n1등~50등 차등 다이아💎 보상안내\n※ 승/패 PT획득 기준으로 순위가 매겨집니다.\n\n";
+			if (ranking.length < 1) {
+				endMsg += "보상 대상자가 없습니다.";
+			}
+			for (var er = 0; er < ranking.length && er < 50; er++) {
+				var rankNo = er + 1;
+				var rewardDia = getMatzangRankReward(rankNo);
+				addDiamond(data, currencyLogData, ranking[er], rewardDia);
+				if (er === 3) endMsg += allsee;
+				endMsg += getRankEmoji(rankNo) + ". [" + checkRank(data, petData, guildData, ranking[er]) + "] " + matzangField.participants[ranking[er]].pt + "pt - 다이아💎 " + rewardDia + "개\n";
+			}
+			matzangField.active = false;
+			matzangField.resting = false;
+			matzangField.endedAt = new Date();
+			matzangField.participants = {};
+			saveJsonFile(data, filePath);
+			saveJsonFile(currencyLogData, currencyLogPath);
+			noticeMsg(endMsg.trim());
+			return;
+		}
+		if (msg === "/다이아순위") {
+			var diamondRanking = Object.keys(currencyLogData.user).filter(function (name) {
+				return ((currencyLogData.user[name].diamond || 0) > 0) && data.member[name];
+			}).sort(function (a, b) {
+				var da = currencyLogData.user[a].diamond || 0;
+				var db = currencyLogData.user[b].diamond || 0;
+				if (db !== da) return db - da;
+				return a > b ? 1 : a < b ? -1 : 0;
+			});
+			var diaMsg = "💎 다이아 순위 💎\n※ 다이아💎 누적기록\n\n";
+			if (diamondRanking.length < 1) diaMsg += "아직 다이아💎 기록이 없습니다.";
+			for (var dr = 0; dr < diamondRanking.length; dr++) {
+				if (dr === 10) diaMsg += allsee;
+				diaMsg += getRankEmoji(dr + 1) + ". " + checkRank(data, petData, guildData, diamondRanking[dr]) + " - 💎: " + numberWithCommas(currencyLogData.user[diamondRanking[dr]].diamond || 0) + "\n";
+			}
+			replier.reply(diaMsg.trim());
+			return;
+		}
+		if (msg === "/다이아상점") {
+			var shopMsg = "💎호이월드 다이아 상점💎\n(구매방법: /다이아구매 [번호] [갯수])\n\n";
+			if (matzangField.shop.length < 1) shopMsg += "등록된 상품이 없습니다.";
+			for (var ds = 0; ds < matzangField.shop.length; ds++) {
+				var dItem = matzangField.shop[ds];
+				shopMsg += ds + 1 + ". " + dItem.name + "x" + numberWithCommas(dItem.count) + ": 💎 " + numberWithCommas(dItem.price) + "개\n";
+			}
+			replier.reply(shopMsg.trim());
+			return;
+		}
+		if (/^\/다이아구매\s+\d+\s+\d+$/.test(msg)) {
+			if (!data.member[sender]) return;
+			ensureDiamondMemberData(data, sender);
+			var buyParts = msg.split(/\s+/);
+			var buyIndex = parseInt(buyParts[1], 10) - 1;
+			var buyCount = parseInt(buyParts[2], 10);
+			if (buyIndex < 0 || buyIndex >= matzangField.shop.length || buyCount < 1) {
+				replier.reply("올바른 상품 번호와 갯수를 입력해주세요.");
+				return;
+			}
+			var buyItem = matzangField.shop[buyIndex];
+			var buyPrice = buyItem.price * buyCount;
+			if (data.member[sender].diamond < buyPrice) {
+				replier.reply("다이아💎가 부족합니다.\n보유: " + numberWithCommas(data.member[sender].diamond) + "개 / 필요: " + numberWithCommas(buyPrice) + "개");
+				return;
+			}
+			data.member[sender].diamond -= buyPrice;
+			addUsedDiamond(currencyLogData, sender, buyPrice, {
+				type: "구매",
+				memo: buyItem.name + "x" + numberWithCommas(buyItem.count * buyCount)
+			});
+			addItem(data, sender, buyItem.name, buyItem.count * buyCount);
+			saveJsonFile(data, filePath);
+			saveJsonFile(currencyLogData, currencyLogPath);
+			replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buyItem.name + " " + numberWithCommas(buyItem.count * buyCount) + "개 구매 완료!\n잔여 다이아💎: " + numberWithCommas(data.member[sender].diamond) + "개");
+			return;
+		}
+		if (msg.startsWith("/다이아상점추가 ") && (isMaster(sender) || isAdmin(sender))) {
+			var addShopMatch = msg.match(/^\/다이아상점추가\s+(.+)\s+(\d+)\s+(\d+)$/);
+			if (!addShopMatch) {
+				replier.reply("사용법: /다이아상점추가 상품명 상품갯수 다이아갯수");
+				return;
+			}
+			matzangField.shop.push({ name: addShopMatch[1], count: parseInt(addShopMatch[2], 10), price: parseInt(addShopMatch[3], 10) });
+			saveJsonFile(data, filePath);
+			replier.reply("다이아 상점에 " + addShopMatch[1] + "x" + addShopMatch[2] + " 상품을 💎 " + addShopMatch[3] + "개로 추가했습니다.");
+			return;
+		}
+		if (/^\/다이아상점삭제\s+\d+$/.test(msg) && (isMaster(sender) || isAdmin(sender))) {
+			var deleteShopIndex = parseInt(msg.split(/\s+/)[1], 10) - 1;
+			if (deleteShopIndex < 0 || deleteShopIndex >= matzangField.shop.length) {
+				replier.reply("유효한 다이아 상점 번호를 입력해주세요.");
+				return;
+			}
+			var removedShopItem = matzangField.shop.splice(deleteShopIndex, 1)[0];
+			saveJsonFile(data, filePath);
+			replier.reply(removedShopItem.name + " 상품을 다이아 상점에서 삭제했습니다.");
+			return;
+		}
+		if (/^\/다이아추가\s+.+\s+\d+$/.test(msg) && (isMaster(sender) || isAdmin(sender))) {
+			var addDiaMatch = msg.match(/^\/다이아추가\s+(.+)\s+(\d+)$/);
+			var addDiaUser = addDiaMatch[1];
+			var addDiaAmount = parseInt(addDiaMatch[2], 10);
+			if (!data.member[addDiaUser]) {
+				replier.reply("존재하지 않는 사용자입니다.");
+				return;
+			}
+			addDiamond(data, currencyLogData, addDiaUser, addDiaAmount);
+			saveJsonFile(data, filePath);
+			saveJsonFile(currencyLogData, currencyLogPath);
+			replier.reply(addDiaUser + "님에게 다이아💎 " + numberWithCommas(addDiaAmount) + "개를 지급했습니다.");
+			return;
+		}
+		if (/^\/다이아차감\s+.+\s+\d+$/.test(msg) && (isMaster(sender) || isAdmin(sender))) {
+			var removeDiaMatch = msg.match(/^\/다이아차감\s+(.+)\s+(\d+)$/);
+			var removeDiaUser = removeDiaMatch[1];
+			var removeDiaAmount = parseInt(removeDiaMatch[2], 10);
+			if (!data.member[removeDiaUser]) {
+				replier.reply("존재하지 않는 사용자입니다.");
+				return;
+			}
+			ensureDiamondMemberData(data, removeDiaUser);
+			var beforeRemoveDiamond = data.member[removeDiaUser].diamond || 0;
+			data.member[removeDiaUser].diamond = Math.max(0, beforeRemoveDiamond - removeDiaAmount);
+			var actualRemoveDiamond = beforeRemoveDiamond - data.member[removeDiaUser].diamond;
+			addUsedDiamond(currencyLogData, removeDiaUser, actualRemoveDiamond, {
+				type: "차감",
+				memo: "운영자 " + sender
+			});
+			saveJsonFile(data, filePath);
+			saveJsonFile(currencyLogData, currencyLogPath);
+			replier.reply(removeDiaUser + "님의 다이아💎 " + numberWithCommas(removeDiaAmount) + "개를 차감했습니다.\n잔여: " + numberWithCommas(data.member[removeDiaUser].diamond) + "개");
+			return;
+		}
 		if (msg.startsWith("/미니펫조합 ")) {
 			var combinationArgs = msg.trim().split(/\s+/);
 			var nickName = checkRank(data, petData, guildData, sender);
@@ -1554,14 +1889,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				initPetSkillUser(petSkillData, sender);
 				
-				var moodSkillUsers = msg === "?" ? findPetSkillOwners(petSkillData, "기분탓") : [];
+				var moodSkillUsers = msg === "?" ? findPetSkillOwners(data, petSkillData, "기분탓") : [];
 				if (moodSkillUsers.length > 0) {
 					replier.reply(moodSkillUsers.map(function (user) {
 						return buildPetSkillMsg(data, petData, guildData, user, "기분탓");
 					}).join("\n"));
 					return;
 				}
-				var instinctSkillUsers = msg === "이쁘다" ? findPetSkillOwners(petSkillData, "종의 본능") : [];
+				var instinctSkillUsers = msg === "이쁘다" ? findPetSkillOwners(data, petSkillData, "종의 본능") : [];
 				if (instinctSkillUsers.length > 0) {
 					replier.reply(instinctSkillUsers.map(function (user) {
 						return buildPetSkillMsg(data, petData, guildData, user, "종의 본능");
@@ -3795,6 +4130,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							if (petData[targetUserToDelete]) {
 								delete petData[targetUserToDelete];
 							}
+							if (petSkillData[targetUserToDelete]) {
+								delete petSkillData[targetUserToDelete];
+							}
+							if (currencyLogData.user[targetUserToDelete]) {
+								delete currencyLogData.user[targetUserToDelete];
+							}
 
 							if (homeData[targetUserToDelete]) {
 								delete homeData[targetUserToDelete];
@@ -3806,6 +4147,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 						saveJsonFile(homeData, homeDataFile);
 						saveJsonFile(petData, memberPetPath);
+						saveJsonFile(petSkillData, petSkillDataPath);
+						saveJsonFile(currencyLogData, currencyLogPath);
 						saveJsonFile(titleData, memberTitlePath);
 						saveJsonFile(data, filePath);
 						saveJsonFile(guildData, guildPath);
@@ -4492,6 +4835,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var trialTower = loadJsonFile(trialTowerPath);
 					var homeData = loadJsonFile(homeDataFile);
 					var petData = loadJsonFile(memberPetPath);
+					var petSkillDeleteData = loadJsonFile(petSkillDataPath);
 					var freeMarketData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
 
 					var successList = [];
@@ -4520,6 +4864,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							// 펫
 							if (petData[target]) {
 								delete petData[target];
+							}
+							if (petSkillDeleteData[target]) {
+								delete petSkillDeleteData[target];
+							}
+							if (currencyLogData.user[target]) {
+								delete currencyLogData.user[target];
 							}
 
 							// 시탑
@@ -4551,6 +4901,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(titleData, memberTitlePath);
 					saveJsonFile(data, filePath);
 					saveJsonFile(petData, memberPetPath);
+					saveJsonFile(petSkillDeleteData, petSkillDataPath);
+					saveJsonFile(currencyLogData, currencyLogPath);
 					saveJsonFile(trialTower, trialTowerPath);
 					saveJsonFile(petTitleData, petTitlePath);
 					saveJsonFile(homeData, homeDataFile);
@@ -24867,11 +25219,11 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					replier.reply(buildPetSkillMsg(data, petData, guildData, sender, skillName));
 					return;
 				}
-				if (msg.startsWith("/맞짱")) {
+				if (msg === "/결투" || /^\/결투\s+.+$/.test(msg)) {
 					let skillName = "품행제로";
-					let fightMatch = msg.match(/^\/맞짱\s+(.+)/);
+					let fightMatch = msg.match(/^\/결투\s+(.+)/);
 					if (!fightMatch) {
-						replier.reply("사용법: /맞짱 [아이디]");
+						replier.reply("사용법: /결투 [아이디]");
 						return;
 					}
 					if (!hasPetSkill(petSkillData, sender, skillName)) {
@@ -24880,11 +25232,11 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 					let target = fightMatch[1].trim();
 					if (!target) {
-						replier.reply("사용법: /맞짱 [아이디]");
+						replier.reply("사용법: /결투 [아이디]");
 						return;
 					}
 					if (target === sender) {
-						replier.reply("자기 자신에게 맞짱을 걸 수는 없습니다.");
+						replier.reply("자기 자신에게 결투를 걸 수는 없습니다.");
 						return;
 					}
 					if (!data.member[target]) {
@@ -32982,6 +33334,143 @@ function addItem(data, user, itemName, count) {
 	data.member[user].bag[itemName] += count;
 }
 
+// 맞짱필드 진행 데이터와 기본 상점을 보장하는 함수
+function ensureMatzangFieldData(data) {
+	if (!data.matzangField || typeof data.matzangField !== "object") data.matzangField = {};
+	if (typeof data.matzangField.active !== "boolean") data.matzangField.active = false;
+	if (typeof data.matzangField.resting !== "boolean") data.matzangField.resting = false;
+	if (!data.matzangField.participants || typeof data.matzangField.participants !== "object") data.matzangField.participants = {};
+	if (!(data.matzangField.shop instanceof Array)) {
+		data.matzangField.shop = [];
+		for (var i = 0; i < GLOBAL_CONFIG.matzangField.defaultShop.length; i++) {
+			var defaultItem = GLOBAL_CONFIG.matzangField.defaultShop[i];
+			data.matzangField.shop.push({ name: defaultItem.name, count: defaultItem.count, price: defaultItem.price });
+		}
+	}
+	return data.matzangField;
+}
+
+// 유저 다이아 보유량 필드를 보장하는 함수
+function ensureDiamondMemberData(data, user) {
+	if (!data.member[user]) return null;
+	if (typeof data.member[user].diamond !== "number" || isNaN(data.member[user].diamond)) data.member[user].diamond = 0;
+	return data.member[user];
+}
+
+// 누적 재화 순위 데이터 구조를 보장하는 함수
+function ensureCurrencyLogData(currencyLogData) {
+	if (!currencyLogData || typeof currencyLogData !== "object") currencyLogData = {};
+	if (!currencyLogData.user || typeof currencyLogData.user !== "object") currencyLogData.user = {};
+	return currencyLogData;
+}
+
+// 유저별 누적 재화 로그 항목을 보장하는 함수
+function ensureCurrencyLogUser(currencyLogData, user) {
+	if (!currencyLogData.user[user] || typeof currencyLogData.user[user] !== "object") currencyLogData.user[user] = {};
+	return currencyLogData.user[user];
+}
+
+// 맞짱필드 참여자 이벤트 기록을 보장하는 함수
+function ensureMatzangParticipant(field, user) {
+	if (!field.participants[user] || typeof field.participants[user] !== "object") {
+		field.participants[user] = { active: false, eliminated: false, count: 0, pt: 0, win: 0, lose: 0, diamonds: 0 };
+	}
+	var participant = field.participants[user];
+	if (typeof participant.active !== "boolean") participant.active = false;
+	if (typeof participant.eliminated !== "boolean") participant.eliminated = false;
+	if (typeof participant.count !== "number" || isNaN(participant.count)) participant.count = 0;
+	if (typeof participant.pt !== "number" || isNaN(participant.pt)) participant.pt = 0;
+	if (typeof participant.win !== "number" || isNaN(participant.win)) participant.win = 0;
+	if (typeof participant.lose !== "number" || isNaN(participant.lose)) participant.lose = 0;
+	if (typeof participant.diamonds !== "number" || isNaN(participant.diamonds)) participant.diamonds = 0;
+	return participant;
+}
+
+// 다이아를 지급하고 누적 재화 로그를 갱신하는 함수
+function addDiamond(data, currencyLogData, user, amount) {
+	ensureDiamondMemberData(data, user);
+	data.member[user].diamond += amount;
+	var currencyLogUser = ensureCurrencyLogUser(currencyLogData, user);
+	if (typeof currencyLogUser.diamond !== "number" || isNaN(currencyLogUser.diamond)) currencyLogUser.diamond = 0;
+	currencyLogUser.diamond += amount;
+}
+
+// 다이아 사용량과 사용내역을 누적 재화 로그에 기록하는 함수
+function addUsedDiamond(currencyLogData, user, amount, detail) {
+	amount = parseInt(amount, 10) || 0;
+	if (amount <= 0) return;
+	var currencyLogUser = ensureCurrencyLogUser(currencyLogData, user);
+	if (typeof currencyLogUser.usedDiamond !== "number" || isNaN(currencyLogUser.usedDiamond)) currencyLogUser.usedDiamond = 0;
+	currencyLogUser.usedDiamond += amount;
+	if (!(currencyLogUser.useHistory instanceof Array)) currencyLogUser.useHistory = [];
+	var log = detail && typeof detail === "object" ? detail : {};
+	log.amount = amount;
+	log.at = formatDateTime(new Date());
+	currencyLogUser.useHistory.push(log);
+}
+
+// 맞짱필드 참여자 목록 메시지를 생성하는 함수
+function buildMatzangParticipantList(field, data, petData, guildData) {
+	var names = Object.keys(field.participants).filter(function (name) {
+		var part = field.participants[name];
+		return part && part.active && !part.eliminated && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name];
+	});
+	var lines = [];
+	for (var i = 0; i < names.length; i++) {
+		lines.push(i + 1 + ". [" + checkRank(data, petData, guildData, names[i]) + "]");
+	}
+	return { count: names.length, lines: lines };
+}
+
+// 맞짱필드 종합매력 기반 전투 수치를 계산하는 함수
+function getMatzangBattleProfile(user, data, petData, homeData, petSkillData) {
+	var petObj = petData[user] || {};
+	var miniPet = petObj.miniPet || null;
+	var baseExp = calculateTotalExp(user, data, petData, homeData, petSkillData) || 0;
+	return {
+		user: user,
+		pet: petObj,
+		miniPet: miniPet,
+		baseExp: Math.round(baseExp),
+		finalExp: Math.round(baseExp),
+		message: "",
+		petLine: miniPet ? "[" + (miniPet.emoji || "") + miniPet.name + "(" + (petObj.pettype || "속성없음") + ")]" : "[" + (petObj.petimg || "") + (petObj.petname || "펫없음") + "(" + (petObj.pettype || "속성없음") + ")]"
+	};
+}
+
+// 맞짱필드 전투 결과와 출력용 상세 데이터를 계산하는 함수
+function runMatzangBattle(attackerName, defenderName, data, petData, homeData, petSkillData) {
+	var attacker = getMatzangBattleProfile(attackerName, data, petData, homeData, petSkillData);
+	var defender = getMatzangBattleProfile(defenderName, data, petData, homeData, petSkillData);
+	var petTypeBuff = difftypeBuff(attacker.pet, defender.pet);
+	var attackerBuffed = Math.round(attacker.baseExp * petTypeBuff.buff1); // 공격자 상성 보정값
+	var defenderBuffed = Math.round(defender.baseExp * petTypeBuff.buff2); // 방어자 상성 보정값
+	var attackerFinal = calculateCriticalDamage(attacker.pet, attackerBuffed);
+	var defenderFinal = calculateCriticalDamage(defender.pet, defenderBuffed);
+	var attackerSymbol = (petTypeBuff.buff1 === 1.3 ? "⬆" : "") + (attackerFinal > attackerBuffed ? "💥" : "");
+	var defenderSymbol = (petTypeBuff.buff2 === 1.3 ? "⬆" : "") + (defenderFinal > defenderBuffed ? "💥" : "");
+	attacker.finalExp = attackerFinal;
+	defender.finalExp = defenderFinal;
+	attacker.message = attackerSymbol ? createTotalMessage(numberWithCommas(attackerFinal), attackerSymbol) : "";
+	defender.message = defenderSymbol ? createTotalMessage(numberWithCommas(defenderFinal), defenderSymbol) : "";
+	var gameResult = petgameplay(attackerFinal, defenderFinal);
+	return {
+		attacker: attacker,
+		defender: defender,
+		isAttackerWin: gameResult.winner == 1,
+		gameResult: gameResult
+	};
+}
+
+// 맞짱필드 순위 보상 다이아 수량을 반환하는 함수
+function getMatzangRankReward(rank) {
+	if (rank >= 1 && rank <= 10) return GLOBAL_CONFIG.matzangField.rankRewards[rank - 1];
+	if (rank >= 11 && rank <= 20) return 40;
+	if (rank >= 21 && rank <= 30) return 35;
+	if (rank >= 31 && rank <= 50) return 30;
+	return 0;
+}
+
 function ensureFreeMarketData(freeMarketData) {
 	if (!freeMarketData || typeof freeMarketData !== "object") freeMarketData = {};
 	if (!Array.isArray(freeMarketData.listings)) freeMarketData.listings = [];
@@ -33608,11 +34097,12 @@ function hasPetSkill(petSkillData, user, skillName) {
 	return equipped.indexOf(skillName) !== -1;
 }
 
-// 전체 유저 중 특정 펫스킬을 장착한 유저명 목록을 반환
-function findPetSkillOwners(petSkillData, skillName) {
+// 현재 계정이 존재하는 유저 중 특정 펫스킬을 장착한 유저명 목록을 반환
+function findPetSkillOwners(data, petSkillData, skillName) {
 	var owners = [];
 	if (!petSkillData) return owners;
 	for (var user in petSkillData) {
+		if (!data || !data.member || !data.member[user]) continue;
 		if (hasPetSkill(petSkillData, user, skillName)) {
 			owners.push(user);
 		}
@@ -36194,17 +36684,16 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
 function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 	if (!dungeonKey) return 0;
+	dungeonKey = String(dungeonKey);
 
 	// 광산(1~3): 정령강화/반지강화/펫강화
-	if (hasPetSkill(petSkillData, user, "광산탐험가")) {
-		if (dungeonKey === "1" || dungeonKey === "2" || dungeonKey === "3") return 5;
-		return 0;
+	if (dungeonKey === "1" || dungeonKey === "2" || dungeonKey === "3") {
+		return hasPetSkill(petSkillData, user, "광산탐험가") ? 5 : 0;
 	}
 
 	// 던전(4~7): 친밀도/전도르/양계장/행운
-	if (hasPetSkill(petSkillData, user, "던전탐험가")) {
-		if (dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "7") return 5;
-		return 0;
+	if (dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "7") {
+		return hasPetSkill(petSkillData, user, "던전탐험가") ? 5 : 0;
 	}
 
 	return 0;

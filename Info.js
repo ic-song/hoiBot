@@ -252,7 +252,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"\n" +
 						"• 최근 출석일: " +
 						formatDate(memberInfo.recent) +
-						"\n• 보유 포인트: 🅟" +
+						"\n• 다이아💎: " +
+						numberWithCommas(memberInfo.diamond || 0) +
+						"개\n• 보유 포인트: 🅟" +
 						numberWithCommas(memberInfo.point) +
 						"\n" +
 						allsee +
@@ -449,6 +451,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				"• 총 출석일: " +
 				(memberInfo.cnt || 0) +
 				"일\n" +
+				"• 다이아💎: " +
+				numberWithCommas(memberInfo.diamond || 0) +
+				"개\n" +
 				"• 보유 포인트: 🅟" +
 				numberWithCommas(memberInfo.point || 0) +
 				"\n" +
