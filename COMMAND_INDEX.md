@@ -3449,10 +3449,10 @@ Status: VERIFIED
 - `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/다이아구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
-- `/맞짱시간체크 [닉네임]` may load `homeDataFile` only when the 기준 참여자 or selected opponent has no stored `totalExp`
+- `/맞짱시간체크 [닉네임]` may load `homeDataFile` when the 기준 유저 or selected opponent has no active field `totalExp`
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
-- `/맞짱시간체크 [닉네임]` is a read-only Admin/Master diagnostic path and does not save match count, PT, diamond, or field data
+- `/맞짱시간체크 [닉네임]` is an anytime read-only Admin/Master diagnostic path and does not save match count, PT, diamond, or field data
 - Active 맞짱필드 blocks `/미니펫오픈` and `/샵오픈` before those command branches execute
 - `Info.js` reads `data.member[*].diamond` for 종합 정보 display
 
@@ -3479,7 +3479,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `/맞짱` and `ㅁㅁ` are exact commands; suffix text does not execute battle logic
-- `/맞짱시간체크 [닉네임]` runs the existing match calculation for the named active participant against a currently eligible random opponent and reports response-entry total, diagnostic-branch, opponent-selection, home-load, charm-calculation, and battle-calculation timings without changing rewards or counts
+- `/맞짱시간체크 [닉네임]` runs the existing match calculation for the named user against a random opponent and reports response-entry total, diagnostic-branch, opponent-selection, home-load, charm-calculation, and battle-calculation timings without changing rewards or counts; it can run outside active 맞짱필드 and falls back to pet-owning users when no active field opponent is available
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
