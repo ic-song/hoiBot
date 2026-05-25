@@ -1,6 +1,6 @@
-﻿@echo off
+@echo off
 chcp 65001 > nul
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_DEVICE=emulator-5556
@@ -18,102 +18,75 @@ echo.
 echo ============================================================
 echo  hoiBot 운영 반영 - main.js
 echo ============================================================
-echo  1. 최신 %BASE_BRANCH% 받기
-echo  2. main.js 업로드
-echo  3. hoiBotChangeLog.json 업로드
-echo  4. MessengerBot main 컴파일
+echo  LDPlayer와 MessengerBot이 켜진 상태에서 실행하세요.
 echo ============================================================
 echo.
 
-echo [CONFIG]
-echo ------------------------------------------------------------
-echo  ADB_EXE          = %ADB_EXE%
-echo  TARGET_DEVICE    = %TARGET_DEVICE%
-echo  BOT_NAME         = %BOT_NAME%
-echo  SOURCE_FILE      = %SOURCE_FILE%
-echo  TARGET_FILE      = %TARGET_FILE%
-echo  CHANGELOG_SOURCE = %CHANGELOG_SOURCE%
-echo  TARGET_CHANGELOG = %TARGET_CHANGELOG%
-echo ------------------------------------------------------------
-echo.
-
-echo [STEP 1/7] 프로젝트 폴더 이동
+echo [1/5] 준비 확인
 echo ------------------------------------------------------------
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
-echo [OK] PROJECT_DIR = %CD%
-echo.
-
-echo [STEP 2/7] 필수 파일 확인
-echo ------------------------------------------------------------
 if not exist "%ADB_EXE%" goto FAIL_ADB_EXE
 if not exist "%SOURCE_FILE%" goto FAIL_SOURCE
 if not exist "%CHANGELOG_SOURCE%" goto FAIL_CHANGELOG_SOURCE
-echo [OK] required files exist
+echo [OK] 준비 완료
 echo.
 
-echo [STEP 3/7] Git 최신화
+echo [2/5] 최신 코드 받기
 echo ------------------------------------------------------------
-git switch %BASE_BRANCH%
+git switch %BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_SWITCH
-echo.
-git pull --ff-only origin %BASE_BRANCH%
+git pull --ff-only origin %BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_PULL
-echo.
-git status --short --branch
-echo.
-echo [OK] git ready
+echo [OK] 최신 코드 확인 완료
 echo.
 
-echo [STEP 4/7] ADB 기기 확인
+echo [3/5] LDPlayer 연결 확인
 echo ------------------------------------------------------------
-"%ADB_EXE%" devices
+"%ADB_EXE%" devices > nul 2>&1
 if errorlevel 1 goto FAIL_ADB
-echo.
-echo [OK] adb ready
+
+set DEVICE_COUNT=0
+set FIRST_DEVICE=
+
+for /f "skip=1 tokens=1,2" %%a in ('"%ADB_EXE%" devices') do (
+	if "%%b"=="device" (
+		set /a DEVICE_COUNT+=1
+		if "!FIRST_DEVICE!"=="" set FIRST_DEVICE=%%a
+	)
+)
+
+if "!DEVICE_COUNT!"=="0" goto FAIL_NO_DEVICE
+if not "!DEVICE_COUNT!"=="1" goto FAIL_MULTI_DEVICE
+
+set TARGET_DEVICE=!FIRST_DEVICE!
+echo [OK] 연결된 기기: !TARGET_DEVICE!
 echo.
 
-echo [STEP 5/7] main.js 업로드
+echo [4/5] main.js 업로드
 echo ------------------------------------------------------------
-echo  FROM: %SOURCE_FILE%
-echo  TO  : %TARGET_FILE%
-echo.
-"%ADB_EXE%" -s %TARGET_DEVICE% push "%SOURCE_FILE%" "%TARGET_FILE%"
+"%ADB_EXE%" -s %TARGET_DEVICE% push "%SOURCE_FILE%" "%TARGET_FILE%" > nul 2>&1
 if errorlevel 1 goto FAIL_PUSH
-echo.
-"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_FILE%"
-echo.
+"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_FILE%" > nul 2>&1
 echo [OK] main.js uploaded
 echo.
 
-echo [STEP 6/7] hoiBotChangeLog.json 업로드
+echo [5/5] 수정내용 업로드 및 컴파일 요청
 echo ------------------------------------------------------------
-echo  FROM: %CHANGELOG_SOURCE%
-echo  TO  : %TARGET_CHANGELOG%
-echo.
-"%ADB_EXE%" -s %TARGET_DEVICE% shell mkdir -p "%TARGET_CHANGELOG_DIR%"
+"%ADB_EXE%" -s %TARGET_DEVICE% shell mkdir -p "%TARGET_CHANGELOG_DIR%" > nul 2>&1
 if errorlevel 1 goto FAIL_CHANGELOG
-echo.
-"%ADB_EXE%" -s %TARGET_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%"
+"%ADB_EXE%" -s %TARGET_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%" > nul 2>&1
 if errorlevel 1 goto FAIL_CHANGELOG
-echo.
-"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_CHANGELOG%"
-echo.
-echo [OK] hoiBotChangeLog.json uploaded
-echo.
-
-echo [STEP 7/7] MessengerBot main 컴파일
-echo ------------------------------------------------------------
-"%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%
+"%ADB_EXE%" -s %TARGET_DEVICE% shell ls -l "%TARGET_CHANGELOG%" > nul 2>&1
+"%ADB_EXE%" -s %TARGET_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME% > nul 2>&1
 if errorlevel 1 goto FAIL_COMPILE
-echo.
-echo [OK] compile requested
+echo [OK] 수정내용 업로드 및 컴파일 요청 완료
 echo.
 
 echo ============================================================
 echo  SUCCESS - main.js 운영 반영 완료
 echo ============================================================
-echo  main.js와 hoiBotChangeLog.json 업로드를 확인했습니다.
+echo  main.js와 수정내용이 운영 봇에 반영되었습니다.
 echo ============================================================
 pause
 exit /b 0
@@ -184,8 +157,28 @@ echo.
 echo ============================================================
 echo  FAIL - ADB 기기 확인 실패
 echo ============================================================
-echo  LDPlayer 실행 상태와 TARGET_DEVICE 값을 확인하세요.
-echo  TARGET_DEVICE = %TARGET_DEVICE%
+echo  LDPlayer 실행 상태와 ADB 경로를 확인하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_NO_DEVICE
+echo.
+echo ============================================================
+echo  FAIL - 연결된 ADB 기기 없음
+echo ============================================================
+echo  LDPlayer가 켜져 있는지 확인한 뒤 다시 실행하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_MULTI_DEVICE
+echo.
+echo ============================================================
+echo  FAIL - 연결된 ADB 기기가 2개 이상입니다
+echo ============================================================
+echo  운영 봇이 실행 중인 LDPlayer만 켜고 다시 실행하세요.
+echo  잘못된 기기에 운영반영되는 것을 막기 위해 중단합니다.
 echo ============================================================
 pause
 exit /b 1
@@ -195,7 +188,8 @@ echo.
 echo ============================================================
 echo  FAIL - main.js 업로드 실패
 echo ============================================================
-echo  TARGET_FILE = %TARGET_FILE%
+echo  LDPlayer와 MessengerBot이 켜져 있는지 확인하세요.
+echo  계속 실패하면 LDPlayer를 재시작한 뒤 다시 실행하세요.
 echo ============================================================
 pause
 exit /b 1
@@ -205,7 +199,8 @@ echo.
 echo ============================================================
 echo  FAIL - hoiBotChangeLog.json 업로드 실패
 echo ============================================================
-echo  TARGET_CHANGELOG = %TARGET_CHANGELOG%
+echo  수정내용 파일 업로드에 실패했습니다.
+echo  LDPlayer 저장공간 접근 상태를 확인하세요.
 echo ============================================================
 pause
 exit /b 1
@@ -215,7 +210,7 @@ echo.
 echo ============================================================
 echo  FAIL - MessengerBot 컴파일 요청 실패
 echo ============================================================
-echo  BOT_NAME = %BOT_NAME%
+echo  MessengerBot 앱이 실행 중인지 확인하세요.
 echo ============================================================
 pause
 exit /b 1
