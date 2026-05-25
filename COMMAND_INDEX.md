@@ -3481,7 +3481,7 @@ Status: VERIFIED
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
 - `/휴식` stores a rest end time so `/맞짱` and `ㅁㅁ` can resume after the 60-second break even if the delayed notice/save timing is late
-- A user who reaches 5 event matches is marked field-out and cannot rejoin the active event
+- A user who reaches 7 event matches is marked field-out and cannot rejoin the active event
 - `/맞짱종료` pays top 1~50 event PT rewards as 다이아 and then clears active participant data
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
