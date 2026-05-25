@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.128"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.129"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -716,8 +716,10 @@ const GLOBAL_CONFIG = {
 	},
 	matzangField: { // 맞짱필드 이벤트 설정
 		maxCount: 5,
-		winPoint: 10,
-		losePoint: 5,
+		winPointMin: 10,
+		winPointMax: 15,
+		losePointMin: 5,
+		losePointMax: 7,
 		diamondMin: 1,
 		diamondMax: 10,
 		restMs: 60000,
@@ -1465,7 +1467,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
 				return;
 			}
-			if (joinPart.active && !joinPart.eliminated) {
+			if (joinPart.active) {
 				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 이미 맞짱필드👊에 참여 중입니다.\n대전방법: /맞짱 or ㅁㅁ");
 				return;
 			}
@@ -1483,8 +1485,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			joinMsg += "두들겨 맞기 전에 후리세요!\n선 빵 필 승🍞" + allsee + "\n\n";
 			joinMsg += "━━━━━━━━━━━━\n⚔️ 진행 규칙\n";
 			joinMsg += "전투 기준: 참여 시점 종합매력\n";
-			joinMsg += "승리: +" + GLOBAL_CONFIG.matzangField.winPoint + "pt\n";
-			joinMsg += "패배: +" + GLOBAL_CONFIG.matzangField.losePoint + "pt\n";
+			joinMsg += "승리: +" + GLOBAL_CONFIG.matzangField.winPointMin + "~" + GLOBAL_CONFIG.matzangField.winPointMax + "pt\n";
+			joinMsg += "패배: +" + GLOBAL_CONFIG.matzangField.losePointMin + "~" + GLOBAL_CONFIG.matzangField.losePointMax + "pt\n";
 			joinMsg += "대전 보상: 다이아💎 " + GLOBAL_CONFIG.matzangField.diamondMin + "~" + GLOBAL_CONFIG.matzangField.diamondMax + "개\n\n";
 			joinMsg += "━━━━━━━━━━━━\n👥 현재 참여자: " + joinList.count + "명\n참여자 목록 보기📋\n\n" + joinList.lines.join("\n");
 			saveJsonFile(data, filePath);
@@ -1516,7 +1518,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (!data.member[sender]) return;
 			ensureDiamondMemberData(data, sender);
 			var myPart = ensureMatzangParticipant(matzangField, sender);
-			if (!myPart.active || myPart.eliminated) {
+			if (!myPart.active && myPart.eliminated && myPart.count < GLOBAL_CONFIG.matzangField.maxCount) {
+				myPart.active = true;
+				myPart.eliminated = false;
+				saveJsonFile(data, filePath);
+			}
+			if (!myPart.active) {
 				replier.reply("[미참가❌]\n[" + checkRank(data, petData, guildData, sender) + "] 님 /참여 or ㅊㅇ로\n맞짱필드👊에 참여해주세요.");
 				return;
 			}
@@ -1533,7 +1540,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 			var candidates = Object.keys(matzangField.participants).filter(function (name) {
 				var part = matzangField.participants[name];
-				return name !== sender && part && part.active && !part.eliminated && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name] && petData[name] && petData[name].petname;
+				return name !== sender && part && part.active && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name] && petData[name] && petData[name].petname;
 			});
 			if (candidates.length < 1) {
 				replier.reply("현재 맞짱 가능한 상대가 없습니다.\n다른 유저가 참여할 때까지 기다려주세요.");
@@ -1558,8 +1565,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var isWin = battle.isAttackerWin;
 			var winnerName = isWin ? sender : opponentName;
 			var loserName = isWin ? opponentName : sender;
-			var loserPart = loserName === sender ? myPart : opponentPart;
-			var gainPt = isWin ? GLOBAL_CONFIG.matzangField.winPoint : GLOBAL_CONFIG.matzangField.losePoint;
+			var gainPtMin = isWin ? GLOBAL_CONFIG.matzangField.winPointMin : GLOBAL_CONFIG.matzangField.losePointMin; // 승패별 최소 PT
+			var gainPtMax = isWin ? GLOBAL_CONFIG.matzangField.winPointMax : GLOBAL_CONFIG.matzangField.losePointMax; // 승패별 최대 PT
+			var gainPt = Math.floor(Math.random() * (gainPtMax - gainPtMin + 1)) + gainPtMin;
 			var diamondGain = Math.floor(Math.random() * (GLOBAL_CONFIG.matzangField.diamondMax - GLOBAL_CONFIG.matzangField.diamondMin + 1)) + GLOBAL_CONFIG.matzangField.diamondMin;
 			myPart.count++;
 			myPart.pt += gainPt;
@@ -1572,8 +1580,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				opponentPart.win++;
 			}
 			addDiamond(data, currencyLogData, sender, diamondGain);
-			loserPart.active = false;
-			loserPart.eliminated = true;
 			if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
 				myPart.active = false;
 				myPart.eliminated = true;
@@ -1587,8 +1593,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			resultMsg += "다이아💎 " + diamondGain + "개 획득\n\n";
 			resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 🆚 [" + checkRank(data, petData, guildData, opponentName) + "]\n";
 			resultMsg += "━━━━━━━━━━━━\n";
-			resultMsg += "💫 K.O [" + checkRank(data, petData, guildData, loserName) + "] 님 탈락\n";
-			resultMsg += "\"/참여 or ㅊㅇ\" 를 입력하면 재참여 가능합니다.";
+			resultMsg += "💫 K.O [" + checkRank(data, petData, guildData, loserName) + "] 님 다운\n";
+			resultMsg += "남은 횟수가 있으면 바로 다음 맞짱이 가능합니다.";
 			if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
 				resultMsg += "\n[" + checkRank(data, petData, guildData, sender) + "] 님은 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진해 필드 아웃되었습니다.";
 			}
@@ -33460,7 +33466,7 @@ function addUsedDiamond(currencyLogData, user, amount, detail) {
 function buildMatzangParticipantList(field, data, petData, guildData) {
 	var names = Object.keys(field.participants).filter(function (name) {
 		var part = field.participants[name];
-		return part && part.active && !part.eliminated && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name];
+		return part && part.active && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name];
 	});
 	var lines = [];
 	for (var i = 0; i < names.length; i++) {

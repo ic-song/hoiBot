@@ -3476,12 +3476,12 @@ Status: VERIFIED
 ## AI Notes
 
 - `/맞짱` and `ㅁㅁ` are exact commands; suffix text does not execute battle logic
-- Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; the matched opponent can be K.O. without receiving PT from that command
-- K.O. users can re-enter with `/참여` or `ㅊㅇ`, but their event count is not reset
+- Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
+- K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
 - `/휴식` stores a rest end time so `/맞짱` and `ㅁㅁ` can resume after the 60-second break even if the delayed notice/save timing is late
-- A user who reaches 10 event matches is marked field-out and cannot rejoin the active event
+- A user who reaches 5 event matches is marked field-out and cannot rejoin the active event
 - `/맞짱종료` pays top 1~50 event PT rewards as 다이아 and then clears active participant data
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
