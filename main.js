@@ -1738,6 +1738,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(removeDiaUser + "님의 다이아💎 " + numberWithCommas(removeDiaAmount) + "개를 차감했습니다.\n잔여: " + numberWithCommas(data.member[removeDiaUser].diamond) + "개");
 			return;
 		}
+		if (msg === "/다이아전체초기화" && isMaster(sender)) {
+			var resetDiamondUserCount = 0;
+			for (var resetDiaUser in data.member) {
+				if (!data.member.hasOwnProperty(resetDiaUser)) continue;
+				if (!data.member[resetDiaUser]) continue;
+				data.member[resetDiaUser].diamond = 0;
+				resetDiamondUserCount++;
+			}
+			currencyLogData.user = {};
+			saveJsonFile(data, filePath);
+			saveJsonFile(currencyLogData, currencyLogPath);
+			replier.reply("모든 다이아💎 데이터가 초기화되었습니다.\n초기화 대상: " + numberWithCommas(resetDiamondUserCount) + "명");
+			return;
+		}
 		if (msg.startsWith("/미니펫조합 ")) {
 			var combinationArgs = msg.trim().split(/\s+/);
 			var nickName = checkRank(data, petData, guildData, sender);

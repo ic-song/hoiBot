@@ -3443,7 +3443,7 @@ Status: VERIFIED
 
 - Uses `filePath` member data for field state, participant event PT, diamond balances, and diamond shop
 - Uses `currencyLogPath` for cumulative earned diamond, used diamond total, and usage history logs
-- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, and `/다이아차감` save `data` through `saveJsonFile(data, filePath)`
+- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, `/다이아차감`, and `/다이아전체초기화` save `data` through `saveJsonFile(data, filePath)`
 - `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/다이아구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
@@ -3467,6 +3467,7 @@ Status: VERIFIED
 - `/다이아상점삭제 [번호]`
 - `/다이아추가 [아이디] [갯수]`
 - `/다이아차감 [아이디] [갯수]`
+- `/다이아전체초기화`
 
 ## AI Notes
 
@@ -3481,3 +3482,4 @@ Status: VERIFIED
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
 - 다이아 사용내역은 `currencyLog.json` `user[유저명].useHistory`에 시간, 구분, 사용량, 메모만 간단히 누적 저장한다
+- `/다이아전체초기화`는 마스터 전용이며 모든 유저의 보유 다이아와 `currencyLog.json` 누적 기록을 초기화한다
