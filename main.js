@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.134"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.135"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1061,6 +1061,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 	var ctx = createCommandContext(isDevCommandMessage(msg));
 	var prevCtx = enterCommandContext(ctx);
 	var responseStartMs = Date.now();
+	var responseTimingRows = [];
+	function addResponseTiming(label, startMs) {
+		responseTimingRows.push({ label: label, ms: Date.now() - startMs });
+	}
 	//데이터 검사
 	try {
 		if (ctx.isDev) {
@@ -1389,24 +1393,44 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				return;
 			}
 		}
+		var commonStepStart = Date.now();
+		addResponseTiming("명령 전처리/과부하체크", responseStartMs);
+		commonStepStart = Date.now();
 		var data = loadJsonFile(filePath);
+		addResponseTiming("member.json 로드", commonStepStart);
+		commonStepStart = Date.now();
 		var petData = loadJsonFile(memberPetPath);
+		addResponseTiming("member_pet.json 로드", commonStepStart);
+		commonStepStart = Date.now();
 		var petSkillData = loadJsonFile(petSkillDataPath);
+		addResponseTiming("petSkillData.json 로드", commonStepStart);
+		commonStepStart = Date.now();
 		var guildData = loadJsonFile(guildPath);
+		addResponseTiming("guildData.json 로드", commonStepStart);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
 		if (!ctx.isDev && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
 			replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
 			return;
 		}
+		commonStepStart = Date.now();
 		ensureHappyFoundationData(data);
+		addResponseTiming("해피재단 보정", commonStepStart);
+		commonStepStart = Date.now();
 		var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData);
+		addResponseTiming("펫스킬 시스템 보정", commonStepStart);
 		if (petSkillChanged) {
+			commonStepStart = Date.now();
 			saveJsonFile(data, filePath);
 			saveJsonFile(petData, memberPetPath);
 			saveJsonFile(petSkillData, petSkillDataPath);
+			addResponseTiming("펫스킬 보정 저장", commonStepStart);
 		}
+		commonStepStart = Date.now();
 		var matzangField = ensureMatzangFieldData(data);
+		addResponseTiming("맞짱필드 보정", commonStepStart);
+		commonStepStart = Date.now();
 		var currencyLogData = ensureCurrencyLogData(loadJsonFile(currencyLogPath));
+		addResponseTiming("currencyLog 로드/보정", commonStepStart);
 		if (matzangField.active && matzangField.resting && matzangField.restUntil && Date.now() >= matzangField.restUntil) {
 			matzangField.resting = false;
 			matzangField.restUntil = 0;
@@ -1537,6 +1561,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			timeCheckMsg += "종합매력 계산: " + expCalcMs + "ms\n";
 			timeCheckMsg += "━━━━━━━━━━━━\n";
 			timeCheckMsg += "종합매력: " + numberWithCommas(totalExpForTimeCheck) + "💕\n";
+			timeCheckMsg += "\n응답 공통 처리📋" + allsee + "\n";
+			for (var rtLine = 0; rtLine < responseTimingRows.length; rtLine++) {
+				timeCheckMsg += responseTimingRows[rtLine].label + ": " + responseTimingRows[rtLine].ms + "ms\n";
+			}
 			timeCheckMsg += "\n세부 계산📋" + allsee + "\n";
 			for (var tcLine = 0; tcLine < timeCheckDetail.lines.length; tcLine++) {
 				timeCheckMsg += timeCheckDetail.lines[tcLine] + "\n";
