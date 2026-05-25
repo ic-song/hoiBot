@@ -715,11 +715,11 @@ const GLOBAL_CONFIG = {
 		legendTitleName: "👑전설의 핵주먹"
 	},
 	matzangField: { // 맞짱필드 이벤트 설정
-		maxCount: 10,
+		maxCount: 5,
 		winPoint: 10,
 		losePoint: 5,
 		diamondMin: 1,
-		diamondMax: 5,
+		diamondMax: 10,
 		restMs: 60000,
 		defaultShop: [
 			{ name: "미니펫 강화석💫", count: 1, price: 1 },
@@ -1469,6 +1469,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 이미 맞짱필드👊에 참여 중입니다.\n대전방법: /맞짱 or ㅁㅁ");
 				return;
 			}
+			var homeDataForJoin = loadJsonFile(homeDataFile);
+			joinPart.totalExp = Math.round(calculateTotalExp(sender, data, petData, homeDataForJoin, petSkillData) || 0);
+			joinPart.totalExpUpdatedAt = formatDateTime(new Date());
 			joinPart.active = true;
 			joinPart.eliminated = false;
 			var joinList = buildMatzangParticipantList(matzangField, data, petData, guildData);
@@ -1479,6 +1482,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			joinMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 맞짱필드에 참여했습니다.\n\n";
 			joinMsg += "두들겨 맞기 전에 후리세요!\n선 빵 필 승🍞" + allsee + "\n\n";
 			joinMsg += "━━━━━━━━━━━━\n⚔️ 진행 규칙\n";
+			joinMsg += "전투 기준: 참여 시점 종합매력\n";
 			joinMsg += "승리: +" + GLOBAL_CONFIG.matzangField.winPoint + "pt\n";
 			joinMsg += "패배: +" + GLOBAL_CONFIG.matzangField.losePoint + "pt\n";
 			joinMsg += "대전 보상: 다이아💎 " + GLOBAL_CONFIG.matzangField.diamondMin + "~" + GLOBAL_CONFIG.matzangField.diamondMax + "개\n\n";
@@ -1538,8 +1542,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var opponentName = candidates[Math.floor(Math.random() * candidates.length)];
 			ensureDiamondMemberData(data, opponentName);
 			var opponentPart = ensureMatzangParticipant(matzangField, opponentName);
-			var homeDataForMatzang = loadJsonFile(homeDataFile);
-			var battle = runMatzangBattle(sender, opponentName, data, petData, homeDataForMatzang, petSkillData);
+			var homeDataForMatzang = null;
+			if (myPart.totalExp <= 0 || opponentPart.totalExp <= 0) {
+				homeDataForMatzang = loadJsonFile(homeDataFile);
+				if (myPart.totalExp <= 0) {
+					myPart.totalExp = Math.round(calculateTotalExp(sender, data, petData, homeDataForMatzang, petSkillData) || 0);
+					myPart.totalExpUpdatedAt = formatDateTime(new Date());
+				}
+				if (opponentPart.totalExp <= 0) {
+					opponentPart.totalExp = Math.round(calculateTotalExp(opponentName, data, petData, homeDataForMatzang, petSkillData) || 0);
+					opponentPart.totalExpUpdatedAt = formatDateTime(new Date());
+				}
+			}
+			var battle = runMatzangBattle(sender, opponentName, data, petData, homeDataForMatzang, petSkillData, myPart.totalExp, opponentPart.totalExp);
 			var isWin = battle.isAttackerWin;
 			var winnerName = isWin ? sender : opponentName;
 			var loserName = isWin ? opponentName : sender;
@@ -33413,6 +33428,8 @@ function ensureMatzangParticipant(field, user) {
 	if (typeof participant.win !== "number" || isNaN(participant.win)) participant.win = 0;
 	if (typeof participant.lose !== "number" || isNaN(participant.lose)) participant.lose = 0;
 	if (typeof participant.diamonds !== "number" || isNaN(participant.diamonds)) participant.diamonds = 0;
+	if (typeof participant.totalExp !== "number" || isNaN(participant.totalExp)) participant.totalExp = 0;
+	if (typeof participant.totalExpUpdatedAt !== "string") participant.totalExpUpdatedAt = "";
 	return participant;
 }
 
@@ -33452,11 +33469,11 @@ function buildMatzangParticipantList(field, data, petData, guildData) {
 	return { count: names.length, lines: lines };
 }
 
-// 맞짱필드 종합매력 기반 전투 수치를 계산하는 함수
-function getMatzangBattleProfile(user, data, petData, homeData, petSkillData) {
+// 맞짱필드 참여 시점 종합매력 기반 전투 수치를 반환하는 함수
+function getMatzangBattleProfile(user, data, petData, homeData, petSkillData, cachedTotalExp) {
 	var petObj = petData[user] || {};
 	var miniPet = petObj.miniPet || null;
-	var baseExp = calculateTotalExp(user, data, petData, homeData, petSkillData) || 0;
+	var baseExp = cachedTotalExp > 0 ? cachedTotalExp : (calculateTotalExp(user, data, petData, homeData, petSkillData) || 0);
 	return {
 		user: user,
 		pet: petObj,
@@ -33469,9 +33486,9 @@ function getMatzangBattleProfile(user, data, petData, homeData, petSkillData) {
 }
 
 // 맞짱필드 전투 결과와 출력용 상세 데이터를 계산하는 함수
-function runMatzangBattle(attackerName, defenderName, data, petData, homeData, petSkillData) {
-	var attacker = getMatzangBattleProfile(attackerName, data, petData, homeData, petSkillData);
-	var defender = getMatzangBattleProfile(defenderName, data, petData, homeData, petSkillData);
+function runMatzangBattle(attackerName, defenderName, data, petData, homeData, petSkillData, attackerTotalExp, defenderTotalExp) {
+	var attacker = getMatzangBattleProfile(attackerName, data, petData, homeData, petSkillData, attackerTotalExp);
+	var defender = getMatzangBattleProfile(defenderName, data, petData, homeData, petSkillData, defenderTotalExp);
 	var petTypeBuff = difftypeBuff(attacker.pet, defender.pet);
 	var attackerBuffed = Math.round(attacker.baseExp * petTypeBuff.buff1); // 공격자 상성 보정값
 	var defenderBuffed = Math.round(defender.baseExp * petTypeBuff.buff2); // 방어자 상성 보정값

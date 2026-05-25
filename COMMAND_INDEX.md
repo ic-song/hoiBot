@@ -3429,6 +3429,8 @@ Status: VERIFIED
 - `data.matzangField.resting`
 - `data.matzangField.restUntil`
 - `data.matzangField.participants`
+- `data.matzangField.participants[*].totalExp`
+- `data.matzangField.participants[*].totalExpUpdatedAt`
 - `data.matzangField.shop`
 - `data.member[*].diamond`
 - `currencyLogData.user[*].diamond`
@@ -3447,6 +3449,8 @@ Status: VERIFIED
 - `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/다이아구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
+- `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
+- `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
 - Active 맞짱필드 blocks `/미니펫오픈` and `/샵오픈` before those command branches execute
 - `Info.js` reads `data.member[*].diamond` for 종합 정보 display
 
@@ -3475,6 +3479,7 @@ Status: VERIFIED
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; the matched opponent can be K.O. without receiving PT from that command
 - K.O. users can re-enter with `/참여` or `ㅊㅇ`, but their event count is not reset
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
+- A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
 - `/휴식` stores a rest end time so `/맞짱` and `ㅁㅁ` can resume after the 60-second break even if the delayed notice/save timing is late
 - A user who reaches 10 event matches is marked field-out and cannot rejoin the active event
 - `/맞짱종료` pays top 1~50 event PT rewards as 다이아 and then clears active participant data
