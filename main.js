@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.133"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.134"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1523,7 +1523,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var homeDataForTimeCheck = loadJsonFile(homeDataFile);
 			var homeLoadMs = Date.now() - homeLoadStart;
 			var expCalcStart = Date.now();
-			var totalExpForTimeCheck = Math.round(calculateTotalExp(timeCheckUser, data, petData, homeDataForTimeCheck, petSkillData) || 0);
+			var timeCheckDetail = buildTotalExpTimeCheckDetail(timeCheckUser, data, petData, homeDataForTimeCheck, petSkillData);
+			var totalExpForTimeCheck = timeCheckDetail.total;
 			var expCalcMs = Date.now() - expCalcStart;
 			var branchTimeMs = Date.now() - timeCheckStart;
 			var totalTimeMs = Date.now() - responseStartMs;
@@ -1536,6 +1537,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			timeCheckMsg += "종합매력 계산: " + expCalcMs + "ms\n";
 			timeCheckMsg += "━━━━━━━━━━━━\n";
 			timeCheckMsg += "종합매력: " + numberWithCommas(totalExpForTimeCheck) + "💕\n";
+			timeCheckMsg += "\n세부 계산📋" + allsee + "\n";
+			for (var tcLine = 0; tcLine < timeCheckDetail.lines.length; tcLine++) {
+				timeCheckMsg += timeCheckDetail.lines[tcLine] + "\n";
+			}
 			timeCheckMsg += "※ 전투/상대선정/저장은 실행하지 않았습니다.";
 			replier.reply(timeCheckMsg);
 			return;
@@ -35709,6 +35714,104 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	if (isNaN(total)) total = 0;
 
 	return total;
+}
+
+// 종합매력 시간체크용 세부 계산 결과를 반환하는 함수
+function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillData) {
+	var result = {
+		total: 0,
+		lines: []
+	};
+	if (!petData || !petData[sender]) return result;
+
+	var petInfo = petData[sender];
+	var bagItems = data && data.member && data.member[sender] && data.member[sender].bag ? data.member[sender].bag : null;
+	var rows = [];
+
+	function addRow(label, value, ms) {
+		value = parseInt(value, 10);
+		if (isNaN(value)) value = 0;
+		rows.push({ label: label, value: value, ms: ms });
+	}
+
+	function measure(label, fn) {
+		var start = Date.now();
+		var value = fn();
+		addRow(label, value, Date.now() - start);
+		return value;
+	}
+
+	function calcSkillExp(homeDataForSkill) {
+		var skillExp = 0;
+		if (hasPetSkill(petSkillData, sender, "장미칼")) skillExp += 500000;
+		if (hasPetSkill(petSkillData, sender, "청룡언월도")) skillExp += 1000000;
+		if (hasPetSkill(petSkillData, sender, "창조림") && hasEquippedCreationMiniPet(petData, sender)) skillExp += 500000;
+		if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
+			var royalLumiereCount = getPlacedFurnitureCountByGrade(homeDataForSkill, sender, "로열 루미에르");
+			if (royalLumiereCount >= 10) skillExp += 150000;
+		}
+		return skillExp;
+	}
+
+	var castleItemExp = measure("캐슬-공격아이템", function () {
+		return calculateCastleItem(sender, data) || 0;
+	});
+	var castleEquipmentExp = measure("캐슬-정령/반지/가방", function () {
+		var itemInfo = calculateItemInfoAll(sender, data, petData) || { castleExp: 0 };
+		return itemInfo.castleExp || 0;
+	});
+	var castlePetExp = measure("캐슬-펫", function () {
+		return petInfo.petexp || 0;
+	});
+	var castleMiniPetExp = measure("캐슬-미니펫", function () {
+		return (petInfo.miniPet && petInfo.miniPet.castleExp) || 0;
+	});
+	var castleHomeExp = measure("캐슬-홈/가구", function () {
+		var homeExp = getHomeTotalExp(homeData, sender) || 0;
+		if (hasPetSkill(petSkillData, sender, "인테리어 장인")) homeExp = Math.floor(homeExp * 1.1);
+		return homeExp;
+	});
+	var castleIntimacyExp = measure("캐슬-친밀도", function () {
+		return getIntimacyExpFromBag(bagItems);
+	});
+	var castleSkillExp = measure("캐슬-펫스킬", function () {
+		return calcSkillExp(homeData);
+	});
+	var castleTotal = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp;
+
+	var raidEquipmentExp = measure("레이드-정령/반지/가방", function () {
+		var itemInfo = calculateItemInfoAll(sender, data, petData) || { raidExp: 0 };
+		return itemInfo.raidExp || 0;
+	});
+	var raidPetExp = measure("레이드-펫", function () {
+		return petInfo.petexp || 0;
+	});
+	var raidMiniPetExp = measure("레이드-미니펫", function () {
+		return (petInfo.miniPet && petInfo.miniPet.raidExp) || 0;
+	});
+	var raidHomeExp = measure("레이드-홈/가구", function () {
+		var homeExp = getHomeTotalExp(homeData, sender) || 0;
+		if (hasPetSkill(petSkillData, sender, "인테리어 장인")) homeExp = Math.floor(homeExp * 1.1);
+		return homeExp;
+	});
+	var raidSkillExp = measure("레이드-펫스킬", function () {
+		return calcSkillExp(homeData);
+	});
+	var raidTotal = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp;
+	var upgradeBonus = measure("강화 보너스", function () {
+		return (petInfo.upgrade || 0) * 300;
+	});
+
+	result.total = parseInt(castleTotal + raidTotal + upgradeBonus, 10);
+	if (isNaN(result.total)) result.total = 0;
+	result.lines.push("캐슬 합계: " + numberWithCommas(castleTotal) + "💕");
+	result.lines.push("레이드 합계: " + numberWithCommas(raidTotal) + "💕");
+	result.lines.push("강화 보너스: " + numberWithCommas(upgradeBonus) + "💕");
+	result.lines.push("━━━━━━━━━━━━");
+	for (var i = 0; i < rows.length; i++) {
+		result.lines.push(rows[i].label + ": " + numberWithCommas(rows[i].value) + "💕 / " + rows[i].ms + "ms");
+	}
+	return result;
 }
 
 // 가입관련
