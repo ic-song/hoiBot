@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.132"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.133"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1519,63 +1519,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("[" + checkRank(data, petData, guildData, timeCheckUser) + "] 님은 펫을 먼저 생성해야 합니다.");
 				return;
 			}
-			var timeCheckPart = matzangField.participants[timeCheckUser];
-			var hasActiveTimeCheckPart = !!(timeCheckPart && timeCheckPart.active && (parseInt(timeCheckPart.count, 10) || 0) < GLOBAL_CONFIG.matzangField.maxCount); // 진행 중 저장 매력 사용 가능 여부
-			var candidateStart = Date.now();
-			var timeCheckCandidates = [];
-			if (matzangField.active) {
-				timeCheckCandidates = Object.keys(matzangField.participants).filter(function (name) {
-					var part = matzangField.participants[name];
-					return name !== timeCheckUser && part && part.active && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name] && petData[name] && petData[name].petname;
-				});
-			}
-			if (timeCheckCandidates.length < 1) {
-				timeCheckCandidates = Object.keys(data.member).filter(function (name) {
-					return name !== timeCheckUser && petData[name] && petData[name].petname;
-				});
-			}
-			var candidateMs = Date.now() - candidateStart;
-			if (timeCheckCandidates.length < 1) {
-				replier.reply("시간체크 가능한 상대가 없습니다.\n펫을 보유한 다른 유저가 필요합니다.");
-				return;
-			}
-			var timeCheckOpponent = timeCheckCandidates[Math.floor(Math.random() * timeCheckCandidates.length)];
-			var timeCheckOpponentPart = matzangField.participants[timeCheckOpponent];
-			var hasActiveOpponentPart = !!(timeCheckOpponentPart && timeCheckOpponentPart.active && (parseInt(timeCheckOpponentPart.count, 10) || 0) < GLOBAL_CONFIG.matzangField.maxCount); // 상대 저장 매력 사용 가능 여부
-			var attackerStoredExp = hasActiveTimeCheckPart ? (parseInt(timeCheckPart.totalExp, 10) || 0) : 0; // 공격자 참여 시점 저장 매력
-			var defenderStoredExp = hasActiveOpponentPart ? (parseInt(timeCheckOpponentPart.totalExp, 10) || 0) : 0; // 상대 참여 시점 저장 매력
-			var homeLoadMs = 0;
-			var expCalcMs = 0;
-			var homeDataForTimeCheck = null;
-			if (attackerStoredExp <= 0 || defenderStoredExp <= 0) {
-				var homeLoadStart = Date.now();
-				homeDataForTimeCheck = loadJsonFile(homeDataFile);
-				homeLoadMs = Date.now() - homeLoadStart;
-				var expCalcStart = Date.now();
-				if (attackerStoredExp <= 0) attackerStoredExp = Math.round(calculateTotalExp(timeCheckUser, data, petData, homeDataForTimeCheck, petSkillData) || 0);
-				if (defenderStoredExp <= 0) defenderStoredExp = Math.round(calculateTotalExp(timeCheckOpponent, data, petData, homeDataForTimeCheck, petSkillData) || 0);
-				expCalcMs = Date.now() - expCalcStart;
-			}
-			var battleCalcStart = Date.now();
-			var timeCheckBattle = runMatzangBattle(timeCheckUser, timeCheckOpponent, data, petData, homeDataForTimeCheck, petSkillData, attackerStoredExp, defenderStoredExp);
-			var battleCalcMs = Date.now() - battleCalcStart;
+			var homeLoadStart = Date.now();
+			var homeDataForTimeCheck = loadJsonFile(homeDataFile);
+			var homeLoadMs = Date.now() - homeLoadStart;
+			var expCalcStart = Date.now();
+			var totalExpForTimeCheck = Math.round(calculateTotalExp(timeCheckUser, data, petData, homeDataForTimeCheck, petSkillData) || 0);
+			var expCalcMs = Date.now() - expCalcStart;
 			var branchTimeMs = Date.now() - timeCheckStart;
 			var totalTimeMs = Date.now() - responseStartMs;
 			var timeCheckMsg = "👊 맞짱 시간체크 👊\n";
 			timeCheckMsg += "기준: [" + checkRank(data, petData, guildData, timeCheckUser) + "]\n";
-			timeCheckMsg += "상대: [" + checkRank(data, petData, guildData, timeCheckOpponent) + "]\n";
-			timeCheckMsg += "결과: " + (timeCheckBattle.isAttackerWin ? "✅승리" : "❌패배") + "\n";
 			timeCheckMsg += "━━━━━━━━━━━━\n";
 			timeCheckMsg += "전체(응답진입): " + totalTimeMs + "ms\n";
 			timeCheckMsg += "진단분기: " + branchTimeMs + "ms\n";
-			timeCheckMsg += "상대선정: " + candidateMs + "ms\n";
 			timeCheckMsg += "홈데이터 로드: " + homeLoadMs + "ms\n";
-			timeCheckMsg += "매력 계산: " + expCalcMs + "ms\n";
-			timeCheckMsg += "전투 계산: " + battleCalcMs + "ms\n";
+			timeCheckMsg += "종합매력 계산: " + expCalcMs + "ms\n";
 			timeCheckMsg += "━━━━━━━━━━━━\n";
-			timeCheckMsg += "기준 매력: " + numberWithCommas(timeCheckBattle.attacker.baseExp) + "💕\n";
-			timeCheckMsg += "상대 매력: " + numberWithCommas(timeCheckBattle.defender.baseExp) + "💕\n";
-			timeCheckMsg += "※ 횟수/PT/다이아/저장은 변경하지 않았습니다.";
+			timeCheckMsg += "종합매력: " + numberWithCommas(totalExpForTimeCheck) + "💕\n";
+			timeCheckMsg += "※ 전투/상대선정/저장은 실행하지 않았습니다.";
 			replier.reply(timeCheckMsg);
 			return;
 		}
