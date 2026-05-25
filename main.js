@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.131"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.132"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1510,18 +1510,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("사용법: /맞짱시간체크 닉네임");
 				return;
 			}
-			if (!matzangField.active) {
-				replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
-				return;
-			}
-			if (room !== room8) {
-				replier.reply("맞짱필드👊 시간체크는 공성전 방에서만 가능합니다.");
-				return;
-			}
-			if (matzangField.resting) {
-				replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱시간체크 닉네임은 휴식 종료 후 확인해주세요.");
-				return;
-			}
 			var timeCheckUser = timeCheckMatch[1].trim();
 			if (!data.member[timeCheckUser]) {
 				replier.reply("존재하지 않는 사용자입니다.");
@@ -1532,28 +1520,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				return;
 			}
 			var timeCheckPart = matzangField.participants[timeCheckUser];
-			if (!timeCheckPart || !timeCheckPart.active) {
-				replier.reply("[미참가❌]\n[" + checkRank(data, petData, guildData, timeCheckUser) + "] 님은 현재 맞짱필드👊에 참여 중이 아닙니다.");
-				return;
-			}
-			if ((parseInt(timeCheckPart.count, 10) || 0) >= GLOBAL_CONFIG.matzangField.maxCount) {
-				replier.reply("[" + checkRank(data, petData, guildData, timeCheckUser) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
-				return;
-			}
+			var hasActiveTimeCheckPart = !!(timeCheckPart && timeCheckPart.active && (parseInt(timeCheckPart.count, 10) || 0) < GLOBAL_CONFIG.matzangField.maxCount); // 진행 중 저장 매력 사용 가능 여부
 			var candidateStart = Date.now();
-			var timeCheckCandidates = Object.keys(matzangField.participants).filter(function (name) {
-				var part = matzangField.participants[name];
-				return name !== timeCheckUser && part && part.active && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name] && petData[name] && petData[name].petname;
-			});
+			var timeCheckCandidates = [];
+			if (matzangField.active) {
+				timeCheckCandidates = Object.keys(matzangField.participants).filter(function (name) {
+					var part = matzangField.participants[name];
+					return name !== timeCheckUser && part && part.active && part.count < GLOBAL_CONFIG.matzangField.maxCount && data.member[name] && petData[name] && petData[name].petname;
+				});
+			}
+			if (timeCheckCandidates.length < 1) {
+				timeCheckCandidates = Object.keys(data.member).filter(function (name) {
+					return name !== timeCheckUser && petData[name] && petData[name].petname;
+				});
+			}
 			var candidateMs = Date.now() - candidateStart;
 			if (timeCheckCandidates.length < 1) {
-				replier.reply("현재 맞짱 가능한 상대가 없습니다.\n다른 유저가 참여할 때까지 기다려주세요.");
+				replier.reply("시간체크 가능한 상대가 없습니다.\n펫을 보유한 다른 유저가 필요합니다.");
 				return;
 			}
 			var timeCheckOpponent = timeCheckCandidates[Math.floor(Math.random() * timeCheckCandidates.length)];
 			var timeCheckOpponentPart = matzangField.participants[timeCheckOpponent];
-			var attackerStoredExp = parseInt(timeCheckPart.totalExp, 10) || 0; // 공격자 참여 시점 저장 매력
-			var defenderStoredExp = parseInt(timeCheckOpponentPart.totalExp, 10) || 0; // 상대 참여 시점 저장 매력
+			var hasActiveOpponentPart = !!(timeCheckOpponentPart && timeCheckOpponentPart.active && (parseInt(timeCheckOpponentPart.count, 10) || 0) < GLOBAL_CONFIG.matzangField.maxCount); // 상대 저장 매력 사용 가능 여부
+			var attackerStoredExp = hasActiveTimeCheckPart ? (parseInt(timeCheckPart.totalExp, 10) || 0) : 0; // 공격자 참여 시점 저장 매력
+			var defenderStoredExp = hasActiveOpponentPart ? (parseInt(timeCheckOpponentPart.totalExp, 10) || 0) : 0; // 상대 참여 시점 저장 매력
 			var homeLoadMs = 0;
 			var expCalcMs = 0;
 			var homeDataForTimeCheck = null;
