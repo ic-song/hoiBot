@@ -1095,7 +1095,7 @@ Status: VERIFIED
 
 ---
 
-# /호이봇버전, /수정내용
+# /호이봇버전, /개발자노트
 
 Status: VERIFIED
 
@@ -1117,18 +1117,19 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/수정내용` reads `hoiBotChangeLogPath`
+- `/개발자노트` reads `hoiBotChangeLogPath`
 - Read-only; no save
 
 ## Related Commands
 
 - `/호이봇버전`
-- `/수정내용`
+- `/개발자노트`
 
 ## AI Notes
 
 - `/호이봇버전` replies with `ver_` + `HoiBotVersion`
-- `/수정내용` is admin/master-only and shows the latest 10 entries from the manually maintained `data/hoiBotChangeLog.json` after an `allsee` fold marker
+- `/개발자노트` is admin/master-only and shows the latest 10 entries from the manually maintained `data/hoiBotChangeLog.json` after an `allsee` fold marker
+- Entries are grouped under date sections in the output; each production-facing change still increments `HoiBotVersion` by `0.001`
 - `HoiBotVersion` should be increased by `0.001` whenever source changes are intentionally reflected
 
 ---
