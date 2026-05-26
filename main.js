@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.143"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.144"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -31444,11 +31444,13 @@ function buildPackageAddGuideMessage() {
 	lines.push("");
 	lines.push("보상목록 형식:");
 	lines.push("item:아이템명:수량, point:포인트수량");
+	lines.push("아이템명 x수량, 아이템명 x수량");
 	lines.push("※ 패키지명 하나만 사용하며, 가방에도 같은 이름으로 표시됩니다.");
 	lines.push("");
 	lines.push("예시:");
 	lines.push("/패키지추가 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
 	lines.push("/패키지수정 3 | 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
+	lines.push("/패키지수정 3 | 이벤트패키지🎁 | 이벤트 보상 패키지 | 펫 강화석⭐ x4,000, 미니펫뽑기🐹(/미니펫오픈) x10");
 	lines.push("");
 	lines.push("제거:");
 	lines.push("/패키지제거 리스트번호");
@@ -31468,6 +31470,7 @@ function buildPackageEditUsageMessage() {
 	lines.push("");
 	lines.push("예시:");
 	lines.push("/패키지수정 3 | 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
+	lines.push("/패키지수정 3 | 이벤트패키지🎁 | 이벤트 보상 패키지 | 펫 강화석⭐ x4,000, 미니펫뽑기🐹(/미니펫오픈) x10");
 	lines.push("");
 	lines.push("자세한 예시는 /패키지추가방법");
 	return lines.join("\n");
@@ -31720,8 +31723,36 @@ function createPackageIdFromName(name, packageInfoData) {
 	return id;
 }
 
+// 아이템명 x수량 형식의 패키지 보상 입력 문자열 파싱 함수
+function parsePackageNaturalItemRewardSpec(rewardSpec) {
+	var rewards = [];
+	var text = String(rewardSpec || "").trim(); // 자연어형 보상 입력 원문
+	var pattern = /\s+x\s*(\d(?:[\d,]*\d)?)/g;
+	var lastEnd = 0;
+	var match = null;
+	while ((match = pattern.exec(text)) !== null) {
+		var rawName = text.substring(lastEnd, match.index).replace(/^[\s,]+/, "").trim(); // 직전 수량 이후부터 현재 x수량 전까지의 아이템명
+		if (rawName.indexOf("item:") === 0) rawName = rawName.substring("item:".length).trim();
+		if (!rawName) return { error: "아이템명이 비어 있습니다." };
+
+		var itemCount = parseInt(String(match[1]).replace(/,/g, ""), 10); // 쉼표가 포함된 수량 정규화
+		if (isNaN(itemCount) || itemCount < 1) return { error: "아이템 보상 수량이 올바르지 않습니다: " + rawName };
+		rewards.push({ type: "item", name: rawName, count: itemCount });
+		lastEnd = pattern.lastIndex;
+	}
+
+	var trailing = text.substring(lastEnd).replace(/^[\s,]+/, "").trim(); // 마지막 x수량 뒤에 남은 잘못된 입력
+	if (rewards.length < 1) return { error: "보상목록을 1개 이상 입력해야 합니다." };
+	if (trailing) return { error: "보상 형식을 확인해주세요: " + trailing };
+	return { rewards: rewards };
+}
+
 // 패키지 보상 입력 문자열 파싱 함수
 function parsePackageRewardSpec(rewardSpec) {
+	if (/\s+x\s*\d/.test(String(rewardSpec || ""))) {
+		return parsePackageNaturalItemRewardSpec(rewardSpec);
+	}
+
 	var rewards = [];
 	var parts = String(rewardSpec || "").split(","); // 쉼표 기준 보상 항목 목록
 	for (var i = 0; i < parts.length; i++) {
