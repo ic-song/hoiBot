@@ -752,7 +752,7 @@ const GLOBAL_CONFIG = {
 			turnFundReward: 50000000 // 영지전 공격 턴 기본보상
 		},
 		rates: { // 길드 영토전 확률/증가량 설정
-			medalRewardRate: 0.1, // 영지전 공격 턴 확률보상
+			medalRewardRate: 0.2, // 영지전 공격 턴 확률보상
 			riftBaseRate: 70, // 영지전 균열 기본 성공 확률
 			riftItemStep: 10, // 영지전 균열 아이템당 확률 증가량
 			instabilityItemStep: 0.5 // 영지전 불안정 아이템당 불안정도 증가/감소량
@@ -1733,7 +1733,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		if (msg === "/다이아상점") {
-			var shopMsg = "💎호이월드 다이아 상점💎\n(구매방법: /다이아구매 [번호] [갯수])\n\n";
+			var shopMsg = "💎호이월드 다이아 상점💎\n\n(구매방법: /다이아상점구매 [번호] [갯수])\n\n※ 다이아💎 획득처가 궁금하신가요?\n※ 채팅창에 '다이아 상점' 을 적어보세요.\n" +allsee;
 			if (matzangField.shop.length < 1) shopMsg += "등록된 상품이 없습니다.";
 			for (var ds = 0; ds < matzangField.shop.length; ds++) {
 				var dItem = matzangField.shop[ds];
@@ -1742,7 +1742,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(shopMsg.trim());
 			return;
 		}
-		if (/^\/다이아구매\s+\d+\s+\d+$/.test(msg)) {
+		if (/^\/다이아상점구매\s+\d+\s+\d+$/.test(msg)) {
 			if (!data.member[sender]) return;
 			ensureDiamondMemberData(data, sender);
 			var buyParts = msg.split(/\s+/);
@@ -1769,8 +1769,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buyItem.name + " " + numberWithCommas(buyItem.count * buyCount) + "개 구매 완료!\n잔여 다이아💎: " + numberWithCommas(data.member[sender].diamond) + "개");
 			return;
 		}
-		if (msg === "/다이아구매" || msg.indexOf("/다이아구매 ") === 0) {
-			replier.reply("사용법: /다이아구매 [번호] [갯수]\n예: /다이아구매 1 3");
+		if (msg === "/다이아상점구매" || msg.indexOf("/다이아상점구매 ") === 0) {
+			replier.reply("사용법: /다이아상점구매 [번호] [갯수]\n예: /다이아상점구매 1 3");
 			return;
 		}
 		if (msg.startsWith("/다이아상점추가 ") && (isMaster(sender) || isAdmin(sender))) {
@@ -30644,6 +30644,7 @@ function generateBagOutput(bagItems) {
 			GLOBAL_CONFIG.freeMarket.memberTicketItemName,
 			"확성기📢(/알림 내용 30자)",
 			"티어 승급티켓🎟",
+			"고급 티어 승급티켓🎫",
 			"다이아상자💎(/다이아상자오픈)",
 			"1억포인트상자🪙(/포인트상자오픈)",
 			"럭키박스🍀(/럭키오픈)",
@@ -34100,7 +34101,7 @@ function buildEliteMiniPetCombinationConditionFailMessage(nickName) {
 		"조합 조건:\n" +
 		"창조등급 300강 미니펫 2개\n" +
 		"조합 비용:\n" +
-		"500억 포인트"
+		"350억 포인트"
 	);
 }
 
@@ -34109,7 +34110,7 @@ function buildEliteMiniPetCombinationFailMessage() {
 		"❌ 엘리트 미니펫 조합 실패\n" +
 		"━━━━━━━━━━━━\n" +
 		"태초의 힘이 불안정하게 흩어진다.\n\n" +
-		"조합비용 500억 포인트가 소모되었다.\n" +
+		"조합비용 350억 포인트가 소모되었다.\n" +
 		"선택한 미니펫은 소멸하지 않는다.\n" +
 		"━━━━━━━━━━━━\n" +
 		"다시 근원의 문을 두드려라."
