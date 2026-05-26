@@ -2074,15 +2074,18 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("");
 	lines.push("일일퀘스트 보상 아이템👏🏻:");
 	lines.push("");
-	lines.push("길드공헌훈장🌟(/길드공헌 숫자) 1개");
-	lines.push("럭키박스🍀(/럭키오픈) 2개");
+	lines.push("다이아상자💎(/다이아상자오픈) 1개");
+	lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 	lines.push("펫 강화석⭐ 30개");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("🦋주간 퀘스트 조건🦋");
 	lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
 	lines.push("");
 	lines.push("주간퀘스트 보상 아이템👏🏻:");
+	lines.push("펫스킬북📙(/펫스킬오픈) 1개");
+	lines.push("다이아상자💎(/다이아상자오픈) 2개");
 	lines.push("미니펫뽑기🐹(/미니펫오픈) 100개");
+	lines.push("땅문서📜 1개");
 	lines.push("펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
 	lines.push("");
 	lines.push("📜일일,주간퀘스트 보상 명령어 안내📜" + allsee);
@@ -2287,6 +2290,8 @@ function generateBagOutput(bagItems) {
 			"확성기📢(/알림 내용 30자)",
 			"티어 승급티켓🎟",
 			"고급 티어 승급티켓🎫",
+			"다이아상자💎(/다이아상자오픈)",
+			"1억포인트상자🪙(/포인트상자오픈)",
 			"럭키박스🍀(/럭키오픈)",
 			"혼자레이드리셋권😝",
 			"펫 강화석⭐",
