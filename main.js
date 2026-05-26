@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.141"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.142"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36538,8 +36538,10 @@ function runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, ms
 
 	removeItem(data, sender, boxName, openCount);
 	addDiamond(data, currencyLogData, sender, openCount);
+	var currentDiamond = data.member[sender].diamond || 0;
+	var remainBox = bag[boxName] || 0;
 
-	replier.reply("💎[" + nick + "] " + cmdLabel + "\n오픈: " + boxName + " x" + numberWithCommas(openCount) + "\n획득: 다이아💎 " + numberWithCommas(openCount) + "개");
+	replier.reply("💎 다이아상자 오픈 💎\n[" + nick + "]\n━━━━━━━━━━━━\n🎁 사용: 다이아상자💎 " + numberWithCommas(openCount) + "개\n✨ 획득: 다이아💎 " + numberWithCommas(openCount) + "개\n━━━━━━━━━━━━\n💰 보유 다이아: " + numberWithCommas(currentDiamond) + "개\n📦 남은 상자: " + numberWithCommas(remainBox) + "개");
 }
 
 function rollDdangDungeonBox(data, sender) {
