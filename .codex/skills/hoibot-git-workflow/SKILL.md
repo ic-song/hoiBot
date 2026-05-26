@@ -51,9 +51,13 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 3. If the change is documentation, workflow, branch strategy, tools, or Codex skill work, commit and push it on `feature/workflow` first.
 4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
 5. For production-facing code/data work, commit and push the current task branch first.
-6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary.
-   - Write change-log text for non-developers: explain what changed and what users/operators will notice, avoiding internal helper/file/key names unless they are user-facing command/data names.
-   - Verify `HoiBotVersion` in `main.js` matches the latest `data/hoiBotChangeLog.json` version so `/호이봇버전` and `/수정내용` stay consistent.
+6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary for `/개발자노트`.
+   - Write developer-note text in a Toss-like, user-friendly style: explain what users/operators can do now, what became easier, or what inconvenience was fixed.
+   - Prefer short sentences such as `~할 수 있어요`, `~가 더 쉬워졌어요`, `~를 더 안정적으로 처리해요`, and `~문제를 고쳤어요`.
+   - Avoid internal helper/file/key names and developer-only jargon unless the command/data name itself is user-facing.
+   - If one version contains several changes, group the wording by user impact such as `새로 추가`, `더 좋아짐`, `문제 수정`, or `운영 개선` instead of implementation area.
+   - When multiple entries share the same date, `/개발자노트` should present them under one date section while each production-facing change still receives its own `0.001` version increase.
+   - Verify `HoiBotVersion` in `main.js` matches the latest `data/hoiBotChangeLog.json` version so `/호이봇버전` and `/개발자노트` stay consistent.
 7. Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change live bot behavior or the user explicitly requests a visible change record.
 8. Switch to `feature/prod`.
 9. Pull `feature/prod`.

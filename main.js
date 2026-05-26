@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.139"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.141"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4005,11 +4005,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg === "/호이봇버전") {
 					replier.reply("ver_" + HoiBotVersion);
 				}
-				if (msg === "/수정내용") {
+				if (msg === "/개발자노트") {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
 					var hoiBotChangeLogData = loadJsonFile(hoiBotChangeLogPath);
 					if (!hoiBotChangeLogData || !Array.isArray(hoiBotChangeLogData.entries)) {
-						replier.reply("❌ 수정내용 파일을 확인할 수 없습니다.\n" + resolveActiveDataPath(hoiBotChangeLogPath));
+						replier.reply("❌ 개발자노트 파일을 확인할 수 없습니다.\n" + resolveActiveDataPath(hoiBotChangeLogPath));
 						return;
 					}
 					replier.reply(buildHoiBotChangeLogMessage(hoiBotChangeLogData));
@@ -26374,24 +26374,27 @@ function getUserRequestBlockMessage() {
 	return "님의 요청이 " + getUserRequestWindowSeconds() + "초 내 " + USER_REQUEST_LIMIT + "회 감지되어 잠시 차단되었습니다.";
 }
 
-// 호이봇 수정 이력 안내 메시지 생성 함수
+// 호이봇 개발자노트 안내 메시지 생성 함수
 function buildHoiBotChangeLogMessage(changeLogData) {
 	let lines = [];
 	let entries = changeLogData.entries;
 	let displayCount = Math.min(entries.length, GLOBAL_CONFIG.display.changeLogMax); // 최근 수정 이력 표시 개수
-	lines.push("🛠 호이봇 수정내용");
+	lines.push("🛠 호이봇 개발자노트");
 	lines.push("현재 버전: ver_" + HoiBotVersion);
 	lines.push("━━━━━━━━━━━━");
 	lines.push(allsee);
 
+	let currentDate = "";
 	for (let i = 0; i < displayCount; i++) {
 		let entry = entries[i];
-		lines.push("ver_" + entry.version + " (" + entry.date + ")");
+		if (entry.date !== currentDate) {
+			if (currentDate !== "") lines.push("");
+			currentDate = entry.date;
+			lines.push("📅 " + currentDate);
+		}
+		lines.push("ver_" + entry.version);
 		for (let j = 0; j < entry.changes.length; j++) {
 			lines.push("- " + entry.changes[j]);
-		}
-		if (i < displayCount - 1) {
-			lines.push("");
 		}
 	}
 
