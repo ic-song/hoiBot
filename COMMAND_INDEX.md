@@ -1315,9 +1315,9 @@ Status: VERIFIED
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
-- Package edit quick command format: `/패키지수정 리스트번호 | 패키지명 | 설명 | 보상목록`
-- `/패키지수정` keeps the existing package `id`, enabled state, and max-use value, but updates name, desc, and rewards
-- Renaming a package does not automatically rename package items already granted to user bags
+- Package edit quick command format: `/패키지수정 리스트번호 보상목록`
+- `/패키지수정` keeps the existing package name, desc, `id`, enabled state, and max-use value, but updates rewards only
+- Package edit does not use `|`; all text after the list number is parsed as the reward spec
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
