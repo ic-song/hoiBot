@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.137"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.138"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21647,6 +21647,12 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					saveJsonFile(data, filePath);
 					return;
 				}
+				if (msg === "/다이아상자오픈" || /^\/다이아상자오픈\s+\d+$/.test(msg)) {
+					runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, msg, replier);
+					saveJsonFile(data, filePath);
+					saveJsonFile(currencyLogData, currencyLogPath);
+					return;
+				}
 				if (msg.startsWith("/상자오픈")) {
 					var m = msg.match(/^\/상자오픈(?:\s+(\d+))?$/);
 					if (!m) {
@@ -36503,6 +36509,34 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 
 function runDdangDungeonBox(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", msg, rollDdangDungeonBox);
+}
+
+// 다이아상자를 열어 다이아를 지급하는 함수
+function runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, msg, replier) {
+	if (!data || !data.member || !data.member[sender]) return;
+
+	var cmdLabel = "/다이아상자오픈";
+	var boxName = "다이아상자💎(/다이아상자오픈)";
+	var nick = checkRank(data, petData, guildData, sender);
+	var bag = data.member[sender].bag || (data.member[sender].bag = {});
+	var have = bag[boxName] || 0;
+
+	if (have <= 0) {
+		replier.reply("❌[" + nick + "] 오픈할 상자가 없습니다.\n(" + boxName + ")");
+		return;
+	}
+
+	var want = parseOpenCountFromMsg(msg);
+	var openCount = resolveOpenCount(have, want);
+	if (openCount === -1) {
+		replier.reply("사용법: " + cmdLabel + " 또는 " + cmdLabel + " 숫자\n예) " + cmdLabel + " 10");
+		return;
+	}
+
+	removeItem(data, sender, boxName, openCount);
+	addDiamond(data, currencyLogData, sender, openCount);
+
+	replier.reply("💎[" + nick + "] " + cmdLabel + "\n오픈: " + boxName + " x" + numberWithCommas(openCount) + "\n획득: 다이아💎 " + numberWithCommas(openCount) + "개");
 }
 
 function rollDdangDungeonBox(data, sender) {

@@ -3493,3 +3493,40 @@ Status: VERIFIED
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
 - 다이아 사용내역은 `currencyLog.json` `user[유저명].useHistory`에 시간, 구분, 사용량, 메모만 간단히 누적 저장한다
 - `/다이아전체초기화`는 마스터 전용이며 모든 유저의 보유 다이아와 `currencyLog.json` 누적 기록을 초기화한다
+---
+
+# /다이아상자오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runDiamondBoxOpen`
+- `parseOpenCountFromMsg`
+- `resolveOpenCount`
+- `removeItem`
+- `addDiamond`
+
+## Data Usage
+
+- `data.member[sender].bag["다이아상자💎(/다이아상자오픈)"]`
+- `data.member[sender].diamond`
+- `currencyLogData.user[sender].diamond`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`
+- Saves cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/다이아상자오픈` or `/다이아상자오픈 숫자`
+- One box grants `다이아💎 1개`; numeric use opens up to the held box count.
