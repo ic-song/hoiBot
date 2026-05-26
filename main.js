@@ -758,7 +758,7 @@ const GLOBAL_CONFIG = {
 			instabilityItemStep: 0.5 // 영지전 불안정 아이템당 불안정도 증가/감소량
 		},
 		items: { // 길드 영토전 아이템명 설정
-			contributionMedalName: "길드공헌훈장🌟(/길드공헌 숫자)",
+			contributionMedalName: "다이아상자💎(/다이아상자오픈)",
 			instabilityUpName: "🌪️ 전쟁불안정 증폭권(/불안정)",
 			instabilityDownName: "🚑 전쟁불안정 감소권(/안정)",
 			riftGuideName: "🌌 균열 유도권(/균열)",
@@ -5464,6 +5464,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							{
 								name: "펫먹이특식🥡(/특식오픈)",
 								count: 1
+							},
+							{
+								name: "다이아상자💎(/다이아상자오픈)",
+								count: 1
 							}
 							];
 							let responseMessage = "호이 패스 패키지가 후원 지급 완료되었습니다.";
@@ -5550,6 +5554,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							},
 							{
 								name: "펫먹이특식🥡(/특식오픈)",
+								count: 1
+							},
+							{
+								name: "다이아상자💎(/다이아상자오픈)",
 								count: 1
 							}
 							];
@@ -27862,7 +27870,7 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
 	}
 
 	return "길드 보상🤑: 🅟" + formatGuildTerritoryRewardAmount(GLOBAL_CONFIG.guildTerritory.rewards.turnFundReward) +
-		"\n확률 보상🎊: " + (medalSuccess ? "[⭐️]공헌+1 획득" : "[🥺]보상실패");
+		"\n확률 보상🎊: " + (medalSuccess ? "[💎]다이아+1 획득" : "[🥺]보상실패");
 }
 
 // 영지전 균열 이벤트 보상 금액 포맷 함수 (억, 만 단위로 콤마와 함께 포맷)
@@ -30914,8 +30922,8 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 	var claimed = false; // 보상 지급 여부 플래그
 
 	if (status.isComplete && !status.dailyRewardDone) {
-		addItem(data, sender, "길드공헌훈장🌟(/길드공헌 숫자)", 1);
-		addItem(data, sender, "럭키박스🍀(/럭키오픈)", 2);
+		addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 1);
+		addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
 		addItem(data, sender, "펫 강화석⭐", 30);
 		member.dailyQuestCnt = (member.dailyQuestCnt || 0) + 1;
 		member.weeklyQuestCnt = Math.min((parseInt(member.weeklyQuestCnt, 10) || 0) + 1, status.weeklyMax);
@@ -30923,18 +30931,19 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 		status.weeklyComplete = status.weeklyUsed >= status.weeklyMax;
 		claimed = true;
 
-		messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 길드공헌훈장🌟(/길드공헌 숫자) 1개\n럭키박스🍀(/럭키오픈) 2개\n펫 강화석⭐ 30개");
+		messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개");
 	}
 
 	if (status.weeklyComplete) {
 		addItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, 1);
+		addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 2);
 		addItem(data, sender, "땅문서📜", 1);
 		addItem(data, sender, "미니펫뽑기🐹(/미니펫오픈)", 100);
 		addItem(data, sender, "펫스윗홈인테리어샵🖼️(/샵오픈)", 100);
 		member.weeklyQuestCnt = 0;
 		claimed = true;
 
-		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
+		messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n다이아상자💎(/다이아상자오픈) 2개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
 
 		if (hasPetSkill(petSkillData, sender, "주간루틴")) {
 			var weeklyRoutineBonusPoint = 1000000000;
@@ -32089,8 +32098,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
 	lines.push("");
 	lines.push("《🎁 일일 퀘스트 보상》");
-	lines.push("길드공헌훈장🌟(/길드공헌 숫자) 1개");
-	lines.push("럭키박스🍀(/럭키오픈) 2개");
+	lines.push("다이아상자💎(/다이아상자오픈) 1개");
+	lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 	lines.push("펫 강화석⭐ 30개");
 	lines.push("━━━━━━━━━━━━━━━━");
 	lines.push("【🦋주간 퀘스트 조건 】");
@@ -32098,6 +32107,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("");
 	lines.push("《🎁 주간 퀘스트 보상》");
 	lines.push(GLOBAL_CONFIG.petSkill.bookItemName + " 1개");
+	lines.push("다이아상자💎(/다이아상자오픈) 2개");
 	lines.push("땅문서📜 1개");
 	lines.push("미니펫뽑기🐹(/미니펫오픈) 100개");
 	lines.push("펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
