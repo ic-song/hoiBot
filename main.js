@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.135"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.136"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35836,8 +35836,14 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
 	result.lines.push("레이드 합계: " + numberWithCommas(raidTotal) + "💕");
 	result.lines.push("강화 보너스: " + numberWithCommas(upgradeBonus) + "💕");
 	result.lines.push("━━━━━━━━━━━━");
+	var visibleDetailCount = 0;
 	for (var i = 0; i < rows.length; i++) {
+		if (rows[i].ms <= 0) continue;
 		result.lines.push(rows[i].label + ": " + numberWithCommas(rows[i].value) + "💕 / " + rows[i].ms + "ms");
+		visibleDetailCount++;
+	}
+	if (visibleDetailCount < 1) {
+		result.lines.push("1ms 이상 걸린 세부 항목이 없습니다.");
 	}
 	return result;
 }
