@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.144"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.145"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21668,6 +21668,11 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					saveJsonFile(currencyLogData, currencyLogPath);
 					return;
 				}
+				if (msg === "/포인트상자오픈" || /^\/포인트상자오픈\s+\d+$/.test(msg)) {
+					runPointBoxOpen(sender, data, petData, guildData, msg, replier);
+					saveJsonFile(data, filePath);
+					return;
+				}
 				if (msg.startsWith("/상자오픈")) {
 					var m = msg.match(/^\/상자오픈(?:\s+(\d+))?$/);
 					if (!m) {
@@ -36636,7 +36641,7 @@ function runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, ms
 	var bag = data.member[sender].bag || (data.member[sender].bag = {});
 	var have = bag[boxName] || 0;
 
-	if (have <= 0) {
+	if (!hasItem(data, sender, boxName, 1)) {
 		replier.reply("❌[" + nick + "] 오픈할 상자가 없습니다.\n(" + boxName + ")");
 		return;
 	}
@@ -36654,6 +36659,37 @@ function runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, ms
 	var remainBox = bag[boxName] || 0;
 
 	replier.reply("💎 다이아상자 오픈 💎\n[" + nick + "]\n━━━━━━━━━━━━\n🎁 사용: 다이아상자💎 " + numberWithCommas(openCount) + "개\n✨ 획득: 다이아💎 " + numberWithCommas(openCount) + "개\n━━━━━━━━━━━━\n💰 보유 다이아: " + numberWithCommas(currentDiamond) + "개\n📦 남은 상자: " + numberWithCommas(remainBox) + "개");
+}
+
+// 1억포인트상자를 열어 포인트를 지급하는 함수
+function runPointBoxOpen(sender, data, petData, guildData, msg, replier) {
+	if (!data || !data.member || !data.member[sender]) return;
+
+	var cmdLabel = "/포인트상자오픈";
+	var boxName = "1억포인트상자🪙(/포인트상자오픈)";
+	var rewardPoint = 100000000;
+	var nick = checkRank(data, petData, guildData, sender);
+	var bag = data.member[sender].bag || (data.member[sender].bag = {});
+	var have = bag[boxName] || 0;
+
+	if (!hasItem(data, sender, boxName, 1)) {
+		replier.reply("❌[" + nick + "] 오픈할 상자가 없습니다.\n(" + boxName + ")");
+		return;
+	}
+
+	var want = parseOpenCountFromMsg(msg);
+	var openCount = resolveOpenCount(have, want);
+	if (openCount === -1) {
+		replier.reply("사용법: " + cmdLabel + " 또는 " + cmdLabel + " 숫자\n예) " + cmdLabel + " 10");
+		return;
+	}
+
+	removeItem(data, sender, boxName, openCount);
+	addPoint(data, sender, rewardPoint * openCount);
+	var currentPoint = data.member[sender].point || 0;
+	var remainBox = bag[boxName] || 0;
+
+	replier.reply("🪙 포인트상자 오픈 🪙\n[" + nick + "]\n━━━━━━━━━━━━\n🎁 사용: 1억포인트상자🪙 " + numberWithCommas(openCount) + "개\n✨ 획득: 🅟" + numberWithCommas(rewardPoint * openCount) + "\n━━━━━━━━━━━━\n💰 보유 포인트: 🅟" + numberWithCommas(currentPoint) + "\n📦 남은 상자: " + numberWithCommas(remainBox) + "개");
 }
 
 function rollDdangDungeonBox(data, sender) {

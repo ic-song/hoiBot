@@ -3521,6 +3521,7 @@ Status: VERIFIED
 - `runDiamondBoxOpen`
 - `parseOpenCountFromMsg`
 - `resolveOpenCount`
+- `hasItem`
 - `removeItem`
 - `addDiamond`
 
@@ -3539,3 +3540,40 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/다이아상자오픈` or `/다이아상자오픈 숫자`
 - One box grants `다이아💎 1개`; numeric use opens up to the held box count.
+
+---
+
+# /포인트상자오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runPointBoxOpen`
+- `parseOpenCountFromMsg`
+- `resolveOpenCount`
+- `hasItem`
+- `removeItem`
+- `addPoint`
+
+## Data Usage
+
+- `data.member[sender].bag["1억포인트상자🪙(/포인트상자오픈)"]`
+- `data.member[sender].point`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/포인트상자오픈` or `/포인트상자오픈 숫자`
+- One box grants `🅟100,000,000`; numeric use opens up to the held box count.
