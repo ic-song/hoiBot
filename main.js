@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.142"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.143"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -15256,6 +15256,21 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					var packageAddResult = addPackageInfoByCommand(sender, msg, packageInfoData);
 					if (packageAddResult.ok) saveJsonFile(packageAddResult.packageInfoData, packageInfoPath);
 					replier.reply(packageAddResult.message);
+					return;
+				}
+
+				if (/^\/패키지수정\s+\d+\s*\|.+\|.+\|.+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var packageInfoData = loadJsonFile(packageInfoPath); // 수정 대상 패키지 목록
+					var packageEditResult = editPackageInfoByCommand(sender, msg, packageInfoData);
+					if (packageEditResult.ok) saveJsonFile(packageEditResult.packageInfoData, packageInfoPath);
+					replier.reply(packageEditResult.message);
+					return;
+				}
+
+				if (msg === "/패키지수정" || /^\/패키지수정\s+/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					replier.reply(buildPackageEditUsageMessage());
 					return;
 				}
 
@@ -31424,12 +31439,16 @@ function buildPackageAddGuideMessage() {
 	lines.push("추가:");
 	lines.push("/패키지추가 패키지명 | 설명 | 보상목록");
 	lines.push("");
+	lines.push("수정:");
+	lines.push("/패키지수정 리스트번호 | 패키지명 | 설명 | 보상목록");
+	lines.push("");
 	lines.push("보상목록 형식:");
 	lines.push("item:아이템명:수량, point:포인트수량");
 	lines.push("※ 패키지명 하나만 사용하며, 가방에도 같은 이름으로 표시됩니다.");
 	lines.push("");
 	lines.push("예시:");
 	lines.push("/패키지추가 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
+	lines.push("/패키지수정 3 | 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
 	lines.push("");
 	lines.push("제거:");
 	lines.push("/패키지제거 리스트번호");
@@ -31438,6 +31457,19 @@ function buildPackageAddGuideMessage() {
 	lines.push("");
 	lines.push("재활성:");
 	lines.push("/패키지활성 리스트번호");
+	return lines.join("\n");
+}
+
+// 패키지 수정 사용법 안내 메시지 생성 함수
+function buildPackageEditUsageMessage() {
+	var lines = [];
+	lines.push("❌ 사용법:");
+	lines.push("/패키지수정 리스트번호 | 패키지명 | 설명 | 보상목록");
+	lines.push("");
+	lines.push("예시:");
+	lines.push("/패키지수정 3 | 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
+	lines.push("");
+	lines.push("자세한 예시는 /패키지추가방법");
 	return lines.join("\n");
 }
 
@@ -31755,6 +31787,55 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
 	lines.push("패키지: " + newPackage.name);
 	lines.push("구성: " + formatPackageRewardSummary(newPackage.rewards));
 	lines.push("추가자: " + sender);
+	return {
+		ok: true,
+		message: lines.join("\n"),
+		packageInfoData: packageInfoData
+	};
+}
+
+// 관리자 패키지 수정 명령어 처리 함수
+function editPackageInfoByCommand(sender, msg, packageInfoData) {
+	var body = String(msg || "").replace(/^\/패키지수정\s+/, "").trim(); // 명령어를 제거한 패키지 수정 본문
+	var parts = body.split("|").map(function (part) {
+		return part.trim();
+	});
+	if (parts.length !== 4) {
+		return { ok: false, message: buildPackageEditUsageMessage() };
+	}
+
+	var listNumber = parseInt(parts[0], 10); // 패키지리스트 기준 수정 대상 번호
+	var packageName = parts[1]; // 수정 후 /패키지리스트 표시명 및 member bag 저장명
+	var desc = parts[2]; // 수정 후 패키지 설명
+	var rewardParseResult = parsePackageRewardSpec(parts[3]); // 수정 후 보상목록 파싱 결과
+	var packageInfo = getPackageByListNumber(packageInfoData, listNumber); // 수정 대상 패키지
+	if (!packageInfo) return { ok: false, message: "❌ 패키지 번호가 올바르지 않습니다." };
+	if (!packageName || !desc) return { ok: false, message: "❌ 패키지명, 설명은 비울 수 없습니다." };
+	if (rewardParseResult.error) return { ok: false, message: "❌ " + rewardParseResult.error + "\n\n자세한 예시는 /패키지추가방법" };
+
+	for (var i = 0; i < packageInfoData.length; i++) {
+		var exists = packageInfoData[i]; // 중복 확인 대상 패키지
+		if (i !== listNumber - 1 && exists && getPackageBagItemName(exists) === packageName) {
+			return { ok: false, message: "❌ 같은 패키지명이 이미 등록되어 있습니다." };
+		}
+	}
+
+	var beforeName = packageInfo.name || getPackageBagItemName(packageInfo); // 수정 전 표시명
+	packageInfo.name = packageName;
+	packageInfo.desc = desc;
+	packageInfo.enabled = packageInfo.enabled === false ? false : true;
+	packageInfo.maxUseOnce = parseInt(packageInfo.maxUseOnce, 10) || 100;
+	packageInfo.rewards = rewardParseResult.rewards;
+
+	var lines = [];
+	lines.push("✅ 패키지 수정 완료");
+	lines.push("");
+	lines.push("번호: " + listNumber);
+	lines.push("기존: " + beforeName);
+	lines.push("변경: " + packageInfo.name);
+	lines.push("구성: " + formatPackageRewardSummary(packageInfo.rewards));
+	lines.push("처리자: " + sender);
+	lines.push("※ 이미 유저 가방에 지급된 기존 패키지명은 자동 변경되지 않습니다.");
 	return {
 		ok: true,
 		message: lines.join("\n"),
