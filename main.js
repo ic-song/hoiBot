@@ -13709,7 +13709,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 							}
 						} else if (msg === "/정리" || msg === "ㅇㅇㅇ") {
 							if (!castleSiegeFlag && data.member && data.member[sender]) {
-								let resultMsg = "[" + checkRank(data, petData, guildData, sender) + " ]님 가방정리 완료🧳\n💡TIP : ㅇㅇㅇ 로도 명령어가 작동됩니다.\n━━━━━━━━━━━━\n🐹호스트코[5월 넷째]🐹\nhttps://hoiland123.tistory.com/512\n※ 핫딜은 카카오채널에서 먼저 안내됩니다." + allsee;
+								let resultMsg = "[" + checkRank(data, petData, guildData, sender) + " ]님 가방정리 완료🧳\n💡TIP : ㅇㅇㅇ 로도 명령어가 작동됩니다.\n━━━━━━━━━━━━\n🐹호스트코[5월 넷째]🐹\nhttps://hoiland123.tistory.com/512\n※ 핫딜은 카카오채널에서 선착순으로 안내됩니다." + allsee;
 								resultMsg += "\n━━━━━━━━━━━━━━━\n";
 								// 🎁 전체 오픈
 								let openResult = runOpenAll(sender, data, petData, replier, guildData);
