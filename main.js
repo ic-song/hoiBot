@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.147"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.148"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20572,6 +20572,17 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
 					saveJsonFile(petExploreData, petExplorePath);
 					replier.reply("✅ 펫탐험 이벤트 광산이 활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】을 확인할 수 있습니다.");
+					return;
+				}
+
+				if (msg === "/펫탐험이벤트비활성화" && sender == "호이 남") {
+					var petExploreData = loadJsonFile(petExplorePath);
+					petExploreData = initPetExploreData(petExploreData);
+					petExploreData.eventMine.active = false;
+					petExploreData.eventMine.name = "다이아 광산💎";
+					petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
+					saveJsonFile(petExploreData, petExplorePath);
+					replier.reply("✅ 펫탐험 이벤트 광산이 비활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】이 숨겨집니다.");
 					return;
 				}
 

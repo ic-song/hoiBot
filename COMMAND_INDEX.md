@@ -3405,6 +3405,7 @@ Status: VERIFIED
 - `/탐 [1~7]`
 - `/탐 0` when the event mine is active
 - `/펫탐험이벤트활성화`
+- `/펫탐험이벤트비활성화`
 - `/자동탐고정 0` when the event mine is active
 
 ## AI Notes
@@ -3413,6 +3414,7 @@ Status: VERIFIED
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
+- `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 
 # /맞짱필드
 
