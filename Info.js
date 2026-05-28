@@ -311,7 +311,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg === "/포인트" || msg === "ㅍㅍㅍ") {
 			if (data.member && data.member[sender]) {
-				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "");
+				var pointDiamond = data.member[sender].diamond || 0;
+				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개");
 			}
 		}
 		if (msg === "/레벨") {

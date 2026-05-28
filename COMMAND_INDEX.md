@@ -2513,11 +2513,14 @@ Status: VERIFIED
 - `numberWithCommas`
 ## Data Usage
 - `data.member[sender].point`
+- `data.member[sender].diamond`
 ## Save Flow
 - Read-only
 ## Related Commands
 - `/레벨`
 - `/포인트확인`
+## AI Notes
+- `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`
 
 ---
 
