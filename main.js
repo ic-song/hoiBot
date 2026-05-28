@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.148"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.149"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20578,11 +20578,16 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 				if (msg === "/펫탐험이벤트비활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					var movedEventMineCount = moveEventMineBetsToRandomMine(petExploreData);
 					petExploreData.eventMine.active = false;
 					petExploreData.eventMine.name = "다이아 광산💎";
 					petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
 					saveJsonFile(petExploreData, petExplorePath);
-					replier.reply("✅ 펫탐험 이벤트 광산이 비활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】이 숨겨집니다.");
+					var eventMineOffMessage = "✅ 펫탐험 이벤트 광산이 비활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】이 숨겨집니다.";
+					if (movedEventMineCount > 0) {
+						eventMineOffMessage += "\n기존 다이아 광산 참가자 " + movedEventMineCount + "명은 일반 광산 1~3번으로 이동했습니다.";
+					}
+					replier.reply(eventMineOffMessage);
 					return;
 				}
 
@@ -34598,6 +34603,35 @@ function initPetExploreData(petExploreData) {
 // 펫탐험 이벤트 광산 활성 여부 반환
 function isPetExploreEventMineActive(petExploreData) {
 	return !!(petExploreData && petExploreData.eventMine && petExploreData.eventMine.active);
+}
+
+// 이벤트 광산 참가자를 일반 광산 1~3번으로 랜덤 이동
+function moveEventMineBetsToRandomMine(petExploreData) {
+	if (!petExploreData) return 0;
+
+	petExploreData = initPetExploreData(petExploreData);
+
+	var eventMineBets = petExploreData.bet["0"];
+	if (!Array.isArray(eventMineBets) || eventMineBets.length === 0) return 0;
+
+	var movedCount = 0;
+	for (var i = 0; i < eventMineBets.length; i++) {
+		var entry = eventMineBets[i];
+		if (!entry || !entry.user) continue;
+
+		var targetDungeon = String(Math.floor(Math.random() * 3) + 1);
+		if (!Array.isArray(petExploreData.bet[targetDungeon])) {
+			petExploreData.bet[targetDungeon] = [];
+		}
+
+		entry.dungeon = targetDungeon;
+		petExploreData.bet[targetDungeon].push(entry);
+		petExploreData.userBet[entry.user] = targetDungeon;
+		movedCount++;
+	}
+
+	petExploreData.bet["0"] = [];
+	return movedCount;
 }
 
 /**
