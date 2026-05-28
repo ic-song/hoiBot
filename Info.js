@@ -810,6 +810,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData);
 			let resultMsg = '👑 종합 순위 👑\n["/펫정보"에 있는 매력+강화로 합산]\n[캐슬⚔️+레이드👾+펫강화⭐️1강*300]\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n(/종합순위보상) 참조\n\n';
+			resultMsg += buildTotalRankingGapGuide(rankData.rows, sender, data, petData, guildData, homeData, petSkillData);
 			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
 			replier.reply(resultMsg);
 		}
@@ -1621,7 +1622,7 @@ function generateRanking(data, petData, homeData, petSkillData) {
 	// 점수를 기준으로 정렬
 	userScores.sort((a, b) => b.totalExp - a.totalExp);
 
-	let rankingMsg1 = ""; // 상위 10명 메시지
+	let rankingMsg1 = ""; // 상위 5명 메시지
 	let rankingMsg2 = ""; // 나머지 메시지
 
 	// 순위 메시지 생성
@@ -1631,7 +1632,7 @@ function generateRanking(data, petData, homeData, petSkillData) {
 		let rankEmoji = getRankEmoji(i + 1);
 		let message = rankEmoji + Rsender + " - 👑 " + numberWithCommas(userScores[i].totalExp) + "\n";
 
-		if (i < 10) {
+		if (i < 5) {
 			rankingMsg1 += message;
 		} else {
 			rankingMsg2 += message;
@@ -1640,8 +1641,38 @@ function generateRanking(data, petData, homeData, petSkillData) {
 
 	return {
 		rankingMsg1: rankingMsg1,
-		rankingMsg2: rankingMsg2
+		rankingMsg2: rankingMsg2,
+		rows: userScores
 	};
+}
+
+// 종합순위에서 본인 기준 다음 순위 격차 안내 문구 생성
+function buildTotalRankingGapGuide(userScores, sender, data, petData, guildData, homeData, petSkillData) {
+	if (!userScores || !userScores.length) return "";
+
+	var myIndex = -1;
+	for (var i = 0; i < userScores.length; i++) {
+		if (userScores[i] && userScores[i].key === sender) {
+			myIndex = i;
+			break;
+		}
+	}
+	if (myIndex < 0) return "";
+
+	var myNick = checkRank(data, petData, guildData, sender);
+	if (myIndex === 0) {
+		if (userScores.length < 2) return "";
+		var secondUser = userScores[1].key;
+		var secondNick = checkRank(data, petData, guildData, secondUser);
+		var firstGap = Math.max(0, userScores[0].totalExp - userScores[1].totalExp);
+		return "👀 뒤를 조심하세요!\n" + myNick + "님은 현재 🏆 1등!\n" + secondNick + "님이 ☆ " + numberWithCommas(firstGap) + " 차이로 바짝 추격 중! 👣\n\n";
+	}
+
+	var prevRow = userScores[myIndex - 1];
+	var myRow = userScores[myIndex];
+	var prevNick = checkRank(data, petData, guildData, prevRow.key);
+	var needGap = Math.max(0, prevRow.totalExp - myRow.totalExp + 1);
+	return "앗, 간발의 차이!\n" + myNick + "님의 순위는 " + (myIndex + 1) + "등!\n종합매력을 ☆ " + numberWithCommas(needGap) + "만 더 모으면\n" + prevNick + "님을 제치고 순위가 상승합니다! 🚀\n\n";
 }
 
 function getMemberRank(memberName, data, petData, homeData, petSkillData) {

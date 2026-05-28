@@ -1511,6 +1511,7 @@ Status: VERIFIED
 
 - `initSweetHomeUser`
 - `generateRanking`
+- `buildTotalRankingGapGuide`
 
 ## Data Usage
 
@@ -1532,6 +1533,8 @@ Status: VERIFIED
 
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
+- Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
+- `allsee` is inserted after the top 5 rows for this command.
 
 ---
 
@@ -2562,6 +2565,7 @@ Status: VERIFIED
 - `쇼핑광📙` discount applies before tax calculation
 - `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
+- Buying `다이아상자💎(/다이아상자오픈)` rejects quantities over 100 before cost/tax processing.
 
 ---
 
@@ -3378,6 +3382,7 @@ Status: VERIFIED
 - buildExploreBetMessage
 - buildPetExploreStatusMessage
 - doPetExploreInterval
+- isPetExploreEventMineActive
 - calcExploreSuccessPercent
 - getExploreTraitBonusPercent
 - hasPetSkill
@@ -3387,6 +3392,7 @@ Status: VERIFIED
 - petExploreData.bet
 - petExploreData.userBet
 - petExploreData.record
+- petExploreData.eventMine
 - petSkillData[*].petSkills.equipped
 
 ## Save Flow
@@ -3397,12 +3403,16 @@ Status: VERIFIED
 ## Related Commands
 - `/탐`
 - `/탐 [1~7]`
+- `/탐 0` when the event mine is active
+- `/펫탐험이벤트활성화`
+- `/자동탐고정 0` when the event mine is active
 
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
+- Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 
 # /맞짱필드
 
@@ -3540,6 +3550,104 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/다이아상자오픈` or `/다이아상자오픈 숫자`
 - One box grants `다이아💎 1개`; numeric use opens up to the held box count.
+
+---
+
+# /다이아조합
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `addPoint`
+- `addItem`
+
+## Data Usage
+
+- `data.member[sender].bag["전설의 돌맹이🗿"]`
+- `data.member[sender].point`
+- `data.member[sender].bag["다이아상자💎(/다이아상자오픈)"]`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)` after successful combination
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/다이아조합` or `/다이아조합 숫자`
+- Each count consumes `전설의 돌맹이🗿` 1개 and `🅟500,000,000`, then grants `다이아상자💎(/다이아상자오픈)` 1개.
+
+---
+
+# /다이아패스
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `processUserIDCommand`
+- `addItem`
+
+## Data Usage
+
+- `data.allowedUsersDiamondPass`
+- `data.member[*].bag["다이아상자💎(/다이아상자오픈)"]`
+
+## Save Flow
+
+- Uses surrounding member data save flow after list or item mutations
+
+## Related Commands
+
+- `/다이아패스추가, 아이디`
+- `/다이아패스삭제, 아이디`
+- `/다이아패스구독`
+- `/다이아패스명단`
+
+## AI Notes
+
+- `/다이아패스구독` gives each listed member `다이아상자💎(/다이아상자오픈)` 10개.
+
+---
+
+# /다이아박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runDiamondMineBoxOpen`
+- `runExploreBoxOpen`
+- `rollDiamondMineBox`
+- `openExploreBoxesAllForOpenAll`
+
+## Data Usage
+
+- `data.member[sender].bag["다이아광산박스💎(/다이아박스오픈)"]`
+- `data.member[sender].bag["다이아상자💎(/다이아상자오픈)"]`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/다이아박스오픈` or `/다이아박스오픈 숫자`
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
 
 ---
 

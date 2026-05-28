@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.146"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.147"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -731,7 +731,10 @@ const GLOBAL_CONFIG = {
 	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
-		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"
+		carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
+		legendStoneName: "전설의 돌맹이🗿",
+		diamondBoxName: "다이아상자💎(/다이아상자오픈)",
+		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)"
 	},
 	guildTerritory: { // 길드 영토전 설정
 		limits: { // 길드 영토전 제한
@@ -4027,6 +4030,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (!data.allowedUsersHoipass) {
 					data.allowedUsersHoipass = ["호이 남"];
 				}
+				if (!data.allowedUsersDiamondPass) {
+					data.allowedUsersDiamondPass = ["호이 남"];
+				}
 				if (msg === "/리셋" && (sender == "오픈채팅봇" || sender == "호이 남")) {
 					saveJsonFile(
 						{
@@ -4633,6 +4639,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("현재 호이 패스 목록에 있는 사용자들: " + userList);
 					} else {
 						replier.reply("호이 패스 목록이 비어 있습니다.");
+					}
+				}
+				if (msg === "/다이아패스명단" && (isMaster(sender) || isAdmin(sender))) {
+					if (data.allowedUsersDiamondPass.length > 0) {
+						let userList = data.allowedUsersDiamondPass.join(", ");
+						replier.reply("현재 다이아 패스 목록에 있는 사용자들: " + userList);
+					} else {
+						replier.reply("다이아 패스 목록이 비어 있습니다.");
 					}
 				}
 				if (msg.startsWith("/후원메모 ") && isMaster(sender)) {
@@ -5392,6 +5406,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (sender == "호이 남" && (msg.startsWith("/호이패스추가,") || msg.startsWith("/호이패스삭제,"))) {
 					let result = processUserIDCommand(msg, data);
 					replier.reply(result);
+				}
+				if (sender == "호이 남" && (/^\/다이아패스추가,\s*.+$/.test(msg) || /^\/다이아패스삭제,\s*.+$/.test(msg))) {
+					let result = processUserIDCommand(msg, data);
+					replier.reply(result);
+				}
+				if (msg === "/다이아패스구독") {
+					if (!castleSiegeFlag) {
+						if (isMaster(sender) || sender === "오픈채팅봇") {
+							for (var diamondPassIndex = 0; diamondPassIndex < data.allowedUsersDiamondPass.length; diamondPassIndex++) {
+								var diamondPassUser = data.allowedUsersDiamondPass[diamondPassIndex];
+								if (data.member[diamondPassUser]) {
+									addItem(data, diamondPassUser, GLOBAL_CONFIG.items.diamondBoxName, 10);
+								}
+							}
+							replier.reply("다이아패스 후원 지급 완료되었습니다.");
+						} else {
+							replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
+						}
+					}
 				}
 				if (msg.startsWith("/호이패스구독")) {
 					if (!castleSiegeFlag) {
@@ -15981,6 +16014,10 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						}
 
 						var itemName = itemList[itemNumber - 1];
+						if (itemName === GLOBAL_CONFIG.items.diamondBoxName && quantity > 100) {
+							replier.reply("❌ 다이아상자💎은 하루 100개까지만 구매 가능합니다.");
+							return;
+						}
 						var basePrice = data.shop[itemName] * quantity;
 						var itemPrice = basePrice;
 						var taxRate = data.HoiCastle && data.HoiCastle.taxRate ? data.HoiCastle.taxRate : 0;
@@ -20265,6 +20302,40 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					saveJsonFile(currencyLogData, currencyLogPath);
 					return;
 				}
+				if (msg === "/다이아박스오픈" || /^\/다이아박스오픈\s+\d+$/.test(msg)) {
+					runDiamondMineBoxOpen(sender, data, petData, guildData, msg, replier);
+					saveJsonFile(data, filePath);
+					return;
+				}
+				if (msg === "/다이아조합" || /^\/다이아조합\s+\d+$/.test(msg)) {
+					var diamondCombineMatch = msg.match(/^\/다이아조합(?:\s+(\d+))?$/);
+					var diamondCombineCount = diamondCombineMatch && diamondCombineMatch[1] ? parseInt(diamondCombineMatch[1], 10) : 1;
+					if (isNaN(diamondCombineCount) || diamondCombineCount <= 0) {
+						replier.reply("사용법: /다이아조합 [숫자]\n예) /다이아조합 10");
+						return;
+					}
+
+					var stoneNeed = diamondCombineCount;
+					var pointNeed = 500000000 * diamondCombineCount;
+					var stoneHave = data.member[sender].bag && data.member[sender].bag[GLOBAL_CONFIG.items.legendStoneName] ? data.member[sender].bag[GLOBAL_CONFIG.items.legendStoneName] : 0;
+					var pointHave = data.member[sender].point || 0;
+
+					if (stoneHave < stoneNeed) {
+						replier.reply("❌ 전설의 돌맹이🗿이(가) 부족합니다.\n(보유: " + numberWithCommas(stoneHave) + " / 필요: " + numberWithCommas(stoneNeed) + ")");
+						return;
+					}
+					if (pointHave < pointNeed) {
+						replier.reply("❌ 포인트가 / 부족합니다.\n(보유: 🅟" + numberWithCommas(pointHave) + " / 필요: 🅟" + numberWithCommas(pointNeed) + ")");
+						return;
+					}
+
+					removeItem(data, sender, GLOBAL_CONFIG.items.legendStoneName, stoneNeed);
+					addPoint(data, sender, -pointNeed);
+					addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, diamondCombineCount);
+					saveJsonFile(data, filePath);
+					replier.reply("💎 다이아 조합 완료!\n\n소비: 전설의 돌맹이🗿 " + numberWithCommas(stoneNeed) + "개 / 🅟" + numberWithCommas(pointNeed) + "\n획득: 다이아상자💎(/다이아상자오픈) " + numberWithCommas(diamondCombineCount) + "개");
+					return;
+				}
 				if (msg === "/포인트상자오픈" || /^\/포인트상자오픈\s+\d+$/.test(msg)) {
 					runPointBoxOpen(sender, data, petData, guildData, msg, replier);
 					saveJsonFile(data, filePath);
@@ -20493,6 +20564,17 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					return;
 				}
 
+				if (msg === "/펫탐험이벤트활성화" && sender == "호이 남") {
+					var petExploreData = loadJsonFile(petExplorePath);
+					petExploreData = initPetExploreData(petExploreData);
+					petExploreData.eventMine.active = true;
+					petExploreData.eventMine.name = "다이아 광산💎";
+					petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
+					saveJsonFile(petExploreData, petExplorePath);
+					replier.reply("✅ 펫탐험 이벤트 광산이 활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】을 확인할 수 있습니다.");
+					return;
+				}
+
 				if (msg === "/지도") {
 					var petExploreData = loadJsonFile(petExplorePath);
 
@@ -20562,7 +20644,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					return;
 				}
 
-				if (msg.indexOf("/자동탐고정") === 0) {
+				if (msg === "/자동탐고정" || /^\/자동탐고정\s+\d+$/.test(msg)) {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
 					var result = handleAutoExploreFixCommand(petExploreData, data, sender, msg);
@@ -20574,7 +20656,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					return;
 				}
 
-				if (msg === "/탐" || msg.indexOf("/탐 ") === 0) {
+				if (msg === "/탐" || /^\/탐\s+\d+$/.test(msg)) {
 					//@탐험
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
@@ -20586,8 +20668,9 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						dungeonNo = String(Math.floor(Math.random() * 3) + 1);
 					} else {
 						var n = parseInt(parts[1], 10);
-						if (isNaN(n) || n < 1 || n > 7) {
-							replier.reply("사용법: /탐 또는 /탐 1~7\n예) /탐 2");
+						if (isNaN(n) || n < 0 || n > 7 || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
+							var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0~7\n예) /탐 0" : "사용법: /탐 또는 /탐 1~7\n예) /탐 2";
+							replier.reply(exploreUsage);
 							return;
 						}
 						dungeonNo = String(n);
@@ -20618,7 +20701,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 
 					//  새 배팅 등록
 					if (!petExploreData.bet) {
-						petExploreData.bet = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+						petExploreData.bet = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
 					}
 					if (!Array.isArray(petExploreData.bet[dungeonNo])) {
 						petExploreData.bet[dungeonNo] = [];
@@ -28388,6 +28471,9 @@ function processUserIDCommand(msg, data) {
 	} else if (msg.startsWith("/호이패스")) {
 		dataArr = data.allowedUsersHoipass;
 		pattern = /^\/호이패스(추가|삭제),\s*(.+)$/;
+	} else if (msg.startsWith("/다이아패스")) {
+		dataArr = data.allowedUsersDiamondPass;
+		pattern = /^\/다이아패스(추가|삭제),\s*(.+)$/;
 	} else {
 		returnMsg = "알 수 없는 명령어입니다.";
 		return;
@@ -34457,9 +34543,9 @@ function incrementCastleAttackCount(HoiCastle, sender) {
 function initPetExploreData(petExploreData) {
 	if (!petExploreData) petExploreData = {};
 
-	// 던전별 배팅 리스트 (1~7)
+	// 던전별 배팅 리스트 (0 이벤트, 1~7 일반)
 	if (!petExploreData.bet) petExploreData.bet = {};
-	for (var i = 1; i <= 7; i++) {
+	for (var i = 0; i <= 7; i++) {
 		var key = String(i);
 		if (!Array.isArray(petExploreData.bet[key])) {
 			petExploreData.bet[key] = [];
@@ -34481,7 +34567,26 @@ function initPetExploreData(petExploreData) {
 		petExploreData.autoFixedDungeon = {};
 	}
 
+	// 이벤트 광산 상태
+	if (!petExploreData.eventMine || typeof petExploreData.eventMine !== "object") {
+		petExploreData.eventMine = {};
+	}
+	if (typeof petExploreData.eventMine.active !== "boolean") {
+		petExploreData.eventMine.active = false;
+	}
+	if (typeof petExploreData.eventMine.name !== "string") {
+		petExploreData.eventMine.name = "다이아 광산💎";
+	}
+	if (typeof petExploreData.eventMine.rewardItem !== "string") {
+		petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
+	}
+
 	return petExploreData;
+}
+
+// 펫탐험 이벤트 광산 활성 여부 반환
+function isPetExploreEventMineActive(petExploreData) {
+	return !!(petExploreData && petExploreData.eventMine && petExploreData.eventMine.active);
 }
 
 /**
@@ -34507,7 +34612,8 @@ function incrementDailyExploreCountForParticipants(data, petExploreData) {
 	var counted = {};
 	var count = 0;
 
-	for (var d = 1; d <= 7; d++) {
+	var startDungeon = isPetExploreEventMineActive(petExploreData) ? 0 : 1;
+	for (var d = startDungeon; d <= 7; d++) {
 		var dk = String(d);
 		var arr = petExploreData.bet[dk];
 
@@ -34543,7 +34649,7 @@ function resetPetExploreBet(petExploreData) {
 
 	if (!petExploreData.bet) petExploreData.bet = {};
 
-	for (var i = 1; i <= 7; i++) {
+	for (var i = 0; i <= 7; i++) {
 		petExploreData.bet[String(i)] = [];
 	}
 	petExploreData.userBet = {};
@@ -34666,6 +34772,7 @@ function getExploreExpBonusPercent(data, petData, homeData, user, petSkillData) 
 /** 던전 번호 -> 표시명 */
 function getExploreDungeonName(no) {
 	var map = {
+		0: "다이아 광산💎",
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
@@ -34681,6 +34788,7 @@ function getExploreDungeonName(no) {
 /** 던전 번호 -> 성공 보상 아이템 */
 function getExploreSuccessRewardItem(no) {
 	var map = {
+		0: GLOBAL_CONFIG.items.diamondMineBoxName,
 		1: "정령박스🥀(/정령박스오픈)",
 		2: "반지박스💍(/반지박스오픈)",
 		3: "강화박스⭐(/강화박스오픈)",
@@ -34731,8 +34839,9 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 	var successCnt = 0;
 	var failCnt = 0;
 
-	for (var d = 1; d <= 7; d++) {
-		var dk = String(d);
+	var exploreDungeonKeys = isPetExploreEventMineActive(petExploreData) ? ["0", "1", "2", "3", "4", "5", "6", "7"] : ["1", "2", "3", "4", "5", "6", "7"];
+	for (var d = 0; d < exploreDungeonKeys.length; d++) {
+		var dk = exploreDungeonKeys[d];
 
 		// 배팅 배열은 petExploreData에서
 		var arr = petExploreData.bet[dk] || [];
@@ -34877,7 +34986,8 @@ function getExploreTotalCount(data, petExploreData) {
 
 	var cnt = 0;
 
-	for (var d = 1; d <= 7; d++) {
+	var startDungeon = isPetExploreEventMineActive(petExploreData) ? 0 : 1;
+	for (var d = startDungeon; d <= 7; d++) {
 		var dk = String(d);
 		var arr = petExploreData.bet[dk] || [];
 		if (!Array.isArray(arr) || arr.length === 0) continue;
@@ -34913,13 +35023,14 @@ function autoExploreBetting(data, petExploreData) {
 		// 이미 배팅 상태면 스킵
 		if (petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user)) continue;
 
-		// 고정 던전 우선 (1~7), 없으면 1~3 랜덤
+		// 고정 던전 우선 (이벤트 활성 시 0 포함), 없으면 1~3 랜덤
 		var fixed = petExploreData.autoFixedDungeon[user];
-		var dungeonNo = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" ? String(fixed) : String(Math.floor(Math.random() * 3) + 1);
+		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || (fixed === "0" && isPetExploreEventMineActive(petExploreData));
+		var dungeonNo = isFixedValid ? String(fixed) : String(Math.floor(Math.random() * 3) + 1);
 
 		// 배열 보장
 		if (!petExploreData.bet) {
-			petExploreData.bet = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
+			petExploreData.bet = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
 		}
 		if (!Array.isArray(petExploreData.bet[dungeonNo])) {
 			petExploreData.bet[dungeonNo] = [];
@@ -35032,12 +35143,18 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 	openAllOne("/전도르박스오픈", "전도르던전박스🗿(/전도르박스오픈)", rollJeondorBox);
 	openAllOne("/양계장박스오픈", "양계장던전박스🐓(/양계장박스오픈)", rollMiniPetDungeonBox);
 	openAllOne("/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", rollDdangDungeonBox);
+	openAllOne("/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, rollDiamondMineBox);
 
 	return logs.length ? logs.join("\n\n") : "";
 }
 
 function runDdangDungeonBox(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", msg, rollDdangDungeonBox);
+}
+
+// 다이아 광산 박스를 열어 다이아상자를 지급하는 함수
+function runDiamondMineBoxOpen(sender, data, petData, guildData, msg, replier) {
+	runExploreBoxOpen(sender, data, petData, guildData, replier, "/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, msg, rollDiamondMineBox);
 }
 
 // 다이아상자를 열어 다이아를 지급하는 함수
@@ -35111,6 +35228,16 @@ function rollDdangDungeonBox(data, sender) {
 function rollMiniPetDungeonBox() {
 	return {
 		gainItems: { "치킨상자🐔": 10 },
+		gainTextLines: []
+	};
+}
+
+// 다이아 광산 박스 보상 테이블
+function rollDiamondMineBox() {
+	var gain = {};
+	gain[GLOBAL_CONFIG.items.diamondBoxName] = 1;
+	return {
+		gainItems: gain,
 		gainTextLines: []
 	};
 }
@@ -35300,6 +35427,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	var bag = data.member[sender] && data.member[sender].bag ? data.member[sender].bag : {};
 
 	var dungeonNameMap = {
+		0: "다이아 광산💎",
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
@@ -35340,6 +35468,8 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	if (dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6" || dungeonNo === "7") {
 		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 광산으로 랜덤 이동합니다.\n";
+	} else if (dungeonNo === "0") {
+		out += "입장🌋: 0개 사용(이벤트 광산)\n";
 	} else {
 		out += "입장🌋: 0개 사용(탐1~3)\n";
 	}
@@ -35389,6 +35519,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	}
 
 	var dungeonNameMap = {
+		0: "다이아 광산💎",
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
@@ -35405,9 +35536,9 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
 	var total = 0;
 	var autoCount = 0;
-	var cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+	var cnt = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
 
-	for (var d = 1; d <= 7; d++) {
+	for (var d = 0; d <= 7; d++) {
 		var dk = String(d);
 		var arr = petExploreData.bet && petExploreData.bet[dk] ? petExploreData.bet[dk] : [];
 		if (!Array.isArray(arr)) arr = [];
@@ -35424,6 +35555,12 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	var myFixedName = myFixed ? dungeonNameMap[myFixed] || myFixed + "번" : "없음";
 
 	out += LINE + "\n";
+
+	if (isPetExploreEventMineActive(petExploreData)) {
+		out += "🎉이벤트 광산💎【/탐 0】\n";
+		out += "【0】 다이아 광산💎: " + cnt["0"] + "명\n";
+		out += LINE + "\n";
+	}
 
 	out += "광산⛰️【/탐 1~3, /탐(랜덤)】\n";
 	out += "【1】 정령강화 광산🥀: " + cnt["1"] + "명\n";
@@ -35460,7 +35597,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += LINE + "\n";
 
 	out += "[자동탐험권 고정⛰️: " + myFixedName + "]\n";
-	out += "[/자동탐고정 탐 1~7 입력시 고정]\n";
+	out += isPetExploreEventMineActive(petExploreData) ? "[/자동탐고정 0~7 입력시 고정]\n" : "[/자동탐고정 탐 1~7 입력시 고정]\n";
 	out += LINE + "\n";
 
 	out += "아이템 보유 현황🛍️\n";
@@ -35574,16 +35711,19 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
 	var parts = msg.trim().split(/\s+/);
 	if (parts.length < 2) {
-		return { text: "사용법: /자동탐고정 1~7\n(예: /자동탐고정 4)", petExploreData: petExploreData, data: data };
+		var usageText = isPetExploreEventMineActive(petExploreData) ? "사용법: /자동탐고정 0~7\n(예: /자동탐고정 0)" : "사용법: /자동탐고정 1~7\n(예: /자동탐고정 4)";
+		return { text: usageText, petExploreData: petExploreData, data: data };
 	}
 
 	var n = String(parts[1]);
-	var isValid = n === "1" || n === "2" || n === "3" || n === "4" || n === "5" || n === "6" || n === "7";
+	var isValid = n === "1" || n === "2" || n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || (n === "0" && isPetExploreEventMineActive(petExploreData));
 	if (!isValid) {
-		return { text: "1~7 중 하나만 입력해줘!\n예) /자동탐고정 2", petExploreData: petExploreData, data: data };
+		var validText = isPetExploreEventMineActive(petExploreData) ? "0~7 중 하나만 입력해줘!\n예) /자동탐고정 0" : "1~7 중 하나만 입력해줘!\n예) /자동탐고정 2";
+		return { text: validText, petExploreData: petExploreData, data: data };
 	}
 
 	var nameMap = {
+		0: "다이아 광산💎",
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
