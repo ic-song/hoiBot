@@ -3383,6 +3383,7 @@ Status: VERIFIED
 - buildPetExploreStatusMessage
 - doPetExploreInterval
 - isPetExploreEventMineActive
+- moveEventMineBetsToRandomMine
 - calcExploreSuccessPercent
 - getExploreTraitBonusPercent
 - hasPetSkill
@@ -3411,6 +3412,7 @@ Status: VERIFIED
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
+- `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
