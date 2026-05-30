@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.152"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.153"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -28668,11 +28668,11 @@ function processUserIDCommand(msg, data) {
 				};
 				return beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.";
 			}
-			var index = legacyDataArr.indexOf(userIDText);
-			if (index > -1) legacyDataArr.splice(index, 1);
+			var passUserIndex = legacyDataArr.indexOf(userIDText);
+			if (passUserIndex > -1) legacyDataArr.splice(passUserIndex, 1);
 			var userPassStore = ensureSupportPassStore(data, userIDText);
 			if (!userPassStore[passConfig.key] || userPassStore[passConfig.key].enabled !== true) {
-				if (index === -1) return "❌ 해당 유저는 해당 패스를 보유하고 있지 않습니다.";
+				if (passUserIndex === -1) return "❌ 해당 유저는 해당 패스를 보유하고 있지 않습니다.";
 				userPassStore[passConfig.key] = { enabled: false, endDate: "", permanent: false };
 			} else {
 				userPassStore[passConfig.key].enabled = false;
@@ -28696,9 +28696,9 @@ function processUserIDCommand(msg, data) {
 			returnMsg = userID + "는 이미 목록에 있습니다.";
 		}
 	} else if (actionType === "삭제") {
-		const index = dataArr.indexOf(userID);
-		if (index > -1) {
-			dataArr.splice(index, 1);
+		const legacyUserIndex = dataArr.indexOf(userID);
+		if (legacyUserIndex > -1) {
+			dataArr.splice(legacyUserIndex, 1);
 			returnMsg = userID + " 사용자가 목록에서 삭제되었습니다.";
 		} else {
 			returnMsg = userID + " 사용자를 찾을 수 없습니다.";
