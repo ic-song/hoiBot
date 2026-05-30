@@ -3352,6 +3352,49 @@ Status: VERIFIED
 
 ---
 
+# /이체
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `parseSafePointAmount`
+- `isSafePointValue`
+- `calculateTransferFee`
+- `ensureHappyFoundationData`
+- `addPoint`
+- `addHappyFoundationFee`
+
+## Data Usage
+
+- `data.member[sender].point`
+- `data.member[targetUser].point`
+- `data.hoiHappyFoundation.feeRate`
+- `data.hoiHappyFoundation.totalAmount`
+- `data.hoiHappyFoundation.captain`
+
+## Save Flow
+
+- On successful transfer, subtracts transfer amount plus fee from sender, adds transfer amount to target, adds fee to the happy foundation ledger/captain, then saves `member.json`
+- Reloads `member.json` immediately after save and verifies sender/target point values
+
+## Related Commands
+
+- `/이체수수료변경`
+- `/호이행복재단`
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/이체 [유저] [숫자]`
+- Amount input is rejected when it exceeds the safe integer range used for point arithmetic
+- Fee calculation must never use `total - amount` as the primary fee value; oversized or negative fee/total values must be rejected before mutating points
+
+---
+
 # Registry Expansion Queue
 
 Status: PARTIAL
@@ -3369,7 +3412,6 @@ Status: PARTIAL
 - `/캐슬대전`
 - `/가구장착 [번호]`
 - `/가구판매 [번호]`
-- `/이체`
 
 ## Known Gaps
 

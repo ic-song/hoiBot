@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.151"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.152"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -15809,7 +15809,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						return;
 					}
 
-					var regexTransferNew = /\/이체\s+([^]+)\s+(\d+)\s*$/;
+					var regexTransferNew = /^\/이체\s+([^]+)\s+(\d+)\s*$/;
 					var matchTransferNew = msg.match(regexTransferNew);
 					if (!matchTransferNew) {
 						replier.reply("올바른 형식으로 이체해주세요.\n예: /이체 [유저] [숫자]");
@@ -15818,7 +15818,12 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 
 					var senderRankText = checkRank(data, petData, guildData, sender);
 					var targetUser = matchTransferNew[1];
-					var transferAmount = parseInt(matchTransferNew[2], 10);
+					var transferAmountResult = parseSafePointAmount(matchTransferNew[2]); // 안전 정수 범위 내 이체 금액 파싱
+					if (!transferAmountResult.ok) {
+						replier.reply(transferAmountResult.message);
+						return;
+					}
+					var transferAmount = transferAmountResult.amount;
 					var happyFoundationTransfer = ensureHappyFoundationData(data);
 					var transferFeeRate = happyFoundationTransfer.feeRate;
 					var transferFee = calculateTransferFee(transferAmount, transferFeeRate);
@@ -15832,6 +15837,10 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 
 					var totalRequiredPoint = roundToTwo(transferAmount + transferFee);
+					if (!isSafePointValue(transferFee) || transferFee < 0 || !isSafePointValue(totalRequiredPoint) || totalRequiredPoint <= 0) {
+						replier.reply("❌ 이체 금액이 너무 큽니다.\n더 작은 금액으로 다시 입력해주세요.");
+						return;
+					}
 
 					var senderTier = data.member[sender].rank.tier;
 					if (!isTierKing(senderTier)) {
@@ -15851,6 +15860,11 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 
 					if (transferAmount === 0) {
 						replier.reply("장난치면 혼난다😤");
+						return;
+					}
+
+					if (!isSafePointValue(data.member[sender].point) || !isSafePointValue(data.member[targetUser].point) || !isSafePointValue(data.member[targetUser].point + transferAmount)) {
+						replier.reply("❌ 포인트 값이 안전 범위를 벗어나 이체할 수 없습니다.\n관리자에게 문의해주세요.");
 						return;
 					}
 
@@ -29338,6 +29352,30 @@ function roundToTwo(value) {
 	}
 	return Math.round(numericValue * 100) / 100;
 }
+// 포인트 계산에 사용할 안전 정수 범위 여부 확인 함수
+function isSafePointValue(value) {
+	var numericValue = Number(value);
+	var maxSafePoint = 9007199254740991; // Number.MAX_SAFE_INTEGER 호환 상수
+	return isFinite(numericValue) && Math.floor(numericValue) === numericValue && numericValue >= 0 && numericValue <= maxSafePoint;
+}
+
+// 포인트 명령 입력 금액을 안전 정수로 파싱하는 함수
+function parseSafePointAmount(rawAmount) {
+	var text = String(rawAmount || "").replace(/^0+/, "");
+	var maxSafePointText = "9007199254740991";
+	if (text === "") text = "0";
+	if (!/^\d+$/.test(text)) {
+		return { ok: false, message: "올바른 형식으로 이체해주세요.\n예: /이체 [유저] [숫자]" };
+	}
+	if (text.length > maxSafePointText.length || (text.length === maxSafePointText.length && text > maxSafePointText)) {
+		return { ok: false, message: "❌ 이체 금액이 너무 큽니다.\n더 작은 금액으로 다시 입력해주세요." };
+	}
+	var amount = parseInt(text, 10);
+	if (!isSafePointValue(amount)) {
+		return { ok: false, message: "❌ 이체 금액이 너무 큽니다.\n더 작은 금액으로 다시 입력해주세요." };
+	}
+	return { ok: true, amount: amount };
+}
 // 포인트 값 포맷터 (정수는 소수점 없이, 소수는 최대 2자리까지)
 function formatPointValue(value) {
 	var rounded = roundToTwo(value);
@@ -29375,8 +29413,9 @@ function ensureHappyFoundationData(data) {
 function calculateTransferFee(amount, feeRate) {
 	var numericAmount = Number(amount) || 0;
 	var numericFeeRate = Number(feeRate) || 0;
-	var totalRequiredPoint = Math.round(numericAmount + (numericAmount * numericFeeRate) / 100);
-	return totalRequiredPoint - numericAmount;
+	var feeAmount = Math.round((numericAmount * numericFeeRate) / 100);
+	if (!isFinite(feeAmount) || feeAmount < 0) return NaN;
+	return feeAmount;
 }
 // 호이 해피 재단에 수수료 추가 및 대장 업데이트 함수
 function addHappyFoundationFee(data, feeAmount) {
