@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.150"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.151"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -752,7 +752,8 @@ const GLOBAL_CONFIG = {
 			pendingStaleMs: 30000 // 길드 영토전 대기 상태 오래 지속 시 자동 취소 시간 (30초)
 		},
 		rewards: { // 길드 영토전 보상 설정
-			turnFundReward: 50000000 // 영지전 공격 턴 기본보상
+			turnFundReward: 50000000, // 영지전 공격 턴 기본보상
+			diamondMineRewardAmount: 20 // 다이아광산 점령 종료 보상
 		},
 		rates: { // 길드 영토전 확률/증가량 설정
 			medalRewardRate: 0.2, // 영지전 공격 턴 확률보상
@@ -4649,6 +4650,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("다이아 패스 목록이 비어 있습니다.");
 					}
 				}
+				if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
+					replier.reply(buildSupportPassListMessage(data, petData, guildData));
+					return;
+				}
 				if (msg.startsWith("/후원메모 ") && isMaster(sender)) {
 					var memoContent = msg.substring(5).trim(); // "/메모 " 다음의 내용을 정확히 추출
 					if (!data.member[sender]) {
@@ -5395,21 +5400,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let result = processUserIDCommand(msg, data);
 					replier.reply(result);
 				}
-				if (sender == "호이 남" && (msg.startsWith("/공헌패스추가,") || msg.startsWith("/공헌패스삭제,"))) {
+				if (sender == "호이 남" && (/^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
 					let result = processUserIDCommand(msg, data);
+					saveJsonFile(data, filePath);
 					replier.reply(result);
-				}
-				if (sender == "호이 남" && (msg.startsWith("/초보추가,") || msg.startsWith("/초보삭제,"))) {
-					let result = processUserIDCommand(msg, data);
-					replier.reply(result);
-				}
-				if (sender == "호이 남" && (msg.startsWith("/호이패스추가,") || msg.startsWith("/호이패스삭제,"))) {
-					let result = processUserIDCommand(msg, data);
-					replier.reply(result);
-				}
-				if (sender == "호이 남" && (/^\/다이아패스추가,\s*.+$/.test(msg) || /^\/다이아패스삭제,\s*.+$/.test(msg))) {
-					let result = processUserIDCommand(msg, data);
-					replier.reply(result);
+					return;
 				}
 				if (msg === "/다이아패스구독") {
 					if (!castleSiegeFlag) {
@@ -12586,7 +12581,8 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						"[2] 정령광산🥀: 정령 강화석🥀 400개\n" +
 						"[3] 반지광산💍: 반지 강화석💍 500개\n" +
 						"[4] 펫강화광산⭐️: 펫 강화석⭐️ 300개\n" +
-						"[5] 미니펫강화광산💫: 미니펫 강화석💫 150개\n\n" +
+						"[5] 미니펫강화광산💫: 미니펫 강화석💫 150개\n" +
+						"[6] 다이아광산💎: 다이아💎 " + GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount + "개\n\n" +
 						"광산류 영지는 종료 시 최종 점령 길드의 길드창고로 지급됩니다."
 					);
 					return;
@@ -12797,7 +12793,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 				}
 
 				// 길드 영지 공격 명령어 처리
-				if (/^\/영지공격\s+[1-5]$/.test(msg)) {
+				if (/^\/영지공격\s+[1-6]$/.test(msg)) {
 
 					// 현재 영지전 상태 확인
 					var attackWar = ensureGuildTerritoryWar(data, guildData);
@@ -12810,9 +12806,9 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						return;
 					}
 
-					// 입력값 검증 (1~5번 영지)
+					// 입력값 검증 (1~6번 영지)
 					var attackParts = msg.trim().split(/\s+/);
-					if (attackParts.length < 2 || !/^[1-5]$/.test(attackParts[1])) {
+					if (attackParts.length < 2 || !/^[1-6]$/.test(attackParts[1])) {
 						replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
 						return;
 					}
@@ -13742,7 +13738,9 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 							}
 						} else if (msg === "/정리" || msg === "ㅇㅇㅇ") {
 							if (!castleSiegeFlag && data.member && data.member[sender]) {
-								let resultMsg = "[" + checkRank(data, petData, guildData, sender) + " ]님 가방정리 완료🧳\n💡TIP : ㅇㅇㅇ 로도 명령어가 작동됩니다.\n━━━━━━━━━━━━\n🐹호스트코[5월 넷째]🐹\nhttps://hoiland123.tistory.com/512\n※ 핫딜은 카카오채널에서 선착순으로 안내됩니다." + allsee;
+								let resultMsg = "[" + checkRank(data, petData, guildData, sender) + " ]님 가방정리 완료🧳\n💡TIP : ㅇㅇㅇ 로도 명령어가 작동됩니다.";
+								var cleanupNotice = getOperationNotice(data, "cleanup"); // 정리/ㅇㅇㅇ 운영 알림 문구
+								if (cleanupNotice) resultMsg += "\n━━━━━━━━━━━━\n" + cleanupNotice + allsee;
 								resultMsg += "\n━━━━━━━━━━━━━━━\n";
 								// 🎁 전체 오픈
 								let openResult = runOpenAll(sender, data, petData, replier, guildData);
@@ -13932,6 +13930,14 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						saveJsonFile(packageGrantResult.packageLogData, packageLogPath);
 					}
 					replier.reply(packageGrantResult.message);
+					return;
+				}
+
+				if (/^\/정리알림\s+.+$/.test(msg) || /^\/패키지알림\s+.+$/.test(msg)) {
+					if (!(isAdmin(sender) || isMaster(sender))) return;
+					var noticeResult = setOperationNoticeByCommand(data, msg);
+					saveJsonFile(data, filePath);
+					replier.reply(noticeResult.message);
 					return;
 				}
 
@@ -21086,6 +21092,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						out += "[" + formatKoreanShort(memberExp) + "💞]";
 						out += "[" + numberWithCommas(c) + "🌟]";
 						out += (contribCnt > 0 ? "[✅]" : "[❌]") + "\n";
+						out += "└ 길드공헌패스🎖️ " + (isSupportPassActive(data, name, "contribution") ? "사용중" : "미사용중") + "\n";
 					}
 					out += "━━━━━━━━━━━━\n";
 					out += "길드자금🌾: 🅟" + numberWithCommas(g.warehouse.fund || 0) + "\n";
@@ -21099,6 +21106,8 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						numberWithCommas(g.warehouse && g.warehouse.pet ? g.warehouse.pet : 0) +
 						" 💫x" +
 						numberWithCommas(g.warehouse && g.warehouse.miniPet ? g.warehouse.miniPet : 0) +
+						" 💎x" +
+						numberWithCommas(g.warehouse && g.warehouse.diamond ? g.warehouse.diamond : 0) +
 						"\n";
 					if (g.mark) {
 						replier.reply(g.mark);
@@ -22256,15 +22265,21 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					var ringEach = Math.floor((g.warehouse.ring || 0) / memberCount);
 					var petEach = Math.floor((g.warehouse.pet || 0) / memberCount);
 					var miniPetEach = Math.floor((g.warehouse.miniPet || 0) / memberCount);
+					var diamondEach = Math.floor((g.warehouse.diamond || 0) / memberCount);
 
-					if (fundEach <= 0 && elementalEach <= 0 && ringEach <= 0 && petEach <= 0 && miniPetEach <= 0) {
+					if (fundEach <= 0 && elementalEach <= 0 && ringEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
 						replier.reply("❌ 분배 가능한 길드 자원이 부족합니다.");
 						return;
 					}
 
+					var skippedMembers = []; // member 데이터가 없어 지급하지 못한 길드원
 					// 길드원에게 지급
 					for (var i = 0; i < members.length; i++) {
 						var memberName = members[i];
+						if (!data.member[memberName]) {
+							skippedMembers.push(memberName);
+							continue;
+						}
 
 						if (fundEach > 0) {
 							addPoint(data, memberName, fundEach);
@@ -22285,6 +22300,10 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						if (miniPetEach > 0) {
 							addItem(data, memberName, "미니펫 강화석💫", miniPetEach);
 						}
+
+						if (diamondEach > 0) {
+							addDiamond(data, currencyLogData, memberName, diamondEach);
+						}
 					}
 
 					// 길드 자원 차감 (N빵 몫만큼만 차감, 나머지는 유지)
@@ -22293,12 +22312,14 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					g.warehouse.ring -= ringEach * memberCount;
 					g.warehouse.pet -= petEach * memberCount;
 					g.warehouse.miniPet -= miniPetEach * memberCount;
+					g.warehouse.diamond -= diamondEach * memberCount;
 
 					// 아이템 차감
 					removeItem(data, sender, itemName, 1);
 
 					saveJsonFile(guildData, guildPath);
 					saveJsonFile(data, filePath);
+					if (diamondEach > 0) saveJsonFile(currencyLogData, currencyLogPath);
 
 					var out = "";
 					out += "✅ 길드 자원 분배 완료!\n";
@@ -22311,13 +22332,15 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					out += "💍 " + numberWithCommas(ringEach) + "\n";
 					out += "⭐️ " + numberWithCommas(petEach) + "\n";
 					out += "💫 " + numberWithCommas(miniPetEach) + "\n";
+					out += "💎 " + numberWithCommas(diamondEach) + "\n";
 					out += "━━━━━━━━━━━━\n";
 					out += "분배 후 남은 길드자원\n";
 					out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
 					out += "🥀 " + numberWithCommas(Number(g.warehouse.elemental) || 0) + "\n";
 					out += "💍 " + numberWithCommas(Number(g.warehouse.ring) || 0) + "\n";
 					out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
-					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0);
+					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0) + "\n";
+					out += "💎 " + numberWithCommas(Number(g.warehouse.diamond) || 0);
 					if (skippedMembers.length > 0) {
 						out += "\n━━━━━━━━━━━━\n";
 						out += "⚠️ 지급 제외: " + skippedMembers.join(", ") + "\n";
@@ -25068,7 +25091,7 @@ function isMutableGuildTerritoryCommand(msg) {
 		msg === "/길드영지초기화" ||
 		msg === "/길드영지순서" ||
 		msg === "/길드영지확인" ||
-		/^\/영지공격\s+[1-5]$/.test(msg) ||
+		/^\/영지공격\s+[1-6]$/.test(msg) ||
 		msg.indexOf("/불안정") === 0 ||
 		msg.indexOf("/안정") === 0 ||
 		msg.indexOf("/균열") === 0 ||
@@ -25570,7 +25593,8 @@ function getGuildTerritoryList() {
 		{ no: 2, name: "정령광산🥀", rewardType: "elemental", rewardAmount: 400 },
 		{ no: 3, name: "반지광산💍", rewardType: "ring", rewardAmount: 500 },
 		{ no: 4, name: "펫강화광산⭐️", rewardType: "pet", rewardAmount: 400 },
-		{ no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: 150 }
+		{ no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: 150 },
+		{ no: 6, name: "다이아광산💎", rewardType: "diamond", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount }
 	];
 }
 
@@ -25599,6 +25623,7 @@ function ensureGuildWarehouseObj(g) {
 	if (typeof g.warehouse.ring !== "number") g.warehouse.ring = 0;
 	if (typeof g.warehouse.pet !== "number") g.warehouse.pet = 0;
 	if (typeof g.warehouse.miniPet !== "number") g.warehouse.miniPet = 0;
+	if (typeof g.warehouse.diamond !== "number") g.warehouse.diamond = 0;
 }
 
 // 길드 영지전 데이터 구조 보장 및 초기화
@@ -28471,28 +28496,176 @@ function useLetterInBag(data, memberName) {
 	}
 	return false;
 }
+
+// 후원패스 설정 목록 반환 함수
+function getSupportPassConfigs() {
+	return [
+		{ key: "newbie", label: "초보패스🐥", arrayName: "allowedUsers6", commandNames: ["초보", "초보패스"] },
+		{ key: "hoi", label: "호이패스🐶", arrayName: "allowedUsersHoipass", commandNames: ["호이패스"] },
+		{ key: "contribution", label: "길드공헌패스🎖️", arrayName: "allowedUsers2", commandNames: ["공헌패스"] },
+		{ key: "diamond", label: "다이아패스💎", arrayName: "allowedUsersDiamondPass", commandNames: ["다이아패스"] }
+	];
+}
+
+// 후원패스 명령어명으로 설정을 찾는 함수
+function getSupportPassConfigByCommandName(commandName) {
+	var configs = getSupportPassConfigs();
+	for (var i = 0; i < configs.length; i++) {
+		for (var j = 0; j < configs[i].commandNames.length; j++) {
+			if (configs[i].commandNames[j] === commandName) return configs[i];
+		}
+	}
+	return null;
+}
+
+// 후원패스 저장 구조를 보장하는 함수
+function ensureSupportPassStore(data, user) {
+	if (!data.member[user]) return null;
+	var member = data.member[user];
+	if (!member.pass || typeof member.pass !== "object") member.pass = {};
+	return member.pass;
+}
+
+// 후원패스 날짜 문자열이 유효한지 확인하는 함수
+function isValidSupportPassDateText(text) {
+	return /^\d{2}\.\d{2}\.\d{2}$/.test(String(text || ""));
+}
+
+// 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
+function getSupportPassDateValue(text) {
+	var match = String(text || "").match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+	if (!match) return null;
+	return parseInt("20" + match[1] + match[2] + match[3], 10);
+}
+
+// 오늘 날짜를 후원패스 비교값으로 반환하는 함수
+function getTodaySupportPassDateValue() {
+	var now = new Date();
+	var y = now.getFullYear();
+	var m = now.getMonth() + 1;
+	var d = now.getDate();
+	return y * 10000 + m * 100 + d;
+}
+
+// 후원패스가 현재 사용 가능한지 확인하는 함수
+function isSupportPassActive(data, user, passKey) {
+	var member = data.member && data.member[user] ? data.member[user] : null;
+	var pass = member && member.pass && member.pass[passKey] ? member.pass[passKey] : null;
+	if (!pass || pass.enabled !== true) {
+		var configs = getSupportPassConfigs();
+		for (var i = 0; i < configs.length; i++) {
+			if (configs[i].key === passKey) {
+				var legacyArr = data[configs[i].arrayName];
+				return legacyArr instanceof Array && legacyArr.indexOf(user) !== -1;
+			}
+		}
+		return false;
+	}
+	if (pass.permanent === true) return true;
+	var expireValue = getSupportPassDateValue(pass.endDate);
+	if (expireValue === null) return true;
+	return expireValue >= getTodaySupportPassDateValue();
+}
+
+// 후원패스 표시 문자열을 만드는 함수
+function formatSupportPassStatus(data, user, config) {
+	if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중";
+	var pass = data.member[user].pass && data.member[user].pass[config.key] ? data.member[user].pass[config.key] : null;
+	if (!pass) return config.label + " (영구권)";
+	if (pass.permanent === true) return config.label + " (영구권)";
+	return config.label + " (" + pass.endDate + " 까지)";
+}
+
+// 유저 패키지가방용 후원패스 표시 줄을 만드는 함수
+function buildUserSupportPassLines(data, user) {
+	var configs = getSupportPassConfigs();
+	var lines = [];
+	for (var i = 0; i < configs.length; i++) {
+		lines.push(formatSupportPassStatus(data, user, configs[i]));
+	}
+	return lines;
+}
+
+// 전체 후원패스 목록 메시지를 만드는 함수
+function buildSupportPassListMessage(data, petData, guildData) {
+	var configs = getSupportPassConfigs();
+	var lines = ["호월패스 전체목록 안내:", "[초보패스, 호이패스, 길드공헌패스, 다이아패스] / " + allsee, ""];
+	for (var i = 0; i < configs.length; i++) {
+		var config = configs[i];
+		var activeUsers = [];
+		for (var user in data.member) {
+			if (isSupportPassActive(data, user, config.key)) activeUsers.push(user);
+		}
+		activeUsers.sort(function (a, b) {
+			var ap = data.member[a].pass && data.member[a].pass[config.key] ? data.member[a].pass[config.key] : { permanent: true };
+			var bp = data.member[b].pass && data.member[b].pass[config.key] ? data.member[b].pass[config.key] : { permanent: true };
+			if (ap.permanent && !bp.permanent) return 1;
+			if (!ap.permanent && bp.permanent) return -1;
+			return (getSupportPassDateValue(ap.endDate) || 99999999) - (getSupportPassDateValue(bp.endDate) || 99999999);
+		});
+		lines.push(config.label + " 명단");
+		if (activeUsers.length < 1) {
+			lines.push("미사용중");
+		} else {
+			for (var j = 0; j < activeUsers.length; j++) {
+				var pass = data.member[activeUsers[j]].pass && data.member[activeUsers[j]].pass[config.key] ? data.member[activeUsers[j]].pass[config.key] : { permanent: true };
+				var endText = pass.permanent ? "영구권" : pass.endDate + " 까지";
+				lines.push("[" + checkRank(data, petData, guildData, activeUsers[j]) + "] " + endText);
+			}
+		}
+		lines.push("━━━━━━━━━━━");
+		lines.push("");
+	}
+	return lines.join("\n");
+}
+
 function processUserIDCommand(msg, data) {
 	let returnMsg = null;
-	// 명령어에 따라 사용되는 데이터 배열과 정규 표현식을 설정
 	let dataArr, pattern;
-	if (msg.startsWith("/공헌패스")) {
-		dataArr = data.allowedUsers2;
-		pattern = /^\/공헌패스(추가|삭제),\s*(.+)$/;
-	} else if (msg.startsWith("/원데이패스")) {
+	if (msg.startsWith("/원데이패스")) {
 		dataArr = data.allowedUsers4;
 		pattern = /^\/원데이패스(추가|삭제),\s*(.+)$/;
-	} else if (msg.startsWith("/초보")) {
-		dataArr = data.allowedUsers6;
-		pattern = /^\/초보(추가|삭제),\s*(.+)$/;
-	} else if (msg.startsWith("/호이패스")) {
-		dataArr = data.allowedUsersHoipass;
-		pattern = /^\/호이패스(추가|삭제),\s*(.+)$/;
-	} else if (msg.startsWith("/다이아패스")) {
-		dataArr = data.allowedUsersDiamondPass;
-		pattern = /^\/다이아패스(추가|삭제),\s*(.+)$/;
 	} else {
-		returnMsg = "알 수 없는 명령어입니다.";
-		return;
+		var passMatch = String(msg || "").match(/^\/(공헌패스|초보패스|초보|호이패스|다이아패스)(추가|삭제),\s*([^]+)$/);
+		if (passMatch) {
+			var passConfig = getSupportPassConfigByCommandName(passMatch[1]);
+			if (!passConfig) return "알 수 없는 명령어입니다.";
+			var action = passMatch[2];
+			var body = String(passMatch[3] || "").trim();
+			var tokens = body.split(/\s+/);
+			var lastToken = tokens.length > 0 ? tokens[tokens.length - 1] : "";
+			var option = action === "추가" && (lastToken === "영구권" || isValidSupportPassDateText(lastToken)) ? lastToken : "";
+			var userIDText = action === "추가" && option ? tokens.slice(0, tokens.length - 1).join(" ") : body;
+			var legacyDataArr = data[passConfig.arrayName];
+			if (!legacyDataArr) {
+				legacyDataArr = [];
+				data[passConfig.arrayName] = legacyDataArr;
+			}
+			if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
+			if (action === "추가") {
+				if (!option) option = "영구권";
+				if (legacyDataArr.indexOf(userIDText) === -1) legacyDataArr.push(userIDText);
+				var passStore = ensureSupportPassStore(data, userIDText);
+				var beforeActive = passStore[passConfig.key] && passStore[passConfig.key].enabled === true;
+				passStore[passConfig.key] = {
+					enabled: true,
+					endDate: option === "영구권" ? "" : option,
+					permanent: option === "영구권"
+				};
+				return beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.";
+			}
+			var index = legacyDataArr.indexOf(userIDText);
+			if (index > -1) legacyDataArr.splice(index, 1);
+			var userPassStore = ensureSupportPassStore(data, userIDText);
+			if (!userPassStore[passConfig.key] || userPassStore[passConfig.key].enabled !== true) {
+				if (index === -1) return "❌ 해당 유저는 해당 패스를 보유하고 있지 않습니다.";
+				userPassStore[passConfig.key] = { enabled: false, endDate: "", permanent: false };
+			} else {
+				userPassStore[passConfig.key].enabled = false;
+			}
+			return userIDText + " 사용자가 목록에서 삭제되었습니다.";
+		}
+		return "알 수 없는 명령어입니다.";
 	}
 	var match = msg.match(pattern);
 	if (!match) {
@@ -30431,10 +30604,44 @@ function setPackageEnabledByCommand(sender, msg, enabled, packageInfoData) {
 	};
 }
 
+// 운영 알림 저장소를 보장하는 함수
+function ensureOperationNoticeData(data) {
+	if (!data.operationNotices || typeof data.operationNotices !== "object") data.operationNotices = {};
+	if (typeof data.operationNotices.cleanup !== "string") data.operationNotices.cleanup = "";
+	if (typeof data.operationNotices.packageBag !== "string") data.operationNotices.packageBag = "";
+	return data.operationNotices;
+}
+
+// 운영 알림 문구를 반환하는 함수
+function getOperationNotice(data, type) {
+	var notices = data.operationNotices && typeof data.operationNotices === "object" ? data.operationNotices : {};
+	var value = notices[type] || "";
+	return String(value).trim();
+}
+
+// 운영 알림 설정 명령어 처리 함수
+function setOperationNoticeByCommand(data, msg) {
+	var match = String(msg || "").match(/^\/(정리알림|패키지알림)\s+([^]+)$/);
+	if (!match) return { ok: false, message: "❌ 사용법: /정리알림 내용 또는 /패키지알림 내용" };
+	var notices = ensureOperationNoticeData(data);
+	var key = match[1] === "정리알림" ? "cleanup" : "packageBag";
+	notices[key] = String(match[2] || "").trim();
+	return {
+		ok: true,
+		message: "✅ " + (key === "cleanup" ? "정리 알림" : "패키지가방 알림") + "을 저장했습니다."
+	};
+}
+
 // 유저 패키지가방 메시지 생성 함수
 function buildUserPackageBagMessage(data, petData, guildData, sender, packageInfoData) {
 	var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저가 보유한 패키지 목록
 	var lines = ["🎁 [" + checkRank(data, petData, guildData, sender) + "] 님의 패키지가방", ""];
+	var packageBagNotice = getOperationNotice(data, "packageBag"); // 패키지가방 상단 운영 알림 문구
+	if (packageBagNotice) {
+		lines.push("━━━━━━━━━━━");
+		lines.push(packageBagNotice);
+		lines.push("━━━━━━━━━━━");
+	}
 	if (packageBagList.length < 1) {
 		lines.push("보유한 패키지가 없습니다.");
 	} else {
@@ -30452,6 +30659,13 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
 	lines.push("예시:");
 	lines.push("/패키지사용 1 1");
 	lines.push("/패키지사용 2 5");
+	lines.push("━━━━━━━━━━━");
+	lines.push("현재 호월패스🐹 사용중인 목록:" + allsee);
+	lines.push("");
+	var passLines = buildUserSupportPassLines(data, sender);
+	for (var p = 0; p < passLines.length; p++) {
+		lines.push(passLines[p]);
+	}
 	return lines.join("\n");
 }
 

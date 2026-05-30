@@ -426,7 +426,7 @@ Status: VERIFIED
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- `/영지공격` is accepted only as `/영지공격 [1-5]`; suffix text such as `/영지공격 2 해봐` must not execute
+- `/영지공격` is accepted only as `/영지공격 [1-6]`; suffix text such as `/영지공격 2 해봐` must not execute
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
@@ -1288,6 +1288,7 @@ Status: VERIFIED
 - `/패키지추가`, `/패키지수정`, `/패키지제거`, `/패키지리스트제거`, `/패키지활성` mutate and save `packageInfo.json`
 - `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
+- `/패키지알림` mutates `data.operationNotices.packageBag` and saves `member.json`
 
 ## Related Commands
 
@@ -1301,6 +1302,7 @@ Status: VERIFIED
 - `/패키지리스트제거`
 - `/패키지활성`
 - `/패키지지급`
+- `/패키지알림`
 - `/패키지가방`
 - `/패키지가방 [아이디]`
 - `/패키지사용`
@@ -1322,6 +1324,87 @@ Status: VERIFIED
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
 - `/패키지가방 [아이디]` is Master-only and reads another user's package bag without mutating or saving data
+- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then displays current support pass status below the package use guide
+
+---
+
+# /정리알림 내용
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `setOperationNoticeByCommand`
+- `ensureOperationNoticeData`
+- `getOperationNotice`
+
+## Data Usage
+- `data.operationNotices.cleanup`
+
+## Save Flow
+- Saves `member.json` after updating the cleanup notice text
+
+## Related Commands
+- `/정리`
+- `ㅇㅇㅇ`
+
+---
+
+# /패키지알림 내용
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `setOperationNoticeByCommand`
+- `ensureOperationNoticeData`
+- `getOperationNotice`
+- `buildUserPackageBagMessage`
+
+## Data Usage
+- `data.operationNotices.packageBag`
+
+## Save Flow
+- Saves `member.json` after updating the package bag notice text
+
+## Related Commands
+- `/패키지가방`
+- `/패키지가방 [아이디]`
+
+---
+
+# /패스목록
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `buildSupportPassListMessage`
+- `getSupportPassConfigs`
+- `isSupportPassActive`
+
+## Data Usage
+- `data.member[user].pass`
+- `data.allowedUsers6`
+- `data.allowedUsersHoipass`
+- `data.allowedUsers2`
+- `data.allowedUsersDiamondPass`
+
+## Save Flow
+- Read-only
+
+## Related Commands
+- `/초보패스추가, [아이디] [날짜|영구권]`
+- `/호이패스추가, [아이디] [날짜|영구권]`
+- `/공헌패스추가, [아이디] [날짜|영구권]`
+- `/다이아패스추가, [아이디] [날짜|영구권]`
+- `/패키지가방`
 
 ---
 
@@ -1852,11 +1935,16 @@ Status: VERIFIED
 - `getMyGuildInfo`
 - `ensureGuildWarehouseObj`
 - `getGuildMemberNames`
+- `addDiamond`
 ## Data Usage
 - guild warehouse/fund state
 - member point/item state
+- `guildData.guilds[*].warehouse.diamond`
+- `data.member[user].diamond`
+- `currencyLogData.user[user].diamond`
 ## Save Flow
 - Saves member data during sync and saves both member data and `guildData` on distribution
+- Saves `currencyLogData` when distributed resources include 다이아
 ## Related Commands
 - `/길드창고패키지오픈`
 - `/길드정보`
