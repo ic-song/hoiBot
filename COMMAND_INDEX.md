@@ -449,6 +449,7 @@ Status: VERIFIED
 - `getMyGuildId`
 - `ensureGuildTerritoryWar`
 - `getGuildTerritoryList`
+- `buildGuildResourceDisplay`
 
 ## Data Usage
 
@@ -476,6 +477,7 @@ Status: VERIFIED
 - Best entry point for current user's guild ownership and membership flow
 - If a bug mentions guild mismatch auto-repair, inspect nearby warning branches with `길드 데이터 불일치`
 - Territory-related display here depends on `ensureGuildTerritoryWar`
+- Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
 
 ---
 
@@ -679,6 +681,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `findGuildIdByNameSafe`
+- `buildGuildResourceDisplay`
 
 ## Data Usage
 
@@ -697,6 +700,7 @@ Status: VERIFIED
 
 - Admin/master investigation command for named guild lookup
 - Good anchor when debugging guild member snapshots without relying on sender membership
+- Guild resource display is shared with `/길드정보` through `buildGuildResourceDisplay`
 
 ---
 

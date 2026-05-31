@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.159"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.160"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21104,20 +21104,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						out += "└ 길드공헌패스🎖️ " + (isSupportPassActive(data, name, "contribution") ? "사용중[✅]" : "미사용중[❌]") + "\n";
 					}
 					out += "━━━━━━━━━━━━\n";
-					out += "길드자금🌾: 🅟" + numberWithCommas(g.warehouse.fund || 0) + "\n";
-					ensureGuildWarehouseObj(g);
-					out +=
-						"길드창고🧳: 🥀x" +
-						numberWithCommas(g.warehouse && g.warehouse.elemental ? g.warehouse.elemental : 0) +
-						" 💍x" +
-						numberWithCommas(g.warehouse && g.warehouse.ring ? g.warehouse.ring : 0) +
-						" ⭐x" +
-						numberWithCommas(g.warehouse && g.warehouse.pet ? g.warehouse.pet : 0) +
-						" 💫x" +
-						numberWithCommas(g.warehouse && g.warehouse.miniPet ? g.warehouse.miniPet : 0) +
-						" 💎x" +
-						numberWithCommas(g.warehouse && g.warehouse.diamond ? g.warehouse.diamond : 0) +
-						"\n";
+					out += buildGuildResourceDisplay(g);
 					if (g.mark) {
 						replier.reply(g.mark);
 					}
@@ -22161,12 +22148,6 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					var memberKeys = Object.keys(g.members || {});
 					var memberCount = memberKeys.length;
 
-					ensureGuildWarehouseObj(g);
-					var elemental = g.warehouse && g.warehouse.elemental ? g.warehouse.elemental : 0;
-					var ring = g.warehouse && g.warehouse.ring ? g.warehouse.ring : 0;
-					var pet = g.warehouse && g.warehouse.pet ? g.warehouse.pet : 0;
-					var miniPet = g.warehouse && g.warehouse.miniPet ? g.warehouse.miniPet : 0;
-
 					var out = "";
 					out += "🏰 길드 상세정보 🏰\n";
 					out += "━━━━━━━━━━━━\n";
@@ -22179,8 +22160,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					out += "레벨: Lv." + (g.level || 1) + "\n";
 					out += "공헌도: " + numberWithCommas(g.exp || 0) + "🌟\n\n";
 
-					out += "길드자금: 🅟" + numberWithCommas(g.warehouse.fund || 0) + "\n";
-					out += "창고: 🥀" + numberWithCommas(elemental) + " 💍" + numberWithCommas(ring) + " ⭐️" + numberWithCommas(pet) + " 💫" + numberWithCommas(miniPet) + "\n\n";
+					out += buildGuildResourceDisplay(g) + "\n";
 
 					out += "가입조건: " + (g.joinConditionExp || 0) + "\n";
 					out += "마감상태: " + (g.memberClose ? "마감" : "모집중") + "\n";
@@ -25652,6 +25632,26 @@ function ensureGuildWarehouseObj(g) {
 	if (typeof g.warehouse.pet !== "number") g.warehouse.pet = 0;
 	if (typeof g.warehouse.miniPet !== "number") g.warehouse.miniPet = 0;
 	if (typeof g.warehouse.diamond !== "number") g.warehouse.diamond = 0;
+}
+
+// 길드 자금과 창고 자원 표시 문자열 생성 함수
+function buildGuildResourceDisplay(g) {
+	ensureGuildWarehouseObj(g);
+	return (
+		"길드자금🌾: 🅟" +
+		numberWithCommas(g.warehouse.fund || 0) +
+		"\n길드창고🧳: 🥀x" +
+		numberWithCommas(g.warehouse.elemental || 0) +
+		" 💍x" +
+		numberWithCommas(g.warehouse.ring || 0) +
+		" ⭐x" +
+		numberWithCommas(g.warehouse.pet || 0) +
+		" 💫x" +
+		numberWithCommas(g.warehouse.miniPet || 0) +
+		" 💎x" +
+		numberWithCommas(g.warehouse.diamond || 0) +
+		"\n"
+	);
 }
 
 // 길드 영지전 데이터 구조 보장 및 초기화
