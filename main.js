@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.163"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.164"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -763,7 +763,7 @@ const GLOBAL_CONFIG = {
 			dimensionGateSuccessRate: 0.2 // 차원의 문 통과 확률
 		},
 		dimensionGate: { // 차원의 문 이벤트 설정
-			bonusTurns: 3,
+			bonusTurns: 4,
 			failMessages: [
 				"[{{rank}}] 님이 차원의 문지방조차 넘지 못했습니다..(탈락🥲)",
 				"[{{rank}}] 님이 차원의 문에 들어갔으나 영영 돌아오지 못했습니다..(탈락🥲)",
@@ -772,11 +772,11 @@ const GLOBAL_CONFIG = {
 				"[{{rank}}] R.I.P (탈락🥲)"
 			],
 			successMessages: [
-				"[{{rank}}] 님이 차원의 문을 통과하였습니다! (턴 +3 증가!)",
-				"[{{rank}}]: 쫘자잔~ 내가 돌아왔다! (턴 +3 증가!)",
-				"[{{rank}}]: 오 디질뻔함ㅋ (턴 +3 증가!)",
-				"[{{rank}}]: 오우 지저스 크라이스트! (턴 +3 증가!)",
-				"[{{rank}}]: ㅎㅇ (턴 +3 증가!)"
+				"[{{rank}}] 님이 차원의 문을 통과하였습니다! (턴 +4 증가!)",
+				"[{{rank}}]: 쫘자잔~ 내가 돌아왔다! (턴 +4 증가!)",
+				"[{{rank}}]: 오 디질뻔함ㅋ (턴 +4 증가!)",
+				"[{{rank}}]: 오우 지저스 크라이스트! (턴 +4 증가!)",
+				"[{{rank}}]: ㅎㅇ (턴 +4 증가!)"
 			]
 		},
 		items: { // 길드 영토전 아이템명 설정
@@ -26313,7 +26313,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
 		var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
 		out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
 	}
-	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "자니..?(20% 확률 3턴 증가)" : "닫힘(OFF)") + "\n";
+	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "자니..?(20% 확률 4턴 증가)" : "닫힘(OFF)") + "\n";
 	if (includeCommand) out += "\n순고한 히셍 간사함니다";
 	return out;
 }

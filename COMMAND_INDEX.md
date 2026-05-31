@@ -434,7 +434,7 @@ Status: VERIFIED
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - `/영지공격` is accepted only as `/영지공격 [1-7]`; suffix text such as `/영지공격 2 해봐` must not execute
-- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with no turn-count deduction, 20% guild attack limit +3
+- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with no turn-count deduction, 20% guild attack limit +4
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
