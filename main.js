@@ -21101,7 +21101,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						out += "[" + formatKoreanShort(memberExp) + "💞]";
 						out += "[" + numberWithCommas(c) + "🌟]";
 						out += (contribCnt > 0 ? "[✅]" : "[❌]") + "\n";
-						out += "└ 길드공헌패스🎖️ " + (isSupportPassActive(data, name, "contribution") ? "사용중" : "미사용중") + "\n";
+						out += "└ 길드공헌패스🎖️ " + (isSupportPassActive(data, name, "contribution") ? "사용중[✅]" : "미사용중[❌]") + "\n";
 					}
 					out += "━━━━━━━━━━━━\n";
 					out += "길드자금🌾: 🅟" + numberWithCommas(g.warehouse.fund || 0) + "\n";
@@ -28597,10 +28597,10 @@ function isSupportPassActive(data, user, passKey) {
 
 // 후원패스 표시 문자열을 만드는 함수
 function formatSupportPassStatus(data, user, config) {
-	if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중";
+	if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중[❌]";
 	var pass = data.member[user].pass && data.member[user].pass[config.key] ? data.member[user].pass[config.key] : null;
-	if (!pass) return config.label + " (영구권)";
-	if (pass.permanent === true) return config.label + " (영구권)";
+	if (!pass) return config.label + " (영구권 사용중[✅])";
+	if (pass.permanent === true) return config.label + " (영구권 사용중[✅])";
 	return config.label + " (" + pass.endDate + " 까지)";
 }
 
@@ -28633,11 +28633,11 @@ function buildSupportPassListMessage(data, petData, guildData) {
 		});
 		lines.push(config.label + " 명단");
 		if (activeUsers.length < 1) {
-			lines.push("미사용중");
+			lines.push("미사용중[❌]");
 		} else {
 			for (var j = 0; j < activeUsers.length; j++) {
 				var pass = data.member[activeUsers[j]].pass && data.member[activeUsers[j]].pass[config.key] ? data.member[activeUsers[j]].pass[config.key] : { permanent: true };
-				var endText = pass.permanent ? "영구권" : pass.endDate + " 까지";
+				var endText = pass.permanent ? "영구권 사용중[✅]" : pass.endDate + " 까지";
 				lines.push("[" + checkRank(data, petData, guildData, activeUsers[j]) + "] " + endText);
 			}
 		}
@@ -30697,7 +30697,7 @@ function setOperationNoticeByCommand(data, msg) {
 // 유저 패키지가방 메시지 생성 함수
 function buildUserPackageBagMessage(data, petData, guildData, sender, packageInfoData) {
 	var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저가 보유한 패키지 목록
-	var lines = ["🎁 [" + checkRank(data, petData, guildData, sender) + "] 님의 패키지가방", ""];
+	var lines = ["🎁 [" + checkRank(data, petData, guildData, sender) + "] 님의 패키지가방🎁"];
 	var packageBagNotice = getOperationNotice(data, "packageBag"); // 패키지가방 상단 운영 알림 문구
 	if (packageBagNotice) {
 		lines.push("━━━━━━━━━━━");
@@ -30717,7 +30717,7 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
 	lines.push("");
 	lines.push("사용 방법: /패키지사용 [가방번호] [오픈갯수]");
 	lines.push("━━━━━━━━━━━");
-	lines.push("현재 호월패스🐹 사용중인 목록:" + allsee);
+	lines.push("호월패스🐹 사용/날짜 확인하기:" + allsee);
 	lines.push("");
 	var passLines = buildUserSupportPassLines(data, sender);
 	for (var p = 0; p < passLines.length; p++) {
