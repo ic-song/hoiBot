@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.157"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.158"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -13933,7 +13933,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					return;
 				}
 
-				if (/^\/정리알림\s+.+$/.test(msg) || /^\/패키지알림\s+.+$/.test(msg)) {
+				if (/^\/(정리알림|패키지알림)\s+[^]+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender))) return;
 					var noticeResult = setOperationNoticeByCommand(data, msg);
 					saveJsonFile(data, filePath);
