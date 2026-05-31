@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.156"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.157"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -24855,6 +24855,24 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						}
 					}
 
+					var pointFloorUserCount = 0;
+					var pointFloorTotalAmount = 0;
+					var pointFloorUserLogs = [];
+
+					for (var pointUser in data.member) {
+						if (!data.member.hasOwnProperty(pointUser)) continue;
+						var pointMember = data.member[pointUser];
+						if (!pointMember || typeof pointMember.point !== "number") continue;
+						var beforePoint = pointMember.point;
+						var afterPoint = Math.floor(beforePoint);
+						if (beforePoint !== afterPoint) {
+							pointMember.point = afterPoint;
+							pointFloorUserCount++;
+							pointFloorTotalAmount += beforePoint - afterPoint;
+							pointFloorUserLogs.push(pointUser + " : " + formatPointValue(beforePoint) + " → " + numberWithCommas(afterPoint));
+						}
+					}
+
 					saveJsonFile(homeData, homeDataFile);
 					saveJsonFile(data, filePath);
 					saveJsonFile(petData, memberPetPath);
@@ -24893,14 +24911,15 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						out += "\n이동할 펫스킬 데이터 없음\n";
 					}
 
-					// 캐슬대전 히스토리 데이터 정리
-					var castleBattleData = loadJsonFile(castleBattlePath);
-					var historyCount = castleBattleData.history ? castleBattleData.history.length : 0;
-					delete castleBattleData.history;
-					saveJsonFile(castleBattleData, castleBattlePath);
+					out += "\n\n[4] 포인트 소수점 정리\n";
+					out += "정리된 유저 : " + numberWithCommas(pointFloorUserCount) + "명\n";
+					out += "제거된 소수점 포인트 총합 : 🅟" + formatPointValue(pointFloorTotalAmount);
 
-					out += "\n\n[4] 캐슬대전 히스토리 정리\n";
-					out += "삭제된 history : " + numberWithCommas(historyCount) + "개";
+					if (pointFloorUserLogs.length > 0) {
+						out += "\n[포인트 정리 유저]\n" + pointFloorUserLogs.join("\n");
+					} else {
+						out += "\n소수점 포인트 없음";
+					}
 
 					replier.reply(out);
 					return;

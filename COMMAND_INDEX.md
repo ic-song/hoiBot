@@ -3828,3 +3828,36 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/포인트상자오픈` or `/포인트상자오픈 숫자`
 - One box grants `🅟100,000,000`; numeric use opens up to the held box count.
+
+---
+
+# /데이터정리
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Data Usage
+
+- `homeData[*].furnitureBag`
+- `homeData[*].placedFurniture`
+- `data.member[*].bag`
+- `data.member[*].point`
+- `petData[*].petSkills`
+- `petData[*].petchar`
+- `petSkillData[*]`
+
+## Save Flow
+
+- Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
+- Saves member data through `saveJsonFile(data, filePath)`
+- Saves pet data through `saveJsonFile(petData, memberPetPath)`
+- Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
+
+## AI Notes
+
+- Admin/Master-only maintenance command.
+- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Castle battle `history` cleanup is no longer performed by this command.
