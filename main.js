@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.153"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.154"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -15804,7 +15804,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						replier.reply("올바른 명령어 형식을 사용해주세요.\n예: /펫타이틀판매 [번호]");
 					}
 				}
-				if (msg.startsWith("/이체")) {
+				if (msg === "/이체" || /^\/이체\s+/.test(msg)) {
 					if (castleSiegeFlag) {
 						return;
 					}
@@ -15860,11 +15860,6 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 
 					if (transferAmount === 0) {
 						replier.reply("장난치면 혼난다😤");
-						return;
-					}
-
-					if (!isSafePointValue(data.member[sender].point) || !isSafePointValue(data.member[targetUser].point) || !isSafePointValue(data.member[targetUser].point + transferAmount)) {
-						replier.reply("❌ 포인트 값이 안전 범위를 벗어나 이체할 수 없습니다.\n관리자에게 문의해주세요.");
 						return;
 					}
 
@@ -29352,11 +29347,15 @@ function roundToTwo(value) {
 	}
 	return Math.round(numericValue * 100) / 100;
 }
-// 포인트 계산에 사용할 안전 정수 범위 여부 확인 함수
+// 포인트 계산에 사용할 안전 범위 여부 확인 함수
 function isSafePointValue(value) {
 	var numericValue = Number(value);
 	var maxSafePoint = 9007199254740991; // Number.MAX_SAFE_INTEGER 호환 상수
-	return isFinite(numericValue) && Math.floor(numericValue) === numericValue && numericValue >= 0 && numericValue <= maxSafePoint;
+	var pointText = String(numericValue);
+	var dotIndex = pointText.indexOf(".");
+	if (!isFinite(numericValue) || numericValue < 0 || numericValue > maxSafePoint) return false;
+	if (dotIndex === -1) return Math.floor(numericValue) === numericValue;
+	return pointText.substring(dotIndex + 1).length <= 2;
 }
 
 // 포인트 명령 입력 금액을 안전 정수로 파싱하는 함수

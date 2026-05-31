@@ -3390,7 +3390,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Exact/full-pattern command guard: `/이체 [유저] [숫자]`
-- Amount input is rejected when it exceeds the safe integer range used for point arithmetic
+- Amount input is rejected when the transfer amount, fee, or total required point exceeds the safe range used for point arithmetic; existing held balances are not used as a separate safe-range blocker
 - Fee calculation must never use `total - amount` as the primary fee value; oversized or negative fee/total values must be rejected before mutating points
 
 ---
