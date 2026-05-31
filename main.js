@@ -30715,12 +30715,7 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
 		}
 	}
 	lines.push("");
-	lines.push("사용 방법:");
-	lines.push("/패키지사용 가방번호 갯수");
-	lines.push("");
-	lines.push("예시:");
-	lines.push("/패키지사용 1 1");
-	lines.push("/패키지사용 2 5");
+	lines.push("사용 방법: /패키지사용 [가방번호] [오픈갯수]");
 	lines.push("━━━━━━━━━━━");
 	lines.push("현재 호월패스🐹 사용중인 목록:" + allsee);
 	lines.push("");
