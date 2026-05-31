@@ -13682,59 +13682,81 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 				}
 
-				if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
-					if (castleSiegeFlag) return;
+if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
+   if (castleSiegeFlag) return;
 
-					let commandParts = msg.trim().split(/\s+/);
-					let count = 1;
-					if (commandParts.length >= 2 && !isNaN(Number(commandParts[1]))) {
-						count = parseInt(commandParts[1]);
-						if (count < 1) count = 1;
-					}
+   let commandParts = msg.trim().split(/\s+/);
+   let count = 1;
 
-					let userBag = data.member[sender].bag;
-					let ticket = userBag["티어 승급티켓🎟"] || 0;
-					let stone = userBag["전설의 돌맹이🗿"] || 0;
-					let petStone = userBag["펫 강화석⭐"] || 0; //추가
+   if (commandParts.length >= 2 && !isNaN(Number(commandParts[1]))) {
+      count = parseInt(commandParts[1]);
+      if (count < 1) count = 1;
+   }
 
-					let maxByTicket = Math.floor((ticket - 2550) / 200);
-					let maxByPetStone = Math.floor(petStone / 100); //추가
-					let maxActual = Math.min(maxByTicket, stone, maxByPetStone); //수정
+   let userBag = data.member[sender].bag;
 
-					if (ticket < 2550) {
-						replier.reply("❌ [조합 불가]\n고급 티어 승급티켓🎫을 조합하려면\n가방에 최소 2550개의 티어 승급티켓🎟이 있어야 합니다.");
-						return;
-					}
+   let ticket = userBag["티어 승급티켓🎟"] || 0;
+   let stone = userBag["전설의 돌맹이🗿"] || 0;
+   let petStone = userBag["펫 강화석⭐"] || 0;
 
-					if (count > maxActual) {
-						let msg = "❌ [조합 실패]\n아래 재료가 부족합니다:\n\n";
+   // 재료 기준
+   // 티어 승급티켓🎟 250개
+   // 전설의 돌맹이🗿 2개
+   // 펫 강화석⭐ 150개
 
-						if (maxByTicket < count) msg += "티어 승급티켓🎟 (조합 시 최소 2550개를 넘겨야 합니다)\n";
+   let maxByTicket = Math.floor((ticket - 2550) / 250);
+   let maxByStone = Math.floor(stone / 2);
+   let maxByPetStone = Math.floor(petStone / 150);
 
-						if (stone < count) msg += "전설의 돌맹이🗿 " + (count - stone) + "개 부족\n";
+   let maxActual = Math.min(maxByTicket, maxByStone, maxByPetStone);
 
-						if (petStone < 100 * count) msg += "펫 강화석⭐ " + (100 * count - petStone) + "개 부족\n"; //추가
+   if (ticket < 2550) {
+      replier.reply(
+         "❌ [조합 불가]\n" +
+         "고급 티어 승급티켓🎫을 조합하려면\n" +
+         "가방에 최소 2550개의 티어 승급티켓🎟이 있어야 합니다."
+      );
+      return;
+   }
 
-						msg += "\n→ 현재 최대 조합 가능 수량: " + maxActual + "개";
-						replier.reply(msg.trim());
-						return;
-					}
+   if (count > maxActual) {
+      let replyMsg = "❌ [조합 실패]\n아래 재료가 부족합니다:\n\n";
 
-					// 🔽 재료 차감
-					userBag["티어 승급티켓🎟"] -= 200 * count;
-					userBag["전설의 돌맹이🗿"] -= count;
-					userBag["펫 강화석⭐"] -= 100 * count; //추가
+      if (maxByTicket < count) {
+         replyMsg += "티어 승급티켓🎟 (조합 시 최소 2550개를 넘겨야 합니다)\n";
+      }
 
-					if (userBag["티어 승급티켓🎟"] === 0) delete userBag["티어 승급티켓🎟"];
-					if (userBag["전설의 돌맹이🗿"] === 0) delete userBag["전설의 돌맹이🗿"];
-					if (userBag["펫 강화석⭐"] === 0) delete userBag["펫 강화석⭐"]; //추가
+      if (stone < 2 * count) {
+         replyMsg += "전설의 돌맹이🗿 " + (2 * count - stone) + "개 부족\n";
+      }
 
-					userBag["고급 티어 승급티켓🎫"] = (userBag["고급 티어 승급티켓🎫"] || 0) + count;
+      if (petStone < 150 * count) {
+         replyMsg += "펫 강화석⭐ " + (150 * count - petStone) + "개 부족\n";
+      }
 
-					let successMsg = "고급 티어 승급티켓이 완성되었습니다.\n[" + checkRank(data, petData, guildData, sender) + "] 님\n고급 티어 승급티켓🎫 " + count + "개 조합 성공!!";
+      replyMsg += "\n→ 현재 최대 조합 가능 수량: " + maxActual + "개";
+      replier.reply(replyMsg.trim());
+      return;
+   }
 
-					replier.reply(successMsg);
-				}
+   // 재료 차감
+   userBag["티어 승급티켓🎟"] -= 250 * count;
+   userBag["전설의 돌맹이🗿"] -= 2 * count;
+   userBag["펫 강화석⭐"] -= 150 * count;
+
+   if (userBag["티어 승급티켓🎟"] === 0) delete userBag["티어 승급티켓🎟"];
+   if (userBag["전설의 돌맹이🗿"] === 0) delete userBag["전설의 돌맹이🗿"];
+   if (userBag["펫 강화석⭐"] === 0) delete userBag["펫 강화석⭐"];
+
+   userBag["고급 티어 승급티켓🎫"] = (userBag["고급 티어 승급티켓🎫"] || 0) + count;
+
+   let successMsg =
+      "고급 티어 승급티켓이 완성되었습니다.\n" +
+      "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+      "고급 티어 승급티켓🎫 " + count + "개 조합 성공!!";
+
+   replier.reply(successMsg);
+}
 				if (msg === "/반지이름조합") {
 					if (castleSiegeFlag) {
 						return;
@@ -26313,7 +26335,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
 		var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
 		out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
 	}
-	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "자니..?(20% 확률 4턴 증가)" : "닫힘(OFF)") + "\n";
+	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "자니..?\n(20% 확률 4턴 증가 80% 확률 탈락)" : "닫힘(OFF)") + "\n";
 	if (includeCommand) out += "\n순고한 히셍 간사함니다";
 	return out;
 }
