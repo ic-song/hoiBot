@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.162"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.163"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -26984,7 +26984,7 @@ function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, at
 
 	if (success) {
 		war.guildAttackLimits[attackInfo.guildId] = attackLimit + GLOBAL_CONFIG.guildTerritory.dimensionGate.bonusTurns;
-		return "🎖️길드 영지전 결과🎖️[차원의 문 통과🌀]\n" +
+		return "🎖️길드 영지전 결과🎖️\n\n[차원의 문 통과🌀]\n" +
 			message + "\n\n" +
 			"[" + formatGuildDisplay(attackInfo.guild) + "] 남은 턴(" +
 			Math.max(0, war.guildAttackLimits[attackInfo.guildId] - (war.guildAttackCounts[attackInfo.guildId] || 0)) +
@@ -26999,7 +26999,7 @@ function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, at
 		at: formatDateTime(new Date()),
 		penaltyTurns: 0
 	};
-	return "🎖️길드 영지전 결과🎖️[차원의 문 실패🌀]\n" +
+	return "🎖️길드 영지전 결과🎖️\n\n[차원의 문 실패🌀]\n" +
 		message + "\n\n" +
 		"※ 차원의 문 탈락은 공격횟수를 차감하지 않습니다.";
 }
