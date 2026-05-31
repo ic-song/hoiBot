@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.155"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.156"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -15831,8 +15831,8 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					var discountedFeeRate = transferFeeRate; // 할인된 수수료율 초기값은 원래 수수료율로 설정
 
 					if (hasPetSkill(petSkillData, sender, "호이행복재단 회원권")) {
-						discountedFeeRate = Math.ceil((transferFeeRate / 2) * 10) / 10;
-						transferFee = Math.ceil((transferFee / 2) * 100) / 100;
+						discountedFeeRate = Math.floor((transferFeeRate / 2) * 10) / 10;
+						transferFee = Math.floor(transferFee / 2);
 						isDiscounted = true;
 					}
 
