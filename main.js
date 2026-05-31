@@ -30703,6 +30703,7 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
 		lines.push("━━━━━━━━━━━");
 		lines.push(packageBagNotice);
 		lines.push("━━━━━━━━━━━");
+		lines.push("🛍️현재 보유중인 패키지🛍️");
 	}
 	if (packageBagList.length < 1) {
 		lines.push("보유한 패키지가 없습니다.");
