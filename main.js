@@ -28599,9 +28599,9 @@ function isSupportPassActive(data, user, passKey) {
 function formatSupportPassStatus(data, user, config) {
 	if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중[❌]";
 	var pass = data.member[user].pass && data.member[user].pass[config.key] ? data.member[user].pass[config.key] : null;
-	if (!pass) return config.label + " (영구권 사용중[✅])";
-	if (pass.permanent === true) return config.label + " (영구권 사용중[✅])";
-	return config.label + " (" + pass.endDate + " 까지)";
+	if (!pass) return config.label + " 영구권 사용중[✅]";
+	if (pass.permanent === true) return config.label + " 영구권 사용중[✅]";
+	return config.label + " " + pass.endDate + " 종료예정[✅]";
 }
 
 // 유저 패키지가방용 후원패스 표시 줄을 만드는 함수
