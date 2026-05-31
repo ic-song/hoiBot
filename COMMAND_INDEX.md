@@ -1375,6 +1375,10 @@ Status: VERIFIED
 ## Save Flow
 - Saves `member.json` after updating the package bag notice text
 
+## AI Notes
+- `/패키지가방` displays saved package notices with an `(알림)` prefix.
+- The support pass status section keeps `현재 호월패스🐹 사용중인 목록:` visible and folds the actual pass status rows from the first row with `allsee`.
+
 ## Related Commands
 - `/패키지가방`
 - `/패키지가방 [아이디]`

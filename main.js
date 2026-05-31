@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.158"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.159"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -13740,7 +13740,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 							if (!castleSiegeFlag && data.member && data.member[sender]) {
 								let resultMsg = "[" + checkRank(data, petData, guildData, sender) + " ]님 가방정리 완료🧳\n💡TIP : ㅇㅇㅇ 로도 명령어가 작동됩니다.";
 								var cleanupNotice = getOperationNotice(data, "cleanup"); // 정리/ㅇㅇㅇ 운영 알림 문구
-								if (cleanupNotice) resultMsg += "\n━━━━━━━━━━━━\n" + cleanupNotice + allsee;
+								if (cleanupNotice) resultMsg += "\n━━━━━━━━━━━━\n(알림) " + cleanupNotice + allsee;
 								resultMsg += "\n━━━━━━━━━━━━━━━\n";
 								// 🎁 전체 오픈
 								let openResult = runOpenAll(sender, data, petData, replier, guildData);
@@ -30701,7 +30701,7 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
 	var packageBagNotice = getOperationNotice(data, "packageBag"); // 패키지가방 상단 운영 알림 문구
 	if (packageBagNotice) {
 		lines.push("━━━━━━━━━━━");
-		lines.push(packageBagNotice);
+		lines.push("(알림) " + packageBagNotice);
 		lines.push("━━━━━━━━━━━");
 		lines.push("🛍️현재 보유중인 패키지🛍️");
 	}
@@ -30718,11 +30718,11 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
 	lines.push("");
 	lines.push("사용 방법: /패키지사용 [가방번호] [오픈갯수]");
 	lines.push("━━━━━━━━━━━");
-	lines.push("호월패스🐹 사용/날짜 확인하기:" + allsee);
+	lines.push("호월패스🐹 사용/날짜 확인하기:");
 	lines.push("");
 	var passLines = buildUserSupportPassLines(data, sender);
 	for (var p = 0; p < passLines.length; p++) {
-		lines.push(passLines[p]);
+		lines.push((p === 0 ? allsee : "") + passLines[p]);
 	}
 	return lines.join("\n");
 }
