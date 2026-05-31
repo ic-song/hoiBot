@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.160"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.161"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -759,7 +759,25 @@ const GLOBAL_CONFIG = {
 			medalRewardRate: 0.2, // 영지전 공격 턴 확률보상
 			riftBaseRate: 70, // 영지전 균열 기본 성공 확률
 			riftItemStep: 10, // 영지전 균열 아이템당 확률 증가량
-			instabilityItemStep: 0.5 // 영지전 불안정 아이템당 불안정도 증가/감소량
+			instabilityItemStep: 0.5, // 영지전 불안정 아이템당 불안정도 증가/감소량
+			dimensionGateSuccessRate: 0.2 // 차원의 문 통과 확률
+		},
+		dimensionGate: { // 차원의 문 이벤트 설정
+			bonusTurns: 3,
+			failMessages: [
+				"🌀 [{{rank}}] 님이 차원의 문지방조차 넘지 못했습니다..(탈락🥲)",
+				"🌌 [{{rank}}] 님이 차원의 문에 들어갔으나 영영 돌아오지 못했습니다..(탈락🥲)",
+				"🚪 [{{rank}}] 님이 문을 착각하고 집 밖으로 뛰쳐나갔습니다..(탈락🥲)",
+				"🪦 [{{rank}}] 님이 비석이 됩니다..(탈락🥲)",
+				"🪦 [{{rank}}] R.I.P (탈락🥲)"
+			],
+			successMessages: [
+				"🌀 [{{rank}}] 님이 차원의 문을 통과하였습니다! (턴 +3 증가!)",
+				"🌌 [{{rank}}]: 쫘자잔~ 내가 돌아왔다! (턴 +3 증가!)",
+				"💀 [{{rank}}]: 오 디질뻔함ㅋ (턴 +3 증가!)",
+				"🙏 [{{rank}}]: 오우 지저스 크라이스트! (턴 +3 증가!)",
+				"👋 [{{rank}}]: ㅎㅇ (턴 +3 증가!)"
+			]
 		},
 		items: { // 길드 영토전 아이템명 설정
 			contributionMedalName: "다이아상자💎(/다이아상자오픈)",
@@ -12765,6 +12783,19 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					return;
 				}
 
+				if (msg === "/차원의문on" || msg === "/차원의문off" || msg === "/차원의문온" || msg === "/차원의문오프") {
+					if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) {
+						replier.reply("❌ 차원의 문 설정은 관리자만 변경할 수 있습니다.");
+						return;
+					}
+					var dimensionGateWar = ensureGuildTerritoryWar(data, guildData);
+					var dimensionGateEnabled = msg === "/차원의문on" || msg === "/차원의문온";
+					dimensionGateWar.dimensionGateEnabled = dimensionGateEnabled;
+					saveJsonFile(guildData, guildPath);
+					replier.reply("✅ 차원의 문 🌀 이벤트가 " + (dimensionGateEnabled ? "ON" : "OFF") + " 상태로 변경되었습니다.");
+					return;
+				}
+
 				if (getCurrentContext().isDev && (msg === "/강제균열" || msg === "/강제대균열")) {
 					var forcedWar = ensureGuildTerritoryWar(data, guildData);
 					if (!forcedWar.active) {
@@ -12793,7 +12824,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 				}
 
 				// 길드 영지 공격 명령어 처리
-				if (/^\/영지공격\s+[1-6]$/.test(msg)) {
+				if (/^\/영지공격\s+[1-7]$/.test(msg)) {
 
 					// 현재 영지전 상태 확인
 					var attackWar = ensureGuildTerritoryWar(data, guildData);
@@ -12806,9 +12837,9 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						return;
 					}
 
-					// 입력값 검증 (1~6번 영지)
+					// 입력값 검증 (1~7번 선택지)
 					var attackParts = msg.trim().split(/\s+/);
-					if (attackParts.length < 2 || !/^[1-6]$/.test(attackParts[1])) {
+					if (attackParts.length < 2 || !/^[1-7]$/.test(attackParts[1])) {
 						replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
 						return;
 					}
@@ -12947,14 +12978,46 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						return;
 					}
 
+					// 공격 대상 영지
+					var territoryNo = parseInt(attackParts[1], 10);
+
+					if (territoryNo === 7) {
+						if (!attackWar.dimensionGateEnabled) {
+							replier.reply("❌ 차원의 문 🌀 이벤트가 현재 OFF 상태입니다.");
+							return;
+						}
+						clearGuildTerritoryWarTimer();
+						attackWar.turnToken = null;
+						var dimensionGateMessage = resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, attackInfo);
+						if (isGuildTerritoryAllDone(data, guildData)) {
+							castleMsg(dimensionGateMessage, replier, isGroupChat);
+							finishGuildTerritoryWar(data, guildData, "차원의 문");
+							withGuildTerritoryDataMode(guildData, function () {
+								saveJsonFile(guildData, guildPath);
+								saveJsonFile(data, filePath);
+							});
+							return;
+						}
+						advanceGuildTerritoryTurn(data, guildData);
+						var dimensionNextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+						if (dimensionNextTurnLine) {
+							dimensionGateMessage = dimensionNextTurnLine + "\n" + dimensionGateMessage;
+						}
+						castleMsg(dimensionGateMessage, replier, isGroupChat);
+						saveJsonFile(guildData, guildPath);
+						var dimensionTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+						dimensionTurnMsgs.forEach(function (m) {
+							castleMsg(m, replier, isGroupChat);
+						});
+						startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+						return;
+					}
+
 					// 턴 초기화 및 공격 카운트 증가
 					clearGuildTerritoryWarTimer();
 					attackWar.turnToken = null;
 					attackWar.guildAttackCounts[attackInfo.guildId] =
 						(attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
-
-					// 공격 대상 영지
-					var territoryNo = parseInt(attackParts[1], 10);
 
 					// 턴 보상 처리 (공격 결과 메시지에 포함)
 					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
@@ -25099,7 +25162,11 @@ function isMutableGuildTerritoryCommand(msg) {
 		msg === "/길드영지초기화" ||
 		msg === "/길드영지순서" ||
 		msg === "/길드영지확인" ||
-		/^\/영지공격\s+[1-6]$/.test(msg) ||
+		/^\/영지공격\s+[1-7]$/.test(msg) ||
+		msg === "/차원의문on" ||
+		msg === "/차원의문off" ||
+		msg === "/차원의문온" ||
+		msg === "/차원의문오프" ||
 		msg.indexOf("/불안정") === 0 ||
 		msg.indexOf("/안정") === 0 ||
 		msg.indexOf("/균열") === 0 ||
@@ -25693,6 +25760,7 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (typeof war.pendingStartRequestedAt !== "number") war.pendingStartRequestedAt = 0;// 영지전 준비 시작 요청 시각 (타임아웃 판정용)
 	if (typeof war.startReady !== "boolean") war.startReady = false;// 실제 영지전 시작 완료 여부
 	if (typeof war.openingToken !== "string") war.openingToken = null;// 시작 유예 토큰
+	if (typeof war.dimensionGateEnabled !== "boolean") war.dimensionGateEnabled = true;// 차원의 문 이벤트 사용 여부
 	if (typeof war.riftEventCount !== "number") {
 		// riftEventStatus가 "rift" 또는 "greatRift"인 경우에만 riftEventCount를 1로 설정, 그렇지 않으면 0으로 설정
 		war.riftEventCount = (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift") ? 1 : 0;
@@ -26245,6 +26313,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
 		var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
 		out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
 	}
+	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "자니..?(20% 확률 3턴 증가)" : "닫힘(OFF)") + "\n";
 	if (includeCommand) out += "\n순고한 히셍 간사함니다";
 	return out;
 }
@@ -26902,6 +26971,37 @@ function decreaseGuildTerritoryItem(data, user, itemName) {
 	if (!data.member[user] || !data.member[user].bag || !data.member[user].bag[itemName]) return;
 	data.member[user].bag[itemName] -= 1;
 	if (data.member[user].bag[itemName] <= 0) delete data.member[user].bag[itemName];
+}
+
+// 차원의 문 이벤트 결과 처리
+function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, attackInfo) {
+	var war = ensureGuildTerritoryWar(data, guildData);
+	var rank = checkRank(data, petData, guildData, sender);
+	var success = Math.random() < GLOBAL_CONFIG.guildTerritory.rates.dimensionGateSuccessRate;
+	var messages = success ? GLOBAL_CONFIG.guildTerritory.dimensionGate.successMessages : GLOBAL_CONFIG.guildTerritory.dimensionGate.failMessages;
+	var message = messages[Math.floor(Math.random() * messages.length)].replace("{{rank}}", rank);
+	var attackLimit = getGuildTerritoryAttackLimitForWar(war, attackInfo.guild, attackInfo.guildId);
+
+	if (success) {
+		war.guildAttackLimits[attackInfo.guildId] = attackLimit + GLOBAL_CONFIG.guildTerritory.dimensionGate.bonusTurns;
+		return "🎖️길드 영지전 결과🎖️[차원의 문 통과🌀]\n" +
+			message + "\n\n" +
+			"[" + formatGuildDisplay(attackInfo.guild) + "] 남은 턴(" +
+			Math.max(0, war.guildAttackLimits[attackInfo.guildId] - (war.guildAttackCounts[attackInfo.guildId] || 0)) +
+			"/" +
+			war.guildAttackLimits[attackInfo.guildId] +
+			"⚔)";
+	}
+
+	war.eliminatedUsers[sender] = {
+		guildId: attackInfo.guildId,
+		reason: "DIMENSION_GATE_FAIL",
+		at: formatDateTime(new Date()),
+		penaltyTurns: 0
+	};
+	return "🎖️길드 영지전 결과🎖️[차원의 문 실패🌀]\n" +
+		message + "\n\n" +
+		"※ 차원의 문 탈락은 공격횟수를 차감하지 않습니다.";
 }
 
 // 영지전 공격 결과 처리

@@ -364,7 +364,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:13004`
+- `main.js:12827`
 
 ## Files
 
@@ -382,6 +382,7 @@ Status: VERIFIED
 - `getGuildTerritoryAttackLimitForWar`
 - `applyGuildTerritoryTurnReward`
 - `buildPetSkillTriggerMessage`
+- `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryAttack`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
@@ -398,11 +399,13 @@ Status: VERIFIED
 - `guildData.territoryWar.readyGuilds`
 - `guildData.territoryWar.guildAttackCounts`
 - `guildData.territoryWar.guildAttackLimits`
+- `guildData.territoryWar.dimensionGateEnabled`
 
 ## Save Flow
 
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
+- `/영지공격 7` saves `guildData` after 차원의 문 failure elimination or success turn-limit increase; failure does not increment `guildAttackCounts`
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -412,6 +415,10 @@ Status: VERIFIED
 - `/길드영지준비`
 - `/길드영지순서`
 - `/길드영지종료`
+- `/차원의문on`
+- `/차원의문off`
+- `/차원의문온`
+- `/차원의문오프`
 
 ## AI Notes
 
@@ -426,7 +433,8 @@ Status: VERIFIED
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- `/영지공격` is accepted only as `/영지공격 [1-6]`; suffix text such as `/영지공격 2 해봐` must not execute
+- `/영지공격` is accepted only as `/영지공격 [1-7]`; suffix text such as `/영지공격 2 해봐` must not execute
+- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with no turn-count deduction, 20% guild attack limit +3
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
