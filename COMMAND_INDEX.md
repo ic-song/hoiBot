@@ -1339,12 +1339,16 @@ Status: VERIFIED
 - `setOperationNoticeByCommand`
 - `ensureOperationNoticeData`
 - `getOperationNotice`
+- `normalizeOperationNoticeText`
 
 ## Data Usage
 - `data.operationNotices.cleanup`
 
 ## Save Flow
 - Saves `member.json` after updating the cleanup notice text
+
+## AI Notes
+- `/n` and `\n` in the saved notice text are normalized to actual line breaks before display
 
 ## Related Commands
 - `/정리`
@@ -3537,6 +3541,8 @@ Status: VERIFIED
 ## Related Commands
 - `/탐`
 - `/탐 [1~7]`
+- `/지도`
+- `/탐험알림`
 - `/탐 0` when the event mine is active
 - `/펫탐험이벤트활성화`
 - `/펫탐험이벤트비활성화`

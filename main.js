@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.154"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.155"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20567,7 +20567,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
 
-					var text = msg.replace("/탐험알림 ", "").trim();
+					var text = normalizeOperationNoticeText(msg.replace("/탐험알림 ", ""));
 					if (!text) {
 						replier.reply("(현재 알림)\n" + (petExploreData.notice || "없음"));
 						return;
@@ -30654,7 +30654,12 @@ function ensureOperationNoticeData(data) {
 function getOperationNotice(data, type) {
 	var notices = data.operationNotices && typeof data.operationNotices === "object" ? data.operationNotices : {};
 	var value = notices[type] || "";
-	return String(value).trim();
+	return normalizeOperationNoticeText(value);
+}
+
+// 운영 알림 입력의 줄바꿈 표기를 실제 줄바꿈으로 변환하는 함수
+function normalizeOperationNoticeText(text) {
+	return String(text || "").replace(/\\n|\/n/g, "\n").trim();
 }
 
 // 운영 알림 설정 명령어 처리 함수
@@ -30663,7 +30668,7 @@ function setOperationNoticeByCommand(data, msg) {
 	if (!match) return { ok: false, message: "❌ 사용법: /정리알림 내용 또는 /패키지알림 내용" };
 	var notices = ensureOperationNoticeData(data);
 	var key = match[1] === "정리알림" ? "cleanup" : "packageBag";
-	notices[key] = String(match[2] || "").trim();
+	notices[key] = normalizeOperationNoticeText(match[2]);
 	return {
 		ok: true,
 		message: "✅ " + (key === "cleanup" ? "정리 알림" : "패키지가방 알림") + "을 저장했습니다."
@@ -35803,6 +35808,9 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	var out = "";
 
 	out += "🗺️ 펫탐험 지도🗺️\n";
+	if (petExploreData.notice) {
+		out += normalizeOperationNoticeText(petExploreData.notice) + "\n";
+	}
 	out += getNextIntervalTime(data, setint) + "\n";
 	out += LINE + "\n";
 
