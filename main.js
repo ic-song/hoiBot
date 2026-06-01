@@ -18454,8 +18454,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						"🐹[" + nickName + "] 님이 미니펫을 오픈합니다!\n" +
 						"확률정보: 채팅창에 '/미니펫확률'를 적어보세요\n" +
 						"━━━━━━━━━━━━━━━\n" +
-						"🎟️ 사용: " + numberWithCommas(openedPets.length) + "개\n" +
-						"🎫 남은 뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
+						"✅️ 사용: " + numberWithCommas(openedPets.length) + "개\n" +
+						"🐈 남은 미뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
 						"🎒 미니펫 가방: " + bagCount + "/" + bagMax + "\n" +
 						"━━━━━━━━━━━━━━━\n";
 					for (let i = 0; i < openedPets.length; i++) {
@@ -19452,7 +19452,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						replier.reply("❌[" + nickName + "]님, 잘못된 번호입니다.\n예) /가구해제 1");
 						return;
 					}
-					let maxBag = 15;
+					let maxBag = 10;
 					if (userHome.furnitureBag.length >= maxBag) {
 						replier.reply("❌ [" + nickName + "]님, 가구 가방이 가득 찼습니다. (" + userHome.furnitureBag.length + "/" + maxBag + ")");
 						return;
@@ -19504,7 +19504,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						replier.reply("❌ [" + nickName + "]님 " + ticketName + " 아이템이 부족합니다.");
 						return;
 					}
-					let maxBag = 15;
+					let maxBag = 10;
 					if (userHome.furnitureBag.length >= maxBag) {
 						replier.reply("❌ [" + nickName + "]님, 가구 가방이 가득 찼습니다. (" + userHome.furnitureBag.length + "/" + maxBag + ")");
 						return;
@@ -19564,10 +19564,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						"] 님이 인테리어샵을 오픈합니다!\n" +
 						"확률정보: 채팅창에 '/가구등급확률'을 적어보세요\n" +
 						"━━━━━━━━━━━━━━━\n" +
-						"🎟️ 사용: " +
+						"✅️ 사용: " +
 						numberWithCommas(results.length) +
 						"개\n" +
-						"🎫 남은 샵오픈권: " +
+						"🏡 남은 샵오픈권: " +
 						numberWithCommas(leftTicketAfter) +
 						"개\n" +
 						"🎒 가구 가방: " +
