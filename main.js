@@ -18455,7 +18455,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						"확률정보: 채팅창에 '/미니펫확률'를 적어보세요\n" +
 						"━━━━━━━━━━━━━━━\n" +
 						"✅️ 사용: " + numberWithCommas(openedPets.length) + "개\n" +
-						"🐈 남은 미뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
+						"🐹 남은 미뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
 						"🎒 미니펫 가방: " + bagCount + "/" + bagMax + "\n" +
 						"━━━━━━━━━━━━━━━\n";
 					for (let i = 0; i < openedPets.length; i++) {
