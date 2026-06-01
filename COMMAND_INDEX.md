@@ -2776,12 +2776,12 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- direct branch formatting only
+- local attendance row formatter in `/출석목록`
 
 ## Data Usage
 
 - `data.attend_list`
-- `data.member[user].rank.emoji`
+- `data.member[user].rank.emoji` when the member/rank data exists
 
 ## Save Flow
 
@@ -2794,6 +2794,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Simple attendance snapshot output
+- Missing member/rank data falls back to a blank rank emoji so stale attendance rows do not crash the command
 - Good first anchor when debugging daily attendance ordering or missing users
 
 ---

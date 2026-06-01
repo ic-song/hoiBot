@@ -620,19 +620,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/출석목록") {
-			let userList = data.attend_list;
+			let userList = data.attend_list || [];
+			// 출석 유저 표시 문자열 생성 함수
+			let formatAttendanceUser = function (user, index, startRank) {
+				let memberInfo = data.member && data.member[user];
+				let rankEmoji = memberInfo && memberInfo.rank && memberInfo.rank.emoji ? memberInfo.rank.emoji : "";
+				return index + startRank + ". [" + rankEmoji + user + "]";
+			};
 			let userListText1 =
 				userList.length > 0
 					? userList
 							.slice(0, 10)
-							.map((user, index) => index + 1 + ". [" + data.member[user].rank.emoji + user + "]")
+							.map(function (user, index) {
+								return formatAttendanceUser(user, index, 1);
+							})
 							.join("\n")
 					: "출석한 유저가 없습니다.";
 			let userListText2 =
 				userList.length > 10
 					? userList
 							.slice(10)
-							.map((user, index) => index + 11 + ". [" + data.member[user].rank.emoji + user + "]")
+							.map(function (user, index) {
+								return formatAttendanceUser(user, index, 11);
+							})
 							.join("\n")
 					: "";
 			replier.reply("출석한 유저 목록:\n" + userListText1 + allsee + "\n" + userListText2);
