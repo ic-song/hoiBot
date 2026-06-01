@@ -5190,13 +5190,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/선물전달" && sender == "호이 남") {
 					for (let user in data.member) {
-						if (data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"]) {
-							data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"]++;
+						if (data.member[user].bag["호이응원패키지(무료)🐹"]) {
+							data.member[user].bag["호이응원패키지(무료)🐹"]++;
 						} else {
-							data.member[user].bag["무료패키지12(/호이월드활동에감사드립니다.)"] = 1;
+							data.member[user].bag["호이응원패키지(무료)🐹"] = 1;
 						}
 					}
-					var message = "무료패키지12(/호이월드활동에감사드립니다.) 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!";
+					var message = "호이응원패키지(무료)🐹 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!\n\n 사용 방법:\n1. /패키지가방\n/패키지사용 [가방번호] [오픈갯수]";
 					Api.replyRoom(room1, message);
 					Api.replyRoom(room2, message);
 					Api.replyRoom(room3, message);
@@ -12321,37 +12321,6 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 				}
 
-
-				if (msg === "/호이월드활동에감사드립니다.") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"] !== undefined && data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"] > 0) {
-							if (data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"] > 1) {
-								data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"]--;
-							} else {
-								delete data.member[sender].bag["무료패키지12(/호이월드활동에감사드립니다.)"];
-							}
-							var hangawiItems = {
-								"보물지도🗺️": 20,
-								"핵꿀밤🥊(/펀치)": 5,
-								"탐험확률UP🗻(30%)": 5,
-								"펫던전 입장권🌋": 5,
-								"확성기📢(/알림 내용 30자) ": 5
-							};
-							for (let item in hangawiItems) {
-								addItemToBag(data.member[sender].bag, item, hangawiItems[item]);
-							}
-							let openMsg =
-								"무료패키지12 오픈되었습니다\n3개 이상 가방소지시 계정삭제!!\n후원은 호이봇의 유지관리보수 및 업데이트\n서버이용료(컴퓨터 전기세) 컴퓨터 관리 등에 사용됩니다.\n많은 관심 부탁드립니다!\nhttps://hoiland123.tistory.com\n\n";
-							for (let item in hangawiItems) {
-								openMsg += item + " " + hangawiItems[item] + "개\n";
-							}
-							replier.reply(openMsg);
-						} else {
-							replier.reply("진짜 개발비에 도움좀 주세여...제발여..으엉엉");
-						}
-					}
-				}
-
 				if (msg === "/해피할로윈오픈시펫외형이바뀝니다안에는어마어마한상품이있습니다") {
 					if (!castleSiegeFlag) {
 						if (
@@ -12423,32 +12392,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 				}
 
-				if (msg === "/캐슬패키지오픈") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["캐슬패키지🏰(/캐슬패키지오픈)"] !== undefined && data.member[sender].bag["캐슬패키지🏰(/캐슬패키지오픈)"] > 0) {
-							if (data.member[sender].bag["캐슬패키지🏰(/캐슬패키지오픈)"] > 1) {
-								data.member[sender].bag["캐슬패키지🏰(/캐슬패키지오픈)"]--;
-							} else {
-								delete data.member[sender].bag["캐슬패키지🏰(/캐슬패키지오픈)"];
-							}
-							var ct = {
-								"영지기습공격권🔥(100%)": 10,
-								"영지절대방어권🛡(100%)": 10,
-								"캐슬공격권⚔": 15
-							};
-							for (var item in ct) {
-								addItemToBag(data.member[sender].bag, item, ct[item]);
-							}
-							let openMsg = "캐슬패키지🏰 오픈!!\n\n";
-							for (let item in ct) {
-								openMsg += item + " " + ct[item] + "개\n";
-							}
-							replier.reply(openMsg);
-						} else {
-							replier.reply("ㅇㅇ?");
-						}
-					}
-				}
+	
 				if (msg === "/시련오픈") {
 					if (data.member[sender].bag["시련의상자😈(/시련오픈)"] !== undefined && data.member[sender].bag["시련의상자😈(/시련오픈)"] > 0) {
 						if (data.member[sender].bag["시련의상자😈(/시련오픈)"] > 1) {
@@ -12501,96 +12445,6 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					}
 				}
 
-
-
-				if (msg === "/돌아온다") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["벚꽃패키지🌸[9](/돌아온다)"] !== undefined && data.member[sender].bag["벚꽃패키지🌸[9](/돌아온다)"] > 0) {
-							if (data.member[sender].bag["벚꽃패키지🌸[9](/돌아온다)"] > 1) {
-								data.member[sender].bag["벚꽃패키지🌸[9](/돌아온다)"]--;
-							} else {
-								delete data.member[sender].bag["벚꽃패키지🌸[9](/돌아온다)"];
-							}
-
-							var packageItems = {
-								"주간상자🌼": 3,
-								"정령 강화석🥀": 1000,
-								"탐험확률UP🗻(30%)": 10,
-								"미니펫뽑기🐹(/미니펫오픈)": 5000
-							};
-
-							var newTitleSet = {
-								name: "🌺돌아온다🌺",
-								inDate: new Date(),
-								price: 100000000
-							};
-
-							var titleData = loadJsonFile(memberTitlePath);
-							if (!titleData.member) titleData.member = {};
-							if (!titleData.member[sender]) titleData.member[sender] = { title: { list: [], num: null } };
-							if (!titleData.member[sender].title) titleData.member[sender].title = { list: [], num: null };
-
-							titleData.member[sender].title.list.push(newTitleSet);
-
-							for (let item in packageItems) {
-								addItemToBag(data.member[sender].bag, item, packageItems[item]);
-							}
-
-							let openMsg = "[" + checkRank(data, petData, guildData, sender) + "]님이\n벚꽃패키지🌸[9]를 오픈합니다!\n\n";
-							for (let item in packageItems) {
-								openMsg += item + " " + packageItems[item] + "개\n";
-							}
-
-							openMsg += "벚꽃패키지🌸[9]가 오픈 되었습니다.\n";
-							openMsg += "타이틀 🌺돌아온다🌺 지급 되었습니다.";
-
-							replier.reply(openMsg);
-							saveJsonFile(titleData, memberTitlePath);
-						} else {
-							replier.reply("벚꽃패키지🌸[9]이 없습니다.");
-						}
-					}
-				}
-				if (msg === "/호월오픈") {
-					if (!castleSiegeFlag) {
-						if (data.member[sender].bag["호월🐹(/호월오픈)"] !== undefined && data.member[sender].bag["호월🐹(/호월오픈)"] > 0) {
-							if (data.member[sender].bag["호월🐹(/호월오픈)"] > 1) {
-								data.member[sender].bag["호월🐹(/호월오픈)"]--;
-							} else {
-								delete data.member[sender].bag["호월🐹(/호월오픈)"];
-							}
-
-							var packageItems = {
-								"펫던전 입장권🌋": 10,
-								"탐험확률UP🗻(50%)": 10,
-								"정령강화확률UP🥀(30%)": 5,
-								"경찰과 도둑🚨(/삐뽀삐뽀)": 30,
-								"길드공헌훈장🌟(/길드공헌 숫자)": 5,
-								"길드창고패키지🧳(/길드창고패키지오픈)": 3,
-								"땅문서📜": 5,
-								"레이드타격대인장👑(+600👾)": 1,
-								"미니펫뽑기🐹(/미니펫오픈)": 500,
-								"펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
-								"보물지도🗺️": 30,
-								"양념치킨🐔": 200
-							};
-
-							for (let item in packageItems) {
-								addItemToBag(data.member[sender].bag, item, packageItems[item]);
-							}
-
-							let openMsg = "[" + checkRank(data, petData, guildData, sender) + "]님이\n호월🐹를 오픈합니다!\n\n";
-							for (let item in packageItems) {
-								openMsg += item + " " + packageItems[item] + "개\n";
-							}
-
-							openMsg += "\n호월🐹가 오픈 되었습니다.";
-							replier.reply(openMsg);
-						} else {
-							replier.reply("호월🐹가 없습니다.");
-						}
-					}
-				}
 
 				if (msg === "영지보상안내" || msg === "/영지보상안내") {
 					replier.reply(
@@ -19885,7 +19739,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					let houseName = userHome.houseName || "서울역 4번출구🚉";
 					let totalExp = getHomeTotalExp(homeData, targetUser);
 					let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
-					let maxBag = 15;
+					let maxBag = 10;
 
 					var out = "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
 					out += "좋아홈💌x" + (userHome.likeCnt || 0) + "개\n";
