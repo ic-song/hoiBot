@@ -5429,7 +5429,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
 					}
 				}
-				if (msg === "/인증필요" && isAdmin(sender)) {
+				if (msg === "/가입인증" && isAdmin(sender)) {
 					let checkmsg1 = "\n1일차 : ";
 					let checkmsg2 = "\n2일차 : ";
 					let checkmsg3 = "\n3일차 : ";
@@ -5458,7 +5458,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					let headerMsg =
 						"🎙️호월 가입 인증목록🎙️\n\n" +
-						"1. 가입인증은 "/가입"을 하여 게임 이용약관에 동의하는 것을 의미합니다..\n" +
+						"1. 가입인증은 /가입 을 하여 게임 이용약관에 동의하는 것을 의미합니다..\n" +
 						"2. 가입인증은 유저가 /가입 시 3일내로 인증 해야합니다.\n" +
 						 "3. 가입 미인증 대상으로 넘어가면 계정은 삭제처리 됩니다.\n"
 						"⭐️채팅창에 '교육방'을 적어보세요\n";
