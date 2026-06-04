@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.165"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.166"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -19425,6 +19425,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/가구해제" || /^\/가구해제\s+\d+$/.test(msg)) {
 					let itemName = "가구귀속해제권🛋️(/가구해제 숫자)";
 					let needCnt = 1;
+					var nickName = checkRank(data, petData, guildData, sender);
 
 					if (!hasItem(data, sender, itemName, needCnt)) {
 						replier.reply("❌ [" + nickName + "]님 " + itemName + " 아이템이 부족합니다.");
@@ -19432,7 +19433,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					var homeData = loadJsonFile(homeDataFile);
-					var nickName = checkRank(data, petData, guildData, sender);
 					homeData = initSweetHomeUser(homeData, sender);
 					var userHome = homeData[sender];
 					userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
