@@ -486,6 +486,52 @@ Status: VERIFIED
 - If a bug mentions guild mismatch auto-repair, inspect nearby warning branches with `길드 데이터 불일치`
 - Territory-related display here depends on `ensureGuildTerritoryWar`
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
+- Displays `subMasters` through `getGuildSubMasterDisplay`
+
+---
+
+# /부길마 [번호] ([번호])
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getMyGuildInfo`
+- `getGuildOrderedMemberKeys`
+- `ensureGuildSubMasters`
+- `getGuildSubMasterDisplay`
+- `isGuildLeader`
+
+## Data Usage
+
+- `guildData.guilds[myGid].subMasters`
+- `guildData.guilds[myGid].members[name].role`
+- `data.member[name].guild.role`
+
+## Save Flow
+
+- Saves `guildData` after replacing the current sub-master list
+- Saves `data` after synchronizing member guild roles
+
+## Related Commands
+
+- `/길드정보`
+- `/길드상세정보`
+- `/소드마스터`
+
+## AI Notes
+
+- Accepted only as `/부길마` or `/부길마 [number] ([number])`
+- The command itself is actual guild-master only; selected members receive shared guild operation authority through `isGuildLeader`
+- Maximum two sub-masters are retained, and invalid, duplicate, master, or non-member selections are rejected
 
 ---
 
@@ -1411,13 +1457,17 @@ Status: VERIFIED
 
 ## Data Usage
 - `data.member[user].pass`
+- `data.member[user].bag["자동탐험권🌄"]`
 - `data.allowedUsers6`
 - `data.allowedUsersHoipass`
 - `data.allowedUsers2`
 - `data.allowedUsersDiamondPass`
 
 ## Save Flow
-- Read-only
+- `/패스목록` is read-only
+- Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
+- `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
+- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄`
 
 ## Related Commands
 - `/초보패스추가, [아이디] [날짜|영구권]`
@@ -3878,3 +3928,41 @@ Status: VERIFIED
 - Admin/Master-only maintenance command.
 - Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Castle battle `history` cleanup is no longer performed by this command.
+
+---
+
+# ㅊㅊ
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `data/attendanceLight.json`
+
+## Related Helpers
+
+- `recordLightAttendanceOnly`
+- `migrateLightAttendanceToMember`
+- `initializeMember`
+- `saveJsonFile`
+- `loadJsonFile`
+
+## Data Usage
+
+- `data.attend_list`
+- `data.member[sender].cnt`
+- `data.member[sender].today`
+- `data.member[sender].recent`
+- `attendanceLightData.users[sender]`
+
+## Save Flow
+
+- Existing member attendance continues to update normal member data
+- Unregistered short-name users using `ㅊㅊ` are recorded in `attendanceLight.json`
+- `/가입` migrates the sender's light attendance row into normal member data, then removes the light row
+
+## AI Notes
+
+- `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users
+- Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`

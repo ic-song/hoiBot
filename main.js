@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.166"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.167"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -586,6 +586,7 @@ const memberBagCheckPath = "/sdcard/호이랜드/memberBagCheck/memberBagCheck.j
 const homeInfoFile = "/sdcard/호이랜드/petSweetHomeInfo.json"; // 펫스윗홈 유저
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
+const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
 const hoiBotChangeLogPath = "/sdcard/호이랜드/hoiBotChangeLog.json"; // 호이봇 수정 이력
 const freeMarketPath = "/sdcard/호이랜드/freeMarket.json"; // 자유시장 데이터
@@ -2019,10 +2020,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		//var titleData = loadJsonFile(memberTitlePath);
 		if (isSaving == false) {
 			var isSignupPetFlow = msg === "/가입" || msg.startsWith("/펫생성 ") || !!termsState[sender];
+			if (msg === "ㅊㅊ" && !data.member[sender]) {
+				var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+				var lightResult = recordLightAttendanceOnly(attendanceLightData, sender);
+				saveJsonFile(attendanceLightData, attendanceLightPath);
+				if (lightResult.already) {
+					replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n/가입하면 출석 기록이 정식 데이터로 옮겨져요.");
+				} else {
+					replier.reply("[" + sender + "] 님 출첵👏\n/가입하면 출석 기록이 정식 데이터로 옮겨져요.");
+				}
+				return;
+			}
 			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
 				if (!data.member[sender]) {
 					initializeMember(sender, data, petData);
 					if (!isSignupPetFlow) return;
+				}
+				if (msg === "/가입") {
+					var signupAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+					if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) {
+						saveJsonFile(data, filePath);
+						saveJsonFile(signupAttendanceLightData, attendanceLightPath);
+					}
 				}
 
 				if (data.member[sender] && !petData[sender]) {
@@ -2500,7 +2519,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					var equipName = skillBagList[equipIndex - 1];
 					if (normalizePetSkillName(equipName) === "전투형 지휘관" || normalizePetSkillName(equipName) === "기사단 증원" || normalizePetSkillName(equipName) === "징집명령") {
 						var commanderGuildInfo = getMyGuildInfo(data, guildData, sender);
-						if (!commanderGuildInfo || commanderGuildInfo.error || !commanderGuildInfo.guild || !isGuildMaster(commanderGuildInfo.guild, sender)) {
+						if (!commanderGuildInfo || commanderGuildInfo.error || !commanderGuildInfo.guild || !isGuildLeader(commanderGuildInfo.guild, sender)) {
 							replier.reply("❌ " + formatPetSkillName(equipName) + "는 길드마스터만 장착할 수 있습니다.");
 							return;
 						}
@@ -3299,7 +3318,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					saveJsonFile(guildData, guildPath);
 					var pickedMsg = [];
 					var addedSwordMaster = pickedMembers[3];
-					var showKnightOrderSwordMasterMsg = hasGuildTerritoryKnightOrderSkill(swordGuild, petSkillData, swordGuild.master) && swordArgs.length === 4 && !!addedSwordMaster;
+					var showKnightOrderSwordMasterMsg = hasGuildTerritoryKnightOrderLeader(swordGuild, petSkillData) && swordArgs.length === 4 && !!addedSwordMaster;
 					for (var smp = 0; smp < pickedMembers.length; smp++) {
 						pickedMsg.push((smp + 1) + ". " + checkRank(data, petData, guildData, pickedMembers[smp]));
 					}
@@ -3311,6 +3330,79 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"✅ 소드마스터🤺로 임명되었습니다.\n당신은 호월킹덤을 점령해야 할 책임을 부여받습니다.\nhttps://ibb.co/TDxxfXpV\n" +
 						pickedMsg.join("\n")
 					);
+					return;
+				}
+
+				if (msg === "/부길마" || /^\/부길마\s+\d+(\s+\d+)?$/.test(msg)) {
+					var subMasterGuildInfo = getMyGuildInfo(data, guildData, sender);
+					if (!subMasterGuildInfo || subMasterGuildInfo.error || !subMasterGuildInfo.guild) {
+						replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "] 님은 길드에 가입되어 있지 않습니다.");
+						return;
+					}
+
+					var subMasterGuild = subMasterGuildInfo.guild;
+					if (subMasterGuild.master !== sender) {
+						replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "] 님 길드마스터만 부길마를 지정할 수 있습니다.");
+						return;
+					}
+
+					var subMasterArgs = msg.trim().split(/\s+/).slice(1);
+					if (subMasterArgs.length < 1 || subMasterArgs.length > 2) {
+						replier.reply("❌ 사용법: /길드정보 길드원 번호입력\n/부길마 [번호] ([번호])");
+						return;
+					}
+
+					var orderedSubMasterMembers = getGuildOrderedMemberKeys(subMasterGuild);
+					var pickedSubMasterIndexes = [];
+					var pickedSubMasters = [];
+
+					for (var subIdx = 0; subIdx < subMasterArgs.length; subIdx++) {
+						var subNo = parseInt(subMasterArgs[subIdx], 10);
+						if (isNaN(subNo) || subNo < 1 || subNo > orderedSubMasterMembers.length) {
+							replier.reply("❌ 길드원 번호가 올바르지 않습니다: " + subMasterArgs[subIdx]);
+							return;
+						}
+						if (pickedSubMasterIndexes.indexOf(subNo) !== -1) {
+							replier.reply("❌ 같은 번호를 중복해서 입력할 수 없습니다: " + subNo);
+							return;
+						}
+						var pickedName = orderedSubMasterMembers[subNo - 1];
+						if (pickedName === subMasterGuild.master) {
+							replier.reply("❌ 길드마스터는 부길마로 지정할 수 없습니다.");
+							return;
+						}
+						pickedSubMasterIndexes.push(subNo);
+						pickedSubMasters.push(pickedName);
+					}
+
+					var oldSubMasters = ensureGuildSubMasters(subMasterGuild).slice();
+					for (var oldSubIdx = 0; oldSubIdx < oldSubMasters.length; oldSubIdx++) {
+						var oldSubName = oldSubMasters[oldSubIdx];
+						if (subMasterGuild.members[oldSubName] && subMasterGuild.members[oldSubName].role === "SUB_MASTER") {
+							subMasterGuild.members[oldSubName].role = "MEMBER";
+						}
+						if (data.member[oldSubName] && data.member[oldSubName].guild && data.member[oldSubName].guild.id === subMasterGuildInfo.guildId && data.member[oldSubName].guild.role === "SUB_MASTER") {
+							data.member[oldSubName].guild.role = "MEMBER";
+						}
+					}
+
+					subMasterGuild.subMasters = pickedSubMasters;
+					for (var newSubIdx = 0; newSubIdx < pickedSubMasters.length; newSubIdx++) {
+						var newSubName = pickedSubMasters[newSubIdx];
+						if (subMasterGuild.members[newSubName]) subMasterGuild.members[newSubName].role = "SUB_MASTER";
+						if (data.member[newSubName] && data.member[newSubName].guild && data.member[newSubName].guild.id === subMasterGuildInfo.guildId) {
+							data.member[newSubName].guild.role = "SUB_MASTER";
+						}
+					}
+
+					saveJsonFile(guildData, guildPath);
+					saveJsonFile(data, filePath);
+
+					var subMasterMsg = [];
+					for (var subMsgIdx = 0; subMsgIdx < pickedSubMasters.length; subMsgIdx++) {
+						subMasterMsg.push((subMsgIdx + 1) + ". " + checkRank(data, petData, guildData, pickedSubMasters[subMsgIdx]));
+					}
+					replier.reply("✅ 부길마를 지정했습니다.\n" + subMasterMsg.join("\n"));
 					return;
 				}
 
@@ -12504,7 +12596,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						replier.reply("❌ 가입된 길드가 없습니다.\n/길드목록 으로 길드를 확인하세요.");
 						return;
 					}
-					if (!isGuildMaster(readyInfo.guild, sender)) {
+					if (!isGuildLeader(readyInfo.guild, sender)) {
 						replier.reply("❌ 길드마스터만 길드영지전 준비를 할 수 있습니다.");
 						return;
 					}
@@ -21007,6 +21099,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (guildRankTitle) {
 						out += " (길드계급: " + guildRankTitle + ")\n";
 					}
+					if (!guildRankTitle) out += "\n";
+					out += "부길마: " + getGuildSubMasterDisplay(data, petData, guildData, g) + "\n";
 					out += "길드원👥: " + memberCount + "명 (최대인원: " + getGuildMaxMemberLimit(g, petSkillData) + "명)\n";
 					out += "소드마스터🤺:\n[" + getGuildSwordMasterDisplay(data, petData, guildData, g, petSkillData) + "]\n";
 					out += "━━━━━━━━━━━━\n";
@@ -21085,7 +21179,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						return;
 					}
 
-					if (g.master !== sender) {
+					if (!isGuildLeader(g, sender)) {
 						replier.reply("❌ 길드마스터만 가입조건을 설정할 수 있습니다.");
 						return;
 					}
@@ -21472,7 +21566,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					// 마스터만 제명 가능
-					if (g.master !== sender) {
+					if (!isGuildLeader(g, sender)) {
 						replier.reply("❌ 길드마스터만 제명할 수 있습니다.");
 						return;
 					}
@@ -21482,12 +21576,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						return;
 					}
 
-					if (targetName === sender) {
+					if (targetName === g.master) {
 						replier.reply("❌ 길드마스터는 제명할 수 없습니다.");
 						return;
 					}
 
 					// 제명 처리
+					var subMasterKickIndex = ensureGuildSubMasters(g).indexOf(targetName);
+					if (subMasterKickIndex !== -1) g.subMasters.splice(subMasterKickIndex, 1);
 					delete g.members[targetName];
 
 					if (data.member[targetName] && data.member[targetName].guild) {
@@ -21587,7 +21683,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						return;
 					}
 
-					if (!(g.master === sender || isAdmin(sender) || isMaster(sender))) {
+					if (!(isGuildLeader(g, sender) || isAdmin(sender) || isMaster(sender))) {
 						return;
 					}
 
@@ -21696,7 +21792,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					var g = lordGuildInfo.guild;
 					// var guildData = myGuildInfo.guildData;
 
-					if (!(g.master === sender || isAdmin(sender) || isMaster(sender))) {
+					if (!(isGuildLeader(g, sender) || isAdmin(sender) || isMaster(sender))) {
 						replier.reply("❌ 길드인원마감은 길드마스터, 어드민, 마스터권한 유저만 가능합니다.");
 						return;
 					}
@@ -21734,7 +21830,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					var g = lordGuildInfo.guild;
 					// var guildData = myGuildInfo.guildData;
 
-					if (!(g.master === sender || isAdmin(sender) || isMaster(sender))) {
+					if (!(isGuildLeader(g, sender) || isAdmin(sender) || isMaster(sender))) {
 						replier.reply("❌ 길드인원마감해제는 길드마스터, 어드민, 마스터권한 유저만 가능합니다.");
 						return;
 					}
@@ -21785,7 +21881,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					var g = lordGuildInfo.guild;
 					// var guildData = myGuildInfo.guildData;
 
-					if (!(g.master === sender || isAdmin(sender) || isMaster(sender))) {
+					if (!(isGuildLeader(g, sender) || isAdmin(sender) || isMaster(sender))) {
 						replier.reply("❌ 길드마크 변경은 길드마스터, 어드민, 마스터권한 유저만 가능합니다.");
 						return;
 					}
@@ -22094,7 +22190,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "길드ID: " + gid + "\n";
 					out += "길드명: " + g.name + "(" + g.mark + ")\n";
 					out += "서버: " + g.server + "\n";
-					out += "길드마스터: " + g.master + "\n\n";
+					out += "길드마스터: " + g.master + "\n";
+					out += "부길마: " + getGuildSubMasterDisplay(data, petData, guildData, g) + "\n\n";
 
 					out += "레벨: Lv." + (g.level || 1) + "\n";
 					out += "공헌도: " + numberWithCommas(g.exp || 0) + "🌟\n\n";
@@ -22825,7 +22922,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					// 길드마스터만 가능
-					if (g.master !== sender) {
+					if (!isGuildLeader(g, sender)) {
 						replier.reply("❌ 길드마스터만 변경할 수 있습니다.");
 						return;
 					}
@@ -23289,7 +23386,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					var g = lordGuildInfo.guild;
 
-					if (!isGuildMaster(g, sender)) {
+					if (!isGuildLeader(g, sender)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 길드마스터만 공지를 설정할 수 있습니다.");
 						return;
 					}
@@ -23317,7 +23414,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					var g = lordGuildInfo.guild;
 
-					if (!isGuildMaster(g, sender)) {
+					if (!isGuildLeader(g, sender)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 길드마스터만 게시판을 초기화할 수 있습니다.");
 						return;
 					}
@@ -25896,7 +25993,7 @@ function shuffleGuildTerritoryRows(rows) {
 
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 전투형 지휘관 스킬 보유 여부)
 function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
-	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
+	return !!(g && petSkillData && user && isGuildLeader(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
 }
 
 // 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 전투형 지휘관 스킬 보유 여부)
@@ -25906,13 +26003,24 @@ function shouldShowGuildTerritoryCommanderTrigger(g, petSkillData, user) {
 
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 기사단 증원 스킬 보유 여부)`
 function hasGuildTerritoryKnightOrderSkill(g, petSkillData, user) {
-	return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "기사단 증원"));
+	return !!(g && petSkillData && user && isGuildLeader(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "기사단 증원"));
+}
+
+// 기사단 증원 효과를 보유한 길드 운영진이 있는지 확인하는 함수
+function hasGuildTerritoryKnightOrderLeader(g, petSkillData) {
+	if (!g) return false;
+	if (hasGuildTerritoryKnightOrderSkill(g, petSkillData, g.master)) return true;
+	var subMasters = ensureGuildSubMasters(g);
+	for (var i = 0; i < subMasters.length; i++) {
+		if (hasGuildTerritoryKnightOrderSkill(g, petSkillData, subMasters[i])) return true;
+	}
+	return false;
 }
 
 // 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 기사단 증원 스킬 보유 여부)
 function getGuildSwordMasterLimit(g, skillDataArg) {
 	var skillData = skillDataArg || (typeof petSkillData !== "undefined" ? petSkillData : null);
-	return 3 + (hasGuildTerritoryKnightOrderSkill(g, skillData, g && g.master) ? 1 : 0);
+	return 3 + (hasGuildTerritoryKnightOrderLeader(g, skillData) ? 1 : 0);
 }
 
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이거나 소드마스터이면서 전투형 지휘관 스킬 보유 여부)
@@ -25925,9 +26033,17 @@ function isGuildTerritoryAttacker(g, petSkillData, user) {
 // 길드 영지전 공격자 이름 목록 가져오기 (소드마스터와 전투형 지휘관 스킬 보유 길드 마스터 포함)
 function getGuildTerritoryAttackerNames(g, petSkillData) {
 	var attackers = ensureGuildSwordMasters(g, petSkillData).slice();
-	var commander = g && g.master ? g.master : "";
-	if (hasGuildTerritoryCommanderSkill(g, petSkillData, commander) && attackers.indexOf(commander) === -1) {
-		attackers.push(commander);
+	var leaders = [];
+	if (g && g.master) leaders.push(g.master);
+	var subMasters = ensureGuildSubMasters(g);
+	for (var i = 0; i < subMasters.length; i++) {
+		if (leaders.indexOf(subMasters[i]) === -1) leaders.push(subMasters[i]);
+	}
+	for (var j = 0; j < leaders.length; j++) {
+		var commander = leaders[j];
+		if (hasGuildTerritoryCommanderSkill(g, petSkillData, commander) && attackers.indexOf(commander) === -1) {
+			attackers.push(commander);
+		}
 	}
 	return attackers;
 }
@@ -28656,7 +28772,8 @@ function processUserIDCommand(msg, data) {
 					endDate: option === "영구권" ? "" : option,
 					permanent: option === "영구권"
 				};
-				return beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.";
+				if (passConfig.key === "newbie" || passConfig.key === "hoi") addItem(data, userIDText, "자동탐험권🌄", 1);
+				return (beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.") + "\n자동탐험권🌄 1개가 지급되었습니다.";
 			}
 			var passUserIndex = legacyDataArr.indexOf(userIDText);
 			if (passUserIndex > -1) legacyDataArr.splice(passUserIndex, 1);
@@ -28667,7 +28784,8 @@ function processUserIDCommand(msg, data) {
 			} else {
 				userPassStore[passConfig.key].enabled = false;
 			}
-			return userIDText + " 사용자가 목록에서 삭제되었습니다.";
+			if (passConfig.key === "newbie" || passConfig.key === "hoi") removeAllItem(data, userIDText, "자동탐험권🌄");
+			return userIDText + " 사용자가 목록에서 삭제되었습니다.\n자동탐험권🌄을 모두 회수했습니다.";
 		}
 		return "알 수 없는 명령어입니다.";
 	}
@@ -32329,6 +32447,14 @@ function removeItem(data, user, itemName, count) {
 		delete data.member[user].bag[itemName];
 	}
 }
+// 해당 사용자의 가방에서 아이템을 전량 제거하는 함수
+function removeAllItem(data, user, itemName) {
+	if (!data.member[user]) return 0;
+	if (!data.member[user].bag) return 0;
+	var count = parseInt(data.member[user].bag[itemName], 10) || 0;
+	if (typeof data.member[user].bag[itemName] !== "undefined") delete data.member[user].bag[itemName];
+	return count;
+}
 // 해당 사용자의 가방에 아이템 수량을 추가
 function addItem(data, user, itemName, count) {
 	if (itemName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName) itemName = GLOBAL_CONFIG.petSkill.bookItemName;
@@ -34769,6 +34895,39 @@ function buildWelcomeMessage() {
 	return "" + "호이월드에 오신 것을 환영합니다\n" + '채팅창에 "가이드"를 입력하시면 가이드 확인이 가능합니다.\n' + "1. /펫생성 아이디\n" + "2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
 }
 
+// ㅊㅊ만 입력한 미가입 유저의 최소 출석 기록을 저장하는 함수
+function recordLightAttendanceOnly(attendanceLightData, sender) {
+	if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
+	var todayText = getCurrentDate();
+	var row = attendanceLightData.users[sender] || { cnt: 0, recent: "", today: 0 };
+	var already = row.recent === todayText && row.today > 0;
+	if (!already) {
+		row.cnt = (parseInt(row.cnt, 10) || 0) + 1;
+		row.recent = todayText;
+		row.today = 1;
+		row.updatedAt = formatDateTime(new Date());
+	}
+	attendanceLightData.users[sender] = row;
+	return { already: already };
+}
+
+// 경량 출석 기록을 정식 회원 데이터로 옮기는 함수
+function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
+	if (!data || !data.member || !data.member[sender]) return false;
+	if (!attendanceLightData || !attendanceLightData.users || !attendanceLightData.users[sender]) return false;
+	var row = attendanceLightData.users[sender];
+	var member = data.member[sender];
+	var rowCnt = parseInt(row.cnt, 10) || 0;
+	if (rowCnt > 0) member.cnt = (parseInt(member.cnt, 10) || 0) + rowCnt;
+	if (row.recent) member.recent = row.recent;
+	if (row.recent === getCurrentDate() && row.today > 0) {
+		member.today = Math.max(parseInt(member.today, 10) || 0, 1);
+		if (data.attend_list instanceof Array && data.attend_list.indexOf(sender) === -1) data.attend_list.push(sender);
+	}
+	delete attendanceLightData.users[sender];
+	return true;
+}
+
 // 공성전 주인장 여부 체크
 function isLordActive(data, sender) {
 	var HoiCastle = data.HoiCastle;
@@ -36486,7 +36645,7 @@ function findGuildIdByNameSafe(guildData, guildName) {
 
 // 길드마스터 위임 권한 확인 (길드마스터 / 어드민 / 마스터권한 유저)
 function canTransferGuildMaster(g, sender) {
-	return !!(g && g.master === sender);
+	return isGuildLeader(g, sender);
 }
 
 // 길드의 소드마스터 목록을 보정하여 반환 (유효한 멤버 이름만, 최대 3명 또는 기사단 증원 시 4명)
@@ -37293,6 +37452,45 @@ function ensureGuildBoard(g) {
 // 길드 게시판에 새 글 추가
 function isGuildMaster(g, sender) {
 	return g && g.master === sender;
+}
+
+// 길드 부길마 목록을 유효한 멤버 기준으로 보정하는 함수
+function ensureGuildSubMasters(g) {
+	if (!g || typeof g !== "object") return [];
+	if (!(g.subMasters instanceof Array)) g.subMasters = [];
+	var result = [];
+	for (var i = 0; i < g.subMasters.length; i++) {
+		var name = g.subMasters[i];
+		if (typeof name !== "string" || !name) continue;
+		if (!g.members || !g.members[name]) continue;
+		if (name === g.master) continue;
+		if (result.indexOf(name) !== -1) continue;
+		result.push(name);
+		if (result.length >= 2) break;
+	}
+	g.subMasters = result;
+	return g.subMasters;
+}
+
+// 현재 유저가 길드 부길마인지 확인하는 함수
+function isGuildSubMaster(g, sender) {
+	return ensureGuildSubMasters(g).indexOf(sender) !== -1;
+}
+
+// 길마 또는 부길마 권한 보유 여부를 확인하는 함수
+function isGuildLeader(g, sender) {
+	return !!(g && (g.master === sender || isGuildSubMaster(g, sender)));
+}
+
+// 길드 부길마 표시 문자열을 생성하는 함수
+function getGuildSubMasterDisplay(data, petData, guildData, g) {
+	var subMasters = ensureGuildSubMasters(g);
+	if (subMasters.length === 0) return "없음";
+	var names = [];
+	for (var i = 0; i < subMasters.length; i++) {
+		names.push(checkRank(data, petData, guildData, subMasters[i]));
+	}
+	return names.join(", ");
 }
 
 // data.member 기준으로 다른 객체의 유저 키를 정리하는 공통 함수
