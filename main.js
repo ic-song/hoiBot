@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.168"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.169"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -5523,7 +5523,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (sender == "호이 남" && (/^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
 					let result = processUserIDCommand(msg, data);
-					saveJsonFile(data, filePath);
+					if (String(result || "").indexOf("❌") !== 0 && String(result || "").indexOf("알 수 없는 명령어") !== 0) {
+						saveJsonFile(data, filePath);
+						var savedMemberData = loadJsonFile(filePath);
+						result += buildSupportPassSaveCheckMessage(msg, savedMemberData);
+					}
 					replier.reply(result);
 					return;
 				}
@@ -28750,6 +28754,41 @@ function buildSupportPassListMessage(data, petData, guildData) {
 	return lines.join("\n");
 }
 
+// 후원패스 명령어의 대상과 옵션을 분석하는 함수
+function parseSupportPassCommandMeta(msg) {
+	var passMatch = String(msg || "").match(/^\/(공헌패스|초보패스|초보|호이패스|다이아패스)(추가|삭제),\s*([^]+)$/);
+	if (!passMatch) return null;
+	var passConfig = getSupportPassConfigByCommandName(passMatch[1]);
+	if (!passConfig) return null;
+	var action = passMatch[2];
+	var body = String(passMatch[3] || "").trim();
+	var tokens = body.split(/\s+/);
+	var lastToken = tokens.length > 0 ? tokens[tokens.length - 1] : "";
+	var option = action === "추가" && (lastToken === "영구권" || isValidSupportPassDateText(lastToken)) ? lastToken : "";
+	var userIDText = action === "추가" && option ? tokens.slice(0, tokens.length - 1).join(" ") : body;
+	return { config: passConfig, action: action, user: userIDText, option: option };
+}
+
+// 저장된 후원패스 상태를 확인하는 함수
+function buildSupportPassSaveCheckMessage(msg, savedData) {
+	var meta = parseSupportPassCommandMeta(msg);
+	if (!meta || !savedData || !savedData.member || !savedData.member[meta.user]) return "\n⚠️ 저장확인: member.json에서 대상 유저를 확인하지 못했습니다.";
+	var member = savedData.member[meta.user];
+	var pass = member.pass && member.pass[meta.config.key] ? member.pass[meta.config.key] : null;
+	if (meta.action === "추가") {
+		if (!pass || pass.enabled !== true) return "\n⚠️ 저장확인: member.json에서 패스 저장을 확인하지 못했습니다.";
+		var savedEndText = pass.permanent === true ? "영구권" : pass.endDate + "까지";
+		var lines = ["\n저장확인: 패스 저장 완료 (" + savedEndText + ")"];
+		if (meta.config.key === "newbie" || meta.config.key === "hoi") {
+			var ticketCount = member.bag && member.bag["자동탐험권🌄"] ? member.bag["자동탐험권🌄"] : 0;
+			lines.push("저장확인: 자동탐험권🌄 " + ticketCount + "개");
+		}
+		return lines.join("\n");
+	}
+	if (pass && pass.enabled === true) return "\n⚠️ 저장확인: member.json에서 패스 삭제를 확인하지 못했습니다.";
+	return "\n저장확인: 패스 삭제 저장 완료";
+}
+
 function processUserIDCommand(msg, data) {
 	let returnMsg = null;
 	let dataArr, pattern;
@@ -28757,16 +28796,13 @@ function processUserIDCommand(msg, data) {
 		dataArr = data.allowedUsers4;
 		pattern = /^\/원데이패스(추가|삭제),\s*(.+)$/;
 	} else {
-		var passMatch = String(msg || "").match(/^\/(공헌패스|초보패스|초보|호이패스|다이아패스)(추가|삭제),\s*([^]+)$/);
-		if (passMatch) {
-			var passConfig = getSupportPassConfigByCommandName(passMatch[1]);
+		var passMeta = parseSupportPassCommandMeta(msg);
+		if (passMeta) {
+			var passConfig = passMeta.config;
 			if (!passConfig) return "알 수 없는 명령어입니다.";
-			var action = passMatch[2];
-			var body = String(passMatch[3] || "").trim();
-			var tokens = body.split(/\s+/);
-			var lastToken = tokens.length > 0 ? tokens[tokens.length - 1] : "";
-			var option = action === "추가" && (lastToken === "영구권" || isValidSupportPassDateText(lastToken)) ? lastToken : "";
-			var userIDText = action === "추가" && option ? tokens.slice(0, tokens.length - 1).join(" ") : body;
+			var action = passMeta.action;
+			var option = passMeta.option;
+			var userIDText = passMeta.user;
 			var legacyDataArr = data[passConfig.arrayName];
 			if (!legacyDataArr) {
 				legacyDataArr = [];

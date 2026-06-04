@@ -1469,6 +1469,7 @@ Status: VERIFIED
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
 - `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄`
 - Past end dates are rejected before pass mutation and automatic ticket grant
+- Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply
 
 ## Related Commands
 - `/초보패스추가, [아이디] [날짜|영구권]`
