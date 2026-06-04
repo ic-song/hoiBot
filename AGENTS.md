@@ -113,19 +113,21 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ## Notion READY Development Workflow
 
-- When the user says "노션확인 후 개발", treat it as a request to check Notion READY items first and then develop according to the selected Notion document.
+- When the user says "노션확인 후 개발", treat it as a request to check Notion READY items from the Notion planning DB first and then develop according to the selected Notion document.
 - The required order is:
   1. Check the current git branch and working tree status.
   2. Prepare the correct hoiBot task branch according to the branch workflow rules.
-  3. Search Notion for READY items.
-  4. Fetch and read the selected READY document.
-  5. Summarize the requirements, acceptance criteria, constraints, and uncertain areas.
-  6. Re-verify the relevant current code, commands, helpers, data flow, and save flow before editing.
-  7. Implement the requested change with minimal scope.
-  8. Validate according to the touched files and runtime constraints.
-  9. Update `COMMAND_INDEX.md`, `COMMAND_REGISTRY.md`, changelog/version files, or other docs only when the rules require synchronization.
-  10. Report the Notion document checked, changed files, validation result, and remaining risks.
+  3. Fetch the Notion planning DB/data source and confirm its schema.
+  4. Identify READY items by DB properties, primarily `상태 = 🛠 READY` or `섹션 = READY`; do not use broad workspace search as the source of truth.
+  5. Fetch and read the selected READY document.
+  6. Summarize the requirements, acceptance criteria, constraints, and uncertain areas.
+  7. Re-verify the relevant current code, commands, helpers, data flow, and save flow before editing.
+  8. Implement the requested change with minimal scope.
+  9. Validate according to the touched files and runtime constraints.
+  10. Update `COMMAND_INDEX.md`, `COMMAND_REGISTRY.md`, changelog/version files, or other docs only when the rules require synchronization.
+  11. Report the Notion document checked, changed files, validation result, and remaining risks.
 - If multiple READY items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
+- If Notion DB querying is unavailable, report the tool limitation and use the narrowest available DB-scoped fallback; do not present broad workspace search results as DB-confirmed.
 - If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
 - Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
 - When a Notion READY development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY to DEV.
