@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.169"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.170"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2025,9 +2025,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				var lightResult = recordLightAttendanceOnly(attendanceLightData, sender);
 				saveJsonFile(attendanceLightData, attendanceLightPath);
 				if (lightResult.already) {
-					replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n/가입하면 출석 기록이 정식 데이터로 옮겨져요.");
+					replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
 				} else {
-					replier.reply("[" + sender + "] 님 출첵👏\n/가입하면 출석 기록이 정식 데이터로 옮겨져요.");
+					replier.reply("[" + sender + "] 님 출첵👏[미가입 유저]\n게임을 원하시면 \"/가입\"을 눌러주세요.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
 				}
 				return;
 			}
