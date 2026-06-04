@@ -5433,7 +5433,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let checkmsg1 = "\n1일차 : ";
 					let checkmsg2 = "\n2일차 : ";
 					let checkmsg3 = "\n3일차 : ";
-					let checkmsg4 = "\n강퇴 대상 : ";
+					let checkmsg4 = "\n가입 미인증 유저: ";
 					let currentDateObj = new Date();
 					currentDateObj = new Date(currentDateObj.getFullYear(), currentDateObj.getMonth(), currentDateObj.getDate());
 					for (let user in data.member) {
@@ -5457,9 +5457,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 					let headerMsg =
-						"🎙️보이스룸 인증목록🎙️\n\n" +
-						"1️⃣보룸인증은 입장방 보룸에서 [성별 확인]을 의미합니다.\n" +
-						"2️⃣보룸인증은 3일내 해야하며 게임을 원할시(/가입)\n보룸 인증방에서 교육을 해야 합니다.\n" +
+						"🎙️호월 가입 인증목록🎙️\n\n" +
+						"1. 가입인증은 "/가입"을 하여 게임 이용약관에 동의하는 것을 의미합니다..\n" +
+						"2. 가입인증은 유저가 /가입 시 3일내로 인증 해야합니다.\n" +
+						 "3. 가입 미인증 대상으로 넘어가면 계정은 삭제처리 됩니다.\n"
 						"⭐️채팅창에 '교육방'을 적어보세요\n";
 					replier.reply(headerMsg + checkmsg1 + checkmsg2 + checkmsg3 + checkmsg4);
 				}
