@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.170"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.171"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2023,7 +2023,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (msg === "ㅊㅊ" && !data.member[sender]) {
 				var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
 				var lightResult = recordLightAttendanceOnly(attendanceLightData, sender);
-				saveJsonFile(attendanceLightData, attendanceLightPath);
+				if (!lightResult.already) saveJsonFile(attendanceLightData, attendanceLightPath);
 				if (lightResult.already) {
 					replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
 				} else {
@@ -2033,6 +2033,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
 				if (!data.member[sender]) {
+					if (!isSignupPetFlow) {
+						var pendingAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+						if (pendingAttendanceLightData.users && pendingAttendanceLightData.users.hasOwnProperty(sender)) return;
+					}
 					initializeMember(sender, data, petData);
 					if (!isSignupPetFlow) return;
 				}
@@ -3652,10 +3656,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								replier.reply("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
 								replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 누구보다 빠르게, 남들과는 다르게!");
 							}
+							saveJsonFile(data, filePath);
 						} else {
 							replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 이미 출첵 하셨습니다.");
 						}
 					}
+					return;
 				}
 				if (!data.member[sender].agree) {
 					// 약관동의 안할 시 사용불가

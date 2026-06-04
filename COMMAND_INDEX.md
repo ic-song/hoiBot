@@ -3964,6 +3964,8 @@ Status: VERIFIED
 
 - Existing member attendance continues to update normal member data
 - Unregistered short-name users using `ㅊㅊ` are recorded in `attendanceLight.json`
+- Duplicate same-day `ㅊㅊ` replies with the existing attendance message and returns without rewriting attendance data
+- Light-attendance users are not promoted to normal member data by ordinary chat; they must use `/가입`
 - `/가입` migrates the sender's light attendance row into normal member data, then removes the light row
 - `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, then saves `attendanceLight.json`
 
