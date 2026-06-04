@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.167"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.168"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4762,6 +4762,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
 					replier.reply(buildSupportPassListMessage(data, petData, guildData));
+					return;
+				}
+				if (msg === "/미가입출첵") {
+					if (!(isMaster(sender) || isAdmin(sender))) {
+						replier.reply("❌ 관리자만 사용할 수 있습니다.");
+						return;
+					}
+					var lightAttendanceData = loadJsonFile(attendanceLightPath) || { users: {} };
+					var lightAttendanceResult = pruneLightAttendanceData(data, lightAttendanceData, 4);
+					saveJsonFile(lightAttendanceData, attendanceLightPath);
+					replier.reply(buildLightAttendanceCleanupMessage(lightAttendanceResult));
 					return;
 				}
 				if (msg.startsWith("/후원메모 ") && isMaster(sender)) {
@@ -28764,6 +28775,12 @@ function processUserIDCommand(msg, data) {
 			if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
 			if (action === "추가") {
 				if (!option) option = "영구권";
+				if (option !== "영구권") {
+					var expireValue = getSupportPassDateValue(option);
+					if (expireValue !== null && expireValue < getTodaySupportPassDateValue()) {
+						return "❌ 지난 날짜로 패스를 추가할 수 없습니다.\n오늘 이후 날짜를 입력해주세요.\n예) /호이패스추가, " + userIDText + " 26.06.21";
+					}
+				}
 				if (legacyDataArr.indexOf(userIDText) === -1) legacyDataArr.push(userIDText);
 				var passStore = ensureSupportPassStore(data, userIDText);
 				var beforeActive = passStore[passConfig.key] && passStore[passConfig.key].enabled === true;
@@ -28773,7 +28790,8 @@ function processUserIDCommand(msg, data) {
 					permanent: option === "영구권"
 				};
 				if (passConfig.key === "newbie" || passConfig.key === "hoi") addItem(data, userIDText, "자동탐험권🌄", 1);
-				return (beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.") + "\n자동탐험권🌄 1개가 지급되었습니다.";
+				var passEndText = option === "영구권" ? "영구권" : option + "까지";
+				return (beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.") + "\n패스 기간: " + passEndText + "\n자동탐험권🌄 1개가 지급되었습니다.";
 			}
 			var passUserIndex = legacyDataArr.indexOf(userIDText);
 			if (passUserIndex > -1) legacyDataArr.splice(passUserIndex, 1);
@@ -34926,6 +34944,86 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
 	}
 	delete attendanceLightData.users[sender];
 	return true;
+}
+
+// YYYYMMDD 날짜 문자열을 비교용 숫자로 변환하는 함수
+function getAttendanceDateValue(text) {
+	var match = String(text || "").match(/^(\d{4})(\d{2})(\d{2})$/);
+	if (!match) return null;
+	return parseInt(match[1] + match[2] + match[3], 10);
+}
+
+// 두 YYYYMMDD 날짜 사이의 일수 차이를 계산하는 함수
+function getAttendanceDateDiff(fromText, toText) {
+	var fromMatch = String(fromText || "").match(/^(\d{4})(\d{2})(\d{2})$/);
+	var toMatch = String(toText || "").match(/^(\d{4})(\d{2})(\d{2})$/);
+	if (!fromMatch || !toMatch) return null;
+	var fromDate = new Date(parseInt(fromMatch[1], 10), parseInt(fromMatch[2], 10) - 1, parseInt(fromMatch[3], 10));
+	var toDate = new Date(parseInt(toMatch[1], 10), parseInt(toMatch[2], 10) - 1, parseInt(toMatch[3], 10));
+	if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) return null;
+	return Math.floor((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+// 미가입 출첵 경량 데이터를 정리하고 남은 목록을 반환하는 함수
+function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
+	if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
+	var todayText = getCurrentDate();
+	var removed = [];
+	var joined = [];
+	var remained = [];
+
+	for (var name in attendanceLightData.users) {
+		if (!attendanceLightData.users.hasOwnProperty(name)) continue;
+		var row = attendanceLightData.users[name] || {};
+		var dayDiff = getAttendanceDateDiff(row.recent, todayText);
+		if (data && data.member && data.member[name]) {
+			joined.push(name);
+			delete attendanceLightData.users[name];
+			continue;
+		}
+		if (dayDiff === null || dayDiff >= staleDays) {
+			removed.push({ name: name, recent: row.recent || "없음", days: dayDiff });
+			delete attendanceLightData.users[name];
+			continue;
+		}
+		remained.push({
+			name: name,
+			cnt: parseInt(row.cnt, 10) || 0,
+			recent: row.recent || "없음",
+			days: dayDiff
+		});
+	}
+
+	remained.sort(function (a, b) {
+		var av = getAttendanceDateValue(a.recent) || 0;
+		var bv = getAttendanceDateValue(b.recent) || 0;
+		if (av !== bv) return av - bv;
+		if (a.name < b.name) return -1;
+		if (a.name > b.name) return 1;
+		return 0;
+	});
+
+	return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
+}
+
+// 미가입 출첵 정리 결과 메시지를 생성하는 함수
+function buildLightAttendanceCleanupMessage(result) {
+	var lines = [];
+	lines.push("✅ 미가입 출첵 정리 완료");
+	lines.push("삭제 기준: 마지막 출첵 후 " + result.staleDays + "일 이상");
+	lines.push("자동삭제: " + result.removed.length + "명");
+	lines.push("가입완료 정리: " + result.joined.length + "명");
+	lines.push("남은 미가입 출첵: " + result.remained.length + "명");
+	if (result.remained.length > 0) {
+		lines.push("━━━━━━━━━━━━");
+		lines.push("남은 목록");
+		for (var i = 0; i < result.remained.length; i++) {
+			if (i === 20) lines.push(allsee);
+			var row = result.remained[i];
+			lines.push((i + 1) + ". " + row.name + " / " + row.cnt + "회 / 최근 " + row.recent + " / " + row.days + "일 전");
+		}
+	}
+	return lines.join("\n");
 }
 
 // 공성전 주인장 여부 체크

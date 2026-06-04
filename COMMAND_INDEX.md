@@ -1468,6 +1468,7 @@ Status: VERIFIED
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
 - `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄`
+- Past end dates are rejected before pass mutation and automatic ticket grant
 
 ## Related Commands
 - `/초보패스추가, [아이디] [날짜|영구권]`
@@ -3944,6 +3945,8 @@ Status: VERIFIED
 
 - `recordLightAttendanceOnly`
 - `migrateLightAttendanceToMember`
+- `pruneLightAttendanceData`
+- `buildLightAttendanceCleanupMessage`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -3961,6 +3964,11 @@ Status: VERIFIED
 - Existing member attendance continues to update normal member data
 - Unregistered short-name users using `ㅊㅊ` are recorded in `attendanceLight.json`
 - `/가입` migrates the sender's light attendance row into normal member data, then removes the light row
+- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, then saves `attendanceLight.json`
+
+## Related Commands
+
+- `/미가입출첵`
 
 ## AI Notes
 
