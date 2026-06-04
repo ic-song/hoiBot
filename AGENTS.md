@@ -118,7 +118,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   1. Check the current git branch and working tree status.
   2. Prepare the correct hoiBot task branch according to the branch workflow rules.
   3. Fetch the Notion planning DB/data source and confirm its schema.
-  4. Identify READY items by DB properties, primarily `상태 = 🛠 READY` or `섹션 = READY`; do not use broad workspace search as the source of truth.
+  4. Identify READY items by the DB status property only: `상태 = 🛠 READY`; do not use `섹션 = READY` or broad workspace search as the source of truth.
   5. Fetch and read the selected READY document.
   6. Summarize the requirements, acceptance criteria, constraints, and uncertain areas.
   7. Re-verify the relevant current code, commands, helpers, data flow, and save flow before editing.
