@@ -128,6 +128,8 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - If multiple READY items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
 - If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
 - Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
+- When a Notion READY development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY to DEV.
+- Do not change the Notion item from READY to DEV before production reflection is complete.
 
 ## Branch Workflow
 

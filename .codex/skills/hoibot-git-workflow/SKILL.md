@@ -33,6 +33,8 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Create PRs from `feature/prod` to `main` only when the user explicitly requests stable synchronization after operational stabilization.
 - When the user says "노션확인 후 개발", check git status and prepare the correct task branch first, then search Notion READY items, fetch the selected document, summarize requirements, re-verify the current code, implement, validate, and report results.
 - If multiple Notion READY items are found and the user did not specify one, ask which item to implement before editing.
+- After a Notion READY development item is implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update that Notion item status from READY to DEV.
+- Do not move the Notion item from READY to DEV before production reflection is complete.
 
 ## Starting Work On A Branch
 
