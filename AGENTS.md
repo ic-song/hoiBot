@@ -111,6 +111,24 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When adding a new helper/function, add a brief one-line purpose comment directly above it, for example `// 현재 날짜 문자열 반환 함수`.
 - When a function declares several derived or summary variables, add short inline comments beside the non-obvious variables explaining what each value calculates, for example `var towerAttempts = ...; // 시련탑 도전 횟수 계산`.
 
+## Notion READY Development Workflow
+
+- When the user says "노션확인 후 개발", treat it as a request to check Notion READY items first and then develop according to the selected Notion document.
+- The required order is:
+  1. Check the current git branch and working tree status.
+  2. Prepare the correct hoiBot task branch according to the branch workflow rules.
+  3. Search Notion for READY items.
+  4. Fetch and read the selected READY document.
+  5. Summarize the requirements, acceptance criteria, constraints, and uncertain areas.
+  6. Re-verify the relevant current code, commands, helpers, data flow, and save flow before editing.
+  7. Implement the requested change with minimal scope.
+  8. Validate according to the touched files and runtime constraints.
+  9. Update `COMMAND_INDEX.md`, `COMMAND_REGISTRY.md`, changelog/version files, or other docs only when the rules require synchronization.
+  10. Report the Notion document checked, changed files, validation result, and remaining risks.
+- If multiple READY items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
+- If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
+- Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
+
 ## Branch Workflow
 
 - `feature/prod` is the operational base branch for production-facing code.
