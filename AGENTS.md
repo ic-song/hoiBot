@@ -113,6 +113,8 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ## Notion READY/HOTFIX Development Workflow
 
+- When the user says "노션 확인", "노션 확인(핫픽스, ready)", or asks to check Notion HOTFIX/READY without explicitly requesting implementation, treat it as a request to count and list development-needed items in the Notion planning DB where `상태 = 🔥 HOTFIX` or `상태 = 🛠 READY`.
+- For Notion status checks, report counts by status and list matching page titles/links only after verifying the page properties; do not treat title text such as `(READY / date)` as the status source of truth.
 - When the user says "노션확인 후 개발", treat it as a request to check Notion READY items from the Notion planning DB first and then develop according to the selected Notion document.
 - When the user says "노션 핫픽스 수정", "핫픽스", or otherwise asks to implement a Notion hotfix, treat it as a request to check Notion HOTFIX items from the Notion planning DB first and then develop according to the selected Notion document.
 - The required order is:

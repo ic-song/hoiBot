@@ -31,6 +31,8 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Other task branches should be based on the updated local `feature/prod`, not on `origin/main`.
 - Do not use `origin/main` as the freshness baseline for production-facing or bug-fix work unless the user explicitly requests main synchronization.
 - Create PRs from `feature/prod` to `main` only when the user explicitly requests stable synchronization after operational stabilization.
+- When the user says "노션 확인", "노션 확인(핫픽스, ready)", or asks to check Notion HOTFIX/READY without explicitly requesting implementation, count and list development-needed items by the Notion planning DB status property only: `상태 = 🔥 HOTFIX` and `상태 = 🛠 READY`.
+- For Notion status checks, report counts by status and list matching page titles/links only after verifying page properties; title text such as `(READY / date)` is not the status source of truth.
 - When the user says "노션확인 후 개발", check git status and prepare the correct task branch first, then fetch the Notion planning DB/data source, identify READY items by the DB status property only (`상태 = 🛠 READY`), fetch the selected document, summarize requirements, re-verify the current code, implement, validate, and report results.
 - When the user says "노션 핫픽스 수정", "핫픽스", or otherwise asks to implement a Notion hotfix, check git status and prepare the correct hotfix branch first, then fetch the Notion planning DB/data source, identify HOTFIX items by the DB status property only (`상태 = 🔥 HOTFIX`), fetch the selected document, summarize requirements, re-verify the current code, implement, validate, and report results.
 - Do not use broad Notion workspace search as the source of truth for READY/HOTFIX development items.
