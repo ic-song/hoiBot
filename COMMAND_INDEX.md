@@ -535,6 +535,50 @@ Status: VERIFIED
 
 ---
 
+# /소드마스터 [번호] [번호] [번호] ([번호])
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getMyGuildInfo`
+- `isGuildLeader`
+- `getGuildOrderedMemberKeys`
+- `getGuildSwordMasterLimit`
+- `hasGuildTerritoryKnightOrderLeader`
+
+## Data Usage
+
+- `guildData.guilds[myGid].swordMasters`
+- `guildData.guilds[myGid].subMasters`
+- guild territory war state
+
+## Save Flow
+
+- Saves `guildData` after replacing the current sword-master list
+
+## Related Commands
+
+- `/길드정보`
+- `/부길마`
+- `/영지공격`
+
+## AI Notes
+
+- Accepted only with full numeric member-number arguments.
+- Guild master and sub-master can execute through `isGuildLeader`.
+- The required count is 3, or up to 4 when knight-order leader conditions allow the extra slot.
+
+---
+
 # /내정보
 
 Status: VERIFIED
@@ -2553,6 +2597,34 @@ Status: VERIFIED
 ## Related Commands
 - `/미니펫가방`
 - `/미니펫가방정리`
+- `/미니펫지정판매`
+
+---
+
+# /미니펫지정판매 [시작]~[끝]
+Status: VERIFIED
+## Command Anchors
+- `main.js`
+## Files
+- `main.js`
+## Related Helpers
+- `checkRank`
+- `addPoint`
+- `refreshMiniPetSortIndex`
+## Data Usage
+- `petData[sender].miniPetBag`
+- `data.member[sender].point`
+## Save Flow
+- Removes mini-pets whose `sortIndex` is within the inclusive range
+- Adds the summed sale price to member points
+- Saves member data and `petData`
+## Related Commands
+- `/미니펫가방`
+- `/미니펫판매`
+- `/타이틀지정판매`
+## AI Notes
+- Accepted as `/미니펫지정판매 [start]~[end]`; suffix guide text must not execute.
+- Uses the same default mini-pet sale price fallback as `/미니펫판매`.
 
 ---
 
@@ -3570,6 +3642,7 @@ Status: VERIFIED
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
+- `/자유시장` appends `[개당 ...]` to active listing item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit

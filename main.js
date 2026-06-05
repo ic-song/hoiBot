@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.172"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.173"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -3279,8 +3279,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 
 					var swordGuild = swordGuildInfo.guild;
-					if (swordGuild.master !== sender) {
-						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 길드마스터만 소드마스터를 지정할 수 있습니다.");
+					if (!isGuildLeader(swordGuild, sender)) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 길드마스터 또는 부길마만 소드마스터를 지정할 수 있습니다.");
 						return;
 					}
 					var swordWar = ensureGuildTerritoryWar(data, guildData);
@@ -18983,6 +18983,61 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					return;
 				}
 
+				if (msg === "/미니펫지정판매") {
+					replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /미니펫지정판매 1~3");
+					return;
+				}
+
+				if (/^\/미니펫지정판매\s+\d+~\d+\s*$/.test(msg)) {
+					var miniPetRangeMatch = msg.match(/^\/미니펫지정판매\s+(\d+)~(\d+)\s*$/);
+					var miniPetStartNo = parseInt(miniPetRangeMatch[1], 10);
+					var miniPetEndNo = parseInt(miniPetRangeMatch[2], 10);
+					if (miniPetStartNo > miniPetEndNo) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n번호 범위가 올바르지 않습니다.");
+						return;
+					}
+					if (!petData[sender]) petData[sender] = {};
+					if (!petData[sender].miniPetBag) petData[sender].miniPetBag = [];
+					var rangeBag = petData[sender].miniPetBag;
+					var rangeSoldCount = 0;
+					var rangeEarnedPoint = 0;
+					var rangeSoldNames = [];
+					var rangeNewBag = [];
+
+					for (var rangeIdx = 0; rangeIdx < rangeBag.length; rangeIdx++) {
+						var rangePet = rangeBag[rangeIdx];
+						var rangeSortIndex = parseInt(rangePet && rangePet.sortIndex, 10);
+						if (!isNaN(rangeSortIndex) && rangeSortIndex >= miniPetStartNo && rangeSortIndex <= miniPetEndNo) {
+							var rangePrice = parseInt(rangePet && rangePet.price, 10) || 100000;
+							rangeEarnedPoint += rangePrice;
+							rangeSoldCount++;
+							rangeSoldNames.push(rangePet.name + rangePet.emoji);
+						} else {
+							rangeNewBag.push(rangePet);
+						}
+					}
+
+					if (rangeSoldCount === 0) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n해당 범위의 미니펫을 찾을 수 없습니다.");
+						return;
+					}
+
+					petData[sender].miniPetBag = rangeNewBag;
+					refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+					addPoint(data, sender, rangeEarnedPoint);
+					saveJsonFile(data, filePath);
+					saveJsonFile(petData, memberPetPath);
+
+					var rangeSaleMsg = "[" + checkRank(data, petData, guildData, sender) + "] 님의 미니펫 " + numberWithCommas(rangeSoldCount) + "개가 판매되었습니다!\n";
+					rangeSaleMsg += "범위: " + miniPetStartNo + "~" + miniPetEndNo + "\n";
+					rangeSaleMsg += "💰 +" + numberWithCommas(rangeEarnedPoint) + " 포인트 획득!";
+					if (rangeSoldNames.length > 0) {
+						rangeSaleMsg += allsee + "\n판매 목록\n" + rangeSoldNames.join("\n");
+					}
+					replier.reply(rangeSaleMsg);
+					return;
+				}
+
 				if (/^\/미니펫판매\s+\d+$/.test(msg)) {
 					let petIndex = parseInt(msg.split(" ")[1], 10); // sortIndex
 					if (!petData[sender]) petData[sender] = {};
@@ -32851,6 +32906,15 @@ function formatFreeMarketPoint(price) {
 	return text;
 }
 
+// 자유시장 목록에 표시할 개당 가격 문자열 반환 함수
+function formatFreeMarketUnitPriceText(listing) {
+	if (!listing) return "";
+	var quantity = parseInt(listing.quantity, 10) || 0;
+	var price = parseInt(listing.price, 10) || 0;
+	if (quantity < 2 || price <= 0) return "";
+	return "[개당 " + formatKoreanShort(Math.floor(price / quantity)) + "]";
+}
+
 // 자유시장 표시용 월/일 시각 문자열 반환 함수
 function formatFreeMarketDisplayTime(timeText, timeMs) {
 	var normalized = timeText ? formatDateTime(timeText) : "";
@@ -32869,7 +32933,7 @@ function getFreeMarketItemText(listing) {
 	if (listing.type === "furniture" && listing.payload && listing.payload.furnitures && listing.payload.furnitures.length > 0) {
 		itemName = formatFreeMarketFurnitureDetail(listing.payload.furnitures[0]);
 	}
-	return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개";
+	return itemName + "x" + numberWithCommas(listing.quantity || 0) + "개" + formatFreeMarketUnitPriceText(listing);
 }
 
 function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
