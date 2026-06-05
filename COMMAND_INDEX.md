@@ -4071,6 +4071,7 @@ Status: VERIFIED
 - `collectPendingUserIdMatches`
 - `normalizePendingUserIdBaseName`
 - `formatPendingUserIdDateText`
+- `formatPendingUserIdDateValue`
 - `loadJsonFile`
 
 ## Data Usage

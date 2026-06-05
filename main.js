@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.174"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.175"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35230,7 +35230,16 @@ function buildPendingUserIdCheckMessage(baseName, data, attendanceLightData) {
 // 미정 아이디 조회에 표시할 날짜 텍스트 생성 함수
 function formatPendingUserIdDateText(dateText, suffix) {
 	if (!dateText) return "";
-	return "(" + formatDate(dateText) + " " + suffix + ")";
+	return "(" + formatPendingUserIdDateValue(dateText) + " " + suffix + ")";
+}
+
+// 미정 아이디 조회용 YYYYMMDD 날짜 문자열을 표시 형식으로 변환하는 함수
+function formatPendingUserIdDateValue(dateText) {
+	if (!dateText) return "-";
+	var year = dateText.substr(0, 4);
+	var month = dateText.substr(4, 2);
+	var day = dateText.substr(6, 2);
+	return year + "년 " + month + "월 " + day + "일";
 }
 
 // 공성전 주인장 여부 체크

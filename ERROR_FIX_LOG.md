@@ -10,6 +10,66 @@ Add new runtime error records below this line.
 
 ---
 
+# 2026-06-05 - `/??` date display `formatDate` undefined
+
+Status: FIXED_IN_BRANCH
+
+## Raw Error Summary
+
+- System: `main`
+- Message: `"formatDate" is not defined.`
+- Reported file: `main`
+- Reported line: `35233`
+- Trigger message: `/?? ??`
+- Room: `? ????`
+- Sender: `?? ?`
+
+## Reported Context
+
+`/?? ??` reached the ?? ??? ?? message builder and crashed while formatting the date text for ???? or ?????.
+
+## Investigated Files / Functions
+
+- `main.js`
+  - `/??` branch calls `buildPendingUserIdCheckMessage(...)`.
+  - `buildPendingUserIdCheckMessage(...)` calls `formatPendingUserIdDateText(...)` for joined and light attendance records.
+  - `formatPendingUserIdDateText(...)` calls `formatDate(dateText)` at the reported line `35233`.
+  - `formatDate2(...)` exists in `main.js` and formats `YYYYMMDD` as `MM? DD?`.
+  - `formatDateTime(...)` exists in `main.js`, but it is for date-time text.
+- `Info.js`
+  - `formatDate(...)` exists only in `Info.js` and formats `YYYYMMDD` as `YYYY? MM? DD?`.
+
+## Suspected Cause
+
+The `/??` helper was added to `main.js` using `formatDate(...)`, but that helper is not defined in the `main.js` runtime scope. It likely passed Node syntax checks because undefined function references are runtime errors, not syntax errors.
+
+The command crashes only when `formatPendingUserIdDateText(...)` receives a non-empty date, such as an existing ??? or ??? ?? recent date.
+
+## Recommended Fix
+
+- Replace the `formatDate(...)` call inside `formatPendingUserIdDateText(...)` with a date formatter available in `main.js`.
+- Preferred minimal fix options:
+  - use existing `formatDate2(dateText)` if `MM? DD?` display is acceptable for `/??`, or
+  - add a small `main.js` local helper for `YYYY? MM? DD?` if the `/??` output should match `/??` style dates.
+- Preserve `/??` output line breaks and status labels.
+- After source fix, update `COMMAND_INDEX.md` only if helper/data-flow details change materially.
+
+## Validation Plan
+
+- Run `node --check main.js`.
+- Run `node --check Info.js`.
+- Validate `/?? ??` where a matching joined or ??? ?? row has a non-empty date.
+- Validate `/?? ??` with no matches still shows ????/????/????? without crashing.
+
+## Follow-up Notes
+
+- Added `formatPendingUserIdDateValue(...)` in `main.js` and changed `formatPendingUserIdDateText(...)` to use it instead of the `Info.js`-only `formatDate(...)`.
+- Updated `HoiBotVersion` and `data/hoiBotChangeLog.json` to `2.175`.
+- Validation planned before production reflection: `node --check main.js`, `node --check Info.js`, and a focused `/??` date-format helper check.
+
+
+---
+
 # 2026-06-01 - `/출석목록` rank lookup undefined
 
 Status: FIXED_IN_BRANCH
