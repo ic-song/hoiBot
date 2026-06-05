@@ -111,27 +111,30 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When adding a new helper/function, add a brief one-line purpose comment directly above it, for example `// 현재 날짜 문자열 반환 함수`.
 - When a function declares several derived or summary variables, add short inline comments beside the non-obvious variables explaining what each value calculates, for example `var towerAttempts = ...; // 시련탑 도전 횟수 계산`.
 
-## Notion READY Development Workflow
+## Notion READY/HOTFIX Development Workflow
 
 - When the user says "노션확인 후 개발", treat it as a request to check Notion READY items from the Notion planning DB first and then develop according to the selected Notion document.
+- When the user says "노션 핫픽스 수정", "핫픽스", or otherwise asks to implement a Notion hotfix, treat it as a request to check Notion HOTFIX items from the Notion planning DB first and then develop according to the selected Notion document.
 - The required order is:
   1. Check the current git branch and working tree status.
   2. Prepare the correct hoiBot task branch according to the branch workflow rules.
   3. Fetch the Notion planning DB/data source and confirm its schema.
-  4. Identify READY items by the DB status property only: `상태 = 🛠 READY`; do not use `섹션 = READY` or broad workspace search as the source of truth.
-  5. Fetch and read the selected READY document.
+  4. Identify target items by the DB status property only: `상태 = 🛠 READY` for READY work or `상태 = 🔥 HOTFIX` for hotfix work; do not use `섹션 = READY`, `섹션 = HOTFIX`, title text, board grouping labels, or broad workspace search as the source of truth.
+  5. Fetch and read the selected READY/HOTFIX document.
   6. Summarize the requirements, acceptance criteria, constraints, and uncertain areas.
   7. Re-verify the relevant current code, commands, helpers, data flow, and save flow before editing.
   8. Implement the requested change with minimal scope.
   9. Validate according to the touched files and runtime constraints.
   10. Update `COMMAND_INDEX.md`, `COMMAND_REGISTRY.md`, changelog/version files, or other docs only when the rules require synchronization.
   11. Report the Notion document checked, changed files, validation result, and remaining risks.
-- If multiple READY items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
-- If Notion DB querying is unavailable, report the tool limitation and use the narrowest available DB-scoped fallback; do not present broad workspace search results as DB-confirmed.
+- Prefer DB/data-source querying by the exact `상태` property. If DB querying is unavailable, report the tool limitation and use the narrowest available DB-scoped fallback: search only within the confirmed data source, fetch each candidate page, and verify the page properties contain the exact target status before treating it as a READY/HOTFIX item.
+- Never conclude that no HOTFIX exists from a text search for `HOTFIX` alone. A page can be grouped under `🔥 HOTFIX` by its status property even when the title/body does not contain the word `HOTFIX`.
+- If the user provides a screenshot or visible board card title, search that exact title within the confirmed data source, fetch the matching page, and verify its `상태` property.
+- If multiple READY/HOTFIX items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
 - If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
 - Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
-- When a Notion READY development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY to DEV.
-- Do not change the Notion item from READY to DEV before production reflection is complete.
+- When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY/HOTFIX to DEV.
+- Do not change the Notion item from READY/HOTFIX to DEV before production reflection is complete.
 
 ## Branch Workflow
 
