@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.171"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.172"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4768,6 +4768,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
 					replier.reply(buildSupportPassListMessage(data, petData, guildData));
+					return;
+				}
+				if (msg === "/미정" || /^\/미정\s+\S(?:.*\S)?\s*$/.test(msg)) {
+					if (!(isMaster(sender) || isAdmin(sender))) {
+						replier.reply("❌ 관리자만 사용할 수 있습니다.");
+						return;
+					}
+					var pendingIdBaseName = msg.substring("/미정".length).trim();
+					if (!pendingIdBaseName) {
+						replier.reply("❌ 명령어 형식이 잘못되었습니다.\n\n사용법: /미정 이름\n예시: /미정 호이");
+						return;
+					}
+					var pendingIdAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+					replier.reply(buildPendingUserIdCheckMessage(pendingIdBaseName, data, pendingIdAttendanceLightData));
 					return;
 				}
 				if (msg === "/미가입출첵") {
@@ -35067,6 +35081,51 @@ function buildLightAttendanceCleanupMessage(result) {
 		}
 	}
 	return lines.join("\n");
+}
+
+// 미정 아이디의 가입/미가입 출첵 잔존 여부를 확인하는 메시지 생성 함수
+function buildPendingUserIdCheckMessage(baseName, data, attendanceLightData) {
+	if (!attendanceLightData || !attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData = { users: {} };
+	var cleanBaseName = String(baseName || "").trim();
+	var candidates = [cleanBaseName + " 남", cleanBaseName + " 여"];
+	var blockedNames = [];
+	var lines = [];
+	lines.push("🔎 미가입 아이디 확인");
+	lines.push("━━━━━━━━━━━━");
+	lines.push("검색 기준: " + cleanBaseName);
+
+	for (var i = 0; i < candidates.length; i++) {
+		var targetName = candidates[i];
+		var memberInfo = data && data.member ? data.member[targetName] : null;
+		var lightInfo = attendanceLightData.users[targetName] || null;
+		var joined = !!memberInfo; // 정식 가입 데이터 존재 여부
+		var hasLightInfo = !!lightInfo; // 미가입 출첵 잔존 정보 존재 여부
+		if (joined || hasLightInfo) blockedNames.push(targetName);
+		lines.push("");
+		lines.push(targetName);
+		lines.push("가입상태: " + (joined ? "✅ 가입됨" + formatPendingUserIdDateText(memberInfo.join, "입장") : "❌ 미가입"));
+		lines.push("정보조회: " + (joined ? "✅ 있음" : "❌ 없음"));
+		lines.push("미가입정보: " + (hasLightInfo ? "✅ 있음" + formatPendingUserIdDateText(lightInfo.recent, "입장") : "❌ 없음"));
+	}
+
+	lines.push("━━━━━━━━━━━━");
+	if (blockedNames.length === 0) {
+		lines.push("✅ 사용 가능한 아이디입니다.");
+	} else if (blockedNames.length === candidates.length) {
+		lines.push("❌ 사용 가능한 아이디가 없습니다.");
+		lines.push("중복아이디가 있으니 나간 계정인지 확인해주시고");
+		lines.push("사용하게 해주세요.");
+	} else {
+		lines.push("현재 [" + blockedNames.join(", ") + "]의 아이디가 존재합니다.");
+		lines.push("⚠️ 중복으로 아이디 사용이 불가능합니다.");
+	}
+	return lines.join("\n");
+}
+
+// 미정 아이디 조회에 표시할 날짜 텍스트 생성 함수
+function formatPendingUserIdDateText(dateText, suffix) {
+	if (!dateText) return "";
+	return "(" + formatDate(dateText) + " " + suffix + ")";
 }
 
 // 공성전 주인장 여부 체크

@@ -3948,6 +3948,8 @@ Status: VERIFIED
 - `migrateLightAttendanceToMember`
 - `pruneLightAttendanceData`
 - `buildLightAttendanceCleanupMessage`
+- `buildPendingUserIdCheckMessage`
+- `formatPendingUserIdDateText`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -3972,8 +3974,48 @@ Status: VERIFIED
 ## Related Commands
 
 - `/미가입출첵`
+- `/미정 [이름]`
 
 ## AI Notes
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
+
+---
+
+# /미정 [이름]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `data/attendanceLight.json`
+
+## Related Helpers
+
+- `buildPendingUserIdCheckMessage`
+- `formatPendingUserIdDateText`
+- `loadJsonFile`
+
+## Data Usage
+
+- `data.member[이름 + " 남"]`
+- `data.member[이름 + " 여"]`
+- `attendanceLightData.users[이름 + " 남"]`
+- `attendanceLightData.users[이름 + " 여"]`
+
+## Save Flow
+
+- No save; reads `attendanceLight.json` and member data only
+
+## Related Commands
+
+- `/미가입출첵`
+- `/정보 [닉네임]`
+
+## AI Notes
+
+- Admin/Master-only HOTFIX command for checking whether a base name can be used as 신규 아이디.
+- Accepted as `/미정` for usage guidance or `/미정 [이름]` for lookup.
+- The command checks both `[이름] 남` and `[이름] 여` against regular member data and 미가입 출첵 light data.
