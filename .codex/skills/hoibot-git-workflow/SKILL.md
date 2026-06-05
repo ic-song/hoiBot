@@ -32,10 +32,14 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Do not use `origin/main` as the freshness baseline for production-facing or bug-fix work unless the user explicitly requests main synchronization.
 - Create PRs from `feature/prod` to `main` only when the user explicitly requests stable synchronization after operational stabilization.
 - When the user says "노션확인 후 개발", check git status and prepare the correct task branch first, then fetch the Notion planning DB/data source, identify READY items by the DB status property only (`상태 = 🛠 READY`), fetch the selected document, summarize requirements, re-verify the current code, implement, validate, and report results.
-- Do not use broad Notion workspace search as the source of truth for READY development items; if DB querying is unavailable, report the limitation and use only the narrowest DB-scoped fallback.
-- If multiple Notion READY items are found and the user did not specify one, ask which item to implement before editing.
-- After a Notion READY development item is implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update that Notion item status from READY to DEV.
-- Do not move the Notion item from READY to DEV before production reflection is complete.
+- When the user says "노션 핫픽스 수정", "핫픽스", or otherwise asks to implement a Notion hotfix, check git status and prepare the correct hotfix branch first, then fetch the Notion planning DB/data source, identify HOTFIX items by the DB status property only (`상태 = 🔥 HOTFIX`), fetch the selected document, summarize requirements, re-verify the current code, implement, validate, and report results.
+- Do not use broad Notion workspace search as the source of truth for READY/HOTFIX development items.
+- Prefer DB/data-source querying by the exact `상태` property. If DB querying is unavailable, report the limitation and use only the narrowest DB-scoped fallback: search within the confirmed data source, fetch each candidate page, and verify the page properties contain the exact target status.
+- Never conclude that no HOTFIX exists from a text search for `HOTFIX` alone. A page can be grouped under `🔥 HOTFIX` by its status property even when the title/body does not contain the word `HOTFIX`.
+- If the user provides a screenshot or visible board card title, search that exact title within the confirmed data source, fetch the matching page, and verify its `상태` property.
+- If multiple Notion READY/HOTFIX items are found and the user did not specify one, ask which item to implement before editing.
+- After a Notion READY/HOTFIX development item is implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update that Notion item status from READY/HOTFIX to DEV.
+- Do not move the Notion item from READY/HOTFIX to DEV before production reflection is complete.
 
 ## Starting Work On A Branch
 
