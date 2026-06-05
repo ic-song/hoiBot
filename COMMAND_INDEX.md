@@ -4068,15 +4068,15 @@ Status: VERIFIED
 ## Related Helpers
 
 - `buildPendingUserIdCheckMessage`
+- `collectPendingUserIdMatches`
+- `normalizePendingUserIdBaseName`
 - `formatPendingUserIdDateText`
 - `loadJsonFile`
 
 ## Data Usage
 
-- `data.member[이름 + " 남"]`
-- `data.member[이름 + " 여"]`
-- `attendanceLightData.users[이름 + " 남"]`
-- `attendanceLightData.users[이름 + " 여"]`
+- `data.member[*]` where the stored user ID matches the requested base name after removing a trailing `남`/`여`
+- `attendanceLightData.users[*]` where the stored user ID matches the requested base name after removing a trailing `남`/`여`
 
 ## Save Flow
 
@@ -4091,4 +4091,4 @@ Status: VERIFIED
 
 - Admin/Master-only HOTFIX command for checking whether a base name can be used as 신규 아이디.
 - Accepted as `/미정` for usage guidance or `/미정 [이름]` for lookup.
-- The command checks both `[이름] 남` and `[이름] 여` against regular member data and 미가입 출첵 light data.
+- The command searches regular member data and 미가입 출첵 light data by base name, excluding the trailing gender token from stored user IDs.

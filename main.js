@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.173"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.174"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35147,38 +35147,79 @@ function buildLightAttendanceCleanupMessage(result) {
 	return lines.join("\n");
 }
 
+// 미정 아이디 비교용으로 마지막 성별 토큰을 제거한 기본 이름을 반환하는 함수
+function normalizePendingUserIdBaseName(name) {
+	return String(name || "").trim().replace(/\s+(남|여)$/, "");
+}
+
+// 미정 아이디 기본 이름과 일치하는 가입/미가입 출첵 데이터를 수집하는 함수
+function collectPendingUserIdMatches(baseName, data, attendanceLightData) {
+	var cleanBaseName = normalizePendingUserIdBaseName(baseName);
+	var matches = [];
+	var seen = {};
+	var memberData = data && data.member ? data.member : {};
+	var lightUsers = attendanceLightData && attendanceLightData.users ? attendanceLightData.users : {};
+
+	for (var memberName in memberData) {
+		if (!memberData.hasOwnProperty(memberName)) continue;
+		if (normalizePendingUserIdBaseName(memberName) !== cleanBaseName) continue;
+		seen[memberName] = true;
+		matches.push({ name: memberName, memberInfo: memberData[memberName], lightInfo: lightUsers[memberName] || null });
+	}
+
+	for (var lightName in lightUsers) {
+		if (!lightUsers.hasOwnProperty(lightName)) continue;
+		if (seen[lightName]) continue;
+		if (normalizePendingUserIdBaseName(lightName) !== cleanBaseName) continue;
+		seen[lightName] = true;
+		matches.push({ name: lightName, memberInfo: memberData[lightName] || null, lightInfo: lightUsers[lightName] });
+	}
+
+	matches.sort(function (a, b) {
+		if (a.name < b.name) return -1;
+		if (a.name > b.name) return 1;
+		return 0;
+	});
+	return matches;
+}
+
 // 미정 아이디의 가입/미가입 출첵 잔존 여부를 확인하는 메시지 생성 함수
 function buildPendingUserIdCheckMessage(baseName, data, attendanceLightData) {
 	if (!attendanceLightData || !attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData = { users: {} };
-	var cleanBaseName = String(baseName || "").trim();
-	var candidates = [cleanBaseName + " 남", cleanBaseName + " 여"];
+	var cleanBaseName = normalizePendingUserIdBaseName(baseName);
+	var matches = collectPendingUserIdMatches(cleanBaseName, data, attendanceLightData);
 	var blockedNames = [];
 	var lines = [];
 	lines.push("🔎 미가입 아이디 확인");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("검색 기준: " + cleanBaseName);
 
-	for (var i = 0; i < candidates.length; i++) {
-		var targetName = candidates[i];
-		var memberInfo = data && data.member ? data.member[targetName] : null;
-		var lightInfo = attendanceLightData.users[targetName] || null;
-		var joined = !!memberInfo; // 정식 가입 데이터 존재 여부
-		var hasLightInfo = !!lightInfo; // 미가입 출첵 잔존 정보 존재 여부
-		if (joined || hasLightInfo) blockedNames.push(targetName);
+	if (matches.length === 0) {
 		lines.push("");
-		lines.push(targetName);
-		lines.push("가입상태: " + (joined ? "✅ 가입됨" + formatPendingUserIdDateText(memberInfo.join, "입장") : "❌ 미가입"));
-		lines.push("정보조회: " + (joined ? "✅ 있음" : "❌ 없음"));
-		lines.push("미가입정보: " + (hasLightInfo ? "✅ 있음" + formatPendingUserIdDateText(lightInfo.recent, "입장") : "❌ 없음"));
+		lines.push(cleanBaseName);
+		lines.push("가입상태: ❌ 미가입");
+		lines.push("정보조회: ❌ 없음");
+		lines.push("미가입정보: ❌ 없음");
+	} else {
+		for (var i = 0; i < matches.length; i++) {
+			var row = matches[i];
+			var targetName = row.name;
+			var memberInfo = row.memberInfo;
+			var lightInfo = row.lightInfo;
+			var joined = !!memberInfo; // 정식 가입 데이터 존재 여부
+			var hasLightInfo = !!lightInfo; // 미가입 출첵 잔존 정보 존재 여부
+			if (joined || hasLightInfo) blockedNames.push(targetName);
+			lines.push("");
+			lines.push(targetName);
+			lines.push("가입상태: " + (joined ? "✅ 가입됨" + formatPendingUserIdDateText(memberInfo.join, "입장") : "❌ 미가입"));
+			lines.push("정보조회: " + (joined ? "✅ 있음" : "❌ 없음"));
+			lines.push("미가입정보: " + (hasLightInfo ? "✅ 있음" + formatPendingUserIdDateText(lightInfo.recent, "입장") : "❌ 없음"));
+		}
 	}
 
 	lines.push("━━━━━━━━━━━━");
 	if (blockedNames.length === 0) {
 		lines.push("✅ 사용 가능한 아이디입니다.");
-	} else if (blockedNames.length === candidates.length) {
-		lines.push("❌ 사용 가능한 아이디가 없습니다.");
-		lines.push("중복아이디가 있으니 나간 계정인지 확인해주시고");
-		lines.push("사용하게 해주세요.");
 	} else {
 		lines.push("현재 [" + blockedNames.join(", ") + "]의 아이디가 존재합니다.");
 		lines.push("⚠️ 중복으로 아이디 사용이 불가능합니다.");
