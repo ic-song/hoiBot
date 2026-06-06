@@ -4020,6 +4020,7 @@ Status: VERIFIED
 
 ## Related Helpers
 
+- `recordLightAttendanceOnly`
 - `migrateLightAttendanceToMember`
 - `pruneLightAttendanceData`
 - `buildLightAttendanceCleanupMessage`
@@ -4037,13 +4038,14 @@ Status: VERIFIED
 - `data.member[sender].today`
 - `data.member[sender].recent`
 - `data.member[sender].server`
-- existing `attendanceLightData.users[sender]` rows from older pre-signup records
+- `attendanceLightData.users[sender]`
+- `attendanceLightData.users[sender].server`
 
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Users missing from `data.member` return before command/data creation unless they are in the explicit `/가입` flow or pending terms response
-- Unregistered users using `ㅊㅊ` no longer create new `attendanceLight.json` rows
+- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ`, in the explicit `/가입` flow, or responding to pending terms
+- Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
 - `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports joined-cleanup names, then saves `attendanceLight.json`
 
@@ -4054,7 +4056,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `attendanceLightPath` is now legacy cleanup/migration data; do not create new rows for users who have not used `/가입`
+- `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
 
 ---
