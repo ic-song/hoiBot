@@ -114,6 +114,7 @@ Status: VERIFIED
 | Helper | Anchor | Why it matters |
 | --- | --- | --- |
 | `generateBagOutput` | `main.js:35217`, `Info.js:2330` | Canonical bag numbering and text renderer |
+| `isRegisteredHomeMember` | `main.js` | Checks that a user exists in `member.json` before pet-home data can be created from commands |
 | `initSweetHomeUser` | `main.js:37569`, `Info.js:2999` | Normalizes home/sweet-home user state before access |
 | `getHomeTotalExp` | `main.js:37749`, `Info.js:2948` | Home ranking and profile summary calculation |
 | `buildMiniPetBagMessage` | `main.js:40722` | Main mini-pet bag formatter and viewer/target split |
@@ -263,6 +264,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `initSweetHomeUser`
+- `isRegisteredHomeMember`
 - `sortFurnitureList`
 - `getFurnitureMaxSlots`
 - `getFurnitureExp`
@@ -295,6 +297,7 @@ Status: VERIFIED
 
 - Canonical read path for sweet-home furniture bag
 - This branch normalizes home user data before output
+- Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 
 ---
@@ -4017,14 +4020,12 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `recordLightAttendanceOnly`
 - `migrateLightAttendanceToMember`
 - `pruneLightAttendanceData`
 - `buildLightAttendanceCleanupMessage`
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
 - `formatPendingUserIdServerText`
-- `isSlashCommandMessage`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -4036,17 +4037,14 @@ Status: VERIFIED
 - `data.member[sender].today`
 - `data.member[sender].recent`
 - `data.member[sender].server`
-- `attendanceLightData.users[sender]`
-- `attendanceLightData.users[sender].server`
+- existing `attendanceLightData.users[sender]` rows from older pre-signup records
 
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Unregistered short-name users using `ㅊㅊ` are recorded in `attendanceLight.json` with first-known server info when the room is mapped
-- Duplicate same-day `ㅊㅊ` replies with the existing attendance message and returns without rewriting attendance data
-- Slash-prefixed messages from unregistered short-name users do not create normal member data unless they are part of the explicit signup flow
-- Light-attendance users are not promoted to normal member data by ordinary chat; they must use `/가입`
-- `/가입` migrates the sender's light attendance row into normal member data, then removes the light row
+- Users missing from `data.member` return before command/data creation unless they are in the explicit `/가입` flow or pending terms response
+- Unregistered users using `ㅊㅊ` no longer create new `attendanceLight.json` rows
+- `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
 - `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports joined-cleanup names, then saves `attendanceLight.json`
 
 ## Related Commands
@@ -4056,7 +4054,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users
+- `attendanceLightPath` is now legacy cleanup/migration data; do not create new rows for users who have not used `/가입`
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
 
 ---

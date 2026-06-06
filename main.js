@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.176"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.177"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1432,6 +1432,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var guildData = loadJsonFile(guildPath);
 		addResponseTiming("guildData.json 로드", commonStepStart);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
+		var isSignupFlow = msg === "/가입" || !!termsState[sender];
+		if (!data.member[sender] && !isSignupFlow) return;
 		if (!ctx.isDev && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
 			replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
 			return;
@@ -2020,27 +2022,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		//var castleBattleData = loadJsonFile(castleBattlePath);
 		//var titleData = loadJsonFile(memberTitlePath);
 		if (isSaving == false) {
-			var isSignupPetFlow = msg === "/가입" || msg.startsWith("/펫생성 ") || !!termsState[sender];
-			if (msg === "ㅊㅊ" && !data.member[sender]) {
-				var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-				var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
-				if (!lightResult.already || lightResult.serverUpdated) saveJsonFile(attendanceLightData, attendanceLightPath);
-				if (lightResult.already) {
-					replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
-				} else {
-					replier.reply("[" + sender + "] 님 출첵👏[미가입 유저]\n게임을 원하시면 \"/가입\"을 눌러주세요.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
-				}
-				return;
-			}
+			var isSignupPetFlow = isSignupFlow;
 			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
 				if (!data.member[sender]) {
-					if (!isSignupPetFlow && isSlashCommandMessage(msg)) return;
-					if (!isSignupPetFlow) {
-						var pendingAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-						if (pendingAttendanceLightData.users && pendingAttendanceLightData.users.hasOwnProperty(sender)) return;
-					}
 					initializeMember(sender, data, petData);
-					if (!isSignupPetFlow) return;
 				}
 				if (msg === "/가입") {
 					var signupAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
@@ -19340,6 +19325,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					return;
 				}
 				if (msg.startsWith("/펫홈")) {
+					if (!isRegisteredHomeMember(data, sender)) return;
 					let homeData = loadJsonFile(homeDataFile);
 					// 대상 유저 결정 (/펫홈 -> 자기자신 /펫홈 호이 남 -> '호이 남')
 					let parts = msg.trim().split(/\s+/);
@@ -19347,7 +19333,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (parts.length > 1) {
 						targetName = parts.slice(1).join(" ").trim();
 					}
-					if (!data.member[targetName]) {
+					if (!isRegisteredHomeMember(data, targetName)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 대상 유저 [" + targetName + "]님이 존재하지 않습니다.");
 						return;
 					}
@@ -34265,6 +34251,11 @@ function refreshMiniPetSortIndex(petData, owner, gradeTable) {
 		bag[i].sortIndex = i + 1;
 	}
 }
+// 펫홈 데이터 생성 가능 회원인지 확인하는 함수
+function isRegisteredHomeMember(data, user) {
+	return !!(data && data.member && data.member[user]);
+}
+
 // 펫스윗홈
 function initSweetHomeUser(homeData, user) {
 	if (!homeData || typeof homeData !== "object") homeData = {};
@@ -35041,32 +35032,6 @@ function buildTermsMessage() {
 
 function buildWelcomeMessage() {
 	return "" + "호이월드에 오신 것을 환영합니다\n" + '채팅창에 "가이드"를 입력하시면 가이드 확인이 가능합니다.\n' + "1. /펫생성 아이디\n" + "2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
-}
-
-// 슬래시로 시작하는 오입력/명령어 메시지인지 확인하는 함수
-function isSlashCommandMessage(msg) {
-	return typeof msg === "string" && msg.indexOf("/") === 0;
-}
-
-// ㅊㅊ만 입력한 미가입 유저의 최소 출석 기록을 저장하는 함수
-function recordLightAttendanceOnly(attendanceLightData, sender, room) {
-	if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
-	var todayText = getCurrentDate();
-	var row = attendanceLightData.users[sender] || { cnt: 0, recent: "", today: 0 };
-	var already = row.recent === todayText && row.today > 0;
-	var serverUpdated = false;
-	if (!row.server && roomToServer[room]) {
-		row.server = roomToServer[room];
-		serverUpdated = true;
-	}
-	if (!already) {
-		row.cnt = (parseInt(row.cnt, 10) || 0) + 1;
-		row.recent = todayText;
-		row.today = 1;
-		row.updatedAt = formatDateTime(new Date());
-	}
-	attendanceLightData.users[sender] = row;
-	return { already: already, serverUpdated: serverUpdated };
 }
 
 // 경량 출석 기록을 정식 회원 데이터로 옮기는 함수
