@@ -4044,7 +4044,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ`, in the explicit `/가입` flow, or responding to pending terms
+- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/가입` flow
+- Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
 - `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports joined-cleanup names, then saves `attendanceLight.json`

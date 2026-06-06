@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.178"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.179"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1433,7 +1433,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		addResponseTiming("guildData.json 로드", commonStepStart);
 		castleSiegeFlag = guildData.castleSiegeFlag || false;
 		var isPreSignupAttendanceFlow = msg === "ㅊㅊ";
-		var isSignupFlow = msg === "/가입" || !!termsState[sender];
+		var hasPendingTerms = !!termsState[sender];
+		var isSignupTermsResponse = hasPendingTerms && (msg === "시작한다" || msg === "/시작한다" || msg === "거절한다" || msg === "/거절한다");
+		var isSignupFlow = msg === "/가입" || isSignupTermsResponse;
 		if (!data.member[sender] && isPreSignupAttendanceFlow) {
 			var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
 			var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
@@ -2036,6 +2038,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (isSaving == false) {
 			var isSignupPetFlow = isSignupFlow;
 			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
+				if (!data.member[sender] && msg !== "/가입") {
+					delete termsState[sender];
+					return;
+				}
 				if (!data.member[sender]) {
 					initializeMember(sender, data, petData);
 				}
