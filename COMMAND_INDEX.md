@@ -405,7 +405,7 @@ Status: VERIFIED
 
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
-- `/영지공격 7` saves `guildData` after 차원의 문 failure elimination or success turn-limit increase; failure does not increment `guildAttackCounts`
+- `/영지공격 7` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -434,7 +434,7 @@ Status: VERIFIED
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - `/영지공격` is accepted only as `/영지공격 [1-7]`; suffix text such as `/영지공격 2 해봐` must not execute
-- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with no turn-count deduction, 20% guild attack limit +4
+- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
@@ -4023,6 +4023,8 @@ Status: VERIFIED
 - `buildLightAttendanceCleanupMessage`
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
+- `formatPendingUserIdServerText`
+- `isSlashCommandMessage`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -4033,16 +4035,19 @@ Status: VERIFIED
 - `data.member[sender].cnt`
 - `data.member[sender].today`
 - `data.member[sender].recent`
+- `data.member[sender].server`
 - `attendanceLightData.users[sender]`
+- `attendanceLightData.users[sender].server`
 
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Unregistered short-name users using `ㅊㅊ` are recorded in `attendanceLight.json`
+- Unregistered short-name users using `ㅊㅊ` are recorded in `attendanceLight.json` with first-known server info when the room is mapped
 - Duplicate same-day `ㅊㅊ` replies with the existing attendance message and returns without rewriting attendance data
+- Slash-prefixed messages from unregistered short-name users do not create normal member data unless they are part of the explicit signup flow
 - Light-attendance users are not promoted to normal member data by ordinary chat; they must use `/가입`
 - `/가입` migrates the sender's light attendance row into normal member data, then removes the light row
-- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports joined-cleanup names, then saves `attendanceLight.json`
 
 ## Related Commands
 
@@ -4071,6 +4076,7 @@ Status: VERIFIED
 - `collectPendingUserIdMatches`
 - `normalizePendingUserIdBaseName`
 - `formatPendingUserIdDateText`
+- `formatPendingUserIdServerText`
 - `formatPendingUserIdDateValue`
 - `loadJsonFile`
 
@@ -4078,6 +4084,8 @@ Status: VERIFIED
 
 - `data.member[*]` where the stored user ID matches the requested base name after removing a trailing `남`/`여`
 - `attendanceLightData.users[*]` where the stored user ID matches the requested base name after removing a trailing `남`/`여`
+- `data.member[*].server`
+- `attendanceLightData.users[*].server`
 
 ## Save Flow
 
@@ -4093,3 +4101,4 @@ Status: VERIFIED
 - Admin/Master-only HOTFIX command for checking whether a base name can be used as 신규 아이디.
 - Accepted as `/미정` for usage guidance or `/미정 [이름]` for lookup.
 - The command searches regular member data and 미가입 출첵 light data by base name, excluding the trailing gender token from stored user IDs.
+- The command displays stored server info for joined users and light-attendance rows, or `(서버정보 없음)` when the row has no server.
