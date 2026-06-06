@@ -5400,21 +5400,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							replier.reply("[" + targetUservc + "] 님 보룸인증 완료했습니다.");
 							// 슬롯코인 증정
 							if (!data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"]) {
-								data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"] = 4;
+								data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"] = 20;
 							} else {
-								data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"] += 4;
+								data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"] += 20;
 							}
 							// 포인트 증정
 							if (!data.member[sender].point) {
 								// 필드 초기화
 								data.member[sender].point = 0;
 							}
-							data.member[sender].point += 1000000; // 100만 포인트 추가
+							data.member[sender].point += 5000000; // 500만 포인트 추가
 							if (!data.member[sender].checkCnt) {
 								data.member[sender].checkCnt = 0;
 							}
 							data.member[sender].checkCnt += 1;
-							replier.reply("관리자 [" + checkRank(data, petData, guildData, sender) + "] 님 고생했다.\n펫홈샵🖼️x4, 100만 포인트 증정완");
+							replier.reply("관리자 [" + checkRank(data, petData, guildData, sender) + "] 님 고생했다.\n펫홈샵🖼️x20, 500만 포인트 증정완");
 						} else {
 							replier.reply("이미 보룸인증 완료한 유저입니다.");
 						}
@@ -26402,7 +26402,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
 		var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
 		out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
 	}
-	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "자니..?\n(20% 확률 4턴 증가 80% 확률 탈락)" : "닫힘(OFF)") + "\n";
+	out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
 	if (includeCommand) out += "\n순고한 히셍 간사함니다";
 	return out;
 }
