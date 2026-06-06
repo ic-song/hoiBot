@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.175"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.176"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -765,6 +765,7 @@ const GLOBAL_CONFIG = {
 		},
 		dimensionGate: { // 차원의 문 이벤트 설정
 			bonusTurns: 4,
+			failPenaltyTurns: 2,
 			failMessages: [
 				"[{{rank}}] 님이 차원의 문지방조차 넘지 못했습니다..(탈락🥲)",
 				"[{{rank}}] 님이 차원의 문에 들어갔으나 영영 돌아오지 못했습니다..(탈락🥲)",
@@ -2022,8 +2023,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var isSignupPetFlow = msg === "/가입" || msg.startsWith("/펫생성 ") || !!termsState[sender];
 			if (msg === "ㅊㅊ" && !data.member[sender]) {
 				var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-				var lightResult = recordLightAttendanceOnly(attendanceLightData, sender);
-				if (!lightResult.already) saveJsonFile(attendanceLightData, attendanceLightPath);
+				var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
+				if (!lightResult.already || lightResult.serverUpdated) saveJsonFile(attendanceLightData, attendanceLightPath);
 				if (lightResult.already) {
 					replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
 				} else {
@@ -2033,6 +2034,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 			if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
 				if (!data.member[sender]) {
+					if (!isSignupPetFlow && isSlashCommandMessage(msg)) return;
 					if (!isSignupPetFlow) {
 						var pendingAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
 						if (pendingAttendanceLightData.users && pendingAttendanceLightData.users.hasOwnProperty(sender)) return;
@@ -27080,11 +27082,18 @@ function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, at
 		guildId: attackInfo.guildId,
 		reason: "DIMENSION_GATE_FAIL",
 		at: formatDateTime(new Date()),
-		penaltyTurns: 0
+		penaltyTurns: GLOBAL_CONFIG.guildTerritory.dimensionGate.failPenaltyTurns
 	};
+	war.guildAttackCounts[attackInfo.guildId] =
+		(war.guildAttackCounts[attackInfo.guildId] || 0) + GLOBAL_CONFIG.guildTerritory.dimensionGate.failPenaltyTurns;
 	return "🎖️길드 영지전 결과🎖️\n\n[차원의 문 실패🌀]\n" +
 		message + "\n\n" +
-		"※ 차원의 문 탈락은 공격횟수를 차감하지 않습니다.";
+		"※ 차원의 문 탈락으로 공격 가능 횟수 " + GLOBAL_CONFIG.guildTerritory.dimensionGate.failPenaltyTurns + "회가 차감됩니다.\n" +
+		"[" + formatGuildDisplay(attackInfo.guild) + "] 남은 턴 " +
+		Math.max(0, attackLimit - (war.guildAttackCounts[attackInfo.guildId] || 0)) +
+		"/" +
+		attackLimit +
+		"회";
 }
 
 // 영지전 공격 결과 처리
@@ -35034,12 +35043,22 @@ function buildWelcomeMessage() {
 	return "" + "호이월드에 오신 것을 환영합니다\n" + '채팅창에 "가이드"를 입력하시면 가이드 확인이 가능합니다.\n' + "1. /펫생성 아이디\n" + "2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
 }
 
+// 슬래시로 시작하는 오입력/명령어 메시지인지 확인하는 함수
+function isSlashCommandMessage(msg) {
+	return typeof msg === "string" && msg.indexOf("/") === 0;
+}
+
 // ㅊㅊ만 입력한 미가입 유저의 최소 출석 기록을 저장하는 함수
-function recordLightAttendanceOnly(attendanceLightData, sender) {
+function recordLightAttendanceOnly(attendanceLightData, sender, room) {
 	if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
 	var todayText = getCurrentDate();
 	var row = attendanceLightData.users[sender] || { cnt: 0, recent: "", today: 0 };
 	var already = row.recent === todayText && row.today > 0;
+	var serverUpdated = false;
+	if (!row.server && roomToServer[room]) {
+		row.server = roomToServer[room];
+		serverUpdated = true;
+	}
 	if (!already) {
 		row.cnt = (parseInt(row.cnt, 10) || 0) + 1;
 		row.recent = todayText;
@@ -35047,7 +35066,7 @@ function recordLightAttendanceOnly(attendanceLightData, sender) {
 		row.updatedAt = formatDateTime(new Date());
 	}
 	attendanceLightData.users[sender] = row;
-	return { already: already };
+	return { already: already, serverUpdated: serverUpdated };
 }
 
 // 경량 출석 기록을 정식 회원 데이터로 옮기는 함수
@@ -35059,6 +35078,7 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
 	var rowCnt = parseInt(row.cnt, 10) || 0;
 	if (rowCnt > 0) member.cnt = (parseInt(member.cnt, 10) || 0) + rowCnt;
 	if (row.recent) member.recent = row.recent;
+	if (!member.server && row.server) member.server = row.server;
 	if (row.recent === getCurrentDate() && row.today > 0) {
 		member.today = Math.max(parseInt(member.today, 10) || 0, 1);
 		if (data.attend_list instanceof Array && data.attend_list.indexOf(sender) === -1) data.attend_list.push(sender);
@@ -35111,7 +35131,8 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
 			name: name,
 			cnt: parseInt(row.cnt, 10) || 0,
 			recent: row.recent || "없음",
-			days: dayDiff
+			days: dayDiff,
+			server: row.server || ""
 		});
 	}
 
@@ -35134,7 +35155,15 @@ function buildLightAttendanceCleanupMessage(result) {
 	lines.push("삭제 기준: 마지막 출첵 후 " + result.staleDays + "일 이상");
 	lines.push("자동삭제: " + result.removed.length + "명");
 	lines.push("가입완료 정리: " + result.joined.length + "명");
-	lines.push("남은 미가입 출첵: " + result.remained.length + "명");
+	if (result.joined.length > 0) {
+		lines.push("");
+		lines.push("가입완료 정리 목록");
+		for (var joinedIndex = 0; joinedIndex < result.joined.length; joinedIndex++) {
+			lines.push((joinedIndex + 1) + ". " + result.joined[joinedIndex]);
+		}
+		lines.push("");
+	}
+	lines.push("남은 미가입 출첵: " + result.remained.length + "명" + allsee);
 	if (result.remained.length > 0) {
 		lines.push("━━━━━━━━━━━━");
 		lines.push("남은 목록");
@@ -35211,9 +35240,9 @@ function buildPendingUserIdCheckMessage(baseName, data, attendanceLightData) {
 			if (joined || hasLightInfo) blockedNames.push(targetName);
 			lines.push("");
 			lines.push(targetName);
-			lines.push("가입상태: " + (joined ? "✅ 가입됨" + formatPendingUserIdDateText(memberInfo.join, "입장") : "❌ 미가입"));
+			lines.push("가입상태: " + (joined ? "✅ 가입됨" + formatPendingUserIdDateText(memberInfo.join, "입장") + formatPendingUserIdServerText(memberInfo.server) : "❌ 미가입"));
 			lines.push("정보조회: " + (joined ? "✅ 있음" : "❌ 없음"));
-			lines.push("미가입정보: " + (hasLightInfo ? "✅ 있음" + formatPendingUserIdDateText(lightInfo.recent, "입장") : "❌ 없음"));
+			lines.push("미가입정보: " + (hasLightInfo ? "✅ 있음" + formatPendingUserIdDateText(lightInfo.recent, "입장") + formatPendingUserIdServerText(lightInfo.server) : "❌ 없음"));
 		}
 	}
 
@@ -35231,6 +35260,11 @@ function buildPendingUserIdCheckMessage(baseName, data, attendanceLightData) {
 function formatPendingUserIdDateText(dateText, suffix) {
 	if (!dateText) return "";
 	return "(" + formatPendingUserIdDateValue(dateText) + " " + suffix + ")";
+}
+
+// 미정 아이디 조회에 표시할 서버 텍스트 생성 함수
+function formatPendingUserIdServerText(server) {
+	return "(" + (server || "서버정보 없음") + ")";
 }
 
 // 미정 아이디 조회용 YYYYMMDD 날짜 문자열을 표시 형식으로 변환하는 함수
