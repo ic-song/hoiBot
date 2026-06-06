@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.179"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.181"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35164,6 +35164,15 @@ function buildLightAttendanceCleanupMessage(result) {
 		lines.push("가입완료 정리 목록");
 		for (var joinedIndex = 0; joinedIndex < result.joined.length; joinedIndex++) {
 			lines.push((joinedIndex + 1) + ". " + result.joined[joinedIndex]);
+		}
+		lines.push("");
+	}
+	if (result.removed.length > 0) {
+		lines.push("");
+		lines.push("자동삭제 목록");
+		for (var removedIndex = 0; removedIndex < result.removed.length; removedIndex++) {
+			var removedRow = result.removed[removedIndex];
+			lines.push((removedIndex + 1) + ". " + removedRow.name + " / 최근 " + removedRow.recent + " / " + removedRow.days + "일 전");
 		}
 		lines.push("");
 	}
