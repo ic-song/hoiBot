@@ -2765,7 +2765,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:22030`
+- `main.js:16083`
 
 ## Files
 
@@ -2784,12 +2784,15 @@ Status: VERIFIED
 - `data.HoiCastle.taxRate`
 - `data.member[sender].point`
 - `data.member[sender].bag`
+- `data.member[sender].diamondBoxBuyCount` for `다이아상자💎(/다이아상자오픈)` daily purchase limit
 - `petSkillData`
 
 ## Save Flow
 
 - Deducts point-shop cost from member points
 - Applies castle tax earnings through `applyTax(itemPrice, data, guildData)` when tax is not exempt
+- Increments `data.member[sender].diamondBoxBuyCount` when buying `다이아상자💎(/다이아상자오픈)`
+- `/리셋` clears `diamondBoxBuyCount` through `resetAttendance`
 - Saves updated member/pet/guild state through the surrounding response flow
 
 ## Related Commands
@@ -2800,10 +2803,52 @@ Status: VERIFIED
 
 ## AI Notes
 
+- Outer guard accepts `/구매` or `/구매 ` followed by arguments; execution still requires full match `/구매 숫자` or `/구매 숫자 숫자`.
 - `쇼핑광📙` discount applies before tax calculation
 - `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
-- Buying `다이아상자💎(/다이아상자오픈)` rejects quantities over 100 before cost/tax processing.
+- Buying `다이아상자💎(/다이아상자오픈)` rejects purchases that would exceed the daily cumulative 100-box limit before cost/tax processing.
+
+---
+
+# /가입인증
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:5457`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `isAdmin`
+
+## Data Usage
+
+- `data.member[*].voicecheck`
+- `data.member[*].join`
+- `data.member[*].agree`
+- `data.member[*].server`
+
+## Save Flow
+
+- Read-only admin report command
+- Does not mutate or save member data
+
+## Related Commands
+
+- `/가입`
+- `시작한다`
+- `거절한다`
+
+## AI Notes
+
+- Lists only users with `join` and `agree === true` who still do not have `voicecheck`.
+- Users who only entered `/가입` but did not complete the terms agreement are excluded.
 
 ---
 

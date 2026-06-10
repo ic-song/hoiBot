@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.181"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.182"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -735,7 +735,8 @@ const GLOBAL_CONFIG = {
 		carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
 		legendStoneName: "전설의 돌맹이🗿",
 		diamondBoxName: "다이아상자💎(/다이아상자오픈)",
-		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)"
+		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)",
+		diamondBoxDailyBuyLimit: 100
 	},
 	guildTerritory: { // 길드 영토전 설정
 		limits: { // 길드 영토전 제한
@@ -5462,7 +5463,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let currentDateObj = new Date();
 					currentDateObj = new Date(currentDateObj.getFullYear(), currentDateObj.getMonth(), currentDateObj.getDate());
 					for (let user in data.member) {
-						if (!data.member[user].voicecheck && data.member[user].join) {
+						if (!data.member[user].voicecheck && data.member[user].join && data.member[user].agree === true) {
 							let join = data.member[user].join;
 							let server = data.member[user].server ? "(" + data.member[user].server + ")" : "";
 							let joinYear = parseInt(join.substring(0, 4));
@@ -16080,7 +16081,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					Master = data.master;
 					return;
 				}
-				if (msg.startsWith("/구매")) {
+				if (msg === "/구매" || /^\/구매\s+/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let isBuyFlag = false;
 						var regex = /\/구매\s+(\d+)(?:\s+(\d+))?$/;
@@ -16101,9 +16102,25 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 
 						var itemName = itemList[itemNumber - 1];
-						if (itemName === GLOBAL_CONFIG.items.diamondBoxName && quantity > 100) {
-							replier.reply("❌ 다이아상자💎은 하루 100개까지만 구매 가능합니다.");
-							return;
+						if (itemName === GLOBAL_CONFIG.items.diamondBoxName) {
+							if (!data.member[sender].diamondBoxBuyCount) {
+								data.member[sender].diamondBoxBuyCount = 0;
+							}
+							var diamondBoxRemaining = Math.max(0, GLOBAL_CONFIG.items.diamondBoxDailyBuyLimit - data.member[sender].diamondBoxBuyCount);
+							if (quantity > diamondBoxRemaining && sender != "호이 남") {
+								replier.reply(
+									"❌ " +
+									"[" +
+									checkRank(data, petData, guildData, sender) +
+									"]님\n하루 최대 구매 가능 수량은 " +
+									GLOBAL_CONFIG.items.diamondBoxDailyBuyLimit +
+									"개입니다.\n" +
+									"남은 구매 가능 수량: " +
+									diamondBoxRemaining +
+									"개"
+								);
+								return;
+							}
 						}
 						var basePrice = data.shop[itemName] * quantity;
 						var itemPrice = basePrice;
@@ -16300,6 +16317,9 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 								data.member[sender].bag[itemName] = quantity; // 상품을 bag에 추가
 							} else {
 								data.member[sender].bag[itemName] += quantity;
+							}
+							if (itemName === GLOBAL_CONFIG.items.diamondBoxName) {
+								data.member[sender].diamondBoxBuyCount += quantity;
 							}
 							replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
 							if (itemName === "티어 승급티켓🎟" && hasPetSkill(petSkillData, sender, "티어 상승론")) {
@@ -27282,6 +27302,9 @@ function resetAttendance(petData, data, replier) {
 		}
 		if (data.member[user].carrotBuyCount !== undefined) {
 			delete data.member[user].carrotBuyCount;
+		}
+		if (data.member[user].diamondBoxBuyCount !== undefined) {
+			delete data.member[user].diamondBoxBuyCount;
 		}
 		data.member[user].battle.ticket = 0;
 		data.member[user].battle.count = 0;
