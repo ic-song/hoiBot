@@ -2803,7 +2803,7 @@ Status: VERIFIED
 - `쇼핑광📙` discount applies before tax calculation
 - `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
-- Buying `다이아상자💎(/다이아상자오픈)` rejects quantities over 100 before cost/tax processing.
+- Buying a point-shop item whose name contains both `다이아` and `상자` is limited to 100 per day before cost/tax processing.
 
 ---
 

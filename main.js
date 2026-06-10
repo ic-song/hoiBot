@@ -5454,7 +5454,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
 					}
 				}
-				if (msg === "/가입인증" && isAdmin(sender)) {
+				if ((msg === "/가입인증" || msg === "/인증필요" || msg === "/가입인증 목록") && isAdmin(sender)) {
 					let checkmsg1 = "\n1일차 : ";
 					let checkmsg2 = "\n2일차 : ";
 					let checkmsg3 = "\n3일차 : ";
@@ -5462,7 +5462,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let currentDateObj = new Date();
 					currentDateObj = new Date(currentDateObj.getFullYear(), currentDateObj.getMonth(), currentDateObj.getDate());
 					for (let user in data.member) {
-						if (!data.member[user].voicecheck && data.member[user].join) {
+						if (!data.member[user].voicecheck && data.member[user].join && data.member[user].agree === true) {
 							let join = data.member[user].join;
 							let server = data.member[user].server ? "(" + data.member[user].server + ")" : "";
 							let joinYear = parseInt(join.substring(0, 4));
@@ -16243,6 +16243,21 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 									replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
 								}
 							}
+						} else if (itemName.indexOf("다이아") !== -1 && itemName.indexOf("상자") !== -1) {
+							let diamondBoxDailyLimit = 100;
+							if (!data.member[sender].diamondBoxBuyCount) {
+								data.member[sender].diamondBoxBuyCount = 0;
+							}
+							let buyCount = data.member[sender].diamondBoxBuyCount;
+							let remaining = diamondBoxDailyLimit - buyCount;
+							if (quantity > remaining && sender != "호이 남") {
+								replier.reply("❌ 다이아상자💎은 하루 100개까지만 구매 가능합니다.\n남은 구매 가능 수량: " + remaining + "개");
+								return;
+							}
+							addItem(data, sender, itemName, quantity);
+							data.member[sender].diamondBoxBuyCount += quantity;
+							replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+							isBuyFlag = true;
 						} else if (itemName == GLOBAL_CONFIG.items.carrotName) {
 							let totalCost = itemTotalCost;
 							let carrotDailyLimit = 1000;
@@ -27282,6 +27297,9 @@ function resetAttendance(petData, data, replier) {
 		}
 		if (data.member[user].carrotBuyCount !== undefined) {
 			delete data.member[user].carrotBuyCount;
+		}
+		if (data.member[user].diamondBoxBuyCount !== undefined) {
+			delete data.member[user].diamondBoxBuyCount;
 		}
 		data.member[user].battle.ticket = 0;
 		data.member[user].battle.count = 0;
