@@ -63,6 +63,8 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
 5. For production-facing code/data work, commit and push the current task branch first.
 6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary for `/개발자노트`.
+   - Before switching to `feature/prod`, inspect the source-branch diff/commit list and confirm both `data/hoiBotChangeLog.json` and `main.js` are included.
+   - If either file is missing for a production-facing change, stop production reflection and add the developer-note/version update on the source branch first.
    - Write developer-note text in a Toss-like, user-friendly style: explain what users/operators can do now, what became easier, or what inconvenience was fixed.
    - Prefer short sentences such as `~할 수 있어요`, `~가 더 쉬워졌어요`, `~를 더 안정적으로 처리해요`, and `~문제를 고쳤어요`.
    - Avoid internal helper/file/key names and developer-only jargon unless the command/data name itself is user-facing.
@@ -75,8 +77,9 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 10. Verify the commit(s) to reflect already exist on the pushed source branch.
 11. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
 12. Push `feature/prod`.
-13. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
-14. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, and whether local skills were updated.
+13. Re-check `origin/feature/prod` and confirm the reflected production-facing commit includes the developer-note/version update; report the reflected `/개발자노트` version.
+14. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
+15. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, which `/개발자노트` version is current, and whether local skills were updated.
 
 ## Merge Versus Cherry-Pick
 

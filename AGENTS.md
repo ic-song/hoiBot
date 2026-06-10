@@ -162,6 +162,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Open PRs back into `feature/prod` for operational changes.
 - When the user says "prod까지 올려줘" or "운영반영해줘", treat it as a request to push the current task branch and then reflect the validated work into `feature/prod`.
 - For production-facing code/data/bug-fix changes, add a new top entry to `data/hoiBotChangeLog.json` before production reflection.
+- Before reflecting production-facing code/data/bug-fix changes, explicitly verify the source-branch diff includes both `data/hoiBotChangeLog.json` and `main.js`; if either is missing, stop and add the developer-note/version update on the source branch before touching `feature/prod`.
 - Treat `data/hoiBotChangeLog.json` as the source for the user-facing `/개발자노트` command.
 - Each `data/hoiBotChangeLog.json` entry must increase the latest version by `0.001`, use the reflection date, and summarize the user-visible fix or change in `changes`.
 - Write `data/hoiBotChangeLog.json` entries in a Toss-like, user-friendly developer-note style:
@@ -171,6 +172,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   - If one version contains several changes, group the wording by user impact such as `새로 추가`, `더 좋아짐`, `문제 수정`, or `운영 개선` instead of implementation area.
 - When multiple entries share the same date, `/개발자노트` should present them under one date section while each production-facing change still receives its own `0.001` version increase.
 - Before production reflection, keep `HoiBotVersion` in `main.js` synchronized with the latest `data/hoiBotChangeLog.json` entry so `/호이봇버전` and `/개발자노트` show the same current version.
+- After production reflection, re-check `origin/feature/prod` and confirm the reflected commit includes the developer-note/version update; report the reflected version in the final response.
 - Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change the live bot behavior or the user explicitly requests a visible change record.
 - Test reflection scripts should use `feature/prod` as their source branch.
 - `main` is a stable/reference branch and should not be assumed to be the active production source.
@@ -318,6 +320,7 @@ head-agent
 - Merge into `feature/prod` only after explicit user approval.
 - For "prod까지 올려줘" or "운영반영해줘", push the current task branch first, then merge or cherry-pick the validated task changes into `feature/prod`, and push `feature/prod`.
 - Before reflecting production-facing code/data/bug-fix changes into `feature/prod`, verify `data/hoiBotChangeLog.json` has a new top entry with the latest version increased by `0.001` and a concise Toss-like `/개발자노트` summary.
+- Treat missing `data/hoiBotChangeLog.json` or missing `HoiBotVersion` synchronization as a hard blocker for production reflection; fix it on the pushed source branch first, then reflect that commit into `feature/prod`.
 - For workflow/documentation changes, do not wait for a separate production-reflection phrase; push `feature/workflow`, then reflect the validated workflow commit(s) into `feature/prod`.
 - If the task branch contains unrelated historical commits or is far ahead of its upstream, do not merge the whole branch into `feature/prod`; cherry-pick only the validated task commit(s).
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
