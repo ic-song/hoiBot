@@ -2765,7 +2765,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:22030`
+- `main.js:16083`
 
 ## Files
 
@@ -2784,6 +2784,7 @@ Status: VERIFIED
 - `data.HoiCastle.taxRate`
 - `data.member[sender].point`
 - `data.member[sender].bag`
+- `data.member[sender].diamondBoxBuyCount`
 - `petSkillData`
 
 ## Save Flow
@@ -2803,7 +2804,8 @@ Status: VERIFIED
 - `쇼핑광📙` discount applies before tax calculation
 - `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
-- Buying a point-shop item whose name contains both `다이아` and `상자` is limited to 100 per day before cost/tax processing.
+- Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
+- Buying a point-shop item whose name contains both `다이아` and `상자` is limited to `GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy` per day before cost/tax processing.
 
 ---
 

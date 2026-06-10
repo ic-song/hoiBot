@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.182"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.183"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -736,6 +736,11 @@ const GLOBAL_CONFIG = {
 		legendStoneName: "전설의 돌맹이🗿",
 		diamondBoxName: "다이아상자💎(/다이아상자오픈)",
 		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)"
+	},
+	pointShop: { // 포인트 상점 설정
+		limits: {
+			diamondBoxDailyBuy: 100
+		}
 	},
 	guildTerritory: { // 길드 영토전 설정
 		limits: { // 길드 영토전 제한
@@ -16080,10 +16085,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					Master = data.master;
 					return;
 				}
-				if (msg.startsWith("/구매")) {
+				if (msg === "/구매" || /^\/구매\s+\d+(?:\s+\d+)?$/.test(msg)) {
 					if (!castleSiegeFlag) {
 						let isBuyFlag = false;
-						var regex = /\/구매\s+(\d+)(?:\s+(\d+))?$/;
+						var regex = /^\/구매\s+(\d+)(?:\s+(\d+))?$/;
 						var match = msg.match(regex);
 
 						if (!match) {
@@ -16099,12 +16104,12 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							replier.reply("유효하지 않은 상품 번호입니다.\n다시 확인해주세요.");
 							return;
 						}
-
-						var itemName = itemList[itemNumber - 1];
-						if (itemName === GLOBAL_CONFIG.items.diamondBoxName && quantity > 100) {
-							replier.reply("❌ 다이아상자💎은 하루 100개까지만 구매 가능합니다.");
+						if (quantity <= 0) {
+							replier.reply("올바른 구매 수량을 입력해주세요.");
 							return;
 						}
+
+						var itemName = itemList[itemNumber - 1];
 						var basePrice = data.shop[itemName] * quantity;
 						var itemPrice = basePrice;
 						var taxRate = data.HoiCastle && data.HoiCastle.taxRate ? data.HoiCastle.taxRate : 0;
@@ -16244,12 +16249,13 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 								}
 							}
 						} else if (itemName.indexOf("다이아") !== -1 && itemName.indexOf("상자") !== -1) {
-							let diamondBoxDailyLimit = 100;
+							let diamondBoxDailyLimit = GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy;
 							if (!data.member[sender].diamondBoxBuyCount) {
 								data.member[sender].diamondBoxBuyCount = 0;
 							}
 							let buyCount = data.member[sender].diamondBoxBuyCount;
 							let remaining = diamondBoxDailyLimit - buyCount;
+							if (remaining < 0) remaining = 0;
 							if (quantity > remaining && sender != "호이 남") {
 								replier.reply("❌ 다이아상자💎은 하루 100개까지만 구매 가능합니다.\n남은 구매 가능 수량: " + remaining + "개");
 								return;
