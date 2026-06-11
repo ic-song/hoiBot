@@ -11,6 +11,7 @@ set TARGET_CHANGELOG=/storage/emulated/0/호이랜드/hoiBotChangeLog.json
 set TARGET_CHANGELOG_DIR=/storage/emulated/0/호이랜드
 set BOT_NAME=info
 set BASE_BRANCH=feature/prod
+set DEPLOY_LOG=%TEMP%\hoibot_info_deploy_%RANDOM%.log
 
 title hoiBot info deploy
 
@@ -77,25 +78,44 @@ echo.
 
 echo [4/5] Info.js 업로드
 echo ------------------------------------------------------------
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %SOURCE_FILE% %TARGET_FILE%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %SOURCE_FILE% %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_PUSH
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%"
+findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_PUSH
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_REMOTE_VERIFY
+findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_REMOTE_VERIFY
 echo [VERIFY] Uploaded Info.js response marker:
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n 'function response' %TARGET_FILE%"
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n 'function response' %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_REMOTE_VERIFY
+findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_REMOTE_VERIFY
 echo [OK] Info.js uploaded
 echo.
 
 echo [5/5] 수정내용 업로드 및 컴파일 요청
 echo ------------------------------------------------------------
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell mkdir -p %TARGET_CHANGELOG_DIR%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell mkdir -p %TARGET_CHANGELOG_DIR%" > "%DEPLOY_LOG%" 2>&1
 if errorlevel 1 goto FAIL_CHANGELOG
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %CHANGELOG_SOURCE% %TARGET_CHANGELOG%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %CHANGELOG_SOURCE% %TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_CHANGELOG
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_CHANGELOG%" > nul 2>&1
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%" > nul 2>&1
+findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_CHANGELOG
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
+if errorlevel 1 goto FAIL_CHANGELOG
+findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_CHANGELOG
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_COMPILE
+findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_COMPILE
 echo [OK] 수정내용 업로드 및 컴파일 요청 완료
 echo.
 
