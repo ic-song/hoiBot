@@ -52,6 +52,11 @@ if errorlevel 1 goto FAIL_GIT_RESET
 git clean -fd > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_CLEAN
 echo [OK] 최신 코드 확인 완료
+for /f "usebackq delims=" %%h in (`git rev-parse --short HEAD`) do set CURRENT_GIT_HEAD=%%h
+echo [VERIFY] Git HEAD = !CURRENT_GIT_HEAD!
+echo [VERIFY] Local HoiBotVersion:
+findstr /n /c:"const HoiBotVersion" "%SOURCE_FILE%"
+if errorlevel 1 goto FAIL_LOCAL_VERIFY
 echo.
 
 echo [3/5] LDPlayer 인스턴스 연결 확인
@@ -67,7 +72,11 @@ echo [4/5] main.js 업로드
 echo ------------------------------------------------------------
 "%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %SOURCE_FILE% %TARGET_FILE%" > nul 2>&1
 if errorlevel 1 goto FAIL_PUSH
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%" > nul 2>&1
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%"
+if errorlevel 1 goto FAIL_REMOTE_VERIFY
+echo [VERIFY] Uploaded HoiBotVersion:
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n HoiBotVersion %TARGET_FILE%"
+if errorlevel 1 goto FAIL_REMOTE_VERIFY
 echo [OK] main.js uploaded
 echo.
 
@@ -168,6 +177,28 @@ echo ============================================================
 echo  FAIL - Git 미추적 파일 정리 실패
 echo ============================================================
 echo  미추적 파일 상태를 확인한 뒤 다시 실행하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_LOCAL_VERIFY
+echo.
+echo ============================================================
+echo  FAIL - 로컬 main.js 버전 확인 실패
+echo ============================================================
+echo  SOURCE_FILE 안에서 HoiBotVersion 줄을 찾지 못했습니다.
+echo  SOURCE_FILE = %SOURCE_FILE%
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_REMOTE_VERIFY
+echo.
+echo ============================================================
+echo  FAIL - 업로드된 main.js 확인 실패
+echo ============================================================
+echo  TARGET_FILE 경로가 실제 MessengerBot main.js 위치인지 확인하세요.
+echo  TARGET_FILE = %TARGET_FILE%
 echo ============================================================
 pause
 exit /b 1
