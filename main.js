@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.185"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.186"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -57,7 +57,7 @@ const PET_SKILL_COMPAT_GROUPS = [
 const PET_SKILL_LIST = [
 
 	{ name: "청룡언월도", grade: "SS", rate: 0.2, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
-	{ name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금을 면제받습니다." },
+	{ name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
 	{ name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
 	{ name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
 	{ name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
@@ -1929,7 +1929,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 			var config = getMiniPetCombinationConfigByGrades(firstPet.grade || "", secondPet.grade || "");
 			if (!config) {
-				replier.reply("❌ 조합 가능한 등급이 아닙니다.\n태초 2개 -> 태초+ (50%)\n태초+ 2개 -> 창세 (30%)\n창세 2개 -> 컬렉션창조 미니펫 (100%)");
+				replier.reply("❌ 조합 가능한 등급이 아닙니다.\n초월+ 2개 -> 태초 (50%)\n태초 2개 -> 태초+ (50%)\n태초+ 2개 -> 창세 (30%)\n창세 2개 -> 컬렉션창조 미니펫 (100%)");
 				return;
 			}
 
@@ -1937,8 +1937,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			attemptMessage += "재료: " + config.inputGrade + " 2마리\n";
 			attemptMessage += "결과 등급: " + config.outputGrade + "\n";
 			attemptMessage += "성공 확률: " + Math.round(config.successRate * 100) + "%";
-
-			removeMiniPetsFromBag(bag, [firstIndex, secondIndex]);
 
 			var isSuccess = config.successRate >= 1 ? true : Math.random() < config.successRate;
 			var rewardPet = null;
@@ -16178,7 +16176,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							taxExempt = true;
 						}
 
-						taxRate = taxExempt ? 0 : baseTaxRate;
+						taxRate = taxExempt ? Math.round(baseTaxRate * 0.3 * 10) / 10 : baseTaxRate;
 						taxAmount = Math.round(itemPrice * (taxRate / 100));
 						itemTotalCost = itemPrice + taxAmount;
 						if (!hasPoint(data, sender, itemTotalCost)) {
@@ -16383,11 +16381,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 						if (isBuyFlag) {
 							if (taxAmount > 0) {
-								applyTax(itemPrice, data, guildData);
+								applyTax(itemPrice, data, guildData, taxAmount);
 							}
 							addPoint(data, sender, -itemTotalCost); // 상품가격 point 차감
 							if (taxExempt && baseTaxRate > 0) {
-								replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
+								replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금의 70%가 면제됩니다.");
 							}
 							saveJsonFile(data, filePath);
 							saveJsonFile(petData, memberPetPath);
@@ -18975,7 +18973,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						var pet = bag[i];
 						var charm = parseInt(pet && pet.battleExp, 10) || 0;
 						var grade = String((pet && pet.grade) || "").trim();
-						var isProtectedGrade = grade === "창조" || grade === "창세" || isElite(pet);
+						var isProtectedGrade = grade === "창조" || grade === "창세" || grade === "태초+" || grade === "태초" || isElite(pet);
 
 						if (!isProtectedGrade && charm <= threshold) {
 							soldCount++;
@@ -28705,14 +28703,14 @@ function castleMsg(msg, replier, isGroupChat) {
  * @param {number} point - 세율이 적용될 포인트
  * @returns {number} - 세금이 적용된 후의 포인트
  */
-function applyTax(point, data, guildData) {
+function applyTax(point, data, guildData, taxAmountOverride) {
 	// 세율과 성주 정보가 있는지 확인
 	if (data.HoiCastle && data.HoiCastle.taxRate && data.HoiCastle.lord) {
 		var taxRate = data.HoiCastle.taxRate; // 세율
 		var lord = data.HoiCastle.lord; // 성주
 
 		// 세금 계산
-		var taxAmount = Math.round(point * (taxRate / 100));
+		var taxAmount = typeof taxAmountOverride === "number" ? Math.round(taxAmountOverride) : Math.round(point * (taxRate / 100));
 		var taxedPoint = point + taxAmount;
 
 		// 실제 길드자금으로 들어갈 금액
@@ -34738,6 +34736,7 @@ function addMiniPetToUserBag(petData, receiver, name, emoji, grade, price, exp) 
 // 0~300강: 1.70 고정
 // 301강부터: 1.70 + (강화-300)*0.01  => 301=1.71, 302=1.72 ...
 function getMiniPetCombinationConfig(commandName) {
+	if (commandName === "태초") return { commandLabel: "태초", inputGrade: "초월+", outputGrade: "태초", successRate: 0.5 };
 	if (commandName === "태초+") return { commandLabel: "태초+", inputGrade: "태초", outputGrade: "태초+", successRate: 0.5 };
 	if (commandName === "창세") return { commandLabel: "창세", inputGrade: "태초+", outputGrade: "창세", successRate: 0.3 };
 	if (commandName === "창조") return { commandLabel: "창조", inputGrade: "창세", outputGrade: "창조", successRate: 1.0 };
@@ -34748,18 +34747,20 @@ function getMiniPetCombinationConfigByGrades(firstGrade, secondGrade) {
 	if (!firstGrade || !secondGrade) return null;
 	if (firstGrade !== secondGrade) return null;
 
-	var firstConfig = getMiniPetCombinationConfig("태초+");
-	var secondConfig = getMiniPetCombinationConfig("창세");
-	var thirdConfig = getMiniPetCombinationConfig("창조");
+	var firstConfig = getMiniPetCombinationConfig("태초");
+	var secondConfig = getMiniPetCombinationConfig("태초+");
+	var thirdConfig = getMiniPetCombinationConfig("창세");
+	var fourthConfig = getMiniPetCombinationConfig("창조");
 
 	if (firstConfig && firstGrade === firstConfig.inputGrade) return firstConfig;
 	if (secondConfig && firstGrade === secondConfig.inputGrade) return secondConfig;
-	if (thirdConfig && firstGrade === "창세") {
+	if (thirdConfig && firstGrade === thirdConfig.inputGrade) return thirdConfig;
+	if (fourthConfig && firstGrade === "창세") {
 		return {
-			commandLabel: thirdConfig.commandLabel,
+			commandLabel: fourthConfig.commandLabel,
 			inputGrade: "창세",
-			outputGrade: thirdConfig.outputGrade,
-			successRate: thirdConfig.successRate
+			outputGrade: fourthConfig.outputGrade,
+			successRate: fourthConfig.successRate
 		};
 	}
 
@@ -34768,6 +34769,13 @@ function getMiniPetCombinationConfigByGrades(firstGrade, secondGrade) {
 
 function createMiniPetFromCombination(grade) {
 	var pool = MINI_PET_COMBINATION_REWARDS[grade] || [];
+	if (!pool.length && miniPetData && miniPetData.miniPet instanceof Array) {
+		for (var mp = 0; mp < miniPetData.miniPet.length; mp++) {
+			if (miniPetData.miniPet[mp] && miniPetData.miniPet[mp].grade === grade) {
+				pool.push([miniPetData.miniPet[mp].name, miniPetData.miniPet[mp].emoji, miniPetData.miniPet[mp].battleExp || miniPetData.miniPet[mp].price || 0]);
+			}
+		}
+	}
 	if (!pool.length) return null;
 	var picked = pool[Math.floor(Math.random() * pool.length)];
 	return { name: picked[0], emoji: picked[1], grade: grade, price: picked[2], battleExp: picked[2], castleExp: picked[2], raidExp: picked[2] };

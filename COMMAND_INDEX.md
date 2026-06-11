@@ -1154,6 +1154,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Threshold-based mini-pet cleanup and sale command
+- `창조`, `창세`, `태초+`, `태초`, and elite mini-pets are protected from cleanup sale
 - Inspect this branch first for reports about unexpected bulk removals
 
 ---
@@ -2488,22 +2489,29 @@ Status: VERIFIED
 
 ---
 
-# /미니펫조합태초+|창세|창조
+# /미니펫조합 [번호] [번호] / /미니펫조합태초+|창세|창조
 Status: VERIFIED
 ## Command Anchors
-- `main.js:24716`
+- `main.js`
 ## Files
 - `main.js`
 ## Related Helpers
 - `getMiniPetCombinationConfig`
+- `getMiniPetCombinationConfigByGrades`
+- `createMiniPetFromCombination`
+- `removeMiniPetsFromBag`
 - `refreshMiniPetSortIndex`
 ## Data Usage
 - `petData[sender].miniPetBag`
+- `miniPetData.miniPet`
 - `miniPetData.gradeTable`
 ## Save Flow
 - Consumes source mini-pets, creates result mini-pet, saves `petData`
 ## Related Commands
 - `/미니펫가방`
+## AI Notes
+- `/미니펫조합 [번호] [번호]` auto-detects same-grade materials and supports `초월+ 2개 -> 태초`, `태초 2개 -> 태초+`, `태초+ 2개 -> 창세`, and `창세 2개 -> 창조`
+- `태초` rewards are selected from `miniPetData.miniPet` because `MINI_PET_COMBINATION_REWARDS` has no dedicated `태초` table
 
 ---
 
@@ -2804,7 +2812,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `쇼핑광📙` discount applies before tax calculation
-- `탈세자📙` sets point-shop tax to 0 for `/구매` only, and does not affect `/길드상점구매`
+- `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
 - Buying a point-shop item whose name contains both `다이아` and `상자` is limited to `GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy` per day before cost/tax processing.
