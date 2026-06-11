@@ -76,9 +76,9 @@ if /i "%TARGET_LD_INDEX%"=="auto" (
 	set DETECTED_TARGET_FILE=
 	set DETECTED_LD_COUNT=0
 	for /f "tokens=1 delims=," %%i in ('"%LD_CONSOLE_EXE%" list2') do (
-		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell find /storage/emulated/0 -path '*/Bots/info/Info.js' -type f 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
+		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell find /storage/emulated/0 -iname Info.js -type f 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
 		for /f "usebackq delims=" %%p in ("%DEPLOY_LOG%") do (
-			echo %%p | findstr /i /c:"/Bots/info/Info.js" > nul 2>&1
+			echo %%p | findstr /i /c:"/info" > nul 2>&1
 			if not errorlevel 1 (
 				set /a DETECTED_LD_COUNT+=1
 				set DETECTED_LD_INDEX=%%i
@@ -284,7 +284,7 @@ echo ============================================================
 echo  FAIL - 운영 LDPlayer 자동 감지 실패
 echo ============================================================
 echo  Info.js 파일을 가진 LDPlayer를 찾지 못했습니다.
-echo  검색 기준 = /storage/emulated/0/*/Bots/info/Info.js
+echo  검색 기준 = /storage/emulated/0 아래 Info.js 파일 중 경로에 info 포함
 echo  LDPlayer와 MessengerBot 봇 파일 경로를 확인하세요.
 echo ============================================================
 pause
