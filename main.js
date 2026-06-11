@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.183"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.184"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -16391,6 +16391,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							if (taxExempt && baseTaxRate > 0) {
 								replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금이 면제됩니다.");
 							}
+							saveJsonFile(data, filePath);
+							saveJsonFile(petData, memberPetPath);
 						}
 					}
 				}

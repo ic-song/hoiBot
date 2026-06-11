@@ -2791,7 +2791,9 @@ Status: VERIFIED
 
 - Deducts point-shop cost from member points
 - Applies castle tax earnings through `applyTax(itemPrice, data, guildData)` when tax is not exempt
-- Saves updated member/pet/guild state through the surrounding response flow
+- Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
+- Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
+- `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
 
 ## Related Commands
 
