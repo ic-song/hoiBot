@@ -39,6 +39,7 @@ echo.
 echo [2/5] 최신 코드 받기
 echo ------------------------------------------------------------
 echo [WARN] 현재 작업트리의 수정/미추적 파일을 취소하고 운영 기준으로 맞춥니다.
+for /f "usebackq delims=" %%h in (`git rev-parse --short HEAD`) do set BEFORE_GIT_HEAD=%%h
 git reset --hard > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_RESET
 git clean -fd > nul 2>&1
@@ -51,8 +52,14 @@ git reset --hard origin/%BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_RESET
 git clean -fd > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_CLEAN
-echo [OK] 최신 코드 확인 완료
 for /f "usebackq delims=" %%h in (`git rev-parse --short HEAD`) do set CURRENT_GIT_HEAD=%%h
+if not "!HOIBOT_DEPLOY_RESTARTED!"=="1" if not "!BEFORE_GIT_HEAD!"=="!CURRENT_GIT_HEAD!" (
+	echo [INFO] 배치 파일이 최신 코드로 갱신되었을 수 있어 새 버전으로 다시 시작합니다.
+	set HOIBOT_DEPLOY_RESTARTED=1
+	call "%~f0"
+	exit /b %ERRORLEVEL%
+)
+echo [OK] 최신 코드 확인 완료
 echo [VERIFY] Git HEAD = !CURRENT_GIT_HEAD!
 echo [VERIFY] Local HoiBotVersion:
 findstr /n /c:"const HoiBotVersion" "%SOURCE_FILE%"
