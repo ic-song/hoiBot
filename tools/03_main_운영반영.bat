@@ -3,6 +3,9 @@ chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
 
 set LD_CONSOLE_EXE=C:\LDPlayer\LDPlayer9\ldconsole.exe
+set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
+set TARGET_ADB_DEVICE=auto
+set USE_DIRECT_ADB=0
 set TARGET_LD_INDEX=auto
 set TARGET_BOT_DIR=/storage/emulated/0/hoiland/hoiland/Bots/main
 set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/main/main.js
@@ -23,6 +26,8 @@ echo ============================================================
 echo  LDPlayer와 MessengerBot이 켜진 상태에서 실행하세요.
 echo ============================================================
 echo  LD_CONSOLE_EXE  = %LD_CONSOLE_EXE%
+echo  ADB_EXE         = %ADB_EXE%
+echo  TARGET_ADB_DEVICE = %TARGET_ADB_DEVICE%
 echo  TARGET_LD_INDEX = %TARGET_LD_INDEX%
 echo  TARGET_FILE     = %TARGET_FILE%
 echo ============================================================
@@ -70,20 +75,63 @@ echo.
 
 echo [3/5] LDPlayer 인스턴스 연결 확인
 echo ------------------------------------------------------------
+if exist "%ADB_EXE%" (
+	echo [INFO] ADB devices:
+	"%ADB_EXE%" devices
+	if /i "%TARGET_ADB_DEVICE%"=="auto" (
+		set DETECTED_ADB_DEVICE=
+		set DETECTED_ADB_COUNT=0
+		for /f "skip=1 tokens=1,2" %%a in ('"%ADB_EXE%" devices') do (
+			if "%%b"=="device" (
+				set /a DETECTED_ADB_COUNT+=1
+				set DETECTED_ADB_DEVICE=%%a
+			)
+		)
+		if "!DETECTED_ADB_COUNT!"=="1" (
+			set TARGET_ADB_DEVICE=!DETECTED_ADB_DEVICE!
+			set USE_DIRECT_ADB=1
+			echo [INFO] 직접 ADB device 사용: !TARGET_ADB_DEVICE!
+		)
+	) else (
+		set USE_DIRECT_ADB=1
+	)
+)
+if "%USE_DIRECT_ADB%"=="1" (
+	set DETECTED_TARGET_FILE=
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "grep -R -l HoiBotVersion /sdcard /storage/emulated/0 /storage/self/primary 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
+	type "%DEPLOY_LOG%"
+	for /f "usebackq delims=" %%p in ("%DEPLOY_LOG%") do (
+		echo %%p | findstr /i /c:".js" > nul 2>&1
+		if not errorlevel 1 (
+			if "!DETECTED_TARGET_FILE!"=="" (
+				set DETECTED_TARGET_FILE=%%p
+			) else (
+				goto FAIL_LD_MULTI_INDEX
+			)
+		)
+	)
+	if "!DETECTED_TARGET_FILE!"=="" goto FAIL_LD_AUTO_INDEX
+	set TARGET_FILE=!DETECTED_TARGET_FILE!
+	echo [OK] 직접 ADB device: %TARGET_ADB_DEVICE%
+	echo [OK] TARGET_FILE = %TARGET_FILE%
+	echo.
+) else (
+echo [INFO] LDPlayer list2:
+"%LD_CONSOLE_EXE%" list2
 if /i "%TARGET_LD_INDEX%"=="auto" (
 	echo [INFO] TARGET_LD_INDEX=auto - main 봇 파일이 있는 LDPlayer와 경로를 찾습니다.
 	set DETECTED_LD_INDEX=
 	set DETECTED_TARGET_FILE=
 	set DETECTED_LD_COUNT=0
 	for /f "tokens=1 delims=," %%i in ('"%LD_CONSOLE_EXE%" list2') do (
-		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell find /storage/emulated/0 -iname main.js -type f 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
+		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell grep -R -l HoiBotVersion /sdcard /storage/emulated/0 /storage/self/primary 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
 		for /f "usebackq delims=" %%p in ("%DEPLOY_LOG%") do (
-			echo %%p | findstr /i /c:"/main" > nul 2>&1
+			echo %%p | findstr /i /c:".js" > nul 2>&1
 			if not errorlevel 1 (
 				set /a DETECTED_LD_COUNT+=1
 				set DETECTED_LD_INDEX=%%i
 				set DETECTED_TARGET_FILE=%%p
-				echo [INFO] main 봇 파일 후보: LDPlayer index %%i, %%p
+				echo [INFO] HoiBotVersion 포함 파일 후보: LDPlayer index %%i, %%p
 			)
 		)
 	)
@@ -96,26 +144,40 @@ if /i "%TARGET_LD_INDEX%"=="auto" (
 	if errorlevel 1 goto FAIL_LD_INDEX
 )
 "%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell echo ok" > "%DEPLOY_LOG%" 2>&1
+type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_ADB
 findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_ADB
 echo [OK] LDPlayer index: %TARGET_LD_INDEX%
 echo.
+)
 
 echo [4/5] main.js 업로드
 echo ------------------------------------------------------------
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %SOURCE_FILE% %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% push "%SOURCE_FILE%" "%TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %SOURCE_FILE% %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+)
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_PUSH
 findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_PUSH
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "ls -l '%TARGET_FILE%'" > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+)
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_REMOTE_VERIFY
 findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_REMOTE_VERIFY
 echo [VERIFY] Uploaded HoiBotVersion:
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n HoiBotVersion %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "grep -n HoiBotVersion '%TARGET_FILE%'" > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n HoiBotVersion %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+)
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_REMOTE_VERIFY
 findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
@@ -125,19 +187,35 @@ echo.
 
 echo [5/5] 수정내용 업로드 및 컴파일 요청
 echo ------------------------------------------------------------
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell mkdir -p %TARGET_CHANGELOG_DIR%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "mkdir -p '%TARGET_CHANGELOG_DIR%'" > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell mkdir -p %TARGET_CHANGELOG_DIR%" > "%DEPLOY_LOG%" 2>&1
+)
 if errorlevel 1 goto FAIL_CHANGELOG
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %CHANGELOG_SOURCE% %TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% push "%CHANGELOG_SOURCE%" "%TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "push %CHANGELOG_SOURCE% %TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+)
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_CHANGELOG
 findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_CHANGELOG
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "ls -l '%TARGET_CHANGELOG%'" > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell ls -l %TARGET_CHANGELOG%" > "%DEPLOY_LOG%" 2>&1
+)
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_CHANGELOG
 findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_CHANGELOG
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%" > "%DEPLOY_LOG%" 2>&1
+if "%USE_DIRECT_ADB%"=="1" (
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME% > "%DEPLOY_LOG%" 2>&1
+) else (
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell am broadcast -a com.xfl.msgbot.broadcast.compile -p com.xfl.msgbot --es name %BOT_NAME%" > "%DEPLOY_LOG%" 2>&1
+)
 type "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_COMPILE
 findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
@@ -283,8 +361,8 @@ echo.
 echo ============================================================
 echo  FAIL - 운영 LDPlayer 자동 감지 실패
 echo ============================================================
-echo  main.js 파일을 가진 LDPlayer를 찾지 못했습니다.
-echo  검색 기준 = /storage/emulated/0 아래 main.js 파일 중 경로에 main 포함
+echo  HoiBotVersion을 포함한 운영 봇 JS 파일을 찾지 못했습니다.
+echo  검색 기준 = /sdcard, /storage/emulated/0, /storage/self/primary
 echo  LDPlayer와 MessengerBot 봇 파일 경로를 확인하세요.
 echo ============================================================
 pause
