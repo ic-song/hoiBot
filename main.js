@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.184"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.185"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -16301,13 +16301,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							}
 						} else if (itemName.indexOf("다이아") !== -1 && itemName.indexOf("상자") !== -1) {
 							let diamondBoxDailyLimit = GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy;
-							if (!data.member[sender].diamondBoxBuyCount) {
-								data.member[sender].diamondBoxBuyCount = 0;
-							}
+							data.member[sender].diamondBoxBuyCount = parseInt(data.member[sender].diamondBoxBuyCount, 10) || 0;
 							let buyCount = data.member[sender].diamondBoxBuyCount;
 							let remaining = diamondBoxDailyLimit - buyCount;
 							if (remaining < 0) remaining = 0;
-							if (quantity > remaining && sender != "호이 남") {
+							if (quantity > remaining) {
 								replier.reply("❌ 다이아상자💎은 하루 100개까지만 구매 가능합니다.\n남은 구매 가능 수량: " + remaining + "개");
 								return;
 							}
