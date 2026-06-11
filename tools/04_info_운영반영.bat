@@ -3,7 +3,8 @@ chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
 
 set LD_CONSOLE_EXE=C:\LDPlayer\LDPlayer9\ldconsole.exe
-set TARGET_LD_INDEX=1
+set TARGET_LD_INDEX=auto
+set TARGET_BOT_DIR=/storage/emulated/0/hoiland/hoiland/Bots/info
 set TARGET_FILE=/storage/emulated/0/hoiland/hoiland/Bots/info/Info.js
 set SOURCE_FILE=Info.js
 set CHANGELOG_SOURCE=data\hoiBotChangeLog.json
@@ -69,10 +70,30 @@ echo.
 
 echo [3/5] LDPlayer 인스턴스 연결 확인
 echo ------------------------------------------------------------
-"%LD_CONSOLE_EXE%" list2 | findstr /b "%TARGET_LD_INDEX%," > nul 2>&1
-if errorlevel 1 goto FAIL_LD_INDEX
-"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell echo ok" > nul 2>&1
+if /i "%TARGET_LD_INDEX%"=="auto" (
+	echo [INFO] TARGET_LD_INDEX=auto - info 봇 폴더가 있는 LDPlayer를 찾습니다.
+	set DETECTED_LD_INDEX=
+	set DETECTED_LD_COUNT=0
+	for /f "tokens=1 delims=," %%i in ('"%LD_CONSOLE_EXE%" list2') do (
+		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell ls %TARGET_BOT_DIR%" > "%DEPLOY_LOG%" 2>&1
+		findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+		if errorlevel 1 (
+			set /a DETECTED_LD_COUNT+=1
+			set DETECTED_LD_INDEX=%%i
+			echo [INFO] info 봇 폴더 후보 LDPlayer index: %%i
+		)
+	)
+	if "!DETECTED_LD_COUNT!"=="0" goto FAIL_LD_AUTO_INDEX
+	if not "!DETECTED_LD_COUNT!"=="1" goto FAIL_LD_MULTI_INDEX
+	set TARGET_LD_INDEX=!DETECTED_LD_INDEX!
+) else (
+	"%LD_CONSOLE_EXE%" list2 | findstr /b "%TARGET_LD_INDEX%," > nul 2>&1
+	if errorlevel 1 goto FAIL_LD_INDEX
+)
+"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell echo ok" > "%DEPLOY_LOG%" 2>&1
 if errorlevel 1 goto FAIL_ADB
+findstr /i /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+if not errorlevel 1 goto FAIL_ADB
 echo [OK] LDPlayer index: %TARGET_LD_INDEX%
 echo.
 
@@ -248,6 +269,29 @@ echo  FAIL - LDPlayer 인스턴스 없음
 echo ============================================================
 echo  TARGET_LD_INDEX = %TARGET_LD_INDEX%
 echo  ldconsole list2에서 해당 인스턴스 번호를 확인하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_LD_AUTO_INDEX
+echo.
+echo ============================================================
+echo  FAIL - 운영 LDPlayer 자동 감지 실패
+echo ============================================================
+echo  info 봇 폴더를 가진 LDPlayer를 찾지 못했습니다.
+echo  TARGET_BOT_DIR = %TARGET_BOT_DIR%
+echo  LDPlayer와 MessengerBot 봇 폴더 경로를 확인하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_LD_MULTI_INDEX
+echo.
+echo ============================================================
+echo  FAIL - 운영 LDPlayer 후보가 2개 이상입니다
+echo ============================================================
+echo  안전을 위해 자동 선택하지 않았습니다.
+echo  배치 파일 상단의 TARGET_LD_INDEX를 운영 인스턴스 번호로 직접 지정하세요.
 echo ============================================================
 pause
 exit /b 1
