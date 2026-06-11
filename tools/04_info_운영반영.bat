@@ -97,21 +97,11 @@ if exist "%ADB_EXE%" (
 	)
 )
 if "%USE_DIRECT_ADB%"=="1" (
-	set DETECTED_TARGET_FILE=
-	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "grep -R -l 'function response' /sdcard /storage/emulated/0 /storage/self/primary 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "ls -l '%TARGET_FILE%'" > "%DEPLOY_LOG%" 2>&1
 	type "%DEPLOY_LOG%"
-	for /f "usebackq delims=" %%p in ("%DEPLOY_LOG%") do (
-		echo %%p | findstr /i /c:".js" > nul 2>&1
-		if not errorlevel 1 (
-			if "!DETECTED_TARGET_FILE!"=="" (
-				set DETECTED_TARGET_FILE=%%p
-			) else (
-				goto FAIL_LD_MULTI_INDEX
-			)
-		)
-	)
-	if "!DETECTED_TARGET_FILE!"=="" goto FAIL_LD_AUTO_INDEX
-	set TARGET_FILE=!DETECTED_TARGET_FILE!
+	if errorlevel 1 goto FAIL_REMOTE_VERIFY
+	findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+	if not errorlevel 1 goto FAIL_REMOTE_VERIFY
 	echo [OK] 직접 ADB device: %TARGET_ADB_DEVICE%
 	echo [OK] TARGET_FILE = %TARGET_FILE%
 	echo.
@@ -119,26 +109,21 @@ if "%USE_DIRECT_ADB%"=="1" (
 echo [INFO] LDPlayer list2:
 "%LD_CONSOLE_EXE%" list2
 if /i "%TARGET_LD_INDEX%"=="auto" (
-	echo [INFO] TARGET_LD_INDEX=auto - info 봇 파일이 있는 LDPlayer와 경로를 찾습니다.
+	echo [INFO] TARGET_LD_INDEX=auto - 고정 TARGET_FILE이 있는 LDPlayer를 찾습니다.
 	set DETECTED_LD_INDEX=
-	set DETECTED_TARGET_FILE=
 	set DETECTED_LD_COUNT=0
 	for /f "tokens=1 delims=," %%i in ('"%LD_CONSOLE_EXE%" list2') do (
-		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell grep -R -l 'function response' /sdcard /storage/emulated/0 /storage/self/primary 2>/dev/null" > "%DEPLOY_LOG%" 2>&1
-		for /f "usebackq delims=" %%p in ("%DEPLOY_LOG%") do (
-			echo %%p | findstr /i /c:".js" > nul 2>&1
-			if not errorlevel 1 (
-				set /a DETECTED_LD_COUNT+=1
-				set DETECTED_LD_INDEX=%%i
-				set DETECTED_TARGET_FILE=%%p
-				echo [INFO] function response 포함 파일 후보: LDPlayer index %%i, %%p
-			)
+		"%LD_CONSOLE_EXE%" adb --index %%i --command "shell ls -l %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+		findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
+		if errorlevel 1 (
+			set /a DETECTED_LD_COUNT+=1
+			set DETECTED_LD_INDEX=%%i
+			echo [INFO] 고정 TARGET_FILE 확인: LDPlayer index %%i, %TARGET_FILE%
 		)
 	)
 	if "!DETECTED_LD_COUNT!"=="0" goto FAIL_LD_AUTO_INDEX
 	if not "!DETECTED_LD_COUNT!"=="1" goto FAIL_LD_MULTI_INDEX
 	set TARGET_LD_INDEX=!DETECTED_LD_INDEX!
-	set TARGET_FILE=!DETECTED_TARGET_FILE!
 ) else (
 	"%LD_CONSOLE_EXE%" list2 | findstr /b "%TARGET_LD_INDEX%," > nul 2>&1
 	if errorlevel 1 goto FAIL_LD_INDEX
@@ -361,8 +346,8 @@ echo.
 echo ============================================================
 echo  FAIL - 운영 LDPlayer 자동 감지 실패
 echo ============================================================
-echo  function response를 포함한 운영 봇 JS 파일을 찾지 못했습니다.
-echo  검색 기준 = /sdcard, /storage/emulated/0, /storage/self/primary
+echo  고정 TARGET_FILE 경로를 가진 운영 LDPlayer를 찾지 못했습니다.
+echo  TARGET_FILE = %TARGET_FILE%
 echo  LDPlayer와 MessengerBot 봇 파일 경로를 확인하세요.
 echo ============================================================
 pause
