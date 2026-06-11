@@ -38,10 +38,19 @@ echo.
 
 echo [2/5] 최신 코드 받기
 echo ------------------------------------------------------------
+echo [WARN] 현재 작업트리의 수정/미추적 파일을 취소하고 운영 기준으로 맞춥니다.
+git reset --hard > nul 2>&1
+if errorlevel 1 goto FAIL_GIT_RESET
+git clean -fd > nul 2>&1
+if errorlevel 1 goto FAIL_GIT_CLEAN
 git switch %BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_SWITCH
-git pull --ff-only origin %BASE_BRANCH% > nul 2>&1
-if errorlevel 1 goto FAIL_GIT_PULL
+git fetch origin %BASE_BRANCH% > nul 2>&1
+if errorlevel 1 goto FAIL_GIT_FETCH
+git reset --hard origin/%BASE_BRANCH% > nul 2>&1
+if errorlevel 1 goto FAIL_GIT_RESET
+git clean -fd > nul 2>&1
+if errorlevel 1 goto FAIL_GIT_CLEAN
 echo [OK] 최신 코드 확인 완료
 echo.
 
@@ -133,12 +142,32 @@ echo ============================================================
 pause
 exit /b 1
 
-:FAIL_GIT_PULL
+:FAIL_GIT_FETCH
 echo.
 echo ============================================================
 echo  FAIL - Git 최신화 실패
 echo ============================================================
 echo  충돌, 네트워크, GitHub 권한을 확인하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_GIT_RESET
+echo.
+echo ============================================================
+echo  FAIL - Git 변경내용 취소 실패
+echo ============================================================
+echo  작업트리 상태를 확인한 뒤 다시 실행하세요.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_GIT_CLEAN
+echo.
+echo ============================================================
+echo  FAIL - Git 미추적 파일 정리 실패
+echo ============================================================
+echo  미추적 파일 상태를 확인한 뒤 다시 실행하세요.
 echo ============================================================
 pause
 exit /b 1
