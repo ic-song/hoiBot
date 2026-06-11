@@ -8566,6 +8566,57 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
+				if (msg === "/창조오픈") {
+   if (castleSiegeFlag) return;
+
+   let member = data.member[sender];
+   if (!member) return;
+
+   let packItem = "창조패키지🐹(/창조오픈)";
+   // 미니펫뽑기 지급 로직 제거됨
+
+   let nickName = checkRank(data, petData, guildData, sender);
+
+   // 펫 데이터 준비
+   if (!petData[sender]) petData[sender] = {};
+   if (!petData[sender].miniPetBag) petData[sender].miniPetBag = [];
+
+   // 가방 꽉 찼으면 오픈 불가
+   if (typeof isMiniPetBagFull === "function" && isMiniPetBagFull(petData, sender)) {
+      replier.reply("[" + nickName + "] 님의\n미니펫 가방이 가득 찼습니다.\n오픈을 진행할 수 없습니다.\n[최대 12개 소지가능]");
+      return;
+   }
+
+   // 패키지 보유 체크
+   if (!hasItem(data, sender, packItem, 1)) {
+      replier.reply("❌ [" + nickName + "] 님\n[" + packItem + "] 아이템이 없습니다.\n(보유: " + ((data.member[sender].bag && data.member[sender].bag[packItem]) || 0) + "개)");
+      return;
+   }
+
+   // 패키지 1개 소모
+   removeItem(data, sender, packItem, 1);
+
+   // 지급 펫 변경: 키보드워리어⚔️ (가격 1,150,000)
+   let newPet = { name: "키보드워리어", emoji: "⚔️", grade: "창조", battleExp: 1150000, price: 100000 };
+
+   // 가방에 추가
+   petData[sender].miniPetBag.push(JSON.parse(JSON.stringify(newPet)));
+
+   // 정렬/인덱스 갱신
+   if (typeof refreshMiniPetSortIndex === "function" && typeof miniPetData !== "undefined") {
+      refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+   }
+
+   // 저장
+   if (typeof saveJsonFile === "function" && typeof memberPetPath !== "undefined") {
+      saveJsonFile(petData, memberPetPath);
+   }
+
+   let msgOut = "⚔️ 창조패키지 오픈 완료!\n\n";
+   msgOut += "🎁 지급: [키보드워리어⚔️] (창조 / 가격: 115만)\n";
+   msgOut += "\n👉 /미니펫가방 으로 확인해주세요.";
+   replier.reply(msgOut);
+}
 				// /낚시, 또는 /낚시10, 아이디  (마스터 전용 지급)
 				if (msg.trim().startsWith("/낚시,") || msg.trim().match(/^\/낚시\d*,/)) {
 					if (isMaster(sender)) {
