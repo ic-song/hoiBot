@@ -292,14 +292,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						sender != "나나 남" &&
 						sender != "감자 여" &&
 						sender != "반지 여" &&
-						sender != "비쟈 남" &&
+						sender != "메메 남" &&
 						sender != "리리 여" &&
 						sender != "맹구 여" &&
 						sender != "쟈기 여" &&
 						sender != "벨라 여" &&
 						sender != "반지 여" &&
 						sender != "라면 남" &&
-						sender != "베라 여"
+						sender != "조사 남"
 					) {
 						Api.replyRoom(room91, "- 정보조회자: " + sender + "\n- 검색: " + targetUser + "");
 					}
