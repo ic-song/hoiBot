@@ -540,7 +540,7 @@ const room8 = "공성전";
 const room10 = "🌸2030대 성인 반말방🌸보룸.봇.친목";
 const room11 = "🐤30대 40대 반말방💛신생/친목/보룸/수다/벙/봇";
 const room12 = "🐹신생🐹 30대 반말방 보이스룸 수다 벙🍒";
-const room13 = "🌷30대반말🌷🌻친목/보룸/봇/벙🌻";
+const room13 = "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻";
 const room90 = "호이월드 GM 관리자방";
 const room91 = "통합스텝";
 
@@ -554,7 +554,7 @@ roomToServer[room7] = "호이서버5[2030]";
 roomToServer[room10] = "호이서버6[2030]";
 roomToServer[room11] = "호이서버4[3040]";
 roomToServer[room12] = "벨라서버2[30]";
-roomToServer[room13] = "쟈기서버1[30]";
+roomToServer[room13] = "호이서버7[2030]";
 roomToServer[room90] = "호이월드 운영진[GM]";
 
 //sd카드에 호이랜드 폴더를 생성 및 경로 지정
