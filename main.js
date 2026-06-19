@@ -1448,7 +1448,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (lightResult.already) {
 				replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
 			} else {
-				replier.reply("[" + sender + "] 님 출첵👏[미가입 유저]\n게임을 원하시면 \"/가입\"을 눌러주세요.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
+				replier.reply("[" + sender + "] 님 출첵👏\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
 			}
 			return;
 		}
@@ -28714,7 +28714,7 @@ function applyTax(point, data, guildData, taxAmountOverride) {
 		var taxedPoint = point + taxAmount;
 
 		// 실제 길드자금으로 들어갈 금액
-		var guildFundAmount = Math.round(taxAmount * 0.5); // 세금의 50%가 길드자금으로 들어감
+		var guildFundAmount = Math.round(taxAmount * 0.15); // 세금의 15%가 길드자금으로 들어감
 
 		// 성주의 길드 찾기
 		var myGuildInfo = getMyGuildInfo(data, guildData, lord);
