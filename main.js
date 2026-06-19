@@ -16981,7 +16981,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					let command = msg.split(" ");
 					if (command.length === 2 && command[1].match(/^\d+$/)) {
 						let newTaxRate = parseInt(command[1]); // '/세금 숫자' 형식으로 받음
-						if (newTaxRate >= 5 && newTaxRate <= 7) {
+						if (newTaxRate >= 15 && newTaxRate <= 15) {
 							let oldTaxRate = hoiCastle.taxRate || 0;
 							hoiCastle.taxRate = newTaxRate.toString(); // 세금 업데이트
 							noticeMsg("[세금💲]\n[" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 영주가 세율을\n[💰" + oldTaxRate + "%]⏩[💰" + newTaxRate + "%]로 조정하였습니다.");
@@ -16990,7 +16990,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							noticeMsg("[알림] 악덕한 영주✨ [" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 님이 세금을 " + newTaxRate.toString() + "% 강제징수 합니다!");
 						} else {
 							// 세금 값이 유효하지 않을 때 처리
-							noticeMsg("세금은 5~7% 사이로 조정 할수 있습니다.");
+							noticeMsg("세금은 15% 고정만 가능합니다.");
 						}
 					}
 				}
