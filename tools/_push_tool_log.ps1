@@ -5,7 +5,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$LogPath,
 
-    [string]$Branch = "feature/tool-logs"
+    [string]$Branch = "feature/prod"
 )
 
 $ErrorActionPreference = "Stop"
