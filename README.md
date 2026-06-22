@@ -108,57 +108,13 @@ tools\05_skills_설치.bat
 | `feature/workflow` | 문서, 에이전트 전략, 브랜치 전략, `tools/` 운영 방식 변경을 처리하는 브랜치입니다. |
 | `feature/bugFix` | 버그 수정 1건 단위로 새로 만드는 임시 브랜치입니다. 원인 분석, 최소 수정, 회귀 검증, 운영반영 후 삭제까지 한 사이클로 처리합니다. |
 
-기본 작업 흐름은 아래와 같습니다.
-
-```text
-feature/prod 최신화
-↓
-feature/hoi 작업 브랜치 생성
-↓
-코드 수정 및 검증
-↓
-feature/hoi push
-↓
-검증된 커밋만 feature/prod에 반영 후 push
-↓
-검토 후 운영 반영
-```
+각 브랜치는 역할별로 분리해 사용합니다.
+번호가 붙은 `tools/` 배치파일도 자동 연결 흐름을 보장하지 않으며, 필요한 목적에 맞춰 개별 실행합니다.
 
 `feature/prod`에는 작업 커밋이나 후속 수정 커밋을 직접 만들지 않습니다. 운영 반영이 필요하면 먼저 작업 브랜치에 커밋하고 push한 뒤, 해당 검증 커밋만 `feature/prod`에 merge 또는 cherry-pick으로 반영합니다.
 
-버그 수정은 아래 흐름을 사용합니다.
-
-```text
-feature/prod 최신화
-↓
-feature/bugFix 작업 브랜치 새로 생성
-↓
-원인 분석, 최소 수정, 회귀 검증
-↓
-feature/bugFix push
-↓
-검증된 커밋만 feature/prod에 반영 후 push
-↓
-feature/bugFix 로컬/원격 삭제
-↓
-다음 버그 수정 때 feature/prod 기준으로 feature/bugFix 재생성
-```
-
-문서/전략/도구 운영 방식 변경은 아래 흐름을 사용합니다.
-
-```text
-feature/prod 최신화
-↓
-feature/workflow 작업 브랜치 생성
-↓
-README.md / AGENTS.md / tools/ 수정 및 검증
-↓
-feature/workflow push
-↓
-검증된 워크플로우 커밋만 feature/prod에 반영 후 push
-↓
-검토 후 운영 흐름 반영
-```
+버그 수정은 `feature/bugFix`에서 처리하고, 검증된 커밋만 `feature/prod`에 반영합니다.
+문서/전략/도구 운영 방식 변경은 `feature/workflow`에서 처리하고, 검증된 커밋만 `feature/prod`에 반영합니다.
 
 작업이 위 브랜치 역할에 맞지 않으면 큰 컨텐츠 단위로 새 브랜치를 만듭니다.
 
@@ -178,15 +134,8 @@ feature/<content-name>
 
 통합 패키지는 관리자 명령어로 `packageInfo.json`에 등록합니다.
 
-추가 순서:
-
-```text
-1. `/패키지추가방법`으로 입력 형식 확인
-2. 단계형은 `/패키지추가시작` 입력 후 안내에 따라 진행
-3. 빠른 등록은 `/패키지추가 패키지명 | 설명 | 보상목록` 입력
-4. `/패키지리스트`에서 새 번호 확인
-5. 지급은 `/패키지지급 이름 리스트번호 갯수`로 처리
-```
+관련 명령어는 `/패키지추가방법`, `/패키지추가시작`, `/패키지추가`, `/패키지리스트`, `/패키지지급`입니다.
+각 명령어는 필요한 목적에 맞춰 개별 사용합니다.
 
 예시:
 
