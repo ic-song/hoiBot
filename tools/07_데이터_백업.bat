@@ -40,6 +40,7 @@ for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss
 set BACKUP_DIR=%BACKUP_ROOT%\%RUN_TS%
 set PULL_ROOT=%TEMP%\hoibot_ld_data_%RUN_TS%
 set PULLED_DATA_DIR=%PULL_ROOT%\호이랜드
+set REQUIRED_JSON_FILES=member.json board.json carrotBoard.json itemInfo.json trialTowerBoss.json eventTowerBoss.json castleBattle2.json errorLog.json member_title.json pet_title.json miniPet_title.json miniPet_collection.json miniPetCollectionInfo.json member_pet.json petSkillData.json punchRankData.json trialTower.json miniPetData.json memberBagCheck\memberBagCheck.json petSweetHomeInfo.json petSweetHomeData.json petExploreData.json attendanceLight.json itemList.json hoiBotChangeLog.json freeMarket.json packageInfo.json packageLog.json currencyLog.json guildData.json requestMonitorConfig.json
 
 echo [1/5] ADB device 확인
 echo ------------------------------------------------------------
@@ -96,9 +97,13 @@ findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%SYNC_LOG%" 
 if not errorlevel 1 goto FAIL_PULL
 
 if not exist "%PULLED_DATA_DIR%\" set PULLED_DATA_DIR=%PULL_ROOT%
-if not exist "%PULLED_DATA_DIR%\member.json" goto FAIL_PULL_VERIFY
-if not exist "%PULLED_DATA_DIR%\guildData.json" goto FAIL_PULL_VERIFY
-if not exist "%PULLED_DATA_DIR%\hoiBotChangeLog.json" goto FAIL_PULL_VERIFY
+set MISSING_REQUIRED_FILE=
+for %%f in (%REQUIRED_JSON_FILES%) do (
+	if not exist "%PULLED_DATA_DIR%\%%f" (
+		set MISSING_REQUIRED_FILE=%%f
+		goto FAIL_PULL_VERIFY
+	)
+)
 echo [OK] 가져온 데이터 검증 완료: %PULLED_DATA_DIR%
 echo.
 
@@ -228,7 +233,8 @@ echo.
 echo ============================================================
 echo  FAIL - 가져온 데이터 검증 실패
 echo ============================================================
-echo  member.json, guildData.json, hoiBotChangeLog.json 중 하나를 찾지 못했습니다.
+echo  main.js 초기 운영 JSON 경로 기준 필수 파일을 찾지 못했습니다.
+echo  누락 파일: %MISSING_REQUIRED_FILE%
 echo  안전을 위해 로컬 data\를 덮어쓰지 않았습니다.
 echo  PULLED_DATA_DIR = %PULLED_DATA_DIR%
 echo  백업 위치: %BACKUP_DIR%\data
