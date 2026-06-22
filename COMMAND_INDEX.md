@@ -2445,6 +2445,43 @@ Status: VERIFIED
 
 ---
 
+# /휴면계정
+
+Status: VERIFIED
+
+## Files
+- main.js
+
+## Related Helpers
+- ensureDormantAccounts
+- isDormantAccount
+- buildDormantAccountListMessage
+- formatDormantDateText
+- getDormantDays
+
+## Data Usage
+- data.dormantAccounts
+- data.member[target]
+
+## Save Flow
+- `/휴면계정 [아이디]` registers `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
+- `/계정삭제` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
+- `/계정잠수명단` and `/계정잠수삭제` exclude registered dormant accounts from removal candidates
+- `/계정잠수삭제` reports dormant accounts that matched the sleep condition but were protected
+
+## Related Commands
+- `/휴면계정 [아이디]`
+- `/휴면리스트`
+- `/계정삭제`
+- `/계정잠수명단`
+- `/계정잠수삭제 [숫자]`
+
+## AI Notes
+- 휴면계정 보호 목록은 별도 파일이 아니라 `data` 안의 `dormantAccounts`에 저장한다.
+- 휴면계정은 계정 삭제 대상에서 제외만 하며 기존 회원 데이터는 변경하지 않는다.
+
+---
+
 # /펫스킬당근 [닉] [번호] [개수]
 Status: VERIFIED
 ## Command Anchors
@@ -3698,11 +3735,15 @@ Status: VERIFIED
 ## Related Commands
 - `/탐`
 - `/탐 [1~7]`
+- `/탐 10` when the guild raid event is active
 - `/지도`
 - `/탐험알림`
 - `/탐 0` when the event mine is active
 - `/펫탐험이벤트활성화`
 - `/펫탐험이벤트비활성화`
+- `/레이드이벤트활성화`
+- `/레이드이벤트비활성화`
+- `/레이드박스오픈`
 - `/자동탐고정 0` when the event mine is active
 
 ## AI Notes
@@ -3713,6 +3754,7 @@ Status: VERIFIED
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
+- Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 
 # /맞짱필드
 
