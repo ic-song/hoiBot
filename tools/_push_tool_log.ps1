@@ -9,6 +9,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue) {
+    $PSNativeCommandUseErrorActionPreference = $false
+}
 
 try {
     if (-not (Test-Path -LiteralPath $LogPath)) {
@@ -60,8 +63,12 @@ try {
             $commit = ($message | git commit-tree $tree).Trim()
         }
 
-        git push origin "$commit`:refs/heads/$Branch" --quiet
-        if ($LASTEXITCODE -eq 0) {
+        $pushOut = Join-Path $env:TEMP ("hoibot_tool_log_push_out_" + [System.Guid]::NewGuid().ToString("N"))
+        $pushErr = Join-Path $env:TEMP ("hoibot_tool_log_push_err_" + [System.Guid]::NewGuid().ToString("N"))
+        $push = Start-Process -FilePath "git" -ArgumentList @("push", "origin", "$commit`:refs/heads/$Branch", "--quiet") -NoNewWindow -Wait -PassThru -RedirectStandardOutput $pushOut -RedirectStandardError $pushErr
+        Remove-Item -LiteralPath $pushOut, $pushErr -Force -ErrorAction SilentlyContinue
+
+        if ($push.ExitCode -eq 0) {
             $pushed = $true
             Write-Host "[LOG] pushed execution log to $Branch`: $relativePath"
         } elseif ($attempt -lt 3) {
