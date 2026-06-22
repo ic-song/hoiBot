@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.186"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.187"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -676,7 +676,18 @@ const GLOBAL_CONFIG = {
 		evolutionRequiredExp: 10 // 알 진화 필요 매력치
 	},
 	petExplore: { // 펫탐험 설정
-		boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"] // 확률UP 아이템 후보(높은 것부터)
+		boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"], // 확률UP 아이템 후보(높은 것부터)
+		diamondMineEvent: {
+			type: "diamondMine",
+			name: "다이아 광산💎",
+			label: "🎉이벤트 광산💎",
+			rewardItem: "다이아광산박스💎(/다이아박스오픈)"
+		},
+		guildRaidEvent: {
+			name: "길드레이드던전👾",
+			label: "🎉이벤트 던전👾",
+			rewardItem: "길드레이드던전박스👾(/레이드박스오픈)"
+		}
 	},
 	fee: { // 수수료 계산 설정
 		highRateThreshold: 50000 // 수익 수수료 고율 적용 기준금액
@@ -4315,6 +4326,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					data.auction.length = 0;
 					replier.reply("호이상점이 초기화가 되었습니다");
 				}
+				if (/^\/휴면계정\s+.+$/.test(msg) && isMaster(sender)) {
+					var dormantTarget = msg.replace(/^\/휴면계정\s+/, "").trim();
+					if (!data.member[dormantTarget]) {
+						replier.reply("❌ 휴면계정으로 등록할 아이디를 찾을 수 없습니다.\n대상: " + dormantTarget);
+						return;
+					}
+					var dormantAccounts = ensureDormantAccounts(data);
+					if (!dormantAccounts[dormantTarget]) {
+						dormantAccounts[dormantTarget] = {
+							startedAt: getCurrentDate(),
+							registeredBy: sender
+						};
+					}
+					saveJsonFile(data, filePath);
+					replier.reply("✅ [" + dormantTarget + "]님을 휴면계정으로 등록했습니다.\n/계정삭제·/계정잠수삭제 대상에서 제외됩니다.");
+					return;
+				}
+
+				if (msg === "/휴면리스트" && isMaster(sender)) {
+					replier.reply(buildDormantAccountListMessage(data));
+					return;
+				}
+
 				if (msg.startsWith("/계정잠수명단") && isMaster(sender)) {
 					var regex = /\/계정잠수명단\s+(\d+)\s*$/;
 					var match = msg.match(regex);
@@ -4329,6 +4363,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							var lastAttendanceDate = (data.member[userName] && data.member[userName].recent) || "";
 							var chatcnt0Value = data.member[userName] && data.member[userName].chatcnt0;
 							var lvValue = data.member[userName] && data.member[userName].lv;
+							if (isDormantAccount(data, userName)) return false;
 							return lvValue <= sleeplvl && (chatcnt0Value < 101 || chatcnt0Value === "") && lastAttendanceDate < currentDate - 5;
 						});
 						var numCandidateToRemove = candidateToRemove.length;
@@ -4361,11 +4396,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							var lastAttendanceDate = (data.member[userName] && data.member[userName].recent) || "";
 							var chatcnt0Value = data.member[userName] && data.member[userName].chatcnt0;
 							var lvValue = data.member[userName] && data.member[userName].lv;
+							if (isDormantAccount(data, userName)) return false;
+							return lvValue <= sleeplvl2 && (chatcnt0Value < 101 || chatcnt0Value === "") && lastAttendanceDate < currentDate0 - 5;
+						});
+						var protectedCandidatesToRemove = Userlistsx.filter((userName) => {
+							if (!isDormantAccount(data, userName)) return false;
+							var lastAttendanceDate = (data.member[userName] && data.member[userName].recent) || "";
+							var chatcnt0Value = data.member[userName] && data.member[userName].chatcnt0;
+							var lvValue = data.member[userName] && data.member[userName].lv;
 							return lvValue <= sleeplvl2 && (chatcnt0Value < 101 || chatcnt0Value === "") && lastAttendanceDate < currentDate0 - 5;
 						});
 						var numCandidatesToRemove = candidatesToRemove.length;
 						replier.reply("잠수조건\n(" + data.checkcnt + " 리셋 부터, 레벨 " + sleeplvl2 + " 이하)\n+ 채팅 100회 이하 + 미출석 5일\n 해당 사용자 수: " + numCandidatesToRemove + "명");
 						var replyMessageToRemove = "잠수삭제 명단 \n\n" + candidatesToRemove.join(", ");
+						if (protectedCandidatesToRemove.length > 0) {
+							replyMessageToRemove += "\n\n휴면계정 보호 제외\n\n" + protectedCandidatesToRemove.join(", ");
+						}
 						replier.reply(replyMessageToRemove);
 						var titleData = loadJsonFile(memberTitlePath);
 						let homeData = loadJsonFile(homeDataFile);
@@ -5129,12 +5175,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					var successList = [];
 					var failList = [];
+					var protectedList = [];
 
 					for (i = 0; i < targets.length; i++) {
 						var target = targets[i];
 
 						if (!data.member[target]) {
 							failList.push(target + "(미존재)");
+							continue;
+						}
+						if (isDormantAccount(data, target)) {
+							protectedList.push(target);
 							continue;
 						}
 
@@ -5200,6 +5251,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					//결과 출력
 					var out = "✅ 계정삭제 완료\n";
 					out += "- 성공(" + successList.length + "): " + (successList.length ? successList.join(", ") : "-") + "\n";
+					out += "- 휴면보호(" + protectedList.length + "): " + (protectedList.length ? protectedList.join(", ") : "-") + "\n";
 					out += "- 실패(" + failList.length + "): " + (failList.length ? failList.join(", ") : "-");
 
 					replier.reply(out);
@@ -20520,6 +20572,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(data, filePath);
 					return;
 				}
+				if (msg === "/레이드박스오픈" || /^\/레이드박스오픈\s+\d+$/.test(msg)) {
+					runGuildRaidBoxOpen(sender, data, petData, guildData, msg, replier);
+					saveJsonFile(data, filePath);
+					return;
+				}
 				if (msg === "/다이아조합" || /^\/다이아조합\s+\d+$/.test(msg)) {
 					var diamondCombineMatch = msg.match(/^\/다이아조합(?:\s+(\d+))?$/);
 					var diamondCombineCount = diamondCombineMatch && diamondCombineMatch[1] ? parseInt(diamondCombineMatch[1], 10) : 1;
@@ -20779,10 +20836,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 				if (msg === "/펫탐험이벤트활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
-					petExploreData = initPetExploreData(petExploreData);
-					petExploreData.eventMine.active = true;
-					petExploreData.eventMine.name = "다이아 광산💎";
-					petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
+					petExploreData = setDiamondMineEventConfig(petExploreData, true);
 					saveJsonFile(petExploreData, petExplorePath);
 					replier.reply("✅ 펫탐험 이벤트 광산이 활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】을 확인할 수 있습니다.");
 					return;
@@ -20792,15 +20846,40 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
 					var movedEventMineCount = moveEventMineBetsToRandomMine(petExploreData);
-					petExploreData.eventMine.active = false;
-					petExploreData.eventMine.name = "다이아 광산💎";
-					petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
+					petExploreData = setDiamondMineEventConfig(petExploreData, false);
 					saveJsonFile(petExploreData, petExplorePath);
 					var eventMineOffMessage = "✅ 펫탐험 이벤트 광산이 비활성화되었습니다.\n/지도에서 다이아 광산💎【/탐 0】이 숨겨집니다.";
 					if (movedEventMineCount > 0) {
 						eventMineOffMessage += "\n기존 다이아 광산 참가자 " + movedEventMineCount + "명은 일반 광산 1~3번으로 이동했습니다.";
 					}
 					replier.reply(eventMineOffMessage);
+					return;
+				}
+
+				if (msg === "/레이드이벤트활성화" && sender == "호이 남") {
+					var petExploreData = loadJsonFile(petExplorePath);
+					petExploreData = initPetExploreData(petExploreData);
+					petExploreData.guildRaidEvent.active = true;
+					petExploreData.guildRaidEvent.name = GLOBAL_CONFIG.petExplore.guildRaidEvent.name;
+					petExploreData.guildRaidEvent.rewardItem = GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem;
+					saveJsonFile(petExploreData, petExplorePath);
+					replier.reply("✅ 길드레이드던전👾 이벤트가 활성화되었습니다.\n/지도에서 길드레이드던전👾【/탐 10】을 확인할 수 있습니다.");
+					return;
+				}
+
+				if (msg === "/레이드이벤트비활성화" && sender == "호이 남") {
+					var petExploreData = loadJsonFile(petExplorePath);
+					petExploreData = initPetExploreData(petExploreData);
+					var movedRaidEventCount = moveGuildRaidBetsToRandomMine(petExploreData);
+					petExploreData.guildRaidEvent.active = false;
+					petExploreData.guildRaidEvent.name = GLOBAL_CONFIG.petExplore.guildRaidEvent.name;
+					petExploreData.guildRaidEvent.rewardItem = GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem;
+					saveJsonFile(petExploreData, petExplorePath);
+					var raidEventOffMessage = "✅ 길드레이드던전👾 이벤트가 비활성화되었습니다.\n/지도에서 길드레이드던전👾【/탐 10】이 숨겨집니다.";
+					if (movedRaidEventCount > 0) {
+						raidEventOffMessage += "\n기존 길드레이드던전 참가자 " + movedRaidEventCount + "명은 일반 광산 1~3번으로 이동했습니다.";
+					}
+					replier.reply(raidEventOffMessage);
 					return;
 				}
 
@@ -20897,12 +20976,26 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						dungeonNo = String(Math.floor(Math.random() * 3) + 1);
 					} else {
 						var n = parseInt(parts[1], 10);
-						if (isNaN(n) || n < 0 || n > 7 || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
-							var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0~7\n예) /탐 0" : "사용법: /탐 또는 /탐 1~7\n예) /탐 2";
+						var isGuildRaidInput = n === 10 && isGuildRaidExploreEventActive(petExploreData);
+						if (isNaN(n) || n < 0 || (n > 7 && !isGuildRaidInput) || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
+							var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0~7" : "사용법: /탐 또는 /탐 1~7";
+							if (isGuildRaidExploreEventActive(petExploreData)) exploreUsage += "\n길드레이드: /탐 10";
+							exploreUsage += "\n예) /탐 2";
 							replier.reply(exploreUsage);
 							return;
 						}
 						dungeonNo = String(n);
+					}
+
+					if (dungeonNo === "10") {
+						if (!getMyGuildId(data, sender)) {
+							replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 길드에 먼저 가입하셔야 길드레이드 던전 참여가 가능합니다.\n /길드목록 을 적으시고 길드가입을 먼저 해주세요.");
+							return;
+						}
+						if (!hasItem(data, sender, "펫던전 입장권🌋", 1)) {
+							replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 펫던전 입장권🌋이 부족하여 길드레이드 던전👾에 입장할 수 없습니다.");
+							return;
+						}
 					}
 
 					// 이전 배팅 확인
@@ -29810,6 +29903,57 @@ function getCurrentDate() {
 	return year + "" + month + "" + day;
 }
 
+// 휴면계정 보호 목록 구조를 보장하는 함수
+function ensureDormantAccounts(data) {
+	if (!data.dormantAccounts || typeof data.dormantAccounts !== "object" || Array.isArray(data.dormantAccounts)) {
+		data.dormantAccounts = {};
+	}
+	return data.dormantAccounts;
+}
+
+// 특정 유저가 휴면 보호 등록 상태인지 확인하는 함수
+function isDormantAccount(data, userName) {
+	var dormantAccounts = ensureDormantAccounts(data);
+	return !!(userName && dormantAccounts[userName]);
+}
+
+// 휴면 시작일을 YY.MM.DD 형식으로 변환하는 함수
+function formatDormantDateText(dateText) {
+	var text = String(dateText || "");
+	if (/^\d{8}$/.test(text)) {
+		return text.substring(2, 4) + "." + text.substring(4, 6) + "." + text.substring(6, 8);
+	}
+	return text || "-";
+}
+
+// 휴면 시작일 기준 경과 일수를 계산하는 함수
+function getDormantDays(dateText) {
+	var text = String(dateText || "");
+	if (!/^\d{8}$/.test(text)) return 0;
+	var start = new Date(parseInt(text.substring(0, 4), 10), parseInt(text.substring(4, 6), 10) - 1, parseInt(text.substring(6, 8), 10));
+	var todayText = getCurrentDate();
+	var today = new Date(parseInt(todayText.substring(0, 4), 10), parseInt(todayText.substring(4, 6), 10) - 1, parseInt(todayText.substring(6, 8), 10));
+	var diff = today.getTime() - start.getTime();
+	if (isNaN(diff) || diff < 0) return 0;
+	return Math.floor(diff / (24 * 60 * 60 * 1000));
+}
+
+// 휴면계정 목록 출력 메시지를 생성하는 함수
+function buildDormantAccountListMessage(data) {
+	var dormantAccounts = ensureDormantAccounts(data);
+	var users = Object.keys(dormantAccounts).sort();
+	if (users.length === 0) return "휴면계정 리스트\n\n등록된 휴면계정이 없습니다.";
+
+	var lines = ["휴면계정 리스트", "", allsee];
+	for (var i = 0; i < users.length; i++) {
+		var userName = users[i];
+		var row = dormantAccounts[userName] || {};
+		var startedAt = typeof row === "string" ? row : row.startedAt;
+		lines.push("[" + userName + "] " + formatDormantDateText(startedAt) + "부터 휴면 / " + getDormantDays(startedAt) + "일째");
+	}
+	return lines.join("\n");
+}
+
 function getC(isDone) {
 	return isDone ? "✅" : "❌";
 }
@@ -35418,6 +35562,9 @@ function initPetExploreData(petExploreData) {
 			petExploreData.bet[key] = [];
 		}
 	}
+	if (!Array.isArray(petExploreData.bet["10"])) {
+		petExploreData.bet["10"] = [];
+	}
 
 	// 유저별 현재 배팅 던전
 	if (!petExploreData.userBet) {
@@ -35442,18 +35589,46 @@ function initPetExploreData(petExploreData) {
 		petExploreData.eventMine.active = false;
 	}
 	if (typeof petExploreData.eventMine.name !== "string") {
-		petExploreData.eventMine.name = "다이아 광산💎";
+		petExploreData.eventMine.name = GLOBAL_CONFIG.petExplore.diamondMineEvent.name;
 	}
 	if (typeof petExploreData.eventMine.rewardItem !== "string") {
-		petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.items.diamondMineBoxName;
+		petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.petExplore.diamondMineEvent.rewardItem;
 	}
 
+	// 길드레이드 이벤트 상태
+	if (!petExploreData.guildRaidEvent || typeof petExploreData.guildRaidEvent !== "object") {
+		petExploreData.guildRaidEvent = {};
+	}
+	if (typeof petExploreData.guildRaidEvent.active !== "boolean") {
+		petExploreData.guildRaidEvent.active = false;
+	}
+	if (typeof petExploreData.guildRaidEvent.name !== "string") {
+		petExploreData.guildRaidEvent.name = GLOBAL_CONFIG.petExplore.guildRaidEvent.name;
+	}
+	if (typeof petExploreData.guildRaidEvent.rewardItem !== "string") {
+		petExploreData.guildRaidEvent.rewardItem = GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem;
+	}
+
+	return petExploreData;
+}
+
+// 펫탐험 다이아광산 이벤트 설정을 적용하는 함수
+function setDiamondMineEventConfig(petExploreData, active) {
+	petExploreData = initPetExploreData(petExploreData);
+	petExploreData.eventMine.active = !!active;
+	petExploreData.eventMine.name = GLOBAL_CONFIG.petExplore.diamondMineEvent.name;
+	petExploreData.eventMine.rewardItem = GLOBAL_CONFIG.petExplore.diamondMineEvent.rewardItem;
 	return petExploreData;
 }
 
 // 펫탐험 이벤트 광산 활성 여부 반환
 function isPetExploreEventMineActive(petExploreData) {
 	return !!(petExploreData && petExploreData.eventMine && petExploreData.eventMine.active);
+}
+
+// 길드레이드 이벤트 던전 활성 여부 반환
+function isGuildRaidExploreEventActive(petExploreData) {
+	return !!(petExploreData && petExploreData.guildRaidEvent && petExploreData.guildRaidEvent.active);
 }
 
 // 이벤트 광산 참가자를 일반 광산 1~3번으로 랜덤 이동
@@ -35482,6 +35657,35 @@ function moveEventMineBetsToRandomMine(petExploreData) {
 	}
 
 	petExploreData.bet["0"] = [];
+	return movedCount;
+}
+
+// 길드레이드 참가자를 일반 광산 1~3번으로 랜덤 이동
+function moveGuildRaidBetsToRandomMine(petExploreData) {
+	if (!petExploreData) return 0;
+
+	petExploreData = initPetExploreData(petExploreData);
+
+	var guildRaidBets = petExploreData.bet["10"];
+	if (!Array.isArray(guildRaidBets) || guildRaidBets.length === 0) return 0;
+
+	var movedCount = 0;
+	for (var i = 0; i < guildRaidBets.length; i++) {
+		var entry = guildRaidBets[i];
+		if (!entry || !entry.user) continue;
+
+		var targetDungeon = String(Math.floor(Math.random() * 3) + 1);
+		if (!Array.isArray(petExploreData.bet[targetDungeon])) {
+			petExploreData.bet[targetDungeon] = [];
+		}
+
+		entry.dungeon = targetDungeon;
+		petExploreData.bet[targetDungeon].push(entry);
+		petExploreData.userBet[entry.user] = targetDungeon;
+		movedCount++;
+	}
+
+	petExploreData.bet["10"] = [];
 	return movedCount;
 }
 
@@ -35532,6 +35736,27 @@ function incrementDailyExploreCountForParticipants(data, petExploreData) {
 			count++;
 		}
 	}
+	if (isGuildRaidExploreEventActive(petExploreData)) {
+		var raidArr = petExploreData.bet["10"] || [];
+		if (Array.isArray(raidArr)) {
+			for (var r = 0; r < raidArr.length; r++) {
+				var raidEntry = raidArr[r];
+				if (!raidEntry || !raidEntry.user) continue;
+
+				var raidUser = raidEntry.user;
+				if (counted[raidUser]) continue;
+				if (!data.member[raidUser]) continue;
+
+				if (typeof data.member[raidUser].exploreCnt !== "number") {
+					data.member[raidUser].exploreCnt = 0;
+				}
+
+				data.member[raidUser].exploreCnt++;
+				counted[raidUser] = true;
+				count++;
+			}
+		}
+	}
 
 	return count;
 }
@@ -35548,6 +35773,7 @@ function resetPetExploreBet(petExploreData) {
 	for (var i = 0; i <= 7; i++) {
 		petExploreData.bet[String(i)] = [];
 	}
+	petExploreData.bet["10"] = [];
 	petExploreData.userBet = {};
 
 	return petExploreData;
@@ -35666,9 +35892,9 @@ function getExploreExpBonusPercent(data, petData, homeData, user, petSkillData) 
 }
 
 /** 던전 번호 -> 표시명 */
-function getExploreDungeonName(no) {
+function getExploreDungeonName(no, petExploreData) {
 	var map = {
-		0: "다이아 광산💎",
+		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
@@ -35676,15 +35902,16 @@ function getExploreDungeonName(no) {
 		5: "전도르 던전🗿",
 		6: "양계장 던전🐓",
 		7: "행운의 던전🍀",
+		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
 		E: "이벤트 던전✡️"
 	};
 	return map[no] || no + "번";
 }
 
 /** 던전 번호 -> 성공 보상 아이템 */
-function getExploreSuccessRewardItem(no) {
+function getExploreSuccessRewardItem(no, petExploreData) {
 	var map = {
-		0: GLOBAL_CONFIG.items.diamondMineBoxName,
+		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.rewardItem,
 		1: "정령박스🥀(/정령박스오픈)",
 		2: "반지박스💍(/반지박스오픈)",
 		3: "강화박스⭐(/강화박스오픈)",
@@ -35692,6 +35919,7 @@ function getExploreSuccessRewardItem(no) {
 		5: "전도르던전박스🗿(/전도르박스오픈)",
 		6: "양계장던전박스🐓(/양계장박스오픈)",
 		7: "행운의박스🍀(/행운의박스오픈)",
+		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem,
 		E: "이벤트박스✡️(/이벤박스오픈)"
 	};
 	return map[no] || null;
@@ -35736,6 +35964,9 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 	var failCnt = 0;
 
 	var exploreDungeonKeys = isPetExploreEventMineActive(petExploreData) ? ["0", "1", "2", "3", "4", "5", "6", "7"] : ["1", "2", "3", "4", "5", "6", "7"];
+	if (isGuildRaidExploreEventActive(petExploreData)) {
+		exploreDungeonKeys.push("10");
+	}
 	for (var d = 0; d < exploreDungeonKeys.length; d++) {
 		var dk = exploreDungeonKeys[d];
 
@@ -35755,6 +35986,21 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			var finalDungeon = dk;
 
 			var usedTicket = false;
+			if (dk === "10") {
+				if (!getMyGuildId(data, user)) {
+					failLines.push("[" + checkRank(data, petData, guildData, user) + "]길드레이드던전👾 입장 실패(❌)\n길드 미가입: 보상 제외");
+					failCnt++;
+					continue;
+				}
+				if (hasItem(data, user, "펫던전 입장권🌋", 1)) {
+					removeItem(data, user, "펫던전 입장권🌋", 1);
+					usedTicket = true;
+				} else {
+					failLines.push("[" + checkRank(data, petData, guildData, user) + "]길드레이드던전👾 입장 실패(❌)\n펫던전 입장권🌋 부족: 보상 제외");
+					failCnt++;
+					continue;
+				}
+			}
 			if (dk === "4" || dk === "5" || dk === "6" || dk === "7") {
 				if (hasItem(data, user, "펫던전 입장권🌋", 1)) {
 					removeItem(data, user, "펫던전 입장권🌋", 1);
@@ -35808,7 +36054,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			var rewardText = "";
 			var bonusRewardText = "";
 			if (success) {
-				var rewardItem = getExploreSuccessRewardItem(finalDungeon);
+				var rewardItem = getExploreSuccessRewardItem(finalDungeon, petExploreData);
 				if (rewardItem) {
 					addItem(data, user, rewardItem, 1);
 					rewardText = rewardItem;
@@ -35828,7 +36074,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
 			// 결과 라인
 			var memberFormat = checkRank(data, petData, guildData, user);
-			var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon) + (success ? "성공(✅)" : "실패(❌)");
+			var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon, petExploreData) + (success ? "성공(✅)" : "실패(❌)");
 			line += "\n획득: " + rewardText;
 			if (bonusRewardText) {
 				line += "\n" + bonusRewardText;
@@ -35896,6 +36142,17 @@ function getExploreTotalCount(data, petExploreData) {
 			if (!data.member[e.user]) continue;
 
 			cnt++;
+		}
+	}
+	if (isGuildRaidExploreEventActive(petExploreData)) {
+		var raidArr = petExploreData.bet["10"] || [];
+		if (Array.isArray(raidArr)) {
+			for (var r = 0; r < raidArr.length; r++) {
+				var re = raidArr[r];
+				if (!re || !re.user) continue;
+				if (!data.member[re.user]) continue;
+				cnt++;
+			}
 		}
 	}
 
@@ -36040,6 +36297,7 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 	openAllOne("/양계장박스오픈", "양계장던전박스🐓(/양계장박스오픈)", rollMiniPetDungeonBox);
 	openAllOne("/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", rollDdangDungeonBox);
 	openAllOne("/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, rollDiamondMineBox);
+	openAllOne("/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, rollGuildRaidBox);
 
 	return logs.length ? logs.join("\n\n") : "";
 }
@@ -36051,6 +36309,34 @@ function runDdangDungeonBox(sender, data, petData, guildData, msg, replier) {
 // 다이아 광산 박스를 열어 다이아상자를 지급하는 함수
 function runDiamondMineBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, msg, rollDiamondMineBox);
+}
+
+// 길드레이드던전 박스 보상 테이블
+function rollGuildRaidBox() {
+	var r = Math.random() * 100;
+	var gain = {};
+	if (r < 80) {
+		gain["펫먹이🍼"] = 350;
+	} else if (r < 90) {
+		gain["땅문서📜"] = 2;
+	} else if (r < 94) {
+		gain["주간상자🌼"] = 1;
+	} else if (r < 97) {
+		gain["미니펫강화석패키지💫"] = 1;
+	} else if (r < 99) {
+		gain["미니펫뽑기🐹(/미니펫오픈)"] = 2000;
+	} else {
+		gain[GLOBAL_CONFIG.petSkill.bookItemName] = 1;
+	}
+	return {
+		gainItems: gain,
+		gainTextLines: []
+	};
+}
+
+// 길드레이드던전 박스를 오픈하는 함수
+function runGuildRaidBoxOpen(sender, data, petData, guildData, msg, replier) {
+	runExploreBoxOpen(sender, data, petData, guildData, replier, "/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, msg, rollGuildRaidBox);
 }
 
 // 다이아상자를 열어 다이아를 지급하는 함수
@@ -36323,14 +36609,15 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	var bag = data.member[sender] && data.member[sender].bag ? data.member[sender].bag : {};
 
 	var dungeonNameMap = {
-		0: "다이아 광산💎",
+		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
 		4: "친밀도 던전🐾",
 		5: "전도르 던전🗿",
 		6: "양계장 던전🐓",
-		7: "행운의 던전🍀"
+		7: "행운의 던전🍀",
+		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
 	};
 	var targetName = dungeonNameMap[dungeonNo] || dungeonNo + "번 던전";
 
@@ -36366,6 +36653,9 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 광산으로 랜덤 이동합니다.\n";
 	} else if (dungeonNo === "0") {
 		out += "입장🌋: 0개 사용(이벤트 광산)\n";
+	} else if (dungeonNo === "10") {
+		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
+		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 보상에서 제외됩니다.\n";
 	} else {
 		out += "입장🌋: 0개 사용(탐1~3)\n";
 	}
@@ -36418,7 +36708,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	}
 
 	var dungeonNameMap = {
-		0: "다이아 광산💎",
+		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
 		1: "정령강화 광산🥀",
 		2: "반지강화 광산💍",
 		3: "펫강화 광산⭐️",
@@ -36426,6 +36716,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 		5: "전도르 던전🗿",
 		6: "양계장 던전🐓",
 		7: "행운의 던전🍀",
+		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
 		E: "이벤트 던전✡️"
 	};
 
@@ -36435,7 +36726,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
 	var total = 0;
 	var autoCount = 0;
-	var cnt = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+	var cnt = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 10: 0 };
 
 	for (var d = 0; d <= 7; d++) {
 		var dk = String(d);
@@ -36449,6 +36740,13 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 			if (arr[i] && arr[i].auto) autoCount++;
 		}
 	}
+	var raidArr = petExploreData.bet && petExploreData.bet["10"] ? petExploreData.bet["10"] : [];
+	if (!Array.isArray(raidArr)) raidArr = [];
+	cnt["10"] = raidArr.length;
+	total += raidArr.length;
+	for (var raidIdx = 0; raidIdx < raidArr.length; raidIdx++) {
+		if (raidArr[raidIdx] && raidArr[raidIdx].auto) autoCount++;
+	}
 
 	var myFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[sender] ? String(petExploreData.autoFixedDungeon[sender]) : null;
 	var myFixedName = myFixed ? dungeonNameMap[myFixed] || myFixed + "번" : "없음";
@@ -36456,8 +36754,14 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += LINE + "\n";
 
 	if (isPetExploreEventMineActive(petExploreData)) {
-		out += "🎉이벤트 광산💎【/탐 0】\n";
-		out += "【0】 다이아 광산💎: " + cnt["0"] + "명\n";
+		out += GLOBAL_CONFIG.petExplore.diamondMineEvent.label + "【/탐 0】\n";
+		out += "【0】 " + GLOBAL_CONFIG.petExplore.diamondMineEvent.name + ": " + cnt["0"] + "명\n";
+		out += LINE + "\n";
+	}
+
+	if (isGuildRaidExploreEventActive(petExploreData)) {
+		out += GLOBAL_CONFIG.petExplore.guildRaidEvent.label + "【/탐 10】\n";
+		out += "【10】 " + GLOBAL_CONFIG.petExplore.guildRaidEvent.name + ": " + cnt["10"] + "명\n";
 		out += LINE + "\n";
 	}
 
@@ -36527,7 +36831,8 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag["펫던전 입장권🌋"]) {
 		ticketCnt = data.member[sender].bag["펫던전 입장권🌋"];
 	}
-	out += "펫탐험 입장권🌋: " + (ticketCnt > 0 ? ticketCnt + "개" : "X") + " (탐4~7 정산 시 재확인)\n";
+	var ticketScope = isGuildRaidExploreEventActive(petExploreData) ? "탐10, 탐4~7 정산 시 재확인" : "탐4~7 정산 시 재확인";
+	out += "펫탐험 입장권🌋: " + (ticketCnt > 0 ? ticketCnt + "개" : "X") + " (" + ticketScope + ")\n";
 	out += LINE + "\n";
 
 	var rec = petExploreData.record && petExploreData.record[sender] ? petExploreData.record[sender] : null;
@@ -36551,8 +36856,8 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 		return hasPetSkill(petSkillData, user, "광산탐험가") ? 5 : 0;
 	}
 
-	// 던전(4~7): 친밀도/전도르/양계장/행운
-	if (dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "7") {
+	// 던전(4~7, 10): 친밀도/전도르/양계장/행운/길드레이드
+	if (dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "7" || dungeonKey === "10") {
 		return hasPetSkill(petSkillData, user, "던전탐험가") ? 5 : 0;
 	}
 
