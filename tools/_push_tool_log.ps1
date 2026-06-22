@@ -20,16 +20,28 @@ try {
     $log = (Resolve-Path -LiteralPath $LogPath).Path
     Push-Location $repo
 
-    $relativePath = [System.IO.Path]::GetRelativePath($repo, $log).Replace("\", "/")
+    $repoWithSlash = $repo.TrimEnd("\") + "\"
+    $relativeUri = (New-Object System.Uri($repoWithSlash)).MakeRelativeUri((New-Object System.Uri($log)))
+    $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
     $indexPath = Join-Path $env:TEMP ("hoibot_tool_log_index_" + [System.Guid]::NewGuid().ToString("N"))
     $oldIndex = $env:GIT_INDEX_FILE
     $env:GIT_INDEX_FILE = $indexPath
+    if (-not $env:GIT_AUTHOR_NAME) { $env:GIT_AUTHOR_NAME = "hoiBot tool log" }
+    if (-not $env:GIT_AUTHOR_EMAIL) { $env:GIT_AUTHOR_EMAIL = "hoibot-tool-log@example.local" }
+    if (-not $env:GIT_COMMITTER_NAME) { $env:GIT_COMMITTER_NAME = $env:GIT_AUTHOR_NAME }
+    if (-not $env:GIT_COMMITTER_EMAIL) { $env:GIT_COMMITTER_EMAIL = $env:GIT_AUTHOR_EMAIL }
 
-    git fetch origin $Branch --quiet 2>$null
     $baseCommit = $null
-    $baseResult = git rev-parse --verify "origin/$Branch^{commit}" 2>$null
-    if ($LASTEXITCODE -eq 0 -and $baseResult) {
-        $baseCommit = $baseResult.Trim()
+    $remoteBranch = git ls-remote --heads origin $Branch 2>$null
+    if ($LASTEXITCODE -eq 0 -and $remoteBranch) {
+        git fetch origin "$Branch`:refs/remotes/origin/$Branch" --quiet
+        $baseResult = git rev-parse --verify "origin/$Branch^{commit}" 2>$null
+        if ($LASTEXITCODE -eq 0 -and $baseResult) {
+            $baseCommit = $baseResult.Trim()
+        }
+    }
+
+    if ($baseCommit) {
         git read-tree $baseCommit
     } else {
         git read-tree --empty
