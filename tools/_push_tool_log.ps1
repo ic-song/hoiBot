@@ -55,12 +55,12 @@ try {
         $blob = (git hash-object -w -- $log).Trim()
         git update-index --add --cacheinfo "100644,$blob,$relativePath"
         $tree = (git write-tree).Trim()
-        $message = "log: " + [System.IO.Path]::GetFileName($log)
+        $message = "log: tool execution log"
 
         if ($baseCommit) {
-            $commit = ($message | git commit-tree $tree -p $baseCommit).Trim()
+            $commit = (git commit-tree $tree -p $baseCommit -m $message).Trim()
         } else {
-            $commit = ($message | git commit-tree $tree).Trim()
+            $commit = (git commit-tree $tree -m $message).Trim()
         }
 
         $pushOut = Join-Path $env:TEMP ("hoibot_tool_log_push_out_" + [System.Guid]::NewGuid().ToString("N"))
