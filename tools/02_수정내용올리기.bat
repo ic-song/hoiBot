@@ -75,7 +75,7 @@ echo [OK] 현재 브랜치: %CURRENT_BRANCH%
 echo.
 echo [STEP 3/7] 변경 파일 확인
 echo ------------------------------------------------------------
-git status --porcelain > "%TEMP%\hoi_git_status.txt"
+git status --porcelain -- . ":(exclude)tools/logs" > "%TEMP%\hoi_git_status.txt"
 
 for %%A in ("%TEMP%\hoi_git_status.txt") do set STATUS_SIZE=%%~zA
 
@@ -97,7 +97,7 @@ set COMMIT_MSG=%WORK_MSG%
 echo.
 echo [STEP 4/7] 변경내용 담기
 echo ------------------------------------------------------------
-git add .
+git add --all -- . ":(exclude)tools/logs"
 if errorlevel 1 goto FAIL_ADD
 
 echo [OK] 변경내용 담기 완료
