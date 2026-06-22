@@ -27,7 +27,8 @@ echo 정말 망했을 때만 사용하세요.
 echo ========================================
 echo.
 
-set /p CONFIRM=정말 초기화하려면 RESET 을 입력하세요: 
+echo 정말 초기화하려면 RESET 을 입력한 뒤 Enter를 누르세요.
+set /p "CONFIRM=> "
 
 if /I not "%CONFIRM%"=="RESET" goto CANCEL
 

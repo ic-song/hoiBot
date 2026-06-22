@@ -86,7 +86,9 @@ echo 변경된 파일 목록:
 git status --short
 
 echo.
-set /p "WORK_MSG=수정내용 제목을 입력하세요. 그냥 엔터 시 기본값 사용 > "
+echo 수정내용 제목을 입력한 뒤 Enter를 누르세요.
+echo 그냥 Enter를 누르면 기본값을 사용합니다.
+set /p "WORK_MSG=> "
 
 if "%WORK_MSG%"=="" set WORK_MSG=BM 코드 수정 반영
 

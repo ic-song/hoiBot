@@ -31,7 +31,8 @@ echo  주의: 방금 수정한 내용이 있다면 삭제될 수 있습니다.
 echo ============================================================
 echo.
 
-set /p "CONFIRM=계속 진행하려면 Y 를 입력하세요 > "
+echo 계속 진행하려면 Y 를 입력한 뒤 Enter를 누르세요.
+set /p "CONFIRM=> "
 
 if /I not "%CONFIRM%"=="Y" goto CANCEL
 
@@ -72,7 +73,7 @@ echo [STEP 5/5] 작업 폴더 초기화
 git reset --hard origin/%BASE_BRANCH%
 if errorlevel 1 goto FAIL_RESET
 
-git clean -fd
+git clean -fd -e tools/logs/
 if errorlevel 1 goto FAIL_CLEAN
 
 echo.
