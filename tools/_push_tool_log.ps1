@@ -55,7 +55,7 @@ try {
         $blob = (git hash-object -w -- $log).Trim()
         git update-index --add --cacheinfo "100644,$blob,$relativePath"
         $tree = (git write-tree).Trim()
-        $message = "로그: " + [System.IO.Path]::GetFileName($log)
+        $message = "log: " + [System.IO.Path]::GetFileName($log)
 
         if ($baseCommit) {
             $commit = ($message | git commit-tree $tree -p $baseCommit).Trim()
