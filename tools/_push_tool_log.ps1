@@ -31,35 +31,48 @@ try {
     if (-not $env:GIT_COMMITTER_NAME) { $env:GIT_COMMITTER_NAME = $env:GIT_AUTHOR_NAME }
     if (-not $env:GIT_COMMITTER_EMAIL) { $env:GIT_COMMITTER_EMAIL = $env:GIT_AUTHOR_EMAIL }
 
-    $baseCommit = $null
-    $remoteBranch = git ls-remote --heads origin $Branch 2>$null
-    if ($LASTEXITCODE -eq 0 -and $remoteBranch) {
-        git fetch origin "$Branch`:refs/remotes/origin/$Branch" --quiet
-        $baseResult = git rev-parse --verify "origin/$Branch^{commit}" 2>$null
-        if ($LASTEXITCODE -eq 0 -and $baseResult) {
-            $baseCommit = $baseResult.Trim()
+    $pushed = $false
+    for ($attempt = 1; $attempt -le 3 -and -not $pushed; $attempt++) {
+        $baseCommit = $null
+        $remoteBranch = git ls-remote --heads origin $Branch 2>$null
+        if ($LASTEXITCODE -eq 0 -and $remoteBranch) {
+            git fetch origin "$Branch`:refs/remotes/origin/$Branch" --quiet
+            $baseResult = git rev-parse --verify "origin/$Branch^{commit}" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $baseResult) {
+                $baseCommit = $baseResult.Trim()
+            }
+        }
+
+        if ($baseCommit) {
+            git read-tree $baseCommit
+        } else {
+            git read-tree --empty
+        }
+
+        $blob = (git hash-object -w -- $log).Trim()
+        git update-index --add --cacheinfo "100644,$blob,$relativePath"
+        $tree = (git write-tree).Trim()
+        $message = "로그: " + [System.IO.Path]::GetFileName($log)
+
+        if ($baseCommit) {
+            $commit = ($message | git commit-tree $tree -p $baseCommit).Trim()
+        } else {
+            $commit = ($message | git commit-tree $tree).Trim()
+        }
+
+        git push origin "$commit`:refs/heads/$Branch" --quiet
+        if ($LASTEXITCODE -eq 0) {
+            $pushed = $true
+            Write-Host "[LOG] pushed execution log to $Branch`: $relativePath"
+        } elseif ($attempt -lt 3) {
+            Write-Host "[LOG][WARN] execution log push conflict, retrying ($attempt/3)"
+            Start-Sleep -Seconds 1
         }
     }
 
-    if ($baseCommit) {
-        git read-tree $baseCommit
-    } else {
-        git read-tree --empty
+    if (-not $pushed) {
+        Write-Host "[LOG][WARN] execution log git push failed after retries: $relativePath"
     }
-
-    $blob = (git hash-object -w -- $log).Trim()
-    git update-index --add --cacheinfo "100644,$blob,$relativePath"
-    $tree = (git write-tree).Trim()
-    $message = "로그: " + [System.IO.Path]::GetFileName($log)
-
-    if ($baseCommit) {
-        $commit = ($message | git commit-tree $tree -p $baseCommit).Trim()
-    } else {
-        $commit = ($message | git commit-tree $tree).Trim()
-    }
-
-    git push origin "$commit`:refs/heads/$Branch" --quiet
-    Write-Host "[LOG] pushed execution log to $Branch`: $relativePath"
 } catch {
     Write-Host "[LOG][WARN] execution log git push failed: $($_.Exception.Message)"
 } finally {
