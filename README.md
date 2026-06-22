@@ -241,3 +241,11 @@ feature/<content-name>
 - `/sdcard/호이랜드/`의 실제 운영 데이터와 저장소의 `data/` 파일이 다를 수 있습니다.
 - 대용량 JSON 파일을 수정할 때는 형식 오류가 나지 않도록 저장 전후로 JSON 구조를 확인하세요.
 - 운영 중인 봇에 반영하기 전 테스트방에서 주요 명령어를 먼저 확인하는 것을 권장합니다.
+
+## Additional Documents
+
+Supplementary review and design documents are managed under `docs/`.
+
+- `docs/deletion-review/DELETION_REVIEW_COMMANDS.md`: command deletion review notes
+- `docs/database/rdb_erd.md`: database/ERD notes
+- `docs/database/rdb_erd_diagram.md`: database/ERD diagram notes
