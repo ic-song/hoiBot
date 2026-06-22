@@ -71,7 +71,7 @@ if /i "%ENABLE_GIT_PUSH%"=="1" (
 	git reset --hard > "%SYNC_LOG%" 2>&1
 	type "%SYNC_LOG%"
 	if errorlevel 1 goto FAIL_GIT_RESET
-	git clean -fd > "%SYNC_LOG%" 2>&1
+	git clean -fd -e tools/logs/ > "%SYNC_LOG%" 2>&1
 	type "%SYNC_LOG%"
 	if errorlevel 1 goto FAIL_GIT_CLEAN
 	echo [OK] Git 작업상태 초기화 완료
