@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.188"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.189"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36762,6 +36762,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	if (isGuildRaidExploreEventActive(petExploreData)) {
 		out += GLOBAL_CONFIG.petExplore.guildRaidEvent.label + "【/탐 10】\n";
 		out += "【10】 " + GLOBAL_CONFIG.petExplore.guildRaidEvent.name + ": " + cnt["10"] + "명\n";
+		out += "※ 길드/펫던전 입장권🌋 필요\n";
 		out += LINE + "\n";
 	}
 
