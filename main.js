@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.187"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.188"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36176,9 +36176,9 @@ function autoExploreBetting(data, petExploreData) {
 		// 이미 배팅 상태면 스킵
 		if (petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user)) continue;
 
-		// 고정 던전 우선 (이벤트 활성 시 0 포함), 없으면 1~3 랜덤
+		// 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 1~3 랜덤
 		var fixed = petExploreData.autoFixedDungeon[user];
-		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || (fixed === "0" && isPetExploreEventMineActive(petExploreData));
+		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
 		var dungeonNo = isFixedValid ? String(fixed) : String(Math.floor(Math.random() * 3) + 1);
 
 		// 배열 보장
@@ -36800,7 +36800,9 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += LINE + "\n";
 
 	out += "[자동탐험권 고정⛰️: " + myFixedName + "]\n";
-	out += isPetExploreEventMineActive(petExploreData) ? "[/자동탐고정 0~7 입력시 고정]\n" : "[/자동탐고정 탐 1~7 입력시 고정]\n";
+	var autoFixGuide = isPetExploreEventMineActive(petExploreData) ? "0~7" : "1~7";
+	if (isGuildRaidExploreEventActive(petExploreData)) autoFixGuide += ", 10";
+	out += "[/자동탐고정 " + autoFixGuide + " 입력시 고정]\n";
 	out += LINE + "\n";
 
 	out += "아이템 보유 현황🛍️\n";
@@ -36915,14 +36917,20 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
 	var parts = msg.trim().split(/\s+/);
 	if (parts.length < 2) {
-		var usageText = isPetExploreEventMineActive(petExploreData) ? "사용법: /자동탐고정 0~7\n(예: /자동탐고정 0)" : "사용법: /자동탐고정 1~7\n(예: /자동탐고정 4)";
+		var usageRange = isPetExploreEventMineActive(petExploreData) ? "0~7" : "1~7";
+		if (isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
+		var usageExample = isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4");
+		var usageText = "사용법: /자동탐고정 " + usageRange + "\n(예: /자동탐고정 " + usageExample + ")";
 		return { text: usageText, petExploreData: petExploreData, data: data };
 	}
 
 	var n = String(parts[1]);
-	var isValid = n === "1" || n === "2" || n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || (n === "0" && isPetExploreEventMineActive(petExploreData));
+	var isValid = n === "1" || n === "2" || n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
 	if (!isValid) {
-		var validText = isPetExploreEventMineActive(petExploreData) ? "0~7 중 하나만 입력해줘!\n예) /자동탐고정 0" : "1~7 중 하나만 입력해줘!\n예) /자동탐고정 2";
+		var validRange = isPetExploreEventMineActive(petExploreData) ? "0~7" : "1~7";
+		if (isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
+		var validExample = isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2");
+		var validText = validRange + " 중 하나만 입력해줘!\n예) /자동탐고정 " + validExample;
 		return { text: validText, petExploreData: petExploreData, data: data };
 	}
 
@@ -36934,7 +36942,8 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 		4: "친밀도 던전🐾",
 		5: "전도르 던전🗿",
 		6: "양계장 던전🐓",
-		7: "행운의 던전🍀"
+		7: "행운의 던전🍀",
+		10: "길드레이드던전👾"
 	};
 
 	// 동일 고정 재입력은 그냥 안내만(소모 없음)
@@ -36951,7 +36960,8 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 	petExploreData.autoFixedDungeon[sender] = n;
 
 	// (선택) 안내 문구: 4~7은 입장권 필요하다는 “정보”만 제공(소모X)
-	if (n === "4" || n === "5" || n === "6" || n === "7") {
+	if (n === "4" || n === "5" || n === "6" || n === "7" || n === "10") {
+		var ticketGuide = n === "10" ? "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다." : "※ 탐4~7 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~3으로 이동합니다.";
 		return {
 			text:
 				"✅ 자동탐험 고정 완료!\n내 자동탐험지: " +
@@ -36959,7 +36969,8 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 				" (탐" +
 				n +
 				")\n" +
-				"※ 탐4~7 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~3으로 이동합니다.\n\n자동탐험권🌄(호이패스,초보패스) 구독자만 이용가능합니다.",
+				ticketGuide +
+				"\n\n자동탐험권🌄(호이패스,초보패스) 구독자만 이용가능합니다.",
 			petExploreData: petExploreData,
 			data: data
 		};

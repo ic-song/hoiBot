@@ -3745,6 +3745,7 @@ Status: VERIFIED
 - `/레이드이벤트비활성화`
 - `/레이드박스오픈`
 - `/자동탐고정 0` when the event mine is active
+- `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
@@ -3754,7 +3755,7 @@ Status: VERIFIED
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
-- Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
+- Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 
 # /맞짱필드
 
