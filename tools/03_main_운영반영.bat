@@ -1,13 +1,14 @@
 @echo off
 chcp 65001 > nul
+setlocal EnableExtensions EnableDelayedExpansion
 if not "%HOIBOT_TOOL_LOG_ACTIVE%"=="1" (
 	set "HOIBOT_TOOL_LOG_ACTIVE=1"
 	set "HOIBOT_TOOL_LOG_DIR=%~dp0logs"
 	set "HOIBOT_TOOL_LOG_SCRIPT=%~f0"
 	if not exist "%~dp0logs" mkdir "%~dp0logs" > nul 2>&1
 	for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "HOIBOT_TOOL_LOG_FILE=%~dp0logs\%~n0_%%t.log"
-	powershell -NoProfile -ExecutionPolicy Bypass -Command "$script=$env:HOIBOT_TOOL_LOG_SCRIPT; $log=$env:HOIBOT_TOOL_LOG_FILE; & $script 2>&1 | Tee-Object -FilePath $log; $code=$LASTEXITCODE; $toolDir=Split-Path -Parent $script; $helper=Join-Path $toolDir '_push_tool_log.ps1'; $repoRoot=Resolve-Path (Join-Path $toolDir '..'); if (Test-Path $helper) { & $helper -RepoRoot $repoRoot -LogPath $log -Branch 'feature/tool-logs' }; exit $code"
-	exit /b %ERRORLEVEL%
+	powershell -NoProfile -ExecutionPolicy Bypass -Command "$script=$env:HOIBOT_TOOL_LOG_SCRIPT; $log=$env:HOIBOT_TOOL_LOG_FILE; cmd /d /c call $script 2>&1 | Tee-Object -FilePath $log; $code=$LASTEXITCODE; $toolDir=Split-Path -Parent $script; $helper=Join-Path $toolDir '_push_tool_log.ps1'; $repoRoot=Resolve-Path (Join-Path $toolDir '..'); if (Test-Path $helper) { & $helper -RepoRoot $repoRoot -LogPath $log -Branch 'feature/tool-logs' }; exit $code"
+	exit /b !ERRORLEVEL!
 )
 setlocal EnableExtensions EnableDelayedExpansion
 
@@ -73,7 +74,7 @@ if not "!HOIBOT_DEPLOY_RESTARTED!"=="1" if not "!BEFORE_GIT_HEAD!"=="!CURRENT_GI
 	echo [INFO] 배치 파일이 최신 코드로 갱신되었을 수 있어 새 버전으로 다시 시작합니다.
 	set HOIBOT_DEPLOY_RESTARTED=1
 	call "%~f0"
-	exit /b %ERRORLEVEL%
+	exit /b
 )
 echo [OK] 최신 코드 확인 완료
 echo [VERIFY] Git HEAD = !CURRENT_GIT_HEAD!
