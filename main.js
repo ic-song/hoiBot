@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.191"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.192"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35776,6 +35776,11 @@ function initPetExploreData(petExploreData) {
 		petExploreData.migration.pendantMazeSlotResetV2191 = true;
 		petExploreData._migrationSaveRequired = true;
 	}
+	if (petExploreData.migration.currentExploreSlotOneResetV2192 !== true) {
+		moveCurrentExploreBetsToDungeonOne(petExploreData);
+		petExploreData.migration.currentExploreSlotOneResetV2192 = true;
+		petExploreData._migrationSaveRequired = true;
+	}
 
 	// 지도/UI 알림 문구
 	if (typeof petExploreData.notice !== "string") {
@@ -35869,6 +35874,35 @@ function moveCurrentExploreBetsToStarterSlots(petExploreData) {
 		if (!Array.isArray(petExploreData.bet[targetDungeon])) petExploreData.bet[targetDungeon] = [];
 		petExploreData.bet[targetDungeon].push(movedEntry);
 		petExploreData.userBet[movedEntry.user] = targetDungeon;
+	}
+	return entries.length;
+}
+
+// 현재 지도 배팅 유저를 1번 탐험지로 한 번 재배치하는 함수
+function moveCurrentExploreBetsToDungeonOne(petExploreData) {
+	if (!petExploreData || !petExploreData.bet) return 0;
+	var entries = [];
+	var seen = {};
+	var dungeonKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "10"];
+	for (var d = 0; d < dungeonKeys.length; d++) {
+		var key = dungeonKeys[d];
+		var arr = petExploreData.bet[key];
+		if (!Array.isArray(arr)) arr = [];
+		for (var i = 0; i < arr.length; i++) {
+			var entry = arr[i];
+			if (!entry || !entry.user || seen[entry.user]) continue;
+			seen[entry.user] = true;
+			entries.push(entry);
+		}
+		petExploreData.bet[key] = [];
+	}
+	if (entries.length === 0) return 0;
+	if (!Array.isArray(petExploreData.bet["1"])) petExploreData.bet["1"] = [];
+	for (var j = 0; j < entries.length; j++) {
+		var movedEntry = entries[j];
+		movedEntry.dungeon = "1";
+		petExploreData.bet["1"].push(movedEntry);
+		petExploreData.userBet[movedEntry.user] = "1";
 	}
 	return entries.length;
 }
@@ -37113,10 +37147,11 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += "【6】 행운의 던전🍀: " + cnt["6"] + "명\n";
 	out += LINE + "\n";
 
-	out += "미궁🕋【/탐 7~8】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
+	out += "미궁🕋【/탐 7】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
 	out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
 	out += "【7】 보물수호자 벨카르💎: " + cnt["7"] + "명\n";
-	out += "【8】 잊혀진 대마법사의 유적📜[종순 10등부터 입장]: " + cnt["8"] + "명\n";
+	out += "【8】 잊혀진 대마법사의 유적📜: " + cnt["8"] + "명\n";
+	out += "*/종합순위 10등부터 입장\n";
 	out += LINE + "\n";
 
 	var appliedUpItem = getMyAppliedUpItem(petExploreData, sender, myBet);
