@@ -1769,10 +1769,53 @@ Status: VERIFIED
 ## Related Commands
 
 - `/티어확인`
+- `/티어보상지급`
 
 ## AI Notes
 
 - Ranking is based on bag ticket totals, not current displayed rank tier
+
+---
+
+# /티어보상지급
+
+Status: VERIFIED
+
+## Files
+
+- main.js
+
+## Related Helpers
+
+- getTierRankingRows
+- payTierRankingReward
+- formatTierRewardLine
+- addItem
+
+## Data Usage
+
+- data.member[*].bag["티어 승급티켓🎟"]
+- data.member[*].bag["고급 티어 승급티켓🎫"]
+- data.member[*].bag["펫스킬북 조각📙"]
+- data.member[*].bag["다이아상자💎(/다이아상자오픈)"]
+- data.tierReward.lastPaidDate
+
+## Save Flow
+
+- `/티어보상지급` mutates member bags and `data.tierReward`, then saves through `saveJsonFile(data, filePath)`.
+
+## Related Commands
+
+- `/티어순위`
+- `/펫스킬북조합`
+- `/다이아상자오픈`
+
+## AI Notes
+
+- Exact command guard: `/티어보상지급`.
+- Admin/operator gated to `호이 남` or `오픈채팅봇`.
+- Uses the same ticket score basis as `/티어순위`: regular ticket 1pt, advanced ticket 5pt.
+- Prevents duplicate same-day payout through `data.tierReward.lastPaidDate`.
 
 ---
 
@@ -2410,6 +2453,30 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬확률`
 - `/펫스킬가방`
+
+---
+
+# /펫스킬북조합
+Status: VERIFIED
+## Files
+- main.js
+## Related Helpers
+- combinePetSkillBookFragment
+- hasItem
+- removeItem
+- addItem
+## Data Usage
+- data.member[sender].bag["펫스킬북 조각📙"]
+- data.member[sender].bag["펫스킬북📙(/펫스킬오픈)"]
+## Save Flow
+- Successful combination consumes 10 fragments, grants 1 pet skill book, and saves member data through `saveJsonFile(data, filePath)`.
+## Related Commands
+- `/티어보상지급`
+- `/펫스킬오픈`
+- `/펫스킬가방`
+## AI Notes
+- Exact command guard: `/펫스킬북조합`.
+- Invalid suffix text does not execute.
 
 ---
 
@@ -3716,11 +3783,14 @@ Status: VERIFIED
 - isPetExploreEventMineActive
 - moveEventMineBetsToRandomMine
 - calcExploreSuccessPercent
+- getExploreSuccessPenaltyPercent
 - getExploreTraitBonusPercent
 - hasPetSkill
 
 ## Data Usage
 - data.member[*].bag
+- data.member[*].bag["펫던전 입장권🌋"]
+- data.member[*].bag["미궁 입장권🕋"]
 - petExploreData.bet
 - petExploreData.userBet
 - petExploreData.record
@@ -3735,6 +3805,7 @@ Status: VERIFIED
 ## Related Commands
 - `/탐`
 - `/탐 [1~7]`
+- `/탐 7`
 - `/탐 10` when the guild raid event is active
 - `/지도`
 - `/탐험알림`
@@ -3744,18 +3815,21 @@ Status: VERIFIED
 - `/레이드이벤트활성화`
 - `/레이드이벤트비활성화`
 - `/레이드박스오픈`
+- `/팬던트미궁박스오픈`
 - `/자동탐고정 0` when the event mine is active
 - `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
-- `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
-- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7`
+- `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~2 when `/펫탐험이벤트비활성화` runs
+- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~2` and `던전탐험가📙` only to `/탐 3~6` plus event guild raid `/탐 10`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
+- Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
+- Maze entry `/탐 7` requires `미궁 입장권🕋`, applies `-50%` success penalty, and rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
 
 # /맞짱필드
 
@@ -3991,6 +4065,39 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/다이아박스오픈` or `/다이아박스오픈 숫자`
 - Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+
+---
+
+# /팬던트미궁박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- main.js
+
+## Related Helpers
+
+- runPendantMazeBoxOpen
+- runExploreBoxOpen
+- rollPendantMazeBox
+- openExploreBoxesAllForOpenAll
+
+## Data Usage
+
+- data.member[sender].bag["팬던트미궁박스💎(/팬던트미궁박스오픈)"]
+- data.member[sender].bag["팬던트 강화석📿"]
+- data.member[sender].bag["팬던트 복원석🔷"]
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/팬던트미궁박스오픈` or `/팬던트미궁박스오픈 숫자`.
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+- Each box grants `팬던트 강화석📿` 1~3개 and has a 1% chance to grant `팬던트 복원석🔷` 1개.
 
 ---
 

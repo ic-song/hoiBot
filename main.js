@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.189"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.190"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -687,6 +687,17 @@ const GLOBAL_CONFIG = {
 			name: "길드레이드던전👾",
 			label: "🎉이벤트 던전👾",
 			rewardItem: "길드레이드던전박스👾(/레이드박스오픈)"
+		},
+		maze: {
+			ticketItemName: "미궁 입장권🕋",
+			rewardItem: "팬던트미궁박스💎(/팬던트미궁박스오픈)",
+			successPenalty: 50
+		},
+		dungeonSuccessPenalty: 10,
+		tierReward: {
+			fragmentItemName: "펫스킬북 조각📙",
+			fragmentNeedCount: 10,
+			topLimit: 10
 		}
 	},
 	fee: { // 수수료 계산 설정
@@ -746,7 +757,9 @@ const GLOBAL_CONFIG = {
 		carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
 		legendStoneName: "전설의 돌맹이🗿",
 		diamondBoxName: "다이아상자💎(/다이아상자오픈)",
-		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)"
+		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)",
+		pendantEnhanceStoneName: "팬던트 강화석📿",
+		pendantRestoreStoneName: "팬던트 복원석🔷"
 	},
 	pointShop: { // 포인트 상점 설정
 		limits: {
@@ -17858,6 +17871,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				} else if (msg == "/반지정보" && sender == "호이 남") {
 					replier.reply(JSON.stringify(petData[sender].ring));
 					replier.reply(JSON.stringify(calculateItemInfo("ring", sender, data, petData)));
+				} else if (msg === "/티어보상지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
+					var tierRewardResult = payTierRankingReward(data, petData, guildData);
+					replier.reply(tierRewardResult.message);
+					if (tierRewardResult.ok) {
+						noticeMsg(tierRewardResult.noticeMessage);
+						saveJsonFile(data, filePath);
+					}
+					return;
 				} else if (msg == "/보상지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
 					// 종합순위보상
 					let members = data.member;
@@ -20577,6 +20598,17 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(data, filePath);
 					return;
 				}
+				if (msg === "/팬던트미궁박스오픈" || /^\/팬던트미궁박스오픈\s+\d+$/.test(msg)) {
+					runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier);
+					saveJsonFile(data, filePath);
+					return;
+				}
+				if (msg === "/펫스킬북조합") {
+					var petSkillBookCombineResult = combinePetSkillBookFragment(data, petData, guildData, sender);
+					if (petSkillBookCombineResult.ok) saveJsonFile(data, filePath);
+					replier.reply(petSkillBookCombineResult.message);
+					return;
+				}
 				if (msg === "/다이아조합" || /^\/다이아조합\s+\d+$/.test(msg)) {
 					var diamondCombineMatch = msg.match(/^\/다이아조합(?:\s+(\d+))?$/);
 					var diamondCombineCount = diamondCombineMatch && diamondCombineMatch[1] ? parseInt(diamondCombineMatch[1], 10) : 1;
@@ -20973,7 +21005,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					var dungeonNo = null;
 
 					if (parts.length === 1) {
-						dungeonNo = String(Math.floor(Math.random() * 3) + 1);
+						dungeonNo = String(Math.floor(Math.random() * 2) + 1);
 					} else {
 						var n = parseInt(parts[1], 10);
 						var isGuildRaidInput = n === 10 && isGuildRaidExploreEventActive(petExploreData);
@@ -20985,6 +21017,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							return;
 						}
 						dungeonNo = String(n);
+					}
+
+					if (dungeonNo === "7" && !hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하여 보물수호자 벨카르💎에 입장할 수 없습니다.");
+						return;
 					}
 
 					if (dungeonNo === "10") {
@@ -32826,6 +32863,110 @@ function addItem(data, user, itemName, count) {
 	data.member[user].bag[itemName] += count;
 }
 
+// 티어순위 산정용 점수 목록을 반환하는 함수
+function getTierRankingRows(data) {
+	var rows = [];
+	if (!data || !data.member) return rows;
+	for (var user in data.member) {
+		if (!data.member.hasOwnProperty(user)) continue;
+		var member = data.member[user];
+		if (!member) continue;
+		var bag = member.bag || {};
+		var regular = parseInt(bag["티어 승급티켓🎟"] || 0, 10) || 0;
+		var advanced = parseInt(bag["고급 티어 승급티켓🎫"] || 0, 10) || 0;
+		rows.push({
+			user: user,
+			point: regular + advanced * 5
+		});
+	}
+	rows.sort(function (a, b) {
+		if (b.point !== a.point) return b.point - a.point;
+		return a.user > b.user ? 1 : a.user < b.user ? -1 : 0;
+	});
+	return rows;
+}
+
+// 티어순위 보상 내용을 문자열로 만드는 함수
+function formatTierRewardLine(reward) {
+	var parts = [];
+	if (reward.fragment > 0) parts.push(GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName + " " + reward.fragment + "개");
+	if (reward.diamondBox > 0) parts.push(GLOBAL_CONFIG.items.diamondBoxName + " " + reward.diamondBox + "개");
+	return parts.join(" ");
+}
+
+// 티어순위 상위권 보상을 지급하는 함수
+function payTierRankingReward(data, petData, guildData) {
+	if (!data || !data.member) return { ok: false, message: "현재 티어순위 데이터가 없어 보상을 지급할 수 없습니다." };
+	if (!data.tierReward || typeof data.tierReward !== "object") data.tierReward = {};
+
+	var today = getCurrentDate();
+	if (data.tierReward.lastPaidDate === today) {
+		return { ok: false, message: "이미 금일 티어보상이 지급되었습니다.\n중복 지급을 방지하기 위해 지급이 취소됩니다." };
+	}
+
+	var rows = getTierRankingRows(data);
+	if (rows.length === 0) return { ok: false, message: "현재 티어순위 데이터가 없어 보상을 지급할 수 없습니다." };
+
+	var rewardTable = [
+		{ fragment: 5, diamondBox: 3 },
+		{ fragment: 3, diamondBox: 2 },
+		{ fragment: 2, diamondBox: 1 },
+		{ fragment: 1, diamondBox: 1 },
+		{ fragment: 0, diamondBox: 1 },
+		{ fragment: 0, diamondBox: 1 },
+		{ fragment: 0, diamondBox: 1 },
+		{ fragment: 0, diamondBox: 1 },
+		{ fragment: 0, diamondBox: 1 },
+		{ fragment: 0, diamondBox: 1 }
+	];
+
+	var limit = Math.min(GLOBAL_CONFIG.petExplore.tierReward.topLimit, rows.length);
+	var notice = "[보상알림]\n";
+	notice += "🎟티어 보상 지급이 완료되었습니다.🎫\n";
+	notice += "(/티어순위) 를 기준으로 1등-10등 보상됩니다.\n";
+	if (limit < GLOBAL_CONFIG.petExplore.tierReward.topLimit) notice += "현재 티어순위 인원이 " + limit + "명으로 확인되어 1등~" + limit + "등까지만 보상이 지급되었습니다.\n";
+	notice += "\n";
+
+	for (var i = 0; i < limit; i++) {
+		var row = rows[i];
+		var reward = rewardTable[i];
+		if (reward.fragment > 0) addItem(data, row.user, GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName, reward.fragment);
+		if (reward.diamondBox > 0) addItem(data, row.user, GLOBAL_CONFIG.items.diamondBoxName, reward.diamondBox);
+		notice += "[" + getRankEmoji(i + 1) + checkRank(data, petData, guildData, row.user) + "]\n";
+		notice += formatTierRewardLine(reward) + "\n\n";
+	}
+
+	data.tierReward.lastPaidDate = today;
+	data.tierReward.lastPaidAt = formatDateTime(new Date());
+	data.tierReward.lastPaidCount = limit;
+
+	return {
+		ok: true,
+		message: "✅ 티어 보상 지급 완료\n지급 인원: " + limit + "명\nNoticeMsg로 지급 결과를 공개했습니다.",
+		noticeMessage: notice.trim()
+	};
+}
+
+// 펫스킬북 조각을 펫스킬북으로 조합하는 함수
+function combinePetSkillBookFragment(data, petData, guildData, sender) {
+	var fragmentName = GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName;
+	var needCount = GLOBAL_CONFIG.petExplore.tierReward.fragmentNeedCount;
+	var nick = checkRank(data, petData, guildData, sender);
+	if (!hasItem(data, sender, fragmentName, needCount)) {
+		var have = data.member && data.member[sender] && data.member[sender].bag ? data.member[sender].bag[fragmentName] || 0 : 0;
+		return {
+			ok: false,
+			message: "❌[" + nick + "]님 " + fragmentName + "이 부족합니다.\n필요: " + needCount + "개 / 보유: " + numberWithCommas(have) + "개"
+		};
+	}
+	removeItem(data, sender, fragmentName, needCount);
+	addItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, 1);
+	return {
+		ok: true,
+		message: "✅ 펫스킬북 조합 완료\n[" + nick + "]\n소비: " + fragmentName + " " + needCount + "개\n획득: " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개"
+	};
+}
+
 // 맞짱필드 진행 데이터와 기본 상점을 보장하는 함수
 function ensureMatzangFieldData(data) {
 	if (!data.matzangField || typeof data.matzangField !== "object") data.matzangField = {};
@@ -35645,7 +35786,7 @@ function moveEventMineBetsToRandomMine(petExploreData) {
 		var entry = eventMineBets[i];
 		if (!entry || !entry.user) continue;
 
-		var targetDungeon = String(Math.floor(Math.random() * 3) + 1);
+		var targetDungeon = String(Math.floor(Math.random() * 2) + 1);
 		if (!Array.isArray(petExploreData.bet[targetDungeon])) {
 			petExploreData.bet[targetDungeon] = [];
 		}
@@ -35674,7 +35815,7 @@ function moveGuildRaidBetsToRandomMine(petExploreData) {
 		var entry = guildRaidBets[i];
 		if (!entry || !entry.user) continue;
 
-		var targetDungeon = String(Math.floor(Math.random() * 3) + 1);
+		var targetDungeon = String(Math.floor(Math.random() * 2) + 1);
 		if (!Array.isArray(petExploreData.bet[targetDungeon])) {
 			petExploreData.bet[targetDungeon] = [];
 		}
@@ -35896,12 +36037,12 @@ function getExploreDungeonName(no, petExploreData) {
 	var map = {
 		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
 		1: "정령강화 광산🥀",
-		2: "반지강화 광산💍",
-		3: "펫강화 광산⭐️",
-		4: "친밀도 던전🐾",
-		5: "전도르 던전🗿",
-		6: "양계장 던전🐓",
-		7: "행운의 던전🍀",
+		2: "펫강화 광산⭐️",
+		3: "친밀도 던전🐾",
+		4: "전도르 던전🗿",
+		5: "양계장 던전🐓",
+		6: "행운의 던전🍀",
+		7: "보물수호자 벨카르💎",
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
 		E: "이벤트 던전✡️"
 	};
@@ -35913,12 +36054,12 @@ function getExploreSuccessRewardItem(no, petExploreData) {
 	var map = {
 		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.rewardItem,
 		1: "정령박스🥀(/정령박스오픈)",
-		2: "반지박스💍(/반지박스오픈)",
-		3: "강화박스⭐(/강화박스오픈)",
-		4: "펫먹이던전박스🍼(/펫먹이박스오픈)",
-		5: "전도르던전박스🗿(/전도르박스오픈)",
-		6: "양계장던전박스🐓(/양계장박스오픈)",
-		7: "행운의박스🍀(/행운의박스오픈)",
+		2: "강화박스⭐(/강화박스오픈)",
+		3: "펫먹이던전박스🍼(/펫먹이박스오픈)",
+		4: "전도르던전박스🗿(/전도르박스오픈)",
+		5: "양계장던전박스🐓(/양계장박스오픈)",
+		6: "행운의박스🍀(/행운의박스오픈)",
+		7: GLOBAL_CONFIG.petExplore.maze.rewardItem,
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem,
 		E: "이벤트박스✡️(/이벤박스오픈)"
 	};
@@ -36001,17 +36142,27 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 					continue;
 				}
 			}
-			if (dk === "4" || dk === "5" || dk === "6" || dk === "7") {
+			if (dk === "3" || dk === "4" || dk === "5" || dk === "6") {
 				if (hasItem(data, user, "펫던전 입장권🌋", 1)) {
 					removeItem(data, user, "펫던전 입장권🌋", 1);
 					usedTicket = true;
 				} else {
-					finalDungeon = String(Math.floor(Math.random() * 3) + 1);
+					finalDungeon = String(Math.floor(Math.random() * 2) + 1);
+				}
+			}
+			if (dk === "7") {
+				if (hasItem(data, user, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
+					removeItem(data, user, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1);
+					usedTicket = true;
+				} else {
+					failLines.push("[" + checkRank(data, petData, guildData, user) + "]보물수호자 벨카르💎 입장 실패(❌)\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 부족: 보상 제외");
+					failCnt++;
+					continue;
 				}
 			}
 
-			// 이벤트 던전 5% 진입(탐1~3만)
-			if (finalDungeon === "1" || finalDungeon === "2" || finalDungeon === "3") {
+			// 이벤트 던전 5% 진입(광산 1~2만)
+			if (finalDungeon === "1" || finalDungeon === "2") {
 				if (Math.random() < 0.05) finalDungeon = "E";
 			}
 
@@ -36035,6 +36186,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
 			var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
 			var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
+			var penaltyP = getExploreSuccessPenaltyPercent(finalDungeon); // 던전/미궁 성공률 디버프 계산
 
 			var usedUpItem = pickAndConsumeExploreUpItem(data, user);
 			var upP = usedUpItem ? parseExploreUpPercent(usedUpItem) : 0;
@@ -36043,7 +36195,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			entry.usedTreasure = usedTreasure;
 			entry.usedUpItem = usedUpItem;
 
-			var totalP = baseP + tierP + expP + lordP + traitP + upP;
+			var totalP = Math.max(0, baseP + tierP + expP + lordP + traitP + upP - penaltyP);
 
 			var success = Math.random() * 100 < totalP;
 
@@ -36080,7 +36232,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 				line += "\n" + bonusRewardText;
 			}
 
-			if ((dk === "4" || dk === "5" || dk === "6" || dk === "7") && !usedTicket) {
+			if ((dk === "3" || dk === "4" || dk === "5" || dk === "6") && !usedTicket) {
 				line += "\n입장권 없음: 광산 랜덤 이동";
 			}
 			if (usedTreasure && treasureDrop) {
@@ -36176,10 +36328,10 @@ function autoExploreBetting(data, petExploreData) {
 		// 이미 배팅 상태면 스킵
 		if (petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user)) continue;
 
-		// 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 1~3 랜덤
+		// 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 1~2 랜덤
 		var fixed = petExploreData.autoFixedDungeon[user];
 		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
-		var dungeonNo = isFixedValid ? String(fixed) : String(Math.floor(Math.random() * 3) + 1);
+		var dungeonNo = isFixedValid ? String(fixed) : String(Math.floor(Math.random() * 2) + 1);
 
 		// 배열 보장
 		if (!petExploreData.bet) {
@@ -36298,6 +36450,7 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 	openAllOne("/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", rollDdangDungeonBox);
 	openAllOne("/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, rollDiamondMineBox);
 	openAllOne("/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, rollGuildRaidBox);
+	openAllOne("/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, rollPendantMazeBox);
 
 	return logs.length ? logs.join("\n\n") : "";
 }
@@ -36337,6 +36490,22 @@ function rollGuildRaidBox() {
 // 길드레이드던전 박스를 오픈하는 함수
 function runGuildRaidBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, msg, rollGuildRaidBox);
+}
+
+// 팬던트 미궁 박스 보상 테이블
+function rollPendantMazeBox() {
+	var gain = {};
+	gain[GLOBAL_CONFIG.items.pendantEnhanceStoneName] = Math.floor(Math.random() * 3) + 1;
+	if (Math.random() < 0.01) gain[GLOBAL_CONFIG.items.pendantRestoreStoneName] = 1;
+	return {
+		gainItems: gain,
+		gainTextLines: []
+	};
+}
+
+// 팬던트 미궁 박스를 오픈하는 함수
+function runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
+	runExploreBoxOpen(sender, data, petData, guildData, replier, "/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, msg, rollPendantMazeBox);
 }
 
 // 다이아상자를 열어 다이아를 지급하는 함수
@@ -36611,12 +36780,12 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	var dungeonNameMap = {
 		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
 		1: "정령강화 광산🥀",
-		2: "반지강화 광산💍",
-		3: "펫강화 광산⭐️",
-		4: "친밀도 던전🐾",
-		5: "전도르 던전🗿",
-		6: "양계장 던전🐓",
-		7: "행운의 던전🍀",
+		2: "펫강화 광산⭐️",
+		3: "친밀도 던전🐾",
+		4: "전도르 던전🗿",
+		5: "양계장 던전🐓",
+		6: "행운의 던전🍀",
+		7: "보물수호자 벨카르💎",
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
 	};
 	var targetName = dungeonNameMap[dungeonNo] || dungeonNo + "번 던전";
@@ -36626,7 +36795,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	try {
 		p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, dungeonNo);
 	} catch (e) {
-		p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, totalP: 5 };
+		p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
 	}
 
 	var upP = typeof p.itemP === "number" ? p.itemP : 0;
@@ -36648,16 +36817,19 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	out += "\n⛰️탐험 성공확률(" + p.totalP + "%)\n";
 
 	// 입장권 표기
-	if (dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6" || dungeonNo === "7") {
+	if (dungeonNo === "3" || dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6") {
 		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 광산으로 랜덤 이동합니다.\n";
+	} else if (dungeonNo === "7") {
+		if (hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) out += "입장🕋: 1개 사용 예정(정산 시 재확인)\n";
+		else out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 이(가) 없습니다. 정산 시 보상에서 제외됩니다.\n";
 	} else if (dungeonNo === "0") {
 		out += "입장🌋: 0개 사용(이벤트 광산)\n";
 	} else if (dungeonNo === "10") {
 		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 보상에서 제외됩니다.\n";
 	} else {
-		out += "입장🌋: 0개 사용(탐1~3)\n";
+		out += "입장🌋: 0개 사용(탐1~2)\n";
 	}
 
 	// 보물지도 표기
@@ -36679,7 +36851,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	// out += "(기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + ";
 	// out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 특성" + p.traitP + "% = " + p.totalP + "%\n";
 	// out += "영주" + p.lordP + "% + UP" + upP + "% = " + p.totalP + "%)";
-	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 확률UP" + upP + "% = " + p.totalP + "%\n";
+	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + p.totalP + "%\n";
 
 	return out;
 }
@@ -36704,18 +36876,18 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	try {
 		p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, myBet);
 	} catch (e) {
-		p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, totalP: 5 };
+		p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
 	}
 
 	var dungeonNameMap = {
 		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
 		1: "정령강화 광산🥀",
-		2: "반지강화 광산💍",
-		3: "펫강화 광산⭐️",
-		4: "친밀도 던전🐾",
-		5: "전도르 던전🗿",
-		6: "양계장 던전🐓",
-		7: "행운의 던전🍀",
+		2: "펫강화 광산⭐️",
+		3: "친밀도 던전🐾",
+		4: "전도르 던전🗿",
+		5: "양계장 던전🐓",
+		6: "행운의 던전🍀",
+		7: "보물수호자 벨카르💎",
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
 		E: "이벤트 던전✡️"
 	};
@@ -36766,17 +36938,22 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 		out += LINE + "\n";
 	}
 
-	out += "광산⛰️【/탐 1~3, /탐(랜덤)】\n";
+	out += "광산⛰️【/탐 1~2, /탐(랜덤)】\n";
 	out += "【1】 정령강화 광산🥀: " + cnt["1"] + "명\n";
-	out += "【2】 반지강화 광산💍: " + cnt["2"] + "명\n";
-	out += "【3】 펫강화 광산⭐️: " + cnt["3"] + "명\n";
+	out += "【2】 펫강화 광산⭐️: " + cnt["2"] + "명\n";
 	out += LINE + "\n";
 
-	out += "던전🌋【/탐 4~7】 펫던전 입장권🌋\n";
-	out += "【4】 친밀도 던전🐾: " + cnt["4"] + "명\n";
-	out += "【5】 전도르 던전🗿: " + cnt["5"] + "명\n";
-	out += "【6】 양계장 던전🐓: " + cnt["6"] + "명\n";
-	out += "【7】 행운의 던전🍀: " + cnt["7"] + "명\n";
+	out += "던전🌋【/탐 3~6】 펫던전 입장권🌋\n";
+	out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty + "% 디버프\n";
+	out += "【3】 친밀도 던전🐾: " + cnt["3"] + "명\n";
+	out += "【4】 전도르 던전🗿: " + cnt["4"] + "명\n";
+	out += "【5】 양계장 던전🐓: " + cnt["5"] + "명\n";
+	out += "【6】 행운의 던전🍀: " + cnt["6"] + "명\n";
+	out += LINE + "\n";
+
+	out += "미궁🕋【/탐 7】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
+	out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
+	out += "【7】 보물수호자 벨카르💎: " + cnt["7"] + "명\n";
 	out += LINE + "\n";
 
 	var appliedUpItem = getMyAppliedUpItem(petExploreData, sender, myBet);
@@ -36784,7 +36961,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
 	out += "(내 탐험 아이템 상세보기..👈)\n";
 	out += allsee + "\n";
-	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 확률UP" + upP + "% = " + p.totalP + "%\n";
+	out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + p.totalP + "%\n";
 
 	var bagUpHas = null;
 	for (var u = 0; u < GLOBAL_CONFIG.petExplore.boostItemNames.length; u++) {
@@ -36834,8 +37011,13 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag["펫던전 입장권🌋"]) {
 		ticketCnt = data.member[sender].bag["펫던전 입장권🌋"];
 	}
-	var ticketScope = isGuildRaidExploreEventActive(petExploreData) ? "탐10, 탐4~7 정산 시 재확인" : "탐4~7 정산 시 재확인";
+	var ticketScope = isGuildRaidExploreEventActive(petExploreData) ? "탐10, 탐3~6 정산 시 재확인" : "탐3~6 정산 시 재확인";
 	out += "펫탐험 입장권🌋: " + (ticketCnt > 0 ? ticketCnt + "개" : "X") + " (" + ticketScope + ")\n";
+	var mazeTicketCnt = 0;
+	if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName]) {
+		mazeTicketCnt = data.member[sender].bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName];
+	}
+	out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + ": " + (mazeTicketCnt > 0 ? mazeTicketCnt + "개" : "X") + " (탐7 정산 시 재확인)\n";
 	out += LINE + "\n";
 
 	var rec = petExploreData.record && petExploreData.record[sender] ? petExploreData.record[sender] : null;
@@ -36854,16 +37036,24 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 	if (!dungeonKey) return 0;
 	dungeonKey = String(dungeonKey);
 
-	// 광산(1~3): 정령강화/반지강화/펫강화
-	if (dungeonKey === "1" || dungeonKey === "2" || dungeonKey === "3") {
+	// 광산(1~2): 정령강화/펫강화
+	if (dungeonKey === "1" || dungeonKey === "2") {
 		return hasPetSkill(petSkillData, user, "광산탐험가") ? 5 : 0;
 	}
 
-	// 던전(4~7, 10): 친밀도/전도르/양계장/행운/길드레이드
-	if (dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "7" || dungeonKey === "10") {
+	// 던전(3~6, 10): 친밀도/전도르/양계장/행운/길드레이드
+	if (dungeonKey === "3" || dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6" || dungeonKey === "10") {
 		return hasPetSkill(petSkillData, user, "던전탐험가") ? 5 : 0;
 	}
 
+	return 0;
+}
+
+// 펫탐험 던전/미궁 성공률 디버프를 반환하는 함수
+function getExploreSuccessPenaltyPercent(dungeonKey) {
+	dungeonKey = String(dungeonKey || "");
+	if (dungeonKey === "3" || dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6") return GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty;
+	if (dungeonKey === "7") return GLOBAL_CONFIG.petExplore.maze.successPenalty;
 	return 0;
 }
 
@@ -36877,8 +37067,9 @@ function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, 
 
 	//  확률UP 아이템 보너스
 	var itemP = getExploreItemBonusPercent(data, user);
+	var penaltyP = getExploreSuccessPenaltyPercent(dungeonKey);
 
-	var totalP = baseP + tierP + expP + lordP + traitP + itemP;
+	var totalP = Math.max(0, baseP + tierP + expP + lordP + traitP + itemP - penaltyP);
 
 	return {
 		baseP: baseP,
@@ -36887,6 +37078,7 @@ function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, 
 		lordP: lordP,
 		traitP: traitP,
 		itemP: itemP,
+		penaltyP: penaltyP,
 		totalP: totalP
 	};
 }
@@ -36938,12 +37130,12 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 	var nameMap = {
 		0: "다이아 광산💎",
 		1: "정령강화 광산🥀",
-		2: "반지강화 광산💍",
-		3: "펫강화 광산⭐️",
-		4: "친밀도 던전🐾",
-		5: "전도르 던전🗿",
-		6: "양계장 던전🐓",
-		7: "행운의 던전🍀",
+		2: "펫강화 광산⭐️",
+		3: "친밀도 던전🐾",
+		4: "전도르 던전🗿",
+		5: "양계장 던전🐓",
+		6: "행운의 던전🍀",
+		7: "보물수호자 벨카르💎",
 		10: "길드레이드던전👾"
 	};
 
@@ -36960,9 +37152,16 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 	// 고정 저장만 (티켓/아이템 검증 및 소모는 하지 않음)
 	petExploreData.autoFixedDungeon[sender] = n;
 
-	// (선택) 안내 문구: 4~7은 입장권 필요하다는 “정보”만 제공(소모X)
-	if (n === "4" || n === "5" || n === "6" || n === "7" || n === "10") {
-		var ticketGuide = n === "10" ? "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다." : "※ 탐4~7 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~3으로 이동합니다.";
+	// (선택) 안내 문구: 던전/미궁은 입장권 필요하다는 정보를 제공(소모X)
+	if (n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || n === "10") {
+		var ticketGuide = "";
+		if (n === "10") {
+			ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
+		} else if (n === "7") {
+			ticketGuide = "※ 탐7 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
+		} else {
+			ticketGuide = "※ 탐3~6 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~2로 이동합니다.";
+		}
 		return {
 			text:
 				"✅ 자동탐험 고정 완료!\n내 자동탐험지: " +
