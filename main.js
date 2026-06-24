@@ -32956,16 +32956,16 @@ function payTierRankingReward(data, petData, guildData) {
 	if (rows.length === 0) return { ok: false, message: "현재 티어순위 데이터가 없어 보상을 지급할 수 없습니다." };
 
 	var rewardTable = [
-		{ fragment: 5, diamondBox: 3 },
-		{ fragment: 3, diamondBox: 2 },
+		{ fragment: 8, diamondBox: 3 },
+		{ fragment: 6, diamondBox: 2 },
+		{ fragment: 5, diamondBox: 1 },
+		{ fragment: 4, diamondBox: 1 },
+		{ fragment: 3, diamondBox: 1 },
 		{ fragment: 2, diamondBox: 1 },
 		{ fragment: 1, diamondBox: 1 },
-		{ fragment: 0, diamondBox: 1 },
-		{ fragment: 0, diamondBox: 1 },
-		{ fragment: 0, diamondBox: 1 },
-		{ fragment: 0, diamondBox: 1 },
-		{ fragment: 0, diamondBox: 1 },
-		{ fragment: 0, diamondBox: 1 }
+		{ fragment: 1, diamondBox: 1 },
+		{ fragment: 1, diamondBox: 1 },
+		{ fragment: 1, diamondBox: 1 }
 	];
 
 	var limit = Math.min(GLOBAL_CONFIG.petExplore.tierReward.topLimit, rows.length);
@@ -36762,12 +36762,12 @@ function rollPendantMazeBox() {
 // 팬던트 미궁 박스를 오픈하는 함수
 function runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, msg, rollPendantMazeBox);
-}
+}ㅉㅉ
 
 // 대마법사의 유적 박스 보상 테이블
 function rollArchmageMazeBox() {
 	var gain = {};
-	gain[GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName] = Math.floor(Math.random() * 3) + 1;
+	gain[GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName] = Math.floor(Math.random() * 4) + 2;
 	if (Math.random() < 0.01) gain[GLOBAL_CONFIG.petSkill.bookItemName] = 1;
 	return {
 		gainItems: gain,
