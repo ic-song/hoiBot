@@ -2469,13 +2469,13 @@ Status: VERIFIED
 - data.member[sender].bag["펫스킬북 조각📙"]
 - data.member[sender].bag["펫스킬북📙(/펫스킬오픈)"]
 ## Save Flow
-- Successful combination consumes 10 fragments, grants 1 pet skill book, and saves member data through `saveJsonFile(data, filePath)`.
+- Successful combination consumes 10 fragments per requested count, grants the same count of pet skill books, and saves member data through `saveJsonFile(data, filePath)`.
 ## Related Commands
 - `/티어보상지급`
 - `/펫스킬오픈`
 - `/펫스킬가방`
 ## AI Notes
-- Exact command guard: `/펫스킬북조합`.
+- Exact/full-pattern command guard: `/펫스킬북조합` or `/펫스킬북조합 숫자`.
 - Invalid suffix text does not execute.
 
 ---
@@ -3804,8 +3804,9 @@ Status: VERIFIED
 
 ## Related Commands
 - `/탐`
-- `/탐 [1~7]`
+- `/탐 [1~8]`
 - `/탐 7`
+- `/탐 8`
 - `/탐 10` when the guild raid event is active
 - `/지도`
 - `/탐험알림`
@@ -3816,6 +3817,7 @@ Status: VERIFIED
 - `/레이드이벤트비활성화`
 - `/레이드박스오픈`
 - `/팬던트미궁박스오픈`
+- `/대마법박스오픈`
 - `/자동탐고정 0` when the event mine is active
 - `/자동탐고정 10` when the guild raid event is active
 
@@ -3829,7 +3831,10 @@ Status: VERIFIED
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 - Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
-- Maze entry `/탐 7` requires `미궁 입장권🕋`, applies `-50%` success penalty, and rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
+- Maze entries `/탐 7~8` require `미궁 입장권🕋` and apply a `-50%` success penalty.
+- `/탐 7` rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
+- `/탐 8` requires `/종합순위` top 10 and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `initPetExploreData` performs one-time `pendantMazeSlotResetV2191` migration through `moveCurrentExploreBetsToStarterSlots`, moving existing visible participants from slots 1~8 into slots 1~3 so old slot data is not displayed as new maze participation.
 
 # /맞짱필드
 
@@ -4098,6 +4103,39 @@ Status: VERIFIED
 - Exact/full-pattern command guard: `/팬던트미궁박스오픈` or `/팬던트미궁박스오픈 숫자`.
 - Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
 - Each box grants `팬던트 강화석📿` 1~3개 and has a 1% chance to grant `팬던트 복원석🔷` 1개.
+
+---
+
+# /대마법박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- main.js
+
+## Related Helpers
+
+- runArchmageMazeBoxOpen
+- runExploreBoxOpen
+- rollArchmageMazeBox
+- openExploreBoxesAllForOpenAll
+
+## Data Usage
+
+- data.member[sender].bag["대마법사의 유적박스📜(/대마법박스오픈)"]
+- data.member[sender].bag["펫스킬북 조각📙"]
+- data.member[sender].bag["펫스킬북📙(/펫스킬오픈)"]
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/대마법박스오픈` or `/대마법박스오픈 숫자`.
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+- Each box grants `펫스킬북 조각📙` 1~3개 and has a 1% chance to grant `펫스킬북📙(/펫스킬오픈)` 1개.
 
 ---
 

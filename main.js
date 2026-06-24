@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.190"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.191"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -691,6 +691,7 @@ const GLOBAL_CONFIG = {
 		maze: {
 			ticketItemName: "미궁 입장권🕋",
 			rewardItem: "팬던트미궁박스💎(/팬던트미궁박스오픈)",
+			archmageRewardItem: "대마법사의 유적박스📜(/대마법박스오픈)",
 			successPenalty: 50
 		},
 		dungeonSuccessPenalty: 10,
@@ -20603,8 +20604,13 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/펫스킬북조합") {
-					var petSkillBookCombineResult = combinePetSkillBookFragment(data, petData, guildData, sender);
+				if (msg === "/대마법박스오픈" || /^\/대마법박스오픈\s+\d+$/.test(msg)) {
+					runArchmageMazeBoxOpen(sender, data, petData, guildData, msg, replier);
+					saveJsonFile(data, filePath);
+					return;
+				}
+				if (msg === "/펫스킬북조합" || /^\/펫스킬북조합\s+\d+$/.test(msg)) {
+					var petSkillBookCombineResult = combinePetSkillBookFragment(data, petData, guildData, sender, msg);
 					if (petSkillBookCombineResult.ok) saveJsonFile(data, filePath);
 					replier.reply(petSkillBookCombineResult.message);
 					return;
@@ -20853,6 +20859,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg.startsWith("/탐험알림") && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 
 					var text = normalizeOperationNoticeText(msg.replace("/탐험알림 ", ""));
 					if (!text) {
@@ -20877,6 +20884,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/펫탐험이벤트비활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 					var movedEventMineCount = moveEventMineBetsToRandomMine(petExploreData);
 					petExploreData = setDiamondMineEventConfig(petExploreData, false);
 					saveJsonFile(petExploreData, petExplorePath);
@@ -20891,6 +20899,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/레이드이벤트활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 					petExploreData.guildRaidEvent.active = true;
 					petExploreData.guildRaidEvent.name = GLOBAL_CONFIG.petExplore.guildRaidEvent.name;
 					petExploreData.guildRaidEvent.rewardItem = GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem;
@@ -20902,6 +20911,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/레이드이벤트비활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 					var movedRaidEventCount = moveGuildRaidBetsToRandomMine(petExploreData);
 					petExploreData.guildRaidEvent.active = false;
 					petExploreData.guildRaidEvent.name = GLOBAL_CONFIG.petExplore.guildRaidEvent.name;
@@ -20932,6 +20942,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/펫탐험순위") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 
 					//  파일에서 전적 읽기
 					var record = petExploreData.record || {};
@@ -20987,6 +20998,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/자동탐고정" || /^\/자동탐고정\s+\d+$/.test(msg)) {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 					var result = handleAutoExploreFixCommand(petExploreData, data, sender, msg);
 					data = result.data;
 					petExploreData = result.petExploreData;
@@ -21000,6 +21012,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					//@탐험
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					savePetExploreMigrationIfNeeded(petExploreData);
 
 					var parts = msg.trim().split(/\s+/);
 					var dungeonNo = null;
@@ -21009,8 +21022,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					} else {
 						var n = parseInt(parts[1], 10);
 						var isGuildRaidInput = n === 10 && isGuildRaidExploreEventActive(petExploreData);
-						if (isNaN(n) || n < 0 || (n > 7 && !isGuildRaidInput) || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
-							var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0~7" : "사용법: /탐 또는 /탐 1~7";
+						if (isNaN(n) || n < 0 || (n > 8 && !isGuildRaidInput) || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
+							var exploreUsage = isPetExploreEventMineActive(petExploreData) ? "사용법: /탐 또는 /탐 0~8" : "사용법: /탐 또는 /탐 1~8";
 							if (isGuildRaidExploreEventActive(petExploreData)) exploreUsage += "\n길드레이드: /탐 10";
 							exploreUsage += "\n예) /탐 2";
 							replier.reply(exploreUsage);
@@ -21022,6 +21035,17 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (dungeonNo === "7" && !hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하여 보물수호자 벨카르💎에 입장할 수 없습니다.");
 						return;
+					}
+					if (dungeonNo === "8") {
+						var homeData = loadJsonFile(homeDataFile);
+						if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender, 10)) {
+							replier.reply("❌ 입장 실패\n\n【8】 잊혀진 대마법사의 유적📜은\n/종합순위 10등 안에 들어간 유저만 입장할 수 있습니다.");
+							return;
+						}
+						if (!hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
+							replier.reply("❌ 입장 실패\n\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족합니다.\n【8】 잊혀진 대마법사의 유적📜 탐험에는 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요합니다.");
+							return;
+						}
 					}
 
 					if (dungeonNo === "10") {
@@ -21081,6 +21105,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(petExploreData, petExplorePath);
 					saveJsonFile(data, filePath);
 
+					if (typeof homeData === "undefined") var homeData = loadJsonFile(homeDataFile);
 					var msgLine = buildExploreBetMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender, dungeonNo, prevDungeon);
 					replier.reply(msgLine);
 					return;
@@ -30049,6 +30074,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
+	savePetExploreMigrationIfNeeded(petExploreData);
 	var rec = petExploreData.record && petExploreData.record[sender] ? petExploreData.record[sender] : { win: 0, lose: 0 };
 	var win = typeof rec.win === "number" ? rec.win : 0;
 	var lose = typeof rec.lose === "number" ? rec.lose : 0;
@@ -32948,23 +32974,54 @@ function payTierRankingReward(data, petData, guildData) {
 }
 
 // 펫스킬북 조각을 펫스킬북으로 조합하는 함수
-function combinePetSkillBookFragment(data, petData, guildData, sender) {
+function combinePetSkillBookFragment(data, petData, guildData, sender, msg) {
 	var fragmentName = GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName;
 	var needCount = GLOBAL_CONFIG.petExplore.tierReward.fragmentNeedCount;
+	var match = String(msg || "").match(/^\/펫스킬북조합(?:\s+(\d+))?$/);
+	var combineCount = match && match[1] ? parseInt(match[1], 10) : 1; // 조합 요청 횟수
 	var nick = checkRank(data, petData, guildData, sender);
-	if (!hasItem(data, sender, fragmentName, needCount)) {
+	if (!match || isNaN(combineCount) || combineCount < 1) {
+		return {
+			ok: false,
+			message: "사용법: /펫스킬북조합 또는 /펫스킬북조합 숫자\n예) /펫스킬북조합 3"
+		};
+	}
+	var totalNeedCount = needCount * combineCount; // 전체 필요 조각 수
+	if (!hasItem(data, sender, fragmentName, totalNeedCount)) {
 		var have = data.member && data.member[sender] && data.member[sender].bag ? data.member[sender].bag[fragmentName] || 0 : 0;
 		return {
 			ok: false,
-			message: "❌[" + nick + "]님 " + fragmentName + "이 부족합니다.\n필요: " + needCount + "개 / 보유: " + numberWithCommas(have) + "개"
+			message: "❌[" + nick + "]님 " + fragmentName + "이 부족합니다.\n필요: " + numberWithCommas(totalNeedCount) + "개 / 보유: " + numberWithCommas(have) + "개"
 		};
 	}
-	removeItem(data, sender, fragmentName, needCount);
-	addItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, 1);
+	removeItem(data, sender, fragmentName, totalNeedCount);
+	addItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, combineCount);
 	return {
 		ok: true,
-		message: "✅ 펫스킬북 조합 완료\n[" + nick + "]\n소비: " + fragmentName + " " + needCount + "개\n획득: " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개"
+		message: "✅ 펫스킬북 조합 완료\n[" + nick + "]\n소비: " + fragmentName + " " + numberWithCommas(totalNeedCount) + "개\n획득: " + GLOBAL_CONFIG.petSkill.bookItemName + " " + numberWithCommas(combineCount) + "개"
 	};
+}
+
+// 유저가 종합순위 상위 제한 안에 있는지 확인하는 함수
+function isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, limit) {
+	if (!data || !data.member || !petData || !data.member[user]) return false;
+	var rows = [];
+	for (var name in data.member) {
+		if (!data.member.hasOwnProperty(name)) continue;
+		if (!petData[name]) continue;
+		rows.push({
+			user: name,
+			totalExp: calculateTotalExp(name, data, petData, homeData, petSkillData)
+		});
+	}
+	rows.sort(function (a, b) {
+		if (b.totalExp !== a.totalExp) return b.totalExp - a.totalExp;
+		return a.user > b.user ? 1 : a.user < b.user ? -1 : 0;
+	});
+	for (var i = 0; i < rows.length && i < limit; i++) {
+		if (rows[i].user === user) return true;
+	}
+	return false;
 }
 
 // 맞짱필드 진행 데이터와 기본 상점을 보장하는 함수
@@ -35695,9 +35752,9 @@ function incrementCastleAttackCount(HoiCastle, sender) {
 function initPetExploreData(petExploreData) {
 	if (!petExploreData) petExploreData = {};
 
-	// 던전별 배팅 리스트 (0 이벤트, 1~7 일반)
+	// 던전별 배팅 리스트 (0 이벤트, 1~8 일반)
 	if (!petExploreData.bet) petExploreData.bet = {};
-	for (var i = 0; i <= 7; i++) {
+	for (var i = 0; i <= 8; i++) {
 		var key = String(i);
 		if (!Array.isArray(petExploreData.bet[key])) {
 			petExploreData.bet[key] = [];
@@ -35710,6 +35767,14 @@ function initPetExploreData(petExploreData) {
 	// 유저별 현재 배팅 던전
 	if (!petExploreData.userBet) {
 		petExploreData.userBet = {};
+	}
+	if (!petExploreData.migration || typeof petExploreData.migration !== "object") {
+		petExploreData.migration = {};
+	}
+	if (petExploreData.migration.pendantMazeSlotResetV2191 !== true) {
+		moveCurrentExploreBetsToStarterSlots(petExploreData);
+		petExploreData.migration.pendantMazeSlotResetV2191 = true;
+		petExploreData._migrationSaveRequired = true;
 	}
 
 	// 지도/UI 알림 문구
@@ -35772,6 +35837,42 @@ function isGuildRaidExploreEventActive(petExploreData) {
 	return !!(petExploreData && petExploreData.guildRaidEvent && petExploreData.guildRaidEvent.active);
 }
 
+// 펫탐험 마이그레이션 결과 저장 필요 여부를 처리하는 함수
+function savePetExploreMigrationIfNeeded(petExploreData) {
+	if (!petExploreData || !petExploreData._migrationSaveRequired) return;
+	delete petExploreData._migrationSaveRequired;
+	saveJsonFile(petExploreData, petExplorePath);
+}
+
+// 현재 지도 배팅 유저를 1~3번 탐험지로 한 번 재배치하는 함수
+function moveCurrentExploreBetsToStarterSlots(petExploreData) {
+	if (!petExploreData || !petExploreData.bet) return 0;
+	var entries = [];
+	var seen = {};
+	for (var d = 1; d <= 8; d++) {
+		var key = String(d);
+		var arr = petExploreData.bet[key];
+		if (!Array.isArray(arr)) arr = [];
+		for (var i = 0; i < arr.length; i++) {
+			var entry = arr[i];
+			if (!entry || !entry.user || seen[entry.user]) continue;
+			seen[entry.user] = true;
+			entries.push(entry);
+		}
+		petExploreData.bet[key] = [];
+	}
+	if (entries.length === 0) return 0;
+	for (var j = 0; j < entries.length; j++) {
+		var targetDungeon = String((j % 3) + 1);
+		var movedEntry = entries[j];
+		movedEntry.dungeon = targetDungeon;
+		if (!Array.isArray(petExploreData.bet[targetDungeon])) petExploreData.bet[targetDungeon] = [];
+		petExploreData.bet[targetDungeon].push(movedEntry);
+		petExploreData.userBet[movedEntry.user] = targetDungeon;
+	}
+	return entries.length;
+}
+
 // 이벤트 광산 참가자를 일반 광산 1~3번으로 랜덤 이동
 function moveEventMineBetsToRandomMine(petExploreData) {
 	if (!petExploreData) return 0;
@@ -35786,7 +35887,7 @@ function moveEventMineBetsToRandomMine(petExploreData) {
 		var entry = eventMineBets[i];
 		if (!entry || !entry.user) continue;
 
-		var targetDungeon = String(Math.floor(Math.random() * 2) + 1);
+		var targetDungeon = String(Math.floor(Math.random() * 3) + 1);
 		if (!Array.isArray(petExploreData.bet[targetDungeon])) {
 			petExploreData.bet[targetDungeon] = [];
 		}
@@ -35815,7 +35916,7 @@ function moveGuildRaidBetsToRandomMine(petExploreData) {
 		var entry = guildRaidBets[i];
 		if (!entry || !entry.user) continue;
 
-		var targetDungeon = String(Math.floor(Math.random() * 2) + 1);
+		var targetDungeon = String(Math.floor(Math.random() * 3) + 1);
 		if (!Array.isArray(petExploreData.bet[targetDungeon])) {
 			petExploreData.bet[targetDungeon] = [];
 		}
@@ -35854,7 +35955,7 @@ function incrementDailyExploreCountForParticipants(data, petExploreData) {
 	var count = 0;
 
 	var startDungeon = isPetExploreEventMineActive(petExploreData) ? 0 : 1;
-	for (var d = startDungeon; d <= 7; d++) {
+	for (var d = startDungeon; d <= 8; d++) {
 		var dk = String(d);
 		var arr = petExploreData.bet[dk];
 
@@ -35911,7 +36012,7 @@ function resetPetExploreBet(petExploreData) {
 
 	if (!petExploreData.bet) petExploreData.bet = {};
 
-	for (var i = 0; i <= 7; i++) {
+	for (var i = 0; i <= 8; i++) {
 		petExploreData.bet[String(i)] = [];
 	}
 	petExploreData.bet["10"] = [];
@@ -36043,6 +36144,7 @@ function getExploreDungeonName(no, petExploreData) {
 		5: "양계장 던전🐓",
 		6: "행운의 던전🍀",
 		7: "보물수호자 벨카르💎",
+		8: "잊혀진 대마법사의 유적📜",
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
 		E: "이벤트 던전✡️"
 	};
@@ -36060,6 +36162,7 @@ function getExploreSuccessRewardItem(no, petExploreData) {
 		5: "양계장던전박스🐓(/양계장박스오픈)",
 		6: "행운의박스🍀(/행운의박스오픈)",
 		7: GLOBAL_CONFIG.petExplore.maze.rewardItem,
+		8: GLOBAL_CONFIG.petExplore.maze.archmageRewardItem,
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem,
 		E: "이벤트박스✡️(/이벤박스오픈)"
 	};
@@ -36104,7 +36207,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 	var successCnt = 0;
 	var failCnt = 0;
 
-	var exploreDungeonKeys = isPetExploreEventMineActive(petExploreData) ? ["0", "1", "2", "3", "4", "5", "6", "7"] : ["1", "2", "3", "4", "5", "6", "7"];
+	var exploreDungeonKeys = isPetExploreEventMineActive(petExploreData) ? ["0", "1", "2", "3", "4", "5", "6", "7", "8"] : ["1", "2", "3", "4", "5", "6", "7", "8"];
 	if (isGuildRaidExploreEventActive(petExploreData)) {
 		exploreDungeonKeys.push("10");
 	}
@@ -36160,6 +36263,21 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 					continue;
 				}
 			}
+			if (dk === "8") {
+				if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, 10)) {
+					failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📜 입장 실패(❌)\n/종합순위 10등 밖: 보상 제외");
+					failCnt++;
+					continue;
+				}
+				if (hasItem(data, user, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
+					removeItem(data, user, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1);
+					usedTicket = true;
+				} else {
+					failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📜 입장 실패(❌)\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 부족: 보상 제외");
+					failCnt++;
+					continue;
+				}
+			}
 
 			// 이벤트 던전 5% 진입(광산 1~2만)
 			if (finalDungeon === "1" || finalDungeon === "2") {
@@ -36206,18 +36324,24 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 			var rewardText = "";
 			var bonusRewardText = "";
 			if (success) {
-				var rewardItem = getExploreSuccessRewardItem(finalDungeon, petExploreData);
-				if (rewardItem) {
-					addItem(data, user, rewardItem, 1);
-					rewardText = rewardItem;
-					var bonusRewardItem = getTreasureHunterBonusReward(petSkillData, user, rewardItem); // 보물 사냥꾼 스킬 보너스
-					if (bonusRewardItem) {
-						addItem(data, user, bonusRewardItem, 1);
-						bonusRewardText = "보물 사냥꾼📙 +1개 더 획득";
-					}
+				if (finalDungeon === "8") {
+					var archmageReward = rollArchmageMazeBox();
+					applyRewardGainItems(data, user, archmageReward.gainItems);
+					rewardText = GLOBAL_CONFIG.petExplore.maze.archmageRewardItem + " 자동오픈\n획득: " + formatRewardGainItems(archmageReward.gainItems);
 				} else {
-					addItem(data, user, "펫먹이🍼", 2);
-					rewardText = "펫먹이🍼 2개";
+					var rewardItem = getExploreSuccessRewardItem(finalDungeon, petExploreData);
+					if (rewardItem) {
+						addItem(data, user, rewardItem, 1);
+						rewardText = rewardItem;
+						var bonusRewardItem = getTreasureHunterBonusReward(petSkillData, user, rewardItem); // 보물 사냥꾼 스킬 보너스
+						if (bonusRewardItem) {
+							addItem(data, user, bonusRewardItem, 1);
+							bonusRewardText = "보물 사냥꾼📙 +1개 더 획득";
+						}
+					} else {
+						addItem(data, user, "펫먹이🍼", 2);
+						rewardText = "펫먹이🍼 2개";
+					}
 				}
 			} else {
 				addItem(data, user, "펫먹이🍼", 2);
@@ -36281,7 +36405,7 @@ function getExploreTotalCount(data, petExploreData) {
 	var cnt = 0;
 
 	var startDungeon = isPetExploreEventMineActive(petExploreData) ? 0 : 1;
-	for (var d = startDungeon; d <= 7; d++) {
+	for (var d = startDungeon; d <= 8; d++) {
 		var dk = String(d);
 		var arr = petExploreData.bet[dk] || [];
 		if (!Array.isArray(arr) || arr.length === 0) continue;
@@ -36451,6 +36575,7 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 	openAllOne("/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, rollDiamondMineBox);
 	openAllOne("/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, rollGuildRaidBox);
 	openAllOne("/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, rollPendantMazeBox);
+	openAllOne("/대마법박스오픈", GLOBAL_CONFIG.petExplore.maze.archmageRewardItem, rollArchmageMazeBox);
 
 	return logs.length ? logs.join("\n\n") : "";
 }
@@ -36506,6 +36631,40 @@ function rollPendantMazeBox() {
 // 팬던트 미궁 박스를 오픈하는 함수
 function runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, msg, rollPendantMazeBox);
+}
+
+// 대마법사의 유적 박스 보상 테이블
+function rollArchmageMazeBox() {
+	var gain = {};
+	gain[GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName] = Math.floor(Math.random() * 3) + 1;
+	if (Math.random() < 0.01) gain[GLOBAL_CONFIG.petSkill.bookItemName] = 1;
+	return {
+		gainItems: gain,
+		gainTextLines: []
+	};
+}
+
+// 대마법사의 유적 박스를 오픈하는 함수
+function runArchmageMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
+	runExploreBoxOpen(sender, data, petData, guildData, replier, "/대마법박스오픈", GLOBAL_CONFIG.petExplore.maze.archmageRewardItem, msg, rollArchmageMazeBox);
+}
+
+// 보상 아이템 묶음을 가방에 반영하는 함수
+function applyRewardGainItems(data, user, gainItems) {
+	for (var itemName in gainItems) {
+		if (!gainItems.hasOwnProperty(itemName)) continue;
+		addItem(data, user, itemName, gainItems[itemName]);
+	}
+}
+
+// 보상 아이템 묶음을 출력 문자열로 변환하는 함수
+function formatRewardGainItems(gainItems) {
+	var lines = [];
+	for (var itemName in gainItems) {
+		if (!gainItems.hasOwnProperty(itemName)) continue;
+		lines.push(itemName + " x" + numberWithCommas(gainItems[itemName]));
+	}
+	return lines.length ? lines.join(", ") : "획득 없음";
 }
 
 // 다이아상자를 열어 다이아를 지급하는 함수
@@ -36820,9 +36979,10 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	if (dungeonNo === "3" || dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6") {
 		if (hasItem(data, sender, "펫던전 입장권🌋", 1)) out += "입장🌋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += "펫던전 입장권🌋 이(가) 없습니다. 정산 시 광산으로 랜덤 이동합니다.\n";
-	} else if (dungeonNo === "7") {
+	} else if (dungeonNo === "7" || dungeonNo === "8") {
 		if (hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) out += "입장🕋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 이(가) 없습니다. 정산 시 보상에서 제외됩니다.\n";
+		if (dungeonNo === "8") out += "입장조건📜: /종합순위 10등 안에 들어가야 합니다.\n";
 	} else if (dungeonNo === "0") {
 		out += "입장🌋: 0개 사용(이벤트 광산)\n";
 	} else if (dungeonNo === "10") {
@@ -36859,6 +37019,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender) {
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
+	savePetExploreMigrationIfNeeded(petExploreData);
 
 	var LINE = "━━━━━━━━━━━━";
 	var out = "";
@@ -36888,6 +37049,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 		5: "양계장 던전🐓",
 		6: "행운의 던전🍀",
 		7: "보물수호자 벨카르💎",
+		8: "잊혀진 대마법사의 유적📜",
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
 		E: "이벤트 던전✡️"
 	};
@@ -36898,9 +37060,9 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
 	var total = 0;
 	var autoCount = 0;
-	var cnt = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 10: 0 };
+	var cnt = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 10: 0 };
 
-	for (var d = 0; d <= 7; d++) {
+	for (var d = 0; d <= 8; d++) {
 		var dk = String(d);
 		var arr = petExploreData.bet && petExploreData.bet[dk] ? petExploreData.bet[dk] : [];
 		if (!Array.isArray(arr)) arr = [];
@@ -36951,9 +37113,10 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += "【6】 행운의 던전🍀: " + cnt["6"] + "명\n";
 	out += LINE + "\n";
 
-	out += "미궁🕋【/탐 7】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
+	out += "미궁🕋【/탐 7~8】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
 	out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
 	out += "【7】 보물수호자 벨카르💎: " + cnt["7"] + "명\n";
+	out += "【8】 잊혀진 대마법사의 유적📜[종순 10등부터 입장]: " + cnt["8"] + "명\n";
 	out += LINE + "\n";
 
 	var appliedUpItem = getMyAppliedUpItem(petExploreData, sender, myBet);
@@ -36978,7 +37141,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += LINE + "\n";
 
 	out += "[자동탐험권 고정⛰️: " + myFixedName + "]\n";
-	var autoFixGuide = isPetExploreEventMineActive(petExploreData) ? "0~7" : "1~7";
+	var autoFixGuide = isPetExploreEventMineActive(petExploreData) ? "0~8" : "1~8";
 	if (isGuildRaidExploreEventActive(petExploreData)) autoFixGuide += ", 10";
 	out += "[/자동탐고정 " + autoFixGuide + " 입력시 고정]\n";
 	out += LINE + "\n";
@@ -37017,7 +37180,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	if (data.member && data.member[sender] && data.member[sender].bag && data.member[sender].bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName]) {
 		mazeTicketCnt = data.member[sender].bag[GLOBAL_CONFIG.petExplore.maze.ticketItemName];
 	}
-	out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + ": " + (mazeTicketCnt > 0 ? mazeTicketCnt + "개" : "X") + " (탐7 정산 시 재확인)\n";
+	out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + ": " + (mazeTicketCnt > 0 ? mazeTicketCnt + "개" : "X") + " (탐7~8 정산 시 재확인)\n";
 	out += LINE + "\n";
 
 	var rec = petExploreData.record && petExploreData.record[sender] ? petExploreData.record[sender] : null;
@@ -37053,7 +37216,7 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
 function getExploreSuccessPenaltyPercent(dungeonKey) {
 	dungeonKey = String(dungeonKey || "");
 	if (dungeonKey === "3" || dungeonKey === "4" || dungeonKey === "5" || dungeonKey === "6") return GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty;
-	if (dungeonKey === "7") return GLOBAL_CONFIG.petExplore.maze.successPenalty;
+	if (dungeonKey === "7" || dungeonKey === "8") return GLOBAL_CONFIG.petExplore.maze.successPenalty;
 	return 0;
 }
 
@@ -37110,7 +37273,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
 	var parts = msg.trim().split(/\s+/);
 	if (parts.length < 2) {
-		var usageRange = isPetExploreEventMineActive(petExploreData) ? "0~7" : "1~7";
+		var usageRange = isPetExploreEventMineActive(petExploreData) ? "0~8" : "1~8";
 		if (isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
 		var usageExample = isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4");
 		var usageText = "사용법: /자동탐고정 " + usageRange + "\n(예: /자동탐고정 " + usageExample + ")";
@@ -37118,9 +37281,9 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 	}
 
 	var n = String(parts[1]);
-	var isValid = n === "1" || n === "2" || n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
+	var isValid = n === "1" || n === "2" || n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || n === "8" || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
 	if (!isValid) {
-		var validRange = isPetExploreEventMineActive(petExploreData) ? "0~7" : "1~7";
+		var validRange = isPetExploreEventMineActive(petExploreData) ? "0~8" : "1~8";
 		if (isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
 		var validExample = isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2");
 		var validText = validRange + " 중 하나만 입력해줘!\n예) /자동탐고정 " + validExample;
@@ -37136,6 +37299,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 		5: "양계장 던전🐓",
 		6: "행운의 던전🍀",
 		7: "보물수호자 벨카르💎",
+		8: "잊혀진 대마법사의 유적📜",
 		10: "길드레이드던전👾"
 	};
 
@@ -37153,12 +37317,13 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 	petExploreData.autoFixedDungeon[sender] = n;
 
 	// (선택) 안내 문구: 던전/미궁은 입장권 필요하다는 정보를 제공(소모X)
-	if (n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || n === "10") {
+	if (n === "3" || n === "4" || n === "5" || n === "6" || n === "7" || n === "8" || n === "10") {
 		var ticketGuide = "";
 		if (n === "10") {
 			ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
-		} else if (n === "7") {
-			ticketGuide = "※ 탐7 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
+		} else if (n === "7" || n === "8") {
+			ticketGuide = "※ 탐" + n + " 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
+			if (n === "8") ticketGuide += "\n탐8은 /종합순위 10등 안에 들어가야 입장할 수 있습니다.";
 		} else {
 			ticketGuide = "※ 탐3~6 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~2로 이동합니다.";
 		}
