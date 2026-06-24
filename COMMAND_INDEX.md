@@ -3837,7 +3837,7 @@ Status: VERIFIED
 - `/탐 8` requires `/종합순위` top 10 and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
 - `initPetExploreData` performs one-time `pendantMazeSlotResetV2191` migration through `moveCurrentExploreBetsToStarterSlots`, moving existing visible participants from slots 1~8 into slots 1~3 so old slot data is not displayed as new maze participation.
 - `initPetExploreData` also performs one-time `currentExploreSlotOneResetV2192` migration through `moveCurrentExploreBetsToDungeonOne`, moving current visible map participants from slots 0~8 and 10 into slot 1.
-- `/탐험유저확인` is an operator-only read command. It loads `petExploreData` and reports current `bet`/`userBet`/`autoFixedDungeon` state without calling `initPetExploreData`, so it does not trigger migration or save flow.
+- `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
 
 # /맞짱필드
 

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.193"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.194"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4523,6 +4523,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg == "/펫탐험전체전적초기화" && (sender == "호이 남" || isMaster(sender))) {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 
 					var beforeCnt = 0;
 					if (petExploreData.record) {
@@ -4535,6 +4536,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					petExploreData.record = {};
 
 					// 탐험 전용 파일에 저장
+					clearPetExploreTransientSaveFlags(petExploreData);
 					saveJsonFile(petExploreData, petExplorePath);
 
 					var out = "🧹/펫탐험전체전적초기화\n";
@@ -4557,6 +4559,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 
 					//  getExploreTotalCount에 petExploreData 전달
 					var totalCnt = getExploreTotalCount(data, petExploreData);
@@ -20859,6 +20862,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg.startsWith("/탐험알림") && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 
 					var text = normalizeOperationNoticeText(msg.replace("/탐험알림 ", ""));
@@ -20884,6 +20888,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/펫탐험이벤트비활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 					var movedEventMineCount = moveEventMineBetsToRandomMine(petExploreData);
 					petExploreData = setDiamondMineEventConfig(petExploreData, false);
@@ -20899,6 +20904,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/레이드이벤트활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 					petExploreData.guildRaidEvent.active = true;
 					petExploreData.guildRaidEvent.name = GLOBAL_CONFIG.petExplore.guildRaidEvent.name;
@@ -20911,6 +20917,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/레이드이벤트비활성화" && sender == "호이 남") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 					var movedRaidEventCount = moveGuildRaidBetsToRandomMine(petExploreData);
 					petExploreData.guildRaidEvent.active = false;
@@ -20940,7 +20947,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/탐험유저확인" || /^\/탐험유저확인\s+(0|[1-8]|10)$/.test(msg)) {
 					if (!(sender == "호이 남" || isAdmin(sender) || isMaster(sender))) return;
 					var petExploreData = loadJsonFile(petExplorePath);
+					var cleanupResult = cleanupInvalidPetExploreUsers(petExploreData, data);
+					if (cleanupResult.total > 0) savePetExploreMigrationIfNeeded(petExploreData);
 					var exploreUserCheckMessage = buildExploreUserCheckMessage(data, petData, guildData, petExploreData, msg);
+					if (cleanupResult.total > 0) exploreUserCheckMessage += "\n\n" + formatPetExploreCleanupSummary(cleanupResult);
 					replier.reply(exploreUserCheckMessage);
 					return;
 				}
@@ -20948,6 +20958,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/펫탐험순위") {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 
 					//  파일에서 전적 읽기
@@ -21004,6 +21015,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				if (msg === "/자동탐고정" || /^\/자동탐고정\s+\d+$/.test(msg)) {
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 					var result = handleAutoExploreFixCommand(petExploreData, data, sender, msg);
 					data = result.data;
@@ -21018,6 +21030,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					//@탐험
 					var petExploreData = loadJsonFile(petExplorePath);
 					petExploreData = initPetExploreData(petExploreData);
+					cleanupInvalidPetExploreUsers(petExploreData, data);
 					savePetExploreMigrationIfNeeded(petExploreData);
 
 					var parts = msg.trim().split(/\s+/);
@@ -30080,6 +30093,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
+	cleanupInvalidPetExploreUsers(petExploreData, data);
 	savePetExploreMigrationIfNeeded(petExploreData);
 	var rec = petExploreData.record && petExploreData.record[sender] ? petExploreData.record[sender] : { win: 0, lose: 0 };
 	var win = typeof rec.win === "number" ? rec.win : 0;
@@ -35850,9 +35864,80 @@ function isGuildRaidExploreEventActive(petExploreData) {
 
 // 펫탐험 마이그레이션 결과 저장 필요 여부를 처리하는 함수
 function savePetExploreMigrationIfNeeded(petExploreData) {
-	if (!petExploreData || !petExploreData._migrationSaveRequired) return;
-	delete petExploreData._migrationSaveRequired;
+	if (!petExploreData || (!petExploreData._migrationSaveRequired && !petExploreData._cleanupSaveRequired)) return;
+	clearPetExploreTransientSaveFlags(petExploreData);
 	saveJsonFile(petExploreData, petExplorePath);
+}
+
+// 펫탐험 저장 전 임시 플래그를 제거하는 함수
+function clearPetExploreTransientSaveFlags(petExploreData) {
+	if (!petExploreData) return;
+	delete petExploreData._migrationSaveRequired;
+	delete petExploreData._cleanupSaveRequired;
+}
+
+// 삭제된 계정의 펫탐험 잔여 데이터를 정리하는 함수
+function cleanupInvalidPetExploreUsers(petExploreData, data) {
+	var result = { bet: 0, userBet: 0, autoFixed: 0, record: 0, total: 0 };
+	if (!petExploreData || !data || !data.member) return result;
+
+	if (petExploreData.bet && typeof petExploreData.bet === "object") {
+		for (var dungeonKey in petExploreData.bet) {
+			if (!petExploreData.bet.hasOwnProperty(dungeonKey)) continue;
+			var arr = petExploreData.bet[dungeonKey];
+			if (!Array.isArray(arr)) continue;
+			var kept = [];
+			for (var i = 0; i < arr.length; i++) {
+				var entry = arr[i];
+				if (entry && entry.user && data.member[entry.user]) {
+					kept.push(entry);
+				} else {
+					result.bet++;
+				}
+			}
+			petExploreData.bet[dungeonKey] = kept;
+		}
+	}
+
+	if (petExploreData.userBet && typeof petExploreData.userBet === "object") {
+		for (var userBetName in petExploreData.userBet) {
+			if (!petExploreData.userBet.hasOwnProperty(userBetName)) continue;
+			if (!data.member[userBetName]) {
+				delete petExploreData.userBet[userBetName];
+				result.userBet++;
+			}
+		}
+	}
+
+	if (petExploreData.autoFixedDungeon && typeof petExploreData.autoFixedDungeon === "object") {
+		for (var fixedUser in petExploreData.autoFixedDungeon) {
+			if (!petExploreData.autoFixedDungeon.hasOwnProperty(fixedUser)) continue;
+			if (!data.member[fixedUser]) {
+				delete petExploreData.autoFixedDungeon[fixedUser];
+				result.autoFixed++;
+			}
+		}
+	}
+
+	if (petExploreData.record && typeof petExploreData.record === "object") {
+		for (var recordUser in petExploreData.record) {
+			if (!petExploreData.record.hasOwnProperty(recordUser)) continue;
+			if (!data.member[recordUser]) {
+				delete petExploreData.record[recordUser];
+				result.record++;
+			}
+		}
+	}
+
+	result.total = result.bet + result.userBet + result.autoFixed + result.record;
+	if (result.total > 0) petExploreData._cleanupSaveRequired = true;
+	return result;
+}
+
+// 펫탐험 삭제 계정 정리 결과 문구를 만드는 함수
+function formatPetExploreCleanupSummary(result) {
+	if (!result || result.total <= 0) return "";
+	return "🧹 삭제 계정 펫탐험 데이터 정리\n현재참여 " + result.bet + "건 / 현재탐험 " + result.userBet + "건 / 자동탐고정 " + result.autoFixed + "건 / 전적 " + result.record + "건";
 }
 
 // 현재 지도 배팅 유저를 1~3번 탐험지로 한 번 재배치하는 함수
@@ -36236,6 +36321,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 	if (!data || !data.member) return null;
 
 	petExploreData = initPetExploreData(petExploreData);
+	cleanupInvalidPetExploreUsers(petExploreData, data);
 	if (!petExploreData.bet) return null;
 
 	var baseP = 5;
@@ -36420,6 +36506,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 	petExploreData = autoExploreBetting(data, petExploreData);
 
 	//  저장 2개
+	clearPetExploreTransientSaveFlags(petExploreData);
 	saveJsonFile(data, filePath); // 아이템/보상 반영
 	saveJsonFile(petExploreData, petExplorePath); // 전적/베팅 상태 반영
 
@@ -36440,6 +36527,7 @@ function getExploreTotalCount(data, petExploreData) {
 	if (!data || !data.member) return 0;
 
 	petExploreData = initPetExploreData(petExploreData);
+	cleanupInvalidPetExploreUsers(petExploreData, data);
 	if (!petExploreData || !petExploreData.bet) return 0;
 
 	var cnt = 0;
@@ -36480,6 +36568,7 @@ function autoExploreBetting(data, petExploreData) {
 	if (!data || !data.member) return;
 
 	petExploreData = initPetExploreData(petExploreData);
+	cleanupInvalidPetExploreUsers(petExploreData, data);
 	if (!petExploreData.autoFixedDungeon) petExploreData.autoFixedDungeon = {};
 
 	for (var user in data.member) {
@@ -37139,6 +37228,7 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
 function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender) {
 	var petExploreData = loadJsonFile(petExplorePath);
 	petExploreData = initPetExploreData(petExploreData);
+	cleanupInvalidPetExploreUsers(petExploreData, data);
 	savePetExploreMigrationIfNeeded(petExploreData);
 
 	var LINE = "━━━━━━━━━━━━";
