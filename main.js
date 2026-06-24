@@ -37329,7 +37329,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
 	out += "【7】 보물수호자 벨카르💎: " + cnt["7"] + "명\n";
 	out += "【8】 잊혀진 대마법사의 유적📜: " + cnt["8"] + "명\n";
-	out += "*/종합순위 10등부터 입장\n";
+	out += "*/종합순위 1등-10등부터 입장 가능\n";
 	out += LINE + "\n";
 
 	var appliedUpItem = getMyAppliedUpItem(petExploreData, sender, myBet);
