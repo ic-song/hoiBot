@@ -36762,7 +36762,7 @@ function rollPendantMazeBox() {
 // 팬던트 미궁 박스를 오픈하는 함수
 function runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, msg, rollPendantMazeBox);
-}ㅉㅉ
+}
 
 // 대마법사의 유적 박스 보상 테이블
 function rollArchmageMazeBox() {
