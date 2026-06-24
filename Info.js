@@ -2393,6 +2393,7 @@ function generateBagOutput(bagItems) {
 			GLOBAL_CONFIG.titleGift.itemName,
 			"펫타이틀권🦊(/펫타이틀이름)",
 			GLOBAL_CONFIG.petSkill.bookItemName,
+			"펫스킬북 조각📙",
 			GLOBAL_CONFIG.petSkill.unbindItemName,
 			GLOBAL_CONFIG.petSkill.oldTraitBookItemName,
 			"반지 이름변경권🗯(/반지이름)",
@@ -2476,6 +2477,7 @@ function generateBagOutput(bagItems) {
 
 			"보물지도🗺️",
 			"펫던전 입장권🌋",
+			"미궁 입장권🕋",
 			"탐험확률UP🗻(50%)",
 			"탐험확률UP🗻(40%)",
 			"탐험확률UP🗻(30%)",
