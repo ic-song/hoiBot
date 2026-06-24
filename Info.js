@@ -835,7 +835,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				let regular = members[user].bag["티어 승급티켓🎟"] || 0;
 				let advanced = members[user].bag["고급 티어 승급티켓🎫"] || 0;
-				let total = regular + advanced * 5;
+				let total = regular + advanced * 10;
 
 				userPoints[user] = total;
 			}
@@ -861,7 +861,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 			}
 
-			resultMsg = "🌟티어 순위🌟\n\n[🎟일반 1pt 🎫고급 5pt 적용]\n";
+			resultMsg = "🌟티어 순위🌟\n\n[🎟일반 1pt 🎫고급 10pt 적용]\n";
 			resultMsg += rankingMsg1.trim();
 			resultMsg += allsee + "\n";
 			resultMsg += rankingMsg2;
