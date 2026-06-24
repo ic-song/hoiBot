@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.192"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.193"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20926,9 +20926,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				}
 
 				if (msg === "/지도") {
-					var petExploreData = loadJsonFile(petExplorePath);
-
-					let homeData = loadJsonFile(homeDataFile);
+					var homeData = loadJsonFile(homeDataFile);
 					var out = buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender);
 
 					if (!out) {
@@ -20937,6 +20935,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					replier.reply(out);
+				}
+
+				if (msg === "/탐험유저확인" || /^\/탐험유저확인\s+(0|[1-8]|10)$/.test(msg)) {
+					if (!(sender == "호이 남" || isAdmin(sender) || isMaster(sender))) return;
+					var petExploreData = loadJsonFile(petExplorePath);
+					var exploreUserCheckMessage = buildExploreUserCheckMessage(data, petData, guildData, petExploreData, msg);
+					replier.reply(exploreUserCheckMessage);
+					return;
 				}
 
 				if (msg === "/펫탐험순위") {
@@ -36979,6 +36985,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 		5: "양계장 던전🐓",
 		6: "행운의 던전🍀",
 		7: "보물수호자 벨카르💎",
+		8: "잊혀진 대마법사의 유적📜",
 		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
 	};
 	var targetName = dungeonNameMap[dungeonNo] || dungeonNo + "번 던전";
@@ -37049,6 +37056,85 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 
 	return out;
 }
+
+// 펫탐험 참여자 현황을 조회 전용으로 출력하는 함수
+function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, msg) {
+	var parts = String(msg || "").trim().split(/\s+/);
+	var targetDungeon = parts.length >= 2 ? String(parts[1]) : null;
+	var dungeonKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "10"];
+	var dungeonNameMap = {
+		0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
+		1: "정령강화 광산🥀",
+		2: "펫강화 광산⭐️",
+		3: "친밀도 던전🐾",
+		4: "전도르 던전🗿",
+		5: "양계장 던전🐓",
+		6: "행운의 던전🍀",
+		7: "보물수호자 벨카르💎",
+		8: "잊혀진 대마법사의 유적📜",
+		10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
+	};
+	if (!petExploreData || typeof petExploreData !== "object") {
+		return "❌ 펫탐험 데이터를 불러올 수 없습니다.";
+	}
+	if (!petExploreData.bet || typeof petExploreData.bet !== "object") {
+		return "⛰️ 탐험 참여자 데이터가 없습니다.";
+	}
+
+	if (!targetDungeon) {
+		var summary = "🧭 펫탐험 유저 확인\n";
+		summary += "상세조회: /탐험유저확인 번호\n예) /탐험유저확인 7\n";
+		summary += "━━━━━━━━━━━━\n";
+		for (var s = 0; s < dungeonKeys.length; s++) {
+			var summaryKey = dungeonKeys[s];
+			var summaryArr = petExploreData.bet[summaryKey];
+			if (!Array.isArray(summaryArr)) summaryArr = [];
+			summary += "【" + summaryKey + "】 " + (dungeonNameMap[summaryKey] || summaryKey + "번") + ": " + summaryArr.length + "명\n";
+		}
+		return summary.trim();
+	}
+
+	var targetArr = petExploreData.bet[targetDungeon];
+	if (!Array.isArray(targetArr)) targetArr = [];
+	var fixedUsers = [];
+	var fixedMap = petExploreData.autoFixedDungeon || {};
+	for (var fixedUser in fixedMap) {
+		if (!fixedMap.hasOwnProperty(fixedUser)) continue;
+		if (String(fixedMap[fixedUser]) === targetDungeon) fixedUsers.push(fixedUser);
+	}
+	fixedUsers.sort();
+
+	var out = "🧭 펫탐험 유저 확인\n";
+	out += "대상: 【" + targetDungeon + "】 " + (dungeonNameMap[targetDungeon] || targetDungeon + "번") + "\n";
+	out += "현재 참여: " + targetArr.length + "명\n";
+	out += "자동탐고정: " + fixedUsers.length + "명\n";
+	out += "━━━━━━━━━━━━\n";
+
+	if (targetArr.length === 0) {
+		out += "현재 참여자가 없습니다.\n";
+	} else {
+		for (var i = 0; i < targetArr.length; i++) {
+			var entry = targetArr[i];
+			var user = entry && entry.user ? entry.user : "(알 수 없음)";
+			var mode = entry && entry.auto ? "자동" : "수동";
+			out += (i + 1) + ". [" + checkRank(data, petData, guildData, user) + "] " + mode + "\n";
+			if (i === 9 && targetArr.length > 10) out += allsee + "\n";
+		}
+	}
+
+	out += "━━━━━━━━━━━━\n";
+	if (fixedUsers.length === 0) {
+		out += "자동탐고정 유저가 없습니다.";
+	} else {
+		out += "자동탐고정 유저\n";
+		for (var j = 0; j < fixedUsers.length; j++) {
+			out += (j + 1) + ". [" + checkRank(data, petData, guildData, fixedUsers[j]) + "]\n";
+			if (j === 9 && fixedUsers.length > 10) out += allsee + "\n";
+		}
+	}
+	return out.trim();
+}
+
 //지도
 function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender) {
 	var petExploreData = loadJsonFile(petExplorePath);

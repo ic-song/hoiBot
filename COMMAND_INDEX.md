@@ -3810,6 +3810,7 @@ Status: VERIFIED
 - `/탐 10` when the guild raid event is active
 - `/지도`
 - `/탐험알림`
+- `/탐험유저확인`
 - `/탐 0` when the event mine is active
 - `/펫탐험이벤트활성화`
 - `/펫탐험이벤트비활성화`
@@ -3824,7 +3825,7 @@ Status: VERIFIED
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
-- `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~2 when `/펫탐험이벤트비활성화` runs
+- `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~2` and `던전탐험가📙` only to `/탐 3~6` plus event guild raid `/탐 10`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
@@ -3836,6 +3837,7 @@ Status: VERIFIED
 - `/탐 8` requires `/종합순위` top 10 and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
 - `initPetExploreData` performs one-time `pendantMazeSlotResetV2191` migration through `moveCurrentExploreBetsToStarterSlots`, moving existing visible participants from slots 1~8 into slots 1~3 so old slot data is not displayed as new maze participation.
 - `initPetExploreData` also performs one-time `currentExploreSlotOneResetV2192` migration through `moveCurrentExploreBetsToDungeonOne`, moving current visible map participants from slots 0~8 and 10 into slot 1.
+- `/탐험유저확인` is an operator-only read command. It loads `petExploreData` and reports current `bet`/`userBet`/`autoFixedDungeon` state without calling `initPetExploreData`, so it does not trigger migration or save flow.
 
 # /맞짱필드
 
