@@ -21057,8 +21057,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					if (dungeonNo === "8") {
 						var homeData = loadJsonFile(homeDataFile);
-						if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender, 10)) {
-							replier.reply("❌ 입장 실패\n\n【8】 잊혀진 대마법사의 유적📜은\n/종합순위 10등 안에 들어간 유저만 입장할 수 있습니다.");
+						if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender,20)) {
+							replier.reply("❌ 입장 실패\n\n【8】 잊혀진 대마법사의 유적📜은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
 							return;
 						}
 						if (!hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
@@ -36392,8 +36392,8 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 				}
 			}
 			if (dk === "8") {
-				if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, 10)) {
-					failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📜 입장 실패(❌)\n/종합순위 10등 밖: 보상 제외");
+				if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, 20)) {
+					failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📜 입장 실패(❌)\n/종합순위 20등 밖: 보상 제외");
 					failCnt++;
 					continue;
 				}
@@ -37329,7 +37329,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 	out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
 	out += "【7】 보물수호자 벨카르💎: " + cnt["7"] + "명\n";
 	out += "【8】 잊혀진 대마법사의 유적📜: " + cnt["8"] + "명\n";
-	out += "*/종합순위 1등-10등부터 입장 가능\n";
+	out += "*/종합순위 1등-30등부터 입장 가능\n";
 	out += LINE + "\n";
 
 	var appliedUpItem = getMyAppliedUpItem(petExploreData, sender, myBet);
