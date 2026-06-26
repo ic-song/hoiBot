@@ -1211,7 +1211,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					continue;
 				}
 
-				var serverName = getServerShortName(m.server);
+				var serverName = m.server;
 
 				if (!serverCount[serverName]) {
 					serverCount[serverName] = 0;
@@ -2863,24 +2863,6 @@ function formatPetInfo(pet) {
 	return pet.name + pet.emoji + "(+" + numberWithCommas(pet.battleExp) + "💕)[" + pet.grade + "]";
 }
 
-// 서버 전체명을 운영용 약칭으로 변환하는 함수
-function getServerShortName(serverName) {
-	var map = {
-		"벨라서버1[2030]": "벨1",
-		"벨라서버2[30]": "벨2",
-		"호이서버1[30]": "호1",
-		"호이서버2[2030]": "호2",
-		"호이서버3[3040]": "호3",
-		"호이서버4[3040]": "호4",
-		"호이서버5[2030]": "호5",
-		"호이서버6[2030]": "호6",
-		"호이서버7[2030]": "호7",
-		"호이월드 운영진[GM]": "GM",
-		"호이월드[서버장]": "서버장"
-	};
-	return map[serverName] || serverName || "미확인";
-}
-
 function getMiniPetGradeStats(petData, gradeTable) {
 	let gradeStats = {};
 	let totalCount = 0;
@@ -2910,11 +2892,11 @@ function getMiniPetGradeStats(petData, gradeTable) {
 	let sortedGrades = allGrades.sort(function (a, b) {
 		if (a === "이벤트") return -1;
 		if (b === "이벤트") return 1;
-		if (a === "엘리트") return -1;
-		if (b === "엘리트") return 1;
 
-		let indexA = definedGrades.indexOf(a);
-		let indexB = definedGrades.indexOf(b);
+		let creationIndex = definedGrades.indexOf("창조");
+		let eliteIndex = creationIndex === -1 ? definedGrades.length : creationIndex + 0.5;
+		let indexA = a === "엘리트" ? eliteIndex : definedGrades.indexOf(a);
+		let indexB = b === "엘리트" ? eliteIndex : definedGrades.indexOf(b);
 
 		if (indexA !== -1 && indexB !== -1) {
 			return indexA - indexB;
