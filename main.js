@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.199"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.200"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35814,15 +35814,16 @@ function buildLightAttendanceServerResetMessage(result) {
 	return lines.join("\n");
 }
 
-// 미가입 출첵 행을 서버 순서와 날짜/이름 순서로 비교하는 함수
+// 미가입 출첵 행을 날짜, 서버, 이름 순서로 비교하는 함수
 function compareLightAttendanceRows(a, b) {
+	var av = getAttendanceDateValue(a.recent) || 0;
+	var bv = getAttendanceDateValue(b.recent) || 0;
+	if (av !== bv) return av - bv;
+
 	var serverA = getAttendanceServerSortOrder(a.server);
 	var serverB = getAttendanceServerSortOrder(b.server);
 	if (serverA !== serverB) return serverA - serverB;
 
-	var av = getAttendanceDateValue(a.recent) || 0;
-	var bv = getAttendanceDateValue(b.recent) || 0;
-	if (av !== bv) return av - bv;
 	if (a.name < b.name) return -1;
 	if (a.name > b.name) return 1;
 	return 0;
