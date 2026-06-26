@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.196"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.197"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35742,9 +35742,9 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays, defaultS
 	return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
 }
 
-// 미가입 출첵 목록에서 이름 옆에 붙일 서버 약칭을 반환하는 함수
-function formatLightAttendanceNameWithServer(row) {
-	return row.name + " (" + getServerShortName(row.server) + ")";
+// 미가입 출첵 목록에 표시할 서버/이름 문자열을 반환하는 함수
+function formatLightAttendanceServerName(row) {
+	return getServerShortName(row.server) + " / " + row.name;
 }
 
 // 미가입 출첵 정리 결과 메시지를 생성하는 함수
@@ -35767,7 +35767,7 @@ function buildLightAttendanceCleanupMessage(result) {
 		lines.push("자동삭제 목록");
 		for (var removedIndex = 0; removedIndex < result.removed.length; removedIndex++) {
 			var removedRow = result.removed[removedIndex];
-			lines.push((removedIndex + 1) + ". " + formatLightAttendanceNameWithServer(removedRow) + " / 최근 " + removedRow.recent + " / " + removedRow.days + "일 전");
+			lines.push((removedIndex + 1) + ". " + formatLightAttendanceServerName(removedRow) + " / 최근 " + removedRow.recent + " / " + removedRow.days + "일 전");
 		}
 		lines.push("");
 	}
@@ -35778,7 +35778,7 @@ function buildLightAttendanceCleanupMessage(result) {
 		for (var i = 0; i < result.remained.length; i++) {
 			if (i === 20) lines.push(allsee);
 			var row = result.remained[i];
-			lines.push((i + 1) + ". " + formatLightAttendanceNameWithServer(row) + " / " + row.cnt + "회 / 최근 " + row.recent + " / " + row.days + "일 전");
+			lines.push((i + 1) + ". " + formatLightAttendanceServerName(row) + " / " + row.cnt + "회 / 최근 " + row.recent + " / " + row.days + "일 전");
 		}
 	}
 	return lines.join("\n");
