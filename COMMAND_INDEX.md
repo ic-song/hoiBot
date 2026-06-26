@@ -841,7 +841,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Canonical shop display for guild-only consumables and permissions items
-- Nearby purchase branch mutates both guild and member state
+- Nearby purchase branch mutates both guild and member state, and uses `applyTax` so the non-guild tax share is reflected in the Happy Foundation ledger
 
 ---
 
@@ -1870,6 +1870,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `getMiniPetGradeStats`
+- `isElite`
 
 ## Data Usage
 
@@ -1888,6 +1889,7 @@ Status: VERIFIED
 
 - Aggregated ownership statistics by mini-pet grade
 - Best anchor for grade-table mismatch issues
+- Elite mini-pets are counted as `엘리트` before grade-table fallback so they do not fall into `기타`
 
 ---
 
@@ -2903,6 +2905,7 @@ Status: VERIFIED
 
 - Deducts point-shop cost from member points
 - Applies castle tax earnings through `applyTax(itemPrice, data, guildData)` when tax is not exempt
+- `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
@@ -3473,6 +3476,7 @@ Status: VERIFIED
 
 - `loadJsonFile`
 - `numberWithCommas`
+- `getServerShortName`
 
 ## Data Usage
 
@@ -3510,6 +3514,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `numberWithCommas`
+- `getServerShortName`
 
 ## Data Usage
 
@@ -3527,6 +3532,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Aggregates server-name distribution from member profiles
+- Displays known server names as short labels such as `호1`, `호2`, `벨1`, `GM`, and `서버장`
 - Missing or blank `member.server` values are folded into unknown counts
 
 ---
@@ -4227,6 +4233,7 @@ Status: VERIFIED
 - `migrateLightAttendanceToMember`
 - `pruneLightAttendanceData`
 - `buildLightAttendanceCleanupMessage`
+- `getServerShortName`
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
 - `formatPendingUserIdServerText`
@@ -4251,7 +4258,7 @@ Status: VERIFIED
 - Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
-- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports automatic-deletion names and joined-cleanup names, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports automatic-deletion names with server short labels and joined-cleanup names, then saves `attendanceLight.json`
 
 ## Related Commands
 

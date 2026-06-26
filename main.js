@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.194"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.195"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -556,6 +556,24 @@ roomToServer[room11] = "호이서버4[3040]";
 roomToServer[room12] = "벨라서버2[30]";
 roomToServer[room13] = "호이서버7[2030]";
 roomToServer[room90] = "호이월드 운영진[GM]";
+
+// 서버 전체명을 운영용 약칭으로 변환하는 함수
+function getServerShortName(serverName) {
+	var map = {
+		"벨라서버1[2030]": "벨1",
+		"벨라서버2[30]": "벨2",
+		"호이서버1[30]": "호1",
+		"호이서버2[2030]": "호2",
+		"호이서버3[3040]": "호3",
+		"호이서버4[3040]": "호4",
+		"호이서버5[2030]": "호5",
+		"호이서버6[2030]": "호6",
+		"호이서버7[2030]": "호7",
+		"호이월드 운영진[GM]": "GM",
+		"호이월드[서버장]": "서버장"
+	};
+	return map[serverName] || serverName || "미확인";
+}
 
 //sd카드에 호이랜드 폴더를 생성 및 경로 지정
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
@@ -29011,6 +29029,7 @@ function applyTax(point, data, guildData, taxAmountOverride) {
 
 		// 실제 길드자금으로 들어갈 금액
 		var guildFundAmount = Math.round(taxAmount * 0.15); // 세금의 15%가 길드자금으로 들어감
+		var foundationAmount = taxAmount - guildFundAmount; // 세금의 나머지 85%는 호이행복재단 장부에 적립
 
 		// 성주의 길드 찾기
 		var myGuildInfo = getMyGuildInfo(data, guildData, lord);
@@ -29028,6 +29047,7 @@ function applyTax(point, data, guildData, taxAmountOverride) {
 			data.HoiCastle.earnings = 0;
 		}
 		data.HoiCastle.earnings += guildFundAmount;
+		addHappyFoundationLedgerAmount(data, foundationAmount);
 
 		// 세금이 적용된 금액 반환
 		saveJsonFile(guildData, guildPath);
@@ -35696,7 +35716,7 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
 			continue;
 		}
 		if (dayDiff === null || dayDiff >= staleDays) {
-			removed.push({ name: name, recent: row.recent || "없음", days: dayDiff });
+			removed.push({ name: name, recent: row.recent || "없음", days: dayDiff, server: row.server || "" });
 			delete attendanceLightData.users[name];
 			continue;
 		}
@@ -35741,7 +35761,7 @@ function buildLightAttendanceCleanupMessage(result) {
 		lines.push("자동삭제 목록");
 		for (var removedIndex = 0; removedIndex < result.removed.length; removedIndex++) {
 			var removedRow = result.removed[removedIndex];
-			lines.push((removedIndex + 1) + ". " + removedRow.name + " / 최근 " + removedRow.recent + " / " + removedRow.days + "일 전");
+			lines.push((removedIndex + 1) + ". " + getServerShortName(removedRow.server) + " / " + removedRow.name + " / 최근 " + removedRow.recent + " / " + removedRow.days + "일 전");
 		}
 		lines.push("");
 	}
@@ -35752,7 +35772,7 @@ function buildLightAttendanceCleanupMessage(result) {
 		for (var i = 0; i < result.remained.length; i++) {
 			if (i === 20) lines.push(allsee);
 			var row = result.remained[i];
-			lines.push((i + 1) + ". " + row.name + " / " + row.cnt + "회 / 최근 " + row.recent + " / " + row.days + "일 전");
+			lines.push((i + 1) + ". " + getServerShortName(row.server) + " / " + row.name + " / " + row.cnt + "회 / 최근 " + row.recent + " / " + row.days + "일 전");
 		}
 	}
 	return lines.join("\n");
