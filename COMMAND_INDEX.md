@@ -4229,6 +4229,9 @@ Status: VERIFIED
 - `recordLightAttendanceOnly`
 - `migrateLightAttendanceToMember`
 - `pruneLightAttendanceData`
+- `buildJoinedBaseNameMap`
+- `resetLightAttendanceServerByShortName`
+- `buildLightAttendanceServerResetMessage`
 - `buildLightAttendanceCleanupMessage`
 - `getServerShortName`
 - `getAttendanceServerSortOrder`
@@ -4258,16 +4261,19 @@ Status: VERIFIED
 - Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
-- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, sorts rows by `호1` through `호7` then `벨`, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the user already joined by exact ID or by matching the gender-trimmed base name, or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by `호1` through `호7` then `벨`, then saves `attendanceLight.json`
 
 ## Related Commands
 
 - `/미가입출첵`
+- `/미가입출첵서버초기화 [호1-호7|벨1-벨2|GM|서버장]`
 - `/미정 [이름]`
 
 ## AI Notes
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
+- `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
+- `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
 
 ---

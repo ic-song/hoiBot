@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.198"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.199"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4890,9 +4890,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						return;
 					}
 					var lightAttendanceData = loadJsonFile(attendanceLightPath) || { users: {} };
-					var lightAttendanceResult = pruneLightAttendanceData(data, lightAttendanceData, 4, roomToServer[room] || "");
+					var lightAttendanceResult = pruneLightAttendanceData(data, lightAttendanceData, 4);
 					saveJsonFile(lightAttendanceData, attendanceLightPath);
 					replier.reply(buildLightAttendanceCleanupMessage(lightAttendanceResult));
+					return;
+				}
+				if (/^\/미가입출첵서버초기화\s+(호[1-7]|벨[1-2]|GM|서버장)$/.test(msg)) {
+					if (!(isMaster(sender) || isAdmin(sender))) {
+						replier.reply("❌ 관리자만 사용할 수 있습니다.");
+						return;
+					}
+					var resetServerShortName = msg.split(/\s+/)[1];
+					var resetLightAttendanceData = loadJsonFile(attendanceLightPath) || { users: {} };
+					var resetServerResult = resetLightAttendanceServerByShortName(resetLightAttendanceData, resetServerShortName);
+					if (resetServerResult.count > 0) saveJsonFile(resetLightAttendanceData, attendanceLightPath);
+					replier.reply(buildLightAttendanceServerResetMessage(resetServerResult));
 					return;
 				}
 				if (msg.startsWith("/후원메모 ") && isMaster(sender)) {
@@ -35710,19 +35722,19 @@ function getAttendanceDateDiff(fromText, toText) {
 }
 
 // 미가입 출첵 경량 데이터를 정리하고 남은 목록을 반환하는 함수
-function pruneLightAttendanceData(data, attendanceLightData, staleDays, defaultServer) {
+function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
 	if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
 	var todayText = getCurrentDate();
 	var removed = [];
 	var joined = [];
 	var remained = [];
+	var joinedBaseNameMap = buildJoinedBaseNameMap(data);
 
 	for (var name in attendanceLightData.users) {
 		if (!attendanceLightData.users.hasOwnProperty(name)) continue;
 		var row = attendanceLightData.users[name] || {};
-		if (!row.server && defaultServer) row.server = defaultServer;
 		var dayDiff = getAttendanceDateDiff(row.recent, todayText);
-		if (data && data.member && data.member[name]) {
+		if (data && data.member && (data.member[name] || joinedBaseNameMap[normalizePendingUserIdBaseName(name)])) {
 			joined.push(name);
 			delete attendanceLightData.users[name];
 			continue;
@@ -35745,6 +35757,61 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays, defaultS
 	remained.sort(compareLightAttendanceRows);
 
 	return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
+}
+
+// 정식 가입 아이디의 성별 제외 기본 이름 맵을 생성하는 함수
+function buildJoinedBaseNameMap(data) {
+	var map = {};
+	var memberData = data && data.member ? data.member : {};
+	for (var memberName in memberData) {
+		if (!memberData.hasOwnProperty(memberName)) continue;
+		map[normalizePendingUserIdBaseName(memberName)] = true;
+	}
+	return map;
+}
+
+// 지정 서버로 표시된 미가입 출첵 기록을 미확인 서버로 되돌리는 함수
+function resetLightAttendanceServerByShortName(attendanceLightData, targetShortName) {
+	if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
+	var changed = [];
+	for (var name in attendanceLightData.users) {
+		if (!attendanceLightData.users.hasOwnProperty(name)) continue;
+		var row = attendanceLightData.users[name] || {};
+		if (getServerShortName(row.server) !== targetShortName) continue;
+		row.server = "";
+		attendanceLightData.users[name] = row;
+		changed.push({
+			name: name,
+			cnt: parseInt(row.cnt, 10) || 0,
+			recent: row.recent || "없음",
+			days: getAttendanceDateDiff(row.recent, getCurrentDate())
+		});
+	}
+	changed.sort(function (a, b) {
+		var av = getAttendanceDateValue(a.recent) || 0;
+		var bv = getAttendanceDateValue(b.recent) || 0;
+		if (av !== bv) return av - bv;
+		if (a.name < b.name) return -1;
+		if (a.name > b.name) return 1;
+		return 0;
+	});
+	return { target: targetShortName, count: changed.length, changed: changed };
+}
+
+// 미가입 출첵 서버 초기화 결과 메시지를 생성하는 함수
+function buildLightAttendanceServerResetMessage(result) {
+	var lines = [];
+	lines.push("✅ 미가입 출첵 서버 초기화 완료");
+	lines.push("대상 서버: " + result.target);
+	lines.push("미확인 처리: " + result.count + "명");
+	if (result.changed.length > 0) {
+		lines.push("초기화 목록" + allsee);
+		for (var i = 0; i < result.changed.length; i++) {
+			var row = result.changed[i];
+			lines.push((i + 1) + ". 미확인 / " + row.name + " / " + row.cnt + "회 / 최근 " + row.recent + " / " + row.days + "일 전");
+		}
+	}
+	return lines.join("\n");
 }
 
 // 미가입 출첵 행을 서버 순서와 날짜/이름 순서로 비교하는 함수
