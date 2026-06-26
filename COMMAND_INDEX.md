@@ -4231,7 +4231,7 @@ Status: VERIFIED
 - `pruneLightAttendanceData`
 - `buildLightAttendanceCleanupMessage`
 - `getServerShortName`
-- `formatLightAttendanceNameWithServer`
+- `formatLightAttendanceServerName`
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
 - `formatPendingUserIdServerText`
@@ -4256,7 +4256,7 @@ Status: VERIFIED
 - Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
-- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports automatic-deletion and remaining names with server short labels next to the user name, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, then saves `attendanceLight.json`
 
 ## Related Commands
 
