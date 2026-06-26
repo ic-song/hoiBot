@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.197"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.198"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -573,6 +573,17 @@ function getServerShortName(serverName) {
 		"호이월드[서버장]": "서버장"
 	};
 	return map[serverName] || serverName || "미확인";
+}
+
+// 미가입 출첵 목록의 서버 표시 순서를 반환하는 함수
+function getAttendanceServerSortOrder(serverName) {
+	var shortName = getServerShortName(serverName);
+	var match = shortName.match(/^호(\d+)$/);
+	if (match) return parseInt(match[1], 10);
+	if (shortName.indexOf("벨") === 0) return 8;
+	if (shortName === "GM") return 9;
+	if (shortName === "서버장") return 10;
+	return 99;
 }
 
 //sd카드에 호이랜드 폴더를 생성 및 경로 지정
@@ -35730,16 +35741,24 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays, defaultS
 		});
 	}
 
-	remained.sort(function (a, b) {
-		var av = getAttendanceDateValue(a.recent) || 0;
-		var bv = getAttendanceDateValue(b.recent) || 0;
-		if (av !== bv) return av - bv;
-		if (a.name < b.name) return -1;
-		if (a.name > b.name) return 1;
-		return 0;
-	});
+	removed.sort(compareLightAttendanceRows);
+	remained.sort(compareLightAttendanceRows);
 
 	return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
+}
+
+// 미가입 출첵 행을 서버 순서와 날짜/이름 순서로 비교하는 함수
+function compareLightAttendanceRows(a, b) {
+	var serverA = getAttendanceServerSortOrder(a.server);
+	var serverB = getAttendanceServerSortOrder(b.server);
+	if (serverA !== serverB) return serverA - serverB;
+
+	var av = getAttendanceDateValue(a.recent) || 0;
+	var bv = getAttendanceDateValue(b.recent) || 0;
+	if (av !== bv) return av - bv;
+	if (a.name < b.name) return -1;
+	if (a.name > b.name) return 1;
+	return 0;
 }
 
 // 미가입 출첵 목록에 표시할 서버/이름 문자열을 반환하는 함수
