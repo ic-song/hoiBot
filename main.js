@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.200"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.201"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35728,13 +35728,12 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
 	var removed = [];
 	var joined = [];
 	var remained = [];
-	var joinedBaseNameMap = buildJoinedBaseNameMap(data);
 
 	for (var name in attendanceLightData.users) {
 		if (!attendanceLightData.users.hasOwnProperty(name)) continue;
 		var row = attendanceLightData.users[name] || {};
 		var dayDiff = getAttendanceDateDiff(row.recent, todayText);
-		if (data && data.member && (data.member[name] || joinedBaseNameMap[normalizePendingUserIdBaseName(name)])) {
+		if (data && data.member && data.member[name]) {
 			joined.push(name);
 			delete attendanceLightData.users[name];
 			continue;
@@ -35757,17 +35756,6 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
 	remained.sort(compareLightAttendanceRows);
 
 	return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
-}
-
-// 정식 가입 아이디의 성별 제외 기본 이름 맵을 생성하는 함수
-function buildJoinedBaseNameMap(data) {
-	var map = {};
-	var memberData = data && data.member ? data.member : {};
-	for (var memberName in memberData) {
-		if (!memberData.hasOwnProperty(memberName)) continue;
-		map[normalizePendingUserIdBaseName(memberName)] = true;
-	}
-	return map;
 }
 
 // 지정 서버로 표시된 미가입 출첵 기록을 미확인 서버로 되돌리는 함수
