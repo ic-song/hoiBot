@@ -719,7 +719,7 @@ const GLOBAL_CONFIG = {
 		},
 		maze: {
 			ticketItemName: "미궁 입장권🕋",
-			rewardItem: "팬던트미궁박스💎(/팬던트미궁박스오픈)",
+			rewardItem: "펜던트미궁박스💎(/펜던트미궁박스오픈)",
 			archmageRewardItem: "대마법사의 유적박스📜(/대마법박스오픈)",
 			successPenalty: 50
 		},
@@ -788,8 +788,8 @@ const GLOBAL_CONFIG = {
 		legendStoneName: "전설의 돌맹이🗿",
 		diamondBoxName: "다이아상자💎(/다이아상자오픈)",
 		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)",
-		pendantEnhanceStoneName: "팬던트 강화석📿",
-		pendantRestoreStoneName: "팬던트 복원석🔷"
+		pendantEnhanceStoneName: "펜던트 강화석📿",
+		pendantRestoreStoneName: "펜던트 복원석🔷"
 	},
 	pointShop: { // 포인트 상점 설정
 		limits: {
@@ -20765,7 +20765,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/팬던트미궁박스오픈" || /^\/팬던트미궁박스오픈\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트미궁박스오픈" || /^\/펜던트미궁박스오픈\s+\d+$/.test(msg)) {
 					runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier);
 					saveJsonFile(data, filePath);
 					return;
@@ -36928,7 +36928,7 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 	openAllOne("/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", rollDdangDungeonBox);
 	openAllOne("/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, rollDiamondMineBox);
 	openAllOne("/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, rollGuildRaidBox);
-	openAllOne("/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, rollPendantMazeBox);
+	openAllOne("/펜던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, rollPendantMazeBox);
 	openAllOne("/대마법박스오픈", GLOBAL_CONFIG.petExplore.maze.archmageRewardItem, rollArchmageMazeBox);
 
 	return logs.length ? logs.join("\n\n") : "";
@@ -36971,7 +36971,7 @@ function runGuildRaidBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, msg, rollGuildRaidBox);
 }
 
-// 팬던트 미궁 박스 보상 테이블
+// 펜던트 미궁 박스 보상 테이블
 function rollPendantMazeBox() {
 	var gain = {};
 	gain[GLOBAL_CONFIG.items.pendantEnhanceStoneName] = Math.floor(Math.random() * 3) + 1;
@@ -36982,9 +36982,9 @@ function rollPendantMazeBox() {
 	};
 }
 
-// 팬던트 미궁 박스를 오픈하는 함수
+// 펜던트 미궁 박스를 오픈하는 함수
 function runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
-	runExploreBoxOpen(sender, data, petData, guildData, replier, "/팬던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, msg, rollPendantMazeBox);
+	runExploreBoxOpen(sender, data, petData, guildData, replier, "/펜던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, msg, rollPendantMazeBox);
 }
 
 // 대마법사의 유적 박스 보상 테이블
