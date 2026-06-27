@@ -33089,7 +33089,7 @@ function getTierRankingRows(data) {
 		var advanced = parseInt(bag["고급 티어 승급티켓🎫"] || 0, 10) || 0;
 		rows.push({
 			user: user,
-			point: regular + advanced * 5
+			point: regular + advanced * 300
 		});
 	}
 	rows.sort(function (a, b) {
