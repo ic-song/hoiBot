@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.201"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.202"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -18722,7 +18722,12 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(petData, memberPetPath);
 					return;
 				}
-				if (msg.startsWith("/알림")) {
+				if (/^\/알림(?:\s|$)/.test(msg)) {
+					var noticeTerritoryWar = guildData && guildData.territoryWar ? guildData.territoryWar : null;
+					if (noticeTerritoryWar && noticeTerritoryWar.active) {
+						replier.reply("🏰 길드 영지전 진행 중에는 /알림을 사용할 수 없습니다.\n영지전 종료 후 다시 이용해 주세요.");
+						return;
+					}
 					let regex = /^\/알림\s+(.+)/;
 					let match = msg.match(regex);
 					if (!match) {

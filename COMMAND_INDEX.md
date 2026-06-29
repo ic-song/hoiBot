@@ -2850,6 +2850,38 @@ Status: VERIFIED
 
 ---
 
+# /알림 [내용]
+Status: VERIFIED
+## Command Anchors
+- `main.js:18725`
+## Files
+- `main.js`
+## Related Helpers
+- `checkRank`
+- `hasItem`
+- `removeItem`
+- `hasPetSkill`
+- `buildPetSkillMsg`
+- `noticeMsg`
+## Data Usage
+- `guildData.territoryWar.active`
+- `data.member[sender].noticeYahoCount`
+- `data.member[sender].noticeItemCount`
+- `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
+- `petSkillData[sender]`
+## Save Flow
+- When `guildData.territoryWar.active` is true, `/알림` is blocked before item/count mutation and does not save member data.
+- Successful `/알림` uses `야호📙` free count or consumes `확성기📢(/알림 내용 30자)`, then saves member data through `saveJsonFile(data, filePath)`.
+## Related Commands
+- `/길드영지시작`
+- `/길드영지종료`
+- `/영지공격`
+## AI Notes
+- `/알림` accepts free-form message text after a command boundary only: `/알림 내용`.
+- The command is blocked while guild territory war is active so territory-war progress messages are not interrupted.
+
+---
+
 # /포인트
 Status: VERIFIED
 ## Command Anchors
