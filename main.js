@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.206"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.207"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -34910,7 +34910,7 @@ function trimPetHomeComments(comments) {
 // 펫홈 댓글 확인 메시지를 생성하는 함수
 function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments) {
 	var targetNick = checkRank(data, petData, guildData, targetName);
-	var out = "[" + targetNick + "]님을 향한 댓글✍\n";
+	var out = "[" + targetNick + "]님의 방명록✍️\n";
 	if (!comments || comments.length === 0) {
 		return out + "아직 등록된 댓글이 없습니다.";
 	}
@@ -34918,7 +34918,7 @@ function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comme
 	var startIndex = comments.length - 50;
 	if (startIndex < 0) startIndex = 0;
 	var visibleCount = comments.length - startIndex; // 최근 댓글 노출 개수
-	out += "━:･ﾟ☆━━최근 댓글 " + visibleCount + "개 표시 / 최대 50개 보관✍️━:･ﾟ☆━" + allsee + "\n";
+	out += "☆━━ 놀러온 친구들의 발도장 " + visibleCount + "개 꾹꾹🐾 ━━☆" + allsee + "\n";
 	for (var i = comments.length - 1; i >= startIndex; i--) {
 		var c = comments[i];
 		if (!c) continue;

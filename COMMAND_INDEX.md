@@ -364,7 +364,7 @@ Status: VERIFIED
 
 - `/펫홈` output is split into two replies: home body first, comments second.
 - Furniture list inserts `allsee` from the second placed furniture.
-- Comment message inserts `allsee` in the comment header and shows the latest 50 comments while storing up to 50 comments.
+- Comment message uses the guestbook header, inserts `allsee` in the count line, and shows the latest 50 comments while storing up to 50 comments.
 - Duplicate pet-home comments by the same writer are allowed.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 
