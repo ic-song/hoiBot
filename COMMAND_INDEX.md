@@ -327,6 +327,7 @@ Status: VERIFIED
 - `initPetHomeCommentsData`
 - `getPetHomeCommentList`
 - `migratePetHomeCommentsFromHomeData`
+- `removeDuplicatePetHomeCommentsByWriter`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `getFurnitureExp`
@@ -365,6 +366,7 @@ Status: VERIFIED
 - `/펫홈` output is split into two replies: home body first, comments second.
 - Furniture list inserts `allsee` from the second placed furniture.
 - Comment message inserts `allsee` in the comment header and shows the latest 4 comments from a max 50 stored comments.
+- Duplicate pet-home comments are normalized by writer, keeping only the latest comment per `from` value.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 
 ---

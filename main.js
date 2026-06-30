@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.204"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.205"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -19817,6 +19817,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					addPoint(data, sender, -cost);
 					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
 					var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
+					removeDuplicatePetHomeCommentsByWriter(petHomeCommentList);
 					//  동일 작성자 댓글 전부 제거(중복 방지)
 					for (var i = petHomeCommentList.length - 1; i >= 0; i--) {
 						if (petHomeCommentList[i].from === sender) {
@@ -25303,6 +25304,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							petHomeCommentsData = migrateResult.commentsData;
 							var commentListAfter = getPetHomeCommentList(petHomeCommentsData, user).length;
 							var movedCount = commentListAfter - commentListBefore;
+							if (movedCount < 0) movedCount = 0;
 							totalGuestCommentsMoved += movedCount;
 							totalGuestCommentsDeleted += oldGuestComments.length;
 							guestCommentUserLogs.push(user + " : 이동 " + numberWithCommas(movedCount) + "개 / 기존 삭제 " + numberWithCommas(oldGuestComments.length) + "개");
@@ -34925,6 +34927,39 @@ function getPetHomeCommentList(commentsData, user) {
 	return commentsData.comments[user];
 }
 
+// 펫홈 댓글 목록에서 같은 작성자의 오래된 댓글을 제거하는 함수
+function removeDuplicatePetHomeCommentsByWriter(comments) {
+	if (!(comments instanceof Array)) return 0;
+	var latestIndexByWriter = {};
+	var removeMap = {};
+	for (var i = 0; i < comments.length; i++) {
+		var comment = comments[i];
+		if (!comment || !comment.from) continue;
+		var writer = String(comment.from);
+		if (latestIndexByWriter[writer] !== undefined) {
+			var prevIndex = latestIndexByWriter[writer];
+			var prevTime = Number(comments[prevIndex] && comments[prevIndex].time) || 0;
+			var currentTime = Number(comment.time) || 0;
+			if (currentTime > 0 && prevTime > 0 && currentTime < prevTime) {
+				removeMap[i] = true;
+			} else {
+				removeMap[prevIndex] = true;
+				latestIndexByWriter[writer] = i;
+			}
+		} else {
+			latestIndexByWriter[writer] = i;
+		}
+	}
+	var removed = 0;
+	for (var j = comments.length - 1; j >= 0; j--) {
+		if (removeMap[j]) {
+			comments.splice(j, 1);
+			removed++;
+		}
+	}
+	return removed;
+}
+
 // 펫홈 댓글을 최대 보관 개수에 맞춰 정리하는 함수
 function trimPetHomeComments(comments) {
 	while (comments.length > 50) {
@@ -34963,6 +34998,7 @@ function migratePetHomeCommentsFromHomeData(homeData, commentsData, user) {
 				result.commentsChanged = true;
 			}
 		}
+		if (removeDuplicatePetHomeCommentsByWriter(comments) > 0) result.commentsChanged = true;
 		trimPetHomeComments(comments);
 	}
 	delete homeData[user].guestComments;
