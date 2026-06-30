@@ -302,6 +302,68 @@ Status: VERIFIED
 
 ---
 
+# /펫홈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:19661`
+- `/펫홈`
+- `/펫홈 [닉네임]`
+- `/댓글`
+- `/댓글확인`
+- `/댓글삭제`
+
+## Files
+
+- `main.js`
+- `data/petSweetHomeData.json`
+
+## Related Helpers
+
+- `initSweetHomeUser`
+- `buildPetHomeCommentsMessage`
+- `trimPetHomeComments`
+- `getFurnitureExp`
+- `getFurnitureMaxSlots`
+- `findTargetAtStart`
+
+## Data Usage
+
+- `homeData[target].houseName`
+- `homeData[target].exp`
+- `homeData[target].floor`
+- `homeData[target].placedFurniture`
+- `homeData[target].visitCnt`
+- `homeData[target].likeCnt`
+- `homeData[target].comment`
+- `homeData[target].guestComments`
+
+## Save Flow
+
+- `/펫홈`: loads `homeDataFile`, replies home body first, then replies comments from `homeData[target].guestComments`. Saves `homeDataFile` only for visit count updates.
+- `/댓글`: mutates `data.member[sender].point` and `homeData[target].guestComments`, then saves `filePath` and `homeDataFile`.
+- `/댓글확인`: reads `homeData[target].guestComments` and replies the comment-only message.
+- `/댓글삭제`: mutates `homeData[sender].guestComments`, then saves `homeDataFile`.
+
+## Related Commands
+
+- `/펫홈순위`
+- `/펫홈방문초기화`
+- `/한줄평`
+- `/집청소`
+- `/가구가방`
+
+## AI Notes
+
+- `/펫홈` output is split into two replies: home body first, comments second.
+- Furniture list inserts `allsee` from the second placed furniture.
+- Comment message inserts `allsee` in the comment header and shows the latest 4 comments from a max 50 stored comments.
+- Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
+
+---
+
 # /길드영지시작
 
 Status: VERIFIED

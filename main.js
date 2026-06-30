@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.202"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.203"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -19657,7 +19657,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					replier.reply("🫂 펫스윗홈 방문자수 초기화 완료!\n" + "초기화된 유저 수: " + resetCount + "명");
 					return;
 				}
-				if (msg.startsWith("/펫홈")) {
+				if (msg === "/펫홈" || /^\/펫홈\s+.+$/.test(msg)) {
 					if (!isRegisteredHomeMember(data, sender)) return;
 					let homeData = loadJsonFile(homeDataFile);
 					// 대상 유저 결정 (/펫홈 -> 자기자신 /펫홈 호이 남 -> '호이 남')
@@ -19717,20 +19717,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					} else {
 						lineComment += "(아직 한줄평이 없습니다.\n/한줄평 내용 을 적어보세요!)\n\n";
 					}
-					let lineGuestComment = "";
-					let comments = userHome.guestComments || [];
-					if (comments.length > 0) {
-						lineGuestComment += "━:･ﾟ☆━━최근 댓글✍️━:･ﾟ☆━\n";
-
-						for (let i = comments.length - 1; i >= 0; i--) {
-							let c = comments[i];
-							let commenterNick = checkRank(data, petData, guildData, c.from);
-							let no = comments.length - i;
-							lineGuestComment += no + ". [" + commenterNick + "]: " + c.text + "\n";
-						}
-					} else {
-						lineGuestComment += "━･ﾟ☆━━최근 댓글✍️━･ﾟ☆━\n(아직 댓글이 없습니다.)\n";
-					}
 					let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
 					let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
 					let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n";
@@ -19747,9 +19733,12 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 					}
 					lineFurniture += "────────────────\n";
-					replier.reply(header + lineHouseInfo + lineLike + lineVisit + lineComment + lineGuestComment + lineComentend + lineFurniture);
+					replier.reply(header + lineHouseInfo + lineLike + lineVisit + lineComment + lineComentend + lineFurniture);
+					var petHomeCommentList = userHome.guestComments || [];
+					replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList));
+					return;
 				}
-				if (msg.startsWith("/댓글삭제")) {
+				if (msg === "/댓글삭제" || /^\/댓글삭제\s+\d+$/.test(msg)) {
 					let parts = msg.trim().split(/\s+/);
 					if (parts.length < 2) {
 						replier.reply("사용법: /댓글삭제 [번호]\n예시: /댓글삭제 1");
@@ -19761,22 +19750,38 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						return;
 					}
 					let homeData = loadJsonFile(homeDataFile);
-					if (!homeData[sender] || !homeData[sender].guestComments || homeData[sender].guestComments.length === 0) {
+					var petHomeCommentList = (homeData[sender] && homeData[sender].guestComments) ? homeData[sender].guestComments : [];
+					if (petHomeCommentList.length === 0) {
 						replier.reply("삭제할 댓글이 없습니다.");
 						return;
 					}
-					let comments = homeData[sender].guestComments;
-					let indexToDelete = comments.length - delIndex; // 출력이 역순이므로 인덱스 보정
-					if (indexToDelete < 0 || indexToDelete >= comments.length) {
+					let indexToDelete = petHomeCommentList.length - delIndex; // 출력이 역순이므로 인덱스 보정
+					if (indexToDelete < 0 || indexToDelete >= petHomeCommentList.length) {
 						replier.reply("해당 번호의 댓글이 존재하지 않습니다.");
 						return;
 					}
-					let removed = comments.splice(indexToDelete, 1)[0];
+					let removed = petHomeCommentList.splice(indexToDelete, 1)[0];
 					saveJsonFile(homeData, homeDataFile);
 					replier.reply("🗑️ 댓글이 삭제되었습니다.\n[" + checkRank(data, petData, guildData, removed.from) + "]: " + removed.text);
 					return;
 				}
-				if (msg.startsWith("/댓글")) {
+				if (msg === "/댓글확인" || /^\/댓글확인\s+.+$/.test(msg)) {
+					let homeData = loadJsonFile(homeDataFile);
+					let parts = msg.trim().split(/\s+/);
+					let targetName = sender;
+					if (parts.length > 1) {
+						targetName = parts.slice(1).join(" ").trim();
+					}
+					if (!isRegisteredHomeMember(data, targetName)) {
+						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 대상 유저 [" + targetName + "]님이 존재하지 않습니다.");
+						return;
+					}
+					var targetHome = homeData[targetName] || {};
+					var petHomeCommentList = targetHome.guestComments || [];
+					replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList));
+					return;
+				}
+				if (msg === "/댓글" || /^\/댓글\s+.+$/.test(msg)) {
 					let senderNick = checkRank(data, petData, guildData, sender);
 					let cost = 10000000;
 					let homeData = loadJsonFile(homeDataFile);
@@ -19812,22 +19817,21 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					// 홈 보장
 					homeData = initSweetHomeUser(homeData, targetName);
 					if (!homeData[targetName].guestComments) homeData[targetName].guestComments = [];
-					var comments = homeData[targetName].guestComments;
+					var petHomeCommentList = homeData[targetName].guestComments;
 					//  동일 작성자 댓글 전부 제거(중복 방지)
-					for (var i = comments.length - 1; i >= 0; i--) {
-						if (comments[i].from === sender) {
-							comments.splice(i, 1);
+					for (var i = petHomeCommentList.length - 1; i >= 0; i--) {
+						if (petHomeCommentList[i].from === sender) {
+							petHomeCommentList.splice(i, 1);
 						}
 					}
 					// 최신 댓글 추가
-					comments.push({
+					petHomeCommentList.push({
 						from: sender,
-						text: comment
+						text: comment,
+						time: Date.now()
 					});
-					// 최대 4개 유지 (오래된 순으로 삭제)
-					if (comments.length > 4) {
-						comments.splice(0, comments.length - 4);
-					}
+					// 최대 50개 유지 (오래된 순으로 삭제)
+					trimPetHomeComments(petHomeCommentList);
 					saveJsonFile(data, filePath);
 					saveJsonFile(homeData, homeDataFile);
 					let targetNick = checkRank(data, petData, guildData, targetName);
@@ -34879,6 +34883,35 @@ function refreshMiniPetSortIndex(petData, owner, gradeTable) {
 // 펫홈 데이터 생성 가능 회원인지 확인하는 함수
 function isRegisteredHomeMember(data, user) {
 	return !!(data && data.member && data.member[user]);
+}
+
+// 펫홈 댓글을 최대 보관 개수에 맞춰 정리하는 함수
+function trimPetHomeComments(comments) {
+	while (comments.length > 50) {
+		comments.shift();
+	}
+}
+
+// 펫홈 댓글 확인 메시지를 생성하는 함수
+function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments) {
+	var targetNick = checkRank(data, petData, guildData, targetName);
+	var out = "[" + targetNick + "]님을 향한 댓글✍\n";
+	if (!comments || comments.length === 0) {
+		return out + "아직 등록된 댓글이 없습니다.";
+	}
+
+	var startIndex = comments.length - 4;
+	if (startIndex < 0) startIndex = 0;
+	var visibleCount = comments.length - startIndex; // 최근 댓글 노출 개수
+	out += "━:･ﾟ☆━━최근 댓글 " + visibleCount + "개(최대 50개)✍️━:･ﾟ☆━" + allsee + "\n";
+	for (var i = comments.length - 1; i >= startIndex; i--) {
+		var c = comments[i];
+		if (!c) continue;
+		var commenterNick = checkRank(data, petData, guildData, c.from);
+		var no = comments.length - i;
+		out += no + ". [" + commenterNick + "]: " + c.text + "\n";
+	}
+	return out.trim();
 }
 
 // 펫스윗홈
