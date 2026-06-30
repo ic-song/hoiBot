@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.209"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.210"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -14249,7 +14249,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (!data.member || !data.member[sender]) return;
 					var packageBagTarget = sender; // 패키지가방 조회 대상
 					if (msg !== "/패키지가방") {
-						if (!isMaster(sender)) {
+						if (!(isMaster(sender) || isAdmin(sender))) {
 							return;
 						}
 						packageBagTarget = msg.replace(/^\/패키지가방\s+/, "").trim();
