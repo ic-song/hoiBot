@@ -1499,7 +1499,7 @@ Status: VERIFIED
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
-- `/패키지가방 [아이디]` is Master-only and reads another user's package bag without mutating or saving data
+- `/패키지가방 [아이디]` is Master/Admin-only and reads another user's package bag without mutating or saving data
 - `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then displays current support pass status below the package use guide
 
 ---
