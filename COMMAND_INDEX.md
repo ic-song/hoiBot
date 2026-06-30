@@ -302,6 +302,73 @@ Status: VERIFIED
 
 ---
 
+# /펫홈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:19661`
+- `/펫홈`
+- `/펫홈 [닉네임]`
+- `/댓글`
+- `/댓글확인`
+- `/댓글삭제`
+
+## Files
+
+- `main.js`
+- `data/petSweetHomeData.json`
+- `data/petHomeComments.json`
+
+## Related Helpers
+
+- `initSweetHomeUser`
+- `initPetHomeCommentsData`
+- `getPetHomeCommentList`
+- `migratePetHomeCommentsFromHomeData`
+- `buildPetHomeCommentsMessage`
+- `trimPetHomeComments`
+- `getFurnitureExp`
+- `getFurnitureMaxSlots`
+- `findTargetAtStart`
+
+## Data Usage
+
+- `homeData[target].houseName`
+- `homeData[target].exp`
+- `homeData[target].floor`
+- `homeData[target].placedFurniture`
+- `homeData[target].visitCnt`
+- `homeData[target].likeCnt`
+- `homeData[target].comment`
+- `petHomeCommentsData.comments[target]`
+- Legacy `homeData[target].guestComments` is moved to `petHomeCommentsData.comments[target]` by `/데이터정리`, then deleted from `homeData`.
+
+## Save Flow
+
+- `/펫홈`: loads `homeDataFile`, replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
+- `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
+- `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
+
+## Related Commands
+
+- `/펫홈순위`
+- `/펫홈방문초기화`
+- `/한줄평`
+- `/집청소`
+- `/가구가방`
+
+## AI Notes
+
+- `/펫홈` output is split into two replies: home body first, comments second.
+- Furniture list inserts `allsee` from the second placed furniture.
+- Comment message inserts `allsee` in the comment header and shows the latest 4 comments from a max 50 stored comments.
+- Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
+
+---
+
 # /길드영지시작
 
 Status: VERIFIED
@@ -841,7 +908,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Canonical shop display for guild-only consumables and permissions items
-- Nearby purchase branch mutates both guild and member state
+- Nearby purchase branch mutates both guild and member state, and uses `applyTax` so the non-guild tax share is reflected in the Happy Foundation ledger
 
 ---
 
@@ -1769,10 +1836,53 @@ Status: VERIFIED
 ## Related Commands
 
 - `/티어확인`
+- `/티어보상지급`
 
 ## AI Notes
 
 - Ranking is based on bag ticket totals, not current displayed rank tier
+
+---
+
+# /티어보상지급
+
+Status: VERIFIED
+
+## Files
+
+- main.js
+
+## Related Helpers
+
+- getTierRankingRows
+- payTierRankingReward
+- formatTierRewardLine
+- addItem
+
+## Data Usage
+
+- data.member[*].bag["티어 승급티켓🎟"]
+- data.member[*].bag["고급 티어 승급티켓🎫"]
+- data.member[*].bag["펫스킬북 조각📙"]
+- data.member[*].bag["다이아상자💎(/다이아상자오픈)"]
+- data.tierReward.lastPaidDate
+
+## Save Flow
+
+- `/티어보상지급` mutates member bags and `data.tierReward`, then saves through `saveJsonFile(data, filePath)`.
+
+## Related Commands
+
+- `/티어순위`
+- `/펫스킬북조합`
+- `/다이아상자오픈`
+
+## AI Notes
+
+- Exact command guard: `/티어보상지급`.
+- Admin/operator gated to `호이 남` or `오픈채팅봇`.
+- Uses the same ticket score basis as `/티어순위`: regular ticket 1pt, advanced ticket 5pt.
+- Prevents duplicate same-day payout through `data.tierReward.lastPaidDate`.
 
 ---
 
@@ -1827,6 +1937,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `getMiniPetGradeStats`
+- `isElite`
 
 ## Data Usage
 
@@ -1845,6 +1956,7 @@ Status: VERIFIED
 
 - Aggregated ownership statistics by mini-pet grade
 - Best anchor for grade-table mismatch issues
+- Elite mini-pets are counted as `엘리트` before grade-table fallback and sorted immediately below `창조`
 
 ---
 
@@ -2413,6 +2525,30 @@ Status: VERIFIED
 
 ---
 
+# /펫스킬북조합
+Status: VERIFIED
+## Files
+- main.js
+## Related Helpers
+- combinePetSkillBookFragment
+- hasItem
+- removeItem
+- addItem
+## Data Usage
+- data.member[sender].bag["펫스킬북 조각📙"]
+- data.member[sender].bag["펫스킬북📙(/펫스킬오픈)"]
+## Save Flow
+- Successful combination consumes 10 fragments per requested count, grants the same count of pet skill books, and saves member data through `saveJsonFile(data, filePath)`.
+## Related Commands
+- `/티어보상지급`
+- `/펫스킬오픈`
+- `/펫스킬가방`
+## AI Notes
+- Exact/full-pattern command guard: `/펫스킬북조합` or `/펫스킬북조합 숫자`.
+- Invalid suffix text does not execute.
+
+---
+
 # /펫스킬장착 [번호]
 Status: VERIFIED
 ## Command Anchors
@@ -2781,6 +2917,38 @@ Status: VERIFIED
 
 ---
 
+# /알림 [내용]
+Status: VERIFIED
+## Command Anchors
+- `main.js:18725`
+## Files
+- `main.js`
+## Related Helpers
+- `checkRank`
+- `hasItem`
+- `removeItem`
+- `hasPetSkill`
+- `buildPetSkillMsg`
+- `noticeMsg`
+## Data Usage
+- `guildData.territoryWar.active`
+- `data.member[sender].noticeYahoCount`
+- `data.member[sender].noticeItemCount`
+- `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
+- `petSkillData[sender]`
+## Save Flow
+- When `guildData.territoryWar.active` is true, `/알림` is blocked before item/count mutation and does not save member data.
+- Successful `/알림` uses `야호📙` free count or consumes `확성기📢(/알림 내용 30자)`, then saves member data through `saveJsonFile(data, filePath)`.
+## Related Commands
+- `/길드영지시작`
+- `/길드영지종료`
+- `/영지공격`
+## AI Notes
+- `/알림` accepts free-form message text after a command boundary only: `/알림 내용`.
+- The command is blocked while guild territory war is active so territory-war progress messages are not interrupted.
+
+---
+
 # /포인트
 Status: VERIFIED
 ## Command Anchors
@@ -2836,6 +3004,7 @@ Status: VERIFIED
 
 - Deducts point-shop cost from member points
 - Applies castle tax earnings through `applyTax(itemPrice, data, guildData)` when tax is not exempt
+- `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
@@ -3716,11 +3885,14 @@ Status: VERIFIED
 - isPetExploreEventMineActive
 - moveEventMineBetsToRandomMine
 - calcExploreSuccessPercent
+- getExploreSuccessPenaltyPercent
 - getExploreTraitBonusPercent
 - hasPetSkill
 
 ## Data Usage
 - data.member[*].bag
+- data.member[*].bag["펫던전 입장권🌋"]
+- data.member[*].bag["미궁 입장권🕋"]
 - petExploreData.bet
 - petExploreData.userBet
 - petExploreData.record
@@ -3734,16 +3906,21 @@ Status: VERIFIED
 
 ## Related Commands
 - `/탐`
-- `/탐 [1~7]`
+- `/탐 [1~8]`
+- `/탐 7`
+- `/탐 8`
 - `/탐 10` when the guild raid event is active
 - `/지도`
 - `/탐험알림`
+- `/탐험유저확인`
 - `/탐 0` when the event mine is active
 - `/펫탐험이벤트활성화`
 - `/펫탐험이벤트비활성화`
 - `/레이드이벤트활성화`
 - `/레이드이벤트비활성화`
 - `/레이드박스오픈`
+- `/팬던트미궁박스오픈`
+- `/대마법박스오픈`
 - `/자동탐고정 0` when the event mine is active
 - `/자동탐고정 10` when the guild raid event is active
 
@@ -3751,11 +3928,18 @@ Status: VERIFIED
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
-- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7`
+- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~2` and `던전탐험가📙` only to `/탐 3~6` plus event guild raid `/탐 10`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
+- Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
+- Maze entries `/탐 7~8` require `미궁 입장권🕋` and apply a `-50%` success penalty.
+- `/탐 7` rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
+- `/탐 8` requires `/종합순위` top 10 and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `initPetExploreData` performs one-time `pendantMazeSlotResetV2191` migration through `moveCurrentExploreBetsToStarterSlots`, moving existing visible participants from slots 1~8 into slots 1~3 so old slot data is not displayed as new maze participation.
+- `initPetExploreData` also performs one-time `currentExploreSlotOneResetV2192` migration through `moveCurrentExploreBetsToDungeonOne`, moving current visible map participants from slots 0~8 and 10 into slot 1.
+- `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
 
 # /맞짱필드
 
@@ -3994,6 +4178,72 @@ Status: VERIFIED
 
 ---
 
+# /팬던트미궁박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- main.js
+
+## Related Helpers
+
+- runPendantMazeBoxOpen
+- runExploreBoxOpen
+- rollPendantMazeBox
+- openExploreBoxesAllForOpenAll
+
+## Data Usage
+
+- data.member[sender].bag["팬던트미궁박스💎(/팬던트미궁박스오픈)"]
+- data.member[sender].bag["팬던트 강화석📿"]
+- data.member[sender].bag["팬던트 복원석🔷"]
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/팬던트미궁박스오픈` or `/팬던트미궁박스오픈 숫자`.
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+- Each box grants `팬던트 강화석📿` 1~3개 and has a 1% chance to grant `팬던트 복원석🔷` 1개.
+
+---
+
+# /대마법박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- main.js
+
+## Related Helpers
+
+- runArchmageMazeBoxOpen
+- runExploreBoxOpen
+- rollArchmageMazeBox
+- openExploreBoxesAllForOpenAll
+
+## Data Usage
+
+- data.member[sender].bag["대마법사의 유적박스📜(/대마법박스오픈)"]
+- data.member[sender].bag["펫스킬북 조각📙"]
+- data.member[sender].bag["펫스킬북📙(/펫스킬오픈)"]
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/대마법박스오픈` or `/대마법박스오픈 숫자`.
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+- Each box grants `펫스킬북 조각📙` 1~3개 and has a 1% chance to grant `펫스킬북📙(/펫스킬오픈)` 1개.
+
+---
+
 # /포인트상자오픈
 
 Status: VERIFIED
@@ -4043,6 +4293,8 @@ Status: VERIFIED
 
 - `homeData[*].furnitureBag`
 - `homeData[*].placedFurniture`
+- `homeData[*].guestComments`
+- `petHomeCommentsData.comments[*]`
 - `data.member[*].bag`
 - `data.member[*].point`
 - `petData[*].petSkills`
@@ -4052,6 +4304,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
+- Saves pet home comment data through `saveJsonFile(petHomeCommentsData, petHomeCommentsFile)`
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
@@ -4059,7 +4312,8 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Moves legacy `homeData[*].guestComments` into `petHomeCommentsData.comments[*]`, then deletes `guestComments` from `homeData`.
+- Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
@@ -4078,7 +4332,13 @@ Status: VERIFIED
 - `recordLightAttendanceOnly`
 - `migrateLightAttendanceToMember`
 - `pruneLightAttendanceData`
+- `resetLightAttendanceServerByShortName`
+- `buildLightAttendanceServerResetMessage`
 - `buildLightAttendanceCleanupMessage`
+- `getServerShortName`
+- `getAttendanceServerSortOrder`
+- `compareLightAttendanceRows`
+- `formatLightAttendanceServerName`
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
 - `formatPendingUserIdServerText`
@@ -4103,16 +4363,19 @@ Status: VERIFIED
 - Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
-- `/미가입출첵` deletes light rows when the user already joined or has not checked in for 4+ days, reports automatic-deletion names and joined-cleanup names, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
 
 ## Related Commands
 
 - `/미가입출첵`
+- `/미가입출첵서버초기화 [호1-호7|벨1-벨2|GM|서버장]`
 - `/미정 [이름]`
 
 ## AI Notes
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
+- `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
+- `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
 
 ---

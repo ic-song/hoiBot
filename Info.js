@@ -835,7 +835,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				let regular = members[user].bag["티어 승급티켓🎟"] || 0;
 				let advanced = members[user].bag["고급 티어 승급티켓🎫"] || 0;
-				let total = regular + advanced * 5;
+				let total = regular + advanced * 300;
 
 				userPoints[user] = total;
 			}
@@ -861,7 +861,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 			}
 
-			resultMsg = "🌟티어 순위🌟\n\n[🎟일반 1pt 🎫고급 5pt 적용]\n";
+			resultMsg = "🌟티어 순위🌟\n\n[🎟일반 1pt 🎫고급 300pt 적용]\n";
 			resultMsg += rankingMsg1.trim();
 			resultMsg += allsee + "\n";
 			resultMsg += rankingMsg2;
@@ -2393,6 +2393,7 @@ function generateBagOutput(bagItems) {
 			GLOBAL_CONFIG.titleGift.itemName,
 			"펫타이틀권🦊(/펫타이틀이름)",
 			GLOBAL_CONFIG.petSkill.bookItemName,
+			"펫스킬북 조각📙",
 			GLOBAL_CONFIG.petSkill.unbindItemName,
 			GLOBAL_CONFIG.petSkill.oldTraitBookItemName,
 			"반지 이름변경권🗯(/반지이름)",
@@ -2476,6 +2477,7 @@ function generateBagOutput(bagItems) {
 
 			"보물지도🗺️",
 			"펫던전 입장권🌋",
+			"미궁 입장권🕋",
 			"탐험확률UP🗻(50%)",
 			"탐험확률UP🗻(40%)",
 			"탐험확률UP🗻(30%)",
@@ -2873,7 +2875,10 @@ function getMiniPetGradeStats(petData, gradeTable) {
 
 		for (let pet of bag) {
 			let grade = pet.grade || "기타";
-			if (!definedGrades.includes(grade)) {
+			if (isElite(pet)) {
+				grade = "엘리트";
+			}
+			if (grade !== "엘리트" && !definedGrades.includes(grade)) {
 				grade = "기타";
 			}
 			if (!gradeStats[grade]) gradeStats[grade] = 0;
@@ -2888,8 +2893,10 @@ function getMiniPetGradeStats(petData, gradeTable) {
 		if (a === "이벤트") return -1;
 		if (b === "이벤트") return 1;
 
-		let indexA = definedGrades.indexOf(a);
-		let indexB = definedGrades.indexOf(b);
+		let creationIndex = definedGrades.indexOf("창조");
+		let eliteIndex = creationIndex === -1 ? definedGrades.length : creationIndex + 0.5;
+		let indexA = a === "엘리트" ? eliteIndex : definedGrades.indexOf(a);
+		let indexB = b === "엘리트" ? eliteIndex : definedGrades.indexOf(b);
 
 		if (indexA !== -1 && indexB !== -1) {
 			return indexA - indexB;
