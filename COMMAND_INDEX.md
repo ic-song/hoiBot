@@ -314,6 +314,7 @@ Status: VERIFIED
 - `/댓글`
 - `/댓글확인`
 - `/댓글삭제`
+- `/펫홈댓글파일생성`
 
 ## Files
 
@@ -350,6 +351,7 @@ Status: VERIFIED
 - `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
+- `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {} }` only when the file does not exist.
 - Duplicate comments by the same writer are allowed.
 
 ## Related Commands
