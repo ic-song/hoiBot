@@ -326,8 +326,6 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `initPetHomeCommentsData`
 - `getPetHomeCommentList`
-- `migratePetHomeCommentsFromHomeData`
-- `removeDuplicatePetHomeCommentsByWriter`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `getFurnitureExp`
@@ -344,7 +342,7 @@ Status: VERIFIED
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
 - `petHomeCommentsData.comments[target]`
-- Legacy `homeData[target].guestComments` is moved to `petHomeCommentsData.comments[target]` by `/데이터정리`, then deleted from `homeData`.
+- Legacy `homeData[target].guestComments` is removed by `/데이터정리`; it is not moved into `petHomeCommentsData`.
 
 ## Save Flow
 
@@ -352,6 +350,7 @@ Status: VERIFIED
 - `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
+- Duplicate comments by the same writer are allowed.
 
 ## Related Commands
 
@@ -4296,7 +4295,6 @@ Status: VERIFIED
 - `homeData[*].furnitureBag`
 - `homeData[*].placedFurniture`
 - `homeData[*].guestComments`
-- `petHomeCommentsData.comments[*]`
 - `data.member[*].bag`
 - `data.member[*].point`
 - `petData[*].petSkills`
@@ -4306,7 +4304,6 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
-- Saves pet home comment data through `saveJsonFile(petHomeCommentsData, petHomeCommentsFile)`
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
@@ -4314,7 +4311,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Moves legacy `homeData[*].guestComments` into `petHomeCommentsData.comments[*]`, then deletes `guestComments` from `homeData`.
+- Deletes legacy `homeData[*].guestComments` from `homeData` only; `/데이터정리` does not move those comments into `petHomeCommentsData`.
 - Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Castle battle `history` cleanup is no longer performed by this command.
 

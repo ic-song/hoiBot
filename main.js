@@ -19817,13 +19817,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					addPoint(data, sender, -cost);
 					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
 					var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
-					removeDuplicatePetHomeCommentsByWriter(petHomeCommentList);
-					//  동일 작성자 댓글 전부 제거(중복 방지)
-					for (var i = petHomeCommentList.length - 1; i >= 0; i--) {
-						if (petHomeCommentList[i].from === sender) {
-							petHomeCommentList.splice(i, 1);
-						}
-					}
 					// 최신 댓글 추가
 					petHomeCommentList.push({
 						from: sender,
@@ -19845,7 +19838,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						comment +
 						'"\n\n🅟' +
 						numberWithCommas(cost) +
-						" 차감\n(기존 동일 작성자 댓글은 교체됩니다.)"
+						" 차감"
 					);
 					return;
 				}
@@ -25245,11 +25238,9 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					var homeData = loadJsonFile(homeDataFile);
-					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
 
 					var totalDisplayRemoved = 0;
 					var totalNullRemoved = 0;
-					var totalGuestCommentsMoved = 0;
 					var totalGuestCommentsDeleted = 0;
 					var userLogs = [];
 					var guestCommentUserLogs = [];
@@ -25298,16 +25289,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 
 						if (homeData[user].guestComments instanceof Array) {
-							var oldGuestComments = homeData[user].guestComments;
-							var commentListBefore = getPetHomeCommentList(petHomeCommentsData, user).length;
-							var migrateResult = migratePetHomeCommentsFromHomeData(homeData, petHomeCommentsData, user);
-							petHomeCommentsData = migrateResult.commentsData;
-							var commentListAfter = getPetHomeCommentList(petHomeCommentsData, user).length;
-							var movedCount = commentListAfter - commentListBefore;
-							if (movedCount < 0) movedCount = 0;
-							totalGuestCommentsMoved += movedCount;
-							totalGuestCommentsDeleted += oldGuestComments.length;
-							guestCommentUserLogs.push(user + " : 이동 " + numberWithCommas(movedCount) + "개 / 기존 삭제 " + numberWithCommas(oldGuestComments.length) + "개");
+							var oldGuestCommentCount = homeData[user].guestComments.length;
+							delete homeData[user].guestComments;
+							totalGuestCommentsDeleted += oldGuestCommentCount;
+							guestCommentUserLogs.push(user + " : 기존 댓글 삭제 " + numberWithCommas(oldGuestCommentCount) + "개");
 						}
 					}
 
@@ -25420,7 +25405,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					saveJsonFile(homeData, homeDataFile);
-					saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
 					saveJsonFile(data, filePath);
 					saveJsonFile(petData, memberPetPath);
 					saveJsonFile(petSkillData, petSkillDataPath);
@@ -25438,14 +25422,13 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						out += "\n펫홈 정리할 데이터 없음\n";
 					}
 
-					out += "\n\n[2] 펫홈 댓글 JSON 분리\n";
-					out += "댓글 이동 : " + numberWithCommas(totalGuestCommentsMoved) + "개\n";
+					out += "\n\n[2] 기존 펫홈 댓글 제거\n";
 					out += "기존 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
 
 					if (guestCommentUserLogs.length > 0) {
-						out += "\n[댓글 분리 유저]\n" + guestCommentUserLogs.join("\n");
+						out += "\n[기존 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
 					} else {
-						out += "\n분리할 기존 댓글 없음\n";
+						out += "\n제거할 기존 댓글 없음\n";
 					}
 
 					out += "\n\n[3] 아이템 명칭 변경\n";
@@ -34927,83 +34910,11 @@ function getPetHomeCommentList(commentsData, user) {
 	return commentsData.comments[user];
 }
 
-// 펫홈 댓글 목록에서 같은 작성자의 오래된 댓글을 제거하는 함수
-function removeDuplicatePetHomeCommentsByWriter(comments) {
-	if (!(comments instanceof Array)) return 0;
-	var latestIndexByWriter = {};
-	var removeMap = {};
-	for (var i = 0; i < comments.length; i++) {
-		var comment = comments[i];
-		if (!comment || !comment.from) continue;
-		var writer = String(comment.from);
-		if (latestIndexByWriter[writer] !== undefined) {
-			var prevIndex = latestIndexByWriter[writer];
-			var prevTime = Number(comments[prevIndex] && comments[prevIndex].time) || 0;
-			var currentTime = Number(comment.time) || 0;
-			if (currentTime > 0 && prevTime > 0 && currentTime < prevTime) {
-				removeMap[i] = true;
-			} else {
-				removeMap[prevIndex] = true;
-				latestIndexByWriter[writer] = i;
-			}
-		} else {
-			latestIndexByWriter[writer] = i;
-		}
-	}
-	var removed = 0;
-	for (var j = comments.length - 1; j >= 0; j--) {
-		if (removeMap[j]) {
-			comments.splice(j, 1);
-			removed++;
-		}
-	}
-	return removed;
-}
-
 // 펫홈 댓글을 최대 보관 개수에 맞춰 정리하는 함수
 function trimPetHomeComments(comments) {
 	while (comments.length > 50) {
 		comments.shift();
 	}
-}
-
-// 기존 펫홈 데이터 안의 댓글을 새 댓글 저장소로 옮기는 함수
-function migratePetHomeCommentsFromHomeData(homeData, commentsData, user) {
-	var result = {
-		commentsData: initPetHomeCommentsData(commentsData),
-		homeChanged: false,
-		commentsChanged: false
-	};
-	if (!homeData || !homeData[user] || !homeData[user].guestComments) return result;
-
-	var oldComments = homeData[user].guestComments;
-	var comments = getPetHomeCommentList(result.commentsData, user);
-	if (oldComments instanceof Array) {
-		for (var i = 0; i < oldComments.length; i++) {
-			var oldComment = oldComments[i];
-			if (!oldComment || !oldComment.from || !oldComment.text) continue;
-			var exists = false;
-			for (var j = 0; j < comments.length; j++) {
-				if (comments[j] && comments[j].from === oldComment.from && comments[j].text === oldComment.text) {
-					exists = true;
-					break;
-				}
-			}
-			if (!exists) {
-				comments.push({
-					from: oldComment.from,
-					text: oldComment.text,
-					time: oldComment.time || oldComment.createdAt || null
-				});
-				result.commentsChanged = true;
-			}
-		}
-		if (removeDuplicatePetHomeCommentsByWriter(comments) > 0) result.commentsChanged = true;
-		trimPetHomeComments(comments);
-	}
-	delete homeData[user].guestComments;
-	result.homeChanged = true;
-	return result;
 }
 
 // 펫홈 댓글 확인 메시지를 생성하는 함수
