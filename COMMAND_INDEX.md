@@ -1572,14 +1572,11 @@ Status: VERIFIED
 - `buildSupportPassListMessage`
 - `getSupportPassConfigs`
 - `isSupportPassActive`
+- `getActiveSupportPassUsers`
 
 ## Data Usage
 - `data.member[user].pass`
 - `data.member[user].bag["자동탐험권🌄"]`
-- `data.allowedUsers6`
-- `data.allowedUsersHoipass`
-- `data.allowedUsers2`
-- `data.allowedUsersDiamondPass`
 
 ## Save Flow
 - `/패스목록` is read-only
@@ -1590,11 +1587,13 @@ Status: VERIFIED
 - Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply
 
 ## Related Commands
+- `/원데이패스추가, [아이디] [날짜|영구권]`
 - `/초보패스추가, [아이디] [날짜|영구권]`
 - `/호이패스추가, [아이디] [날짜|영구권]`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
+- Standalone legacy pass-list commands were removed; use `/패스목록`.
 
 ---
 
@@ -4130,7 +4129,7 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.allowedUsersDiamondPass`
+- `data.member[*].pass.diamond`
 - `data.member[*].bag["다이아상자💎(/다이아상자오픈)"]`
 
 ## Save Flow
@@ -4142,11 +4141,10 @@ Status: VERIFIED
 - `/다이아패스추가, 아이디`
 - `/다이아패스삭제, 아이디`
 - `/다이아패스구독`
-- `/다이아패스명단`
 
 ## AI Notes
 
-- `/다이아패스구독` gives each listed member `다이아상자💎(/다이아상자오픈)` 10개.
+- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `다이아상자💎(/다이아상자오픈)` 10개.
 
 ---
 
@@ -4299,6 +4297,11 @@ Status: VERIFIED
 - `homeData[*].guestComments`
 - `data.member[*].bag`
 - `data.member[*].point`
+- `data.allowedUsers2`
+- `data.allowedUsers4`
+- `data.allowedUsers6`
+- `data.allowedUsersHoipass`
+- `data.allowedUsersDiamondPass`
 - `petData[*].petSkills`
 - `petData[*].petchar`
 - `petSkillData[*]`
@@ -4315,6 +4318,7 @@ Status: VERIFIED
 - Admin/Master-only maintenance command.
 - Deletes legacy `homeData[*].guestComments` from `homeData` only; `/데이터정리` does not move those comments into `petHomeCommentsData`.
 - Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Step 6 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.208"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.209"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4201,21 +4201,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					replier.reply(buildHoiBotChangeLogMessage(hoiBotChangeLogData));
 					return;
 				}
-				if (!data.allowedUsers2) {
-					data.allowedUsers2 = ["호이 남"];
-				}
-				if (!data.allowedUsers4) {
-					data.allowedUsers4 = ["호이 남"];
-				}
-				if (!data.allowedUsers6) {
-					data.allowedUsers6 = ["호이 남"];
-				}
-				if (!data.allowedUsersHoipass) {
-					data.allowedUsersHoipass = ["호이 남"];
-				}
-				if (!data.allowedUsersDiamondPass) {
-					data.allowedUsersDiamondPass = ["호이 남"];
-				}
 				if (msg === "/리셋" && (sender == "오픈채팅봇" || sender == "호이 남")) {
 					saveJsonFile(
 						{
@@ -4828,46 +4813,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					} else {
 						replier.reply("올바른 명령어 형식을 사용해주세요. 예: /상점삭제 [물건번호]");
-					}
-				}
-				if (msg === "/공헌패스명단" && isMaster(sender)) {
-					if (data.allowedUsers2.length > 0) {
-						let userList = data.allowedUsers2.join(", ");
-						replier.reply("현재 후원 패키지 목록에 있는 사용자들: " + userList);
-					} else {
-						replier.reply("후원 패키지 목록이 비어 있습니다.");
-					}
-				}
-				if (msg === "/원데이패스명단" && (isMaster(sender) || isAdmin(sender))) {
-					if (data.allowedUsers4.length > 0) {
-						let userList = data.allowedUsers4.join(", ");
-						replier.reply("현재 주사위 패키지 목록에 있는 사용자들: " + userList);
-					} else {
-						replier.reply("주사위 패키지 목록이 비어 있습니다.");
-					}
-				}
-				if (msg === "/초보패스명단" && (isMaster(sender) || isAdmin(sender))) {
-					if (data.allowedUsers6.length > 0) {
-						let userList = data.allowedUsers6.join(", ");
-						replier.reply("초보 패스 목록에 있는 사용자들: " + userList);
-					} else {
-						replier.reply("초보 패스 목록이 비어 있습니다.");
-					}
-				}
-				if (msg === "/호이패스명단" && (isMaster(sender) || isAdmin(sender))) {
-					if (data.allowedUsersHoipass.length > 0) {
-						let userList = data.allowedUsersHoipass.join(", ");
-						replier.reply("현재 호이 패스 목록에 있는 사용자들: " + userList);
-					} else {
-						replier.reply("호이 패스 목록이 비어 있습니다.");
-					}
-				}
-				if (msg === "/다이아패스명단" && (isMaster(sender) || isAdmin(sender))) {
-					if (data.allowedUsersDiamondPass.length > 0) {
-						let userList = data.allowedUsersDiamondPass.join(", ");
-						replier.reply("현재 다이아 패스 목록에 있는 사용자들: " + userList);
-					} else {
-						replier.reply("다이아 패스 목록이 비어 있습니다.");
 					}
 				}
 				if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
@@ -5660,11 +5605,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 
-				if (sender == "호이 남" && (msg.startsWith("/원데이패스추가,") || msg.startsWith("/원데이패스삭제,"))) {
-					let result = processUserIDCommand(msg, data);
-					replier.reply(result);
-				}
-				if (sender == "호이 남" && (/^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
+				if (sender == "호이 남" && (/^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
 					let result = processUserIDCommand(msg, data);
 					if (String(result || "").indexOf("❌") !== 0 && String(result || "").indexOf("알 수 없는 명령어") !== 0) {
 						saveJsonFile(data, filePath);
@@ -5677,8 +5618,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg === "/다이아패스구독") {
 					if (!castleSiegeFlag) {
 						if (isMaster(sender) || sender === "오픈채팅봇") {
-							for (var diamondPassIndex = 0; diamondPassIndex < data.allowedUsersDiamondPass.length; diamondPassIndex++) {
-								var diamondPassUser = data.allowedUsersDiamondPass[diamondPassIndex];
+							var diamondPassUsers = getActiveSupportPassUsers(data, "diamond");
+							for (var diamondPassIndex = 0; diamondPassIndex < diamondPassUsers.length; diamondPassIndex++) {
+								var diamondPassUser = diamondPassUsers[diamondPassIndex];
 								if (data.member[diamondPassUser]) {
 									addItem(data, diamondPassUser, GLOBAL_CONFIG.items.diamondBoxName, 10);
 								}
@@ -5767,7 +5709,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 							];
 							let responseMessage = "호이 패스 패키지가 후원 지급 완료되었습니다.";
-							data.allowedUsersHoipass.forEach((username) => {
+							getActiveSupportPassUsers(data, "hoi").forEach((username) => {
 								if (data.member[username]) {
 									itemsToAddHoipass.forEach((item) => {
 										if (data.member[username].bag[item.name]) {
@@ -5858,7 +5800,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 							];
 							let responseMessage = "초보패스 후원 지급 완료되었습니다.";
-							data.allowedUsers6.forEach((username) => {
+							getActiveSupportPassUsers(data, "newbie").forEach((username) => {
 								if (data.member[username]) {
 									itemsToAdd6.forEach((item) => {
 										if (data.member[username].bag[item.name]) {
@@ -5889,7 +5831,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 							];
 							let responseMessage = "공헌훈장 지급 완료되었습니다.";
-							data.allowedUsers2.forEach((username) => {
+							getActiveSupportPassUsers(data, "contribution").forEach((username) => {
 								if (data.member[username]) {
 									itemsToAdd7.forEach((item) => {
 										if (data.member[username].bag[item.name]) {
@@ -6113,7 +6055,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							}
 						];
 						let responseMessage = "원데이 패키지가 후원 지급 완료되었습니다.";
-						data.allowedUsers4.forEach((username) => {
+						getActiveSupportPassUsers(data, "oneday").forEach((username) => {
 							if (data.member[username]) {
 								// 사용자가 존재하는지 확인
 								itemsToAdd4.forEach((item) => {
@@ -25407,6 +25349,17 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 					}
 
+					var legacyPassListKeys = ["allowedUsers2", "allowedUsers4", "allowedUsers6", "allowedUsersHoipass", "allowedUsersDiamondPass"];
+					var legacyPassRemovedLogs = [];
+					for (var legacyPassIndex = 0; legacyPassIndex < legacyPassListKeys.length; legacyPassIndex++) {
+						var legacyPassKey = legacyPassListKeys[legacyPassIndex];
+						if (data[legacyPassKey] !== undefined) {
+							var legacyPassCount = data[legacyPassKey] instanceof Array ? data[legacyPassKey].length : 0;
+							delete data[legacyPassKey];
+							legacyPassRemovedLogs.push(legacyPassKey + " : " + numberWithCommas(legacyPassCount) + "명");
+						}
+					}
+
 					saveJsonFile(homeData, homeDataFile);
 					saveJsonFile(data, filePath);
 					saveJsonFile(petData, memberPetPath);
@@ -25462,6 +25415,13 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						out += "\n[포인트 정리 유저]\n" + pointFloorUserLogs.join("\n");
 					} else {
 						out += "\n소수점 포인트 없음";
+					}
+
+					out += "\n\n[6] 레거시 패스 명단 데이터 제거\n";
+					if (legacyPassRemovedLogs.length > 0) {
+						out += legacyPassRemovedLogs.join("\n");
+					} else {
+						out += "제거할 레거시 패스 명단 없음";
 					}
 
 					replier.reply(out);
@@ -29159,10 +29119,11 @@ function useLetterInBag(data, memberName) {
 // 후원패스 설정 목록 반환 함수
 function getSupportPassConfigs() {
 	return [
-		{ key: "newbie", label: "초보패스🐥", arrayName: "allowedUsers6", commandNames: ["초보", "초보패스"] },
-		{ key: "hoi", label: "호이패스🐶", arrayName: "allowedUsersHoipass", commandNames: ["호이패스"] },
-		{ key: "contribution", label: "길드공헌패스🎖️", arrayName: "allowedUsers2", commandNames: ["공헌패스"] },
-		{ key: "diamond", label: "다이아패스💎", arrayName: "allowedUsersDiamondPass", commandNames: ["다이아패스"] }
+		{ key: "oneday", label: "원데이패스🎲", commandNames: ["원데이패스"] },
+		{ key: "newbie", label: "초보패스🐥", commandNames: ["초보", "초보패스"] },
+		{ key: "hoi", label: "호이패스🐶", commandNames: ["호이패스"] },
+		{ key: "contribution", label: "길드공헌패스🎖️", commandNames: ["공헌패스"] },
+		{ key: "diamond", label: "다이아패스💎", commandNames: ["다이아패스"] }
 	];
 }
 
@@ -29213,7 +29174,7 @@ function isSupportPassActive(data, user, passKey) {
 	if (!pass || pass.enabled !== true) {
 		var configs = getSupportPassConfigs();
 		for (var i = 0; i < configs.length; i++) {
-			if (configs[i].key === passKey) {
+			if (configs[i].key === passKey && configs[i].arrayName) {
 				var legacyArr = data[configs[i].arrayName];
 				return legacyArr instanceof Array && legacyArr.indexOf(user) !== -1;
 			}
@@ -29226,11 +29187,21 @@ function isSupportPassActive(data, user, passKey) {
 	return expireValue >= getTodaySupportPassDateValue();
 }
 
+// 현재 사용 가능한 후원패스 유저 목록을 반환하는 함수
+function getActiveSupportPassUsers(data, passKey) {
+	var users = [];
+	if (!data || !data.member) return users;
+	for (var user in data.member) {
+		if (isSupportPassActive(data, user, passKey)) users.push(user);
+	}
+	return users;
+}
+
 // 후원패스 표시 문자열을 만드는 함수
 function formatSupportPassStatus(data, user, config) {
 	if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중[❌]";
 	var pass = data.member[user].pass && data.member[user].pass[config.key] ? data.member[user].pass[config.key] : null;
-	if (!pass) return config.label + " 영구권 사용중[✅]";
+	if (!pass) return config.label + " 미사용중[❌]";
 	if (pass.permanent === true) return config.label + " 영구권 사용중[✅]";
 	return config.label + " " + pass.endDate + " 종료예정[✅]";
 }
@@ -29248,7 +29219,7 @@ function buildUserSupportPassLines(data, user) {
 // 전체 후원패스 목록 메시지를 만드는 함수
 function buildSupportPassListMessage(data, petData, guildData) {
 	var configs = getSupportPassConfigs();
-	var lines = ["호월패스 전체목록 안내:", "[초보패스, 호이패스, 길드공헌패스, 다이아패스] / " + allsee, ""];
+	var lines = ["호월패스 전체목록 안내:", "[원데이패스, 초보패스, 호이패스, 길드공헌패스, 다이아패스] / " + allsee, ""];
 	for (var i = 0; i < configs.length; i++) {
 		var config = configs[i];
 		var activeUsers = [];
@@ -29267,8 +29238,8 @@ function buildSupportPassListMessage(data, petData, guildData) {
 			lines.push("미사용중[❌]");
 		} else {
 			for (var j = 0; j < activeUsers.length; j++) {
-				var pass = data.member[activeUsers[j]].pass && data.member[activeUsers[j]].pass[config.key] ? data.member[activeUsers[j]].pass[config.key] : { permanent: true };
-				var endText = pass.permanent ? "영구권 사용중[✅]" : pass.endDate + " 까지";
+				var pass = data.member[activeUsers[j]].pass && data.member[activeUsers[j]].pass[config.key] ? data.member[activeUsers[j]].pass[config.key] : null;
+				var endText = !pass ? "미사용중[❌]" : (pass.permanent ? "영구권 사용중[✅]" : pass.endDate + " 까지");
 				lines.push("[" + checkRank(data, petData, guildData, activeUsers[j]) + "] " + endText);
 			}
 		}
@@ -29280,7 +29251,7 @@ function buildSupportPassListMessage(data, petData, guildData) {
 
 // 후원패스 명령어의 대상과 옵션을 분석하는 함수
 function parseSupportPassCommandMeta(msg) {
-	var passMatch = String(msg || "").match(/^\/(공헌패스|초보패스|초보|호이패스|다이아패스)(추가|삭제),\s*([^]+)$/);
+	var passMatch = String(msg || "").match(/^\/(원데이패스|공헌패스|초보패스|초보|호이패스|다이아패스)(추가|삭제),\s*([^]+)$/);
 	if (!passMatch) return null;
 	var passConfig = getSupportPassConfigByCommandName(passMatch[1]);
 	if (!passConfig) return null;
@@ -29314,83 +29285,54 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
 }
 
 function processUserIDCommand(msg, data) {
-	let returnMsg = null;
-	let dataArr, pattern;
-	if (msg.startsWith("/원데이패스")) {
-		dataArr = data.allowedUsers4;
-		pattern = /^\/원데이패스(추가|삭제),\s*(.+)$/;
-	} else {
-		var passMeta = parseSupportPassCommandMeta(msg);
-		if (passMeta) {
-			var passConfig = passMeta.config;
-			if (!passConfig) return "알 수 없는 명령어입니다.";
-			var action = passMeta.action;
-			var option = passMeta.option;
-			var userIDText = passMeta.user;
-			var legacyDataArr = data[passConfig.arrayName];
-			if (!legacyDataArr) {
-				legacyDataArr = [];
-				data[passConfig.arrayName] = legacyDataArr;
+	var passMeta = parseSupportPassCommandMeta(msg);
+	if (!passMeta) return "알 수 없는 명령어입니다.";
+
+	var passConfig = passMeta.config;
+	if (!passConfig) return "알 수 없는 명령어입니다.";
+	var action = passMeta.action;
+	var option = passMeta.option;
+	var userIDText = passMeta.user;
+	if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
+
+	if (action === "추가") {
+		if (!option) option = "영구권";
+		if (option !== "영구권") {
+			var expireValue = getSupportPassDateValue(option);
+			if (expireValue !== null && expireValue < getTodaySupportPassDateValue()) {
+				return "❌ 지난 날짜로 패스를 추가할 수 없습니다.\n오늘 이후 날짜를 입력해주세요.\n예) /호이패스추가, " + userIDText + " 26.06.21";
 			}
-			if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
-			if (action === "추가") {
-				if (!option) option = "영구권";
-				if (option !== "영구권") {
-					var expireValue = getSupportPassDateValue(option);
-					if (expireValue !== null && expireValue < getTodaySupportPassDateValue()) {
-						return "❌ 지난 날짜로 패스를 추가할 수 없습니다.\n오늘 이후 날짜를 입력해주세요.\n예) /호이패스추가, " + userIDText + " 26.06.21";
-					}
-				}
-				if (legacyDataArr.indexOf(userIDText) === -1) legacyDataArr.push(userIDText);
-				var passStore = ensureSupportPassStore(data, userIDText);
-				var beforeActive = passStore[passConfig.key] && passStore[passConfig.key].enabled === true;
-				passStore[passConfig.key] = {
-					enabled: true,
-					endDate: option === "영구권" ? "" : option,
-					permanent: option === "영구권"
-				};
-				if (passConfig.key === "newbie" || passConfig.key === "hoi") addItem(data, userIDText, "자동탐험권🌄", 1);
-				var passEndText = option === "영구권" ? "영구권" : option + "까지";
-				return (beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자가 목록에 추가되었습니다.") + "\n패스 기간: " + passEndText + "\n자동탐험권🌄 1개가 지급되었습니다.";
-			}
-			var passUserIndex = legacyDataArr.indexOf(userIDText);
-			if (passUserIndex > -1) legacyDataArr.splice(passUserIndex, 1);
-			var userPassStore = ensureSupportPassStore(data, userIDText);
-			if (!userPassStore[passConfig.key] || userPassStore[passConfig.key].enabled !== true) {
-				if (passUserIndex === -1) return "❌ 해당 유저는 해당 패스를 보유하고 있지 않습니다.";
-				userPassStore[passConfig.key] = { enabled: false, endDate: "", permanent: false };
-			} else {
-				userPassStore[passConfig.key].enabled = false;
-			}
-			if (passConfig.key === "newbie" || passConfig.key === "hoi") removeAllItem(data, userIDText, "자동탐험권🌄");
-			return userIDText + " 사용자가 목록에서 삭제되었습니다.\n자동탐험권🌄을 모두 회수했습니다.";
 		}
-		return "알 수 없는 명령어입니다.";
-	}
-	var match = msg.match(pattern);
-	if (!match) {
-		returnMsg = "명령어 형식이 잘못되었습니다. 올바른 형식: " + msg.split(",")[0] + " 추가 또는 삭제, 아이디 (예: 호이 남)";
-		return;
-	}
-	const actionType = match[1]; // 추가 또는 삭제
-	const userID = match[2].trim();
-	if (actionType === "추가") {
-		if (!dataArr.includes(userID)) {
-			dataArr.push(userID);
-			returnMsg = userID + " 사용자가 목록에 추가되었습니다.";
-		} else {
-			returnMsg = userID + "는 이미 목록에 있습니다.";
+		var passStore = ensureSupportPassStore(data, userIDText);
+		var beforeActive = passStore[passConfig.key] && passStore[passConfig.key].enabled === true;
+		passStore[passConfig.key] = {
+			enabled: true,
+			endDate: option === "영구권" ? "" : option,
+			permanent: option === "영구권"
+		};
+		var passEndText = option === "영구권" ? "영구권" : option + "까지";
+		var addLines = [
+			beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자에게 패스가 추가되었습니다.",
+			"패스 기간: " + passEndText
+		];
+		if (passConfig.key === "newbie" || passConfig.key === "hoi") {
+			addItem(data, userIDText, "자동탐험권🌄", 1);
+			addLines.push("자동탐험권🌄 1개가 지급되었습니다.");
 		}
-	} else if (actionType === "삭제") {
-		const legacyUserIndex = dataArr.indexOf(userID);
-		if (legacyUserIndex > -1) {
-			dataArr.splice(legacyUserIndex, 1);
-			returnMsg = userID + " 사용자가 목록에서 삭제되었습니다.";
-		} else {
-			returnMsg = userID + " 사용자를 찾을 수 없습니다.";
-		}
+		return addLines.join("\n");
 	}
-	return returnMsg;
+
+	var userPassStore = ensureSupportPassStore(data, userIDText);
+	if (!userPassStore[passConfig.key] || userPassStore[passConfig.key].enabled !== true) {
+		return "❌ 해당 유저는 해당 패스를 보유하고 있지 않습니다.";
+	}
+	userPassStore[passConfig.key].enabled = false;
+	var deleteLines = [userIDText + " 사용자의 패스가 삭제되었습니다."];
+	if (passConfig.key === "newbie" || passConfig.key === "hoi") {
+		removeAllItem(data, userIDText, "자동탐험권🌄");
+		deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
+	}
+	return deleteLines.join("\n");
 }
 //////////////////////////////////////////////////////////////////////
 // 이 아래는 info.js와 같은 함수를 사용하므로 수정 시 싱크맞춰야합니다.//
