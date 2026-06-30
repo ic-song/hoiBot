@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.207"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.208"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1256,6 +1256,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 
 			replier.reply(out.trim());
+			return;
+		}
+
+		if (msg === "/펫홈댓글파일생성" && (isAdmin(sender) || isMaster(sender))) {
+			var activePetHomeCommentsFile = resolveActiveDataPath(petHomeCommentsFile);
+			var petHomeCommentFileObj = new java.io.File(activePetHomeCommentsFile);
+			if (petHomeCommentFileObj.exists()) {
+				replier.reply("✅ 펫홈 댓글 파일이 이미 있습니다.\n" + activePetHomeCommentsFile);
+				return;
+			}
+
+			saveJsonFile({ comments: {} }, petHomeCommentsFile);
+			replier.reply("✅ 펫홈 댓글 파일 생성 완료\n" + activePetHomeCommentsFile);
 			return;
 		}
 
