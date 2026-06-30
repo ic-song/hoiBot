@@ -319,10 +319,14 @@ Status: VERIFIED
 
 - `main.js`
 - `data/petSweetHomeData.json`
+- `data/petHomeComments.json`
 
 ## Related Helpers
 
 - `initSweetHomeUser`
+- `initPetHomeCommentsData`
+- `getPetHomeCommentList`
+- `migratePetHomeCommentsFromHomeData`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `getFurnitureExp`
@@ -338,14 +342,15 @@ Status: VERIFIED
 - `homeData[target].visitCnt`
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
-- `homeData[target].guestComments`
+- `petHomeCommentsData.comments[target]`
+- Legacy `homeData[target].guestComments` is moved to `petHomeCommentsData.comments[target]` by `/데이터정리`, then deleted from `homeData`.
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile`, replies home body first, then replies comments from `homeData[target].guestComments`. Saves `homeDataFile` only for visit count updates.
-- `/댓글`: mutates `data.member[sender].point` and `homeData[target].guestComments`, then saves `filePath` and `homeDataFile`.
-- `/댓글확인`: reads `homeData[target].guestComments` and replies the comment-only message.
-- `/댓글삭제`: mutates `homeData[sender].guestComments`, then saves `homeDataFile`.
+- `/펫홈`: loads `homeDataFile`, replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
+- `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
+- `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 
 ## Related Commands
 
@@ -4288,6 +4293,8 @@ Status: VERIFIED
 
 - `homeData[*].furnitureBag`
 - `homeData[*].placedFurniture`
+- `homeData[*].guestComments`
+- `petHomeCommentsData.comments[*]`
 - `data.member[*].bag`
 - `data.member[*].point`
 - `petData[*].petSkills`
@@ -4297,6 +4304,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
+- Saves pet home comment data through `saveJsonFile(petHomeCommentsData, petHomeCommentsFile)`
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
@@ -4304,7 +4312,8 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Moves legacy `homeData[*].guestComments` into `petHomeCommentsData.comments[*]`, then deletes `guestComments` from `homeData`.
+- Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---

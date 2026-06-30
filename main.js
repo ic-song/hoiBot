@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.203"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.204"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -614,6 +614,7 @@ const miniPetPath = "/sdcard/호이랜드/miniPetData.json"; //미니펫
 const memberBagCheckPath = "/sdcard/호이랜드/memberBagCheck/memberBagCheck.json"; //미니펫 전투
 const homeInfoFile = "/sdcard/호이랜드/petSweetHomeInfo.json"; // 펫스윗홈 유저
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
+const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
@@ -19734,7 +19735,9 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					lineFurniture += "────────────────\n";
 					replier.reply(header + lineHouseInfo + lineLike + lineVisit + lineComment + lineComentend + lineFurniture);
-					var petHomeCommentList = userHome.guestComments || [];
+
+					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+					var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
 					replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList));
 					return;
 				}
@@ -19749,8 +19752,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						replier.reply("삭제할 번호는 숫자로 입력해주세요.");
 						return;
 					}
-					let homeData = loadJsonFile(homeDataFile);
-					var petHomeCommentList = (homeData[sender] && homeData[sender].guestComments) ? homeData[sender].guestComments : [];
+					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+					var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, sender);
 					if (petHomeCommentList.length === 0) {
 						replier.reply("삭제할 댓글이 없습니다.");
 						return;
@@ -19761,12 +19764,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						return;
 					}
 					let removed = petHomeCommentList.splice(indexToDelete, 1)[0];
-					saveJsonFile(homeData, homeDataFile);
+					saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
 					replier.reply("🗑️ 댓글이 삭제되었습니다.\n[" + checkRank(data, petData, guildData, removed.from) + "]: " + removed.text);
 					return;
 				}
 				if (msg === "/댓글확인" || /^\/댓글확인\s+.+$/.test(msg)) {
-					let homeData = loadJsonFile(homeDataFile);
 					let parts = msg.trim().split(/\s+/);
 					let targetName = sender;
 					if (parts.length > 1) {
@@ -19776,15 +19778,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "]님 대상 유저 [" + targetName + "]님이 존재하지 않습니다.");
 						return;
 					}
-					var targetHome = homeData[targetName] || {};
-					var petHomeCommentList = targetHome.guestComments || [];
+					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+					var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
 					replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList));
 					return;
 				}
 				if (msg === "/댓글" || /^\/댓글\s+.+$/.test(msg)) {
 					let senderNick = checkRank(data, petData, guildData, sender);
 					let cost = 10000000;
-					let homeData = loadJsonFile(homeDataFile);
 					let raw = msg.substring(3).trim();
 					if (!raw) {
 						replier.reply("방문 댓글💌\n🎙️ 최대 20자, 등록 시 🅟10,000,000 소모\n예) /댓글 호이 남 멋진 집이에요!🏡");
@@ -19814,10 +19815,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						return;
 					}
 					addPoint(data, sender, -cost);
-					// 홈 보장
-					homeData = initSweetHomeUser(homeData, targetName);
-					if (!homeData[targetName].guestComments) homeData[targetName].guestComments = [];
-					var petHomeCommentList = homeData[targetName].guestComments;
+					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+					var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
 					//  동일 작성자 댓글 전부 제거(중복 방지)
 					for (var i = petHomeCommentList.length - 1; i >= 0; i--) {
 						if (petHomeCommentList[i].from === sender) {
@@ -19833,7 +19832,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					// 최대 50개 유지 (오래된 순으로 삭제)
 					trimPetHomeComments(petHomeCommentList);
 					saveJsonFile(data, filePath);
-					saveJsonFile(homeData, homeDataFile);
+					saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
 					let targetNick = checkRank(data, petData, guildData, targetName);
 					replier.reply(
 						"💌 [" +
@@ -25245,10 +25244,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					var homeData = loadJsonFile(homeDataFile);
+					var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
 
 					var totalDisplayRemoved = 0;
 					var totalNullRemoved = 0;
+					var totalGuestCommentsMoved = 0;
+					var totalGuestCommentsDeleted = 0;
 					var userLogs = [];
+					var guestCommentUserLogs = [];
 
 					for (var user in homeData) {
 						if (!homeData[user]) continue;
@@ -25291,6 +25294,18 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							userLogs.push(user + " : display " + displayRemovedCount + "개 / null " + nullRemovedCount + "개");
 							totalDisplayRemoved += displayRemovedCount;
 							totalNullRemoved += nullRemovedCount;
+						}
+
+						if (homeData[user].guestComments instanceof Array) {
+							var oldGuestComments = homeData[user].guestComments;
+							var commentListBefore = getPetHomeCommentList(petHomeCommentsData, user).length;
+							var migrateResult = migratePetHomeCommentsFromHomeData(homeData, petHomeCommentsData, user);
+							petHomeCommentsData = migrateResult.commentsData;
+							var commentListAfter = getPetHomeCommentList(petHomeCommentsData, user).length;
+							var movedCount = commentListAfter - commentListBefore;
+							totalGuestCommentsMoved += movedCount;
+							totalGuestCommentsDeleted += oldGuestComments.length;
+							guestCommentUserLogs.push(user + " : 이동 " + numberWithCommas(movedCount) + "개 / 기존 삭제 " + numberWithCommas(oldGuestComments.length) + "개");
 						}
 					}
 
@@ -25403,6 +25418,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					saveJsonFile(homeData, homeDataFile);
+					saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
 					saveJsonFile(data, filePath);
 					saveJsonFile(petData, memberPetPath);
 					saveJsonFile(petSkillData, petSkillDataPath);
@@ -25420,7 +25436,17 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						out += "\n펫홈 정리할 데이터 없음\n";
 					}
 
-					out += "\n\n[2] 아이템 명칭 변경\n";
+					out += "\n\n[2] 펫홈 댓글 JSON 분리\n";
+					out += "댓글 이동 : " + numberWithCommas(totalGuestCommentsMoved) + "개\n";
+					out += "기존 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
+
+					if (guestCommentUserLogs.length > 0) {
+						out += "\n[댓글 분리 유저]\n" + guestCommentUserLogs.join("\n");
+					} else {
+						out += "\n분리할 기존 댓글 없음\n";
+					}
+
+					out += "\n\n[3] 아이템 명칭 변경\n";
 					out += "변경된 아이템 수량 : " + numberWithCommas(itemChangeCount) + "개\n";
 
 					if (itemUserLogs.length > 0) {
@@ -25429,7 +25455,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						out += "\n변경할 아이템 없음\n";
 					}
 
-					out += "\n\n[3] 펫스킬 데이터 이동\n";
+					out += "\n\n[4] 펫스킬 데이터 이동\n";
 					out += "이동된 펫스킬 수량 : " + numberWithCommas(petSkillMoveCount) + "개\n";
 					out += "삭제된 petData.petchar 유저 : " + numberWithCommas(petCharDeleteCount) + "명\n";
 					out += "petData.petSkills 삭제 유저 : " + numberWithCommas(petSkillDeleteCount) + "명\n";
@@ -25440,7 +25466,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						out += "\n이동할 펫스킬 데이터 없음\n";
 					}
 
-					out += "\n\n[4] 포인트 소수점 정리\n";
+					out += "\n\n[5] 포인트 소수점 정리\n";
 					out += "정리된 유저 : " + numberWithCommas(pointFloorUserCount) + "명\n";
 					out += "제거된 소수점 포인트 총합 : 🅟" + formatPointValue(pointFloorTotalAmount);
 
@@ -34885,11 +34911,63 @@ function isRegisteredHomeMember(data, user) {
 	return !!(data && data.member && data.member[user]);
 }
 
+// 펫홈 댓글 저장소 기본 구조를 보장하는 함수
+function initPetHomeCommentsData(commentsData) {
+	if (!commentsData || typeof commentsData !== "object") commentsData = {};
+	if (!commentsData.comments || typeof commentsData.comments !== "object") commentsData.comments = {};
+	return commentsData;
+}
+
+// 특정 유저의 펫홈 댓글 목록을 반환하는 함수
+function getPetHomeCommentList(commentsData, user) {
+	commentsData = initPetHomeCommentsData(commentsData);
+	if (!(commentsData.comments[user] instanceof Array)) commentsData.comments[user] = [];
+	return commentsData.comments[user];
+}
+
 // 펫홈 댓글을 최대 보관 개수에 맞춰 정리하는 함수
 function trimPetHomeComments(comments) {
 	while (comments.length > 50) {
 		comments.shift();
 	}
+}
+
+// 기존 펫홈 데이터 안의 댓글을 새 댓글 저장소로 옮기는 함수
+function migratePetHomeCommentsFromHomeData(homeData, commentsData, user) {
+	var result = {
+		commentsData: initPetHomeCommentsData(commentsData),
+		homeChanged: false,
+		commentsChanged: false
+	};
+	if (!homeData || !homeData[user] || !homeData[user].guestComments) return result;
+
+	var oldComments = homeData[user].guestComments;
+	var comments = getPetHomeCommentList(result.commentsData, user);
+	if (oldComments instanceof Array) {
+		for (var i = 0; i < oldComments.length; i++) {
+			var oldComment = oldComments[i];
+			if (!oldComment || !oldComment.from || !oldComment.text) continue;
+			var exists = false;
+			for (var j = 0; j < comments.length; j++) {
+				if (comments[j] && comments[j].from === oldComment.from && comments[j].text === oldComment.text) {
+					exists = true;
+					break;
+				}
+			}
+			if (!exists) {
+				comments.push({
+					from: oldComment.from,
+					text: oldComment.text,
+					time: oldComment.time || oldComment.createdAt || null
+				});
+				result.commentsChanged = true;
+			}
+		}
+		trimPetHomeComments(comments);
+	}
+	delete homeData[user].guestComments;
+	result.homeChanged = true;
+	return result;
 }
 
 // 펫홈 댓글 확인 메시지를 생성하는 함수
@@ -35232,7 +35310,6 @@ function addFurniture(homeData, targetName, name, exp, rate, grade, display) {
 		homeData[targetName] = {
 			furniture: [],
 			exp: 0,
-			guestComments: [],
 			likeCnt: 0,
 			comment: "",
 			floor: 1
@@ -35523,7 +35600,6 @@ function applyStarterHome(homeData, userName) {
 	// 기타 필드들 안전 초기화(없어도 되지만 스타터팩에서 깔끔하게)
 	u.likeCnt = u.likeCnt || 0;
 	u.visitCnt = u.visitCnt || 0;
-	u.guestComments = u.guestComments || [];
 
 	return homeData;
 }
