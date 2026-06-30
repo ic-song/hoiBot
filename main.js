@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.205"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.206"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1205,16 +1205,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (file.exists()) {
 				let fileContent = FileStream.read(activeFilePath, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
 				parseJsonContent(fileContent, activeFilePath);
-				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
-			}
-			return;
-		}
-		if (msg == "/펫홈글자수") {
-			let activeHomeDataFile = resolveActiveDataPath(homeDataFile);
-			let file = new java.io.File(activeHomeDataFile);
-			if (file.exists()) {
-				let fileContent = FileStream.read(activeHomeDataFile, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-				parseJsonContent(fileContent, activeHomeDataFile);
 				replier.reply("총 글자 수 : " + numberWithCommas(fileContent.length));
 			}
 			return;
@@ -34925,10 +34915,10 @@ function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comme
 		return out + "아직 등록된 댓글이 없습니다.";
 	}
 
-	var startIndex = comments.length - 4;
+	var startIndex = comments.length - 50;
 	if (startIndex < 0) startIndex = 0;
 	var visibleCount = comments.length - startIndex; // 최근 댓글 노출 개수
-	out += "━:･ﾟ☆━━최근 댓글 " + visibleCount + "개(최대 50개)✍️━:･ﾟ☆━" + allsee + "\n";
+	out += "━:･ﾟ☆━━최근 댓글 " + visibleCount + "개 표시 / 최대 50개 보관✍️━:･ﾟ☆━" + allsee + "\n";
 	for (var i = comments.length - 1; i >= startIndex; i--) {
 		var c = comments[i];
 		if (!c) continue;
