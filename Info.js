@@ -812,10 +812,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
 			replier.reply(resultMsg);
 		} else if (msg === "/반지순위") {
-			let rankData = generateRingRanking(petData, data.member);
-			let resultMsg = "💍 반지 강화순위 💍\n\n";
-			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
-			replier.reply(resultMsg);
+			replier.reply("반지순위는 펜던트 콘텐츠 전환으로 종료되었습니다.");
 		} else if (msg === "/종합순위" || msg === "ㅈㅈㅈ") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
@@ -1070,8 +1067,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (petInfo.elemental) {
 				resultMsg += "정령🔯: " + petInfo.elemental.name + "[" + petInfo.elemental.grade + "]" + "(+" + petInfo.elemental.upgrade + ")\n";
 			}
-			if (petInfo.ring) {
-				resultMsg += "반지💍: " + petInfo.ring.name + "[" + petInfo.ring.grade + "]" + "(+" + petInfo.ring.upgrade + ")\n";
+			if (petInfo.pendant) {
+				var pendantDurability = "";
+				if (petInfo.pendant.durability !== undefined && petInfo.pendant.maxDurability !== undefined) {
+					pendantDurability = "[⚒️" + petInfo.pendant.durability + "/" + petInfo.pendant.maxDurability + "]";
+				}
+				var pendantUpgrade = petInfo.pendant.upgrade !== undefined ? petInfo.pendant.upgrade : 0;
+				resultMsg += "펜던트💎: " + petInfo.pendant.name + "[" + petInfo.pendant.grade + "]" + pendantDurability + "(+" + pendantUpgrade + ")\n";
+			} else {
+				resultMsg += "펜던트💎: 현재 펜던트가 없습니다.\n";
 			}
 
 			// 미니펫/홈
@@ -2322,6 +2326,10 @@ function checkRank(data, petData, guildData, user) {
 function generateBagOutput(bagItems) {
 	var bagOutput = "";
 	var sortedItemList = [];
+	if (bagItems && typeof bagItems["반지 강화석💍"] !== "undefined") {
+		bagItems["펜던트 강화석📿"] = (parseInt(bagItems["펜던트 강화석📿"], 10) || 0) + (parseInt(bagItems["반지 강화석💍"], 10) || 0);
+		delete bagItems["반지 강화석💍"];
+	}
 
 	if (bagItems && Object.keys(bagItems).length > 0) {
 		bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
@@ -2452,7 +2460,7 @@ function generateBagOutput(bagItems) {
 			"정령강화확률UP🥀(95%)",
 			"정령강화확률UP🥀(100%)",
 
-			"반지 강화석💍",
+			"펜던트 강화석📿",
 			"반지강화확률UP💍(3%)",
 			"반지강화확률UP💍(5%)",
 			"반지강화확률UP💍(10%)",
