@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.216"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.217"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -22642,8 +22642,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				}
 				// 길드 자원 전체 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
 				if (msg === "/길드분배") {
-					replier.reply("⚠️ 길드분배는 길드창고 점검으로 잠시 중단되었습니다.\n점검 완료 후 다시 안내드릴게요.");
-					return;
 					var syncResult = syncMemberGuild(data, guildData);
 					if (!syncResult.success) {
 						replier.reply("❌ 길드 데이터 동기화 실패\n" + syncResult.message);
@@ -22713,12 +22711,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					var fundEach = Math.floor((g.warehouse.fund || 0) / memberCount);
 					var elementalEach = Math.floor((g.warehouse.elemental || 0) / memberCount);
-					var pendantEach = Math.floor((g.warehouse.pendant || 0) / memberCount);
 					var petEach = Math.floor((g.warehouse.pet || 0) / memberCount);
 					var miniPetEach = Math.floor((g.warehouse.miniPet || 0) / memberCount);
 					var diamondEach = Math.floor((g.warehouse.diamond || 0) / memberCount);
 
-					if (fundEach <= 0 && elementalEach <= 0 && pendantEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
+					if (fundEach <= 0 && elementalEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
 						replier.reply("❌ 분배 가능한 길드 자원이 부족합니다.");
 						return;
 					}
@@ -22740,10 +22737,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							addItem(data, memberName, "정령 강화석🥀", elementalEach);
 						}
 
-						if (pendantEach > 0) {
-							addItem(data, memberName, GLOBAL_CONFIG.items.pendantEnhanceStoneName, pendantEach);
-						}
-
 						if (petEach > 0) {
 							addItem(data, memberName, "펫 강화석⭐", petEach);
 						}
@@ -22760,7 +22753,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					// 길드 자원 차감 (N빵 몫만큼만 차감, 나머지는 유지)
 					g.warehouse.fund -= fundEach * memberCount;
 					g.warehouse.elemental -= elementalEach * memberCount;
-					g.warehouse.pendant -= pendantEach * memberCount;
 					g.warehouse.pet -= petEach * memberCount;
 					g.warehouse.miniPet -= miniPetEach * memberCount;
 					g.warehouse.diamond -= diamondEach * memberCount;
@@ -22780,7 +22772,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "1인당 분배 자원\n";
 					out += "🅟 " + numberWithCommas(fundEach) + "\n";
 					out += "🥀 " + numberWithCommas(elementalEach) + "\n";
-					out += "📿 " + numberWithCommas(pendantEach) + "\n";
 					out += "⭐️ " + numberWithCommas(petEach) + "\n";
 					out += "💫 " + numberWithCommas(miniPetEach) + "\n";
 					out += "💎 " + numberWithCommas(diamondEach) + "\n";
@@ -22788,7 +22779,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "분배 후 남은 길드자원\n";
 					out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
 					out += "🥀 " + numberWithCommas(Number(g.warehouse.elemental) || 0) + "\n";
-					out += "📿 " + numberWithCommas(Number(g.warehouse.pendant) || 0) + "\n";
 					out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
 					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0) + "\n";
 					out += "💎 " + numberWithCommas(Number(g.warehouse.diamond) || 0);

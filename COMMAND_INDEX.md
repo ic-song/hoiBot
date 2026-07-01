@@ -2164,7 +2164,7 @@ Status: VERIFIED
 # /길드분배
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28229`
+- `main.js:22644`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2180,10 +2180,10 @@ Status: VERIFIED
 - `data.member[user].diamond`
 - `currencyLogData.user[user].diamond`
 ## Save Flow
-- Temporarily blocked before mutation while guild warehouse distribution is under inspection.
-- Normal distribution path saves member data during sync and saves both member data and `guildData`.
-- Normal distribution path saves `currencyLogData` when distributed resources include 다이아.
-- The legacy `warehouse.ring` slot is preserved but not displayed as `펜던트 강화석📿`; new pendant warehouse quantities use `warehouse.pendant`.
+- Saves member data during sync and saves both member data and `guildData` after successful distribution.
+- Saves `currencyLogData` when distributed resources include 다이아.
+- The legacy `warehouse.ring` slot is preserved but not displayed or distributed as `펜던트 강화석📿`; new pendant warehouse quantities use `warehouse.pendant`.
+- `/길드분배` currently excludes `warehouse.pendant` from payout and deduction until pendant enhancement content is ready.
 ## Related Commands
 - `/길드창고패키지오픈`
 - `/길드정보`
