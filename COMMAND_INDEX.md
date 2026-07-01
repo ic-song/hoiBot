@@ -1763,6 +1763,7 @@ Status: VERIFIED
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
 - Check role gating when another user's skill bag is unexpectedly visible
+- `장인의 숨결` applies to `/펫강화` and `/정령강화` failure only, preserving the required enhancement stone at 7%; it does not apply to `/반지강화`.
 
 ---
 
