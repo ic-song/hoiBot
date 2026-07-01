@@ -766,7 +766,7 @@ Status: VERIFIED
 - `getIntimacyLvFromBag`
 - `getIntimacyUserRank`
 - `getUserIntimacyInfo`
-- Pendant equipment display is handled inline in `/펫정보`; legacy `ring` charm remains in total charm calculations but is no longer shown as equipment.
+- Pendant equipment display is handled inline in `/펫정보`; legacy `ring` data should be migrated through `/반지보상받기` and removed from active equipment data.
 
 ## Data Usage
 
@@ -3406,7 +3406,81 @@ Status: VERIFIED
 ## AI Notes
 
 - Command now replies that ring ranking has ended for the pendant transition.
-- Legacy ring enhancement charm remains included in total charm calculations; do not remove ring data when updating profile/ranking logic.
+- Legacy ring enhancement exp is converted to `반지매력보상🎁(/보상받기)` through `/반지보상받기`; do not re-enable ring ranking for migrated users.
+
+---
+
+# /반지보상받기
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:17924`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `calculateItemInfo`
+- `addItem`
+- `saveJsonFile`
+
+## Data Usage
+
+- `petData[sender].ring`
+- `petData[sender].ringRewardMigration`
+- `data.member[sender].bag`
+
+## Save Flow
+
+- Calculates legacy ring reward as `ring raidExp + ring castleExp`.
+- Adds `반지매력보상🎁(/보상받기)` to the member bag.
+- Deletes `petData[sender].ring` and records one-time migration metadata in `petData[sender].ringRewardMigration`.
+- Saves both member data and `petData`.
+
+## Related Commands
+
+- `/보상받기`
+- `/펫정보`
+- `/반지강화`
+
+---
+
+# /보상받기
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:17970`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `removeItem`
+- `saveJsonFile`
+
+## Data Usage
+
+- `data.member[sender].bag`
+- `petData[sender].petexp`
+
+## Save Flow
+
+- Consumes `반지매력보상🎁(/보상받기)` and increases `petData[sender].petexp` by the consumed count.
+- Uses 1 item by default when no count is provided.
+- Saves both member data and `petData`.
+
+## Related Commands
+
+- `/반지보상받기`
+- `/펫정보`
 
 ---
 

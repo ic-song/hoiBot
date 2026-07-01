@@ -2813,7 +2813,7 @@ function calculateItemInfoAll(memberName, data, petData) {
 		castleExp: 0
 	};
 	let elementalInfo = calculateItemInfo("elemental", memberName, data, petData);
-	let ringInfo = calculateItemInfo("ring", memberName, data, petData);
+	let ringInfo = petData[memberName] && petData[memberName].ring ? calculateItemInfo("ring", memberName, data, petData) : { battleExp: 0, raidExp: 0, castleExp: 0 };
 	let bagInfo = calculateItemInfo("bag", memberName, data, petData);
 	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + bagInfo.battleExp;
 	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + bagInfo.raidExp;

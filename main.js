@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.217"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.218"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -790,7 +790,8 @@ const GLOBAL_CONFIG = {
 		diamondBoxName: "다이아상자💎(/다이아상자오픈)",
 		diamondMineBoxName: "다이아광산박스💎(/다이아박스오픈)",
 		pendantEnhanceStoneName: "펜던트 강화석📿",
-		pendantRestoreStoneName: "펜던트 복원석🔷"
+		pendantRestoreStoneName: "펜던트 복원석🔷",
+		ringExpRewardItemName: "반지매력보상🎁(/보상받기)"
 	},
 	pointShop: { // 포인트 상점 설정
 		limits: {
@@ -17917,7 +17918,82 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					return;
 				}
 				if (msg === "/반지강화" || /^\/반지강화\s+\d+$/.test(msg)) {
-					replier.reply("반지강화는 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 종합 매력에 유지됩니다.");
+					replier.reply("반지강화는 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 /반지보상받기로 보상받을 수 있습니다.");
+					return;
+				}
+				if (msg === "/반지보상받기") {
+					if (!data.member[sender] || !petData[sender] || !petData[sender].petname) {
+						replier.reply("펫을 먼저 생성해주세요.");
+						return;
+					}
+					if (petData[sender].ringRewardMigration && petData[sender].ringRewardMigration.claimed === true) {
+						replier.reply("이미 반지 매력 보상을 받았습니다.");
+						return;
+					}
+					if (!petData[sender].ring) {
+						replier.reply("보상받을 반지 정보가 없습니다.");
+						return;
+					}
+
+					var ringRewardInfo = calculateItemInfo("ring", sender, data, petData);
+					var ringRewardCount = Math.floor((ringRewardInfo.raidExp || 0) + (ringRewardInfo.castleExp || 0));
+					if (ringRewardCount <= 0) {
+						replier.reply("반지 매력 보상으로 지급할 수량이 없습니다.");
+						return;
+					}
+
+					var oldRingInfo = {
+						name: petData[sender].ring.name || "",
+						grade: petData[sender].ring.grade || "",
+						upgrade: petData[sender].ring.upgrade || 0,
+						raidExp: ringRewardInfo.raidExp || 0,
+						castleExp: ringRewardInfo.castleExp || 0
+					};
+					addItem(data, sender, GLOBAL_CONFIG.items.ringExpRewardItemName, ringRewardCount);
+					delete petData[sender].ring;
+					petData[sender].ringRewardMigration = {
+						claimed: true,
+						claimedAt: new Date().toISOString(),
+						rewardItem: GLOBAL_CONFIG.items.ringExpRewardItemName,
+						rewardCount: ringRewardCount,
+						ring: oldRingInfo
+					};
+					saveJsonFile(data, filePath);
+					saveJsonFile(petData, memberPetPath);
+					replier.reply("✅ 반지 매력 보상 지급 완료!\n" +
+						"기존 반지: " + oldRingInfo.name + "[" + oldRingInfo.grade + "](+" + oldRingInfo.upgrade + ")\n" +
+						"지급: " + GLOBAL_CONFIG.items.ringExpRewardItemName + " x" + numberWithCommas(ringRewardCount) + "\n" +
+						"※ 보상 지급과 함께 기존 반지 데이터가 정리되었습니다.\n" +
+						"※ /보상받기 또는 /보상받기 숫자로 매력에 반영할 수 있어요.");
+					return;
+				}
+				if (msg === "/보상받기" || /^\/보상받기\s+\d+$/.test(msg)) {
+					if (!data.member[sender] || !petData[sender] || !petData[sender].petname) {
+						replier.reply("펫을 먼저 생성해주세요.");
+						return;
+					}
+					var ringRewardItemName = GLOBAL_CONFIG.items.ringExpRewardItemName;
+					var rewardHave = data.member[sender].bag && data.member[sender].bag[ringRewardItemName] ? data.member[sender].bag[ringRewardItemName] : 0;
+					if (rewardHave <= 0) {
+						replier.reply("사용할 반지 매력 보상권이 없습니다.");
+						return;
+					}
+					var rewardUseCount = 1;
+					var rewardUseMatch = msg.match(/^\/보상받기\s+(\d+)$/);
+					if (rewardUseMatch) rewardUseCount = parseInt(rewardUseMatch[1], 10);
+					if (!rewardUseCount || rewardUseCount < 1) {
+						replier.reply("사용법: /보상받기 또는 /보상받기 숫자");
+						return;
+					}
+					if (rewardUseCount > rewardHave) rewardUseCount = rewardHave;
+					removeItem(data, sender, ringRewardItemName, rewardUseCount);
+					petData[sender].petexp = (petData[sender].petexp || 0) + rewardUseCount;
+					saveJsonFile(data, filePath);
+					saveJsonFile(petData, memberPetPath);
+					replier.reply("✅ 반지 매력 보상권 사용 완료!\n" +
+						"사용: " + numberWithCommas(rewardUseCount) + "개\n" +
+						"매력💕 +" + numberWithCommas(rewardUseCount) + "\n" +
+						"현재 펫 매력💕: " + numberWithCommas(petData[sender].petexp || 0));
 					return;
 				}
 				if (msg.startsWith("/펫강화속성") && isMaster(sender)) {
@@ -31988,7 +32064,7 @@ function calculateItemInfoAll(memberName, data, petData) {
 		castleExp: 0
 	};
 	let elementalInfo = calculateItemInfo("elemental", memberName, data, petData);
-	let ringInfo = calculateItemInfo("ring", memberName, data, petData);
+	let ringInfo = petData[memberName] && petData[memberName].ring ? calculateItemInfo("ring", memberName, data, petData) : { battleExp: 0, raidExp: 0, castleExp: 0 };
 	let bagInfo = calculateItemInfo("bag", memberName, data, petData);
 	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + bagInfo.battleExp;
 	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + bagInfo.raidExp;
