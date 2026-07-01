@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.212"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.213"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -64,7 +64,7 @@ const PET_SKILL_LIST = [
 	{ name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
 	{ name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
 	{ name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
-	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화, /반지강화 실패 시 5% 확률로 강화석이 소모되지 않습니다." },
+	{ name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
 	{ name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
 	{ name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
 	{ name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
@@ -29467,7 +29467,7 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 
 	var artisanBreathTriggered = false;
 	if (hasPetSkill(petSkillData, sender, "장인의 숨결")) {
-		artisanBreathTriggered = Math.random() < 0.05;
+		artisanBreathTriggered = Math.random() < 0.07;
 	}
 	if (!artisanBreathTriggered) {
 		removeItem(data, sender, "펫 강화석⭐", needItemCount);
@@ -32232,8 +32232,8 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 	var label = type === "ring" ? "반지강화확률UP💍" : "정령강화확률UP🥀";
 	if (!isSuccess) {
 		var artisanBreathTriggered = false;
-		if (hasPetSkill(petSkillData, memberName, "장인의 숨결")) {
-			artisanBreathTriggered = Math.random() < 0.05;
+		if (type !== "ring" && hasPetSkill(petSkillData, memberName, "장인의 숨결")) {
+			artisanBreathTriggered = Math.random() < 0.07;
 		}
 		var isDrop = Math.random() < dropChance;
 		// 실패 기본 문구 (+ 하락 처리)
