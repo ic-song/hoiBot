@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.219"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.220"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17924,6 +17924,66 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						"지급: " + GLOBAL_CONFIG.items.ringExpRewardItemName + " x" + numberWithCommas(ringRewardCount) + "\n" +
 						"※ 보상 지급과 함께 기존 반지 데이터가 정리되었습니다.\n" +
 						"※ /보상받기 또는 /보상받기 숫자로 매력에 반영할 수 있어요.");
+					return;
+				}
+				if (msg === "/반지보상통계" && (isAdmin(sender) || isMaster(sender))) {
+					var ringRewardStatItemName = GLOBAL_CONFIG.items.ringExpRewardItemName;
+					var totalPetUserCount = 0;
+					var claimedUserCount = 0;
+					var claimedRewardTotal = 0; // 지급 완료된 보상권 총수량
+					var claimedRewardRemainTotal = 0; // 지급 완료 유저가 아직 보유한 보상권 수량
+					var pendingRingUserCount = 0;
+					var pendingRewardTotal = 0; // 아직 반지 보상을 받지 않은 유저의 예상 지급 수량
+					var claimedWithRingCount = 0; // 지급 완료 flag가 있는데 ring이 남은 점검 대상
+					var rewardCalcErrorCount = 0;
+
+					for (var ringStatUser in petData) {
+						if (!petData.hasOwnProperty(ringStatUser)) continue;
+						var ringStatPet = petData[ringStatUser];
+						if (!ringStatPet || !ringStatPet.petname) continue;
+						totalPetUserCount++;
+
+						var ringStatMigration = ringStatPet.ringRewardMigration;
+						var ringStatClaimed = ringStatMigration && ringStatMigration.claimed === true;
+						if (ringStatClaimed) {
+							claimedUserCount++;
+							claimedRewardTotal += Math.floor(Number(ringStatMigration.rewardCount) || 0);
+							if (data.member[ringStatUser] && data.member[ringStatUser].bag) {
+								claimedRewardRemainTotal += Math.floor(Number(data.member[ringStatUser].bag[ringRewardStatItemName]) || 0);
+							}
+							if (ringStatPet.ring) claimedWithRingCount++;
+							continue;
+						}
+
+						if (ringStatPet.ring) {
+							pendingRingUserCount++;
+							try {
+								var pendingRingRewardInfo = calculateItemInfo("ring", ringStatUser, data, petData);
+								pendingRewardTotal += Math.max(0, Math.floor((pendingRingRewardInfo.raidExp || 0) + (pendingRingRewardInfo.castleExp || 0)));
+							} catch (e) {
+								rewardCalcErrorCount++;
+							}
+						}
+					}
+
+					var estimatedUsedRewardTotal = claimedRewardTotal - claimedRewardRemainTotal;
+					if (estimatedUsedRewardTotal < 0) estimatedUsedRewardTotal = 0;
+
+					var statOut = "📊 반지 보상 통계\n";
+					statOut += allsee + "\n";
+					statOut += "전체 펫 유저 : " + numberWithCommas(totalPetUserCount) + "명\n\n";
+					statOut += "[보상 완료]\n";
+					statOut += "완료 유저 : " + numberWithCommas(claimedUserCount) + "명\n";
+					statOut += "지급 총수량 : " + numberWithCommas(claimedRewardTotal) + "개\n";
+					statOut += "보상권 잔여 : " + numberWithCommas(claimedRewardRemainTotal) + "개\n";
+					statOut += "사용 추정 : " + numberWithCommas(estimatedUsedRewardTotal) + "개\n\n";
+					statOut += "[보상 대기]\n";
+					statOut += "반지 보유 유저 : " + numberWithCommas(pendingRingUserCount) + "명\n";
+					statOut += "예상 지급 수량 : " + numberWithCommas(pendingRewardTotal) + "개\n\n";
+					statOut += "[점검]\n";
+					statOut += "완료 flag + ring 잔존 : " + numberWithCommas(claimedWithRingCount) + "명\n";
+					statOut += "계산 오류 : " + numberWithCommas(rewardCalcErrorCount) + "명";
+					replier.reply(statOut);
 					return;
 				}
 				if (msg === "/보상받기" || /^\/보상받기\s+\d+$/.test(msg)) {

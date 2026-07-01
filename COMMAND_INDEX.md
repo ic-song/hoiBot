@@ -3452,6 +3452,43 @@ Status: VERIFIED
 
 ---
 
+# /반지보상통계
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:17929`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `calculateItemInfo`
+- `numberWithCommas`
+
+## Data Usage
+
+- `petData[*].ring`
+- `petData[*].ringRewardMigration`
+- `data.member[*].bag["반지매력보상🎁(/보상받기)"]`
+
+## Save Flow
+
+- Admin/Master-only exact command.
+- Read-only statistics command; no save calls.
+- Counts claimed users by `ringRewardMigration.claimed === true`.
+- Counts pending users by remaining `petData[user].ring` without a claimed migration flag.
+
+## Related Commands
+
+- `/반지보상받기`
+- `/보상받기`
+
+---
+
 # /보상받기
 
 Status: VERIFIED
