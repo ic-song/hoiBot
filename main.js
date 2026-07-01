@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.213"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.214"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -516,7 +516,7 @@ const towerTips = [
 	"특성 십원✨을 소지시 60만💕을 지원받습니다.",
 	"펫 강화석⭐️으로 ‘/펫강화’로 펫을 성장시켜보세요!",
 	"정령 강화석🥀으로 ‘/정령강화’로 펫을 성장시켜보세요!",
-	"반지 강화석💍으로 ‘/반지강화’로 펫을 성장시켜주세요!",
+	"펜던트 강화석📿은 펜던트 콘텐츠 전환을 위해 보관해주세요!",
 	"조합이 번거로우신가요? '/전체조합'을 적어보세요",
 	"'/정리'로 게임을 쉽게 할 수 있습니다.",
 	"/후원 을 통하여 펫을 성장시켜보세요 :)",
@@ -12816,7 +12816,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						"🎖️길드 영지전 보상 안내🎖️\n\n" +
 						"[1] 호월킹덤🏰: 세금 시스템 15% 부과\n" +
 						"[2] 정령광산🥀: 정령 강화석🥀 400개\n" +
-						"[3] 반지광산💍: 반지 강화석💍 500개\n" +
+						"[3] 펜던트 광산📿: 펜던트 강화석📿 5개\n" +
 						"[4] 펫강화광산⭐️: 펫 강화석⭐️ 300개\n" +
 						"[5] 미니펫강화광산💫: 미니펫 강화석💫 150개\n" +
 						"[6] 다이아광산💎: 다이아💎 " + GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount + "개\n\n" +
@@ -17917,27 +17917,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					return;
 				}
 				if (msg === "/반지강화" || /^\/반지강화\s+\d+$/.test(msg)) {
-					if (castleSiegeFlag) return;
-					if (!petData[sender]) {
-						replier.reply("펫이 없습니다.");
-						return;
-					}
-					var ringUpgradeArgs = msg.trim().split(/\s+/);
-					var ringUpgradeCount = 1;
-					if (ringUpgradeArgs.length >= 2) {
-						ringUpgradeCount = parseInt(ringUpgradeArgs[1], 10);
-					}
-					if (!ringUpgradeCount || ringUpgradeCount < 1) {
-						replier.reply("사용법: /반지강화 [횟수]");
-						return;
-					}
-					if (ringUpgradeCount > 100) {
-						replier.reply("반지강화는 최대 100회까지만 가능합니다. 100회로 진행합니다.");
-						ringUpgradeCount = 100;
-					}
-					replier.reply(runRepeatUpgrade("ring", "ring", sender, data, petData, guildData, petSkillData, ringUpgradeCount));
-					saveJsonFile(petData, memberPetPath);
-					saveJsonFile(data, filePath);
+					replier.reply("반지강화는 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 종합 매력에 유지됩니다.");
 					return;
 				}
 				if (msg.startsWith("/펫강화속성") && isMaster(sender)) {
@@ -17969,21 +17949,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 				}
 				if (msg.startsWith("/반지속성") && isMaster(sender)) {
-					var regex = /^\/반지속성\s+([^\d]+?)\s+(\d+)$/;
-					var matchFlag = msg.match(regex);
-					if (matchFlag) {
-						var memberName = matchFlag[1];
-						var upgrade = parseInt(matchFlag[2]);
-						petData[memberName].ring.upgrade = upgrade;
-					} else {
-						replier.reply("올바른 명령어 형식을 사용해주세요. 예: /반지속성 [유저명] [강화수]");
-					}
+					replier.reply("반지속성 수정은 펜던트 콘텐츠 전환으로 종료되었습니다.");
+					return;
 				} else if (msg == "/정령정보" && sender == "호이 남") {
 					replier.reply(JSON.stringify(petData[sender].elemental));
 					replier.reply(JSON.stringify(calculateItemInfo("elemental", sender, data, petData)));
 				} else if (msg == "/반지정보" && sender == "호이 남") {
-					replier.reply(JSON.stringify(petData[sender].ring));
-					replier.reply(JSON.stringify(calculateItemInfo("ring", sender, data, petData)));
+					replier.reply("반지정보 조회는 펜던트 콘텐츠 전환으로 종료되었습니다.");
+					return;
 				} else if (msg === "/티어보상지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
 					var tierRewardResult = payTierRankingReward(data, petData, guildData);
 					replier.reply(tierRewardResult.message);
@@ -22766,7 +22739,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 
 						if (ringEach > 0) {
-							addItem(data, memberName, "반지 강화석💍", ringEach);
+							addItem(data, memberName, GLOBAL_CONFIG.items.pendantEnhanceStoneName, ringEach);
 						}
 
 						if (petEach > 0) {
@@ -22805,7 +22778,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "1인당 분배 자원\n";
 					out += "🅟 " + numberWithCommas(fundEach) + "\n";
 					out += "🥀 " + numberWithCommas(elementalEach) + "\n";
-					out += "💍 " + numberWithCommas(ringEach) + "\n";
+					out += "📿 " + numberWithCommas(ringEach) + "\n";
 					out += "⭐️ " + numberWithCommas(petEach) + "\n";
 					out += "💫 " + numberWithCommas(miniPetEach) + "\n";
 					out += "💎 " + numberWithCommas(diamondEach) + "\n";
@@ -22813,7 +22786,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "분배 후 남은 길드자원\n";
 					out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
 					out += "🥀 " + numberWithCommas(Number(g.warehouse.elemental) || 0) + "\n";
-					out += "💍 " + numberWithCommas(Number(g.warehouse.ring) || 0) + "\n";
+					out += "📿 " + numberWithCommas(Number(g.warehouse.ring) || 0) + "\n";
 					out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
 					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0) + "\n";
 					out += "💎 " + numberWithCommas(Number(g.warehouse.diamond) || 0);
@@ -22898,7 +22871,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					);
 					return;
 				}
-				// 운영자 전용 반지 강화석 창고 지급
+				// 운영자 전용 펜던트 강화석 창고 지급
 				if (msg.indexOf("/길드반지창고") === 0) {
 					var parsed = parseGuildNameAndAmount(msg, "/길드반지창고");
 					if (!parsed) {
@@ -23622,7 +23595,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "━━━━━━━━━━━━\n";
 					out += "🅟 +" + numberWithCommas(fund) + "\n";
 					out += "🥀 +" + numberWithCommas(elemental) + "\n";
-					out += "💍 +" + numberWithCommas(ring) + "\n";
+					out += "📿 +" + numberWithCommas(ring) + "\n";
 					out += "⭐️ +" + numberWithCommas(pet) + "\n";
 					out += "💫 +" + numberWithCommas(miniPet);
 
@@ -26126,7 +26099,7 @@ function getGuildTerritoryList() {
 	return [
 		{ no: 1, name: "호월킹덤🏰", rewardType: "castle" },
 		{ no: 2, name: "정령광산🥀", rewardType: "elemental", rewardAmount: 400 },
-		{ no: 3, name: "반지광산💍", rewardType: "ring", rewardAmount: 500 },
+		{ no: 3, name: "펜던트 광산📿", rewardType: "ring", rewardAmount: 5 },
 		{ no: 4, name: "펫강화광산⭐️", rewardType: "pet", rewardAmount: 400 },
 		{ no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: 150 },
 		{ no: 6, name: "다이아광산💎", rewardType: "diamond", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount }
@@ -26156,6 +26129,10 @@ function ensureGuildWarehouseObj(g) {
 	}
 	if (typeof g.warehouse.fund !== "number") g.warehouse.fund = 0;
 	if (typeof g.warehouse.ring !== "number") g.warehouse.ring = 0;
+	if (typeof g.warehouse.pendant === "number") {
+		g.warehouse.ring += g.warehouse.pendant;
+		delete g.warehouse.pendant;
+	}
 	if (typeof g.warehouse.pet !== "number") g.warehouse.pet = 0;
 	if (typeof g.warehouse.miniPet !== "number") g.warehouse.miniPet = 0;
 	if (typeof g.warehouse.diamond !== "number") g.warehouse.diamond = 0;
@@ -26169,7 +26146,7 @@ function buildGuildResourceDisplay(g) {
 		numberWithCommas(g.warehouse.fund || 0) +
 		"\n길드창고🧳: 🥀x" +
 		numberWithCommas(g.warehouse.elemental || 0) +
-		" 💍x" +
+		" 📿x" +
 		numberWithCommas(g.warehouse.ring || 0) +
 		" ⭐x" +
 		numberWithCommas(g.warehouse.pet || 0) +
@@ -29073,8 +29050,26 @@ function debuggerLog(msg) {
 		}
 	}
 }
+// 펜던트 전환 대상 아이템명을 현재 아이템명으로 변환
+function normalizePendantTransitionItemName(itemName) {
+	if (itemName === "반지 강화석💍") return GLOBAL_CONFIG.items.pendantEnhanceStoneName;
+	return itemName;
+}
+
+// 기존 반지 강화석 보유 수량을 펜던트 강화석으로 합산
+function normalizePendantTransitionBagItem(bag, itemName) {
+	var normalizedName = normalizePendantTransitionItemName(itemName);
+	if (!bag) return normalizedName;
+	if (normalizedName !== itemName && typeof bag[itemName] !== "undefined") {
+		bag[normalizedName] = (parseInt(bag[normalizedName], 10) || 0) + (parseInt(bag[itemName], 10) || 0);
+		delete bag[itemName];
+	}
+	return normalizedName;
+}
+
 // 상자 오픈과 관련된 아이템들을 사용자의 가방에 추가하는 함수
 function addItemToBag(bag, item, quantity) {
+	item = normalizePendantTransitionBagItem(bag, item);
 	if (bag[item]) {
 		bag[item] += quantity;
 	} else {
@@ -31676,6 +31671,7 @@ function checkRank(data, petData, guildData, user) {
 function generateBagOutput(bagItems) {
 	var bagOutput = "";
 	var sortedItemList = [];
+	normalizePendantTransitionBagItem(bagItems, "반지 강화석💍");
 
 	if (bagItems && Object.keys(bagItems).length > 0) {
 		bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
@@ -31806,7 +31802,7 @@ function generateBagOutput(bagItems) {
 			"정령강화확률UP🥀(95%)",
 			"정령강화확률UP🥀(100%)",
 
-			"반지 강화석💍",
+			GLOBAL_CONFIG.items.pendantEnhanceStoneName,
 			"반지강화확률UP💍(3%)",
 			"반지강화확률UP💍(5%)",
 			"반지강화확률UP💍(10%)",
@@ -32602,7 +32598,7 @@ function openMagicStoneBox(sender, count, replier, data) {
 	let rewards = {}; // 보상 아이템을 합산할 객체
 	for (let i = 0; i < count; i++) {
 		let rand = Math.random() * 100;
-		let rewardItem = "반지 강화석💍";
+		let rewardItem = GLOBAL_CONFIG.items.pendantEnhanceStoneName;
 		let rewardCount = 1; // 기본 개수
 		if (rand <= 0.001)
 			rewardCount = 100; // 0.001%
@@ -32883,7 +32879,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
 			"🥀 +" +
 			numberWithCommas(elemental) +
 			"\n" +
-			"💍 +" +
+			"📿 +" +
 			numberWithCommas(ring) +
 			"\n" +
 			"⭐️ +" +
@@ -33010,11 +33006,13 @@ function runSellAll(sender, data, petData, guildData) {
 function hasItem(data, user, itemName, count) {
 	if (!data.member[user]) return false;
 	if (!data.member[user].bag) return false;
+	itemName = normalizePendantTransitionBagItem(data.member[user].bag, itemName);
 	if (typeof data.member[user].bag[itemName] === "undefined") return false;
 	return data.member[user].bag[itemName] >= count;
 }
 //  해당 사용자의 가방에서 아이템 수량을 차감
 function removeItem(data, user, itemName, count) {
+	itemName = normalizePendantTransitionBagItem(data.member[user].bag, itemName);
 	// 수량 차감
 	data.member[user].bag[itemName] -= count;
 	// 수량이 0 이하가 되면 가방에서 해당 아이템 삭제
@@ -33035,6 +33033,7 @@ function addItem(data, user, itemName, count) {
 	if (itemName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName) itemName = GLOBAL_CONFIG.petSkill.bookItemName;
 	if (!data.member[user]) return;
 	if (!data.member[user].bag) data.member[user].bag = {};
+	itemName = normalizePendantTransitionBagItem(data.member[user].bag, itemName);
 	if (!data.member[user].bag[itemName]) {
 		data.member[user].bag[itemName] = 0;
 	}
@@ -37164,7 +37163,7 @@ function runflowerBoxOpen(sender, data, petData, guildData, msg, replier) {
 }
 function rollStoneBox() {
 	return {
-		gainItems: { "반지 강화석💍": 100 },
+		gainItems: { "펜던트 강화석📿": 100 },
 		gainTextLines: []
 	};
 }
@@ -38325,7 +38324,7 @@ function checkGuildLevelUp(data, guildData, g) {
 
 		if (reward.ring) {
 			g.warehouse.ring += reward.ring;
-			rewardTexts.push("반지 강화석💍 " + numberWithCommas(reward.ring) + "개");
+			rewardTexts.push("펜던트 강화석📿 " + numberWithCommas(reward.ring) + "개");
 		}
 
 		if (reward.pet) {
@@ -38473,7 +38472,7 @@ function addGuildResourceByAdmin(guildData, sender, guildName, amount, type) {
 		beforeValue = g.warehouse.ring || 0;
 		g.warehouse.ring = beforeValue + amount;
 		afterValue = g.warehouse.ring;
-		resourceLabel = "반지 강화석💍";
+		resourceLabel = "펜던트 강화석📿";
 	} else if (type === "pet") {
 		beforeValue = g.warehouse.pet || 0;
 		g.warehouse.pet = beforeValue + amount;
