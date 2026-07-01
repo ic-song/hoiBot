@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.211"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.212"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36022,13 +36022,12 @@ function initPetExploreData(petExploreData) {
 	if (!petExploreData.migration || typeof petExploreData.migration !== "object") {
 		petExploreData.migration = {};
 	}
+	// 기존 참여지를 보존하고 이전 이동 마이그레이션은 완료 플래그만 기록합니다.
 	if (petExploreData.migration.pendantMazeSlotResetV2191 !== true) {
-		moveCurrentExploreBetsToStarterSlots(petExploreData);
 		petExploreData.migration.pendantMazeSlotResetV2191 = true;
 		petExploreData._migrationSaveRequired = true;
 	}
 	if (petExploreData.migration.currentExploreSlotOneResetV2192 !== true) {
-		moveCurrentExploreBetsToDungeonOne(petExploreData);
 		petExploreData.migration.currentExploreSlotOneResetV2192 = true;
 		petExploreData._migrationSaveRequired = true;
 	}
@@ -36813,7 +36812,7 @@ function autoExploreBetting(data, petExploreData) {
 		if (petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user)) continue;
 
 		// 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 1~2 랜덤
-		var fixed = petExploreData.autoFixedDungeon[user];
+		var fixed = petExploreData.autoFixedDungeon[user] !== undefined ? String(petExploreData.autoFixedDungeon[user]) : null;
 		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || fixed === "8" || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
 		var dungeonNo = isFixedValid ? String(fixed) : String(Math.floor(Math.random() * 2) + 1);
 
@@ -37343,7 +37342,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 	} else if (dungeonNo === "7" || dungeonNo === "8") {
 		if (hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) out += "입장🕋: 1개 사용 예정(정산 시 재확인)\n";
 		else out += GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 이(가) 없습니다. 정산 시 보상에서 제외됩니다.\n";
-		if (dungeonNo === "8") out += "입장조건📜: /종합순위 10등 안에 들어가야 합니다.\n";
+		if (dungeonNo === "8") out += "입장조건📜: /종합순위 20등 안에 들어가야 합니다.\n";
 	} else if (dungeonNo === "0") {
 		out += "입장🌋: 0개 사용(이벤트 광산)\n";
 	} else if (dungeonNo === "10") {
@@ -37765,7 +37764,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 			ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
 		} else if (n === "7" || n === "8") {
 			ticketGuide = "※ 탐" + n + " 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
-			if (n === "8") ticketGuide += "\n탐8은 /종합순위 10등 안에 들어가야 입장할 수 있습니다.";
+			if (n === "8") ticketGuide += "\n탐8은 /종합순위 20등 안에 들어가야 입장할 수 있습니다.";
 		} else {
 			ticketGuide = "※ 탐3~6 자동탐험은 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋을 전부 소모하면 탐 1~2로 이동합니다.";
 		}
