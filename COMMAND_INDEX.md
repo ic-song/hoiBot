@@ -125,7 +125,7 @@ Status: VERIFIED
 | `getMyGuildInfo` | `main.js:39943`, `Info.js:3347` | Guild object + sender membership validation hub |
 | `getJoinableGuildRows` | `main.js:39834` | Joinable guild filtering and listing logic |
 | `findGuildIdByNameSafe` | `main.js:39879` | Safer guild-name-to-id resolution |
-| `ensureGuildWarehouseObj` | `main.js:31244` | Warehouse/fund branches should usually pass here first |
+| `ensureGuildWarehouseObj` | `main.js:26221` | Warehouse/fund branches should usually pass here first |
 | `ensureGuildTerritoryWar` | `main.js:31259` | Canonical territory-war state normalizer |
 | `ensureGuildBoard` | `main.js:40695` | Guild board schema normalization |
 | `buildGuildRankingRows` | `main.js:40353` | Cross-store guild ranking aggregation |
@@ -2182,11 +2182,13 @@ Status: VERIFIED
 ## Save Flow
 - Saves member data during sync and saves both member data and `guildData` after successful distribution.
 - Saves `currencyLogData` when distributed resources include 다이아.
-- The legacy `warehouse.ring` slot is preserved but not displayed or distributed as `펜던트 강화석📿`; new pendant warehouse quantities use `warehouse.pendant`.
+- Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
 - `/길드분배` currently excludes `warehouse.pendant` from payout and deduction until pendant enhancement content is ready.
+- Legacy `warehouse.ring` is removed by `/데이터정리`; it is not migrated to `warehouse.pendant`.
 ## Related Commands
 - `/길드창고패키지오픈`
 - `/길드정보`
+- `/데이터정리`
 
 ---
 
@@ -3440,6 +3442,7 @@ Status: VERIFIED
 - Adds `반지매력보상🎁(/보상받기)` to the member bag.
 - Deletes `petData[sender].ring` and records one-time migration metadata in `petData[sender].ringRewardMigration`.
 - Saves both member data and `petData`.
+- Starter pet creation no longer creates `petData[user].ring`; existing rings remain only for reward migration.
 
 ## Related Commands
 
@@ -4384,6 +4387,7 @@ Status: VERIFIED
 - `petData[*].petSkills`
 - `petData[*].petchar`
 - `petSkillData[*]`
+- `guildData.guilds[*].warehouse.ring`
 
 ## Save Flow
 
@@ -4391,6 +4395,7 @@ Status: VERIFIED
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
+- Saves guild data through `saveJsonFile(guildData, guildPath)`
 
 ## AI Notes
 
@@ -4398,6 +4403,7 @@ Status: VERIFIED
 - Deletes legacy `homeData[*].guestComments` from `homeData` only; `/데이터정리` does not move those comments into `petHomeCommentsData`.
 - Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Step 6 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
+- Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---

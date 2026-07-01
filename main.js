@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.218"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.219"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -13978,25 +13978,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
    replier.reply(successMsg);
 }
 				if (msg === "/반지이름조합") {
-					if (castleSiegeFlag) {
-						return;
-					}
-					if (data.member[sender].bag["양념치킨🐔"] && data.member[sender].bag["양념치킨🐔"] >= 100) {
-						data.member[sender].bag["양념치킨🐔"] -= 100;
-						if (!data.member[sender].bag["반지 이름변경권🗯(/반지이름)"]) {
-							data.member[sender].bag["반지 이름변경권🗯(/반지이름)"] = 1;
-						} else {
-							data.member[sender].bag["반지 이름변경권🗯(/반지이름)"] += 1;
-						}
-						replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n반지 이름변경권🗯 조합이 완료되었습니다");
-						if (data.member[sender].bag["양념치킨🐔"] === 0) {
-							delete data.member[sender].bag["양념치킨🐔"];
-						}
-						saveJsonFile(data, filePath);
-						return;
-					} else {
-						replier.reply("양념치킨🐔 100개가 필요해요!");
-					}
+					replier.reply("반지 이름변경권 조합은 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 /반지보상받기로 보상받을 수 있습니다.");
+					return;
 				}
 				if (msg === "/정령이름조합") {
 					if (!castleSiegeFlag) {
@@ -15827,32 +15810,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					return;
 				}
 				if (msg.startsWith("/반지이름 ")) {
-					if (castleSiegeFlag) {
-						return;
-					}
-					if (!petData[sender].ring) {
-						replier.reply("반지 이름변경권🗯 이(가) 없습니다.");
-						return;
-					}
-					let itemName = "반지 이름변경권🗯(/반지이름)";
-					var newName = msg.substring("/반지이름 ".length);
-					if (data.member[sender] && !data.member[sender].bag[itemName]) {
-						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 " + itemName + "이 없습니다.");
-						return;
-					}
-					if (newName.length <= 10) {
-						petData[sender].ring.name = newName;
-						data.member[sender].bag[itemName] -= 1;
-						if (data.member[sender].bag[itemName] < 1) {
-							delete data.member[sender].bag[itemName];
-						}
-						saveJsonFile(petData, memberPetPath);
-						saveJsonFile(data, filePath);
-						replier.reply("반지이름 변경이 완료되었습니다.");
-						return;
-					} else {
-						replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 10글자까지 반지 이름 변경이 가능합니다.");
-					}
+					replier.reply("반지 이름변경은 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 /반지보상받기로 보상받을 수 있습니다.");
+					return;
 				}
 				if (msg.startsWith("/정령이름 ")) {
 					if (castleSiegeFlag) {
@@ -21428,7 +21387,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						memberClose: false,
 						joinConditionExp: 0,
 						notice: "",
-						warehouse: { fund: 0, elemental: 0, ring: 0, pet: 0, miniPet: 0 },
+						warehouse: { fund: 0, elemental: 0, pendant: 0, pet: 0, miniPet: 0 },
 						createdAt: formatDateTime(new Date()),
 						members: {}
 					};
@@ -25401,10 +25360,31 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						}
 					}
 
+					var guildRingDeleteGuildCount = 0; // 반지 데이터가 삭제된 길드 수
+					var guildRingDeleteTotalAmount = 0; // 삭제된 반지 총수량
+					var guildRingDeleteLogs = [];
+					if (guildData && guildData.guilds) {
+						for (var cleanupGuildId in guildData.guilds) {
+							if (!guildData.guilds.hasOwnProperty(cleanupGuildId)) continue;
+							var cleanupGuild = guildData.guilds[cleanupGuildId];
+							if (!cleanupGuild || !cleanupGuild.warehouse) continue;
+							var oldGuildRingAmount = Math.floor(Number(cleanupGuild.warehouse.ring) || 0); // 삭제 전 길드창고 반지 수량
+							if (cleanupGuild.warehouse.ring !== undefined) {
+								delete cleanupGuild.warehouse.ring;
+							}
+							if (oldGuildRingAmount > 0) {
+								guildRingDeleteGuildCount++;
+								guildRingDeleteTotalAmount += oldGuildRingAmount;
+								guildRingDeleteLogs.push(cleanupGuild.name + "(" + (cleanupGuild.mark || "") + ") : 💍x" + numberWithCommas(oldGuildRingAmount) + " 삭제");
+							}
+						}
+					}
+
 					saveJsonFile(homeData, homeDataFile);
 					saveJsonFile(data, filePath);
 					saveJsonFile(petData, memberPetPath);
 					saveJsonFile(petSkillData, petSkillDataPath);
+					saveJsonFile(guildData, guildPath);
 
 					var out = "🧹 /데이터정리 완료\n";
 					out += allsee + "\n";
@@ -25463,6 +25443,16 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						out += legacyPassRemovedLogs.join("\n");
 					} else {
 						out += "제거할 레거시 패스 명단 없음";
+					}
+
+					out += "\n\n[7] 길드창고 기존 반지 데이터 삭제\n";
+					out += "삭제 길드 : " + numberWithCommas(guildRingDeleteGuildCount) + "개\n";
+					out += "삭제 수량 : 💍x" + numberWithCommas(guildRingDeleteTotalAmount) + "\n";
+					out += "※ 펜던트 강화석📿 수량으로 이전하지 않습니다.\n";
+					if (guildRingDeleteLogs.length > 0) {
+						out += "\n[삭제된 길드창고 반지 데이터]\n" + guildRingDeleteLogs.join("\n");
+					} else {
+						out += "\n삭제할 길드창고 반지 데이터 없음";
 					}
 
 					replier.reply(out);
@@ -26189,14 +26179,13 @@ function getGuildByIdSafe(guildData, gid) {
 // 길드 ID로 길드 정보 가져오기 (에러 처리 포함)
 function ensureGuildWarehouseObj(g) {
 	if (!g) return;
-	if (!g.warehouse) g.warehouse = { fund: 0, elemental: 0, ring: 0, pet: 0, miniPet: 0 };
+	if (!g.warehouse) g.warehouse = { fund: 0, elemental: 0, pendant: 0, pet: 0, miniPet: 0 };
 	if (typeof g.warehouse.elemental !== "number") g.warehouse.elemental = 0;
 	if (typeof g.warehouse.spirit === "number") {
 		g.warehouse.elemental += g.warehouse.spirit;
 		delete g.warehouse.spirit;
 	}
 	if (typeof g.warehouse.fund !== "number") g.warehouse.fund = 0;
-	if (typeof g.warehouse.ring !== "number") g.warehouse.ring = 0;
 	if (typeof g.warehouse.pendant !== "number") g.warehouse.pendant = 0;
 	if (typeof g.warehouse.pet !== "number") g.warehouse.pet = 0;
 	if (typeof g.warehouse.miniPet !== "number") g.warehouse.miniPet = 0;
@@ -35485,7 +35474,7 @@ function getPetUpgradeCritMul(upgrade) {
  * 스타터팩 세팅
  * - 펫강화 30강(= 1.7배 구간)
  * - 펫특성: 이세계 용사✨ㅈ
- * - 정령/반지/미니펫/스윗홈 초기 지급
+ * - 정령/미니펫/스윗홈 초기 지급
  * - 가구는 "가구가방"을 비워둔 채(혹은 기본 0개) 스윗홈 등급(+4평)로 처리
  */
 function applyStarterPet(pet, user, petSkillData) {
@@ -35505,13 +35494,6 @@ function applyStarterPet(pet, user, petSkillData) {
 	};
 	// 펫매력
 	pet.petexp = 35000;
-
-	// 반지
-	pet.ring = {
-		upgrade: 70,
-		name: "사파이어 반지🔮",
-		grade: "최상급"
-	};
 
 	// 미니펫 가방
 	if (!pet.miniPetBag) pet.miniPetBag = [];
