@@ -2326,10 +2326,6 @@ function checkRank(data, petData, guildData, user) {
 function generateBagOutput(bagItems) {
 	var bagOutput = "";
 	var sortedItemList = [];
-	if (bagItems && typeof bagItems["반지 강화석💍"] !== "undefined") {
-		bagItems["펜던트 강화석📿"] = (parseInt(bagItems["펜던트 강화석📿"], 10) || 0) + (parseInt(bagItems["반지 강화석💍"], 10) || 0);
-		delete bagItems["반지 강화석💍"];
-	}
 
 	if (bagItems && Object.keys(bagItems).length > 0) {
 		bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
@@ -2460,7 +2456,7 @@ function generateBagOutput(bagItems) {
 			"정령강화확률UP🥀(95%)",
 			"정령강화확률UP🥀(100%)",
 
-			"펜던트 강화석📿",
+			"반지 강화석💍",
 			"반지강화확률UP💍(3%)",
 			"반지강화확률UP💍(5%)",
 			"반지강화확률UP💍(10%)",

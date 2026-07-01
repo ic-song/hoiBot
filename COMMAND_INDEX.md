@@ -203,7 +203,7 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
-- During the pendant transition, `generateBagOutput` merges legacy `반지 강화석💍` into `펜던트 강화석📿` for display.
+- During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
 
@@ -2182,7 +2182,7 @@ Status: VERIFIED
 ## Save Flow
 - Saves member data during sync and saves both member data and `guildData` on distribution
 - Saves `currencyLogData` when distributed resources include 다이아
-- The legacy `warehouse.ring` slot is displayed/distributed as `펜던트 강화석📿` during the pendant transition.
+- The legacy `warehouse.ring` slot is preserved but not displayed as `펜던트 강화석📿`; new pendant warehouse quantities use `warehouse.pendant`.
 ## Related Commands
 - `/길드창고패키지오픈`
 - `/길드정보`
