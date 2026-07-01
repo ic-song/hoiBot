@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.210"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.211"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36814,7 +36814,7 @@ function autoExploreBetting(data, petExploreData) {
 
 		// 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 1~2 랜덤
 		var fixed = petExploreData.autoFixedDungeon[user];
-		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
+		var isFixedValid = fixed === "1" || fixed === "2" || fixed === "3" || fixed === "4" || fixed === "5" || fixed === "6" || fixed === "7" || fixed === "8" || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
 		var dungeonNo = isFixedValid ? String(fixed) : String(Math.floor(Math.random() * 2) + 1);
 
 		// 배열 보장

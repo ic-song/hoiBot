@@ -3924,6 +3924,7 @@ Status: VERIFIED
 - `/팬던트미궁박스오픈`
 - `/대마법박스오픈`
 - `/자동탐고정 0` when the event mine is active
+- `/자동탐고정 8`
 - `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
@@ -3938,7 +3939,7 @@ Status: VERIFIED
 - Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
 - Maze entries `/탐 7~8` require `미궁 입장권🕋` and apply a `-50%` success penalty.
 - `/탐 7` rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
-- `/탐 8` requires `/종합순위` top 10 and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `/탐 8` requires `/종합순위` top 10, can be fixed with `/자동탐고정 8`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
 - `initPetExploreData` performs one-time `pendantMazeSlotResetV2191` migration through `moveCurrentExploreBetsToStarterSlots`, moving existing visible participants from slots 1~8 into slots 1~3 so old slot data is not displayed as new maze participation.
 - `initPetExploreData` also performs one-time `currentExploreSlotOneResetV2192` migration through `moveCurrentExploreBetsToDungeonOne`, moving current visible map participants from slots 0~8 and 10 into slot 1.
 - `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
