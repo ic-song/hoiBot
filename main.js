@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.215"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.216"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -22642,6 +22642,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				}
 				// 길드 자원 전체 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
 				if (msg === "/길드분배") {
+					replier.reply("⚠️ 길드분배는 길드창고 점검으로 잠시 중단되었습니다.\n점검 완료 후 다시 안내드릴게요.");
+					return;
 					var syncResult = syncMemberGuild(data, guildData);
 					if (!syncResult.success) {
 						replier.reply("❌ 길드 데이터 동기화 실패\n" + syncResult.message);
