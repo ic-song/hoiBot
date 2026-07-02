@@ -16897,7 +16897,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				}
 				if (msg === "/펜던트오픈" || /^\/펜던트오픈\s+\d+$/.test(msg)) {
 					if (sender !== "호이 남") {
-						replier.reply("펜던트오픈은 정식 오픈 전까지 운영자만 사용할 수 있습니다.");
 						return;
 					}
 					var pendantOpenResult = runPendantOpen(sender, data, petData, guildData, msg);
