@@ -36248,6 +36248,10 @@ function sortPendantBagByGrade(bag) {
 		var ar = getPendantGradeSortRank(a.item ? a.item.grade : "");
 		var br = getPendantGradeSortRank(b.item ? b.item.grade : "");
 		if (ar !== br) return ar - br;
+		var an = a.item && a.item.name ? String(a.item.name) : "";
+		var bn = b.item && b.item.name ? String(b.item.name) : "";
+		if (an < bn) return -1;
+		if (an > bn) return 1;
 		return a.index - b.index;
 	});
 	for (var j = 0; j < decorated.length; j++) {
