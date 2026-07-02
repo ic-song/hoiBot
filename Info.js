@@ -2336,6 +2336,10 @@ function generateBagOutput(bagItems) {
 			"확성기📢(/알림 내용 30자)",
 			"티어 승급티켓🎟",
 			"고급 티어 승급티켓🎫",
+			"펜던트뽑기💎(/펜던트오픈)",
+			"펜던트 강화석📿",
+			"펜던트 복원석🔷",
+			"펜던트귀속해제💎(/펜던트해제)",
 			"다이아상자💎(/다이아상자오픈)",
 			"1억포인트상자🪙(/포인트상자오픈)",
 			"럭키박스🍀(/럭키오픈)",
@@ -2806,6 +2810,41 @@ function calculateItemInfo(type, memberName, data, petData) {
 
 	return returnObject;
 }
+
+// 펜던트 등급별 기본 종합매력 반환
+function getPendantBaseCharmForInfo(grade) {
+	if (grade === "하급") return 500000;
+	if (grade === "하급+") return 1000000;
+	if (grade === "중급") return 2000000;
+	if (grade === "중급+") return 3000000;
+	if (grade === "상급") return 4000000;
+	if (grade === "상급+") return 5000000;
+	if (grade === "최상급") return 6000000;
+	if (grade === "최상급+") return 7000000;
+	if (grade === "신화") return 8000000;
+	if (grade === "초월") return 10000000;
+	if (grade === "창세") return 15000000;
+	if (grade === "창조") return 20000000;
+	return 200000;
+}
+
+// 펜던트 강화 누적 종합매력 반환
+function getPendantUpgradeCharmForInfo(upgrade) {
+	var table = [0, 5000, 10000, 15000, 20000, 25000, 30000, 250000, 375000, 500000, 750000, 1000000, 1250000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 12500000, 15000000, 17500000, 25000000, 30000000];
+	var total = 0;
+	var max = Math.max(0, Math.min(30, parseInt(upgrade || 0, 10)));
+	for (var i = 1; i <= max; i++) total += table[i] || 0;
+	return total;
+}
+
+// 펜던트 종합매력을 레이드/캐슬 매력으로 분배
+function calculatePendantItemInfoForInfo(pendant) {
+	if (!pendant) return { battleExp: 0, raidExp: 0, castleExp: 0 };
+	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade);
+	var raid = Math.floor(charm / 2);
+	return { battleExp: 0, raidExp: raid, castleExp: charm - raid };
+}
+
 function calculateItemInfoAll(memberName, data, petData) {
 	let returnObj = {
 		battleExp: 0,
@@ -2814,10 +2853,11 @@ function calculateItemInfoAll(memberName, data, petData) {
 	};
 	let elementalInfo = calculateItemInfo("elemental", memberName, data, petData);
 	let ringInfo = petData[memberName] && petData[memberName].ring ? calculateItemInfo("ring", memberName, data, petData) : { battleExp: 0, raidExp: 0, castleExp: 0 };
+	let pendantInfo = calculatePendantItemInfoForInfo(petData[memberName] && petData[memberName].pendant ? petData[memberName].pendant : null);
 	let bagInfo = calculateItemInfo("bag", memberName, data, petData);
-	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + bagInfo.battleExp;
-	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + bagInfo.raidExp;
-	returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + bagInfo.castleExp;
+	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + pendantInfo.battleExp + bagInfo.battleExp;
+	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + pendantInfo.raidExp + bagInfo.raidExp;
+	returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + pendantInfo.castleExp + bagInfo.castleExp;
 	return returnObj;
 }
 // 당근순위 랭킹을 가져오는 함수
