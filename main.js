@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.226"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.227"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -33,14 +33,14 @@ var guildLevelTable = {
 	10: { need: 40000, reward: { petFoodAll: 100000 } },
 	11: { need: 50000, reward: { fund: 300000000000 } },
 	12: { need: 60000, reward: { elemental: 30000 } },
-	13: { need: 70000, reward: { ring: 35000 } },
+	13: { need: 70000, reward: { elemental: 35000 } },
 	14: { need: 80000, reward: { fund: 500000000000 } },
 	15: { need: 90000, reward: { pet: 100000 } },
 
 	16: { need: 100000, reward: { petFoodAll: 300000 } },
 	17: { need: 120000, reward: { fund: 700000000000 } },
 	18: { need: 150000, reward: { elemental: 60000 } },
-	19: { need: 180000, reward: { ring: 70000 } },
+	19: { need: 180000, reward: { elemental: 70000 } },
 	20: { need: 250000, reward: { fund: 900000000000 } }
 };
 
@@ -38497,11 +38497,6 @@ function checkGuildLevelUp(data, guildData, g) {
 		if (reward.elemental) {
 			g.warehouse.elemental += reward.elemental;
 			rewardTexts.push("정령 강화석🥀 " + numberWithCommas(reward.elemental) + "개");
-		}
-
-		if (reward.ring) {
-			g.warehouse.pendant += reward.ring;
-			rewardTexts.push("펜던트 강화석📿 " + numberWithCommas(reward.ring) + "개");
 		}
 
 		if (reward.pet) {

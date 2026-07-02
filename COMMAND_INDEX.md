@@ -2196,6 +2196,33 @@ Status: VERIFIED
 
 ---
 
+# /길드공헌, /길드공헌추가
+Status: VERIFIED
+## Files
+- `main.js`
+## Related Helpers
+- `checkGuildLevelUp`
+- `getMyGuildInfo`
+- `ensureGuildWarehouseObj`
+- `addItem`
+- `saveJsonFile`
+## Data Usage
+- `guildData.guilds[*].exp`
+- `guildData.guilds[*].level`
+- `guildData.guilds[*].warehouse`
+- `data.member[sender].bag`
+- `data.member[sender].gContribCnt`
+## Save Flow
+- `/길드공헌` mutates member contribution counters, member bag rewards, guild EXP, and possible guild warehouse rewards, then saves member data and `guildData`.
+- `/길드공헌추가` mutates target guild EXP and possible guild warehouse rewards, then saves member data and `guildData`.
+- `checkGuildLevelUp` now grants level 13 and 19 rewards as `warehouse.elemental` 정령 강화석, not pendant/ring warehouse rewards.
+## Related Commands
+- `/길드정보`
+- `/길드창고`
+- `/길드분배`
+
+---
+
 # /길드전체초기화
 Status: VERIFIED
 ## Command Anchors
