@@ -4654,3 +4654,68 @@ Status: VERIFIED
 
 - Do not broaden the guard with `startsWith`; malformed `/미출석가입` suffixes should fall into validation and must not create data.
 - Existing historical member IDs are not normalized or deleted by this command.
+
+---
+
+# 펜던트 콘텐츠
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+- `data/hoiBotChangeLog.json`
+
+## Commands
+
+- `/펜던트오픈 [갯수]`
+- `/펜던트확률`
+- `/펜던트가방`
+- `/펜던트정보 [번호]`
+- `/펜던트장착 [번호]`
+- `/펜던트해제`
+- `/펜던트복원 [번호]`
+- `/펜던트강화 [번호]`
+- `/펜던트판매 [번호]`
+- `/펜던트가방정리 번호~번호`
+- `/펜던트당근거래 유저명 번호`
+- `/펜던트거래등록 번호 판매금액`
+- `/펜던트추가`, `/펜던트삭제`, `/펜던트장착초기화`, `/펜던트강화수정`, `/펜던트내구도수정`
+
+## Related Helpers
+
+- `ensurePendantUser`
+- `getPendantBag`
+- `pickRandomPendant`
+- `formatPendantDisplay`
+- `calculatePendantStats`
+- `calculatePendantItemInfo`
+- `getPendantExploreBonusPercent`
+- `runPendantOpen`
+- `equipPendantFromBag`
+- `unequipPendantToBag`
+- `restorePendantDurability`
+- `buildPendantUpgradePreview`
+- `runPendantUpgradeFromState`
+- `registerPendantFreeMarket`
+
+## Data Usage
+
+- `petData[user].pendant`
+- `petData[user].pendantBag`
+- `data.member[user].bag`
+- `data.member[user].point`
+- `freeMarketData.listings[*].type = "pendant"`
+
+## Save Flow
+
+- 펜던트 장착/관리/강화/거래는 `petData`를 저장한다.
+- 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
+- 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
+
+## AI Notes
+
+- `/펜던트오픈`은 정식 오픈 전까지 `호이 남`만 사용할 수 있도록 임시 제한되어 있다.
+- 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
+- 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
