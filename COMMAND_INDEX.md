@@ -4473,6 +4473,9 @@ Status: VERIFIED
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
 - `formatPendingUserIdServerText`
+- `normalizeMissingAttendanceSignupUserId`
+- `buildMissingAttendanceSignupInvalidIdMessage`
+- `buildMissingAttendanceSignupSuccessMessage`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -4500,6 +4503,7 @@ Status: VERIFIED
 
 - `/미가입출첵`
 - `/미가입출첵서버초기화 [호1-호7|벨1-벨2|GM|서버장]`
+- `/미출석가입 [아이디]`
 - `/미정 [이름]`
 
 ## AI Notes
@@ -4552,3 +4556,51 @@ Status: VERIFIED
 - Accepted as `/미정` for usage guidance or `/미정 [이름]` for lookup.
 - The command searches regular member data and 미가입 출첵 light data by base name, excluding the trailing gender token from stored user IDs.
 - The command displays stored server info for joined users and light-attendance rows, or `(서버정보 없음)` when the row has no server.
+
+---
+
+# /미출석가입 [아이디]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `data/attendanceLight.json`
+- `data/hoiBotChangeLog.json`
+
+## Related Helpers
+
+- `normalizeMissingAttendanceSignupUserId`
+- `buildMissingAttendanceSignupInvalidIdMessage`
+- `buildMissingAttendanceSignupSuccessMessage`
+- `initializeMember`
+- `initPetSkillUser`
+- `saveJsonFile`
+- `loadJsonFile`
+
+## Data Usage
+
+- `data.member[아이디]`
+- `petData[아이디]`
+- `petSkillData[아이디]`
+- `member_title.member[아이디]`
+- `attendanceLightData.users[아이디]`
+
+## Save Flow
+
+- Admin/Master-only command.
+- Accepts `/미출석가입 [아이디]` only when the ID normalizes to `이름 남` or `이름 여`.
+- Invalid IDs reply with usage guidance and return before creating member, pet, title, pet-skill, or light-attendance data.
+- Valid new IDs call `initializeMember`, initialize pet-skill data, save `petSkillData`, and remove an exact matching `attendanceLight.json` row when it exists.
+
+## Related Commands
+
+- `/가입`
+- `/미가입출첵`
+- `/미정 [이름]`
+
+## AI Notes
+
+- Do not broaden the guard with `startsWith`; malformed `/미출석가입` suffixes should fall into validation and must not create data.
+- Existing historical member IDs are not normalized or deleted by this command.

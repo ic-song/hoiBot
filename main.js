@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.223"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.224"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4839,6 +4839,38 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 					var pendingIdAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
 					replier.reply(buildPendingUserIdCheckMessage(pendingIdBaseName, data, pendingIdAttendanceLightData));
+					return;
+				}
+				if (msg === "/미출석가입" || /^\/미출석가입\s+\S(?:.*\S)?\s*$/.test(msg)) {
+					if (!(isMaster(sender) || isAdmin(sender))) {
+						replier.reply("❌ 관리자만 사용할 수 있습니다.");
+						return;
+					}
+					var missingAttendanceSignupRawId = msg.substring("/미출석가입".length).trim();
+					if (!missingAttendanceSignupRawId) {
+						replier.reply("❌ 명령어 형식이 잘못되었습니다.\n\n사용법: /미출석가입 아이디\n예시: /미출석가입 호이 남");
+						return;
+					}
+					var missingAttendanceSignupUserId = normalizeMissingAttendanceSignupUserId(missingAttendanceSignupRawId);
+					if (!missingAttendanceSignupUserId) {
+						replier.reply(buildMissingAttendanceSignupInvalidIdMessage(missingAttendanceSignupRawId));
+						return;
+					}
+					if (data.member[missingAttendanceSignupUserId]) {
+						replier.reply("❌ 이미 가입된 아이디입니다.\n아이디: " + missingAttendanceSignupUserId);
+						return;
+					}
+					initializeMember(missingAttendanceSignupUserId, data, petData);
+					initPetSkillUser(petSkillData, missingAttendanceSignupUserId);
+					saveJsonFile(petSkillData, petSkillDataPath);
+					var missingAttendanceSignupLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+					var missingAttendanceSignupLightRemoved = false;
+					if (missingAttendanceSignupLightData.users && missingAttendanceSignupLightData.users[missingAttendanceSignupUserId]) {
+						delete missingAttendanceSignupLightData.users[missingAttendanceSignupUserId];
+						missingAttendanceSignupLightRemoved = true;
+						saveJsonFile(missingAttendanceSignupLightData, attendanceLightPath);
+					}
+					replier.reply(buildMissingAttendanceSignupSuccessMessage(missingAttendanceSignupUserId, missingAttendanceSignupLightRemoved));
 					return;
 				}
 				if (msg === "/미가입출첵") {
@@ -35801,6 +35833,33 @@ function buildTermsMessage() {
 
 function buildWelcomeMessage() {
 	return "" + "호이월드에 오신 것을 환영합니다\n" + '채팅창에 "가이드"를 입력하시면 가이드 확인이 가능합니다.\n' + "1. /펫생성 아이디\n" + "2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
+}
+
+// 미출석가입 아이디를 이름 + 성별 양식으로 정규화하는 함수
+function normalizeMissingAttendanceSignupUserId(rawUserId) {
+	var userId = String(rawUserId || "").replace(/\s+/g, " ").trim();
+	if (!/^[^\s]+ (남|여)$/.test(userId)) return "";
+	return userId;
+}
+
+// 미출석가입 아이디 양식 오류 안내 메시지를 생성하는 함수
+function buildMissingAttendanceSignupInvalidIdMessage(rawUserId) {
+	return (
+		"❌ 아이디 양식이 올바르지 않아 등록되지 않았습니다.\n\n" +
+		"입력값: " + String(rawUserId || "").trim() + "\n" +
+		"사용법: /미출석가입 아이디\n" +
+		"예시: /미출석가입 호이 남\n\n" +
+		"아이디는 이름 뒤에 남 또는 여를 띄어 입력해주세요."
+	);
+}
+
+// 미출석가입 등록 완료 안내 메시지를 생성하는 함수
+function buildMissingAttendanceSignupSuccessMessage(userId, lightRemoved) {
+	var lines = [];
+	lines.push("✅ 미출석가입 등록 완료");
+	lines.push("아이디: " + userId);
+	if (lightRemoved) lines.push("미가입 출첵 잔여 기록도 함께 정리했습니다.");
+	return lines.join("\n");
 }
 
 // ㅊㅊ만 입력한 미가입 유저의 최소 출석 기록을 저장하는 함수
