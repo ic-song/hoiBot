@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.224"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.225"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20773,11 +20773,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					saveJsonFile(data, filePath);
 					return;
 				}
-				if (msg === "/반지박스오픈" || /^\/반지박스오픈\s+\d+$/.test(msg)) {
-					runStoneBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
-					saveJsonFile(data, filePath);
-					return;
-				}
 				if (msg === "/이벤박스오픈" || /^\/이벤박스오픈\s+\d+$/.test(msg)) {
 					runEventBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
 					saveJsonFile(data, filePath);
@@ -37117,7 +37112,6 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 
 	openAllOne("/정령박스오픈", "정령박스🥀(/정령박스오픈)", rollflowerBox);
 	openAllOne("/강화박스오픈", "강화박스⭐(/강화박스오픈)", rollEnhanceBox);
-	openAllOne("/반지박스오픈", "반지박스💍(/반지박스오픈)", rollStoneBox);
 	openAllOne("/이벤박스오픈", "이벤트박스✡️(/이벤박스오픈)", rollEventBox);
 	openAllOne("/펫먹이박스오픈", "펫먹이던전박스🍼(/펫먹이박스오픈)", rollPetFoodBox);
 	openAllOne("/전도르박스오픈", "전도르던전박스🗿(/전도르박스오픈)", rollJeondorBox);
@@ -37353,16 +37347,6 @@ function rollflowerBox() {
 
 function runflowerBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/정령박스오픈", "정령박스🥀(/정령박스오픈)", msg, rollflowerBox);
-}
-function rollStoneBox() {
-	return {
-		gainItems: { "펜던트 강화석📿": 100 },
-		gainTextLines: []
-	};
-}
-
-function runStoneBoxOpen(sender, data, petData, guildData, msg, replier) {
-	runExploreBoxOpen(sender, data, petData, guildData, replier, "/반지박스오픈", "반지박스💍(/반지박스오픈)", msg, rollStoneBox);
 }
 function rollEnhanceBox() {
 	var qty = Math.floor(Math.random() * (100 - 70 + 1)) + 70;
