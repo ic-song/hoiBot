@@ -4689,6 +4689,8 @@ Status: VERIFIED
 - `getPendantBag`
 - `pickRandomPendant`
 - `formatPendantDisplay`
+- `formatPendantPercent`
+- `sortPendantBagByGrade`
 - `calculatePendantStats`
 - `calculatePendantItemInfo`
 - `getPendantExploreBonusPercent`
@@ -4717,5 +4719,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `/펜던트오픈`은 정식 오픈 전까지 `호이 남`만 사용할 수 있도록 임시 제한되어 있다.
+- `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 표시한다.
+- `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
 - 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
