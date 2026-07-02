@@ -2223,6 +2223,28 @@ Status: VERIFIED
 
 ---
 
+# 레벨업 보상
+Status: VERIFIED
+## Files
+- `main.js`
+## Related Helpers
+- `addItem`
+- `saveJsonFile`
+## Data Usage
+- `data.member[sender].lv`
+- `data.member[sender].exp`
+- `data.member[sender].point`
+- `data.member[sender].bag`
+- `petData[sender].petexp`
+## Save Flow
+- When a user levels up, the command flow mutates member EXP/point/bag and pet EXP, then saves member data and pet data in the surrounding attendance/action flow.
+- `levelRewards` no longer grants `반지 강화석💍`; levels that only granted ring stones were removed from the reward table.
+## Related Commands
+- `ㅊㅊ`
+- activity commands that add EXP before level-up processing
+
+---
+
 # /길드전체초기화
 Status: VERIFIED
 ## Command Anchors
