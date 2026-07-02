@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.220"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.221"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -5381,13 +5381,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				if (msg === "/선물전달" && sender == "호이 남") {
 					for (let user in data.member) {
-						if (data.member[user].bag["호이응원패키지(무료)🐹"]) {
-							data.member[user].bag["호이응원패키지(무료)🐹"]++;
+						if (data.member[user].bag["호이응원패키지(무료)🐹[2]"]) {
+							data.member[user].bag["호이응원패키지(무료)🐹[2]"]++;
 						} else {
-							data.member[user].bag["호이응원패키지(무료)🐹"] = 1;
+							data.member[user].bag["호이응원패키지(무료)🐹[2]"] = 1;
 						}
 					}
-					var message = "호이응원패키지(무료)🐹 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!\n\n 사용 방법:\n1. /패키지가방\n/패키지사용 [가방번호] [오픈갯수]";
+					var message = "호이응원패키지(무료)🐹[2] 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!\n\n 사용 방법:\n1. /패키지가방\n/패키지사용 [가방번호] [오픈갯수]";
 					Api.replyRoom(room1, message);
 					Api.replyRoom(room2, message);
 					Api.replyRoom(room3, message);
@@ -34970,7 +34970,7 @@ function trimPetHomeComments(comments) {
 // 펫홈 댓글 확인 메시지를 생성하는 함수
 function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments) {
 	var targetNick = checkRank(data, petData, guildData, targetName);
-	var out = "[" + targetNick + "]님의 방명록✍️\n";
+	var out = "[" + targetNick + "]님의 방명록✍️[최대 50개]\n";
 	if (!comments || comments.length === 0) {
 		return out + "아직 등록된 댓글이 없습니다.";
 	}
