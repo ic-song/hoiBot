@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.229"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.230"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -5681,10 +5681,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								count: 5
 							},
 							{
-								name: "반지 강화석💍",
-								count: 5
-							},
-							{
 								name: "미니펫대전리셋권🐹",
 								count: 2
 							},
@@ -5698,7 +5694,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							},
 							{
 								name: "펫 강화석⭐",
-								count: 30
+								count: 70
 							},
 							{
 								name: "잡템☠️",
@@ -5709,20 +5705,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								count: 5
 							},
 							{
-								name: "시탑 부스터🔮",
-								count: 1
-							},
-							{
 								name: "캐슬대전리셋권🐶",
 								count: 1
 							},
 							{
 								name: "티어 승급티켓🎟",
 								count: 1
-							},
-							{
-								name: "하트💝",
-								count: 10
 							},
 							{
 								name: "펫먹이특식🥡(/특식오픈)",
@@ -5768,10 +5756,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								count: 10
 							},
 							{
-								name: "반지 강화석💍",
-								count: 10
-							},
-							{
 								name: "미니펫대전리셋권🐹",
 								count: 2
 							},
@@ -5785,7 +5769,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							},
 							{
 								name: "펫 강화석⭐",
-								count: 40
+								count: 100
 							},
 							{
 								name: "잡템☠️",
@@ -5796,20 +5780,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								count: 5
 							},
 							{
-								name: "시탑 부스터🔮",
-								count: 1
-							},
-							{
 								name: "티어 승급티켓🎟",
 								count: 5
 							},
 							{
 								name: "캐슬대전리셋권🐶",
 								count: 5
-							},
-							{
-								name: "하트💝",
-								count: 20
 							},
 							{
 								name: "펫먹이상자📦(/상자오픈)",
@@ -5852,6 +5828,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 							},
 							{
 								name: "길드창고패키지🧳(/길드창고패키지오픈)",
+								count: 1
+							},
+							{
+								name: "길드영지 부스터🔮(/길드부스터공헌 숫자)",
 								count: 1
 							}
 							];
@@ -14431,9 +14411,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				function pickEnhanceItem() {
 					var r = Math.random();
 
-					if (r < 0.4) {
-						return "반지강화확률UP💍(30%)";
-					} else if (r < 0.8) {
+					if (r < 0.8) {
 						return "정령강화확률UP🥀(30%)";
 					} else if (r < 0.9) {
 						return "펫강화확률UP🌟(20%)";
@@ -14457,8 +14435,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						function getGroup(name) {
 							if (name.indexOf("펫강화확률UP") !== -1) return 1;
 							if (name.indexOf("미니펫강화확률UP") !== -1) return 2;
-							if (name.indexOf("반지") !== -1) return 3;
-							if (name.indexOf("정령") !== -1) return 4;
+							if (name.indexOf("정령") !== -1) return 3;
 							return 99;
 						}
 
@@ -37188,7 +37165,7 @@ function runflowerBoxOpen(sender, data, petData, guildData, msg, replier) {
 	runExploreBoxOpen(sender, data, petData, guildData, replier, "/정령박스오픈", "정령박스🥀(/정령박스오픈)", msg, rollflowerBox);
 }
 function rollEnhanceBox() {
-	var qty = Math.floor(Math.random() * (100 - 70 + 1)) + 70;
+	var qty = Math.floor(Math.random() * (1500 - 100 + 1)) + 100;
 	return {
 		gainItems: { "펫 강화석⭐": qty },
 		gainTextLines: []
