@@ -2264,6 +2264,7 @@ Status: VERIFIED
 - `data.member[sender].bag`
 ## Save Flow
 - Consumes package item, mutates guild warehouse, saves member data and `guildData`
+- Each package adds guild warehouse rewards: fund 50,000,000, elemental 12, pendant 1, pet 15, miniPet 5.
 ## Related Commands
 - `/길드분배`
 - `/길드정보`

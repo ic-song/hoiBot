@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.225"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.226"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -23656,7 +23656,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					replier.reply(out);
 				}
-				if (msg === "/길드창고패키지오픈" || msg.indexOf("/길드창고패키지오픈 ") === 0) {
+				if (msg === "/길드창고패키지오픈" || /^\/길드창고패키지오픈\s+\d+$/.test(msg)) {
 					var parts = msg.split(" ");
 					var count = 1;
 
@@ -23695,7 +23695,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					// 지급
 					var fund = 50000000 * count;
 					var elemental = 12 * count;
-					var ring = 11 * count;
+					var ring = 1 * count;
 					var pet = 15 * count;
 					var miniPet = 5 * count;
 
@@ -33022,7 +33022,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
 
 		var fund = 50000000 * count;
 		var elemental = 12 * count;
-		var ring = 11 * count;
+		var ring = 1 * count;
 		var pet = 15 * count;
 		var miniPet = 5 * count;
 
