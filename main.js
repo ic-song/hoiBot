@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.228"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.229"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -18308,58 +18308,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						resultMsg += "- 정령 강화석🥀 x " + elementalCount + "\n";
 						hasResult = true;
 					}
-					var magicBoxCount = Math.floor((bag["마정석🔮"] ? bag["마정석🔮"] : 0) / 10);
-					if (magicBoxCount > 0) {
-						bag["마정석🔮"] = bag["마정석🔮"] - magicBoxCount * 10;
-						if (bag["마정석🔮"] <= 0) {
-							delete bag["마정석🔮"];
-						}
-						bag["마정석상자🔮"] = (bag["마정석상자🔮"] ? bag["마정석상자🔮"] : 0) + magicBoxCount;
-						resultMsg += "- 마정석상자🔮 x " + magicBoxCount + "\n";
-						hasResult = true;
-					}
 					if (hasResult) {
 						replier.reply(resultMsg.trim());
 					} else {
 						replier.reply("❌ 조합 가능한 재료가 없습니다.");
-					}
-				}
-				if (msg === "/마정석조합" || /^\/마정석조합\s+\d+$/.test(msg)) {
-					let args = msg.split(" ");
-					let combineCount = args.length > 1 ? parseInt(args[1]) : 1; // 기본값 1개 조합
-					// 입력값 검증
-					if (isNaN(combineCount) || combineCount < 1) {
-						replier.reply("❌ 잘못된 입력입니다. 숫자는 1 이상이어야 합니다.");
-						return;
-					}
-					let cost = combineCount * 10; // 마정석🔮 10개당 1개 조합
-					if (!data.member[sender].bag["마정석🔮"] || data.member[sender].bag["마정석🔮"] < cost) {
-						replier.reply("❌ 마정석🔮이 부족합니다. (필요 개수: " + cost + ")");
-						return;
-					}
-					data.member[sender].bag["마정석🔮"] -= cost;
-					if (!data.member[sender].bag["마정석상자🔮"]) {
-						data.member[sender].bag["마정석상자🔮"] = 0;
-					}
-					data.member[sender].bag["마정석상자🔮"] += combineCount;
-					// 조합 메시지 출력
-					replier.reply("✨ 무언가 영롱하게 빛납니다!!\n[" + checkRank(data, petData, guildData, sender) + "]님이 마정석상자🔮(/마정석오픈) " + combineCount + "개 조합 성공!");
-				}
-				if (msg === "/마정석오픈" || /^\/마정석오픈\s+\d+$/.test(msg)) {
-					let args = msg.split(" ");
-					let openCount = args.length > 1 ? parseInt(args[1]) : 1; // 기본값 1개
-					if (isNaN(openCount) || openCount < 1) {
-						replier.reply("잘못된 명령어 형식입니다. 사용법: /마정석오픈 {갯수}");
-						return;
-					}
-					let rewards = openMagicStoneBox(sender, openCount, replier, data);
-					if (rewards) {
-						// 결과 메시지 출력
-						let resultMessage = "[" + checkRank(data, petData, guildData, sender) + "]님이 마정석상자🔮 " + openCount + "개 오픈!\n\n";
-						for (let item in rewards) {
-							resultMessage += item + " " + rewards[item] + "개 획득";
-						}
-						replier.reply(resultMessage);
 					}
 				}
 				if (msg.startsWith("/시련의탑수정") && sender == "호이 남") {
@@ -22950,42 +22902,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "elemental");
-
-					if (!result.ok) {
-						replier.reply(result.message);
-						return;
-					}
-
-					replier.reply(
-						"✅ 길드창고에 자원이 지급되었습니다.\n" +
-						"길드: " +
-						result.guildName +
-						"(" +
-						result.guildMark +
-						")\n" +
-						"자원: " +
-						result.resourceLabel +
-						"\n" +
-						"기존: " +
-						numberWithCommas(result.beforeValue) +
-						"\n" +
-						"추가: +" +
-						numberWithCommas(result.addValue) +
-						"\n" +
-						"현재: " +
-						numberWithCommas(result.afterValue)
-					);
-					return;
-				}
-				// 운영자 전용 펜던트 강화석 창고 지급
-				if (msg.indexOf("/길드반지창고") === 0) {
-					var parsed = parseGuildNameAndAmount(msg, "/길드반지창고");
-					if (!parsed) {
-						replier.reply("사용법: /길드반지창고 [길드명] [숫자]\n예) /길드반지창고 대머리 100");
-						return;
-					}
-
-					var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "ring");
 
 					if (!result.ok) {
 						replier.reply(result.message);
@@ -32742,49 +32658,6 @@ function getTrialTowerBossExp(floor) {
 	}
 	return 1000 * floor;
 }
-function openMagicStoneBox(sender, count, replier, data) {
-	if (!data.member[sender].bag["마정석상자🔮"] || data.member[sender].bag["마정석상자🔮"] < count) {
-		replier.reply("마정석상자🔮가 부족합니다.");
-		return null;
-	}
-	data.member[sender].bag["마정석상자🔮"] -= count;
-	let rewards = {}; // 보상 아이템을 합산할 객체
-	for (let i = 0; i < count; i++) {
-		let rand = Math.random() * 100;
-		let rewardItem = GLOBAL_CONFIG.items.pendantEnhanceStoneName;
-		let rewardCount = 1; // 기본 개수
-		if (rand <= 0.001)
-			rewardCount = 100; // 0.001%
-		else if (rand <= 0.01)
-			rewardCount = 50; // 0.009%
-		else if (rand <= 0.1)
-			rewardCount = 20; // 0.090%
-		else if (rand <= 0.5)
-			rewardCount = 10; // 0.400%
-		else if (rand <= 1.0)
-			rewardCount = 7; // 0.500%
-		else if (rand <= 3.0)
-			rewardCount = 5; // 2.000%
-		else if (rand <= 5.0)
-			rewardCount = 3; // 2.000%
-		else if (rand <= 10.0)
-			rewardCount = 2; // 5.000%
-		else rewardCount = 1; //이외
-		// 보상을 합산
-		if (!rewards[rewardItem]) {
-			rewards[rewardItem] = 0;
-		}
-		rewards[rewardItem] += rewardCount;
-		// 유저 가방에 반영
-		if (!data.member[sender].bag[rewardItem]) {
-			data.member[sender].bag[rewardItem] = 0;
-		}
-		data.member[sender].bag[rewardItem] += rewardCount;
-	}
-	// 보상 결과 반환
-	return rewards;
-}
-
 function runOpenAll(sender, data, petData, replier, guildData) {
 	let responseMessage = "[" + checkRank(data, petData, guildData, sender) + "]님의 전체 오픈!!!\n\n";
 	let totalResults1 = [],
@@ -33083,17 +32956,6 @@ function runOpenAll(sender, data, petData, replier, guildData) {
 		totalResults2.push(exploreOpenMsg);
 	}
 
-	if (bag["마정석상자🔮"]) {
-		let count = bag["마정석상자🔮"];
-		let result = openMagicStoneBox(sender, count, replier, data);
-		if (result) {
-			totalResults1.push("마정석상자🔮 " + count + "개 오픈");
-			for (let item in result) {
-				totalResults2.push(item + " " + result[item] + "개 오픈\n");
-			}
-		}
-		delete bag["마정석상자🔮"];
-	}
 	if (totalResults1.length > 0) {
 		responseMessage += totalResults1.join("\n") + "\n" + allsee + "\n" + totalResults3.join("\n") + "\n종합 획득 포인트 : 🅟" + numberWithCommas(totPoint) + "\n\n" + totalResults2.join("\n");
 	} else {
@@ -33112,14 +32974,6 @@ function runCombineAll(sender, data) {
 		if (bag["정령조각🥀"] <= 0) delete bag["정령조각🥀"];
 		bag["정령 강화석🥀"] = (bag["정령 강화석🥀"] || 0) + elementalCount;
 		resultMsg += "- 정령 강화석🥀 x " + elementalCount + "\n";
-		hasResult = true;
-	}
-	let magicBoxCount = Math.floor((bag["마정석🔮"] || 0) / 10);
-	if (magicBoxCount > 0) {
-		bag["마정석🔮"] -= magicBoxCount * 10;
-		if (bag["마정석🔮"] <= 0) delete bag["마정석🔮"];
-		bag["마정석상자🔮"] = (bag["마정석상자🔮"] || 0) + magicBoxCount;
-		resultMsg += "- 마정석상자🔮 x " + magicBoxCount + "\n";
 		hasResult = true;
 	}
 	return hasResult ? resultMsg.trim() : "❌ 조합 가능한 재료가 없습니다.";
@@ -38625,11 +38479,6 @@ function addGuildResourceByAdmin(guildData, sender, guildName, amount, type) {
 		g.warehouse.elemental = beforeValue + amount;
 		afterValue = g.warehouse.elemental;
 		resourceLabel = "정령 강화석🥀";
-	} else if (type === "ring") {
-		beforeValue = g.warehouse.pendant || 0;
-		g.warehouse.pendant = beforeValue + amount;
-		afterValue = g.warehouse.pendant;
-		resourceLabel = "펜던트 강화석📿";
 	} else if (type === "pet") {
 		beforeValue = g.warehouse.pet || 0;
 		g.warehouse.pet = beforeValue + amount;
