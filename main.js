@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.232"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.233"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36221,6 +36221,41 @@ function formatPendantDisplay(pendant) {
 	return pendant.name + (pendant.icon || "") + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
 }
 
+// 펜던트 확률 표시용 소수 정리
+function formatPendantPercent(value) {
+	var n = parseFloat(value || 0);
+	var text = (Math.round(n * 10) / 10).toFixed(1);
+	return text.replace(/\.0$/, "");
+}
+
+// 펜던트 등급 정렬 우선순위 반환
+function getPendantGradeSortRank(grade) {
+	var order = ["창조", "창세", "초월", "신화", "최상급+", "최상급", "상급+", "상급", "중급+", "중급", "하급+", "하급", "최하급"];
+	for (var i = 0; i < order.length; i++) {
+		if (order[i] === grade) return i;
+	}
+	return order.length;
+}
+
+// 펜던트 가방을 등급 순서대로 정렬
+function sortPendantBagByGrade(bag) {
+	if (!Array.isArray(bag)) return bag;
+	var decorated = [];
+	for (var i = 0; i < bag.length; i++) {
+		decorated.push({ item: bag[i], index: i });
+	}
+	decorated.sort(function(a, b) {
+		var ar = getPendantGradeSortRank(a.item ? a.item.grade : "");
+		var br = getPendantGradeSortRank(b.item ? b.item.grade : "");
+		if (ar !== br) return ar - br;
+		return a.index - b.index;
+	});
+	for (var j = 0; j < decorated.length; j++) {
+		bag[j] = decorated[j].item;
+	}
+	return bag;
+}
+
 // 펜던트 기본/강화 능력치 계산
 function calculatePendantStats(pendant) {
 	var result = { charm: 0, explore: 0, baseCharm: 0, upgradeCharm: 0, baseExplore: 0, upgradeExplore: 0 };
@@ -36270,14 +36305,17 @@ function buildPendantRateMessage() {
 function buildPendantBagMessage(data, petData, guildData, user) {
 	if (!petData[user]) return "펫 데이터가 없습니다.";
 	var bag = getPendantBag(petData, user);
+	sortPendantBagByGrade(bag);
 	var out = "[" + checkRank(data, petData, guildData, user) + "] 보유 펜던트가방💎[" + bag.length + "/" + getPendantBagLimit() + "]\n";
 	out += "━━━━━━━━━━━━━\n";
 	out += "※ 펜던트 장착: /펜던트장착 [번호]\n";
 	out += "※ 펜던트 판매: /펜던트판매 [번호]\n";
 	out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
+	out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
 	out += "━━━━━━━━━━━━━\n";
 	if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
 	for (var i = 0; i < bag.length; i++) {
+		if (i === 5 && typeof allsee !== "undefined") out += allsee + "\n";
 		out += (i + 1) + ". " + formatPendantDisplay(bag[i]) + "\n";
 	}
 	return out.trim();
@@ -36288,6 +36326,7 @@ function getPendantByIndex(petData, user, index) {
 	var pet = ensurePendantUser(petData, user);
 	if (index === 0) return { pendant: pet.pendant || null, source: "equipped", arrayIndex: -1 };
 	var bag = getPendantBag(petData, user);
+	sortPendantBagByGrade(bag);
 	if (index < 1 || index > bag.length) return { pendant: null, source: "bag", arrayIndex: -1 };
 	return { pendant: bag[index - 1], source: "bag", arrayIndex: index - 1 };
 }
@@ -36305,9 +36344,9 @@ function buildPendantInfoMessage(data, petData, guildData, user, index) {
 	out += "기본 종합매력👑: " + numberWithCommas(stats.baseCharm) + "💞\n";
 	out += "강화 종합매력👑: +" + numberWithCommas(stats.upgradeCharm) + "💞\n";
 	out += "총 종합매력👑: " + numberWithCommas(stats.charm) + "💞\n\n";
-	out += "기본 펫탐험성공확률⛰️: +" + stats.baseExplore + "%\n";
-	out += "강화 펫탐험성공확률⛰️: +" + stats.upgradeExplore + "%\n";
-	out += "총 펫탐험성공확률⛰️: +" + stats.explore + "%\n\n";
+	out += "기본 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.baseExplore) + "%\n";
+	out += "강화 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.upgradeExplore) + "%\n";
+	out += "총 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.explore) + "%\n\n";
 	out += "남은 내구도⚒️: " + (info.pendant.durability || 0) + "회\n";
 	if (parseInt(info.pendant.upgrade || 0, 10) >= 30) {
 		out += "이미 최대 강화 단계입니다.";
@@ -36358,12 +36397,13 @@ function equipPendantFromBag(data, petData, guildData, sender, index) {
 	var pet = ensurePendantUser(petData, sender);
 	if (pet.pendant) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n━━━━━━━━━━━━━\n기존 " + formatPendantDisplay(pet.pendant) + " 을(를)\n먼저 /펜던트해제 를 해주세요.\n━━━━━━━━━━━━━\n펜던트귀속해제💎(/펜던트해제) 는\n다이아상점💎 에서 구매가 가능합니다." };
 	var bag = getPendantBag(petData, sender);
+	sortPendantBagByGrade(bag);
 	if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
 	var pendant = bag.splice(index - 1, 1)[0];
 	pendant.bound = true;
 	pet.pendant = pendant;
 	var stats = calculatePendantStats(pendant);
-	return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트를 장착 하였습니다.\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) + "\n\n종합매력👑: " + numberWithCommas(stats.charm) + "💞\n펫탐험성공확률⛰️ +" + stats.explore + "%\n남은 내구도⚒️: " + pendant.durability + "회" };
+	return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트를 장착 하였습니다.\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) + "\n\n종합매력👑: " + numberWithCommas(stats.charm) + "💞\n펫탐험성공확률⛰️ +" + formatPendantPercent(stats.explore) + "%\n남은 내구도⚒️: " + pendant.durability + "회" };
 }
 
 // 펜던트 해제 처리
@@ -36439,7 +36479,7 @@ function buildPendantUpgradePreview(data, petData, guildData, sender, index) {
 	out += formatPendantDisplay(info.pendant) + "\n\n";
 	out += "강화 성공시:\n";
 	out += "종합매력👑: " + numberWithCommas(beforeStats.charm) + "+" + numberWithCommas(afterStats.charm - beforeStats.charm) + "(⬆️)=" + numberWithCommas(afterStats.charm) + "💞\n";
-	out += "펫탐험성공확률⛰️:" + beforeStats.explore + "%+" + (afterStats.explore - beforeStats.explore).toFixed(1) + "%(⬆️)=" + afterStats.explore + "%\n\n";
+	out += "펫탐험성공확률⛰️:" + formatPendantPercent(beforeStats.explore) + "%+" + formatPendantPercent(afterStats.explore - beforeStats.explore) + "%(⬆️)=" + formatPendantPercent(afterStats.explore) + "%\n\n";
 	out += "강화비용💸: 🅟" + numberWithCommas(nextInfo.point) + "\n필요 강화석📿: " + nextInfo.stone + "개\n강화성공 확률🎲: " + nextInfo.rate + "%\n남은 내구도⚒️: " + info.pendant.durability + "회\n━━━━━━━━━━━━━\n펜던트 강화할거임?\n[진행시켜] / [쫄았음]";
 	return { ok: true, message: out };
 }
@@ -36463,7 +36503,7 @@ function runPendantUpgradeFromState(sender, data, petData, guildData) {
 	if (success) {
 		info.pendant.upgrade = next;
 		var successStats = calculatePendantStats(info.pendant);
-		return { ok: true, message: "[✅][" + checkRank(data, petData, guildData, sender) + "] 님! 영롱하군요🤩🤩\n\n펜던트 강화 성공!\n━━━━━━━━━━━━━\n" + formatPendantDisplay(info.pendant) + "\n종합매력👑: " + numberWithCommas(successStats.charm) + "💞\n펫탐험성공확률⛰️:" + successStats.explore + "%\n━━━━━━━━━━━━━\n남은 포인트💸: 🅟" + numberWithCommas(data.member[sender].point || 0) + "\n남은 내구도⚒️: " + info.pendant.durability + "회" };
+		return { ok: true, message: "[✅][" + checkRank(data, petData, guildData, sender) + "] 님! 영롱하군요🤩🤩\n\n펜던트 강화 성공!\n━━━━━━━━━━━━━\n" + formatPendantDisplay(info.pendant) + "\n종합매력👑: " + numberWithCommas(successStats.charm) + "💞\n펫탐험성공확률⛰️:" + formatPendantPercent(successStats.explore) + "%\n━━━━━━━━━━━━━\n남은 포인트💸: 🅟" + numberWithCommas(data.member[sender].point || 0) + "\n남은 내구도⚒️: " + info.pendant.durability + "회" };
 	}
 	info.pendant.durability = Math.max(0, (info.pendant.durability || 0) - 1);
 	var failMsg = "[❌][" + checkRank(data, petData, guildData, sender) + "] 야야 [😵]실패네? ㅋㅋ\n━━━━━━━━━━━━━\n" + formatPendantDisplay(info.pendant) + "\n\n남은 포인트💸: 🅟" + numberWithCommas(data.member[sender].point || 0) + "\n남은 내구도⚒️: " + info.pendant.durability + "회";
@@ -36474,6 +36514,7 @@ function runPendantUpgradeFromState(sender, data, petData, guildData) {
 // 펜던트 단일 판매 처리
 function sellPendantFromBag(data, petData, guildData, sender, index) {
 	var bag = getPendantBag(petData, sender);
+	sortPendantBagByGrade(bag);
 	if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
 	var pendant = bag.splice(index - 1, 1)[0];
 	var price = 100000000;
@@ -36493,6 +36534,7 @@ function cleanPendantBagRange(data, petData, guildData, sender, msg) {
 		end = tmp;
 	}
 	var bag = getPendantBag(petData, sender);
+	sortPendantBagByGrade(bag);
 	if (start < 1 || end > bag.length) return { ok: false, message: "정리 범위가 올바르지 않습니다." };
 	var count = end - start + 1;
 	bag.splice(start - 1, count);
@@ -36510,6 +36552,7 @@ function tradePendantByCarrot(data, petData, guildData, sender, msg) {
 	if (!data.member[target] || !petData[target]) return { ok: false, message: "거래 대상 유저를 찾을 수 없습니다." };
 	if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100)) return { ok: false, message: "펜던트 거래 수수료 당근🥕 100개가 부족합니다." };
 	var senderBag = getPendantBag(petData, sender);
+	sortPendantBagByGrade(senderBag);
 	var targetBag = getPendantBag(petData, target);
 	if (targetBag.length >= getPendantBagLimit()) return { ok: false, message: "상대 펜던트가방 공간이 부족합니다." };
 	if (index < 1 || index > senderBag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
@@ -36533,6 +36576,7 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
 	if (activeCount + 1 > limit) return { ok: false, message: "❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + activeCount + "/" + limit + "건\n요청: +1건" };
 	if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100)) return { ok: false, message: "펜던트 거래 등록 수수료 당근🥕 100개가 부족합니다." };
 	var bag = getPendantBag(petData, sender);
+	sortPendantBagByGrade(bag);
 	if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
 	var pendant = bag.splice(index - 1, 1)[0];
 	removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100);
