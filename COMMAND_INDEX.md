@@ -399,6 +399,9 @@ Status: VERIFIED
 - `buildGuildTerritoryStatusMessage`
 - `buildGuildTerritoryStartMessage`
 - `startGuildTerritoryTurnTimer`
+- `isGuildTerritoryWarCommandLockActive`
+- `isGuildTerritoryAllowedDuringWarCommand`
+- `isGuildTerritoryBlockedDuringWarCommand`
 
 ## Data Usage
 
@@ -429,6 +432,7 @@ Status: VERIFIED
 - Turn order and guild attack limits may include `전투형 지휘관📙`, `기사단 증원📙` 길드마스터 effects at start time
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
+- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
 

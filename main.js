@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.222"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.223"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1514,6 +1514,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (!data.member[sender] && !isSignupFlow) return;
 		if (!ctx.isDev && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
 			replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
+			return;
+		}
+		if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
+			replier.reply(
+				"🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
+				"허용 명령어: /영지공격, /길드영지순서, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
+			);
 			return;
 		}
 		commonStepStart = Date.now();
@@ -25723,6 +25730,34 @@ function isMutableGuildTerritoryCommand(msg) {
 		msg.indexOf("/균열") === 0 ||
 		msg.indexOf("/대균열") === 0
 	);
+}
+
+// 길드 영지전 중 일반 명령 차단 여부를 확인하는 함수
+function isGuildTerritoryWarCommandLockActive(guildData) {
+	return !!(guildData && guildData.territoryWar && guildData.territoryWar.active === true);
+}
+
+// 길드 영지전 중 허용되는 영지전 명령어인지 확인하는 함수
+function isGuildTerritoryAllowedDuringWarCommand(msg) {
+	if (typeof msg !== "string") return false;
+	return (
+		msg === "/길드영지순서" ||
+		msg === "/길드영지초기화" ||
+		msg === "/길드영지종료" ||
+		msg === "/길드영지" ||
+		/^\/영지공격(?:\s+[1-7])?$/.test(msg) ||
+		/^\/안정(?:\s+\d+)?$/.test(msg) ||
+		/^\/불안정(?:\s+\d+)?$/.test(msg) ||
+		/^\/균열(?:\s+\d+)?$/.test(msg) ||
+		/^\/대균열(?:\s+\d+)?$/.test(msg)
+	);
+}
+
+// 길드 영지전 중 차단할 일반 슬래시 명령어인지 확인하는 함수
+function isGuildTerritoryBlockedDuringWarCommand(msg) {
+	if (typeof msg !== "string") return false;
+	if (msg.indexOf("/") !== 0) return false;
+	return !isGuildTerritoryAllowedDuringWarCommand(msg);
 }
 
 // DEV 길드 영지전이 진행 중인지 확인하는 함수
