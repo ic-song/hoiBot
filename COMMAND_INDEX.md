@@ -560,6 +560,10 @@ Status: VERIFIED
 - `guildData`
 - guild territory war state inside guild data structures
 - `guildData.guilds[myGid].guildTerritoryBooster`
+- `guildData.guilds[myGid].members[*].contribution`
+- `guildData.guilds[myGid].members[*].boosterContribution`
+- `data.member[*].gContribCnt`
+- `data.member[*].gBoosterContribCnt`
 
 ## Save Flow
 
@@ -582,6 +586,7 @@ Status: VERIFIED
 - Territory-related display here depends on `ensureGuildTerritoryWar`
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
 - Displays current `길드영지 부스터🔮` count through `ensureGuildTerritoryBoosterCount`
+- Member rows display total guild contribution and total booster contribution with daily check marks.
 - Displays `subMasters` through `getGuildSubMasterDisplay`
 
 ---
@@ -2357,8 +2362,10 @@ Status: VERIFIED
 ## Data Usage
 - `data.member[sender].bag["길드영지 부스터🔮(/길드부스터공헌 숫자)"]`
 - `guildData.guilds[*].guildTerritoryBooster`
+- `guildData.guilds[*].members[sender].boosterContribution`
+- `data.member[sender].gBoosterContribCnt`
 ## Save Flow
-- Consumes the booster item from the member bag, adds the count to the user's guild, then saves member data and `guildData`.
+- Consumes the booster item from the member bag, adds the count to the user's guild, records the member's cumulative booster contribution and daily contribution flag, then saves member data and `guildData`.
 - `/정리` also auto-contributes all held boosters only when the user belongs to a guild; guildless users keep the item.
 ## Related Commands
 - `/길드정보`

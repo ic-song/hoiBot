@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.238"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.239"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20788,14 +20788,16 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					for (var k = 0; k < memberKeys.length; k++) {
 						var name = memberKeys[k];
-						var contribCnt = data.member[name].gContribCnt || 0;
+						var contribCnt = data.member[name] ? (data.member[name].gContribCnt || 0) : 0;
+						var boosterContribCnt = data.member[name] ? (data.member[name].gBoosterContribCnt || 0) : 0;
 						var c = g.members[name] && g.members[name].contribution ? g.members[name].contribution : 0;
+						var boosterContribution = g.members[name] && g.members[name].boosterContribution ? g.members[name].boosterContribution : 0;
 						var memberExp = calculateTotalExp(name, data, petData, homeData, petSkillData);
 
 						out += k + 1 + ". [" + checkRank(data, petData, guildData, name) + "]";
-						out += "[" + formatKoreanShort(memberExp) + "💞]";
-						out += "[" + numberWithCommas(c) + "🌟]";
-						out += (contribCnt > 0 ? "[✅]" : "[❌]") + "\n";
+						out += "[" + formatKoreanShort(memberExp) + "💞]\n";
+						out += "길드공헌 [" + numberWithCommas(c) + "🌟]" + (contribCnt > 0 ? "[✅]" : "[❌]") + " ";
+						out += "부스터공헌 [" + numberWithCommas(boosterContribution) + "🔮]" + (boosterContribCnt > 0 ? "[✅]" : "[❌]") + "\n";
 						out += "└ 길드공헌패스🎖️ " + (isSupportPassActive(data, name, "contribution") ? "사용중[✅]" : "미사용중[❌]") + "\n";
 					}
 					out += "━━━━━━━━━━━━\n";
@@ -25421,6 +25423,12 @@ function contributeGuildTerritoryBooster(data, petData, guildData, sender, count
 
 	var g = guildInfo.guild;
 	ensureGuildTerritoryBoosterCount(g);
+	if (g.members && g.members[sender]) {
+		if (typeof g.members[sender].boosterContribution !== "number") g.members[sender].boosterContribution = 0;
+		g.members[sender].boosterContribution += count;
+	}
+	if (typeof data.member[sender].gBoosterContribCnt !== "number") data.member[sender].gBoosterContribCnt = 0;
+	data.member[sender].gBoosterContribCnt += 1;
 	removeItem(data, sender, itemName, count);
 	g.guildTerritoryBooster += count;
 
@@ -27012,6 +27020,9 @@ function resetAttendance(petData, data, replier) {
 		}
 		if (data.member[user].gContribCnt !== undefined) {
 			delete data.member[user].gContribCnt;
+		}
+		if (data.member[user].gBoosterContribCnt !== undefined) {
+			delete data.member[user].gBoosterContribCnt;
 		}
 		if (data.member[user].dailyQuestCnt !== undefined) {
 			delete data.member[user].dailyQuestCnt;
