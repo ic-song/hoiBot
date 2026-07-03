@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.239"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.240"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1256,13 +1256,38 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			// 펫멤버
 			var activePath3 = resolveActiveDataPath(memberPetPath);
 			var f3 = new java.io.File(activePath3);
+			var pendantTextLength = null;
 			if (!f3.exists()) {
 				out += "- 펫멤버: ❌ 파일 없음\n";
 			} else {
 				var c3 = FileStream.read(activePath3, "utf-8");
-				parseJsonContent(c3, activePath3);
+				var parsedPetMemberForStats = parseJsonContent(c3, activePath3);
 				out += "- 펫멤버: " + numberWithCommas(c3.length) + "\n";
+				var pendantOnlyData = {};
+				for (var pendantStatsUser in parsedPetMemberForStats) {
+					if (!parsedPetMemberForStats.hasOwnProperty(pendantStatsUser)) continue;
+					var pendantStatsPet = parsedPetMemberForStats[pendantStatsUser] || {};
+					if (pendantStatsPet.pendant || pendantStatsPet.pendantBag) {
+						pendantOnlyData[pendantStatsUser] = {
+							pendant: pendantStatsPet.pendant || null,
+							pendantBag: pendantStatsPet.pendantBag || []
+						};
+					}
+				}
+				pendantTextLength = JSON.stringify(pendantOnlyData).length;
 			}
+
+			// 펫스킬
+			var activePath4 = resolveActiveDataPath(petSkillDataPath);
+			var f4 = new java.io.File(activePath4);
+			if (!f4.exists()) {
+				out += "- 펫스킬: ❌ 파일 없음\n";
+			} else {
+				var c4 = FileStream.read(activePath4, "utf-8");
+				parseJsonContent(c4, activePath4);
+				out += "- 펫스킬: " + numberWithCommas(c4.length) + "\n";
+			}
+			out += "- 펜던트: " + (pendantTextLength === null ? "❌ 파일 없음" : numberWithCommas(pendantTextLength)) + "\n";
 
 			replier.reply(out.trim());
 			return;
@@ -3094,12 +3119,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 
 				if (/^\/펜던트거래등록\s+\d+\s+\d+$/.test(msg)) {
-					var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg);
+					var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg, isFreeMarketConfirmed);
 					replier.reply(pendantMarketResultEarly.message);
+					if (pendantMarketResultEarly.pending) {
+						setFreeMarketConfirmState(sender, "register", msg, 0);
+						return;
+					}
 					if (pendantMarketResultEarly.ok) {
 						saveJsonFile(data, filePath);
 						saveJsonFile(petData, memberPetPath);
 						saveJsonFile(pendantMarketResultEarly.freeMarketData, freeMarketPath);
+						clearFreeMarketConfirmState(sender);
 					}
 					return;
 				}
@@ -17003,7 +17033,18 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					return;
 				}
-				if (/^\/펜던트당근거래\s+.+\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트전체정리") {
+					if (!isMaster(sender)) {
+						return;
+					}
+					var pendantCleanAllResult = cleanAllPendantBags(data, petData, guildData);
+					replier.reply(pendantCleanAllResult.message);
+					if (pendantCleanAllResult.ok) {
+						saveJsonFile(petData, memberPetPath);
+					}
+					return;
+				}
+				if (/^\/펜던트당근(?:거래)?\s+.+\s+\d+$/.test(msg)) {
 					var pendantTradeResult = tradePendantByCarrot(data, petData, guildData, sender, msg);
 					replier.reply(pendantTradeResult.message);
 					if (pendantTradeResult.ok) {
@@ -36567,7 +36608,7 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
 	var bag = getPendantBag(petData, sender);
 	var remain = getPendantBagLimit() - bag.length;
 	if (remain <= 0) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트 가방이 가득 차서 펜던트뽑기를 진행할 수 없습니다.\n━━━━━━━━━━━━━\n펜던트가방💎: " + bag.length + "/" + getPendantBagLimit() + "\n불필요한 펜던트를 판매하거나 정리해주세요." };
-	var openCount = Math.min(count, have, remain);
+	var openCount = Math.min(count, have);
 	var noticeLines = [];
 	var openedPendants = [];
 	var out = "💎[" + checkRank(data, petData, guildData, sender) + "] 님이 펜던트를 오픈합니다!\n";
@@ -36764,10 +36805,39 @@ function cleanPendantBagRange(data, petData, guildData, sender, msg) {
 	return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트 " + count + "개를 정리했습니다.\n획득 포인트💸: 🅟" + numberWithCommas(point) };
 }
 
+// 전체 유저 펜던트가방 초과분 정리
+function cleanAllPendantBags(data, petData, guildData) {
+	var totalUserCount = 0;
+	var totalRemovedCount = 0;
+	var userLogLines = [];
+	for (var name in petData) {
+		if (!petData.hasOwnProperty(name)) continue;
+		var pet = petData[name];
+		if (!pet || !Array.isArray(pet.pendantBag)) continue;
+		var bag = pet.pendantBag;
+		if (bag.length <= getPendantBagLimit()) continue;
+		sortPendantBagByGrade(bag);
+		var removedCount = bag.length - getPendantBagLimit();
+		pet.pendantBag = bag.slice(0, getPendantBagLimit());
+		totalUserCount++;
+		totalRemovedCount += removedCount;
+		userLogLines.push("- [" + checkRank(data, petData, guildData, name) + "] " + removedCount + "개 삭제");
+	}
+	var msg = "💎 펜던트 전체정리 완료\n";
+	msg += "━━━━━━━━━━━━━\n";
+	msg += "정리 기준: 펜던트가방 51개 이상\n";
+	msg += "정리 유저: " + numberWithCommas(totalUserCount) + "명\n";
+	msg += "삭제 펜던트: " + numberWithCommas(totalRemovedCount) + "개";
+	if (userLogLines.length) {
+		msg += "\n━━━━━━━━━━━━━\n정리 목록\n" + userLogLines.join("\n");
+	}
+	return { ok: true, message: msg };
+}
+
 // 펜던트 당근 개인거래 처리
 function tradePendantByCarrot(data, petData, guildData, sender, msg) {
-	var m = msg.match(/^\/펜던트당근거래\s+(.+)\s+(\d+)$/);
-	if (!m) return { ok: false, message: "사용법: /펜던트당근거래 거래대상닉네임 펜던트가방번호" };
+	var m = msg.match(/^\/펜던트당근(?:거래)?\s+(.+)\s+(\d+)$/);
+	if (!m) return { ok: false, message: "사용법: /펜던트당근 거래대상닉네임 펜던트가방번호" };
 	var target = m[1].trim();
 	var index = parseInt(m[2], 10);
 	if (!data.member[target] || !petData[target]) return { ok: false, message: "거래 대상 유저를 찾을 수 없습니다." };
@@ -36784,7 +36854,7 @@ function tradePendantByCarrot(data, petData, guildData, sender, msg) {
 }
 
 // 펜던트 자유시장 등록 처리
-function registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg) {
+function registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg, isConfirmed) {
 	if (!canRegisterFreeMarketByTier(data, sender)) return { ok: false, message: "❌ [" + checkRank(data, petData, guildData, sender) + "]님 거래등록은 티어 \"킹\" 이상만 가능합니다." };
 	var m = msg.match(/^\/펜던트거래등록\s+(\d+)\s+(\d+)$/);
 	if (!m) return { ok: false, message: "사용법: /펜던트거래등록 [펜던트가방번호] [판매금액]" };
@@ -36799,6 +36869,13 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
 	var bag = getPendantBag(petData, sender);
 	sortPendantBagByGrade(bag);
 	if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
+	if (!isConfirmed) {
+		return {
+			ok: true,
+			pending: true,
+			message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 100, "")
+		};
+	}
 	var pendant = bag.splice(index - 1, 1)[0];
 	removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100);
 	addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, 100);

@@ -21,6 +21,33 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /글자수통계
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Data Usage
+
+- `filePath`
+- `homeDataFile`
+- `memberPetPath`
+- `petSkillDataPath`
+
+## Save Flow
+
+- Read-only command. It reads active DEV/PROD-resolved files through `resolveActiveDataPath` and does not save data.
+
+## AI Notes
+
+- Master operator `호이 남` only.
+- 출력 항목은 멤버, 펫홈, 펫멤버, 펫스킬, 펜던트 글자수다.
+- 펜던트 글자수는 `member_pet.json`에서 `pendant`와 `pendantBag`만 추출한 JSON 문자열 길이로 계산한다.
+
+---
+
 # /캐슬대전
 
 Status: VERIFIED
@@ -4099,6 +4126,7 @@ Status: VERIFIED
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]` is handled before the common invalid registration usage guard so it does not require a quantity argument.
+- `/펜던트거래등록 [펜던트가방번호] [판매금액]` now follows the same confirmation flow as other free-market registrations: confirmation message first, `자유시장거래` to register, `자유시장거래취소` to cancel.
 - Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, `/스킬거래등록`, and malformed `/펜던트거래등록` input replies with the registration usage guide
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists
 
@@ -4735,7 +4763,8 @@ Status: VERIFIED
 - `/펜던트강화 [번호]`
 - `/펜던트판매 [번호]`
 - `/펜던트가방정리 번호~번호`
-- `/펜던트당근거래 유저명 번호`
+- `/펜던트전체정리`
+- `/펜던트당근 유저명 번호`
 - `/펜던트거래등록 번호 판매금액`
 - `/펜던트추가`, `/펜던트삭제`, `/펜던트장착초기화`, `/펜던트강화수정`, `/펜던트내구도수정`
 
@@ -4760,6 +4789,7 @@ Status: VERIFIED
 - `buildPendantUpgradePreview`
 - `runPendantUpgradeFromState`
 - `registerPendantFreeMarket`
+- `cleanAllPendantBags`
 
 ## Data Usage
 
@@ -4775,6 +4805,7 @@ Status: VERIFIED
 - 펜던트 장착/관리/강화/거래는 `petData`를 저장한다.
 - 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
 - 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
+- `/펜던트전체정리`는 `petData[user].pendantBag`에서 51개 이상인 가방의 초과분을 삭제한 뒤 `member_pet.json`을 저장한다.
 
 ## AI Notes
 
@@ -4782,6 +4813,8 @@ Status: VERIFIED
 - `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 번호와 각 펜던트의 뽑기 확률을 함께 표시한다.
 - `/펜던트오픈` 결과는 5번째 항목부터 `allsee` 뒤에 표시한다.
 - `/펜던트오픈` 전체알림은 고등급 펜던트마다 1개씩 송출하고 획득 확률을 함께 표시한다.
+- `/펜던트오픈`은 펜던트가방이 이미 50/50일 때만 막고, 49/50 이하에서는 보유한 펜던트뽑기 수량만큼 오픈할 수 있다.
+- `/펜던트당근거래`는 기존 호환 별칭이며, 안내 문구와 문서 기준 명령어는 `/펜던트당근`이다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
