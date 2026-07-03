@@ -63,6 +63,7 @@ Status: VERIFIED
 
 - `숙련된 전사` adds pet charm only after matching and ticket validation pass; keep `memberPetPath` save in this command flow when changing castle battle rewards.
 - `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
+- `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
@@ -441,7 +442,7 @@ Status: VERIFIED
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 - Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
-- `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to non-castle mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`.
+- `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to non-castle mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
@@ -876,10 +877,12 @@ Status: VERIFIED
 
 - `findGuildIdByNameSafe`
 - `buildGuildResourceDisplay`
+- `ensureGuildTerritoryBoosterCount`
 
 ## Data Usage
 
 - `guildData.guilds`
+- `guildData.guilds[*].guildTerritoryBooster`
 
 ## Save Flow
 
@@ -895,6 +898,7 @@ Status: VERIFIED
 - Admin/master investigation command for named guild lookup
 - Good anchor when debugging guild member snapshots without relying on sender membership
 - Guild resource display is shared with `/길드정보` through `buildGuildResourceDisplay`
+- Displays `길드영지 부스터🔮` below guild contribution count
 
 ---
 
@@ -4059,6 +4063,7 @@ Status: VERIFIED
 - `/미니펫거래등록 [미니펫가방번호] [갯수] [판매금액]`
 - `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
 - `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
+- `/펜던트거래등록 [펜던트가방번호] [판매금액]`
 - `/자유시장확인`
 - `/자유시장확인취소`
 - `/자유시장구매 [번호]`
@@ -4086,7 +4091,8 @@ Status: VERIFIED
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
-- Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, and `/스킬거래등록` input now replies with the exact numeric-index registration usage guide
+- `/펜던트거래등록 [펜던트가방번호] [판매금액]` is handled before the common invalid registration usage guard so it does not require a quantity argument.
+- Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, `/스킬거래등록`, and malformed `/펜던트거래등록` input replies with the registration usage guide
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists
 
 # /탐
@@ -4766,7 +4772,9 @@ Status: VERIFIED
 ## AI Notes
 
 - `/펜던트오픈`은 정식 오픈 전까지 `호이 남`만 사용할 수 있도록 임시 제한되어 있다.
-- `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 각 펜던트의 뽑기 확률을 함께 표시한다.
+- `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 번호와 각 펜던트의 뽑기 확률을 함께 표시한다.
+- `/펜던트오픈` 결과는 5번째 항목부터 `allsee` 뒤에 표시한다.
+- `/펜던트오픈` 전체알림은 고등급 펜던트마다 1개씩 송출하고 획득 확률을 함께 표시한다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.

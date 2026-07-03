@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.237"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.238"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -3090,6 +3090,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"※ 등록 수수료 [당근🥕 " + numberWithCommas(skillMarketCarrotFee) + "개]가 차감되었습니다.\n" +
 						buildFreeMarketTradeFeeNotice(data, sender)
 					);
+					return;
+				}
+
+				if (/^\/펜던트거래등록\s+\d+\s+\d+$/.test(msg)) {
+					var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg);
+					replier.reply(pendantMarketResultEarly.message);
+					if (pendantMarketResultEarly.ok) {
+						saveJsonFile(data, filePath);
+						saveJsonFile(petData, memberPetPath);
+						saveJsonFile(pendantMarketResultEarly.freeMarketData, freeMarketPath);
+					}
 					return;
 				}
 
@@ -15787,10 +15798,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					let attackerMiniPetExp = 0;
 					let defenderMiniPetExp = 0;
 					if (petData[attackerName].miniPet) {
-						attackerMiniPetExp = parseInt(petData[attackerName].miniPet.battleExp);
+						attackerMiniPetExp = parseInt(petData[attackerName].miniPet.castleExp, 10) || 0;
 					}
 					if (petData[defenderName].miniPet) {
-						defenderMiniPetExp = parseInt(petData[defenderName].miniPet.battleExp);
+						defenderMiniPetExp = parseInt(petData[defenderName].miniPet.castleExp, 10) || 0;
 					}
 
 					let attackerSkillExp = hasPetSkill(petSkillData, attackerName, "장미칼") ? 500000 : 0;
@@ -16927,7 +16938,13 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					var pendantOpenResult = runPendantOpen(sender, data, petData, guildData, msg);
 					replier.reply(pendantOpenResult.message);
 					if (pendantOpenResult.ok) {
-						if (pendantOpenResult.noticeMessage) noticeMsg(pendantOpenResult.noticeMessage);
+						if (pendantOpenResult.noticeMessages && pendantOpenResult.noticeMessages.length) {
+							for (var pendantNoticeIdx = 0; pendantNoticeIdx < pendantOpenResult.noticeMessages.length; pendantNoticeIdx++) {
+								noticeMsg(pendantOpenResult.noticeMessages[pendantNoticeIdx]);
+							}
+						} else if (pendantOpenResult.noticeMessage) {
+							noticeMsg(pendantOpenResult.noticeMessage);
+						}
 						saveJsonFile(data, filePath);
 						saveJsonFile(petData, memberPetPath);
 					}
@@ -16992,16 +17009,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (pendantTradeResult.ok) {
 						saveJsonFile(data, filePath);
 						saveJsonFile(petData, memberPetPath);
-					}
-					return;
-				}
-				if (/^\/펜던트거래등록\s+\d+\s+\d+$/.test(msg)) {
-					var pendantMarketResult = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg);
-					replier.reply(pendantMarketResult.message);
-					if (pendantMarketResult.ok) {
-						saveJsonFile(data, filePath);
-						saveJsonFile(petData, memberPetPath);
-						saveJsonFile(pendantMarketResult.freeMarketData, freeMarketPath);
 					}
 					return;
 				}
@@ -21868,7 +21875,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "부길마: " + getGuildSubMasterDisplay(data, petData, guildData, g) + "\n\n";
 
 					out += "레벨: Lv." + (g.level || 1) + "\n";
-					out += "공헌도: " + numberWithCommas(g.exp || 0) + "🌟\n\n";
+					out += "공헌도: " + numberWithCommas(g.exp || 0) + "🌟\n";
+					out += "길드영지 부스터🔮: " + numberWithCommas(ensureGuildTerritoryBoosterCount(g)) + "개\n\n";
 
 					out += buildGuildResourceDisplay(g) + "\n";
 
@@ -25367,6 +25375,42 @@ function addGuildWarehouseReward(g, rewardType, amount) {
 	g.warehouse[rewardType] += amount;
 }
 
+// 길드영지 부스터를 광산별 남은 보상 한도에 맞춰 반복 분배
+function calculateGuildTerritoryBoosterBonuses(rows, availableBooster) {
+	var bonuses = [];
+	var remaining = Math.max(0, parseInt(availableBooster, 10) || 0); // 아직 분배 가능한 부스터 수량
+	for (var i = 0; i < rows.length; i++) {
+		bonuses.push(0);
+	}
+
+	while (remaining > 0) {
+		var eligibleIndexes = [];
+		for (var e = 0; e < rows.length; e++) {
+			if (bonuses[e] < rows[e].baseAmount) eligibleIndexes.push(e);
+		}
+		if (eligibleIndexes.length === 0) break;
+
+		var share = Math.floor(remaining / eligibleIndexes.length); // 이번 회차 광산별 균등 분배량
+		if (share < 1) share = 1;
+		var usedThisRound = 0; // 이번 회차 실제 소진량
+		for (var s = 0; s < eligibleIndexes.length && remaining > 0; s++) {
+			var rowIndex = eligibleIndexes[s];
+			var rowRemain = rows[rowIndex].baseAmount - bonuses[rowIndex]; // 해당 광산 추가 보상 잔여 한도
+			var addAmount = Math.min(share, rowRemain, remaining);
+			if (addAmount <= 0) continue;
+			bonuses[rowIndex] += addAmount;
+			remaining -= addAmount;
+			usedThisRound += addAmount;
+		}
+		if (usedThisRound <= 0) break;
+	}
+
+	return {
+		bonuses: bonuses,
+		used: Math.max(0, (parseInt(availableBooster, 10) || 0) - remaining)
+	};
+}
+
 // 길드영지 부스터 공헌 처리
 function contributeGuildTerritoryBooster(data, petData, guildData, sender, count) {
 	var itemName = GLOBAL_CONFIG.guildTerritory.items.boosterName;
@@ -26898,36 +26942,15 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 			var availableBooster = ensureGuildTerritoryBoosterCount(guild);
 			if (availableBooster <= 0) continue;
 
-			var totalBaseAmount = 0; // 점령 광산의 기본 보상 총량
-			for (var r = 0; r < rows.length; r++) {
-				totalBaseAmount += rows[r].baseAmount;
+			var boosterResult = calculateGuildTerritoryBoosterBonuses(rows, availableBooster);
+			for (var bonusIdx = 0; bonusIdx < rows.length; bonusIdx++) {
+				var bonusAmount = boosterResult.bonuses[bonusIdx] || 0;
+				if (bonusAmount <= 0) continue;
+				addGuildWarehouseReward(guild, rows[bonusIdx].territory.rewardType, bonusAmount);
+				boosterLogs.push(formatGuildDisplay(guild) + " " + rows[bonusIdx].territory.name + " +" + numberWithCommas(bonusAmount) + "🔮");
 			}
 
-			var usedBooster = 0;
-			if (availableBooster >= totalBaseAmount) {
-				for (var fullIdx = 0; fullIdx < rows.length; fullIdx++) {
-					addGuildWarehouseReward(guild, rows[fullIdx].territory.rewardType, rows[fullIdx].baseAmount);
-					usedBooster += rows[fullIdx].baseAmount;
-					boosterLogs.push(formatGuildDisplay(guild) + " " + rows[fullIdx].territory.name + " +" + numberWithCommas(rows[fullIdx].baseAmount));
-				}
-			} else if (rows.length === 1) {
-				var singleBonus = Math.min(availableBooster, rows[0].baseAmount);
-				addGuildWarehouseReward(guild, rows[0].territory.rewardType, singleBonus);
-				usedBooster += singleBonus;
-				boosterLogs.push(formatGuildDisplay(guild) + " " + rows[0].territory.name + " +" + numberWithCommas(singleBonus));
-			} else {
-				var dividedBonus = Math.floor(availableBooster / rows.length);
-				if (dividedBonus > 0) {
-					for (var divIdx = 0; divIdx < rows.length; divIdx++) {
-						var rowBonus = Math.min(dividedBonus, rows[divIdx].baseAmount);
-						addGuildWarehouseReward(guild, rows[divIdx].territory.rewardType, rowBonus);
-						usedBooster += rowBonus;
-						boosterLogs.push(formatGuildDisplay(guild) + " " + rows[divIdx].territory.name + " +" + numberWithCommas(rowBonus));
-					}
-				}
-			}
-
-			guild.guildTerritoryBooster = Math.max(0, availableBooster - usedBooster);
+			guild.guildTerritoryBooster = Math.max(0, availableBooster - boosterResult.used);
 		}
 
 		var out = "[🎖️길드 영지전 종료🎖️]\n";
@@ -36546,7 +36569,8 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
 		bag.push(pendant);
 		openedPendants.push(pendant);
 		if (getPendantGradeInfo(pendant.grade).notice) {
-			noticeLines.push("[" + checkRank(data, petData, guildData, sender) + "] 님이 펜던트뽑기에서\n" + pendant.name + pendant.icon + "[" + pendant.grade + "] 을(를) 획득했습니다!");
+			var pendantNoticeGradeInfo = getPendantGradeInfo(pendant.grade);
+			noticeLines.push("[전체알림💎]\n[" + checkRank(data, petData, guildData, sender) + "] 님이 펜던트💎\n" + pendant.name + pendant.icon + "[" + pendant.grade + "](확률 " + formatPendantPercent(pendantNoticeGradeInfo.rate) + "%)을(를) 획득했습니다!");
 		}
 	}
 	out += "💎 남은 펜던트뽑기: " + numberWithCommas(data.member[sender].bag[ticketName] || 0) + "개\n";
@@ -36554,10 +36578,11 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
 	out += "━━━━━━━━━━━━━━━\n";
 	sortPendantBagByGrade(openedPendants);
 	for (var j = 0; j < openedPendants.length; j++) {
-		out += formatPendantOpenResultDisplay(openedPendants[j]) + "\n";
+		if (j === 4) out += allsee;
+		out += (j + 1) + ". " + formatPendantOpenResultDisplay(openedPendants[j]) + "\n";
 	}
 	out = out.replace(/\n$/, "");
-	return { ok: true, message: out, noticeMessage: noticeLines.length ? "[전체알림💎]\n" + noticeLines.join("\n\n") : "" };
+	return { ok: true, message: out, noticeMessages: noticeLines, noticeMessage: "" };
 }
 
 // 펜던트 장착 처리
