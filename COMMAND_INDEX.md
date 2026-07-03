@@ -401,6 +401,9 @@ Status: VERIFIED
 - `buildGuildTerritoryOrderMessage`
 - `buildGuildTerritoryStatusMessage`
 - `buildGuildTerritoryStartMessage`
+- `finishGuildTerritoryWar`
+- `addGuildWarehouseReward`
+- `ensureGuildTerritoryBoosterCount`
 - `startGuildTerritoryTurnTimer`
 - `isGuildTerritoryWarCommandLockActive`
 - `isGuildTerritoryAllowedDuringWarCommand`
@@ -414,6 +417,8 @@ Status: VERIFIED
 - `guildData.territoryWar.openingToken`
 - `guildData.territoryWar.turnOrder`
 - `guildData.castleSiegeFlag`
+- `guildData.guilds[*].warehouse.petSkillBook`
+- `guildData.guilds[*].guildTerritoryBooster`
 
 ## Save Flow
 
@@ -435,6 +440,8 @@ Status: VERIFIED
 - Turn order and guild attack limits may include `전투형 지휘관📙`, `기사단 증원📙` 길드마스터 effects at start time
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
+- Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
+- `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to non-castle mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
@@ -543,6 +550,7 @@ Status: VERIFIED
 - `ensureGuildTerritoryWar`
 - `getGuildTerritoryList`
 - `buildGuildResourceDisplay`
+- `ensureGuildTerritoryBoosterCount`
 
 ## Data Usage
 
@@ -550,6 +558,7 @@ Status: VERIFIED
 - `guildData.guilds[myGid]`
 - `guildData`
 - guild territory war state inside guild data structures
+- `guildData.guilds[myGid].guildTerritoryBooster`
 
 ## Save Flow
 
@@ -571,6 +580,7 @@ Status: VERIFIED
 - If a bug mentions guild mismatch auto-repair, inspect nearby warning branches with `길드 데이터 불일치`
 - Territory-related display here depends on `ensureGuildTerritoryWar`
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
+- Displays current `길드영지 부스터🔮` count through `ensureGuildTerritoryBoosterCount`
 - Displays `subMasters` through `getGuildSubMasterDisplay`
 
 ---
@@ -2187,6 +2197,7 @@ Status: VERIFIED
 ## Data Usage
 - guild warehouse/fund state
 - member point/item state
+- `guildData.guilds[*].warehouse.petSkillBook`
 - `guildData.guilds[*].warehouse.diamond`
 - `data.member[user].diamond`
 - `currencyLogData.user[user].diamond`
@@ -2194,6 +2205,7 @@ Status: VERIFIED
 - Saves member data during sync and saves both member data and `guildData` after successful distribution.
 - Saves `currencyLogData` when distributed resources include 다이아.
 - Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
+- `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
 - `/길드분배` currently excludes `warehouse.pendant` from payout and deduction until pendant enhancement content is ready.
 - Legacy `warehouse.ring` is removed by `/데이터정리`; it is not migrated to `warehouse.pendant`.
 ## Related Commands
@@ -2222,7 +2234,7 @@ Status: VERIFIED
 ## Save Flow
 - `/길드공헌` mutates member contribution counters, member bag rewards, guild EXP, and possible guild warehouse rewards, then saves member data and `guildData`.
 - `/길드공헌추가` mutates target guild EXP and possible guild warehouse rewards, then saves member data and `guildData`.
-- `checkGuildLevelUp` now grants level 13 and 19 rewards as `warehouse.elemental` 정령 강화석, not pendant/ring warehouse rewards.
+- `checkGuildLevelUp` grants former guild 정령 warehouse rewards as `warehouse.petSkillBook` 펫스킬북 조각📙.
 ## Related Commands
 - `/길드정보`
 - `/길드창고`
@@ -2320,10 +2332,34 @@ Status: VERIFIED
 - `data.member[sender].bag`
 ## Save Flow
 - Consumes package item, mutates guild warehouse, saves member data and `guildData`
-- Each package adds guild warehouse rewards: fund 50,000,000, elemental 12, pendant 1, pet 15, miniPet 5.
+- Each package adds guild warehouse rewards: fund 50,000,000, petSkillBook 12, pendant 1, pet 15, miniPet 5.
 ## Related Commands
 - `/길드분배`
 - `/길드정보`
+
+---
+
+# /길드부스터공헌 [개수]
+Status: VERIFIED
+## Command Anchors
+- `main.js:20802`
+## Files
+- `main.js`
+## Related Helpers
+- `contributeGuildTerritoryBooster`
+- `ensureGuildTerritoryBoosterCount`
+- `getMyGuildInfo`
+- `removeItem`
+## Data Usage
+- `data.member[sender].bag["길드영지 부스터🔮(/길드부스터공헌 숫자)"]`
+- `guildData.guilds[*].guildTerritoryBooster`
+## Save Flow
+- Consumes the booster item from the member bag, adds the count to the user's guild, then saves member data and `guildData`.
+- `/정리` also auto-contributes all held boosters only when the user belongs to a guild; guildless users keep the item.
+## Related Commands
+- `/길드정보`
+- `/길드영지종료`
+- `/영지보상안내`
 
 ---
 

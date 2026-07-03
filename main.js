@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.236"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.237"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -32,15 +32,15 @@ var guildLevelTable = {
 
 	10: { need: 40000, reward: { petFoodAll: 100000 } },
 	11: { need: 50000, reward: { fund: 300000000000 } },
-	12: { need: 60000, reward: { elemental: 30000 } },
-	13: { need: 70000, reward: { elemental: 35000 } },
+	12: { need: 60000, reward: { petSkillBook: 30000 } },
+	13: { need: 70000, reward: { petSkillBook: 35000 } },
 	14: { need: 80000, reward: { fund: 500000000000 } },
 	15: { need: 90000, reward: { pet: 100000 } },
 
 	16: { need: 100000, reward: { petFoodAll: 300000 } },
 	17: { need: 120000, reward: { fund: 700000000000 } },
-	18: { need: 150000, reward: { elemental: 60000 } },
-	19: { need: 180000, reward: { elemental: 70000 } },
+	18: { need: 150000, reward: { petSkillBook: 60000 } },
+	19: { need: 180000, reward: { petSkillBook: 70000 } },
 	20: { need: 250000, reward: { fund: 900000000000 } }
 };
 
@@ -818,6 +818,10 @@ const GLOBAL_CONFIG = {
 		},
 		rewards: { // 길드 영토전 보상 설정
 			turnFundReward: 50000000, // 영지전 공격 턴 기본보상
+			petSkillMineRewardAmount: 5, // 펫스킬 광산 점령 종료 보상
+			pendantMineRewardAmount: 5, // 펜던트 광산 점령 종료 보상
+			petMineRewardAmount: 200, // 펫강화광산 점령 종료 보상
+			miniPetMineRewardAmount: 150, // 미니펫강화광산 점령 종료 보상
 			diamondMineRewardAmount: 20 // 다이아광산 점령 종료 보상
 		},
 		rates: { // 길드 영토전 확률/증가량 설정
@@ -850,7 +854,8 @@ const GLOBAL_CONFIG = {
 			instabilityUpName: "🌪️ 전쟁불안정 증폭권(/불안정)",
 			instabilityDownName: "🚑 전쟁불안정 감소권(/안정)",
 			riftGuideName: "🌌 균열 유도권(/균열)",
-			greatRiftGuideName: "🌋 대균열 유도권(/대균열)"
+			greatRiftGuideName: "🌋 대균열 유도권(/대균열)",
+			boosterName: "길드영지 부스터🔮(/길드부스터공헌 숫자)"
 		}
 	}
 };
@@ -11835,12 +11840,13 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					replier.reply(
 						"🎖️길드 영지전 보상 안내🎖️\n\n" +
 						"[1] 호월킹덤🏰: 세금 시스템 15% 부과\n" +
-						"[2] 정령광산🥀: 정령 강화석🥀 400개\n" +
-						"[3] 펜던트 광산📿: 펜던트 강화석📿 5개\n" +
-						"[4] 펫강화광산⭐️: 펫 강화석⭐️ 300개\n" +
-						"[5] 미니펫강화광산💫: 미니펫 강화석💫 150개\n" +
+						"[2] 펫스킬 광산📙: 펫스킬북 조각📙 " + GLOBAL_CONFIG.guildTerritory.rewards.petSkillMineRewardAmount + "개\n" +
+						"[3] 펜던트 광산📿: 펜던트 강화석📿 " + GLOBAL_CONFIG.guildTerritory.rewards.pendantMineRewardAmount + "개\n" +
+						"[4] 펫강화광산⭐️: 펫 강화석⭐️ " + GLOBAL_CONFIG.guildTerritory.rewards.petMineRewardAmount + "개\n" +
+						"[5] 미니펫강화광산💫: 미니펫 강화석💫 " + GLOBAL_CONFIG.guildTerritory.rewards.miniPetMineRewardAmount + "개\n" +
 						"[6] 다이아광산💎: 다이아💎 " + GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount + "개\n\n" +
-						"광산류 영지는 종료 시 최종 점령 길드의 길드창고로 지급됩니다."
+						"광산류 영지는 종료 시 최종 점령 길드의 길드창고로 지급됩니다.\n" +
+						"호월킹덤🏰을 제외한 광산 보상은 길드영지 부스터🔮 보유량에 따라 추가 지급됩니다."
 					);
 					return;
 				}
@@ -13067,6 +13073,17 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 								// 💰 전체 판매
 								let sellResult = runSellAll(sender, data, petData, guildData);
 								resultMsg += "💰 [전체 판매 결과]\n" + sellResult;
+
+								var cleanupBoosterItemName = GLOBAL_CONFIG.guildTerritory.items.boosterName;
+								var cleanupBoosterCount = data.member[sender].bag[cleanupBoosterItemName] || 0;
+								if (cleanupBoosterCount > 0 && getMyGuildId(data, sender)) {
+									var cleanupBoosterResult = contributeGuildTerritoryBooster(data, petData, guildData, sender, cleanupBoosterCount);
+									if (cleanupBoosterResult.ok) {
+										resultMsg += "\n━━━━━━━━━━━━━━━\n";
+										resultMsg += "\n\n" + cleanupBoosterResult.message;
+										saveJsonFile(data, filePath);
+									}
+								}
 
 								// 자동구매
 								// 길드공헌훈장🌟 자동 구매
@@ -20752,6 +20769,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					} else {
 						out += "다음 길드레벨: MAX\n";
 					}
+					out += "길드영지 부스터🔮: " + numberWithCommas(ensureGuildTerritoryBoosterCount(g)) + "개\n";
 					if (occupiedTerritoryNames.length > 0) {
 						out += "━━━━━━━━━━━━\n";
 						out += "점령 영지🗺️: " + occupiedTerritoryNames.join(", ") + "\n";
@@ -20779,6 +20797,25 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						replier.reply(g.mark);
 					}
 					replier.reply(out);
+					return;
+				}
+				if (msg === "/길드부스터공헌" || /^\/길드부스터공헌\s+\d+$/.test(msg)) {
+					var boosterParts = msg.split(/\s+/);
+					var boosterCount = parseInt(String(boosterParts[1]).replace(/,/g, ""), 10);
+					if (isNaN(boosterCount) || boosterCount <= 0) {
+						replier.reply("사용법: /길드부스터공헌 [숫자]\n예) /길드부스터공헌 100");
+						return;
+					}
+
+					var boosterResult = contributeGuildTerritoryBooster(data, petData, guildData, sender, boosterCount);
+					if (!boosterResult.ok) {
+						replier.reply(boosterResult.message);
+						return;
+					}
+
+					saveJsonFile(data, filePath);
+					saveJsonFile(guildData, guildPath);
+					replier.reply(boosterResult.message);
 					return;
 				}
 				if (msg.indexOf("/길드가입조건") === 0) {
@@ -21923,12 +21960,12 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 
 					var fundEach = Math.floor((g.warehouse.fund || 0) / memberCount);
-					var elementalEach = Math.floor((g.warehouse.elemental || 0) / memberCount);
+					var petSkillBookEach = Math.floor((g.warehouse.petSkillBook || 0) / memberCount);
 					var petEach = Math.floor((g.warehouse.pet || 0) / memberCount);
 					var miniPetEach = Math.floor((g.warehouse.miniPet || 0) / memberCount);
 					var diamondEach = Math.floor((g.warehouse.diamond || 0) / memberCount);
 
-					if (fundEach <= 0 && elementalEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
+					if (fundEach <= 0 && petSkillBookEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
 						replier.reply("❌ 분배 가능한 길드 자원이 부족합니다.");
 						return;
 					}
@@ -21946,8 +21983,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 							addPoint(data, memberName, fundEach);
 						}
 
-						if (elementalEach > 0) {
-							addItem(data, memberName, "정령 강화석🥀", elementalEach);
+						if (petSkillBookEach > 0) {
+							addItem(data, memberName, GLOBAL_CONFIG.petSkill.fragmentItemName, petSkillBookEach);
 						}
 
 						if (petEach > 0) {
@@ -21965,7 +22002,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					// 길드 자원 차감 (N빵 몫만큼만 차감, 나머지는 유지)
 					g.warehouse.fund -= fundEach * memberCount;
-					g.warehouse.elemental -= elementalEach * memberCount;
+					g.warehouse.petSkillBook -= petSkillBookEach * memberCount;
 					g.warehouse.pet -= petEach * memberCount;
 					g.warehouse.miniPet -= miniPetEach * memberCount;
 					g.warehouse.diamond -= diamondEach * memberCount;
@@ -21984,14 +22021,14 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += "━━━━━━━━━━━━\n";
 					out += "1인당 분배 자원\n";
 					out += "🅟 " + numberWithCommas(fundEach) + "\n";
-					out += "🥀 " + numberWithCommas(elementalEach) + "\n";
+					out += "📙 " + numberWithCommas(petSkillBookEach) + "\n";
 					out += "⭐️ " + numberWithCommas(petEach) + "\n";
 					out += "💫 " + numberWithCommas(miniPetEach) + "\n";
 					out += "💎 " + numberWithCommas(diamondEach) + "\n";
 					out += "━━━━━━━━━━━━\n";
 					out += "분배 후 남은 길드자원\n";
 					out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
-					out += "🥀 " + numberWithCommas(Number(g.warehouse.elemental) || 0) + "\n";
+					out += "📙 " + numberWithCommas(Number(g.warehouse.petSkillBook) || 0) + "\n";
 					out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
 					out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0) + "\n";
 					out += "💎 " + numberWithCommas(Number(g.warehouse.diamond) || 0);
@@ -22040,15 +22077,15 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					);
 					return;
 				}
-				// 운영자 전용 정령 강화석 창고 지급
+				// 운영자 전용 펫스킬북 조각 창고 지급
 				if (msg.indexOf("/길드정령창고") === 0) {
 					var parsed = parseGuildNameAndAmount(msg, "/길드정령창고");
 					if (!parsed) {
-						replier.reply("사용법: /길드정령창고 [길드명] [숫자]\n예) /길드정령창고 대머리 100");
+						replier.reply("사용법: /길드정령창고 [길드명] [숫자]\n예) /길드정령창고 대머리 100\n※ 길드창고에 펫스킬북 조각📙을 지급합니다.");
 						return;
 					}
 
-					var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "elemental");
+					var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "petSkillBook");
 
 					if (!result.ok) {
 						replier.reply(result.message);
@@ -22742,13 +22779,13 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					// 지급
 					var fund = 50000000 * count;
-					var elemental = 12 * count;
+					var petSkillBook = 12 * count;
 					var ring = 1 * count;
 					var pet = 15 * count;
 					var miniPet = 5 * count;
 
 					g.warehouse.fund += fund;
-					g.warehouse.elemental += elemental;
+					g.warehouse.petSkillBook += petSkillBook;
 					g.warehouse.pendant += ring;
 					g.warehouse.pet += pet;
 					g.warehouse.miniPet += miniPet;
@@ -22763,7 +22800,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					out += g.name + "(" + g.mark + ") 길드창고 지급 완료\n";
 					out += "━━━━━━━━━━━━\n";
 					out += "🅟 +" + numberWithCommas(fund) + "\n";
-					out += "🥀 +" + numberWithCommas(elemental) + "\n";
+					out += "📙 +" + numberWithCommas(petSkillBook) + "\n";
 					out += "📿 +" + numberWithCommas(ring) + "\n";
 					out += "⭐️ +" + numberWithCommas(pet) + "\n";
 					out += "💫 +" + numberWithCommas(miniPet);
@@ -25279,10 +25316,10 @@ function saveJsonFile(data, path) {
 function getGuildTerritoryList() {
 	return [
 		{ no: 1, name: "호월킹덤🏰", rewardType: "castle" },
-		{ no: 2, name: "정령광산🥀", rewardType: "elemental", rewardAmount: 400 },
-		{ no: 3, name: "펜던트 광산📿", rewardType: "pendant", rewardAmount: 5 },
-		{ no: 4, name: "펫강화광산⭐️", rewardType: "pet", rewardAmount: 400 },
-		{ no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: 150 },
+		{ no: 2, name: "펫스킬 광산📙", rewardType: "petSkillBook", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.petSkillMineRewardAmount },
+		{ no: 3, name: "펜던트 광산📿", rewardType: "pendant", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.pendantMineRewardAmount },
+		{ no: 4, name: "펫강화광산⭐️", rewardType: "pet", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.petMineRewardAmount },
+		{ no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.miniPetMineRewardAmount },
 		{ no: 6, name: "다이아광산💎", rewardType: "diamond", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount }
 	];
 }
@@ -25302,17 +25339,63 @@ function getGuildByIdSafe(guildData, gid) {
 // 길드 ID로 길드 정보 가져오기 (에러 처리 포함)
 function ensureGuildWarehouseObj(g) {
 	if (!g) return;
-	if (!g.warehouse) g.warehouse = { fund: 0, elemental: 0, pendant: 0, pet: 0, miniPet: 0 };
-	if (typeof g.warehouse.elemental !== "number") g.warehouse.elemental = 0;
-	if (typeof g.warehouse.spirit === "number") {
-		g.warehouse.elemental += g.warehouse.spirit;
-		delete g.warehouse.spirit;
-	}
+	if (!g.warehouse) g.warehouse = { fund: 0, petSkillBook: 0, pendant: 0, pet: 0, miniPet: 0, diamond: 0 };
+	if (typeof g.warehouse.petSkillBook !== "number") g.warehouse.petSkillBook = 0;
+	delete g.warehouse.elemental;
+	delete g.warehouse.spirit;
 	if (typeof g.warehouse.fund !== "number") g.warehouse.fund = 0;
 	if (typeof g.warehouse.pendant !== "number") g.warehouse.pendant = 0;
 	if (typeof g.warehouse.pet !== "number") g.warehouse.pet = 0;
 	if (typeof g.warehouse.miniPet !== "number") g.warehouse.miniPet = 0;
 	if (typeof g.warehouse.diamond !== "number") g.warehouse.diamond = 0;
+	ensureGuildTerritoryBoosterCount(g);
+}
+
+// 길드영지 부스터 보유량을 숫자로 보정
+function ensureGuildTerritoryBoosterCount(g) {
+	if (!g) return 0;
+	if (typeof g.guildTerritoryBooster !== "number") g.guildTerritoryBooster = 0;
+	if (g.guildTerritoryBooster < 0) g.guildTerritoryBooster = 0;
+	return g.guildTerritoryBooster;
+}
+
+// 길드창고 보상 자원 가산
+function addGuildWarehouseReward(g, rewardType, amount) {
+	ensureGuildWarehouseObj(g);
+	if (!g || !g.warehouse || !rewardType || amount <= 0) return;
+	if (typeof g.warehouse[rewardType] !== "number") g.warehouse[rewardType] = 0;
+	g.warehouse[rewardType] += amount;
+}
+
+// 길드영지 부스터 공헌 처리
+function contributeGuildTerritoryBooster(data, petData, guildData, sender, count) {
+	var itemName = GLOBAL_CONFIG.guildTerritory.items.boosterName;
+	if (!data.member || !data.member[sender]) return { ok: false, message: "❌ 유저 데이터가 없습니다." };
+	var guildInfo = getMyGuildInfo(data, guildData, sender);
+	if (!guildInfo || guildInfo.error) return { ok: false, message: "❌ 가입된 길드가 없습니다." };
+	if (!hasItem(data, sender, itemName, count)) return { ok: false, message: "❌ 길드영지 부스터🔮 아이템이 부족합니다." };
+
+	var g = guildInfo.guild;
+	ensureGuildTerritoryBoosterCount(g);
+	removeItem(data, sender, itemName, count);
+	g.guildTerritoryBooster += count;
+
+	return {
+		ok: true,
+		guild: g,
+		count: count,
+		boosterCount: g.guildTerritoryBooster,
+		message:
+			"[" +
+			checkRank(data, petData, guildData, sender) +
+			"]님이 " +
+			formatGuildDisplay(g) +
+			" 길드 공헌 완료🔮\n\n길드영지 부스터🔮 " +
+			numberWithCommas(count) +
+			"개를 길드에 공헌했습니다.\n현재 길드영지 부스터🔮: " +
+			numberWithCommas(g.guildTerritoryBooster) +
+			"개"
+	};
 }
 
 // 길드 자금과 창고 자원 표시 문자열 생성 함수
@@ -25321,8 +25404,8 @@ function buildGuildResourceDisplay(g) {
 	return (
 		"길드자금🌾: 🅟" +
 		numberWithCommas(g.warehouse.fund || 0) +
-		"\n길드창고🧳: 🥀x" +
-		numberWithCommas(g.warehouse.elemental || 0) +
+		"\n길드창고🧳: 📙x" +
+		numberWithCommas(g.warehouse.petSkillBook || 0) +
 		" 📿x" +
 		numberWithCommas(g.warehouse.pendant || 0) +
 		" ⭐x" +
@@ -26794,14 +26877,57 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 		}
 
 		var list = getGuildTerritoryList();
+		var rewardRowsByGuild = {};
 		for (var i = 0; i < list.length; i++) {
 			var territory = list[i];
 			if (territory.rewardType === "castle") continue;
 			var ter = war.territories[String(territory.no)];
 			var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
 			if (!g) continue;
-			ensureGuildWarehouseObj(g);
-			g.warehouse[territory.rewardType] += territory.rewardAmount;
+			addGuildWarehouseReward(g, territory.rewardType, territory.rewardAmount);
+			if (!rewardRowsByGuild[ter.ownerGuildId]) rewardRowsByGuild[ter.ownerGuildId] = [];
+			rewardRowsByGuild[ter.ownerGuildId].push({ guild: g, territory: territory, baseAmount: territory.rewardAmount });
+		}
+
+		var boosterLogs = [];
+		for (var gid in rewardRowsByGuild) {
+			if (!rewardRowsByGuild.hasOwnProperty(gid)) continue;
+			var rows = rewardRowsByGuild[gid];
+			if (!rows || rows.length === 0) continue;
+			var guild = rows[0].guild;
+			var availableBooster = ensureGuildTerritoryBoosterCount(guild);
+			if (availableBooster <= 0) continue;
+
+			var totalBaseAmount = 0; // 점령 광산의 기본 보상 총량
+			for (var r = 0; r < rows.length; r++) {
+				totalBaseAmount += rows[r].baseAmount;
+			}
+
+			var usedBooster = 0;
+			if (availableBooster >= totalBaseAmount) {
+				for (var fullIdx = 0; fullIdx < rows.length; fullIdx++) {
+					addGuildWarehouseReward(guild, rows[fullIdx].territory.rewardType, rows[fullIdx].baseAmount);
+					usedBooster += rows[fullIdx].baseAmount;
+					boosterLogs.push(formatGuildDisplay(guild) + " " + rows[fullIdx].territory.name + " +" + numberWithCommas(rows[fullIdx].baseAmount));
+				}
+			} else if (rows.length === 1) {
+				var singleBonus = Math.min(availableBooster, rows[0].baseAmount);
+				addGuildWarehouseReward(guild, rows[0].territory.rewardType, singleBonus);
+				usedBooster += singleBonus;
+				boosterLogs.push(formatGuildDisplay(guild) + " " + rows[0].territory.name + " +" + numberWithCommas(singleBonus));
+			} else {
+				var dividedBonus = Math.floor(availableBooster / rows.length);
+				if (dividedBonus > 0) {
+					for (var divIdx = 0; divIdx < rows.length; divIdx++) {
+						var rowBonus = Math.min(dividedBonus, rows[divIdx].baseAmount);
+						addGuildWarehouseReward(guild, rows[divIdx].territory.rewardType, rowBonus);
+						usedBooster += rowBonus;
+						boosterLogs.push(formatGuildDisplay(guild) + " " + rows[divIdx].territory.name + " +" + numberWithCommas(rowBonus));
+					}
+				}
+			}
+
+			guild.guildTerritoryBooster = Math.max(0, availableBooster - usedBooster);
 		}
 
 		var out = "[🎖️길드 영지전 종료🎖️]\n";
@@ -26811,6 +26937,9 @@ function finishGuildTerritoryWar(data, guildData, reason) {
 			var t = war.territories[String(list[j].no)];
 			var owner = getGuildByIdSafe(guildData, t ? t.ownerGuildId : null);
 			out += "[" + list[j].no + "] " + list[j].name + ": " + formatGuildDisplay(owner) + "\n";
+		}
+		if (boosterLogs.length > 0) {
+			out += "\n[길드영지 부스터🔮 적용]\n" + boosterLogs.join("\n") + "\n";
 		}
 		out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
 		war.readyGuilds = {};
@@ -31996,13 +32125,13 @@ function runOpenAll(sender, data, petData, replier, guildData) {
 		ensureGuildWarehouseObj(g);
 
 		var fund = 50000000 * count;
-		var elemental = 12 * count;
+		var petSkillBook = 12 * count;
 		var ring = 1 * count;
 		var pet = 15 * count;
 		var miniPet = 5 * count;
 
 		g.warehouse.fund += fund;
-		g.warehouse.elemental += elemental;
+		g.warehouse.petSkillBook += petSkillBook;
 		g.warehouse.pendant += ring;
 		g.warehouse.pet += pet;
 		g.warehouse.miniPet += miniPet;
@@ -32019,8 +32148,8 @@ function runOpenAll(sender, data, petData, replier, guildData) {
 			"🅟 +" +
 			numberWithCommas(fund) +
 			"\n" +
-			"🥀 +" +
-			numberWithCommas(elemental) +
+			"📙 +" +
+			numberWithCommas(petSkillBook) +
 			"\n" +
 			"📿 +" +
 			numberWithCommas(ring) +
@@ -38035,9 +38164,9 @@ function checkGuildLevelUp(data, guildData, g) {
 		}
 
 		// 창고 보상
-		if (reward.elemental) {
-			g.warehouse.elemental += reward.elemental;
-			rewardTexts.push("정령 강화석🥀 " + numberWithCommas(reward.elemental) + "개");
+		if (reward.petSkillBook) {
+			g.warehouse.petSkillBook += reward.petSkillBook;
+			rewardTexts.push("펫스킬북 조각📙 " + numberWithCommas(reward.petSkillBook) + "개");
 		}
 
 		if (reward.pet) {
@@ -38176,11 +38305,11 @@ function addGuildResourceByAdmin(guildData, sender, guildName, amount, type) {
 		g.warehouse.fund += amount;
 		afterValue = g.warehouse.fund;
 		resourceLabel = "길드자금🅟";
-	} else if (type === "elemental") {
-		beforeValue = g.warehouse.elemental || 0;
-		g.warehouse.elemental = beforeValue + amount;
-		afterValue = g.warehouse.elemental;
-		resourceLabel = "정령 강화석🥀";
+	} else if (type === "petSkillBook") {
+		beforeValue = g.warehouse.petSkillBook || 0;
+		g.warehouse.petSkillBook = beforeValue + amount;
+		afterValue = g.warehouse.petSkillBook;
+		resourceLabel = "펫스킬북 조각📙";
 	} else if (type === "pet") {
 		beforeValue = g.warehouse.pet || 0;
 		g.warehouse.pet = beforeValue + amount;
