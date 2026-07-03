@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.234"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.235"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -15756,8 +15756,8 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					let attackerCastleItemExp = Math.round(calculateCastleItem(attackerName, data));
 					let defenderCastleItemExp = Math.round(calculateCastleItem(defenderName, data));
 					// 펫 장비 계산 로직
-					let attackerGearExp = Math.round(calculateItemInfoAll(attackerName, data, petData).battleExp);
-					let defenderGearExp = Math.round(calculateItemInfoAll(defenderName, data, petData).battleExp);
+					let attackerGearExp = Math.round(calculateItemInfoAll(attackerName, data, petData).castleExp);
+					let defenderGearExp = Math.round(calculateItemInfoAll(defenderName, data, petData).castleExp);
 					// 미니펫 매력 계산
 					let attackerMiniPetExp = 0;
 					let defenderMiniPetExp = 0;
@@ -36218,6 +36218,15 @@ function formatPendantDisplay(pendant) {
 	return pendant.name + (pendant.icon || "") + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
 }
 
+// 펜던트 오픈 결과용 표시 문자열 생성
+function formatPendantOpenResultDisplay(pendant) {
+	if (!pendant) return "없음";
+	var maxDurability = pendant.maxDurability !== undefined ? pendant.maxDurability : 5;
+	var durability = pendant.durability !== undefined ? pendant.durability : maxDurability;
+	var gradeInfo = getPendantGradeInfo(pendant.grade);
+	return pendant.name + (pendant.icon || "") + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "] (확률:" + formatPendantPercent(gradeInfo.rate) + "%)";
+}
+
 // 펜던트 확률 표시용 소수 정리
 function formatPendantPercent(value) {
 	var n = parseFloat(value || 0);
@@ -36374,6 +36383,7 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
 	if (remain <= 0) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트 가방이 가득 차서 펜던트뽑기를 진행할 수 없습니다.\n━━━━━━━━━━━━━\n펜던트가방💎: " + bag.length + "/" + getPendantBagLimit() + "\n불필요한 펜던트를 판매하거나 정리해주세요." };
 	var openCount = Math.min(count, have, remain);
 	var noticeLines = [];
+	var openedPendants = [];
 	var out = "💎[" + checkRank(data, petData, guildData, sender) + "] 님이 펜던트를 오픈합니다!\n";
 	out += "확률정보: 채팅창에 '/펜던트확률'를 적어보세요\n";
 	out += "━━━━━━━━━━━━━━━\n";
@@ -36382,14 +36392,19 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
 	for (var i = 0; i < openCount; i++) {
 		var pendant = pickRandomPendant();
 		bag.push(pendant);
-		out += formatPendantDisplay(pendant) + "\n";
+		openedPendants.push(pendant);
 		if (getPendantGradeInfo(pendant.grade).notice) {
 			noticeLines.push("[" + checkRank(data, petData, guildData, sender) + "] 님이 펜던트뽑기에서\n" + pendant.name + pendant.icon + "[" + pendant.grade + "] 을(를) 획득했습니다!");
 		}
 	}
-	out += "━━━━━━━━━━━━━━━\n";
 	out += "💎 남은 펜던트뽑기: " + numberWithCommas(data.member[sender].bag[ticketName] || 0) + "개\n";
-	out += "🎒 펜던트 가방: " + bag.length + "/" + getPendantBagLimit();
+	out += "🎒 펜던트 가방: " + bag.length + "/" + getPendantBagLimit() + "\n";
+	out += "━━━━━━━━━━━━━━━\n";
+	sortPendantBagByGrade(openedPendants);
+	for (var j = 0; j < openedPendants.length; j++) {
+		out += formatPendantOpenResultDisplay(openedPendants[j]) + "\n";
+	}
+	out = out.replace(/\n$/, "");
 	return { ok: true, message: out, noticeMessage: noticeLines.length ? "[전체알림💎]\n" + noticeLines.join("\n\n") : "" };
 }
 

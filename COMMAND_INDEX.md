@@ -42,6 +42,7 @@ Status: VERIFIED
 - `petgameplay`
 - `calculateCastleItem`
 - `calculateItemInfoAll`
+- `calculatePendantItemInfo`
 
 ## Data Usage
 
@@ -49,6 +50,7 @@ Status: VERIFIED
 - `data.member[sender].point`
 - `data.member[sender].exp`
 - `petData[sender].petexp`
+- `petData[*].pendant`
 - `castleBattleData`
 
 ## Save Flow
@@ -60,6 +62,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `숙련된 전사` adds pet charm only after matching and ticket validation pass; keep `memberPetPath` save in this command flow when changing castle battle rewards.
+- `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
@@ -4689,6 +4692,7 @@ Status: VERIFIED
 - `getPendantBag`
 - `pickRandomPendant`
 - `formatPendantDisplay`
+- `formatPendantOpenResultDisplay`
 - `formatPendantPercent`
 - `sortPendantBagByGrade`
 - `calculatePendantStats`
@@ -4722,6 +4726,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `/펜던트오픈`은 정식 오픈 전까지 `호이 남`만 사용할 수 있도록 임시 제한되어 있다.
+- `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 각 펜던트의 뽑기 확률을 함께 표시한다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
