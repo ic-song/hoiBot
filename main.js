@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.235"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.236"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -803,6 +803,7 @@ const GLOBAL_CONFIG = {
 	guildTerritory: { // 길드 영토전 설정
 		limits: { // 길드 영토전 제한
 			attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
+			personalAttackLimit: 10, // 개인별 영지공격 최대 횟수
 			wrongTurnPenalty: 5, // 영지공격 오입력 패널티 턴
 			timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준
 			riftMaxTurn: 120, // 영지전 균열 최대 턴
@@ -12215,6 +12216,11 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						replier.reply("❌ [" + formatGuildDisplay(attackInfo.guild) + "] 길드는 공격횟수 " + attackLimit + "회를 모두 사용했습니다.");
 						return;
 					}
+					var personalAttackLimit = GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit;
+					if (getGuildTerritoryUserAttackCount(attackWar, sender) >= personalAttackLimit) {
+						replier.reply("⚔️ 영지 공격 횟수를 모두 사용했습니다.\n개인당 영지 공격은 최대 " + personalAttackLimit + "회까지 가능합니다.");
+						return;
+					}
 
 					// 공격 대상 영지
 					var territoryNo = parseInt(attackParts[1], 10);
@@ -12226,6 +12232,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 						}
 						clearGuildTerritoryWarTimer();
 						attackWar.turnToken = null;
+						increaseGuildTerritoryUserAttackCount(attackWar, sender);
 						var dimensionGateMessage = resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, attackInfo);
 						if (isGuildTerritoryAllDone(data, guildData)) {
 							castleMsg(dimensionGateMessage, replier, isGroupChat);
@@ -12256,6 +12263,7 @@ if (msg.trim() === "/펀치" || /^\/펀치 [1-9]\d*$/.test(msg.trim())) {
 					attackWar.turnToken = null;
 					attackWar.guildAttackCounts[attackInfo.guildId] =
 						(attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
+					increaseGuildTerritoryUserAttackCount(attackWar, sender);
 
 					// 턴 보상 처리 (공격 결과 메시지에 포함)
 					var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
@@ -25351,6 +25359,7 @@ function ensureGuildTerritoryWar(data, guildData) {
 	if (!war.territories || typeof war.territories !== "object") war.territories = {};// 영지 정보
 	if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};// 길드별 공격 횟수
 	if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};// 길드별 공격 횟수 제한
+	if (!war.userAttackCounts || typeof war.userAttackCounts !== "object") war.userAttackCounts = {};// 유저별 공격 횟수
 	if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};// 타임아웃으로 공격 실패한 횟수
 	if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};// 제거된 사용자 정보
 	if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};// 제거된 길드 정보
@@ -25504,6 +25513,7 @@ function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, repli
 	war.currentTurnIndex = 0;// 현재 턴 진행 중인 소드마스터🤺의 인덱스
 	war.guildAttackCounts = {};// 길드별 영지 공격 횟수 기록 초기화
 	war.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
+	war.userAttackCounts = {};// 유저별 영지 공격 횟수 기록 초기화
 	war.eliminatedUsers = {};// 탈락한 유저 기록 초기화
 	war.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
 	war.timeoutMissCounts = {};// 턴 타임아웃 미스 횟수 기록
@@ -25816,6 +25826,19 @@ function getGuildTerritoryAttackLimitForWar(war, g, guildId) {
 		return war.guildAttackLimits[guildId];
 	}
 	return getGuildTerritoryAttackLimit(g, null);
+}
+
+// 길드 영지전 개인 공격 횟수 반환
+function getGuildTerritoryUserAttackCount(war, user) {
+	if (!war.userAttackCounts || typeof war.userAttackCounts !== "object") war.userAttackCounts = {};
+	return war.userAttackCounts[user] || 0;
+}
+
+// 길드 영지전 개인 공격 횟수 1회 증가
+function increaseGuildTerritoryUserAttackCount(war, user) {
+	if (!war.userAttackCounts || typeof war.userAttackCounts !== "object") war.userAttackCounts = {};
+	war.userAttackCounts[user] = (war.userAttackCounts[user] || 0) + 1;
+	return war.userAttackCounts[user];
 }
 
 // 길드 영지전 균열 이벤트 발생 횟수 계산 및 보장
