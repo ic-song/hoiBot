@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.233"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.234"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -87,7 +87,7 @@ const PET_SKILL_LIST = [
 	{ name: "일일루틴", grade: "B", rate: 2.0, effect: "일일퀘스트 완료 시 100%로 포인트 1억을 획득합니다." },
 	{ name: "주간루틴", grade: "B", rate: 2.0, effect: "주간퀘스트 완료 시 100%로 포인트 10억을 획득합니다." },
 	{ name: "시련을 걷는 자", grade: "B", rate: 2.0, effect: "10% 확률로 시련의 탑 공략 성공" },
-	{ name: "결혼못한 대장장이", grade: "B", rate: 2.0, effect: "/반지강화 성공 확률 5% 증가" },
+	{ name: "결혼못한 대장장이", grade: "B", rate: 2.0, effect: "/펜던트강화 성공 확률 1% 증가" },
 	{ name: "구원", grade: "B", rate: 2.3, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
 	{ name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨업 시 3업당 매력 +10" },
 	{ name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
@@ -16873,7 +16873,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					return;
 				}
 				if (msg === "진행시켜" && getPendantUpgradeState(sender)) {
-					var pendantConfirmResult = runPendantUpgradeFromState(sender, data, petData, guildData);
+					var pendantConfirmResult = runPendantUpgradeFromState(sender, data, petData, guildData, petSkillData);
 					clearPendantUpgradeState(sender);
 					replier.reply(pendantConfirmResult.message);
 					if (pendantConfirmResult.ok) {
@@ -16938,7 +16938,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 				}
 				if (/^\/펜던트강화\s+\d+$/.test(msg)) {
 					var pendantUpgradeIndex = parseInt(msg.split(/\s+/)[1], 10);
-					var pendantPreview = buildPendantUpgradePreview(data, petData, guildData, sender, pendantUpgradeIndex);
+					var pendantPreview = buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, pendantUpgradeIndex);
 					replier.reply(pendantPreview.message);
 					if (pendantPreview.ok) setPendantUpgradeState(sender, pendantUpgradeIndex);
 					return;
@@ -31310,9 +31310,6 @@ function upgradeItemInfo(type, memberName, data, petData, guildData, petSkillDat
 	if (type === "elemental" && hasPetSkill(petSkillData, memberName, "꽃집 대장장이")) {
 		traitBonusPct = 5;
 		traitLine = "꽃집 대장장이📙 펫스킬을 적용 받았습니다(5%)";
-	} else if (type === "ring" && hasPetSkill(petSkillData, memberName, "결혼못한 대장장이")) {
-		traitBonusPct = 5;
-		traitLine = "결혼못한 대장장이📙 펫스킬을 적용 받았습니다(5%)";
 	}
 	function findBestBoostItem(bag, type) {
 		var best = null;
@@ -36462,8 +36459,22 @@ function clearPendantUpgradeState(sender) {
 	if (userState[sender] && userState[sender].pendantUpgrade) delete userState[sender].pendantUpgrade;
 }
 
+// 펜던트 강화에 적용되는 펫스킬북 보너스 확률 반환
+function getPendantUpgradePetSkillBonusRate(petSkillData, sender) {
+	return hasPetSkill(petSkillData, sender, "결혼못한 대장장이") ? 1 : 0;
+}
+
+// 펜던트 강화 성공 확률 표시 문구 생성
+function formatPendantUpgradeRateLine(baseRate, bonusRate) {
+	var finalRate = Math.min(100, baseRate + bonusRate); // 펫스킬북 적용 후 최종 성공 확률
+	if (bonusRate > 0) {
+		return "강화성공 확률🎲: " + formatPendantPercent(baseRate) + "%+" + formatPendantPercent(bonusRate) + "% = " + formatPendantPercent(finalRate) + "%\n결혼못한 대장장이📙 " + formatPendantPercent(bonusRate) + "% 적용";
+	}
+	return "강화성공 확률🎲: " + formatPendantPercent(baseRate) + "%";
+}
+
 // 펜던트 강화 미리보기 생성
-function buildPendantUpgradePreview(data, petData, guildData, sender, index) {
+function buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, index) {
 	var info = getPendantByIndex(petData, sender, index);
 	if (!info.pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
 	var upgrade = parseInt(info.pendant.upgrade || 0, 10);
@@ -36484,12 +36495,13 @@ function buildPendantUpgradePreview(data, petData, guildData, sender, index) {
 	out += "강화 성공시:\n";
 	out += "종합매력👑: " + numberWithCommas(beforeStats.charm) + "+" + numberWithCommas(afterStats.charm - beforeStats.charm) + "(⬆️)=" + numberWithCommas(afterStats.charm) + "💞\n";
 	out += "펫탐험성공확률⛰️:" + formatPendantPercent(beforeStats.explore) + "%+" + formatPendantPercent(afterStats.explore - beforeStats.explore) + "%(⬆️)=" + formatPendantPercent(afterStats.explore) + "%\n\n";
-	out += "강화비용💸: 🅟" + numberWithCommas(nextInfo.point) + "\n필요 강화석📿: " + nextInfo.stone + "개\n강화성공 확률🎲: " + nextInfo.rate + "%\n남은 내구도⚒️: " + info.pendant.durability + "회\n━━━━━━━━━━━━━\n펜던트 강화할거임?\n[진행시켜] / [쫄았음]";
+	var skillBonusRate = getPendantUpgradePetSkillBonusRate(petSkillData, sender);
+	out += "강화비용💸: 🅟" + numberWithCommas(nextInfo.point) + "\n필요 강화석📿: " + nextInfo.stone + "개\n" + formatPendantUpgradeRateLine(nextInfo.rate, skillBonusRate) + "\n남은 내구도⚒️: " + info.pendant.durability + "회\n━━━━━━━━━━━━━\n펜던트 강화할거임?\n[진행시켜] / [쫄았음]";
 	return { ok: true, message: out };
 }
 
 // 저장된 확인 상태로 펜던트 강화 실행
-function runPendantUpgradeFromState(sender, data, petData, guildData) {
+function runPendantUpgradeFromState(sender, data, petData, guildData, petSkillData) {
 	var state = getPendantUpgradeState(sender);
 	if (!state) return { ok: false, message: "펜던트 강화 확인 시간이 만료되었습니다." };
 	var info = getPendantByIndex(petData, sender, parseInt(state.index, 10));
@@ -36503,7 +36515,9 @@ function runPendantUpgradeFromState(sender, data, petData, guildData) {
 	if (!hasItem(data, sender, GLOBAL_CONFIG.items.pendantEnhanceStoneName, nextInfo.stone)) return { ok: false, message: "펜던트 강화석📿이 부족합니다." };
 	data.member[sender].point -= nextInfo.point;
 	removeItem(data, sender, GLOBAL_CONFIG.items.pendantEnhanceStoneName, nextInfo.stone);
-	var success = Math.random() * 100 < nextInfo.rate;
+	var skillBonusRate = getPendantUpgradePetSkillBonusRate(petSkillData, sender);
+	var successRate = Math.min(100, nextInfo.rate + skillBonusRate); // 실제 강화 판정에 사용하는 최종 성공 확률
+	var success = Math.random() * 100 < successRate;
 	if (success) {
 		info.pendant.upgrade = next;
 		var successStats = calculatePendantStats(info.pendant);

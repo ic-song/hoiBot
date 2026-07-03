@@ -4698,6 +4698,8 @@ Status: VERIFIED
 - `equipPendantFromBag`
 - `unequipPendantToBag`
 - `restorePendantDurability`
+- `getPendantUpgradePetSkillBonusRate`
+- `formatPendantUpgradeRateLine`
 - `buildPendantUpgradePreview`
 - `runPendantUpgradeFromState`
 - `registerPendantFreeMarket`
@@ -4706,6 +4708,7 @@ Status: VERIFIED
 
 - `petData[user].pendant`
 - `petData[user].pendantBag`
+- `petSkillData[user].petSkills.equipped`
 - `data.member[user].bag`
 - `data.member[user].point`
 - `freeMarketData.listings[*].type = "pendant"`
@@ -4723,3 +4726,4 @@ Status: VERIFIED
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
 - 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
+- `결혼못한 대장장이📙` 펫스킬북을 장착하면 `/펜던트강화` 미리보기와 실제 강화 판정에 성공 확률 +1%가 함께 반영된다.
