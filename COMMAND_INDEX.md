@@ -1316,6 +1316,7 @@ Status: VERIFIED
 
 - Mutates tower progress and member state
 - Saves `trialTower`, member data, and sometimes pet data in branch
+- `/시련의탑` 1~5층 도전은 포인트와 리셋권을 소모하지 않는다.
 
 ## Related Commands
 
@@ -4107,6 +4108,7 @@ Status: VERIFIED
 - `/자유시장현황`
 - `/자유시장거래현황`
 - `ㅅㅅ`
+- `/펜던트거래정보 [자유시장번호]`
 
 ## AI Notes
 
@@ -4120,7 +4122,7 @@ Status: VERIFIED
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
-- `/자유시장` appends `[개당 ...]` to active listing item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
+- `/자유시장` and `/자유시장거래현황` append `[개당 ...]` to item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
@@ -4741,6 +4743,47 @@ Status: VERIFIED
 
 ---
 
+# /글자수전체정리
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `cleanAllMiniPetBags`
+- `cleanAllFurnitureBags`
+- `cleanAllPendantBags`
+- `buildTextLengthCleanupMessage`
+
+## Data Usage
+
+- `petData[*].miniPetBag`
+- `homeData[*].furnitureBag`
+- `petData[*].pendantBag`
+
+## Save Flow
+
+- Master 전용 통합 정리 명령이다.
+- 미니펫 정리 결과가 있으면 `member_pet.json`을 저장한다.
+- 가구 정리 결과가 있으면 `homeDataFile`을 저장한다.
+- 펜던트 정리 결과가 있으면 `member_pet.json`을 저장한다.
+
+## Related Commands
+
+- `/미니펫전체정리`
+- `/가구전체정리`
+- `/펜던트전체정리`
+
+## AI Notes
+
+- `/미니펫전체정리`, `/가구전체정리`, `/펜던트전체정리`의 공용 정리 헬퍼를 순차 실행한다.
+- 초과 데이터가 없으면 저장하지 않고 0개 삭제 결과를 출력한다.
+
+---
+
 # 펜던트 콘텐츠
 
 Status: VERIFIED
@@ -4757,15 +4800,16 @@ Status: VERIFIED
 - `/펜던트확률`
 - `/펜던트가방`
 - `/펜던트정보 [번호]`
-- `/펜던트장착 [번호]`
+- `/펜던트장착 [펜던트가방번호]`
 - `/펜던트해제`
 - `/펜던트복원 [번호]`
-- `/펜던트강화 [번호]`
+- `/펜던트강화 [펜던트가방번호]`
 - `/펜던트판매 [번호]`
 - `/펜던트가방정리 번호~번호`
 - `/펜던트전체정리`
 - `/펜던트당근 유저명 번호`
 - `/펜던트거래등록 번호 판매금액`
+- `/펜던트거래정보 [자유시장번호]`
 - `/펜던트추가`, `/펜던트삭제`, `/펜던트장착초기화`, `/펜던트강화수정`, `/펜던트내구도수정`
 
 ## Related Helpers
@@ -4774,7 +4818,9 @@ Status: VERIFIED
 - `getPendantBag`
 - `pickRandomPendant`
 - `formatPendantDisplay`
+- `formatPendantNameWithIcon`
 - `formatPendantOpenResultDisplay`
+- `buildPendantInfoDetailMessage`
 - `formatPendantPercent`
 - `sortPendantBagByGrade`
 - `calculatePendantStats`
@@ -4789,6 +4835,7 @@ Status: VERIFIED
 - `buildPendantUpgradePreview`
 - `runPendantUpgradeFromState`
 - `registerPendantFreeMarket`
+- `buildPendantTradeInfoMessage`
 - `cleanAllPendantBags`
 
 ## Data Usage
@@ -4817,6 +4864,9 @@ Status: VERIFIED
 - `/펜던트당근거래`는 기존 호환 별칭이며, 안내 문구와 문서 기준 명령어는 `/펜던트당근`이다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
+- `/펜던트강화`는 펜던트가방 번호를 입력하며, 장착 펜던트는 숫자 `0`으로 강화한다.
+- `/펜던트거래정보 [자유시장번호]`는 자유시장 등록 목록의 펜던트 payload를 기존 펜던트 정보 형식으로 보여준다.
+- 펜던트 이름 끝에 이미 같은 이모지가 있으면 `formatPendantNameWithIcon`이 표시 이모지를 중복으로 붙이지 않는다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
 - 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
 - `결혼못한 대장장이📙` 펫스킬북을 장착하면 `/펜던트강화` 미리보기와 실제 강화 판정에 성공 확률 +1%가 함께 반영된다.

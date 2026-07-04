@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.240"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.241"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2827,6 +2827,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				if (msg === "/자유시장거래현황" || msg === "ㅅㅅ") {
 					var freeMarketHistory = ensureFreeMarketData(loadJsonFile(freeMarketPath));
 					replier.reply(buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketHistory));
+					return;
+				}
+
+				if (msg === "/펜던트거래정보" || /^\/펜던트거래정보\s+.+$/.test(msg)) {
+					if (msg === "/펜던트거래정보") {
+						replier.reply("사용법: /펜던트거래정보 [자유시장번호]\n예시: /펜던트거래정보 3");
+						return;
+					}
+					if (!/^\/펜던트거래정보\s+\d+$/.test(msg)) {
+						replier.reply("자유시장 번호는 숫자로 입력해주세요.\n예시: /펜던트거래정보 3");
+						return;
+					}
+					var pendantTradeInfoNo = parseInt(msg.split(/\s+/)[1], 10);
+					var pendantTradeInfoData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+					replier.reply(buildPendantTradeInfoMessage(pendantTradeInfoData, pendantTradeInfoNo));
 					return;
 				}
 
@@ -6351,28 +6366,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					}
 				}
 				
-				if (msg.startsWith("/초보1, ")) {
-					var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-					if (sender !== "호이 남") {
-						replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-					} else {
-						if (commandParts.length !== 2) {
-							replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: /초보, 사용자아이디");
-						} else {
-							var targetUserId = commandParts[1].trim(); // 명령어 뒤에 입력된 아이디를 가져옵니다.
-							if (!data.member.hasOwnProperty(targetUserId)) {
-								replier.reply("해당 사용자를 찾을 수 없습니다.");
-							} else {
-								if (data.member[targetUserId].bag["초보자 스타터패키지🌟[1](/초보오픈1)"] === undefined) {
-									data.member[targetUserId].bag["초보자 스타터패키지🌟[1](/초보오픈1)"] = 1;
-								} else {
-									data.member[targetUserId].bag["초보자 스타터패키지🌟[1](/초보오픈1)"] += 1;
-								}
-								replier.reply("[" + targetUserId + "]님에게 초보자 스타터패키지🌟[1](/초보오픈1)가 지급되었습니다.");
-							}
-						}
-					}
-				}
+
 				if (msg.startsWith("/초보2, ")) {
 					var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
 					if (sender !== "호이 남") {
@@ -8534,9 +8528,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						}
 					}
 				}
-				if (msg.trim().startsWith("/시련,") || msg.trim().match(/^\/시련\d*,/)) {
+				if (msg.trim().startsWith("/전돌,") || msg.trim().match(/^\/전돌\d*,/)) {
 					if (isMaster(sender)) {
-						var parts = msg.match(/^\/시련(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
+						var parts = msg.match(/^\/전돌(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
 						if (parts) {
 							var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
 							var userId = parts[2].trim();
@@ -8545,12 +8539,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 								return;
 							}
 							if (data.member[userId] !== undefined) {
-								if (data.member[userId].bag["시련의상자😈(/시련오픈)"] === undefined) {
-									data.member[userId].bag["시련의상자😈(/시련오픈)"] = amount;
+								if (data.member[userId].bag["전설의돌 뽑기🩶(/전돌뽑기 숫자)"] === undefined) {
+									data.member[userId].bag["전설의돌 뽑기🩶(/전돌뽑기 숫자)"] = amount;
 								} else {
-									data.member[userId].bag["시련의상자😈(/시련오픈)"] += amount;
+									data.member[userId].bag["전설의돌 뽑기🩶(/전돌뽑기 숫자)"] += amount;
 								}
-								replier.reply(userId + "님에게 시련의상자😈(/시련오픈) " + amount + "개를 지급했습니다.");
+								replier.reply(userId + "님에게 전설의돌 뽑기🩶(/전돌뽑기 숫자) " + amount + "개를 지급했습니다.");
 							} else {
 								replier.reply("유저 아이디를 확인해 주세요.");
 							}
@@ -11394,6 +11388,142 @@ if (msg === "/황제패키지오픈3") {
 						replier.reply(baseMsg);
 					}, 300);
 				}
+
+				if (msg.indexOf("/전돌뽑기") === 0) {
+	var splitMsg = msg.trim().split(/\s+/);
+	var useCount = 1;
+
+	if (splitMsg.length > 1) {
+		useCount = parseInt(splitMsg[1], 10);
+
+		if (isNaN(useCount) || useCount <= 0) {
+			replier.reply("사용법: /전돌뽑기 [숫자]\n예시: /전돌뽑기 10");
+			return;
+		}
+	}
+
+	if (useCount > 100) {
+		replier.reply("한 번에 최대 100개까지만 사용할 수 있습니다.");
+		return;
+	}
+
+	var itemName = "전설의돌 뽑기🩶(/전돌뽑기 숫자)";
+
+	if (!data.member[sender].bag[itemName] || data.member[sender].bag[itemName] < useCount) {
+		var haveCnt = data.member[sender].bag[itemName] || 0;
+		replier.reply(itemName + " 보유 수량이 부족합니다.\n현재 보유: " + haveCnt + "개");
+		return;
+	}
+
+	data.member[sender].bag[itemName] -= useCount;
+	if (data.member[sender].bag[itemName] <= 0) {
+		delete data.member[sender].bag[itemName];
+	}
+
+	var baseItems = {
+		"티어 승급티켓🎟": 3,
+		"다이아상자💎(/다이아상자오픈)": 1,
+		"미니펫뽑기🐹(/미니펫오픈)": 100
+	};
+
+	var totalBaseItems = {};
+	for (var item in baseItems) {
+		totalBaseItems[item] = baseItems[item] * useCount;
+		addItemToBag(data.member[sender].bag, item, totalBaseItems[item]);
+	}
+
+	var rewardItemName = "전설의 돌맹이🗿";
+
+	var countStone1 = 0;
+	var countStone2 = 0;
+	var countStone3 = 0;
+	var countStone5 = 0;
+	var countStone10 = 0;
+	var countStone50 = 0;
+
+	var totalStone = 0;
+
+	for (var i = 0; i < useCount; i++) {
+		var rand = Math.random();
+
+		// 총 확률 91%라 남은 9%는 1개 지급으로 처리
+		if (rand < 0.01) {
+			countStone50++;
+			totalStone += 50;
+		} else if (rand < 0.03) {
+			countStone10++;
+			totalStone += 10;
+		} else if (rand < 0.06) {
+			countStone5++;
+			totalStone += 5;
+		} else if (rand < 0.11) {
+			countStone3++;
+			totalStone += 3;
+		} else if (rand < 0.21) {
+			countStone2++;
+			totalStone += 2;
+		} else {
+			countStone1++;
+			totalStone += 1;
+		}
+	}
+
+	addItemToBag(data.member[sender].bag, rewardItemName, totalStone);
+
+	var rankName = checkRank(data, petData, guildData, sender);
+
+	var specialText = "";
+	var specialImg = "";
+
+	if (countStone50 > 0) {
+		specialText = "🎉 전설의 돌맹이🗿 50개 대박 당첨! 축하드립니다!";
+		specialImg = "https://ibb.co/YFNcgbCx";
+
+		noticeMsg(
+			"[전체알림💎]\n" +
+			"[" + rankName + "] 님이 전돌뽑기에서\n" +
+			"전설의 돌맹이🗿 50개에 당첨되었습니다!🎉\n" +
+			"(총 " + countStone50 + "회 당첨)"
+		);
+	}
+
+	var resultLine = [];
+	if (countStone1 > 0) resultLine.push("1개: " + countStone1 + "회");
+	if (countStone2 > 0) resultLine.push("2개: " + countStone2 + "회");
+	if (countStone3 > 0) resultLine.push("3개: " + countStone3 + "회");
+	if (countStone5 > 0) resultLine.push("5개: " + countStone5 + "회");
+	if (countStone10 > 0) resultLine.push("10개: " + countStone10 + "회");
+	if (countStone50 > 0) resultLine.push("50개: " + countStone50 + "회");
+
+	var msgOut = "";
+	msgOut += "🩶 전설의돌 뽑기 결과 🩶\n";
+	msgOut += "[" + rankName + "] 님이 전설의돌 뽑기를 진행했습니다!\n";
+	msgOut += "사용 수량: " + useCount + "개\n\n";
+
+	msgOut += "📊 뽑기 결과\n";
+	msgOut += "[" + resultLine.join(" ") + "]\n\n";
+
+	msgOut += "🗿 총 획득 전설의 돌맹이: " + numberWithCommas(totalStone) + "개\n";
+	msgOut += "👜 남은 보유: " + (data.member[sender].bag[itemName] || 0) + "개";
+
+	if (countStone50 > 0) {
+		msgOut += "\n🎊 대박 당첨 축하\n";
+		msgOut += specialText + "\n";
+		msgOut += "\n🖼️ 축하 이미지\n";
+		msgOut += specialImg + "\n";
+	}
+
+	var baseMsg = "";
+	baseMsg += "📦 기본 지급 아이템 " + allsee + "\n\n";
+	baseMsg += "티어 승급티켓🎟 " + totalBaseItems["티어 승급티켓🎟"] + "개\n";
+	baseMsg += "다이아상자💎(/다이아상자오픈) " + totalBaseItems["다이아상자💎(/다이아상자오픈)"] + "개\n";
+	baseMsg += "미니펫뽑기🐹(/미니펫오픈) " + totalBaseItems["미니펫뽑기🐹(/미니펫오픈)"] + "개";
+
+	replier.reply(msgOut);
+	setTimeout(function () {
+		replier.reply(baseMsg);
+	}, 300);
+}
 // 🥊 호이월드 오락실 펀치기계 전체 코드
 // 명령어: /펀치, /펀치 [횟수], /펀치순위, /펀치순위초기화
 // 필요 아이템: 핵꿀밤🥊(/펀치)
@@ -16984,7 +17114,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					replier.reply(buildPendantInfoMessage(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10)));
 					return;
 				}
-				if (/^\/펜던트장착\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트장착" || /^\/펜던트장착\s+.+$/.test(msg)) {
+					if (!/^\/펜던트장착\s+\d+$/.test(msg)) {
+						replier.reply("예) /펜던트장착 [펜던트가방번호]");
+						return;
+					}
 					var pendantEquipResult = equipPendantFromBag(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10));
 					replier.reply(pendantEquipResult.message);
 					if (pendantEquipResult.ok) saveJsonFile(petData, memberPetPath);
@@ -17008,7 +17142,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					return;
 				}
-				if (/^\/펜던트강화\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트강화" || /^\/펜던트강화\s+.+$/.test(msg)) {
+					if (!/^\/펜던트강화\s+\d+$/.test(msg)) {
+						replier.reply("예) /펜던트강화 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요.");
+						return;
+					}
 					var pendantUpgradeIndex = parseInt(msg.split(/\s+/)[1], 10);
 					var pendantPreview = buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, pendantUpgradeIndex);
 					replier.reply(pendantPreview.message);
@@ -17042,6 +17180,21 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (pendantCleanAllResult.ok) {
 						saveJsonFile(petData, memberPetPath);
 					}
+					return;
+				}
+				if (msg === "/글자수전체정리") {
+					if (!isMaster(sender)) {
+						replier.reply("관리자만 사용할 수 있는 명령어입니다.");
+						return;
+					}
+					var textCleanHomeData = loadJsonFile(homeDataFile);
+					var miniCleanAllResult = cleanAllMiniPetBags(data, petData, guildData, miniPetData);
+					var furnitureCleanAllResult = cleanAllFurnitureBags(data, petData, guildData, textCleanHomeData);
+					var pendantCleanAllResultForText = cleanAllPendantBags(data, petData, guildData);
+					var shouldSaveTextCleanPetData = miniCleanAllResult.ok || pendantCleanAllResultForText.ok; // 미니펫/펜던트 정리 결과 저장 여부
+					if (shouldSaveTextCleanPetData) saveJsonFile(petData, memberPetPath);
+					if (furnitureCleanAllResult.ok) saveJsonFile(textCleanHomeData, homeDataFile);
+					replier.reply(buildTextLengthCleanupMessage(miniCleanAllResult, furnitureCleanAllResult, pendantCleanAllResultForText));
 					return;
 				}
 				if (/^\/펜던트당근(?:거래)?\s+.+\s+\d+$/.test(msg)) {
@@ -17597,24 +17750,6 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						replier.reply("펫이 없습니다.");
 						return;
 					}
-					let useItemArray = [];
-					let resetTicketName = "시련의탑리셋권😈";
-					if (!data.member[sender].bag[resetTicketName]) {
-						// 포인트 차감
-						if (data.member[sender].point < needPoint) {
-							// 50만 포인트보다 적을 때 부족 메시지 출력
-							replier.reply("❌ 포인트가 부족합니다. (필요: 550만)");
-							return;
-						}
-						data.member[sender].point -= needPoint;
-					} else {
-						// 티켓사용
-						data.member[sender].bag[resetTicketName]--;
-						if (data.member[sender].bag[resetTicketName] == 0) {
-							delete data.member[sender].bag[resetTicketName];
-						}
-						useItemArray.push(resetTicketName);
-					}
 					if (!trialTower.user[sender]) {
 						trialTower.user[sender] = {
 							floor: 0,
@@ -17624,6 +17759,27 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					let currentFloor = trialTower.user[sender].floor; // 현재 층
 					let challengerFloor = currentFloor + 1; // 도전 층
+					let isTrialTowerFreeFloor = challengerFloor >= 1 && challengerFloor <= 5; // 1~5층 무료 입장 여부
+					let useItemArray = [];
+					let resetTicketName = "시련의탑리셋권😈";
+					if (!data.member[sender].bag[resetTicketName]) {
+						// 포인트 차감
+						if (!isTrialTowerFreeFloor && data.member[sender].point < needPoint) {
+							// 50만 포인트보다 적을 때 부족 메시지 출력
+							replier.reply("❌ 포인트가 부족합니다. (필요: 550만)");
+							return;
+						}
+						if (!isTrialTowerFreeFloor) data.member[sender].point -= needPoint;
+					} else {
+						// 티켓사용
+						if (!isTrialTowerFreeFloor) {
+							data.member[sender].bag[resetTicketName]--;
+							if (data.member[sender].bag[resetTicketName] == 0) {
+								delete data.member[sender].bag[resetTicketName];
+							}
+							useItemArray.push(resetTicketName);
+						}
+					}
 					// 다음 층의 몬스터 찾기
 					let bossObj = getTrialTowerBossFloor(challengerFloor);
 					if (!bossObj) {
@@ -17817,6 +17973,9 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 						message += "\n\n" + diceBonusMsg;
 					}
 					message += "\n\n👜사용한 아이템 :";
+					if (isTrialTowerFreeFloor) {
+						message += "\n- 1~5층 무료입장";
+					}
 					useItemArray.forEach((itemName) => {
 						if (itemName == cheatItemName) {
 							// 공략서
@@ -18346,51 +18505,9 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender) || sender == "오픈채팅봇")) {
 						return;
 					}
-					if (!petData) {
-						replier.reply("❌ 미니펫 데이터가 없습니다.");
-						return;
-					}
-					let totalUserCount = 0; // 정리 대상 유저 수
-					let totalRemovedCount = 0; // 전체 삭제된 미니펫 수
-					let userLogLines = []; // 유저별 요약 로그
-					//  전체 유저 순회
-					for (let name in petData) {
-						if (!petData.hasOwnProperty(name)) continue;
-						let userPet = petData[name];
-						if (!userPet.miniPetBag || !userPet.miniPetBag.length) continue;
-						refreshMiniPetSortIndex(petData, name, miniPetData.gradeTable);
-						let bag = userPet.miniPetBag;
-						let count = bag.length;
-						// 정리 기준 미만이면 스킵
-						if (count < GLOBAL_CONFIG.miniPet.cleanupTriggerCount) continue;
-						let keepCount = GLOBAL_CONFIG.miniPet.cleanupKeepCount;
-						let removedCount = count - keepCount;
-						let kept = bag.slice(0, keepCount);
-						let removed = bag.slice(keepCount);
-						// 실제로 가방 덮어쓰기
-						userPet.miniPetBag = kept;
-						// 남은 15마리에 대해 sortIndex 다시 부여
-						refreshMiniPetSortIndex(petData, name, miniPetData.gradeTable);
-						totalUserCount++;
-						totalRemovedCount += removedCount;
-						// 유저별 요약 로그 (닉네임 기준)
-						let nickname = checkRank(data, petData, guildData, name);
-						userLogLines.push("[" + nickname + "] " + count + "마리 → " + keepCount + "마리 (삭제: " + removedCount + "마리)");
-					}
-					// 저장 및 결과 출력
-					if (totalUserCount === 0) {
-						replier.reply("✅ 정리 대상 유저가 없습니다.\n(" + GLOBAL_CONFIG.miniPet.cleanupTriggerCount + "마리 이상 보유한 가방이 없습니다.)");
-						return;
-					}
-					saveJsonFile(petData, memberPetPath);
-					let msgText = "🧹 [관리자 전용] 미니펫 가방 전체 정리 완료\n";
-					msgText += "━━━━━━━━━━━━━━━\n";
-					msgText += "정리 대상 유저 수 : " + totalUserCount + "명\n";
-					msgText += "전체 삭제된 미니펫 : " + totalRemovedCount + "마리\n";
-					msgText += "※ 각 유저별로 상위 12마리만 남기고 나머지는 영구 삭제되었습니다.\n";
-					msgText += "━━━━━━━━━━━━━━━\n";
-					msgText += allsee + userLogLines.join("\n");
-					replier.reply(msgText);
+					var miniCleanResult = cleanAllMiniPetBags(data, petData, guildData, miniPetData);
+					replier.reply(miniCleanResult.message);
+					if (miniCleanResult.ok) saveJsonFile(petData, memberPetPath);
 					return;
 				}
 
@@ -19534,53 +19651,10 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (!(isAdmin(sender) || isMaster(sender) || sender == "오픈채팅봇")) {
 						return;
 					}
-					let homeData = loadJsonFile(homeDataFile);
-					if (!homeData) {
-						replier.reply("❌ 가구 데이터가 없습니다.");
-						return;
-					}
-					let totalUserCount = 0; // 정리된 유저 수
-					let totalRemovedCount = 0; // 전체 삭제된 가구 수
-					let userLogLines = []; // 유저별 요약 로그
-					// 전체 유저 순회
-					for (let name in homeData) {
-						if (!homeData.hasOwnProperty(name)) continue;
-						homeData = initSweetHomeUser(homeData, name);
-						let userHome = homeData[name];
-						if (!userHome.furnitureBag) userHome.furnitureBag = [];
-						let bagArr = userHome.furnitureBag;
-						let count = bagArr.length;
-						// 9개 미만 → 스킵
-						if (count < 11) continue;
-						bagArr = sortFurnitureList(bagArr);
-						userHome.furnitureBag = bagArr;
-						let keepCount = 10;
-						let removedCount = count - keepCount;
-						let kept = bagArr.slice(0, keepCount);
-						// let removed = bagArr.slice(keepCount); // 필요시 상세 로그용
-						userHome.furnitureBag = kept;
-						// 정렬 한 번 더 (상위 50개지만 규칙 유지용)
-						userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-						totalUserCount++;
-						totalRemovedCount += removedCount;
-						let nickname = checkRank(data, petData, guildData, name);
-						userLogLines.push("[" + nickname + "] " + count + "개 → " + keepCount + "개 (삭제: " + removedCount + "개)");
-					}
-					// 결과 처리
-					if (totalUserCount === 0) {
-						replier.reply("✅ 정리 대상 유저가 없습니다.\n" + "(가구 가방에 15개 이상 보유한 유저가 없습니다.)");
-						return;
-					}
-					saveJsonFile(homeData, homeDataFile);
-					let msgText = "🧹 [관리자 전용] 가구 가방 전체 정리 완료\n";
-					msgText += "━━━━━━━━━━━━━━━\n";
-					msgText += "정리 대상 유저 수 : " + totalUserCount + "명\n";
-					msgText += "전체 삭제된 가구 : " + totalRemovedCount + "개\n";
-					msgText += "※ 각 유저별로 가방 기준 11개 이상일 때,\n";
-					msgText += "   정렬 상위 10개만 남기고 나머지는 영구 삭제되었습니다.\n";
-					msgText += "━━━━━━━━━━━━━━━\n";
-					msgText += allsee + userLogLines.join("\n");
-					replier.reply(msgText);
+					var furnitureHomeData = loadJsonFile(homeDataFile);
+					var furnitureCleanResult = cleanAllFurnitureBags(data, petData, guildData, furnitureHomeData);
+					replier.reply(furnitureCleanResult.message);
+					if (furnitureCleanResult.ok) saveJsonFile(furnitureHomeData, homeDataFile);
 					return;
 				}
 				if (msg === "/가구순위") {
@@ -22830,7 +22904,7 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 
 					// 지급
 					var fund = 50000000 * count;
-					var petSkillBook = 12 * count;
+					var petSkillBook = 1 * count;
 					var ring = 1 * count;
 					var pet = 15 * count;
 					var miniPet = 5 * count;
@@ -29906,10 +29980,13 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
 		var towerBag = towerMember && towerMember.bag ? towerMember.bag : {};
 		var towerPet = petData && petData[sender] ? petData[sender] : null;
 		var towerTicket = parseInt(towerBag["시련의탑리셋권😈"], 10) || 0; // 보유 시탑 리셋권
+		var towerFloor = trialTower && trialTower.user && trialTower.user[sender] ? parseInt(trialTower.user[sender].floor, 10) || 0 : 0;
+		var towerNextFloor = towerFloor + 1; // 자동일퀘가 다음에 도전할 시련의탑 층
+		var towerFreeFloor = towerNextFloor >= 1 && towerNextFloor <= 5; // 1~5층 무료 입장 여부
 		if (guildData && guildData.castleSiegeFlag) return "공성전 진행 중이라 시련의탑 자동 진행이 중단되었습니다.";
 		if (!trialTower || !trialTower.flag) return "시련의탑 시즌이 진행 중이 아니라 자동 진행이 중단되었습니다.";
 		if (!towerPet || !towerPet.petname) return "펫이 없어 시련의탑 자동 진행이 중단되었습니다.";
-		if (towerMember && towerTicket < 1 && (parseInt(towerMember.point, 10) || 0) < 5500000) {
+		if (!towerFreeFloor && towerMember && towerTicket < 1 && (parseInt(towerMember.point, 10) || 0) < 5500000) {
 			return "시련의탑 입장 포인트/리셋권 부족으로 중단되었습니다. 필요 🅟5,500,000 / 보유 🅟" + numberWithCommas(towerMember.point || 0) + " / 리셋권 " + towerTicket + "개";
 		}
 	}
@@ -32200,7 +32277,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
 		ensureGuildWarehouseObj(g);
 
 		var fund = 50000000 * count;
-		var petSkillBook = 12 * count;
+		var petSkillBook = 1 * count;
 		var ring = 1 * count;
 		var pet = 15 * count;
 		var miniPet = 5 * count;
@@ -32902,11 +32979,20 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
 		var log = logs[i];
 		var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + GLOBAL_CONFIG.freeMarket.memberFeeTag : "";
 		var completedTimeText = formatFreeMarketDisplayTime(log.completedAt, log.completedAtMs);
-		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
+		out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개" + formatFreeMarketUnitPriceText(log) + "]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
 		if (completedTimeText) out += "\n  └(" + completedTimeText + ")";
 		out += "\n\n";
 	}
 	return out.trim();
+}
+
+// 자유시장 등록 펜던트 상세 정보 메시지 생성
+function buildPendantTradeInfoMessage(freeMarketData, displayNo) {
+	var listing = getFreeMarketListingByDisplayNo(freeMarketData, displayNo);
+	if (!listing) return "해당 자유시장 번호의 거래 정보를 찾을 수 없습니다.";
+	if (listing.type !== "pendant") return "해당 거래 아이템은 펜던트가 아닙니다.\n펜던트 거래정보는 자유시장에 등록된 펜던트만 확인할 수 있습니다.";
+	if (!listing.payload || !listing.payload.pendants || !listing.payload.pendants[0]) return "해당 펜던트 정보를 불러올 수 없습니다.\n관리자에게 문의해주세요.";
+	return buildPendantInfoDetailMessage("펜던트 거래정보:", listing.payload.pendants[0]);
 }
 
 // 자유시장 완료 로그가 회원권 수수료 적용 거래인지 확인하는 함수
@@ -36425,6 +36511,15 @@ function createPendantByGradeInfo(info) {
 	};
 }
 
+// 펜던트 이름과 이모지를 중복 없이 결합
+function formatPendantNameWithIcon(pendant) {
+	if (!pendant) return "";
+	var name = pendant.name || "";
+	var icon = pendant.icon || "";
+	if (icon && name.substring(name.length - icon.length) === icon) return name;
+	return name + icon;
+}
+
 // 펜던트 뽑기 결과 선택
 function pickRandomPendant() {
 	var r = Math.random() * 100;
@@ -36442,7 +36537,7 @@ function formatPendantDisplay(pendant) {
 	var maxDurability = pendant.maxDurability !== undefined ? pendant.maxDurability : 5;
 	var durability = pendant.durability !== undefined ? pendant.durability : maxDurability;
 	var upgrade = pendant.upgrade !== undefined ? pendant.upgrade : 0;
-	return pendant.name + (pendant.icon || "") + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
+	return formatPendantNameWithIcon(pendant) + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
 }
 
 // 펜던트 오픈 결과용 표시 문자열 생성
@@ -36451,7 +36546,7 @@ function formatPendantOpenResultDisplay(pendant) {
 	var maxDurability = pendant.maxDurability !== undefined ? pendant.maxDurability : 5;
 	var durability = pendant.durability !== undefined ? pendant.durability : maxDurability;
 	var gradeInfo = getPendantGradeInfo(pendant.grade);
-	return pendant.name + (pendant.icon || "") + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "] (확률:" + formatPendantPercent(gradeInfo.rate) + "%)";
+	return formatPendantNameWithIcon(pendant) + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "] (확률:" + formatPendantPercent(gradeInfo.rate) + "%)";
 }
 
 // 펜던트 확률 표시용 소수 정리
@@ -36545,9 +36640,10 @@ function buildPendantBagMessage(data, petData, guildData, user) {
 	sortPendantBagByGrade(bag);
 	var out = "[" + checkRank(data, petData, guildData, user) + "] 보유 펜던트가방💎[" + bag.length + "/" + getPendantBagLimit() + "]\n";
 	out += "━━━━━━━━━━━━━\n";
-	out += "※ 펜던트 장착: /펜던트장착 [번호]\n";
+	out += "※ 펜던트 장착: /펜던트장착 [펜던트가방번호]\n";
 	out += "※ 펜던트 판매: /펜던트판매 [번호]\n";
 	out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
+	out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
 	out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
 	out += "━━━━━━━━━━━━━\n";
 	if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
@@ -36572,11 +36668,16 @@ function getPendantByIndex(petData, user, index) {
 function buildPendantInfoMessage(data, petData, guildData, user, index) {
 	var info = getPendantByIndex(petData, user, index);
 	if (!info.pendant) return "[" + checkRank(data, petData, guildData, user) + "] 님\n해당 번호의 펜던트가 존재하지 않습니다.";
-	var stats = calculatePendantStats(info.pendant);
-	var next = Math.min(30, (parseInt(info.pendant.upgrade || 0, 10) + 1));
+	return buildPendantInfoDetailMessage("펜던트 정보:", info.pendant);
+}
+
+// 펜던트 상세 정보 출력 문자열 생성
+function buildPendantInfoDetailMessage(title, pendant) {
+	var stats = calculatePendantStats(pendant);
+	var next = Math.min(30, (parseInt(pendant.upgrade || 0, 10) + 1));
 	var nextInfo = PENDANT_UPGRADE_TABLE[next];
-	var out = "펜던트 정보:\n";
-	out += formatPendantDisplay(info.pendant) + "\n";
+	var out = title + "\n";
+	out += formatPendantDisplay(pendant) + "\n";
 	out += "━━━━━━━━━━━━━\n";
 	out += "기본 종합매력👑: " + numberWithCommas(stats.baseCharm) + "💞\n";
 	out += "강화 종합매력👑: +" + numberWithCommas(stats.upgradeCharm) + "💞\n";
@@ -36584,8 +36685,8 @@ function buildPendantInfoMessage(data, petData, guildData, user, index) {
 	out += "기본 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.baseExplore) + "%\n";
 	out += "강화 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.upgradeExplore) + "%\n";
 	out += "총 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.explore) + "%\n\n";
-	out += "남은 내구도⚒️: " + (info.pendant.durability || 0) + "회\n";
-	if (parseInt(info.pendant.upgrade || 0, 10) >= 30) {
+	out += "남은 내구도⚒️: " + (pendant.durability || 0) + "회\n";
+	if (parseInt(pendant.upgrade || 0, 10) >= 30) {
 		out += "이미 최대 강화 단계입니다.";
 	} else {
 		out += "다음 강화성공 확률🎲: " + nextInfo.rate + "%\n";
@@ -36720,7 +36821,7 @@ function formatPendantUpgradeRateLine(baseRate, bonusRate) {
 // 펜던트 강화 미리보기 생성
 function buildPendantUpgradePreview(data, petData, guildData, petSkillData, sender, index) {
 	var info = getPendantByIndex(petData, sender, index);
-	if (!info.pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
+	if (!info.pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다.\n━━━━━━━━━━━━━\n예) /펜던트강화 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요." };
 	var upgrade = parseInt(info.pendant.upgrade || 0, 10);
 	if (upgrade >= 30) return { ok: false, message: "이미 펜던트 최대 강화 단계에 도달했습니다.\n━━━━━━━━━━━━━\n현재 강화수치: +30\n최대 강화수치: +30" };
 	if ((info.pendant.durability || 0) <= 0) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n해당 펜던트는 내구도가 0이라 강화할 수 없습니다.\n━━━━━━━━━━━━━\n/펜던트복원 [번호] 명령어로 복원 후 다시 시도해주세요." };
@@ -36805,6 +36906,78 @@ function cleanPendantBagRange(data, petData, guildData, sender, msg) {
 	return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트 " + count + "개를 정리했습니다.\n획득 포인트💸: 🅟" + numberWithCommas(point) };
 }
 
+// 전체 미니펫 가방 초과분 정리
+function cleanAllMiniPetBags(data, petData, guildData, miniPetData) {
+	if (!petData) return { ok: false, totalUserCount: 0, totalRemovedCount: 0, userLogLines: [], message: "❌ 미니펫 데이터가 없습니다." };
+	var totalUserCount = 0;
+	var totalRemovedCount = 0;
+	var userLogLines = [];
+	for (var name in petData) {
+		if (!petData.hasOwnProperty(name)) continue;
+		var userPet = petData[name];
+		if (!userPet.miniPetBag || !userPet.miniPetBag.length) continue;
+		refreshMiniPetSortIndex(petData, name, miniPetData.gradeTable);
+		var bag = userPet.miniPetBag;
+		var count = bag.length;
+		if (count < GLOBAL_CONFIG.miniPet.cleanupTriggerCount) continue;
+		var keepCount = GLOBAL_CONFIG.miniPet.cleanupKeepCount;
+		var removedCount = count - keepCount;
+		userPet.miniPetBag = bag.slice(0, keepCount);
+		refreshMiniPetSortIndex(petData, name, miniPetData.gradeTable);
+		totalUserCount++;
+		totalRemovedCount += removedCount;
+		userLogLines.push("[" + checkRank(data, petData, guildData, name) + "] " + count + "마리 → " + keepCount + "마리 (삭제: " + removedCount + "마리)");
+	}
+	if (totalUserCount === 0) {
+		return { ok: false, totalUserCount: 0, totalRemovedCount: 0, userLogLines: [], message: "✅ 정리 대상 유저가 없습니다.\n(" + GLOBAL_CONFIG.miniPet.cleanupTriggerCount + "마리 이상 보유한 가방이 없습니다.)" };
+	}
+	var msgText = "🧹 [관리자 전용] 미니펫 가방 전체 정리 완료\n";
+	msgText += "━━━━━━━━━━━━━━━\n";
+	msgText += "정리 대상 유저 수 : " + totalUserCount + "명\n";
+	msgText += "전체 삭제된 미니펫 : " + totalRemovedCount + "마리\n";
+	msgText += "※ 각 유저별로 상위 " + GLOBAL_CONFIG.miniPet.cleanupKeepCount + "마리만 남기고 나머지는 영구 삭제되었습니다.\n";
+	msgText += "━━━━━━━━━━━━━━━\n";
+	msgText += allsee + userLogLines.join("\n");
+	return { ok: true, totalUserCount: totalUserCount, totalRemovedCount: totalRemovedCount, userLogLines: userLogLines, message: msgText };
+}
+
+// 전체 가구 가방 초과분 정리
+function cleanAllFurnitureBags(data, petData, guildData, homeData) {
+	if (!homeData) return { ok: false, totalUserCount: 0, totalRemovedCount: 0, userLogLines: [], message: "❌ 가구 데이터가 없습니다." };
+	var totalUserCount = 0;
+	var totalRemovedCount = 0;
+	var userLogLines = [];
+	for (var name in homeData) {
+		if (!homeData.hasOwnProperty(name)) continue;
+		homeData = initSweetHomeUser(homeData, name);
+		var userHome = homeData[name];
+		if (!userHome.furnitureBag) userHome.furnitureBag = [];
+		var bagArr = userHome.furnitureBag;
+		var count = bagArr.length;
+		if (count < 11) continue;
+		bagArr = sortFurnitureList(bagArr);
+		userHome.furnitureBag = bagArr;
+		var keepCount = 10;
+		var removedCount = count - keepCount;
+		userHome.furnitureBag = sortFurnitureList(bagArr.slice(0, keepCount));
+		totalUserCount++;
+		totalRemovedCount += removedCount;
+		userLogLines.push("[" + checkRank(data, petData, guildData, name) + "] " + count + "개 → " + keepCount + "개 (삭제: " + removedCount + "개)");
+	}
+	if (totalUserCount === 0) {
+		return { ok: false, totalUserCount: 0, totalRemovedCount: 0, userLogLines: [], message: "✅ 정리 대상 유저가 없습니다.\n(가구 가방에 11개 이상 보유한 유저가 없습니다.)" };
+	}
+	var msgText = "🧹 [관리자 전용] 가구 가방 전체 정리 완료\n";
+	msgText += "━━━━━━━━━━━━━━━\n";
+	msgText += "정리 대상 유저 수 : " + totalUserCount + "명\n";
+	msgText += "전체 삭제된 가구 : " + totalRemovedCount + "개\n";
+	msgText += "※ 각 유저별로 가방 기준 11개 이상일 때,\n";
+	msgText += "   정렬 상위 10개만 남기고 나머지는 영구 삭제되었습니다.\n";
+	msgText += "━━━━━━━━━━━━━━━\n";
+	msgText += allsee + userLogLines.join("\n");
+	return { ok: true, totalUserCount: totalUserCount, totalRemovedCount: totalRemovedCount, userLogLines: userLogLines, message: msgText };
+}
+
 // 전체 유저 펜던트가방 초과분 정리
 function cleanAllPendantBags(data, petData, guildData) {
 	var totalUserCount = 0;
@@ -36831,7 +37004,26 @@ function cleanAllPendantBags(data, petData, guildData) {
 	if (userLogLines.length) {
 		msg += "\n━━━━━━━━━━━━━\n정리 목록\n" + userLogLines.join("\n");
 	}
-	return { ok: true, message: msg };
+	return { ok: totalRemovedCount > 0, totalUserCount: totalUserCount, totalRemovedCount: totalRemovedCount, userLogLines: userLogLines, message: msg };
+}
+
+// 글자수 전체 정리 결과 메시지 생성
+function buildTextLengthCleanupMessage(miniResult, furnitureResult, pendantResult) {
+	var msg = "[관리자 정리 시스템🧹]\n글자수 전체 정리가 완료되었습니다.\n\n";
+	msg += "정리 결과\n";
+	msg += "- 미니펫 정리: " + numberWithCommas(miniResult.totalRemovedCount || 0) + "마리 삭제\n";
+	msg += "- 가구 정리: " + numberWithCommas(furnitureResult.totalRemovedCount || 0) + "개 삭제\n";
+	msg += "- 펜던트 정리: " + numberWithCommas(pendantResult.totalRemovedCount || 0) + "개 삭제\n";
+	if (!miniResult.ok && !furnitureResult.ok && !pendantResult.ok) {
+		msg += "\n정리할 초과 데이터가 없습니다.";
+		return msg;
+	}
+	msg += "\n데이터 저장이 완료되었습니다.";
+	msg += "\n\n상세 결과" + allsee + "\n";
+	msg += "[미니펫]\n" + (miniResult.userLogLines && miniResult.userLogLines.length ? miniResult.userLogLines.join("\n") : "정리 대상 없음") + "\n\n";
+	msg += "[가구]\n" + (furnitureResult.userLogLines && furnitureResult.userLogLines.length ? furnitureResult.userLogLines.join("\n") : "정리 대상 없음") + "\n\n";
+	msg += "[펜던트]\n" + (pendantResult.userLogLines && pendantResult.userLogLines.length ? pendantResult.userLogLines.join("\n") : "정리 대상 없음");
+	return msg;
 }
 
 // 펜던트 당근 개인거래 처리
