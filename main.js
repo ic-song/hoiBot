@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.241"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.242"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17110,7 +17110,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					return;
 				}
-				if (/^\/펜던트정보\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트정보" || /^\/펜던트정보\s+.+$/.test(msg)) {
+					if (!/^\/펜던트정보\s+\d+$/.test(msg)) {
+						replier.reply("예) /펜던트정보 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요.");
+						return;
+					}
 					replier.reply(buildPendantInfoMessage(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10)));
 					return;
 				}
@@ -17133,7 +17137,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					return;
 				}
-				if (/^\/펜던트복원\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트복원" || /^\/펜던트복원\s+.+$/.test(msg)) {
+					if (!/^\/펜던트복원\s+\d+$/.test(msg)) {
+						replier.reply("예) /펜던트복원 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해주세요.");
+						return;
+					}
 					var pendantRestoreResult = restorePendantDurability(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10));
 					replier.reply(pendantRestoreResult.message);
 					if (pendantRestoreResult.ok) {
@@ -17153,7 +17161,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					if (pendantPreview.ok) setPendantUpgradeState(sender, pendantUpgradeIndex);
 					return;
 				}
-				if (/^\/펜던트판매\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트판매" || /^\/펜던트판매\s+.+$/.test(msg)) {
+					if (!/^\/펜던트판매\s+\d+$/.test(msg)) {
+						replier.reply("예) /펜던트판매 [펜던트가방번호]");
+						return;
+					}
 					var pendantSellResult = sellPendantFromBag(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10));
 					replier.reply(pendantSellResult.message);
 					if (pendantSellResult.ok) {
@@ -17162,7 +17174,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					}
 					return;
 				}
-				if (/^\/펜던트가방정리\s+\d+~\d+$/.test(msg)) {
+				if (msg === "/펜던트가방정리" || /^\/펜던트가방정리\s+.+$/.test(msg)) {
+					if (!/^\/펜던트가방정리\s+\d+~\d+$/.test(msg)) {
+						replier.reply("예) /펜던트가방정리 [시작번호~끝번호]");
+						return;
+					}
 					var pendantCleanResult = cleanPendantBagRange(data, petData, guildData, sender, msg);
 					replier.reply(pendantCleanResult.message);
 					if (pendantCleanResult.ok) {
@@ -17197,7 +17213,11 @@ if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
 					replier.reply(buildTextLengthCleanupMessage(miniCleanAllResult, furnitureCleanAllResult, pendantCleanAllResultForText));
 					return;
 				}
-				if (/^\/펜던트당근(?:거래)?\s+.+\s+\d+$/.test(msg)) {
+				if (msg === "/펜던트당근" || msg === "/펜던트당근거래" || /^\/펜던트당근(?:거래)?\s+.+$/.test(msg)) {
+					if (!/^\/펜던트당근(?:거래)?\s+.+\s+\d+$/.test(msg)) {
+						replier.reply("예) /펜던트당근 [거래대상닉네임] [펜던트가방번호]");
+						return;
+					}
 					var pendantTradeResult = tradePendantByCarrot(data, petData, guildData, sender, msg);
 					replier.reply(pendantTradeResult.message);
 					if (pendantTradeResult.ok) {
@@ -36645,6 +36665,7 @@ function buildPendantBagMessage(data, petData, guildData, user) {
 	out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
 	out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
 	out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
+	out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n";
 	out += "━━━━━━━━━━━━━\n";
 	if (bag.length === 0) return out + "보유한 펜던트가 없습니다.";
 	for (var i = 0; i < bag.length; i++) {
@@ -36759,13 +36780,15 @@ function unequipPendantToBag(data, petData, guildData, sender) {
 	var bag = getPendantBag(petData, sender);
 	if (bag.length >= getPendantBagLimit()) return { ok: false, message: "펜던트가방에 빈칸이 없습니다." };
 	var itemName = GLOBAL_CONFIG.items.pendantUnbindItemName;
-	if (!hasItem(data, sender, itemName, 1)) return { ok: false, message: "펜던트귀속해제💎(/펜던트해제)가 부족합니다." };
+	var unbindItemCount = data.member[sender].bag && data.member[sender].bag[itemName] ? data.member[sender].bag[itemName] : 0;
+	if (unbindItemCount < 1) return { ok: false, message: "펜던트귀속해제💎(/펜던트해제)가 부족합니다.\n귀속권 보유: ❌ 없음" };
 	removeItem(data, sender, itemName, 1);
+	var remainUnbindItemCount = data.member[sender].bag && data.member[sender].bag[itemName] ? data.member[sender].bag[itemName] : 0;
 	var pendant = pet.pendant;
 	pendant.bound = false;
 	bag.push(pendant);
 	delete pet.pendant;
-	return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) + " 을(를)\n펜던트 가방💎으로 이동시켰습니다." };
+	return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) + " 을(를)\n펜던트 가방💎으로 이동시켰습니다.\n귀속권 사용: 1개\n남은 귀속권: " + remainUnbindItemCount + "개" };
 }
 
 // 펜던트 복원 처리
