@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.246"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.247"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -22391,6 +22391,42 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     );
                     return;
                 }
+                // 운영자 전용 다이아 창고 지급
+                if (msg === "/길드다이아창고" || /^\/길드다이아창고\s+.+\s+[\d,]+$/.test(msg)) {
+                    var parsed = parseGuildNameAndAmount(msg, "/길드다이아창고");
+                    if (!parsed) {
+                        replier.reply("사용법: /길드다이아창고 [길드명] [숫자]\n예) /길드다이아창고 대머리 100\n※ 길드창고에 다이아💎를 지급합니다.");
+                        return;
+                    }
+
+                    var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "diamond");
+
+                    if (!result.ok) {
+                        replier.reply(result.message);
+                        return;
+                    }
+
+                    replier.reply(
+                        "✅ 길드창고에 자원이 지급되었습니다.\n" +
+                        "길드: " +
+                        result.guildName +
+                        "(" +
+                        result.guildMark +
+                        ")\n" +
+                        "자원: " +
+                        result.resourceLabel +
+                        "\n" +
+                        "기존: " +
+                        numberWithCommas(result.beforeValue) +
+                        "\n" +
+                        "추가: +" +
+                        numberWithCommas(result.addValue) +
+                        "\n" +
+                        "현재: " +
+                        numberWithCommas(result.afterValue)
+                    );
+                    return;
+                }
                 if (msg === "/길드전체초기화") {
                     if (!(isAdmin(sender) || isMaster(sender))) {
                         replier.reply("❌ 관리자만 사용할 수 있습니다.");
@@ -38789,6 +38825,11 @@ function addGuildResourceByAdmin(guildData, sender, guildName, amount, type) {
         g.warehouse.pendant = beforeValue + amount;
         afterValue = g.warehouse.pendant;
         resourceLabel = "펜던트 강화석📿";
+    } else if (type === "diamond") {
+        beforeValue = g.warehouse.diamond || 0;
+        g.warehouse.diamond = beforeValue + amount;
+        afterValue = g.warehouse.diamond;
+        resourceLabel = "다이아💎";
     } else {
         return { ok: false, message: "❌ 자원 타입 오류." };
     }

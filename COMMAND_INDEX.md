@@ -2244,12 +2244,36 @@ Status: VERIFIED
 - Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
 - `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
 - `/길드분배` currently excludes `warehouse.pendant` from payout and deduction until pendant enhancement content is ready.
-- Admin warehouse grants use `/길드펫스킬창고 [길드명] [숫자]` for `warehouse.petSkillBook` and `/길드펜던트창고 [길드명] [숫자]` for `warehouse.pendant`.
+- Admin warehouse grants use `/길드펫스킬창고 [길드명] [숫자]` for `warehouse.petSkillBook`, `/길드펜던트창고 [길드명] [숫자]` for `warehouse.pendant`, and `/길드다이아창고 [길드명] [숫자]` for `warehouse.diamond`.
 - Legacy `warehouse.ring` is removed by `/데이터정리`; it is not migrated to `warehouse.pendant`.
 ## Related Commands
 - `/길드창고패키지오픈`
 - `/길드정보`
 - `/데이터정리`
+- `/길드다이아창고`
+
+---
+
+# /길드다이아창고 [길드명] [숫자]
+Status: VERIFIED
+## Command Anchors
+- `main.js:22395`
+## Files
+- `main.js`
+## Related Helpers
+- `parseGuildNameAndAmount`
+- `addGuildResourceByAdmin`
+- `findGuildIdByNameSafe`
+- `ensureGuildWarehouseObj`
+## Data Usage
+- `guildData.guilds[*].warehouse.diamond`
+## Save Flow
+- Admin/Master-only command.
+- Parses `[길드명] [숫자]`, adds the amount to `warehouse.diamond`, and saves `guildData` through `saveJsonFile(guildData, guildPath)`.
+## Related Commands
+- `/길드분배`
+- `/길드정보`
+- `/길드상세정보`
 
 ---
 
