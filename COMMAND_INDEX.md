@@ -4563,6 +4563,8 @@ Status: VERIFIED
 - `data.allowedUsersDiamondPass`
 - `petData[*].petSkills`
 - `petData[*].petchar`
+- `petData[*].ring`
+- `petData[*].ringRewardMigration`
 - `petSkillData[*]`
 - `guildData.guilds[*].warehouse.ring`
 
@@ -4580,7 +4582,8 @@ Status: VERIFIED
 - Deletes legacy `homeData[*].guestComments` from `homeData` only; `/데이터정리` does not move those comments into `petHomeCommentsData`.
 - Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Step 6 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
-- Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
+- Step 7 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
+- Step 8 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---

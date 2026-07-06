@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.244"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.245"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -24662,6 +24662,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
 
+                    var petRingDeleteUserCount = 0; // 장착 반지 데이터가 삭제된 유저 수
+                    var ringRewardMigrationDeleteUserCount = 0; // 반지 보상 플래그가 삭제된 유저 수
+                    var petRingDeleteLogs = [];
+                    for (var ringCleanupUser in petData) {
+                        if (!petData.hasOwnProperty(ringCleanupUser)) continue;
+                        var ringCleanupPet = petData[ringCleanupUser];
+                        if (!ringCleanupPet || typeof ringCleanupPet !== "object") continue;
+
+                        var removedRingForUser = false;
+                        var removedMigrationForUser = false;
+                        if (ringCleanupPet.ring !== undefined) {
+                            delete ringCleanupPet.ring;
+                            petRingDeleteUserCount++;
+                            removedRingForUser = true;
+                        }
+                        if (ringCleanupPet.ringRewardMigration !== undefined) {
+                            delete ringCleanupPet.ringRewardMigration;
+                            ringRewardMigrationDeleteUserCount++;
+                            removedMigrationForUser = true;
+                        }
+                        if (removedRingForUser || removedMigrationForUser) {
+                            var ringCleanupParts = [];
+                            if (removedRingForUser) ringCleanupParts.push("반지");
+                            if (removedMigrationForUser) ringCleanupParts.push("보상플래그");
+                            petRingDeleteLogs.push(ringCleanupUser + " : " + ringCleanupParts.join(", ") + " 삭제");
+                        }
+                    }
+
                     var guildRingDeleteGuildCount = 0; // 반지 데이터가 삭제된 길드 수
                     var guildRingDeleteTotalAmount = 0; // 삭제된 반지 총수량
                     var guildRingDeleteLogs = [];
@@ -24747,7 +24775,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "제거할 레거시 패스 명단 없음";
                     }
 
-                    out += "\n\n[7] 길드창고 기존 반지 데이터 삭제\n";
+                    out += "\n\n[7] 유저 기존 반지 데이터 삭제\n";
+                    out += "반지 삭제 유저 : " + numberWithCommas(petRingDeleteUserCount) + "명\n";
+                    out += "보상 플래그 삭제 유저 : " + numberWithCommas(ringRewardMigrationDeleteUserCount) + "명\n";
+                    if (petRingDeleteLogs.length > 0) {
+                        out += "\n[삭제된 유저 반지 데이터]\n" + petRingDeleteLogs.join("\n");
+                    } else {
+                        out += "\n삭제할 유저 반지 데이터 없음";
+                    }
+
+                    out += "\n\n[8] 길드창고 기존 반지 데이터 삭제\n";
                     out += "삭제 길드 : " + numberWithCommas(guildRingDeleteGuildCount) + "개\n";
                     out += "삭제 수량 : 💍x" + numberWithCommas(guildRingDeleteTotalAmount) + "\n";
                     out += "※ 펜던트 강화석📿 수량으로 이전하지 않습니다.\n";
