@@ -4801,6 +4801,8 @@ Status: VERIFIED
 - `/펜던트가방`
 - `/펜던트정보 [펜던트가방번호]`
 - `/펜던트장착 [펜던트가방번호]`
+- `장착할래`
+- `생각해볼게`
 - `/펜던트해제`
 - `/펜던트복원 [펜던트가방번호]`
 - `/펜던트강화 [펜던트가방번호]`
@@ -4827,6 +4829,10 @@ Status: VERIFIED
 - `calculatePendantItemInfo`
 - `getPendantExploreBonusPercent`
 - `runPendantOpen`
+- `setPendantEquipState`
+- `getPendantEquipState`
+- `clearPendantEquipState`
+- `buildPendantEquipConfirmMessage`
 - `equipPendantFromBag`
 - `unequipPendantToBag`
 - `restorePendantDurability`
@@ -4842,6 +4848,7 @@ Status: VERIFIED
 
 - `petData[user].pendant`
 - `petData[user].pendantBag`
+- `userState[user].pendantEquip`
 - `petSkillData[user].petSkills.equipped`
 - `data.member[user].bag`
 - `data.member[user].point`
@@ -4850,13 +4857,15 @@ Status: VERIFIED
 ## Save Flow
 
 - 펜던트 장착/관리/강화/거래는 `petData`를 저장한다.
+- 장착 펜던트가 이미 있는 `/펜던트장착 [번호]`는 `userState[user].pendantEquip`에 확인 대기를 저장하고, `장착할래` 확정 시 기존 장착 펜던트를 소멸시키고 선택한 가방 펜던트를 장착한 뒤 `petData`를 저장한다.
 - 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
 - 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
 - `/펜던트전체정리`는 `petData[user].pendantBag`에서 51개 이상인 가방의 초과분을 삭제한 뒤 `member_pet.json`을 저장한다.
 
 ## AI Notes
 
-- `/펜던트오픈`은 정식 오픈 전까지 `호이 남`만 사용할 수 있도록 임시 제한되어 있다.
+- `/펜던트오픈`은 운영 제한 없이 사용할 수 있다.
+- `/펜던트장착 [번호]`는 장착 펜던트가 없으면 즉시 장착하고, 이미 장착 중이면 `장착할래` / `생각해볼게` 확인 단계를 거친다.
 - `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 번호와 각 펜던트의 뽑기 확률을 함께 표시한다.
 - `/펜던트오픈` 결과는 5번째 항목부터 `allsee` 뒤에 표시한다.
 - `/펜던트오픈` 전체알림은 고등급 펜던트마다 1개씩 송출하고 획득 확률을 함께 표시한다.

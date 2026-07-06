@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.243"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.244"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -704,6 +704,9 @@ const GLOBAL_CONFIG = {
     },
     pet: { // 펫 성장 설정
         evolutionRequiredExp: 10 // 알 진화 필요 매력치
+    },
+    pendant: { // 펜던트 시스템 설정
+        equipConfirmStaleMs: 30000 // 펜던트 교체 확인 대기 만료 시간
     },
     petExplore: { // 펫탐험 설정
         boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"], // 확률UP 아이템 후보(높은 것부터)
@@ -17078,6 +17081,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
+                if (msg === "생각해볼게" && userState[sender] && userState[sender].pendantEquip) {
+                    clearPendantEquipState(sender);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님이\n펜던트 장착을 취소하였습니다.");
+                    return;
+                }
+                if (msg === "장착할래" && userState[sender] && userState[sender].pendantEquip) {
+                    var pendantEquipState = getPendantEquipState(sender);
+                    if (!pendantEquipState) {
+                        replier.reply("펜던트 장착 확인 시간이 만료되었습니다.\n다시 /펜던트장착 [펜던트가방번호] 를 입력해주세요.");
+                        return;
+                    }
+                    var pendantEquipConfirmResult = equipPendantFromBag(data, petData, guildData, sender, pendantEquipState.index, true);
+                    clearPendantEquipState(sender);
+                    replier.reply(pendantEquipConfirmResult.message);
+                    if (pendantEquipConfirmResult.ok) saveJsonFile(petData, memberPetPath);
+                    return;
+                }
                 if (msg === "/펜던트확률") {
                     replier.reply(buildPendantRateMessage());
                     return;
@@ -17121,7 +17141,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("예) /펜던트장착 [펜던트가방번호]");
                         return;
                     }
-                    var pendantEquipResult = equipPendantFromBag(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10));
+                    var hadPendingPendantEquip = !!getPendantEquipState(sender);
+                    var pendantEquipResult = equipPendantFromBag(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10), false);
+                    if (pendantEquipResult.pending) {
+                        setPendantEquipState(sender, parseInt(msg.split(/\s+/)[1], 10));
+                        if (hadPendingPendantEquip) {
+                            pendantEquipResult.message = "기존 펜던트 장착 대기를 취소하고\n새로운 펜던트 장착 확인을 진행합니다.\n\n" + pendantEquipResult.message;
+                        }
+                    }
                     replier.reply(pendantEquipResult.message);
                     if (pendantEquipResult.ok) saveJsonFile(petData, memberPetPath);
                     return;
@@ -36757,17 +36784,55 @@ function runPendantOpen(sender, data, petData, guildData, msg) {
     return { ok: true, message: out, noticeMessages: noticeLines, noticeMessage: "" };
 }
 
+// 펜던트 장착 확인 상태 저장
+function setPendantEquipState(sender, index) {
+    if (!userState[sender]) userState[sender] = {};
+    userState[sender].pendantEquip = { index: index, createdAt: new Date().getTime() };
+}
+
+// 펜던트 장착 확인 상태 반환
+function getPendantEquipState(sender) {
+    if (!userState[sender] || !userState[sender].pendantEquip) return null;
+    var state = userState[sender].pendantEquip;
+    var staleMs = GLOBAL_CONFIG.pendant.equipConfirmStaleMs;
+    if (new Date().getTime() - state.createdAt > staleMs) {
+        delete userState[sender].pendantEquip;
+        return null;
+    }
+    return state;
+}
+
+// 펜던트 장착 확인 상태 삭제
+function clearPendantEquipState(sender) {
+    if (userState[sender] && userState[sender].pendantEquip) delete userState[sender].pendantEquip;
+}
+
+// 펜던트 교체 확인 메시지 생성
+function buildPendantEquipConfirmMessage(data, petData, guildData, sender, pendant) {
+    return "[" + formatPendantDisplay(pendant) + "]\n\n" +
+        "펜던트는 한 번 장착하면 귀속됩니다.\n" +
+        "장착 후에는 가방으로 되돌릴 수 없고\n" +
+        "기존 장착 펜던트는 소멸됩니다.\n\n" +
+        "그래도 장착하시겠습니까?\n\n" +
+        "👉 [장착할래] / [생각해볼게]\n\n" +
+        "*펜던트를 펜던트가방으로 이동시키려면\n" +
+        "펜던트귀속해제💎(/펜던트해제) 가 필요합니다.";
+}
+
 // 펜던트 장착 처리
-function equipPendantFromBag(data, petData, guildData, sender, index) {
+function equipPendantFromBag(data, petData, guildData, sender, index, forceReplace) {
     var pet = ensurePendantUser(petData, sender);
-    if (pet.pendant) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n━━━━━━━━━━━━━\n기존 " + formatPendantDisplay(pet.pendant) + " 을(를)\n먼저 /펜던트해제 를 해주세요.\n━━━━━━━━━━━━━\n펜던트귀속해제💎(/펜던트해제) 는\n다이아상점💎 에서 구매가 가능합니다." };
     var bag = getPendantBag(petData, sender);
     sortPendantBagByGrade(bag);
     if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
+    var selectedPendant = bag[index - 1];
+    if (!selectedPendant || !selectedPendant.name || !selectedPendant.grade) return { ok: false, message: "해당 아이템은 펜던트가 아닙니다." };
+    if (pet.pendant && !forceReplace) return { ok: false, pending: true, message: buildPendantEquipConfirmMessage(data, petData, guildData, sender, selectedPendant) };
     var pendant = bag.splice(index - 1, 1)[0];
     pendant.bound = true;
     pet.pendant = pendant;
     var stats = calculatePendantStats(pendant);
+    if (forceReplace) return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "]님이\n" + formatPendantDisplay(pendant) + "\n펜던트를 새롭게 장착하였습니다." };
     return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트를 장착 하였습니다.\n━━━━━━━━━━━━━\n" + formatPendantDisplay(pendant) + "\n\n종합매력👑: " + numberWithCommas(stats.charm) + "💞\n펫탐험성공확률⛰️ +" + formatPendantPercent(stats.explore) + "%\n남은 내구도⚒️: " + pendant.durability + "회" };
 }
 
