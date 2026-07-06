@@ -2244,6 +2244,7 @@ Status: VERIFIED
 - Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
 - `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
 - `/길드분배` currently excludes `warehouse.pendant` from payout and deduction until pendant enhancement content is ready.
+- Admin warehouse grants use `/길드펫스킬창고 [길드명] [숫자]` for `warehouse.petSkillBook` and `/길드펜던트창고 [길드명] [숫자]` for `warehouse.pendant`.
 - Legacy `warehouse.ring` is removed by `/데이터정리`; it is not migrated to `warehouse.pendant`.
 ## Related Commands
 - `/길드창고패키지오픈`

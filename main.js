@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.245"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.246"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -22212,7 +22212,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 // 운영자 전용 길드자금 지급
-                if (msg.indexOf("/길드자금") === 0) {
+                if (msg === "/길드자금" || /^\/길드자금\s+.+$/.test(msg)) {
                     var parsed = parseGuildNameAndAmount(msg, "/길드자금");
                     if (!parsed) {
                         replier.reply("사용법: /길드자금 [길드명] [포인트]\n예) /길드자금 대머리 100000000");
@@ -22248,10 +22248,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 // 운영자 전용 펫스킬북 조각 창고 지급
-                if (msg.indexOf("/길드정령창고") === 0) {
-                    var parsed = parseGuildNameAndAmount(msg, "/길드정령창고");
+                if (msg === "/길드펫스킬창고" || /^\/길드펫스킬창고\s+.+$/.test(msg)) {
+                    var parsed = parseGuildNameAndAmount(msg, "/길드펫스킬창고");
                     if (!parsed) {
-                        replier.reply("사용법: /길드정령창고 [길드명] [숫자]\n예) /길드정령창고 대머리 100\n※ 길드창고에 펫스킬북 조각📙을 지급합니다.");
+                        replier.reply("사용법: /길드펫스킬창고 [길드명] [숫자]\n예) /길드펫스킬창고 대머리 100\n※ 길드창고에 펫스킬북 조각📙을 지급합니다.");
                         return;
                     }
 
@@ -22284,7 +22284,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 // 운영자 전용 펫 강화석 창고 지급
-                if (msg.indexOf("/길드펫강화석창고") === 0) {
+                if (msg === "/길드펫강화석창고" || /^\/길드펫강화석창고\s+.+$/.test(msg)) {
                     var parsed = parseGuildNameAndAmount(msg, "/길드펫강화석창고");
                     if (!parsed) {
                         replier.reply("사용법: /길드펫강화석창고 [길드명] [숫자]\n예) /길드펫강화석창고 대머리 100");
@@ -22320,7 +22320,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 // 운영자 전용 미니펫 강화석 창고 지급
-                if (msg.indexOf("/길드미니펫강화석창고") === 0) {
+                if (msg === "/길드미니펫강화석창고" || /^\/길드미니펫강화석창고\s+.+$/.test(msg)) {
                     var parsed = parseGuildNameAndAmount(msg, "/길드미니펫강화석창고");
                     if (!parsed) {
                         replier.reply("사용법: /길드미니펫강화석창고 [길드명] [숫자]\n예) /길드미니펫강화석창고 대머리 100");
@@ -22328,6 +22328,42 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "miniPet");
+
+                    if (!result.ok) {
+                        replier.reply(result.message);
+                        return;
+                    }
+
+                    replier.reply(
+                        "✅ 길드창고에 자원이 지급되었습니다.\n" +
+                        "길드: " +
+                        result.guildName +
+                        "(" +
+                        result.guildMark +
+                        ")\n" +
+                        "자원: " +
+                        result.resourceLabel +
+                        "\n" +
+                        "기존: " +
+                        numberWithCommas(result.beforeValue) +
+                        "\n" +
+                        "추가: +" +
+                        numberWithCommas(result.addValue) +
+                        "\n" +
+                        "현재: " +
+                        numberWithCommas(result.afterValue)
+                    );
+                    return;
+                }
+                // 운영자 전용 펜던트 강화석 창고 지급
+                if (msg === "/길드펜던트창고" || /^\/길드펜던트창고\s+.+$/.test(msg)) {
+                    var parsed = parseGuildNameAndAmount(msg, "/길드펜던트창고");
+                    if (!parsed) {
+                        replier.reply("사용법: /길드펜던트창고 [길드명] [숫자]\n예) /길드펜던트창고 대머리 100\n※ 길드창고에 펜던트 강화석📿을 지급합니다.");
+                        return;
+                    }
+
+                    var result = addGuildResourceByAdmin(guildData, sender, parsed.guildName, parsed.amount, "pendant");
 
                     if (!result.ok) {
                         replier.reply(result.message);
@@ -38748,6 +38784,11 @@ function addGuildResourceByAdmin(guildData, sender, guildName, amount, type) {
         g.warehouse.miniPet = beforeValue + amount;
         afterValue = g.warehouse.miniPet;
         resourceLabel = "미니펫 강화석💫";
+    } else if (type === "pendant") {
+        beforeValue = g.warehouse.pendant || 0;
+        g.warehouse.pendant = beforeValue + amount;
+        afterValue = g.warehouse.pendant;
+        resourceLabel = "펜던트 강화석📿";
     } else {
         return { ok: false, message: "❌ 자원 타입 오류." };
     }
