@@ -2222,7 +2222,7 @@ Status: VERIFIED
 # /길드분배
 Status: VERIFIED
 ## Command Anchors
-- `main.js:22644`
+- `main.js:22064`
 ## Files
 - `main.js`
 ## Related Helpers
