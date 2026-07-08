@@ -13,6 +13,7 @@ if not "%HOIBOT_TOOL_LOG_ACTIVE%"=="1" (
 
 set BRANCH_NAME=feature/hoi
 set BASE_BRANCH=feature/prod
+set REMOTE_BASE=origin/feature/prod
 
 title hoiBot workflow 01 - 새 작업 시작
 
@@ -21,11 +22,11 @@ echo ============================================================
 echo  hoiBot Workflow 01 - 새 작업 시작
 echo ============================================================
 echo.
-echo  기준 브랜치 : %BASE_BRANCH%
-echo  작업 브랜치 : %BRANCH_NAME%
+echo  base branch : %REMOTE_BASE%
+echo  work branch : %BRANCH_NAME%
 echo.
 echo  기존 %BRANCH_NAME% 작업 내용을 초기화하고
-echo  최신 %BASE_BRANCH% 기준으로 새 작업을 시작합니다.
+echo  깃허브의 최신 %REMOTE_BASE% 기준으로 새 작업을 시작합니다.
 echo.
 echo  주의: 방금 수정한 내용이 있다면 삭제될 수 있습니다.
 echo ============================================================
@@ -52,25 +53,25 @@ if errorlevel 1 goto FAIL_FETCH
 echo [OK] fetch complete
 
 echo.
-echo [STEP 3/6] %BASE_BRANCH% 최신화
-git switch %BASE_BRANCH%
-if errorlevel 1 goto FAIL_MAIN
-
-git pull origin %BASE_BRANCH%
+echo [STEP 3/6] 원격 운영 기준 확인
+git fetch origin %BASE_BRANCH%:refs/remotes/%REMOTE_BASE%
 if errorlevel 1 goto FAIL_PULL
 
-echo [OK] %BASE_BRANCH% ready
+git rev-parse --verify %REMOTE_BASE%
+if errorlevel 1 goto FAIL_PULL
+
+echo [OK] %REMOTE_BASE% ready
 
 echo.
 echo [STEP 4/6] 작업 브랜치 준비
-git switch -C %BRANCH_NAME% %BASE_BRANCH%
+git switch -C %BRANCH_NAME% %REMOTE_BASE%
 if errorlevel 1 goto FAIL_BRANCH
 
 echo [OK] %BRANCH_NAME% ready
 
 echo.
 echo [STEP 5/6] 작업 폴더 초기화
-git reset --hard %BASE_BRANCH%
+git reset --hard %REMOTE_BASE%
 if errorlevel 1 goto FAIL_RESET
 
 git clean -fd -e tools/logs/
