@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.248"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.249"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36578,7 +36578,7 @@ function runGuildRaidBoxOpen(sender, data, petData, guildData, msg, replier) {
 }
 
 var PENDANT_GRADE_TABLE = [
-    { name: "고요의 펜던트", icon: "🌙", grade: "최하급", rate: 40, charm: 200000, explore: 0.3, notice: false },
+    { name: "고요의 펜던트", icon: "🌙", grade: "최하급", rate: 39.89, charm: 200000, explore: 0.3, notice: false },
     { name: "맹세의 펜던트", icon: "🤍", grade: "하급", rate: 25, charm: 500000, explore: 0.4, notice: false },
     { name: "균열의 펜던트", icon: "🕳️", grade: "하급+", rate: 15, charm: 1000000, explore: 0.5, notice: false },
     { name: "폭풍의 펜던트", icon: "🌪️", grade: "중급", rate: 8, charm: 2000000, explore: 0.6, notice: false },
