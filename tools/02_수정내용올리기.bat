@@ -64,6 +64,11 @@ git merge --ff-only origin/%BASE_BRANCH%
 if errorlevel 1 goto FAIL_BASE_SYNC
 echo.
 
+git merge-base --is-ancestor origin/%BASE_BRANCH% HEAD
+if errorlevel 1 goto FAIL_BASE_ANCESTOR
+echo [OK] %BRANCH_NAME% is based on origin/%BASE_BRANCH%
+echo.
+
 for /f "tokens=*" %%i in ('git branch --show-current') do set CURRENT_BRANCH=%%i
 
 if not "%CURRENT_BRANCH%"=="%BRANCH_NAME%" goto FAIL_BRANCH
@@ -200,6 +205,15 @@ echo.
 echo ========================================
 echo [FAIL] feature/hoi could not fast-forward from origin/feature/prod.
 echo Resolve branch divergence or conflicts first.
+echo ========================================
+pause
+exit /b 1
+
+:FAIL_BASE_ANCESTOR
+echo.
+echo ========================================
+echo [FAIL] feature/hoi is not based on origin/feature/prod.
+echo Run 01 first, or check branch history before uploading.
 echo ========================================
 pause
 exit /b 1
