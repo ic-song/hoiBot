@@ -37,7 +37,7 @@ set /p "CONFIRM=> "
 if /I not "%CONFIRM%"=="Y" goto CANCEL
 
 echo.
-echo [STEP 1/5] 프로젝트 폴더 이동
+echo [STEP 1/6] 프로젝트 폴더 이동
 cd /d "%~dp0.."
 if errorlevel 1 goto FAIL_PATH
 
@@ -45,14 +45,14 @@ echo [OK] PROJECT_DIR
 cd
 
 echo.
-echo [STEP 2/5] 원격 저장소 정보 갱신
+echo [STEP 2/6] 원격 저장소 정보 갱신
 git fetch origin
 if errorlevel 1 goto FAIL_FETCH
 
 echo [OK] fetch complete
 
 echo.
-echo [STEP 3/5] %BASE_BRANCH% 최신화
+echo [STEP 3/6] %BASE_BRANCH% 최신화
 git switch %BASE_BRANCH%
 if errorlevel 1 goto FAIL_MAIN
 
@@ -62,19 +62,26 @@ if errorlevel 1 goto FAIL_PULL
 echo [OK] %BASE_BRANCH% ready
 
 echo.
-echo [STEP 4/5] 작업 브랜치 준비
-git switch -C %BRANCH_NAME% origin/%BASE_BRANCH%
+echo [STEP 4/6] 작업 브랜치 준비
+git switch -C %BRANCH_NAME% %BASE_BRANCH%
 if errorlevel 1 goto FAIL_BRANCH
 
 echo [OK] %BRANCH_NAME% ready
 
 echo.
-echo [STEP 5/5] 작업 폴더 초기화
-git reset --hard origin/%BASE_BRANCH%
+echo [STEP 5/6] 작업 폴더 초기화
+git reset --hard %BASE_BRANCH%
 if errorlevel 1 goto FAIL_RESET
 
 git clean -fd -e tools/logs/
 if errorlevel 1 goto FAIL_CLEAN
+
+echo.
+echo [STEP 6/6] 원격 작업 브랜치 기준 맞추기
+git push -u origin %BRANCH_NAME% --force-with-lease
+if errorlevel 1 goto FAIL_PUSH
+
+for /f "usebackq delims=" %%h in (`git rev-parse --short HEAD`) do set CURRENT_GIT_HEAD=%%h
 
 echo.
 echo ============================================================
@@ -82,6 +89,8 @@ echo  SUCCESS - 새 작업 준비 완료
 echo ============================================================
 echo.
 echo  현재 브랜치: %BRANCH_NAME%
+echo  Git HEAD: !CURRENT_GIT_HEAD!
+echo  원격 반영: origin/%BRANCH_NAME%
 echo ============================================================
 pause
 exit /b 0
@@ -161,6 +170,17 @@ echo ============================================================
 echo  FAIL - 불필요 파일 정리 실패
 echo ============================================================
 echo  clean 처리 중 문제가 발생했습니다.
+echo ============================================================
+pause
+exit /b 1
+
+:FAIL_PUSH
+echo.
+echo ============================================================
+echo  FAIL - 원격 작업 브랜치 기준 맞추기 실패
+echo ============================================================
+echo  origin/%BRANCH_NAME% 반영 중 문제가 발생했습니다.
+echo  인터넷 연결, GitHub 권한, 또는 원격 브랜치 변경을 확인하세요.
 echo ============================================================
 pause
 exit /b 1
