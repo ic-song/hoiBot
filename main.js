@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.251"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.252"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36714,8 +36714,9 @@ function formatPendantOpenResultDisplay(pendant) {
 // 펜던트 확률 표시용 소수 정리
 function formatPendantPercent(value) {
     var n = parseFloat(value || 0);
-    var text = (Math.round(n * 10) / 10).toFixed(1);
-    return text.replace(/\.0$/, "");
+    var decimalPlaces = Math.abs(n) < 1 ? 2 : 1;
+    var text = n.toFixed(decimalPlaces);
+    return text.replace(/\.?0+$/, "");
 }
 
 // 펜던트 등급 정렬 우선순위 반환
