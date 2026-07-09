@@ -2235,6 +2235,7 @@ Status: VERIFIED
 - guild warehouse/fund state
 - member point/item state
 - `guildData.guilds[*].warehouse.petSkillBook`
+- `guildData.guilds[*].warehouse.pendant`
 - `guildData.guilds[*].warehouse.diamond`
 - `data.member[user].diamond`
 - `currencyLogData.user[user].diamond`
@@ -2243,7 +2244,7 @@ Status: VERIFIED
 - Saves `currencyLogData` when distributed resources include 다이아.
 - Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
 - `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
-- `/길드분배` currently excludes `warehouse.pendant` from payout and deduction until pendant enhancement content is ready.
+- `/길드분배` distributes `warehouse.pendant` as `펜던트 강화석📿`, then deducts only the evenly distributed share while leaving the remainder in the guild warehouse.
 - Admin warehouse grants use `/길드펫스킬창고 [길드명] [숫자]` for `warehouse.petSkillBook`, `/길드펜던트창고 [길드명] [숫자]` for `warehouse.pendant`, and `/길드다이아창고 [길드명] [숫자]` for `warehouse.diamond`.
 - Legacy `warehouse.ring` is removed by `/데이터정리`; it is not migrated to `warehouse.pendant`.
 ## Related Commands

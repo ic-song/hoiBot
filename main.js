@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.250"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.251"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -22131,11 +22131,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var fundEach = Math.floor((g.warehouse.fund || 0) / memberCount);
                     var petSkillBookEach = Math.floor((g.warehouse.petSkillBook || 0) / memberCount);
+                    var pendantEach = Math.floor((g.warehouse.pendant || 0) / memberCount);
                     var petEach = Math.floor((g.warehouse.pet || 0) / memberCount);
                     var miniPetEach = Math.floor((g.warehouse.miniPet || 0) / memberCount);
                     var diamondEach = Math.floor((g.warehouse.diamond || 0) / memberCount);
 
-                    if (fundEach <= 0 && petSkillBookEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
+                    if (fundEach <= 0 && petSkillBookEach <= 0 && pendantEach <= 0 && petEach <= 0 && miniPetEach <= 0 && diamondEach <= 0) {
                         replier.reply("❌ 분배 가능한 길드 자원이 부족합니다.");
                         return;
                     }
@@ -22157,6 +22158,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             addItem(data, memberName, GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName, petSkillBookEach);
                         }
 
+                        if (pendantEach > 0) {
+                            addItem(data, memberName, GLOBAL_CONFIG.items.pendantEnhanceStoneName, pendantEach);
+                        }
+
                         if (petEach > 0) {
                             addItem(data, memberName, "펫 강화석⭐", petEach);
                         }
@@ -22173,6 +22178,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 길드 자원 차감 (N빵 몫만큼만 차감, 나머지는 유지)
                     g.warehouse.fund -= fundEach * memberCount;
                     g.warehouse.petSkillBook -= petSkillBookEach * memberCount;
+                    g.warehouse.pendant -= pendantEach * memberCount;
                     g.warehouse.pet -= petEach * memberCount;
                     g.warehouse.miniPet -= miniPetEach * memberCount;
                     g.warehouse.diamond -= diamondEach * memberCount;
@@ -22192,6 +22198,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     out += "1인당 분배 자원\n";
                     out += "🅟 " + numberWithCommas(fundEach) + "\n";
                     out += "📙 " + numberWithCommas(petSkillBookEach) + "\n";
+                    out += "📿 " + numberWithCommas(pendantEach) + "\n";
                     out += "⭐️ " + numberWithCommas(petEach) + "\n";
                     out += "💫 " + numberWithCommas(miniPetEach) + "\n";
                     out += "💎 " + numberWithCommas(diamondEach) + "\n";
@@ -22199,6 +22206,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     out += "분배 후 남은 길드자원\n";
                     out += "🅟 " + numberWithCommas(Number(g.warehouse.fund) || 0) + "\n";
                     out += "📙 " + numberWithCommas(Number(g.warehouse.petSkillBook) || 0) + "\n";
+                    out += "📿 " + numberWithCommas(Number(g.warehouse.pendant) || 0) + "\n";
                     out += "⭐️ " + numberWithCommas(Number(g.warehouse.pet) || 0) + "\n";
                     out += "💫 " + numberWithCommas(Number(g.warehouse.miniPet) || 0) + "\n";
                     out += "💎 " + numberWithCommas(Number(g.warehouse.diamond) || 0);
