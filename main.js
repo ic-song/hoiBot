@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.258"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.259"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1568,7 +1568,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
+                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
             );
             return;
         }
@@ -12243,7 +12243,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildGuildTerritoryRankingMessage(data, guildData));
                     return;
                 }
-                if (msg === "/길드영지보상지급" || msg === "/영지순위보상") {
+                if (msg === "/영지순위보상" || msg === "/영지보상순위") {
+                    replier.reply(buildGuildTerritoryRankRewardGuideMessage());
+                    return;
+                }
+                if (msg === "/길드영지보상지급") {
                     var territoryRankReward = runGuildTerritoryRankReward(data, guildData, sender);
                     replier.reply(territoryRankReward.message);
                     if (territoryRankReward.ok) {
@@ -25153,6 +25157,8 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/길드영지종료" ||
         msg === "/길드영지" ||
         msg === "/길드영지순위" ||
+        msg === "/영지순위보상" ||
+        msg === "/영지보상순위" ||
         /^\/영지공격(?:\s+[1-7])?$/.test(msg) ||
         /^\/안정(?:\s+\d+)?$/.test(msg) ||
         /^\/불안정(?:\s+\d+)?$/.test(msg) ||
@@ -26530,6 +26536,13 @@ function buildGuildTerritoryScoreRankingRows(guildData) {
     return rows;
 }
 
+// 길드영지 순위에서 길드장 전체 표시명을 안전하게 반환하는 함수
+function formatGuildTerritoryMasterDisplay(data, guildData, guild) {
+    if (!guild || !guild.master) return "길드장 정보 없음";
+    if (!data || !data.member || !data.member[guild.master]) return "길드장 정보 없음";
+    return checkRank(data, null, guildData, guild.master);
+}
+
 // 길드영지 누적 점수 순위 메시지를 생성하는 함수
 function buildGuildTerritoryRankingMessage(data, guildData) {
     var rows = buildGuildTerritoryScoreRankingRows(guildData);
@@ -26544,11 +26557,26 @@ function buildGuildTerritoryRankingMessage(data, guildData) {
         var guild = rows[i].guild;
         out += (i + 1) + ". " + formatGuildDisplay(guild) + "\n";
         out += "[" + (guild.server || "서버미상") + "]\n";
-        out += "[" + (guild.master || "길드장없음") + "][Lv." + (guild.level || 1) + "]\n";
+        out += "[" + formatGuildTerritoryMasterDisplay(data, guildData, guild) + "][Lv." + (guild.level || 1) + "]\n";
         out += "[누적 영지점수: " + numberWithCommas(rows[i].score) + "pt]\n\n";
     }
 
     return out.replace(/\n\n$/, "");
+}
+
+// 길드영지 순위 보상 안내 메시지를 생성하는 함수
+function buildGuildTerritoryRankRewardGuideMessage() {
+    var rewardTable = GLOBAL_CONFIG.guildTerritory.rankRewards || [];
+    var out = "🏅 길드영지 순위 보상 🏅\n\n";
+    out += "\"/길드영지순위\"를 기준으로\n";
+    out += "매일 저녁 10시 5분에 지급됩니다.\n\n";
+    out += "1위   🅟" + numberWithCommas(rewardTable[0] || 0) + "\n";
+    out += "2위   🅟" + numberWithCommas(rewardTable[1] || 0) + "\n";
+    out += "3위   🅟" + numberWithCommas(rewardTable[2] || 0) + "\n";
+    out += "4위   🅟" + numberWithCommas(rewardTable[3] || 0) + "\n";
+    out += "5위   🅟" + numberWithCommas(rewardTable[4] || 0) + "\n";
+    out += "6위~10위   🅟" + numberWithCommas(rewardTable[5] || 0);
+    return out;
 }
 
 // 길드영지 순위 보상 지급을 처리하는 함수
@@ -26584,7 +26612,7 @@ function runGuildTerritoryRankReward(data, guildData, sender) {
         totalPoint += reward;
         if (i === 5 && typeof allsee !== "undefined") notice += allsee;
         notice += formatSimpleRankPrefix(i + 1) + " " + formatGuildDisplay(guild) + "\n";
-        notice += "길드창고 +" + numberWithCommas(reward) + "P\n\n";
+        notice += "길드창고 +🅟" + numberWithCommas(reward) + "\n\n";
     }
     notice += "순위 확인: /길드영지순위";
 
@@ -26593,7 +26621,7 @@ function runGuildTerritoryRankReward(data, guildData, sender) {
     return {
         ok: true,
         noticeMessage: notice,
-        message: "✅ 길드영지 순위 보상 지급이 완료되었습니다.\n\n보상 대상: " + maxCount + "개 길드\n총 지급 포인트: " + numberWithCommas(totalPoint) + "P\n전체 알림: 전송 완료\n데이터 저장: 완료"
+        message: "✅ 길드영지 순위 보상 지급이 완료되었습니다.\n\n보상 대상: " + maxCount + "개 길드\n총 지급 포인트: 🅟" + numberWithCommas(totalPoint) + "\n전체 알림: 전송 완료\n데이터 저장: 완료"
     };
 }
 
@@ -27468,7 +27496,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
             var owner = getGuildByIdSafe(guildData, t ? t.ownerGuildId : null);
             out += "[" + list[j].no + "] " + list[j].name + ": " + (owner ? formatGuildDisplay(owner) : "점령 길드 없음") + "\n";
         }
-        out += "\n영지종료보상 및 영지순위 보상 확인하기..";
+        out += "\n💥영지종료보상 및 영지순위 보상 확인하기..";
         if (typeof allsee !== "undefined") out += allsee;
         else out += "\n";
         if (boosterLogs.length > 0) {
