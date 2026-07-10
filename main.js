@@ -26664,14 +26664,14 @@ function buildGuildTerritoryRankingMessage(data, guildData) {
     var out = "📈 🏅 길드영지 순위 🏅 📈\n\n";
     out += "━━━━━━━━━━━\n";
     out += "영지pt 획득 기준\n";
-    out += "(점령시 길드 영지부스터🔮 소지시 2배 획득\n";
+    out += "(길드 영지부스터🔮 소지시 2배 획득\n";
     out += "호월킹덤🏰 50pt\n";
     out += "펫스킬 광산📙 20pt\n";
     out += "펜던트 광산📿 20pt\n";
     out += "펫강화광산⭐️ 50pt\n";
     out += "미니펫강화광산💫 50pt\n";
     out += "다이아광산💎 20pt\n";
-    out += "━━━━━━━━━━━";
+    out += "━━━━━━━━━━━\n";
     if (rows.length === 0) return out + "아직 누적 영지점수가 없습니다.";
 
     for (var i = 0; i < rows.length; i++) {
