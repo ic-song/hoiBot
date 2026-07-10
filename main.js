@@ -12163,7 +12163,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 
-                if (msg === "영지보상안내" || msg === "/영지보상안내") {
+                if (msg === "영지종료보상" || msg === "/영지종료보상") {
                     replier.reply(
                         "🎖️길드 영지전 보상 안내🎖️\n\n" +
                         "[1] 호월킹덤🏰: 세금 시스템 15% 부과\n" +
@@ -26662,7 +26662,16 @@ function formatGuildTerritoryMasterDisplay(data, guildData, guild) {
 function buildGuildTerritoryRankingMessage(data, guildData) {
     var rows = buildGuildTerritoryScoreRankingRows(guildData);
     var out = "📈 🏅 길드영지 순위 🏅 📈\n\n";
-    out += "[길드명(마크)][서버][길드장][길드레벨][누적 영지점수]\n\n";
+    out += "━━━━━━━━━━━\n";
+    out += "영지pt 획득 기준\n";
+    out += "(점령시 길드 영지부스터🔮 소지시 2배 획득\n";
+    out += "호월킹덤🏰 50pt\n";
+    out += "펫스킬 광산📙 20pt\n";
+    out += "펜던트 광산📿 20pt\n";
+    out += "펫강화광산⭐️ 50pt\n";
+    out += "미니펫강화광산💫 50pt\n";
+    out += "다이아광산💎 20pt\n";
+    out += "━━━━━━━━━━━";
     if (rows.length === 0) return out + "아직 누적 영지점수가 없습니다.";
 
     for (var i = 0; i < rows.length; i++) {
@@ -26679,18 +26688,29 @@ function buildGuildTerritoryRankingMessage(data, guildData) {
     return out.replace(/\n\n$/, "");
 }
 
-// 길드영지 순위 보상 안내 메시지를 생성하는 함수
 function buildGuildTerritoryRankRewardGuideMessage() {
     var rewardTable = GLOBAL_CONFIG.guildTerritory.rankRewards || [];
     var out = "🏅 길드영지 순위 보상 🏅\n\n";
+
     out += "\"/길드영지순위\"를 기준으로\n";
     out += "매일 저녁 10시 5분에 지급됩니다.\n\n";
+    out += "(점령시 길드 영지부스터🔮 소지시 2배 획득\n";
+
     out += "1위   🅟" + numberWithCommas(rewardTable[0] || 0) + "\n";
     out += "2위   🅟" + numberWithCommas(rewardTable[1] || 0) + "\n";
     out += "3위   🅟" + numberWithCommas(rewardTable[2] || 0) + "\n";
     out += "4위   🅟" + numberWithCommas(rewardTable[3] || 0) + "\n";
     out += "5위   🅟" + numberWithCommas(rewardTable[4] || 0) + "\n";
-    out += "6위~10위   🅟" + numberWithCommas(rewardTable[5] || 0);
+    out += "6위~10위   🅟" + numberWithCommas(rewardTable[5] || 0) + "\n\n";
+
+    out += "영지pt 획득 기준:\n";
+    out += "호월킹덤🏰   50pt\n";
+    out += "펫스킬 광산📙   20pt\n";
+    out += "펜던트 광산📿   20pt\n";
+    out += "펫강화광산⭐️   50pt\n";
+    out += "미니펫강화광산💫   50pt\n";
+    out += "다이아광산💎   20pt";
+
     return out;
 }
 
@@ -26718,6 +26738,7 @@ function runGuildTerritoryRankReward(data, guildData, sender) {
     var totalPoint = 0;
     var notice = "🏅 길드영지 순위 보상 지급 완료 🏅\n\n";
     notice += "누적 길드영지 점수를 기준으로\n1위부터 10위까지 길드창고에\n포인트 보상이 지급되었습니다.\n\n";
+    notice += "획득한 점수는 길드영지순위에\n자동으로 누적되며 영지pt 또한\n길드영지 부스터🔮가 적용됩니다.\n1.영지종료 보상->영지포인트 보상 순으로 적용\n\n";
     for (var i = 0; i < maxCount; i++) {
         var reward = parseInt(rewardTable[i] || 0, 10);
         if (isNaN(reward) || reward <= 0) continue;
@@ -26729,7 +26750,8 @@ function runGuildTerritoryRankReward(data, guildData, sender) {
         notice += formatSimpleRankPrefix(i + 1) + " " + formatGuildDisplay(guild) + "\n";
         notice += "길드창고 +🅟" + numberWithCommas(reward) + "\n\n";
     }
-    notice += "순위 확인: /길드영지순위";
+    notice += "순위 확인: /길드영지순위\n";
+    notice += "보상 기준: /영지순위보상";
 
     rewardData.lastPaidKey = paidKey;
     rewardData.lastPaidAt = formatDateTime(new Date());
@@ -27621,7 +27643,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
             out += "\n[🏅길드영지 포인트 획득🏅+ 부스터🔮 적용]\n" + scoreLogs.join("\n") + "\n";
             out += "\n획득한 점수는 길드영지순위에\n자동으로 누적됩니다.\n";
         }
-        out += "\n순위 확인: /길드영지순위\n영지순위 보상: /영지순위보상\n점령 보상: /영지보상안내";
+        out += "\n영지순위 확인: /길드영지순위\n영지순위 보상: /영지순위보상\n영지점령 보상: /영지종료보상";
         war.finishProcessed = true;
         war.readyGuilds = {};
         war.riftCommandUses = {};
