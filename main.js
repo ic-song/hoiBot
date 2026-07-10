@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.257"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.258"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -12243,7 +12243,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildGuildTerritoryRankingMessage(data, guildData));
                     return;
                 }
-                if (msg === "/길드영지보상지급") {
+                if (msg === "/길드영지보상지급" || msg === "/영지순위보상") {
                     var territoryRankReward = runGuildTerritoryRankReward(data, guildData, sender);
                     replier.reply(territoryRankReward.message);
                     if (territoryRankReward.ok) {
@@ -25739,8 +25739,9 @@ function getGuildTerritoryBaseScore(territory) {
 
 // 길드영지 점수를 누적하고 적용 내역을 반환하는 함수
 function applyGuildTerritoryScores(guildData, list, war) {
-    var logs = [];
-    if (!guildData || !guildData.guilds || !war || !war.territories) return logs;
+    var summaryByGuild = {};
+    var orderedGuildIds = [];
+    if (!guildData || !guildData.guilds || !war || !war.territories) return [];
     for (var i = 0; i < list.length; i++) {
         var territory = list[i];
         var ter = war.territories[String(territory.no)];
@@ -25756,7 +25757,25 @@ function applyGuildTerritoryScores(guildData, list, war) {
         }
         var gainScore = boosterApplied ? baseScore * 2 : baseScore;
         guild.guildTerritoryScore = ensureGuildTerritoryScore(guild) + gainScore;
-        logs.push(formatGuildDisplay(guild) + " " + territory.name + " +" + gainScore + "pt" + (boosterApplied ? "🔮" : ""));
+        if (!summaryByGuild[ter.ownerGuildId]) {
+            summaryByGuild[ter.ownerGuildId] = {
+                guild: guild,
+                baseScore: 0,
+                boosterScore: 0
+            };
+            orderedGuildIds.push(ter.ownerGuildId);
+        }
+        summaryByGuild[ter.ownerGuildId].baseScore += baseScore;
+        if (boosterApplied) summaryByGuild[ter.ownerGuildId].boosterScore += baseScore;
+    }
+
+    var logs = [];
+    for (var j = 0; j < orderedGuildIds.length; j++) {
+        var row = summaryByGuild[orderedGuildIds[j]];
+        if (!row) continue;
+        var text = formatGuildDisplay(row.guild) + " " + numberWithCommas(row.baseScore) + "pt";
+        if (row.boosterScore > 0) text += "+" + numberWithCommas(row.boosterScore) + "pt🔮";
+        logs.push(text);
     }
     return logs;
 }
@@ -26050,6 +26069,7 @@ function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, repli
     war.turnToken = null;// 턴 토큰 초기화
     war.startReady = false;// 시작 유예 중에는 공격 불가
     war.openingToken = String(new Date().getTime()) + "_" + String(Math.random());// 시작 유예 토큰
+    war.finishProcessed = false;// 동일 회차 종료 처리 중복 방지 초기화
     clearGuildTerritoryPendingStartState(war); // 영지전 준비 상태 초기화
 
     for (var gl = 0; gl < readyGuildIds.length; gl++) {
@@ -27390,6 +27410,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 function finishGuildTerritoryWar(data, guildData, reason) {
     return withGuildTerritoryDataMode(guildData, function () {
         var war = ensureGuildTerritoryWar(data, guildData);
+        if (!war.active && war.finishProcessed) return;
         clearGuildTerritoryWarTimer();
         clearGuildTerritoryPendingStartTimer();
         clearGuildTerritoryOpeningTimer();
@@ -27431,7 +27452,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
                 var bonusAmount = boosterResult.bonuses[bonusIdx] || 0;
                 if (bonusAmount <= 0) continue;
                 addGuildWarehouseReward(guild, rows[bonusIdx].territory.rewardType, bonusAmount);
-                boosterLogs.push(formatGuildDisplay(guild) + " " + rows[bonusIdx].territory.name + " +" + numberWithCommas(bonusAmount) + "🔮");
+                boosterLogs.push(formatGuildDisplay(guild) + " " + rows[bonusIdx].territory.name + " " + numberWithCommas(rows[bonusIdx].baseAmount) + "+" + numberWithCommas(bonusAmount) + "🔮");
             }
 
             guild.guildTerritoryBooster = Math.max(0, availableBooster - boosterResult.used);
@@ -27445,15 +27466,20 @@ function finishGuildTerritoryWar(data, guildData, reason) {
         for (var j = 0; j < list.length; j++) {
             var t = war.territories[String(list[j].no)];
             var owner = getGuildByIdSafe(guildData, t ? t.ownerGuildId : null);
-            out += "[" + list[j].no + "] " + list[j].name + ": " + formatGuildDisplay(owner) + "\n";
+            out += "[" + list[j].no + "] " + list[j].name + ": " + (owner ? formatGuildDisplay(owner) : "점령 길드 없음") + "\n";
         }
+        out += "\n영지종료보상 및 영지순위 보상 확인하기..";
+        if (typeof allsee !== "undefined") out += allsee;
+        else out += "\n";
         if (boosterLogs.length > 0) {
-            out += "\n[길드영지 부스터🔮 적용]\n" + boosterLogs.join("\n") + "\n";
+            out += "\n[길드영지 종료 보상🏅+부스터🔮 적용]\n" + boosterLogs.join("\n") + "\n";
         }
         if (scoreLogs.length > 0) {
-            out += "\n[누적 영지점수 반영]\n" + scoreLogs.join("\n") + "\n";
+            out += "\n[🏅길드영지 포인트 획득🏅+ 부스터🔮 적용]\n" + scoreLogs.join("\n") + "\n";
+            out += "\n획득한 점수는 길드영지순위에\n자동으로 누적됩니다.\n";
         }
-        out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
+        out += "\n순위 확인: /길드영지순위\n영지순위 보상: /영지순위보상\n점령 보상: /영지보상안내";
+        war.finishProcessed = true;
         war.readyGuilds = {};
         war.riftCommandUses = {};
         noticeMsg(out);
