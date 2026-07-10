@@ -462,6 +462,8 @@ Status: VERIFIED
 - `/길드영지종료`
 - `/길드영지순서`
 - `/길드영지순위`
+- `/길드영지보상지급`
+- `/길드영지순위`
 - `/영지공격 [숫자]`
 
 ## AI Notes
@@ -472,7 +474,8 @@ Status: VERIFIED
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 - Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
 - `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to non-castle mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
-- `/길드영지순위` is read-only and displays current occupied territory counts sorted by occupied count, castle ownership, guild level, then guild name.
+- `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name.
+- `/길드영지보상지급` is Admin/Master only and pays guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---

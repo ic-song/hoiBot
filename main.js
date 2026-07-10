@@ -831,6 +831,15 @@ const GLOBAL_CONFIG = {
             miniPetMineRewardAmount: 150, // 미니펫강화광산 점령 종료 보상
             diamondMineRewardAmount: 20 // 다이아광산 점령 종료 보상
         },
+        scores: { // 길드 영토전 누적 점수 설정
+            castle: 50,
+            petSkillBook: 20,
+            pendant: 20,
+            pet: 50,
+            miniPet: 50,
+            diamond: 20
+        },
+        rankRewards: [500000000, 400000000, 300000000, 200000000, 100000000, 50000000, 50000000, 50000000, 50000000, 50000000],
         rates: { // 길드 영토전 확률/증가량 설정
             medalRewardRate: 0.2, // 영지전 공격 턴 확률보상
             riftBaseRate: 70, // 영지전 균열 기본 성공 확률
@@ -12232,6 +12241,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/길드영지순위") {
                     replier.reply(buildGuildTerritoryRankingMessage(data, guildData));
+                    return;
+                }
+                if (msg === "/길드영지보상지급") {
+                    var territoryRankReward = runGuildTerritoryRankReward(data, guildData, sender);
+                    replier.reply(territoryRankReward.message);
+                    if (territoryRankReward.ok) {
+                        saveJsonFile(guildData, guildPath);
+                        noticeMsg(territoryRankReward.noticeMessage);
+                    }
                     return;
                 }
 
@@ -25692,6 +25710,57 @@ function addGuildWarehouseReward(g, rewardType, amount) {
     g.warehouse[rewardType] += amount;
 }
 
+// 길드영지 누적 점수를 숫자로 보정하는 함수
+function ensureGuildTerritoryScore(g) {
+    if (!g) return 0;
+    if (typeof g.guildTerritoryScore !== "number") g.guildTerritoryScore = 0;
+    if (g.guildTerritoryScore < 0) g.guildTerritoryScore = 0;
+    return g.guildTerritoryScore;
+}
+
+// 길드영지 보상 지급 기록 구조를 보장하는 함수
+function ensureGuildTerritoryRewardData(guildData) {
+    if (!guildData.guildTerritoryReward || typeof guildData.guildTerritoryReward !== "object") {
+        guildData.guildTerritoryReward = {};
+    }
+    if (typeof guildData.guildTerritoryReward.lastPaidKey !== "string") guildData.guildTerritoryReward.lastPaidKey = "";
+    if (typeof guildData.guildTerritoryReward.lastPaidAt !== "string") guildData.guildTerritoryReward.lastPaidAt = "";
+    return guildData.guildTerritoryReward;
+}
+
+// 영지 보상 타입별 기본 점수를 반환하는 함수
+function getGuildTerritoryBaseScore(territory) {
+    if (!territory) return 0;
+    var scores = GLOBAL_CONFIG.guildTerritory.scores || {};
+    var score = scores[territory.rewardType] || 0;
+    score = parseInt(score, 10);
+    return isNaN(score) || score < 0 ? 0 : score;
+}
+
+// 길드영지 점수를 누적하고 적용 내역을 반환하는 함수
+function applyGuildTerritoryScores(guildData, list, war) {
+    var logs = [];
+    if (!guildData || !guildData.guilds || !war || !war.territories) return logs;
+    for (var i = 0; i < list.length; i++) {
+        var territory = list[i];
+        var ter = war.territories[String(territory.no)];
+        var guild = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
+        if (!guild) continue;
+        var baseScore = getGuildTerritoryBaseScore(territory);
+        if (baseScore <= 0) continue;
+        var boosterApplied = false;
+        var boosterCount = ensureGuildTerritoryBoosterCount(guild);
+        if (boosterCount > 0) {
+            boosterApplied = true;
+            guild.guildTerritoryBooster = boosterCount - 1;
+        }
+        var gainScore = boosterApplied ? baseScore * 2 : baseScore;
+        guild.guildTerritoryScore = ensureGuildTerritoryScore(guild) + gainScore;
+        logs.push(formatGuildDisplay(guild) + " " + territory.name + " +" + gainScore + "pt" + (boosterApplied ? "🔮" : ""));
+    }
+    return logs;
+}
+
 // 길드영지 부스터를 광산별 남은 보상 한도에 맞춰 반복 분배
 function calculateGuildTerritoryBoosterBonuses(rows, availableBooster) {
     var bonuses = [];
@@ -26416,55 +26485,96 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
     return out;
 }
 
-// 길드별 현재 점령 영지 수 순위 메시지를 생성하는 함수
-function buildGuildTerritoryRankingMessage(data, guildData) {
-    var war = ensureGuildTerritoryWar(data, guildData);
-    var list = getGuildTerritoryList();
-    var map = {};
+// 길드영지 누적 점수 순위 행을 생성하는 함수
+function buildGuildTerritoryScoreRankingRows(guildData) {
     var rows = [];
-    var i;
-
-    for (i = 0; i < list.length; i++) {
-        var ter = war.territories[String(list[i].no)];
-        var gid = ter ? ter.ownerGuildId : null;
-        if (!gid) continue;
-        var guild = getGuildByIdSafe(guildData, gid);
+    if (!guildData || !guildData.guilds) return rows;
+    for (var gid in guildData.guilds) {
+        if (!guildData.guilds.hasOwnProperty(gid)) continue;
+        var guild = guildData.guilds[gid];
         if (!guild) continue;
-        if (!map[gid]) {
-            map[gid] = {
-                guild: guild,
-                count: 0,
-                castleOwned: false,
-                level: guild.level || 1,
-                names: []
-            };
-        }
-        map[gid].count++;
-        if (list[i].rewardType === "castle") map[gid].castleOwned = true;
-        map[gid].names.push(list[i].name);
+        var score = ensureGuildTerritoryScore(guild);
+        if (score <= 0) continue;
+        rows.push({
+            gid: gid,
+            guild: guild,
+            score: score,
+            level: guild.level || 1
+        });
     }
-
-    for (var key in map) {
-        if (map.hasOwnProperty(key)) rows.push(map[key]);
-    }
-
     rows.sort(function(a, b) {
-        if (b.count !== a.count) return b.count - a.count;
-        if (b.castleOwned !== a.castleOwned) return b.castleOwned ? 1 : -1;
+        if (b.score !== a.score) return b.score - a.score;
         if ((b.level || 0) !== (a.level || 0)) return (b.level || 0) - (a.level || 0);
         return String(a.guild.name || "").localeCompare(String(b.guild.name || ""), "ko");
     });
+    return rows;
+}
 
-    var out = "🏰 길드영지 순위 🏰\n[현재 점령 영지 기준]\n\n";
-    if (rows.length === 0) return out + "아직 점령 중인 길드가 없습니다.";
+// 길드영지 누적 점수 순위 메시지를 생성하는 함수
+function buildGuildTerritoryRankingMessage(data, guildData) {
+    var rows = buildGuildTerritoryScoreRankingRows(guildData);
+    var out = "📈 🏅 길드영지 순위 🏅 📈\n\n";
+    out += "[길드명(마크)][서버][길드장][길드레벨][누적 영지점수]\n\n";
+    if (rows.length === 0) return out + "아직 누적 영지점수가 없습니다.";
 
-    for (i = 0; i < rows.length; i++) {
-        out += formatSimpleRankPrefix(i + 1) + " " + formatGuildDisplay(rows[i].guild) + " - " + rows[i].count + "개";
-        if (rows[i].names.length > 0) out += " (" + rows[i].names.join(", ") + ")";
-        out += "\n";
+    for (var i = 0; i < rows.length; i++) {
+        if (i === 3 && typeof allsee !== "undefined") {
+            out += "⭐ 다른 길드 보러가기.. 👉 (4등부터~)\n" + allsee + "\n";
+        }
+        var guild = rows[i].guild;
+        out += (i + 1) + ". " + formatGuildDisplay(guild) + "\n";
+        out += "[" + (guild.server || "서버미상") + "]\n";
+        out += "[" + (guild.master || "길드장없음") + "][Lv." + (guild.level || 1) + "]\n";
+        out += "[누적 영지점수: " + numberWithCommas(rows[i].score) + "pt]\n\n";
     }
 
-    return out.replace(/\n$/, "");
+    return out.replace(/\n\n$/, "");
+}
+
+// 길드영지 순위 보상 지급을 처리하는 함수
+function runGuildTerritoryRankReward(data, guildData, sender) {
+    if (!(isMaster(sender) || isAdmin(sender))) {
+        return { ok: false, message: "❌ 해당 명령어는 관리자만 사용할 수 있습니다.", noticeMessage: "" };
+    }
+    var rows = buildGuildTerritoryScoreRankingRows(guildData);
+    if (rows.length === 0) {
+        return { ok: false, message: "❌ 보상 지급 대상 길드가 없습니다.", noticeMessage: "" };
+    }
+    var rewardData = ensureGuildTerritoryRewardData(guildData);
+    var rewardTable = GLOBAL_CONFIG.guildTerritory.rankRewards || [];
+    var maxCount = Math.min(rows.length, rewardTable.length, 10);
+    var paidKeyParts = [];
+    for (var k = 0; k < maxCount; k++) {
+        paidKeyParts.push(rows[k].gid + ":" + rows[k].score);
+    }
+    var paidKey = paidKeyParts.join("|");
+    if (paidKey && rewardData.lastPaidKey === paidKey) {
+        return { ok: false, message: "❌ 현재 길드영지 순위 보상은 이미 지급되었습니다.", noticeMessage: "" };
+    }
+
+    var totalPoint = 0;
+    var notice = "🏅 길드영지 순위 보상 지급 완료 🏅\n\n";
+    notice += "누적 길드영지 점수를 기준으로\n1위부터 10위까지 길드창고에\n포인트 보상이 지급되었습니다.\n\n";
+    for (var i = 0; i < maxCount; i++) {
+        var reward = parseInt(rewardTable[i] || 0, 10);
+        if (isNaN(reward) || reward <= 0) continue;
+        var guild = rows[i].guild;
+        ensureGuildWarehouseObj(guild);
+        guild.warehouse.fund += reward;
+        totalPoint += reward;
+        if (i === 5 && typeof allsee !== "undefined") notice += allsee;
+        notice += formatSimpleRankPrefix(i + 1) + " " + formatGuildDisplay(guild) + "\n";
+        notice += "길드창고 +" + numberWithCommas(reward) + "P\n\n";
+    }
+    notice += "순위 확인: /길드영지순위";
+
+    rewardData.lastPaidKey = paidKey;
+    rewardData.lastPaidAt = formatDateTime(new Date());
+    return {
+        ok: true,
+        noticeMessage: notice,
+        message: "✅ 길드영지 순위 보상 지급이 완료되었습니다.\n\n보상 대상: " + maxCount + "개 길드\n총 지급 포인트: " + numberWithCommas(totalPoint) + "P\n전체 알림: 전송 완료\n데이터 저장: 완료"
+    };
 }
 
 // 영지전 시작 메시지 빌드
@@ -27327,6 +27437,8 @@ function finishGuildTerritoryWar(data, guildData, reason) {
             guild.guildTerritoryBooster = Math.max(0, availableBooster - boosterResult.used);
         }
 
+        var scoreLogs = applyGuildTerritoryScores(guildData, list, war);
+
         var out = "[🎖️길드 영지전 종료🎖️]\n";
         if (reason) out += reason + "\n";
         out += "최종 영지전 결과✌\n\n";
@@ -27337,6 +27449,9 @@ function finishGuildTerritoryWar(data, guildData, reason) {
         }
         if (boosterLogs.length > 0) {
             out += "\n[길드영지 부스터🔮 적용]\n" + boosterLogs.join("\n") + "\n";
+        }
+        if (scoreLogs.length > 0) {
+            out += "\n[누적 영지점수 반영]\n" + scoreLogs.join("\n") + "\n";
         }
         out += "\n점령지 보상이 궁금하시면\n채팅창에 '영지보상안내'를 입력해 주세요⭐️";
         war.readyGuilds = {};
@@ -36917,7 +37032,7 @@ function buildPendantRankingRows(data, petData) {
 // 장착 펜던트 순위 메시지를 생성하는 함수
 function buildPendantRankingMessage(data, petData) {
     var rows = buildPendantRankingRows(data, petData);
-    var out = "💎 펜던트 순위 💎\n[장착 펜던트 기준]\n[등급 → 강화수치 → 닉네임 가나다]\n\n";
+    var out = "💎 펜던트 순위 💎\n[등급 → 강화수치 → 닉네임 가나다]\n\n";
     if (rows.length === 0) return out + "장착 중인 펜던트가 없습니다.";
     var limit = Math.min(rows.length, 100);
     for (var i = 0; i < limit; i++) {
