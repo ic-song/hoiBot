@@ -27,7 +27,8 @@ const GLOBAL_CONFIG = {
 		cleanupKeepCount: 12 // 미니펫 가방 정리 후 유지 수
 	},
 	pet: { // 펫 성장 설정
-		evolutionRequiredExp: 10 // 알 진화 필요 매력치
+		evolutionRequiredExp: 10, // 알 진화 필요 매력치
+		totalCharmPerUpgrade: 1000 // 종합매력 계산 시 펫강화 1강당 반영 매력
 	},
 	happyFoundation: { // 호이행복재단 설정
 		transferFeeMax: 16 // 이체 수수료 최대 설정값
@@ -817,7 +818,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData);
-			let resultMsg = '👑 종합 순위 👑\n["/펫정보"에 있는 매력+강화로 합산]\n[캐슬⚔️+레이드👾+펫강화⭐️1강*300]\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n(/종합순위보상) 참조\n\n';
+			let resultMsg = '👑 종합 순위 👑\n["/펫정보"에 있는 매력+강화로 합산]\n[캐슬⚔️+레이드👾+펫강화⭐️1강*1,000]\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n(/종합순위보상) 참조\n\n';
 			resultMsg += buildTotalRankingGapGuide(rankData.rows, sender, data, petData, guildData, homeData, petSkillData);
 			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
 			replier.reply(resultMsg);
@@ -1626,7 +1627,7 @@ function generateRanking(data, petData, homeData, petSkillData) {
 		if (petData[key]) {
 			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData) || 0;
 			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData) || 0;
-			let upgradeBonus = (petData[key].upgrade || 0) * 300;
+			let upgradeBonus = (petData[key].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 
 			let totalExp = castleExp + raidExp + upgradeBonus;
 
@@ -1699,7 +1700,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 		if (petData[key]) {
 			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData) || 0;
 			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData) || 0;
-			let upgradeBonus = (petData[key].upgrade || 0) * 300;
+			let upgradeBonus = (petData[key].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 			let totalExp = castleExp + raidExp + upgradeBonus;
 
 			userScores.push({ key: key, totalExp: totalExp });
@@ -1724,8 +1725,8 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 //   let sortedUsrs = Object.keys(members)
 //     .filter(key => petData[key] && petData[key].ring)
 //     .sort((a, b) => {
-//       let A = calculateCastleExp(a, data, petData) + calculateRaidExp(a, data, petData) + (petData[a].upgrade * 300);
-//       let B = calculateCastleExp(b, data, petData) + calculateRaidExp(b, data, petData) + (petData[b].upgrade * 300);
+//       let A = calculateCastleExp(a, data, petData) + calculateRaidExp(a, data, petData) + (petData[a].upgrade * 1000);
+//       let B = calculateCastleExp(b, data, petData) + calculateRaidExp(b, data, petData) + (petData[b].upgrade * 1000);
 //       return B - A;
 //     });
 
@@ -1737,7 +1738,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 //     let memberName = sortedUsrs[i];
 //     let Rsender1 = members[memberName].rank.emoji + memberName;
 //     let rankEmoji1 = getRankEmoji(i + 1);
-//     rankingMsg1 += rankEmoji1 + Rsender1 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 300)) + '\n';
+//     rankingMsg1 += rankEmoji1 + Rsender1 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 1000)) + '\n';
 //   }
 
 //   // 나머지 사용자들에 대해 순위 메시지를 작성합니다.
@@ -1745,7 +1746,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 //     let memberName = sortedUsrs[i];
 //     let Rsender2 = members[memberName].rank.emoji + memberName;
 //     let rankEmoji2 = getRankEmoji(i + 1);
-//     rankingMsg2 += rankEmoji2 + Rsender2 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 300)) + '\n';
+//     rankingMsg2 += rankEmoji2 + Rsender2 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 1000)) + '\n';
 //   }
 
 //   // 상위 10명과 나머지 사용자들의 순위 메시지를 반환합니다.
@@ -3160,7 +3161,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData) || 0;
 
 	// 강화 매력 보너스(기존 로직 유지)
-	var upgradeBonus = (petInfo.upgrade || 0) * 300;
+	var upgradeBonus = (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 
 	var total = totalCastle + totalRaid + upgradeBonus;
 	

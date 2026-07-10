@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.253"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.256"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -703,7 +703,11 @@ const GLOBAL_CONFIG = {
         allowedGrades: ["일반", "고급", "희귀", "영웅", "전설", "전설+", "신화", "신화+", "초월", "초월+", "태초", "태초+", "창세", "창조"] // 미니펫 뽑기 허용 등급
     },
     pet: { // 펫 성장 설정
-        evolutionRequiredExp: 10 // 알 진화 필요 매력치
+        evolutionRequiredExp: 10, // 알 진화 필요 매력치
+        totalCharmPerUpgrade: 1000 // 종합매력 계산 시 펫강화 1강당 반영 매력
+    },
+    signup: { // 가입 닉네임 검증 설정
+        blockedNicknameTerms: ["시발", "씨발", "ㅅㅂ", "병신", "ㅂㅅ", "개새", "좆", "존나", "지랄", "염병", "대통령", "민주당", "국민의힘", "국힘", "정치", "좌파", "우파", "보수", "진보", "탄핵"]
     },
     pendant: { // 펜던트 시스템 설정
         equipConfirmStaleMs: 30000 // 펜던트 교체 확인 대기 만료 시간
@@ -2146,6 +2150,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (!data.member[sender] && msg !== "/가입") {
                     delete termsState[sender];
                     return;
+                }
+                if (!data.member[sender] && msg === "/가입") {
+                    var signupNameValidation = validateSignupNickname(sender);
+                    if (!signupNameValidation.ok) {
+                        delete termsState[sender];
+                        replier.reply(signupNameValidation.message);
+                        return;
+                    }
                 }
                 if (!data.member[sender]) {
                     initializeMember(sender, data, petData);
@@ -17521,11 +17533,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             let A =
                                 (calculateCastleExp(a, data, petData, homeData, petSkillData) || 0) +
                                 (calculateRaidExp(a, data, petData, homeData, petSkillData) || 0) +
-                                (petData[a].upgrade || 0) * 300;
+                                (petData[a].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
                             let B =
                                 (calculateCastleExp(b, data, petData, homeData, petSkillData) || 0) +
                                 (calculateRaidExp(b, data, petData, homeData, petSkillData) || 0) +
-                                (petData[b].upgrade || 0) * 300;
+                                (petData[b].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
                             return B - A;
                         });
                     // 보상 구간 설정
@@ -35115,8 +35127,8 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
     var totalCastle = calculateCastleExp(sender, data, petData, homeData, petSkillData) || 0;
     var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData) || 0;
 
-    // 강화 매력 보너스(기존 로직 유지)
-    var upgradeBonus = (petInfo.upgrade || 0) * 300;
+    // 강화 매력 보너스 계산
+    var upgradeBonus = (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 
     var total = totalCastle + totalRaid + upgradeBonus;
 
@@ -35212,7 +35224,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     });
     var raidTotal = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp;
     var upgradeBonus = measure("강화 보너스", function () {
-        return (petInfo.upgrade || 0) * 300;
+        return (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
     });
 
     result.total = parseInt(castleTotal + raidTotal + upgradeBonus, 10);
@@ -35267,6 +35279,29 @@ function buildTermsMessage() {
 
 function buildWelcomeMessage() {
     return "" + "호이월드에 오신 것을 환영합니다\n" + '채팅창에 "가이드"를 입력하시면 가이드 확인이 가능합니다.\n' + "1. /펫생성 아이디\n" + "2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
+}
+
+// 가입 닉네임이 이름 남/여 형식과 금칙어 조건을 통과하는지 확인하는 함수
+function validateSignupNickname(userName) {
+    var normalizedName = String(userName || "").replace(/\s+/g, " ").trim();
+    if (!/^[^\s]{2,} (남|여)$/.test(normalizedName)) {
+        return {
+            ok: false,
+            message: "❌ 가입할 수 없는 닉네임입니다.\n\n닉네임은 두 글자 이상 이름 뒤에 남 또는 여를 띄어 입력해주세요.\n예시: 호이 남"
+        };
+    }
+    var terms = GLOBAL_CONFIG.signup.blockedNicknameTerms || [];
+    var compactName = normalizedName.replace(/\s+/g, "").toLowerCase();
+    for (var i = 0; i < terms.length; i++) {
+        var term = String(terms[i] || "").replace(/\s+/g, "").toLowerCase();
+        if (term && compactName.indexOf(term) >= 0) {
+            return {
+                ok: false,
+                message: "❌ 가입할 수 없는 닉네임입니다.\n\n욕설이나 정치 관련 표현이 포함된 닉네임은 사용할 수 없습니다."
+            };
+        }
+    }
+    return { ok: true, message: "" };
 }
 
 // 미출석가입 아이디를 이름 + 성별 양식으로 정규화하는 함수
@@ -37543,7 +37578,7 @@ function runflowerBoxOpen(sender, data, petData, guildData, msg, replier) {
     runExploreBoxOpen(sender, data, petData, guildData, replier, "/정령박스오픈", "정령박스🥀(/정령박스오픈)", msg, rollflowerBox);
 }
 function rollEnhanceBox() {
-    var qty = Math.floor(Math.random() * (1500 - 100 + 1)) + 100;
+    var qty = Math.floor(Math.random() * (150 - 100 + 1)) + 100;
     return {
         gainItems: { "펫 강화석⭐": qty },
         gainTextLines: []

@@ -1866,6 +1866,7 @@ Status: VERIFIED
 
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
+- Pet upgrade contribution is `GLOBAL_CONFIG.pet.totalCharmPerUpgrade`; current value is 1,000 total charm per pet upgrade level.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 
@@ -4643,6 +4644,7 @@ Status: VERIFIED
 - `normalizeMissingAttendanceSignupUserId`
 - `buildMissingAttendanceSignupInvalidIdMessage`
 - `buildMissingAttendanceSignupSuccessMessage`
+- `validateSignupNickname`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -4663,6 +4665,7 @@ Status: VERIFIED
 - Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/가입` flow
 - Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
+- `/가입` for new users validates the Kakao sender nickname before creating member data; invalid name/gender format or blocked profanity/political terms return with guidance and do not save data
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
 - `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
 
@@ -4676,6 +4679,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
+- 신규 `/가입` 닉네임은 `두 글자 이상 이름 + 공백 + 남/여` 형식이어야 한다.
 - `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
 - `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
