@@ -428,6 +428,7 @@ Status: VERIFIED
 - `scheduleGuildTerritoryOpening`
 - `buildGuildTerritoryOrderMessage`
 - `buildGuildTerritoryStatusMessage`
+- `buildGuildTerritoryRankingMessage`
 - `buildGuildTerritoryStartMessage`
 - `finishGuildTerritoryWar`
 - `addGuildWarehouseReward`
@@ -460,6 +461,7 @@ Status: VERIFIED
 - `/길드영지준비`
 - `/길드영지종료`
 - `/길드영지순서`
+- `/길드영지순위`
 - `/영지공격 [숫자]`
 
 ## AI Notes
@@ -470,7 +472,8 @@ Status: VERIFIED
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 - Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
 - `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to non-castle mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
-- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
+- `/길드영지순위` is read-only and displays current occupied territory counts sorted by occupied count, castle ownership, guild level, then guild name.
+- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
 
@@ -4834,6 +4837,7 @@ Status: VERIFIED
 - `/펜던트오픈 [갯수]`
 - `/펜던트확률`
 - `/펜던트가방`
+- `/펜던트순위`
 - `/펜던트정보 [펜던트가방번호]`
 - `/펜던트장착 [펜던트가방번호]`
 - `장착할래`
@@ -4857,10 +4861,13 @@ Status: VERIFIED
 - `formatPendantDisplay`
 - `formatPendantNameWithIcon`
 - `formatPendantOpenResultDisplay`
+- `formatSimpleRankPrefix`
 - `buildPendantInfoDetailMessage`
 - `formatPendantPercent`
 - `sortPendantBagByGrade`
 - `calculatePendantStats`
+- `buildPendantRankingRows`
+- `buildPendantRankingMessage`
 - `calculatePendantItemInfo`
 - `getPendantExploreBonusPercent`
 - `runPendantOpen`
@@ -4908,6 +4915,7 @@ Status: VERIFIED
 - `/펜던트당근거래`는 기존 호환 별칭이며, 안내 문구와 문서 기준 명령어는 `/펜던트당근`이다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
+- `/펜던트순위`는 장착 펜던트만 대상으로 등급 → 강화수치 → 닉네임 가나다순으로 100명까지 표시하고, 11등부터 `allsee` 뒤에 표시한다.
 - `/펜던트강화`는 펜던트가방 번호를 입력하며, 장착 펜던트는 숫자 `0`으로 강화한다.
 - `/펜던트거래정보 [자유시장번호]`는 자유시장 등록 목록의 펜던트 payload를 기존 펜던트 정보 형식으로 보여준다.
 - 펜던트 이름 끝에 이미 같은 이모지가 있으면 `formatPendantNameWithIcon`이 표시 이모지를 중복으로 붙이지 않는다.

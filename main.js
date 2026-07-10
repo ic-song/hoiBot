@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.256"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.257"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1559,7 +1559,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /영지공격, /길드영지순서, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
+                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
             );
             return;
         }
@@ -12230,6 +12230,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildGuildTerritoryStatusMessage(data, guildData, true));
                     return;
                 }
+                if (msg === "/길드영지순위") {
+                    replier.reply(buildGuildTerritoryRankingMessage(data, guildData));
+                    return;
+                }
 
                 if (msg === "/차원의문on" || msg === "/차원의문off" || msg === "/차원의문온" || msg === "/차원의문오프") {
                     if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) {
@@ -17138,6 +17142,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         pendantBagTarget = msg.substring("/펜던트가방".length).trim();
                     }
                     replier.reply(buildPendantBagMessage(data, petData, guildData, pendantBagTarget));
+                    return;
+                }
+                if (msg === "/펜던트순위") {
+                    replier.reply(buildPendantRankingMessage(data, petData));
                     return;
                 }
                 if (msg === "/펜던트오픈" || /^\/펜던트오픈\s+\d+$/.test(msg)) {
@@ -25126,6 +25134,7 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/길드영지초기화" ||
         msg === "/길드영지종료" ||
         msg === "/길드영지" ||
+        msg === "/길드영지순위" ||
         /^\/영지공격(?:\s+[1-7])?$/.test(msg) ||
         /^\/안정(?:\s+\d+)?$/.test(msg) ||
         /^\/불안정(?:\s+\d+)?$/.test(msg) ||
@@ -26405,6 +26414,57 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
     out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
+}
+
+// 길드별 현재 점령 영지 수 순위 메시지를 생성하는 함수
+function buildGuildTerritoryRankingMessage(data, guildData) {
+    var war = ensureGuildTerritoryWar(data, guildData);
+    var list = getGuildTerritoryList();
+    var map = {};
+    var rows = [];
+    var i;
+
+    for (i = 0; i < list.length; i++) {
+        var ter = war.territories[String(list[i].no)];
+        var gid = ter ? ter.ownerGuildId : null;
+        if (!gid) continue;
+        var guild = getGuildByIdSafe(guildData, gid);
+        if (!guild) continue;
+        if (!map[gid]) {
+            map[gid] = {
+                guild: guild,
+                count: 0,
+                castleOwned: false,
+                level: guild.level || 1,
+                names: []
+            };
+        }
+        map[gid].count++;
+        if (list[i].rewardType === "castle") map[gid].castleOwned = true;
+        map[gid].names.push(list[i].name);
+    }
+
+    for (var key in map) {
+        if (map.hasOwnProperty(key)) rows.push(map[key]);
+    }
+
+    rows.sort(function(a, b) {
+        if (b.count !== a.count) return b.count - a.count;
+        if (b.castleOwned !== a.castleOwned) return b.castleOwned ? 1 : -1;
+        if ((b.level || 0) !== (a.level || 0)) return (b.level || 0) - (a.level || 0);
+        return String(a.guild.name || "").localeCompare(String(b.guild.name || ""), "ko");
+    });
+
+    var out = "🏰 길드영지 순위 🏰\n[현재 점령 영지 기준]\n\n";
+    if (rows.length === 0) return out + "아직 점령 중인 길드가 없습니다.";
+
+    for (i = 0; i < rows.length; i++) {
+        out += formatSimpleRankPrefix(i + 1) + " " + formatGuildDisplay(rows[i].guild) + " - " + rows[i].count + "개";
+        if (rows[i].names.length > 0) out += " (" + rows[i].names.join(", ") + ")";
+        out += "\n";
+    }
+
+    return out.replace(/\n$/, "");
 }
 
 // 영지전 시작 메시지 빌드
@@ -36754,6 +36814,14 @@ function formatPendantDisplay(pendant) {
     return formatPendantNameWithIcon(pendant) + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
 }
 
+// 순위표용 등수 접두어를 반환하는 함수
+function formatSimpleRankPrefix(rank) {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return addsingle(rank) + ".";
+}
+
 // 펜던트 오픈 결과용 표시 문자열 생성
 function formatPendantOpenResultDisplay(pendant) {
     if (!pendant) return "없음";
@@ -36819,6 +36887,44 @@ function calculatePendantStats(pendant) {
     result.charm = result.baseCharm + result.upgradeCharm;
     result.explore = result.baseExplore + result.upgradeExplore;
     return result;
+}
+
+// 장착 펜던트 기준 순위 행을 생성하는 함수
+function buildPendantRankingRows(data, petData) {
+    var rows = [];
+    if (!data || !data.member || !petData) return rows;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        if (!petData[user] || !petData[user].pendant) continue;
+        var pendant = petData[user].pendant;
+        var upgrade = parseInt(pendant.upgrade || 0, 10);
+        if (isNaN(upgrade)) upgrade = 0;
+        rows.push({
+            user: user,
+            pendant: pendant,
+            gradeRank: getPendantGradeSortRank(pendant.grade),
+            upgrade: upgrade
+        });
+    }
+    rows.sort(function(a, b) {
+        if (a.gradeRank !== b.gradeRank) return a.gradeRank - b.gradeRank;
+        if (b.upgrade !== a.upgrade) return b.upgrade - a.upgrade;
+        return String(a.user).localeCompare(String(b.user), "ko");
+    });
+    return rows;
+}
+
+// 장착 펜던트 순위 메시지를 생성하는 함수
+function buildPendantRankingMessage(data, petData) {
+    var rows = buildPendantRankingRows(data, petData);
+    var out = "💎 펜던트 순위 💎\n[장착 펜던트 기준]\n[등급 → 강화수치 → 닉네임 가나다]\n\n";
+    if (rows.length === 0) return out + "장착 중인 펜던트가 없습니다.";
+    var limit = Math.min(rows.length, 100);
+    for (var i = 0; i < limit; i++) {
+        if (i === 10 && typeof allsee !== "undefined") out += allsee + "\n";
+        out += formatSimpleRankPrefix(i + 1) + " " + rows[i].user + " - " + formatPendantDisplay(rows[i].pendant) + "\n";
+    }
+    return out.replace(/\n$/, "");
 }
 
 // 장착 펜던트의 펫탐험 성공률 보너스 반환
