@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.252"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.253"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4448,6 +4448,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (msg === "/휴면리스트" && isMaster(sender)) {
                     replier.reply(buildDormantAccountListMessage(data));
+                    return;
+                }
+
+                if (/^\/휴면해제\s+.+$/.test(msg) && isMaster(sender)) {
+                    var dormantReleaseTarget = msg.replace(/^\/휴면해제\s+/, "").trim();
+                    if (!data.member[dormantReleaseTarget]) {
+                        replier.reply("❌ 해당 유저를 찾을 수 없습니다.\n대상: " + dormantReleaseTarget);
+                        return;
+                    }
+                    var releaseDormantAccounts = ensureDormantAccounts(data);
+                    if (!releaseDormantAccounts[dormantReleaseTarget]) {
+                        replier.reply("❌ 휴면 상태가 아닌 유저입니다.\n대상: " + dormantReleaseTarget);
+                        return;
+                    }
+                    delete releaseDormantAccounts[dormantReleaseTarget];
+                    saveJsonFile(data, filePath);
+                    replier.reply("✅ [" + dormantReleaseTarget + "] 님의 휴면 상태가 해제되었습니다.");
                     return;
                 }
 

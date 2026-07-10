@@ -2772,12 +2772,14 @@ Status: VERIFIED
 
 ## Save Flow
 - `/휴면계정 [아이디]` registers `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
+- `/휴면해제 [아이디]` deletes `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
 - `/계정삭제` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
 - `/계정잠수명단` and `/계정잠수삭제` exclude registered dormant accounts from removal candidates
 - `/계정잠수삭제` reports dormant accounts that matched the sleep condition but were protected
 
 ## Related Commands
 - `/휴면계정 [아이디]`
+- `/휴면해제 [아이디]`
 - `/휴면리스트`
 - `/계정삭제`
 - `/계정잠수명단`
@@ -2785,7 +2787,7 @@ Status: VERIFIED
 
 ## AI Notes
 - 휴면계정 보호 목록은 별도 파일이 아니라 `data` 안의 `dormantAccounts`에 저장한다.
-- 휴면계정은 계정 삭제 대상에서 제외만 하며 기존 회원 데이터는 변경하지 않는다.
+- 휴면계정 등록/해제는 계정 삭제 대상 제외 목록만 변경하며 기존 회원 데이터는 변경하지 않는다.
 
 ---
 
