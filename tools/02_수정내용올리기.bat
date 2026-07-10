@@ -1,15 +1,6 @@
 @echo off
 chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
-if not "%HOIBOT_TOOL_LOG_ACTIVE%"=="1" (
-	set "HOIBOT_TOOL_LOG_ACTIVE=1"
-	set "HOIBOT_TOOL_LOG_DIR=%~dp0logs"
-	set "HOIBOT_TOOL_LOG_SCRIPT=%~f0"
-	if not exist "%~dp0logs" mkdir "%~dp0logs" > nul 2>&1
-	for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "HOIBOT_TOOL_LOG_FILE=%~dp0logs\%~n0_%%t.log"
-	powershell -NoProfile -ExecutionPolicy Bypass -Command "$script=$env:HOIBOT_TOOL_LOG_SCRIPT; $log=$env:HOIBOT_TOOL_LOG_FILE; cmd /d /c call $script 2>&1 | Tee-Object -FilePath $log; $code=$LASTEXITCODE; $toolDir=Split-Path -Parent $script; $helper=Join-Path $toolDir '_push_tool_log.ps1'; $repoRoot=Resolve-Path (Join-Path $toolDir '..'); if (Test-Path $helper) { & $helper -RepoRoot $repoRoot -LogPath $log -Branch 'feature/tool-logs' }; exit $code"
-	exit /b !ERRORLEVEL!
-)
 
 set BRANCH_NAME=feature/hoi
 set BASE_BRANCH=feature/prod
@@ -78,7 +69,7 @@ echo [OK] 현재 브랜치: %CURRENT_BRANCH%
 echo.
 echo [STEP 3/7] 변경 파일 확인
 echo ------------------------------------------------------------
-git status --porcelain -- . ":(exclude)tools/logs" > "%TEMP%\hoi_git_status.txt"
+git status --porcelain -- . > "%TEMP%\hoi_git_status.txt"
 
 for %%A in ("%TEMP%\hoi_git_status.txt") do set STATUS_SIZE=%%~zA
 
@@ -100,7 +91,7 @@ set COMMIT_MSG=%WORK_MSG%
 echo.
 echo [STEP 4/7] 변경내용 담기
 echo ------------------------------------------------------------
-git add --all -- . ":(exclude)tools/logs"
+git add --all -- .
 if errorlevel 1 goto FAIL_ADD
 
 echo [OK] 변경내용 담기 완료

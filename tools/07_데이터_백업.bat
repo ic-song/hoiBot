@@ -1,16 +1,6 @@
 @echo off
 chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
-if not "%HOIBOT_TOOL_LOG_ACTIVE%"=="1" (
-	set "HOIBOT_TOOL_LOG_ACTIVE=1"
-	set "HOIBOT_TOOL_LOG_DIR=%~dp0logs"
-	set "HOIBOT_TOOL_LOG_SCRIPT=%~f0"
-	if not exist "%~dp0logs" mkdir "%~dp0logs" > nul 2>&1
-	for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "HOIBOT_TOOL_LOG_FILE=%~dp0logs\%~n0_%%t.log"
-	powershell -NoProfile -ExecutionPolicy Bypass -Command "$script=$env:HOIBOT_TOOL_LOG_SCRIPT; $log=$env:HOIBOT_TOOL_LOG_FILE; cmd /d /c call $script 2>&1 | Tee-Object -FilePath $log; $code=$LASTEXITCODE; $toolDir=Split-Path -Parent $script; $helper=Join-Path $toolDir '_push_tool_log.ps1'; $repoRoot=Resolve-Path (Join-Path $toolDir '..'); if (Test-Path $helper) { & $helper -RepoRoot $repoRoot -LogPath $log -Branch 'feature/prod' }; exit $code"
-	exit /b !ERRORLEVEL!
-)
-setlocal EnableExtensions EnableDelayedExpansion
 
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
 set TARGET_ADB_DEVICE=auto
@@ -47,7 +37,6 @@ echo  BACKUP_ROOT       = %BACKUP_ROOT%
 echo  ENABLE_GIT_PUSH   = %ENABLE_GIT_PUSH%
 echo  BASE_BRANCH       = %BASE_BRANCH%
 echo  GIT_PUSH_BRANCH   = %GIT_PUSH_BRANCH%
-if defined HOIBOT_TOOL_LOG_FILE echo  TOOL_LOG_FILE     = %HOIBOT_TOOL_LOG_FILE%
 echo ------------------------------------------------------------
 echo.
 
@@ -71,7 +60,7 @@ if /i "%ENABLE_GIT_PUSH%"=="1" (
 	git reset --hard > "%SYNC_LOG%" 2>&1
 	type "%SYNC_LOG%"
 	if errorlevel 1 goto FAIL_GIT_RESET
-	git clean -fd -e tools/logs/ > "%SYNC_LOG%" 2>&1
+	git clean -fd > "%SYNC_LOG%" 2>&1
 	type "%SYNC_LOG%"
 	if errorlevel 1 goto FAIL_GIT_CLEAN
 	echo [OK] Git 작업상태 초기화 완료
@@ -160,7 +149,7 @@ if %ROBOCOPY_CODE% GEQ 8 goto FAIL_MIRROR
 echo [OK] 로컬 data\ 최신화 완료
 echo.
 
-echo [7/7] Git 데이터/로그 기록 및 push
+echo [7/7] Git 데이터 기록 및 push
 echo ------------------------------------------------------------
 if /i not "%ENABLE_GIT_PUSH%"=="1" (
 	echo [SKIP] ENABLE_GIT_PUSH=0 이므로 Git push를 생략합니다.
@@ -171,19 +160,13 @@ type "%SYNC_LOG%"
 set HAS_GIT_INPUT=
 findstr "." "%SYNC_LOG%" > nul 2>&1
 if not errorlevel 1 set HAS_GIT_INPUT=1
-if defined HOIBOT_TOOL_LOG_FILE if exist "%HOIBOT_TOOL_LOG_FILE%" set HAS_GIT_INPUT=1
 if not defined HAS_GIT_INPUT (
-	echo [OK] data\ 변경사항 및 실행 로그 없음 - Git commit/push 생략
+	echo [OK] data\ 변경사항 없음 - Git commit/push 생략
 	goto SUCCESS
 )
 git add "%LOCAL_DATA_DIR%" > "%SYNC_LOG%" 2>&1
 type "%SYNC_LOG%"
 if errorlevel 1 goto FAIL_GIT_ADD
-if defined HOIBOT_TOOL_LOG_FILE if exist "%HOIBOT_TOOL_LOG_FILE%" (
-	git add -f "%HOIBOT_TOOL_LOG_FILE%" > "%SYNC_LOG%" 2>&1
-	type "%SYNC_LOG%"
-	if errorlevel 1 goto FAIL_GIT_ADD
-)
 git commit -m "%GIT_COMMIT_PREFIX% %RUN_TS%" > "%SYNC_LOG%" 2>&1
 type "%SYNC_LOG%"
 if errorlevel 1 goto FAIL_GIT_COMMIT
@@ -199,7 +182,6 @@ echo  SUCCESS - LDPlayer 데이터 가져오기 완료
 echo ============================================================
 echo  백업 위치: %BACKUP_DIR%\data
 echo  최신화 대상: %LOCAL_DATA_DIR%\
-if defined HOIBOT_TOOL_LOG_FILE echo  실행 로그: %HOIBOT_TOOL_LOG_FILE%
 if /i "%ENABLE_GIT_PUSH%"=="1" echo  Git push 대상: %GIT_PUSH_BRANCH%
 echo ============================================================
 pause
