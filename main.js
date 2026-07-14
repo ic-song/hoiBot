@@ -859,14 +859,14 @@ blockedNicknameTerms: [
     happyFoundation: { // 호이행복재단 설정
         transferFeeMin: 0.5, // 이체 수수료 최소 설정값
         transferFeeStep: 0.5, // 이체 수수료 변경 단위
-        transferFeeMax: 20 // 이체 수수료 최대 설정값
+        transferFeeMax: 25 // 이체 수수료 최대 설정값
     },
     freeMarket: { // 자유시장 설정
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
-        tradeFeeRate: 0.15, // 자유시장 기본 거래 수수료율
-        memberTradeFeeRate: 0.07, // 자유시장회원권 보유자 거래 수수료율
-        memberFeeTag: "자회원🏪(수수료 7%)"
+        tradeFeeRate: 0.19, // 자유시장 기본 거래 수수료율
+        memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
+        memberFeeTag: "자회원🏪(수수료 10%)"
     },
     titleGift: { // 타이틀 선물 설정
         itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)",
@@ -16503,7 +16503,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let command = msg.split(" ");
                     if (command.length === 2 && command[1].match(/^\d+$/)) {
                         let newTaxRate = parseInt(command[1]); // '/세금 숫자' 형식으로 받음
-                        if (newTaxRate >= 15 && newTaxRate <= 15) {
+                        if (newTaxRate >= 10 && newTaxRate <= 10) {
                             let oldTaxRate = hoiCastle.taxRate || 0;
                             hoiCastle.taxRate = newTaxRate.toString(); // 세금 업데이트
                             noticeMsg("[세금💲]\n[" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 영주가 세율을\n[💰" + oldTaxRate + "%]⏩[💰" + newTaxRate + "%]로 조정하였습니다.");
@@ -16521,7 +16521,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (!data.auction || data.auction.length === 0) {
                         replier.reply("호이상점에 등록된 상품이 없습니다.");
                     } else {
-                        let resultMsg = "🔔호이 경매상점🔔\n[ /입찰 [아이템번호] [포인트] 로 입찰 ]\n(입찰 수수료🤑 : 🅟300,000)\n\n";
+                        let resultMsg = "🔔호이 경매상점🔔\n[ /입찰 [아이템번호] [포인트] 로 입찰 ]\n(입찰 수수료🤑 : 🅟700,000)\n\n";
                         let validAuctionItems = [];
                         data.auction.forEach((item, index) => {
                             let remainingTime = item.endTime - Date.now();
@@ -16582,7 +16582,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (sender == auctionItem.highestBidder) {
                         replier.reply("자신이 이미 최상위 입찰자입니다.");
-                    } else if (bidAmount + 300000 > data.member[sender].point) {
+                    } else if (bidAmount + 700000 > data.member[sender].point) {
                         replier.reply("포인트가 부족하여 입찰할 수 없습니다.");
                     } else if (bidAmount <= highestBid) {
                         replier.reply("더 높은 포인트로 입찰해야 합니다.");
@@ -16600,7 +16600,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             data.member[auctionItem.highestBidder].point += highestBid;
                         }
                         data.member[sender].point -= bidAmount;
-                        data.member[sender].point -= 300000;
+                        data.member[sender].point -= 700000;
                         auctionItem.highestBid = bidAmount;
                         auctionItem.highestBidder = sender;
                         var message =
@@ -33487,8 +33487,8 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
     var listings = getFreeMarketActiveListings(freeMarketData);
     var out = "🏪 호이월드 자유시장 🏪\n";
     out += "━━━━━━━━━━━━\n";
-    out += "💰수수료: 판매금액의 15%\n";
-    out += "🏪 자유시장회원권: 소지시 수수료 7%\n";
+    out += "💰수수료: 판매금액의 19%\n";
+    out += "🏪 자유시장회원권: 소지시 수수료 10%\n";
     out += "🛒구매: /자유시장구매 [번호]\n";
     out += "❌취소: /자유시장취소 [번호]\n";
     out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -33523,8 +33523,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
     out += "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-    out += "💰수수료는 판매금액의 15%\n";
-    out += "🏪 자유시장회원권 소지시 수수료 7%\n"
+    out += "💰수수료는 판매금액의 19%\n";
+    out += "🏪 자유시장회원권 소지시 수수료 10%\n"
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
