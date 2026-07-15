@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.259"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.260"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -683,6 +683,11 @@ const GLOBAL_CONFIG = {
     },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
+    },
+    petHomeComments: { // 펫홈 방명록 댓글 설정
+        maxStored: 50, // 최근 댓글 보관 개수
+        maxPinned: 3, // 댓글핀 최대 개수
+        pinCost: 50000000 // 댓글핀 등록 비용
     },
     daily: { // 일일 콘텐츠 진행 설정
         trialTowerMax: 5, // 시련의탑 하루 최대 횟수
@@ -1432,7 +1437,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
 
-            saveJsonFile({ comments: {} }, petHomeCommentsFile);
+            saveJsonFile({ comments: {}, pinnedComments: {} }, petHomeCommentsFile);
             replier.reply("✅ 펫홈 댓글 파일 생성 완료\n" + activePetHomeCommentsFile);
             return;
         }
@@ -19275,7 +19280,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
-                    replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList));
+                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
+                    replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList, petHomePinnedCommentList));
                     return;
                 }
                 if (msg === "/댓글삭제" || /^\/댓글삭제\s+\d+$/.test(msg)) {
@@ -19300,9 +19306,52 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("해당 번호의 댓글이 존재하지 않습니다.");
                         return;
                     }
+                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, sender);
+                    if (isPinnedPetHomeComment(petHomeCommentList[indexToDelete], petHomePinnedCommentList)) {
+                        replier.reply("고정된 댓글은 삭제할 수 없습니다📌\n/댓글핀삭제 [번호]로 상단 고정만 먼저 해제해주세요.");
+                        return;
+                    }
                     let removed = petHomeCommentList.splice(indexToDelete, 1)[0];
                     saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
                     replier.reply("🗑️ 댓글이 삭제되었습니다.\n[" + checkRank(data, petData, guildData, removed.from) + "]: " + removed.text);
+                    return;
+                }
+                if (msg === "/댓글핀삭제" || /^\/댓글핀삭제\s+\d+$/.test(msg)) {
+                    if (!isRegisteredHomeMember(data, sender)) return;
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply("[" + sender + "] 님은 아직 펫을 생성하지 않았습니다.");
+                        return;
+                    }
+                    let parts = msg.trim().split(/\s+/);
+                    if (parts.length < 2) {
+                        replier.reply("사용법: /댓글핀삭제 [댓글핀번호]\n예시: /댓글핀삭제 1");
+                        return;
+                    }
+                    let pinDeleteNo = parseInt(parts[1], 10);
+                    if (isNaN(pinDeleteNo)) {
+                        replier.reply("해당 댓글핀 번호를 찾을 수 없습니다.\n댓글핀 번호를 다시 확인해주세요.");
+                        return;
+                    }
+                    var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, sender);
+                    var pinDeleteIndex = pinDeleteNo - 1;
+                    if (pinDeleteIndex < 0 || pinDeleteIndex >= petHomePinnedCommentList.length) {
+                        replier.reply("해당 댓글핀 번호를 찾을 수 없습니다.\n댓글핀 번호를 다시 확인해주세요.");
+                        return;
+                    }
+                    let removedPin = petHomePinnedCommentList.splice(pinDeleteIndex, 1)[0];
+                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                    replier.reply(
+                        "[" +
+                        checkRank(data, petData, guildData, sender) +
+                        "]님\n댓글핀을 삭제했습니다📌\n관련명령어: /댓글핀삭제 [댓글핀번호]\n\n" +
+                        pinDeleteNo +
+                        '번에📌 고정 "[' +
+                        checkRank(data, petData, guildData, removedPin.from) +
+                        "]: " +
+                        removedPin.text +
+                        '"\n\n상단 고정 목록에서 제거되었습니다.'
+                    );
                     return;
                 }
                 if (msg === "/댓글확인" || /^\/댓글확인\s+.+$/.test(msg)) {
@@ -19317,7 +19366,68 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
-                    replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList));
+                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
+                    replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList, petHomePinnedCommentList));
+                    return;
+                }
+                if (msg === "/댓글핀" || /^\/댓글핀\s+\d+$/.test(msg)) {
+                    if (!isRegisteredHomeMember(data, sender)) return;
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply("[" + sender + "] 님은 아직 펫을 생성하지 않았습니다.");
+                        return;
+                    }
+                    let parts = msg.trim().split(/\s+/);
+                    if (parts.length < 2) {
+                        replier.reply("사용법: /댓글핀 [댓글번호]\n예시: /댓글핀 3");
+                        return;
+                    }
+                    let pinCommentNo = parseInt(parts[1], 10);
+                    if (isNaN(pinCommentNo)) {
+                        replier.reply("해당 댓글 번호를 찾을 수 없습니다.\n방명록 댓글 번호를 다시 확인해주세요.");
+                        return;
+                    }
+                    var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, sender);
+                    var pinTargetIndex = petHomeCommentList.length - pinCommentNo; // 출력이 역순이므로 인덱스 보정
+                    if (pinTargetIndex < 0 || pinTargetIndex >= petHomeCommentList.length) {
+                        replier.reply("해당 댓글 번호를 찾을 수 없습니다.\n방명록 댓글 번호를 다시 확인해주세요.");
+                        return;
+                    }
+                    var pinTargetComment = petHomeCommentList[pinTargetIndex];
+                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, sender);
+                    if (isPinnedPetHomeComment(pinTargetComment, petHomePinnedCommentList)) {
+                        replier.reply("이미 고정된 댓글입니다📌");
+                        return;
+                    }
+                    if (petHomePinnedCommentList.length >= GLOBAL_CONFIG.petHomeComments.maxPinned) {
+                        replier.reply("댓글핀이 가득 차있습니다.\n/댓글핀삭제 [번호]로 댓글핀을 삭제해주세요.");
+                        return;
+                    }
+                    var pinCost = GLOBAL_CONFIG.petHomeComments.pinCost;
+                    if (!hasPoint(data, sender, pinCost)) {
+                        replier.reply("포인트가 부족합니다.\n댓글핀 등록에는 5천만 포인트가 필요합니다.");
+                        return;
+                    }
+                    addPoint(data, sender, -pinCost);
+                    petHomePinnedCommentList.push({
+                        from: pinTargetComment.from,
+                        text: pinTargetComment.text,
+                        time: pinTargetComment.time,
+                        pinnedAt: Date.now()
+                    });
+                    saveJsonFile(data, filePath);
+                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                    replier.reply(
+                        "[" +
+                        checkRank(data, petData, guildData, sender) +
+                        "]님\n해당 댓글을 방명록 상단에 고정했습니다📌\n관련명령어: /댓글핀 [댓글번호]\n\n" +
+                        petHomePinnedCommentList.length +
+                        '번에📌 고정 "[' +
+                        checkRank(data, petData, guildData, pinTargetComment.from) +
+                        "]: " +
+                        pinTargetComment.text +
+                        '"\n\n소모 포인트: 5천만 포인트\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다.'
+                    );
                     return;
                 }
                 if (msg === "/댓글" || /^\/댓글\s+.+$/.test(msg)) {
@@ -19354,6 +19464,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addPoint(data, sender, -cost);
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
+                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
                     // 최신 댓글 추가
                     petHomeCommentList.push({
                         from: sender,
@@ -19361,7 +19472,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         time: Date.now()
                     });
                     // 최대 50개 유지 (오래된 순으로 삭제)
-                    trimPetHomeComments(petHomeCommentList);
+                    trimPetHomeComments(petHomeCommentList, petHomePinnedCommentList);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
                     let targetNick = checkRank(data, petData, guildData, targetName);
@@ -34829,6 +34940,7 @@ function isRegisteredHomeMember(data, user) {
 function initPetHomeCommentsData(commentsData) {
     if (!commentsData || typeof commentsData !== "object") commentsData = {};
     if (!commentsData.comments || typeof commentsData.comments !== "object") commentsData.comments = {};
+    if (!commentsData.pinnedComments || typeof commentsData.pinnedComments !== "object") commentsData.pinnedComments = {};
     return commentsData;
 }
 
@@ -34839,25 +34951,74 @@ function getPetHomeCommentList(commentsData, user) {
     return commentsData.comments[user];
 }
 
-// 펫홈 댓글을 최대 보관 개수에 맞춰 정리하는 함수
-function trimPetHomeComments(comments) {
-    while (comments.length > 50) {
-        comments.shift();
+// 특정 유저의 펫홈 핀 댓글 목록을 반환하는 함수
+function getPetHomePinnedCommentList(commentsData, user) {
+    commentsData = initPetHomeCommentsData(commentsData);
+    if (!(commentsData.pinnedComments[user] instanceof Array)) commentsData.pinnedComments[user] = [];
+    return commentsData.pinnedComments[user];
+}
+
+// 펫홈 댓글 동일 여부를 판정하는 함수
+function isSamePetHomeComment(a, b) {
+    if (!a || !b) return false;
+    return a.from === b.from && a.text === b.text && a.time === b.time;
+}
+
+// 펫홈 댓글이 핀 목록에 포함되어 있는지 확인하는 함수
+function isPinnedPetHomeComment(comment, pinnedComments) {
+    if (!(pinnedComments instanceof Array)) return false;
+    for (var i = 0; i < pinnedComments.length; i++) {
+        if (isSamePetHomeComment(comment, pinnedComments[i])) return true;
+    }
+    return false;
+}
+
+// 펫홈 댓글을 핀 댓글 보호 후 최대 보관 개수에 맞춰 정리하는 함수
+function trimPetHomeComments(comments, pinnedComments) {
+    var maxStored = GLOBAL_CONFIG.petHomeComments.maxStored;
+    while (comments.length > maxStored) {
+        var removeIndex = -1; // 삭제 가능한 가장 오래된 댓글 위치
+        for (var i = 0; i < comments.length; i++) {
+            if (!isPinnedPetHomeComment(comments[i], pinnedComments)) {
+                removeIndex = i;
+                break;
+            }
+        }
+        if (removeIndex === -1) break;
+        comments.splice(removeIndex, 1);
     }
 }
 
 // 펫홈 댓글 확인 메시지를 생성하는 함수
-function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments) {
+function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments, pinnedComments) {
     var targetNick = checkRank(data, petData, guildData, targetName);
-    var out = "[" + targetNick + "]님의 방명록✍️[최대 50개]\n";
-    if (!comments || comments.length === 0) {
-        return out + "아직 등록된 댓글이 없습니다.";
-    }
+    var maxStored = GLOBAL_CONFIG.petHomeComments.maxStored;
+    var out = "[" + targetNick + "]님의 방명록✍️[최대 " + maxStored + "개]\n";
+    if (!(comments instanceof Array)) comments = [];
+    if (!(pinnedComments instanceof Array)) pinnedComments = [];
 
-    var startIndex = comments.length - 50;
+    var startIndex = comments.length - maxStored;
     if (startIndex < 0) startIndex = 0;
     var visibleCount = comments.length - startIndex; // 최근 댓글 노출 개수
-    out += "☆━━ 놀러온 친구들의 발도장 " + visibleCount + "개 꾹꾹🐾 ━━☆" + allsee + "\n";
+    out += "☆━━ 놀러온 친구들의 발도장 " + visibleCount + "개 꾹꾹🐾 ━━☆\n";
+
+    if (pinnedComments.length > 0) {
+        out += "\n❤️집주인이 좋아하는 댓글❤️\n";
+        for (var pinIndex = 0; pinIndex < pinnedComments.length; pinIndex++) {
+            var pinned = pinnedComments[pinIndex];
+            if (!pinned) continue;
+            var pinnedNick = checkRank(data, petData, guildData, pinned.from);
+            out += (pinIndex + 1) + ". 📌 [" + pinnedNick + "]: " + pinned.text + "\n";
+        }
+        out += "\n☆━━ 최근 방명록 댓글 ━━☆" + allsee + "\n";
+    } else {
+        out += allsee + "\n";
+    }
+
+    if (comments.length === 0) {
+        return (out + "아직 등록된 댓글이 없습니다.").trim();
+    }
+
     for (var i = comments.length - 1; i >= startIndex; i--) {
         var c = comments[i];
         if (!c) continue;
