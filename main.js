@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.261"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.262"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1313,6 +1313,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var missingDevFiles = getMissingDevDataFiles();
             if (missingDevFiles.length > 0) {
                 replier.reply("❌ DEV 데이터가 준비되지 않았습니다.\nMaster가 dev/데이터백업을 먼저 실행해 주세요.\n\n누락 파일:\n- " + missingDevFiles.join("\n- "));
+                return;
+            }
+        }
+
+        if (msg.indexOf("/") === 0) {
+            var accountSuspensionCheckData = loadJsonFile(filePath);
+            if (isAccountSuspended(accountSuspensionCheckData, sender)) {
+                replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
                 return;
             }
         }
@@ -4569,6 +4577,61 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     data.auction.length = 0;
                     replier.reply("호이상점이 초기화가 되었습니다");
                 }
+                if (msg === "/계정정지해제" || /^\/계정정지해제\s+.+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+                        return;
+                    }
+                    var accountReleaseTarget = msg.replace(/^\/계정정지해제/, "").trim();
+                    if (!accountReleaseTarget) {
+                        replier.reply("사용법: /계정정지해제 [아이디]\n예시: /계정정지해제 호이 남");
+                        return;
+                    }
+                    if (!data.member[accountReleaseTarget]) {
+                        replier.reply("❌ 해당 유저를 찾을 수 없습니다.\n대상: " + accountReleaseTarget);
+                        return;
+                    }
+                    var releaseSuspendedAccounts = ensureAccountSuspensions(data);
+                    if (!releaseSuspendedAccounts[accountReleaseTarget]) {
+                        replier.reply("❌ 계정정지 상태가 아닌 유저입니다.\n대상: " + accountReleaseTarget);
+                        return;
+                    }
+                    delete releaseSuspendedAccounts[accountReleaseTarget];
+                    saveJsonFile(data, filePath);
+                    replier.reply("✅ [" + accountReleaseTarget + "] 님의 계정정지가 해제되었습니다.");
+                    return;
+                }
+
+                if (msg === "/계정정지" || /^\/계정정지\s+.+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+                        return;
+                    }
+                    var accountSuspendTarget = msg.replace(/^\/계정정지/, "").trim();
+                    if (!accountSuspendTarget) {
+                        replier.reply("사용법: /계정정지 [아이디]\n예시: /계정정지 호이 남");
+                        return;
+                    }
+                    if (!data.member[accountSuspendTarget]) {
+                        replier.reply("❌ 해당 유저를 찾을 수 없습니다.\n대상: " + accountSuspendTarget);
+                        return;
+                    }
+                    if (accountSuspendTarget === sender) {
+                        replier.reply("❌ 자기 자신은 계정정지할 수 없습니다.");
+                        return;
+                    }
+                    var suspendedAccounts = ensureAccountSuspensions(data);
+                    if (!suspendedAccounts[accountSuspendTarget]) {
+                        suspendedAccounts[accountSuspendTarget] = {
+                            suspendedAt: getCurrentDate(),
+                            suspendedBy: sender
+                        };
+                    }
+                    saveJsonFile(data, filePath);
+                    replier.reply("✅ [" + accountSuspendTarget + "] 님의 계정을 정지했습니다.\n정지된 유저는 명령어를 사용할 수 없습니다.");
+                    return;
+                }
+
                 if (/^\/휴면계정\s+.+$/.test(msg) && isMaster(sender)) {
                     var dormantTarget = msg.replace(/^\/휴면계정\s+/, "").trim();
                     if (!data.member[dormantTarget]) {
@@ -30252,6 +30315,24 @@ function ensureDormantAccounts(data) {
 function isDormantAccount(data, userName) {
     var dormantAccounts = ensureDormantAccounts(data);
     return !!(userName && dormantAccounts[userName]);
+}
+
+// 계정정지 목록 구조를 보장하는 함수
+function ensureAccountSuspensions(data) {
+    if (!data.accountSuspensions || typeof data.accountSuspensions !== "object" || Array.isArray(data.accountSuspensions)) {
+        data.accountSuspensions = {};
+    }
+    if (!data.accountSuspensions.users || typeof data.accountSuspensions.users !== "object" || Array.isArray(data.accountSuspensions.users)) {
+        data.accountSuspensions.users = {};
+    }
+    return data.accountSuspensions.users;
+}
+
+// 특정 유저가 계정정지 상태인지 확인하는 함수
+function isAccountSuspended(data, userName) {
+    if (!data || typeof data !== "object") return false;
+    var suspendedAccounts = ensureAccountSuspensions(data);
+    return !!(userName && suspendedAccounts[userName]);
 }
 
 // 휴면 시작일을 YY.MM.DD 형식으로 변환하는 함수
