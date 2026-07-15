@@ -19262,7 +19262,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         lineFurniture += "[배치된 가구가 없습니다.]\n";
                     } else {
                         for (var i = 0; i < placedArr.length; i++) {
-                            if (i == 1) {
+                            if (i == 3) {
                                 lineFurniture += allsee;
                             }
                             var p = placedArr[i];
@@ -19553,7 +19553,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         gradeRateMap[gradeRates[i].grade] = gradeRates[i].rate;
                     }
                     let results = [];
-                    let noticeGrade = ["그랑 루미에르", "로열 루미에르"];
+                    let noticeGrade = ["로열 루미에르", "아르카나 루미에르"];
                     for (let i = 0; i < count; i++) {
                         // 2단계 추첨: 등급 → 가구
                         let item = getRandomFurnitureByGrade(furnitureInfo, gradeRates); // {name, exp, rate, grade, display}
