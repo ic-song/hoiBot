@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.262"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.263"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -10,6 +10,36 @@ let autoDailyQuestInternalDepth = 0;
 
 let USER_REQUEST_WINDOW_MS = 2000; // 2초
 let USER_REQUEST_LIMIT = 3; // 2초에 3회 이상 요청 시 과부하로 간주
+const ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES = [
+    "ㅊㅊ",
+    "ㅊㅇ",
+    "ㅁㅁ",
+    "?",
+    "이쁘다",
+    "자유시장거래",
+    "자유시장거래취소",
+    "ㅈㅈ",
+    "ㅅㅅ",
+    "영지종료보상",
+    "ㅇㅇㅇ",
+    "ㄹㄹㄹ",
+    "ㅇㅋㅋ",
+    "ㅎㅎㅎ",
+    "ㄴㄴㄴ",
+    "쫄았음",
+    "진행시켜",
+    "생각해볼게",
+    "장착할래",
+    "입양할래",
+    "집뚝딱",
+    "생각해본다",
+    "ㄱㄱㄱ",
+    "가입한다",
+    "등록",
+    "ㄴㄴ",
+    "시작한다",
+    "거절한다"
+];
 
 
 
@@ -1317,7 +1347,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
         }
 
-        if (msg.indexOf("/") === 0) {
+        if (isAccountSuspensionBlockedMessage(msg)) {
             var accountSuspensionCheckData = loadJsonFile(filePath);
             if (isAccountSuspended(accountSuspensionCheckData, sender)) {
                 replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
@@ -30331,8 +30361,18 @@ function ensureAccountSuspensions(data) {
 // 특정 유저가 계정정지 상태인지 확인하는 함수
 function isAccountSuspended(data, userName) {
     if (!data || typeof data !== "object") return false;
-    var suspendedAccounts = ensureAccountSuspensions(data);
+    if (!data.accountSuspensions || typeof data.accountSuspensions !== "object" || Array.isArray(data.accountSuspensions)) return false;
+    if (!data.accountSuspensions.users || typeof data.accountSuspensions.users !== "object" || Array.isArray(data.accountSuspensions.users)) return false;
+    var suspendedAccounts = data.accountSuspensions.users;
     return !!(userName && suspendedAccounts[userName]);
+}
+
+// 계정정지 상태에서 차단할 명령/트리거 메시지인지 확인하는 함수
+function isAccountSuspensionBlockedMessage(msg) {
+    if (typeof msg !== "string") return false;
+    if (msg.indexOf("/") === 0) return true;
+    if (msg.indexOf("@") === 0) return true;
+    return ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(msg) !== -1;
 }
 
 // 휴면 시작일을 YY.MM.DD 형식으로 변환하는 함수

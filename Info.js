@@ -71,6 +71,7 @@ const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗�
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const guildPath = "/sdcard/호이랜드/guildData.json"; // 길드 데이터
 var allsee = "​".repeat(500);
+const ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
 //테스트데이터
 const filePath2 = "/sdcard/호이랜드/member2.json";
 const castleBattlePath2 = "/sdcard/호이랜드/castleBattle2.json";
@@ -174,6 +175,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		if (isAccountSuspensionBlockedMessage(msg) && isAccountSuspended(data, sender)) {
+			replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
+			return;
+		}
 		if (data && data.member && data.member[sender] && data.member[sender].agree != true) {
 			return;
 		}
@@ -1425,6 +1430,21 @@ function loadJsonFile(path) {
 		// save("호이랜드/로그", "Log_Load_" + randomNumber + ".txt", "Error while saving JSON file: " + error.message);
 		// replier.reply(error.message);
 	}
+}
+
+// 특정 유저가 계정정지 상태인지 확인하는 함수
+function isAccountSuspended(data, userName) {
+	if (!data || typeof data !== "object") return false;
+	if (!data.accountSuspensions || typeof data.accountSuspensions !== "object" || Array.isArray(data.accountSuspensions)) return false;
+	if (!data.accountSuspensions.users || typeof data.accountSuspensions.users !== "object" || Array.isArray(data.accountSuspensions.users)) return false;
+	return !!(userName && data.accountSuspensions.users[userName]);
+}
+
+// 계정정지 상태에서 차단할 정보봇 명령/트리거 메시지인지 확인하는 함수
+function isAccountSuspensionBlockedMessage(msg) {
+	if (typeof msg !== "string") return false;
+	if (msg.indexOf("/") === 0) return true;
+	return ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(msg) !== -1;
 }
 function save(folderName, fileName, str) {
 	var c = new java.io.File(sdcard + "/" + folderName + "/" + fileName);
