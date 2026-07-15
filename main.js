@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.260"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.261"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -34993,14 +34993,14 @@ function trimPetHomeComments(comments, pinnedComments) {
 function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments, pinnedComments) {
     var targetNick = checkRank(data, petData, guildData, targetName);
     var maxStored = GLOBAL_CONFIG.petHomeComments.maxStored;
-    var out = "[" + targetNick + "]님의 방명록✍️[최대 " + maxStored + "개]\n";
+    var out = "[" + targetNick + "]의 방명록✍️[최대 " + maxStored + "개]\n";
     if (!(comments instanceof Array)) comments = [];
     if (!(pinnedComments instanceof Array)) pinnedComments = [];
 
     var startIndex = comments.length - maxStored;
     if (startIndex < 0) startIndex = 0;
     var visibleCount = comments.length - startIndex; // 최근 댓글 노출 개수
-    out += "☆━━ 놀러온 친구들의 발도장 " + visibleCount + "개 꾹꾹🐾 ━━☆\n";
+    out += "☆━친구들의 발도장 " + visibleCount + "개 꾹꾹🐾━☆\n";
 
     if (pinnedComments.length > 0) {
         out += "\n❤️집주인이 좋아하는 댓글❤️\n";
@@ -35012,6 +35012,8 @@ function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comme
         }
         out += "\n☆━━ 최근 방명록 댓글 ━━☆" + allsee + "\n";
     } else {
+        out += "\n❤️집주인이 좋아하는 댓글❤️\n";
+        out += "현재 댓글핀이 없습니다.\n/댓글핀 [숫자] 로 지정하세요\n";
         out += allsee + "\n";
     }
 
