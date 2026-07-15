@@ -8733,7 +8733,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                     data.member[userId].bag = {};
                                 }
 
-                                var attackItem = "영지기습공격권🔥(60%)";
+                                var attackItem = "영지기습공격권🔥(40%)";
                                 var defenseItem = "영지절대방어권🛡(50%)";
 
                                 if (data.member[userId].bag[attackItem] === undefined) {
@@ -10665,76 +10665,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 
 
-                if (msg === "/길드스타터오픈5") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"] !== undefined && data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"] > 0) {
-                            if (data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"] > 1) {
-                                data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"]--;
-                            } else {
-                                delete data.member[sender].bag["길드공헌스타터패키지🎖️[5](/길드스타터오픈5)"];
-                            }
-
-                            let guildStarterItems = {
-                                "길드공헌훈장🌟(/길드공헌 숫자)": 100,
-                                "길드창고패키지🧳(/길드창고패키지오픈)": 10,
-                                "영지절대방어권🛡(50%)": 5,
-                                "영지절대방어권🛡(80%)": 100,
-                                "영지기습공격권🔥(60%)": 100,
-                                "영지기습공격권🔥(90%)": 5
-                            };
-
-                            for (let item in guildStarterItems) {
-                                addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
-                            }
-
-                            let openMsg = "길드공헌스타터패키지🎖️[5] 패키지오픈!!\nhttps://ibb.co/7dw9DGxR\n\n";
-                            openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                            for (let item in guildStarterItems) {
-                                openMsg += item + " " + guildStarterItems[item] + "개\n";
-                            }
-
-                            replier.reply(openMsg);
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n길드공헌스타터패키지🎖️[4] 아이템이 없습니다.");
-                        }
-                    }
-                }
-                if (msg === "/길드스타터오픈4") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["길드공헌스타터패키지🎖️[4](/길드스타터오픈4)"] !== undefined && data.member[sender].bag["길드공헌스타터패키지🎖️[4](/길드스타터오픈4)"] > 0) {
-                            if (data.member[sender].bag["길드공헌스타터패키지🎖️[4](/길드스타터오픈4)"] > 1) {
-                                data.member[sender].bag["길드공헌스타터패키지🎖️[4](/길드스타터오픈4)"]--;
-                            } else {
-                                delete data.member[sender].bag["길드공헌스타터패키지🎖️[4](/길드스타터오픈4)"];
-                            }
-
-                            let guildStarterItems = {
-                                "길드공헌훈장🌟(/길드공헌 숫자)": 150,
-                                "길드창고패키지🧳(/길드창고패키지오픈)": 40,
-                                "영지절대방어권🛡(50%)": 70,
-                                "영지절대방어권🛡(80%)": 30,
-                                "영지기습공격권🔥(60%)": 70,
-                                "영지기습공격권🔥(90%)": 30
-                            };
-
-                            for (let item in guildStarterItems) {
-                                addItemToBag(data.member[sender].bag, item, guildStarterItems[item]);
-                            }
-
-                            let openMsg = "길드공헌스타터패키지🎖️[4] 패키지오픈!!\nhttps://ibb.co/7dw9DGxR\n\n";
-                            openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                            for (let item in guildStarterItems) {
-                                openMsg += item + " " + guildStarterItems[item] + "개\n";
-                            }
-
-                            replier.reply(openMsg);
-                        } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n길드공헌스타터패키지🎖️[4] 아이템이 없습니다.");
-                        }
-                    }
-                }
 
                 if (msg === "/광산오픈4") {
                     if (!castleSiegeFlag) {
@@ -14236,7 +14166,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 delete data.member[sender].bag["랜덤박스💝"];
                             }
                             // 랜덤 아이템 목록
-                            var items2 = ["잡템상자☠", "정령상자🥀", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(50%)", "영지기습공격권🔥(60%)"];
+                            var items2 = ["잡템상자☠", "정령상자🥀", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
                             let acquiredItems = {}; // 여러 아이템을 저장할 객체
                             for (let i = 0; i < openCount; i++) {
                                 // openCount만큼 반복
@@ -24780,102 +24710,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     replier.reply(openMsg);
                 }
-                if (msg === "/길드영지오픈1") {
-                    if (castleSiegeFlag) return;
-
-                    var member = data.member[sender];
-                    if (!member) return;
-
-                    var packItem = "길드영지전쟁패키지🏰[1](/길드영지오픈1)";
-
-                    if (!member.bag) {
-                        member.bag = {};
-                    }
-
-                    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
-                        return;
-                    }
-
-                    if (member.bag[packItem] > 1) {
-                        member.bag[packItem]--;
-                    } else {
-                        delete member.bag[packItem];
-                    }
-
-                    var rewardItems = {
-                        "길드공헌훈장🌟(/길드공헌 숫자)": 200,
-                        "영지기습공격권🔥(90%)": 20,
-                        "영지절대방어권🛡(80%)": 20,
-                        "🌪️ 전쟁불안정 증폭권(/불안정)": 10,
-                        "🚑 전쟁불안정 감소권(/안정)": 10,
-                        "🌌 균열 유도권(/균열)": 10,
-                        "🌋 대균열 유도권(/대균열)": 10
-                    };
-
-                    for (var item in rewardItems) {
-                        addItemToBag(member.bag, item, rewardItems[item]);
-                    }
-
-                    var openMsg = "길드 영지전쟁 보급품이 도착했습니다🏰\n";
-                    openMsg = "https://ibb.co/yLXcrRL\n";
-                    openMsg += "전장을 뒤흔들 준비를 시작합니다.\n\n";
-                    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                    for (var rewardName in rewardItems) {
-                        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
-                    }
-
-                    replier.reply(openMsg);
-                }
-                if (msg === "/길드영지오픈2") {
-                    if (castleSiegeFlag) return;
-
-                    var member = data.member[sender];
-                    if (!member) return;
-
-                    var packItem = "길드영지전쟁패키지🏰[2](/길드영지오픈2)";
-
-                    if (!member.bag) {
-                        member.bag = {};
-                    }
-
-                    if (member.bag[packItem] === undefined || member.bag[packItem] <= 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + packItem + " 아이템이 없습니다.");
-                        return;
-                    }
-
-                    if (member.bag[packItem] > 1) {
-                        member.bag[packItem]--;
-                    } else {
-                        delete member.bag[packItem];
-                    }
-
-                    var rewardItems = {
-                        "길드공헌훈장🌟(/길드공헌 숫자)": 150,
-                        "영지기습공격권🔥(90%)": 20,
-                        "영지절대방어권🛡(80%)": 20,
-                        "🌪️ 전쟁불안정 증폭권(/불안정)": 20,
-                        "🚑 전쟁불안정 감소권(/안정)": 10,
-                        "🌌 균열 유도권(/균열)": 10,
-                        "🌋 대균열 유도권(/대균열)": 10
-                    };
-
-                    for (var item in rewardItems) {
-                        addItemToBag(member.bag, item, rewardItems[item]);
-                    }
-
-                    var openMsg = "길드 영지전쟁 보급품이 도착했습니다🏰\n";
-                    openMsg = "https://ibb.co/yLXcrRL\n";
-                    openMsg += "전장을 뒤흔들 준비를 시작합니다.\n\n";
-                    openMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 구성품을 획득했습니다.\n\n";
-
-                    for (var rewardName in rewardItems) {
-                        openMsg += rewardName + " " + rewardItems[rewardName] + "개\n";
-                    }
-
-                    replier.reply(openMsg);
-                }
+               
 
                 //@# =====================
                 if (msg.startsWith("/명치한대 ") && (sender == "호이 남" || sender == "맹구 여")) {
@@ -25004,10 +24839,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 아이템 명칭 변경
                     var itemChangeMap = {
                         "캐슬공격권⚔": "영지공격권⚔",
-                        "캐슬기습공격권🔥(60%)": "영지기습공격권🔥(60%)",
-                        "캐슬절대방어권🛡(50%)": "영지절대방어권🛡(50%)",
-                        "캐슬기습공격권🔥(100%)": "영지기습공격권🔥(90%)",
-                        "캐슬절대방어권🛡(100%)": "영지절대방어권🛡(80%)"
+                        "캐슬기습공격권🔥(60%)": "영지기습공격권🔥(10%)",
+                        "캐슬절대방어권🛡(50%)": "영지절대방어권🛡(20%)",
+                        "캐슬기습공격권🔥(100%)": "영지기습공격권🔥(40%)",
+                        "캐슬절대방어권🛡(100%)": "영지절대방어권🛡(50%)"
                     };
 
                     var itemChangeCount = 0;
@@ -27681,16 +27516,16 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     }
 
     var defenseItems = [
-        { name: "영지절대방어권🛡(80%)", successRate: 0.8, label: "절대🛡(80%)" },
-        { name: "영지절대방어권🛡(100%)", successRate: 0.8, label: "절대🛡(80%)" },
         { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" },
-        { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" }
+        { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" },
+        { name: "영지절대방어권🛡(20%)", successRate: 0.2, label: "절대🛡(20%)" },
+        { name: "영지절대방어권🛡(20%)", successRate: 0.2, label: "절대🛡(20%)" }
     ];
     var offenseItems = [
-        { name: "영지기습공격권🔥(90%)", successRate: 0.9, label: "기습🔥(90%)" },
-        { name: "영지기습공격권🔥(100%)", successRate: 0.9, label: "기습🔥(90%)" },
-        { name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" },
-        { name: "영지기습공격권🔥(60%)", successRate: 0.6, label: "기습🔥(60%)" }
+        { name: "영지기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" },
+        { name: "영지기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" },
+        { name: "영지기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" },
+        { name: "영지기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" }
     ];
     if (defenderName && data.member[defenderName]) {
         // 방어 아이템
@@ -32092,10 +31927,10 @@ function generateBagOutput(bagItems) {
             "탐험확률UP🗻(20%)",
             "탐험확률UP🗻(10%)",
 
-            "영지기습공격권🔥(60%)",
-            "영지기습공격권🔥(90%)",
+            "영지기습공격권🔥(10%)",
+            "영지기습공격권🔥(40%)",
+            "영지절대방어권🛡(20%)",
             "영지절대방어권🛡(50%)",
-            "영지절대방어권🛡(80%)",
             "🌋 대균열 유도권(/대균열)",
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
@@ -33107,7 +32942,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
         if (bag["랜덤박스💝"]) {
             let count = bag["랜덤박스💝"];
             delete bag["랜덤박스💝"];
-            let items = ["잡템상자☠", "정령상자🥀", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(50%)", "영지기습공격권🔥(60%)"];
+            let items = ["잡템상자☠", "정령상자🥀", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
             let acquired = {},
                 msg = "";
             for (let i = 0; i < count; i++) {
