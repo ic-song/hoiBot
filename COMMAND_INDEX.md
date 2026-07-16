@@ -2765,7 +2765,7 @@ Status: VERIFIED
 - `/펫스킬가방`
 ## AI Notes
 - `전투형 지휘관📙`, `기사단 증원📙`, `징집명령📙`은 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
-- `야호📙`은 `/알림`에서 확성기 아이템 사용 횟수와 합산해 하루 총 3회 한도 안에서만 무료 사용을 허용한다
+- `야호📙`은 신규 뽑기 목록과 `/알림` 효과가 주석 처리되어 더 이상 획득·사용되지 않는다. 기존 보유 데이터는 유지한다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
 - `/계정삭제`와 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
@@ -3123,7 +3123,7 @@ Status: VERIFIED
 # /알림 [내용]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:18725`
+- `main.js:18343`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3140,15 +3140,13 @@ Status: VERIFIED
 - `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
 - `petSkillData[sender]`
 ## Save Flow
-- When `guildData.territoryWar.active` is true, `/알림` is blocked before item/count mutation and does not save member data.
-- Successful `/알림` uses `야호📙` free count or consumes `확성기📢(/알림 내용 30자)`, then saves member data through `saveJsonFile(data, filePath)`.
+- The execution block is commented out. `/알림` does not reply, consume `확성기📢(/알림 내용 30자)`, mutate counters, or save member data.
 ## Related Commands
 - `/길드영지시작`
 - `/길드영지종료`
 - `/영지공격`
 ## AI Notes
-- `/알림` accepts free-form message text after a command boundary only: `/알림 내용`.
-- The command is blocked while guild territory war is active so territory-war progress messages are not interrupted.
+- `/알림` and the `야호📙` effect are intentionally disabled while existing item and skill ownership data remain intact.
 
 ---
 

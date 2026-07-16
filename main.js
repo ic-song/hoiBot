@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.266"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.267"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -123,7 +123,7 @@ const PET_SKILL_LIST = [
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "정령강화/반지강화/펫강화 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "친밀도/전도르/양계장/행운 탐험 성공확률 5% 상승" },
-    { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
+    // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
     // { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
 
     { name: "롤렉스", grade: "C", rate: 4.0, effect: "손목에 차고 있으면 괜히 기분이 좋아지고, 손을 들어 자랑하고 싶은 욕구가 생깁니다.\n명령어: /자랑" },
@@ -18340,6 +18340,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petData, memberPetPath);
                     return;
                 }
+                // 확성기📢 아이템과 야호📙 스킬 사용 중단
+                /*
                 if (/^\/알림(?:\s|$)/.test(msg)) {
                     var noticeTerritoryWar = guildData && guildData.territoryWar ? guildData.territoryWar : null;
                     if (noticeTerritoryWar && noticeTerritoryWar.active) {
@@ -18393,6 +18395,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "야호"));
                     }
                 }
+                */
                 if (msg.startsWith("/미니펫삭제 ") && sender == "호이 남") {
                     let args = msg.replace("/미니펫삭제", "").trim().split(" ");
                     if (args.length < 2) {
@@ -26480,11 +26483,11 @@ function buildPetSkillMsg(data, petData, guildData, user, skillName) {
             "롤렉스🕰️ [{rank}] 쿨하게 손목 한번 들어봅니다.",
             "롤렉스🕰️ [{rank}] 성공 그것은 저의 별명입니다."
         ],
-        "야호": [
-            "야호📙 [{rank}] 야호! 오늘은 무료 확성이다!",
-            "야호📙 [{rank}] 확성기 아이템이 소모되지 않았습니다!",
-            "야호📙 [{rank}] 기분 좋게 외쳐봅니다!"
-        ],
+        // "야호": [
+        //     "야호📙 [{rank}] 야호! 오늘은 무료 확성이다!",
+        //     "야호📙 [{rank}] 확성기 아이템이 소모되지 않았습니다!",
+        //     "야호📙 [{rank}] 기분 좋게 외쳐봅니다!"
+        // ],
         "기분탓": [
             "기분탓📙 [{rank}]: 라고 할뻔~"
         ],
