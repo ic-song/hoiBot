@@ -479,7 +479,9 @@ Status: VERIFIED
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 - Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
 - `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to `[2]`~`[6]` mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
-- `[8] 길드영지PT광산🪙` pays 2,000,000,000 points to `warehouse.fund` and grants 100 territory points; the territory-point booster path doubles this to 200 points.
+- `[7] 길드영지PT광산🪙` pays 2,000,000,000 points to `warehouse.fund` and grants 100 territory points; 100 territory boosters are required and consumed to double this to 200 points.
+- Territory score boosts consume one `길드영지 부스터🔮` per additional point: 50 for a 50pt territory, 20 for a 20pt territory, and 100 for the PT mine.
+- `ensureGuildTerritoryWar` migrates the former PT mine occupation row from territory 8 to territory 7 and removes the stale territory 8 row; number 8 is now the virtual dimension gate only.
 - `finishGuildTerritoryWar` keeps final occupation results visible first, then folds reward details, grouped territory point gains, and guide commands behind `allsee`.
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
@@ -543,7 +545,7 @@ Status: VERIFIED
 
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
-- `/영지공격 7` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
+- `/영지공격 8` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -573,8 +575,8 @@ Status: VERIFIED
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
 - `/영지공격` is accepted only as `/영지공격 [1-8]`; suffix text such as `/영지공격 2 해봐` must not execute
-- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
-- `/영지공격 8` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
+- `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
+- `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---

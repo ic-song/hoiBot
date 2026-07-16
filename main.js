@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.264"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.265"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -12208,9 +12208,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "[4] 펫강화광산⭐️: 펫 강화석⭐️ " + GLOBAL_CONFIG.guildTerritory.rewards.petMineRewardAmount + "개\n" +
                         "[5] 미니펫강화광산💫: 미니펫 강화석💫 " + GLOBAL_CONFIG.guildTerritory.rewards.miniPetMineRewardAmount + "개\n" +
                         "[6] 다이아광산💎: 다이아💎 " + GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount + "개\n" +
-                        "[8] 길드영지PT광산🪙: 길드창고 🅟" + numberWithCommas(GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount) + " / 영지pt " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt(부스터 적용 시 " + (GLOBAL_CONFIG.guildTerritory.scores.pointMine * 2) + "pt)\n\n" +
+                        "[7] 길드영지PT광산🪙: 길드창고 🅟" + numberWithCommas(GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount) + " / 영지pt " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt(부스터 " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "개 적용 시 " + (GLOBAL_CONFIG.guildTerritory.scores.pointMine * 2) + "pt)\n\n" +
                         "광산류 영지는 종료 시 최종 점령 길드의 길드창고로 지급됩니다.\n" +
-                        "[2]~[6] 광산 보상은 길드영지 부스터🔮 보유량에 따라 추가 지급됩니다."
+                        "[2]~[6] 광산 보상은 길드영지 부스터🔮 보유량에 따라 추가 지급됩니다.\n" +
+                        "영지pt 추가 획득은 추가 점수 1pt당 길드영지 부스터🔮 1개가 차감됩니다."
                     );
                     return;
                 }
@@ -12612,7 +12613,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 공격 대상 영지
                     var territoryNo = parseInt(attackParts[1], 10);
 
-                    if (territoryNo === 7) {
+                    if (territoryNo === 8) {
                         if (!attackWar.dimensionGateEnabled) {
                             replier.reply("❌ 차원의 문 🌀 이벤트가 현재 OFF 상태입니다.");
                             return;
@@ -25833,7 +25834,7 @@ function getGuildTerritoryList() {
         { no: 4, name: "펫강화광산⭐️", rewardType: "pet", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.petMineRewardAmount },
         { no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.miniPetMineRewardAmount },
         { no: 6, name: "다이아광산💎", rewardType: "diamond", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount },
-        { no: 8, name: "길드영지PT광산🪙", rewardType: "fund", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount, scoreType: "pointMine", boosterReward: false }
+        { no: 7, name: "길드영지PT광산🪙", rewardType: "fund", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount, scoreType: "pointMine", boosterReward: false }
     ];
 }
 
@@ -25941,10 +25942,11 @@ function applyGuildTerritoryScores(guildData, list, war) {
         var baseScore = getGuildTerritoryBaseScore(territory);
         if (baseScore <= 0) continue;
         var boosterApplied = false;
+        var boosterCost = baseScore; // 추가 획득 점수와 동일하게 차감할 부스터 수량
         var boosterCount = ensureGuildTerritoryBoosterCount(guild);
-        if (boosterCount > 0) {
+        if (boosterCount >= boosterCost) {
             boosterApplied = true;
-            guild.guildTerritoryBooster = boosterCount - 1;
+            guild.guildTerritoryBooster = boosterCount - boosterCost;
         }
         var gainScore = boosterApplied ? baseScore * 2 : baseScore;
         guild.guildTerritoryScore = ensureGuildTerritoryScore(guild) + gainScore;
@@ -26086,6 +26088,15 @@ function ensureGuildTerritoryWar(data, guildData) {
     var war = guildData.territoryWar; // 이제 war 객체는 guildData.territoryWar을 참조하며, 필요한 초기화 작업을 수행
     if (!war.readyGuilds || typeof war.readyGuilds !== "object") war.readyGuilds = {};// 준비한 길드 정보
     if (!war.territories || typeof war.territories !== "object") war.territories = {};// 영지 정보
+    var legacyPointMine = war.territories["8"]; // 번호 변경 전 8번 PT광산 점령 정보
+    var currentPointMine = war.territories["7"];
+    if (legacyPointMine && legacyPointMine.name === "길드영지PT광산🪙") {
+        if (!currentPointMine || !currentPointMine.ownerGuildId) {
+            war.territories["7"] = legacyPointMine;
+            war.territories["7"].no = 7;
+        }
+        delete war.territories["8"];
+    }
     if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};// 길드별 공격 횟수
     if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};// 길드별 공격 횟수 제한
     if (!war.userAttackCounts || typeof war.userAttackCounts !== "object") war.userAttackCounts = {};// 유저별 공격 횟수
@@ -26687,13 +26698,11 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
     var out = "🎖️현재 길드 영지전 상황🎖️\n\n";
 
     for (var i = 0; i < list.length; i++) {
-        if (list[i].no === 8) {
-            out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
-        }
         var ter = war.territories[String(list[i].no)];
         var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
+    out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
@@ -26736,14 +26745,14 @@ function buildGuildTerritoryRankingMessage(data, guildData) {
     var out = "📈 🏅 길드영지 순위 🏅 📈\n\n";
     out += "━━━━━━━━━━━\n";
     out += "영지pt 획득 기준\n";
-    out += "(길드 영지부스터🔮 소지시 2배 획득\n";
+    out += "(추가 점수 1pt당 길드영지 부스터🔮 1개 차감)\n";
     out += "호월킹덤🏰 50pt\n";
     out += "펫스킬 광산📙 20pt\n";
     out += "펜던트 광산📿 20pt\n";
     out += "펫강화광산⭐️ 50pt\n";
     out += "미니펫강화광산💫 50pt\n";
     out += "다이아광산💎 20pt\n";
-    out += "길드영지PT광산🪙 " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt\n";
+    out += "길드영지PT광산🪙 " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt(부스터 " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "개 적용 시 " + (GLOBAL_CONFIG.guildTerritory.scores.pointMine * 2) + "pt)\n";
     out += "━━━━━━━━━━━\n";
     if (rows.length === 0) return out + "아직 누적 영지점수가 없습니다.";
 
@@ -26783,7 +26792,8 @@ function buildGuildTerritoryRankRewardGuideMessage() {
     out += "펫강화광산⭐️   50pt\n";
     out += "미니펫강화광산💫   50pt\n";
     out += "다이아광산💎   20pt\n";
-    out += "길드영지PT광산🪙   " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt";
+    out += "길드영지PT광산🪙   " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt(부스터 " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "개 적용 시 " + (GLOBAL_CONFIG.guildTerritory.scores.pointMine * 2) + "pt)";
+    out += "\n※ 추가 점수 1pt당 길드영지 부스터🔮 1개 차감";
 
     return out;
 }
