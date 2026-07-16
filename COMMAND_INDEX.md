@@ -433,6 +433,8 @@ Status: VERIFIED
 - `finishGuildTerritoryWar`
 - `addGuildWarehouseReward`
 - `ensureGuildTerritoryBoosterCount`
+- `getGuildTerritoryByNo`
+- `getGuildTerritoryOwnedCount`
 - `startGuildTerritoryTurnTimer`
 - `isGuildTerritoryWarCommandLockActive`
 - `isGuildTerritoryAllowedDuringWarCommand`
@@ -447,7 +449,9 @@ Status: VERIFIED
 - `guildData.territoryWar.turnOrder`
 - `guildData.castleSiegeFlag`
 - `guildData.guilds[*].warehouse.petSkillBook`
+- `guildData.guilds[*].warehouse.fund`
 - `guildData.guilds[*].guildTerritoryBooster`
+- `guildData.guilds[*].guildTerritoryScore`
 
 ## Save Flow
 
@@ -474,7 +478,8 @@ Status: VERIFIED
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 - Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
-- `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to non-castle mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
+- `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to `[2]`~`[6]` mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
+- `[8] 길드영지PT광산🪙` pays 2,000,000,000 points to `warehouse.fund` and grants 100 territory points; the territory-point booster path doubles this to 200 points.
 - `finishGuildTerritoryWar` keeps final occupation results visible first, then folds reward details, grouped territory point gains, and guide commands behind `allsee`.
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
@@ -489,7 +494,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:12827`
+- `main.js:12453`
 
 ## Files
 
@@ -511,6 +516,8 @@ Status: VERIFIED
 - `buildPetSkillTriggerMessage`
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryAttack`
+- `getGuildTerritoryByNo`
+- `getGuildTerritoryOwnedCount`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
 - `buildGuildTerritoryCurrentTurnLine`
@@ -528,6 +535,9 @@ Status: VERIFIED
 - `guildData.territoryWar.guildAttackLimits`
 - `guildData.territoryWar.userAttackCounts`
 - `guildData.territoryWar.dimensionGateEnabled`
+- `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
+- `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
+- `GLOBAL_CONFIG.guildTerritory.scores.pointMine`
 
 ## Save Flow
 
@@ -562,8 +572,9 @@ Status: VERIFIED
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
-- `/영지공격` is accepted only as `/영지공격 [1-7]`; suffix text such as `/영지공격 2 해봐` must not execute
+- `/영지공격` is accepted only as `/영지공격 [1-8]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
+- `/영지공격 8` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
@@ -2773,11 +2784,14 @@ Status: VERIFIED
 - ensureDormantAccounts
 - isDormantAccount
 - buildDormantAccountListMessage
+- ensureAccountSuspensions
+- buildAccountSuspensionListMessage
 - formatDormantDateText
 - getDormantDays
 
 ## Data Usage
 - data.dormantAccounts
+- data.accountSuspensions.users
 - data.member[target]
 
 ## Save Flow
@@ -2786,11 +2800,13 @@ Status: VERIFIED
 - `/계정삭제` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
 - `/계정잠수명단` and `/계정잠수삭제` exclude registered dormant accounts from removal candidates
 - `/계정잠수삭제` reports dormant accounts that matched the sleep condition but were protected
+- `/휴면계정리스트` and `/계정정지리스트` are read-only and do not save member data
 
 ## Related Commands
 - `/휴면계정 [아이디]`
 - `/휴면해제 [아이디]`
-- `/휴면리스트`
+- `/휴면계정리스트`
+- `/계정정지리스트`
 - `/계정삭제`
 - `/계정잠수명단`
 - `/계정잠수삭제 [숫자]`
@@ -2798,6 +2814,8 @@ Status: VERIFIED
 ## AI Notes
 - 휴면계정 보호 목록은 별도 파일이 아니라 `data` 안의 `dormantAccounts`에 저장한다.
 - 휴면계정 등록/해제는 계정 삭제 대상 제외 목록만 변경하며 기존 회원 데이터는 변경하지 않는다.
+- 기존 `/휴면리스트`는 제거되었으며 입력해도 반응하지 않는다.
+- 계정정지 목록은 `data.accountSuspensions.users`를 휴면 목록과 같은 날짜 표시 형식으로 읽고 `allsee` 전체보기를 지원한다.
 
 ---
 

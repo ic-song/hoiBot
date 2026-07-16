@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.263"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.264"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -961,6 +961,7 @@ blockedNicknameTerms: [
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
             personalAttackLimit: 10, // 개인별 영지공격 최대 횟수
+            maxOwnedTerritories: 3, // 길드별 동시 점령 가능 영지 수
             wrongTurnPenalty: 5, // 영지공격 오입력 패널티 턴
             timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준
             riftMaxTurn: 120, // 영지전 균열 최대 턴
@@ -979,7 +980,8 @@ blockedNicknameTerms: [
             pendantMineRewardAmount: 5, // 펜던트 광산 점령 종료 보상
             petMineRewardAmount: 200, // 펫강화광산 점령 종료 보상
             miniPetMineRewardAmount: 150, // 미니펫강화광산 점령 종료 보상
-            diamondMineRewardAmount: 20 // 다이아광산 점령 종료 보상
+            diamondMineRewardAmount: 20, // 다이아광산 점령 종료 보상
+            pointMineFundRewardAmount: 2000000000 // 길드영지PT광산 점령 종료 길드창고 포인트 보상
         },
         scores: { // 길드 영토전 누적 점수 설정
             castle: 50,
@@ -987,7 +989,8 @@ blockedNicknameTerms: [
             pendant: 20,
             pet: 50,
             miniPet: 50,
-            diamond: 20
+            diamond: 20,
+            pointMine: 100
         },
         rankRewards: [500000000, 400000000, 300000000, 200000000, 100000000, 50000000, 50000000, 50000000, 50000000, 50000000],
         rates: { // 길드 영토전 확률/증가량 설정
@@ -4680,8 +4683,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg === "/휴면리스트" && isMaster(sender)) {
+                if (msg === "/휴면계정리스트" && isMaster(sender)) {
                     replier.reply(buildDormantAccountListMessage(data));
+                    return;
+                }
+
+                if (msg === "/계정정지리스트" && isMaster(sender)) {
+                    replier.reply(buildAccountSuspensionListMessage(data));
                     return;
                 }
 
@@ -12199,9 +12207,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "[3] 펜던트 광산📿: 펜던트 강화석📿 " + GLOBAL_CONFIG.guildTerritory.rewards.pendantMineRewardAmount + "개\n" +
                         "[4] 펫강화광산⭐️: 펫 강화석⭐️ " + GLOBAL_CONFIG.guildTerritory.rewards.petMineRewardAmount + "개\n" +
                         "[5] 미니펫강화광산💫: 미니펫 강화석💫 " + GLOBAL_CONFIG.guildTerritory.rewards.miniPetMineRewardAmount + "개\n" +
-                        "[6] 다이아광산💎: 다이아💎 " + GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount + "개\n\n" +
+                        "[6] 다이아광산💎: 다이아💎 " + GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount + "개\n" +
+                        "[8] 길드영지PT광산🪙: 길드창고 🅟" + numberWithCommas(GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount) + " / 영지pt " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt(부스터 적용 시 " + (GLOBAL_CONFIG.guildTerritory.scores.pointMine * 2) + "pt)\n\n" +
                         "광산류 영지는 종료 시 최종 점령 길드의 길드창고로 지급됩니다.\n" +
-                        "호월킹덤🏰을 제외한 광산 보상은 길드영지 부스터🔮 보유량에 따라 추가 지급됩니다."
+                        "[2]~[6] 광산 보상은 길드영지 부스터🔮 보유량에 따라 추가 지급됩니다."
                     );
                     return;
                 }
@@ -12441,7 +12450,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 // 길드 영지 공격 명령어 처리
-                if (/^\/영지공격\s+[1-7]$/.test(msg)) {
+                if (/^\/영지공격\s+[1-8]$/.test(msg)) {
 
                     // 현재 영지전 상태 확인
                     var attackWar = ensureGuildTerritoryWar(data, guildData);
@@ -12454,9 +12463,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    // 입력값 검증 (1~7번 선택지)
+                    // 입력값 검증 (1~8번 선택지)
                     var attackParts = msg.trim().split(/\s+/);
-                    if (attackParts.length < 2 || !/^[1-7]$/.test(attackParts[1])) {
+                    if (attackParts.length < 2 || !/^[1-8]$/.test(attackParts[1])) {
                         replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
                         return;
                     }
@@ -25285,7 +25294,7 @@ function isMutableGuildTerritoryCommand(msg) {
         msg === "/길드영지초기화" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지확인" ||
-        /^\/영지공격\s+[1-7]$/.test(msg) ||
+        /^\/영지공격\s+[1-8]$/.test(msg) ||
         msg === "/차원의문on" ||
         msg === "/차원의문off" ||
         msg === "/차원의문온" ||
@@ -25313,7 +25322,7 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/길드영지순위" ||
         msg === "/영지순위보상" ||
         msg === "/영지보상순위" ||
-        /^\/영지공격(?:\s+[1-7])?$/.test(msg) ||
+        /^\/영지공격(?:\s+[1-8])?$/.test(msg) ||
         /^\/안정(?:\s+\d+)?$/.test(msg) ||
         /^\/불안정(?:\s+\d+)?$/.test(msg) ||
         /^\/균열(?:\s+\d+)?$/.test(msg) ||
@@ -25823,8 +25832,30 @@ function getGuildTerritoryList() {
         { no: 3, name: "펜던트 광산📿", rewardType: "pendant", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.pendantMineRewardAmount },
         { no: 4, name: "펫강화광산⭐️", rewardType: "pet", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.petMineRewardAmount },
         { no: 5, name: "미니펫강화광산💫", rewardType: "miniPet", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.miniPetMineRewardAmount },
-        { no: 6, name: "다이아광산💎", rewardType: "diamond", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount }
+        { no: 6, name: "다이아광산💎", rewardType: "diamond", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.diamondMineRewardAmount },
+        { no: 8, name: "길드영지PT광산🪙", rewardType: "fund", rewardAmount: GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount, scoreType: "pointMine", boosterReward: false }
     ];
+}
+
+// 영지 번호로 점령지 설정을 찾는 함수
+function getGuildTerritoryByNo(territoryNo) {
+    var list = getGuildTerritoryList();
+    for (var i = 0; i < list.length; i++) {
+        if (list[i].no === territoryNo) return list[i];
+    }
+    return null;
+}
+
+// 길드가 현재 점령 중인 영지 수를 계산하는 함수
+function getGuildTerritoryOwnedCount(war, guildId) {
+    if (!war || !war.territories || !guildId) return 0;
+    var list = getGuildTerritoryList();
+    var count = 0;
+    for (var i = 0; i < list.length; i++) {
+        var territory = war.territories[String(list[i].no)];
+        if (territory && territory.ownerGuildId === guildId) count++;
+    }
+    return count;
 }
 
 // 길드 정보 표시 함수
@@ -25892,7 +25923,7 @@ function ensureGuildTerritoryRewardData(guildData) {
 function getGuildTerritoryBaseScore(territory) {
     if (!territory) return 0;
     var scores = GLOBAL_CONFIG.guildTerritory.scores || {};
-    var score = scores[territory.rewardType] || 0;
+    var score = scores[territory.scoreType || territory.rewardType] || 0;
     score = parseInt(score, 10);
     return isNaN(score) || score < 0 ? 0 : score;
 }
@@ -26656,11 +26687,13 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
     var out = "🎖️현재 길드 영지전 상황🎖️\n\n";
 
     for (var i = 0; i < list.length; i++) {
+        if (list[i].no === 8) {
+            out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
+        }
         var ter = war.territories[String(list[i].no)];
         var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
-    out += "[7] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
@@ -26710,6 +26743,7 @@ function buildGuildTerritoryRankingMessage(data, guildData) {
     out += "펫강화광산⭐️ 50pt\n";
     out += "미니펫강화광산💫 50pt\n";
     out += "다이아광산💎 20pt\n";
+    out += "길드영지PT광산🪙 " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt\n";
     out += "━━━━━━━━━━━\n";
     if (rows.length === 0) return out + "아직 누적 영지점수가 없습니다.";
 
@@ -26748,7 +26782,8 @@ function buildGuildTerritoryRankRewardGuideMessage() {
     out += "펜던트 광산📿   20pt\n";
     out += "펫강화광산⭐️   50pt\n";
     out += "미니펫강화광산💫   50pt\n";
-    out += "다이아광산💎   20pt";
+    out += "다이아광산💎   20pt\n";
+    out += "길드영지PT광산🪙   " + GLOBAL_CONFIG.guildTerritory.scores.pointMine + "pt";
 
     return out;
 }
@@ -27502,7 +27537,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     var attackerGuild = attackerGuildInfo.guild;
     var defenderGuild = getGuildByIdSafe(guildData, ter.ownerGuildId);
     var defenderName = ter.ownerUser || (defenderGuild ? defenderGuild.master : null);
-    var territory = getGuildTerritoryList()[territoryNo - 1];
+    var territory = getGuildTerritoryByNo(territoryNo);
     var used = war.guildAttackCounts[attackerGuildInfo.guildId] || 0;
     //	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
     var out = "";
@@ -27512,6 +27547,19 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         //		out += baseInfo;
         out += "[" + checkRank(data, petData, guildData, sender) + "] [" + formatGuildDisplay(attackerGuild) + "]\n";
         out += "[" + territoryNo + "] " + territory.name + "을(를) 이미 점령 중입니다.";
+        return out;
+    }
+
+    var ownedTerritoryCount = getGuildTerritoryOwnedCount(war, attackerGuildInfo.guildId); // 현재 길드 점령지 수
+    if (ownedTerritoryCount >= GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories) {
+        var occupationLimit = getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId);
+        var occupationRemain = Math.max(0, occupationLimit - used); // 이번 공격 턴 차감 후 남은 횟수
+        out = "🎖️길드 영지전 결과🎖️[공격 불가⚠️]\n";
+        out += "[🤣점령제한]\n";
+        out += "[" + formatGuildDisplay(attackerGuild) + "] 길드는\n";
+        out += "현재 최대 점령지 " + GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories + "개에 도달했습니다.\n";
+        out += "턴 -1개가 차감됩니다.\n\n";
+        out += "※ [" + formatGuildDisplay(attackerGuild) + "] 남은 턴 " + occupationRemain + "/" + occupationLimit + "회";
         return out;
     }
 
@@ -27638,6 +27686,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
             var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
             if (!g) continue;
             addGuildWarehouseReward(g, territory.rewardType, territory.rewardAmount);
+            if (territory.boosterReward === false) continue;
             if (!rewardRowsByGuild[ter.ownerGuildId]) rewardRowsByGuild[ter.ownerGuildId] = [];
             rewardRowsByGuild[ter.ownerGuildId].push({ guild: g, territory: territory, baseAmount: territory.rewardAmount });
         }
@@ -30243,6 +30292,22 @@ function buildDormantAccountListMessage(data) {
         var row = dormantAccounts[userName] || {};
         var startedAt = typeof row === "string" ? row : row.startedAt;
         lines.push("[" + userName + "] " + formatDormantDateText(startedAt) + "부터 휴면 / " + getDormantDays(startedAt) + "일째");
+    }
+    return lines.join("\n");
+}
+
+// 계정정지 목록 출력 메시지를 생성하는 함수
+function buildAccountSuspensionListMessage(data) {
+    var suspendedAccounts = ensureAccountSuspensions(data);
+    var users = Object.keys(suspendedAccounts).sort();
+    if (users.length === 0) return "계정정지 리스트\n\n등록된 계정정지 유저가 없습니다.";
+
+    var lines = ["계정정지 리스트", "", allsee];
+    for (var i = 0; i < users.length; i++) {
+        var userName = users[i];
+        var row = suspendedAccounts[userName] || {};
+        var suspendedAt = typeof row === "string" ? row : row.suspendedAt;
+        lines.push("[" + userName + "] " + formatDormantDateText(suspendedAt) + "부터 정지 / " + getDormantDays(suspendedAt) + "일째");
     }
     return lines.join("\n");
 }
