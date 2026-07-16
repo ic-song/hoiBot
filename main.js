@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.265"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.266"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -25931,7 +25931,7 @@ function getGuildTerritoryBaseScore(territory) {
 
 // 길드영지 점수를 누적하고 적용 내역을 반환하는 함수
 function applyGuildTerritoryScores(guildData, list, war) {
-    var summaryByGuild = {};
+    var scoreRowsByGuild = {};
     var orderedGuildIds = [];
     if (!guildData || !guildData.guilds || !war || !war.territories) return [];
     for (var i = 0; i < list.length; i++) {
@@ -25941,33 +25941,36 @@ function applyGuildTerritoryScores(guildData, list, war) {
         if (!guild) continue;
         var baseScore = getGuildTerritoryBaseScore(territory);
         if (baseScore <= 0) continue;
-        var boosterApplied = false;
-        var boosterCost = baseScore; // 추가 획득 점수와 동일하게 차감할 부스터 수량
-        var boosterCount = ensureGuildTerritoryBoosterCount(guild);
-        if (boosterCount >= boosterCost) {
-            boosterApplied = true;
-            guild.guildTerritoryBooster = boosterCount - boosterCost;
-        }
-        var gainScore = boosterApplied ? baseScore * 2 : baseScore;
-        guild.guildTerritoryScore = ensureGuildTerritoryScore(guild) + gainScore;
-        if (!summaryByGuild[ter.ownerGuildId]) {
-            summaryByGuild[ter.ownerGuildId] = {
-                guild: guild,
-                baseScore: 0,
-                boosterScore: 0
-            };
+        if (!scoreRowsByGuild[ter.ownerGuildId]) {
+            scoreRowsByGuild[ter.ownerGuildId] = [];
             orderedGuildIds.push(ter.ownerGuildId);
         }
-        summaryByGuild[ter.ownerGuildId].baseScore += baseScore;
-        if (boosterApplied) summaryByGuild[ter.ownerGuildId].boosterScore += baseScore;
+        scoreRowsByGuild[ter.ownerGuildId].push({
+            guild: guild,
+            baseScore: baseScore,
+            baseAmount: baseScore
+        });
     }
 
     var logs = [];
     for (var j = 0; j < orderedGuildIds.length; j++) {
-        var row = summaryByGuild[orderedGuildIds[j]];
-        if (!row) continue;
-        var text = formatGuildDisplay(row.guild) + " " + numberWithCommas(row.baseScore) + "pt";
-        if (row.boosterScore > 0) text += "+" + numberWithCommas(row.boosterScore) + "pt🔮";
+        var guildId = orderedGuildIds[j];
+        var rows = scoreRowsByGuild[guildId];
+        if (!rows || rows.length === 0) continue;
+        var scoreGuild = rows[0].guild;
+        var availableBooster = ensureGuildTerritoryBoosterCount(scoreGuild);
+        var boosterResult = calculateGuildTerritoryBoosterBonuses(rows, availableBooster);
+        var baseScoreTotal = 0; // 길드가 점령한 영지의 기본 점수 합계
+        var boosterScoreTotal = 0; // 보유 부스터로 분산 지급한 추가 점수 합계
+        for (var rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+            var bonusScore = boosterResult.bonuses[rowIdx] || 0;
+            baseScoreTotal += rows[rowIdx].baseScore;
+            boosterScoreTotal += bonusScore;
+        }
+        scoreGuild.guildTerritoryScore = ensureGuildTerritoryScore(scoreGuild) + baseScoreTotal + boosterScoreTotal;
+        scoreGuild.guildTerritoryBooster = Math.max(0, availableBooster - boosterResult.used);
+        var text = formatGuildDisplay(scoreGuild) + " " + numberWithCommas(baseScoreTotal) + "pt";
+        if (boosterScoreTotal > 0) text += "+" + numberWithCommas(boosterScoreTotal) + "pt🔮";
         logs.push(text);
     }
     return logs;

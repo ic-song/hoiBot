@@ -479,8 +479,8 @@ Status: VERIFIED
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
 - Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
 - `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to `[2]`~`[6]` mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
-- `[7] 길드영지PT광산🪙` pays 2,000,000,000 points to `warehouse.fund` and grants 100 territory points; 100 territory boosters are required and consumed to double this to 200 points.
-- Territory score boosts consume one `길드영지 부스터🔮` per additional point: 50 for a 50pt territory, 20 for a 20pt territory, and 100 for the PT mine.
+- `[7] 길드영지PT광산🪙` pays 2,000,000,000 points to `warehouse.fund` and grants 100 territory points; up to 100 territory boosters can add up to 100 more points.
+- Territory score boosts consume one `길드영지 부스터🔮` per additional point. When boosters are insufficient, all remaining boosters are distributed across occupied territories with the existing `n:1` mine distribution logic, capped at each territory's base score.
 - `ensureGuildTerritoryWar` migrates the former PT mine occupation row from territory 8 to territory 7 and removes the stale territory 8 row; number 8 is now the virtual dimension gate only.
 - `finishGuildTerritoryWar` keeps final occupation results visible first, then folds reward details, grouped territory point gains, and guide commands behind `allsee`.
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
