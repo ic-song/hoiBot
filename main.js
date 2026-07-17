@@ -969,7 +969,7 @@ blockedNicknameTerms: [
             instabilityAdjustLimit: 10 // 영지전 불안정도 조정 최대치
         },
         timers: { // 길드 영토전 시간 설정
-            turnTimeoutMs: 1000 * 13, // 길드 영토전 턴 타임아웃 (13초)
+            turnTimeoutMs: 1000 * 24, // 길드 영토전 턴 타임아웃 (14초)
             startDelayMs: 20000, // 길드 영토전 시작 지연 시간 (20초)
             orderGraceMs: 5000, // 길드 영토전 명령어 입력 유예 시간 (5초)
             pendingStaleMs: 30000 // 길드 영토전 대기 상태 오래 지속 시 자동 취소 시간 (30초)
