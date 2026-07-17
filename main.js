@@ -8801,12 +8801,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 return;
                             }
                             if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["전설의돌 뽑기🩶(/전돌뽑기 숫자)"] === undefined) {
-                                    data.member[userId].bag["전설의돌 뽑기🩶(/전돌뽑기 숫자)"] = amount;
+                                if (data.member[userId].bag["전설의돌 뽑기🩶[2](/전돌뽑기 숫자)"] === undefined) {
+                                    data.member[userId].bag["전설의돌 뽑기🩶[2](/전돌뽑기 숫자)"] = amount;
                                 } else {
-                                    data.member[userId].bag["전설의돌 뽑기🩶(/전돌뽑기 숫자)"] += amount;
+                                    data.member[userId].bag["전설의돌 뽑기🩶[2](/전돌뽑기 숫자)"] += amount;
                                 }
-                                replier.reply(userId + "님에게 전설의돌 뽑기🩶(/전돌뽑기 숫자) " + amount + "개를 지급했습니다.");
+                                replier.reply(userId + "님에게 전설의돌 뽑기🩶[2]\(/전돌뽑기 숫자) " + amount + "개를 지급했습니다.");
                             } else {
                                 replier.reply("유저 아이디를 확인해 주세요.");
                             }
@@ -11613,9 +11613,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var baseItems = {
-                        "티어 승급티켓🎟": 3,
+                        "티어 승급티켓🎟": 4,
                         "다이아상자💎(/다이아상자오픈)": 1,
-                        "미니펫뽑기🐹(/미니펫오픈)": 100
+                        "펫스윗홈인테리어샵🖼️(/샵오픈)": 150
                     };
 
                     var totalBaseItems = {};
@@ -16541,7 +16541,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let command = msg.split(" ");
                     if (command.length === 2 && command[1].match(/^\d+$/)) {
                         let newTaxRate = parseInt(command[1]); // '/세금 숫자' 형식으로 받음
-                        if (newTaxRate >= 10 && newTaxRate <= 10) {
+                        if (newTaxRate >= 5 && newTaxRate <= 5) {
                             let oldTaxRate = hoiCastle.taxRate || 0;
                             hoiCastle.taxRate = newTaxRate.toString(); // 세금 업데이트
                             noticeMsg("[세금💲]\n[" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 영주가 세율을\n[💰" + oldTaxRate + "%]⏩[💰" + newTaxRate + "%]로 조정하였습니다.");
@@ -16550,7 +16550,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             noticeMsg("[알림] 악덕한 영주✨ [" + checkRank(data, petData, guildData, hoiCastle.lord) + "] 님이 세금을 " + newTaxRate.toString() + "% 강제징수 합니다!");
                         } else {
                             // 세금 값이 유효하지 않을 때 처리
-                            noticeMsg("세금은 15% 고정만 가능합니다.");
+                            noticeMsg("세금은 5% 고정만 가능합니다.");
                         }
                     }
                 }
