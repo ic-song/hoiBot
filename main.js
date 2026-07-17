@@ -11599,7 +11599,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    var itemName = "전설의돌 뽑기🩶(/전돌뽑기 숫자)";
+                    var itemName = "전설의돌 뽑기🩶[2](/전돌뽑기 숫자)";
 
                     if (!data.member[sender].bag[itemName] || data.member[sender].bag[itemName] < useCount) {
                         var haveCnt = data.member[sender].bag[itemName] || 0;
