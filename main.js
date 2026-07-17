@@ -11709,7 +11709,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     baseMsg += "📦 기본 지급 아이템 " + allsee + "\n\n";
                     baseMsg += "티어 승급티켓🎟 " + totalBaseItems["티어 승급티켓🎟"] + "개\n";
                     baseMsg += "다이아상자💎(/다이아상자오픈) " + totalBaseItems["다이아상자💎(/다이아상자오픈)"] + "개\n";
-                    baseMsg += "미니펫뽑기🐹(/미니펫오픈) " + totalBaseItems["미니펫뽑기🐹(/미니펫오픈)"] + "개";
+                    baseMsg += "펫스윗홈인테리어샵🖼️(/샵오픈) " + totalBaseItems["펫스윗홈인테리어샵🖼️(/샵오픈)"] + "개";
 
                     replier.reply(msgOut);
                     setTimeout(function () {
