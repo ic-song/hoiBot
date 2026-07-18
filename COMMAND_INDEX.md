@@ -15,7 +15,8 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 ## AI Navigation Rules
 
 - Use this file as a starting map, not as proof.
-- Prefer jumping to listed command anchors first, then inspect related helpers.
+- Prefer searching the listed command text or helper name first, then inspect related branches.
+- Search anchors intentionally avoid line numbers so they remain useful after code insertions and removals.
 - If a command appears in both `main.js` and `Info.js`, trust the actual branch handling in code.
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
 
@@ -54,7 +55,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:16104`
+- Search in `main.js`: `/캐슬대전`
 
 ## Files
 
@@ -118,7 +119,7 @@ Status: VERIFIED
 - `homeDataFile`: sweet-home data, runtime path `/sdcard/호이랜드/petSweetHomeData.json`, repo snapshot `data/petSweetHomeData.json`
 - `petSkillDataPath`: pet skill data, runtime path `/sdcard/호이랜드/petSkillData.json`, repo snapshot `data/petSkillData.json`
 - `trialTowerPath`: trial tower data, runtime path `/sdcard/호이랜드/trialTower.json`, repo snapshot `data/trialTower.json`
-- `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle.json`
+- `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle2.json`
 - `petTitlePath`: pet title data, runtime path `/sdcard/호이랜드/pet_title.json`, repo snapshot `data/pet_title.json`
 - `memberTitlePath`: member title data, runtime path `/sdcard/호이랜드/member_title.json`, repo snapshot `data/member_title.json`
 - `boardPath`: public letter board, runtime path `/sdcard/호이랜드/board.json`, repo snapshot `data/board.json`
@@ -132,12 +133,12 @@ Status: VERIFIED
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore a malformed `member.json` from the strictly parsed `member_back.json` recovery snapshot.
 - `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for `member.json` and `member_back.json`; other JSON files keep the existing direct UTF-8 write flow.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
-- `main.js:1328`: main `response(...)` entry point for almost all mutable gameplay commands
-- `Info.js:115`: info/query-oriented `response(...)` entry point
-- `main.js:31185`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
-- `main.js:31209`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
-- `Info.js:1383`: separate `loadJsonFile(path)` implementation used by info commands
-- `main.js:1029-1059`: production/DEV root constants and major runtime data-file constants
+- `main.js`: main `response(...)` entry point for almost all mutable gameplay commands
+- `Info.js`: info/query-oriented `response(...)` entry point
+- `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
+- `main.js`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
+- `Info.js`: separate `loadJsonFile(path)` implementation used by info commands
+- `main.js`: production/DEV root constants and major runtime data-file constants
 
 ## DEV / PROD Path Rules
 
@@ -151,26 +152,26 @@ Status: VERIFIED
 
 | Helper | Anchor | Why it matters |
 | --- | --- | --- |
-| `generateBagOutput` | `main.js:35217`, `Info.js:2330` | Canonical bag numbering and text renderer |
+| `generateBagOutput` | `main.js`, `Info.js` | Canonical bag numbering and text renderer |
 | `isRegisteredHomeMember` | `main.js` | Checks that a user exists in `member.json` before pet-home data can be created from commands |
-| `initSweetHomeUser` | `main.js:37569`, `Info.js:2999` | Normalizes home/sweet-home user state before access |
-| `getHomeTotalExp` | `main.js:37749`, `Info.js:2948` | Home ranking and profile summary calculation |
-| `buildMiniPetBagMessage` | `main.js:40722` | Main mini-pet bag formatter and viewer/target split |
-| `initPetSkillUser` | `main.js:36606`, `Info.js:2000` | Normalizes pet-skill storage before use |
-| `getPetSkillSlotCount` | `main.js:36730`, `Info.js:2031` | Slot-count source for pet-skill display/equip rules |
-| `calculateTotalExp` | `main.js:38263`, `Info.js:3104` | High-value aggregate formula for user progression/rank output |
-| `getMyGuildId` | `main.js:39821`, `Info.js:3342` | Fastest guild membership lookup anchor |
-| `getMyGuildInfo` | `main.js:39943`, `Info.js:3347` | Guild object + sender membership validation hub |
-| `getJoinableGuildRows` | `main.js:39834` | Joinable guild filtering and listing logic |
-| `findGuildIdByNameSafe` | `main.js:39879` | Safer guild-name-to-id resolution |
-| `ensureGuildWarehouseObj` | `main.js:26221` | Warehouse/fund branches should usually pass here first |
-| `ensureGuildTerritoryWar` | `main.js:31259` | Canonical territory-war state normalizer |
-| `ensureGuildBoard` | `main.js:40695` | Guild board schema normalization |
-| `buildGuildRankingRows` | `main.js:40353` | Cross-store guild ranking aggregation |
-| `syncMemberGuild` | `main.js:40570` | Member/guild mismatch repair path |
-| `trialTowerRanking` | `Info.js:1888` | Ranking renderer for tower-related info output |
-| `getMiniPetGradeStats` | `Info.js:2865` | Aggregate mini-pet grade statistics |
-| `getTitle` | `Info.js:1970` | Member/pet title display helper used by info summaries |
+| `initSweetHomeUser` | `main.js`, `Info.js` | Normalizes home/sweet-home user state before access |
+| `getHomeTotalExp` | `main.js`, `Info.js` | Home ranking and profile summary calculation |
+| `buildMiniPetBagMessage` | `main.js` | Main mini-pet bag formatter and viewer/target split |
+| `initPetSkillUser` | `main.js`, `Info.js` | Normalizes pet-skill storage before use |
+| `getPetSkillSlotCount` | `main.js`, `Info.js` | Slot-count source for pet-skill display/equip rules |
+| `calculateTotalExp` | `main.js`, `Info.js` | High-value aggregate formula for user progression/rank output |
+| `getMyGuildId` | `main.js`, `Info.js` | Fastest guild membership lookup anchor |
+| `getMyGuildInfo` | `main.js`, `Info.js` | Guild object + sender membership validation hub |
+| `getJoinableGuildRows` | `main.js` | Joinable guild filtering and listing logic |
+| `findGuildIdByNameSafe` | `main.js` | Safer guild-name-to-id resolution |
+| `ensureGuildWarehouseObj` | `main.js` | Warehouse/fund branches should usually pass here first |
+| `ensureGuildTerritoryWar` | `main.js` | Canonical territory-war state normalizer |
+| `ensureGuildBoard` | `main.js` | Guild board schema normalization |
+| `buildGuildRankingRows` | `main.js` | Cross-store guild ranking aggregation |
+| `syncMemberGuild` | `main.js` | Member/guild mismatch repair path |
+| `trialTowerRanking` | `Info.js` | Ranking renderer for tower-related info output |
+| `getMiniPetGradeStats` | `Info.js` | Aggregate mini-pet grade statistics |
+| `getTitle` | `Info.js` | Member/pet title display helper used by info summaries |
 
 ## Command Family Hotspots
 
@@ -208,7 +209,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:20672`
+- Search in `main.js`: `/가방`
 - Alias: `ㄴㄴㄴ`
 
 ## Files
@@ -252,7 +253,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24710`
+- Search in `main.js`: `/미니펫가방`
 
 ## Files
 
@@ -295,7 +296,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:25935`
+- Search in `main.js`: `/가구가방`
 
 ## Files
 
@@ -348,10 +349,12 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:19661`
+- Search in `main.js`: `/펫홈`
 - `/펫홈`
 - `/펫홈 [닉네임]`
 - `/댓글`
+- `/댓글핀 [번호]`
+- `/댓글핀삭제 [번호]`
 - `/댓글확인`
 - `/댓글삭제`
 - `/펫홈댓글파일생성`
@@ -367,6 +370,8 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `initPetHomeCommentsData`
 - `getPetHomeCommentList`
+- `getPetHomePinnedCommentList`
+- `isPinnedPetHomeComment`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `getFurnitureExp`
@@ -383,15 +388,18 @@ Status: VERIFIED
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
 - `petHomeCommentsData.comments[target]`
+- `petHomeCommentsData.pinnedComments[target]`
 - Legacy `homeData[target].guestComments` is removed by `/데이터정리`; it is not moved into `petHomeCommentsData`.
 
 ## Save Flow
 
 - `/펫홈`: loads `homeDataFile`, replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
 - `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글핀 [번호]`: deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
-- `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {} }` only when the file does not exist.
+- `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
 - Duplicate comments by the same writer are allowed.
 
 ## Related Commands
@@ -407,6 +415,7 @@ Status: VERIFIED
 - `/펫홈` output is split into two replies: home body first, comments second.
 - Furniture list inserts `allsee` from the second placed furniture.
 - Comment message uses the guestbook header, inserts `allsee` in the count line, and shows the latest 50 comments while storing up to 50 comments.
+- Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 
@@ -418,7 +427,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:18349`
+- Search in `main.js`: `/길드영지시작`
 
 ## Files
 
@@ -504,7 +513,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:12512`
+- Search in `main.js`: `/영지공격`
 
 ## Files
 
@@ -523,7 +532,7 @@ Status: VERIFIED
 - `getGuildTerritoryUserAttackCount`
 - `increaseGuildTerritoryUserAttackCount`
 - `applyGuildTerritoryTurnReward`
-- `buildPetSkillTriggerMessage`
+- `buildPetSkillMsg`
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryAttack`
 - `getGuildTerritoryDefenderName`
@@ -614,7 +623,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:27052`
+- Search in `main.js`: `/길드정보`
 - Alias: `ㅗㅗㅗ`
 
 ## Files
@@ -673,7 +682,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/부길마`
 
 ## Files
 
@@ -718,7 +727,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/소드마스터`
 
 ## Files
 
@@ -762,7 +771,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:330`
+- Search in `Info.js`: `/내정보`
 
 ## Files
 
@@ -805,7 +814,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:175`
+- Search in `Info.js`: `/정보`
 - Admin or master only
 
 ## Files
@@ -847,7 +856,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:907`
+- Search in `Info.js`: `/펫정보`
 - Alias: `ㅁㅁㅁ`
 
 ## Files
@@ -909,7 +918,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:26970`
+- Search in `main.js`: `/길드목록`
 
 ## Files
 
@@ -948,7 +957,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:28154`
+- Search in `main.js`: `/길드상세정보`
 
 ## Files
 
@@ -989,7 +998,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:28567`
+- Search in `main.js`: `/길드상점`
 
 ## Files
 
@@ -1029,7 +1038,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:28808`
+- Search in `main.js`: `/길드순위`
 
 ## Files
 
@@ -1069,7 +1078,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:29330`
+- Search in `main.js`: `/길드게시판`
 - Alias: `/길메`
 
 ## Files
@@ -1110,7 +1119,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2788`
+- Search in `main.js`: `/당근게시판`
 
 ## Files
 
@@ -1149,7 +1158,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:25867`
+- Search in `main.js`: `/가구정보`
 
 ## Files
 
@@ -1188,7 +1197,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:26046`
+- Search in `main.js`: `/가구순위`
 
 ## Files
 
@@ -1226,7 +1235,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:26212`
+- Search in `main.js`: `/가구가방정리`
 
 ## Files
 
@@ -1266,7 +1275,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24828`
+- Search in `main.js`: `/미니펫정보`
 
 ## Files
 
@@ -1303,7 +1312,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24909`
+- Search in `main.js`: `/미니펫가방정리`
 
 ## Files
 
@@ -1343,7 +1352,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:16912`
+- Search in `main.js`: `/미니펫대전`
 
 ## Files
 
@@ -1383,7 +1392,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:18090`
+- Search in `main.js`: `/시련의탑`
 
 ## Files
 
@@ -1434,7 +1443,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:3939`
+- Search in `main.js`: `/호이봇버전, /개발자노트`
 
 ## Files
 
@@ -1473,7 +1482,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:14720`
+- Search in `main.js`: `/자동일퀘`
 
 ## Files
 
@@ -1539,7 +1548,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:3020`
+- Search in `main.js`: `/일퀘횟수수정`
 
 ## Files
 
@@ -1590,7 +1599,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:14681`
+- Search in `main.js`: `/패키지리스트`
 
 ## Files
 
@@ -1764,7 +1773,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/펀치|/펀치순위|/펀치순위초기화`
 
 ## Files
 
@@ -1819,7 +1828,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2049`
+- Search in `main.js`: `/펫스킬가방`
 
 ## Files
 
@@ -1857,7 +1866,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2068`
+- Search in `main.js`: `/펫스킬`
 
 ## Files
 
@@ -1895,7 +1904,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2742`
+- Search in `main.js`: `/펫스킬정보`
 
 ## Files
 
@@ -1939,7 +1948,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:793`
+- Search in `Info.js`: `/종합순위`
 - Alias: `ㅈㅈㅈ`
 
 ## Files
@@ -1984,7 +1993,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:802`
+- Search in `Info.js`: `/티어순위`
 
 ## Files
 
@@ -2062,7 +2071,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:888`
+- Search in `Info.js`: `/펫상태`
 
 ## Files
 
@@ -2098,7 +2107,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:897`
+- Search in `Info.js`: `/미니펫통계`
 
 ## Files
 
@@ -2136,7 +2145,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1113`
+- Search in `Info.js`: `/시련의탑순위`
 
 ## Files
 
@@ -2171,7 +2180,7 @@ Status: VERIFIED
 # /길드가입조건 [숫자]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27152`
+- Search in main.js: `/길드가입조건`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2189,7 +2198,7 @@ Status: VERIFIED
 # /길드가입 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27201`
+- Search in main.js: `/길드가입`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2214,7 +2223,7 @@ Status: VERIFIED
 # /가입한다
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27311`
+- Search in main.js: `/가입한다`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2235,7 +2244,7 @@ Status: VERIFIED
 # /안한다
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27419`
+- Search in main.js: `/안한다`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2253,7 +2262,7 @@ Status: VERIFIED
 # /길드탈퇴
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27426`
+- Search in main.js: `/길드탈퇴`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2273,7 +2282,7 @@ Status: VERIFIED
 # /길드인원마감
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27777`
+- Search in main.js: `/길드인원마감`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2291,7 +2300,7 @@ Status: VERIFIED
 # /길드인원마감해제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27815`
+- Search in main.js: `/길드인원마감해제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2309,7 +2318,7 @@ Status: VERIFIED
 # /길드마크변경 [이모지]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27854`
+- Search in main.js: `/길드마크변경`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2329,7 +2338,7 @@ Status: VERIFIED
 # /길드분배
 Status: VERIFIED
 ## Command Anchors
-- `main.js:22064`
+- Search in main.js: `/길드분배`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2369,7 +2378,7 @@ Status: VERIFIED
 # /길드다이아창고 [길드명] [숫자]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:22395`
+- Search in main.js: `/길드다이아창고`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2441,7 +2450,7 @@ Status: VERIFIED
 # /길드전체초기화
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28553`
+- Search in main.js: `/길드전체초기화`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2459,7 +2468,7 @@ Status: VERIFIED
 # /길드계급표
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28875`
+- Search in main.js: `/길드계급표`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2476,7 +2485,7 @@ Status: VERIFIED
 # /길드fund삭제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28961`
+- Search in main.js: `/길드fund삭제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2494,7 +2503,7 @@ Status: VERIFIED
 # /길드창고패키지오픈 [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:29109`
+- Search in main.js: `/길드창고패키지오픈`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2516,7 +2525,7 @@ Status: VERIFIED
 # /길드부스터공헌 [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:20802`
+- Search in main.js: `/길드부스터공헌`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2542,7 +2551,7 @@ Status: VERIFIED
 # /당근 [받을유저닉] [가방번호] [수량]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2874`
+- Search in main.js: `/당근`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2562,7 +2571,7 @@ Status: VERIFIED
 # /당근완료
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2860`
+- Search in main.js: `/당근완료`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2580,7 +2589,7 @@ Status: VERIFIED
 # /당근게시판삭제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2850`
+- Search in main.js: `/당근게시판삭제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2597,7 +2606,7 @@ Status: VERIFIED
 # /편지 [내용]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:22620`
+- Search in main.js: `/편지`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2617,7 +2626,7 @@ Status: VERIFIED
 # /편지삭제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:3572`
+- Search in main.js: `/편지삭제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2635,7 +2644,7 @@ Status: VERIFIED
 # /가방속성 [유저명] [아이템번호] [갯수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:4603`
+- Search in main.js: `/가방속성`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2654,7 +2663,7 @@ Status: VERIFIED
 # /가방추가 [유저명], [아이템명] [갯수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:4633`
+- Search in `main.js`: `/가방추가`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2671,7 +2680,7 @@ Status: VERIFIED
 # /펫스킬가방추가 [유저], [스킬명] [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1762`
+- Search in `main.js`: `/펫스킬가방추가`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2692,7 +2701,7 @@ Status: VERIFIED
 # /펫스킬일괄지급
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1818`
+- Search in main.js: `/펫스킬일괄지급`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2711,7 +2720,7 @@ Status: VERIFIED
 # /펫스킬전체판매
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1921`
+- Search in main.js: `/펫스킬전체판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2733,7 +2742,7 @@ Status: VERIFIED
 # /펫스킬판매 [번호] [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1961`
+- Search in main.js: `/펫스킬판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2753,7 +2762,7 @@ Status: VERIFIED
 # /펫스킬확률
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2715`
+- Search in main.js: `/펫스킬확률`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2778,7 +2787,7 @@ Status: VERIFIED
 # /펫스킬중복
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2118`
+- Search in main.js: `/펫스킬중복`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2795,7 +2804,7 @@ Status: VERIFIED
 # /펫스킬오픈 [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2128`
+- Search in main.js: `/펫스킬오픈`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2846,7 +2855,7 @@ Status: VERIFIED
 # /펫스킬장착 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2205`
+- Search in main.js: `/펫스킬장착`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2930,7 +2939,7 @@ Status: VERIFIED
 # /펫스킬당근 [닉] [번호] [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2282`
+- Search in main.js: `/펫스킬당근`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2952,7 +2961,7 @@ Status: VERIFIED
 # /미니펫장착 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:24639`
+- Search in main.js: `/미니펫장착`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2974,7 +2983,7 @@ Status: VERIFIED
 # /미니펫조합 [번호] [번호] / /미니펫조합태초+|창세|창조
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/미니펫조합`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3000,7 +3009,7 @@ Status: VERIFIED
 # /미니펫조합엘리트
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/미니펫조합엘리트`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3029,7 +3038,7 @@ Status: VERIFIED
 # /관리자명단|관리자추가|관리자삭제|관리자일당|부방상여
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/관리자명단`, `/관리자추가`, `/관리자삭제`, `/관리자일당`, `/부방상여`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3059,7 +3068,7 @@ Status: VERIFIED
 # /미니펫전체정리
 Status: VERIFIED
 ## Command Anchors
-- `main.js:24857`
+- Search in main.js: `/미니펫전체정리`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3077,7 +3086,7 @@ Status: VERIFIED
 # /미니펫판매 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:25020`
+- Search in main.js: `/미니펫판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3097,7 +3106,7 @@ Status: VERIFIED
 # /미니펫지정판매 [시작]~[끝]
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/미니펫지정판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3124,7 +3133,7 @@ Status: VERIFIED
 # /귀속해제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:25060`
+- Search in main.js: `/귀속해제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3145,7 +3154,7 @@ Status: VERIFIED
 # /컬렉션등록 [번호...]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:29672`
+- Search in main.js: `/컬렉션등록`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3172,7 +3181,7 @@ Status: VERIFIED
 # /미니펫컬렉션
 Status: VERIFIED
 ## Command Anchors
-- `main.js:30039`
+- Search in main.js: `/미니펫컬렉션`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3192,7 +3201,7 @@ Status: VERIFIED
 # /미니펫컬렉션순위
 Status: VERIFIED
 ## Command Anchors
-- `main.js:30085`
+- Search in main.js: `/미니펫컬렉션순위`
 ## Files
 - `main.js`
 
@@ -3211,7 +3220,7 @@ Status: VERIFIED
 # /자랑
 Status: VERIFIED
 ## Command Anchors
-- `main.js:30099`
+- Search in main.js: `/자랑`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3229,7 +3238,7 @@ Status: VERIFIED
 # /알림 [내용]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:18343`
+- Search in main.js: `/알림`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -3259,7 +3268,7 @@ Status: VERIFIED
 # /포인트
 Status: VERIFIED
 ## Command Anchors
-- `Info.js:300`
+- Search in Info.js: `/포인트`
 - Alias: `ㅍㅍㅍ`
 ## Files
 - `Info.js`
@@ -3285,7 +3294,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:16083`
+- Search in `main.js`: `/구매`
 
 ## Files
 
@@ -3294,7 +3303,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `hasPetSkill`
-- `buildPetSkillTriggerMessage`
+- `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
 
@@ -3338,8 +3347,8 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:495`
-- `Info.js:519` target-user admin path
+- Search in `Info.js`: `/타이틀목록`
+- Search in `Info.js`: `/타이틀목록` target-user admin path
 
 ## Files
 
@@ -3379,8 +3388,8 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:551`
-- `Info.js:574` target-user admin path
+- Search in `Info.js`: `/펫타이틀목록`
+- Search in `Info.js`: `/펫타이틀목록` target-user admin path
 
 ## Files
 
@@ -3420,7 +3429,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:606`
+- Search in `Info.js`: `/출석목록`
 
 ## Files
 
@@ -3457,7 +3466,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:624`
+- Search in `Info.js`: `/상점`
 
 ## Files
 
@@ -3497,7 +3506,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:763`
+- Search in `Info.js`: `/펫강순위`
 
 ## Files
 
@@ -3534,7 +3543,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:768`
+- Search in `Info.js`: `/누좋순위`
 
 ## Files
 
@@ -3570,7 +3579,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:773`
+- Search in `Info.js`: `/누렙순위`
 
 ## Files
 
@@ -3606,7 +3615,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:778`
+- Search in `Info.js`: `/영주수익순위`
 
 ## Files
 
@@ -3642,7 +3651,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:783`
+- Search in `Info.js`: `/정령순위`
 
 ## Files
 
@@ -3679,7 +3688,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:814`
+- Search in `Info.js`: `/반지순위`
 
 ## Files
 
@@ -3716,7 +3725,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:17924`
+- Search in `main.js`: `/반지보상받기`
 
 ## Files
 
@@ -3756,7 +3765,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:17929`
+- Search in `main.js`: `/반지보상통계`
 
 ## Files
 
@@ -3793,7 +3802,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:17970`
+- Search in `main.js`: `/보상받기`
 
 ## Files
 
@@ -3828,15 +3837,11 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:845`
+- Search in `Info.js`: `/티어확인`
 
 ## Files
 
 - `Info.js`
-
-## Related Helpers
-
-- `ticketTierData`
 
 ## Data Usage
 
@@ -3865,7 +3870,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1089`
+- Search in `Info.js`: `/펫매력순위`
 
 ## Files
 
@@ -3902,7 +3907,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1095`
+- Search in `Info.js`: `/캐슬매력순위`
 
 ## Files
 
@@ -3943,7 +3948,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1105`
+- Search in `Info.js`: `/레이드매력순위`
 
 ## Files
 
@@ -3984,7 +3989,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1120`
+- Search in `Info.js`: `/가구통계`
 
 ## Files
 
@@ -4022,7 +4027,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1170`
+- Search in `Info.js`: `/서버통계`
 
 ## Files
 
@@ -4058,7 +4063,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1243`
+- Search in `Info.js`: `/캐슬전적`
 
 ## Files
 
@@ -4103,7 +4108,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1265`
+- Search in `Info.js`: `/캐슬대전순위`
 
 ## Files
 
@@ -4212,9 +4217,9 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2404`
-- Registration commands: `main.js:2449`
-- Purchase/cancel commands: `main.js:2732`
+- Search in `main.js`: `/자유시장`
+- Registration search: `가방거래등록`, `미니펫거래등록`, `가구거래등록`, `스킬거래등록`
+- Purchase/cancel search: `/자유시장구매`, `/자유시장취소`, `/거래소강제취소`
 
 ## Files
 
@@ -4342,7 +4347,7 @@ Status: VERIFIED
 - `/레이드이벤트활성화`
 - `/레이드이벤트비활성화`
 - `/레이드박스오픈`
-- `/팬던트미궁박스오픈`
+- `/펜던트미궁박스오픈`
 - `/대마법박스오픈`
 - `/자동탐고정 0` when the event mine is active
 - `/자동탐고정 8`
@@ -4359,7 +4364,7 @@ Status: VERIFIED
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 - Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
 - Maze entries `/탐 7~8` require `미궁 입장권🕋` and apply a `-50%` success penalty.
-- `/탐 7` rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
+- `/탐 7` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
 - `/탐 8` requires `/종합순위` top 20, can be fixed with `/자동탐고정 8`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
 - `initPetExploreData` preserves current visible participants and only records the old `pendantMazeSlotResetV2191` / `currentExploreSlotOneResetV2192` migration flags when they are missing.
 - `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
@@ -4415,9 +4420,9 @@ Status: VERIFIED
 
 - Uses `filePath` member data for field state, participant event PT, diamond balances, and diamond shop
 - Uses `currencyLogPath` for cumulative earned diamond, used diamond total, and usage history logs
-- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, `/다이아차감`, and `/다이아전체초기화` save `data` through `saveJsonFile(data, filePath)`
+- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아상점구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, `/다이아차감`, and `/다이아전체초기화` save `data` through `saveJsonFile(data, filePath)`
 - `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
-- `/다이아구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
+- `/다이아상점구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
 - `/맞짱시간체크 [닉네임]` loads `homeDataFile` and measures the named user's 종합매력 runtime with detailed component timings
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
@@ -4440,7 +4445,7 @@ Status: VERIFIED
 - `/맞짱순위`
 - `/다이아순위`
 - `/다이아상점`
-- `/다이아구매 [번호] [갯수]`
+- `/다이아상점구매 [번호] [갯수]`
 - `/다이아상점추가 [상품명] [상품갯수] [다이아갯수]`
 - `/다이아상점삭제 [번호]`
 - `/다이아추가 [아이디] [갯수]`
@@ -4465,7 +4470,7 @@ Status: VERIFIED
 - While the field is active, allowed commands are `/맞짱시작`, `/휴식`, `/참여` (`ㅊㅇ`), `/맞짱필드목록`, `/맞짱순위`, `/맞짱시간체크 [닉네임]`, `/맞짱` (`ㅁㅁ`), `/맞짱종료`, and the field-linked diamond ranking/shop/operator commands; full-pattern guards prevent suffix text from bypassing the lock.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
-- 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
+- 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아상점구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
 - 다이아 사용내역은 `currencyLog.json` `user[유저명].useHistory`에 시간, 구분, 사용량, 메모만 간단히 누적 저장한다
 - `/다이아전체초기화`는 마스터 전용이며 모든 유저의 보유 다이아와 `currencyLog.json` 누적 기록을 초기화한다
 ---
@@ -4476,7 +4481,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/다이아상자오픈`
 
 ## Files
 
@@ -4606,7 +4611,7 @@ Status: VERIFIED
 
 ---
 
-# /팬던트미궁박스오픈
+# /펜던트미궁박스오픈
 
 Status: VERIFIED
 
@@ -4623,7 +4628,7 @@ Status: VERIFIED
 
 ## Data Usage
 
-- data.member[sender].bag["팬던트미궁박스💎(/팬던트미궁박스오픈)"]
+- data.member[sender].bag["펜던트미궁박스💎(/펜던트미궁박스오픈)"]
 - data.member[sender].bag["팬던트 강화석📿"]
 - data.member[sender].bag["팬던트 복원석🔷"]
 
@@ -4633,7 +4638,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Exact/full-pattern command guard: `/팬던트미궁박스오픈` or `/팬던트미궁박스오픈 숫자`.
+- Exact/full-pattern command guard: `/펜던트미궁박스오픈` or `/펜던트미궁박스오픈 숫자`.
 - Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
 - Each box grants `팬던트 강화석📿` 1~3개 and has a 1% chance to grant `팬던트 복원석🔷` 1개.
 
@@ -4678,7 +4683,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/포인트상자오픈`
 
 ## Files
 

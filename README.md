@@ -79,7 +79,7 @@ tools\05_skills_설치.bat
 | `trialTower.json` | 시련의 탑 유저 진행 데이터 |
 | `trialTowerBoss.json` | 시련의 탑 보스 데이터 |
 | `eventTowerBoss.json` | 이벤트 탑 보스 데이터 |
-| `castleBattle.json` | 캐슬 대전 데이터 |
+| `castleBattle2.json` | 캐슬 대전 데이터 |
 | `itemInfo.json` | 아이템 상세 정보 |
 | `itemList.json` | 아이템 목록 |
 | `board.json` | 게시판 데이터 |
@@ -167,7 +167,8 @@ feature/<content-name>
 /패키지활성 리스트번호
 ```
 
-패키지 번호 유지를 위해 제거는 실제 삭제가 아니라 `enabled:false` 비활성화로 처리합니다. 신규 패키지는 항상 리스트 맨 아래에 추가됩니다.
+패키지 제거는 선택한 항목을 목록에서 실제 삭제하며, 뒤에 있던 패키지 번호가 한 칸씩 당겨집니다. 신규 패키지는 항상 리스트 맨 아래에 추가됩니다.
+`/패키지활성`은 목록에 남아 있는 `enabled:false` 항목만 다시 활성화할 수 있으며, `/패키지제거`로 삭제된 항목은 복구하지 못합니다.
 
 운영 명령어:
 
