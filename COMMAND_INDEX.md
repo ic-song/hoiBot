@@ -544,6 +544,7 @@ Status: VERIFIED
 - `guildData.territoryWar.guildAttackLimits`
 - `guildData.territoryWar.userAttackCounts`
 - `guildData.territoryWar.castleExpSnapshots`
+- `GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier`
 - `guildData.territoryWar.dimensionGateEnabled`
 - `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
 - `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
@@ -585,6 +586,7 @@ Status: VERIFIED
 - `/영지공격` is accepted only as `/영지공격 [1-8]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
+- 공격 시점에 점령지 3개를 보유한 길드는 턴 길드자금 보상이 5천만에서 1억으로 두 배 적용되며 결과에 `점령 3개 추가보너스 획득`이 표시된다.
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력을 `castleExpSnapshots`에 저장한다.
 - 전투 중에는 저장된 공격자·방어자 캐슬매력만 비교하며, 진행 중인 구버전 영지전의 누락 사용자만 최초 공격 시 한 번 계산해 저장한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
@@ -2264,7 +2266,8 @@ Status: VERIFIED
 - `syncMemberGuild`
 - `getMyGuildInfo`
 - `ensureGuildWarehouseObj`
-- `getGuildMemberNames`
+- `getGuildOrderedMemberKeys`
+- `getGuildDistributionMembersByNumbers`
 - `addDiamond`
 ## Data Usage
 - guild warehouse/fund state
@@ -2277,6 +2280,9 @@ Status: VERIFIED
 ## Save Flow
 - Saves member data during sync and saves both member data and `guildData` after successful distribution.
 - Saves `currencyLogData` when distributed resources include 다이아.
+- `/길드분배 [멤버번호] ...`는 `/길드정보`의 공헌도 순 멤버번호로 1~6명을 선택하고, 선택 인원수로 자원을 균등 분배한다.
+- 인자 없는 `/길드분배`는 사용법만 출력하며 자원이나 분배 아이템을 변경하지 않는다.
+- 길드 전체 인원 5명 이상 조건은 유지하고, 범위 밖 번호와 중복 번호는 지급 전에 차단한다.
 - Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
 - `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
 - `/길드분배` distributes `warehouse.pendant` as `펜던트 강화석📿`, then deducts only the evenly distributed share while leaving the remainder in the guild warehouse.

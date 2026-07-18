@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.270"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.272"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1008,6 +1008,7 @@ blockedNicknameTerms: [
         },
         rewards: { // 길드 영토전 보상 설정
             turnFundReward: 50000000, // 영지전 공격 턴 기본보상
+            maxTerritoryTurnFundMultiplier: 2, // 점령지 최대 보유 길드의 공격 턴 보상 배율
             petSkillMineRewardAmount: 5, // 펫스킬 광산 점령 종료 보상
             pendantMineRewardAmount: 5, // 펜던트 광산 점령 종료 보상
             petMineRewardAmount: 200, // 펫강화광산 점령 종료 보상
@@ -22427,8 +22428,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     replier.reply(out);
                 }
-                // 길드 자원 전체 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
                 if (msg === "/길드분배") {
+                    replier.reply("사용법: /길드분배 [멤버번호] ([멤버번호] ... 최대 6명)\n예) /길드분배 1 3 5\n※ 멤버번호는 /길드정보 기준입니다.");
+                    return;
+                }
+                // 길드 자원 지정 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
+                if (/^\/길드분배(?:\s+\d+){1,6}$/.test(msg)) {
                     var syncResult = syncMemberGuild(data, guildData);
                     if (!syncResult.success) {
                         replier.reply("❌ 길드 데이터 동기화 실패\n" + syncResult.message);
@@ -22483,7 +22488,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     ensureGuildWarehouseObj(g);
 
-                    var members = getGuildMemberNames(g);
+                    var memberNumberArgs = msg.trim().split(/\s+/).slice(1);
+                    var distributionSelection = getGuildDistributionMembersByNumbers(g, memberNumberArgs);
+                    if (!distributionSelection.ok) {
+                        replier.reply(distributionSelection.message);
+                        return;
+                    }
+
+                    var members = distributionSelection.members;
                     var memberCount = members.length;
 
                     if (memberCount <= 0) {
@@ -22491,8 +22503,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    if (memberCount < 5) {
-                        replier.reply("❌ 길드분배는 길드 인원 5명 이상부터 가능합니다.\n현재 인원: " + memberCount + "명");
+                    if (distributionSelection.allMemberCount < 5) {
+                        replier.reply("❌ 길드분배는 길드 인원 5명 이상부터 가능합니다.\n현재 인원: " + distributionSelection.allMemberCount + "명");
                         return;
                     }
 
@@ -22561,6 +22573,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     out += "✅ 길드 자원 분배 완료!\n";
                     out += "길드: " + g.name + "(" + g.mark + ")\n";
                     out += "분배 인원: " + memberCount + "명\n";
+                    out += "분배 대상: " + members.join(", ") + "\n";
                     out += "━━━━━━━━━━━━\n";
                     out += "1인당 분배 자원\n";
                     out += "🅟 " + numberWithCommas(fundEach) + "\n";
@@ -27228,14 +27241,20 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
     if (!g || !data.member[user]) return "";
 
     ensureGuildWarehouseObj(g);
-    g.warehouse.fund += GLOBAL_CONFIG.guildTerritory.rewards.turnFundReward;
+    var war = ensureGuildTerritoryWar(data, guildData);
+    var ownedTerritoryCount = getGuildTerritoryOwnedCount(war, guildId); // 공격 시점 길드 점령지 수
+    var hasMaxTerritoryBonus = ownedTerritoryCount >= GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories;
+    var turnFundMultiplier = hasMaxTerritoryBonus ? GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier : 1;
+    var turnFundReward = GLOBAL_CONFIG.guildTerritory.rewards.turnFundReward * turnFundMultiplier;
+    g.warehouse.fund += turnFundReward;
 
     var medalSuccess = Math.random() < GLOBAL_CONFIG.guildTerritory.rates.medalRewardRate;
     if (medalSuccess) {
         addItem(data, user, GLOBAL_CONFIG.guildTerritory.items.contributionMedalName, 1);
     }
 
-    return "길드 보상🤑: 🅟" + formatGuildTerritoryRewardAmount(GLOBAL_CONFIG.guildTerritory.rewards.turnFundReward) +
+    return "길드 보상🤑: 🅟" + formatGuildTerritoryRewardAmount(turnFundReward) +
+        (hasMaxTerritoryBonus ? "\n점령 3개 추가보너스 획득" : "") +
         "\n확률 보상🎊: " + (medalSuccess ? "[💎]다이아+1 획득" : "[🥺]보상실패");
 }
 
@@ -39508,6 +39527,29 @@ function getGuildOrderedMemberKeys(g) {
         return cb - ca;
     });
     return memberKeys;
+}
+
+// /길드정보 멤버번호를 길드 자원 분배 대상자 목록으로 변환
+function getGuildDistributionMembersByNumbers(g, memberNumberArgs) {
+    var allGuildMembers = getGuildOrderedMemberKeys(g); // /길드정보와 동일한 공헌도 순서
+    var members = [];
+    var selectedMemberNumbers = {};
+
+    for (var i = 0; i < memberNumberArgs.length; i++) {
+        var memberNumber = parseInt(memberNumberArgs[i], 10);
+        if (memberNumber < 1 || memberNumber > allGuildMembers.length) {
+            return {
+                ok: false,
+                message: "❌ 길드원 번호가 올바르지 않습니다: " + memberNumberArgs[i] + "\n/길드정보에서 멤버번호를 확인해주세요."
+            };
+        }
+        if (selectedMemberNumbers[String(memberNumber)]) {
+            return { ok: false, message: "❌ 같은 길드원 번호를 중복 입력할 수 없습니다: " + memberNumber };
+        }
+        selectedMemberNumbers[String(memberNumber)] = true;
+        members.push(allGuildMembers[memberNumber - 1]);
+    }
+    return { ok: true, members: members, allMemberCount: allGuildMembers.length };
 }
 
 // 길드 소드마스터 표시 문자열 생성 (기여도 순으로 정렬, 최대 3명)
