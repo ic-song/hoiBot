@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.274"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.275"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2714,18 +2714,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (msg === "/펫스킬확률") {
                     var rateMsg = "📙 펫스킬북 확률표 📙\n\n" + allsee + "\n";
-                    var totalPercent = 0; // 🔥 추가
+                    var totalPercent = 0;
+                    var petSkillGrades = ["SS", "S", "A", "B", "C", "D"];
 
-                    for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
-                        var sd = PET_SKILL_LIST[ps];
-                        var rate = getPetSkillActualRate(sd);
-                        totalPercent += rate; // 🔥 누적
+                    for (var pg = 0; pg < petSkillGrades.length; pg++) {
+                        var currentGrade = petSkillGrades[pg];
+                        rateMsg += "━━━" + currentGrade + " 등급━━━\n";
 
-                        rateMsg += "[" + sd.grade + "] " + formatPetSkillName(sd.name) + " (확률: " + rate.toFixed(1) + "%)\n";
+                        for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
+                            var sd = PET_SKILL_LIST[ps];
+                            if (sd.grade !== currentGrade) continue;
+
+                            var rate = getPetSkillActualRate(sd);
+                            totalPercent += rate;
+                            rateMsg += formatPetSkillName(sd.name) + " (확률: " + rate.toFixed(1) + "%)\n";
+                        }
+
+                        rateMsg += "\n";
                     }
 
-                    rateMsg += "\n━━━━━━━━━━━━━━━\n";
-                    rateMsg += "총 확률: " + totalPercent.toFixed(1) + "%"; // 🔥 출력
+                    rateMsg += "━━━━━━━━━━━━━━━\n";
+                    rateMsg += "총 확률: " + totalPercent.toFixed(1) + "%";
 
                     replier.reply(rateMsg.trim());
                     return;

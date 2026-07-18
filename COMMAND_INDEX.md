@@ -2685,7 +2685,7 @@ Status: VERIFIED
 # /펫스킬확률
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2074`
+- `main.js:2715`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2702,6 +2702,7 @@ Status: VERIFIED
 ## AI Notes
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
+- `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
 - S/A/B/C의 기존 등급별 총확률은 유지하고, 각 등급 안의 기존 스킬과 티어책에 동일 확률로 균등 분배한다. SS/D는 기존 개별 확률을 유지한다.
 
 ---
