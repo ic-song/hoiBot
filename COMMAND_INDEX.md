@@ -531,6 +531,7 @@ Status: VERIFIED
 - `advanceGuildTerritoryTurn`
 - `buildGuildTerritoryCurrentTurnLine`
 - `buildGuildTerritoryTurnMessage`
+- `buildGuildTerritoryAttackTimeCheckMessage`
 - `startGuildTerritoryTurnTimer`
 
 ## Data Usage
@@ -590,6 +591,7 @@ Status: VERIFIED
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력을 `castleExpSnapshots`에 저장한다.
 - 전투 중에는 저장된 공격자·방어자 캐슬매력만 비교하며, 진행 중인 구버전 영지전의 누락 사용자만 최초 공격 시 한 번 계산해 저장한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
+- `dev/영지공격 [1-8]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---

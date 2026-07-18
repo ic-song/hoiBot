@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.273"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.274"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -12500,6 +12500,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 // 길드 영지 공격 명령어 처리
                 if (/^\/영지공격\s+[1-8]$/.test(msg)) {
+                    var territoryAttackBranchStartMs = ctx.isDev ? Date.now() : 0;
+                    var territoryAttackTimingRows = ctx.isDev ? [] : null;
 
                     // 현재 영지전 상태 확인
                     var attackWar = ensureGuildTerritoryWar(data, guildData);
@@ -12660,6 +12662,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     // 공격 대상 영지
                     var territoryNo = parseInt(attackParts[1], 10);
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "검증/턴 확인", ms: Date.now() - territoryAttackBranchStartMs });
 
                     if (territoryNo === 8) {
                         if (!attackWar.dimensionGateEnabled) {
@@ -12669,32 +12672,49 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         clearGuildTerritoryWarTimer();
                         attackWar.turnToken = null;
                         increaseGuildTerritoryUserAttackCount(attackWar, sender);
+                        var dimensionResolveStartMs = ctx.isDev ? Date.now() : 0;
                         var dimensionGateMessage = resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, attackInfo);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "차원의 문 판정", ms: Date.now() - dimensionResolveStartMs });
                         if (isGuildTerritoryAllDone(data, guildData)) {
+                            var dimensionFinishStartMs = ctx.isDev ? Date.now() : 0;
                             castleMsg(dimensionGateMessage, replier, isGroupChat);
                             finishGuildTerritoryWar(data, guildData, "차원의 문");
                             withGuildTerritoryDataMode(guildData, function () {
                                 saveJsonFile(guildData, guildPath);
                                 saveJsonFile(data, filePath);
                             });
+                            if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 출력/종료 저장", ms: Date.now() - dimensionFinishStartMs });
+                            if (ctx.isDev) {
+                                replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
+                            }
                             return;
                         }
+                        var dimensionResultStartMs = ctx.isDev ? Date.now() : 0;
                         advanceGuildTerritoryTurn(data, guildData);
                         var dimensionNextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
                         if (dimensionNextTurnLine) {
                             dimensionGateMessage = dimensionNextTurnLine + "\n" + dimensionGateMessage;
                         }
                         castleMsg(dimensionGateMessage, replier, isGroupChat);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 처리/출력", ms: Date.now() - dimensionResultStartMs });
+                        var dimensionSaveStartMs = ctx.isDev ? Date.now() : 0;
                         saveJsonFile(guildData, guildPath);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - dimensionSaveStartMs });
+                        var dimensionTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
                         var dimensionTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
                         dimensionTurnMsgs.forEach(function (m) {
                             castleMsg(m, replier, isGroupChat);
                         });
                         startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - dimensionTurnGuideStartMs });
+                        if (ctx.isDev) {
+                            replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
+                        }
                         return;
                     }
 
                     // 턴 초기화 및 공격 카운트 증가
+                    var attackPrepareStartMs = ctx.isDev ? Date.now() : 0;
                     clearGuildTerritoryWarTimer();
                     attackWar.turnToken = null;
                     attackWar.guildAttackCounts[attackInfo.guildId] =
@@ -12703,14 +12723,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     // 턴 보상 처리 (공격 결과 메시지에 포함)
                     var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "공격 준비/턴 보상", ms: Date.now() - attackPrepareStartMs });
 
                     // 공격 처리
+                    var snapshotPrepareStartMs = ctx.isDev ? Date.now() : 0;
                     var missingCastleExpUsers = getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo);
                     if (missingCastleExpUsers.length > 0) {
                         var legacyWarHomeData = loadJsonFile(homeDataFile);
                         fillGuildTerritoryCastleExpSnapshots(data, petData, legacyWarHomeData, petSkillData, guildData, missingCastleExpUsers);
                     }
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "캐슬매력 스냅샷 준비", ms: Date.now() - snapshotPrepareStartMs });
+                    var attackResolveStartMs = ctx.isDev ? Date.now() : 0;
                     var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo); // 공격 결과 메시지 반환
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "전투 판정", ms: Date.now() - attackResolveStartMs });
+                    var attackPostProcessStartMs = ctx.isDev ? Date.now() : 0;
                     var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
                     // if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
                     var riftMessage = "";
@@ -12727,8 +12753,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var rewardBlock = rewardMessage;
                     if (triggerMessages.length > 0) rewardBlock += "\n" + triggerMessages.join("\n");
                     resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardBlock); // 공격 결과 메시지에 턴 보상/스킬 메시지 추가
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "균열/보상 후처리", ms: Date.now() - attackPostProcessStartMs });
                     // 전체 종료 여부 체크
                     if (isGuildTerritoryAllDone(data, guildData)) {
+                        var attackFinishStartMs = ctx.isDev ? Date.now() : 0;
                         castleMsg(resultMessage, replier, isGroupChat);
                         if (riftMessage) {
                             castleMsg(riftMessage, replier, isGroupChat);
@@ -12738,26 +12766,37 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             saveJsonFile(guildData, guildPath);
                             saveJsonFile(data, filePath);
                         });
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 출력/종료 저장", ms: Date.now() - attackFinishStartMs });
+                        if (ctx.isDev) {
+                            replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
+                        }
                         return;
                     }
 
                     // 턴 이동
+                    var attackTurnProcessStartMs = ctx.isDev ? Date.now() : 0;
                     advanceGuildTerritoryTurn(data, guildData);
                     // 다음 턴 안내 메시지 생성
                     var nextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
                     if (nextTurnLine) {
                         resultMessage = nextTurnLine + "\n" + resultMessage;
                     }
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 처리", ms: Date.now() - attackTurnProcessStartMs });
 
+                    var attackOutputStartMs = ctx.isDev ? Date.now() : 0;
                     castleMsg(resultMessage, replier, isGroupChat);
                     if (riftMessage) {
                         castleMsg(riftMessage, replier, isGroupChat);
                     }
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 출력", ms: Date.now() - attackOutputStartMs });
 
+                    var attackSaveStartMs = ctx.isDev ? Date.now() : 0;
                     saveJsonFile(guildData, guildPath);
                     saveJsonFile(data, filePath);
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - attackSaveStartMs });
 
                     // 다음 턴 안내
+                    var attackTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
                     var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
                     turnMsgs.forEach(function (m) {
                         castleMsg(m, replier, isGroupChat);
@@ -12765,6 +12804,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     // 턴 타이머 시작
                     startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - attackTurnGuideStartMs });
+                    if (ctx.isDev) {
+                        replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
+                    }
 
                     return;
                 }
@@ -27239,6 +27282,24 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
         turnLine;
 
     return [msg];
+}
+
+// DEV 영지공격의 응답 공통 처리와 단계별 소요 시간을 출력하는 메시지 생성
+function buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, branchStartMs, responseTimingRows, attackTimingRows) {
+    var message = "🏰 DEV 영지공격 속도체크 🏰\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "전체(응답진입): " + (Date.now() - responseStartMs) + "ms\n";
+    message += "영지공격 분기: " + (Date.now() - branchStartMs) + "ms\n";
+    message += "\n응답 공통 처리📋\n";
+    for (var commonIndex = 0; commonIndex < responseTimingRows.length; commonIndex++) {
+        message += responseTimingRows[commonIndex].label + ": " + responseTimingRows[commonIndex].ms + "ms\n";
+    }
+    message += "\n영지공격 처리📋\n";
+    for (var attackIndex = 0; attackIndex < attackTimingRows.length; attackIndex++) {
+        message += attackTimingRows[attackIndex].label + ": " + attackTimingRows[attackIndex].ms + "ms\n";
+    }
+    message += "※ dev/영지공격에서만 표시됩니다.";
+    return message;
 }
 
 // 영지전 공격 턴 보상 적용: 길드 자금 보상, 공헌 메달 보상 확률 계산 및 적용, 보상 메시지 반환
