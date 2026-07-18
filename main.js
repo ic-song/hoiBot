@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.282"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.283"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -708,6 +708,8 @@ var COMMON_DATA_FILE_MAP = {
     "petSweetHomeInfo.json": true
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
+var commandDataFlowLock = new java.util.concurrent.locks.ReentrantReadWriteLock(true); // 자동일퀘와 일반 응답의 데이터 처리 순서 보호
+var autoDailyBatchThreadLocal = new java.lang.ThreadLocal(); // 자동일퀘 스레드별 메모리 저장 배치
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
     windowMs: 2000,
     limit: 3,
@@ -1360,6 +1362,8 @@ const miniPetData = loadJsonFile(miniPetPath);
 
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    var responseDataLock = getResponseDataFlowLock(msg);
+    responseDataLock.lock();
     var ctx = createCommandContext(isDevCommandMessage(msg));
     var prevCtx = enterCommandContext(ctx);
     var responseStartMs = Date.now();
@@ -2394,7 +2398,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         //var castleBattleData = loadJsonFile(castleBattlePath);
         //var titleData = loadJsonFile(memberTitlePath);
-        if (isSaving == false) {
+        if (isSaving == false || getAutoDailyBatchContext()) {
             var isSignupPetFlow = isSignupFlow;
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
                 if (!data.member[sender] && msg !== "/가입") {
@@ -25209,6 +25213,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
     } finally {
         exitCommandContext(prevCtx);
+        responseDataLock.unlock();
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -25302,6 +25307,18 @@ function getUserRequestCount(sender) {
 // DEV 명령어 접두사 여부를 확인하는 함수
 function isDevCommandMessage(msg) {
     return typeof msg === "string" && msg.indexOf("dev/") === 0;
+}
+
+// 자동일퀘 진입 명령어인지 확인하는 함수
+function isAutoDailyEntryCommandMessage(msg) {
+    var command = String(msg || "");
+    if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
+    return command === "/자동일퀘" || command === "ㅇㅋㅋ";
+}
+
+// 자동일퀘는 단독 처리하고 일반 응답끼리는 병렬 처리를 허용하는 잠금 반환 함수
+function getResponseDataFlowLock(msg) {
+    return isAutoDailyEntryCommandMessage(msg) ? commandDataFlowLock.writeLock() : commandDataFlowLock.readLock();
 }
 
 // DEV 명령어 접두사를 제거하고 일반 명령어 형태로 변환하는 함수
@@ -25907,6 +25924,10 @@ function loadJsonFile(path) {
     var protectedLock = null;
     try {
         path = resolveActiveDataPath(path);
+        var autoDailyBatch = getAutoDailyBatchContext();
+        if (autoDailyBatch && autoDailyBatch.managedPaths[path] && Object.prototype.hasOwnProperty.call(autoDailyBatch.files, path)) {
+            return autoDailyBatch.files[path];
+        }
         if (isProtectedMemberJsonPath(path)) {
             protectedLock = getProtectedJsonSaveLock(path);
             protectedLock.lock();
@@ -25914,8 +25935,11 @@ function loadJsonFile(path) {
         let file = new java.io.File(path);
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-            return parseJsonContent(fileContent, path);
+            var loadedData = parseJsonContent(fileContent, path);
+            if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = loadedData;
+            return loadedData;
         }
+        if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = null;
         return null;
     } catch (e) {
         var errorObj = {
@@ -26014,6 +26038,12 @@ function saveJsonFile(data, path) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
         path = resolveActiveDataPath(path);
+        var autoDailyBatch = getAutoDailyBatchContext();
+        if (autoDailyBatch && !autoDailyBatch.committing && autoDailyBatch.managedPaths[path]) {
+            autoDailyBatch.files[path] = data;
+            autoDailyBatch.dirtyPaths[path] = true;
+            return;
+        }
         var jsonText = JSON.stringify(data);
         if (typeof jsonText !== "string") {
             throw new Error("JSON stringify failed: " + path);
@@ -30899,6 +30929,54 @@ function createAutoDailyCaptureReplier() {
     };
 }
 
+// 현재 스레드의 자동일퀘 메모리 저장 배치를 반환하는 함수
+function getAutoDailyBatchContext() {
+    return autoDailyBatchThreadLocal.get();
+}
+
+// 자동일퀘 대상 데이터를 메모리에 고정해 반복 파일 입출력을 막는 함수
+function beginAutoDailyBatch(snapshot, petSkillData) {
+    var batch = {
+        managedPaths: {},
+        files: {},
+        dirtyPaths: {},
+        committing: false
+    };
+    var managedPaths = [filePath, memberPetPath, petSkillDataPath, guildPath, trialTowerPath, castleBattlePath, petExplorePath, memberTitlePath];
+    for (var i = 0; i < managedPaths.length; i++) {
+        batch.managedPaths[resolveActiveDataPath(managedPaths[i])] = true;
+    }
+    batch.files[resolveActiveDataPath(filePath)] = snapshot.data;
+    batch.files[resolveActiveDataPath(memberPetPath)] = snapshot.petData;
+    batch.files[resolveActiveDataPath(petSkillDataPath)] = petSkillData;
+    batch.files[resolveActiveDataPath(guildPath)] = snapshot.guildData;
+    batch.files[resolveActiveDataPath(trialTowerPath)] = snapshot.trialTower;
+    batch.files[resolveActiveDataPath(castleBattlePath)] = snapshot.castleBattleData;
+    autoDailyBatchThreadLocal.set(batch);
+    return batch;
+}
+
+// 자동일퀘에서 변경된 파일을 정해진 순서로 각각 한 번만 저장하는 함수
+function commitAutoDailyBatch() {
+    var batch = getAutoDailyBatchContext();
+    if (!batch) return;
+    var commitOrder = [trialTowerPath, castleBattlePath, memberPetPath, memberTitlePath, petExplorePath, petSkillDataPath, guildPath, filePath];
+    batch.committing = true;
+    try {
+        for (var i = 0; i < commitOrder.length; i++) {
+            var resolvedPath = resolveActiveDataPath(commitOrder[i]);
+            if (batch.dirtyPaths[resolvedPath]) saveJsonFile(batch.files[resolvedPath], resolvedPath);
+        }
+    } finally {
+        batch.committing = false;
+    }
+}
+
+// 현재 스레드의 자동일퀘 저장 배치를 해제하는 함수
+function clearAutoDailyBatch() {
+    autoDailyBatchThreadLocal.remove();
+}
+
 // 기존 일퀘 명령어를 자동일퀘 내부에서 무음 실행하는 함수
 function runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB, packageName) {
     var ctx = getCurrentContext();
@@ -30911,15 +30989,6 @@ function runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB
         autoDailyQuestInternalDepth--;
     }
     return capture.messages;
-}
-
-// 자동일퀘 내부 실행 후 저장 반영을 잠시 기다리는 함수
-function waitAutoDailySnapshotFlush(waitMs) {
-    try {
-        java.lang.Thread.sleep(waitMs);
-    } catch (e) {
-        sleep(waitMs);
-    }
 }
 
 // 자동일퀘 전후 비교용 유저 상태 스냅샷 반환 함수
@@ -30999,12 +31068,7 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
         var before = getAutoDailyQuestSnapshot(sender);
         var messages = runAutoDailyInternalCommand(room, command, sender, isGroupChat, imageDB, packageName);
         captured = captured.concat(messages);
-        waitAutoDailySnapshotFlush(150);
         var after = getAutoDailyQuestSnapshot(sender);
-        if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
-            waitAutoDailySnapshotFlush(600);
-            after = getAutoDailyQuestSnapshot(sender);
-        }
         if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
             var fallbackMessage = buildAutoDailyBlockedFallbackMessage(sender, command, before, usedKey, maxKey);
             blockedMessage = getLastAutoDailyBlockedMessage(messages);
@@ -31232,37 +31296,41 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
     if (beforePetSkillData) {
         saveJsonFile(beforePetSkillData, petSkillDataPath_back);
     }
+    beginAutoDailyBatch(before, beforePetSkillData);
+    try {
+        var capturedMessages = [];
+        var autoDailyIssues = [];
+        var towerRun = runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/시련의탑", "towerUsed", "towerMax");
+        capturedMessages = capturedMessages.concat(towerRun.captured);
+        if (towerRun.blockedMessage) autoDailyIssues.push("😈 시련의탑: " + towerRun.blockedMessage);
+        var castleRun = runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/캐슬대전", "castleUsed", "castleMax");
+        capturedMessages = capturedMessages.concat(castleRun.captured);
+        if (castleRun.blockedMessage) autoDailyIssues.push("🏆 캐슬대전: " + castleRun.blockedMessage);
+        var miniRun = runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/미니펫대전", "miniUsed", "miniMax");
+        capturedMessages = capturedMessages.concat(miniRun.captured);
+        if (miniRun.blockedMessage) autoDailyIssues.push("🐹 미니펫대전: " + miniRun.blockedMessage);
 
-    var capturedMessages = [];
-    var autoDailyIssues = [];
-    var towerRun = runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/시련의탑", "towerUsed", "towerMax");
-    capturedMessages = capturedMessages.concat(towerRun.captured);
-    if (towerRun.blockedMessage) autoDailyIssues.push("😈 시련의탑: " + towerRun.blockedMessage);
-    var castleRun = runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/캐슬대전", "castleUsed", "castleMax");
-    capturedMessages = capturedMessages.concat(castleRun.captured);
-    if (castleRun.blockedMessage) autoDailyIssues.push("🏆 캐슬대전: " + castleRun.blockedMessage);
-    var miniRun = runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, "/미니펫대전", "miniUsed", "miniMax");
-    capturedMessages = capturedMessages.concat(miniRun.captured);
-    if (miniRun.blockedMessage) autoDailyIssues.push("🐹 미니펫대전: " + miniRun.blockedMessage);
-
-    var rewardData = loadJsonFile(filePath);
-    var rewardPetData = loadJsonFile(memberPetPath);
-    var rewardPetSkillData = loadJsonFile(petSkillDataPath);
-    var rewardGuildData = loadJsonFile(guildPath);
-    var rewardResult = claimQuestReward(rewardData, rewardPetData, rewardGuildData, rewardPetSkillData, sender);
-    if (rewardResult.claimed) {
-        if (hasPetSkill(rewardPetSkillData, sender, "일일루틴")) {
-            var bonusPoint = 100000000;
-            addPoint(rewardData, sender, bonusPoint);
-            rewardResult.message += "\n\n🎉 일일루틴📙 1억 포인트를 지급받습니다.";
+        var rewardData = loadJsonFile(filePath);
+        var rewardPetData = loadJsonFile(memberPetPath);
+        var rewardPetSkillData = loadJsonFile(petSkillDataPath);
+        var rewardGuildData = loadJsonFile(guildPath);
+        var rewardResult = claimQuestReward(rewardData, rewardPetData, rewardGuildData, rewardPetSkillData, sender);
+        if (rewardResult.claimed) {
+            if (hasPetSkill(rewardPetSkillData, sender, "일일루틴")) {
+                var bonusPoint = 100000000;
+                addPoint(rewardData, sender, bonusPoint);
+                rewardResult.message += "\n\n🎉 일일루틴📙 1억 포인트를 지급받습니다.";
+            }
+            saveJsonFile(rewardData, filePath);
         }
-        saveJsonFile(rewardData, filePath);
-    }
 
-    var after = getAutoDailyQuestSnapshot(sender);
-    return {
-        message: buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages, autoDailyIssues)
-    };
+        var after = getAutoDailyQuestSnapshot(sender);
+        var resultMessage = buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages, autoDailyIssues);
+        commitAutoDailyBatch();
+        return { message: resultMessage };
+    } finally {
+        clearAutoDailyBatch();
+    }
 }
 
 // 패키지 로그 데이터 구조 검증 함수
@@ -32201,6 +32269,7 @@ function generateBagOutput(bagItems) {
 
         var specialItems = [
             "자동탐험권🌄",
+            "자동일퀘권📝",
             GLOBAL_CONFIG.freeMarket.memberTicketItemName,
             "확성기📢(/알림 내용 30자)",
             "티어 승급티켓🎟",

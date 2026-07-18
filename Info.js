@@ -2400,6 +2400,7 @@ function generateBagOutput(bagItems) {
 
 		var specialItems = [
 			"자동탐험권🌄",
+			"자동일퀘권📝",
 			GLOBAL_CONFIG.freeMarket.memberTicketItemName,
 			"확성기📢(/알림 내용 30자)",
 			"티어 승급티켓🎟",

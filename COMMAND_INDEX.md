@@ -241,6 +241,7 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
+- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
@@ -1483,6 +1484,8 @@ Status: VERIFIED
 - `runAutoDailyQuest`
 - `runAutoDailyInternalCommand`
 - `runAutoDailyQuestCommands`
+- `beginAutoDailyBatch`
+- `commitAutoDailyBatch`
 - `buildAutoDailyQuestMessage`
 - `getDailyQuestStatus`
 - `claimQuestReward`
@@ -1500,13 +1503,14 @@ Status: VERIFIED
 ## Save Flow
 
 - Creates member, pet, and pet-skill backup snapshots before automated mutation
-- Repeats each target until the daily count reaches 5 for 시탑/캐대전/미대전 or the underlying command stops progressing; reset-ticket shortages are summarized in the final message
+- Loads automatic-daily data into a thread-local memory batch, repeats each target until its daily count reaches 15 or the underlying command stops progressing, then saves each changed file once
+- Uses an exclusive automatic-daily response lock so ordinary command data processing cannot overwrite the in-memory batch while it is running
 - Filters successful internal battle/result output out of auto-stop reasons, so only blocking messages or concise fallback progress messages are shown
 - Captures internal command exceptions as auto-stop messages instead of falling through to a generic no-progress reason
 - Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
 - Sends an immediate "자동일퀘 계산 중" progress notice before long-running internal command execution
-- Waits briefly and rechecks snapshots after each internal command so delayed save reflection does not look like no progress
-- Reloads data after automated runs and saves member data when daily/weekly quest reward is claimed
+- Compares in-memory snapshots immediately after each internal command without disk-flush sleep delays
+- Claims daily/weekly quest rewards in the same memory batch before the final save
 
 ## Related Commands
 
