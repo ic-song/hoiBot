@@ -499,7 +499,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:12453`
+- `main.js:12512`
 
 ## Files
 
@@ -522,9 +522,13 @@ Status: VERIFIED
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryAttack`
 - `getGuildTerritoryDefenderName`
+- `createGuildTerritoryCastleBattleSnapshot`
 - `buildGuildTerritoryCastleExpSnapshots`
 - `getGuildTerritoryMissingCastleExpUsers`
 - `fillGuildTerritoryCastleExpSnapshots`
+- `resolveGuildTerritoryCastleBattle`
+- `formatGuildTerritoryCastleBattleUserLine`
+- `buildGuildTerritoryCastleBattleDetailMessage`
 - `getGuildTerritoryByNo`
 - `getGuildTerritoryOwnedCount`
 - `processGuildTerritoryRiftEvent`
@@ -545,6 +549,7 @@ Status: VERIFIED
 - `guildData.territoryWar.guildAttackLimits`
 - `guildData.territoryWar.userAttackCounts`
 - `guildData.territoryWar.castleExpSnapshots`
+- `guildData.territoryWar.castleBattleSnapshots`
 - `GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier`
 - `guildData.territoryWar.dimensionGateEnabled`
 - `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
@@ -588,9 +593,10 @@ Status: VERIFIED
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
 - 공격 시점에 점령지 3개를 보유한 길드는 턴 길드자금 보상이 5천만에서 1억으로 두 배 적용되며 결과에 `점령 3개 추가보너스 획득`이 표시된다.
-- 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력을 `castleExpSnapshots`에 저장한다.
-- 전투 중에는 저장된 공격자·방어자 캐슬매력만 비교하며, 진행 중인 구버전 영지전의 누락 사용자만 최초 공격 시 한 번 계산해 저장한다.
-- 특수 방어권·기습공격권이 발동하지 않은 캐슬매력 대결은 주사위 반복 없이 높은 캐슬매력 보유자가 즉시 승리하며, 동률이면 방어자가 승리한다.
+- 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
+- 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
+- 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
+- 일반 캐슬매력 대결 상세보기에는 `유저[펫] 기본매력(크리 적용매력💥)` 형식으로 양측 수치를 표시하고, 크리 미발동 시 괄호를 생략한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
 - `dev/영지공격 [1-8]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts

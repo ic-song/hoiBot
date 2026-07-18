@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.277"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.278"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -26321,6 +26321,7 @@ function ensureGuildTerritoryWar(data, guildData) {
     if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};// 길드별 공격 횟수 제한
     if (!war.userAttackCounts || typeof war.userAttackCounts !== "object") war.userAttackCounts = {};// 유저별 공격 횟수
     if (!war.castleExpSnapshots || typeof war.castleExpSnapshots !== "object") war.castleExpSnapshots = {};// 영지전 시작 시점 캐슬매력 스냅샷
+    if (!war.castleBattleSnapshots || typeof war.castleBattleSnapshots !== "object") war.castleBattleSnapshots = {};// 영지전 시작 시점 캐슬매력·크리 스냅샷
     if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};// 타임아웃으로 공격 실패한 횟수
     if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};// 제거된 사용자 정보
     if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};// 제거된 길드 정보
@@ -26458,10 +26459,23 @@ function getGuildTerritoryDefenderName(guildData, territoryInfo) {
     return territoryInfo.ownerUser || (defenderGuild ? defenderGuild.master : null);
 }
 
+// 영지전 시작 시점의 캐슬매력과 크리티컬 정보를 스냅샷으로 생성
+function createGuildTerritoryCastleBattleSnapshot(petData, user, baseExp) {
+    var upgradeLevel = petData[user] ? parseInt(petData[user].upgrade, 10) || 0 : 0;
+    return {
+        baseExp: baseExp,
+        petName: petData[user] && petData[user].petname ? petData[user].petname : "펫 정보 없음",
+        upgradeLevel: upgradeLevel,
+        critChance: calculateCritChance(upgradeLevel),
+        critMultiplier: getCritMultiplier(upgradeLevel)
+    };
+}
+
 // 영지전 시작 시 공격자와 기존 점령자의 캐슬매력을 한 번 계산해 저장
 function buildGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillData, guildData, war, turnRows) {
     var targets = {};
     var snapshots = {};
+    war.castleBattleSnapshots = {};
 
     for (var rowIndex = 0; rowIndex < turnRows.length; rowIndex++) {
         if (turnRows[rowIndex] && turnRows[rowIndex].user) targets[turnRows[rowIndex].user] = true;
@@ -26475,7 +26489,9 @@ function buildGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkill
     for (var user in targets) {
         if (!targets.hasOwnProperty(user)) continue;
         if (!data.member[user] || !petData[user]) continue;
-        snapshots[user] = calculateCastleExp(user, data, petData, homeData, petSkillData);
+        var baseExp = calculateCastleExp(user, data, petData, homeData, petSkillData);
+        snapshots[user] = baseExp;
+        war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(petData, user, baseExp);
     }
     return snapshots;
 }
@@ -26491,7 +26507,7 @@ function getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender
     for (var i = 0; i < targets.length; i++) {
         var user = targets[i];
         if (!user || !data.member[user] || !petData[user]) continue;
-        if (typeof war.castleExpSnapshots[user] !== "number") missingUsers.push(user);
+        if (typeof war.castleExpSnapshots[user] !== "number" || !war.castleBattleSnapshots[user]) missingUsers.push(user);
     }
     return missingUsers;
 }
@@ -26501,8 +26517,11 @@ function fillGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillD
     var war = ensureGuildTerritoryWar(data, guildData);
     for (var i = 0; i < users.length; i++) {
         var user = users[i];
-        if (typeof war.castleExpSnapshots[user] === "number") continue;
-        war.castleExpSnapshots[user] = calculateCastleExp(user, data, petData, homeData, petSkillData);
+        if (typeof war.castleExpSnapshots[user] === "number" && war.castleBattleSnapshots[user]) continue;
+        var calculatedExp = calculateCastleExp(user, data, petData, homeData, petSkillData);
+        var baseExp = typeof war.castleExpSnapshots[user] === "number" ? war.castleExpSnapshots[user] : calculatedExp;
+        war.castleExpSnapshots[user] = baseExp;
+        war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(petData, user, baseExp);
     }
 }
 
@@ -27803,6 +27822,36 @@ function decreaseGuildTerritoryItem(data, user, itemName) {
     if (data.member[user].bag[itemName] <= 0) delete data.member[user].bag[itemName];
 }
 
+// 영지전 공격자와 방어자의 크리티컬을 한 번씩 판정하고 최종 캐슬매력을 반환
+function resolveGuildTerritoryCastleBattle(war, petData, attackerName, defenderName) {
+    var attackerSnapshot = war.castleBattleSnapshots[attackerName] || createGuildTerritoryCastleBattleSnapshot(petData, attackerName, war.castleExpSnapshots[attackerName]);
+    var defenderSnapshot = war.castleBattleSnapshots[defenderName] || createGuildTerritoryCastleBattleSnapshot(petData, defenderName, war.castleExpSnapshots[defenderName]);
+    var isAttackerCritical = Math.random() < attackerSnapshot.critChance;
+    var isDefenderCritical = Math.random() < defenderSnapshot.critChance;
+    var attackerFinalExp = isAttackerCritical ? Math.round(attackerSnapshot.baseExp * attackerSnapshot.critMultiplier) : attackerSnapshot.baseExp;
+    var defenderFinalExp = isDefenderCritical ? Math.round(defenderSnapshot.baseExp * defenderSnapshot.critMultiplier) : defenderSnapshot.baseExp;
+
+    war.castleBattleSnapshots[attackerName] = attackerSnapshot;
+    war.castleBattleSnapshots[defenderName] = defenderSnapshot;
+    return {
+        attacker: { name: attackerName, petName: attackerSnapshot.petName, baseExp: attackerSnapshot.baseExp, finalExp: attackerFinalExp, isCritical: isAttackerCritical },
+        defender: { name: defenderName, petName: defenderSnapshot.petName, baseExp: defenderSnapshot.baseExp, finalExp: defenderFinalExp, isCritical: isDefenderCritical }
+    };
+}
+
+// 영지전 캐슬매력과 크리티컬 적용값을 유저·펫 이름과 함께 한 줄로 표시
+function formatGuildTerritoryCastleBattleUserLine(battleUser) {
+    var line = battleUser.name + "[" + battleUser.petName + "] " + numberWithCommas(battleUser.baseExp) + "💕";
+    if (battleUser.isCritical) line += "(" + numberWithCommas(battleUser.finalExp) + "💕💥)";
+    return line;
+}
+
+// 영지전 상세보기에 공격자와 방어자의 캐슬매력 비교 문구 생성
+function buildGuildTerritoryCastleBattleDetailMessage(battleResult) {
+    return "\n" + formatGuildTerritoryCastleBattleUserLine(battleResult.attacker) +
+        "\nvs\n" + formatGuildTerritoryCastleBattleUserLine(battleResult.defender) + "\n\n";
+}
+
 // 차원의 문 이벤트 결과 처리
 function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, attackInfo) {
     var war = ensureGuildTerritoryWar(data, guildData);
@@ -27938,9 +27987,9 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         return out;
     }
 
-    var defenderExp = war.castleExpSnapshots[defenderName];
-    var attackerExp = war.castleExpSnapshots[sender];
-    var isAttackerWin = attackerExp > defenderExp; // 공격자 캐슬매력이 방어자보다 높을 때만 승리
+    var castleBattleResult = resolveGuildTerritoryCastleBattle(war, petData, sender, defenderName);
+    var isAttackerWin = castleBattleResult.attacker.finalExp > castleBattleResult.defender.finalExp; // 크리 적용 후 공격자 캐슬매력이 높을 때만 승리
+    var castleBattleDetailMessage = buildGuildTerritoryCastleBattleDetailMessage(castleBattleResult);
 
     if (isAttackerWin) {
         //공격자 승리
@@ -27953,14 +28002,14 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         }
         out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
         //out += baseInfo;
-        out += "공격/방어/보상 상세보기" + allsee;
+        out += "공격/방어/보상 상세보기" + allsee + castleBattleDetailMessage;
         out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
         out += "[" + territoryNo + "] " + territory.name + " 점령에 성공합니다!";
     } else {
         //방어자 승리
         out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
         //	out += baseInfo;
-        out += "공격/방어/보상 상세보기" + allsee;
+        out += "공격/방어/보상 상세보기" + allsee + castleBattleDetailMessage;
         out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
         out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
         out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "] 이(가)\n";
