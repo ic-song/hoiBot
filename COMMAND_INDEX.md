@@ -521,6 +521,10 @@ Status: VERIFIED
 - `buildPetSkillTriggerMessage`
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryAttack`
+- `getGuildTerritoryDefenderName`
+- `buildGuildTerritoryCastleExpSnapshots`
+- `getGuildTerritoryMissingCastleExpUsers`
+- `fillGuildTerritoryCastleExpSnapshots`
 - `getGuildTerritoryByNo`
 - `getGuildTerritoryOwnedCount`
 - `processGuildTerritoryRiftEvent`
@@ -539,6 +543,7 @@ Status: VERIFIED
 - `guildData.territoryWar.guildAttackCounts`
 - `guildData.territoryWar.guildAttackLimits`
 - `guildData.territoryWar.userAttackCounts`
+- `guildData.territoryWar.castleExpSnapshots`
 - `guildData.territoryWar.dimensionGateEnabled`
 - `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
 - `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
@@ -580,6 +585,9 @@ Status: VERIFIED
 - `/영지공격` is accepted only as `/영지공격 [1-8]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
+- 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력을 `castleExpSnapshots`에 저장한다.
+- 전투 중에는 저장된 공격자·방어자 캐슬매력만 비교하며, 진행 중인 구버전 영지전의 누락 사용자만 최초 공격 시 한 번 계산해 저장한다.
+- 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---

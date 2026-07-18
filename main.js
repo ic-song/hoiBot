@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.268"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.269"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -12656,6 +12656,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
 
                     // 공격 처리
+                    var missingCastleExpUsers = getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo);
+                    if (missingCastleExpUsers.length > 0) {
+                        var legacyWarHomeData = loadJsonFile(homeDataFile);
+                        fillGuildTerritoryCastleExpSnapshots(data, petData, legacyWarHomeData, petSkillData, guildData, missingCastleExpUsers);
+                    }
                     var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo); // 공격 결과 메시지 반환
                     var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
                     // if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
@@ -26201,6 +26206,7 @@ function ensureGuildTerritoryWar(data, guildData) {
     if (!war.guildAttackCounts || typeof war.guildAttackCounts !== "object") war.guildAttackCounts = {};// 길드별 공격 횟수
     if (!war.guildAttackLimits || typeof war.guildAttackLimits !== "object") war.guildAttackLimits = {};// 길드별 공격 횟수 제한
     if (!war.userAttackCounts || typeof war.userAttackCounts !== "object") war.userAttackCounts = {};// 유저별 공격 횟수
+    if (!war.castleExpSnapshots || typeof war.castleExpSnapshots !== "object") war.castleExpSnapshots = {};// 영지전 시작 시점 캐슬매력 스냅샷
     if (!war.timeoutMissCounts || typeof war.timeoutMissCounts !== "object") war.timeoutMissCounts = {};// 타임아웃으로 공격 실패한 횟수
     if (!war.eliminatedUsers || typeof war.eliminatedUsers !== "object") war.eliminatedUsers = {};// 제거된 사용자 정보
     if (!war.eliminatedGuilds || typeof war.eliminatedGuilds !== "object") war.eliminatedGuilds = {};// 제거된 길드 정보
@@ -26331,8 +26337,63 @@ function buildGuildTerritoryTurnRows(guildData, petSkillData, war) {
     };
 }
 
+// 영지전 점령 정보에서 현재 방어자 이름을 반환
+function getGuildTerritoryDefenderName(guildData, territoryInfo) {
+    if (!territoryInfo) return null;
+    var defenderGuild = getGuildByIdSafe(guildData, territoryInfo.ownerGuildId);
+    return territoryInfo.ownerUser || (defenderGuild ? defenderGuild.master : null);
+}
+
+// 영지전 시작 시 공격자와 기존 점령자의 캐슬매력을 한 번 계산해 저장
+function buildGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillData, guildData, war, turnRows) {
+    var targets = {};
+    var snapshots = {};
+
+    for (var rowIndex = 0; rowIndex < turnRows.length; rowIndex++) {
+        if (turnRows[rowIndex] && turnRows[rowIndex].user) targets[turnRows[rowIndex].user] = true;
+    }
+    for (var territoryKey in war.territories) {
+        if (!war.territories.hasOwnProperty(territoryKey)) continue;
+        var defenderName = getGuildTerritoryDefenderName(guildData, war.territories[territoryKey]);
+        if (defenderName) targets[defenderName] = true;
+    }
+
+    for (var user in targets) {
+        if (!targets.hasOwnProperty(user)) continue;
+        if (!data.member[user] || !petData[user]) continue;
+        snapshots[user] = calculateCastleExp(user, data, petData, homeData, petSkillData);
+    }
+    return snapshots;
+}
+
+// 진행 중인 구버전 영지전의 누락 스냅샷 대상자를 반환
+function getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo) {
+    var war = ensureGuildTerritoryWar(data, guildData);
+    var territoryInfo = war.territories[String(territoryNo)];
+    var defenderName = getGuildTerritoryDefenderName(guildData, territoryInfo);
+    var targets = [sender, defenderName];
+    var missingUsers = [];
+
+    for (var i = 0; i < targets.length; i++) {
+        var user = targets[i];
+        if (!user || !data.member[user] || !petData[user]) continue;
+        if (typeof war.castleExpSnapshots[user] !== "number") missingUsers.push(user);
+    }
+    return missingUsers;
+}
+
+// 진행 중인 구버전 영지전의 누락 캐슬매력을 한 번 계산해 저장
+function fillGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillData, guildData, users) {
+    var war = ensureGuildTerritoryWar(data, guildData);
+    for (var i = 0; i < users.length; i++) {
+        var user = users[i];
+        if (typeof war.castleExpSnapshots[user] === "number") continue;
+        war.castleExpSnapshots[user] = calculateCastleExp(user, data, petData, homeData, petSkillData);
+    }
+}
+
 // 영지전 시작 처리 함수
-function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, replier, isGroupChat) {
+function beginGuildTerritoryWarNow(data, petData, homeData, petSkillData, guildData, replier, isGroupChat) {
     var war = ensureGuildTerritoryWar(data, guildData);
     var startRows = buildGuildTerritoryTurnRows(guildData, petSkillData, war);
     var readyGuildIds = startRows.readyGuildIds;
@@ -26355,6 +26416,7 @@ function beginGuildTerritoryWarNow(data, petData, petSkillData, guildData, repli
     war.guildAttackCounts = {};// 길드별 영지 공격 횟수 기록 초기화
     war.guildAttackLimits = {};// 길드별 영지 공격 횟수 제한 기록
     war.userAttackCounts = {};// 유저별 영지 공격 횟수 기록 초기화
+    war.castleExpSnapshots = buildGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillData, guildData, war, turnRows);// 시작 시점 캐슬매력 고정
     war.eliminatedUsers = {};// 탈락한 유저 기록 초기화
     war.eliminatedGuilds = {};// 탈락한 유저와 길드 기록 초기화
     war.timeoutMissCounts = {};// 턴 타임아웃 미스 횟수 기록
@@ -26408,6 +26470,7 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
             delete guildTerritoryPendingStartTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
+            var latestHomeData = loadJsonFile(homeDataFile);
             var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
             var latestWar = ensureGuildTerritoryWar(latestData, latestGuildData);
@@ -26416,7 +26479,7 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
             if (latestWar.pendingStartToken !== startToken) return;
             if (latestWar.active) return;
 
-            var startResult = beginGuildTerritoryWarNow(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat);
+            var startResult = beginGuildTerritoryWarNow(latestData, latestPetData, latestHomeData, latestPetSkillData, latestGuildData, replier, isGroupChat);
             if (!startResult.started && startResult.message) {
                 Api.replyRoom(room8, timerCtx.header(startResult.message));
                 saveJsonFile(latestGuildData, guildPath);
@@ -27647,7 +27710,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     var attackerGuildInfo = getMyGuildInfo(data, guildData, sender);
     var attackerGuild = attackerGuildInfo.guild;
     var defenderGuild = getGuildByIdSafe(guildData, ter.ownerGuildId);
-    var defenderName = ter.ownerUser || (defenderGuild ? defenderGuild.master : null);
+    var defenderName = getGuildTerritoryDefenderName(guildData, ter);
     var territory = getGuildTerritoryByNo(territoryNo);
     var used = war.guildAttackCounts[attackerGuildInfo.guildId] || 0;
     //	var baseInfo = "(길드영지전 총 공격횟수⚔ " + used + "/" + getGuildTerritoryAttackLimitForWar(war, attackerGuild, attackerGuildInfo.guildId) + ")\n\n";
@@ -27737,9 +27800,8 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         return out;
     }
 
-    var homeData = loadJsonFile(homeDataFile);
-    var defenderExp = calculateCastleExp(defenderName, data, petData, homeData, petSkillData);
-    var attackerExp = calculateCastleExp(sender, data, petData, homeData, petSkillData);
+    var defenderExp = war.castleExpSnapshots[defenderName];
+    var attackerExp = war.castleExpSnapshots[sender];
     var gameResult = petgameplay(defenderExp, attackerExp, null);
 
     if (gameResult.winner == 2) {
