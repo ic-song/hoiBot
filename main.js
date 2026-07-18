@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.281"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.282"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -16300,33 +16300,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     ensureCastleBattleRecord(data, defenderName);
                     let attackerPetObj = petData[attackerName];
                     let defenderPetObj = petData[defenderName];
-                    // 펫홈 계산 로직
+                    // 공용 캐슬매력 계산에 사용할 펫홈 데이터
                     let homeData = loadJsonFile(homeDataFile);
-                    var attackerHomeTotalExp = getHomeTotalExp(homeData, attackerName);
-                    var defenderHomeTotalExp = getHomeTotalExp(homeData, defenderName);
-                    // 친밀도
-                    var attackerIntimacyExp = getUserIntimacyInfo(data, attackerName).exp;
-                    var defenderIntimacyExp = getUserIntimacyInfo(data, defenderName).exp;
-                    // 병사 계산 로직
-                    let attackerCastleItemExp = Math.round(calculateCastleItem(attackerName, data));
-                    let defenderCastleItemExp = Math.round(calculateCastleItem(defenderName, data));
-                    // 펫 장비 계산 로직
-                    let attackerGearExp = Math.round(calculateItemInfoAll(attackerName, data, petData).castleExp);
-                    let defenderGearExp = Math.round(calculateItemInfoAll(defenderName, data, petData).castleExp);
-                    // 미니펫 매력 계산
-                    let attackerMiniPetExp = 0;
-                    let defenderMiniPetExp = 0;
-                    if (petData[attackerName].miniPet) {
-                        attackerMiniPetExp = parseInt(petData[attackerName].miniPet.castleExp, 10) || 0;
-                    }
-                    if (petData[defenderName].miniPet) {
-                        defenderMiniPetExp = parseInt(petData[defenderName].miniPet.castleExp, 10) || 0;
-                    }
-
-                    let attackerSkillExp = hasPetSkill(petSkillData, attackerName, "장미칼") ? 500000 : 0;
-                    let defenderSkillExp = hasPetSkill(petSkillData, defenderName, "장미칼") ? 500000 : 0;
-                    let attackerPetExp_origin = parseInt(Math.round(attackerPetObj.petexp) + attackerCastleItemExp + attackerGearExp) + attackerMiniPetExp + attackerHomeTotalExp + attackerIntimacyExp + attackerSkillExp; //펫매력+캐슬매력+펫장비+미니펫+펫홈+펫스킬
-                    let defenderPetExp_origin = parseInt(Math.round(defenderPetObj.petexp) + defenderCastleItemExp + defenderGearExp) + defenderMiniPetExp + defenderHomeTotalExp + defenderIntimacyExp + defenderSkillExp; //펫매력+캐슬매력+펫장비+미니펫+펫홈+펫스킬
+                    let attackerPetExp_origin = Math.round(calculateCastleExp(attackerName, data, petData, homeData, petSkillData)); // 공격자 전체 캐슬매력
+                    let defenderPetExp_origin = Math.round(calculateCastleExp(defenderName, data, petData, homeData, petSkillData)); // 방어자 전체 캐슬매력
                     let petTypeBuff = difftypeBuff(attackerPetObj, defenderPetObj);
                     let attackerTypeExp = Math.round(attackerPetExp_origin * petTypeBuff.buff1); // 공격자 상성 적용 매력
                     let defenderTypeExp = Math.round(defenderPetExp_origin * petTypeBuff.buff2); // 방어자 상성 적용 매력
@@ -16385,7 +16362,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += "유저: " + checkRank(data, petData, guildData, attackerName) + "\n";
                     result += "펫: " + attackerPetObj.petname + "(" + attackerPetImage + ")\n";
                     result += "타입: " + attackerPetObj.pettype + " · 등급: " + beforeRankName + "\n";
-                    result += "기본: " + numberWithCommas(attackerPetExp_origin) + "💕\n";
+                    result += "캐슬매력: " + numberWithCommas(attackerPetExp_origin) + "💕\n";
                     result += "상성: " + numberWithCommas(attackerTypeExp) + "💕" + (petTypeBuff.buff1 === 1.3 ? " ⬆️유리" : "") + "\n";
                     result += "최종: " + numberWithCommas(attackerPetExp) + "💕" + (attackerCriticalFlag ? " 💥크리티컬" : "") + "\n\n";
                     result += "              🆚\n\n";
@@ -16393,7 +16370,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += "유저: " + checkRank(data, petData, guildData, defenderName) + "\n";
                     result += "펫: " + defenderPetObj.petname + "(" + defenderPetImage + ")\n";
                     result += "타입: " + defenderPetObj.pettype + " · 등급: " + defRankName + "\n";
-                    result += "기본: " + numberWithCommas(defenderPetExp_origin) + "💕\n";
+                    result += "캐슬매력: " + numberWithCommas(defenderPetExp_origin) + "💕\n";
                     result += "상성: " + numberWithCommas(defenderTypeExp) + "💕" + (petTypeBuff.buff2 === 1.3 ? " ⬆️유리" : "") + "\n";
                     result += "최종: " + numberWithCommas(defenderPetExp) + "💕" + (defenderCriticalFlag ? " 💥크리티컬" : "") + "\n\n";
                     result += "━━━━━━━━━━━━\n";
@@ -17037,14 +17014,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     resultMsg += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
                     resultMsg += "미니펫: " + petData[sender].miniPet.name + "(" + petData[sender].miniPet.emoji + ") · 강화: " + myMiniPetUpgrade + "강💫\n";
                     resultMsg += "등급: " + petData[sender].miniPet.grade + " · 장착: +" + numberWithCommas(petData[sender].miniPet.battleExp) + "💕\n";
-                    resultMsg += "기본: " + numberWithCommas(myBase) + "💕\n";
+                    resultMsg += "미니펫매력: " + numberWithCommas(myBase) + "💕\n";
                     resultMsg += "최종: " + numberWithCommas(myFinal) + "💕" + (isMyCrit ? " 💥크리티컬" : "") + "\n\n";
                     resultMsg += "              🆚\n\n";
                     resultMsg += "🛡️ 방어\n";
                     resultMsg += "유저: " + checkRank(data, petData, guildData, targetName) + "\n";
                     resultMsg += "미니펫: " + petData[targetName].miniPet.name + "(" + petData[targetName].miniPet.emoji + ") · 강화: " + enemyMiniPetUpgrade + "강💫\n";
                     resultMsg += "등급: " + petData[targetName].miniPet.grade + " · 장착: +" + numberWithCommas(petData[targetName].miniPet.battleExp) + "💕\n";
-                    resultMsg += "기본: " + numberWithCommas(enemyBase) + "💕\n";
+                    resultMsg += "미니펫매력: " + numberWithCommas(enemyBase) + "💕\n";
                     resultMsg += "최종: " + numberWithCommas(enemyFinal) + "💕" + (isEnemyCrit ? " 💥크리티컬" : "") + "\n\n";
                     resultMsg += "━━━━━━━━━━━━\n";
                     resultMsg += "📊 최종 매력 비교" + allsee + "\n";
@@ -18135,22 +18112,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let bossExp = originBossExp;
 
                     // 유저 매력 (종합)
-                    let userPetExp = calculateTotalExp(sender, data, petData, homeData, petSkillData);
+                    let baseUserTotalExp = calculateTotalExp(sender, data, petData, homeData, petSkillData); // /종합정보와 동일한 원본 종합매력
+                    let userPetExp = baseUserTotalExp;
+                    let towerBonusExp = 0; // 구원·십원으로 전투 중 추가된 일시 매력
 
                     var triggeredPetSkill = "";
                     // 구원/십원 펫스킬
                     if (hasPetSkill(petSkillData, sender, "구원") && Math.random() <= 0.5) {
                         userPetExp += 500000;
+                        towerBonusExp = 500000;
                         isPetcharFlag = true;
                         triggeredPetSkill = "구원";
                     } else if (hasPetSkill(petSkillData, sender, "십원") && Math.random() <= 0.4) {
                         userPetExp += 1000000;
+                        towerBonusExp = 1000000;
                         isPetcharFlag = true;
                         triggeredPetSkill = "십원";
                     }
 
-                    // 출력용: 치명타/상성 적용 전 "원본 종합매력"
-                    let originUserPetExp = Math.round(userPetExp);
+                    // 출력용: /종합정보와 같은 원본 종합매력 및 일시 보정 적용값
+                    let originUserPetExp = Math.round(baseUserTotalExp);
+                    let boostedUserPetExp = Math.round(userPetExp);
 
                     //치명타
                     let userCriticalExp = calculateCriticalDamage(userPetObj, userPetExp);
@@ -18161,7 +18143,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let petTypeBuff = difftypeBuff(userPetObj, bossObj);
                     let petTypeFlag = petTypeBuff.buff1 != 1 ? true : false; // 속성 상성여부 true 유리 false 기존
                     let bossTypeFlag = petTypeBuff.buff2 != 1 ? true : false; // 속성 상성여부 true 유리 false 기존
-                    let userTypeExp = Math.round(originUserPetExp * petTypeBuff.buff1); // 출력용 상성 적용 매력
+                    let userTypeExp = Math.round(boostedUserPetExp * petTypeBuff.buff1); // 일시 보정 후 상성 적용 매력
 
                     // 상성 적용
                     userPetExp = Math.round(userPetExp * petTypeBuff.buff1);
@@ -18251,14 +18233,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     message += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
                     message += "펫: " + petData[sender].petimg + petData[sender].petname + "\n";
                     message += "타입: " + userPetObj.pettype + "\n";
-                    message += "기본: " + numberWithCommas(originUserPetExp) + "💕\n";
+                    message += "종합매력: " + numberWithCommas(originUserPetExp) + "💕\n";
+                    if (towerBonusExp > 0) message += "추가보정: +" + numberWithCommas(towerBonusExp) + "💕\n";
                     message += "상성: " + numberWithCommas(userTypeExp) + "💕" + (petTypeFlag ? " ⬆️유리" : "") + "\n";
                     message += "최종: " + numberWithCommas(userPetExp) + "💕" + (criticalFlag ? " 💥크리티컬" : "") + "\n\n";
                     message += "              🆚\n\n";
                     message += "👹 " + challengerFloor + "층 수호자\n";
                     message += "보스: " + bossObj.name + "\n";
                     message += "타입: " + bossObj.pettype + "\n";
-                    message += "기본: " + numberWithCommas(originBossExp) + "💕\n";
+                    message += "수호자매력: " + numberWithCommas(originBossExp) + "💕\n";
                     message += "상성: " + numberWithCommas(bossExp) + "💕" + (bossTypeFlag ? " ⬆️유리" : "") + "\n";
                     message += "최종: " + numberWithCommas(bossExp) + "💕\n\n";
                     message += "━━━━━━━━━━━━\n";
