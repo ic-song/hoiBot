@@ -93,7 +93,7 @@ Status: VERIFIED
 - `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
 - `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
 - 양측 상성·크리티컬 적용 후 최종 캐슬매력을 직접 비교하며, 동률이면 방어자가 승리한다.
-- 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 기본/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시한다.
+- 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 기본/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
@@ -1369,7 +1369,7 @@ Status: VERIFIED
 ## AI Notes
 
 - 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
-- 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/기본/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시한다.
+- 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/기본/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
 - `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
 
 ---
@@ -1418,7 +1418,7 @@ Status: VERIFIED
 - High-impact progression branch with daily entry count and reward logic
 - 도전자 크리티컬·양측 상성 적용 후 최종 매력을 직접 비교하며, 동률이면 보스가 승리한다.
 - 직접 비교에서 패배한 경우에만 `시련을 걷는 자`와 `시탑 공략서📜` 순서로 기존 추가 판정을 수행한다.
-- 출력은 도전자·보스 기본/상성/최종 매력, 비교식, 매력 차이, 추가 판정과 공략 결과를 카드형 UI로 표시한다.
+- 출력은 도전자·보스 기본/상성/최종 매력, 비교식, 매력 차이, 추가 판정과 공략 결과를 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
 - Best anchor for tower floor, entry limit, and reward regression investigations
 
 ---
@@ -1519,7 +1519,7 @@ Status: VERIFIED
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
-- Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
+- Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
@@ -1571,7 +1571,7 @@ Status: VERIFIED
 - Master-only test helper for setting daily quest counters in one command
 - Usage: `/일퀘횟수수정 유저명 시탑 캐대전 미대전 펫탐험 [일일보상횟수]`
 - The outer command guard accepts `/일퀘횟수수정` and spaced arguments, then `editDailyQuestCountsForTest` returns usage/validation errors
-- Count values must be 시탑/캐대전/미대전 0~5, 펫탐험 0~10
+- Count values must be 시탑/캐대전/미대전 0~15, 펫탐험 0~10
 - Castle `battle.ticket` is normalized to `min(캐대전, 1)` so test state matches free-battle usage
 
 ---
@@ -4376,6 +4376,7 @@ Status: VERIFIED
 - `ensureMatzangParticipant`
 - `addDiamond`
 - `buildMatzangParticipantList`
+- `getMatzangPointRanking`
 - `getMatzangBattleProfile`
 - `runMatzangBattle`
 - `getMatzangRankReward`
@@ -4414,7 +4415,7 @@ Status: VERIFIED
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
 - `/맞짱시간체크 [닉네임]` is an anytime read-only Admin/Master diagnostic path and does not run battle, select an opponent, or save match count, PT, diamond, or field data
-- Active 맞짱필드 blocks `/미니펫오픈` and `/샵오픈` before those command branches execute
+- Active 맞짱필드 blocks all non-matzang command flows in `main.js` and `Info.js` until `/맞짱종료`; slash commands receive the allowed-command guide while unrelated plain-text aliases are ignored without executing
 - `Info.js` reads `data.member[*].diamond` for 종합 정보 display
 
 ## Related Commands
@@ -4428,6 +4429,7 @@ Status: VERIFIED
 - `/휴식`
 - `/맞짱종료`
 - `/맞짱필드목록`
+- `/맞짱순위`
 - `/다이아순위`
 - `/다이아상점`
 - `/다이아구매 [번호] [갯수]`
@@ -4449,7 +4451,10 @@ Status: VERIFIED
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
 - `/휴식` stores a rest end time so `/맞짱` and `ㅁㅁ` can resume after the 60-second break even if the delayed notice/save timing is late
 - A user who reaches 7 event matches is marked field-out and cannot rejoin the active event
-- `/맞짱종료` pays top 1~50 event PT rewards as 다이아 and then clears active participant data
+- Each `/맞짱` or `ㅁㅁ` run grants 1~2 다이아. `/맞짱종료` pays event PT rank rewards to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
+- `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
+- `/맞짱순위`는 `/맞짱시작`부터 현재까지 PT를 획득한 참가자를 누적 PT 내림차순으로 보여주며, 동점은 이름 오름차순으로 정렬한다. 조회만 수행하며 데이터를 저장하지 않는다.
+- While the field is active, allowed commands are `/맞짱시작`, `/휴식`, `/참여` (`ㅊㅇ`), `/맞짱필드목록`, `/맞짱순위`, `/맞짱시간체크 [닉네임]`, `/맞짱` (`ㅁㅁ`), `/맞짱종료`, and the field-linked diamond ranking/shop/operator commands; full-pattern guards prevent suffix text from bypassing the lock.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다

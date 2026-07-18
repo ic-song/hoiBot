@@ -10,10 +10,10 @@ const GLOBAL_CONFIG = {
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
 	},
 	daily: { // 일일 콘텐츠 진행 설정
-		trialTowerMax: 5, // 시련의탑 하루 최대 횟수
-		castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
+		trialTowerMax: 15, // 시련의탑 하루 최대 횟수
+		castleBattleMax: 15, // 캐슬대전 하루 최대 횟수
 		castleBattleFree: 1, // 캐슬대전 무료 횟수
-		miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
+		miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
 		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
 		petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
 	},
@@ -208,6 +208,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		if (data && data.matzangField && data.matzangField.active === true) {
+			return;
+		}
 		if (isAccountSuspensionBlockedMessage(msg) && isAccountSuspended(data, sender)) {
 			replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
 			return;
@@ -1022,19 +1025,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 
-			// 기록: 시련탑(요구사항: 5)
+			// 기록: 시련탑(요구사항: 15)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
 			var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
-			// 기록: 캐슬대전(요구사항: 5)
+			// 기록: 캐슬대전(요구사항: 15)
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
 			var castleMax = GLOBAL_CONFIG.daily.castleBattleMax;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
-			// 기록: 미니펫대전(요구사항: 5)
+			// 기록: 미니펫대전(요구사항: 15)
 			var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 			var miniWin = miniBattle.win || 0;
 			var miniLose = miniBattle.lose || 0;
