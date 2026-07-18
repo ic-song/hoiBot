@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.272"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.273"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -84,6 +84,13 @@ const PET_SKILL_COMPAT_GROUPS = [
     ["헌터", "만렙헌터"],
     ["건물주", "하느님 위에 갓물주"]
 ];
+const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
+    S: 10.5,
+    A: 18.1,
+    B: 20,
+    C: 47.7
+};
+var petSkillGradeItemCountCache = null;
 const PET_SKILL_LIST = [
 
     { name: "청룡언월도", grade: "SS", rate: 0.2, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
@@ -2711,7 +2718,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
                         var sd = PET_SKILL_LIST[ps];
-                        if (sd.tierExclusive) continue;
                         var rate = getPetSkillActualRate(sd);
                         totalPercent += rate; // 🔥 누적
 
@@ -2746,7 +2752,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("등록되지 않은 펫스킬입니다.\n또는 존재하지 않는 유저입니다.");
                         return;
                     }
-                    var skillRateLine = skillInfo.tierExclusive ? "획득: 별도 지급 전용" : "확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
+                    var skillRateLine = "확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
                     replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n" + skillRateLine + "\n효과: " + skillInfo.effect);
                     return;
                 }
@@ -34397,15 +34403,36 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
 function getPetSkillTotalRate() {
     var totalRate = 0;
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-        if (!PET_SKILL_LIST[i].tierExclusive) totalRate += PET_SKILL_LIST[i].rate;
+        totalRate += getPetSkillRandomWeight(PET_SKILL_LIST[i]);
     }
     return totalRate;
+}
+
+// 등급별 총확률을 유지하면서 같은 등급 스킬에 균등 분배한 추첨 가중치 반환
+function getPetSkillRandomWeight(skillData) {
+    if (!skillData) return 0;
+    var gradeWeightTotal = PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS[skillData.grade];
+    if (typeof gradeWeightTotal !== "number") return skillData.rate || 0;
+    var gradeItemCount = getPetSkillGradeItemCount(skillData.grade);
+    return gradeItemCount > 0 ? gradeWeightTotal / gradeItemCount : 0;
+}
+
+// 펫스킬 등급별 등록 개수를 한 번 계산해 재사용
+function getPetSkillGradeItemCount(grade) {
+    if (!petSkillGradeItemCountCache) {
+        petSkillGradeItemCountCache = {};
+        for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+            var skillGrade = PET_SKILL_LIST[i].grade;
+            petSkillGradeItemCountCache[skillGrade] = (petSkillGradeItemCountCache[skillGrade] || 0) + 1;
+        }
+    }
+    return petSkillGradeItemCountCache[grade] || 0;
 }
 
 function getPetSkillActualRate(skillData) {
     var totalRate = getPetSkillTotalRate();
     if (!skillData || totalRate <= 0) return 0;
-    return (skillData.rate / totalRate) * 100;
+    return (getPetSkillRandomWeight(skillData) / totalRate) * 100;
 }
 
 // 무작위 펫 스킬을 선택하는 함수
@@ -34415,9 +34442,8 @@ function pickRandomPetSkill() {
     var acc = 0;
     var lastRandomSkill = null;
     for (var j = 0; j < PET_SKILL_LIST.length; j++) {
-        if (PET_SKILL_LIST[j].tierExclusive) continue;
         lastRandomSkill = PET_SKILL_LIST[j];
-        acc += PET_SKILL_LIST[j].rate;
+        acc += getPetSkillRandomWeight(PET_SKILL_LIST[j]);
         if (roll < acc) return PET_SKILL_LIST[j];
     }
     return lastRandomSkill;

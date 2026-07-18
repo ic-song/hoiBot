@@ -2699,7 +2699,8 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `tierExclusive: true`인 티어 전용 펫스킬북 30종은 확률표와 랜덤 오픈 풀에서 제외되며 관리자 별도 지급만 사용한다.
+- 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
+- S/A/B/C의 기존 등급별 총확률은 유지하고, 각 등급 안의 기존 스킬과 티어책에 동일 확률로 균등 분배한다. SS/D는 기존 개별 확률을 유지한다.
 
 ---
 
@@ -2742,7 +2743,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- 티어 전용 펫스킬북은 `rate: 0`이며 `pickRandomPetSkill`이 명시적으로 제외한다.
+- `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C 등급 내부 균등 확률을 적용하며 티어 전용 펫스킬북도 추첨한다.
 - `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
 
 ---
