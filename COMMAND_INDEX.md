@@ -94,6 +94,7 @@ Status: VERIFIED
 - `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
 - 양측 상성·크리티컬 적용 후 최종 캐슬매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 기본/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
@@ -1370,6 +1371,7 @@ Status: VERIFIED
 
 - 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/기본/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
 - `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
 
 ---
@@ -1419,6 +1421,7 @@ Status: VERIFIED
 - 도전자 크리티컬·양측 상성 적용 후 최종 매력을 직접 비교하며, 동률이면 보스가 승리한다.
 - 직접 비교에서 패배한 경우에만 `시련을 걷는 자`와 `시탑 공략서📜` 순서로 기존 추가 판정을 수행한다.
 - 출력은 도전자·보스 기본/상성/최종 매력, 비교식, 매력 차이, 추가 판정과 공략 결과를 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 카드 상단의 공략횟수 아래에 현재 결과를 `✅ 공략 성공` 또는 `❌ 공략 실패`로 먼저 표시한다.
 - Best anchor for tower floor, entry limit, and reward regression investigations
 
 ---

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.280"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.281"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -16379,6 +16379,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += "🏆 데일리 캐슬매력 대전\n";
                     result += "(대전횟수: " + (isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) + "/" + GLOBAL_CONFIG.daily.castleBattleMax + ") ";
                     result += "(리셋권: " + (data.member[sender].bag[resetTicketName] || 0) + "개)\n";
+                    result += "결과: " + (isWinFlag ? "✅ 승리" : "❌ 패배") + "\n";
                     result += "━━━━━━━━━━━━\n\n";
                     result += "⚔️ 공격\n";
                     result += "유저: " + checkRank(data, petData, guildData, attackerName) + "\n";
@@ -17030,6 +17031,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let enemyMiniPetUpgrade = petData[targetName].miniPet.upgrade || 0;
                     let resultMsg = "🐹 미니펫 대전\n";
                     resultMsg += "(대전횟수: " + remain + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ") (리셋권: " + resetItemCount + "개)\n";
+                    resultMsg += "결과: " + (isWin ? "✅ 승리" : "❌ 패배") + "\n";
                     resultMsg += "━━━━━━━━━━━━\n\n";
                     resultMsg += "⚔️ 공격\n";
                     resultMsg += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
@@ -18243,6 +18245,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let towerExpGap = Math.abs(userPetExp - bossExp); // 도전자와 보스의 최종 매력 차이
                     message += "😈 시련의 탑 · " + challengerFloor + "층\n";
                     message += "(공략횟수: " + data.member[sender].towerCnt + "/" + maxEnter + ")\n";
+                    message += "결과: " + (userWinnerFlag ? "✅ 공략 성공" : "❌ 공략 실패") + "\n";
                     message += "━━━━━━━━━━━━\n\n";
                     message += "⚔️ 도전자\n";
                     message += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
