@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.275"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.276"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2762,7 +2762,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var skillRateLine = "확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
-                    replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n" + skillRateLine + "\n효과: " + skillInfo.effect);
+                    var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
+                    replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n" + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine);
                     return;
                 }
 
@@ -34232,9 +34233,28 @@ function removeFreeMarketDataByUser(freeMarketData, user) {
 function getPetSkillData(skillName) {
     skillName = normalizePetSkillName(skillName);
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-        if (PET_SKILL_LIST[i].name === skillName) return PET_SKILL_LIST[i];
+        var skillData = PET_SKILL_LIST[i];
+        if (skillData.name === skillName || getTierPetSkillSearchName(skillData) === skillName) return skillData;
     }
     return null;
+}
+
+// 티어 전용 펫스킬 이름에서 선행 이모지를 제외한 조회용 이름 반환
+function getTierPetSkillSearchName(skillData) {
+    if (!skillData || !skillData.tierExclusive) return "";
+    var normalizedName = normalizePetSkillName(skillData.name);
+    var firstSpaceIndex = normalizedName.indexOf(" ");
+    return firstSpaceIndex === -1 ? normalizedName : normalizedName.substring(firstSpaceIndex + 1).trim();
+}
+
+// 티어 전용 펫스킬의 종합매력과 중복 장착 안내 문구 생성
+function buildTierPetSkillInfoLine(skillData) {
+    if (!skillData || !skillData.tierExclusive) return "";
+    var totalExp = (parseInt(skillData.raidExp, 10) || 0) + (parseInt(skillData.castleExp, 10) || 0); // 레이드·캐슬 매력 합산
+    var totalExpInTenThousands = totalExp / 10000; // 종합매력을 만 단위로 변환
+    return "\n종합매력 " + numberWithCommas(totalExpInTenThousands) + "만 증가" +
+        "\n티어전용 펫스킬 중복 장착은 불가합니다." +
+        "\n장미칼,청룡언월도,오딘의 뿅망치 중복장착은 가능합니다.";
 }
 
 // 펫 스킬 이름에서 불필요한 접두사나 이모지를 제거하여 정규화된 형태로 반환

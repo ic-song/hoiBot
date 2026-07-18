@@ -1831,7 +1831,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2092`
+- `main.js:2742`
 
 ## Files
 
@@ -1841,6 +1841,8 @@ Status: VERIFIED
 
 - `formatSkillBagMessage`
 - `getPetSkillData`
+- `getTierPetSkillSearchName`
+- `buildTierPetSkillInfoLine`
 - `normalizePetSkillName`
 
 ## Data Usage
@@ -1860,6 +1862,8 @@ Status: VERIFIED
 ## AI Notes
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
+- 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
+- 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬·장미칼·청룡언월도·오딘의 뿅망치 중복 장착 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
 - `장인의 숨결` applies to `/펫강화` and `/정령강화` failure only, preserving the required enhancement stone at 7%; it does not apply to `/반지강화`.
 
