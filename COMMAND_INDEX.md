@@ -125,6 +125,9 @@ Status: VERIFIED
 
 ## Runtime / Save-Flow Hotspots
 
+- `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore a malformed `member.json` from the strictly parsed `member_back.json` recovery snapshot.
+- `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for `member.json` and `member_back.json`; other JSON files keep the existing direct UTF-8 write flow.
+- Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
 - `main.js:1328`: main `response(...)` entry point for almost all mutable gameplay commands
 - `Info.js:115`: info/query-oriented `response(...)` entry point
 - `main.js:31185`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`

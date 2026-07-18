@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.267"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.268"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -694,6 +694,7 @@ USER_REQUEST_WINDOW_MS = requestMonitorConfig.windowMs;
 USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
+var protectedJsonSaveLocks = {}; // member/직전 백업 경로별 저장 잠금
 let initData = loadJsonFile(filePath);
 let Master = initData.master;
 let Admins = getAdminPayoutUsers(initData);
@@ -1350,9 +1351,46 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
         }
 
+        if (msg === "/봇살리기" && (isAdmin(sender) || isMaster(sender))) {
+            try {
+                let activeFilePathBack = resolveActiveDataPath(filePath_back);
+                let activeMemberPetPathBack = resolveActiveDataPath(memberPetPath_back);
+                let activePetSkillDataPathBack = resolveActiveDataPath(petSkillDataPath_back);
+                let file = new java.io.File(activeFilePathBack);
+                if (file.exists()) {
+                    // main
+                    let fileContent = FileStream.read(activeFilePathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+                    let mainDataBack = parseJsonContent(fileContent, activeFilePathBack);
+                    saveJsonFile(mainDataBack, filePath);
+                    //pet
+                    let petContent = FileStream.read(activeMemberPetPathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+                    let petDataBack = parseJsonContent(petContent, activeMemberPetPathBack);
+                    saveJsonFile(petDataBack, memberPetPath);
+                    //petSkill
+                    let petSkillFile = new java.io.File(activePetSkillDataPathBack);
+                    if (petSkillFile.exists()) {
+                        let petSkillContent = FileStream.read(activePetSkillDataPathBack, "utf-8");
+                        let petSkillDataBack = parseJsonContent(petSkillContent, activePetSkillDataPathBack, {});
+                        saveJsonFile(petSkillDataBack, petSkillDataPath);
+                    }
+
+                    replier.reply(sender + "님이 직전 데이터로 봇을 살립니다.");
+                } else {
+                    replier.reply("해당 경로에 파일 없음");
+                }
+                return;
+            } catch (e) {
+                replier.reply("백파일도 이상 발생...");
+                debuggerLog("[ERROR : Backup error]" + allsee + JSON.stringify(e));
+                return;
+            }
+        }
+
+        var data = null;
+
         if (isAccountSuspensionBlockedMessage(msg)) {
-            var accountSuspensionCheckData = loadJsonFile(filePath);
-            if (isAccountSuspended(accountSuspensionCheckData, sender)) {
+            data = loadJsonFile(filePath);
+            if (isAccountSuspended(data, sender)) {
                 replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
                 return;
             }
@@ -1601,45 +1639,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        if (msg === "/봇살리기" && (isAdmin(sender) || isMaster(sender))) {
-            try {
-                let activeFilePathBack = resolveActiveDataPath(filePath_back);
-                let activeMemberPetPathBack = resolveActiveDataPath(memberPetPath_back);
-                let activePetSkillDataPathBack = resolveActiveDataPath(petSkillDataPath_back);
-                let file = new java.io.File(activeFilePathBack);
-                if (file.exists()) {
-                    // main
-                    let fileContent = FileStream.read(activeFilePathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-                    let mainDataBack = parseJsonContent(fileContent, activeFilePathBack);
-                    saveJsonFile(mainDataBack, filePath);
-                    //pet
-                    let petContent = FileStream.read(activeMemberPetPathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-                    let petDataBack = parseJsonContent(petContent, activeMemberPetPathBack);
-                    saveJsonFile(petDataBack, memberPetPath);
-                    //petSkill
-                    let petSkillFile = new java.io.File(activePetSkillDataPathBack);
-                    if (petSkillFile.exists()) {
-                        let petSkillContent = FileStream.read(activePetSkillDataPathBack, "utf-8");
-                        let petSkillDataBack = parseJsonContent(petSkillContent, activePetSkillDataPathBack, {});
-                        saveJsonFile(petSkillDataBack, petSkillDataPath);
-                    }
-                    //homeData
-                    //    let homeContent = FileStream.read(homeDataFile_back, "utf-8");          // 명시적으로 UTF-8 인코딩 사용
-                    //      let homeDataBack = JSON.parse(homeContent);
-                    //    saveJsonFile(homeDataBack, homeDataFile);
-
-                    //복원
-                    replier.reply(sender + "님이 직전 데이터로 봇을 살립니다.");
-                } else {
-                    replier.reply("해당 경로에 파일 없음");
-                }
-                return;
-            } catch (e) {
-                replier.reply("백파일도 이상 발생...");
-                debuggerLog("[ERROR : Backup error]" + allsee + JSON.stringify(e));
-                return;
-            }
-        }
         if (autoDailyQuestInternalDepth <= 0 && msg.startsWith("/")) {
             try {
                 let activeFilePath = resolveActiveDataPath(filePath);
@@ -1694,7 +1693,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var commonStepStart = Date.now();
         addResponseTiming("명령 전처리/과부하체크", responseStartMs);
         commonStepStart = Date.now();
-        var data = loadJsonFile(filePath);
+        if (!data) data = loadJsonFile(filePath);
         addResponseTiming("member.json 로드", commonStepStart);
         commonStepStart = Date.now();
         var petData = loadJsonFile(memberPetPath);
@@ -25794,8 +25793,13 @@ function getMissingDevDataFiles() {
 
 // JSON 파일 로드 함수
 function loadJsonFile(path) {
+    var protectedLock = null;
     try {
         path = resolveActiveDataPath(path);
+        if (isProtectedMemberJsonPath(path)) {
+            protectedLock = getProtectedJsonSaveLock(path);
+            protectedLock.lock();
+        }
         let file = new java.io.File(path);
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
@@ -25814,18 +25818,109 @@ function loadJsonFile(path) {
         // Api.replyRoom(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
         debuggerLog(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
         throw e;
+    } finally {
+        if (protectedLock) protectedLock.unlock();
     }
 }
+
+// member.json과 직전 백업에 안전 저장을 적용할지 확인하는 함수
+function isProtectedMemberJsonPath(path) {
+    var fileName = String(new java.io.File(path).getName());
+    return fileName === "member.json" || fileName === "member_back.json";
+}
+
+// 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
+function getProtectedJsonSaveLock(path) {
+    path = String(path);
+    if (!protectedJsonSaveLocks[path]) {
+        protectedJsonSaveLocks[path] = new java.util.concurrent.locks.ReentrantLock();
+    }
+    return protectedJsonSaveLocks[path];
+}
+
+// JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
+function writeVerifiedJsonFile(path, jsonText) {
+    var lock = getProtectedJsonSaveLock(path);
+    var targetFile = new java.io.File(path);
+    var tempFile = new java.io.File(path + ".tmp");
+    var rollbackFile = new java.io.File(path + ".rollback");
+    var outputStream = null;
+    var writer = null;
+
+    lock.lock();
+    try {
+        ensureParentFolder(path);
+        if (tempFile.exists() && !tempFile.delete()) {
+            throw new Error("Temporary JSON file cleanup failed: " + tempFile.getPath());
+        }
+        if (rollbackFile.exists() && !rollbackFile.delete()) {
+            throw new Error("Rollback JSON file cleanup failed: " + rollbackFile.getPath());
+        }
+
+        outputStream = new java.io.FileOutputStream(tempFile, false);
+        writer = new java.io.OutputStreamWriter(outputStream, "UTF-8");
+        writer.write(jsonText);
+        writer.flush();
+        outputStream.getFD().sync();
+        writer.close();
+        writer = null;
+        outputStream = null;
+
+        parseJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), tempFile.getPath());
+
+        if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
+            throw new Error("Current JSON file backup failed: " + path);
+        }
+        if (!tempFile.renameTo(targetFile)) {
+            if (rollbackFile.exists()) rollbackFile.renameTo(targetFile);
+            throw new Error("Verified JSON file replace failed: " + path);
+        }
+        if (rollbackFile.exists() && !rollbackFile.delete()) {
+            debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath());
+        }
+    } catch (e) {
+        if (!targetFile.exists() && rollbackFile.exists()) {
+            rollbackFile.renameTo(targetFile);
+        }
+        throw e;
+    } finally {
+        try {
+            if (writer) writer.close();
+        } catch (ignoreWriterClose) {
+        }
+        try {
+            if (outputStream) outputStream.close();
+        } catch (ignoreStreamClose) {
+        }
+        if (tempFile.exists()) tempFile.delete();
+        lock.unlock();
+    }
+}
+
 // JSON 파일 저장 함수
 function saveJsonFile(data, path) {
     if (data === null || (typeof data !== "object" && typeof data !== "function")) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
         path = resolveActiveDataPath(path);
+        var jsonText = JSON.stringify(data);
+        if (typeof jsonText !== "string") {
+            throw new Error("JSON stringify failed: " + path);
+        }
         isSaving = true;
-        ensureParentFolder(path);
-        FileStream.write(path, JSON.stringify(data), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-        isSaving = false;
+        try {
+            ensureParentFolder(path);
+            if (isProtectedMemberJsonPath(path)) {
+                writeVerifiedJsonFile(path, jsonText);
+            } else {
+                FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
+            }
+        } catch (e) {
+            debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString());
+            throw e;
+        } finally {
+            isSaving = false;
+        }
     }
 }
 // 길드 영지전 관련 함수들
