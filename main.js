@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.278"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.279"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2029,11 +2029,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 resultMsg += "\n[" + checkRank(data, petData, guildData, sender) + "] 님은 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진해 필드 아웃되었습니다.";
             }
             resultMsg += "\n\n맞짱결과 상세보기📋" + allsee + "\n";
-            resultMsg += "[" + checkRank(data, petData, guildData, sender) + "]\n";
-            resultMsg += battle.attacker.petLine + " " + numberWithCommas(battle.attacker.baseExp) + "💕 " + battle.attacker.message + "\n\n";
-            resultMsg += "🆚\n\n";
-            resultMsg += "[" + checkRank(data, petData, guildData, opponentName) + "]\n";
-            resultMsg += battle.defender.petLine + " " + numberWithCommas(battle.defender.baseExp) + "💕 " + battle.defender.message;
+            var matzangCompareSymbol = battle.attacker.finalExp > battle.defender.finalExp ? ">" : battle.attacker.finalExp < battle.defender.finalExp ? "<" : "=";
+            var matzangExpGap = Math.abs(battle.attacker.finalExp - battle.defender.finalExp); // 양측 최종 매력 차이
+            resultMsg += "⚔️ 공격\n";
+            resultMsg += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
+            resultMsg += "펫: " + battle.attacker.petLine + "\n";
+            resultMsg += "기본: " + numberWithCommas(battle.attacker.baseExp) + "💕\n";
+            resultMsg += "상성: " + numberWithCommas(battle.attacker.buffedExp) + "💕" + (battle.attacker.isTypeAdvantage ? " ⬆️유리" : "") + "\n";
+            resultMsg += "최종: " + numberWithCommas(battle.attacker.finalExp) + "💕" + (battle.attacker.isCritical ? " 💥크리티컬" : "") + "\n\n";
+            resultMsg += "              🆚\n\n";
+            resultMsg += "🛡️ 방어\n";
+            resultMsg += "유저: " + checkRank(data, petData, guildData, opponentName) + "\n";
+            resultMsg += "펫: " + battle.defender.petLine + "\n";
+            resultMsg += "기본: " + numberWithCommas(battle.defender.baseExp) + "💕\n";
+            resultMsg += "상성: " + numberWithCommas(battle.defender.buffedExp) + "💕" + (battle.defender.isTypeAdvantage ? " ⬆️유리" : "") + "\n";
+            resultMsg += "최종: " + numberWithCommas(battle.defender.finalExp) + "💕" + (battle.defender.isCritical ? " 💥크리티컬" : "") + "\n\n";
+            resultMsg += "━━━━━━━━━━━━\n";
+            resultMsg += "📊 최종 매력 비교\n";
+            resultMsg += numberWithCommas(battle.attacker.finalExp) + " " + matzangCompareSymbol + " " + numberWithCommas(battle.defender.finalExp) + "\n";
+            resultMsg += "매력 차이: " + numberWithCommas(matzangExpGap) + "💕";
             saveJsonFile(data, filePath);
             saveJsonFile(currencyLogData, currencyLogPath);
             replier.reply(resultMsg);
@@ -16285,49 +16299,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let defenderSkillExp = hasPetSkill(petSkillData, defenderName, "장미칼") ? 500000 : 0;
                     let attackerPetExp_origin = parseInt(Math.round(attackerPetObj.petexp) + attackerCastleItemExp + attackerGearExp) + attackerMiniPetExp + attackerHomeTotalExp + attackerIntimacyExp + attackerSkillExp; //펫매력+캐슬매력+펫장비+미니펫+펫홈+펫스킬
                     let defenderPetExp_origin = parseInt(Math.round(defenderPetObj.petexp) + defenderCastleItemExp + defenderGearExp) + defenderMiniPetExp + defenderHomeTotalExp + defenderIntimacyExp + defenderSkillExp; //펫매력+캐슬매력+펫장비+미니펫+펫홈+펫스킬
-                    let attackerMsg = "";
-                    let defenderMsg = "";
                     let petTypeBuff = difftypeBuff(attackerPetObj, defenderPetObj);
-                    let attackerPetExp = (attackerPetExp_origin * petTypeBuff.buff1).toFixed(0);
-                    let defenderPetExp = (defenderPetExp_origin * petTypeBuff.buff2).toFixed(0);
-                    let newAttackerPetExp = petTypeBuff.buff1 === 1.3 ? parseInt(attackerPetExp) : null;
-                    let newDefenderPetExp = petTypeBuff.buff2 === 1.3 ? parseInt(defenderPetExp) : null;
-                    // 상성 버프 적용
-                    attackerMsg = createTotalMessage(attackerPetExp, petTypeBuff.buff1 === 1.3 ? "⬆" : "");
-                    defenderMsg = createTotalMessage(defenderPetExp, petTypeBuff.buff2 === 1.3 ? "⬆" : "");
-                    if (petTypeBuff.buff1 === 1.3 && newAttackerPetExp !== null) {
-                        // 상성 + 치명타 적용
-                        let attackerPetExp2 = calculateCriticalDamage(attackerPetObj, parseInt(newAttackerPetExp));
-                        if (newAttackerPetExp !== attackerPetExp2) {
-                            attackerPetExp = attackerPetExp2;
-                            attackerMsg = createTotalMessage(attackerPetExp, "⬆💥");
-                        }
-                    } else {
-                        // 치명타 버프 적용
-                        let attackerPetExp1 = calculateCriticalDamage(attackerPetObj, parseInt(attackerPetExp_origin));
-                        if (attackerPetExp_origin !== attackerPetExp1) {
-                            attackerPetExp = attackerPetExp1;
-                            attackerMsg = createTotalMessage(attackerPetExp, "💥");
-                        }
-                    }
-                    if (petTypeBuff.buff2 === 1.3 && newDefenderPetExp !== null) {
-                        let defenderPetExp2 = calculateCriticalDamage(defenderPetObj, parseInt(newDefenderPetExp));
-                        if (newDefenderPetExp !== defenderPetExp2) {
-                            defenderPetExp = defenderPetExp2;
-                            defenderMsg = createTotalMessage(defenderPetExp, "⬆💥");
-                        }
-                    } else {
-                        // 치명타 버프 적용
-                        let defenderPetExp1 = calculateCriticalDamage(defenderPetObj, parseInt(defenderPetExp_origin));
-                        if (defenderPetExp_origin !== defenderPetExp1) {
-                            defenderPetExp = defenderPetExp1;
-                            defenderMsg = createTotalMessage(defenderPetExp, "💥");
-                        }
-                    }
-                    attackerMsg = attackerPetExp_origin < attackerPetExp ? numberWithCommas(attackerMsg) : "";
-                    defenderMsg = defenderPetExp_origin < defenderPetExp ? numberWithCommas(defenderMsg) : "";
-                    let gameResult = petgameplay(attackerPetExp, defenderPetExp); // 전투
-                    let isWinFlag = gameResult.winner == 1; // 공격자의 승리 여부
+                    let attackerTypeExp = Math.round(attackerPetExp_origin * petTypeBuff.buff1); // 공격자 상성 적용 매력
+                    let defenderTypeExp = Math.round(defenderPetExp_origin * petTypeBuff.buff2); // 방어자 상성 적용 매력
+                    let attackerPetExp = calculateCriticalDamage(attackerPetObj, attackerTypeExp); // 공격자 최종 매력
+                    let defenderPetExp = calculateCriticalDamage(defenderPetObj, defenderTypeExp); // 방어자 최종 매력
+                    let attackerCriticalFlag = attackerPetExp > attackerTypeExp;
+                    let defenderCriticalFlag = defenderPetExp > defenderTypeExp;
+                    let isWinFlag = attackerPetExp > defenderPetExp; // 최종 매력이 높을 때만 공격 승리, 동률은 방어 승리
                     let winnerName = isWinFlag ? attackerName : defenderName;
                     let loseName = isWinFlag ? defenderName : attackerName;
                     let winnerScore = getRandomScore2(true, isWinFlag, matchingBonusNum, castleBattleData);
@@ -16364,51 +16343,38 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     data.member[sender].exp += expGain + expFromBooster;
                     let finalExp = expGain + expFromBooster + "exp(" + expGain + "/" + expFromBooster + ")"; // 최종 경험치
-                    // 전투메세지
-                    result += "🏆데일리 캐슬매력 대전🏆\n";
-                    result +=
-                        "(남은 대전횟수: " +
-                        (isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) +
-                        "/" + GLOBAL_CONFIG.daily.castleBattleMax + ")" +
-                        " (잔여 :" +
-                        (data.member[sender].bag[resetTicketName] || 0) +
-                        "개)" +
-                        "\n";
-                    result += "\n🛡대전결과🛡\n[ " + (isWinFlag ? "🥇획득 +" + winnerScore : "❌회수 -" + loseScore) + "🏆 ]";
-                    result += "[누적 CP " + numberWithCommas(data.member[sender].battle.score) + "🏆]";
-                    result += isWinFlag ? "\n[승리✅] 경험치 " + finalExp + "(⤴️)" : "\n[패배❌] 경험치 " + finalExp + "(⤴️)";
-                    result += "\n\n";
-                    result +=
-                        "[" +
-                        checkRank(data, petData, guildData, attackerName) +
-                        "]등급: " +
-                        beforeRankName +
-                        "\n[" +
-                        attackerPetObj.petimg +
-                        attackerPetObj.petname +
-                        "(" +
-                        attackerPetObj.pettype +
-                        ")] " +
-                        numberWithCommas(attackerPetExp_origin) +
-                        "💕" +
-                        attackerMsg +
-                        "\n";
-                    result += "🆚";
-                    result +=
-                        "\n[" +
-                        checkRank(data, petData, guildData, defenderName) +
-                        "]등급: " +
-                        defRankName +
-                        "\n[" +
-                        defenderPetObj.petimg +
-                        defenderPetObj.petname +
-                        "(" +
-                        defenderPetObj.pettype +
-                        ")] " +
-                        numberWithCommas(defenderPetExp_origin) +
-                        "💕" +
-                        defenderMsg +
-                        "\n";
+                    // 전투 메시지
+                    let castleCompareSymbol = attackerPetExp > defenderPetExp ? ">" : attackerPetExp < defenderPetExp ? "<" : "=";
+                    let castleExpGap = Math.abs(attackerPetExp - defenderPetExp); // 양측 최종 매력 차이
+                    let attackerPetImage = attackerPetObj.newimg || attackerPetObj.petimg || ""; // 공격자 현재 펫 외형
+                    let defenderPetImage = defenderPetObj.newimg || defenderPetObj.petimg || ""; // 방어자 현재 펫 외형
+                    result += "🏆 데일리 캐슬매력 대전\n";
+                    result += "(대전횟수: " + (isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) + "/" + GLOBAL_CONFIG.daily.castleBattleMax + ") ";
+                    result += "(리셋권: " + (data.member[sender].bag[resetTicketName] || 0) + "개)\n";
+                    result += "━━━━━━━━━━━━\n\n";
+                    result += "⚔️ 공격\n";
+                    result += "유저: " + checkRank(data, petData, guildData, attackerName) + "\n";
+                    result += "펫: " + attackerPetObj.petname + "(" + attackerPetImage + ")\n";
+                    result += "타입: " + attackerPetObj.pettype + " · 등급: " + beforeRankName + "\n";
+                    result += "기본: " + numberWithCommas(attackerPetExp_origin) + "💕\n";
+                    result += "상성: " + numberWithCommas(attackerTypeExp) + "💕" + (petTypeBuff.buff1 === 1.3 ? " ⬆️유리" : "") + "\n";
+                    result += "최종: " + numberWithCommas(attackerPetExp) + "💕" + (attackerCriticalFlag ? " 💥크리티컬" : "") + "\n\n";
+                    result += "              🆚\n\n";
+                    result += "🛡️ 방어\n";
+                    result += "유저: " + checkRank(data, petData, guildData, defenderName) + "\n";
+                    result += "펫: " + defenderPetObj.petname + "(" + defenderPetImage + ")\n";
+                    result += "타입: " + defenderPetObj.pettype + " · 등급: " + defRankName + "\n";
+                    result += "기본: " + numberWithCommas(defenderPetExp_origin) + "💕\n";
+                    result += "상성: " + numberWithCommas(defenderTypeExp) + "💕" + (petTypeBuff.buff2 === 1.3 ? " ⬆️유리" : "") + "\n";
+                    result += "최종: " + numberWithCommas(defenderPetExp) + "💕" + (defenderCriticalFlag ? " 💥크리티컬" : "") + "\n\n";
+                    result += "━━━━━━━━━━━━\n";
+                    result += "📊 최종 매력 비교\n";
+                    result += numberWithCommas(attackerPetExp) + " " + castleCompareSymbol + " " + numberWithCommas(defenderPetExp) + "\n";
+                    result += "매력 차이: " + numberWithCommas(castleExpGap) + "💕\n\n";
+                    result += isWinFlag ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
+                    result += isWinFlag ? checkRank(data, petData, guildData, attackerName) + " 님이 캐슬대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, defenderName) + " 님이 캐슬대전에서 승리했습니다!\n";
+                    result += "CP: " + (isWinFlag ? "+" + winnerScore : "-" + loseScore) + "🏆 · 누적 " + numberWithCommas(data.member[sender].battle.score) + "🏆\n";
+                    result += "경험치: " + finalExp + "(⤴️)\n";
                     result +=
                         "\n━ ✦ 획득포인트 및 경험치 상세정보✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\n";
                     result += allsee + "\n";
@@ -16428,22 +16394,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else if (data.member[sender].boostercnt > 0) {
                         result += "\n남은 경험치 부스터 횟수:  " + numberWithCommas(data.member[sender].boostercnt || 0);
                     }
-                    result +=
-                        "\n🔸️캐슬대전(상세이력)🔸️\n" +
-                        allsee +
-                        attackerPetObj.petimg +
-                        attackerPetObj.petname +
-                        "\n💕 : " +
-                        numberWithCommas(attackerPetExp) +
-                        " / 최종 남은 💕 :" +
-                        numberWithCommas(gameResult.remainExp1) +
-                        " \n" +
-                        defenderPetObj.petimg +
-                        defenderPetObj.petname +
-                        "\n💕 : " +
-                        numberWithCommas(defenderPetExp) +
-                        " / 최종 남은 💕 :" +
-                        numberWithCommas(gameResult.remainExp2);
+                    result += "\n🔸️캐슬대전 최종 매력 차이🔸️\n" + allsee + numberWithCommas(castleExpGap) + "💕";
                     result += "\n\n" + checkRank(data, petData, guildData, winnerName) + " 캐슬포인트(CP): +" + numberWithCommas(winnerScore) + "pt🏆";
                     result += "\n" + checkRank(data, petData, guildData, loseName) + " 캐슬포인트(CP): -" + numberWithCommas(loseScore) + "pt🏆";
                     replier.reply(result);
@@ -17044,45 +16995,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 대전 결과 메시지
                     let remain = petData[sender].miniPetBattle.count || 0;
                     let resetItemCount = (data.member[sender].bag && data.member[sender].bag[resetItemName]) || 0;
-                    // 반환할 메시지
-                    let resultMsg = "🐹미니펫 대전🐹\n" + "(남은 대전횟수: " + remain + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ") " + "(잔여: " + resetItemCount + "개)\n\n";
-                    resultMsg += isWin ? "🏆대전결과🏆\n[승리✅] 경험치 " + finalExp + "(⤴️)\n" : "🏆대전결과🏆\n[패배❌] 경험치 " + finalExp + "(⤴️)\n";
-                    resultMsg +=
-                        "\n[" +
-                        checkRank(data, petData, guildData, sender) +
-                        "]\n" +
-                        "[" +
-                        petData[sender].miniPet.name +
-                        petData[sender].miniPet.emoji +
-                        "(+" +
-                        numberWithCommas(petData[sender].miniPet.battleExp) +
-                        "💕)" +
-                        "[" +
-                        petData[sender].miniPet.grade +
-                        "]" +
-                        "+" +
-                        numberWithCommas(myBase) +
-                        "💕" +
-                        (isMyCrit ? "(💥" + numberWithCommas(myFinal) + "💕)" : "") +
-                        "\n";
-                    resultMsg +=
-                        "🆚\n[" +
-                        checkRank(data, petData, guildData, targetName) +
-                        "]\n" +
-                        "[" +
-                        petData[targetName].miniPet.name +
-                        petData[targetName].miniPet.emoji +
-                        "(+" +
-                        numberWithCommas(petData[targetName].miniPet.battleExp) +
-                        "💕)" +
-                        "[" +
-                        petData[targetName].miniPet.grade +
-                        "]" +
-                        "+" +
-                        numberWithCommas(enemyBase) +
-                        "💕" +
-                        (isEnemyCrit ? "(💥" + numberWithCommas(enemyFinal) + "💕)" : "") +
-                        "\n\n";
+                    // 공통 대전 카드 형식으로 최종 매력 비교 표시
+                    let miniPetCompareSymbol = myFinal > enemyFinal ? ">" : myFinal < enemyFinal ? "<" : "=";
+                    let miniPetExpGap = Math.abs(myFinal - enemyFinal); // 양측 최종 매력 차이
+                    let myMiniPetUpgrade = petData[sender].miniPet.upgrade || 0;
+                    let enemyMiniPetUpgrade = petData[targetName].miniPet.upgrade || 0;
+                    let resultMsg = "🐹 미니펫 대전\n";
+                    resultMsg += "(대전횟수: " + remain + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ") (리셋권: " + resetItemCount + "개)\n";
+                    resultMsg += "━━━━━━━━━━━━\n\n";
+                    resultMsg += "⚔️ 공격\n";
+                    resultMsg += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
+                    resultMsg += "미니펫: " + petData[sender].miniPet.name + "(" + petData[sender].miniPet.emoji + ") · 강화: " + myMiniPetUpgrade + "강💫\n";
+                    resultMsg += "등급: " + petData[sender].miniPet.grade + " · 장착: +" + numberWithCommas(petData[sender].miniPet.battleExp) + "💕\n";
+                    resultMsg += "기본: " + numberWithCommas(myBase) + "💕\n";
+                    resultMsg += "최종: " + numberWithCommas(myFinal) + "💕" + (isMyCrit ? " 💥크리티컬" : "") + "\n\n";
+                    resultMsg += "              🆚\n\n";
+                    resultMsg += "🛡️ 방어\n";
+                    resultMsg += "유저: " + checkRank(data, petData, guildData, targetName) + "\n";
+                    resultMsg += "미니펫: " + petData[targetName].miniPet.name + "(" + petData[targetName].miniPet.emoji + ") · 강화: " + enemyMiniPetUpgrade + "강💫\n";
+                    resultMsg += "등급: " + petData[targetName].miniPet.grade + " · 장착: +" + numberWithCommas(petData[targetName].miniPet.battleExp) + "💕\n";
+                    resultMsg += "기본: " + numberWithCommas(enemyBase) + "💕\n";
+                    resultMsg += "최종: " + numberWithCommas(enemyFinal) + "💕" + (isEnemyCrit ? " 💥크리티컬" : "") + "\n\n";
+                    resultMsg += "━━━━━━━━━━━━\n";
+                    resultMsg += "📊 최종 매력 비교\n";
+                    resultMsg += numberWithCommas(myFinal) + " " + miniPetCompareSymbol + " " + numberWithCommas(enemyFinal) + "\n";
+                    resultMsg += "매력 차이: " + numberWithCommas(miniPetExpGap) + "💕\n\n";
+                    resultMsg += isWin ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
+                    resultMsg += isWin ? checkRank(data, petData, guildData, sender) + " 님이 미니펫대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, targetName) + " 님이 미니펫대전에서 승리했습니다!\n";
+                    resultMsg += "경험치: " + finalExp + "(⤴️)\n\n";
                     resultMsg +=
                         "━ ✦ 획득포인트 및 경험치 상세정보✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​";
                     resultMsg += "\n" + allsee + "\n";
@@ -18161,7 +18101,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     //전투
 
                     // 보스 매력(공격력) 계산
-                    let bossExp = getTrialTowerBossExp(challengerFloor);
+                    let originBossExp = getTrialTowerBossExp(challengerFloor); // 상성 적용 전 보스 매력
+                    let bossExp = originBossExp;
 
                     // 유저 매력 (종합)
                     let userPetExp = calculateTotalExp(sender, data, petData, homeData, petSkillData);
@@ -18190,14 +18131,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let petTypeBuff = difftypeBuff(userPetObj, bossObj);
                     let petTypeFlag = petTypeBuff.buff1 != 1 ? true : false; // 속성 상성여부 true 유리 false 기존
                     let bossTypeFlag = petTypeBuff.buff2 != 1 ? true : false; // 속성 상성여부 true 유리 false 기존
+                    let userTypeExp = Math.round(originUserPetExp * petTypeBuff.buff1); // 출력용 상성 적용 매력
 
                     // 상성 적용
                     userPetExp = Math.round(userPetExp * petTypeBuff.buff1);
                     bossExp = Math.round(bossExp * petTypeBuff.buff2);
 
-                    let gameResult = petgameplay(userPetExp, bossExp);
-                    // 승부 결과
-                    let userWinnerFlag = gameResult.winner == 1 ? true : false;
+                    // 최종 매력 직접 비교, 동률은 보스 승리
+                    let directTowerWinFlag = userPetExp > bossExp;
+                    let userWinnerFlag = directTowerWinFlag;
                     // 졌을 때 [시련을 걷는 자📙] 펫스킬 발동
                     if (!userWinnerFlag && hasPetSkill(petSkillData, sender, "시련을 걷는 자")) {
                         if (Math.random() <= 0.1) {
@@ -18269,26 +18211,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             }
                         });
                     }
-                    let img = userWinnerFlag ? "성공🤭" : "실패😨";
-                    message += "😈시련의 탑 " + challengerFloor + "층 공략😈 (" + img + ")";
-                    message += "\n(남은 공략횟수: " + "" + data.member[sender].towerCnt + "/" + maxEnter + ")";
-                    message += "\n\n";
-                    message += "[" + petData[sender].petimg + petData[sender].petname + "] 님의 공격⚔:\n";
-                    message += numberWithCommas(originUserPetExp) + "💕";
-                    if (petTypeFlag || criticalFlag) {
-                        message += "(" + numberWithCommas(userPetExp) + "💕";
-                        if (petTypeFlag) {
-                            message += "⬆";
-                        }
-                        if (criticalFlag) {
-                            message += "💥";
-                        }
-                        message += ")";
+                    let towerCompareSymbol = userPetExp > bossExp ? ">" : userPetExp < bossExp ? "<" : "=";
+                    let towerExpGap = Math.abs(userPetExp - bossExp); // 도전자와 보스의 최종 매력 차이
+                    message += "😈 시련의 탑 · " + challengerFloor + "층\n";
+                    message += "(공략횟수: " + data.member[sender].towerCnt + "/" + maxEnter + ")\n";
+                    message += "━━━━━━━━━━━━\n\n";
+                    message += "⚔️ 도전자\n";
+                    message += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
+                    message += "펫: " + petData[sender].petimg + petData[sender].petname + "\n";
+                    message += "타입: " + userPetObj.pettype + "\n";
+                    message += "기본: " + numberWithCommas(originUserPetExp) + "💕\n";
+                    message += "상성: " + numberWithCommas(userTypeExp) + "💕" + (petTypeFlag ? " ⬆️유리" : "") + "\n";
+                    message += "최종: " + numberWithCommas(userPetExp) + "💕" + (criticalFlag ? " 💥크리티컬" : "") + "\n\n";
+                    message += "              🆚\n\n";
+                    message += "👹 " + challengerFloor + "층 수호자\n";
+                    message += "보스: " + bossObj.name + "\n";
+                    message += "타입: " + bossObj.pettype + "\n";
+                    message += "기본: " + numberWithCommas(originBossExp) + "💕\n";
+                    message += "상성: " + numberWithCommas(bossExp) + "💕" + (bossTypeFlag ? " ⬆️유리" : "") + "\n";
+                    message += "최종: " + numberWithCommas(bossExp) + "💕\n\n";
+                    message += "━━━━━━━━━━━━\n";
+                    message += "📊 최종 매력 비교\n";
+                    message += numberWithCommas(userPetExp) + " " + towerCompareSymbol + " " + numberWithCommas(bossExp) + "\n";
+                    message += "매력 차이: " + numberWithCommas(towerExpGap) + "💕\n";
+                    if (!directTowerWinFlag && triggeredPetSkill == "시련을 걷는 자" && userWinnerFlag) {
+                        message += "\n✨ 추가 판정\n시련을 걷는 자📙 발동\n";
+                    } else if (!directTowerWinFlag && cheatItemFlag) {
+                        message += "\n✨ 추가 판정\n시탑 공략서📜 " + (userWinnerFlag ? "성공" : "실패") + "\n";
                     }
-                    message += "\n🆚";
-                    message += "\n";
-                    message += "[" + bossObj.name + "] (속성 : " + bossObj.pettype + (bossTypeFlag ? "⬆" : "") + ")";
-                    message += "\n남은 체력🌡: " + (userWinnerFlag ? "기절" : typeof gameResult.remainExp2 == "number" ? numberWithCommas(gameResult.remainExp2) : gameResult.remainExp2);
+                    message += userWinnerFlag ? "\n🎉 공략 성공\n" + challengerFloor + "층을 돌파했습니다!" : "\n👹 공략 실패\n" + bossObj.name + "을(를) 넘지 못했습니다.";
                     message +=
                         "\n\n━ ✦ 공략,사용아이템 및 상세정보 ✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\n";
                     message += allsee;
@@ -27839,17 +27790,37 @@ function resolveGuildTerritoryCastleBattle(war, petData, attackerName, defenderN
     };
 }
 
-// 영지전 캐슬매력과 크리티컬 적용값을 유저·펫 이름과 함께 한 줄로 표시
-function formatGuildTerritoryCastleBattleUserLine(battleUser) {
-    var line = battleUser.name + "[" + battleUser.petName + "] " + numberWithCommas(battleUser.baseExp) + "💕";
-    if (battleUser.isCritical) line += "(" + numberWithCommas(battleUser.finalExp) + "💕💥)";
-    return line;
+// 영지전 공격·방어 유저의 길드와 캐슬매력 상세 블록 생성
+function formatGuildTerritoryCastleBattleUserBlock(data, petData, guildData, guild, battleUser, roleLabel) {
+    var message = roleLabel + " · " + formatGuildDisplay(guild) + "\n";
+    message += "유저: " + checkRank(data, petData, guildData, battleUser.name) + "\n";
+    message += "펫: " + battleUser.petName + "\n";
+    message += "기본: " + numberWithCommas(battleUser.baseExp) + "💕\n";
+    message += "최종: " + numberWithCommas(battleUser.finalExp) + "💕" + (battleUser.isCritical ? " 💥크리티컬" : "");
+    return message;
 }
 
-// 영지전 상세보기에 공격자와 방어자의 캐슬매력 비교 문구 생성
-function buildGuildTerritoryCastleBattleDetailMessage(battleResult) {
-    return "\n" + formatGuildTerritoryCastleBattleUserLine(battleResult.attacker) +
-        "\nvs\n" + formatGuildTerritoryCastleBattleUserLine(battleResult.defender) + "\n\n";
+// 영지전 상세보기에 공격·방어 카드와 최종 매력 판정 결과 생성
+function buildGuildTerritoryCastleBattleDetailMessage(data, petData, guildData, attackerGuild, defenderGuild, territory, territoryNo, battleResult, isAttackerWin) {
+    var compareSymbol = battleResult.attacker.finalExp > battleResult.defender.finalExp ? ">" : battleResult.attacker.finalExp < battleResult.defender.finalExp ? "<" : "=";
+    var message = "\n🏰 [" + territoryNo + "] " + territory.name + "\n";
+    message += "━━━━━━━━━━━━\n\n";
+    message += formatGuildTerritoryCastleBattleUserBlock(data, petData, guildData, attackerGuild, battleResult.attacker, "⚔️ 공격") + "\n\n";
+    message += "              🆚\n\n";
+    message += formatGuildTerritoryCastleBattleUserBlock(data, petData, guildData, defenderGuild, battleResult.defender, "🛡️ 방어") + "\n\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "📊 최종 매력 비교\n";
+    message += numberWithCommas(battleResult.attacker.finalExp) + " " + compareSymbol + " " + numberWithCommas(battleResult.defender.finalExp) + "\n\n";
+    if (isAttackerWin) {
+        message += "⚔️ 공격 성공\n";
+        message += "[" + formatGuildDisplay(attackerGuild) + "] 길드가\n";
+        message += "[" + territoryNo + "] " + territory.name + " 점령에 성공했습니다!";
+    } else {
+        message += "🛡️ 방어 성공\n";
+        message += "[" + formatGuildDisplay(defenderGuild) + "] 길드가\n";
+        message += "[" + territoryNo + "] " + territory.name + "을 지켜냈습니다!";
+    }
+    return message;
 }
 
 // 차원의 문 이벤트 결과 처리
@@ -27989,7 +27960,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
 
     var castleBattleResult = resolveGuildTerritoryCastleBattle(war, petData, sender, defenderName);
     var isAttackerWin = castleBattleResult.attacker.finalExp > castleBattleResult.defender.finalExp; // 크리 적용 후 공격자 캐슬매력이 높을 때만 승리
-    var castleBattleDetailMessage = buildGuildTerritoryCastleBattleDetailMessage(castleBattleResult);
+    var castleBattleDetailMessage = buildGuildTerritoryCastleBattleDetailMessage(data, petData, guildData, attackerGuild, defenderGuild, territory, territoryNo, castleBattleResult, isAttackerWin);
 
     if (isAttackerWin) {
         //공격자 승리
@@ -28003,17 +27974,11 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         out = "🎖️길드 영지전 결과🎖️[공격 성공✅]\n";
         //out += baseInfo;
         out += "공격/방어/보상 상세보기" + allsee + castleBattleDetailMessage;
-        out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
-        out += "[" + territoryNo + "] " + territory.name + " 점령에 성공합니다!";
     } else {
         //방어자 승리
         out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
         //	out += baseInfo;
         out += "공격/방어/보상 상세보기" + allsee + castleBattleDetailMessage;
-        out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
-        out += "[" + territoryNo + "] " + territory.name + " 공격에 실패합니다!\n🆚\n";
-        out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "] 이(가)\n";
-        out += "[" + territoryNo + "] " + territory.name + " 방어에 성공합니다!";
     }
     return out;
 }
@@ -31083,8 +31048,11 @@ function isAutoDailySuccessResultMessage(message) {
     message = String(message || "");
     var successPatterns = [
         "😈시련의 탑",
+        "😈 시련의 탑",
         "🏆데일리 캐슬매력 대전",
+        "🏆 데일리 캐슬매력 대전",
         "🐹미니펫 대전",
+        "🐹 미니펫 대전",
         "🛡대전결과🛡",
         "💰공략 아이템 획득",
         "획득 포인트🤑",
@@ -33751,14 +33719,18 @@ function runMatzangBattle(attackerName, defenderName, data, petData, homeData, p
     var defenderSymbol = (petTypeBuff.buff2 === 1.3 ? "⬆" : "") + (defenderFinal > defenderBuffed ? "💥" : "");
     attacker.finalExp = attackerFinal;
     defender.finalExp = defenderFinal;
+    attacker.buffedExp = attackerBuffed;
+    defender.buffedExp = defenderBuffed;
+    attacker.isTypeAdvantage = petTypeBuff.buff1 === 1.3;
+    defender.isTypeAdvantage = petTypeBuff.buff2 === 1.3;
+    attacker.isCritical = attackerFinal > attackerBuffed;
+    defender.isCritical = defenderFinal > defenderBuffed;
     attacker.message = attackerSymbol ? createTotalMessage(numberWithCommas(attackerFinal), attackerSymbol) : "";
     defender.message = defenderSymbol ? createTotalMessage(numberWithCommas(defenderFinal), defenderSymbol) : "";
-    var gameResult = petgameplay(attackerFinal, defenderFinal);
     return {
         attacker: attacker,
         defender: defender,
-        isAttackerWin: gameResult.winner == 1,
-        gameResult: gameResult
+        isAttackerWin: attackerFinal > defenderFinal
     };
 }
 

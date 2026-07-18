@@ -54,7 +54,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:17133`
+- `main.js:16104`
 
 ## Files
 
@@ -66,7 +66,8 @@ Status: VERIFIED
 - `getRandomScore2`
 - `setCastleBattleTier`
 - `ensureCastleBattleRecord`
-- `petgameplay`
+- `difftypeBuff`
+- `calculateCriticalDamage`
 - `calculateCastleItem`
 - `calculateItemInfoAll`
 - `calculatePendantItemInfo`
@@ -91,6 +92,8 @@ Status: VERIFIED
 - `숙련된 전사` adds pet charm only after matching and ticket validation pass; keep `memberPetPath` save in this command flow when changing castle battle rewards.
 - `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
 - `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
+- 양측 상성·크리티컬 적용 후 최종 캐슬매력을 직접 비교하며, 동률이면 방어자가 승리한다.
+- 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 기본/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
@@ -527,7 +530,7 @@ Status: VERIFIED
 - `getGuildTerritoryMissingCastleExpUsers`
 - `fillGuildTerritoryCastleExpSnapshots`
 - `resolveGuildTerritoryCastleBattle`
-- `formatGuildTerritoryCastleBattleUserLine`
+- `formatGuildTerritoryCastleBattleUserBlock`
 - `buildGuildTerritoryCastleBattleDetailMessage`
 - `getGuildTerritoryByNo`
 - `getGuildTerritoryOwnedCount`
@@ -596,7 +599,7 @@ Status: VERIFIED
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
 - 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
 - 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
-- 일반 캐슬매력 대결 상세보기에는 `유저[펫] 기본매력(크리 적용매력💥)` 형식으로 양측 수치를 표시하고, 크리 미발동 시 괄호를 생략한다.
+- 일반 캐슬매력 대결 상세보기에는 영지, 공격·방어 길드, 유저·펫, 기본·최종 매력, 크리 발동, 비교식과 점령 결과를 카드형 UI로 표시한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
 - `dev/영지공격 [1-8]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
@@ -1332,13 +1335,52 @@ Status: VERIFIED
 
 ---
 
+# /미니펫대전
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js:16912`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getTotalMinipetExp`
+- `calculateCriticalDamage`
+- `hasPetSkill`
+
+## Data Usage
+
+- `data.member[sender].point`
+- `data.member[sender].exp`
+- `petData[sender].miniPet`
+- `petData[sender].miniPetBag`
+- `petData[sender].miniPetBattle`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)` after point, item, and experience rewards.
+- Saves pet data through `saveJsonFile(petData, memberPetPath)` after battle count and win/loss mutation.
+
+## AI Notes
+
+- 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
+- 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/기본/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시한다.
+- `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
+
+---
+
 # /시련의탑
 
 Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24113`
+- `main.js:18090`
 
 ## Files
 
@@ -1347,6 +1389,9 @@ Status: VERIFIED
 ## Related Helpers
 
 - `calculateTotalExp`
+- `calculateCriticalDamage`
+- `difftypeBuff`
+- `hasPetSkill`
 - trial tower reward and floor helpers in nearby branch logic
 
 ## Data Usage
@@ -1371,6 +1416,9 @@ Status: VERIFIED
 ## AI Notes
 
 - High-impact progression branch with daily entry count and reward logic
+- 도전자 크리티컬·양측 상성 적용 후 최종 매력을 직접 비교하며, 동률이면 보스가 승리한다.
+- 직접 비교에서 패배한 경우에만 `시련을 걷는 자`와 `시탑 공략서📜` 순서로 기존 추가 판정을 수행한다.
+- 출력은 도전자·보스 기본/상성/최종 매력, 비교식, 매력 차이, 추가 판정과 공략 결과를 카드형 UI로 표시한다.
 - Best anchor for tower floor, entry limit, and reward regression investigations
 
 ---
@@ -1470,6 +1518,7 @@ Status: VERIFIED
 - Requires `자동일퀘권📝` in the user bag
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
+- 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
 - Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
@@ -4334,7 +4383,6 @@ Status: VERIFIED
 - `calculateTotalExp`
 - `difftypeBuff`
 - `calculateCriticalDamage`
-- `petgameplay`
 
 ## Data Usage
 
@@ -4392,6 +4440,8 @@ Status: VERIFIED
 ## AI Notes
 
 - `/맞짱` and `ㅁㅁ` are exact commands; suffix text does not execute battle logic
+- 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
+- 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
