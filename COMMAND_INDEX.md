@@ -1817,6 +1817,7 @@ Status: VERIFIED
 
 - Summary view for equipped and available skills
 - Use this when the user report is about equip slots rather than whole bag totals
+- 기본 장착 슬롯은 친밀도 Lv.100당 1칸, 최대 30칸이며 `펫스킬 학개론📙` 장착 시 최대 33칸이다.
 
 ---
 
@@ -2690,6 +2691,10 @@ Status: VERIFIED
 - `/펫스킬오픈`
 - `/펫스킬정보`
 
+## AI Notes
+
+- `tierExclusive: true`인 티어 전용 펫스킬북 30종은 확률표와 랜덤 오픈 풀에서 제외되며 관리자 별도 지급만 사용한다.
+
 ---
 
 # /펫스킬중복
@@ -2719,6 +2724,7 @@ Status: VERIFIED
 - `getPetSkillBagRemainCount`
 - `getPetSkillBagTotalCount`
 - `addPetSkillToBag`
+- `pickRandomPetSkill`
 ## Data Usage
 - skill-book item in `data.member[sender].bag`
 - `petSkillData[sender].bag`
@@ -2727,6 +2733,11 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬확률`
 - `/펫스킬가방`
+
+## AI Notes
+
+- 티어 전용 펫스킬북은 `rate: 0`이며 `pickRandomPetSkill`이 명시적으로 제외한다.
+- `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
 
 ---
 
@@ -2765,10 +2776,14 @@ Status: VERIFIED
 - `getPetSkillSlotCount`
 - `initPetSkillUser`
 - `hasPetSkill`
+- `canEquipTierPetSkill`
+- `getTicketTierOrderIndex`
+- `isPetSkillCompatible`
 - `removePetSkillFromBag`
 ## Data Usage
 - `petSkillData[sender].bag`
 - `petSkillData[sender].equipped`
+- `data.member[sender].rank.tier`
 ## Save Flow
 - Moves skill from bag to equipped and saves `petSkillData`
 ## Related Commands
@@ -2777,6 +2792,8 @@ Status: VERIFIED
 ## AI Notes
 - `전투형 지휘관📙`, `기사단 증원📙`, `징집명령📙`은 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
 - `야호📙`은 신규 뽑기 목록과 `/알림` 효과가 주석 처리되어 더 이상 획득·사용되지 않는다. 기존 보유 데이터는 유지한다.
+- 티어 전용 펫스킬은 `ticketTierData` 순서로 현재 티어가 요구 티어 이상인지 장착 시 검사하며, 티어책끼리는 한 종만 허용하고 일반 스킬과는 함께 장착할 수 있다.
+- 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
 - `/계정삭제`와 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다

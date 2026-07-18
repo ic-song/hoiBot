@@ -4,7 +4,7 @@ const room91 = "통합스텝";
 
 // 크리티컬 정보
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
-const PET_SKILL_MAX_EQUIP_SLOT = 20;
+const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
 	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
@@ -138,6 +138,39 @@ const ticketTierData = {
 	왕왕왕: { emoji: "🐶", ticket: 900000, highticket: 3350, exp: 15000, low: 1.0, high: 1.5, bonusP: 0.7 },
 	용용용: { emoji: "🐉", ticket: 1000000, highticket: 3550, exp: 15000, low: 1.0, high: 1.5, bonusP: 0.7 },
 	피닉스: { emoji: "🐦‍🔥", ticket: 2000000, highticket: 4050, exp: 30000, low: 1.0, high: 1.5, bonusP: 0.7 }
+};
+
+const TIER_PET_SKILL_EXP = {
+	"🪽 엠퍼러의 천공 날개": 100000,
+	"🪬 올마이티의 전능 부적": 150000,
+	"🤍 하얀하트의 순백 반지": 200000,
+	"🩵 하늘하트의 창공 목걸이": 300000,
+	"💛 노랑하트의 황금 팔찌": 400000,
+	"💜 보라하트의 환상 보주": 500000,
+	"❤️ 빨강하트의 맹세검": 650000,
+	"🖤 블랙하트의 칠흑 대낫": 800000,
+	"💖 반짝하트의 별빛 왕관": 1000000,
+	"❤️‍🔥 열정하트의 화염 건틀릿": 1250000,
+	"💘 화살하트의 운명 활": 1500000,
+	"💗 두근하트의 설렘 마법봉": 1800000,
+	"❤️‍🩹 심장하트의 수호 방패": 2200000,
+	"💟 보라보라하트의 자수정 귀걸이": 2600000,
+	"🫶 손하트의 인연 반지": 3000000,
+	"♠️ 스페이드의 사신 흑창": 3500000,
+	"♥️ 하트의 생명 목걸이": 4000000,
+	"♦️ 다이아몬드의 불멸검": 4600000,
+	"♣️ 클로바의 행운 지팡이": 5200000,
+	"🃏 풀하우스의 승부 카드": 6000000,
+	"🧸 곰찌의 수호 인형": 7000000,
+	"🌱 초심의 모험가 단검": 8000000,
+	"🌸 벚꽃의 천화앵검": 9000000,
+	"🎲 해피왕의 운명 주사위": 10000000,
+	"😈 마왕의 멸망검": 12000000,
+	"🦄 페가수스의 성운 신창": 14000000,
+	"👻 유령왕의 망령낫": 16000000,
+	"🐶 왕왕왕의 수호왕 갑주": 18000000,
+	"🐉 용용용의 용신 여의주": 21000000,
+	"🐦‍🔥 피닉스의 불멸 성검": 25000000
 };
 
 //아이템정보
@@ -1611,6 +1644,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 			skillExp += 150000;
 		}
 	}
+	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
 	return castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp;
 }
 
@@ -1635,6 +1669,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 			skillExp += 150000;
 		}
 	}
+	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
 	return itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 아이템 정보의 레이드 경험치 + 펫 경험치 + 미니펫 레이드 경험치 + 홈 경험치
 }
 
@@ -2108,6 +2143,15 @@ function hasPetSkill(petSkillData, user, skillName) {
 	skillName = normalizePetSkillName(skillName);
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
+}
+// 장착된 티어 전용 펫스킬의 레이드·캐슬 공통 매력 보너스 합산 함수
+function getEquippedTierPetSkillExp(petSkillData, user) {
+	var equipped = getEquippedPetSkillNames(petSkillData, user);
+	var totalExp = 0;
+	for (var i = 0; i < equipped.length; i++) {
+		totalExp += TIER_PET_SKILL_EXP[equipped[i]] || 0;
+	}
+	return totalExp;
 }
 // 펫스킬 슬롯 개수 계산 함수
 function getPetSkillSlotCount(data, petSkillData, user) {

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.269"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.270"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -76,7 +76,7 @@ var guildLevelTable = {
 
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_SYSTEM_VERSION = 1;
-const PET_SKILL_MAX_EQUIP_SLOT = 20;
+const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
 const PET_SKILL_COMPAT_GROUPS = [
@@ -134,7 +134,7 @@ const PET_SKILL_LIST = [
     { name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +2 획득" },
     { name: "기도", grade: "C", rate: 4.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다." },
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
-    { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 20개가 되면 23개로 확장됩니다." },
+    { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
 
 
@@ -143,7 +143,38 @@ const PET_SKILL_LIST = [
     { name: "종의 본능", grade: "D", rate: 14.5, effect: "'이쁘다' 채팅 입력 시 연출 멘트를 출력합니다." },
     { name: "품행제로", grade: "D", rate: 14.5, effect: "/결투 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
     { name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
-    { name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" }
+    { name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" },
+
+    { name: "🪽 엠퍼러의 천공 날개", grade: "C", rate: 0, requiredTier: "엠퍼러", raidExp: 100000, castleExp: 100000, equipComment: "잠깐, 나 지금 날고 있는 거야?!", tierExclusive: true, effect: "엠퍼러 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 10만 증가합니다." },
+    { name: "🪬 올마이티의 전능 부적", grade: "C", rate: 0, requiredTier: "올마이티", raidExp: 150000, castleExp: 150000, equipComment: "뭐든 할 수 있을 것 같은 기분이야!", tierExclusive: true, effect: "올마이티 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 15만 증가합니다." },
+    { name: "🤍 하얀하트의 순백 반지", grade: "C", rate: 0, requiredTier: "하얀하트", raidExp: 200000, castleExp: 200000, equipComment: "깨끗하게, 맑게, 자신 있게!", tierExclusive: true, effect: "하얀하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 20만 증가합니다." },
+    { name: "🩵 하늘하트의 창공 목걸이", grade: "C", rate: 0, requiredTier: "하늘하트", raidExp: 300000, castleExp: 300000, equipComment: "오늘 하늘은 내가 접수한다!", tierExclusive: true, effect: "하늘하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 30만 증가합니다." },
+    { name: "💛 노랑하트의 황금 팔찌", grade: "C", rate: 0, requiredTier: "노랑하트", raidExp: 400000, castleExp: 400000, equipComment: "번쩍번쩍! 부자 된 기분이야!", tierExclusive: true, effect: "노랑하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 40만 증가합니다." },
+    { name: "💜 보라하트의 환상 보주", grade: "C", rate: 0, requiredTier: "보라하트", raidExp: 500000, castleExp: 500000, equipComment: "어라? 방금 유니콘 지나갔어!", tierExclusive: true, effect: "보라하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 50만 증가합니다." },
+    { name: "❤️ 빨강하트의 맹세검", grade: "C", rate: 0, requiredTier: "빨강하트", raidExp: 650000, castleExp: 650000, equipComment: "내 뜨거운 마음을 받아랏!", tierExclusive: true, effect: "빨강하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 65만 증가합니다." },
+    { name: "🖤 블랙하트의 칠흑 대낫", grade: "C", rate: 0, requiredTier: "블랙하트", raidExp: 800000, castleExp: 800000, equipComment: "후후… 오늘부터 흑화한다!", tierExclusive: true, effect: "블랙하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 80만 증가합니다." },
+    { name: "💖 반짝하트의 별빛 왕관", grade: "B", rate: 0, requiredTier: "반짝하트", raidExp: 1000000, castleExp: 1000000, equipComment: "눈부시지? 내가 좀 빛나!", tierExclusive: true, effect: "반짝하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 100만 증가합니다." },
+    { name: "❤️‍🔥 열정하트의 화염 건틀릿", grade: "B", rate: 0, requiredTier: "열정하트", raidExp: 1250000, castleExp: 1250000, equipComment: "주먹이 활활! 의욕도 활활!", tierExclusive: true, effect: "열정하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 125만 증가합니다." },
+    { name: "💘 화살하트의 운명 활", grade: "B", rate: 0, requiredTier: "화살하트", raidExp: 1500000, castleExp: 1500000, equipComment: "빗나가도 사랑은 직진이야!", tierExclusive: true, effect: "화살하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 150만 증가합니다." },
+    { name: "💗 두근하트의 설렘 마법봉", grade: "B", rate: 0, requiredTier: "두근하트", raidExp: 1800000, castleExp: 1800000, equipComment: "두근두근! 이거 고장 난 거 아니지?", tierExclusive: true, effect: "두근하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 180만 증가합니다." },
+    { name: "❤️‍🩹 심장하트의 수호 방패", grade: "B", rate: 0, requiredTier: "심장하트", raidExp: 2200000, castleExp: 2200000, equipComment: "아픈 건 싫으니까 뒤에 숨을래!", tierExclusive: true, effect: "심장하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 220만 증가합니다." },
+    { name: "💟 보라보라하트의 자수정 귀걸이", grade: "B", rate: 0, requiredTier: "보라보라하트", raidExp: 2600000, castleExp: 2600000, equipComment: "예쁜데 강하기까지 하면 반칙인가?", tierExclusive: true, effect: "보라보라하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 260만 증가합니다." },
+    { name: "🫶 손하트의 인연 반지", grade: "B", rate: 0, requiredTier: "손하트", raidExp: 3000000, castleExp: 3000000, equipComment: "자, 모두에게 하트 발사!", tierExclusive: true, effect: "손하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 300만 증가합니다." },
+    { name: "♠️ 스페이드의 사신 흑창", grade: "B", rate: 0, requiredTier: "스페이드", raidExp: 3500000, castleExp: 3500000, equipComment: "무서워하지 마, 살짝만 찌를게!", tierExclusive: true, effect: "스페이드 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 350만 증가합니다." },
+    { name: "♥️ 하트의 생명 목걸이", grade: "A", rate: 0, requiredTier: "하트", raidExp: 4000000, castleExp: 4000000, equipComment: "심장이 콩닥콩닥! 아직 살아 있다!", tierExclusive: true, effect: "하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 400만 증가합니다." },
+    { name: "♦️ 다이아몬드의 불멸검", grade: "A", rate: 0, requiredTier: "다이아몬드", raidExp: 4600000, castleExp: 4600000, equipComment: "아 뜨거 뜨거!", tierExclusive: true, effect: "다이아몬드 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 460만 증가합니다." },
+    { name: "♣️ 클로바의 행운 지팡이", grade: "A", rate: 0, requiredTier: "클로바", raidExp: 5200000, castleExp: 5200000, equipComment: "오늘은 왠지 뽑기가 잘될 것 같아!", tierExclusive: true, effect: "클로바 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 520만 증가합니다." },
+    { name: "🃏 풀하우스의 승부 카드", grade: "A", rate: 0, requiredTier: "풀하우스", raidExp: 6000000, castleExp: 6000000, equipComment: "올인! 내 포인트도 올인!", tierExclusive: true, effect: "풀하우스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 600만 증가합니다." },
+    { name: "🧸 곰찌의 수호 인형", grade: "A", rate: 0, requiredTier: "곰찌", raidExp: 7000000, castleExp: 7000000, equipComment: "귀엽다고 얕보면 곰 발바닥 간다!", tierExclusive: true, effect: "곰찌 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 700만 증가합니다." },
+    { name: "🌱 초심의 모험가 단검", grade: "A", rate: 0, requiredTier: "초심", raidExp: 8000000, castleExp: 8000000, equipComment: "작지만 따끔하다구!", tierExclusive: true, effect: "초심 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 800만 증가합니다." },
+    { name: "🌸 벚꽃의 천화앵검", grade: "A", rate: 0, requiredTier: "벛꽃", raidExp: 9000000, castleExp: 9000000, equipComment: "예쁘게 피고, 화려하게 벤다!", tierExclusive: true, effect: "벛꽃 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 900만 증가합니다." },
+    { name: "🎲 해피왕의 운명 주사위", grade: "A", rate: 0, requiredTier: "해피왕", raidExp: 10000000, castleExp: 10000000, equipComment: "주사위야, 제발 눈치 좀 챙겨줘!", tierExclusive: true, effect: "해피왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,000만 증가합니다." },
+    { name: "😈 마왕의 멸망검", grade: "S", rate: 0, requiredTier: "마왕", raidExp: 12000000, castleExp: 12000000, equipComment: "크하하하! 오늘 저녁은 뭐 먹지?", tierExclusive: true, effect: "마왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,200만 증가합니다." },
+    { name: "🦄 페가수스의 성운 신창", grade: "S", rate: 0, requiredTier: "페가수스", raidExp: 14000000, castleExp: 14000000, equipComment: "비켜! 유니콘 지나간다!", tierExclusive: true, effect: "페가수스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,400만 증가합니다." },
+    { name: "👻 유령왕의 망령낫", grade: "S", rate: 0, requiredTier: "유령왕", raidExp: 16000000, castleExp: 16000000, equipComment: "뒤를 봐… 아니, 보지 마!", tierExclusive: true, effect: "유령왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,600만 증가합니다." },
+    { name: "🐶 왕왕왕의 수호왕 갑주", grade: "S", rate: 0, requiredTier: "왕왕왕", raidExp: 18000000, castleExp: 18000000, equipComment: "왕왕! 물지는 않고 때릴게!", tierExclusive: true, effect: "왕왕왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,800만 증가합니다." },
+    { name: "🐉 용용용의 용신 여의주", grade: "S", rate: 0, requiredTier: "용용용", raidExp: 21000000, castleExp: 21000000, equipComment: "소원을 말해 봐! 들어준다고는 안 했어!", tierExclusive: true, effect: "용용용 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,100만 증가합니다." },
+    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다." }
 ];
 
 var bidItems = [];
@@ -2679,6 +2710,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     for (var ps = 0; ps < PET_SKILL_LIST.length; ps++) {
                         var sd = PET_SKILL_LIST[ps];
+                        if (sd.tierExclusive) continue;
                         var rate = getPetSkillActualRate(sd);
                         totalPercent += rate; // 🔥 누적
 
@@ -2713,7 +2745,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("등록되지 않은 펫스킬입니다.\n또는 존재하지 않는 유저입니다.");
                         return;
                     }
-                    replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%\n효과: " + skillInfo.effect);
+                    var skillRateLine = skillInfo.tierExclusive ? "획득: 별도 지급 전용" : "확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
+                    replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n" + skillRateLine + "\n효과: " + skillInfo.effect);
                     return;
                 }
 
@@ -2728,7 +2761,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (
                     msg === "/펫스킬오픈" ||
-                    msg.startsWith("/펫스킬오픈 ")
+                    /^\/펫스킬오픈\s+\d+$/.test(msg)
                     // || msg === "/특성오픈" || msg.startsWith("/특성오픈 ")
                 ) {
                     if (castleSiegeFlag) return;
@@ -2804,7 +2837,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.startsWith("/펫스킬장착 ")) {
+                if (/^\/펫스킬장착\s+\d+$/.test(msg)) {
                     var equipIndex = parseInt(msg.replace("/펫스킬장착", "").trim(), 10);
                     var skillBagList = getPetSkillBagList(petSkillData, sender);
                     if (isNaN(equipIndex) || equipIndex < 1 || equipIndex > skillBagList.length) {
@@ -2812,6 +2845,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var equipName = skillBagList[equipIndex - 1];
+                    var tierEquipCheck = canEquipTierPetSkill(data, sender, equipName);
+                    if (!tierEquipCheck.ok) {
+                        replier.reply("❌ " + tierEquipCheck.reason);
+                        return;
+                    }
                     if (normalizePetSkillName(equipName) === "전투형 지휘관" || normalizePetSkillName(equipName) === "기사단 증원" || normalizePetSkillName(equipName) === "징집명령") {
                         var commanderGuildInfo = getMyGuildInfo(data, guildData, sender);
                         if (!commanderGuildInfo || commanderGuildInfo.error || !commanderGuildInfo.guild || !isGuildLeader(commanderGuildInfo.guild, sender)) {
@@ -2835,6 +2873,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     skillStore.equipped.push(equipName);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
+                    var equippedSkillData = getPetSkillData(equipName);
+                    if (equippedSkillData && equippedSkillData.equipComment) {
+                        equipMsg += "\n\n" + formatPetSkillName(equipName) + ": " + equippedSkillData.equipComment;
+                    }
                     if (normalizePetSkillName(equipName) === "징집명령") {
                         equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "징집명령");
                     }
@@ -32305,6 +32347,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
             skillExp += 150000;
         }
     }
+    skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp");
     return castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp;
 }
 
@@ -32329,6 +32372,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
             skillExp += 150000;
         }
     }
+    skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp");
     return itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 아이템 정보의 레이드 경험치 + 펫 경험치 + 미니펫 레이드 경험치 + 홈 경험치
 }
 function calculateItemInfoAll(memberName, data, petData) {
@@ -34240,6 +34284,42 @@ function hasPetSkill(petSkillData, user, skillName) {
     return equipped.indexOf(skillName) !== -1;
 }
 
+// 장착된 티어 전용 펫스킬의 레이드 또는 캐슬 매력 보너스를 합산
+function getEquippedTierPetSkillExp(petSkillData, user, expType) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var totalExp = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillData = getPetSkillData(equipped[i]);
+        if (!skillData || !skillData.tierExclusive) continue;
+        totalExp += parseInt(skillData[expType], 10) || 0;
+    }
+    return totalExp;
+}
+
+// 티어 이름의 ticketTierData 순서를 반환
+function getTicketTierOrderIndex(tierName) {
+    var index = 0;
+    for (var name in ticketTierData) {
+        if (!ticketTierData.hasOwnProperty(name)) continue;
+        if (name === tierName) return index;
+        index++;
+    }
+    return -1;
+}
+
+// 사용자의 현재 티어가 티어 전용 펫스킬 장착 조건을 충족하는지 확인
+function canEquipTierPetSkill(data, user, skillName) {
+    var skillData = getPetSkillData(skillName);
+    if (!skillData || !skillData.tierExclusive) return { ok: true, reason: "" };
+    var currentTier = data.member[user] && data.member[user].rank ? data.member[user].rank.tier : "새싹";
+    var currentTierIndex = getTicketTierOrderIndex(currentTier);
+    var requiredTierIndex = getTicketTierOrderIndex(skillData.requiredTier);
+    if (currentTierIndex < requiredTierIndex || requiredTierIndex < 0) {
+        return { ok: false, reason: formatPetSkillName(skillName) + "는 " + skillData.requiredTier + " 티어부터 장착할 수 있습니다.\n현재 티어: " + currentTier };
+    }
+    return { ok: true, reason: "" };
+}
+
 // 현재 계정이 존재하는 유저 중 특정 펫스킬을 장착한 유저명 목록을 반환
 function findPetSkillOwners(data, petSkillData, skillName) {
     var owners = [];
@@ -34273,6 +34353,16 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
     var equipped = getEquippedPetSkillNames(petSkillData, user);
     if (equipped.indexOf(skillName) !== -1) return { ok: false, reason: "이미 장착 중인 스킬입니다." };
 
+    var targetSkillData = getPetSkillData(skillName);
+    if (targetSkillData && targetSkillData.tierExclusive) {
+        for (var tierIndex = 0; tierIndex < equipped.length; tierIndex++) {
+            var equippedSkillData = getPetSkillData(equipped[tierIndex]);
+            if (equippedSkillData && equippedSkillData.tierExclusive) {
+                return { ok: false, reason: "티어 전용 펫스킬은 한 종만 장착할 수 있습니다." };
+            }
+        }
+    }
+
     for (var i = 0; i < PET_SKILL_COMPAT_GROUPS.length; i++) {
         var group = PET_SKILL_COMPAT_GROUPS[i];
         if (group.indexOf(skillName) === -1) continue;
@@ -34287,7 +34377,9 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
 
 function getPetSkillTotalRate() {
     var totalRate = 0;
-    for (var i = 0; i < PET_SKILL_LIST.length; i++) totalRate += PET_SKILL_LIST[i].rate;
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        if (!PET_SKILL_LIST[i].tierExclusive) totalRate += PET_SKILL_LIST[i].rate;
+    }
     return totalRate;
 }
 
@@ -34302,11 +34394,14 @@ function pickRandomPetSkill() {
     var totalRate = getPetSkillTotalRate();
     var roll = Math.random() * totalRate;
     var acc = 0;
+    var lastRandomSkill = null;
     for (var j = 0; j < PET_SKILL_LIST.length; j++) {
+        if (PET_SKILL_LIST[j].tierExclusive) continue;
+        lastRandomSkill = PET_SKILL_LIST[j];
         acc += PET_SKILL_LIST[j].rate;
         if (roll < acc) return PET_SKILL_LIST[j];
     }
-    return PET_SKILL_LIST[PET_SKILL_LIST.length - 1];
+    return lastRandomSkill;
 }
 
 // 사용자의 펫 스킬 가방에 있는 스킬 목록과 총 개수를 포맷팅하여 메시지로 반환
