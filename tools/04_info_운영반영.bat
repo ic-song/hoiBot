@@ -1,16 +1,6 @@
 @echo off
 chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
-if not "%HOIBOT_TOOL_LOG_ACTIVE%"=="1" (
-	set "HOIBOT_TOOL_LOG_ACTIVE=1"
-	set "HOIBOT_TOOL_LOG_DIR=%~dp0logs"
-	set "HOIBOT_TOOL_LOG_SCRIPT=%~f0"
-	if not exist "%~dp0logs" mkdir "%~dp0logs" > nul 2>&1
-	for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "HOIBOT_TOOL_LOG_FILE=%~dp0logs\%~n0_%%t.log"
-	powershell -NoProfile -ExecutionPolicy Bypass -Command "$script=$env:HOIBOT_TOOL_LOG_SCRIPT; $log=$env:HOIBOT_TOOL_LOG_FILE; cmd /d /c call $script 2>&1 | Tee-Object -FilePath $log; $code=$LASTEXITCODE; $toolDir=Split-Path -Parent $script; $helper=Join-Path $toolDir '_push_tool_log.ps1'; $repoRoot=Resolve-Path (Join-Path $toolDir '..'); if (Test-Path $helper) { & $helper -RepoRoot $repoRoot -LogPath $log -Branch 'feature/prod' }; exit $code"
-	exit /b !ERRORLEVEL!
-)
-setlocal EnableExtensions EnableDelayedExpansion
 
 set LD_CONSOLE_EXE=C:\LDPlayer\LDPlayer9\ldconsole.exe
 set ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe
@@ -59,7 +49,7 @@ echo [WARN] 현재 작업트리의 수정/미추적 파일을 취소하고 운�
 for /f "usebackq delims=" %%h in (`git rev-parse --short HEAD`) do set BEFORE_GIT_HEAD=%%h
 git reset --hard > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_RESET
-git clean -fd -e tools/logs/ > nul 2>&1
+git clean -fd > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_CLEAN
 git switch %BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_SWITCH
@@ -67,7 +57,7 @@ git fetch origin %BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_FETCH
 git reset --hard origin/%BASE_BRANCH% > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_RESET
-git clean -fd -e tools/logs/ > nul 2>&1
+git clean -fd > nul 2>&1
 if errorlevel 1 goto FAIL_GIT_CLEAN
 for /f "usebackq delims=" %%h in (`git rev-parse --short HEAD`) do set CURRENT_GIT_HEAD=%%h
 if not "!HOIBOT_DEPLOY_RESTARTED!"=="1" if not "!BEFORE_GIT_HEAD!"=="!CURRENT_GIT_HEAD!" (

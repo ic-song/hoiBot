@@ -4,16 +4,16 @@ const room91 = "통합스텝";
 
 // 크리티컬 정보
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
-const PET_SKILL_MAX_EQUIP_SLOT = 20;
+const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
 	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
 	},
 	daily: { // 일일 콘텐츠 진행 설정
-		trialTowerMax: 5, // 시련의탑 하루 최대 횟수
-		castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
+		trialTowerMax: 15, // 시련의탑 하루 최대 횟수
+		castleBattleMax: 15, // 캐슬대전 하루 최대 횟수
 		castleBattleFree: 1, // 캐슬대전 무료 횟수
-		miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
+		miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
 		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
 		petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
 	},
@@ -27,7 +27,8 @@ const GLOBAL_CONFIG = {
 		cleanupKeepCount: 12 // 미니펫 가방 정리 후 유지 수
 	},
 	pet: { // 펫 성장 설정
-		evolutionRequiredExp: 10 // 알 진화 필요 매력치
+		evolutionRequiredExp: 10, // 알 진화 필요 매력치
+		totalCharmPerUpgrade: 1000 // 종합매력 계산 시 펫강화 1강당 반영 매력
 	},
 	happyFoundation: { // 호이행복재단 설정
 		transferFeeMax: 16 // 이체 수수료 최대 설정값
@@ -70,6 +71,7 @@ const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗�
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const guildPath = "/sdcard/호이랜드/guildData.json"; // 길드 데이터
 var allsee = "​".repeat(500);
+const ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
 //테스트데이터
 const filePath2 = "/sdcard/호이랜드/member2.json";
 const castleBattlePath2 = "/sdcard/호이랜드/castleBattle2.json";
@@ -138,6 +140,39 @@ const ticketTierData = {
 	피닉스: { emoji: "🐦‍🔥", ticket: 2000000, highticket: 4050, exp: 30000, low: 1.0, high: 1.5, bonusP: 0.7 }
 };
 
+const TIER_PET_SKILL_EXP = {
+	"🪽 엠퍼러의 천공 날개": 100000,
+	"🪬 올마이티의 전능 부적": 150000,
+	"🤍 하얀하트의 순백 반지": 200000,
+	"🩵 하늘하트의 창공 목걸이": 300000,
+	"💛 노랑하트의 황금 팔찌": 400000,
+	"💜 보라하트의 환상 보주": 500000,
+	"❤️ 빨강하트의 맹세검": 650000,
+	"🖤 블랙하트의 칠흑 대낫": 800000,
+	"💖 반짝하트의 별빛 왕관": 1000000,
+	"❤️‍🔥 열정하트의 화염 건틀릿": 1250000,
+	"💘 화살하트의 운명 활": 1500000,
+	"💗 두근하트의 설렘 마법봉": 1800000,
+	"❤️‍🩹 심장하트의 수호 방패": 2200000,
+	"💟 보라보라하트의 자수정 귀걸이": 2600000,
+	"🫶 손하트의 인연 반지": 3000000,
+	"♠️ 스페이드의 사신 흑창": 3500000,
+	"♥️ 하트의 생명 목걸이": 4000000,
+	"♦️ 다이아몬드의 불멸검": 4600000,
+	"♣️ 클로바의 행운 지팡이": 5200000,
+	"🃏 풀하우스의 승부 카드": 6000000,
+	"🧸 곰찌의 수호 인형": 7000000,
+	"🌱 초심의 모험가 단검": 8000000,
+	"🌸 벚꽃의 천화앵검": 9000000,
+	"🎲 해피왕의 운명 주사위": 10000000,
+	"😈 마왕의 멸망검": 12000000,
+	"🦄 페가수스의 성운 신창": 14000000,
+	"👻 유령왕의 망령낫": 16000000,
+	"🐶 왕왕왕의 수호왕 갑주": 18000000,
+	"🐉 용용용의 용신 여의주": 21000000,
+	"🐦‍🔥 피닉스의 불멸 성검": 25000000
+};
+
 //아이템정보
 var itemInfoData = loadJsonFile(itemInfoPath);
 var productionItemInfoData = itemInfoData;
@@ -173,6 +208,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 관리 정보 명령 사용 가능 대상
+		var isMatzangInfoOperatorCommand = isMatzangOperator && isMatzangInfoOperatorCommandMessage(msg); // Info.js 관리 명령 여부
+		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangInfoOperatorCommand) {
+			return;
+		}
+		if (isAccountSuspensionBlockedMessage(msg) && isAccountSuspended(data, sender)) {
+			replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
+			return;
+		}
 		if (data && data.member && data.member[sender] && data.member[sender].agree != true) {
 			return;
 		}
@@ -812,15 +856,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
 			replier.reply(resultMsg);
 		} else if (msg === "/반지순위") {
-			let rankData = generateRingRanking(petData, data.member);
-			let resultMsg = "💍 반지 강화순위 💍\n\n";
-			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
-			replier.reply(resultMsg);
+			replier.reply("반지순위는 펜던트 콘텐츠 전환으로 종료되었습니다.");
 		} else if (msg === "/종합순위" || msg === "ㅈㅈㅈ") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData);
-			let resultMsg = '👑 종합 순위 👑\n["/펫정보"에 있는 매력+강화로 합산]\n[캐슬⚔️+레이드👾+펫강화⭐️1강*300]\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n(/종합순위보상) 참조\n\n';
+			let resultMsg = '👑 종합 순위 👑\n["/펫정보"에 있는 매력+강화로 합산]\n[캐슬⚔️+레이드👾+펫강화⭐️1강*1,000]\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n(/종합순위보상) 참조\n\n';
 			resultMsg += buildTotalRankingGapGuide(rankData.rows, sender, data, petData, guildData, homeData, petSkillData);
 			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
 			replier.reply(resultMsg);
@@ -986,19 +1027,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 
-			// 기록: 시련탑(요구사항: 5)
+			// 기록: 시련탑(요구사항: 15)
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
 			var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
-			// 기록: 캐슬대전(요구사항: 5)
+			// 기록: 캐슬대전(요구사항: 15)
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
 			var castleMax = GLOBAL_CONFIG.daily.castleBattleMax;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
-			// 기록: 미니펫대전(요구사항: 5)
+			// 기록: 미니펫대전(요구사항: 15)
 			var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 			var miniWin = miniBattle.win || 0;
 			var miniLose = miniBattle.lose || 0;
@@ -1070,8 +1111,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (petInfo.elemental) {
 				resultMsg += "정령🔯: " + petInfo.elemental.name + "[" + petInfo.elemental.grade + "]" + "(+" + petInfo.elemental.upgrade + ")\n";
 			}
-			if (petInfo.ring) {
-				resultMsg += "반지💍: " + petInfo.ring.name + "[" + petInfo.ring.grade + "]" + "(+" + petInfo.ring.upgrade + ")\n";
+			if (petInfo.pendant) {
+				var pendantDurability = "";
+				if (petInfo.pendant.durability !== undefined && petInfo.pendant.maxDurability !== undefined) {
+					pendantDurability = "[⚒️" + petInfo.pendant.durability + "/" + petInfo.pendant.maxDurability + "]";
+				}
+				var pendantUpgrade = petInfo.pendant.upgrade !== undefined ? petInfo.pendant.upgrade : 0;
+				resultMsg += "펜던트💎: " + petInfo.pendant.name + "[" + petInfo.pendant.grade + "]" + pendantDurability + "(+" + pendantUpgrade + ")\n";
+			} else {
+				resultMsg += "펜던트💎: 현재 펜던트가 없습니다.\n";
 			}
 
 			// 미니펫/홈
@@ -1322,6 +1370,17 @@ function isDevCommandMessage(msg) {
 	return typeof msg === "string" && msg.indexOf("dev/") === 0;
 }
 
+// 맞짱필드 진행 중 Info.js에서 운영자에게 허용할 관리 명령인지 확인하는 함수
+function isMatzangInfoOperatorCommandMessage(msg) {
+	if (typeof msg !== "string") return false;
+	var commandRoots = ["/정보", "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인"];
+	for (var i = 0; i < commandRoots.length; i++) {
+		var commandRoot = commandRoots[i];
+		if (msg === commandRoot || msg.indexOf(commandRoot + " ") === 0) return true;
+	}
+	return false;
+}
+
 function stripDevCommandPrefix(msg) {
 	var command = String(msg || "").substring("dev/".length).trim();
 	if (!command) return "";
@@ -1420,6 +1479,21 @@ function loadJsonFile(path) {
 		// save("호이랜드/로그", "Log_Load_" + randomNumber + ".txt", "Error while saving JSON file: " + error.message);
 		// replier.reply(error.message);
 	}
+}
+
+// 특정 유저가 계정정지 상태인지 확인하는 함수
+function isAccountSuspended(data, userName) {
+	if (!data || typeof data !== "object") return false;
+	if (!data.accountSuspensions || typeof data.accountSuspensions !== "object" || Array.isArray(data.accountSuspensions)) return false;
+	if (!data.accountSuspensions.users || typeof data.accountSuspensions.users !== "object" || Array.isArray(data.accountSuspensions.users)) return false;
+	return !!(userName && data.accountSuspensions.users[userName]);
+}
+
+// 계정정지 상태에서 차단할 정보봇 명령/트리거 메시지인지 확인하는 함수
+function isAccountSuspensionBlockedMessage(msg) {
+	if (typeof msg !== "string") return false;
+	if (msg.indexOf("/") === 0) return true;
+	return ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(msg) !== -1;
 }
 function save(folderName, fileName, str) {
 	var c = new java.io.File(sdcard + "/" + folderName + "/" + fileName);
@@ -1586,6 +1660,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 			skillExp += 150000;
 		}
 	}
+	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
 	return castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp;
 }
 
@@ -1610,6 +1685,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 			skillExp += 150000;
 		}
 	}
+	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
 	return itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 아이템 정보의 레이드 경험치 + 펫 경험치 + 미니펫 레이드 경험치 + 홈 경험치
 }
 
@@ -1622,7 +1698,7 @@ function generateRanking(data, petData, homeData, petSkillData) {
 		if (petData[key]) {
 			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData) || 0;
 			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData) || 0;
-			let upgradeBonus = (petData[key].upgrade || 0) * 300;
+			let upgradeBonus = (petData[key].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 
 			let totalExp = castleExp + raidExp + upgradeBonus;
 
@@ -1695,7 +1771,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 		if (petData[key]) {
 			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData) || 0;
 			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData) || 0;
-			let upgradeBonus = (petData[key].upgrade || 0) * 300;
+			let upgradeBonus = (petData[key].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 			let totalExp = castleExp + raidExp + upgradeBonus;
 
 			userScores.push({ key: key, totalExp: totalExp });
@@ -1720,8 +1796,8 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 //   let sortedUsrs = Object.keys(members)
 //     .filter(key => petData[key] && petData[key].ring)
 //     .sort((a, b) => {
-//       let A = calculateCastleExp(a, data, petData) + calculateRaidExp(a, data, petData) + (petData[a].upgrade * 300);
-//       let B = calculateCastleExp(b, data, petData) + calculateRaidExp(b, data, petData) + (petData[b].upgrade * 300);
+//       let A = calculateCastleExp(a, data, petData) + calculateRaidExp(a, data, petData) + (petData[a].upgrade * 1000);
+//       let B = calculateCastleExp(b, data, petData) + calculateRaidExp(b, data, petData) + (petData[b].upgrade * 1000);
 //       return B - A;
 //     });
 
@@ -1733,7 +1809,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 //     let memberName = sortedUsrs[i];
 //     let Rsender1 = members[memberName].rank.emoji + memberName;
 //     let rankEmoji1 = getRankEmoji(i + 1);
-//     rankingMsg1 += rankEmoji1 + Rsender1 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 300)) + '\n';
+//     rankingMsg1 += rankEmoji1 + Rsender1 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 1000)) + '\n';
 //   }
 
 //   // 나머지 사용자들에 대해 순위 메시지를 작성합니다.
@@ -1741,7 +1817,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 //     let memberName = sortedUsrs[i];
 //     let Rsender2 = members[memberName].rank.emoji + memberName;
 //     let rankEmoji2 = getRankEmoji(i + 1);
-//     rankingMsg2 += rankEmoji2 + Rsender2 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 300)) + '\n';
+//     rankingMsg2 += rankEmoji2 + Rsender2 + ' - 👑 ' + numberWithCommas(calculateCastleExp(memberName, data, petData) + calculateRaidExp(memberName, data, petData) + (petData[memberName].upgrade * 1000)) + '\n';
 //   }
 
 //   // 상위 10명과 나머지 사용자들의 순위 메시지를 반환합니다.
@@ -2084,6 +2160,15 @@ function hasPetSkill(petSkillData, user, skillName) {
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
 }
+// 장착된 티어 전용 펫스킬의 레이드·캐슬 공통 매력 보너스 합산 함수
+function getEquippedTierPetSkillExp(petSkillData, user) {
+	var equipped = getEquippedPetSkillNames(petSkillData, user);
+	var totalExp = 0;
+	for (var i = 0; i < equipped.length; i++) {
+		totalExp += TIER_PET_SKILL_EXP[equipped[i]] || 0;
+	}
+	return totalExp;
+}
 // 펫스킬 슬롯 개수 계산 함수
 function getPetSkillSlotCount(data, petSkillData, user) {
 	var info = getUserIntimacyInfo(data, user);
@@ -2328,10 +2413,15 @@ function generateBagOutput(bagItems) {
 
 		var specialItems = [
 			"자동탐험권🌄",
+			"자동일퀘권📝",
 			GLOBAL_CONFIG.freeMarket.memberTicketItemName,
 			"확성기📢(/알림 내용 30자)",
 			"티어 승급티켓🎟",
 			"고급 티어 승급티켓🎫",
+			"펜던트뽑기💎(/펜던트오픈)",
+			"펜던트 강화석📿",
+			"펜던트 복원석🔷",
+			"펜던트귀속해제💎(/펜던트해제)",
 			"다이아상자💎(/다이아상자오픈)",
 			"1억포인트상자🪙(/포인트상자오픈)",
 			"럭키박스🍀(/럭키오픈)",
@@ -2484,10 +2574,10 @@ function generateBagOutput(bagItems) {
 			"탐험확률UP🗻(20%)",
 			"탐험확률UP🗻(10%)",
 
-			"영지기습공격권🔥(60%)",
-			"영지기습공격권🔥(90%)",
+			"영지기습공격권🔥(10%)",
+			"영지기습공격권🔥(40%)",
+			"영지절대방어권🛡(20%)",
 			"영지절대방어권🛡(50%)",
-			"영지절대방어권🛡(80%)",
 			"🌋 대균열 유도권(/대균열)",
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
@@ -2802,6 +2892,41 @@ function calculateItemInfo(type, memberName, data, petData) {
 
 	return returnObject;
 }
+
+// 펜던트 등급별 기본 종합매력 반환
+function getPendantBaseCharmForInfo(grade) {
+	if (grade === "하급") return 500000;
+	if (grade === "하급+") return 1000000;
+	if (grade === "중급") return 2000000;
+	if (grade === "중급+") return 3000000;
+	if (grade === "상급") return 4000000;
+	if (grade === "상급+") return 5000000;
+	if (grade === "최상급") return 6000000;
+	if (grade === "최상급+") return 7000000;
+	if (grade === "신화") return 8000000;
+	if (grade === "초월") return 10000000;
+	if (grade === "창세") return 15000000;
+	if (grade === "창조") return 20000000;
+	return 200000;
+}
+
+// 펜던트 강화 누적 종합매력 반환
+function getPendantUpgradeCharmForInfo(upgrade) {
+	var table = [0, 5000, 10000, 15000, 20000, 25000, 30000, 250000, 375000, 500000, 750000, 1000000, 1250000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000, 4500000, 5000000, 6000000, 7000000, 8000000, 9000000, 10000000, 12500000, 15000000, 17500000, 25000000, 30000000];
+	var total = 0;
+	var max = Math.max(0, Math.min(30, parseInt(upgrade || 0, 10)));
+	for (var i = 1; i <= max; i++) total += table[i] || 0;
+	return total;
+}
+
+// 펜던트 종합매력을 레이드/캐슬 매력으로 분배
+function calculatePendantItemInfoForInfo(pendant) {
+	if (!pendant) return { battleExp: 0, raidExp: 0, castleExp: 0 };
+	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade);
+	var raid = Math.floor(charm / 2);
+	return { battleExp: 0, raidExp: raid, castleExp: charm - raid };
+}
+
 function calculateItemInfoAll(memberName, data, petData) {
 	let returnObj = {
 		battleExp: 0,
@@ -2809,11 +2934,12 @@ function calculateItemInfoAll(memberName, data, petData) {
 		castleExp: 0
 	};
 	let elementalInfo = calculateItemInfo("elemental", memberName, data, petData);
-	let ringInfo = calculateItemInfo("ring", memberName, data, petData);
+	let ringInfo = petData[memberName] && petData[memberName].ring ? calculateItemInfo("ring", memberName, data, petData) : { battleExp: 0, raidExp: 0, castleExp: 0 };
+	let pendantInfo = calculatePendantItemInfoForInfo(petData[memberName] && petData[memberName].pendant ? petData[memberName].pendant : null);
 	let bagInfo = calculateItemInfo("bag", memberName, data, petData);
-	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + bagInfo.battleExp;
-	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + bagInfo.raidExp;
-	returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + bagInfo.castleExp;
+	returnObj.battleExp = elementalInfo.battleExp + ringInfo.battleExp + pendantInfo.battleExp + bagInfo.battleExp;
+	returnObj.raidExp = elementalInfo.raidExp + ringInfo.raidExp + pendantInfo.raidExp + bagInfo.raidExp;
+	returnObj.castleExp = elementalInfo.castleExp + ringInfo.castleExp + pendantInfo.castleExp + bagInfo.castleExp;
 	return returnObj;
 }
 // 당근순위 랭킹을 가져오는 함수
@@ -3116,7 +3242,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData) || 0;
 
 	// 강화 매력 보너스(기존 로직 유지)
-	var upgradeBonus = (petInfo.upgrade || 0) * 300;
+	var upgradeBonus = (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 
 	var total = totalCastle + totalRaid + upgradeBonus;
 	

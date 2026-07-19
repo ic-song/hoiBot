@@ -15,9 +15,37 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 ## AI Navigation Rules
 
 - Use this file as a starting map, not as proof.
-- Prefer jumping to listed command anchors first, then inspect related helpers.
+- Prefer searching the listed command text or helper name first, then inspect related branches.
+- Search anchors intentionally avoid line numbers so they remain useful after code insertions and removals.
 - If a command appears in both `main.js` and `Info.js`, trust the actual branch handling in code.
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
+
+---
+
+# /글자수통계
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Data Usage
+
+- `filePath`
+- `homeDataFile`
+- `memberPetPath`
+- `petSkillDataPath`
+
+## Save Flow
+
+- Read-only command. It reads active DEV/PROD-resolved files through `resolveActiveDataPath` and does not save data.
+
+## AI Notes
+
+- Master operator `호이 남` only.
+- 출력 항목은 멤버, 펫홈, 펫멤버, 펫스킬, 펜던트 글자수다.
+- 펜던트 글자수는 `member_pet.json`에서 `pendant`와 `pendantBag`만 추출한 JSON 문자열 길이로 계산한다.
 
 ---
 
@@ -27,7 +55,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:17133`
+- Search in `main.js`: `/캐슬대전`
 
 ## Files
 
@@ -39,9 +67,11 @@ Status: VERIFIED
 - `getRandomScore2`
 - `setCastleBattleTier`
 - `ensureCastleBattleRecord`
-- `petgameplay`
+- `difftypeBuff`
+- `calculateCriticalDamage`
 - `calculateCastleItem`
 - `calculateItemInfoAll`
+- `calculatePendantItemInfo`
 
 ## Data Usage
 
@@ -49,6 +79,7 @@ Status: VERIFIED
 - `data.member[sender].point`
 - `data.member[sender].exp`
 - `petData[sender].petexp`
+- `petData[*].pendant`
 - `castleBattleData`
 
 ## Save Flow
@@ -60,6 +91,11 @@ Status: VERIFIED
 ## AI Notes
 
 - `숙련된 전사` adds pet charm only after matching and ticket validation pass; keep `memberPetPath` save in this command flow when changing castle battle rewards.
+- `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
+- `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
+- 양측 모두 `calculateCastleExp`로 전체 캐슬매력을 계산해 장비·미니펫·홈·친밀도·일반/티어 전용 펫스킬을 동일하게 반영한 뒤 상성·크리티컬을 적용하며, 동률이면 방어자가 승리한다.
+- 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 캐슬/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
@@ -83,7 +119,7 @@ Status: VERIFIED
 - `homeDataFile`: sweet-home data, runtime path `/sdcard/호이랜드/petSweetHomeData.json`, repo snapshot `data/petSweetHomeData.json`
 - `petSkillDataPath`: pet skill data, runtime path `/sdcard/호이랜드/petSkillData.json`, repo snapshot `data/petSkillData.json`
 - `trialTowerPath`: trial tower data, runtime path `/sdcard/호이랜드/trialTower.json`, repo snapshot `data/trialTower.json`
-- `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle.json`
+- `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle2.json`
 - `petTitlePath`: pet title data, runtime path `/sdcard/호이랜드/pet_title.json`, repo snapshot `data/pet_title.json`
 - `memberTitlePath`: member title data, runtime path `/sdcard/호이랜드/member_title.json`, repo snapshot `data/member_title.json`
 - `boardPath`: public letter board, runtime path `/sdcard/호이랜드/board.json`, repo snapshot `data/board.json`
@@ -94,12 +130,15 @@ Status: VERIFIED
 
 ## Runtime / Save-Flow Hotspots
 
-- `main.js:1328`: main `response(...)` entry point for almost all mutable gameplay commands
-- `Info.js:115`: info/query-oriented `response(...)` entry point
-- `main.js:31185`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
-- `main.js:31209`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
-- `Info.js:1383`: separate `loadJsonFile(path)` implementation used by info commands
-- `main.js:1029-1059`: production/DEV root constants and major runtime data-file constants
+- `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore a malformed `member.json` from the strictly parsed `member_back.json` recovery snapshot.
+- `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for `member.json` and `member_back.json`; other JSON files keep the existing direct UTF-8 write flow.
+- Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
+- `main.js`: main `response(...)` entry point for almost all mutable gameplay commands
+- `Info.js`: info/query-oriented `response(...)` entry point
+- `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
+- `main.js`: `saveJsonFile(data, path)` resolves DEV/PROD path, ensures parent folders, and writes UTF-8 JSON
+- `Info.js`: separate `loadJsonFile(path)` implementation used by info commands
+- `main.js`: production/DEV root constants and major runtime data-file constants
 
 ## DEV / PROD Path Rules
 
@@ -113,26 +152,26 @@ Status: VERIFIED
 
 | Helper | Anchor | Why it matters |
 | --- | --- | --- |
-| `generateBagOutput` | `main.js:35217`, `Info.js:2330` | Canonical bag numbering and text renderer |
+| `generateBagOutput` | `main.js`, `Info.js` | Canonical bag numbering and text renderer |
 | `isRegisteredHomeMember` | `main.js` | Checks that a user exists in `member.json` before pet-home data can be created from commands |
-| `initSweetHomeUser` | `main.js:37569`, `Info.js:2999` | Normalizes home/sweet-home user state before access |
-| `getHomeTotalExp` | `main.js:37749`, `Info.js:2948` | Home ranking and profile summary calculation |
-| `buildMiniPetBagMessage` | `main.js:40722` | Main mini-pet bag formatter and viewer/target split |
-| `initPetSkillUser` | `main.js:36606`, `Info.js:2000` | Normalizes pet-skill storage before use |
-| `getPetSkillSlotCount` | `main.js:36730`, `Info.js:2031` | Slot-count source for pet-skill display/equip rules |
-| `calculateTotalExp` | `main.js:38263`, `Info.js:3104` | High-value aggregate formula for user progression/rank output |
-| `getMyGuildId` | `main.js:39821`, `Info.js:3342` | Fastest guild membership lookup anchor |
-| `getMyGuildInfo` | `main.js:39943`, `Info.js:3347` | Guild object + sender membership validation hub |
-| `getJoinableGuildRows` | `main.js:39834` | Joinable guild filtering and listing logic |
-| `findGuildIdByNameSafe` | `main.js:39879` | Safer guild-name-to-id resolution |
-| `ensureGuildWarehouseObj` | `main.js:31244` | Warehouse/fund branches should usually pass here first |
-| `ensureGuildTerritoryWar` | `main.js:31259` | Canonical territory-war state normalizer |
-| `ensureGuildBoard` | `main.js:40695` | Guild board schema normalization |
-| `buildGuildRankingRows` | `main.js:40353` | Cross-store guild ranking aggregation |
-| `syncMemberGuild` | `main.js:40570` | Member/guild mismatch repair path |
-| `trialTowerRanking` | `Info.js:1888` | Ranking renderer for tower-related info output |
-| `getMiniPetGradeStats` | `Info.js:2865` | Aggregate mini-pet grade statistics |
-| `getTitle` | `Info.js:1970` | Member/pet title display helper used by info summaries |
+| `initSweetHomeUser` | `main.js`, `Info.js` | Normalizes home/sweet-home user state before access |
+| `getHomeTotalExp` | `main.js`, `Info.js` | Home ranking and profile summary calculation |
+| `buildMiniPetBagMessage` | `main.js` | Main mini-pet bag formatter and viewer/target split |
+| `initPetSkillUser` | `main.js`, `Info.js` | Normalizes pet-skill storage before use |
+| `getPetSkillSlotCount` | `main.js`, `Info.js` | Slot-count source for pet-skill display/equip rules |
+| `calculateTotalExp` | `main.js`, `Info.js` | High-value aggregate formula for user progression/rank output |
+| `getMyGuildId` | `main.js`, `Info.js` | Fastest guild membership lookup anchor |
+| `getMyGuildInfo` | `main.js`, `Info.js` | Guild object + sender membership validation hub |
+| `getJoinableGuildRows` | `main.js` | Joinable guild filtering and listing logic |
+| `findGuildIdByNameSafe` | `main.js` | Safer guild-name-to-id resolution |
+| `ensureGuildWarehouseObj` | `main.js` | Warehouse/fund branches should usually pass here first |
+| `ensureGuildTerritoryWar` | `main.js` | Canonical territory-war state normalizer |
+| `ensureGuildBoard` | `main.js` | Guild board schema normalization |
+| `buildGuildRankingRows` | `main.js` | Cross-store guild ranking aggregation |
+| `syncMemberGuild` | `main.js` | Member/guild mismatch repair path |
+| `trialTowerRanking` | `Info.js` | Ranking renderer for tower-related info output |
+| `getMiniPetGradeStats` | `Info.js` | Aggregate mini-pet grade statistics |
+| `getTitle` | `Info.js` | Member/pet title display helper used by info summaries |
 
 ## Command Family Hotspots
 
@@ -170,7 +209,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:20672`
+- Search in `main.js`: `/가방`
 - Alias: `ㄴㄴㄴ`
 
 ## Files
@@ -203,6 +242,8 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
+- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
+- During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
 
@@ -212,7 +253,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24710`
+- Search in `main.js`: `/미니펫가방`
 
 ## Files
 
@@ -255,7 +296,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:25935`
+- Search in `main.js`: `/가구가방`
 
 ## Files
 
@@ -308,12 +349,15 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:19661`
+- Search in `main.js`: `/펫홈`
 - `/펫홈`
 - `/펫홈 [닉네임]`
 - `/댓글`
+- `/댓글핀 [번호]`
+- `/댓글핀삭제 [번호]`
 - `/댓글확인`
 - `/댓글삭제`
+- `/펫홈댓글파일생성`
 
 ## Files
 
@@ -326,7 +370,8 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `initPetHomeCommentsData`
 - `getPetHomeCommentList`
-- `migratePetHomeCommentsFromHomeData`
+- `getPetHomePinnedCommentList`
+- `isPinnedPetHomeComment`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `getFurnitureExp`
@@ -343,14 +388,19 @@ Status: VERIFIED
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
 - `petHomeCommentsData.comments[target]`
-- Legacy `homeData[target].guestComments` is moved to `petHomeCommentsData.comments[target]` by `/데이터정리`, then deleted from `homeData`.
+- `petHomeCommentsData.pinnedComments[target]`
+- Legacy `homeData[target].guestComments` is removed by `/데이터정리`; it is not moved into `petHomeCommentsData`.
 
 ## Save Flow
 
 - `/펫홈`: loads `homeDataFile`, replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
 - `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글핀 [번호]`: deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
+- `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
+- Duplicate comments by the same writer are allowed.
 
 ## Related Commands
 
@@ -364,7 +414,9 @@ Status: VERIFIED
 
 - `/펫홈` output is split into two replies: home body first, comments second.
 - Furniture list inserts `allsee` from the second placed furniture.
-- Comment message inserts `allsee` in the comment header and shows the latest 4 comments from a max 50 stored comments.
+- Comment message uses the guestbook header, inserts `allsee` in the count line, and shows the latest 50 comments while storing up to 50 comments.
+- Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
+- Duplicate pet-home comments by the same writer are allowed.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 
 ---
@@ -375,7 +427,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:18349`
+- Search in `main.js`: `/길드영지시작`
 
 ## Files
 
@@ -393,8 +445,17 @@ Status: VERIFIED
 - `scheduleGuildTerritoryOpening`
 - `buildGuildTerritoryOrderMessage`
 - `buildGuildTerritoryStatusMessage`
+- `buildGuildTerritoryRankingMessage`
 - `buildGuildTerritoryStartMessage`
+- `finishGuildTerritoryWar`
+- `addGuildWarehouseReward`
+- `ensureGuildTerritoryBoosterCount`
+- `getGuildTerritoryByNo`
+- `getGuildTerritoryOwnedCount`
 - `startGuildTerritoryTurnTimer`
+- `isGuildTerritoryWarCommandLockActive`
+- `isGuildTerritoryAllowedDuringWarCommand`
+- `isGuildTerritoryBlockedDuringWarCommand`
 
 ## Data Usage
 
@@ -404,6 +465,10 @@ Status: VERIFIED
 - `guildData.territoryWar.openingToken`
 - `guildData.territoryWar.turnOrder`
 - `guildData.castleSiegeFlag`
+- `guildData.guilds[*].warehouse.petSkillBook`
+- `guildData.guilds[*].warehouse.fund`
+- `guildData.guilds[*].guildTerritoryBooster`
+- `guildData.guilds[*].guildTerritoryScore`
 
 ## Save Flow
 
@@ -417,6 +482,10 @@ Status: VERIFIED
 - `/길드영지준비`
 - `/길드영지종료`
 - `/길드영지순서`
+- `/길드영지순위`
+- `/길드영지보상지급`
+- `/영지순위보상`
+- `/영지보상순위`
 - `/영지공격 [숫자]`
 
 ## AI Notes
@@ -425,6 +494,16 @@ Status: VERIFIED
 - Turn order and guild attack limits may include `전투형 지휘관📙`, `기사단 증원📙` 길드마스터 effects at start time
 - During the 5-second grace window, `/영지공격` is intentionally blocked by `territoryWar.startReady`
 - Cancellation and forced finish should clear both pending-start and opening-grace timers
+- Finish rewards use `펫스킬 광산📙` / `warehouse.petSkillBook` instead of the old `정령광산🥀` / `warehouse.elemental` guild warehouse flow.
+- `finishGuildTerritoryWar` applies `길드영지 부스터🔮` to `[2]`~`[6]` mine rewards by guild; insufficient boosters across multiple mines are divided with `Math.floor`, then remaining boosters are redistributed to mines that still have bonus capacity.
+- `[7] 길드영지PT광산🪙` pays 2,000,000,000 points to `warehouse.fund` and grants 100 territory points; up to 100 territory boosters can add up to 100 more points.
+- Territory score boosts consume one `길드영지 부스터🔮` per additional point. When boosters are insufficient, all remaining boosters are distributed across occupied territories with the existing `n:1` mine distribution logic, capped at each territory's base score.
+- `ensureGuildTerritoryWar` migrates the former PT mine occupation row from territory 8 to territory 7 and removes the stale territory 8 row; number 8 is now the virtual dimension gate only.
+- `finishGuildTerritoryWar` keeps final occupation results visible first, then folds reward details, grouped territory point gains, and guide commands behind `allsee`.
+- `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
+- `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
+- `/길드영지보상지급` is Admin/Master only and pays guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
+- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
 
@@ -434,7 +513,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:12827`
+- Search in `main.js`: `/영지공격`
 
 ## Files
 
@@ -450,14 +529,27 @@ Status: VERIFIED
 - `hasGuildTerritoryKnightOrderSkill`
 - `getGuildTerritoryTurnRow`
 - `getGuildTerritoryAttackLimitForWar`
+- `getGuildTerritoryUserAttackCount`
+- `increaseGuildTerritoryUserAttackCount`
 - `applyGuildTerritoryTurnReward`
-- `buildPetSkillTriggerMessage`
+- `buildPetSkillMsg`
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryAttack`
+- `getGuildTerritoryDefenderName`
+- `createGuildTerritoryCastleBattleSnapshot`
+- `buildGuildTerritoryCastleExpSnapshots`
+- `getGuildTerritoryMissingCastleExpUsers`
+- `fillGuildTerritoryCastleExpSnapshots`
+- `resolveGuildTerritoryCastleBattle`
+- `formatGuildTerritoryCastleBattleUserBlock`
+- `buildGuildTerritoryCastleBattleDetailMessage`
+- `getGuildTerritoryByNo`
+- `getGuildTerritoryOwnedCount`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
 - `buildGuildTerritoryCurrentTurnLine`
 - `buildGuildTerritoryTurnMessage`
+- `buildGuildTerritoryAttackTimeCheckMessage`
 - `startGuildTerritoryTurnTimer`
 
 ## Data Usage
@@ -469,13 +561,20 @@ Status: VERIFIED
 - `guildData.territoryWar.readyGuilds`
 - `guildData.territoryWar.guildAttackCounts`
 - `guildData.territoryWar.guildAttackLimits`
+- `guildData.territoryWar.userAttackCounts`
+- `guildData.territoryWar.castleExpSnapshots`
+- `guildData.territoryWar.castleBattleSnapshots`
+- `GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier`
 - `guildData.territoryWar.dimensionGateEnabled`
+- `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
+- `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
+- `GLOBAL_CONFIG.guildTerritory.scores.pointMine`
 
 ## Save Flow
 
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
-- `/영지공격 7` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
+- `/영지공격 8` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -503,8 +602,17 @@ Status: VERIFIED
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- `/영지공격` is accepted only as `/영지공격 [1-7]`; suffix text such as `/영지공격 2 해봐` must not execute
-- `/영지공격 7` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
+- 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
+- `/영지공격` is accepted only as `/영지공격 [1-8]`; suffix text such as `/영지공격 2 해봐` must not execute
+- `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
+- `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
+- 공격 시점에 점령지 3개를 보유한 길드는 턴 길드자금 보상이 5천만에서 1억으로 두 배 적용되며 결과에 `점령 3개 추가보너스 획득`이 표시된다.
+- 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
+- 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
+- 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
+- 일반 캐슬매력 대결 상세보기에는 영지, 공격·방어 길드, 유저·펫, 기본·최종 매력, 크리 발동, 비교식과 점령 결과를 카드형 UI로 표시한다.
+- 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
+- `dev/영지공격 [1-8]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
@@ -515,7 +623,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:27052`
+- Search in `main.js`: `/길드정보`
 - Alias: `ㅗㅗㅗ`
 
 ## Files
@@ -528,6 +636,7 @@ Status: VERIFIED
 - `ensureGuildTerritoryWar`
 - `getGuildTerritoryList`
 - `buildGuildResourceDisplay`
+- `ensureGuildTerritoryBoosterCount`
 
 ## Data Usage
 
@@ -535,6 +644,11 @@ Status: VERIFIED
 - `guildData.guilds[myGid]`
 - `guildData`
 - guild territory war state inside guild data structures
+- `guildData.guilds[myGid].guildTerritoryBooster`
+- `guildData.guilds[myGid].members[*].contribution`
+- `guildData.guilds[myGid].members[*].boosterContribution`
+- `data.member[*].gContribCnt`
+- `data.member[*].gBoosterContribCnt`
 
 ## Save Flow
 
@@ -556,6 +670,8 @@ Status: VERIFIED
 - If a bug mentions guild mismatch auto-repair, inspect nearby warning branches with `길드 데이터 불일치`
 - Territory-related display here depends on `ensureGuildTerritoryWar`
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
+- Displays current `길드영지 부스터🔮` count through `ensureGuildTerritoryBoosterCount`
+- Member rows display total guild contribution and total booster contribution with daily check marks.
 - Displays `subMasters` through `getGuildSubMasterDisplay`
 
 ---
@@ -566,7 +682,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/부길마`
 
 ## Files
 
@@ -611,7 +727,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/소드마스터`
 
 ## Files
 
@@ -655,7 +771,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:330`
+- Search in `Info.js`: `/내정보`
 
 ## Files
 
@@ -698,7 +814,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:175`
+- Search in `Info.js`: `/정보`
 - Admin or master only
 
 ## Files
@@ -740,7 +856,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:907`
+- Search in `Info.js`: `/펫정보`
 - Alias: `ㅁㅁㅁ`
 
 ## Files
@@ -762,6 +878,7 @@ Status: VERIFIED
 - `getIntimacyLvFromBag`
 - `getIntimacyUserRank`
 - `getUserIntimacyInfo`
+- Pendant equipment display is handled inline in `/펫정보`; legacy `ring` data should be migrated through `/반지보상받기` and removed from active equipment data.
 
 ## Data Usage
 
@@ -801,7 +918,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:26970`
+- Search in `main.js`: `/길드목록`
 
 ## Files
 
@@ -840,7 +957,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:28154`
+- Search in `main.js`: `/길드상세정보`
 
 ## Files
 
@@ -850,10 +967,12 @@ Status: VERIFIED
 
 - `findGuildIdByNameSafe`
 - `buildGuildResourceDisplay`
+- `ensureGuildTerritoryBoosterCount`
 
 ## Data Usage
 
 - `guildData.guilds`
+- `guildData.guilds[*].guildTerritoryBooster`
 
 ## Save Flow
 
@@ -869,6 +988,7 @@ Status: VERIFIED
 - Admin/master investigation command for named guild lookup
 - Good anchor when debugging guild member snapshots without relying on sender membership
 - Guild resource display is shared with `/길드정보` through `buildGuildResourceDisplay`
+- Displays `길드영지 부스터🔮` below guild contribution count
 
 ---
 
@@ -878,7 +998,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:28567`
+- Search in `main.js`: `/길드상점`
 
 ## Files
 
@@ -918,7 +1038,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:28808`
+- Search in `main.js`: `/길드순위`
 
 ## Files
 
@@ -958,7 +1078,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:29330`
+- Search in `main.js`: `/길드게시판`
 - Alias: `/길메`
 
 ## Files
@@ -999,7 +1119,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2788`
+- Search in `main.js`: `/당근게시판`
 
 ## Files
 
@@ -1038,7 +1158,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:25867`
+- Search in `main.js`: `/가구정보`
 
 ## Files
 
@@ -1077,7 +1197,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:26046`
+- Search in `main.js`: `/가구순위`
 
 ## Files
 
@@ -1115,7 +1235,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:26212`
+- Search in `main.js`: `/가구가방정리`
 
 ## Files
 
@@ -1155,7 +1275,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24828`
+- Search in `main.js`: `/미니펫정보`
 
 ## Files
 
@@ -1192,7 +1312,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24909`
+- Search in `main.js`: `/미니펫가방정리`
 
 ## Files
 
@@ -1226,13 +1346,53 @@ Status: VERIFIED
 
 ---
 
+# /미니펫대전
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/미니펫대전`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getTotalMinipetExp`
+- `calculateCriticalDamage`
+- `hasPetSkill`
+
+## Data Usage
+
+- `data.member[sender].point`
+- `data.member[sender].exp`
+- `petData[sender].miniPet`
+- `petData[sender].miniPetBag`
+- `petData[sender].miniPetBattle`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)` after point, item, and experience rewards.
+- Saves pet data through `saveJsonFile(petData, memberPetPath)` after battle count and win/loss mutation.
+
+## AI Notes
+
+- 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
+- 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/미니펫/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
+- `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
+
+---
+
 # /시련의탑
 
 Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:24113`
+- Search in `main.js`: `/시련의탑`
 
 ## Files
 
@@ -1241,6 +1401,9 @@ Status: VERIFIED
 ## Related Helpers
 
 - `calculateTotalExp`
+- `calculateCriticalDamage`
+- `difftypeBuff`
+- `hasPetSkill`
 - trial tower reward and floor helpers in nearby branch logic
 
 ## Data Usage
@@ -1254,6 +1417,7 @@ Status: VERIFIED
 
 - Mutates tower progress and member state
 - Saves `trialTower`, member data, and sometimes pet data in branch
+- `/시련의탑` 1~5층 도전은 포인트와 리셋권을 소모하지 않는다.
 
 ## Related Commands
 
@@ -1264,6 +1428,11 @@ Status: VERIFIED
 ## AI Notes
 
 - High-impact progression branch with daily entry count and reward logic
+- 도전자 크리티컬·양측 상성 적용 후 최종 매력을 직접 비교하며, 동률이면 보스가 승리한다.
+- 직접 비교에서 패배한 경우에만 `시련을 걷는 자`와 `시탑 공략서📜` 순서로 기존 추가 판정을 수행한다.
+- 도전자 `종합매력`은 `/종합정보`와 같은 `calculateTotalExp` 원본값을 표시하며, 구원·십원 발동 매력은 `추가보정`으로 분리한 뒤 실제 전투 상성·크리티컬 계산에 반영한다.
+- 출력은 도전자 종합매력과 수호자매력, 상성/최종 매력, 비교식, 매력 차이, 추가 판정과 공략 결과를 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 카드 상단의 공략횟수 아래에 현재 결과를 `✅ 공략 성공` 또는 `❌ 공략 실패`로 먼저 표시한다.
 - Best anchor for tower floor, entry limit, and reward regression investigations
 
 ---
@@ -1274,7 +1443,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:3939`
+- Search in `main.js`: `/호이봇버전, /개발자노트`
 
 ## Files
 
@@ -1313,7 +1482,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:14720`
+- Search in `main.js`: `/자동일퀘`
 
 ## Files
 
@@ -1324,6 +1493,8 @@ Status: VERIFIED
 - `runAutoDailyQuest`
 - `runAutoDailyInternalCommand`
 - `runAutoDailyQuestCommands`
+- `beginAutoDailyBatch`
+- `commitAutoDailyBatch`
 - `buildAutoDailyQuestMessage`
 - `getDailyQuestStatus`
 - `claimQuestReward`
@@ -1341,13 +1512,14 @@ Status: VERIFIED
 ## Save Flow
 
 - Creates member, pet, and pet-skill backup snapshots before automated mutation
-- Repeats each target until the daily count reaches 5 for 시탑/캐대전/미대전 or the underlying command stops progressing; reset-ticket shortages are summarized in the final message
+- Loads automatic-daily data into a thread-local memory batch, repeats each target until its daily count reaches 15 or the underlying command stops progressing, then saves each changed file once
+- Uses an exclusive automatic-daily response lock so ordinary command data processing cannot overwrite the in-memory batch while it is running
 - Filters successful internal battle/result output out of auto-stop reasons, so only blocking messages or concise fallback progress messages are shown
 - Captures internal command exceptions as auto-stop messages instead of falling through to a generic no-progress reason
 - Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
 - Sends an immediate "자동일퀘 계산 중" progress notice before long-running internal command execution
-- Waits briefly and rechecks snapshots after each internal command so delayed save reflection does not look like no progress
-- Reloads data after automated runs and saves member data when daily/weekly quest reward is claimed
+- Compares in-memory snapshots immediately after each internal command without disk-flush sleep delays
+- Claims daily/weekly quest rewards in the same memory batch before the final save
 
 ## Related Commands
 
@@ -1363,7 +1535,10 @@ Status: VERIFIED
 - Requires `자동일퀘권📝` in the user bag
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
-- Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
+- 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
+- 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
+- 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
+- Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
@@ -1375,7 +1550,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:3020`
+- Search in `main.js`: `/일퀘횟수수정`
 
 ## Files
 
@@ -1415,7 +1590,7 @@ Status: VERIFIED
 - Master-only test helper for setting daily quest counters in one command
 - Usage: `/일퀘횟수수정 유저명 시탑 캐대전 미대전 펫탐험 [일일보상횟수]`
 - The outer command guard accepts `/일퀘횟수수정` and spaced arguments, then `editDailyQuestCountsForTest` returns usage/validation errors
-- Count values must be 시탑/캐대전/미대전 0~5, 펫탐험 0~10
+- Count values must be 시탑/캐대전/미대전 0~15, 펫탐험 0~10
 - Castle `battle.ticket` is normalized to `min(캐대전, 1)` so test state matches free-battle usage
 
 ---
@@ -1426,7 +1601,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:14681`
+- Search in `main.js`: `/패키지리스트`
 
 ## Files
 
@@ -1496,7 +1671,7 @@ Status: VERIFIED
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
-- `/패키지가방 [아이디]` is Master-only and reads another user's package bag without mutating or saving data
+- `/패키지가방 [아이디]` is Master/Admin-only and reads another user's package bag without mutating or saving data
 - `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then displays current support pass status below the package use guide
 
 ---
@@ -1569,14 +1744,11 @@ Status: VERIFIED
 - `buildSupportPassListMessage`
 - `getSupportPassConfigs`
 - `isSupportPassActive`
+- `getActiveSupportPassUsers`
 
 ## Data Usage
 - `data.member[user].pass`
 - `data.member[user].bag["자동탐험권🌄"]`
-- `data.allowedUsers6`
-- `data.allowedUsersHoipass`
-- `data.allowedUsers2`
-- `data.allowedUsersDiamondPass`
 
 ## Save Flow
 - `/패스목록` is read-only
@@ -1587,11 +1759,13 @@ Status: VERIFIED
 - Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply
 
 ## Related Commands
+- `/원데이패스추가, [아이디] [날짜|영구권]`
 - `/초보패스추가, [아이디] [날짜|영구권]`
 - `/호이패스추가, [아이디] [날짜|영구권]`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
+- Standalone legacy pass-list commands were removed; use `/패스목록`.
 
 ---
 
@@ -1601,7 +1775,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/펀치|/펀치순위|/펀치순위초기화`
 
 ## Files
 
@@ -1656,7 +1830,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2049`
+- Search in `main.js`: `/펫스킬가방`
 
 ## Files
 
@@ -1694,7 +1868,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2068`
+- Search in `main.js`: `/펫스킬`
 
 ## Files
 
@@ -1722,6 +1896,7 @@ Status: VERIFIED
 
 - Summary view for equipped and available skills
 - Use this when the user report is about equip slots rather than whole bag totals
+- 기본 장착 슬롯은 친밀도 Lv.100당 1칸, 최대 30칸이며 `펫스킬 학개론📙` 장착 시 최대 33칸이다.
 
 ---
 
@@ -1731,7 +1906,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2092`
+- Search in `main.js`: `/펫스킬정보`
 
 ## Files
 
@@ -1741,6 +1916,8 @@ Status: VERIFIED
 
 - `formatSkillBagMessage`
 - `getPetSkillData`
+- `getTierPetSkillSearchName`
+- `buildTierPetSkillInfoLine`
 - `normalizePetSkillName`
 
 ## Data Usage
@@ -1760,7 +1937,10 @@ Status: VERIFIED
 ## AI Notes
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
+- 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
+- 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬·장미칼·청룡언월도·오딘의 뿅망치 중복 장착 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
+- `장인의 숨결` applies to `/펫강화` and `/정령강화` failure only, preserving the required enhancement stone at 7%; it does not apply to `/반지강화`.
 
 ---
 
@@ -1770,7 +1950,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:793`
+- Search in `Info.js`: `/종합순위`
 - Alias: `ㅈㅈㅈ`
 
 ## Files
@@ -1803,6 +1983,7 @@ Status: VERIFIED
 
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
+- Pet upgrade contribution is `GLOBAL_CONFIG.pet.totalCharmPerUpgrade`; current value is 1,000 total charm per pet upgrade level.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 
@@ -1814,7 +1995,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:802`
+- Search in `Info.js`: `/티어순위`
 
 ## Files
 
@@ -1892,7 +2073,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:888`
+- Search in `Info.js`: `/펫상태`
 
 ## Files
 
@@ -1928,7 +2109,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:897`
+- Search in `Info.js`: `/미니펫통계`
 
 ## Files
 
@@ -1966,7 +2147,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1113`
+- Search in `Info.js`: `/시련의탑순위`
 
 ## Files
 
@@ -2001,7 +2182,7 @@ Status: VERIFIED
 # /길드가입조건 [숫자]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27152`
+- Search in main.js: `/길드가입조건`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2019,7 +2200,7 @@ Status: VERIFIED
 # /길드가입 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27201`
+- Search in main.js: `/길드가입`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2044,7 +2225,7 @@ Status: VERIFIED
 # /가입한다
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27311`
+- Search in main.js: `/가입한다`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2065,7 +2246,7 @@ Status: VERIFIED
 # /안한다
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27419`
+- Search in main.js: `/안한다`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2083,7 +2264,7 @@ Status: VERIFIED
 # /길드탈퇴
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27426`
+- Search in main.js: `/길드탈퇴`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2103,7 +2284,7 @@ Status: VERIFIED
 # /길드인원마감
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27777`
+- Search in main.js: `/길드인원마감`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2121,7 +2302,7 @@ Status: VERIFIED
 # /길드인원마감해제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27815`
+- Search in main.js: `/길드인원마감해제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2139,7 +2320,7 @@ Status: VERIFIED
 # /길드마크변경 [이모지]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:27854`
+- Search in main.js: `/길드마크변경`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2159,34 +2340,119 @@ Status: VERIFIED
 # /길드분배
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28229`
+- Search in main.js: `/길드분배`
 ## Files
 - `main.js`
 ## Related Helpers
 - `syncMemberGuild`
 - `getMyGuildInfo`
 - `ensureGuildWarehouseObj`
-- `getGuildMemberNames`
+- `getGuildOrderedMemberKeys`
+- `getGuildDistributionMembersByNumbers`
 - `addDiamond`
 ## Data Usage
 - guild warehouse/fund state
 - member point/item state
+- `guildData.guilds[*].warehouse.petSkillBook`
+- `guildData.guilds[*].warehouse.pendant`
 - `guildData.guilds[*].warehouse.diamond`
 - `data.member[user].diamond`
 - `currencyLogData.user[user].diamond`
 ## Save Flow
-- Saves member data during sync and saves both member data and `guildData` on distribution
-- Saves `currencyLogData` when distributed resources include 다이아
+- Saves member data during sync and saves both member data and `guildData` after successful distribution.
+- Saves `currencyLogData` when distributed resources include 다이아.
+- `/길드분배 [멤버번호] ...`는 `/길드정보`의 공헌도 순 멤버번호로 1~6명을 선택하고, 선택 인원수로 자원을 균등 분배한다.
+- 인자 없는 `/길드분배`는 사용법만 출력하며 자원이나 분배 아이템을 변경하지 않는다.
+- 길드 전체 인원 5명 이상 조건은 유지하고, 범위 밖 번호와 중복 번호는 지급 전에 차단한다.
+- Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
+- `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
+- `/길드분배` distributes `warehouse.pendant` as `펜던트 강화석📿`, then deducts only the evenly distributed share while leaving the remainder in the guild warehouse.
+- Admin warehouse grants use `/길드펫스킬창고 [길드명] [숫자]` for `warehouse.petSkillBook`, `/길드펜던트창고 [길드명] [숫자]` for `warehouse.pendant`, and `/길드다이아창고 [길드명] [숫자]` for `warehouse.diamond`.
+- Legacy `warehouse.ring` is removed by `/데이터정리`; it is not migrated to `warehouse.pendant`.
 ## Related Commands
 - `/길드창고패키지오픈`
 - `/길드정보`
+- `/데이터정리`
+- `/길드다이아창고`
+
+---
+
+# /길드다이아창고 [길드명] [숫자]
+Status: VERIFIED
+## Command Anchors
+- Search in main.js: `/길드다이아창고`
+## Files
+- `main.js`
+## Related Helpers
+- `parseGuildNameAndAmount`
+- `addGuildResourceByAdmin`
+- `findGuildIdByNameSafe`
+- `ensureGuildWarehouseObj`
+## Data Usage
+- `guildData.guilds[*].warehouse.diamond`
+## Save Flow
+- Admin/Master-only command.
+- Parses `[길드명] [숫자]`, adds the amount to `warehouse.diamond`, and saves `guildData` through `saveJsonFile(guildData, guildPath)`.
+## Related Commands
+- `/길드분배`
+- `/길드정보`
+- `/길드상세정보`
+
+---
+
+# /길드공헌, /길드공헌추가
+Status: VERIFIED
+## Files
+- `main.js`
+## Related Helpers
+- `checkGuildLevelUp`
+- `getMyGuildInfo`
+- `ensureGuildWarehouseObj`
+- `addItem`
+- `saveJsonFile`
+## Data Usage
+- `guildData.guilds[*].exp`
+- `guildData.guilds[*].level`
+- `guildData.guilds[*].warehouse`
+- `data.member[sender].bag`
+- `data.member[sender].gContribCnt`
+## Save Flow
+- `/길드공헌` mutates member contribution counters, member bag rewards, guild EXP, and possible guild warehouse rewards, then saves member data and `guildData`.
+- `/길드공헌추가` mutates target guild EXP and possible guild warehouse rewards, then saves member data and `guildData`.
+- `checkGuildLevelUp` grants former guild 정령 warehouse rewards as `warehouse.petSkillBook` 펫스킬북 조각📙.
+## Related Commands
+- `/길드정보`
+- `/길드창고`
+- `/길드분배`
+
+---
+
+# 레벨업 보상
+Status: VERIFIED
+## Files
+- `main.js`
+## Related Helpers
+- `addItem`
+- `saveJsonFile`
+## Data Usage
+- `data.member[sender].lv`
+- `data.member[sender].exp`
+- `data.member[sender].point`
+- `data.member[sender].bag`
+- `petData[sender].petexp`
+## Save Flow
+- When a user levels up, the command flow mutates member EXP/point/bag and pet EXP, then saves member data and pet data in the surrounding attendance/action flow.
+- `levelRewards` no longer grants `반지 강화석💍`; levels that only granted ring stones were removed from the reward table.
+## Related Commands
+- `ㅊㅊ`
+- activity commands that add EXP before level-up processing
 
 ---
 
 # /길드전체초기화
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28553`
+- Search in main.js: `/길드전체초기화`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2204,7 +2470,7 @@ Status: VERIFIED
 # /길드계급표
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28875`
+- Search in main.js: `/길드계급표`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2221,7 +2487,7 @@ Status: VERIFIED
 # /길드fund삭제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:28961`
+- Search in main.js: `/길드fund삭제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2239,7 +2505,7 @@ Status: VERIFIED
 # /길드창고패키지오픈 [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:29109`
+- Search in main.js: `/길드창고패키지오픈`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2251,16 +2517,43 @@ Status: VERIFIED
 - `data.member[sender].bag`
 ## Save Flow
 - Consumes package item, mutates guild warehouse, saves member data and `guildData`
+- Each package adds guild warehouse rewards: fund 50,000,000, petSkillBook 12, pendant 1, pet 15, miniPet 5.
 ## Related Commands
 - `/길드분배`
 - `/길드정보`
 
 ---
 
+# /길드부스터공헌 [개수]
+Status: VERIFIED
+## Command Anchors
+- Search in main.js: `/길드부스터공헌`
+## Files
+- `main.js`
+## Related Helpers
+- `contributeGuildTerritoryBooster`
+- `ensureGuildTerritoryBoosterCount`
+- `getMyGuildInfo`
+- `removeItem`
+## Data Usage
+- `data.member[sender].bag["길드영지 부스터🔮(/길드부스터공헌 숫자)"]`
+- `guildData.guilds[*].guildTerritoryBooster`
+- `guildData.guilds[*].members[sender].boosterContribution`
+- `data.member[sender].gBoosterContribCnt`
+## Save Flow
+- Consumes the booster item from the member bag, adds the count to the user's guild, records the member's cumulative booster contribution and daily contribution flag, then saves member data and `guildData`.
+- `/정리` also auto-contributes all held boosters only when the user belongs to a guild; guildless users keep the item.
+## Related Commands
+- `/길드정보`
+- `/길드영지종료`
+- `/영지보상안내`
+
+---
+
 # /당근 [받을유저닉] [가방번호] [수량]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2874`
+- Search in main.js: `/당근`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2280,7 +2573,7 @@ Status: VERIFIED
 # /당근완료
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2860`
+- Search in main.js: `/당근완료`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2298,7 +2591,7 @@ Status: VERIFIED
 # /당근게시판삭제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2850`
+- Search in main.js: `/당근게시판삭제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2315,7 +2608,7 @@ Status: VERIFIED
 # /편지 [내용]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:22620`
+- Search in main.js: `/편지`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2335,7 +2628,7 @@ Status: VERIFIED
 # /편지삭제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:3572`
+- Search in main.js: `/편지삭제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2353,7 +2646,7 @@ Status: VERIFIED
 # /가방속성 [유저명] [아이템번호] [갯수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:4603`
+- Search in main.js: `/가방속성`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2372,7 +2665,7 @@ Status: VERIFIED
 # /가방추가 [유저명], [아이템명] [갯수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:4633`
+- Search in `main.js`: `/가방추가`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2389,7 +2682,7 @@ Status: VERIFIED
 # /펫스킬가방추가 [유저], [스킬명] [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1762`
+- Search in `main.js`: `/펫스킬가방추가`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2410,7 +2703,7 @@ Status: VERIFIED
 # /펫스킬일괄지급
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1818`
+- Search in main.js: `/펫스킬일괄지급`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2429,7 +2722,7 @@ Status: VERIFIED
 # /펫스킬전체판매
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1921`
+- Search in main.js: `/펫스킬전체판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2451,7 +2744,7 @@ Status: VERIFIED
 # /펫스킬판매 [번호] [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:1961`
+- Search in main.js: `/펫스킬판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2471,7 +2764,7 @@ Status: VERIFIED
 # /펫스킬확률
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2074`
+- Search in main.js: `/펫스킬확률`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2485,12 +2778,18 @@ Status: VERIFIED
 - `/펫스킬오픈`
 - `/펫스킬정보`
 
+## AI Notes
+
+- 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
+- `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
+- S/A/B/C의 기존 등급별 총확률은 유지하고, 각 등급 안의 기존 스킬과 티어책에 동일 확률로 균등 분배한다. SS/D는 기존 개별 확률을 유지한다.
+
 ---
 
 # /펫스킬중복
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2118`
+- Search in main.js: `/펫스킬중복`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2507,13 +2806,14 @@ Status: VERIFIED
 # /펫스킬오픈 [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2128`
+- Search in main.js: `/펫스킬오픈`
 ## Files
 - `main.js`
 ## Related Helpers
 - `getPetSkillBagRemainCount`
 - `getPetSkillBagTotalCount`
 - `addPetSkillToBag`
+- `pickRandomPetSkill`
 ## Data Usage
 - skill-book item in `data.member[sender].bag`
 - `petSkillData[sender].bag`
@@ -2522,6 +2822,11 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬확률`
 - `/펫스킬가방`
+
+## AI Notes
+
+- `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C 등급 내부 균등 확률을 적용하며 티어 전용 펫스킬북도 추첨한다.
+- `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
 
 ---
 
@@ -2552,7 +2857,7 @@ Status: VERIFIED
 # /펫스킬장착 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2205`
+- Search in main.js: `/펫스킬장착`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2560,10 +2865,14 @@ Status: VERIFIED
 - `getPetSkillSlotCount`
 - `initPetSkillUser`
 - `hasPetSkill`
+- `canEquipTierPetSkill`
+- `getTicketTierOrderIndex`
+- `isPetSkillCompatible`
 - `removePetSkillFromBag`
 ## Data Usage
 - `petSkillData[sender].bag`
 - `petSkillData[sender].equipped`
+- `data.member[sender].rank.tier`
 ## Save Flow
 - Moves skill from bag to equipped and saves `petSkillData`
 ## Related Commands
@@ -2571,7 +2880,9 @@ Status: VERIFIED
 - `/펫스킬가방`
 ## AI Notes
 - `전투형 지휘관📙`, `기사단 증원📙`, `징집명령📙`은 장착 시점에 길드마스터 여부를 검사하는 전용 스킬이다
-- `야호📙`은 `/알림`에서 확성기 아이템 사용 횟수와 합산해 하루 총 3회 한도 안에서만 무료 사용을 허용한다
+- `야호📙`은 신규 뽑기 목록과 `/알림` 효과가 주석 처리되어 더 이상 획득·사용되지 않는다. 기존 보유 데이터는 유지한다.
+- 티어 전용 펫스킬은 `ticketTierData` 순서로 현재 티어가 요구 티어 이상인지 장착 시 검사하며, 티어책끼리는 한 종만 허용하고 일반 스킬과는 함께 장착할 수 있다.
+- 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
 - `/계정삭제`와 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
@@ -2592,36 +2903,45 @@ Status: VERIFIED
 - ensureDormantAccounts
 - isDormantAccount
 - buildDormantAccountListMessage
+- ensureAccountSuspensions
+- buildAccountSuspensionListMessage
 - formatDormantDateText
 - getDormantDays
 
 ## Data Usage
 - data.dormantAccounts
+- data.accountSuspensions.users
 - data.member[target]
 
 ## Save Flow
 - `/휴면계정 [아이디]` registers `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
+- `/휴면해제 [아이디]` deletes `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
 - `/계정삭제` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
 - `/계정잠수명단` and `/계정잠수삭제` exclude registered dormant accounts from removal candidates
 - `/계정잠수삭제` reports dormant accounts that matched the sleep condition but were protected
+- `/휴면계정리스트` and `/계정정지리스트` are read-only and do not save member data
 
 ## Related Commands
 - `/휴면계정 [아이디]`
-- `/휴면리스트`
+- `/휴면해제 [아이디]`
+- `/휴면계정리스트`
+- `/계정정지리스트`
 - `/계정삭제`
 - `/계정잠수명단`
 - `/계정잠수삭제 [숫자]`
 
 ## AI Notes
 - 휴면계정 보호 목록은 별도 파일이 아니라 `data` 안의 `dormantAccounts`에 저장한다.
-- 휴면계정은 계정 삭제 대상에서 제외만 하며 기존 회원 데이터는 변경하지 않는다.
+- 휴면계정 등록/해제는 계정 삭제 대상 제외 목록만 변경하며 기존 회원 데이터는 변경하지 않는다.
+- 기존 `/휴면리스트`는 제거되었으며 입력해도 반응하지 않는다.
+- 계정정지 목록은 `data.accountSuspensions.users`를 휴면 목록과 같은 날짜 표시 형식으로 읽고 `allsee` 전체보기를 지원한다.
 
 ---
 
 # /펫스킬당근 [닉] [번호] [개수]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:2282`
+- Search in main.js: `/펫스킬당근`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2643,7 +2963,7 @@ Status: VERIFIED
 # /미니펫장착 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:24639`
+- Search in main.js: `/미니펫장착`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2665,7 +2985,7 @@ Status: VERIFIED
 # /미니펫조합 [번호] [번호] / /미니펫조합태초+|창세|창조
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/미니펫조합`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2691,7 +3011,7 @@ Status: VERIFIED
 # /미니펫조합엘리트
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/미니펫조합엘리트`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2720,7 +3040,7 @@ Status: VERIFIED
 # /관리자명단|관리자추가|관리자삭제|관리자일당|부방상여
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/관리자명단`, `/관리자추가`, `/관리자삭제`, `/관리자일당`, `/부방상여`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2750,7 +3070,7 @@ Status: VERIFIED
 # /미니펫전체정리
 Status: VERIFIED
 ## Command Anchors
-- `main.js:24857`
+- Search in main.js: `/미니펫전체정리`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2768,7 +3088,7 @@ Status: VERIFIED
 # /미니펫판매 [번호]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:25020`
+- Search in main.js: `/미니펫판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2788,7 +3108,7 @@ Status: VERIFIED
 # /미니펫지정판매 [시작]~[끝]
 Status: VERIFIED
 ## Command Anchors
-- `main.js`
+- Search in `main.js`: `/미니펫지정판매`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2815,7 +3135,7 @@ Status: VERIFIED
 # /귀속해제
 Status: VERIFIED
 ## Command Anchors
-- `main.js:25060`
+- Search in main.js: `/귀속해제`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2836,7 +3156,7 @@ Status: VERIFIED
 # /컬렉션등록 [번호...]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:29672`
+- Search in main.js: `/컬렉션등록`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2863,7 +3183,7 @@ Status: VERIFIED
 # /미니펫컬렉션
 Status: VERIFIED
 ## Command Anchors
-- `main.js:30039`
+- Search in main.js: `/미니펫컬렉션`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2883,7 +3203,7 @@ Status: VERIFIED
 # /미니펫컬렉션순위
 Status: VERIFIED
 ## Command Anchors
-- `main.js:30085`
+- Search in main.js: `/미니펫컬렉션순위`
 ## Files
 - `main.js`
 
@@ -2902,7 +3222,7 @@ Status: VERIFIED
 # /자랑
 Status: VERIFIED
 ## Command Anchors
-- `main.js:30099`
+- Search in main.js: `/자랑`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2920,7 +3240,7 @@ Status: VERIFIED
 # /알림 [내용]
 Status: VERIFIED
 ## Command Anchors
-- `main.js:18725`
+- Search in main.js: `/알림`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -2937,22 +3257,20 @@ Status: VERIFIED
 - `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
 - `petSkillData[sender]`
 ## Save Flow
-- When `guildData.territoryWar.active` is true, `/알림` is blocked before item/count mutation and does not save member data.
-- Successful `/알림` uses `야호📙` free count or consumes `확성기📢(/알림 내용 30자)`, then saves member data through `saveJsonFile(data, filePath)`.
+- The execution block is commented out. `/알림` does not reply, consume `확성기📢(/알림 내용 30자)`, mutate counters, or save member data.
 ## Related Commands
 - `/길드영지시작`
 - `/길드영지종료`
 - `/영지공격`
 ## AI Notes
-- `/알림` accepts free-form message text after a command boundary only: `/알림 내용`.
-- The command is blocked while guild territory war is active so territory-war progress messages are not interrupted.
+- `/알림` and the `야호📙` effect are intentionally disabled while existing item and skill ownership data remain intact.
 
 ---
 
 # /포인트
 Status: VERIFIED
 ## Command Anchors
-- `Info.js:300`
+- Search in Info.js: `/포인트`
 - Alias: `ㅍㅍㅍ`
 ## Files
 - `Info.js`
@@ -2978,7 +3296,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:16083`
+- Search in `main.js`: `/구매`
 
 ## Files
 
@@ -2987,7 +3305,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `hasPetSkill`
-- `buildPetSkillTriggerMessage`
+- `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
 
@@ -3031,8 +3349,8 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:495`
-- `Info.js:519` target-user admin path
+- Search in `Info.js`: `/타이틀목록`
+- Search in `Info.js`: `/타이틀목록` target-user admin path
 
 ## Files
 
@@ -3072,8 +3390,8 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:551`
-- `Info.js:574` target-user admin path
+- Search in `Info.js`: `/펫타이틀목록`
+- Search in `Info.js`: `/펫타이틀목록` target-user admin path
 
 ## Files
 
@@ -3113,7 +3431,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:606`
+- Search in `Info.js`: `/출석목록`
 
 ## Files
 
@@ -3150,7 +3468,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:624`
+- Search in `Info.js`: `/상점`
 
 ## Files
 
@@ -3190,7 +3508,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:763`
+- Search in `Info.js`: `/펫강순위`
 
 ## Files
 
@@ -3227,7 +3545,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:768`
+- Search in `Info.js`: `/누좋순위`
 
 ## Files
 
@@ -3263,7 +3581,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:773`
+- Search in `Info.js`: `/누렙순위`
 
 ## Files
 
@@ -3299,7 +3617,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:778`
+- Search in `Info.js`: `/영주수익순위`
 
 ## Files
 
@@ -3335,7 +3653,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:783`
+- Search in `Info.js`: `/정령순위`
 
 ## Files
 
@@ -3372,7 +3690,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:788`
+- Search in `Info.js`: `/반지순위`
 
 ## Files
 
@@ -3380,7 +3698,7 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `generateRingRanking`
+- `generateRingRanking` remains in source for legacy reference but is no longer called by the command branch.
 
 ## Data Usage
 
@@ -3398,8 +3716,120 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Ring-enhancement leaderboard
-- Useful when ring-related contribution in pet/profile output needs isolation
+- Command now replies that ring ranking has ended for the pendant transition.
+- Legacy ring enhancement exp is converted to `반지매력보상🎁(/보상받기)` through `/반지보상받기`; do not re-enable ring ranking for migrated users.
+
+---
+
+# /반지보상받기
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/반지보상받기`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `calculateItemInfo`
+- `addItem`
+- `saveJsonFile`
+
+## Data Usage
+
+- `petData[sender].ring`
+- `petData[sender].ringRewardMigration`
+- `data.member[sender].bag`
+
+## Save Flow
+
+- Calculates legacy ring reward as `ring raidExp + ring castleExp`.
+- Adds `반지매력보상🎁(/보상받기)` to the member bag.
+- Deletes `petData[sender].ring` and records one-time migration metadata in `petData[sender].ringRewardMigration`.
+- Saves both member data and `petData`.
+- Starter pet creation no longer creates `petData[user].ring`; existing rings remain only for reward migration.
+
+## Related Commands
+
+- `/보상받기`
+- `/펫정보`
+- `/반지강화`
+
+---
+
+# /반지보상통계
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/반지보상통계`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `calculateItemInfo`
+- `numberWithCommas`
+
+## Data Usage
+
+- `petData[*].ring`
+- `petData[*].ringRewardMigration`
+- `data.member[*].bag["반지매력보상🎁(/보상받기)"]`
+
+## Save Flow
+
+- Admin/Master-only exact command.
+- Read-only statistics command; no save calls.
+- Counts claimed users by `ringRewardMigration.claimed === true`.
+- Counts pending users by remaining `petData[user].ring` without a claimed migration flag.
+
+## Related Commands
+
+- `/반지보상받기`
+- `/보상받기`
+
+---
+
+# /보상받기
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/보상받기`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `removeItem`
+- `saveJsonFile`
+
+## Data Usage
+
+- `data.member[sender].bag`
+- `petData[sender].petexp`
+
+## Save Flow
+
+- Consumes `반지매력보상🎁(/보상받기)` and increases `petData[sender].petexp` by the consumed count.
+- Uses 1 item by default when no count is provided.
+- Saves both member data and `petData`.
+
+## Related Commands
+
+- `/반지보상받기`
+- `/펫정보`
 
 ---
 
@@ -3409,15 +3839,11 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:845`
+- Search in `Info.js`: `/티어확인`
 
 ## Files
 
 - `Info.js`
-
-## Related Helpers
-
-- `ticketTierData`
 
 ## Data Usage
 
@@ -3446,7 +3872,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1089`
+- Search in `Info.js`: `/펫매력순위`
 
 ## Files
 
@@ -3483,7 +3909,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1095`
+- Search in `Info.js`: `/캐슬매력순위`
 
 ## Files
 
@@ -3524,7 +3950,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1105`
+- Search in `Info.js`: `/레이드매력순위`
 
 ## Files
 
@@ -3565,7 +3991,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1120`
+- Search in `Info.js`: `/가구통계`
 
 ## Files
 
@@ -3603,7 +4029,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1170`
+- Search in `Info.js`: `/서버통계`
 
 ## Files
 
@@ -3639,7 +4065,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1243`
+- Search in `Info.js`: `/캐슬전적`
 
 ## Files
 
@@ -3684,7 +4110,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `Info.js:1265`
+- Search in `Info.js`: `/캐슬대전순위`
 
 ## Files
 
@@ -3793,9 +4219,9 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js:2404`
-- Registration commands: `main.js:2449`
-- Purchase/cancel commands: `main.js:2732`
+- Search in `main.js`: `/자유시장`
+- Registration search: `가방거래등록`, `미니펫거래등록`, `가구거래등록`, `스킬거래등록`
+- Purchase/cancel search: `/자유시장구매`, `/자유시장취소`, `/거래소강제취소`
 
 ## Files
 
@@ -3841,6 +4267,7 @@ Status: VERIFIED
 - `/미니펫거래등록 [미니펫가방번호] [갯수] [판매금액]`
 - `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
 - `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
+- `/펜던트거래등록 [펜던트가방번호] [판매금액]`
 - `/자유시장확인`
 - `/자유시장확인취소`
 - `/자유시장구매 [번호]`
@@ -3850,6 +4277,7 @@ Status: VERIFIED
 - `/자유시장현황`
 - `/자유시장거래현황`
 - `ㅅㅅ`
+- `/펜던트거래정보 [자유시장번호]`
 
 ## AI Notes
 
@@ -3863,12 +4291,14 @@ Status: VERIFIED
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
 - `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
-- `/자유시장` appends `[개당 ...]` to active listing item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
+- `/자유시장` and `/자유시장거래현황` append `[개당 ...]` to item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
 - Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
-- Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, and `/스킬거래등록` input now replies with the exact numeric-index registration usage guide
+- `/펜던트거래등록 [펜던트가방번호] [판매금액]` is handled before the common invalid registration usage guard so it does not require a quantity argument.
+- `/펜던트거래등록 [펜던트가방번호] [판매금액]` now follows the same confirmation flow as other free-market registrations: confirmation message first, `자유시장거래` to register, `자유시장거래취소` to cancel.
+- Invalid `/가방거래등록`, `/미니펫거래등록`, `/가구거래등록`, `/스킬거래등록`, and malformed `/펜던트거래등록` input replies with the registration usage guide
 - Furniture listings display furniture charm as `(+n💕)[grade]` in free-market item text when payload furniture data exists
 
 # /탐
@@ -3919,9 +4349,10 @@ Status: VERIFIED
 - `/레이드이벤트활성화`
 - `/레이드이벤트비활성화`
 - `/레이드박스오픈`
-- `/팬던트미궁박스오픈`
+- `/펜던트미궁박스오픈`
 - `/대마법박스오픈`
 - `/자동탐고정 0` when the event mine is active
+- `/자동탐고정 8`
 - `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
@@ -3935,10 +4366,9 @@ Status: VERIFIED
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 - Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
 - Maze entries `/탐 7~8` require `미궁 입장권🕋` and apply a `-50%` success penalty.
-- `/탐 7` rewards `팬던트미궁박스💎(/팬던트미궁박스오픈)` on success.
-- `/탐 8` requires `/종합순위` top 10 and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
-- `initPetExploreData` performs one-time `pendantMazeSlotResetV2191` migration through `moveCurrentExploreBetsToStarterSlots`, moving existing visible participants from slots 1~8 into slots 1~3 so old slot data is not displayed as new maze participation.
-- `initPetExploreData` also performs one-time `currentExploreSlotOneResetV2192` migration through `moveCurrentExploreBetsToDungeonOne`, moving current visible map participants from slots 0~8 and 10 into slot 1.
+- `/탐 7` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
+- `/탐 8` requires `/종합순위` top 20, can be fixed with `/자동탐고정 8`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `initPetExploreData` preserves current visible participants and only records the old `pendantMazeSlotResetV2191` / `currentExploreSlotOneResetV2192` migration flags when they are missing.
 - `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
 
 # /맞짱필드
@@ -3961,6 +4391,7 @@ Status: VERIFIED
 - `ensureMatzangParticipant`
 - `addDiamond`
 - `buildMatzangParticipantList`
+- `getMatzangPointRanking`
 - `getMatzangBattleProfile`
 - `runMatzangBattle`
 - `getMatzangRankReward`
@@ -3968,7 +4399,6 @@ Status: VERIFIED
 - `calculateTotalExp`
 - `difftypeBuff`
 - `calculateCriticalDamage`
-- `petgameplay`
 
 ## Data Usage
 
@@ -3990,17 +4420,17 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Uses `filePath` member data for field state, participant event PT, diamond balances, and diamond shop
+- Uses `filePath` member data for field state, participant event PT, battle point rewards, diamond balances, and diamond shop
 - Uses `currencyLogPath` for cumulative earned diamond, used diamond total, and usage history logs
-- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, `/다이아차감`, and `/다이아전체초기화` save `data` through `saveJsonFile(data, filePath)`
-- `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
-- `/다이아구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
+- `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아상점구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, `/다이아차감`, and `/다이아전체초기화` save `data` through `saveJsonFile(data, filePath)`
+- `/맞짱종료` and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
+- `/다이아상점구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
 - `/맞짱시간체크 [닉네임]` loads `homeDataFile` and measures the named user's 종합매력 runtime with detailed component timings
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
 - `/맞짱시간체크 [닉네임]` is an anytime read-only Admin/Master diagnostic path and does not run battle, select an opponent, or save match count, PT, diamond, or field data
-- Active 맞짱필드 blocks `/미니펫오픈` and `/샵오픈` before those command branches execute
+- Active 맞짱필드 blocks non-matzang command flows in `main.js` and `Info.js` outside rest time; Admin/Master/오픈채팅봇 bypass only the confirmed field-operation and management command roots rather than every slash command, and the shared known plain-command list makes aliases and state inputs such as `ㅊㅊ`, `ㅈㅈ`, and `ㅈㅈㅈ` receive the same allowed-command guide as slash commands
 - `Info.js` reads `data.member[*].diamond` for 종합 정보 display
 
 ## Related Commands
@@ -4014,9 +4444,10 @@ Status: VERIFIED
 - `/휴식`
 - `/맞짱종료`
 - `/맞짱필드목록`
+- `/맞짱순위`
 - `/다이아순위`
 - `/다이아상점`
-- `/다이아구매 [번호] [갯수]`
+- `/다이아상점구매 [번호] [갯수]`
 - `/다이아상점추가 [상품명] [상품갯수] [다이아갯수]`
 - `/다이아상점삭제 [번호]`
 - `/다이아추가 [아이디] [갯수]`
@@ -4026,17 +4457,22 @@ Status: VERIFIED
 ## AI Notes
 
 - `/맞짱` and `ㅁㅁ` are exact commands; suffix text does not execute battle logic
+- 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
+- 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
-- `/휴식` stores a rest end time so `/맞짱` and `ㅁㅁ` can resume after the 60-second break even if the delayed notice/save timing is late
-- A user who reaches 7 event matches is marked field-out and cannot rejoin the active event
-- `/맞짱종료` pays top 1~50 event PT rewards as 다이아 and then clears active participant data
+- `/휴식` sends start/end notices through `noticeMsg`, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late; `/맞짱` and `ㅊㅇ` show the remaining break time in minutes and seconds
+- A user who reaches 10 event matches is marked field-out and receives the `[✅완료]` message instead of the participation guide
+- Each `/맞짱` or `ㅁㅁ` run grants the acting user 50,000,000 points on a win or 25,000,000 points on a loss. `/맞짱종료` still pays event PT rank rewards in diamonds to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
+- `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
+- `/맞짱순위`는 `/맞짱시작`부터 현재까지 PT를 획득한 참가자를 누적 PT 내림차순으로 보여주며, 동점은 이름 오름차순으로 정렬한다. 조회만 수행하며 데이터를 저장하지 않는다.
+- While the field is active outside rest time, normal users may use only `/참여` (`ㅊㅇ`), `/맞짱` (`ㅁㅁ`), `/맞짱필드목록`, and `/맞짱순위`; confirmed management commands such as `/휴식`, `/맞짱종료`, `/미정`, `/정보`, `/미니펫정보`, and `/패키지리스트` require the Admin/Master/오픈채팅봇 command-specific bypass. Operators no longer bypass the lock for ordinary slash commands. `/맞짱` outside the siege room includes the siege-room link.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
-- 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
+- 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아상점구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
 - 다이아 사용내역은 `currencyLog.json` `user[유저명].useHistory`에 시간, 구분, 사용량, 메모만 간단히 누적 저장한다
 - `/다이아전체초기화`는 마스터 전용이며 모든 유저의 보유 다이아와 `currencyLog.json` 누적 기록을 초기화한다
 ---
@@ -4047,7 +4483,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/다이아상자오픈`
 
 ## Files
 
@@ -4127,7 +4563,7 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.allowedUsersDiamondPass`
+- `data.member[*].pass.diamond`
 - `data.member[*].bag["다이아상자💎(/다이아상자오픈)"]`
 
 ## Save Flow
@@ -4139,11 +4575,10 @@ Status: VERIFIED
 - `/다이아패스추가, 아이디`
 - `/다이아패스삭제, 아이디`
 - `/다이아패스구독`
-- `/다이아패스명단`
 
 ## AI Notes
 
-- `/다이아패스구독` gives each listed member `다이아상자💎(/다이아상자오픈)` 10개.
+- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `다이아상자💎(/다이아상자오픈)` 10개.
 
 ---
 
@@ -4178,7 +4613,7 @@ Status: VERIFIED
 
 ---
 
-# /팬던트미궁박스오픈
+# /펜던트미궁박스오픈
 
 Status: VERIFIED
 
@@ -4195,7 +4630,7 @@ Status: VERIFIED
 
 ## Data Usage
 
-- data.member[sender].bag["팬던트미궁박스💎(/팬던트미궁박스오픈)"]
+- data.member[sender].bag["펜던트미궁박스💎(/펜던트미궁박스오픈)"]
 - data.member[sender].bag["팬던트 강화석📿"]
 - data.member[sender].bag["팬던트 복원석🔷"]
 
@@ -4205,7 +4640,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Exact/full-pattern command guard: `/팬던트미궁박스오픈` or `/팬던트미궁박스오픈 숫자`.
+- Exact/full-pattern command guard: `/펜던트미궁박스오픈` or `/펜던트미궁박스오픈 숫자`.
 - Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
 - Each box grants `팬던트 강화석📿` 1~3개 and has a 1% chance to grant `팬던트 복원석🔷` 1개.
 
@@ -4250,7 +4685,7 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- `main.js`
+- Search in `main.js`: `/포인트상자오픈`
 
 ## Files
 
@@ -4294,26 +4729,36 @@ Status: VERIFIED
 - `homeData[*].furnitureBag`
 - `homeData[*].placedFurniture`
 - `homeData[*].guestComments`
-- `petHomeCommentsData.comments[*]`
 - `data.member[*].bag`
 - `data.member[*].point`
+- `data.allowedUsers2`
+- `data.allowedUsers4`
+- `data.allowedUsers6`
+- `data.allowedUsersHoipass`
+- `data.allowedUsersDiamondPass`
 - `petData[*].petSkills`
 - `petData[*].petchar`
+- `petData[*].ring`
+- `petData[*].ringRewardMigration`
 - `petSkillData[*]`
+- `guildData.guilds[*].warehouse.ring`
 
 ## Save Flow
 
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
-- Saves pet home comment data through `saveJsonFile(petHomeCommentsData, petHomeCommentsFile)`
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
+- Saves guild data through `saveJsonFile(guildData, guildPath)`
 
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Moves legacy `homeData[*].guestComments` into `petHomeCommentsData.comments[*]`, then deletes `guestComments` from `homeData`.
+- Deletes legacy `homeData[*].guestComments` from `homeData` only; `/데이터정리` does not move those comments into `petHomeCommentsData`.
 - Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Step 6 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
+- Step 7 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
+- Step 8 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
@@ -4342,6 +4787,10 @@ Status: VERIFIED
 - `buildPendingUserIdCheckMessage`
 - `formatPendingUserIdDateText`
 - `formatPendingUserIdServerText`
+- `normalizeMissingAttendanceSignupUserId`
+- `buildMissingAttendanceSignupInvalidIdMessage`
+- `buildMissingAttendanceSignupSuccessMessage`
+- `validateSignupNickname`
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
@@ -4362,6 +4811,7 @@ Status: VERIFIED
 - Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/가입` flow
 - Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
+- `/가입` for new users validates the Kakao sender nickname before creating member data; invalid name/gender format or blocked profanity/political terms return with guidance and do not save data
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
 - `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
 
@@ -4369,11 +4819,13 @@ Status: VERIFIED
 
 - `/미가입출첵`
 - `/미가입출첵서버초기화 [호1-호7|벨1-벨2|GM|서버장]`
+- `/미출석가입 [아이디]`
 - `/미정 [이름]`
 
 ## AI Notes
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
+- 신규 `/가입` 닉네임은 `두 글자 이상 이름 + 공백 + 남/여` 형식이어야 한다.
 - `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
 - `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
@@ -4421,3 +4873,195 @@ Status: VERIFIED
 - Accepted as `/미정` for usage guidance or `/미정 [이름]` for lookup.
 - The command searches regular member data and 미가입 출첵 light data by base name, excluding the trailing gender token from stored user IDs.
 - The command displays stored server info for joined users and light-attendance rows, or `(서버정보 없음)` when the row has no server.
+
+---
+
+# /미출석가입 [아이디]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `data/attendanceLight.json`
+- `data/hoiBotChangeLog.json`
+
+## Related Helpers
+
+- `normalizeMissingAttendanceSignupUserId`
+- `buildMissingAttendanceSignupInvalidIdMessage`
+- `buildMissingAttendanceSignupSuccessMessage`
+- `initializeMember`
+- `initPetSkillUser`
+- `saveJsonFile`
+- `loadJsonFile`
+
+## Data Usage
+
+- `data.member[아이디]`
+- `petData[아이디]`
+- `petSkillData[아이디]`
+- `member_title.member[아이디]`
+- `attendanceLightData.users[아이디]`
+
+## Save Flow
+
+- Admin/Master-only command.
+- Accepts `/미출석가입 [아이디]` only when the ID normalizes to `이름 남` or `이름 여`.
+- Invalid IDs reply with usage guidance and return before creating member, pet, title, pet-skill, or light-attendance data.
+- Valid new IDs call `initializeMember`, initialize pet-skill data, save `petSkillData`, and remove an exact matching `attendanceLight.json` row when it exists.
+
+## Related Commands
+
+- `/가입`
+- `/미가입출첵`
+- `/미정 [이름]`
+
+## AI Notes
+
+- Do not broaden the guard with `startsWith`; malformed `/미출석가입` suffixes should fall into validation and must not create data.
+- Existing historical member IDs are not normalized or deleted by this command.
+
+---
+
+# /글자수전체정리
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `cleanAllMiniPetBags`
+- `cleanAllFurnitureBags`
+- `cleanAllPendantBags`
+- `buildTextLengthCleanupMessage`
+
+## Data Usage
+
+- `petData[*].miniPetBag`
+- `homeData[*].furnitureBag`
+- `petData[*].pendantBag`
+
+## Save Flow
+
+- Master 전용 통합 정리 명령이다.
+- 미니펫 정리 결과가 있으면 `member_pet.json`을 저장한다.
+- 가구 정리 결과가 있으면 `homeDataFile`을 저장한다.
+- 펜던트 정리 결과가 있으면 `member_pet.json`을 저장한다.
+
+## Related Commands
+
+- `/미니펫전체정리`
+- `/가구전체정리`
+- `/펜던트전체정리`
+
+## AI Notes
+
+- `/미니펫전체정리`, `/가구전체정리`, `/펜던트전체정리`의 공용 정리 헬퍼를 순차 실행한다.
+- 초과 데이터가 없으면 저장하지 않고 0개 삭제 결과를 출력한다.
+
+---
+
+# 펜던트 콘텐츠
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+- `data/hoiBotChangeLog.json`
+
+## Commands
+
+- `/펜던트오픈 [갯수]`
+- `/펜던트확률`
+- `/펜던트가방`
+- `/펜던트순위`
+- `/펜던트정보 [펜던트가방번호]`
+- `/펜던트장착 [펜던트가방번호]`
+- `장착할래`
+- `생각해볼게`
+- `/펜던트해제`
+- `/펜던트복원 [펜던트가방번호]`
+- `/펜던트강화 [펜던트가방번호]`
+- `/펜던트판매 [펜던트가방번호]`
+- `/펜던트가방정리 시작번호~끝번호`
+- `/펜던트전체정리`
+- `/펜던트당근 유저명 번호`
+- `/펜던트거래등록 번호 판매금액`
+- `/펜던트거래정보 [자유시장번호]`
+- `/펜던트추가`, `/펜던트삭제`, `/펜던트장착초기화`, `/펜던트강화수정`, `/펜던트내구도수정`
+
+## Related Helpers
+
+- `ensurePendantUser`
+- `getPendantBag`
+- `pickRandomPendant`
+- `formatPendantDisplay`
+- `formatPendantNameWithIcon`
+- `formatPendantOpenResultDisplay`
+- `formatSimpleRankPrefix`
+- `buildPendantInfoDetailMessage`
+- `formatPendantPercent`
+- `sortPendantBagByGrade`
+- `calculatePendantStats`
+- `buildPendantRankingRows`
+- `buildPendantRankingMessage`
+- `calculatePendantItemInfo`
+- `getPendantExploreBonusPercent`
+- `runPendantOpen`
+- `setPendantEquipState`
+- `getPendantEquipState`
+- `clearPendantEquipState`
+- `buildPendantEquipConfirmMessage`
+- `equipPendantFromBag`
+- `unequipPendantToBag`
+- `restorePendantDurability`
+- `getPendantUpgradePetSkillBonusRate`
+- `formatPendantUpgradeRateLine`
+- `buildPendantUpgradePreview`
+- `runPendantUpgradeFromState`
+- `registerPendantFreeMarket`
+- `buildPendantTradeInfoMessage`
+- `cleanAllPendantBags`
+
+## Data Usage
+
+- `petData[user].pendant`
+- `petData[user].pendantBag`
+- `userState[user].pendantEquip`
+- `petSkillData[user].petSkills.equipped`
+- `data.member[user].bag`
+- `data.member[user].point`
+- `freeMarketData.listings[*].type = "pendant"`
+
+## Save Flow
+
+- 펜던트 장착/관리/강화/거래는 `petData`를 저장한다.
+- 장착 펜던트가 이미 있는 `/펜던트장착 [번호]`는 `userState[user].pendantEquip`에 확인 대기를 저장하고, `장착할래` 확정 시 기존 장착 펜던트를 소멸시키고 선택한 가방 펜던트를 장착한 뒤 `petData`를 저장한다.
+- 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
+- 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
+- `/펜던트전체정리`는 `petData[user].pendantBag`에서 51개 이상인 가방의 초과분을 삭제한 뒤 `member_pet.json`을 저장한다.
+
+## AI Notes
+
+- `/펜던트오픈`은 운영 제한 없이 사용할 수 있다.
+- `/펜던트장착 [번호]`는 장착 펜던트가 없으면 즉시 장착하고, 이미 장착 중이면 `장착할래` / `생각해볼게` 확인 단계를 거친다.
+- `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 번호와 각 펜던트의 뽑기 확률을 함께 표시한다.
+- `/펜던트오픈` 결과는 5번째 항목부터 `allsee` 뒤에 표시한다.
+- `/펜던트오픈` 전체알림은 최상급+ 이상 펜던트마다 1개씩 송출하고, 창세/창조처럼 1% 미만인 획득 확률도 소수점으로 보존해 함께 표시한다.
+- `/펜던트오픈`은 펜던트가방이 이미 50/50일 때만 막고, 49/50 이하에서는 보유한 펜던트뽑기 수량만큼 오픈할 수 있다.
+- `/펜던트당근거래`는 기존 호환 별칭이며, 안내 문구와 문서 기준 명령어는 `/펜던트당근`이다.
+- `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
+- `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
+- `/펜던트순위`는 장착 펜던트만 대상으로 등급 → 강화수치 → 닉네임 가나다순으로 100명까지 표시하고, 11등부터 `allsee` 뒤에 표시한다.
+- `/펜던트강화`는 펜던트가방 번호를 입력하며, 장착 펜던트는 숫자 `0`으로 강화한다.
+- `/펜던트거래정보 [자유시장번호]`는 자유시장 등록 목록의 펜던트 payload를 기존 펜던트 정보 형식으로 보여준다.
+- 펜던트 이름 끝에 이미 같은 이모지가 있으면 `formatPendantNameWithIcon`이 표시 이모지를 중복으로 붙이지 않는다.
+- 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
+- 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
+- `결혼못한 대장장이📙` 펫스킬북을 장착하면 `/펜던트강화` 미리보기와 실제 강화 판정에 성공 확률 +1%가 함께 반영된다.
