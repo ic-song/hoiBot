@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.288"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.289"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1981,7 +1981,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             if (matzangField.resting) {
-                replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.\n※ 휴식종료까지 남은 시간 " + formatMatzangRestRemainingTime(matzangField.restUntil));
+                replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ /참여 or ㅊㅇ로 먼저 맞짱을 준비해주세요\n※ 일반 명령어는 이용할 수 있습니다.\n※ 휴식종료까지 남은 시간 " + formatMatzangRestRemainingTime(matzangField.restUntil));
                 return;
             }
             if (!data.member[sender]) return;

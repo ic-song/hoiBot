@@ -4471,7 +4471,7 @@ Status: VERIFIED
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
-- `/휴식` sends start/end notices through `noticeMsg`, includes the siege-room link in both notices, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late; `/맞짱` and `ㅊㅇ` show the remaining break time in minutes and seconds
+- `/휴식` sends start/end notices through `noticeMsg`, includes the siege-room link in both notices, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late; `/맞짱` shows the remaining break time and tells users to prepare with `/참여` or `ㅊㅇ`, while `ㅊㅇ` shows the remaining break time before the participation card
 - A user who reaches 10 event matches is marked field-out and receives the `[✅완료]` message instead of the participation guide
 - Each `/맞짱` or `ㅁㅁ` run grants the acting user 50,000,000 points on a win or 25,000,000 points on a loss. `/맞짱종료` still pays event PT rank rewards in diamonds to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
 - `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
