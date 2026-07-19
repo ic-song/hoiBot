@@ -208,8 +208,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
-		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 정보 명령 허용 대상
-		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangOperator) {
+		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 관리 정보 명령 사용 가능 대상
+		var isMatzangInfoOperatorCommand = isMatzangOperator && isMatzangInfoOperatorCommandMessage(msg); // Info.js 관리 명령 여부
+		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangInfoOperatorCommand) {
 			return;
 		}
 		if (isAccountSuspensionBlockedMessage(msg) && isAccountSuspended(data, sender)) {
@@ -1367,6 +1368,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 // JSON 파일 로드 함수
 function isDevCommandMessage(msg) {
 	return typeof msg === "string" && msg.indexOf("dev/") === 0;
+}
+
+// 맞짱필드 진행 중 Info.js에서 운영자에게 허용할 관리 명령인지 확인하는 함수
+function isMatzangInfoOperatorCommandMessage(msg) {
+	if (typeof msg !== "string") return false;
+	var commandRoots = ["/정보", "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인"];
+	for (var i = 0; i < commandRoots.length; i++) {
+		var commandRoot = commandRoots[i];
+		if (msg === commandRoot || msg.indexOf(commandRoot + " ") === 0) return true;
+	}
+	return false;
 }
 
 function stripDevCommandPrefix(msg) {

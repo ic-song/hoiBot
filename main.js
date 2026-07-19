@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.286"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.287"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -951,7 +951,11 @@ blockedNicknameTerms: [
     petSkill: { // 펫스킬 시스템 설정
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
-        unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"
+        unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
+        effects: {
+            robberStealPoint: 10000000,
+            experiencedWarriorCharm: 20
+        }
     },
     miniPetCombination: { // 미니펫 조합 설정
         elite: { // 엘리트 미니펫 조합 설정
@@ -967,7 +971,7 @@ blockedNicknameTerms: [
         legendTitleName: "👑전설의 핵주먹"
     },
     matzangField: { // 맞짱필드 이벤트 설정
-        maxCount: 15,
+        maxCount: 10,
         winPointMin: 10,
         winPointMax: 15,
         losePointMin: 5,
@@ -1799,8 +1803,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             matzangField.restUntil = 0;
             saveJsonFile(data, filePath);
         }
-        var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 전체 명령 허용 대상
-        if (matzangField.active && !matzangField.resting && !isMatzangOperator && !isMatzangAllowedDuringFieldCommand(msg)) {
+        var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 운영 명령 사용 가능 대상
+        var isMatzangOperatorCommand = isMatzangOperator && isMatzangOperatorCommandMessage(msg); // 운영자에게만 허용할 관리 명령 여부
+        if (matzangField.active && !matzangField.resting && !isMatzangOperatorCommand && !isMatzangAllowedDuringFieldCommand(msg)) {
             if (msg.indexOf("/") === 0 || isMatzangBlockedPlainCommandAlias(msg)) {
                 replier.reply(
                     "👊 맞짱필드 진행 중에는 맞짱 관련 명령어만 사용할 수 있습니다.\n\n" +
@@ -16291,8 +16296,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (hasPetSkill(petSkillData, sender, "숙련된 전사")) {
                         if (Math.random() <= 0.5) {
-                            petData[sender].petexp += 20;
-                            replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력 20💕을 획득하셨습니다");
+                            petData[sender].petexp += GLOBAL_CONFIG.petSkill.effects.experiencedWarriorCharm;
+                            replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력 " + numberWithCommas(GLOBAL_CONFIG.petSkill.effects.experiencedWarriorCharm) + "💕을 획득하셨습니다");
                         }
                     }
                     data.member[sender].battle.ticket++; // 횟수 증가
@@ -17076,9 +17081,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (hasPetSkill(petSkillData, sender, "약탈자")) {
                         if (Math.random() < 0.7) {
-                            data.member[targetName].point = (data.member[targetName].point || 0) - 10000000;
-                            addPoint(data, sender, 10000000);
-                            replier.reply("약탈자📙\n" + userRank + "님의 약탈 본능 발동!\n상대 [" + checkRank(data, petData, guildData, targetName) + "]에게서 🅟1000만 포인트를 약탈합니다.");
+                            data.member[targetName].point = (data.member[targetName].point || 0) - GLOBAL_CONFIG.petSkill.effects.robberStealPoint;
+                            addPoint(data, sender, GLOBAL_CONFIG.petSkill.effects.robberStealPoint);
+                            replier.reply("약탈자📙\n" + userRank + "님의 약탈 본능 발동!\n상대 [" + checkRank(data, petData, guildData, targetName) + "]에게서 🅟" + numberWithCommas(GLOBAL_CONFIG.petSkill.effects.robberStealPoint) + " 포인트를 약탈합니다.");
                         }
                     }
                     if (hasPetSkill(petSkillData, sender, "정신승리")) {
@@ -25459,6 +25464,32 @@ function isMatzangAllowedDuringFieldCommand(msg) {
     );
 }
 
+// 맞짱필드 진행 중 운영자에게만 허용할 관리 명령인지 확인하는 함수
+function isMatzangOperatorCommandMessage(msg) {
+    if (typeof msg !== "string") return false;
+    var commandRoots = [
+        "/맞짱시작", "/휴식", "/맞짱종료", "/맞짱시간체크",
+        "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
+        "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
+        "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
+        "/데이터백업", "/데이터정리", "/봇살리기", "/글자수전체정리",
+        "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
+        "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
+        "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
+        "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
+        "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
+        "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프",
+        "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
+        "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
+        "/펫홈댓글파일생성", "/개발자노트"
+    ];
+    for (var i = 0; i < commandRoots.length; i++) {
+        var commandRoot = commandRoots[i];
+        if (msg === commandRoot || msg.indexOf(commandRoot + " ") === 0 || msg.indexOf(commandRoot + ",") === 0) return true;
+    }
+    return false;
+}
+
 // 맞짱필드 중 차단 안내를 보여줄 일반 명령어 단축어인지 확인하는 함수
 function isMatzangBlockedPlainCommandAlias(msg) {
     if (typeof msg !== "string") return false;
@@ -31219,10 +31250,29 @@ function formatAutoDailyPetSkillActivationLines(messages) {
     for (var definitionIndex = 0; definitionIndex < PET_SKILL_LIST.length; definitionIndex++) {
         var activatedSkillName = PET_SKILL_LIST[definitionIndex].name;
         if (activationCounts[activatedSkillName]) {
-            lines.push("- " + activatedSkillName + " x " + numberWithCommas(activationCounts[activatedSkillName]) + "회");
+            var activationCount = activationCounts[activatedSkillName]; // 현재 펫스킬의 자동일퀘 발동 횟수
+            var effectSummary = ""; // 횟수와 함께 표시할 누적 획득 효과
+            if (activatedSkillName === "약탈자") {
+                effectSummary = " · 획득 포인트 🅟" + numberWithCommas(activationCount * GLOBAL_CONFIG.petSkill.effects.robberStealPoint);
+            } else if (activatedSkillName === "숙련된 전사") {
+                effectSummary = " · 획득 매력 " + numberWithCommas(activationCount * GLOBAL_CONFIG.petSkill.effects.experiencedWarriorCharm) + "💕";
+            }
+            lines.push("- " + activatedSkillName + " x " + numberWithCommas(activationCount) + "회" + effectSummary);
         }
     }
     return lines.length > 0 ? lines.join("\n") : "- 없음";
+}
+
+// 자동일퀘 내부 대전 결과에서 실제 지급된 경험치 총합을 계산하는 함수
+function sumAutoDailyBattleExp(messages) {
+    var totalExp = 0;
+    if (!(messages instanceof Array)) return totalExp;
+    for (var i = 0; i < messages.length; i++) {
+        var message = String(messages[i] || "");
+        var expMatch = message.match(/경험치:\s*([\d,]+)exp\(/);
+        if (expMatch) totalExp += parseInt(expMatch[1].replace(/,/g, ""), 10) || 0;
+    }
+    return totalExp;
 }
 
 // 자동일퀘 진행 결과 요약 메시지 생성 함수
@@ -31239,7 +31289,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     var miniAttempts = Math.max(0, status.miniUsed - before.status.miniUsed); // 미니펫대전 진행 횟수 계산
     var miniWin = Math.max(0, after.miniWin - before.miniWin); // 미니펫대전 승리 횟수 계산
     var miniLose = Math.max(0, after.miniLose - before.miniLose); // 미니펫대전 패배 횟수 계산
-    var expDelta = after.exp - before.exp; // 자동일퀘 후 경험치 증감 계산
+    var earnedExp = sumAutoDailyBattleExp(capturedMessages); // 레벨업 초기화와 무관한 실제 대전 경험치 합계
     var pointDelta = after.point - before.point; // 자동일퀘 후 포인트 증감 계산
     var itemDelta = diffPositiveNumberMap(before.bag, after.bag); // 자동일퀘로 증가한 아이템 계산
     var progressed = towerAttempts + castleAttempts + miniAttempts > 0; // 자동 진행된 콘텐츠 존재 여부
@@ -31258,7 +31308,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
         lines.push("⏳ 일일퀘스트 미완료");
     }
     lines.push("[😈시탑,🐹미대전,🏆캐대전]");
-    lines.push("✨ 총 획득 경험치: " + numberWithCommas(Math.max(0, expDelta)) + " exp");
+    lines.push("✨ 총 획득 경험치: " + numberWithCommas(earnedExp) + " exp");
     lines.push("🤑 총 포인트 변동: 🅟" + numberWithCommas(pointDelta) + " " + allsee);
     lines.push("━━━━━━━━━━━━");
     lines.push("😈 시련의탑");
