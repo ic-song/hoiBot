@@ -1496,6 +1496,8 @@ Status: VERIFIED
 - `beginAutoDailyBatch`
 - `commitAutoDailyBatch`
 - `buildAutoDailyQuestMessage`
+- `formatAutoDailyPetSkillActivationLines`
+- `sumAutoDailyBattleExp`
 - `getDailyQuestStatus`
 - `claimQuestReward`
 - `ensureCastleBattleRecord` via `/캐슬대전`
@@ -4399,6 +4401,11 @@ Status: VERIFIED
 - `calculateTotalExp`
 - `difftypeBuff`
 - `calculateCriticalDamage`
+- `isMatzangAllowedDuringFieldCommand`
+- `isMatzangOperatorCommandMessage`
+- `isMatzangBlockedPlainCommandAlias`
+- `isMatzangInfoOperatorCommandMessage` in `Info.js`
+- `formatMatzangRestRemainingTime`
 
 ## Data Usage
 
