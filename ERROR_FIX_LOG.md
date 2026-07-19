@@ -10,6 +10,63 @@ Add new runtime error records below this line.
 
 ---
 
+# 2026-07-19 - `/자동일퀘` pet-skill activation summary undefined identifier
+
+Status: FIXED_IN_BRANCH
+
+## Raw Error Summary
+
+- System: `main`
+- Message: `"PET_SKILL_DEFINITIONS" is not defined.`
+- Reported file: `main`
+- Reported line: `31220`
+- Trigger message: `ㅇㅋㅋ` (`/자동일퀘` alias)
+- Room: `팻 테스트방`
+- Sender: `호이 남`
+
+## Reported Context
+
+자동일퀘가 시련의 탑, 캐슬대전, 미니펫대전을 진행한 뒤 최종 결과 메시지에서 발동 펫스킬 횟수를 정리하는 단계에 도달하면 런타임 오류가 발생했다.
+
+## Investigated Files / Functions
+
+- `main.js`
+  - `runAutoDailyQuest(...)`
+  - `buildAutoDailyQuestMessage(...)`
+  - `formatAutoDailyPetSkillActivationLines(...)`
+  - `PET_SKILL_LIST`
+  - `normalizePetSkillName(...)`
+- `COMMAND_INDEX.md`
+  - `/자동일퀘` 내부 명령 실행 및 저장 배치 흐름
+
+## Suspected Cause
+
+- 확정 원인: `formatAutoDailyPetSkillActivationLines(...)`가 실제 펫스킬 정의 배열인 `PET_SKILL_LIST` 대신 존재하지 않는 `PET_SKILL_DEFINITIONS`를 두 곳에서 참조했다.
+- Node 문법 검사는 미정의 전역 참조를 실행하지 않으므로 통과했으며, 이전 독립 집계 테스트도 잘못된 이름의 모의 배열을 주입해 실제 런타임 결함을 가렸다.
+- 오류는 자동 전투와 배치 내 저장 처리가 끝난 뒤 결과 메시지를 만드는 과정에서 발생했다. 보고된 로그만으로 운영 저장 완료 여부를 단정할 수는 없지만, 수정 과정에서 저장 순서나 데이터 경로는 변경하지 않았다.
+
+## Recommended Fix
+
+- 펫스킬 발동 집계 함수의 두 반복문이 기존 전역 `PET_SKILL_LIST`를 사용하도록 교체한다.
+- 테스트에서 별도 정의 배열을 만들지 않고 실제 소스의 전역명과 함수 참조가 일치하는지 검증한다.
+- 자동일퀘의 기존 메모리 배치와 `commitAutoDailyBatch(...)` 저장 순서는 유지한다.
+
+## Validation Plan
+
+- `node --check main.js`
+- `node --check Info.js`
+- `PET_SKILL_DEFINITIONS` 잔여 참조가 없는지 검색
+- 실제 `PET_SKILL_LIST`를 사용해 `약탈자📙`, `숙련된 전사✨` 발동 메시지 집계 검증
+- 운영 스냅샷 JSON 읽기 전용 파싱
+- Android MessengerBot Rhino에서 `/자동일퀘` 또는 `ㅇㅋㅋ` 재실행 확인
+
+## Follow-up Notes
+
+- `feature/bugFix`에서 잘못된 전역 참조를 `PET_SKILL_LIST`로 교체했다.
+- 소스 커밋, 운영 반영 및 실제 Rhino 재실행 결과는 후속 기록한다.
+
+---
+
 # 2026-07-18 - `member.json` malformed JSON and blocked `/봇살리기`
 
 Status: FIXED_IN_BRANCH

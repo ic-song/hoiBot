@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.284"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.285"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -31217,16 +31217,16 @@ function formatAutoDailyPetSkillActivationLines(messages) {
     for (var messageIndex = 0; messageIndex < messages.length; messageIndex++) {
         var message = String(messages[messageIndex] || "");
         var messageSkillName = normalizePetSkillName(message.split("\n")[0]);
-        for (var skillIndex = 0; skillIndex < PET_SKILL_DEFINITIONS.length; skillIndex++) {
-            var skillName = PET_SKILL_DEFINITIONS[skillIndex].name;
+        for (var skillIndex = 0; skillIndex < PET_SKILL_LIST.length; skillIndex++) {
+            var skillName = PET_SKILL_LIST[skillIndex].name;
             if (messageSkillName === skillName) {
                 activationCounts[skillName] = (activationCounts[skillName] || 0) + 1;
                 break;
             }
         }
     }
-    for (var definitionIndex = 0; definitionIndex < PET_SKILL_DEFINITIONS.length; definitionIndex++) {
-        var activatedSkillName = PET_SKILL_DEFINITIONS[definitionIndex].name;
+    for (var definitionIndex = 0; definitionIndex < PET_SKILL_LIST.length; definitionIndex++) {
+        var activatedSkillName = PET_SKILL_LIST[definitionIndex].name;
         if (activationCounts[activatedSkillName]) {
             lines.push("- " + activatedSkillName + " x " + numberWithCommas(activationCounts[activatedSkillName]) + "회");
         }
