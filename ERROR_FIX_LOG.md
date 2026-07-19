@@ -62,8 +62,9 @@ Status: FIXED_IN_BRANCH
 
 ## Follow-up Notes
 
-- `feature/bugFix`에서 잘못된 전역 참조를 `PET_SKILL_LIST`로 교체했다.
-- 소스 커밋, 운영 반영 및 실제 Rhino 재실행 결과는 후속 기록한다.
+- `feature/bugFix` 커밋 `2e3a10f`에서 잘못된 전역 참조를 `PET_SKILL_LIST`로 교체했다.
+- 실제 `PET_SKILL_LIST`를 읽어 `약탈자` 2회와 `숙련된 전사` 1회 발동 집계를 검증했다.
+- 운영 반영 및 실제 Rhino 재실행 결과는 후속 기록한다.
 
 ---
 
