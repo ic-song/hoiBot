@@ -1536,6 +1536,7 @@ Status: VERIFIED
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
+- 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
@@ -4418,17 +4419,17 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Uses `filePath` member data for field state, participant event PT, diamond balances, and diamond shop
+- Uses `filePath` member data for field state, participant event PT, battle point rewards, diamond balances, and diamond shop
 - Uses `currencyLogPath` for cumulative earned diamond, used diamond total, and usage history logs
 - `/맞짱`, `/참여`, `/맞짱시작`, `/맞짱종료`, `/휴식`, `/다이아상점구매`, `/다이아상점추가`, `/다이아상점삭제`, `/다이아추가`, `/다이아차감`, and `/다이아전체초기화` save `data` through `saveJsonFile(data, filePath)`
-- `/맞짱`, `/맞짱종료`, and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
+- `/맞짱종료` and `/다이아추가` save cumulative diamond data through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/다이아상점구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
 - `/맞짱시간체크 [닉네임]` loads `homeDataFile` and measures the named user's 종합매력 runtime with detailed component timings
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
 - `/맞짱시간체크 [닉네임]` is an anytime read-only Admin/Master diagnostic path and does not run battle, select an opponent, or save match count, PT, diamond, or field data
-- Active 맞짱필드 blocks all non-matzang command flows in `main.js` and `Info.js` until `/맞짱종료`; slash commands receive the allowed-command guide while unrelated plain-text aliases are ignored without executing
+- Active 맞짱필드 blocks non-matzang command flows in `main.js` and `Info.js` outside rest time; Admin/Master/오픈채팅봇 commands remain available, and the shared known plain-command list makes aliases and state inputs such as `ㅊㅊ`, `ㅈㅈ`, and `ㅈㅈㅈ` receive the same allowed-command guide as slash commands
 - `Info.js` reads `data.member[*].diamond` for 종합 정보 display
 
 ## Related Commands
@@ -4462,12 +4463,12 @@ Status: VERIFIED
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
-- `/휴식` stores a rest end time so `/맞짱` and `ㅁㅁ` can resume after the 60-second break even if the delayed notice/save timing is late
-- A user who reaches 7 event matches is marked field-out and cannot rejoin the active event
-- Each `/맞짱` or `ㅁㅁ` run grants 1~2 다이아. `/맞짱종료` pays event PT rank rewards to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
+- `/휴식` sends start/end notices through `noticeMsg`, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late
+- A user who reaches 15 event matches is marked field-out and receives the `[✅완료]` message instead of the participation guide
+- Each `/맞짱` or `ㅁㅁ` run grants the acting user 50,000,000 points on a win or 25,000,000 points on a loss. `/맞짱종료` still pays event PT rank rewards in diamonds to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
 - `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
 - `/맞짱순위`는 `/맞짱시작`부터 현재까지 PT를 획득한 참가자를 누적 PT 내림차순으로 보여주며, 동점은 이름 오름차순으로 정렬한다. 조회만 수행하며 데이터를 저장하지 않는다.
-- While the field is active, allowed commands are `/맞짱시작`, `/휴식`, `/참여` (`ㅊㅇ`), `/맞짱필드목록`, `/맞짱순위`, `/맞짱시간체크 [닉네임]`, `/맞짱` (`ㅁㅁ`), `/맞짱종료`, and the field-linked diamond ranking/shop/operator commands; full-pattern guards prevent suffix text from bypassing the lock.
+- While the field is active outside rest time, normal users may use the existing field command set; the displayed guide lists only `/참여` (`ㅊㅇ`), `/맞짱` (`ㅁㅁ`), `/맞짱필드목록`, `/맞짱순위`, and `/휴식`. Admin/Master users bypass the field command lock.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아상점구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다

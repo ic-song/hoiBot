@@ -208,7 +208,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
-		if (data && data.matzangField && data.matzangField.active === true) {
+		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 정보 명령 허용 대상
+		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangOperator) {
 			return;
 		}
 		if (isAccountSuspensionBlockedMessage(msg) && isAccountSuspended(data, sender)) {

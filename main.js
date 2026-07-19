@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.283"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.284"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -967,14 +967,14 @@ blockedNicknameTerms: [
         legendTitleName: "👑전설의 핵주먹"
     },
     matzangField: { // 맞짱필드 이벤트 설정
-        maxCount: 7,
+        maxCount: 15,
         winPointMin: 10,
         winPointMax: 15,
         losePointMin: 5,
         losePointMax: 7,
-        diamondMin: 1,
-        diamondMax: 2,
-        restMs: 60000,
+        winRewardPoint: 50000000,
+        loseRewardPoint: 25000000,
+        restMs: 180000,
         defaultShop: [
             { name: "미니펫 강화석💫", count: 1, price: 1 },
             { name: "펫스킬북📙(/펫스킬오픈)", count: 1, price: 10000 }
@@ -1799,11 +1799,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             matzangField.restUntil = 0;
             saveJsonFile(data, filePath);
         }
-        if (matzangField.active && !isMatzangAllowedDuringFieldCommand(msg)) {
-            if (msg.indexOf("/") === 0) {
+        var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 전체 명령 허용 대상
+        if (matzangField.active && !matzangField.resting && !isMatzangOperator && !isMatzangAllowedDuringFieldCommand(msg)) {
+            if (msg.indexOf("/") === 0 || isMatzangBlockedPlainCommandAlias(msg)) {
                 replier.reply(
                     "👊 맞짱필드 진행 중에는 맞짱 관련 명령어만 사용할 수 있습니다.\n\n" +
-                    "허용 명령어: /참여(ㅊㅇ), /맞짱(ㅁㅁ), /맞짱필드목록, /맞짱순위, /휴식, /맞짱종료, /다이아순위, /다이아상점, /다이아상점구매"
+                    "허용 명령어: /참여(ㅊㅇ), /맞짱(ㅁㅁ), /맞짱필드목록, /맞짱순위, /휴식"
                 );
             }
             return;
@@ -1823,7 +1824,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             matzangField.startedAt = new Date();
             matzangField.participants = {};
             saveJsonFile(data, filePath);
-            noticeMsg("[📢전체알림📢]\n맞짱필드👊\n\n호이월드 유저의 맞짱이 시작되었습니다.\n\n맞짱에 참여하여 다이아💎를 획득해보세요.\n\n참여방법: /참여 or ㅊㅇ\n대전방법: /맞짱 or ㅁㅁ(공성전방 에서 가능)\n\nhttps://open.kakao.com/o/gaP4Xybh\n※ 맞짱필드가 궁금하신가요?\n채팅창에 \"맞짱필드 컨텐츠\"를 적어보세요.\n※ 맞짱필드 종료전까진 미니펫오픈or샵오픈불가");
+            noticeMsg("[📢전체알림📢]\n맞짱필드👊\n\n호이월드 유저의 맞짱이 시작되었습니다.\n\n맞짱에 참여하여 포인트를 획득해보세요.\n\n참여방법: /참여 or ㅊㅇ\n대전방법: /맞짱 or ㅁㅁ(공성전방 에서 가능)\n\nhttps://open.kakao.com/o/gaP4Xybh\n※ 맞짱필드가 궁금하신가요?\n채팅창에 \"맞짱필드 컨텐츠\"를 적어보세요.\n※ 맞짱필드 종료전까진 미니펫오픈or샵오픈불가");
             return;
         }
         if (msg === "/휴식") {
@@ -1835,7 +1836,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             matzangField.resting = true;
             matzangField.restUntil = Date.now() + GLOBAL_CONFIG.matzangField.restMs;
             saveJsonFile(data, filePath);
-            Api.replyRoom(room8, "땡🛎️땡🛎️ 떙🛎️[휴식]\n\n잠시 휴식 시간 입니다.(60초)\n※ /맞짱 or ㅁㅁ 이 불가하며\n※ /참여 or ㅊㅇ 만 가능합니다.\n━━━━━━━━━━━");
+            noticeMsg("땡🛎️땡🛎️ 떙🛎️[휴식]\n\n잠시 휴식 시간입니다.(3분)\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.\n━━━━━━━━━━━");
             setTimeout(function () {
                 var latestData = loadJsonFile(filePath);
                 var latestField = ensureMatzangFieldData(latestData);
@@ -1843,7 +1844,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     latestField.resting = false;
                     latestField.restUntil = 0;
                     saveJsonFile(latestData, filePath);
-                    Api.replyRoom(room8, "땡🛎️땡🛎️ 떙🛎️[시작]\n\n맞짱필드👊 휴식 시간 끝\n\n모두 맞짱뜨세요!\n\n※ /맞짱 or ㅁㅁ");
+                    noticeMsg("땡🛎️땡🛎️ 떙🛎️[시작]\n\n맞짱필드👊 휴식 시간 끝\n\n모두 맞짱뜨세요!\n\n※ /맞짱 or ㅁㅁ");
                 }
             }, GLOBAL_CONFIG.matzangField.restMs);
             return;
@@ -1857,7 +1858,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             ensureDiamondMemberData(data, sender);
             var joinPart = ensureMatzangParticipant(matzangField, sender);
             if (joinPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
-                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
+                replier.reply("[✅완료]\n[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
                 return;
             }
             if (joinPart.active) {
@@ -1880,7 +1881,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             joinMsg += "전투 기준: 참여 시점 종합매력\n";
             joinMsg += "승리: +" + GLOBAL_CONFIG.matzangField.winPointMin + "~" + GLOBAL_CONFIG.matzangField.winPointMax + "pt\n";
             joinMsg += "패배: +" + GLOBAL_CONFIG.matzangField.losePointMin + "~" + GLOBAL_CONFIG.matzangField.losePointMax + "pt\n";
-            joinMsg += "대전 보상: 다이아💎 " + GLOBAL_CONFIG.matzangField.diamondMin + "~" + GLOBAL_CONFIG.matzangField.diamondMax + "개\n\n";
+            joinMsg += "승리 보상: 포인트🅟 " + numberWithCommas(GLOBAL_CONFIG.matzangField.winRewardPoint) + "\n";
+            joinMsg += "패배 보상: 포인트🅟 " + numberWithCommas(GLOBAL_CONFIG.matzangField.loseRewardPoint) + "\n\n";
             joinMsg += "━━━━━━━━━━━━\n👥 현재 참여자: " + joinList.count + "명\n참여자 목록 보기📋\n\n" + joinList.lines.join("\n");
             saveJsonFile(data, filePath);
             replier.reply(joinMsg);
@@ -1969,7 +1971,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             if (matzangField.resting) {
-                replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ 이 불가하며\n※ /참여 or ㅊㅇ 만 가능합니다.");
+                replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.");
                 return;
             }
             if (!data.member[sender]) return;
@@ -1980,15 +1982,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 myPart.eliminated = false;
                 saveJsonFile(data, filePath);
             }
-            if (!myPart.active) {
-                replier.reply("[미참가❌]\n[" + checkRank(data, petData, guildData, sender) + "] 님 /참여 or ㅊㅇ로\n맞짱필드👊에 참여해주세요.");
-                return;
-            }
             if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
                 myPart.active = false;
                 myPart.eliminated = true;
                 saveJsonFile(data, filePath);
-                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진해 필드 아웃되었습니다.");
+                replier.reply("[✅완료]\n[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.");
+                return;
+            }
+            if (!myPart.active) {
+                replier.reply("[미참가❌]\n[" + checkRank(data, petData, guildData, sender) + "] 님 /참여 or ㅊㅇ로\n맞짱필드👊에 참여해주세요.");
                 return;
             }
             if (!petData[sender] || !petData[sender].petname) {
@@ -2025,10 +2027,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var gainPtMin = isWin ? GLOBAL_CONFIG.matzangField.winPointMin : GLOBAL_CONFIG.matzangField.losePointMin; // 승패별 최소 PT
             var gainPtMax = isWin ? GLOBAL_CONFIG.matzangField.winPointMax : GLOBAL_CONFIG.matzangField.losePointMax; // 승패별 최대 PT
             var gainPt = Math.floor(Math.random() * (gainPtMax - gainPtMin + 1)) + gainPtMin;
-            var diamondGain = Math.floor(Math.random() * (GLOBAL_CONFIG.matzangField.diamondMax - GLOBAL_CONFIG.matzangField.diamondMin + 1)) + GLOBAL_CONFIG.matzangField.diamondMin;
+            var rewardPoint = isWin ? GLOBAL_CONFIG.matzangField.winRewardPoint : GLOBAL_CONFIG.matzangField.loseRewardPoint; // 승패별 기본 포인트 보상
             myPart.count++;
             myPart.pt += gainPt;
-            myPart.diamonds += diamondGain;
             if (isWin) {
                 myPart.win++;
                 opponentPart.lose++;
@@ -2036,7 +2037,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 myPart.lose++;
                 opponentPart.win++;
             }
-            addDiamond(data, currencyLogData, sender, diamondGain);
+            addPoint(data, sender, rewardPoint);
             if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
                 myPart.active = false;
                 myPart.eliminated = true;
@@ -2047,13 +2048,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             resultMsg += "━━━━━━━━━━━━\n";
             resultMsg += "🤜맞짱결과🤛 [" + (isWin ? "✅승리" : "❌패배") + "]\n";
             resultMsg += "[+" + gainPt + "pt 획득 | 누적: " + myPart.pt + "pt]\n";
-            resultMsg += "다이아💎 " + diamondGain + "개 획득\n\n";
+            resultMsg += "포인트🅟 " + numberWithCommas(rewardPoint) + " 획득\n\n";
             resultMsg += "[" + checkRank(data, petData, guildData, sender) + "] 🆚 [" + checkRank(data, petData, guildData, opponentName) + "]\n";
             resultMsg += "━━━━━━━━━━━━\n";
             resultMsg += "💫 K.O [" + checkRank(data, petData, guildData, loserName) + "] 님 다운\n";
             resultMsg += "남은 횟수가 있으면 바로 다음 맞짱이 가능합니다.";
             if (myPart.count >= GLOBAL_CONFIG.matzangField.maxCount) {
-                resultMsg += "\n[" + checkRank(data, petData, guildData, sender) + "] 님은 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진해 필드 아웃되었습니다.";
+                resultMsg += "\n[✅완료]\n[" + checkRank(data, petData, guildData, sender) + "] 님은 맞짱필드👊 " + GLOBAL_CONFIG.matzangField.maxCount + "회를 모두 소진했습니다.";
             }
             resultMsg += "\n\n맞짱결과 상세보기📋" + allsee + "\n";
             var matzangCompareSymbol = battle.attacker.finalExp > battle.defender.finalExp ? ">" : battle.attacker.finalExp < battle.defender.finalExp ? "<" : "=";
@@ -2076,7 +2077,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             resultMsg += numberWithCommas(battle.attacker.finalExp) + " " + matzangCompareSymbol + " " + numberWithCommas(battle.defender.finalExp) + "\n";
             resultMsg += "매력 차이: " + numberWithCommas(matzangExpGap) + "💕";
             saveJsonFile(data, filePath);
-            saveJsonFile(currencyLogData, currencyLogPath);
             replier.reply(resultMsg);
             return;
         }
@@ -16286,7 +16286,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (hasPetSkill(petSkillData, sender, "숙련된 전사")) {
                         if (Math.random() <= 0.5) {
-                            petData[sender].petexp += 10;
+                            petData[sender].petexp += 20;
                             replier.reply("숙련된 전사✨\n[" + checkRank(data, petData, guildData, sender) + "] 님이 깨달음을 얻어 매력 20💕을 획득하셨습니다");
                         }
                     }
@@ -25468,6 +25468,12 @@ function isMatzangAllowedDuringFieldCommand(msg) {
     );
 }
 
+// 맞짱필드 중 차단 안내를 보여줄 일반 명령어 단축어인지 확인하는 함수
+function isMatzangBlockedPlainCommandAlias(msg) {
+    if (typeof msg !== "string") return false;
+    return ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(msg) !== -1;
+}
+
 // DEV 길드 영지전이 진행 중인지 확인하는 함수
 function isDevGuildTerritoryWarActive() {
     var prevCtx = enterCommandContext(createCommandContext(true));
@@ -31203,6 +31209,31 @@ function getLastAutoDailyBlockedMessage(messages) {
     return "";
 }
 
+// 자동일퀘 내부 대전에서 발동한 펫스킬을 횟수별 출력 문자열로 생성하는 함수
+function formatAutoDailyPetSkillActivationLines(messages) {
+    var activationCounts = {};
+    var lines = [];
+    if (!(messages instanceof Array)) return "- 없음";
+    for (var messageIndex = 0; messageIndex < messages.length; messageIndex++) {
+        var message = String(messages[messageIndex] || "");
+        var messageSkillName = normalizePetSkillName(message.split("\n")[0]);
+        for (var skillIndex = 0; skillIndex < PET_SKILL_DEFINITIONS.length; skillIndex++) {
+            var skillName = PET_SKILL_DEFINITIONS[skillIndex].name;
+            if (messageSkillName === skillName) {
+                activationCounts[skillName] = (activationCounts[skillName] || 0) + 1;
+                break;
+            }
+        }
+    }
+    for (var definitionIndex = 0; definitionIndex < PET_SKILL_DEFINITIONS.length; definitionIndex++) {
+        var activatedSkillName = PET_SKILL_DEFINITIONS[definitionIndex].name;
+        if (activationCounts[activatedSkillName]) {
+            lines.push("- " + activatedSkillName + " x " + numberWithCommas(activationCounts[activatedSkillName]) + "회");
+        }
+    }
+    return lines.length > 0 ? lines.join("\n") : "- 없음";
+}
+
 // 자동일퀘 진행 결과 요약 메시지 생성 함수
 function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages, autoDailyIssues) {
     var status = after.status; // 자동일퀘 실행 후 일퀘 진행 상태
@@ -31253,6 +31284,8 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     lines.push("포인트 변동🤑 🅟" + numberWithCommas(pointDelta));
     lines.push("획득 아이템💰");
     lines.push(formatAutoDailyItemLines(itemDelta));
+    lines.push("발동 펫스킬📙");
+    lines.push(formatAutoDailyPetSkillActivationLines(capturedMessages));
     lines.push("━━━━━━━━━━━━");
     if (rewardResult && rewardResult.message) {
         lines.push(rewardResult.message);
