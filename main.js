@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.287"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.288"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1841,7 +1841,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             matzangField.resting = true;
             matzangField.restUntil = Date.now() + GLOBAL_CONFIG.matzangField.restMs;
             saveJsonFile(data, filePath);
-            noticeMsg("땡🛎️땡🛎️ 떙🛎️[휴식]\n\n잠시 휴식 시간입니다.(3분)\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.\n━━━━━━━━━━━");
+            noticeMsg("땡🛎️땡🛎️ 떙🛎️[휴식]\n\n잠시 휴식 시간입니다.(3분)\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.\n━━━━━━━━━━━\n맞짱 장소: https://open.kakao.com/o/gaP4Xybh");
             setTimeout(function () {
                 var latestData = loadJsonFile(filePath);
                 var latestField = ensureMatzangFieldData(latestData);
@@ -1849,7 +1849,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     latestField.resting = false;
                     latestField.restUntil = 0;
                     saveJsonFile(latestData, filePath);
-                    noticeMsg("땡🛎️땡🛎️ 떙🛎️[시작]\n\n맞짱필드👊 휴식 시간 끝\n\n모두 맞짱뜨세요!\n\n※ /맞짱 or ㅁㅁ");
+                    noticeMsg("땡🛎️땡🛎️ 떙🛎️[시작]\n\n맞짱필드👊 휴식 시간 끝\n\n모두 맞짱뜨세요!\n\n※ /맞짱 or ㅁㅁ\n맞짱 장소: https://open.kakao.com/o/gaP4Xybh");
                 }
             }, GLOBAL_CONFIG.matzangField.restMs);
             return;
