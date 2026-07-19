@@ -4463,12 +4463,12 @@ Status: VERIFIED
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
 - A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
-- `/휴식` sends start/end notices through `noticeMsg`, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late
+- `/휴식` sends start/end notices through `noticeMsg`, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late; `/맞짱` and `ㅊㅇ` show the remaining break time in minutes and seconds
 - A user who reaches 15 event matches is marked field-out and receives the `[✅완료]` message instead of the participation guide
 - Each `/맞짱` or `ㅁㅁ` run grants the acting user 50,000,000 points on a win or 25,000,000 points on a loss. `/맞짱종료` still pays event PT rank rewards in diamonds to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
 - `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
 - `/맞짱순위`는 `/맞짱시작`부터 현재까지 PT를 획득한 참가자를 누적 PT 내림차순으로 보여주며, 동점은 이름 오름차순으로 정렬한다. 조회만 수행하며 데이터를 저장하지 않는다.
-- While the field is active outside rest time, normal users may use the existing field command set; the displayed guide lists only `/참여` (`ㅊㅇ`), `/맞짱` (`ㅁㅁ`), `/맞짱필드목록`, `/맞짱순위`, and `/휴식`. Admin/Master users bypass the field command lock.
+- While the field is active outside rest time, normal users may use only `/참여` (`ㅊㅇ`), `/맞짱` (`ㅁㅁ`), `/맞짱필드목록`, and `/맞짱순위`; `/휴식`, 종료, 다이아, and diagnostic commands rely on the Admin/Master/오픈채팅봇 bypass and are excluded from the public guide. `/맞짱` outside the siege room includes the siege-room link.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아상점구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다

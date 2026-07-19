@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.285"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.286"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1804,7 +1804,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (msg.indexOf("/") === 0 || isMatzangBlockedPlainCommandAlias(msg)) {
                 replier.reply(
                     "👊 맞짱필드 진행 중에는 맞짱 관련 명령어만 사용할 수 있습니다.\n\n" +
-                    "허용 명령어: /참여(ㅊㅇ), /맞짱(ㅁㅁ), /맞짱필드목록, /맞짱순위, /휴식"
+                    "허용 명령어: /참여(ㅊㅇ), /맞짱(ㅁㅁ), /맞짱필드목록, /맞짱순위"
                 );
             }
             return;
@@ -1824,7 +1824,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             matzangField.startedAt = new Date();
             matzangField.participants = {};
             saveJsonFile(data, filePath);
-            noticeMsg("[📢전체알림📢]\n맞짱필드👊\n\n호이월드 유저의 맞짱이 시작되었습니다.\n\n맞짱에 참여하여 포인트를 획득해보세요.\n\n참여방법: /참여 or ㅊㅇ\n대전방법: /맞짱 or ㅁㅁ(공성전방 에서 가능)\n\nhttps://open.kakao.com/o/gaP4Xybh\n※ 맞짱필드가 궁금하신가요?\n채팅창에 \"맞짱필드 컨텐츠\"를 적어보세요.\n※ 맞짱필드 종료전까진 미니펫오픈or샵오픈불가");
+            noticeMsg("[📢전체알림📢]\n맞짱필드👊\n\n호이월드 유저의 맞짱이 시작되었습니다.\n\n맞짱에 참여하여 포인트를 획득해보세요.\n\n참여방법: /참여 or ㅊㅇ\n대전방법: /맞짱 or ㅁㅁ(공성전방 에서 가능)\n\nhttps://open.kakao.com/o/gaP4Xybh\n※ 맞짱필드가 궁금하신가요?\n채팅창에 \"맞짱필드 컨텐츠\"를 적어보세요.\n※ 맞짱필드 종료전까진 일반 명령어 불가\n※ 휴식시간 3분 동안 일반 명령어 가능");
             return;
         }
         if (msg === "/휴식") {
@@ -1872,7 +1872,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             joinPart.eliminated = false;
             var joinList = buildMatzangParticipantList(matzangField, data, petData, guildData);
             var joinRemain = GLOBAL_CONFIG.matzangField.maxCount - joinPart.count;
-            var joinMsg = "👊 맞짱필드 입장 완료 👊\n";
+            var joinMsg = "";
+            if (matzangField.resting) {
+                joinMsg += "※ 현재 맞짱필드👊 휴식 시간입니다.\n";
+                joinMsg += "※ 휴식종료까지 남은 시간 " + formatMatzangRestRemainingTime(matzangField.restUntil) + "\n";
+            }
+            joinMsg += "👊 맞짱필드 입장 완료 👊\n";
             joinMsg += "[남은 횟수: " + joinRemain + " / " + GLOBAL_CONFIG.matzangField.maxCount + "] [누적: " + joinPart.pt + "pt]\n";
             joinMsg += "━━━━━━━━━━━━\n";
             joinMsg += "[" + checkRank(data, petData, guildData, sender) + "] 님이 맞짱필드에 참여했습니다.\n\n";
@@ -1967,11 +1972,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             if (room !== room8) {
-                replier.reply("맞짱필드👊 대전은 공성전 방에서만 가능합니다.");
+                replier.reply("맞짱필드👊 대전은 공성전 방에서만 가능합니다.\nhttps://open.kakao.com/o/gaP4Xybh");
                 return;
             }
             if (matzangField.resting) {
-                replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.");
+                replier.reply("현재 맞짱필드👊 휴식 시간입니다.\n※ /맞짱 or ㅁㅁ은 이용할 수 없습니다.\n※ 일반 명령어는 이용할 수 있습니다.\n※ 휴식종료까지 남은 시간 " + formatMatzangRestRemainingTime(matzangField.restUntil));
                 return;
             }
             if (!data.member[sender]) return;
@@ -25445,26 +25450,12 @@ function isGuildTerritoryBlockedDuringWarCommand(msg) {
 function isMatzangAllowedDuringFieldCommand(msg) {
     if (typeof msg !== "string") return false;
     return (
-        msg === "/맞짱시작" ||
-        msg === "/휴식" ||
         msg === "/참여" ||
         msg === "ㅊㅇ" ||
         msg === "/맞짱필드목록" ||
         msg === "/맞짱순위" ||
-        msg === "/맞짱시간체크" ||
-        /^\/맞짱시간체크\s+.+$/.test(msg) ||
         msg === "/맞짱" ||
-        msg === "ㅁㅁ" ||
-        msg === "/맞짱종료" ||
-        msg === "/다이아순위" ||
-        msg === "/다이아상점" ||
-        msg === "/다이아상점구매" ||
-        /^\/다이아상점구매\s+\d+\s+\d+$/.test(msg) ||
-        /^\/다이아상점추가\s+.+\s+\d+\s+\d+$/.test(msg) ||
-        /^\/다이아상점삭제\s+\d+$/.test(msg) ||
-        /^\/다이아추가\s+.+\s+\d+$/.test(msg) ||
-        /^\/다이아차감\s+.+\s+\d+$/.test(msg) ||
-        msg === "/다이아전체초기화"
+        msg === "ㅁㅁ"
     );
 }
 
@@ -33757,6 +33748,15 @@ function ensureMatzangFieldData(data) {
         }
     }
     return data.matzangField;
+}
+
+// 맞짱필드 휴식 종료까지 남은 시간을 분·초 문자열로 반환하는 함수
+function formatMatzangRestRemainingTime(restUntil) {
+    var remainSeconds = Math.max(0, Math.ceil(((parseInt(restUntil, 10) || 0) - Date.now()) / 1000));
+    var remainMinutes = Math.floor(remainSeconds / 60); // 남은 전체 초에서 분 단위 계산
+    var remainSecondPart = remainSeconds % 60; // 분을 제외한 나머지 초 계산
+    if (remainMinutes > 0) return remainMinutes + "분 " + remainSecondPart + "초";
+    return remainSecondPart + "초";
 }
 
 // 유저 다이아 보유량 필드를 보장하는 함수
