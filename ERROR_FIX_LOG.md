@@ -12,7 +12,7 @@ Add new runtime error records below this line.
 
 # 2026-07-19 - `/자동일퀘` pet-skill activation summary undefined identifier
 
-Status: FIXED_IN_BRANCH
+Status: FIXED_IN_PROD
 
 ## Raw Error Summary
 
@@ -64,7 +64,8 @@ Status: FIXED_IN_BRANCH
 
 - `feature/bugFix` 커밋 `2e3a10f`에서 잘못된 전역 참조를 `PET_SKILL_LIST`로 교체했다.
 - 실제 `PET_SKILL_LIST`를 읽어 `약탈자` 2회와 `숙련된 전사` 1회 발동 집계를 검증했다.
-- 운영 반영 및 실제 Rhino 재실행 결과는 후속 기록한다.
+- 코드 수정과 오류 기록 커밋 `2e3a10f`, `4bd7c5b`를 `feature/prod`에 반영했다.
+- 실제 Android MessengerBot Rhino의 `/자동일퀘` 또는 `ㅇㅋㅋ` 재실행은 운영 봇에서 확인이 필요하다.
 
 ---
 
