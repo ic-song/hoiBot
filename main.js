@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.289"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.291"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -755,6 +755,12 @@ const GLOBAL_CONFIG = {
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
     },
+    admin: { // 관리자 보상 설정
+        dailyPayoutPoint: 1000000000
+    },
+    supportPass: { // 후원 패스 지급 설정
+        diamondBoxCount: 15
+    },
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 50, // 최근 댓글 보관 개수
         maxPinned: 3, // 댓글핀 최대 개수
@@ -766,7 +772,8 @@ const GLOBAL_CONFIG = {
         castleBattleFree: 1, // 캐슬대전 무료 횟수
         miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
         miniPetBattleFree: 1, // 미니펫대전 무료 횟수
-        petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
+        petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
+        autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
         batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
@@ -5799,12 +5806,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         payoutAdmins.forEach((username) => {
                             if (data.member[username]) {
                                 // 사용자가 존재하는지 확인
-                                data.member[username].point += 300000000;
+                                data.member[username].point += GLOBAL_CONFIG.admin.dailyPayoutPoint;
                                 paidAdminCount++;
                             }
                         });
                         saveJsonFile(data, filePath);
-                        replier.reply("호이 남: 일당 받아가라 노예들아\n🅟3억 포인트를 던졌습니다.\n지급 관리자 수: " + paidAdminCount + "명");
+                        replier.reply("호이 남: 일당 받아가라 노예들아\n🅟10억 포인트를 던졌습니다.\n지급 관리자 수: " + paidAdminCount + "명");
                     } else {
                         replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
                     }
@@ -6097,7 +6104,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             for (var diamondPassIndex = 0; diamondPassIndex < diamondPassUsers.length; diamondPassIndex++) {
                                 var diamondPassUser = diamondPassUsers[diamondPassIndex];
                                 if (data.member[diamondPassUser]) {
-                                    addItem(data, diamondPassUser, GLOBAL_CONFIG.items.diamondBoxName, 10);
+                                    addItem(data, diamondPassUser, GLOBAL_CONFIG.items.diamondBoxName, GLOBAL_CONFIG.supportPass.diamondBoxCount);
                                 }
                             }
                             replier.reply("다이아패스 후원 지급 완료되었습니다.");
@@ -16158,7 +16165,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (msg === "/캐슬대전") {
-                    let joinMaxCnt = GLOBAL_CONFIG.daily.castleBattleMax; // 최대 참여 횟수
+                    let joinMaxCnt = GLOBAL_CONFIG.daily.castleBattleMax + (autoDailyQuestInternalDepth > 0 ? GLOBAL_CONFIG.daily.autoDailyBonusRuns : 0); // 자동일퀘 추가 보상을 포함한 최대 참여 횟수
                     var castleBattleData = loadJsonFile(castleBattlePath);
                     if (!castleBattleData.flag) {
                         replier.reply("현재 캐슬대전시즌이 아닙니다.");
@@ -16174,7 +16181,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     ensureCastleBattleRecord(data, sender);
                     if (data.member[sender].battle.count >= joinMaxCnt) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n캐대리🐶는 하루에 " + GLOBAL_CONFIG.daily.castleBattleMax + "회만 가능합니다.");
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님\n캐대리🐶는 하루에 " + joinMaxCnt + "회만 가능합니다.");
                         return;
                     }
                     let myTier;
@@ -16368,7 +16375,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let attackerPetImage = attackerPetObj.newimg || attackerPetObj.petimg || ""; // 공격자 현재 펫 외형
                     let defenderPetImage = defenderPetObj.newimg || defenderPetObj.petimg || ""; // 방어자 현재 펫 외형
                     result += "🏆 데일리 캐슬매력 대전\n";
-                    result += "(대전횟수: " + (isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) + "/" + GLOBAL_CONFIG.daily.castleBattleMax + ") ";
+                    result += "(대전횟수: " + (isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) + "/" + joinMaxCnt + ") ";
                     result += "(리셋권: " + (data.member[sender].bag[resetTicketName] || 0) + "개)\n";
                     result += "결과: " + (isWinFlag ? "✅ 승리" : "❌ 패배") + "\n";
                     result += "━━━━━━━━━━━━\n\n";
@@ -16929,6 +16936,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let userRank = "[" + checkRank(data, petData, guildData, sender) + "]";
                     let resetItemName = "미니펫대전리셋권🐹";
                     let joinMaxCnt = GLOBAL_CONFIG.daily.miniPetBattleFree; // 기본 무료 횟수
+                    let miniPetBattleMax = GLOBAL_CONFIG.daily.miniPetBattleMax + (autoDailyQuestInternalDepth > 0 ? GLOBAL_CONFIG.daily.autoDailyBonusRuns : 0); // 자동일퀘 추가 보상을 포함한 최대 대전 횟수
                     // 미니펫 장착 확인
                     if (!petData[sender] || !petData[sender].miniPet) {
                         replier.reply("❌ " + userRank + "님\n미니펫을 장착 중이어야 대전을 진행할 수 있습니다.");
@@ -16944,8 +16952,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (petData[sender].miniPetBattle.count >= joinMaxCnt) {
                         if (hasItem(data, sender, resetItemName, 1)) {
-                            if (petData[sender].miniPetBattle.count >= GLOBAL_CONFIG.daily.miniPetBattleMax) {
-                                replier.reply("❌ " + userRank + "님 오늘 대전 최대 가능 횟수(" + GLOBAL_CONFIG.daily.miniPetBattleMax + "회)를 초과했습니다.");
+                            if (petData[sender].miniPetBattle.count >= miniPetBattleMax) {
+                                replier.reply("❌ " + userRank + "님 오늘 대전 최대 가능 횟수(" + miniPetBattleMax + "회)를 초과했습니다.");
                                 return;
                             }
                             removeItem(data, sender, resetItemName, 1);
@@ -17021,7 +17029,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let myMiniPetUpgrade = petData[sender].miniPet.upgrade || 0;
                     let enemyMiniPetUpgrade = petData[targetName].miniPet.upgrade || 0;
                     let resultMsg = "🐹 미니펫 대전\n";
-                    resultMsg += "(대전횟수: " + remain + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ") (리셋권: " + resetItemCount + "개)\n";
+                    resultMsg += "(대전횟수: " + remain + "/" + miniPetBattleMax + ") (리셋권: " + resetItemCount + "개)\n";
                     resultMsg += "결과: " + (isWin ? "✅ 승리" : "❌ 패배") + "\n";
                     resultMsg += "━━━━━━━━━━━━\n\n";
                     resultMsg += "⚔️ 공격\n";
@@ -18053,7 +18061,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     let message = ""; // 리턴할 메시지
-                    let maxEnter = GLOBAL_CONFIG.daily.trialTowerMax; // 최대입장
+                    let maxEnter = GLOBAL_CONFIG.daily.trialTowerMax + (autoDailyQuestInternalDepth > 0 ? GLOBAL_CONFIG.daily.autoDailyBonusRuns : 0); // 자동일퀘 추가 보상을 포함한 최대입장
                     // 카운트가 없으면 0으로 초기화
                     if (!data.member[sender].towerCnt) {
                         data.member[sender].towerCnt = 0;
@@ -22466,12 +22474,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     replier.reply(out);
                 }
-                if (msg === "/길드분배") {
-                    replier.reply("사용법: /길드분배 [멤버번호] ([멤버번호] ... 최대 6명)\n예) /길드분배 1 3 5\n※ 멤버번호는 /길드정보 기준입니다.");
-                    return;
-                }
-                // 길드 자원 지정 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
-                if (/^\/길드분배(?:\s+\d+){1,6}$/.test(msg)) {
+                // 길드 자원 전체/지정 분배 (길드마스터 유저, 길드자원분배 아이템 필요)
+                if (msg === "/길드분배" || /^\/길드분배(?:\s+\d+)+$/.test(msg)) {
                     var syncResult = syncMemberGuild(data, guildData);
                     if (!syncResult.success) {
                         replier.reply("❌ 길드 데이터 동기화 실패\n" + syncResult.message);
@@ -22526,7 +22530,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     ensureGuildWarehouseObj(g);
 
-                    var memberNumberArgs = msg.trim().split(/\s+/).slice(1);
+                    var memberNumberArgs = msg === "/길드분배" ? [] : msg.trim().split(/\s+/).slice(1);
                     var distributionSelection = getGuildDistributionMembersByNumbers(g, memberNumberArgs);
                     if (!distributionSelection.ok) {
                         replier.reply(distributionSelection.message);
@@ -31089,7 +31093,8 @@ function formatAutoDailyItemLines(items) {
 // 자동일퀘 대상 명령어를 잔여 횟수만큼 반복 실행하는 함수
 function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageName, command, usedKey, maxKey) {
     var first = getAutoDailyQuestSnapshot(sender);
-    var remain = Math.max(0, (first.status[maxKey] || 0) - (first.status[usedKey] || 0));
+    var targetMax = (first.status[maxKey] || 0) + GLOBAL_CONFIG.daily.autoDailyBonusRuns; // 자동일퀘권으로 받을 수 있는 추가 보상 포함 목표 횟수
+    var remain = Math.max(0, targetMax - (first.status[usedKey] || 0));
     var captured = [];
     var blockedMessage = "";
     for (var i = 0; i < remain; i++) {
@@ -31098,7 +31103,7 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
         captured = captured.concat(messages);
         var after = getAutoDailyQuestSnapshot(sender);
         if ((after.status[usedKey] || 0) <= (before.status[usedKey] || 0)) {
-            var fallbackMessage = buildAutoDailyBlockedFallbackMessage(sender, command, before, usedKey, maxKey);
+            var fallbackMessage = buildAutoDailyBlockedFallbackMessage(sender, command, before, usedKey, maxKey, targetMax);
             blockedMessage = getLastAutoDailyBlockedMessage(messages);
             if (fallbackMessage) blockedMessage = fallbackMessage;
             if (!blockedMessage) blockedMessage = "진행 횟수가 증가하지 않아 자동 진행이 중단되었습니다. 현재 " + (before.status[usedKey] || 0) + "/" + (before.status[maxKey] || 0);
@@ -31112,10 +31117,10 @@ function runAutoDailyQuestCommands(room, sender, isGroupChat, imageDB, packageNa
 }
 
 // 자동일퀘 내부 실행 중단 사유가 비어 있을 때 보조 안내 메시지 생성 함수
-function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey, maxKey) {
+function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey, maxKey, targetMax) {
     var status = snapshot && snapshot.status ? snapshot.status : {};
     var used = status[usedKey] || 0; // 현재 진행 횟수
-    var max = status[maxKey] || 0; // 목표 진행 횟수
+    var max = targetMax || status[maxKey] || 0; // 자동일퀘 추가 보상을 포함한 목표 진행 횟수
     var remain = Math.max(0, max - used); // 남은 일퀘 횟수
     var data = snapshot && snapshot.data ? snapshot.data : {};
     var petData = snapshot && snapshot.petData ? snapshot.petData : {};
@@ -31147,7 +31152,7 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
         if (!castleBattleData || !castleBattleData.flag) return "캐슬대전 시즌이 진행 중이 아니라 자동 진행이 중단되었습니다.";
         if (!castlePet) return "펫이 없어 캐슬대전 자동 진행이 중단되었습니다.";
         if ((parseInt(castlePet.petexp, 10) || 0) <= 499) return "펫 매력💕 500 미만이라 캐슬대전 자동 진행이 중단되었습니다.";
-        if (member && member.battle && (parseInt(member.battle.count, 10) || 0) >= GLOBAL_CONFIG.daily.castleBattleMax) return "캐슬대전 오늘 최대 가능 횟수(" + GLOBAL_CONFIG.daily.castleBattleMax + "회)에 도달했습니다.";
+        if (member && member.battle && (parseInt(member.battle.count, 10) || 0) >= max) return "캐슬대전 오늘 최대 가능 횟수(" + max + "회)에 도달했습니다.";
         if (castleFreeUsed >= GLOBAL_CONFIG.daily.castleBattleFree && castleTicket < 1) {
             return "오늘 무료대전 " + GLOBAL_CONFIG.daily.castleBattleFree + "회를 모두 사용했고 캐슬대전리셋권🐶이 없어 중단되었습니다. 현재 " + used + "/" + max;
         }
@@ -31164,7 +31169,7 @@ function buildAutoDailyBlockedFallbackMessage(sender, command, snapshot, usedKey
         if (!miniPetUser || !miniPetUser.miniPet) return "미니펫을 장착하지 않아 미니펫대전 자동 진행이 중단되었습니다.";
         if (!miniPetBag || miniPetBag.length < GLOBAL_CONFIG.miniPet.battleBagMin) return "미니펫가방이 " + GLOBAL_CONFIG.miniPet.battleBagMin + "마리 미만이라 미니펫대전 자동 진행이 중단되었습니다.";
         if (miniPetBag.length > GLOBAL_CONFIG.miniPet.battleBagMax) return "미니펫가방이 " + GLOBAL_CONFIG.miniPet.battleBagMax + "마리 이상이라 미니펫대전 자동 진행이 중단되었습니다.";
-        if (used >= GLOBAL_CONFIG.daily.miniPetBattleMax) return "미니펫대전 오늘 최대 가능 횟수(" + GLOBAL_CONFIG.daily.miniPetBattleMax + "회)에 도달했습니다.";
+        if (used >= max) return "미니펫대전 오늘 최대 가능 횟수(" + max + "회)에 도달했습니다.";
         if (used >= GLOBAL_CONFIG.daily.miniPetBattleFree && remain > miniTicket) {
             return "미니펫대전리셋권🐹 부족으로 중단되었습니다. 남은 일퀘 " + remain + "회 / 보유 " + miniTicket + "개";
         }
@@ -38963,7 +38968,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         out += "\n(탐험 변경: " + (dungeonNameMap[prevDungeon] || prevDungeon + "번") + " → " + targetName + ")\n";
     }
 
-    out += "\n⛰️탐험 성공확률(" + p.totalP + "%)\n";
+    out += "\n⛰️탐험 성공확률(" + formatPercent1(p.totalP) + "%)\n";
 
     // 입장권 표기
     if (dungeonNo === "3" || dungeonNo === "4" || dungeonNo === "5" || dungeonNo === "6") {
@@ -38998,10 +39003,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
     out += "\n(상세 성공확률 보기..👈)\n" + allsee + "\n\n";
 
     // 상세 수식도 공용값 기반으로 출력
-    // out += "(기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + ";
-    // out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 특성" + p.traitP + "% = " + p.totalP + "%\n";
-    // out += "영주" + p.lordP + "% + UP" + upP + "% = " + p.totalP + "%)";
-    out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 펜던트" + p.pendantP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + p.totalP + "%\n";
+    out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 펜던트" + p.pendantP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + formatPercent1(p.totalP) + "%\n";
 
     return out;
 }
@@ -39871,11 +39873,15 @@ function getGuildOrderedMemberKeys(g) {
     return memberKeys;
 }
 
-// /길드정보 멤버번호를 길드 자원 분배 대상자 목록으로 변환
+// /길드정보 멤버번호를 길드 자원 분배 대상으로 변환하고 번호가 없으면 전체 길드원 반환
 function getGuildDistributionMembersByNumbers(g, memberNumberArgs) {
     var allGuildMembers = getGuildOrderedMemberKeys(g); // /길드정보와 동일한 공헌도 순서
     var members = [];
     var selectedMemberNumbers = {};
+
+    if (memberNumberArgs.length < 1) {
+        return { ok: true, members: allGuildMembers, allMemberCount: allGuildMembers.length };
+    }
 
     for (var i = 0; i < memberNumberArgs.length; i++) {
         var memberNumber = parseInt(memberNumberArgs[i], 10);
