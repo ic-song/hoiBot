@@ -1536,6 +1536,7 @@ Status: VERIFIED
 - Triggers: `/자동일퀘`, `ㅇㅋㅋ`
 - Requires `자동일퀘권📝` in the user bag
 - `자동일퀘권📝` allows 5 additional reward runs for 시탑/캐대전/미대전, so automatic execution targets 20 while manual commands remain capped at 15
+- 자동일퀘 결과 제목 아래에 `[자동일퀘 보너스 발동!]`, `[시탑😈,🏆캐대,🐹미대 5판 추가 보상👌]` 안내를 표시한다.
 - The 5 bonus runs reuse the existing battle flows, including reset-ticket/point costs, random rewards, win/loss records, and pet-skill effects
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
@@ -4361,7 +4362,7 @@ Status: VERIFIED
 
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
-- `/탐 [숫자]` 예약 안내의 상단 성공확률과 상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
+- `/탐 [숫자]` 예약 안내와 `/지도`의 상단 성공확률·상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~2` and `던전탐험가📙` only to `/탐 3~6` plus event guild raid `/탐 10`

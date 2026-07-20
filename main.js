@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.291"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.293"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -31303,6 +31303,8 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
 
     lines.push("[" + nickName + "]");
     lines.push(rewardResult && rewardResult.claimed ? "자동 일퀘 보상 수령 완료 🐶" : "자동 일퀘 진행 결과 🐶");
+    lines.push("[자동일퀘 보너스 발동!]");
+    lines.push("[시탑😈,🏆캐대,🐹미대 5판 추가 보상👌]");
     if (rewardResult && rewardResult.claimed) {
         lines.push("✅ 일일퀘스트 보상 지급 완료!");
     } else if (status.isComplete && status.dailyRewardDone) {
@@ -39127,7 +39129,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     };
 
     var myDungeonName = myBet ? dungeonNameMap[myBet] || myBet + "번" : "없음";
-    out += "[" + checkRank(data, petData, guildData, sender) + "]님의 성공률(" + p.totalP + "%)\n";
+    out += "[" + checkRank(data, petData, guildData, sender) + "]님의 성공률(" + formatPercent1(p.totalP) + "%)\n";
     out += "현재 내 탐험지⛰️: " + myDungeonName + "\n";
 
     var total = 0;
@@ -39197,7 +39199,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
     out += "(내 탐험 아이템 상세보기..👈)\n";
     out += allsee + "\n";
-    out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 펜던트" + p.pendantP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + p.totalP + "%\n";
+    out += "기본" + p.baseP + "% + 티어" + p.tierP + "% + 매력" + p.expP + "% + 영주" + p.lordP + "% + 펫스킬" + p.traitP + "% + 펜던트" + p.pendantP + "% + 확률UP" + upP + "% - 디버프" + p.penaltyP + "% = " + formatPercent1(p.totalP) + "%\n";
 
     var bagUpHas = null;
     for (var u = 0; u < GLOBAL_CONFIG.petExplore.boostItemNames.length; u++) {
