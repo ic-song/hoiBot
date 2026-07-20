@@ -1514,7 +1514,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Creates member, pet, and pet-skill backup snapshots before automated mutation
-- Loads automatic-daily data into a thread-local memory batch, repeats each target until its daily count reaches 15 or the underlying command stops progressing, then saves each changed file once
+- Loads automatic-daily data into a thread-local memory batch, repeats 시탑/캐대전/미대전 until each count reaches the normal daily maximum plus 5 bonus runs or the underlying command stops progressing, then saves each changed file once
 - Uses an exclusive automatic-daily response lock so ordinary command data processing cannot overwrite the in-memory batch while it is running
 - Filters successful internal battle/result output out of auto-stop reasons, so only blocking messages or concise fallback progress messages are shown
 - Captures internal command exceptions as auto-stop messages instead of falling through to a generic no-progress reason
@@ -1535,6 +1535,8 @@ Status: VERIFIED
 
 - Triggers: `/자동일퀘`, `ㅇㅋㅋ`
 - Requires `자동일퀘권📝` in the user bag
+- `자동일퀘권📝` allows 5 additional reward runs for 시탑/캐대전/미대전, so automatic execution targets 20 while manual commands remain capped at 15
+- The 5 bonus runs reuse the existing battle flows, including reset-ticket/point costs, random rewards, win/loss records, and pet-skill effects
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
@@ -2363,8 +2365,8 @@ Status: VERIFIED
 ## Save Flow
 - Saves member data during sync and saves both member data and `guildData` after successful distribution.
 - Saves `currencyLogData` when distributed resources include 다이아.
-- `/길드분배 [멤버번호] ...`는 `/길드정보`의 공헌도 순 멤버번호로 1~6명을 선택하고, 선택 인원수로 자원을 균등 분배한다.
-- 인자 없는 `/길드분배`는 사용법만 출력하며 자원이나 분배 아이템을 변경하지 않는다.
+- 인자 없는 `/길드분배`는 전체 길드원을 대상으로 자원을 균등 분배한다.
+- `/길드분배 [멤버번호] ...`는 `/길드정보`의 공헌도 순 멤버번호로 대상을 선택하며 지정 인원 수 제한은 없다.
 - 길드 전체 인원 5명 이상 조건은 유지하고, 범위 밖 번호와 중복 번호는 지급 전에 차단한다.
 - Guild warehouse normalization uses `warehouse.pendant` for `펜던트 강화석📿` and no longer creates a default `warehouse.ring` slot.
 - `/길드분배` distributes `warehouse.petSkillBook` as `펫스킬북 조각📙`; `warehouse.elemental` is not used by the guild warehouse flow.
@@ -3054,7 +3056,7 @@ Status: VERIFIED
 - `data.member[*].bag["미니펫뽑기🐹(/미니펫오픈)"]`
 ## Save Flow
 - `/관리자추가` and `/관리자삭제` mutate `data.admin` and save `filePath`
-- `/관리자일당` reads `data.admin`, gives existing members 3억 points, reports actual paid count, and saves `filePath`
+- `/관리자일당` reads `data.admin`, gives existing members `GLOBAL_CONFIG.admin.dailyPayoutPoint` (10억) points, reports actual paid count, and saves `filePath`
 - `/부방상여` reads `data.admin`, gives existing members 미니펫뽑기 1000개, reports actual rewarded count, and saves `filePath`
 ## Related Commands
 - `/관리자명단`
@@ -4359,6 +4361,7 @@ Status: VERIFIED
 
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status success-rate display
+- `/탐 [숫자]` 예약 안내의 상단 성공확률과 상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~2` and `던전탐험가📙` only to `/탐 3~6` plus event guild raid `/탐 10`
@@ -4585,7 +4588,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `다이아상자💎(/다이아상자오픈)` 10개.
+- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (15개) of `다이아상자💎(/다이아상자오픈)`.
 
 ---
 
