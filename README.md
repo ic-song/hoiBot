@@ -74,6 +74,7 @@ tools\05_skills_설치.bat
 | `petSkillData.json` | 펫 스킬 데이터 |
 | `petSweetHomeData.json` | 펫 스윗홈 유저 데이터 |
 | `petHomePlacedFurniture.json` | 펫홈 장착 가구 상세 데이터 (`/장착가구동기화` 최초 실행 시 생성) |
+| `petSweetHomeData_beforePlacedFurnitureSplit.json` | 장착 가구 최초 분리 전 펫홈 데이터 1회 백업 |
 | `petSweetHomeInfo.json` | 펫 스윗홈 가구/정보 데이터 |
 | `petExploreData.json` | 펫 탐험 데이터 |
 | `guildData.json` | 길드 데이터 |

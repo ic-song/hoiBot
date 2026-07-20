@@ -119,6 +119,7 @@ Status: VERIFIED
 - `guildPath`: guild data, runtime path `/sdcard/호이랜드/guildData.json`, repo snapshot `data/guildData.json`
 - `homeDataFile`: sweet-home data, runtime path `/sdcard/호이랜드/petSweetHomeData.json`, repo snapshot `data/petSweetHomeData.json`
 - `petHomePlacedFurniturePath`: placed furniture detail data, runtime path `/sdcard/호이랜드/petHomePlacedFurniture.json`; created by `/장착가구동기화`
+- `petHomeBeforeSplitBackupPath`: one-time pre-split backup, runtime path `/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json`
 - `petSkillDataPath`: pet skill data, runtime path `/sdcard/호이랜드/petSkillData.json`, repo snapshot `data/petSkillData.json`
 - `trialTowerPath`: trial tower data, runtime path `/sdcard/호이랜드/trialTower.json`, repo snapshot `data/trialTower.json`
 - `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle2.json`
@@ -440,6 +441,7 @@ Status: VERIFIED
 - `main.js`
 - runtime `petSweetHomeData.json`
 - runtime `petHomePlacedFurniture.json`
+- runtime `petSweetHomeData_beforePlacedFurnitureSplit.json`
 
 ## Related Helpers
 
@@ -460,6 +462,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Admin/Master-only exact command.
+- Before the first separation, saves and reload-validates `petSweetHomeData_beforePlacedFurnitureSplit.json`; an existing backup is preserved without overwrite.
 - If the detail file is missing, copies legacy placed lists into it, verifies summaries, then removes legacy fields from home data.
 - If the detail file exists, treats it as the source of truth, merges remaining legacy IDs, removes bag/detail ID duplicates, and recalculates every summary.
 - Saves `petHomePlacedFurniturePath` before `homeDataFile`, reloads both, and reports verification mismatches.

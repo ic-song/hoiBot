@@ -683,6 +683,7 @@ const memberBagCheckPath = "/sdcard/호이랜드/memberBagCheck/memberBagCheck.j
 const homeInfoFile = "/sdcard/호이랜드/petSweetHomeInfo.json"; // 펫스윗홈 유저
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
 const petHomePlacedFurniturePath = "/sdcard/호이랜드/petHomePlacedFurniture.json"; // 펫홈 장착 가구 상세 데이터
+const petHomeBeforeSplitBackupPath = "/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json"; // 장착 가구 최초 분리 전 1회 백업
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
@@ -19373,6 +19374,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
+                    var initialBackupStatus = "";
+                    if (!syncPlacedFileExists) {
+                        var initialBackupFile = new java.io.File(resolveActiveDataPath(petHomeBeforeSplitBackupPath));
+                        if (initialBackupFile.exists()) {
+                            loadJsonFile(petHomeBeforeSplitBackupPath); // 기존 최초 백업의 JSON 유효성 확인
+                            initialBackupStatus = "기존 백업 유지";
+                        } else {
+                            saveJsonFile(syncHomeData, petHomeBeforeSplitBackupPath);
+                            loadJsonFile(petHomeBeforeSplitBackupPath); // 저장 직후 재로딩 검증
+                            initialBackupStatus = "생성 완료";
+                        }
+                    }
+
                     var syncResult = synchronizePlacedFurnitureData(syncHomeData, syncPlacedData);
                     saveJsonFile(syncPlacedData, petHomePlacedFurniturePath);
                     saveJsonFile(syncHomeData, homeDataFile);
@@ -19407,7 +19421,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             "개\n" +
                             "상세만 남은 유저: " +
                             numberWithCommas(syncResult.orphanUserCount) +
-                            "명"
+                            "명" +
+                            (syncPlacedFileExists
+                                ? ""
+                                : "\n최초 백업: " + initialBackupStatus + "\n백업 파일: petSweetHomeData_beforePlacedFurnitureSplit.json")
                     );
                     return;
                 }
