@@ -328,7 +328,7 @@ updated_at
 
 ### 홈 가구(user_home_furniture)
 
-`placedFurniture`, `furnitureBag`.
+`petHomePlacedFurniture.json[user]`의 장착 가구와 `petSweetHomeData.json[user].furnitureBag`.
 
 ```text
 PK id
@@ -940,7 +940,8 @@ created_at
 | `member.json` | `users`, `user_progress`, `user_roles`, `user_items`, `user_currencies`, `shop_items`, `system_states` |
 | `member_pet.json` | `user_pets`, `user_mini_pets`, `user_mini_pet_battle_stats`, `user_items` |
 | `petSkillData.json` | `user_pet_skills` |
-| `petSweetHomeData.json` | `user_homes`, `user_home_furniture`, `user_home_comments` |
+| `petSweetHomeData.json` | `user_homes`, `user_home_furniture(source_type=bag)`, `user_home_comments` |
+| `petHomePlacedFurniture.json` | `user_home_furniture(source_type=placed)` |
 | `petSweetHomeInfo.json` | `home_master`, `furniture_master` |
 | `miniPetData.json` | `mini_pet_master`, `mini_pet_grade_master` |
 | `miniPet_collection.json` | `user_mini_pet_collections` |

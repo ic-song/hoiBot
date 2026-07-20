@@ -34,6 +34,7 @@ Status: VERIFIED
 
 - `filePath`
 - `homeDataFile`
+- `petHomePlacedFurniturePath`
 - `memberPetPath`
 - `petSkillDataPath`
 
@@ -44,7 +45,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Master operator `호이 남` only.
-- 출력 항목은 멤버, 펫홈, 펫멤버, 펫스킬, 펜던트 글자수다.
+- 출력 항목은 멤버, 펫홈, 장착가구, 펫멤버, 펫스킬, 펜던트 글자수다.
 - 펜던트 글자수는 `member_pet.json`에서 `pendant`와 `pendantBag`만 추출한 JSON 문자열 길이로 계산한다.
 
 ---
@@ -117,6 +118,7 @@ Status: VERIFIED
 - `memberPetPath`: pet and mini-pet data, runtime path `/sdcard/호이랜드/member_pet.json`, repo snapshot `data/member_pet.json`
 - `guildPath`: guild data, runtime path `/sdcard/호이랜드/guildData.json`, repo snapshot `data/guildData.json`
 - `homeDataFile`: sweet-home data, runtime path `/sdcard/호이랜드/petSweetHomeData.json`, repo snapshot `data/petSweetHomeData.json`
+- `petHomePlacedFurniturePath`: placed furniture detail data, runtime path `/sdcard/호이랜드/petHomePlacedFurniture.json`; created by `/장착가구동기화`
 - `petSkillDataPath`: pet skill data, runtime path `/sdcard/호이랜드/petSkillData.json`, repo snapshot `data/petSkillData.json`
 - `trialTowerPath`: trial tower data, runtime path `/sdcard/호이랜드/trialTower.json`, repo snapshot `data/trialTower.json`
 - `castleBattlePath`: castle battle data, runtime path `/sdcard/호이랜드/castleBattle2.json`, repo snapshot `data/castleBattle2.json`
@@ -315,7 +317,7 @@ Status: VERIFIED
 ## Data Usage
 
 - `homeData[sender].furnitureBag`
-- `homeData[sender].placedFurniture`
+- `homeData[sender].placedFurnitureSummary`
 - `homeData[sender].floor`
 - `homeData[sender].houseName`
 - `petSkillData`
@@ -363,6 +365,7 @@ Status: VERIFIED
 
 - `main.js`
 - `data/petSweetHomeData.json`
+- runtime `petHomePlacedFurniture.json`
 - `data/petHomeComments.json`
 
 ## Related Helpers
@@ -375,6 +378,7 @@ Status: VERIFIED
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `getFurnitureExp`
+- `getPlacedFurnitureList`
 - `getFurnitureMaxSlots`
 - `findTargetAtStart`
 
@@ -383,7 +387,8 @@ Status: VERIFIED
 - `homeData[target].houseName`
 - `homeData[target].exp`
 - `homeData[target].floor`
-- `homeData[target].placedFurniture`
+- `homeData[target].placedFurnitureSummary`
+- `placedFurnitureData[target]`
 - `homeData[target].visitCnt`
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
@@ -393,7 +398,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile`, replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
 - `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀 [번호]`: deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
@@ -409,6 +414,7 @@ Status: VERIFIED
 - `/한줄평`
 - `/집청소`
 - `/가구가방`
+- `/장착가구동기화`
 
 ## AI Notes
 
@@ -418,6 +424,51 @@ Status: VERIFIED
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
+
+---
+
+# /장착가구동기화
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/장착가구동기화`
+
+## Files
+
+- `main.js`
+- runtime `petSweetHomeData.json`
+- runtime `petHomePlacedFurniture.json`
+
+## Related Helpers
+
+- `buildPlacedFurnitureSummary`
+- `requirePlacedFurnitureDataMap`
+- `synchronizePlacedFurnitureData`
+- `validatePlacedFurnitureSync`
+- `mergePlacedFurnitureLists`
+- `removePlacedFurnitureDuplicatesFromBag`
+
+## Data Usage
+
+- `homeData[*].placedFurniture` during initial legacy migration only
+- `homeData[*].placedFurnitureSummary`
+- `homeData[*].furnitureBag`
+- `placedFurnitureData[*]`
+
+## Save Flow
+
+- Admin/Master-only exact command.
+- If the detail file is missing, copies legacy placed lists into it, verifies summaries, then removes legacy fields from home data.
+- If the detail file exists, treats it as the source of truth, merges remaining legacy IDs, removes bag/detail ID duplicates, and recalculates every summary.
+- Saves `petHomePlacedFurniturePath` before `homeDataFile`, reloads both, and reports verification mismatches.
+
+## AI Notes
+
+- Re-running the command is idempotent for furniture entries that have IDs.
+- A missing detail file is not recreated when only non-zero summaries remain, preventing silent loss of detailed furniture data.
+- After separation, detail-dependent view and mutation commands stop with an operator-check message if the detail file disappears instead of recreating partial legacy lists.
 
 ---
 
@@ -432,6 +483,7 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- runtime `petHomePlacedFurniture.json`
 
 ## Related Helpers
 
@@ -1168,16 +1220,18 @@ Status: VERIFIED
 
 - `initSweetHomeUser`
 - `sortFurnitureList`
+- `normalizePlacedFurnitureSummary`
+- `getFurnitureExp`
 - `checkRank`
 
 ## Data Usage
 
 - `homeData[targetUser].furnitureBag`
-- `homeData[targetUser].placedFurniture`
+- `homeData[targetUser].placedFurnitureSummary`
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- Saves `homeDataFile` after user initialization, furniture-bag sorting, and legacy summary normalization.
 
 ## Related Commands
 
@@ -1209,7 +1263,7 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `homeData[*].placedFurniture`
+- `placedFurnitureData[*]`
 - `data.member`
 - `petData`
 
@@ -1225,6 +1279,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Ranking is based on placed furniture items, not bag contents
+- Before initial separation, the command falls back to legacy `homeData[*].placedFurniture`.
 - This branch reloads member and pet data locally before formatting names
 
 ---
@@ -4738,7 +4793,7 @@ Status: VERIFIED
 ## Data Usage
 
 - `homeData[*].furnitureBag`
-- `homeData[*].placedFurniture`
+- `placedFurnitureData[*]` after separation, with legacy home fallback before separation
 - `homeData[*].guestComments`
 - `data.member[*].bag`
 - `data.member[*].point`
@@ -4757,6 +4812,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
+- Saves separated placed furniture cleanup through `saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath)` when the detail file exists
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`

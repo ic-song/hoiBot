@@ -3062,7 +3062,21 @@ function isElite(mini) {
 	return mini && (mini.grade === "엘리트" || mini.grade === "엘리트급" || mini.grade === "ELITE");
 }
 
+// 장착 가구 요약값을 정수 기준으로 정규화
+function normalizePlacedFurnitureSummary(summary) {
+	summary = summary && typeof summary === "object" ? summary : {};
+	return {
+		count: Math.max(0, parseInt(summary.count, 10) || 0),
+		totalExp: Number(summary.totalExp) || 0,
+		royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0)
+	};
+}
+
+// 현재 배치된 가구로 얻는 총 매력 반환
 function getFurnitureExp(userData) {
+	if (userData && userData.placedFurnitureSummary && userData.placedFurnitureSummary.totalExp !== undefined) {
+		return Number(userData.placedFurnitureSummary.totalExp) || 0;
+	}
 	if (!userData || !userData.placedFurniture || userData.placedFurniture.length === 0) {
 		return 0;
 	}
@@ -3089,10 +3103,14 @@ function getHomeTotalExp(homeData, username) {
 }
 
 function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
-	if (!homeData || !homeData[username] || !homeData[username].placedFurniture) return 0;
-	var placed = homeData[username].placedFurniture;
 	var target = String(furnitureGrade || "").trim();
 	if (!target) return 0;
+	if (!homeData || !homeData[username]) return 0;
+	if (target === "로열 루미에르" && homeData[username].placedFurnitureSummary) {
+		return normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary).royalLumiereCount;
+	}
+	if (!homeData[username].placedFurniture) return 0;
+	var placed = homeData[username].placedFurniture;
 	var count = 0;
 	for (var i = 0; i < placed.length; i++) {
 		var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
@@ -3134,10 +3152,29 @@ function initSweetHomeUser(homeData, user) {
 			floor: 0, // 집 평수
 			houseName: "서울역 4번출구🚉", // 집 이름(스킨)
 			exp: 0, // 집 성장 경험치 (집짓기로 증가)
-			placedFurniture: [], // 현재 배치된 가구들의 id 배열
+			placedFurnitureSummary: {
+				count: 0,
+				totalExp: 0,
+				royalLumiereCount: 0
+			}, // 장착 가구 계산용 요약값
 			furnitureBag: [], // 가구 가방: {id, name, charm, grade,...} 리스트
 			visitCnt: 0, // 누적 방문 수 (본인 제외)
 			likeCnt: 0 // 누적 좋아홈 수
+		};
+	}
+	if (!homeData[user].placedFurnitureSummary || typeof homeData[user].placedFurnitureSummary !== "object") {
+		var legacyPlaced = Array.isArray(homeData[user].placedFurniture) ? homeData[user].placedFurniture : [];
+		var legacyTotalExp = 0;
+		var legacyRoyalCount = 0;
+		for (var i = 0; i < legacyPlaced.length; i++) {
+			if (!legacyPlaced[i]) continue;
+			legacyTotalExp += Number(legacyPlaced[i].exp) || 0;
+			if (String(legacyPlaced[i].grade || "").trim() === "로열 루미에르") legacyRoyalCount++;
+		}
+		homeData[user].placedFurnitureSummary = {
+			count: legacyPlaced.length,
+			totalExp: legacyTotalExp,
+			royalLumiereCount: legacyRoyalCount
 		};
 	}
 

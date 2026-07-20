@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.293"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.294"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -682,6 +682,7 @@ const miniPetPath = "/sdcard/호이랜드/miniPetData.json"; //미니펫
 const memberBagCheckPath = "/sdcard/호이랜드/memberBagCheck/memberBagCheck.json"; //미니펫 전투
 const homeInfoFile = "/sdcard/호이랜드/petSweetHomeInfo.json"; // 펫스윗홈 유저
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
+const petHomePlacedFurniturePath = "/sdcard/호이랜드/petHomePlacedFurniture.json"; // 펫홈 장착 가구 상세 데이터
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
@@ -1520,6 +1521,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var c2 = FileStream.read(activePath2, "utf-8");
                 parseJsonContent(c2, activePath2);
                 out += "- 펫홈: " + numberWithCommas(c2.length) + "\n";
+            }
+
+            // 장착 가구 상세
+            var activePlacedFurniturePath = resolveActiveDataPath(petHomePlacedFurniturePath);
+            var placedFurnitureFile = new java.io.File(activePlacedFurniturePath);
+            if (!placedFurnitureFile.exists()) {
+                out += "- 장착가구: ❌ 파일 없음\n";
+            } else {
+                var placedFurnitureContent = FileStream.read(activePlacedFurniturePath, "utf-8");
+                parseJsonContent(placedFurnitureContent, activePlacedFurniturePath);
+                out += "- 장착가구: " + numberWithCommas(placedFurnitureContent.length) + "\n";
             }
 
             // 펫멤버
@@ -4897,6 +4909,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply(replyMessageToRemove);
                         var titleData = loadJsonFile(memberTitlePath);
                         let homeData = loadJsonFile(homeDataFile);
+                        var placedFurnitureDeleteData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                         candidatesToRemove.forEach((targetUserToDelete) => {
                             // 길드데이터
                             removeUserFromGuildDataOnAccountDelete(data, guildData, targetUserToDelete);
@@ -4920,12 +4933,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             if (homeData[targetUserToDelete]) {
                                 delete homeData[targetUserToDelete];
                             }
+                            if (placedFurnitureDeleteData && placedFurnitureDeleteData[targetUserToDelete]) {
+                                delete placedFurnitureDeleteData[targetUserToDelete];
+                            }
                         });
                         data.checkcnt = getCurrentDate();
                         for (let userc in data.member) {
                             data.member[userc].chatcnt0 = 0;
                         }
                         saveJsonFile(homeData, homeDataFile);
+                        if (placedFurnitureDeleteData) saveJsonFile(placedFurnitureDeleteData, petHomePlacedFurniturePath);
                         saveJsonFile(petData, memberPetPath);
                         saveJsonFile(petSkillData, petSkillDataPath);
                         saveJsonFile(currencyLogData, currencyLogPath);
@@ -4977,12 +4994,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var trialTower = loadJsonFile(trialTowerPath);
                     var titleData = loadJsonFile(memberTitlePath);
                     let homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureBackupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     savebackupJsonFile(filePath, data);
                     savebackupJsonFile(memberPetPath, petData);
                     savebackupJsonFile(boardPath, board);
                     savebackupJsonFile(petTitlePath, petTitleData);
                     savebackupJsonFile(trialTowerPath, trialTower);
                     savebackupJsonFile(homeDataFile, homeData);
+                    if (placedFurnitureBackupData) savebackupJsonFile(petHomePlacedFurniturePath, placedFurnitureBackupData);
                     savebackupJsonFile(memberTitlePath, titleData);
                     savebackupJsonFile(guildPath, guildData);
                     replier.reply("백업 완료");
@@ -5658,6 +5677,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petTitleData = loadJsonFile(petTitlePath);
                     var trialTower = loadJsonFile(trialTowerPath);
                     var homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureDeleteData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     var petData = loadJsonFile(memberPetPath);
                     var petSkillDeleteData = loadJsonFile(petSkillDataPath);
                     var freeMarketData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
@@ -5715,6 +5735,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             if (homeData && homeData[target]) {
                                 delete homeData[target];
                             }
+                            if (placedFurnitureDeleteData && placedFurnitureDeleteData[target]) {
+                                delete placedFurnitureDeleteData[target];
+                            }
 
                             // 자유시장
                             removeFreeMarketDataByUser(freeMarketData, target);
@@ -5735,6 +5758,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(trialTower, trialTowerPath);
                     saveJsonFile(petTitleData, petTitlePath);
                     saveJsonFile(homeData, homeDataFile);
+                    if (placedFurnitureDeleteData) saveJsonFile(placedFurnitureDeleteData, petHomePlacedFurniturePath);
                     saveJsonFile(freeMarketData, freeMarketPath);
 
                     //결과 출력
@@ -19329,9 +19353,73 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("🫂 펫스윗홈 방문자수 초기화 완료!\n" + "초기화된 유저 수: " + resetCount + "명");
                     return;
                 }
+                if (msg === "/장착가구동기화" && (isAdmin(sender) || isMaster(sender))) {
+                    var syncHomeData = loadJsonFile(homeDataFile);
+                    if (!syncHomeData || typeof syncHomeData !== "object" || Array.isArray(syncHomeData)) {
+                        replier.reply("❌ 펫홈 기본 데이터를 불러올 수 없습니다.");
+                        return;
+                    }
+
+                    var syncPlacedPath = resolveActiveDataPath(petHomePlacedFurniturePath);
+                    var syncPlacedFileExists = new java.io.File(syncPlacedPath).exists(); // 최초 분리와 상시 동기화 구분
+                    var syncPlacedData = syncPlacedFileExists ? loadJsonFile(petHomePlacedFurniturePath) : {};
+                    if (!syncPlacedData || typeof syncPlacedData !== "object" || Array.isArray(syncPlacedData)) {
+                        replier.reply("❌ 장착 가구 상세 데이터를 불러올 수 없습니다.");
+                        return;
+                    }
+                    syncPlacedData = requirePlacedFurnitureDataMap(syncPlacedData);
+                    if (!syncPlacedFileExists && !canCreatePlacedFurnitureData(syncHomeData)) {
+                        replier.reply("❌ 장착 상세 파일을 새로 만들 수 없습니다.\n기존 장착 목록은 없지만 장착 요약값이 남아 있어 관리자 확인이 필요합니다.");
+                        return;
+                    }
+
+                    var syncResult = synchronizePlacedFurnitureData(syncHomeData, syncPlacedData);
+                    saveJsonFile(syncPlacedData, petHomePlacedFurniturePath);
+                    saveJsonFile(syncHomeData, homeDataFile);
+
+                    var verifiedHomeData = loadJsonFile(homeDataFile);
+                    var verifiedPlacedData = requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath));
+                    var verifyResult = validatePlacedFurnitureSync(verifiedHomeData, verifiedPlacedData);
+                    if (!verifyResult.ok) {
+                        replier.reply("❌ 장착 가구 동기화 검증 실패\n불일치 유저: " + numberWithCommas(verifyResult.mismatchUserCount) + "명");
+                        return;
+                    }
+
+                    replier.reply(
+                        "✅ 장착 가구 " +
+                            (syncPlacedFileExists ? "상시 동기화" : "최초 분리") +
+                            " 완료\n" +
+                            "━━━━━━━━━━━━━━━\n" +
+                            "동기화 유저: " +
+                            numberWithCommas(syncResult.userCount) +
+                            "명\n" +
+                            "장착 가구: " +
+                            numberWithCommas(syncResult.furnitureCount) +
+                            "개\n" +
+                            "기존 목록 병합: " +
+                            numberWithCommas(syncResult.mergedCount) +
+                            "개\n" +
+                            "요약값 수정: " +
+                            numberWithCommas(syncResult.summaryChangedCount) +
+                            "명\n" +
+                            "가방 중복 제거: " +
+                            numberWithCommas(syncResult.bagDuplicateRemovedCount) +
+                            "개\n" +
+                            "상세만 남은 유저: " +
+                            numberWithCommas(syncResult.orphanUserCount) +
+                            "명"
+                    );
+                    return;
+                }
                 if (msg === "/펫홈" || /^\/펫홈\s+.+$/.test(msg)) {
                     if (!isRegisteredHomeMember(data, sender)) return;
                     let homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureFileExistsForHome = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!placedFurnitureFileExistsForHome && !canCreatePlacedFurnitureData(homeData)) {
+                        replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
+                        return;
+                    }
+                    var placedFurnitureDataForHome = placedFurnitureFileExistsForHome ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     // 대상 유저 결정 (/펫홈 -> 자기자신 /펫홈 호이 남 -> '호이 남')
                     let parts = msg.trim().split(/\s+/);
                     let targetName = sender;
@@ -19362,7 +19450,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let exp = userHome.exp || 0;
                     let visitCnt = userHome.visitCnt || 0;
                     let likeCnt = userHome.likeCnt || 0;
-                    // 가구 매력 계산 (placedFurniture 기준 합산)
+                    // 가구 매력 계산 (장착 요약값 기준)
                     let furnitureExp = getFurnitureExp(userHome); // 없으면 0 나와도 괜찮게 작성돼 있음
                     let totalExp = exp + furnitureExp;
                     if (hasPetSkill(petSkillData, targetName, "인테리어 장인")) {
@@ -19375,7 +19463,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     ////////////////////////////////////////
-                    var placedArr = userHome.placedFurniture || [];
+                    var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
                     ////////
                     let header = "🏡[ " + nickName + " ]님의 펫하우스🏡\n\n";
@@ -19652,12 +19740,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/집청소" || /^\/집청소\s+\d+$/.test(msg)) {
                     var homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureSplitActive = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!placedFurnitureSplitActive && !canCreatePlacedFurnitureData(homeData)) {
+                        replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
+                        return;
+                    }
+                    var placedFurnitureData = placedFurnitureSplitActive ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     var nickName = checkRank(data, petData, guildData, sender);
                     homeData = initSweetHomeUser(homeData, sender);
                     var userHome = homeData[sender];
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
-                    if (!userHome.placedFurniture || userHome.placedFurniture.length === 0) {
+                    var placedFurnitureList = placedFurnitureSplitActive ? ensurePlacedFurnitureUser(placedFurnitureData, sender) : getPlacedFurnitureList(homeData, null, sender);
+                    placedFurnitureList = sortFurnitureList(placedFurnitureList);
+                    if (placedFurnitureList.length === 0) {
                         replier.reply("🏡[" + nickName + "]님, 현재 집에 배치된 가구가 없습니다.");
                         return;
                     }
@@ -19665,21 +19760,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var idxStr = parts.length > 1 ? parts[1] : null;
                     // 숫자 입력이 없으면 알람 출력하고 종료
                     if (!idxStr) {
-                        replier.reply("❌ 정리할 가구 번호를 입력해주세요.\n예) /집청소 1\n현재 배치된 가구 수: " + userHome.placedFurniture.length + "개");
+                        replier.reply("❌ 정리할 가구 번호를 입력해주세요.\n예) /집청소 1\n현재 배치된 가구 수: " + placedFurnitureList.length + "개");
                         return;
                     }
                     var idx = parseInt(idxStr, 10);
-                    if (isNaN(idx) || idx < 1 || idx > userHome.placedFurniture.length) {
+                    if (isNaN(idx) || idx < 1 || idx > placedFurnitureList.length) {
                         replier.reply("❌[" + nickName + "]님, 잘못된 번호입니다.\n예) /집청소 1");
                         return;
                     }
                     var cleanedItems = [];
-                    var removed = userHome.placedFurniture.splice(idx - 1, 1)[0];
+                    var removed = placedFurnitureList.splice(idx - 1, 1)[0];
                     if (removed) cleanedItems.push(removed);
                     var pointPerItem = 100000;
                     var totalPoint = pointPerItem;
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
+                    sortFurnitureList(placedFurnitureList);
+                    refreshPlacedFurnitureSummary(homeData, sender, placedFurnitureList);
+                    if (placedFurnitureSplitActive && userHome.placedFurniture !== undefined) delete userHome.placedFurniture;
                     addPoint(data, sender, totalPoint);
                     var cleanedListMsgArr = [];
                     for (var i = 0; i < cleanedItems.length; i++) {
@@ -19697,6 +19794,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "개\n" +
                         "획득 포인트: 🅟" +
                         numberWithCommas(totalPoint);
+                    if (placedFurnitureSplitActive) saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath);
                     saveJsonFile(homeData, homeDataFile);
                     replier.reply(resultMsg);
                 }
@@ -19711,22 +19809,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureSplitActive = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!placedFurnitureSplitActive && !canCreatePlacedFurnitureData(homeData)) {
+                        replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
+                        return;
+                    }
+                    var placedFurnitureData = placedFurnitureSplitActive ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     homeData = initSweetHomeUser(homeData, sender);
                     var userHome = homeData[sender];
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
-                    if (!userHome.placedFurniture || userHome.placedFurniture.length === 0) {
+                    var placedFurnitureList = placedFurnitureSplitActive ? ensurePlacedFurnitureUser(placedFurnitureData, sender) : getPlacedFurnitureList(homeData, null, sender);
+                    placedFurnitureList = sortFurnitureList(placedFurnitureList);
+                    if (placedFurnitureList.length === 0) {
                         replier.reply("🏡[" + nickName + "]님, 현재 집에 배치된 가구가 없습니다.");
                         return;
                     }
                     var parts = msg.trim().split(/\s+/);
                     var idxStr = parts.length > 1 ? parts[1] : null;
                     if (!idxStr) {
-                        replier.reply("❌ 해제할 가구 번호를 입력해주세요.\n예) /가구해제 1\n현재 배치된 가구 수: " + userHome.placedFurniture.length + "개");
+                        replier.reply("❌ 해제할 가구 번호를 입력해주세요.\n예) /가구해제 1\n현재 배치된 가구 수: " + placedFurnitureList.length + "개");
                         return;
                     }
                     var idx = parseInt(idxStr, 10);
-                    if (isNaN(idx) || idx < 1 || idx > userHome.placedFurniture.length) {
+                    if (isNaN(idx) || idx < 1 || idx > placedFurnitureList.length) {
                         replier.reply("❌[" + nickName + "]님, 잘못된 번호입니다.\n예) /가구해제 1");
                         return;
                     }
@@ -19735,13 +19840,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ [" + nickName + "]님, 가구 가방이 가득 찼습니다. (" + userHome.furnitureBag.length + "/" + maxBag + ")");
                         return;
                     }
-                    var removed = userHome.placedFurniture.splice(idx - 1, 1)[0];
+                    var removed = placedFurnitureList.splice(idx - 1, 1)[0];
                     userHome.furnitureBag.push(removed);
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
+                    sortFurnitureList(placedFurnitureList);
+                    refreshPlacedFurnitureSummary(homeData, sender, placedFurnitureList);
+                    if (placedFurnitureSplitActive && userHome.placedFurniture !== undefined) delete userHome.placedFurniture;
 
                     removeItem(data, sender, itemName, needCnt);
                     saveJsonFile(homeData, homeDataFile);
+                    if (placedFurnitureSplitActive) saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath);
                     var resultMsg =
                         "🛋️[ " +
                         nickName +
@@ -19768,7 +19876,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let homeData = loadJsonFile(homeDataFile);
                     homeData = initSweetHomeUser(homeData, sender);
                     homeData[sender].furnitureBag = sortFurnitureList(homeData[sender].furnitureBag);
-                    homeData[sender].placedFurniture = sortFurnitureList(homeData[sender].placedFurniture);
                     let userHome = homeData[sender];
                     let nickName = checkRank(data, petData, guildData, sender);
                     if (!userHome.furnitureBag) {
@@ -19823,7 +19930,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     results = sortFurnitureList(results);
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
                     removeItem(data, sender, ticketName, count);
                     saveJsonFile(homeData, homeDataFile);
                     saveJsonFile(data, filePath);
@@ -20005,10 +20111,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     homeData = initSweetHomeUser(homeData, targetUser);
                     homeData[targetUser].furnitureBag = sortFurnitureList(homeData[targetUser].furnitureBag);
-                    homeData[targetUser].placedFurniture = sortFurnitureList(homeData[targetUser].placedFurniture);
 
                     var userHome = homeData[targetUser];
-                    var placedArr = userHome.placedFurniture || [];
+                    var placedSummary = normalizePlacedFurnitureSummary(userHome.placedFurnitureSummary);
                     var bagArr = userHome.furnitureBag || [];
                     var maxSlots = getFurnitureMaxSlots(petData, targetUser, userHome.floor || 0, petSkillData);
                     var placedExp = getFurnitureExp(userHome);
@@ -20021,7 +20126,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var out = "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
                     out += "좋아홈💌x" + (userHome.likeCnt || 0) + "개\n";
-                    out += "현재 배치된 가구 (" + placedArr.length + "/" + maxSlots + ")\n";
+                    out += "현재 배치된 가구 (" + placedSummary.count + "/" + maxSlots + ")\n";
                     out += "(매력 " + numberWithCommas(placedExp) + "💕 적용중)\n";
                     out += "━━━━━━━━━━━━━━━\n";
                     if (bagArr.length === 0) {
@@ -20053,10 +20158,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let homeData = loadJsonFile(homeDataFile);
                     homeData = initSweetHomeUser(homeData, sender);
                     homeData[sender].furnitureBag = sortFurnitureList(homeData[sender].furnitureBag);
-                    homeData[sender].placedFurniture = sortFurnitureList(homeData[sender].placedFurniture);
                     // 안전하게 초기화
                     var userHome = homeData[sender];
-                    var placedArr = userHome.placedFurniture || [];
+                    var placedSummary = normalizePlacedFurnitureSummary(userHome.placedFurnitureSummary);
                     var bagArr = userHome.furnitureBag || [];
                     var maxSlots = getFurnitureMaxSlots(petData, sender, userHome.floor || 0, petSkillData);
                     var placedExp = getFurnitureExp(userHome);
@@ -20072,7 +20176,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     (userHome.likeCnt || 0) +
                     "개\n" +
                     "현재 배치된 가구 (" +
-                    placedArr.length +
+                    placedSummary.count +
                     "/" +
                     maxSlots +
                     ")\n" +
@@ -20118,13 +20222,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/가구순위") {
                     var homeData = loadJsonFile(homeDataFile); // 🏡 펫스윗홈 데이터
+                    var placedFurnitureFileExistsForRank = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!placedFurnitureFileExistsForRank && !canCreatePlacedFurnitureData(homeData)) {
+                        replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
+                        return;
+                    }
+                    var placedFurnitureDataForRank = placedFurnitureFileExistsForRank ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     var data = loadJsonFile(filePath); // 멤버 데이터
                     var petData = loadJsonFile(memberPetPath); // 펫 데이터
                     var allItems = [];
                     // 모든 유저 순회
                     for (var user in homeData) {
-                        var userInfo = homeData[user] || {};
-                        var placed = userInfo.placedFurniture || [];
+                        var placed = getPlacedFurnitureList(homeData, placedFurnitureDataForRank, user);
                         for (var i = 0; i < placed.length; i++) {
                             var item = placed[i];
                             if (!item) continue;
@@ -20174,6 +20283,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureSplitActive = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!placedFurnitureSplitActive && !canCreatePlacedFurnitureData(homeData)) {
+                        replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
+                        return;
+                    }
+                    var placedFurnitureData = placedFurnitureSplitActive ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
                     var nickName = checkRank(data, petData, guildData, sender);
                     // 유저 하우스 보장
                     homeData = initSweetHomeUser(homeData, sender);
@@ -20181,13 +20296,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var floor = userHome.floor || 0;
                     var maxSlots = getFurnitureMaxSlots(petData, sender, floor, petSkillData);
                     // 안전하게 배열 준비
-                    if (!userHome.placedFurniture) userHome.placedFurniture = [];
                     if (!userHome.furnitureBag) userHome.furnitureBag = [];
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
+                    var placedFurnitureList = placedFurnitureSplitActive ? ensurePlacedFurnitureUser(placedFurnitureData, sender) : getPlacedFurnitureList(homeData, null, sender);
+                    placedFurnitureList = sortFurnitureList(placedFurnitureList);
+                    if (!placedFurnitureSplitActive && !Array.isArray(userHome.placedFurniture)) userHome.placedFurniture = placedFurnitureList;
                     // 이미 꽉 찼는지 확인
-                    if (userHome.placedFurniture.length >= maxSlots) {
-                        replier.reply("❌[" + nickName + "]님 배치 가능한 가구 수를 초과했습니다.\n" + "현재 (" + userHome.placedFurniture.length + "/" + maxSlots + ")");
+                    if (placedFurnitureList.length >= maxSlots) {
+                        replier.reply("❌[" + nickName + "]님 배치 가능한 가구 수를 초과했습니다.\n" + "현재 (" + placedFurnitureList.length + "/" + maxSlots + ")");
                         return;
                     }
                     var bagIdx = pickIndex - 1; // 유저는 1부터, 실제 배열은 0부터
@@ -20199,12 +20315,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 가방에서 제거
                     userHome.furnitureBag.splice(bagIdx, 1);
                     // 집에 배치
-                    userHome.placedFurniture.push(movedItem);
+                    placedFurnitureList.push(movedItem);
                     // 매력 다시 계산
-                    var placedExp = getFurnitureExp(userHome);
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
+                    sortFurnitureList(placedFurnitureList);
+                    var placedSummary = refreshPlacedFurnitureSummary(homeData, sender, placedFurnitureList);
+                    var placedExp = placedSummary.totalExp;
+                    if (placedFurnitureSplitActive && userHome.placedFurniture !== undefined) delete userHome.placedFurniture;
                     // 저장
+                    if (placedFurnitureSplitActive) saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath);
                     saveJsonFile(homeData, homeDataFile);
                     // 안내 메시지
                     var itemExp = movedItem.exp || 0;
@@ -20217,7 +20336,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         numberWithCommas(itemExp) +
                         "💕) 를 배치했습니다!\n\n" +
                         "현재 배치: " +
-                        userHome.placedFurniture.length +
+                        placedFurnitureList.length +
                         "/" +
                         maxSlots +
                         "\n" +
@@ -20248,7 +20367,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let homeData = loadJsonFile(homeDataFile);
                     homeData = initSweetHomeUser(homeData, sender);
                     homeData[sender].furnitureBag = sortFurnitureList(homeData[sender].furnitureBag);
-                    homeData[sender].placedFurniture = sortFurnitureList(homeData[sender].placedFurniture);
                     var userHome = homeData[sender];
                     if (!userHome.furnitureBag || userHome.furnitureBag.length === 0) {
                         replier.reply("[" + nickName + "]님, 판매 가능한 가구가 없습니다.");
@@ -20264,7 +20382,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var rewardPoint = 100000;
                     addPoint(data, sender, rewardPoint);
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
                     // 저장
                     saveJsonFile(homeData, homeDataFile);
                     var itemExpVal = soldItem.exp || 0;
@@ -20319,7 +20436,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     userHome.furnitureBag = remainItems;
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
-                    userHome.placedFurniture = sortFurnitureList(userHome.placedFurniture);
                     // 포인트 지급
                     var pointPerItem = 100000;
                     var totalReward = removedItems.length * pointPerItem;
@@ -24892,6 +25008,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var homeData = loadJsonFile(homeDataFile);
+                    var placedFurnitureCleanupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
 
                     var totalDisplayRemoved = 0;
                     var totalNullRemoved = 0;
@@ -24905,7 +25022,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var displayRemovedCount = 0;
                         var nullRemovedCount = 0;
 
-                        var placed = homeData[user].placedFurniture || [];
+                        var placed = getPlacedFurnitureList(homeData, placedFurnitureCleanupData, user);
 
                         if (!Array.isArray(homeData[user].furnitureBag)) {
                             homeData[user].furnitureBag = [];
@@ -25118,6 +25235,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     saveJsonFile(homeData, homeDataFile);
+                    if (placedFurnitureCleanupData) saveJsonFile(placedFurnitureCleanupData, petHomePlacedFurniturePath);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(petSkillData, petSkillDataPath);
@@ -25476,7 +25594,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터정리", "/봇살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터정리", "/장착가구동기화", "/봇살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -35696,11 +35814,18 @@ function initSweetHomeUser(homeData, user) {
             floor: 0,
             houseName: "서울역 4번출구🚉",
             exp: 0,
-            placedFurniture: [],
+            placedFurnitureSummary: {
+                count: 0,
+                totalExp: 0,
+                royalLumiereCount: 0
+            },
             furnitureBag: [],
             visitCnt: 0,
             likeCnt: 0
         };
+    }
+    if (!homeData[user].placedFurnitureSummary || typeof homeData[user].placedFurnitureSummary !== "object") {
+        homeData[user].placedFurnitureSummary = buildPlacedFurnitureSummary(homeData[user].placedFurniture || []);
     }
     return homeData;
 }
@@ -35803,8 +35928,189 @@ function getFurnitureMaxSlots(petData, userName, floor, petSkillData) {
     return slotSize;
 }
 
+// 장착 가구 목록에서 계산용 최소 요약값 생성
+function buildPlacedFurnitureSummary(placedFurniture) {
+    var list = Array.isArray(placedFurniture) ? placedFurniture : [];
+    var totalExp = 0; // 장착 가구 매력 합계
+    var royalLumiereCount = 0; // 로열 하우스 스킬 조건용 가구 개수
+    for (var i = 0; i < list.length; i++) {
+        var item = list[i];
+        if (!item) continue;
+        totalExp += Number(item.exp) || 0;
+        if (String(item.grade || "").trim() === "로열 루미에르") royalLumiereCount++;
+    }
+    return {
+        count: list.length,
+        totalExp: totalExp,
+        royalLumiereCount: royalLumiereCount
+    };
+}
+
+// 저장된 요약값을 정수 기준으로 정규화
+function normalizePlacedFurnitureSummary(summary) {
+    summary = summary && typeof summary === "object" ? summary : {};
+    return {
+        count: Math.max(0, parseInt(summary.count, 10) || 0),
+        totalExp: Number(summary.totalExp) || 0,
+        royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0)
+    };
+}
+
+// 장착 가구 요약값 두 개가 같은지 확인
+function isSamePlacedFurnitureSummary(a, b) {
+    var left = normalizePlacedFurnitureSummary(a);
+    var right = normalizePlacedFurnitureSummary(b);
+    return left.count === right.count && left.totalExp === right.totalExp && left.royalLumiereCount === right.royalLumiereCount;
+}
+
+// 분리 상세 파일을 우선 사용하고 이관 전에는 기존 펫홈 목록을 반환
+function getPlacedFurnitureList(homeData, placedFurnitureData, username) {
+    if (placedFurnitureData && Array.isArray(placedFurnitureData[username])) return placedFurnitureData[username];
+    if (homeData && homeData[username] && Array.isArray(homeData[username].placedFurniture)) return homeData[username].placedFurniture;
+    return [];
+}
+
+// 장착 가구 상세 데이터가 사용자별 목록 객체인지 확인
+function requirePlacedFurnitureDataMap(placedFurnitureData) {
+    if (!placedFurnitureData || typeof placedFurnitureData !== "object" || Array.isArray(placedFurnitureData)) {
+        throw new Error("Invalid placed furniture data map: " + petHomePlacedFurniturePath);
+    }
+    for (var user in placedFurnitureData) {
+        if (!placedFurnitureData.hasOwnProperty(user)) continue;
+        if (!Array.isArray(placedFurnitureData[user])) {
+            throw new Error("Invalid placed furniture user list: " + user);
+        }
+    }
+    return placedFurnitureData;
+}
+
+// 장착 가구 상세 파일의 사용자 목록을 배열로 보장
+function ensurePlacedFurnitureUser(placedFurnitureData, username) {
+    if (!Array.isArray(placedFurnitureData[username])) placedFurnitureData[username] = [];
+    return placedFurnitureData[username];
+}
+
+// 장착 상세 목록을 기준으로 해당 사용자의 펫홈 요약값 갱신
+function refreshPlacedFurnitureSummary(homeData, username, placedFurniture) {
+    homeData = initSweetHomeUser(homeData, username);
+    homeData[username].placedFurnitureSummary = buildPlacedFurnitureSummary(placedFurniture);
+    return homeData[username].placedFurnitureSummary;
+}
+
+// 분리 파일과 기존 장착 목록을 가구 ID 기준으로 병합
+function mergePlacedFurnitureLists(targetList, legacyList) {
+    var target = Array.isArray(targetList) ? targetList : [];
+    var legacy = Array.isArray(legacyList) ? legacyList : [];
+    var knownIds = {};
+    var mergedCount = 0;
+    for (var i = 0; i < target.length; i++) {
+        if (target[i] && target[i].id) knownIds[String(target[i].id)] = true;
+    }
+    for (var j = 0; j < legacy.length; j++) {
+        var item = legacy[j];
+        if (!item) continue;
+        var itemId = item.id ? String(item.id) : "";
+        if (itemId && knownIds[itemId]) continue;
+        target.push(item);
+        if (itemId) knownIds[itemId] = true;
+        mergedCount++;
+    }
+    sortFurnitureList(target);
+    return { list: target, mergedCount: mergedCount };
+}
+
+// 장착 상세와 같은 ID가 가구 가방에도 있으면 장착 상태를 우선해 중복 제거
+function removePlacedFurnitureDuplicatesFromBag(furnitureBag, placedFurniture) {
+    if (!Array.isArray(furnitureBag) || !Array.isArray(placedFurniture)) return 0;
+    var placedIds = {};
+    for (var i = 0; i < placedFurniture.length; i++) {
+        if (placedFurniture[i] && placedFurniture[i].id) placedIds[String(placedFurniture[i].id)] = true;
+    }
+    var nextBag = [];
+    var removedCount = 0;
+    for (var j = 0; j < furnitureBag.length; j++) {
+        var item = furnitureBag[j];
+        var itemId = item && item.id ? String(item.id) : "";
+        if (itemId && placedIds[itemId]) {
+            removedCount++;
+        } else {
+            nextBag.push(item);
+        }
+    }
+    furnitureBag.splice(0, furnitureBag.length);
+    for (var k = 0; k < nextBag.length; k++) furnitureBag.push(nextBag[k]);
+    sortFurnitureList(furnitureBag);
+    return removedCount;
+}
+
+// 신규 장착 상세 파일을 기존 데이터에서 안전하게 만들 수 있는지 확인
+function canCreatePlacedFurnitureData(homeData) {
+    for (var user in homeData) {
+        if (!homeData.hasOwnProperty(user) || !homeData[user]) continue;
+        var legacyList = homeData[user].placedFurniture;
+        if (legacyList !== undefined && !Array.isArray(legacyList)) return false;
+        var summary = normalizePlacedFurnitureSummary(homeData[user].placedFurnitureSummary);
+        var hasSummaryFurniture = summary.count > 0 || summary.totalExp > 0 || summary.royalLumiereCount > 0;
+        if (hasSummaryFurniture && !Array.isArray(legacyList)) return false;
+    }
+    return true;
+}
+
+// 상세 목록을 원본으로 펫홈 요약값을 초기 생성하거나 다시 동기화
+function synchronizePlacedFurnitureData(homeData, placedFurnitureData) {
+    var userCount = 0;
+    var furnitureCount = 0;
+    var mergedCount = 0;
+    var summaryChangedCount = 0;
+    var bagDuplicateRemovedCount = 0;
+    var orphanUserCount = 0;
+    for (var user in homeData) {
+        if (!homeData.hasOwnProperty(user) || !homeData[user]) continue;
+        var legacyList = Array.isArray(homeData[user].placedFurniture) ? homeData[user].placedFurniture : [];
+        var currentList = Array.isArray(placedFurnitureData[user]) ? placedFurnitureData[user] : [];
+        var mergeResult = mergePlacedFurnitureLists(currentList, legacyList);
+        var nextSummary = buildPlacedFurnitureSummary(mergeResult.list);
+        if (!isSamePlacedFurnitureSummary(homeData[user].placedFurnitureSummary, nextSummary)) summaryChangedCount++;
+        placedFurnitureData[user] = mergeResult.list;
+        homeData[user].placedFurnitureSummary = nextSummary;
+        bagDuplicateRemovedCount += removePlacedFurnitureDuplicatesFromBag(homeData[user].furnitureBag, mergeResult.list);
+        if (homeData[user].placedFurniture !== undefined) delete homeData[user].placedFurniture;
+        userCount++;
+        furnitureCount += mergeResult.list.length;
+        mergedCount += mergeResult.mergedCount;
+    }
+    for (var placedUser in placedFurnitureData) {
+        if (!placedFurnitureData.hasOwnProperty(placedUser)) continue;
+        if (!homeData[placedUser]) orphanUserCount++;
+    }
+    return {
+        userCount: userCount,
+        furnitureCount: furnitureCount,
+        mergedCount: mergedCount,
+        summaryChangedCount: summaryChangedCount,
+        bagDuplicateRemovedCount: bagDuplicateRemovedCount,
+        orphanUserCount: orphanUserCount
+    };
+}
+
+// 펫홈 요약값과 장착 상세 목록이 모두 일치하는지 검증
+function validatePlacedFurnitureSync(homeData, placedFurnitureData) {
+    var mismatchUserCount = 0;
+    for (var user in homeData) {
+        if (!homeData.hasOwnProperty(user) || !homeData[user]) continue;
+        var list = placedFurnitureData && Array.isArray(placedFurnitureData[user]) ? placedFurnitureData[user] : [];
+        var hasMismatch = !isSamePlacedFurnitureSummary(homeData[user].placedFurnitureSummary, buildPlacedFurnitureSummary(list));
+        if (homeData[user].placedFurniture !== undefined) hasMismatch = true;
+        if (hasMismatch) mismatchUserCount++;
+    }
+    return { ok: mismatchUserCount === 0, mismatchUserCount: mismatchUserCount };
+}
+
 // 현재 배치된 가구로 얻는 총 매력💕
 function getFurnitureExp(userData) {
+    if (userData && userData.placedFurnitureSummary && userData.placedFurnitureSummary.totalExp !== undefined) {
+        return Number(userData.placedFurnitureSummary.totalExp) || 0;
+    }
     if (!userData || !userData.placedFurniture || userData.placedFurniture.length === 0) {
         return 0;
     }
@@ -35893,10 +36199,14 @@ function getPlacedFurnitureCountByName(homeData, username, furnitureName) {
 
 // 특정 등급의 가구가 배치된 개수 조회
 function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
-    if (!homeData || !homeData[username] || !homeData[username].placedFurniture) return 0;
-    var placed = homeData[username].placedFurniture;
     var target = String(furnitureGrade || "").trim();
     if (!target) return 0;
+    if (!homeData || !homeData[username]) return 0;
+    if (target === "로열 루미에르" && homeData[username].placedFurnitureSummary) {
+        return normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary).royalLumiereCount;
+    }
+    if (!homeData[username].placedFurniture) return 0;
+    var placed = homeData[username].placedFurniture;
     var count = 0;
     for (var i = 0; i < placed.length; i++) {
         var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
