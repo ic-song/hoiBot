@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.299"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.300"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -14020,6 +14020,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "]님\n오늘 이미 일일퀘스트 완료 보상을 받았습니다.");
                         return;
                     }
+                    if (isAutoDailyQuestRunComplete(data, petData, sender)) {
+                        replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "]님\n오늘 자동일퀘는 이미 완료되었습니다.\n시탑😈·캐대전🏆·미대전🐹 추가 보상까지 모두 완료했어요.");
+                        return;
+                    }
                     replier.reply("⏳ 자동일퀘 계산 중입니다.\n시탑/캐대전/미대전을 순서대로 진행하고 있어요.\n잠시만 기다려주세요.");
                     var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
                     replier.reply(autoDailyResult.message);
@@ -25754,6 +25758,17 @@ function isAutoDailyEntryCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/자동일퀘" || command === "ㅇㅋㅋ";
+}
+
+// 자동일퀘 대상 3종이 보너스 횟수까지 완료됐는지 확인하는 함수
+function isAutoDailyQuestRunComplete(data, petData, sender) {
+    if (!data || !data.member || !data.member[sender]) return false;
+    var member = data.member[sender]; // 자동일퀘 횟수를 확인할 회원 데이터
+    var miniBattle = petData && petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : null; // 미니펫대전 횟수 데이터
+    var bonusRuns = GLOBAL_CONFIG.daily.autoDailyBonusRuns; // 자동일퀘권 추가 보상 횟수
+    return (parseInt(member.towerCnt, 10) || 0) >= GLOBAL_CONFIG.daily.trialTowerMax + bonusRuns &&
+        (parseInt(member.battle && member.battle.count, 10) || 0) >= GLOBAL_CONFIG.daily.castleBattleMax + bonusRuns &&
+        (parseInt(miniBattle && miniBattle.count, 10) || 0) >= GLOBAL_CONFIG.daily.miniPetBattleMax + bonusRuns;
 }
 
 // 자동일퀘는 단독 처리하고 일반 응답끼리는 병렬 처리를 허용하는 잠금 반환 함수
