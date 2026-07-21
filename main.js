@@ -1090,7 +1090,7 @@ blockedNicknameTerms: [
             ]
         },
         rememberMe: { // 날 기억해줘 이벤트 영지 설정
-            successRate: 0.5,
+            successRate: 0.7,
             successMessages: [
                 "[{{rank}}] 님의 마지막 외침이 길드원들에게 닿았습니다.",
                 "[{{rank}}] 님의 이름이 길드의 역사에 새겨집니다.",
@@ -27497,8 +27497,8 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
         var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
-    out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
-    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "입장 가능\n(50% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
+    out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "환생 하고싶누?\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
+    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "hey 스타가 되고싶누?\n(70% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
