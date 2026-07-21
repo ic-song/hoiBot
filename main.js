@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.296"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.297"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1085,6 +1085,33 @@ blockedNicknameTerms: [
                 "[{{rank}}]: 오 디질뻔함ㅋ (턴 +4 증가!)",
                 "[{{rank}}]: 오우 지저스 크라이스트! (턴 +4 증가!)",
                 "[{{rank}}]: ㅎㅇ (턴 +4 증가!)"
+            ]
+        },
+        rememberMe: { // 날 기억해줘 이벤트 영지 설정
+            successRate: 0.5,
+            successMessages: [
+                "[{{rank}}] 님의 마지막 외침이 길드원들에게 닿았습니다.",
+                "[{{rank}}] 님의 이름이 길드의 역사에 새겨집니다.",
+                "[{{rank}}] 님을 기억하는 이들의 마음이 기적을 일으켰습니다.",
+                "[{{rank}}] 님의 희생이 전장의 운명을 뒤흔듭니다.",
+                "[{{rank}}] 님의 간절한 바람에 길드원들이 응답했습니다.",
+                "[{{rank}}] 님의 흔적이 점령지에 강렬하게 남았습니다.",
+                "[{{rank}}] 님의 이름을 외치는 목소리가 전장에 울려 퍼집니다.",
+                "[{{rank}}] 님의 마지막 기억이 적의 점령지를 무너뜨립니다.",
+                "[{{rank}}] 님의 희생을 길드는 영원히 기억할 것입니다.",
+                "[{{rank}}] 님은 사라졌지만, 그 이름은 모두의 기억에 남았습니다."
+            ],
+            failMessages: [
+                "[{{rank}}] 님의 마지막 외침은 아무에게도 닿지 않았습니다.(탈락🥲)",
+                "[{{rank}}] 님의 이름은 전장의 소음 속에 묻혀버렸습니다.(탈락🥲)",
+                "[{{rank}}] 님을 기억하는 이는 아무도 없었습니다.(탈락🥲)",
+                "[{{rank}}] 님의 간절한 바람은 허무하게 사라졌습니다.(탈락🥲)",
+                "[{{rank}}] 님의 희생은 아무런 흔적도 남기지 못했습니다.(탈락🥲)",
+                "[{{rank}}] 님은 길드원들의 기억에서 조용히 잊혀졌습니다.(탈락🥲)",
+                "[{{rank}}] 님의 목소리에 아무도 응답하지 않았습니다.(탈락🥲)",
+                "[{{rank}}] 님이 남긴 마지막 흔적마저 사라졌습니다.(탈락🥲)",
+                "[{{rank}}] 님의 이름은 끝내 기억되지 못했습니다.(탈락🥲)",
+                "[{{rank}}] 님은 아무도 모르게 전장에서 사라졌습니다.(탈락🥲)"
             ]
         },
         items: { // 길드 영토전 아이템명 설정
@@ -12752,6 +12779,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg === "/날기억해줘온" || msg === "/날기억해줘오프") {
+                    if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) {
+                        replier.reply("❌ 날 기억해줘 설정은 관리자만 변경할 수 있습니다.");
+                        return;
+                    }
+                    var rememberMeWar = ensureGuildTerritoryWar(data, guildData);
+                    var rememberMeEnabled = msg === "/날기억해줘온";
+                    rememberMeWar.rememberMeEnabled = rememberMeEnabled;
+                    saveJsonFile(guildData, guildPath);
+                    replier.reply("✅ 날 기억해줘😭 이벤트 영지가 " + (rememberMeEnabled ? "ON" : "OFF") + " 상태로 변경되었습니다.");
+                    return;
+                }
+
                 if (getCurrentContext().isDev && (msg === "/강제균열" || msg === "/강제대균열")) {
                     var forcedWar = ensureGuildTerritoryWar(data, guildData);
                     if (!forcedWar.active) {
@@ -12780,7 +12820,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 // 길드 영지 공격 명령어 처리
-                if (/^\/영지공격\s+[1-8]$/.test(msg)) {
+                if (/^\/영지공격\s+[1-9]$/.test(msg)) {
                     var territoryAttackBranchStartMs = ctx.isDev ? Date.now() : 0;
                     var territoryAttackTimingRows = ctx.isDev ? [] : null;
 
@@ -12795,9 +12835,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    // 입력값 검증 (1~8번 선택지)
+                    // 입력값 검증 (1~9번 선택지)
                     var attackParts = msg.trim().split(/\s+/);
-                    if (attackParts.length < 2 || !/^[1-8]$/.test(attackParts[1])) {
+                    if (attackParts.length < 2 || !/^[1-9]$/.test(attackParts[1])) {
                         replier.reply("사용법: /영지공격 [영지번호]\n예) /영지공격 2");
                         return;
                     }
@@ -12988,6 +13028,58 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         });
                         startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - dimensionTurnGuideStartMs });
+                        if (ctx.isDev) {
+                            replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
+                        }
+                        return;
+                    }
+
+                    if (territoryNo === 9) {
+                        if (!attackWar.rememberMeEnabled) {
+                            replier.reply("❌ 날 기억해줘😭 이벤트 영지가 현재 OFF 상태입니다.");
+                            return;
+                        }
+                        clearGuildTerritoryWarTimer();
+                        attackWar.turnToken = null;
+                        attackWar.guildAttackCounts[attackInfo.guildId] =
+                            (attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
+                        increaseGuildTerritoryUserAttackCount(attackWar, sender);
+                        var rememberMeResolveStartMs = ctx.isDev ? Date.now() : 0;
+                        var rememberMeMessage = resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attackInfo);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "날 기억해줘 판정", ms: Date.now() - rememberMeResolveStartMs });
+                        if (isGuildTerritoryAllDone(data, guildData)) {
+                            var rememberMeFinishStartMs = ctx.isDev ? Date.now() : 0;
+                            castleMsg(rememberMeMessage, replier, isGroupChat);
+                            finishGuildTerritoryWar(data, guildData, "날 기억해줘");
+                            withGuildTerritoryDataMode(guildData, function () {
+                                saveJsonFile(guildData, guildPath);
+                                saveJsonFile(data, filePath);
+                            });
+                            if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 출력/종료 저장", ms: Date.now() - rememberMeFinishStartMs });
+                            if (ctx.isDev) {
+                                replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
+                            }
+                            return;
+                        }
+                        var rememberMeResultStartMs = ctx.isDev ? Date.now() : 0;
+                        advanceGuildTerritoryTurn(data, guildData);
+                        var rememberMeNextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+                        if (rememberMeNextTurnLine) {
+                            rememberMeMessage = rememberMeNextTurnLine + "\n" + rememberMeMessage;
+                        }
+                        castleMsg(rememberMeMessage, replier, isGroupChat);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 처리/출력", ms: Date.now() - rememberMeResultStartMs });
+                        var rememberMeSaveStartMs = ctx.isDev ? Date.now() : 0;
+                        saveJsonFile(guildData, guildPath);
+                        saveJsonFile(data, filePath);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - rememberMeSaveStartMs });
+                        var rememberMeTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
+                        var rememberMeTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+                        rememberMeTurnMsgs.forEach(function (m) {
+                            castleMsg(m, replier, isGroupChat);
+                        });
+                        startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
+                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - rememberMeTurnGuideStartMs });
                         if (ctx.isDev) {
                             replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
                         }
@@ -25730,11 +25822,13 @@ function isMutableGuildTerritoryCommand(msg) {
         msg === "/길드영지초기화" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지확인" ||
-        /^\/영지공격\s+[1-8]$/.test(msg) ||
+        /^\/영지공격\s+[1-9]$/.test(msg) ||
         msg === "/차원의문on" ||
         msg === "/차원의문off" ||
         msg === "/차원의문온" ||
         msg === "/차원의문오프" ||
+        msg === "/날기억해줘온" ||
+        msg === "/날기억해줘오프" ||
         msg.indexOf("/불안정") === 0 ||
         msg.indexOf("/안정") === 0 ||
         msg.indexOf("/균열") === 0 ||
@@ -25758,7 +25852,7 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/길드영지순위" ||
         msg === "/영지순위보상" ||
         msg === "/영지보상순위" ||
-        /^\/영지공격(?:\s+[1-8])?$/.test(msg) ||
+        /^\/영지공격(?:\s+[1-9])?$/.test(msg) ||
         /^\/안정(?:\s+\d+)?$/.test(msg) ||
         /^\/불안정(?:\s+\d+)?$/.test(msg) ||
         /^\/균열(?:\s+\d+)?$/.test(msg) ||
@@ -25800,7 +25894,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
         "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
-        "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프",
+        "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/개발자노트"
@@ -26710,6 +26804,7 @@ function ensureGuildTerritoryWar(data, guildData) {
     if (typeof war.startReady !== "boolean") war.startReady = false;// 실제 영지전 시작 완료 여부
     if (typeof war.openingToken !== "string") war.openingToken = null;// 시작 유예 토큰
     if (typeof war.dimensionGateEnabled !== "boolean") war.dimensionGateEnabled = true;// 차원의 문 이벤트 사용 여부
+    if (typeof war.rememberMeEnabled !== "boolean") war.rememberMeEnabled = false;// 날 기억해줘 이벤트 영지 사용 여부
     if (typeof war.riftEventCount !== "number") {
         // riftEventStatus가 "rift" 또는 "greatRift"인 경우에만 riftEventCount를 1로 설정, 그렇지 않으면 0으로 설정
         war.riftEventCount = (war.riftEventStatus === "rift" || war.riftEventStatus === "greatRift") ? 1 : 0;
@@ -27372,6 +27467,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
     out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "드루와\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
+    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "입장 가능\n(50% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
@@ -28280,6 +28376,54 @@ function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, at
         "/" +
         attackLimit +
         "회";
+}
+
+// 날 기억해줘 이벤트를 판정하고 점령지 해제·입장 유저 탈락을 적용
+function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attackInfo) {
+    var war = ensureGuildTerritoryWar(data, guildData);
+    var rank = checkRank(data, petData, guildData, sender);
+    var occupiedTerritories = []; // 현재 실제 길드가 점령 중인 1~7번 영지 후보
+    var territoryList = getGuildTerritoryList();
+
+    for (var i = 0; i < territoryList.length; i++) {
+        var territory = territoryList[i];
+        var territoryState = war.territories[String(territory.no)];
+        var ownerGuild = getGuildByIdSafe(guildData, territoryState ? territoryState.ownerGuildId : null);
+        if (territoryState && ownerGuild) {
+            occupiedTerritories.push({ territory: territory, state: territoryState, ownerGuild: ownerGuild });
+        }
+    }
+
+    var success = occupiedTerritories.length > 0 && Math.random() < GLOBAL_CONFIG.guildTerritory.rememberMe.successRate;
+    var messages = success ? GLOBAL_CONFIG.guildTerritory.rememberMe.successMessages : GLOBAL_CONFIG.guildTerritory.rememberMe.failMessages;
+    var message = messages[Math.floor(Math.random() * messages.length)].replace("{{rank}}", rank);
+
+    war.eliminatedUsers[sender] = {
+        guildId: attackInfo.guildId,
+        reason: "REMEMBER_ME",
+        at: formatDateTime(new Date()),
+        turnsUsed: 1
+    };
+
+    if (!success) {
+        return "🎖️길드 영지전 결과🎖️\n\n[날 기억해줘 실패😭]\n" +
+            message + "\n\n" +
+            "※ 점령지에는 아무런 변화도 일어나지 않았습니다.";
+    }
+
+    var selected = occupiedTerritories[Math.floor(Math.random() * occupiedTerritories.length)];
+    selected.state.ownerGuildId = null;
+    selected.state.ownerUser = null;
+    if (selected.territory.no === 1 && data.HoiCastle) {
+        data.HoiCastle.lord = "";
+        data.HoiCastle.earnings = 0;
+        data.HoiCastle.defenseCount = 0;
+    }
+
+    return "🎖️길드 영지전 결과🎖️\n\n[날 기억해줘 성공😭]\n" +
+        message + "\n\n" +
+        "※ [" + formatGuildDisplay(selected.ownerGuild) + "]의 점령지인 " + selected.territory.name + "(이)가\n" +
+        "미점령 상태로 변경됩니다.";
 }
 
 // 영지전 공격 결과 처리
