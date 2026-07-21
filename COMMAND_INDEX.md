@@ -602,6 +602,7 @@ Status: VERIFIED
 - `applyGuildTerritoryTurnReward`
 - `buildPetSkillMsg`
 - `resolveGuildTerritoryDimensionGate`
+- `resolveGuildTerritoryRememberMe`
 - `resolveGuildTerritoryAttack`
 - `getGuildTerritoryDefenderName`
 - `createGuildTerritoryCastleBattleSnapshot`
@@ -634,6 +635,7 @@ Status: VERIFIED
 - `guildData.territoryWar.castleBattleSnapshots`
 - `GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier`
 - `guildData.territoryWar.dimensionGateEnabled`
+- `guildData.territoryWar.rememberMeEnabled`
 - `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
 - `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
 - `GLOBAL_CONFIG.guildTerritory.scores.pointMine`
@@ -643,6 +645,7 @@ Status: VERIFIED
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
 - `/영지공격 8` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
+- `/영지공격 9` saves `guildData` and `data` after one-turn deduction, user elimination, and an optional occupied-territory release
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -656,6 +659,8 @@ Status: VERIFIED
 - `/차원의문off`
 - `/차원의문온`
 - `/차원의문오프`
+- `/날기억해줘온`
+- `/날기억해줘오프`
 
 ## AI Notes
 
@@ -671,16 +676,18 @@ Status: VERIFIED
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
-- `/영지공격` is accepted only as `/영지공격 [1-8]`; suffix text such as `/영지공격 2 해봐` must not execute
+- `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
+- `/영지공격 9` triggers 날 기억해줘😭 when enabled: the guild and user each consume one attack, the entering user is always eliminated, and a 50% success releases one randomly selected occupied territory among `[1]~[7]`.
+- Releasing `[1] 호월킹덤🏰` also clears the current lord, earnings, and defense count so `ensureGuildTerritoryWar` cannot restore the released ownership.
 - 공격 시점에 점령지 3개를 보유한 길드는 턴 길드자금 보상이 5천만에서 1억으로 두 배 적용되며 결과에 `점령 3개 추가보너스 획득`이 표시된다.
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
 - 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
 - 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
 - 일반 캐슬매력 대결 상세보기에는 영지, 공격·방어 길드, 유저·펫, 기본·최종 매력, 크리 발동, 비교식과 점령 결과를 카드형 UI로 표시한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
-- `dev/영지공격 [1-8]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
+- `dev/영지공격 [1-9]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
 - After a successful or blocked attack resolution, the next turn message is sent and a fresh turn timer starts
 
 ---
