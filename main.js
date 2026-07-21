@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.298"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.299"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -14016,6 +14016,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/자동일퀘" || msg === "ㅇㅋㅋ") {
                     if (castleSiegeFlag) return;
                     if (!data.member || !data.member[sender]) return;
+                    if ((data.member[sender].dailyQuestCnt || 0) >= 1) {
+                        replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "]님\n오늘 이미 일일퀘스트 완료 보상을 받았습니다.");
+                        return;
+                    }
                     replier.reply("⏳ 자동일퀘 계산 중입니다.\n시탑/캐대전/미대전을 순서대로 진행하고 있어요.\n잠시만 기다려주세요.");
                     var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
                     replier.reply(autoDailyResult.message);

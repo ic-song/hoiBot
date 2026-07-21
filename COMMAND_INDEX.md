@@ -1613,6 +1613,7 @@ Status: VERIFIED
 
 - Triggers: `/자동일퀘`, `ㅇㅋㅋ`
 - Requires `자동일퀘권📝` in the user bag
+- 오늘 일일퀘스트 보상을 이미 받은 사용자는 자동 계산을 시작하지 않고 완료 안내를 즉시 표시한다.
 - `자동일퀘권📝` allows 5 additional reward runs for 시탑/캐대전/미대전, so automatic execution targets 20 while manual commands remain capped at 15
 - 자동일퀘 결과 제목 아래에 `[자동일퀘 보너스 발동!]`, `[시탑😈,🏆캐대,🐹미대 5판 추가 보상👌]` 안내를 표시한다.
 - The 5 bonus runs reuse the existing battle flows, including reset-ticket/point costs, random rewards, win/loss records, and pet-skill effects
