@@ -5862,11 +5862,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("올바른 명령어 형식을 사용해주세요. 예: /속성증가|감소 [유저명] (lv|point) [숫자]");
                     }
                 }
-                if (msg.startsWith("/계정삭제") && isMaster(sender)) {
-                    var raw = msg.replace("/계정삭제", "").trim();
+                if (msg.startsWith("/계삭진행") && isMaster(sender)) {
+                    var raw = msg.replace("/계삭진행", "").trim();
 
                     if (!raw) {
-                        replier.reply("사용법: /계정삭제 아이디1, 아이디2, 아이디3");
+                        replier.reply("사용법: /계삭진행 아이디1, 아이디2, 아이디3");
                         return;
                     }
 
@@ -5881,7 +5881,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     if (targets.length === 0) {
-                        replier.reply("사용법: /계정삭제 아이디1, 아이디2, 아이디3");
+                        replier.reply("사용법: /계삭진행 아이디1, 아이디2, 아이디3");
                         return;
                     }
 
