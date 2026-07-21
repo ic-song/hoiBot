@@ -336,7 +336,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						sender != "나나 남" &&
 						sender != "감자 여" &&
 						sender != "반지 여" &&
-						sender != "메메 남" &&
+						sender != "성준 남" &&
 						sender != "리리 여" &&
 						sender != "맹구 여" &&
 						sender != "쟈기 여" &&
