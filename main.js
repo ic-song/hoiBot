@@ -27498,7 +27498,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
     out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "환생 하고싶누?\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
-    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "hey 스타가 되고싶누?\n(70% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
+    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "주인공 되고싶누?\n(70% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
