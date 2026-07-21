@@ -4455,7 +4455,8 @@ Status: VERIFIED
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket or success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-10%` success penalty and check `펫던전 입장권🌋` at settlement.
-- `/탐 6` rewards `땅문서📜` 1개, and `/탐 7` rewards `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 on success.
+- `/탐 6` rewards `땅문서던전박스📜(/땅문서박스오픈)` 1개, and `/탐 7` rewards `샵오픈던전박스🏡(/샵오픈박스오픈)` 1개 on success.
+- `/땅문서박스오픈` grants `땅문서📜` 1개 per box, and `/샵오픈박스오픈` grants `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 per box; both boxes are auto-opened by `/정리`.
 - Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-40%` success penalty.
 - `/탐 8` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
 - `/탐 9` requires `/종합순위` top 20, can be fixed with `/자동탐고정 9`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
@@ -4707,6 +4708,70 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/다이아박스오픈` or `/다이아박스오픈 숫자`
 - Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+
+---
+
+# /땅문서박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runLandDocumentDungeonBoxOpen`
+- `runExploreBoxOpen`
+- `rollLandDocumentDungeonBox`
+- `openExploreBoxesAllForOpenAll`
+
+## Data Usage
+
+- `data.member[sender].bag["땅문서던전박스📜(/땅문서박스오픈)"]`
+- `data.member[sender].bag["땅문서📜"]`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/땅문서박스오픈` or `/땅문서박스오픈 숫자`.
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+- Each box grants `땅문서📜` 1개.
+
+---
+
+# /샵오픈박스오픈
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runShopOpenDungeonBoxOpen`
+- `runExploreBoxOpen`
+- `rollShopOpenDungeonBox`
+- `openExploreBoxesAllForOpenAll`
+
+## Data Usage
+
+- `data.member[sender].bag["샵오픈던전박스🏡(/샵오픈박스오픈)"]`
+- `data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"]`
+
+## Save Flow
+
+- Saves member data through `saveJsonFile(data, filePath)`.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/샵오픈박스오픈` or `/샵오픈박스오픈 숫자`.
+- Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
+- Each box grants `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개.
 
 ---
 

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.297"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.298"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -925,7 +925,9 @@ blockedNicknameTerms: [
         },
         rewards: {
             landDocumentItemName: "땅문서📜",
+            landDocumentBoxName: "땅문서던전박스📜(/땅문서박스오픈)",
             shopOpenItemName: "펫스윗홈인테리어샵🖼️(/샵오픈)",
+            shopOpenBoxName: "샵오픈던전박스🏡(/샵오픈박스오픈)",
             shopOpenCount: 70
         },
         diamondMineEvent: {
@@ -20888,6 +20890,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     return;
                 }
+                if (msg === "/땅문서박스오픈" || /^\/땅문서박스오픈\s+\d+$/.test(msg)) {
+                    runLandDocumentDungeonBoxOpen(sender, data, petData, guildData, msg, replier);
+                    saveJsonFile(data, filePath);
+                    return;
+                }
+                if (msg === "/샵오픈박스오픈" || /^\/샵오픈박스오픈\s+\d+$/.test(msg)) {
+                    runShopOpenDungeonBoxOpen(sender, data, petData, guildData, msg, replier);
+                    saveJsonFile(data, filePath);
+                    return;
+                }
                 if (msg === "/다이아상자오픈" || /^\/다이아상자오픈\s+\d+$/.test(msg)) {
                     runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, msg, replier);
                     saveJsonFile(data, filePath);
@@ -21360,11 +21372,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (dungeonNo === "9") {
                         var homeData = loadJsonFile(homeDataFile);
                         if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender,20)) {
-                            replier.reply("❌ 입장 실패\n\n【9】 잊혀진 대마법사의 유적📜은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
+                            replier.reply("❌ 입장 실패\n\n【9】 잊혀진 대마법사의 유적📙은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
                             return;
                         }
                         if (!hasItem(data, sender, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1)) {
-                            replier.reply("❌ 입장 실패\n\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족합니다.\n【9】 잊혀진 대마법사의 유적📜 탐험에는 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요합니다.");
+                            replier.reply("❌ 입장 실패\n\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족합니다.\n【9】 잊혀진 대마법사의 유적📙 탐험에는 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요합니다.");
                             return;
                         }
                     }
@@ -38049,7 +38061,7 @@ function getExploreDungeonName(no, petExploreData) {
         6: "땅문서 던전📜",
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
-        9: "잊혀진 대마법사의 유적📜",
+        9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
         E: "이벤트 던전✡️"
     };
@@ -38065,8 +38077,8 @@ function getExploreSuccessRewardItem(no, petExploreData) {
         3: "행운의박스🍀(/행운의박스오픈)",
         4: "전도르던전박스🗿(/전도르박스오픈)",
         5: "양계장던전박스🐓(/양계장박스오픈)",
-        6: GLOBAL_CONFIG.petExplore.rewards.landDocumentItemName,
-        7: GLOBAL_CONFIG.petExplore.rewards.shopOpenItemName,
+        6: GLOBAL_CONFIG.petExplore.rewards.landDocumentBoxName,
+        7: GLOBAL_CONFIG.petExplore.rewards.shopOpenBoxName,
         8: GLOBAL_CONFIG.petExplore.maze.rewardItem,
         9: GLOBAL_CONFIG.petExplore.maze.archmageRewardItem,
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem,
@@ -38196,7 +38208,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             }
             if (dk === "9") {
                 if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, 20)) {
-                    failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📜 입장 실패(❌)\n/종합순위 20등 밖: 보상 제외");
+                    failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📙 입장 실패(❌)\n/종합순위 20등 밖: 보상 제외");
                     failCnt++;
                     continue;
                 }
@@ -38204,7 +38216,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                     removeItem(data, user, GLOBAL_CONFIG.petExplore.maze.ticketItemName, 1);
                     usedTicket = true;
                 } else {
-                    failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📜 입장 실패(❌)\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 부족: 보상 제외");
+                    failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📙 입장 실패(❌)\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 부족: 보상 제외");
                     failCnt++;
                     continue;
                 }
@@ -38263,7 +38275,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 } else {
                     var rewardItem = getExploreSuccessRewardItem(finalDungeon, petExploreData);
                     if (rewardItem) {
-                        var rewardCount = finalDungeon === "7" ? GLOBAL_CONFIG.petExplore.rewards.shopOpenCount : 1;
+                        var rewardCount = 1;
                         addItem(data, user, rewardItem, rewardCount);
                         rewardText = rewardItem + (rewardCount > 1 ? " " + rewardCount + "개" : "");
                         var bonusRewardItem = getTreasureHunterBonusReward(petSkillData, user, rewardItem); // 보물 사냥꾼 스킬 보너스
@@ -38511,6 +38523,8 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
     openAllOne("/전도르박스오픈", "전도르던전박스🗿(/전도르박스오픈)", rollJeondorBox);
     openAllOne("/양계장박스오픈", "양계장던전박스🐓(/양계장박스오픈)", rollMiniPetDungeonBox);
     openAllOne("/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", rollDdangDungeonBox);
+    openAllOne("/땅문서박스오픈", GLOBAL_CONFIG.petExplore.rewards.landDocumentBoxName, rollLandDocumentDungeonBox);
+    openAllOne("/샵오픈박스오픈", GLOBAL_CONFIG.petExplore.rewards.shopOpenBoxName, rollShopOpenDungeonBox);
     openAllOne("/다이아박스오픈", GLOBAL_CONFIG.items.diamondMineBoxName, rollDiamondMineBox);
     openAllOne("/레이드박스오픈", GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem, rollGuildRaidBox);
     openAllOne("/펜던트미궁박스오픈", GLOBAL_CONFIG.petExplore.maze.rewardItem, rollPendantMazeBox);
@@ -38521,6 +38535,30 @@ function openExploreBoxesAllForOpenAll(sender, data, petData) {
 
 function runDdangDungeonBox(sender, data, petData, guildData, msg, replier) {
     runExploreBoxOpen(sender, data, petData, guildData, replier, "/행운의박스오픈", "행운의박스🍀(/행운의박스오픈)", msg, rollDdangDungeonBox);
+}
+
+// 땅문서 던전 박스의 고정 보상을 생성하는 함수
+function rollLandDocumentDungeonBox() {
+    var gain = {};
+    gain[GLOBAL_CONFIG.petExplore.rewards.landDocumentItemName] = 1;
+    return { gainItems: gain, gainTextLines: [] };
+}
+
+// 땅문서 던전 박스를 오픈하는 함수
+function runLandDocumentDungeonBoxOpen(sender, data, petData, guildData, msg, replier) {
+    runExploreBoxOpen(sender, data, petData, guildData, replier, "/땅문서박스오픈", GLOBAL_CONFIG.petExplore.rewards.landDocumentBoxName, msg, rollLandDocumentDungeonBox);
+}
+
+// 샵오픈 던전 박스의 고정 보상을 생성하는 함수
+function rollShopOpenDungeonBox() {
+    var gain = {};
+    gain[GLOBAL_CONFIG.petExplore.rewards.shopOpenItemName] = GLOBAL_CONFIG.petExplore.rewards.shopOpenCount;
+    return { gainItems: gain, gainTextLines: [] };
+}
+
+// 샵오픈 던전 박스를 오픈하는 함수
+function runShopOpenDungeonBoxOpen(sender, data, petData, guildData, msg, replier) {
+    runExploreBoxOpen(sender, data, petData, guildData, replier, "/샵오픈박스오픈", GLOBAL_CONFIG.petExplore.rewards.shopOpenBoxName, msg, rollShopOpenDungeonBox);
 }
 
 // 다이아 광산 박스를 열어 다이아상자를 지급하는 함수
@@ -39675,7 +39713,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         6: "땅문서 던전📜",
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
-        9: "잊혀진 대마법사의 유적📜",
+        9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
     };
     var targetName = dungeonNameMap[dungeonNo] || dungeonNo + "번 던전";
@@ -39759,7 +39797,7 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
         6: "땅문서 던전📜",
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
-        9: "잊혀진 대마법사의 유적📜",
+        9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
     };
     if (!petExploreData || typeof petExploreData !== "object") {
@@ -39859,7 +39897,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
         6: "땅문서 던전📜",
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
-        9: "잊혀진 대마법사의 유적📜",
+        9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
         E: "이벤트 던전✡️"
     };
@@ -39927,7 +39965,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     out += "미궁🕋【/탐 8~9】 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + " 필요\n";
     out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.maze.successPenalty + "% 디버프\n";
     out += "【8】 보물수호자 벨카르💎: " + cnt["8"] + "명\n";
-    out += "【9】 잊혀진 대마법사의 유적📜: " + cnt["9"] + "명\n";
+    out += "【9】 잊혀진 대마법사의 유적📙: " + cnt["9"] + "명\n";
     out += "*【9】 /종합순위 1등~20등만 입장 가능\n";
     out += LINE + "\n";
 
@@ -40115,7 +40153,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
         6: "땅문서 던전📜",
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
-        9: "잊혀진 대마법사의 유적📜",
+        9: "잊혀진 대마법사의 유적📙",
         10: "길드레이드던전👾"
     };
 
