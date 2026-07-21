@@ -4390,9 +4390,14 @@ Status: VERIFIED
 - doPetExploreInterval
 - isPetExploreEventMineActive
 - moveEventMineBetsToRandomMine
+- migratePetExploreContentSlots
 - calcExploreSuccessPercent
 - getExploreSuccessPenaltyPercent
 - getExploreTraitBonusPercent
+- getRandomRegularMineExploreSlot
+- isRegularMineExploreSlot
+- isRegularDungeonExploreSlot
+- isMazeExploreSlot
 - hasPetSkill
 
 ## Data Usage
@@ -4412,9 +4417,9 @@ Status: VERIFIED
 
 ## Related Commands
 - `/탐`
-- `/탐 [1~8]`
-- `/탐 7`
+- `/탐 [1~9]`
 - `/탐 8`
+- `/탐 9`
 - `/탐 10` when the guild raid event is active
 - `/지도`
 - `/탐험알림`
@@ -4428,7 +4433,7 @@ Status: VERIFIED
 - `/펜던트미궁박스오픈`
 - `/대마법박스오픈`
 - `/자동탐고정 0` when the event mine is active
-- `/자동탐고정 8`
+- `/자동탐고정 9`
 - `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
@@ -4436,15 +4441,18 @@ Status: VERIFIED
 - `/탐 [숫자]` 예약 안내와 `/지도`의 상단 성공확률·상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
 - `doPetExploreInterval` recalculates the same success-rate components during settlement
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
-- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~2` and `던전탐험가📙` only to `/탐 3~6` plus event guild raid `/탐 10`
+- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
-- Regular mines are `/탐 1~2`; dungeon entries are `/탐 3~6` and apply `-10%` success penalty with `펫던전 입장권🌋` checked at settlement.
-- Maze entries `/탐 7~8` require `미궁 입장권🕋` and apply a `-50%` success penalty.
-- `/탐 7` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
-- `/탐 8` requires `/종합순위` top 20, can be fixed with `/자동탐고정 8`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket or success penalty.
+- Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-10%` success penalty and check `펫던전 입장권🌋` at settlement.
+- `/탐 6` rewards `땅문서📜` 1개, and `/탐 7` rewards `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 on success.
+- Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-40%` success penalty.
+- `/탐 8` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
+- `/탐 9` requires `/종합순위` top 20, can be fixed with `/자동탐고정 9`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `migratePetExploreContentSlots` runs once through `initPetExploreData`, moves existing participation and auto-fixed selections to the reworked slots, and marks `contentRework20260721` for persistence through the existing migration save flow.
 - `initPetExploreData` preserves current visible participants and only records the old `pendantMazeSlotResetV2191` / `currentExploreSlotOneResetV2192` migration flags when they are missing.
 - `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
 
