@@ -37,6 +37,16 @@ Status: VERIFIED
 - `petHomePlacedFurniturePath`
 - `memberPetPath`
 - `petSkillDataPath`
+- `memberTitlePath`
+- `petTitlePath`
+- `miniPetTitlePath`
+- `miniPetCollectionPath`
+- `trialTowerPath`
+- `petExplorePath`
+- `guildPath`
+- `attendanceLightPath`
+- `boardPath`
+- `freeMarketPath`
 
 ## Save Flow
 
@@ -45,8 +55,11 @@ Status: VERIFIED
 ## AI Notes
 
 - Master operator `호이 남` only.
-- 출력 항목은 멤버, 펫홈, 장착가구, 펫멤버, 펫스킬, 펜던트 글자수다.
-- 펜던트 글자수는 `member_pet.json`에서 `pendant`와 `pendantBag`만 추출한 JSON 문자열 길이로 계산한다.
+- 출력 항목은 멤버, 펫홈, 장착가구, 펫멤버, 펫스킬, 펜던트, 회원칭호, 펫칭호, 미니펫칭호, 미니펫도감, 시련의탑, 펫탐험, 길드, 경량출석, 게시판, 자유시장이다.
+- 각 항목은 JSON 문자열 길이와 파일 구조에 맞춰 중복 제거한 유저 수를 함께 표시한다.
+- 출력은 핵심 데이터, 칭호·성장 데이터, 운영 데이터 구역으로 나눠 표시한다.
+- 펜던트 글자수와 유저 수는 `member_pet.json`에서 `pendant`와 `pendantBag` 데이터가 있는 유저만 추출해 계산한다.
+- 연결된 동기화 명령어가 있으면 해당 항목 바로 아래 줄에 `/장착가구동기화`, `/펫데이터동기화`, `/펫타이틀동기화`, `/시련의탑동기화`, `/길드데이터동기화`, `/전체동기화`를 표시한다.
 
 ---
 

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.294"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.295"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1500,7 +1500,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg == "/글자수통계" && sender == "호이 남") {
-            var out = "📊 글자수 통계\n";
+            var out = "📊 글자수 통계\n\n[핵심 데이터]\n";
 
             // 멤버
             var activePath1 = resolveActiveDataPath(filePath);
@@ -1509,8 +1509,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 out += "- 멤버: ❌ 파일 없음\n";
             } else {
                 var c1 = FileStream.read(activePath1, "utf-8");
-                parseJsonContent(c1, activePath1);
-                out += "- 멤버: " + numberWithCommas(c1.length) + "\n";
+                var parsedMemberForStats = parseJsonContent(c1, activePath1);
+                var memberStatsUserCount = parsedMemberForStats.member ? Object.keys(parsedMemberForStats.member).length : 0;
+                out += "- 멤버: " + numberWithCommas(c1.length) + "자 / " + numberWithCommas(memberStatsUserCount) + "명\n";
+                out += "  ↳ 동기화: /길드데이터동기화, /전체동기화\n";
             }
 
             // 펫홈
@@ -1520,8 +1522,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 out += "- 펫홈: ❌ 파일 없음\n";
             } else {
                 var c2 = FileStream.read(activePath2, "utf-8");
-                parseJsonContent(c2, activePath2);
-                out += "- 펫홈: " + numberWithCommas(c2.length) + "\n";
+                var parsedPetHomeForStats = parseJsonContent(c2, activePath2);
+                out += "- 펫홈: " + numberWithCommas(c2.length) + "자 / " + numberWithCommas(Object.keys(parsedPetHomeForStats).length) + "명\n";
+                out += "  ↳ 동기화: /장착가구동기화\n";
             }
 
             // 장착 가구 상세
@@ -1531,8 +1534,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 out += "- 장착가구: ❌ 파일 없음\n";
             } else {
                 var placedFurnitureContent = FileStream.read(activePlacedFurniturePath, "utf-8");
-                parseJsonContent(placedFurnitureContent, activePlacedFurniturePath);
-                out += "- 장착가구: " + numberWithCommas(placedFurnitureContent.length) + "\n";
+                var parsedPlacedFurnitureForStats = parseJsonContent(placedFurnitureContent, activePlacedFurniturePath);
+                out += "- 장착가구: " + numberWithCommas(placedFurnitureContent.length) + "자 / " + numberWithCommas(Object.keys(parsedPlacedFurnitureForStats).length) + "명\n";
+                out += "  ↳ 동기화: /장착가구동기화\n";
             }
 
             // 펫멤버
@@ -1544,7 +1548,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             } else {
                 var c3 = FileStream.read(activePath3, "utf-8");
                 var parsedPetMemberForStats = parseJsonContent(c3, activePath3);
-                out += "- 펫멤버: " + numberWithCommas(c3.length) + "\n";
+                out += "- 펫멤버: " + numberWithCommas(c3.length) + "자 / " + numberWithCommas(Object.keys(parsedPetMemberForStats).length) + "명\n";
+                out += "  ↳ 동기화: /펫데이터동기화, /전체동기화\n";
                 var pendantOnlyData = {};
                 for (var pendantStatsUser in parsedPetMemberForStats) {
                     if (!parsedPetMemberForStats.hasOwnProperty(pendantStatsUser)) continue;
@@ -1566,10 +1571,174 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 out += "- 펫스킬: ❌ 파일 없음\n";
             } else {
                 var c4 = FileStream.read(activePath4, "utf-8");
-                parseJsonContent(c4, activePath4);
-                out += "- 펫스킬: " + numberWithCommas(c4.length) + "\n";
+                var parsedPetSkillForStats = parseJsonContent(c4, activePath4);
+                out += "- 펫스킬: " + numberWithCommas(c4.length) + "자 / " + numberWithCommas(Object.keys(parsedPetSkillForStats).length) + "명\n";
             }
-            out += "- 펜던트: " + (pendantTextLength === null ? "❌ 파일 없음" : numberWithCommas(pendantTextLength)) + "\n";
+            out += "- 펜던트: " + (pendantTextLength === null ? "❌ 파일 없음" : numberWithCommas(pendantTextLength) + "자 / " + numberWithCommas(Object.keys(pendantOnlyData).length) + "명") + "\n";
+
+            out += "\n[칭호·성장 데이터]\n";
+
+            // 회원칭호
+            var activeMemberTitlePath = resolveActiveDataPath(memberTitlePath);
+            var memberTitleFile = new java.io.File(activeMemberTitlePath);
+            if (!memberTitleFile.exists()) {
+                out += "- 회원칭호: ❌ 파일 없음\n";
+            } else {
+                var memberTitleContent = FileStream.read(activeMemberTitlePath, "utf-8");
+                var parsedMemberTitleForStats = parseJsonContent(memberTitleContent, activeMemberTitlePath);
+                var memberTitleStatsUserCount = parsedMemberTitleForStats.member ? Object.keys(parsedMemberTitleForStats.member).length : 0;
+                out += "- 회원칭호: " + numberWithCommas(memberTitleContent.length) + "자 / " + numberWithCommas(memberTitleStatsUserCount) + "명\n";
+            }
+
+            // 펫칭호
+            var activePetTitlePath = resolveActiveDataPath(petTitlePath);
+            var petTitleFile = new java.io.File(activePetTitlePath);
+            if (!petTitleFile.exists()) {
+                out += "- 펫칭호: ❌ 파일 없음\n";
+            } else {
+                var petTitleContent = FileStream.read(activePetTitlePath, "utf-8");
+                var parsedPetTitleForStats = parseJsonContent(petTitleContent, activePetTitlePath);
+                var petTitleStatsUserCount = parsedPetTitleForStats.member ? Object.keys(parsedPetTitleForStats.member).length : 0;
+                out += "- 펫칭호: " + numberWithCommas(petTitleContent.length) + "자 / " + numberWithCommas(petTitleStatsUserCount) + "명\n";
+                out += "  ↳ 동기화: /펫타이틀동기화, /전체동기화\n";
+            }
+
+            // 미니펫칭호
+            var activeMiniPetTitlePath = resolveActiveDataPath(miniPetTitlePath);
+            var miniPetTitleFile = new java.io.File(activeMiniPetTitlePath);
+            if (!miniPetTitleFile.exists()) {
+                out += "- 미니펫칭호: ❌ 파일 없음\n";
+            } else {
+                var miniPetTitleContent = FileStream.read(activeMiniPetTitlePath, "utf-8");
+                var parsedMiniPetTitleForStats = parseJsonContent(miniPetTitleContent, activeMiniPetTitlePath);
+                var miniPetTitleStatsUserCount = parsedMiniPetTitleForStats.member ? Object.keys(parsedMiniPetTitleForStats.member).length : 0;
+                out += "- 미니펫칭호: " + numberWithCommas(miniPetTitleContent.length) + "자 / " + numberWithCommas(miniPetTitleStatsUserCount) + "명\n";
+            }
+
+            // 미니펫도감
+            var activeMiniPetCollectionPath = resolveActiveDataPath(miniPetCollectionPath);
+            var miniPetCollectionFile = new java.io.File(activeMiniPetCollectionPath);
+            if (!miniPetCollectionFile.exists()) {
+                out += "- 미니펫도감: ❌ 파일 없음\n";
+            } else {
+                var miniPetCollectionContent = FileStream.read(activeMiniPetCollectionPath, "utf-8");
+                var parsedMiniPetCollectionForStats = parseJsonContent(miniPetCollectionContent, activeMiniPetCollectionPath);
+                var miniPetCollectionStatsUserCount = parsedMiniPetCollectionForStats.member ? Object.keys(parsedMiniPetCollectionForStats.member).length : 0;
+                out += "- 미니펫도감: " + numberWithCommas(miniPetCollectionContent.length) + "자 / " + numberWithCommas(miniPetCollectionStatsUserCount) + "명\n";
+            }
+
+            // 시련의탑
+            var activeTrialTowerPath = resolveActiveDataPath(trialTowerPath);
+            var trialTowerFile = new java.io.File(activeTrialTowerPath);
+            if (!trialTowerFile.exists()) {
+                out += "- 시련의탑: ❌ 파일 없음\n";
+            } else {
+                var trialTowerContent = FileStream.read(activeTrialTowerPath, "utf-8");
+                var parsedTrialTowerForStats = parseJsonContent(trialTowerContent, activeTrialTowerPath);
+                var trialTowerStatsUserCount = parsedTrialTowerForStats.user ? Object.keys(parsedTrialTowerForStats.user).length : 0;
+                out += "- 시련의탑: " + numberWithCommas(trialTowerContent.length) + "자 / " + numberWithCommas(trialTowerStatsUserCount) + "명\n";
+                out += "  ↳ 동기화: /시련의탑동기화, /전체동기화\n";
+            }
+
+            out += "\n[운영 데이터]\n";
+
+            // 펫탐험
+            var activePetExplorePath = resolveActiveDataPath(petExplorePath);
+            var petExploreFile = new java.io.File(activePetExplorePath);
+            if (!petExploreFile.exists()) {
+                out += "- 펫탐험: ❌ 파일 없음\n";
+            } else {
+                var petExploreContent = FileStream.read(activePetExplorePath, "utf-8");
+                var parsedPetExploreForStats = parseJsonContent(petExploreContent, activePetExplorePath);
+                var petExploreStatsUsers = {}; // 탐험 설정·기록·진행 중 베팅의 고유 유저
+                var petExploreUserMaps = [parsedPetExploreForStats.userBet, parsedPetExploreForStats.autoFixedDungeon, parsedPetExploreForStats.record];
+                for (var petExploreMapIndex = 0; petExploreMapIndex < petExploreUserMaps.length; petExploreMapIndex++) {
+                    var petExploreUserMap = petExploreUserMaps[petExploreMapIndex] || {};
+                    for (var petExploreStatsUser in petExploreUserMap) {
+                        if (petExploreUserMap.hasOwnProperty(petExploreStatsUser)) petExploreStatsUsers[petExploreStatsUser] = true;
+                    }
+                }
+                var petExploreBets = parsedPetExploreForStats.bet || {};
+                for (var petExploreBetKey in petExploreBets) {
+                    if (!petExploreBets.hasOwnProperty(petExploreBetKey)) continue;
+                    var petExploreBetUsers = petExploreBets[petExploreBetKey] || [];
+                    for (var petExploreBetIndex = 0; petExploreBetIndex < petExploreBetUsers.length; petExploreBetIndex++) {
+                        if (petExploreBetUsers[petExploreBetIndex] && petExploreBetUsers[petExploreBetIndex].user) {
+                            petExploreStatsUsers[petExploreBetUsers[petExploreBetIndex].user] = true;
+                        }
+                    }
+                }
+                out += "- 펫탐험: " + numberWithCommas(petExploreContent.length) + "자 / " + numberWithCommas(Object.keys(petExploreStatsUsers).length) + "명\n";
+            }
+
+            // 길드
+            var activeGuildPath = resolveActiveDataPath(guildPath);
+            var guildFile = new java.io.File(activeGuildPath);
+            if (!guildFile.exists()) {
+                out += "- 길드: ❌ 파일 없음\n";
+            } else {
+                var guildContent = FileStream.read(activeGuildPath, "utf-8");
+                var parsedGuildForStats = parseJsonContent(guildContent, activeGuildPath);
+                var guildStatsUsers = {}; // 전체 길드에 소속된 고유 유저
+                var guildStatsGuilds = parsedGuildForStats.guilds || {};
+                for (var guildStatsId in guildStatsGuilds) {
+                    if (!guildStatsGuilds.hasOwnProperty(guildStatsId)) continue;
+                    var guildStatsMembers = guildStatsGuilds[guildStatsId].members || {};
+                    for (var guildStatsUser in guildStatsMembers) {
+                        if (guildStatsMembers.hasOwnProperty(guildStatsUser)) guildStatsUsers[guildStatsUser] = true;
+                    }
+                }
+                out += "- 길드: " + numberWithCommas(guildContent.length) + "자 / " + numberWithCommas(Object.keys(guildStatsUsers).length) + "명\n";
+                out += "  ↳ 동기화: /길드데이터동기화, /전체동기화\n";
+            }
+
+            // 경량출석
+            var activeAttendanceLightPath = resolveActiveDataPath(attendanceLightPath);
+            var attendanceLightFile = new java.io.File(activeAttendanceLightPath);
+            if (!attendanceLightFile.exists()) {
+                out += "- 경량출석: ❌ 파일 없음\n";
+            } else {
+                var attendanceLightContent = FileStream.read(activeAttendanceLightPath, "utf-8");
+                var parsedAttendanceLightForStats = parseJsonContent(attendanceLightContent, activeAttendanceLightPath);
+                var attendanceLightStatsUserCount = parsedAttendanceLightForStats.users ? Object.keys(parsedAttendanceLightForStats.users).length : 0;
+                out += "- 경량출석: " + numberWithCommas(attendanceLightContent.length) + "자 / " + numberWithCommas(attendanceLightStatsUserCount) + "명\n";
+            }
+
+            // 게시판
+            var activeBoardPath = resolveActiveDataPath(boardPath);
+            var boardFile = new java.io.File(activeBoardPath);
+            if (!boardFile.exists()) {
+                out += "- 게시판: ❌ 파일 없음\n";
+            } else {
+                var boardContent = FileStream.read(activeBoardPath, "utf-8");
+                var parsedBoardForStats = parseJsonContent(boardContent, activeBoardPath);
+                var boardStatsUsers = {}; // 메모와 누적 게시글을 작성한 고유 유저
+                var boardStatsEntries = (parsedBoardForStats.memo || []).concat(parsedBoardForStats.record || []);
+                for (var boardStatsIndex = 0; boardStatsIndex < boardStatsEntries.length; boardStatsIndex++) {
+                    if (boardStatsEntries[boardStatsIndex] && boardStatsEntries[boardStatsIndex].user) {
+                        boardStatsUsers[boardStatsEntries[boardStatsIndex].user] = true;
+                    }
+                }
+                out += "- 게시판: " + numberWithCommas(boardContent.length) + "자 / " + numberWithCommas(Object.keys(boardStatsUsers).length) + "명\n";
+            }
+
+            // 자유시장
+            var activeFreeMarketPath = resolveActiveDataPath(freeMarketPath);
+            var freeMarketFileForStats = new java.io.File(activeFreeMarketPath);
+            if (!freeMarketFileForStats.exists()) {
+                out += "- 자유시장: ❌ 파일 없음\n";
+            } else {
+                var freeMarketContentForStats = FileStream.read(activeFreeMarketPath, "utf-8");
+                var parsedFreeMarketForStats = parseJsonContent(freeMarketContentForStats, activeFreeMarketPath);
+                var freeMarketStatsUsers = {}; // 판매 중·거래 완료 기록의 고유 거래 유저
+                var freeMarketStatsEntries = (parsedFreeMarketForStats.listings || []).concat(parsedFreeMarketForStats.completedLogs || []);
+                for (var freeMarketStatsIndex = 0; freeMarketStatsIndex < freeMarketStatsEntries.length; freeMarketStatsIndex++) {
+                    var freeMarketStatsEntry = freeMarketStatsEntries[freeMarketStatsIndex] || {};
+                    if (freeMarketStatsEntry.seller) freeMarketStatsUsers[freeMarketStatsEntry.seller] = true;
+                    if (freeMarketStatsEntry.buyer) freeMarketStatsUsers[freeMarketStatsEntry.buyer] = true;
+                }
+                out += "- 자유시장: " + numberWithCommas(freeMarketContentForStats.length) + "자 / " + numberWithCommas(Object.keys(freeMarketStatsUsers).length) + "명\n";
+            }
 
             replier.reply(out.trim());
             return;
