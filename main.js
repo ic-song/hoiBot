@@ -1008,7 +1008,7 @@ blockedNicknameTerms: [
             { name: "미니펫 강화석💫", count: 1, price: 1 },
             { name: "펫스킬북📙(/펫스킬오픈)", count: 1, price: 10000 }
         ],
-        rankRewards: [20, 19, 18, 17, 16, 15, 14, 13, 12, 11]
+        rankRewards: [15, 14, 13, 12, 11, 10, 9, 8, 7, 6]
     },
     items: { // 공통 아이템명 설정
         carrotName: "🥕당근이세요?",
@@ -34442,9 +34442,9 @@ function runMatzangBattle(attackerName, defenderName, data, petData, homeData, p
 // 맞짱필드 순위 보상 다이아 수량을 반환하는 함수
 function getMatzangRankReward(rank) {
     if (rank >= 1 && rank <= 10) return GLOBAL_CONFIG.matzangField.rankRewards[rank - 1];
-    if (rank >= 11 && rank <= 20) return 10;
-    if (rank >= 21 && rank <= 30) return 5;
-    if (rank >= 31 && rank <= 100) return 3;
+    if (rank >= 11 && rank <= 20) return 4;
+    if (rank >= 21 && rank <= 30) return 2;
+    if (rank >= 31 && rank <= 100) return 1;
     return 0;
 }
 
