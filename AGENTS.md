@@ -182,8 +182,9 @@ LDPlayer
 - If multiple READY/HOTFIX items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
 - If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
 - Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
-- When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY/HOTFIX to DEV.
-- Do not change the Notion item from READY/HOTFIX to DEV before production reflection is complete.
+- When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY/HOTFIX to DEV and set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
+- Treat the Notion `상태` change and `운영반영일` update as one operation; if either update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
+- Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` before production reflection is complete.
 
 ## Branch Workflow
 
@@ -316,7 +317,8 @@ head-agent
  ├─ error-bugfix-agent
  ├─ test-agent
  ├─ encoding-agent
- └─ doc-agent
+ ├─ doc-agent
+ └─ notion-agent
 ```
 
 ## General Principles
@@ -661,6 +663,31 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - Preserve:
   - Markdown heading structure
   - code block formatting
+
+---
+
+# 13-1) notion-agent
+
+## Role
+
+- Handles read and update operations for the hoiBot Notion planning DB.
+- Verifies the planning DB schema and page properties before treating an item as READY, HOTFIX, DEV, or LIVE.
+- Reads selected planning documents and reports requirements, acceptance criteria, constraints, and uncertain areas to the head-agent.
+
+## Modification Permission
+
+- May update only the selected Notion item's `상태` and `운영반영일` properties when the workflow rules authorize the change.
+- MUST NOT modify repository files, Git branches, commits, or production state.
+- MUST NOT change Notion page content or unrelated properties unless the user explicitly requests it.
+
+## Rules
+
+- Use the exact Notion DB `상태` property as the source of truth; do not substitute `섹션`, title text, board grouping labels, or broad workspace search results.
+- If multiple target items exist, list them and wait for the user's selection; do not update all candidates.
+- Do not change READY/HOTFIX items to DEV until implementation, validation, source-branch push, and `feature/prod` reflection are all complete.
+- When changing `상태` from READY/HOTFIX to DEV, set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
+- Treat the `상태` and `운영반영일` updates as one operation and verify both values after updating.
+- Report the Notion page title/link, previous and new status, recorded `운영반영일`, reflected branch/commit, and any failed or unverified update.
 
 ---
 
