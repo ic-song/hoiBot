@@ -162,7 +162,7 @@ LDPlayer
 
 - When the user says "노션 확인", "노션 확인(핫픽스, ready)", or asks to check Notion HOTFIX/READY without explicitly requesting implementation, treat it as a request to count and list development-needed items in the Notion planning DB where `상태 = 🔥 HOTFIX` or `상태 = 🛠 READY`.
 - For Notion status checks, report counts by status and list matching page titles/links only after verifying the page properties; do not treat title text such as `(READY / date)` as the status source of truth.
-- Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, record `즉시 반영 필요`; preserve any explicit planned date or text entered by the user.
+- Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only; leave the Notion property blank and preserve any explicit planned date or text entered by the user.
 - Keep `운영 반영예정일` separate from `운영반영일`: the former is a planned schedule/urgency value, while the latter is the actual `feature/prod` reflection date.
 - When the user says "노션확인 후 개발", treat it as a request to check Notion READY items from the Notion planning DB first and then develop according to the selected Notion document.
 - When the user says "노션 핫픽스 수정", "핫픽스", or otherwise asks to implement a Notion hotfix, treat it as a request to check Notion HOTFIX items from the Notion planning DB first and then develop according to the selected Notion document.
@@ -687,12 +687,12 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 - Use the exact Notion DB `상태` property as the source of truth; do not substitute `섹션`, title text, board grouping labels, or broad workspace search results.
 - If multiple target items exist, list them and wait for the user's selection; do not update all candidates.
-- Treat `운영 반영예정일` as text; when it is omitted, empty, or whitespace-only, set it to `즉시 반영 필요` without overwriting an explicit value.
+- Treat `운영 반영예정일` as text; when it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only, and do not write or backfill that phrase into Notion.
 - Never store `즉시 반영 필요` in the date-type `운영반영일` property.
 - Do not change READY/HOTFIX items to DEV until implementation, validation, source-branch push, and `feature/prod` reflection are all complete.
 - When changing `상태` from READY/HOTFIX to DEV, set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
 - Treat the `상태` and `운영반영일` updates as one operation and verify both values after updating.
-- Report the Notion page title/link, previous and new status, `운영 반영예정일`, recorded `운영반영일`, reflected branch/commit, and any failed or unverified update.
+- Report the Notion page title/link, previous and new status, the raw `운영 반영예정일` value and its blank-value interpretation, recorded `운영반영일`, reflected branch/commit, and any failed or unverified update.
 
 ---
 
