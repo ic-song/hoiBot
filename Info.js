@@ -331,7 +331,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (
 						sender != "호이 남" &&
 						sender != "희재 남" &&
-						sender != "마라 여" &&
+						sender != "메메 남" &&
 						sender != "콘트 남" &&
 						sender != "나나 남" &&
 						sender != "감자 여" &&
