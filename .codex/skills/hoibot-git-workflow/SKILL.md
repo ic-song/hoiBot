@@ -40,6 +40,8 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Never conclude that no HOTFIX exists from a text search for `HOTFIX` alone. A page can be grouped under `🔥 HOTFIX` by its status property even when the title/body does not contain the word `HOTFIX`.
 - If the user provides a screenshot or visible board card title, search that exact title within the confirmed data source, fetch the matching page, and verify its `상태` property.
 - If multiple Notion READY/HOTFIX items are found and the user did not specify one, ask which item to implement before editing.
+- Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, set it to `즉시 반영 필요` without overwriting an explicit value.
+- Keep `운영 반영예정일` separate from the date-type `운영반영일`; never store `즉시 반영 필요` in `운영반영일`.
 - After a Notion READY/HOTFIX development item is implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update that Notion item status from READY/HOTFIX to DEV and set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
 - Treat the Notion `상태` change and `운영반영일` update as one operation, verify both values, and report any partial failure.
 - Do not move the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` before production reflection is complete.
