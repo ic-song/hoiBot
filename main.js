@@ -17207,14 +17207,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             count: 1
                         },
                         {
-                            item: "정령 강화석🥀",
-                            count: 1
-                        },
-                        {
-                            item: "마정석🔮",
-                            count: 1
-                        },
-                        {
                             item: "펫먹이특식🥡(/특식오픈)",
                             count: 1
                         },
