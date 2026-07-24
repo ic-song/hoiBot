@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.300"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.301"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1027,6 +1027,30 @@ blockedNicknameTerms: [
             diamondBoxDailyBuy: 100
         }
     },
+    guaranteedPackage: { // 확정 패키지 아이템·보상 설정
+        royal: {
+            itemName: "[🏡가구]로열패키지 확정(/로열오픈)",
+            maxBagSize: 32,
+            reward: {
+                name: "고대서적📘",
+                exp: 140000,
+                rate: 0.00001,
+                grade: "로열 루미에르"
+            }
+        },
+        genesis: {
+            itemName: "[🐹미니펫]창세패키지 확정(/창세오픈)",
+            maxBagSize: 8,
+            reward: {
+                name: "가온빛",
+                emoji: "💖",
+                grade: "창세",
+                battleExp: 1001280,
+                castleExp: 1001280,
+                raidExp: 1001280
+            }
+        }
+    },
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
@@ -1090,30 +1114,30 @@ blockedNicknameTerms: [
             ]
         },
         rememberMe: { // 날 기억해줘 이벤트 영지 설정
-            successRate: 0.7,
+            successRate: 0.3,
             successMessages: [
-                "[{{rank}}] 님의 마지막 외침이 길드원들에게 닿았습니다.",
+                "[{{rank}}] 님의 외침이 길드원들에게 닿았습니다.",
                 "[{{rank}}] 님의 이름이 길드의 역사에 새겨집니다.",
                 "[{{rank}}] 님을 기억하는 이들의 마음이 기적을 일으켰습니다.",
-                "[{{rank}}] 님의 희생이 전장의 운명을 뒤흔듭니다.",
+                "[{{rank}}] 님의 용기가 전장의 운명을 뒤흔듭니다.",
                 "[{{rank}}] 님의 간절한 바람에 길드원들이 응답했습니다.",
                 "[{{rank}}] 님의 흔적이 점령지에 강렬하게 남았습니다.",
                 "[{{rank}}] 님의 이름을 외치는 목소리가 전장에 울려 퍼집니다.",
-                "[{{rank}}] 님의 마지막 기억이 적의 점령지를 무너뜨립니다.",
-                "[{{rank}}] 님의 희생을 길드는 영원히 기억할 것입니다.",
-                "[{{rank}}] 님은 사라졌지만, 그 이름은 모두의 기억에 남았습니다."
+                "[{{rank}}] 님의 기억이 적의 점령지를 무너뜨립니다.",
+                "[{{rank}}] 님의 활약을 길드는 영원히 기억할 것입니다.",
+                "[{{rank}}] 님의 이름은 모두의 기억에 남았습니다."
             ],
             failMessages: [
-                "[{{rank}}] 님의 마지막 외침은 아무에게도 닿지 않았습니다.(탈락🥲)",
-                "[{{rank}}] 님의 이름은 전장의 소음 속에 묻혀버렸습니다.(탈락🥲)",
-                "[{{rank}}] 님을 기억하는 이는 아무도 없었습니다.(탈락🥲)",
-                "[{{rank}}] 님의 간절한 바람은 허무하게 사라졌습니다.(탈락🥲)",
-                "[{{rank}}] 님의 희생은 아무런 흔적도 남기지 못했습니다.(탈락🥲)",
-                "[{{rank}}] 님은 길드원들의 기억에서 조용히 잊혀졌습니다.(탈락🥲)",
-                "[{{rank}}] 님의 목소리에 아무도 응답하지 않았습니다.(탈락🥲)",
-                "[{{rank}}] 님이 남긴 마지막 흔적마저 사라졌습니다.(탈락🥲)",
-                "[{{rank}}] 님의 이름은 끝내 기억되지 못했습니다.(탈락🥲)",
-                "[{{rank}}] 님은 아무도 모르게 전장에서 사라졌습니다.(탈락🥲)"
+                "[{{rank}}] 님의 외침은 아무에게도 닿지 않았습니다.",
+                "[{{rank}}] 님의 이름은 전장의 소음 속에 묻혀버렸습니다.",
+                "[{{rank}}] 님을 기억하는 이는 아무도 없었습니다.",
+                "[{{rank}}] 님의 간절한 바람은 허무하게 사라졌습니다.",
+                "[{{rank}}] 님의 시도는 아무런 흔적도 남기지 못했습니다.",
+                "[{{rank}}] 님은 길드원들의 기억에서 조용히 잊혀졌습니다.",
+                "[{{rank}}] 님의 목소리에 아무도 응답하지 않았습니다.",
+                "[{{rank}}] 님이 남긴 흔적마저 사라졌습니다.",
+                "[{{rank}}] 님의 이름은 끝내 기억되지 못했습니다.",
+                "[{{rank}}] 님의 외침이 전장의 소음에 묻혔습니다."
             ]
         },
         items: { // 길드 영토전 아이템명 설정
@@ -5025,7 +5049,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         };
                     }
                     saveJsonFile(data, filePath);
-                    replier.reply("✅ [" + dormantTarget + "]님을 휴면계정으로 등록했습니다.\n/계정삭제·/계정잠수삭제 대상에서 제외됩니다.");
+                    replier.reply("✅ [" + dormantTarget + "]님을 휴면계정으로 등록했습니다.\n/계삭진행·/계정잠수삭제 대상에서 제외됩니다.");
                     return;
                 }
 
@@ -5133,6 +5157,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             if (data.member[targetUserToDelete]) {
                                 delete data.member[targetUserToDelete];
                             }
+                            removeAccountLifecycleEntriesOnDelete(data, targetUserToDelete);
                             if (petData[targetUserToDelete]) {
                                 delete petData[targetUserToDelete];
                             }
@@ -5922,6 +5947,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                             // 메인 계정
                             delete data.member[target];
+                            removeAccountLifecycleEntriesOnDelete(data, target);
 
                             // 펫
                             if (petData[target]) {
@@ -13494,6 +13520,116 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     msgOut += "🎟️ 추가지급: " + ticketItem + " " + ticketGive + "개\n";
                     msgOut += "\n👉 /미니펫가방 으로 확인해주세요.";
                     replier.reply(msgOut);
+                }
+
+                // ==============================
+                // /로열오픈
+                // - 로열패키지 확정 1개 소모
+                // - 고대서적 가구를 펫스윗홈 가구 보관함에 지급
+                // ==============================
+                if (msg === "/로열오픈") {
+                    var royalMember = data.member[sender];
+                    if (!royalMember) return;
+
+                    var royalPackage = GLOBAL_CONFIG.guaranteedPackage.royal;
+                    if (!hasItem(data, sender, royalPackage.itemName, 1)) {
+                        replier.reply("해당 확정 패키지를 보유하고 있지 않습니다.");
+                        return;
+                    }
+
+                    var royalHomeData = loadJsonFile(homeDataFile);
+                    initSweetHomeUser(royalHomeData, sender);
+                    if (!royalHomeData[sender].furnitureBag) royalHomeData[sender].furnitureBag = [];
+                    if (royalHomeData[sender].furnitureBag.length >= royalPackage.maxBagSize) {
+                        replier.reply("보관함 공간이 부족합니다.\n공간을 확보한 후 다시 시도해 주세요.");
+                        return;
+                    }
+
+                    var royalReward = {
+                        id: createCuId(),
+                        name: royalPackage.reward.name,
+                        exp: royalPackage.reward.exp,
+                        rate: royalPackage.reward.rate,
+                        grade: royalPackage.reward.grade
+                    };
+                    royalHomeData[sender].furnitureBag.push(royalReward);
+                    royalHomeData[sender].furnitureBag = sortFurnitureList(royalHomeData[sender].furnitureBag);
+                    removeItem(data, sender, royalPackage.itemName, 1);
+
+                    try {
+                        saveJsonFile(royalHomeData, homeDataFile);
+                        saveJsonFile(data, filePath);
+                    } catch (royalOpenError) {
+                        for (var royalIndex = royalHomeData[sender].furnitureBag.length - 1; royalIndex >= 0; royalIndex--) {
+                            if (royalHomeData[sender].furnitureBag[royalIndex].id === royalReward.id) {
+                                royalHomeData[sender].furnitureBag.splice(royalIndex, 1);
+                                break;
+                            }
+                        }
+                        addItem(data, sender, royalPackage.itemName, 1);
+                        try {
+                            saveJsonFile(royalHomeData, homeDataFile);
+                            saveJsonFile(data, filePath);
+                        } catch (royalRollbackError) {
+                            debuggerLog("[ERROR : 로열패키지 확정 롤백 실패] " + royalRollbackError);
+                        }
+                        throw royalOpenError;
+                    }
+
+                    replier.reply("🏡 로열패키지 확정 오픈!\n\n고대서적📘(+140,000💕)[로열 루미에르]을(를) 획득했습니다.");
+                    return;
+                }
+
+                // ==============================
+                // /창세오픈
+                // - 창세패키지 확정 1개 소모
+                // - 가온빛 미니펫을 미니펫 가방에 지급
+                // ==============================
+                if (msg === "/창세오픈") {
+                    var genesisMember = data.member[sender];
+                    if (!genesisMember) return;
+
+                    var genesisPackage = GLOBAL_CONFIG.guaranteedPackage.genesis;
+                    if (!hasItem(data, sender, genesisPackage.itemName, 1)) {
+                        replier.reply("해당 확정 패키지를 보유하고 있지 않습니다.");
+                        return;
+                    }
+
+                    if (!petData[sender]) petData[sender] = {};
+                    if (!petData[sender].miniPetBag) petData[sender].miniPetBag = [];
+                    if (petData[sender].miniPetBag.length >= genesisPackage.maxBagSize) {
+                        replier.reply("보관함 공간이 부족합니다.\n공간을 확보한 후 다시 시도해 주세요.");
+                        return;
+                    }
+
+                    var genesisReward = JSON.parse(JSON.stringify(genesisPackage.reward));
+                    petData[sender].miniPetBag.push(genesisReward);
+                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                    removeItem(data, sender, genesisPackage.itemName, 1);
+
+                    try {
+                        saveJsonFile(petData, memberPetPath);
+                        saveJsonFile(data, filePath);
+                    } catch (genesisOpenError) {
+                        for (var genesisIndex = petData[sender].miniPetBag.length - 1; genesisIndex >= 0; genesisIndex--) {
+                            if (petData[sender].miniPetBag[genesisIndex] === genesisReward) {
+                                petData[sender].miniPetBag.splice(genesisIndex, 1);
+                                break;
+                            }
+                        }
+                        refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                        addItem(data, sender, genesisPackage.itemName, 1);
+                        try {
+                            saveJsonFile(petData, memberPetPath);
+                            saveJsonFile(data, filePath);
+                        } catch (genesisRollbackError) {
+                            debuggerLog("[ERROR : 창세패키지 확정 롤백 실패] " + genesisRollbackError);
+                        }
+                        throw genesisOpenError;
+                    }
+
+                    replier.reply("🐹 창세패키지 확정 오픈!\n\n가온빛💖(+1001280💕)[창세]을(를) 획득했습니다.");
+                    return;
                 }
 
                 // ==============================
@@ -27490,7 +27626,7 @@ function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
     out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "환생 하고싶누?\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
-    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "주인공 되고싶누?\n(70% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
+    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "주인공 되고싶누?\n(30% 확률 점령지 1곳 미점령, 공격 1턴 소모)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
@@ -28401,7 +28537,7 @@ function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, at
         "회";
 }
 
-// 날 기억해줘 이벤트를 판정하고 점령지 해제·입장 유저 탈락을 적용
+// 날 기억해줘 이벤트를 판정하고 성공 시 점령지 한 곳을 해제
 function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attackInfo) {
     var war = ensureGuildTerritoryWar(data, guildData);
     var rank = checkRank(data, petData, guildData, sender);
@@ -28420,13 +28556,6 @@ function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attac
     var success = occupiedTerritories.length > 0 && Math.random() < GLOBAL_CONFIG.guildTerritory.rememberMe.successRate;
     var messages = success ? GLOBAL_CONFIG.guildTerritory.rememberMe.successMessages : GLOBAL_CONFIG.guildTerritory.rememberMe.failMessages;
     var message = messages[Math.floor(Math.random() * messages.length)].replace("{{rank}}", rank);
-
-    war.eliminatedUsers[sender] = {
-        guildId: attackInfo.guildId,
-        reason: "REMEMBER_ME",
-        at: formatDateTime(new Date()),
-        turnsUsed: 1
-    };
 
     if (!success) {
         return "🎖️길드 영지전 결과🎖️\n\n[날 기억해줘 실패😭]\n" +
@@ -31153,6 +31282,14 @@ function ensureAccountSuspensions(data) {
         data.accountSuspensions.users = {};
     }
     return data.accountSuspensions.users;
+}
+
+// 계정 삭제 대상의 정지·휴면 목록 항목을 함께 제거하는 함수
+function removeAccountLifecycleEntriesOnDelete(data, userName) {
+    var suspendedAccounts = ensureAccountSuspensions(data);
+    var dormantAccounts = ensureDormantAccounts(data);
+    if (suspendedAccounts[userName]) delete suspendedAccounts[userName];
+    if (dormantAccounts[userName]) delete dormantAccounts[userName];
 }
 
 // 특정 유저가 계정정지 상태인지 확인하는 함수

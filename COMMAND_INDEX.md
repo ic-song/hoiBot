@@ -22,6 +22,82 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /로열오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/로열오픈`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `initSweetHomeUser`
+- `createCuId`
+- `sortFurnitureList`
+
+## Data Usage
+
+- `data.member[sender].bag["[🏡가구]로열패키지 확정(/로열오픈)"]`
+- `homeData[sender].furnitureBag`
+- `GLOBAL_CONFIG.guaranteedPackage.royal`
+
+## Save Flow
+
+- 가구 보관함 32칸을 먼저 확인하고 패키지 1개를 소모해 `고대서적📘(+140,000💕)[로열 루미에르]` 1개를 지급한다.
+- 성공 시 `homeDataFile`과 `filePath`를 저장하며, 저장 실패 시 지급 가구 제거와 패키지 복원을 시도한다.
+
+## AI Notes
+
+- Exact command guard: `/로열오픈`.
+- 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+
+---
+
+# /창세오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/창세오픈`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `refreshMiniPetSortIndex`
+
+## Data Usage
+
+- `data.member[sender].bag["[🐹미니펫]창세패키지 확정(/창세오픈)"]`
+- `petData[sender].miniPetBag`
+- `GLOBAL_CONFIG.guaranteedPackage.genesis`
+
+## Save Flow
+
+- 미니펫 가방 8칸을 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
+- 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
+
+## AI Notes
+
+- Exact command guard: `/창세오픈`.
+- 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+
+---
+
 # /글자수통계
 
 Status: VERIFIED
@@ -645,7 +721,7 @@ Status: VERIFIED
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
 - `/영지공격 8` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
-- `/영지공격 9` saves `guildData` and `data` after one-turn deduction, user elimination, and an optional occupied-territory release
+- `/영지공격 9` saves `guildData` and `data` after one-turn deduction and an optional occupied-territory release
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -679,7 +755,7 @@ Status: VERIFIED
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
-- `/영지공격 9` triggers 날 기억해줘😭 when enabled: the guild and user each consume one attack, the entering user is always eliminated, and a 50% success releases one randomly selected occupied territory among `[1]~[7]`.
+- `/영지공격 9` triggers 날 기억해줘😭 when enabled: the guild and user each consume one attack, the entering user remains in the rotation, and a 30% success releases one randomly selected occupied territory among `[1]~[7]`.
 - Releasing `[1] 호월킹덤🏰` also clears the current lord, earnings, and defense count so `ensureGuildTerritoryWar` cannot restore the released ownership.
 - 공격 시점에 점령지 3개를 보유한 길드는 턴 길드자금 보상이 5천만에서 1억으로 두 배 적용되며 결과에 `점령 3개 추가보너스 획득`이 표시된다.
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
@@ -2971,7 +3047,7 @@ Status: VERIFIED
 - 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
-- `/계정삭제`와 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
+- `/계삭진행`과 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
@@ -2990,6 +3066,7 @@ Status: VERIFIED
 - isDormantAccount
 - buildDormantAccountListMessage
 - ensureAccountSuspensions
+- removeAccountLifecycleEntriesOnDelete
 - buildAccountSuspensionListMessage
 - formatDormantDateText
 - getDormantDays
@@ -3002,9 +3079,10 @@ Status: VERIFIED
 ## Save Flow
 - `/휴면계정 [아이디]` registers `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
 - `/휴면해제 [아이디]` deletes `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
-- `/계정삭제` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
+- `/계삭진행` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
 - `/계정잠수명단` and `/계정잠수삭제` exclude registered dormant accounts from removal candidates
 - `/계정잠수삭제` reports dormant accounts that matched the sleep condition but were protected
+- `/계삭진행`과 `/계정잠수삭제`에서 실제 삭제된 아이디는 `data.accountSuspensions.users`와 `data.dormantAccounts`에서도 함께 제거한다.
 - `/휴면계정리스트` and `/계정정지리스트` are read-only and do not save member data
 
 ## Related Commands
@@ -3012,7 +3090,7 @@ Status: VERIFIED
 - `/휴면해제 [아이디]`
 - `/휴면계정리스트`
 - `/계정정지리스트`
-- `/계정삭제`
+- `/계삭진행 [아이디1, 아이디2, ...]`
 - `/계정잠수명단`
 - `/계정잠수삭제 [숫자]`
 
