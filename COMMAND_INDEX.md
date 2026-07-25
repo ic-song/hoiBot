@@ -1916,7 +1916,7 @@ Status: VERIFIED
 
 ## Save Flow
 - `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
-- Expired newbie/hoi cleanup removes all `자동탐험권🌄` only when neither newbie nor hoi pass remains active
+- `/패스목록` removes stale `자동탐험권🌄` for users with managed newbie/hoi pass history whenever neither automatic-explore pass remains active, including tickets left from an earlier cleanup
 - `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
@@ -1924,7 +1924,7 @@ Status: VERIFIED
 - Past end dates are rejected before pass mutation and automatic ticket grant
 - Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
 - Finite passes remain active through the displayed end date and are removed from the active list on D+1
-- Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply
+- Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply; newbie/hoi deletion also confirms whether the automatic-explore ticket was recovered or retained
 
 ## Related Commands
 - `/원데이패스추가, [아이디] [날짜|영구권]`

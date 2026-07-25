@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.302"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.303"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -30360,7 +30360,6 @@ function cleanupExpiredSupportPasses(data) {
         if (!data.member.hasOwnProperty(user)) continue;
         var member = data.member[user];
         if (!member || !member.pass) continue;
-        var autoPassExpired = false;
         for (var i = 0; i < configs.length; i++) {
             var config = configs[i];
             var pass = member.pass[config.key];
@@ -30375,10 +30374,10 @@ function cleanupExpiredSupportPasses(data) {
             pass.enabled = false;
             result.changed = true;
             result.expiredCount++;
-            if (config.key === "newbie" || config.key === "hoi") autoPassExpired = true;
             debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
         }
-        if (autoPassExpired && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
+        var hasManagedAutoPass = !!(member.pass.newbie || member.pass.hoi);
+        if (hasManagedAutoPass && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
             var removedTicketCount = removeAllItem(data, user, "자동탐험권🌄");
             if (removedTicketCount > 0) {
                 result.changed = true;
@@ -30512,7 +30511,20 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
         return lines.join("\n");
     }
     if (pass && pass.enabled === true) return "\n⚠️ 저장확인: member.json에서 패스 삭제를 확인하지 못했습니다.";
-    return "\n저장확인: 패스 삭제 저장 완료";
+    var deleteLines = ["\n저장확인: 패스 삭제 저장 완료"];
+    if (meta.config.key === "newbie" || meta.config.key === "hoi") {
+        var remainingTicketCount = member.bag && member.bag["자동탐험권🌄"] ? member.bag["자동탐험권🌄"] : 0;
+        if (!isSupportPassActive(savedData, meta.user, "newbie") && !isSupportPassActive(savedData, meta.user, "hoi")) {
+            if (remainingTicketCount > 0) {
+                deleteLines.push("⚠️ 저장확인: 자동탐험권🌄 " + remainingTicketCount + "개가 남아 있습니다.");
+            } else {
+                deleteLines.push("저장확인: 자동탐험권🌄 회수 완료");
+            }
+        } else {
+            deleteLines.push("저장확인: 다른 자동탐험 패스가 유효하여 자동탐험권🌄 유지");
+        }
+    }
+    return deleteLines.join("\n");
 }
 
 function processUserIDCommand(msg, data) {
