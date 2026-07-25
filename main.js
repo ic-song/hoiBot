@@ -965,9 +965,9 @@ blockedNicknameTerms: [
     freeMarket: { // 자유시장 설정
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
-        tradeFeeRate: 0.19, // 자유시장 기본 거래 수수료율
-        memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
-        memberFeeTag: "자회원🏪(수수료 10%)"
+        tradeFeeRate: 0.1, // 자유시장 기본 거래 수수료율
+        memberTradeFeeRate: 0.05, // 자유시장회원권 보유자 거래 수수료율
+        memberFeeTag: "자회원🏪(수수료 5%)"
     },
     titleGift: { // 타이틀 선물 설정
         itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)",
@@ -34787,8 +34787,8 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
     var listings = getFreeMarketActiveListings(freeMarketData);
     var out = "🏪 호이월드 자유시장 🏪\n";
     out += "━━━━━━━━━━━━\n";
-    out += "💰수수료: 판매금액의 19%\n";
-    out += "🏪 자유시장회원권: 소지시 수수료 10%\n";
+    out += "💰수수료: 판매금액의 10%\n";
+    out += "🏪 자유시장회원권: 소지시 수수료 5%\n";
     out += "🛒구매: /자유시장구매 [번호]\n";
     out += "❌취소: /자유시장취소 [번호]\n";
     out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -34823,8 +34823,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
     out += "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-    out += "💰수수료는 판매금액의 19%\n";
-    out += "🏪 자유시장회원권 소지시 수수료 10%\n"
+    out += "💰수수료는 판매금액의 10%\n";
+    out += "🏪 자유시장회원권 소지시 수수료 5%\n"
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
