@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.301"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.302"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -5523,6 +5523,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
                 if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
+                    var supportPassCleanupResult = cleanupExpiredSupportPasses(data);
+                    if (supportPassCleanupResult.changed) saveJsonFile(data, filePath);
                     replier.reply(buildSupportPassListMessage(data, petData, guildData));
                     return;
                 }
@@ -27618,13 +27620,14 @@ function getGuildTerritoryTimeoutMissCount(war, guildId) {
 function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
     var war = ensureGuildTerritoryWar(data, guildData);
     var list = getGuildTerritoryList();
-    var out = "🎖️현재 길드 영지전 상황🎖️\n\n";
+    var out = "🎖️현재 길드 영지전 상황🎖️\n━━━━━━━━━━━━\n";
 
     for (var i = 0; i < list.length; i++) {
         var ter = war.territories[String(list[i].no)];
         var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
+    out += "━━━━━━━━━━━━\n";
     out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "환생 하고싶누?\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
     out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "주인공 되고싶누?\n(30% 확률 점령지 1곳 미점령, 공격 1턴 소모)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
@@ -30293,22 +30296,27 @@ function ensureSupportPassStore(data, user) {
 
 // 후원패스 날짜 문자열이 유효한지 확인하는 함수
 function isValidSupportPassDateText(text) {
-    return /^\d{2}\.\d{2}\.\d{2}$/.test(String(text || ""));
+    return getSupportPassDateValue(text) !== null;
 }
 
 // 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
 function getSupportPassDateValue(text) {
     var match = String(text || "").match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
     if (!match) return null;
-    return parseInt("20" + match[1] + match[2] + match[3], 10);
+    var year = 2000 + parseInt(match[1], 10);
+    var month = parseInt(match[2], 10);
+    var day = parseInt(match[3], 10);
+    var date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) return null;
+    return year * 10000 + month * 100 + day;
 }
 
-// 오늘 날짜를 후원패스 비교값으로 반환하는 함수
+// 한국 시간의 오늘 날짜를 후원패스 비교값으로 반환하는 함수
 function getTodaySupportPassDateValue() {
-    var now = new Date();
-    var y = now.getFullYear();
-    var m = now.getMonth() + 1;
-    var d = now.getDate();
+    var now = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+    var y = now.getUTCFullYear();
+    var m = now.getUTCMonth() + 1;
+    var d = now.getUTCDate();
     return y * 10000 + m * 100 + d;
 }
 
@@ -30339,6 +30347,66 @@ function getActiveSupportPassUsers(data, passKey) {
     for (var user in data.member) {
         if (isSupportPassActive(data, user, passKey)) users.push(user);
     }
+    return users;
+}
+
+// 만료된 후원패스를 정리하고 자격이 끝난 자동탐험권을 회수하는 함수
+function cleanupExpiredSupportPasses(data) {
+    var result = { changed: false, expiredCount: 0, removedTicketCount: 0, invalidDateCount: 0 };
+    if (!data || !data.member) return result;
+    var configs = getSupportPassConfigs();
+    var todayValue = getTodaySupportPassDateValue();
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var member = data.member[user];
+        if (!member || !member.pass) continue;
+        var autoPassExpired = false;
+        for (var i = 0; i < configs.length; i++) {
+            var config = configs[i];
+            var pass = member.pass[config.key];
+            if (!pass || pass.enabled !== true || pass.permanent === true) continue;
+            var expireValue = getSupportPassDateValue(pass.endDate);
+            if (expireValue === null) {
+                result.invalidDateCount++;
+                debuggerLog("[후원패스 만료 정리] 잘못된 날짜로 자동 정리 제외: " + user + " / " + config.key + " / " + pass.endDate);
+                continue;
+            }
+            if (expireValue >= todayValue) continue;
+            pass.enabled = false;
+            result.changed = true;
+            result.expiredCount++;
+            if (config.key === "newbie" || config.key === "hoi") autoPassExpired = true;
+            debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
+        }
+        if (autoPassExpired && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
+            var removedTicketCount = removeAllItem(data, user, "자동탐험권🌄");
+            if (removedTicketCount > 0) {
+                result.changed = true;
+                result.removedTicketCount += removedTicketCount;
+                debuggerLog("[후원패스 만료 정리] 자동탐험권 회수: " + user + " / " + removedTicketCount + "개");
+            }
+        }
+    }
+    return result;
+}
+
+// 자동탐험권 보유 자격이 없는 유저 목록을 반환하는 함수
+function getInvalidAutoExploreTicketUsers(data) {
+    var users = [];
+    if (!data || !data.member) return users;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var member = data.member[user];
+        var ticketCount = member && member.bag ? parseInt(member.bag["자동탐험권🌄"], 10) || 0 : 0;
+        if (ticketCount < 1) continue;
+        if (isSupportPassActive(data, user, "newbie") || isSupportPassActive(data, user, "hoi")) continue;
+        users.push({ user: user, count: ticketCount });
+    }
+    users.sort(function (a, b) {
+        if (a.user < b.user) return -1;
+        if (a.user > b.user) return 1;
+        return 0;
+    });
     return users;
 }
 
@@ -30390,6 +30458,24 @@ function buildSupportPassListMessage(data, petData, guildData) {
         }
         lines.push("━━━━━━━━━━━");
         lines.push("");
+    }
+    var invalidTicketUsers = getInvalidAutoExploreTicketUsers(data);
+    lines.push("━━━━━━━━━━━━");
+    if (invalidTicketUsers.length < 1) {
+        lines.push("✅ 자동탐험권 정합성 검사");
+        lines.push("삭제 대상 유저가 없습니다.");
+    } else {
+        lines.push("⚠️ 자동탐험권 수동 삭제해야하는 유저");
+        lines.push("━━━━━━━━━━━━");
+        lines.push("초보패스·호이패스 명단에는 없지만");
+        lines.push("자동탐험권🌄을 보유 중인 유저입니다.");
+        lines.push("");
+        for (var invalidIndex = 0; invalidIndex < invalidTicketUsers.length; invalidIndex++) {
+            var invalidTicketUser = invalidTicketUsers[invalidIndex];
+            lines.push((invalidIndex + 1) + ". " + checkRank(data, petData, guildData, invalidTicketUser.user) + " — 자동탐험권🌄 x" + invalidTicketUser.count);
+        }
+        lines.push("");
+        lines.push("총 " + invalidTicketUsers.length + "명");
     }
     return lines.join("\n");
 }
@@ -30474,8 +30560,12 @@ function processUserIDCommand(msg, data) {
     userPassStore[passConfig.key].enabled = false;
     var deleteLines = [userIDText + " 사용자의 패스가 삭제되었습니다."];
     if (passConfig.key === "newbie" || passConfig.key === "hoi") {
-        removeAllItem(data, userIDText, "자동탐험권🌄");
-        deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
+        if (!isSupportPassActive(data, userIDText, "newbie") && !isSupportPassActive(data, userIDText, "hoi")) {
+            removeAllItem(data, userIDText, "자동탐험권🌄");
+            deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
+        } else {
+            deleteLines.push("다른 자동탐험 패스가 유효하여 자동탐험권🌄을 유지합니다.");
+        }
     }
     return deleteLines.join("\n");
 }

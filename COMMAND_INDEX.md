@@ -1904,6 +1904,8 @@ Status: VERIFIED
 
 ## Related Helpers
 - `buildSupportPassListMessage`
+- `cleanupExpiredSupportPasses`
+- `getInvalidAutoExploreTicketUsers`
 - `getSupportPassConfigs`
 - `isSupportPassActive`
 - `getActiveSupportPassUsers`
@@ -1913,11 +1915,15 @@ Status: VERIFIED
 - `data.member[user].bag["자동탐험권🌄"]`
 
 ## Save Flow
-- `/패스목록` is read-only
+- `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
+- Expired newbie/hoi cleanup removes all `자동탐험권🌄` only when neither newbie nor hoi pass remains active
+- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
-- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄`
+- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when the other automatic-explore pass is also inactive
 - Past end dates are rejected before pass mutation and automatic ticket grant
+- Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
+- Finite passes remain active through the displayed end date and are removed from the active list on D+1
 - Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply
 
 ## Related Commands
