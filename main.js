@@ -30462,6 +30462,7 @@ function cleanupExpiredSupportPasses(data) {
         if (!data.member.hasOwnProperty(user)) continue;
         var member = data.member[user];
         if (!member || !member.pass) continue;
+        var autoPassExpired = false;
         for (var i = 0; i < configs.length; i++) {
             var config = configs[i];
             var pass = member.pass[config.key];
@@ -30476,10 +30477,10 @@ function cleanupExpiredSupportPasses(data) {
             pass.enabled = false;
             result.changed = true;
             result.expiredCount++;
+            if (config.key === "newbie" || config.key === "hoi") autoPassExpired = true;
             debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
         }
-        var hasManagedAutoPass = !!(member.pass.newbie || member.pass.hoi);
-        if (hasManagedAutoPass && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
+        if (autoPassExpired && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
             var removedTicketCount = removeAllItem(data, user, "자동탐험권🌄");
             if (removedTicketCount > 0) {
                 result.changed = true;
