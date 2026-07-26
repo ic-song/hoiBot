@@ -22,6 +22,40 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# 1:1톡 패스 접근 제한
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+
+- `hasActiveHoiOrNewbiePass`
+- `hasInfoPrivateChatPass`
+- `isSupportPassActive`
+- `isInfoSupportPassActive`
+
+## Data Usage
+
+- `data.member[user].pass.newbie`
+- `data.member[user].pass.hoi`
+
+## Save Flow
+
+- 패스 상태를 읽기만 하며 데이터를 변경하거나 저장하지 않는다.
+
+## AI Notes
+
+- 그룹채팅은 기존 명령어 흐름을 유지한다.
+- 1:1톡은 활성 초보패스 또는 호이패스가 없으면 `main.js`와 `Info.js` 모두 명령 실행 전에 반환한다.
+- `main.js`는 패스 없는 1:1 입력에 패스 필요 안내를 응답하고, `Info.js`는 중복 안내 없이 실행만 차단한다.
+- `main.js`의 DEV 데이터 백업과 봇 복구 명령은 기존 비상 복구 흐름을 유지한다.
+
+---
+
 # /로열오픈
 
 Status: VERIFIED
