@@ -471,6 +471,7 @@ Status: VERIFIED
 - `trimPetHomeComments`
 - `cleanupPetHomePassBenefitData`
 - `hasActiveHoiOrNewbiePass`
+- `getPetHomePassBenefitCost`
 - `getFurnitureExp`
 - `getPlacedFurnitureList`
 - `getFurnitureMaxSlots`
@@ -494,15 +495,15 @@ Status: VERIFIED
 ## Save Flow
 
 - `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
-- `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
-- `/댓글핀 [번호]`: deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies and appends to `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
-- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated.
+- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost.
 - Duplicate comments by the same writer are allowed.
 
 ## Related Commands
@@ -4339,7 +4340,6 @@ Status: VERIFIED
 - `ensureHappyFoundationData`
 - `addPoint`
 - `addHappyFoundationFee`
-- `hasActiveHoiOrNewbiePass`
 
 ## Data Usage
 
@@ -4351,7 +4351,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- On successful transfer, subtracts transfer amount plus fee from sender and adds transfer amount to target; active hoi/newbie pass users pay zero fee, while other fees are added to the happy foundation ledger/captain before saving `member.json`
+- On successful transfer, subtracts transfer amount plus the configured fee from sender and adds transfer amount to target; `호이행복재단 회원권` still applies its existing half-fee benefit, and collected fees are added to the happy foundation ledger/captain before saving `member.json`
 - Reloads `member.json` immediately after save and verifies sender/target point values
 
 ## Related Commands
@@ -4364,7 +4364,6 @@ Status: VERIFIED
 - Exact/full-pattern command guard: `/이체 [유저] [숫자]`
 - Amount input is rejected when the transfer amount, fee, or total required point exceeds the safe range used for point arithmetic; existing held balances are not used as a separate safe-range blocker
 - Fee calculation must never use `total - amount` as the primary fee value; oversized or negative fee/total values must be rejected before mutating points
-- Active hoi/newbie pass fee exemption takes precedence over the `호이행복재단 회원권` half-fee benefit and displays the applied fee as `0`.
 
 ---
 
