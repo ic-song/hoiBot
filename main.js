@@ -685,6 +685,8 @@ const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗�
 const petHomePlacedFurniturePath = "/sdcard/호이랜드/petHomePlacedFurniture.json"; // 펫홈 장착 가구 상세 데이터
 const petHomeBeforeSplitBackupPath = "/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json"; // 장착 가구 최초 분리 전 1회 백업
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
+const petHomePassBenefitHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 펫홈 백업
+const petHomePassBenefitCommentsBackupPath = "/sdcard/호이랜드/backups/petHomeComments_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 댓글 백업
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
@@ -1821,6 +1823,73 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
             saveJsonFile({ comments: {}, pinnedComments: {} }, petHomeCommentsFile);
             replier.reply("✅ 펫홈 댓글 파일 생성 완료\n" + activePetHomeCommentsFile);
+            return;
+        }
+
+        if (msg === "/펫홈패스개편정리" && (isAdmin(sender) || isMaster(sender))) {
+            var passBenefitHomeData = loadJsonFile(homeDataFile);
+            var passBenefitCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+            if (passBenefitCommentsData.migrations && passBenefitCommentsData.migrations.passBenefits20260726 === true) {
+                replier.reply("✅ 펫홈 패스 혜택 개편 정리가 이미 완료되었습니다.");
+                return;
+            }
+
+            var passBenefitHomeBackupFile = new java.io.File(resolveActiveDataPath(petHomePassBenefitHomeBackupPath));
+            var passBenefitCommentsBackupFile = new java.io.File(resolveActiveDataPath(petHomePassBenefitCommentsBackupPath));
+            var homeBackupStatus = "기존 백업 유지";
+            var commentsBackupStatus = "기존 백업 유지";
+            if (passBenefitHomeBackupFile.exists()) {
+                loadJsonFile(petHomePassBenefitHomeBackupPath);
+            } else {
+                saveJsonFile(passBenefitHomeData, petHomePassBenefitHomeBackupPath);
+                loadJsonFile(petHomePassBenefitHomeBackupPath);
+                homeBackupStatus = "생성 완료";
+            }
+            if (passBenefitCommentsBackupFile.exists()) {
+                loadJsonFile(petHomePassBenefitCommentsBackupPath);
+            } else {
+                saveJsonFile(passBenefitCommentsData, petHomePassBenefitCommentsBackupPath);
+                loadJsonFile(petHomePassBenefitCommentsBackupPath);
+                commentsBackupStatus = "생성 완료";
+            }
+
+            var passBenefitCleanupResult = cleanupPetHomePassBenefitData(passBenefitHomeData, passBenefitCommentsData);
+            saveJsonFile(passBenefitHomeData, homeDataFile);
+            saveJsonFile(passBenefitCommentsData, petHomeCommentsFile);
+
+            var verifiedPassBenefitHomeData = loadJsonFile(homeDataFile);
+            var verifiedPassBenefitCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+            if (!verifiedPassBenefitCommentsData.migrations || verifiedPassBenefitCommentsData.migrations.passBenefits20260726 !== true) {
+                throw new Error("펫홈 패스 혜택 개편 정리 플래그 저장 확인 실패");
+            }
+            if (Object.keys(verifiedPassBenefitCommentsData.comments).length > 0) {
+                throw new Error("펫홈 일반 댓글 정리 저장 확인 실패");
+            }
+            var verifiedPinnedCommentCount = 0; // 저장 후 유지된 댓글핀 총개수
+            for (var verifiedPinnedUser in verifiedPassBenefitCommentsData.pinnedComments) {
+                if (!verifiedPassBenefitCommentsData.pinnedComments.hasOwnProperty(verifiedPinnedUser)) continue;
+                if (verifiedPassBenefitCommentsData.pinnedComments[verifiedPinnedUser] instanceof Array) {
+                    verifiedPinnedCommentCount += verifiedPassBenefitCommentsData.pinnedComments[verifiedPinnedUser].length;
+                }
+            }
+            if (verifiedPinnedCommentCount !== passBenefitCleanupResult.preservedPinnedCount) {
+                throw new Error("펫홈 댓글핀 보존 저장 확인 실패");
+            }
+            for (var verifiedPassBenefitUser in verifiedPassBenefitHomeData) {
+                if (!verifiedPassBenefitHomeData.hasOwnProperty(verifiedPassBenefitUser)) continue;
+                if (verifiedPassBenefitHomeData[verifiedPassBenefitUser] && verifiedPassBenefitHomeData[verifiedPassBenefitUser].likeCnt !== undefined) {
+                    throw new Error("펫홈 좋아홈 정리 저장 확인 실패: " + verifiedPassBenefitUser);
+                }
+            }
+
+            replier.reply(
+                "✅ 펫홈 패스 혜택 개편 정리 완료\n\n" +
+                "일반 댓글 삭제: " + numberWithCommas(passBenefitCleanupResult.removedCommentCount) + "개\n" +
+                "댓글핀 유지: " + numberWithCommas(passBenefitCleanupResult.preservedPinnedCount) + "개\n" +
+                "좋아홈 초기화: " + numberWithCommas(passBenefitCleanupResult.resetLikeUserCount) + "명 / " + numberWithCommas(passBenefitCleanupResult.resetLikeCount) + "개\n\n" +
+                "펫홈 백업: " + homeBackupStatus + "\n" +
+                "댓글 백업: " + commentsBackupStatus
+            );
             return;
         }
 
@@ -16120,8 +16189,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var transferFee = calculateTransferFee(transferAmount, transferFeeRate);
                     var isDiscounted = false; // 호이행복재단 회원권으로 할인 적용 여부
                     var discountedFeeRate = transferFeeRate; // 할인된 수수료율 초기값은 원래 수수료율로 설정
+                    var isSupportPassFeeExempt = hasActiveHoiOrNewbiePass(data, sender); // 패스 혜택으로 이체 수수료가 면제되는지 확인
 
-                    if (hasPetSkill(petSkillData, sender, "호이행복재단 회원권")) {
+                    if (isSupportPassFeeExempt) {
+                        transferFee = 0;
+                        discountedFeeRate = 0;
+                    } else if (hasPetSkill(petSkillData, sender, "호이행복재단 회원권")) {
                         discountedFeeRate = Math.floor((transferFeeRate / 2) * 10) / 10;
                         transferFee = Math.floor(transferFee / 2);
                         isDiscounted = true;
@@ -16179,7 +16252,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     addPoint(data, sender, -totalRequiredPoint);
                     addPoint(data, targetUser, transferAmount);
-                    var feeReceiverNew = addHappyFoundationFee(data, transferFee);
+                    var feeReceiverNew = transferFee > 0 ? addHappyFoundationFee(data, transferFee) : "";
 
                     replier.reply(
                         "[" +
@@ -16192,7 +16265,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         formatPointValue(transferAmount) +
                         "를 이체했습니다.\n\n" +
                         "이체 수수료🤫: " +
-                        (isDiscounted ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%(호행권📙)" : formatTransferFeeRate(transferFeeRate) + "%") +
+                        (isSupportPassFeeExempt ? formatTransferFeeRate(transferFeeRate) + "→ 0%(호이·초보패스)" : isDiscounted ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%(호행권📙)" : formatTransferFeeRate(transferFeeRate) + "%") +
                         "\n(-🅟" +
                         formatPointValue(transferFee) +
                         ")\n" +
@@ -16202,12 +16275,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "\n\n" +
                         "※ 이체수수료란?\n" +
                         "이체금액의 " +
-                        formatTransferFeeRate(transferFeeRate) +
-                        "%를 기준으로 수수료가 별도 차감됩니다.\n" +
+                        (isSupportPassFeeExempt ? "0%(호이·초보패스)" : formatTransferFeeRate(transferFeeRate) + "%") +
+                        "를 기준으로 수수료가 별도 차감됩니다.\n" +
                         "받는 유저는 신청한 이체금액 그대로 받습니다.\n" +
-                        "※ 이체 수수료는 " +
-                        (feeReceiverNew ? "[" + checkRank(data, petData, guildData, feeReceiverNew) + "]" : "호이행복재단♥️") +
-                        "으로 기부되며 어려운 이웃을 돕습니다."
+                        (isSupportPassFeeExempt
+                            ? "※ 호이패스·초보패스 혜택으로 이체 수수료가 면제되었습니다."
+                            : "※ 이체 수수료는 " + (feeReceiverNew ? "[" + checkRank(data, petData, guildData, feeReceiverNew) + "]" : "호이행복재단♥️") + "으로 기부되며 어려운 이웃을 돕습니다.")
                     );
 
                     var expectedSenderPoint = roundToTwo(data.member[sender].point);
@@ -19922,6 +19995,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/댓글삭제" || /^\/댓글삭제\s+\d+$/.test(msg)) {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     let parts = msg.trim().split(/\s+/);
                     if (parts.length < 2) {
                         replier.reply("사용법: /댓글삭제 [번호]\n예시: /댓글삭제 1");
@@ -19955,6 +20032,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/댓글핀삭제" || /^\/댓글핀삭제\s+\d+$/.test(msg)) {
                     if (!isRegisteredHomeMember(data, sender)) return;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     if (!petData[sender] || !petData[sender].petname) {
                         replier.reply("[" + sender + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
@@ -19992,6 +20073,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/댓글확인" || /^\/댓글확인\s+.+$/.test(msg)) {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     let parts = msg.trim().split(/\s+/);
                     let targetName = sender;
                     if (parts.length > 1) {
@@ -20009,6 +20094,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/댓글핀" || /^\/댓글핀\s+\d+$/.test(msg)) {
                     if (!isRegisteredHomeMember(data, sender)) return;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     if (!petData[sender] || !petData[sender].petname) {
                         replier.reply("[" + sender + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
@@ -20069,6 +20158,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/댓글" || /^\/댓글\s+.+$/.test(msg)) {
                     let senderNick = checkRank(data, petData, guildData, sender);
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + senderNick + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     let cost = 10000000;
                     let raw = msg.substring(3).trim();
                     if (!raw) {
@@ -20080,6 +20173,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let comment = parsed.rest;
                     if (!targetName) {
                         replier.reply("❌ 닉네임을 찾을 수 없습니다.\n예) /댓글 호이 남 잘들렸다가요!");
+                        return;
+                    }
+                    if (!hasActiveHoiOrNewbiePass(data, targetName)) {
+                        replier.reply("[" + senderNick + "] 님 ❌ 호이패스 또는 초보패스 활성 가입자의 펫홈에만 댓글을 작성할 수 있습니다.");
                         return;
                     }
                     if (!comment) {
@@ -20929,7 +21026,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.startsWith("/좋아홈")) {
+                if (msg === "/좋아홈" || /^\/좋아홈\s+.+$/.test(msg)) {
                     // 파라미터 파싱
                     let parts = msg.trim().split(/\s+/);
                     if (parts.length < 2) {
@@ -20938,6 +21035,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     let targetName = parts.slice(1).join(" ").trim(); // 닉네임은 띄어쓰기 허용
                     let senderName = sender;
+                    let nickName = checkRank(data, petData, guildData, senderName);
+                    if (!hasActiveHoiOrNewbiePass(data, senderName)) {
+                        replier.reply("[" + nickName + "] 님 ❌ 좋아홈은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
+                    if (!data.member[targetName]) {
+                        replier.reply("[" + targetName + "] 님은 아직 펫을 생성하지 않았습니다.");
+                        return;
+                    }
+                    if (!hasActiveHoiOrNewbiePass(data, targetName)) {
+                        replier.reply("[" + nickName + "] 님 ❌ 호이패스 또는 초보패스 활성 가입자의 펫홈에만 좋아홈을 보낼 수 있습니다.");
+                        return;
+                    }
                     // 자기 자신 금지
                     if (targetName == senderName) {
                         replier.reply("자기 자신에게는 좋아홈💌을 보낼 수 없습니다!");
@@ -20953,7 +21063,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     // 파일 로드
                     let homeData = loadJsonFile(homeDataFile);
-                    let nickName = checkRank(data, petData, guildData, senderName);
                     // 안전 초기화
                     homeData = initSweetHomeUser(homeData, senderName);
                     homeData = initSweetHomeUser(homeData, targetName);
@@ -26046,7 +26155,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
-        "/펫홈댓글파일생성", "/개발자노트"
+        "/펫홈댓글파일생성", "/펫홈패스개편정리", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -30326,6 +30435,11 @@ function isSupportPassActive(data, user, passKey) {
     var expireValue = getSupportPassDateValue(pass.endDate);
     if (expireValue === null) return true;
     return expireValue >= getTodaySupportPassDateValue();
+}
+
+// 호이패스 또는 초보패스가 현재 활성 상태인지 확인하는 함수
+function hasActiveHoiOrNewbiePass(data, user) {
+    return isSupportPassActive(data, user, "hoi") || isSupportPassActive(data, user, "newbie");
 }
 
 // 현재 사용 가능한 후원패스 유저 목록을 반환하는 함수
@@ -36315,6 +36429,41 @@ function initPetHomeCommentsData(commentsData) {
     if (!commentsData.comments || typeof commentsData.comments !== "object") commentsData.comments = {};
     if (!commentsData.pinnedComments || typeof commentsData.pinnedComments !== "object") commentsData.pinnedComments = {};
     return commentsData;
+}
+
+// 패스 혜택 개편을 위해 일반 댓글과 좋아홈 수치를 한 번 정리하는 함수
+function cleanupPetHomePassBenefitData(homeData, commentsData) {
+    commentsData = initPetHomeCommentsData(commentsData);
+    if (!commentsData.migrations || typeof commentsData.migrations !== "object") commentsData.migrations = {};
+    var result = { changed: false, alreadyApplied: false, removedCommentCount: 0, preservedPinnedCount: 0, resetLikeUserCount: 0, resetLikeCount: 0 };
+    if (commentsData.migrations.passBenefits20260726 === true) {
+        result.alreadyApplied = true;
+        return result;
+    }
+
+    for (var commentUser in commentsData.comments) {
+        if (!commentsData.comments.hasOwnProperty(commentUser)) continue;
+        if (commentsData.comments[commentUser] instanceof Array) result.removedCommentCount += commentsData.comments[commentUser].length;
+    }
+    for (var pinnedUser in commentsData.pinnedComments) {
+        if (!commentsData.pinnedComments.hasOwnProperty(pinnedUser)) continue;
+        if (commentsData.pinnedComments[pinnedUser] instanceof Array) result.preservedPinnedCount += commentsData.pinnedComments[pinnedUser].length;
+    }
+    commentsData.comments = {};
+
+    if (homeData && typeof homeData === "object") {
+        for (var homeUser in homeData) {
+            if (!homeData.hasOwnProperty(homeUser)) continue;
+            if (!homeData[homeUser] || homeData[homeUser].likeCnt === undefined) continue;
+            result.resetLikeUserCount++;
+            result.resetLikeCount += parseInt(homeData[homeUser].likeCnt, 10) || 0;
+            delete homeData[homeUser].likeCnt;
+        }
+    }
+
+    commentsData.migrations.passBenefits20260726 = true;
+    result.changed = true;
+    return result;
 }
 
 // 특정 유저의 펫홈 댓글 목록을 반환하는 함수
