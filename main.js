@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.309"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.310"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -765,6 +765,9 @@ const GLOBAL_CONFIG = {
     supportPass: { // 후원 패스 지급 설정
         diamondBoxCount: 15
     },
+    privateChat: { // 1:1톡 이용 제한 설정
+        passRequiredMessage: "❌ 1:1톡에서는 초보패스🐥 또는 호이패스🐶 사용 중인 유저만 봇 명령어를 이용할 수 있습니다.\n그룹채팅의 /패키지가방에서 패스 상태를 확인해주세요."
+    },
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 50, // 최근 댓글 보관 개수
         maxPinned: 3, // 댓글핀 최대 개수
@@ -1512,6 +1515,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
 
         var data = null;
+
+        if (!isGroupChat) {
+            data = loadJsonFile(filePath);
+            if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                var privateChatInput = String(msg || "").trim(); // 차단 안내를 표시할 슬래시·초성 명령 입력
+                if (privateChatInput.indexOf("/") === 0 || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(privateChatInput)) {
+                    replier.reply(GLOBAL_CONFIG.privateChat.passRequiredMessage);
+                }
+                return;
+            }
+        }
 
         if (isAccountSuspensionBlockedMessage(msg)) {
             data = loadJsonFile(filePath);

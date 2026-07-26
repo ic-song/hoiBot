@@ -45,6 +45,9 @@ const GLOBAL_CONFIG = {
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪"
 	},
+	privateChat: { // 1:1톡 이용 제한 설정
+		passRequiredMessage: "❌ 1:1톡에서는 초보패스🐥 또는 호이패스🐶 사용 중인 유저만 봇 명령어를 이용할 수 있습니다.\n그룹채팅의 /패키지가방에서 패스 상태를 확인해주세요."
+	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
 		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"
@@ -90,6 +93,40 @@ function isAdmin(sender) {
 }
 function isMaster(sender) {
 	return Master.includes(sender);
+}
+
+// Info 명령에서 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
+function getInfoSupportPassDateValue(text) {
+	var match = String(text || "").match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+	if (!match) return null;
+	var year = 2000 + parseInt(match[1], 10);
+	var month = parseInt(match[2], 10);
+	var day = parseInt(match[3], 10);
+	var date = new Date(Date.UTC(year, month - 1, day));
+	if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) return null;
+	return year * 10000 + month * 100 + day;
+}
+
+// Info 명령에서 한국 시간의 오늘 날짜를 후원패스 비교값으로 반환하는 함수
+function getInfoTodaySupportPassDateValue() {
+	var now = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+	return now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + now.getUTCDate();
+}
+
+// Info 명령에서 후원패스가 현재 사용 가능한지 확인하는 함수
+function isInfoSupportPassActive(data, user, passKey) {
+	var member = data.member && data.member[user] ? data.member[user] : null;
+	var pass = member && member.pass && member.pass[passKey] ? member.pass[passKey] : null;
+	if (!pass || pass.enabled !== true) return false;
+	if (pass.permanent === true) return true;
+	var expireValue = getInfoSupportPassDateValue(pass.endDate);
+	if (expireValue === null) return true;
+	return expireValue >= getInfoTodaySupportPassDateValue();
+}
+
+// Info 명령에서 1:1톡 이용 가능한 초보패스·호이패스 여부를 확인하는 함수
+function hasInfoPrivateChatPass(data, user) {
+	return isInfoSupportPassActive(data, user, "newbie") || isInfoSupportPassActive(data, user, "hoi");
 }
 //미니펫
 var MINIPET_MAX_LV = 300;
@@ -208,6 +245,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		if (!isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
+			var privateChatInput = String(msg || "").trim(); // 차단 안내를 표시할 슬래시·초성 명령 입력
+			if (privateChatInput.indexOf("/") === 0 || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(privateChatInput)) {
+				replier.reply(GLOBAL_CONFIG.privateChat.passRequiredMessage);
+			}
+			return;
+		}
 		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 관리 정보 명령 사용 가능 대상
 		var isMatzangInfoOperatorCommand = isMatzangOperator && isMatzangInfoOperatorCommandMessage(msg); // Info.js 관리 명령 여부
 		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangInfoOperatorCommand) {
