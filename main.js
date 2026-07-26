@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.306"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.308"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -25543,6 +25543,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var homeData = loadJsonFile(homeDataFile);
+                    var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomeCommentCleanupResult = clearPetHomeCommentsPreservingPins(petHomeCommentsData);
                     var placedFurnitureCleanupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
 
                     var totalDisplayRemoved = 0;
@@ -25770,6 +25772,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     saveJsonFile(homeData, homeDataFile);
+                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
                     if (placedFurnitureCleanupData) saveJsonFile(placedFurnitureCleanupData, petHomePlacedFurniturePath);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
@@ -25790,12 +25793,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     out += "\n\n[2] 기존 펫홈 댓글 제거\n";
-                    out += "기존 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
+                    out += "일반 댓글 제거 : " + numberWithCommas(petHomeCommentCleanupResult.removedCommentCount) + "개\n";
+                    out += "댓글핀 유지 : " + numberWithCommas(petHomeCommentCleanupResult.preservedPinnedCount) + "개\n";
+                    out += "레거시 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
+
+                    if (petHomeCommentCleanupResult.removedUsers.length > 0) {
+                        var petHomeCommentCleanupLogs = [];
+                        for (var cleanupCommentIndex = 0; cleanupCommentIndex < petHomeCommentCleanupResult.removedUsers.length; cleanupCommentIndex++) {
+                            var cleanupCommentUser = petHomeCommentCleanupResult.removedUsers[cleanupCommentIndex];
+                            petHomeCommentCleanupLogs.push(cleanupCommentUser.user + " : 일반 댓글 삭제 " + numberWithCommas(cleanupCommentUser.count) + "개");
+                        }
+                        out += "\n[일반 댓글 제거 유저]\n" + petHomeCommentCleanupLogs.join("\n");
+                    } else {
+                        out += "\n제거할 일반 댓글 없음\n";
+                    }
 
                     if (guestCommentUserLogs.length > 0) {
-                        out += "\n[기존 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
+                        out += "\n[레거시 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
                     } else {
-                        out += "\n제거할 기존 댓글 없음\n";
+                        out += "\n제거할 레거시 댓글 없음\n";
                     }
 
                     out += "\n\n[3] 아이템 명칭 변경\n";
@@ -30482,7 +30498,7 @@ function cleanupExpiredSupportPasses(data) {
             debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
         }
         if (autoPassExpired && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
-            var removedTicketCount = removeAllItem(data, user, "자동탐험권🌄");
+            var removedTicketCount = removeAllAutoExploreTickets(data, user);
             if (removedTicketCount > 0) {
                 result.changed = true;
                 result.removedTicketCount += removedTicketCount;
@@ -30493,14 +30509,47 @@ function cleanupExpiredSupportPasses(data) {
     return result;
 }
 
+// 자동탐험권 아이템명의 숨은 이모지 선택자와 끝 공백을 제거하는 함수
+function normalizeAutoExploreTicketItemName(itemName) {
+    return String(itemName || "").replace(/[\uFE0E\uFE0F]/g, "").trim();
+}
+
+// 유저 가방의 자동탐험권 표기 변형을 합산하는 함수
+function getAutoExploreTicketCount(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
+    var bag = data.member[user].bag;
+    var targetName = normalizeAutoExploreTicketItemName("자동탐험권🌄");
+    var count = 0;
+    for (var itemName in bag) {
+        if (!bag.hasOwnProperty(itemName)) continue;
+        if (normalizeAutoExploreTicketItemName(itemName) !== targetName) continue;
+        count += parseInt(bag[itemName], 10) || 0;
+    }
+    return count;
+}
+
+// 유저 가방의 자동탐험권 표기 변형을 모두 회수하는 함수
+function removeAllAutoExploreTickets(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
+    var bag = data.member[user].bag;
+    var targetName = normalizeAutoExploreTicketItemName("자동탐험권🌄");
+    var removedCount = 0;
+    for (var itemName in bag) {
+        if (!bag.hasOwnProperty(itemName)) continue;
+        if (normalizeAutoExploreTicketItemName(itemName) !== targetName) continue;
+        removedCount += parseInt(bag[itemName], 10) || 0;
+        delete bag[itemName];
+    }
+    return removedCount;
+}
+
 // 자동탐험권 보유 자격이 없는 유저 목록을 반환하는 함수
 function getInvalidAutoExploreTicketUsers(data) {
     var users = [];
     if (!data || !data.member) return users;
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user)) continue;
-        var member = data.member[user];
-        var ticketCount = member && member.bag ? parseInt(member.bag["자동탐험권🌄"], 10) || 0 : 0;
+        var ticketCount = getAutoExploreTicketCount(data, user);
         if (ticketCount < 1) continue;
         if (isSupportPassActive(data, user, "newbie") || isSupportPassActive(data, user, "hoi")) continue;
         users.push({ user: user, count: ticketCount });
@@ -30609,7 +30658,7 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
         var savedEndText = pass.permanent === true ? "영구권" : pass.endDate + "까지";
         var lines = ["\n저장확인: 패스 저장 완료 (" + savedEndText + ")"];
         if (meta.config.key === "newbie" || meta.config.key === "hoi") {
-            var ticketCount = member.bag && member.bag["자동탐험권🌄"] ? member.bag["자동탐험권🌄"] : 0;
+            var ticketCount = getAutoExploreTicketCount(savedData, meta.user);
             lines.push("저장확인: 자동탐험권🌄 " + ticketCount + "개");
         }
         return lines.join("\n");
@@ -30617,7 +30666,7 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
     if (pass && pass.enabled === true) return "\n⚠️ 저장확인: member.json에서 패스 삭제를 확인하지 못했습니다.";
     var deleteLines = ["\n저장확인: 패스 삭제 저장 완료"];
     if (meta.config.key === "newbie" || meta.config.key === "hoi") {
-        var remainingTicketCount = member.bag && member.bag["자동탐험권🌄"] ? member.bag["자동탐험권🌄"] : 0;
+        var remainingTicketCount = getAutoExploreTicketCount(savedData, meta.user);
         if (!isSupportPassActive(savedData, meta.user, "newbie") && !isSupportPassActive(savedData, meta.user, "hoi")) {
             if (remainingTicketCount > 0) {
                 deleteLines.push("⚠️ 저장확인: 자동탐험권🌄 " + remainingTicketCount + "개가 남아 있습니다.");
@@ -30677,7 +30726,7 @@ function processUserIDCommand(msg, data) {
     var deleteLines = [userIDText + " 사용자의 패스가 삭제되었습니다."];
     if (passConfig.key === "newbie" || passConfig.key === "hoi") {
         if (!isSupportPassActive(data, userIDText, "newbie") && !isSupportPassActive(data, userIDText, "hoi")) {
-            removeAllItem(data, userIDText, "자동탐험권🌄");
+            removeAllAutoExploreTickets(data, userIDText);
             deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
         } else {
             deleteLines.push("다른 자동탐험 패스가 유효하여 자동탐험권🌄을 유지합니다.");
@@ -36433,6 +36482,25 @@ function initPetHomeCommentsData(commentsData) {
     return commentsData;
 }
 
+// 모든 일반 댓글을 삭제하고 댓글핀 보존 수량을 집계하는 함수
+function clearPetHomeCommentsPreservingPins(commentsData) {
+    commentsData = initPetHomeCommentsData(commentsData);
+    var result = { removedCommentCount: 0, preservedPinnedCount: 0, removedUsers: [] };
+    for (var commentUser in commentsData.comments) {
+        if (!commentsData.comments.hasOwnProperty(commentUser)) continue;
+        if (!(commentsData.comments[commentUser] instanceof Array)) continue;
+        var commentCount = commentsData.comments[commentUser].length;
+        result.removedCommentCount += commentCount;
+        if (commentCount > 0) result.removedUsers.push({ user: commentUser, count: commentCount });
+    }
+    for (var pinnedUser in commentsData.pinnedComments) {
+        if (!commentsData.pinnedComments.hasOwnProperty(pinnedUser)) continue;
+        if (commentsData.pinnedComments[pinnedUser] instanceof Array) result.preservedPinnedCount += commentsData.pinnedComments[pinnedUser].length;
+    }
+    commentsData.comments = {};
+    return result;
+}
+
 // 패스 혜택 개편을 위해 일반 댓글과 좋아홈 수치를 한 번 정리하는 함수
 function cleanupPetHomePassBenefitData(homeData, commentsData) {
     commentsData = initPetHomeCommentsData(commentsData);
@@ -36443,15 +36511,9 @@ function cleanupPetHomePassBenefitData(homeData, commentsData) {
         return result;
     }
 
-    for (var commentUser in commentsData.comments) {
-        if (!commentsData.comments.hasOwnProperty(commentUser)) continue;
-        if (commentsData.comments[commentUser] instanceof Array) result.removedCommentCount += commentsData.comments[commentUser].length;
-    }
-    for (var pinnedUser in commentsData.pinnedComments) {
-        if (!commentsData.pinnedComments.hasOwnProperty(pinnedUser)) continue;
-        if (commentsData.pinnedComments[pinnedUser] instanceof Array) result.preservedPinnedCount += commentsData.pinnedComments[pinnedUser].length;
-    }
-    commentsData.comments = {};
+    var commentCleanupResult = clearPetHomeCommentsPreservingPins(commentsData);
+    result.removedCommentCount = commentCleanupResult.removedCommentCount;
+    result.preservedPinnedCount = commentCleanupResult.preservedPinnedCount;
 
     if (homeData && typeof homeData === "object") {
         for (var homeUser in homeData) {
