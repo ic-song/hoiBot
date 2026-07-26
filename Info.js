@@ -1012,7 +1012,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 		}
 
-		if (msg === "/펫정보" || msg === "ㅁㅁㅁ") {
+		if (msg === "/펫정보" || msg === "/ㅎ" || msg === "ㅁㅁㅁ") {
 			var homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			var petExploreData = loadJsonFile(petExplorePath);
@@ -1104,8 +1104,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var petHomeLikeUsed = parseInt(data.member[sender].homeLikeCnt, 10) || 0;
 			var userLikeUsed = parseInt(data.member[sender].cntlike, 10) || 0;
 			var passDailyIconMsg = hasPassDailyQuest
-				? "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][💌" + getC(petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax) + "][💕" + getC(userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax) + "]\n"
-				: ""; // 패스 전용 3종 완료 아이콘
+				? "[🐶호패 전용][💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][💌" + getC(petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax) + "][💕" + getC(userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax) + "]\n"
+				: "[🐶호패,초패 회원전용]\n"; // 패스 전용 3종 완료 아이콘 또는 가입 안내
 			var weeklyQuestMax = 7;
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));
 			var weeklyQuestRemain = Math.max(0, weeklyQuestMax - weeklyQuestCnt);
@@ -1201,10 +1201,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var rankText = rankInfo ? rankInfo.rank + "등" : "순위없음";
 
 			resultMsg += formatDoneLine("펫탐험⛰️", exploreCount, 10, numberWithCommas(win) + "승 (순위: " + rankText + ")") + "\n";
+			resultMsg += "━━━━━━━━━━━━━━━━\n";
+			resultMsg += "【 🐶호이,초보패스🐥전용 일퀘 조건 】\n";
+			resultMsg += "━━━━━━━━━━━━━━━━\n";
 			if (hasPassDailyQuest) {
 				resultMsg += formatDoneLine("펫홈 댓글 달성📝", petHomeCommentUsed, GLOBAL_CONFIG.daily.passPetHomeCommentMax, "패스 전용") + "\n";
 				resultMsg += formatDoneLine("펫홈 좋아홈🏡", petHomeLikeUsed, GLOBAL_CONFIG.daily.passPetHomeLikeMax, "패스 전용") + "\n";
 				resultMsg += formatDoneLine("유저 좋아요💕", userLikeUsed, GLOBAL_CONFIG.daily.passUserLikeMax, "패스 전용") + "\n";
+			} else {
+				resultMsg += "펫홈 댓글 달성📝[호패,초패 회원전용]\n";
+				resultMsg += "펫홈 좋아홈🏡[호패,초패 회원전용]\n";
+				resultMsg += "유저 좋아요💕[호패,초패 회원전용]\n";
 			}
 			resultMsg += "주간퀘스트🦋[" + weeklyQuestCnt + "/" + weeklyQuestMax + "]: " + getWeeklyQuestRemainText(weeklyQuestCnt, weeklyQuestMax) + "\n";
 
@@ -2247,9 +2254,9 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("📜 일일 · 주간 · 🐶호패,초패🐥 ");
 	lines.push("퀘스트 보상 안내 🦋 ");
 	lines.push("━━━━━━━━━━━━");
+	lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
+	lines.push("━━━━━━━━━━━━━━━━");
 	if (status.hasPassDailyQuest) {
-		lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
-		lines.push("━━━━━━━━━━━━━━━━");
 		lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
 		lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
 		lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
@@ -2257,9 +2264,13 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 		lines.push("《🎁 호패,초패 퀘스트 보상》");
 		lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 		if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
-		lines.push("");
-		lines.push("━━━━━━━━━━━━");
+	} else {
+		lines.push("펫홈 댓글 달성📝[호패,초패 회원전용]");
+		lines.push("펫홈 좋아홈🏡[호패,초패 회원전용]");
+		lines.push("유저 좋아요💕[호패,초패 회원전용]");
 	}
+	lines.push("");
+	lines.push("━━━━━━━━━━━━");
 	lines.push("📜일일 퀘스트 조건📜");
 	lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
 	lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]");
