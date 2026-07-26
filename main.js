@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.317"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.318"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -25577,15 +25577,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var homeData = loadJsonFile(homeDataFile);
-                    var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
-                    var petHomeCommentCleanupResult = clearPetHomeCommentsPreservingPins(petHomeCommentsData);
                     var placedFurnitureCleanupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
 
                     var totalDisplayRemoved = 0;
                     var totalNullRemoved = 0;
-                    var totalGuestCommentsDeleted = 0;
                     var userLogs = [];
-                    var guestCommentUserLogs = [];
 
                     for (var user in homeData) {
                         if (!homeData[user]) continue;
@@ -25630,12 +25626,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             totalNullRemoved += nullRemovedCount;
                         }
 
-                        if (homeData[user].guestComments instanceof Array) {
-                            var oldGuestCommentCount = homeData[user].guestComments.length;
-                            delete homeData[user].guestComments;
-                            totalGuestCommentsDeleted += oldGuestCommentCount;
-                            guestCommentUserLogs.push(user + " : 기존 댓글 삭제 " + numberWithCommas(oldGuestCommentCount) + "개");
-                        }
                     }
 
                     // 아이템 명칭 변경
@@ -25806,7 +25796,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     saveJsonFile(homeData, homeDataFile);
-                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
                     if (placedFurnitureCleanupData) saveJsonFile(placedFurnitureCleanupData, petHomePlacedFurniturePath);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
@@ -25826,29 +25815,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n펫홈 정리할 데이터 없음\n";
                     }
 
-                    out += "\n\n[2] 기존 펫홈 댓글 제거\n";
-                    out += "일반 댓글 제거 : " + numberWithCommas(petHomeCommentCleanupResult.removedCommentCount) + "개\n";
-                    out += "댓글핀 유지 : " + numberWithCommas(petHomeCommentCleanupResult.preservedPinnedCount) + "개\n";
-                    out += "레거시 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
-
-                    if (petHomeCommentCleanupResult.removedUsers.length > 0) {
-                        var petHomeCommentCleanupLogs = [];
-                        for (var cleanupCommentIndex = 0; cleanupCommentIndex < petHomeCommentCleanupResult.removedUsers.length; cleanupCommentIndex++) {
-                            var cleanupCommentUser = petHomeCommentCleanupResult.removedUsers[cleanupCommentIndex];
-                            petHomeCommentCleanupLogs.push(cleanupCommentUser.user + " : 일반 댓글 삭제 " + numberWithCommas(cleanupCommentUser.count) + "개");
-                        }
-                        out += "\n[일반 댓글 제거 유저]\n" + petHomeCommentCleanupLogs.join("\n");
-                    } else {
-                        out += "\n제거할 일반 댓글 없음\n";
-                    }
-
-                    if (guestCommentUserLogs.length > 0) {
-                        out += "\n[레거시 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
-                    } else {
-                        out += "\n제거할 레거시 댓글 없음\n";
-                    }
-
-                    out += "\n\n[3] 아이템 명칭 변경\n";
+                    out += "\n\n[2] 아이템 명칭 변경\n";
                     out += "변경된 아이템 수량 : " + numberWithCommas(itemChangeCount) + "개\n";
 
                     if (itemUserLogs.length > 0) {
@@ -25857,7 +25824,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n변경할 아이템 없음\n";
                     }
 
-                    out += "\n\n[4] 펫스킬 데이터 이동\n";
+                    out += "\n\n[3] 펫스킬 데이터 이동\n";
                     out += "이동된 펫스킬 수량 : " + numberWithCommas(petSkillMoveCount) + "개\n";
                     out += "삭제된 petData.petchar 유저 : " + numberWithCommas(petCharDeleteCount) + "명\n";
                     out += "petData.petSkills 삭제 유저 : " + numberWithCommas(petSkillDeleteCount) + "명\n";
@@ -25868,7 +25835,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n이동할 펫스킬 데이터 없음\n";
                     }
 
-                    out += "\n\n[5] 포인트 소수점 정리\n";
+                    out += "\n\n[4] 포인트 소수점 정리\n";
                     out += "정리된 유저 : " + numberWithCommas(pointFloorUserCount) + "명\n";
                     out += "제거된 소수점 포인트 총합 : 🅟" + formatPointValue(pointFloorTotalAmount);
 
@@ -25878,14 +25845,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n소수점 포인트 없음";
                     }
 
-                    out += "\n\n[6] 레거시 패스 명단 데이터 제거\n";
+                    out += "\n\n[5] 레거시 패스 명단 데이터 제거\n";
                     if (legacyPassRemovedLogs.length > 0) {
                         out += legacyPassRemovedLogs.join("\n");
                     } else {
                         out += "제거할 레거시 패스 명단 없음";
                     }
 
-                    out += "\n\n[7] 유저 기존 반지 데이터 삭제\n";
+                    out += "\n\n[6] 유저 기존 반지 데이터 삭제\n";
                     out += "반지 삭제 유저 : " + numberWithCommas(petRingDeleteUserCount) + "명\n";
                     out += "보상 플래그 삭제 유저 : " + numberWithCommas(ringRewardMigrationDeleteUserCount) + "명\n";
                     if (petRingDeleteLogs.length > 0) {
@@ -25894,7 +25861,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n삭제할 유저 반지 데이터 없음";
                     }
 
-                    out += "\n\n[8] 길드창고 기존 반지 데이터 삭제\n";
+                    out += "\n\n[7] 길드창고 기존 반지 데이터 삭제\n";
                     out += "삭제 길드 : " + numberWithCommas(guildRingDeleteGuildCount) + "개\n";
                     out += "삭제 수량 : 💍x" + numberWithCommas(guildRingDeleteTotalAmount) + "\n";
                     out += "※ 펜던트 강화석📿 수량으로 이전하지 않습니다.\n";

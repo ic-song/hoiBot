@@ -528,7 +528,7 @@ Status: VERIFIED
 - `petHomeCommentsData.comments[target]`
 - `petHomeCommentsData.pinnedComments[target]`
 - `petHomeCommentsData.migrations.passBenefits20260726`
-- Legacy `homeData[target].guestComments` is removed by `/데이터정리`; it is not moved into `petHomeCommentsData`.
+- Legacy `homeData[target].guestComments` is not changed by `/데이터정리`.
 
 ## Save Flow
 
@@ -5052,9 +5052,6 @@ Status: VERIFIED
 
 - `homeData[*].furnitureBag`
 - `placedFurnitureData[*]` after separation, with legacy home fallback before separation
-- `homeData[*].guestComments`
-- `petHomeCommentsData.comments[*]`
-- `petHomeCommentsData.pinnedComments[*]`
 - `data.member[*].bag`
 - `data.member[*].point`
 - `data.allowedUsers2`
@@ -5072,7 +5069,6 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
-- Saves `petHomeCommentsData` through `saveJsonFile(petHomeCommentsData, petHomeCommentsFile)` after clearing all general comments while preserving pinned comments
 - Saves separated placed furniture cleanup through `saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath)` when the detail file exists
 - Saves member data through `saveJsonFile(data, filePath)`
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
@@ -5082,12 +5078,11 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Deletes all current `petHomeCommentsData.comments[*]` entries for every user and preserves `petHomeCommentsData.pinnedComments[*]`.
-- Also deletes legacy `homeData[*].guestComments` from `homeData`; legacy comments are not moved into `petHomeCommentsData`.
-- Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
-- Step 6 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
-- Step 7 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
-- Step 8 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
+- Does not load, mutate, or save `petHomeCommentsData`, and does not delete legacy `homeData[*].guestComments`.
+- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
+- Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
+- Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
