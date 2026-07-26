@@ -25543,6 +25543,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var homeData = loadJsonFile(homeDataFile);
+                    var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomeCommentCleanupResult = clearPetHomeCommentsPreservingPins(petHomeCommentsData);
                     var placedFurnitureCleanupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
 
                     var totalDisplayRemoved = 0;
@@ -25770,6 +25772,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     saveJsonFile(homeData, homeDataFile);
+                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
                     if (placedFurnitureCleanupData) saveJsonFile(placedFurnitureCleanupData, petHomePlacedFurniturePath);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
@@ -25790,12 +25793,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     out += "\n\n[2] 기존 펫홈 댓글 제거\n";
-                    out += "기존 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
+                    out += "일반 댓글 제거 : " + numberWithCommas(petHomeCommentCleanupResult.removedCommentCount) + "개\n";
+                    out += "댓글핀 유지 : " + numberWithCommas(petHomeCommentCleanupResult.preservedPinnedCount) + "개\n";
+                    out += "레거시 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
+
+                    if (petHomeCommentCleanupResult.removedUsers.length > 0) {
+                        var petHomeCommentCleanupLogs = [];
+                        for (var cleanupCommentIndex = 0; cleanupCommentIndex < petHomeCommentCleanupResult.removedUsers.length; cleanupCommentIndex++) {
+                            var cleanupCommentUser = petHomeCommentCleanupResult.removedUsers[cleanupCommentIndex];
+                            petHomeCommentCleanupLogs.push(cleanupCommentUser.user + " : 일반 댓글 삭제 " + numberWithCommas(cleanupCommentUser.count) + "개");
+                        }
+                        out += "\n[일반 댓글 제거 유저]\n" + petHomeCommentCleanupLogs.join("\n");
+                    } else {
+                        out += "\n제거할 일반 댓글 없음\n";
+                    }
 
                     if (guestCommentUserLogs.length > 0) {
-                        out += "\n[기존 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
+                        out += "\n[레거시 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
                     } else {
-                        out += "\n제거할 기존 댓글 없음\n";
+                        out += "\n제거할 레거시 댓글 없음\n";
                     }
 
                     out += "\n\n[3] 아이템 명칭 변경\n";
@@ -36433,6 +36449,25 @@ function initPetHomeCommentsData(commentsData) {
     return commentsData;
 }
 
+// 모든 일반 댓글을 삭제하고 댓글핀 보존 수량을 집계하는 함수
+function clearPetHomeCommentsPreservingPins(commentsData) {
+    commentsData = initPetHomeCommentsData(commentsData);
+    var result = { removedCommentCount: 0, preservedPinnedCount: 0, removedUsers: [] };
+    for (var commentUser in commentsData.comments) {
+        if (!commentsData.comments.hasOwnProperty(commentUser)) continue;
+        if (!(commentsData.comments[commentUser] instanceof Array)) continue;
+        var commentCount = commentsData.comments[commentUser].length;
+        result.removedCommentCount += commentCount;
+        if (commentCount > 0) result.removedUsers.push({ user: commentUser, count: commentCount });
+    }
+    for (var pinnedUser in commentsData.pinnedComments) {
+        if (!commentsData.pinnedComments.hasOwnProperty(pinnedUser)) continue;
+        if (commentsData.pinnedComments[pinnedUser] instanceof Array) result.preservedPinnedCount += commentsData.pinnedComments[pinnedUser].length;
+    }
+    commentsData.comments = {};
+    return result;
+}
+
 // 패스 혜택 개편을 위해 일반 댓글과 좋아홈 수치를 한 번 정리하는 함수
 function cleanupPetHomePassBenefitData(homeData, commentsData) {
     commentsData = initPetHomeCommentsData(commentsData);
@@ -36443,15 +36478,9 @@ function cleanupPetHomePassBenefitData(homeData, commentsData) {
         return result;
     }
 
-    for (var commentUser in commentsData.comments) {
-        if (!commentsData.comments.hasOwnProperty(commentUser)) continue;
-        if (commentsData.comments[commentUser] instanceof Array) result.removedCommentCount += commentsData.comments[commentUser].length;
-    }
-    for (var pinnedUser in commentsData.pinnedComments) {
-        if (!commentsData.pinnedComments.hasOwnProperty(pinnedUser)) continue;
-        if (commentsData.pinnedComments[pinnedUser] instanceof Array) result.preservedPinnedCount += commentsData.pinnedComments[pinnedUser].length;
-    }
-    commentsData.comments = {};
+    var commentCleanupResult = clearPetHomeCommentsPreservingPins(commentsData);
+    result.removedCommentCount = commentCleanupResult.removedCommentCount;
+    result.preservedPinnedCount = commentCleanupResult.preservedPinnedCount;
 
     if (homeData && typeof homeData === "object") {
         for (var homeUser in homeData) {
