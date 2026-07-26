@@ -1,10 +1,11 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.310"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.311"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
+let privateChatBlockedTracker = {}; // 패스 미사용 유저별 1:1톡 차단 횟수
 let requestMonitorConfig = null;
 let autoDailyQuestInternalDepth = 0;
 
@@ -766,7 +767,8 @@ const GLOBAL_CONFIG = {
         diamondBoxCount: 15
     },
     privateChat: { // 1:1톡 이용 제한 설정
-        passRequiredMessage: "❌ 1:1톡에서 봇 명령어를 이용하려면 초보패스🐥 또는 호이패스🐶가 필요합니다.\n그룹채팅의 /패키지가방에서 패스 상태를 확인해주세요."
+        notifyEvery: 3, // 패스 미사용 1:1톡 운영 알림 주기
+        messagePreviewMaxLength: 100 // 운영 알림에 표시할 최근 메시지 최대 길이
     },
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 50, // 최근 댓글 보관 개수
@@ -1519,7 +1521,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!isGroupChat) {
             data = loadJsonFile(filePath);
             if (!hasActiveHoiOrNewbiePass(data, sender)) {
-                replier.reply(GLOBAL_CONFIG.privateChat.passRequiredMessage);
+                recordBlockedPrivateChatAttempt(room, sender, msg);
                 return;
             }
         }
@@ -30459,6 +30461,28 @@ function isSupportPassActive(data, user, passKey) {
 // 호이패스 또는 초보패스가 현재 활성 상태인지 확인하는 함수
 function hasActiveHoiOrNewbiePass(data, user) {
     return isSupportPassActive(data, user, "hoi") || isSupportPassActive(data, user, "newbie");
+}
+
+// 패스 미사용 유저의 1:1톡 차단 횟수를 기록하고 주기마다 운영진에게 알리는 함수
+function recordBlockedPrivateChatAttempt(room, sender, msg) {
+    var attemptCount = (privateChatBlockedTracker[sender] || 0) + 1; // 봇 실행 후 유저별 누적 차단 횟수
+    privateChatBlockedTracker[sender] = attemptCount;
+    if (attemptCount % GLOBAL_CONFIG.privateChat.notifyEvery !== 0) return;
+
+    var messagePreview = String(msg || "").replace(/[\r\n]+/g, " ").trim(); // 운영 알림용 최근 메시지 한 줄 요약
+    if (messagePreview.length > GLOBAL_CONFIG.privateChat.messagePreviewMaxLength) {
+        messagePreview = messagePreview.substring(0, GLOBAL_CONFIG.privateChat.messagePreviewMaxLength) + "...";
+    }
+    if (!messagePreview) messagePreview = "-";
+
+    Api.replyRoom(
+        room90,
+        "[패스 미사용 1:1톡 감지]\n" +
+        "유저: " + sender + "\n" +
+        "개인톡방: " + room + "\n" +
+        "누적 횟수: " + attemptCount + "회\n" +
+        "최근 메시지: " + messagePreview
+    );
 }
 
 // 호이패스·초보패스 활성 유저의 펫홈 기능 비용을 면제하는 함수

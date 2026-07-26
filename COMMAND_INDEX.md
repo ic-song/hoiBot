@@ -34,6 +34,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `hasActiveHoiOrNewbiePass`
+- `recordBlockedPrivateChatAttempt`
 - `hasInfoPrivateChatPass`
 - `isSupportPassActive`
 - `isInfoSupportPassActive`
@@ -51,7 +52,9 @@ Status: VERIFIED
 
 - 그룹채팅은 기존 명령어 흐름을 유지한다.
 - 1:1톡은 활성 초보패스 또는 호이패스가 없으면 `main.js`와 `Info.js` 모두 명령 실행 전에 반환한다.
-- `main.js`는 패스 없는 1:1 입력에 패스 필요 안내를 응답하고, `Info.js`는 중복 안내 없이 실행만 차단한다.
+- `main.js`는 패스 없는 1:1 입력에 응답하지 않고 유저별 차단 횟수를 메모리에 누적하며, 3회 단위마다 `room90`에 사용자·방·횟수·최근 메시지를 알린다.
+- `Info.js`는 별도 응답과 카운트 증가 없이 실행만 차단한다.
+- 1:1톡 차단 횟수는 파일에 저장하지 않아 봇 재시작 시 초기화된다.
 - `main.js`의 DEV 데이터 백업과 봇 복구 명령은 기존 비상 복구 흐름을 유지한다.
 
 ---
