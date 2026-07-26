@@ -14353,6 +14353,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             );
                         } else {
                             var statusMsg = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
+                            statusMsg += "팁: 자동일퀘권📝 소지시 자동일퀘가 가능하며";
+                            statusMsg += "시탑,캐대,미대 5판을 추가로";
+                            statusMsg += "대전하여 추가 보상을 지급해요👌";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
                             statusMsg += "아직 일일퀘스트를 완료하지 못했습니다.\n";
                             statusMsg += "시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]\n";
@@ -32933,7 +32936,10 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     var status = getDailyQuestStatus(data, petData, guildData, sender);
     var lines = [];
     lines.push("[" + checkRank(data, petData, guildData, sender) + "]님의");
-    lines.push("📜 일일 · 주간 퀘스트 보상 안내 🦋 " + allsee);
+    lines.push("📜 일일 · 주간 퀘스트 보상 안내 🦋 ");
+    lines.push("팁: 자동일퀘권📝 소지시 자동일퀘가 가능하며");
+    lines.push("시탑,캐대,미대 5판을 추가로");
+    lines.push("대전하여 추가 보상을 지급해요👌" + allsee);
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【📜일일 퀘스트 조건 】");
     lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
