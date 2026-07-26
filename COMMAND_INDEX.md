@@ -695,7 +695,7 @@ Status: VERIFIED
 - `finishGuildTerritoryWar` keeps final occupation results visible first, then folds reward details, grouped territory point gains, and guide commands behind `allsee`.
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
-- `/길드영지보상지급` is Admin/Master only and pays guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
+- `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
@@ -1711,6 +1711,10 @@ Status: VERIFIED
 - `data.member[sender].bag["자동일퀘권📝"]`
 - `data.member[sender].towerCnt`
 - `data.member[sender].battle`
+- `data.member[sender].petHomeCommentCnt`
+- `data.member[sender].homeLikeCnt`
+- `data.member[sender].cntlike`
+- `data.member[sender].passDailyQuestCnt`
 - `petData[sender].miniPetBattle`
 - `trialTower.user[sender]`
 - `petExploreData.record[sender]`
@@ -1750,6 +1754,8 @@ Status: VERIFIED
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
 - 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
+- 활성 호이패스·초보패스 유저에게 펫홈 댓글 3회, 좋아홈 2회, 유저 좋아요 2회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`를 증가시키고, 좋아홈·유저 좋아요는 기존 일일 제한 카운터를 재사용한다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
@@ -1953,6 +1959,9 @@ Status: VERIFIED
 
 ## Related Helpers
 - `buildSupportPassListMessage`
+- `buildDailyRewardPayoutStatusLines`
+- `isDailyRewardPayoutDone`
+- `recordDailyRewardPayout`
 - `cleanupExpiredSupportPasses`
 - `getInvalidAutoExploreTicketUsers`
 - `getAutoExploreTicketCount`
@@ -1965,6 +1974,9 @@ Status: VERIFIED
 ## Data Usage
 - `data.member[user].pass`
 - `data.member[user].bag["자동탐험권🌄"]`
+- `data.rewardPayoutStatus`
+- `data.tierReward.lastPaidDate`
+- `guildData.guildTerritoryReward.lastPaidAt`
 
 ## Save Flow
 - `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
@@ -1977,6 +1989,8 @@ Status: VERIFIED
 - Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
 - Finite passes remain active through the displayed end date and are removed from the active list on D+1
 - Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply; newbie/hoi deletion also confirms whether the automatic-explore ticket was recovered or retained
+- `/패스목록`은 종합·미니펫·길드·티어·길드영지 순위 보상 명령의 예정 시각과 당일 지급 여부를 `[V]`/`[X]`로 표시한다. 종합·미니펫·길드 보상은 성공 직후 `data.rewardPayoutStatus`에 기록하며, 티어·길드영지는 기존 지급 기록을 재사용한다.
+- `/보상지급`은 기존 응답 종료 저장, `/연금지급`과 `/길드보상지급`은 각 성공 분기의 `saveJsonFile(data, filePath)`로 당일 지급 기록을 `member.json`에 함께 저장한다.
 
 ## Related Commands
 - `/원데이패스추가, [아이디] [날짜|영구권]`
@@ -1985,6 +1999,11 @@ Status: VERIFIED
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
+- `/보상지급`
+- `/연금지급`
+- `/길드보상지급`
+- `/티어보상지급`
+- `/영지순위보상지급`
 - Standalone legacy pass-list commands were removed; use `/패스목록`.
 
 ---

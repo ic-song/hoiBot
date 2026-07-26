@@ -15,7 +15,10 @@ const GLOBAL_CONFIG = {
 		castleBattleFree: 1, // 캐슬대전 무료 횟수
 		miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
 		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
-		petExploreMax: 10 // 펫탐험 일퀘 완료 횟수
+		petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
+		passPetHomeCommentMax: 3, // 패스 전용 펫홈 댓글 일퀘 횟수
+		passPetHomeLikeMax: 2, // 패스 전용 좋아홈 일퀘 횟수
+		passUserLikeMax: 2 // 패스 전용 유저 좋아요 일퀘 횟수
 	},
 	command: { // 명령어 입력/실행 설정
 		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
@@ -1096,6 +1099,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var exploreCount = data.member[sender].exploreCnt;
 			var dailyQuestRewardDone = ((data.member[sender] && data.member[sender].dailyQuestCnt) || 0) >= 1;
 			var dailyQuestRewardMsg = dailyQuestRewardDone ? "[🅾️일일퀘스트 보상지급 완료🅾️]" : "[❌일일퀘스트 보상지급 미완료❌]";
+			var hasPassDailyQuest = hasInfoPrivateChatPass(data, sender); // 호이·초보패스 전용 일퀘 표시 여부
+			var petHomeCommentUsed = parseInt(data.member[sender].petHomeCommentCnt, 10) || 0;
+			var petHomeLikeUsed = parseInt(data.member[sender].homeLikeCnt, 10) || 0;
+			var userLikeUsed = parseInt(data.member[sender].cntlike, 10) || 0;
+			var passDailyIconMsg = hasPassDailyQuest
+				? "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][💌" + getC(petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax) + "][💕" + getC(userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax) + "]\n"
+				: ""; // 패스 전용 3종 완료 아이콘
 			var weeklyQuestMax = 7;
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));
 			var weeklyQuestRemain = Math.max(0, weeklyQuestMax - weeklyQuestCnt);
@@ -1139,6 +1149,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				getC(exploreCount >= GLOBAL_CONFIG.daily.petExploreMax) +
 				"]" +
 				"\n" +
+				passDailyIconMsg +
 				dailyQuestRewardMsg +
 				"\n" +
 				questGuideMsg +
@@ -1190,6 +1201,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var rankText = rankInfo ? rankInfo.rank + "등" : "순위없음";
 
 			resultMsg += formatDoneLine("펫탐험⛰️", exploreCount, 10, numberWithCommas(win) + "승 (순위: " + rankText + ")") + "\n";
+			if (hasPassDailyQuest) {
+				resultMsg += formatDoneLine("펫홈 댓글 달성📝", petHomeCommentUsed, GLOBAL_CONFIG.daily.passPetHomeCommentMax, "패스 전용") + "\n";
+				resultMsg += formatDoneLine("펫홈 좋아홈🏡", petHomeLikeUsed, GLOBAL_CONFIG.daily.passPetHomeLikeMax, "패스 전용") + "\n";
+				resultMsg += formatDoneLine("유저 좋아요💕", userLikeUsed, GLOBAL_CONFIG.daily.passUserLikeMax, "패스 전용") + "\n";
+			}
 			resultMsg += "주간퀘스트🦋[" + weeklyQuestCnt + "/" + weeklyQuestMax + "]: " + getWeeklyQuestRemainText(weeklyQuestCnt, weeklyQuestMax) + "\n";
 
 			// 출력
@@ -2235,6 +2251,18 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]");
 	lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]");
 	lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
+	if (status.hasPassDailyQuest) {
+		lines.push("");
+		lines.push("【 🐶호이,초보패스🐥  전용 일퀘 조건 】");
+		lines.push("━━━━━━━━━━━━━━━━");
+		lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
+		lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
+		lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
+		lines.push("");
+		lines.push("《🎁 호패,초패 퀘스트 보상》");
+		lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
+		if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
+	}
 	lines.push("");
 	lines.push("일일퀘스트 보상 아이템👏🏻:");
 	lines.push("");
@@ -2260,6 +2288,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 }
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
+	var member = data.member[sender]; // 일퀘 상태를 확인할 회원 데이터
 	var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
 	var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
 
@@ -2285,6 +2314,15 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	var weeklyUsed = data.member[sender] ? parseInt(data.member[sender].weeklyQuestCnt, 10) || 0 : 0;
 	weeklyUsed = Math.max(0, Math.min(weeklyUsed, weeklyMax));
 	var dailyRewardDone = data.member[sender] ? (data.member[sender].dailyQuestCnt || 0) >= 1 : false;
+	var hasPassDailyQuest = hasInfoPrivateChatPass(data, sender); // 호이·초보패스 전용 일퀘 적용 여부
+	var petHomeCommentUsed = parseInt(member.petHomeCommentCnt, 10) || 0;
+	var petHomeLikeUsed = parseInt(member.homeLikeCnt, 10) || 0;
+	var userLikeUsed = parseInt(member.cntlike, 10) || 0;
+	var passDailyComplete = hasPassDailyQuest &&
+		petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax &&
+		petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax &&
+		userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax; // 패스 전용 3종 완료 여부
+	var passDailyRewardDone = (parseInt(member.passDailyQuestCnt, 10) || 0) >= 1;
 
 	return {
 		towerUsed: towerUsed,
@@ -2302,6 +2340,15 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 		weeklyMax: weeklyMax,
 		weeklyComplete: weeklyUsed >= weeklyMax,
 		dailyRewardDone: dailyRewardDone,
+		hasPassDailyQuest: hasPassDailyQuest,
+		petHomeCommentUsed: petHomeCommentUsed,
+		petHomeCommentMax: GLOBAL_CONFIG.daily.passPetHomeCommentMax,
+		petHomeLikeUsed: petHomeLikeUsed,
+		petHomeLikeMax: GLOBAL_CONFIG.daily.passPetHomeLikeMax,
+		userLikeUsed: userLikeUsed,
+		userLikeMax: GLOBAL_CONFIG.daily.passUserLikeMax,
+		passDailyComplete: passDailyComplete,
+		passDailyRewardDone: passDailyRewardDone,
 		isComplete: towerUsed >= towerMax && castleUsed >= castleMax && miniUsed >= miniMax && exploreUsed >= exploreMax
 	};
 }
