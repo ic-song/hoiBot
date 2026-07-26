@@ -1755,6 +1755,8 @@ Status: VERIFIED
 - 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
+- `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
 - 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`를 증가시키고, 좋아홈·유저 좋아요는 기존 일일 제한 카운터를 재사용한다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
@@ -1989,7 +1991,7 @@ Status: VERIFIED
 - Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
 - Finite passes remain active through the displayed end date and are removed from the active list on D+1
 - Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply; newbie/hoi deletion also confirms whether the automatic-explore ticket was recovered or retained
-- `/패스목록`은 종합·미니펫·길드·티어·길드영지 순위 보상 명령의 예정 시각과 당일 지급 여부를 `[V]`/`[X]`로 표시한다. 종합·미니펫·길드 보상은 성공 직후 `data.rewardPayoutStatus`에 기록하며, 티어·길드영지는 기존 지급 기록을 재사용한다.
+- `/패스목록`은 종합·미니펫·길드·티어·길드영지 순위 보상 명령의 예정 시각과 당일 지급 여부를 `[✅]`/`[❌]`로 표시한다. 종합·미니펫·길드 보상은 성공 직후 `data.rewardPayoutStatus`에 기록하며, 티어·길드영지는 기존 지급 기록을 재사용한다.
 - `/보상지급`은 기존 응답 종료 저장, `/연금지급`과 `/길드보상지급`은 각 성공 분기의 `saveJsonFile(data, filePath)`로 당일 지급 기록을 `member.json`에 함께 저장한다.
 
 ## Related Commands

@@ -2244,16 +2244,11 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	var status = getDailyQuestStatus(data, petData, guildData, sender);
 	var lines = [];
 
-	lines.push("📜일일,주간 퀘스트 보상 안내🦋");
+	lines.push("📜 일일 · 주간 · 🐶호패,초패🐥 ");
+	lines.push("퀘스트 보상 안내 🦋 ");
 	lines.push("━━━━━━━━━━━━");
-	lines.push("📜일일 퀘스트 조건📜");
-	lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
-	lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]");
-	lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]");
-	lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
 	if (status.hasPassDailyQuest) {
-		lines.push("");
-		lines.push("【 🐶호이,초보패스🐥  전용 일퀘 조건 】");
+		lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
 		lines.push("━━━━━━━━━━━━━━━━");
 		lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
 		lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
@@ -2262,7 +2257,14 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 		lines.push("《🎁 호패,초패 퀘스트 보상》");
 		lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 		if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
+		lines.push("");
+		lines.push("━━━━━━━━━━━━");
 	}
+	lines.push("📜일일 퀘스트 조건📜");
+	lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
+	lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]");
+	lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]");
+	lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
 	lines.push("");
 	lines.push("일일퀘스트 보상 아이템👏🏻:");
 	lines.push("");
