@@ -6388,7 +6388,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             },
                                 {
                                     name: "미니펫뽑기🐹(/미니펫오픈)",
-                                    count: 1
+                                    count: 2
                                 },
                                 {
                                     name: "강화확률뽑기⚒️(/강화뽑기)",
@@ -6396,11 +6396,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "럭키박스🍀(/럭키오픈)",
-                                    count: 1
-                                },
-                                {
-                                    name: "정령 강화석🥀",
-                                    count: 5
+                                    count: 2
                                 },
                                 {
                                     name: "미니펫대전리셋권🐹",
@@ -6408,7 +6404,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "펫먹이🍼",
-                                    count: 1
+                                    count: 10
                                 },
                                 {
                                     name: "펫스윗홈인테리어샵🖼️(/샵오픈)",
@@ -6416,11 +6412,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "펫 강화석⭐",
-                                    count: 70
+                                    count: 50
                                 },
                                 {
                                     name: "잡템☠️",
-                                    count: 5
+                                    count: 10
                                 },
                                 {
                                     name: "양념치킨🐔",
@@ -6428,11 +6424,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "캐슬대전리셋권🐶",
-                                    count: 1
+                                    count: 2
                                 },
                                 {
                                     name: "티어 승급티켓🎟",
-                                    count: 1
+                                    count: 2
                                 },
                                 {
                                     name: "펫먹이특식🥡(/특식오픈)",
@@ -6471,19 +6467,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             },
                                 {
                                     name: "미니펫뽑기🐹(/미니펫오픈)",
-                                    count: 1
+                                    count: 5
                                 },
-                                {
-                                    name: "정령 강화석🥀",
-                                    count: 10
-                                },
+
                                 {
                                     name: "미니펫대전리셋권🐹",
-                                    count: 2
+                                    count: 5
                                 },
                                 {
                                     name: "펫먹이🍼",
-                                    count: 1
+                                    count: 30
                                 },
                                 {
                                     name: "펫스윗홈인테리어샵🖼️(/샵오픈)",
@@ -6508,14 +6501,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 {
                                     name: "캐슬대전리셋권🐶",
                                     count: 5
-                                },
-                                {
-                                    name: "펫먹이상자📦(/상자오픈)",
-                                    count: 1
-                                },
-                                {
-                                    name: "펫먹이특식🥡(/특식오픈)",
-                                    count: 1
                                 },
                                 {
                                     name: "다이아상자💎(/다이아상자오픈)",
