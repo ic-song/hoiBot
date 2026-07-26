@@ -32937,6 +32937,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     var lines = [];
     lines.push("[" + checkRank(data, petData, guildData, sender) + "]님의");
     lines.push("📜 일일 · 주간 퀘스트 보상 안내 🦋 ");
+    lines.push("━━━━━━━━━━━━━━━━");
     lines.push("팁: 자동일퀘권📝 소지시 자동일퀘 가능");
     lines.push("시탑,캐대,미대 5판을 추가로");
     lines.push("대전하여 추가 보상을 지급해요👌" + allsee);
