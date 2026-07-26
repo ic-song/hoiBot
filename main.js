@@ -764,7 +764,13 @@ const GLOBAL_CONFIG = {
         dailyPayoutPoint: 1000000000
     },
     supportPass: { // 후원 패스 지급 설정
-        diamondBoxCount: 15
+        diamondBoxCount: 15,
+        freeSupportPackage: { // 장기 미사용 확인용 무료 응원패키지 설정
+            baseName: "호이응원패키지(무료)🐹",
+            minVariant: 1,
+            maxVariant: 10,
+            alertCount: 3
+        }
     },
     privateChat: { // 1:1톡 이용 제한 설정
         notifyEvery: 3, // 패스 미사용 1:1톡 운영 알림 주기
@@ -30589,6 +30595,48 @@ function getInvalidAutoExploreTicketUsers(data) {
     return users;
 }
 
+// 유저 가방의 호이응원 무료패키지 1~10번 수량을 합산하는 함수
+function getHoiFreeSupportPackageCount(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
+    var packageConfig = GLOBAL_CONFIG.supportPass.freeSupportPackage;
+    var bag = data.member[user].bag;
+    var packagePrefix = packageConfig.baseName.replace(/[\uFE0E\uFE0F]/g, "") + "[";
+    var count = 0;
+    for (var itemName in bag) {
+        if (!bag.hasOwnProperty(itemName)) continue;
+        var normalizedItemName = String(itemName || "").replace(/[\uFE0E\uFE0F]/g, "").trim();
+        if (normalizedItemName.indexOf(packagePrefix) !== 0 || normalizedItemName.charAt(normalizedItemName.length - 1) !== "]") continue;
+        var variantText = normalizedItemName.substring(packagePrefix.length, normalizedItemName.length - 1);
+        if (!/^\d+$/.test(variantText)) continue;
+        var variant = parseInt(variantText, 10);
+        if (variant < packageConfig.minVariant || variant > packageConfig.maxVariant) continue;
+        if (variantText !== String(variant)) continue;
+        var itemCount = parseInt(bag[itemName], 10) || 0;
+        if (itemCount > 0) count += itemCount;
+    }
+    return count;
+}
+
+// 호이응원 무료패키지를 기준 수량 이상 보유한 유저 목록을 반환하는 함수
+function getHoiFreeSupportPackageAlertUsers(data) {
+    var users = [];
+    if (!data || !data.member) return users;
+    var alertCount = GLOBAL_CONFIG.supportPass.freeSupportPackage.alertCount;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var packageCount = getHoiFreeSupportPackageCount(data, user);
+        if (packageCount < alertCount) continue;
+        users.push({ user: user, count: packageCount });
+    }
+    users.sort(function (a, b) {
+        if (a.count !== b.count) return b.count - a.count;
+        if (a.user < b.user) return -1;
+        if (a.user > b.user) return 1;
+        return 0;
+    });
+    return users;
+}
+
 // 후원패스 표시 문자열을 만드는 함수
 function formatSupportPassStatus(data, user, config) {
     if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중[❌]";
@@ -30698,6 +30746,25 @@ function buildSupportPassListMessage(data, petData, guildData) {
         }
         lines.push("");
         lines.push("총 " + invalidTicketUsers.length + "명");
+    }
+    lines.push("");
+    var freeSupportPackageConfig = GLOBAL_CONFIG.supportPass.freeSupportPackage;
+    var freeSupportPackageUsers = getHoiFreeSupportPackageAlertUsers(data);
+    lines.push("━━━━━━━━━━━━");
+    if (freeSupportPackageUsers.length < 1) {
+        lines.push("✅ " + freeSupportPackageConfig.baseName + " 보유 검사");
+        lines.push(freeSupportPackageConfig.alertCount + "개 이상 소지 유저가 없습니다.");
+    } else {
+        lines.push("⚠️ " + freeSupportPackageConfig.baseName + " " + freeSupportPackageConfig.alertCount + "개 이상 소지 유저");
+        lines.push("━━━━━━━━━━━━");
+        lines.push("[" + freeSupportPackageConfig.minVariant + "]~[" + freeSupportPackageConfig.maxVariant + "] 합산 기준입니다.");
+        lines.push("");
+        for (var packageUserIndex = 0; packageUserIndex < freeSupportPackageUsers.length; packageUserIndex++) {
+            var freeSupportPackageUser = freeSupportPackageUsers[packageUserIndex];
+            lines.push((packageUserIndex + 1) + ". " + checkRank(data, petData, guildData, freeSupportPackageUser.user) + " — " + freeSupportPackageConfig.baseName + " x" + freeSupportPackageUser.count);
+        }
+        lines.push("");
+        lines.push("총 " + freeSupportPackageUsers.length + "명");
     }
     return lines.join("\n");
 }
