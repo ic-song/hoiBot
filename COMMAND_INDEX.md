@@ -523,6 +523,7 @@ Status: VERIFIED
 - Comment message uses the guestbook header, inserts `allsee` in the count line, and shows the latest 50 comments while storing up to 50 comments.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
+- `/댓글` 성공 메시지는 무료 혜택에 맞춰 `🅟0 차감` 문구를 표시하지 않는다.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 - `/좋아홈` also uses an exact/full-pattern guard so `/좋아홈순위` and `/좋아홈초기화` do not enter the mutation branch.
 

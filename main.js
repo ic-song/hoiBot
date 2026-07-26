@@ -20214,9 +20214,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "] 님의 집에 댓글을 남겼습니다!\n" +
                         '💬 "' +
                         comment +
-                        '"\n\n🅟' +
-                        numberWithCommas(cost) +
-                        " 차감"
+                        '"'
                     );
                     return;
                 }
