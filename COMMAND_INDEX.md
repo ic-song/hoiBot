@@ -1079,7 +1079,7 @@ Status: VERIFIED
 - `getIntimacyUserRank`
 - `getUserIntimacyInfo`
 - Pendant equipment display is handled inline in `/펫정보`; legacy `ring` data should be migrated through `/반지보상받기` and removed from active equipment data.
-- `/펫정보`와 `/ㅎ`의 요약에는 패스 회원일 때 `[🐶호패 전용]`과 3종 완료 아이콘을 표시하고, 비회원일 때 `[🐶호패,초패 회원전용]`을 표시한다. 상세 화면은 패스 유무와 관계없이 전용 일퀘 영역을 유지하며 비회원의 세 조건을 `[호패,초패 회원전용]`으로 안내한다.
+- `/펫정보`와 `/ㅎ`의 요약에는 패스 회원일 때만 `[🐶호패 전용]`과 3종 완료 아이콘을 표시한다. 비회원 요약에는 패스 안내 줄을 추가하지 않지만, 상세 화면은 전용 일퀘 영역을 유지하며 세 조건을 `[호패,초패 회원전용]`으로 안내한다.
 
 ## Data Usage
 
@@ -1757,7 +1757,7 @@ Status: VERIFIED
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
-- 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 세 조건은 `[호패,초패 회원전용]`으로 표시한다.
+- 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
 - `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
 - 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`를 증가시키고, 좋아홈·유저 좋아요는 기존 일일 제한 카운터를 재사용한다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape

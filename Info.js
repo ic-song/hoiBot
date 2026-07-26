@@ -1105,7 +1105,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var userLikeUsed = parseInt(data.member[sender].cntlike, 10) || 0;
 			var passDailyIconMsg = hasPassDailyQuest
 				? "[🐶호패 전용][💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][💌" + getC(petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax) + "][💕" + getC(userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax) + "]\n"
-				: "[🐶호패,초패 회원전용]\n"; // 패스 전용 3종 완료 아이콘 또는 가입 안내
+				: ""; // 패스 회원에게만 전용 3종 완료 아이콘 표시
 			var weeklyQuestMax = 7;
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));
 			var weeklyQuestRemain = Math.max(0, weeklyQuestMax - weeklyQuestCnt);
@@ -2255,8 +2255,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("퀘스트 보상 안내 🦋 ");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
-	lines.push("━━━━━━━━━━━━━━━━");
 	if (status.hasPassDailyQuest) {
+		lines.push("━━━━━━━━━━━━━━━━");
 		lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
 		lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
 		lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
@@ -2264,12 +2264,13 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 		lines.push("《🎁 호패,초패 퀘스트 보상》");
 		lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 		if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
+		lines.push("");
 	} else {
+		lines.push("");
 		lines.push("펫홈 댓글 달성📝[호패,초패 회원전용]");
 		lines.push("펫홈 좋아홈🏡[호패,초패 회원전용]");
 		lines.push("유저 좋아요💕[호패,초패 회원전용]");
 	}
-	lines.push("");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("📜일일 퀘스트 조건📜");
 	lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");

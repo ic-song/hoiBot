@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.316"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.317"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -33228,8 +33228,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("대전하여 추가 보상을 지급해요👌" + allsee);
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
-    lines.push("━━━━━━━━━━━━━━━━");
     if (status.hasPassDailyQuest) {
+        lines.push("━━━━━━━━━━━━━━━━");
         lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
         lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
         lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
@@ -33237,12 +33237,13 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
         lines.push("《🎁 호패,초패 퀘스트 보상》");
         lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
         if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
+        lines.push("");
     } else {
+        lines.push("");
         lines.push("펫홈 댓글 달성📝[호패,초패 회원전용]");
         lines.push("펫홈 좋아홈🏡[호패,초패 회원전용]");
         lines.push("유저 좋아요💕[호패,초패 회원전용]");
     }
-    lines.push("");
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【📜일일 퀘스트 조건 】");
     lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
