@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.313"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.314"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -782,9 +782,9 @@ const GLOBAL_CONFIG = {
         miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
         miniPetBattleFree: 1, // 미니펫대전 무료 횟수
         petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
-        passPetHomeCommentMax: 3, // 패스 전용 펫홈 댓글 일퀘 횟수
-        passPetHomeLikeMax: 2, // 패스 전용 좋아홈 일퀘 횟수
-        passUserLikeMax: 2, // 패스 전용 유저 좋아요 일퀘 횟수
+        passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
+        passPetHomeLikeMax: 1, // 패스 전용 좋아홈 일퀘 횟수
+        passUserLikeMax: 1, // 패스 전용 유저 좋아요 일퀘 횟수
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정

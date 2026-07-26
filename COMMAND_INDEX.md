@@ -1754,7 +1754,7 @@ Status: VERIFIED
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
 - 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
-- 활성 호이패스·초보패스 유저에게 펫홈 댓글 3회, 좋아홈 2회, 유저 좋아요 2회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`를 증가시키고, 좋아홈·유저 좋아요는 기존 일일 제한 카운터를 재사용한다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets

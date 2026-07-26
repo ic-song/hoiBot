@@ -16,9 +16,9 @@ const GLOBAL_CONFIG = {
 		miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
 		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
 		petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
-		passPetHomeCommentMax: 3, // 패스 전용 펫홈 댓글 일퀘 횟수
-		passPetHomeLikeMax: 2, // 패스 전용 좋아홈 일퀘 횟수
-		passUserLikeMax: 2 // 패스 전용 유저 좋아요 일퀘 횟수
+		passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
+		passPetHomeLikeMax: 1, // 패스 전용 좋아홈 일퀘 횟수
+		passUserLikeMax: 1 // 패스 전용 유저 좋아요 일퀘 횟수
 	},
 	command: { // 명령어 입력/실행 설정
 		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
