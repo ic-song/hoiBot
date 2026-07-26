@@ -1917,6 +1917,9 @@ Status: VERIFIED
 - `buildSupportPassListMessage`
 - `cleanupExpiredSupportPasses`
 - `getInvalidAutoExploreTicketUsers`
+- `getAutoExploreTicketCount`
+- `removeAllAutoExploreTickets`
+- `normalizeAutoExploreTicketItemName`
 - `getSupportPassConfigs`
 - `isSupportPassActive`
 - `getActiveSupportPassUsers`
@@ -1928,7 +1931,7 @@ Status: VERIFIED
 ## Save Flow
 - `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
 - `/패스목록` removes `자동탐험권🌄` only when a newbie/hoi pass expires during that cleanup and neither automatic-explore pass remains active
-- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan
+- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
 - `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when the other automatic-explore pass is also inactive
