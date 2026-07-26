@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.305"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.306"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -16189,12 +16189,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var transferFee = calculateTransferFee(transferAmount, transferFeeRate);
                     var isDiscounted = false; // 호이행복재단 회원권으로 할인 적용 여부
                     var discountedFeeRate = transferFeeRate; // 할인된 수수료율 초기값은 원래 수수료율로 설정
-                    var isSupportPassFeeExempt = hasActiveHoiOrNewbiePass(data, sender); // 패스 혜택으로 이체 수수료가 면제되는지 확인
 
-                    if (isSupportPassFeeExempt) {
-                        transferFee = 0;
-                        discountedFeeRate = 0;
-                    } else if (hasPetSkill(petSkillData, sender, "호이행복재단 회원권")) {
+                    if (hasPetSkill(petSkillData, sender, "호이행복재단 회원권")) {
                         discountedFeeRate = Math.floor((transferFeeRate / 2) * 10) / 10;
                         transferFee = Math.floor(transferFee / 2);
                         isDiscounted = true;
@@ -16265,7 +16261,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         formatPointValue(transferAmount) +
                         "를 이체했습니다.\n\n" +
                         "이체 수수료🤫: " +
-                        (isSupportPassFeeExempt ? formatTransferFeeRate(transferFeeRate) + "→ 0%(호이·초보패스)" : isDiscounted ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%(호행권📙)" : formatTransferFeeRate(transferFeeRate) + "%") +
+                        (isDiscounted ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%(호행권📙)" : formatTransferFeeRate(transferFeeRate) + "%") +
                         "\n(-🅟" +
                         formatPointValue(transferFee) +
                         ")\n" +
@@ -16275,12 +16271,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "\n\n" +
                         "※ 이체수수료란?\n" +
                         "이체금액의 " +
-                        (isSupportPassFeeExempt ? "0%(호이·초보패스)" : formatTransferFeeRate(transferFeeRate) + "%") +
+                        formatTransferFeeRate(transferFeeRate) + "%" +
                         "를 기준으로 수수료가 별도 차감됩니다.\n" +
                         "받는 유저는 신청한 이체금액 그대로 받습니다.\n" +
-                        (isSupportPassFeeExempt
-                            ? "※ 호이패스·초보패스 혜택으로 이체 수수료가 면제되었습니다."
-                            : "※ 이체 수수료는 " + (feeReceiverNew ? "[" + checkRank(data, petData, guildData, feeReceiverNew) + "]" : "호이행복재단♥️") + "으로 기부되며 어려운 이웃을 돕습니다.")
+                        "※ 이체 수수료는 " + (feeReceiverNew ? "[" + checkRank(data, petData, guildData, feeReceiverNew) + "]" : "호이행복재단♥️") + "으로 기부되며 어려운 이웃을 돕습니다."
                     );
 
                     var expectedSenderPoint = roundToTwo(data.member[sender].point);
@@ -20129,7 +20123,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("댓글핀이 가득 차있습니다.\n/댓글핀삭제 [번호]로 댓글핀을 삭제해주세요.");
                         return;
                     }
-                    var pinCost = GLOBAL_CONFIG.petHomeComments.pinCost;
+                    var pinCost = getPetHomePassBenefitCost(data, sender, GLOBAL_CONFIG.petHomeComments.pinCost);
                     if (!hasPoint(data, sender, pinCost)) {
                         replier.reply("포인트가 부족합니다.\n댓글핀 등록에는 5천만 포인트가 필요합니다.");
                         return;
@@ -20152,7 +20146,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         checkRank(data, petData, guildData, pinTargetComment.from) +
                         "]: " +
                         pinTargetComment.text +
-                        '"\n\n소모 포인트: 5천만 포인트\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다.'
+                        '"\n\n소모 포인트: ' +
+                        (pinCost === 0 ? "0 (호이·초보패스 혜택)" : numberWithCommas(pinCost) + " 포인트") +
+                        "\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다."
                     );
                     return;
                 }
@@ -20162,10 +20158,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("[" + senderNick + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
                         return;
                     }
-                    let cost = 10000000;
+                    let cost = getPetHomePassBenefitCost(data, sender, 10000000);
                     let raw = msg.substring(3).trim();
                     if (!raw) {
-                        replier.reply("방문 댓글💌\n🎙️ 최대 20자, 등록 시 🅟10,000,000 소모\n예) /댓글 호이 남 멋진 집이에요!🏡");
+                        replier.reply("방문 댓글💌\n🎙️ 최대 20자, 호이·초보패스 혜택으로 무료\n예) /댓글 호이 남 멋진 집이에요!🏡");
                         return;
                     }
                     let parsed = findTargetAtStart(raw, data.member || {});
@@ -21072,7 +21068,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("[" + targetName + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
                     }
-                    let cost = 10000000;
+                    let cost = getPetHomePassBenefitCost(data, senderName, 10000000);
                     if (!hasPoint(data, senderName, cost)) {
                         replier.reply("포인트가 부족합니다. (필요: 🅟" + numberWithCommas(cost) + ")");
                         return;
@@ -30440,6 +30436,11 @@ function isSupportPassActive(data, user, passKey) {
 // 호이패스 또는 초보패스가 현재 활성 상태인지 확인하는 함수
 function hasActiveHoiOrNewbiePass(data, user) {
     return isSupportPassActive(data, user, "hoi") || isSupportPassActive(data, user, "newbie");
+}
+
+// 호이패스·초보패스 활성 유저의 펫홈 기능 비용을 면제하는 함수
+function getPetHomePassBenefitCost(data, user, baseCost) {
+    return hasActiveHoiOrNewbiePass(data, user) ? 0 : baseCost;
 }
 
 // 현재 사용 가능한 후원패스 유저 목록을 반환하는 함수
