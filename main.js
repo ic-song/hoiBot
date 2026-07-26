@@ -766,7 +766,7 @@ const GLOBAL_CONFIG = {
         diamondBoxCount: 15
     },
     privateChat: { // 1:1톡 이용 제한 설정
-        passRequiredMessage: "❌ 1:1톡에서는 초보패스🐥 또는 호이패스🐶 사용 중인 유저만 봇 명령어를 이용할 수 있습니다.\n그룹채팅의 /패키지가방에서 패스 상태를 확인해주세요."
+        passRequiredMessage: "❌ 1:1톡에서 봇 명령어를 이용하려면 초보패스🐥 또는 호이패스🐶가 필요합니다.\n그룹채팅의 /패키지가방에서 패스 상태를 확인해주세요."
     },
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 50, // 최근 댓글 보관 개수
@@ -1519,10 +1519,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!isGroupChat) {
             data = loadJsonFile(filePath);
             if (!hasActiveHoiOrNewbiePass(data, sender)) {
-                var privateChatInput = String(msg || "").trim(); // 차단 안내를 표시할 슬래시·초성 명령 입력
-                if (privateChatInput.indexOf("/") === 0 || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(privateChatInput)) {
-                    replier.reply(GLOBAL_CONFIG.privateChat.passRequiredMessage);
-                }
+                replier.reply(GLOBAL_CONFIG.privateChat.passRequiredMessage);
                 return;
             }
         }

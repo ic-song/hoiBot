@@ -45,9 +45,6 @@ const GLOBAL_CONFIG = {
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪"
 	},
-	privateChat: { // 1:1톡 이용 제한 설정
-		passRequiredMessage: "❌ 1:1톡에서는 초보패스🐥 또는 호이패스🐶 사용 중인 유저만 봇 명령어를 이용할 수 있습니다.\n그룹채팅의 /패키지가방에서 패스 상태를 확인해주세요."
-	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
 		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"
@@ -246,10 +243,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		let data = loadJsonFile(filePath);
 		if (!isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
-			var privateChatInput = String(msg || "").trim(); // 차단 안내를 표시할 슬래시·초성 명령 입력
-			if (privateChatInput.indexOf("/") === 0 || /^[ㄱ-ㅎㅏ-ㅣ]+$/.test(privateChatInput)) {
-				replier.reply(GLOBAL_CONFIG.privateChat.passRequiredMessage);
-			}
 			return;
 		}
 		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 관리 정보 명령 사용 가능 대상
