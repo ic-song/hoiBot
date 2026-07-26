@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.308"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.309"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20146,9 +20146,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         checkRank(data, petData, guildData, pinTargetComment.from) +
                         "]: " +
                         pinTargetComment.text +
-                        '"\n\n소모 포인트: ' +
-                        (pinCost === 0 ? "0 (호이·초보패스 혜택)" : numberWithCommas(pinCost) + " 포인트") +
-                        "\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다."
+                        '"\n\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다.'
                     );
                     return;
                 }
@@ -20214,9 +20212,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "] 님의 집에 댓글을 남겼습니다!\n" +
                         '💬 "' +
                         comment +
-                        '"\n\n🅟' +
-                        numberWithCommas(cost) +
-                        " 차감"
+                        '"'
                     );
                     return;
                 }
@@ -21080,7 +21076,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     targetHome.likeCnt = targetHome.likeCnt || 0;
                     targetHome.likeCnt += 1;
                     let targetNickName = checkRank(data, petData, guildData, targetName);
-                    let replyMsg = "[" + nickName + "] 님이 [" + targetNickName + "] 님에게\n" + "좋아홈💌 을 보냈습니다!\n" + "🅟" + numberWithCommas(cost) + " 을 소모합니다.";
+                    let replyMsg = "[" + nickName + "] 님이 [" + targetNickName + "] 님에게\n" + "좋아홈💌 을 보냈습니다!";
                     saveJsonFile(data, filePath);
                     saveJsonFile(homeData, homeDataFile);
                     replier.reply(replyMsg);
