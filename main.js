@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.312"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.313"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -963,6 +963,15 @@ blockedNicknameTerms: [
             fragmentNeedCount: 10,
             topLimit: 10
         }
+    },
+    rewardPayout: { // 운영 순위 보상 지급 현황 설정
+        schedules: [
+            { key: "overall", command: "/보상지급", time: "오후 3시 32분", label: "종합순위 보상" },
+            { key: "miniPet", command: "/연금지급", time: "오후 3시 32분", label: "미니펫순위 보상" },
+            { key: "guildRank", command: "/길드보상지급", time: "오후 3시 33분", label: "길드순위 보상" },
+            { key: "tier", command: "/티어보상지급", time: "오후 3시 36분", label: "티어순위 보상" },
+            { key: "territory", command: "/영지순위보상지급", time: "오후 10시 05분", label: "길드영지포인트 순위보상" }
+        ]
     },
     fee: { // 수수료 계산 설정
         highRateThreshold: 50000 // 수익 수수료 고율 적용 기준금액
@@ -12856,7 +12865,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildGuildTerritoryRankRewardGuideMessage());
                     return;
                 }
-                if (msg === "/길드영지보상지급") {
+                if (msg === "/길드영지보상지급" || msg === "/영지순위보상지급") {
                     var territoryRankReward = runGuildTerritoryRankReward(data, guildData, sender);
                     replier.reply(territoryRankReward.message);
                     if (territoryRankReward.ok) {
@@ -17711,6 +17720,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     replier.reply(rewardMsg);
                     noticeMsg(rewardMsg); // 공지로도 출력
+                    recordDailyRewardPayout(data, "miniPet");
                     saveJsonFile(data, filePath);
                     return;
                 }
@@ -18505,6 +18515,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             });
                         });
                     });
+                    recordDailyRewardPayout(data, "overall");
                     replier.reply(message);
                     noticeMsg(message);
                 }
@@ -23821,7 +23832,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(out);
                     return;
                 }
-                if (msg.indexOf("/길드보상지급") === 0) {
+                if (msg === "/길드보상지급") {
                     var allowedSenders = ["오픈채팅봇", "호이 남", "감자 여"];
 
                     if (allowedSenders.indexOf(sender) === -1) {
@@ -23842,6 +23853,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
+                    recordDailyRewardPayout(data, "guildRank");
                     saveJsonFile(data, filePath);
                     saveJsonFile(guildData, guildPath);
 
@@ -26183,7 +26195,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
-        "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
+        "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
@@ -30627,6 +30639,44 @@ function buildUserSupportPassLines(data, user) {
     return lines;
 }
 
+// 순위 보상 명령의 당일 지급 완료 시각을 기록하는 함수
+function recordDailyRewardPayout(data, rewardKey) {
+    if (!data.rewardPayoutStatus || typeof data.rewardPayoutStatus !== "object" || data.rewardPayoutStatus instanceof Array) {
+        data.rewardPayoutStatus = {};
+    }
+    data.rewardPayoutStatus[rewardKey] = {
+        lastPaidDate: getCurrentDate(),
+        lastPaidAt: formatDateTime(new Date())
+    };
+}
+
+// 순위 보상별 오늘 지급 완료 여부를 확인하는 함수
+function isDailyRewardPayoutDone(data, guildData, rewardKey) {
+    var today = getCurrentDate();
+    if (rewardKey === "tier") {
+        return !!(data.tierReward && data.tierReward.lastPaidDate === today);
+    }
+    if (rewardKey === "territory") {
+        var territoryPaidAt = guildData && guildData.guildTerritoryReward ? guildData.guildTerritoryReward.lastPaidAt : "";
+        return String(territoryPaidAt || "").substring(0, 10).replace(/-/g, "") === today;
+    }
+    var payout = data.rewardPayoutStatus && data.rewardPayoutStatus[rewardKey] ? data.rewardPayoutStatus[rewardKey] : null;
+    return !!(payout && payout.lastPaidDate === today);
+}
+
+// 패스목록에 표시할 당일 순위 보상 지급 현황 줄을 만드는 함수
+function buildDailyRewardPayoutStatusLines(data, guildData) {
+    var schedules = GLOBAL_CONFIG.rewardPayout.schedules;
+    var lines = ["《🎁 금일 순위 보상 지급 현황》"];
+    for (var i = 0; i < schedules.length; i++) {
+        var schedule = schedules[i];
+        var paidMark = isDailyRewardPayoutDone(data, guildData, schedule.key) ? "V" : "X";
+        lines.push(schedule.command + " " + schedule.time + " [" + paidMark + "]");
+        lines.push("└ " + schedule.label);
+    }
+    return lines;
+}
+
 // 전체 후원패스 목록 메시지를 만드는 함수
 function buildSupportPassListMessage(data, petData, guildData) {
     var configs = getSupportPassConfigs();
@@ -30657,6 +30707,11 @@ function buildSupportPassListMessage(data, petData, guildData) {
         lines.push("━━━━━━━━━━━");
         lines.push("");
     }
+    var rewardPayoutLines = buildDailyRewardPayoutStatusLines(data, guildData);
+    for (var rewardLineIndex = 0; rewardLineIndex < rewardPayoutLines.length; rewardLineIndex++) {
+        lines.push(rewardPayoutLines[rewardLineIndex]);
+    }
+    lines.push("");
     var invalidTicketUsers = getInvalidAutoExploreTicketUsers(data);
     lines.push("━━━━━━━━━━━━");
     if (invalidTicketUsers.length < 1) {
