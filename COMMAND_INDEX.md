@@ -616,6 +616,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `/펫홈` output is split into two replies: home body first, comments second.
+- `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
 - `/홈뱃지` keeps the representative badge and collection summary visible, then inserts `allsee` immediately after the owned-badge section divider.
 - Furniture list inserts `allsee` from the second placed furniture.
 - Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.327"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.328"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20421,7 +20421,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else {
                         lineComment += "(아직 한줄평이 없습니다.\n/한줄평 내용 을 적어보세요!)\n\n";
                     }
-                    let lineHouseInfo = houseName + "[+" + floor + "평]\n";
+                    let displayHouseName = houseName.indexOf("[🏡]") === 0 ? houseName : "[🏡]" + houseName; // 집 아이콘 중복 방지
+                    let lineHouseInfo = displayHouseName + "[+" + floor + "평]\n";
                     let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
                     let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n" + lineHouseInfo;
                     if (placedArr.length === 0) {
