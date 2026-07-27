@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.325"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.326"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -37673,7 +37673,8 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
 function buildAllPetHomeBadgesMessage(activityData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var allBadges = GLOBAL_CONFIG.petHomeActivity.achievementBadges.concat(GLOBAL_CONFIG.petHomeActivity.specialBadges);
-    var out = "🏅 전체 펫홈 뱃지 64종\n━━━━━━━━━━━━\n";
+    var out = "🏅 전체 펫홈 뱃지 64종\n━━━━━━━━━━━━\n" +
+        "상세: /홈뱃지정보 [번호 또는 ID]\n\n";
     for (var i = 0; i < allBadges.length; i++) {
         var badge = allBadges[i];
         var status = petHomeStringListContains(social.badges, badge.id) ? "✅" : (petHomeStringListContains(social.deletedBadgeIds, badge.id) ? "🗑" : "▫️");
