@@ -223,6 +223,8 @@ LDPlayer
 - When multiple entries share the same date, `/개발자노트` should present them under one date section while each production-facing change still receives its own `0.001` version increase.
 - Before production reflection, keep `HoiBotVersion` in `main.js` synchronized with the latest `data/hoiBotChangeLog.json` entry so `/호이봇버전` and `/개발자노트` show the same current version.
 - After production reflection, re-check `origin/feature/prod` and confirm the reflected commit includes the developer-note/version update; report the reflected version in the final response.
+- After any successful `feature/prod` reflection and remote verification, use the PlayMCP KakaoTalk `나에게 보내기` tool to send exactly `ver_<HoiBotVersion>` with no additional text.
+- Do not send the KakaoTalk version message when `feature/prod` was not updated or remote verification failed. If PlayMCP is unavailable or sending fails, retry once when safe and report the notification failure without misreporting it as sent.
 - Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change the live bot behavior or the user explicitly requests a visible change record.
 - Test reflection scripts should use `feature/prod` as their source branch.
 - `main` is a stable/reference branch and should not be assumed to be the active production source.
