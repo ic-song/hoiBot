@@ -37610,7 +37610,7 @@ function buildPetHomeFollowListMessage(data, petData, guildData, activityData, u
         else nonMutualUsers.push(listedUser);
     }
     var list = nonMutualUsers.concat(mutualUsers);
-    var title = type === "followers" ? "🐾 팔로워 유저[명령어: /팔로우]" : "🎀 팔로잉 유저[명령어: /팔로잉]";
+    var title = type === "followers" ? "🐾 팔로워 유저[명령어: /팔로우]\n※ 나에게 관심 있는 사람" : "🎀 팔로잉 유저[명령어: /팔로잉]\n※ 내가 관심 있는 사람";
     var out = title + "\n━━━━━━━━━━━━\n";
     if (list.length === 0) return out + "등록된 유저가 없습니다.";
     for (var i = 0; i < list.length; i++) {
