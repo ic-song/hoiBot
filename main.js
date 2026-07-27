@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.323"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.324"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20409,7 +20409,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     ////////
                     let header = "🏡[" + nickName + "]님의 펫하우스🏡\n━━━━━━━━━━━━\n";
                     var targetHomeSocial = getPetHomeSocialUser(petHomeActivityDataForHome, targetName);
-                    let lineSocial = "팔로워🐾 " + targetHomeSocial.followers.length + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
+                    let lineSocial = "팔로우🐾 " + targetHomeSocial.followers.length + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
                         "대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForHome, targetName) + "\n\n";
                     let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
                     let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
@@ -37594,10 +37594,10 @@ function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwne
 }
 
 // 펫홈 소셜 관계 목록 메시지를 생성하는 함수
-function buildPetHomeFollowListMessage(data, petData, guildData, activityData, user, type) {
+function buildPetHomeFollowListMessage(data, petData, guildData, activityData, user, type, titleOverride) {
     var social = getPetHomeSocialUser(activityData, user);
     var list = type === "followers" ? social.followers : social.following;
-    var title = type === "followers" ? "🐾 팔로워 유저" : "🎀 팔로잉 유저";
+    var title = titleOverride || (type === "followers" ? "🐾 팔로워 유저" : "🎀 팔로잉 유저");
     var out = title + "\n━━━━━━━━━━━━\n";
     if (list.length === 0) return out + "등록된 유저가 없습니다.";
     for (var i = 0; i < list.length; i++) {
@@ -37818,7 +37818,7 @@ function buildPetHomeActivityMessage(data, petData, guildData, sender, activityD
     var out = "🔔 " + checkRank(data, petData, guildData, sender) + "님의 홈알림\n" +
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, sender) + "\n" +
         "━━━━━━━━━━━━\n" +
-        "팔로워🐾 " + social.followers.length + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
+        "팔로우🐾 " + social.followers.length + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
         "맞팔🤝 " + mutualCount + "명 | 남은 마음💌: " + heartStatus.remaining + "개\n" +
         "━━━━━━━━━━━━\n" +
         "새로운 알림🔔 " + unreadCount + "개 | 보관📭 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
@@ -37837,7 +37837,7 @@ function buildPetHomeActivityMessage(data, petData, guildData, sender, activityD
         }
     }
 
-    out += "\n\n" + buildPetHomeFollowListMessage(data, petData, guildData, activityData, sender, "followers") + "\n\n";
+    out += "\n\n" + buildPetHomeFollowListMessage(data, petData, guildData, activityData, sender, "followers", "🐾 팔로우 유저") + "\n\n";
     out += buildPetHomeFollowListMessage(data, petData, guildData, activityData, sender, "following") + "\n\n";
     out += "👣 최근 방문자\n━━━━━━━━━━━━\n";
     if (visitors.length === 0) {
