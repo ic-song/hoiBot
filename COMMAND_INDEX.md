@@ -592,7 +592,7 @@ Status: VERIFIED
 - `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with empty `alerts`, `recentVisitors`, `petHomeSocial`, and `migrations` only when the active DEV/PROD file does not exist and never overwrites an existing file.
 - `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
-- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. The follower/following list headers also show the related `/팔로우` and `/팔로잉` command guides.
+- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
 - `/홈뱃지` rechecks achievement badges, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus the exact name or `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -1820,7 +1820,7 @@ Status: VERIFIED
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
 - 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
-- 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
 - 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
 - `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.

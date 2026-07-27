@@ -18,7 +18,8 @@ const GLOBAL_CONFIG = {
 		petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
 		passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
 		passPetHomeLikeMax: 1, // 패스 전용 좋아홈 일퀘 횟수
-		passUserLikeMax: 1 // 패스 전용 유저 좋아요 일퀘 횟수
+		passUserLikeMax: 1, // 패스 전용 유저 좋아요 일퀘 횟수
+		passDailyPointBoxReward: 2 // 패스 전용 일퀘 1억 포인트상자 보상 수량
 	},
 	command: { // 명령어 입력/실행 설정
 		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
@@ -2262,7 +2263,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 		lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
 		lines.push("");
 		lines.push("《🎁 호패,초패 퀘스트 보상》");
-		lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
+		lines.push("1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개");
 		if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
 		lines.push("");
 	} else {
