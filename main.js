@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.330"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.331"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -872,6 +872,7 @@ const GLOBAL_CONFIG = {
         passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
         passPetHomeLikeMax: 1, // 패스 전용 좋아홈 일퀘 횟수
         passUserLikeMax: 1, // 패스 전용 유저 좋아요 일퀘 횟수
+        passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
@@ -14589,7 +14590,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 statusMsg += "펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]\n";
                                 statusMsg += "유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]\n";
                                 statusMsg += "\n";
-                                statusMsg += status.passDailyRewardDone ? "[✅ 호패,초패 퀘스트 보상 지급 완료]\n" : "《🎁 호패,초패 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) 1개\n";
+                                statusMsg += status.passDailyRewardDone ? "[✅ 호패,초패 퀘스트 보상 지급 완료]\n" : "《🎁 호패,초패 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개\n";
                             }
                             statusMsg += "주간퀘스트🦋[" + status.weeklyUsed + "/" + status.weeklyMax + "]: " + getWeeklyQuestRemainText(status.weeklyUsed, status.weeklyMax) + "\n";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
@@ -32544,11 +32545,11 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     }
 
     if (status.passDailyComplete && !status.passDailyRewardDone) {
-        addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
+        addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", GLOBAL_CONFIG.daily.passDailyPointBoxReward);
         member.passDailyQuestCnt = (member.passDailyQuestCnt || 0) + 1;
         claimed = true;
         passDailyClaimed = true;
-        messages.push("✅ 호이·초보패스 전용 일퀘 보상 지급 완료!\n보상 : 1억포인트상자🪙(/포인트상자오픈) 1개");
+        messages.push("✅ 호이·초보패스 전용 일퀘 보상 지급 완료!\n보상 : 1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개");
     }
 
     if (status.weeklyComplete) {
@@ -33857,7 +33858,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
         lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
         lines.push("");
         lines.push("《🎁 호패,초패 퀘스트 보상》");
-        lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
+        lines.push("1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개");
         if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
         lines.push("");
     } else {
@@ -37600,7 +37601,15 @@ function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwne
 // 펫홈 소셜 관계 목록 메시지를 생성하는 함수
 function buildPetHomeFollowListMessage(data, petData, guildData, activityData, user, type) {
     var social = getPetHomeSocialUser(activityData, user);
-    var list = type === "followers" ? social.followers : social.following;
+    var sourceList = type === "followers" ? social.followers : social.following;
+    var nonMutualUsers = []; // 목록 상단에 표시할 맞팔이 아닌 유저
+    var mutualUsers = []; // 비맞팔 다음에 표시할 맞팔 유저
+    for (var listIndex = 0; listIndex < sourceList.length; listIndex++) {
+        var listedUser = sourceList[listIndex];
+        if (isPetHomeMutualFollow(activityData, user, listedUser)) mutualUsers.push(listedUser);
+        else nonMutualUsers.push(listedUser);
+    }
+    var list = nonMutualUsers.concat(mutualUsers);
     var title = type === "followers" ? "🐾 팔로워 유저[명령어: /팔로우]" : "🎀 팔로잉 유저[명령어: /팔로잉]";
     var out = title + "\n━━━━━━━━━━━━\n";
     if (list.length === 0) return out + "등록된 유저가 없습니다.";
