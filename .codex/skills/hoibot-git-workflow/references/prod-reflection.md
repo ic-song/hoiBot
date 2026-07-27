@@ -55,12 +55,13 @@ If the task branch contains unrelated commits, cherry-pick only the validated ta
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.
 
-After verifying the pushed `origin/feature/prod`, send exactly
-`ver_<HoiBotVersion>` through the PlayMCP KakaoTalk `나에게 보내기` tool. Do
-not add a prefix, suffix, commit hash, or explanatory text. Do not send when
-production was not updated or remote verification failed. If sending fails,
-retry once when safe and report the notification failure without claiming it
-was sent.
+After verifying the pushed `origin/feature/prod`, when the PlayMCP KakaoTalk
+`나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>`. Do not
+add a prefix, suffix, commit hash, or explanatory text. Do not send when
+production was not updated or remote verification failed. If the tool is
+unavailable, skip the notification without failing production reflection and
+report that it was skipped. If the available tool fails to send, retry once
+when safe and report the notification failure without claiming it was sent.
 
 For bug-fix work on `feature/bugFix`, delete local and remote `feature/bugFix`
 after the validated commit has been pushed, reflected into `feature/prod`, and
