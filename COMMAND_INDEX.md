@@ -490,7 +490,7 @@ Status: VERIFIED
 - `/마음 [닉네임]`
 - `/귀여워 [닉네임]`
 - `/응원해 [닉네임]`
-- `/멋져 [닉네임]`
+- `/멋져요 [닉네임]`
 - `/사랑해 [닉네임]`
 - `/홈알림`
 - `/펫홈댓글파일생성`
@@ -578,7 +578,7 @@ Status: VERIFIED
 
 - `/펫홈` output is split into two replies: home body first, comments second.
 - Furniture list inserts `allsee` from the second placed furniture.
-- Comment message uses the guestbook header, inserts `allsee` in the count line, and shows the latest 50 comments while storing up to 50 comments.
+- Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
 - `/댓글`, `/댓글핀`, `/좋아홈` 성공 메시지는 포인트 차감·소모 문구를 표시하지 않는다.

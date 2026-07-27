@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.320"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.321"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -789,7 +789,7 @@ const GLOBAL_CONFIG = {
         heartTypes: [
             { key: "cute", command: "귀여워", label: "귀여워", emoji: "🐾", alertType: "heart_cute" },
             { key: "cheer", command: "응원해", label: "응원해", emoji: "⭐", alertType: "heart_cheer" },
-            { key: "cool", command: "멋져", label: "멋져", emoji: "✨", alertType: "heart_cool" },
+            { key: "cool", command: "멋져요", label: "멋져요", emoji: "✨", alertType: "heart_cool" },
             { key: "love", command: "사랑해", label: "사랑해", emoji: "💖", alertType: "heart_love" }
         ]
     },
@@ -20087,7 +20087,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petHomeActivityDataForAlert, petHomeActivityFile);
                     return;
                 }
-                var heartCommandMatch = msg.match(/^\/(마음|사랑해|귀여워|멋져|응원해)(?:\s+(.+))?$/);
+                var heartCommandMatch = msg.match(/^\/(마음|사랑해|귀여워|멋져요|응원해)(?:\s+(.+))?$/);
                 if (heartCommandMatch) {
                     var heartCommandName = heartCommandMatch[1];
                     var heartTargetText = heartCommandMatch[2] ? heartCommandMatch[2].trim() : "";
@@ -36996,7 +36996,7 @@ function buildPetHomeHeartExpressionMessage(userHome) {
     var counts = ensurePetHomeHeartExpressions(userHome);
     return "💞━━ 나를 향한 마음표현 ━━💞\n" +
         "귀여워🐾 x" + counts.cute + " | 응원해⭐ x" + counts.cheer + "\n" +
-        "멋져✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n";
+        "멋져요✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n";
 }
 
 // 저장된 활동 유형을 홈알림 표시 문구로 변환하는 함수
@@ -37170,13 +37170,19 @@ function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comme
 
     if (pinnedComments.length > 0) {
         out += "\n❤️집주인이 좋아하는 댓글❤️\n";
+        var hasInsertedPinnedAllsee = false;
         for (var pinIndex = 0; pinIndex < pinnedComments.length; pinIndex++) {
             var pinned = pinnedComments[pinIndex];
             if (!pinned) continue;
             var pinnedNick = checkRank(data, petData, guildData, pinned.from);
-            out += (pinIndex + 1) + ". 📌 [" + pinnedNick + "]: " + pinned.text + "\n";
+            out += (pinIndex + 1) + ". 📌 [" + pinnedNick + "]: " + pinned.text;
+            if (!hasInsertedPinnedAllsee) {
+                out += allsee;
+                hasInsertedPinnedAllsee = true;
+            }
+            out += "\n";
         }
-        out += "\n☆━━ 최근 방명록 댓글 ━━☆" + allsee + "\n";
+        out += "\n☆━━ 최근 방명록 댓글 ━━☆\n";
     } else {
         out += "\n❤️집주인이 좋아하는 댓글❤️\n";
         out += "현재 댓글핀이 없습니다.\n/댓글핀 [숫자] 로 지정하세요\n";
