@@ -1,10 +1,11 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.300"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.320"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
+let privateChatBlockedTracker = {}; // 패스 미사용 유저별 1:1톡 차단 횟수
 let requestMonitorConfig = null;
 let autoDailyQuestInternalDepth = 0;
 
@@ -685,6 +686,9 @@ const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗�
 const petHomePlacedFurniturePath = "/sdcard/호이랜드/petHomePlacedFurniture.json"; // 펫홈 장착 가구 상세 데이터
 const petHomeBeforeSplitBackupPath = "/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json"; // 장착 가구 최초 분리 전 1회 백업
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
+const petHomeActivityFile = "/sdcard/호이랜드/petHomeActivityData.json"; // 펫홈 활동 알림·최근 방문자 데이터
+const petHomePassBenefitHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 펫홈 백업
+const petHomePassBenefitCommentsBackupPath = "/sdcard/호이랜드/backups/petHomeComments_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 댓글 백업
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
@@ -761,12 +765,33 @@ const GLOBAL_CONFIG = {
         dailyPayoutPoint: 1000000000
     },
     supportPass: { // 후원 패스 지급 설정
-        diamondBoxCount: 15
+        diamondBoxCount: 15,
+        freeSupportPackage: { // 장기 미사용 확인용 무료 응원패키지 설정
+            baseName: "호이응원패키지(무료)🐹",
+            minVariant: 1,
+            maxVariant: 10,
+            alertCount: 3
+        }
+    },
+    privateChat: { // 1:1톡 이용 제한 설정
+        notifyEvery: 3, // 패스 미사용 1:1톡 운영 알림 주기
+        messagePreviewMaxLength: 100 // 운영 알림에 표시할 최근 메시지 최대 길이
     },
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 50, // 최근 댓글 보관 개수
         maxPinned: 3, // 댓글핀 최대 개수
         pinCost: 50000000 // 댓글핀 등록 비용
+    },
+    petHomeActivity: { // 펫홈 마음표현·활동 알림 설정
+        maxAlerts: 100,
+        maxRecentVisitors: 100,
+        commentPreviewMaxLength: 15,
+        heartTypes: [
+            { key: "cute", command: "귀여워", label: "귀여워", emoji: "🐾", alertType: "heart_cute" },
+            { key: "cheer", command: "응원해", label: "응원해", emoji: "⭐", alertType: "heart_cheer" },
+            { key: "cool", command: "멋져", label: "멋져", emoji: "✨", alertType: "heart_cool" },
+            { key: "love", command: "사랑해", label: "사랑해", emoji: "💖", alertType: "heart_love" }
+        ]
     },
     daily: { // 일일 콘텐츠 진행 설정
         trialTowerMax: 15, // 시련의탑 하루 최대 횟수
@@ -775,6 +800,9 @@ const GLOBAL_CONFIG = {
         miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
         miniPetBattleFree: 1, // 미니펫대전 무료 횟수
         petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
+        passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
+        passPetHomeLikeMax: 1, // 패스 전용 좋아홈 일퀘 횟수
+        passUserLikeMax: 1, // 패스 전용 유저 좋아요 일퀘 횟수
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
@@ -954,6 +982,15 @@ blockedNicknameTerms: [
             topLimit: 10
         }
     },
+    rewardPayout: { // 운영 순위 보상 지급 현황 설정
+        schedules: [
+            { key: "overall", command: "/보상지급", time: "오후 3시 32분", label: "종합순위 보상" },
+            { key: "miniPet", command: "/연금지급", time: "오후 3시 32분", label: "미니펫순위 보상" },
+            { key: "guildRank", command: "/길드보상지급", time: "오후 3시 33분", label: "길드순위 보상" },
+            { key: "tier", command: "/티어보상지급", time: "오후 3시 36분", label: "티어순위 보상" },
+            { key: "territory", command: "/영지순위보상지급", time: "오후 10시 05분", label: "길드영지포인트 순위보상" }
+        ]
+    },
     fee: { // 수수료 계산 설정
         highRateThreshold: 50000 // 수익 수수료 고율 적용 기준금액
     },
@@ -965,9 +1002,9 @@ blockedNicknameTerms: [
     freeMarket: { // 자유시장 설정
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
-        tradeFeeRate: 0.19, // 자유시장 기본 거래 수수료율
-        memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
-        memberFeeTag: "자회원🏪(수수료 10%)"
+        tradeFeeRate: 0.1, // 자유시장 기본 거래 수수료율
+        memberTradeFeeRate: 0.05, // 자유시장회원권 보유자 거래 수수료율
+        memberFeeTag: "자회원🏪(수수료 5%)"
     },
     titleGift: { // 타이틀 선물 설정
         itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)",
@@ -1008,7 +1045,7 @@ blockedNicknameTerms: [
             { name: "미니펫 강화석💫", count: 1, price: 1 },
             { name: "펫스킬북📙(/펫스킬오픈)", count: 1, price: 10000 }
         ],
-        rankRewards: [20, 19, 18, 17, 16, 15, 14, 13, 12, 11]
+        rankRewards: [15, 14, 13, 12, 11, 10, 9, 8, 7, 6]
     },
     items: { // 공통 아이템명 설정
         carrotName: "🥕당근이세요?",
@@ -1025,6 +1062,30 @@ blockedNicknameTerms: [
     pointShop: { // 포인트 상점 설정
         limits: {
             diamondBoxDailyBuy: 100
+        }
+    },
+    guaranteedPackage: { // 확정 패키지 아이템·보상 설정
+        royal: {
+            itemName: "[🏡가구]로열패키지 확정(/로열오픈)",
+            maxBagSize: 32,
+            reward: {
+                name: "고대서적📘",
+                exp: 140000,
+                rate: 0.00001,
+                grade: "로열 루미에르"
+            }
+        },
+        genesis: {
+            itemName: "[🐹미니펫]창세패키지 확정(/창세오픈)",
+            maxBagSize: 8,
+            reward: {
+                name: "가온빛",
+                emoji: "💖",
+                grade: "창세",
+                battleExp: 1001280,
+                castleExp: 1001280,
+                raidExp: 1001280
+            }
         }
     },
     guildTerritory: { // 길드 영토전 설정
@@ -1090,30 +1151,30 @@ blockedNicknameTerms: [
             ]
         },
         rememberMe: { // 날 기억해줘 이벤트 영지 설정
-            successRate: 0.7,
+            successRate: 0.3,
             successMessages: [
-                "[{{rank}}] 님의 마지막 외침이 길드원들에게 닿았습니다.",
+                "[{{rank}}] 님의 외침이 길드원들에게 닿았습니다.",
                 "[{{rank}}] 님의 이름이 길드의 역사에 새겨집니다.",
                 "[{{rank}}] 님을 기억하는 이들의 마음이 기적을 일으켰습니다.",
-                "[{{rank}}] 님의 희생이 전장의 운명을 뒤흔듭니다.",
+                "[{{rank}}] 님의 용기가 전장의 운명을 뒤흔듭니다.",
                 "[{{rank}}] 님의 간절한 바람에 길드원들이 응답했습니다.",
                 "[{{rank}}] 님의 흔적이 점령지에 강렬하게 남았습니다.",
                 "[{{rank}}] 님의 이름을 외치는 목소리가 전장에 울려 퍼집니다.",
-                "[{{rank}}] 님의 마지막 기억이 적의 점령지를 무너뜨립니다.",
-                "[{{rank}}] 님의 희생을 길드는 영원히 기억할 것입니다.",
-                "[{{rank}}] 님은 사라졌지만, 그 이름은 모두의 기억에 남았습니다."
+                "[{{rank}}] 님의 기억이 적의 점령지를 무너뜨립니다.",
+                "[{{rank}}] 님의 활약을 길드는 영원히 기억할 것입니다.",
+                "[{{rank}}] 님의 이름은 모두의 기억에 남았습니다."
             ],
             failMessages: [
-                "[{{rank}}] 님의 마지막 외침은 아무에게도 닿지 않았습니다.(탈락🥲)",
-                "[{{rank}}] 님의 이름은 전장의 소음 속에 묻혀버렸습니다.(탈락🥲)",
-                "[{{rank}}] 님을 기억하는 이는 아무도 없었습니다.(탈락🥲)",
-                "[{{rank}}] 님의 간절한 바람은 허무하게 사라졌습니다.(탈락🥲)",
-                "[{{rank}}] 님의 희생은 아무런 흔적도 남기지 못했습니다.(탈락🥲)",
-                "[{{rank}}] 님은 길드원들의 기억에서 조용히 잊혀졌습니다.(탈락🥲)",
-                "[{{rank}}] 님의 목소리에 아무도 응답하지 않았습니다.(탈락🥲)",
-                "[{{rank}}] 님이 남긴 마지막 흔적마저 사라졌습니다.(탈락🥲)",
-                "[{{rank}}] 님의 이름은 끝내 기억되지 못했습니다.(탈락🥲)",
-                "[{{rank}}] 님은 아무도 모르게 전장에서 사라졌습니다.(탈락🥲)"
+                "[{{rank}}] 님의 외침은 아무에게도 닿지 않았습니다.",
+                "[{{rank}}] 님의 이름은 전장의 소음 속에 묻혀버렸습니다.",
+                "[{{rank}}] 님을 기억하는 이는 아무도 없었습니다.",
+                "[{{rank}}] 님의 간절한 바람은 허무하게 사라졌습니다.",
+                "[{{rank}}] 님의 시도는 아무런 흔적도 남기지 못했습니다.",
+                "[{{rank}}] 님은 길드원들의 기억에서 조용히 잊혀졌습니다.",
+                "[{{rank}}] 님의 목소리에 아무도 응답하지 않았습니다.",
+                "[{{rank}}] 님이 남긴 흔적마저 사라졌습니다.",
+                "[{{rank}}] 님의 이름은 끝내 기억되지 못했습니다.",
+                "[{{rank}}] 님의 외침이 전장의 소음에 묻혔습니다."
             ]
         },
         items: { // 길드 영토전 아이템명 설정
@@ -1487,6 +1548,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         var data = null;
 
+        if (!isGroupChat) {
+            data = loadJsonFile(filePath);
+            if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                recordBlockedPrivateChatAttempt(room, sender, msg);
+                return;
+            }
+        }
+
         if (isAccountSuspensionBlockedMessage(msg)) {
             data = loadJsonFile(filePath);
             if (isAccountSuspended(data, sender)) {
@@ -1797,6 +1866,86 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
             saveJsonFile({ comments: {}, pinnedComments: {} }, petHomeCommentsFile);
             replier.reply("✅ 펫홈 댓글 파일 생성 완료\n" + activePetHomeCommentsFile);
+            return;
+        }
+
+        if (msg === "/펫홈활동파일생성" && (isAdmin(sender) || isMaster(sender))) {
+            var activePetHomeActivityFile = resolveActiveDataPath(petHomeActivityFile);
+            var petHomeActivityFileObj = new java.io.File(activePetHomeActivityFile);
+            if (petHomeActivityFileObj.exists()) {
+                replier.reply("✅ 펫홈 활동 파일이 이미 있습니다.\n" + activePetHomeActivityFile);
+                return;
+            }
+
+            saveJsonFile({ alerts: {}, recentVisitors: {} }, petHomeActivityFile);
+            replier.reply("✅ 펫홈 활동 파일 생성 완료\n" + activePetHomeActivityFile);
+            return;
+        }
+
+        if (msg === "/펫홈패스개편정리" && (isAdmin(sender) || isMaster(sender))) {
+            var passBenefitHomeData = loadJsonFile(homeDataFile);
+            var passBenefitCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+            if (passBenefitCommentsData.migrations && passBenefitCommentsData.migrations.passBenefits20260726 === true) {
+                replier.reply("✅ 펫홈 패스 혜택 개편 정리가 이미 완료되었습니다.");
+                return;
+            }
+
+            var passBenefitHomeBackupFile = new java.io.File(resolveActiveDataPath(petHomePassBenefitHomeBackupPath));
+            var passBenefitCommentsBackupFile = new java.io.File(resolveActiveDataPath(petHomePassBenefitCommentsBackupPath));
+            var homeBackupStatus = "기존 백업 유지";
+            var commentsBackupStatus = "기존 백업 유지";
+            if (passBenefitHomeBackupFile.exists()) {
+                loadJsonFile(petHomePassBenefitHomeBackupPath);
+            } else {
+                saveJsonFile(passBenefitHomeData, petHomePassBenefitHomeBackupPath);
+                loadJsonFile(petHomePassBenefitHomeBackupPath);
+                homeBackupStatus = "생성 완료";
+            }
+            if (passBenefitCommentsBackupFile.exists()) {
+                loadJsonFile(petHomePassBenefitCommentsBackupPath);
+            } else {
+                saveJsonFile(passBenefitCommentsData, petHomePassBenefitCommentsBackupPath);
+                loadJsonFile(petHomePassBenefitCommentsBackupPath);
+                commentsBackupStatus = "생성 완료";
+            }
+
+            var passBenefitCleanupResult = cleanupPetHomePassBenefitData(passBenefitHomeData, passBenefitCommentsData);
+            saveJsonFile(passBenefitHomeData, homeDataFile);
+            saveJsonFile(passBenefitCommentsData, petHomeCommentsFile);
+
+            var verifiedPassBenefitHomeData = loadJsonFile(homeDataFile);
+            var verifiedPassBenefitCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+            if (!verifiedPassBenefitCommentsData.migrations || verifiedPassBenefitCommentsData.migrations.passBenefits20260726 !== true) {
+                throw new Error("펫홈 패스 혜택 개편 정리 플래그 저장 확인 실패");
+            }
+            if (Object.keys(verifiedPassBenefitCommentsData.comments).length > 0) {
+                throw new Error("펫홈 일반 댓글 정리 저장 확인 실패");
+            }
+            var verifiedPinnedCommentCount = 0; // 저장 후 유지된 댓글핀 총개수
+            for (var verifiedPinnedUser in verifiedPassBenefitCommentsData.pinnedComments) {
+                if (!verifiedPassBenefitCommentsData.pinnedComments.hasOwnProperty(verifiedPinnedUser)) continue;
+                if (verifiedPassBenefitCommentsData.pinnedComments[verifiedPinnedUser] instanceof Array) {
+                    verifiedPinnedCommentCount += verifiedPassBenefitCommentsData.pinnedComments[verifiedPinnedUser].length;
+                }
+            }
+            if (verifiedPinnedCommentCount !== passBenefitCleanupResult.preservedPinnedCount) {
+                throw new Error("펫홈 댓글핀 보존 저장 확인 실패");
+            }
+            for (var verifiedPassBenefitUser in verifiedPassBenefitHomeData) {
+                if (!verifiedPassBenefitHomeData.hasOwnProperty(verifiedPassBenefitUser)) continue;
+                if (verifiedPassBenefitHomeData[verifiedPassBenefitUser] && verifiedPassBenefitHomeData[verifiedPassBenefitUser].likeCnt !== undefined) {
+                    throw new Error("펫홈 좋아홈 정리 저장 확인 실패: " + verifiedPassBenefitUser);
+                }
+            }
+
+            replier.reply(
+                "✅ 펫홈 패스 혜택 개편 정리 완료\n\n" +
+                "일반 댓글 삭제: " + numberWithCommas(passBenefitCleanupResult.removedCommentCount) + "개\n" +
+                "댓글핀 유지: " + numberWithCommas(passBenefitCleanupResult.preservedPinnedCount) + "개\n" +
+                "좋아홈 초기화: " + numberWithCommas(passBenefitCleanupResult.resetLikeUserCount) + "명 / " + numberWithCommas(passBenefitCleanupResult.resetLikeCount) + "개\n\n" +
+                "펫홈 백업: " + homeBackupStatus + "\n" +
+                "댓글 백업: " + commentsBackupStatus
+            );
             return;
         }
 
@@ -5025,7 +5174,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         };
                     }
                     saveJsonFile(data, filePath);
-                    replier.reply("✅ [" + dormantTarget + "]님을 휴면계정으로 등록했습니다.\n/계정삭제·/계정잠수삭제 대상에서 제외됩니다.");
+                    replier.reply("✅ [" + dormantTarget + "]님을 휴면계정으로 등록했습니다.\n/계삭진행·/계정잠수삭제 대상에서 제외됩니다.");
                     return;
                 }
 
@@ -5133,6 +5282,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             if (data.member[targetUserToDelete]) {
                                 delete data.member[targetUserToDelete];
                             }
+                            removeAccountLifecycleEntriesOnDelete(data, targetUserToDelete);
                             if (petData[targetUserToDelete]) {
                                 delete petData[targetUserToDelete];
                             }
@@ -5208,6 +5358,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var titleData = loadJsonFile(memberTitlePath);
                     let homeData = loadJsonFile(homeDataFile);
                     var placedFurnitureBackupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                    var petHomeActivityBackupData = new java.io.File(resolveActiveDataPath(petHomeActivityFile)).exists() ? requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)) : null;
                     savebackupJsonFile(filePath, data);
                     savebackupJsonFile(memberPetPath, petData);
                     savebackupJsonFile(boardPath, board);
@@ -5215,6 +5366,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     savebackupJsonFile(trialTowerPath, trialTower);
                     savebackupJsonFile(homeDataFile, homeData);
                     if (placedFurnitureBackupData) savebackupJsonFile(petHomePlacedFurniturePath, placedFurnitureBackupData);
+                    if (petHomeActivityBackupData) savebackupJsonFile(petHomeActivityFile, petHomeActivityBackupData);
                     savebackupJsonFile(memberTitlePath, titleData);
                     savebackupJsonFile(guildPath, guildData);
                     replier.reply("백업 완료");
@@ -5498,6 +5650,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
                 if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
+                    var supportPassCleanupResult = cleanupExpiredSupportPasses(data);
+                    if (supportPassCleanupResult.changed) saveJsonFile(data, filePath);
                     replier.reply(buildSupportPassListMessage(data, petData, guildData));
                     return;
                 }
@@ -5922,6 +6076,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                             // 메인 계정
                             delete data.member[target];
+                            removeAccountLifecycleEntriesOnDelete(data, target);
 
                             // 펫
                             if (petData[target]) {
@@ -6360,7 +6515,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             },
                                 {
                                     name: "미니펫뽑기🐹(/미니펫오픈)",
-                                    count: 1
+                                    count: 2
                                 },
                                 {
                                     name: "강화확률뽑기⚒️(/강화뽑기)",
@@ -6368,11 +6523,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "럭키박스🍀(/럭키오픈)",
-                                    count: 1
-                                },
-                                {
-                                    name: "정령 강화석🥀",
-                                    count: 5
+                                    count: 2
                                 },
                                 {
                                     name: "미니펫대전리셋권🐹",
@@ -6380,7 +6531,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "펫먹이🍼",
-                                    count: 1
+                                    count: 10
                                 },
                                 {
                                     name: "펫스윗홈인테리어샵🖼️(/샵오픈)",
@@ -6388,11 +6539,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "펫 강화석⭐",
-                                    count: 70
+                                    count: 50
                                 },
                                 {
                                     name: "잡템☠️",
-                                    count: 5
+                                    count: 10
                                 },
                                 {
                                     name: "양념치킨🐔",
@@ -6400,11 +6551,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "캐슬대전리셋권🐶",
-                                    count: 1
+                                    count: 2
                                 },
                                 {
                                     name: "티어 승급티켓🎟",
-                                    count: 1
+                                    count: 2
                                 },
                                 {
                                     name: "펫먹이특식🥡(/특식오픈)",
@@ -6443,19 +6594,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             },
                                 {
                                     name: "미니펫뽑기🐹(/미니펫오픈)",
-                                    count: 1
+                                    count: 5
                                 },
-                                {
-                                    name: "정령 강화석🥀",
-                                    count: 10
-                                },
+
                                 {
                                     name: "미니펫대전리셋권🐹",
-                                    count: 2
+                                    count: 5
                                 },
                                 {
                                     name: "펫먹이🍼",
-                                    count: 1
+                                    count: 30
                                 },
                                 {
                                     name: "펫스윗홈인테리어샵🖼️(/샵오픈)",
@@ -6480,14 +6628,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 {
                                     name: "캐슬대전리셋권🐶",
                                     count: 5
-                                },
-                                {
-                                    name: "펫먹이상자📦(/상자오픈)",
-                                    count: 1
-                                },
-                                {
-                                    name: "펫먹이특식🥡(/특식오픈)",
-                                    count: 1
                                 },
                                 {
                                     name: "다이아상자💎(/다이아상자오픈)",
@@ -12758,7 +12898,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildGuildTerritoryRankRewardGuideMessage());
                     return;
                 }
-                if (msg === "/길드영지보상지급") {
+                if (msg === "/길드영지보상지급" || msg === "/영지순위보상지급") {
                     var territoryRankReward = runGuildTerritoryRankReward(data, guildData, sender);
                     replier.reply(territoryRankReward.message);
                     if (territoryRankReward.ok) {
@@ -13497,6 +13637,116 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 // ==============================
+                // /로열오픈
+                // - 로열패키지 확정 1개 소모
+                // - 고대서적 가구를 펫스윗홈 가구 보관함에 지급
+                // ==============================
+                if (msg === "/로열오픈") {
+                    var royalMember = data.member[sender];
+                    if (!royalMember) return;
+
+                    var royalPackage = GLOBAL_CONFIG.guaranteedPackage.royal;
+                    if (!hasItem(data, sender, royalPackage.itemName, 1)) {
+                        replier.reply("해당 확정 패키지를 보유하고 있지 않습니다.");
+                        return;
+                    }
+
+                    var royalHomeData = loadJsonFile(homeDataFile);
+                    initSweetHomeUser(royalHomeData, sender);
+                    if (!royalHomeData[sender].furnitureBag) royalHomeData[sender].furnitureBag = [];
+                    if (royalHomeData[sender].furnitureBag.length >= royalPackage.maxBagSize) {
+                        replier.reply("보관함 공간이 부족합니다.\n공간을 확보한 후 다시 시도해 주세요.");
+                        return;
+                    }
+
+                    var royalReward = {
+                        id: createCuId(),
+                        name: royalPackage.reward.name,
+                        exp: royalPackage.reward.exp,
+                        rate: royalPackage.reward.rate,
+                        grade: royalPackage.reward.grade
+                    };
+                    royalHomeData[sender].furnitureBag.push(royalReward);
+                    royalHomeData[sender].furnitureBag = sortFurnitureList(royalHomeData[sender].furnitureBag);
+                    removeItem(data, sender, royalPackage.itemName, 1);
+
+                    try {
+                        saveJsonFile(royalHomeData, homeDataFile);
+                        saveJsonFile(data, filePath);
+                    } catch (royalOpenError) {
+                        for (var royalIndex = royalHomeData[sender].furnitureBag.length - 1; royalIndex >= 0; royalIndex--) {
+                            if (royalHomeData[sender].furnitureBag[royalIndex].id === royalReward.id) {
+                                royalHomeData[sender].furnitureBag.splice(royalIndex, 1);
+                                break;
+                            }
+                        }
+                        addItem(data, sender, royalPackage.itemName, 1);
+                        try {
+                            saveJsonFile(royalHomeData, homeDataFile);
+                            saveJsonFile(data, filePath);
+                        } catch (royalRollbackError) {
+                            debuggerLog("[ERROR : 로열패키지 확정 롤백 실패] " + royalRollbackError);
+                        }
+                        throw royalOpenError;
+                    }
+
+                    replier.reply("🏡 로열패키지 확정 오픈!\n\n고대서적📘(+140,000💕)[로열 루미에르]을(를) 획득했습니다.");
+                    return;
+                }
+
+                // ==============================
+                // /창세오픈
+                // - 창세패키지 확정 1개 소모
+                // - 가온빛 미니펫을 미니펫 가방에 지급
+                // ==============================
+                if (msg === "/창세오픈") {
+                    var genesisMember = data.member[sender];
+                    if (!genesisMember) return;
+
+                    var genesisPackage = GLOBAL_CONFIG.guaranteedPackage.genesis;
+                    if (!hasItem(data, sender, genesisPackage.itemName, 1)) {
+                        replier.reply("해당 확정 패키지를 보유하고 있지 않습니다.");
+                        return;
+                    }
+
+                    if (!petData[sender]) petData[sender] = {};
+                    if (!petData[sender].miniPetBag) petData[sender].miniPetBag = [];
+                    if (petData[sender].miniPetBag.length >= genesisPackage.maxBagSize) {
+                        replier.reply("보관함 공간이 부족합니다.\n공간을 확보한 후 다시 시도해 주세요.");
+                        return;
+                    }
+
+                    var genesisReward = JSON.parse(JSON.stringify(genesisPackage.reward));
+                    petData[sender].miniPetBag.push(genesisReward);
+                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                    removeItem(data, sender, genesisPackage.itemName, 1);
+
+                    try {
+                        saveJsonFile(petData, memberPetPath);
+                        saveJsonFile(data, filePath);
+                    } catch (genesisOpenError) {
+                        for (var genesisIndex = petData[sender].miniPetBag.length - 1; genesisIndex >= 0; genesisIndex--) {
+                            if (petData[sender].miniPetBag[genesisIndex] === genesisReward) {
+                                petData[sender].miniPetBag.splice(genesisIndex, 1);
+                                break;
+                            }
+                        }
+                        refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                        addItem(data, sender, genesisPackage.itemName, 1);
+                        try {
+                            saveJsonFile(petData, memberPetPath);
+                            saveJsonFile(data, filePath);
+                        } catch (genesisRollbackError) {
+                            debuggerLog("[ERROR : 창세패키지 확정 롤백 실패] " + genesisRollbackError);
+                        }
+                        throw genesisOpenError;
+                    }
+
+                    replier.reply("🐹 창세패키지 확정 오픈!\n\n가온빛💖(+1001280💕)[창세]을(를) 획득했습니다.");
+                    return;
+                }
+
+                // ==============================
                 // /컬렉션창세오픈
                 // - 컬렉션창세패키지🐹(/컬렉션창세오픈) 1개 소모
                 // - "컬렉션창세 미니펫" 즉시 가방 지급
@@ -13995,7 +14245,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                     saveJsonFile(data, filePath);
                                 }
                                 replier.reply(resultMsg.trim());
-                                if (questRewardResult.claimed && hasPetSkill(petSkillData, sender, "일일루틴")) {
+                                if (questRewardResult.dailyClaimed && hasPetSkill(petSkillData, sender, "일일루틴")) {
                                     // 일일루틴B등급: 추가 포인트 지급 (1억 포인트)
                                     var bonusPoint = 100000000; // 1억 포인트
                                     addPoint(data, sender, bonusPoint);
@@ -14198,13 +14448,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (rewardResult.claimed) {
                             saveJsonFile(data, filePath);
                             replier.reply(rewardResult.message);
-                            if (hasPetSkill(petSkillData, sender, "일일루틴")) {
+                            if (rewardResult.dailyClaimed && hasPetSkill(petSkillData, sender, "일일루틴")) {
                                 // 일일루틴B등급: 추가 포인트 지급 (3억 포인트)
                                 var bonusPoint = 100000000; // 3억 포인트
                                 addPoint(data, sender, bonusPoint);
                                 replier.reply("🎉 일일루틴📙 1억 포인트를 지급받습니다.");
                             }
-                        } else if (status.isComplete && status.dailyRewardDone && !status.weeklyComplete) {
+                        } else if (status.isComplete && status.dailyRewardDone && !status.weeklyComplete && (!status.hasPassDailyQuest || status.passDailyRewardDone)) {
                             replier.reply(
                                 "이미 오늘 일일퀘스트 보상을 받았습니다.\n주간퀘스트🦋[" +
                                 status.weeklyUsed +
@@ -14215,12 +14465,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             );
                         } else {
                             var statusMsg = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
+                            statusMsg += "팁: 자동일퀘권📝 소지시 자동일퀘 가능\n";
+                            statusMsg += "시탑,캐대,미대 5판을 추가로\n";
+                            statusMsg += "대전하여 추가 보상을 지급해요👌\n";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
-                            statusMsg += "아직 일일퀘스트를 완료하지 못했습니다.\n";
+                            statusMsg += status.isComplete ? "아직 호이·초보패스 전용 일퀘를 완료하지 못했습니다.\n" : "아직 일일퀘스트를 완료하지 못했습니다.\n";
                             statusMsg += "시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]\n";
                             statusMsg += "캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]\n";
                             statusMsg += "미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]\n";
                             statusMsg += "펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]\n";
+                            if (status.hasPassDailyQuest) {
+                                statusMsg += "━━━━━━━━━━━━━━━━\n";
+                                statusMsg += "【 🐶호이,초보패스🐥전용 일퀘 조건 】\n";
+                                statusMsg += "펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]\n";
+                                statusMsg += "펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]\n";
+                                statusMsg += "유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]\n";
+                                statusMsg += "\n";
+                                statusMsg += status.passDailyRewardDone ? "[✅ 호패,초패 퀘스트 보상 지급 완료]\n" : "《🎁 호패,초패 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) 1개\n";
+                            }
                             statusMsg += "주간퀘스트🦋[" + status.weeklyUsed + "/" + status.weeklyMax + "]: " + getWeeklyQuestRemainText(status.weeklyUsed, status.weeklyMax) + "\n";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
                             statusMsg += '모든 퀘스트를 완료하면 "/퀘스트완료" 또는 "ㅎㅎㅎ"("/ㅇㅇㅇ") 를 입력하세요.';
@@ -16053,7 +16315,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     addPoint(data, sender, -totalRequiredPoint);
                     addPoint(data, targetUser, transferAmount);
-                    var feeReceiverNew = addHappyFoundationFee(data, transferFee);
+                    var feeReceiverNew = transferFee > 0 ? addHappyFoundationFee(data, transferFee) : "";
 
                     replier.reply(
                         "[" +
@@ -16076,12 +16338,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "\n\n" +
                         "※ 이체수수료란?\n" +
                         "이체금액의 " +
-                        formatTransferFeeRate(transferFeeRate) +
-                        "%를 기준으로 수수료가 별도 차감됩니다.\n" +
+                        formatTransferFeeRate(transferFeeRate) + "%" +
+                        "를 기준으로 수수료가 별도 차감됩니다.\n" +
                         "받는 유저는 신청한 이체금액 그대로 받습니다.\n" +
-                        "※ 이체 수수료는 " +
-                        (feeReceiverNew ? "[" + checkRank(data, petData, guildData, feeReceiverNew) + "]" : "호이행복재단♥️") +
-                        "으로 기부되며 어려운 이웃을 돕습니다."
+                        "※ 이체 수수료는 " + (feeReceiverNew ? "[" + checkRank(data, petData, guildData, feeReceiverNew) + "]" : "호이행복재단♥️") + "으로 기부되며 어려운 이웃을 돕습니다."
                     );
 
                     var expectedSenderPoint = roundToTwo(data.member[sender].point);
@@ -17207,14 +17467,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             count: 1
                         },
                         {
-                            item: "정령 강화석🥀",
-                            count: 1
-                        },
-                        {
-                            item: "마정석🔮",
-                            count: 1
-                        },
-                        {
                             item: "펫먹이특식🥡(/특식오픈)",
                             count: 1
                         },
@@ -17503,6 +17755,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     replier.reply(rewardMsg);
                     noticeMsg(rewardMsg); // 공지로도 출력
+                    recordDailyRewardPayout(data, "miniPet");
                     saveJsonFile(data, filePath);
                     return;
                 }
@@ -18297,6 +18550,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             });
                         });
                     });
+                    recordDailyRewardPayout(data, "overall");
                     replier.reply(message);
                     noticeMsg(message);
                 }
@@ -19742,10 +19996,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let userHome = homeData[targetName];
                     // 방문 처리 (자기 자신이 아니면 방문수 증가)
                     if (targetName !== sender) {
-                        // visitCnt 안전하게 초기화 후 증가
-                        userHome.visitCnt = userHome.visitCnt || 0;
-                        userHome.visitCnt += 1;
-                        saveJsonFile(homeData, homeDataFile);
+                        var petHomeActivityDataForVisit = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                        var hadPreviousVisitCnt = userHome.hasOwnProperty("visitCnt");
+                        var previousVisitCnt = userHome.visitCnt || 0;
+                        var hadPreviousVisitors = petHomeActivityDataForVisit.recentVisitors.hasOwnProperty(targetName);
+                        var previousVisitors = JSON.parse(JSON.stringify(getPetHomeRecentVisitorList(petHomeActivityDataForVisit, targetName)));
+                        userHome.visitCnt = previousVisitCnt + 1;
+                        updatePetHomeRecentVisitor(petHomeActivityDataForVisit, targetName, sender);
+                        try {
+                            saveJsonFile(homeData, homeDataFile);
+                            saveJsonFile(petHomeActivityDataForVisit, petHomeActivityFile);
+                        } catch (petHomeVisitSaveError) {
+                            if (hadPreviousVisitCnt) userHome.visitCnt = previousVisitCnt;
+                            else delete userHome.visitCnt;
+                            if (hadPreviousVisitors) petHomeActivityDataForVisit.recentVisitors[targetName] = previousVisitors;
+                            else delete petHomeActivityDataForVisit.recentVisitors[targetName];
+                            try {
+                                saveJsonFile(homeData, homeDataFile);
+                                saveJsonFile(petHomeActivityDataForVisit, petHomeActivityFile);
+                            } catch (petHomeVisitRollbackError) {
+                                debuggerLog("[ERROR : 펫홈 방문 기록 롤백 실패] " + petHomeVisitRollbackError);
+                            }
+                            throw petHomeVisitSaveError;
+                        }
                     }
                     let floor = userHome.floor || 0;
                     let houseName = userHome.houseName || "서울역 4번출구🚉";
@@ -19768,18 +20041,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
                     ////////
-                    let header = "🏡[ " + nickName + " ]님의 펫하우스🏡\n\n";
-                    let lineLike = "좋아홈💌x" + likeCnt + "개 | ";
-                    let lineVisit = "방문자수🫂: " + numberWithCommas(visitCnt) + "명\n\n";
-                    let lineComment = "📣집주인의 한줄평📣\n";
+                    let header = "🏡[" + nickName + "]님의 펫하우스🏡\n\n";
+                    let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
+                    let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
+                    let lineComment = "📣 집주인의 한줄평\n";
 
                     if (userHome.comment) {
-                        let commentTime = userHome.commentTime ? "(" + formatDateTime(userHome.commentTime) + ")" : "";
-                        lineComment += '🎙️ "' + userHome.comment + commentTime + '"\n\n';
+                        let commentTime = userHome.commentTime ? formatDateTime(userHome.commentTime) : "시간 정보 없음";
+                        lineComment += "🎙️ “" + userHome.comment + "”\n└ " + commentTime + "\n\n";
                     } else {
                         lineComment += "(아직 한줄평이 없습니다.\n/한줄평 내용 을 적어보세요!)\n\n";
                     }
-                    let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
+                    let lineHouseInfo = houseName + "\n(+" + numberWithCommas(totalExp) + "💕) [+" + floor + "평]\n\n";
                     let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
                     let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n";
                     if (placedArr.length === 0) {
@@ -19795,7 +20068,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     lineFurniture += "────────────────\n";
-                    replier.reply(header + lineHouseInfo + lineLike + lineVisit + lineComment + lineComentend + lineFurniture);
+                    replier.reply(header + lineHouseInfo + lineHeart + lineStats + lineComment + lineComentend + lineFurniture);
 
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
@@ -19803,7 +20076,104 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList, petHomePinnedCommentList));
                     return;
                 }
+                if (msg === "/홈알림") {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("홈알림🔔은 호이패스·초보패스 이용자만\n확인할 수 있습니다.");
+                        return;
+                    }
+                    var petHomeActivityDataForAlert = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    replier.reply(buildPetHomeActivityMessage(data, petData, guildData, sender, petHomeActivityDataForAlert));
+                    markPetHomeAlertsRead(petHomeActivityDataForAlert, sender);
+                    saveJsonFile(petHomeActivityDataForAlert, petHomeActivityFile);
+                    return;
+                }
+                var heartCommandMatch = msg.match(/^\/(마음|사랑해|귀여워|멋져|응원해)(?:\s+(.+))?$/);
+                if (heartCommandMatch) {
+                    var heartCommandName = heartCommandMatch[1];
+                    var heartTargetText = heartCommandMatch[2] ? heartCommandMatch[2].trim() : "";
+                    if (!heartTargetText) {
+                        replier.reply("사용법: /" + heartCommandName + " [아이디]\n예시: /" + heartCommandName + " 조사 남");
+                        return;
+                    }
+                    var heartTargetParsed = findTargetAtStart(heartTargetText, data.member || {});
+                    if (!heartTargetParsed.target || heartTargetParsed.rest) {
+                        replier.reply("존재하지 않는 아이디입니다.\n아이디를 다시 확인해 주세요.");
+                        return;
+                    }
+                    var heartTargetName = heartTargetParsed.target;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("펫홈 마음표현💞은\n호이패스·초보패스 이용자만 사용할 수 있습니다.");
+                        return;
+                    }
+                    if (!hasActiveHoiOrNewbiePass(data, heartTargetName)) {
+                        replier.reply("상대방이 호이패스·초보패스 이용자가 아니어서\n마음표현을 남길 수 없습니다.");
+                        return;
+                    }
+                    if (heartTargetName === sender) {
+                        replier.reply("본인의 펫홈에는 마음표현을 사용할 수 없습니다.");
+                        return;
+                    }
+
+                    var heartHomeData = loadJsonFile(homeDataFile);
+                    heartHomeData = initSweetHomeUser(heartHomeData, sender);
+                    heartHomeData = initSweetHomeUser(heartHomeData, heartTargetName);
+                    var heartSenderHome = heartHomeData[sender];
+                    var heartTargetHome = heartHomeData[heartTargetName];
+                    var heartToday = getPetHomeTodayText();
+                    if (heartSenderHome.lastHeartExpressionDate === heartToday) {
+                        replier.reply("오늘은 이미 마음표현을 사용했습니다.💞\n내일 다시 마음을 표현해 주세요!");
+                        return;
+                    }
+
+                    var heartType = heartCommandName === "마음"
+                        ? GLOBAL_CONFIG.petHomeActivity.heartTypes[Math.floor(Math.random() * GLOBAL_CONFIG.petHomeActivity.heartTypes.length)]
+                        : getPetHomeHeartTypeByCommand(heartCommandName);
+                    var petHomeActivityDataForHeart = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var hadPreviousHeartExpressions = heartTargetHome.hasOwnProperty("heartExpressions");
+                    var previousHeartExpressions = heartTargetHome.heartExpressions;
+                    if (previousHeartExpressions && typeof previousHeartExpressions === "object") {
+                        previousHeartExpressions = JSON.parse(JSON.stringify(previousHeartExpressions));
+                    }
+                    ensurePetHomeHeartExpressions(heartTargetHome);
+                    var hadPreviousHeartDate = heartSenderHome.hasOwnProperty("lastHeartExpressionDate");
+                    var previousHeartDate = heartSenderHome.lastHeartExpressionDate;
+                    var hadPreviousHeartAlerts = petHomeActivityDataForHeart.alerts.hasOwnProperty(heartTargetName);
+                    var previousHeartAlerts = JSON.parse(JSON.stringify(getPetHomeAlertList(petHomeActivityDataForHeart, heartTargetName)));
+
+                    heartTargetHome.heartExpressions[heartType.key] += 1;
+                    heartSenderHome.lastHeartExpressionDate = heartToday;
+                    addPetHomeActivityAlert(petHomeActivityDataForHeart, heartTargetName, heartType.alertType, sender, "");
+                    try {
+                        saveJsonFile(heartHomeData, homeDataFile);
+                        saveJsonFile(petHomeActivityDataForHeart, petHomeActivityFile);
+                    } catch (heartSaveError) {
+                        if (hadPreviousHeartExpressions) heartTargetHome.heartExpressions = previousHeartExpressions;
+                        else delete heartTargetHome.heartExpressions;
+                        if (hadPreviousHeartDate) heartSenderHome.lastHeartExpressionDate = previousHeartDate;
+                        else delete heartSenderHome.lastHeartExpressionDate;
+                        if (hadPreviousHeartAlerts) petHomeActivityDataForHeart.alerts[heartTargetName] = previousHeartAlerts;
+                        else delete petHomeActivityDataForHeart.alerts[heartTargetName];
+                        try {
+                            saveJsonFile(heartHomeData, homeDataFile);
+                            saveJsonFile(petHomeActivityDataForHeart, petHomeActivityFile);
+                        } catch (heartRollbackError) {
+                            debuggerLog("[ERROR : 펫홈 마음표현 롤백 실패] " + heartRollbackError);
+                        }
+                        throw heartSaveError;
+                    }
+
+                    replier.reply(
+                        "💞 " + checkRank(data, petData, guildData, heartTargetName) + "님의 펫홈에\n[" +
+                        heartType.label + heartType.emoji +
+                        "] 마음을 표현했습니다!\n\n마음표현은 하루에 한 번만 가능합니다."
+                    );
+                    return;
+                }
                 if (msg === "/댓글삭제" || /^\/댓글삭제\s+\d+$/.test(msg)) {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     let parts = msg.trim().split(/\s+/);
                     if (parts.length < 2) {
                         replier.reply("사용법: /댓글삭제 [번호]\n예시: /댓글삭제 1");
@@ -19837,6 +20207,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/댓글핀삭제" || /^\/댓글핀삭제\s+\d+$/.test(msg)) {
                     if (!isRegisteredHomeMember(data, sender)) return;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     if (!petData[sender] || !petData[sender].petname) {
                         replier.reply("[" + sender + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
@@ -19874,6 +20248,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/댓글확인" || /^\/댓글확인\s+.+$/.test(msg)) {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     let parts = msg.trim().split(/\s+/);
                     let targetName = sender;
                     if (parts.length > 1) {
@@ -19891,6 +20269,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/댓글핀" || /^\/댓글핀\s+\d+$/.test(msg)) {
                     if (!isRegisteredHomeMember(data, sender)) return;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
                     if (!petData[sender] || !petData[sender].petname) {
                         replier.reply("[" + sender + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
@@ -19922,7 +20304,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("댓글핀이 가득 차있습니다.\n/댓글핀삭제 [번호]로 댓글핀을 삭제해주세요.");
                         return;
                     }
-                    var pinCost = GLOBAL_CONFIG.petHomeComments.pinCost;
+                    var pinCost = getPetHomePassBenefitCost(data, sender, GLOBAL_CONFIG.petHomeComments.pinCost);
                     if (!hasPoint(data, sender, pinCost)) {
                         replier.reply("포인트가 부족합니다.\n댓글핀 등록에는 5천만 포인트가 필요합니다.");
                         return;
@@ -19945,16 +20327,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         checkRank(data, petData, guildData, pinTargetComment.from) +
                         "]: " +
                         pinTargetComment.text +
-                        '"\n\n소모 포인트: 5천만 포인트\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다.'
+                        '"\n\n❤️집주인이 좋아하는 댓글❤️ 영역에 표시됩니다.'
                     );
                     return;
                 }
                 if (msg === "/댓글" || /^\/댓글\s+.+$/.test(msg)) {
                     let senderNick = checkRank(data, petData, guildData, sender);
-                    let cost = 10000000;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("[" + senderNick + "] 님 ❌ 펫홈 댓글 기능은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
+                    let cost = getPetHomePassBenefitCost(data, sender, 10000000);
                     let raw = msg.substring(3).trim();
                     if (!raw) {
-                        replier.reply("방문 댓글💌\n🎙️ 최대 20자, 등록 시 🅟10,000,000 소모\n예) /댓글 호이 남 멋진 집이에요!🏡");
+                        replier.reply("방문 댓글💌\n🎙️ 최대 20자, 호이·초보패스 혜택으로 무료\n예) /댓글 호이 남 멋진 집이에요!🏡");
                         return;
                     }
                     let parsed = findTargetAtStart(raw, data.member || {});
@@ -19962,6 +20348,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let comment = parsed.rest;
                     if (!targetName) {
                         replier.reply("❌ 닉네임을 찾을 수 없습니다.\n예) /댓글 호이 남 잘들렸다가요!");
+                        return;
+                    }
+                    if (!hasActiveHoiOrNewbiePass(data, targetName)) {
+                        replier.reply("[" + senderNick + "] 님 ❌ 호이패스 또는 초보패스 활성 가입자의 펫홈에만 댓글을 작성할 수 있습니다.");
                         return;
                     }
                     if (!comment) {
@@ -19980,20 +20370,48 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("포인트가 부족합니다. (필요: 🅟" + numberWithCommas(cost) + ")");
                         return;
                     }
-                    addPoint(data, sender, -cost);
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomeActivityDataForComment = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var hadPreviousPetHomeComments = petHomeCommentsData.comments.hasOwnProperty(targetName);
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
                     var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
+                    var previousCommentPoint = data.member[sender].point;
+                    var previousCommentDailyCount = data.member[sender].petHomeCommentCnt;
+                    var previousPetHomeComments = JSON.parse(JSON.stringify(petHomeCommentList));
+                    var hadPreviousCommentAlerts = petHomeActivityDataForComment.alerts.hasOwnProperty(targetName);
+                    var previousCommentAlerts = JSON.parse(JSON.stringify(getPetHomeAlertList(petHomeActivityDataForComment, targetName)));
+                    addPoint(data, sender, -cost);
                     // 최신 댓글 추가
                     petHomeCommentList.push({
                         from: sender,
                         text: comment,
                         time: Date.now()
                     });
+                    data.member[sender].petHomeCommentCnt = Math.min((data.member[sender].petHomeCommentCnt || 0) + 1, GLOBAL_CONFIG.daily.passPetHomeCommentMax);
                     // 최대 50개 유지 (오래된 순으로 삭제)
                     trimPetHomeComments(petHomeCommentList, petHomePinnedCommentList);
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                    addPetHomeActivityAlert(petHomeActivityDataForComment, targetName, "comment", sender, getPetHomeCommentPreview(comment));
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                        saveJsonFile(petHomeActivityDataForComment, petHomeActivityFile);
+                    } catch (petHomeCommentSaveError) {
+                        data.member[sender].point = previousCommentPoint;
+                        if (previousCommentDailyCount === undefined) delete data.member[sender].petHomeCommentCnt;
+                        else data.member[sender].petHomeCommentCnt = previousCommentDailyCount;
+                        if (hadPreviousPetHomeComments) petHomeCommentsData.comments[targetName] = previousPetHomeComments;
+                        else delete petHomeCommentsData.comments[targetName];
+                        if (hadPreviousCommentAlerts) petHomeActivityDataForComment.alerts[targetName] = previousCommentAlerts;
+                        else delete petHomeActivityDataForComment.alerts[targetName];
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                            saveJsonFile(petHomeActivityDataForComment, petHomeActivityFile);
+                        } catch (petHomeCommentRollbackError) {
+                            debuggerLog("[ERROR : 펫홈 댓글 알림 롤백 실패] " + petHomeCommentRollbackError);
+                        }
+                        throw petHomeCommentSaveError;
+                    }
                     let targetNick = checkRank(data, petData, guildData, targetName);
                     replier.reply(
                         "💌 [" +
@@ -20003,9 +20421,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "] 님의 집에 댓글을 남겼습니다!\n" +
                         '💬 "' +
                         comment +
-                        '"\n\n🅟' +
-                        numberWithCommas(cost) +
-                        " 차감"
+                        '"'
                     );
                     return;
                 }
@@ -20811,7 +21227,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.startsWith("/좋아홈")) {
+                if (msg === "/좋아홈" || /^\/좋아홈\s+.+$/.test(msg)) {
                     // 파라미터 파싱
                     let parts = msg.trim().split(/\s+/);
                     if (parts.length < 2) {
@@ -20820,11 +21236,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     let targetName = parts.slice(1).join(" ").trim(); // 닉네임은 띄어쓰기 허용
                     let senderName = sender;
+                    let nickName = checkRank(data, petData, guildData, senderName);
+                    if (!hasActiveHoiOrNewbiePass(data, senderName)) {
+                        replier.reply("[" + nickName + "] 님 ❌ 좋아홈은 호이패스 또는 초보패스 활성 가입자만 이용할 수 있습니다.");
+                        return;
+                    }
+                    if (!data.member[targetName]) {
+                        replier.reply("[" + targetName + "] 님은 아직 펫을 생성하지 않았습니다.");
+                        return;
+                    }
+                    if (!hasActiveHoiOrNewbiePass(data, targetName)) {
+                        replier.reply("[" + nickName + "] 님 ❌ 호이패스 또는 초보패스 활성 가입자의 펫홈에만 좋아홈을 보낼 수 있습니다.");
+                        return;
+                    }
                     // 자기 자신 금지
                     if (targetName == senderName) {
                         replier.reply("자기 자신에게는 좋아홈💌을 보낼 수 없습니다!");
                         return;
                     }
+                    var hadPreviousHomeLikeCnt = data.member[sender].hasOwnProperty("homeLikeCnt");
+                    var previousHomeLikeCnt = data.member[sender].homeLikeCnt;
                     if (!data.member[sender].homeLikeCnt) {
                         data.member[sender].homeLikeCnt = 0;
                     }
@@ -20835,7 +21266,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     // 파일 로드
                     let homeData = loadJsonFile(homeDataFile);
-                    let nickName = checkRank(data, petData, guildData, senderName);
                     // 안전 초기화
                     homeData = initSweetHomeUser(homeData, senderName);
                     homeData = initSweetHomeUser(homeData, targetName);
@@ -20845,21 +21275,46 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("[" + targetName + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
                     }
-                    let cost = 10000000;
+                    let cost = getPetHomePassBenefitCost(data, senderName, 10000000);
                     if (!hasPoint(data, senderName, cost)) {
                         replier.reply("포인트가 부족합니다. (필요: 🅟" + numberWithCommas(cost) + ")");
                         return;
                     }
 
+                    var petHomeActivityDataForLike = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var previousHomeLikePoint = data.member[sender].point;
+                    var previousTargetLikeCnt = targetHome.likeCnt;
+                    var hadPreviousLikeAlerts = petHomeActivityDataForLike.alerts.hasOwnProperty(targetName);
+                    var previousLikeAlerts = JSON.parse(JSON.stringify(getPetHomeAlertList(petHomeActivityDataForLike, targetName)));
                     data.member[sender].homeLikeCnt = (data.member[sender].homeLikeCnt || 0) + 1;
                     addPoint(data, senderName, -cost);
                     // 대상 유저 좋아홈 증가
                     targetHome.likeCnt = targetHome.likeCnt || 0;
                     targetHome.likeCnt += 1;
+                    addPetHomeActivityAlert(petHomeActivityDataForLike, targetName, "home_like", senderName, "");
                     let targetNickName = checkRank(data, petData, guildData, targetName);
-                    let replyMsg = "[" + nickName + "] 님이 [" + targetNickName + "] 님에게\n" + "좋아홈💌 을 보냈습니다!\n" + "🅟" + numberWithCommas(cost) + " 을 소모합니다.";
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(homeData, homeDataFile);
+                    let replyMsg = "[" + nickName + "] 님이 [" + targetNickName + "] 님에게\n" + "좋아홈💌 을 보냈습니다!";
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(homeData, homeDataFile);
+                        saveJsonFile(petHomeActivityDataForLike, petHomeActivityFile);
+                    } catch (petHomeLikeSaveError) {
+                        data.member[sender].point = previousHomeLikePoint;
+                        if (hadPreviousHomeLikeCnt) data.member[sender].homeLikeCnt = previousHomeLikeCnt;
+                        else delete data.member[sender].homeLikeCnt;
+                        if (previousTargetLikeCnt === undefined) delete targetHome.likeCnt;
+                        else targetHome.likeCnt = previousTargetLikeCnt;
+                        if (hadPreviousLikeAlerts) petHomeActivityDataForLike.alerts[targetName] = previousLikeAlerts;
+                        else delete petHomeActivityDataForLike.alerts[targetName];
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(homeData, homeDataFile);
+                            saveJsonFile(petHomeActivityDataForLike, petHomeActivityFile);
+                        } catch (petHomeLikeRollbackError) {
+                            debuggerLog("[ERROR : 좋아홈 알림 롤백 실패] " + petHomeLikeRollbackError);
+                        }
+                        throw petHomeLikeSaveError;
+                    }
                     replier.reply(replyMsg);
                     return;
                 }
@@ -23578,7 +24033,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(out);
                     return;
                 }
-                if (msg.indexOf("/길드보상지급") === 0) {
+                if (msg === "/길드보상지급") {
                     var allowedSenders = ["오픈채팅봇", "호이 남", "감자 여"];
 
                     if (allowedSenders.indexOf(sender) === -1) {
@@ -23599,6 +24054,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
+                    recordDailyRewardPayout(data, "guildRank");
                     saveJsonFile(data, filePath);
                     saveJsonFile(guildData, guildPath);
 
@@ -25324,9 +25780,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var totalDisplayRemoved = 0;
                     var totalNullRemoved = 0;
-                    var totalGuestCommentsDeleted = 0;
                     var userLogs = [];
-                    var guestCommentUserLogs = [];
 
                     for (var user in homeData) {
                         if (!homeData[user]) continue;
@@ -25371,12 +25825,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             totalNullRemoved += nullRemovedCount;
                         }
 
-                        if (homeData[user].guestComments instanceof Array) {
-                            var oldGuestCommentCount = homeData[user].guestComments.length;
-                            delete homeData[user].guestComments;
-                            totalGuestCommentsDeleted += oldGuestCommentCount;
-                            guestCommentUserLogs.push(user + " : 기존 댓글 삭제 " + numberWithCommas(oldGuestCommentCount) + "개");
-                        }
                     }
 
                     // 아이템 명칭 변경
@@ -25566,16 +26014,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n펫홈 정리할 데이터 없음\n";
                     }
 
-                    out += "\n\n[2] 기존 펫홈 댓글 제거\n";
-                    out += "기존 댓글 제거 : " + numberWithCommas(totalGuestCommentsDeleted) + "개\n";
-
-                    if (guestCommentUserLogs.length > 0) {
-                        out += "\n[기존 댓글 제거 유저]\n" + guestCommentUserLogs.join("\n");
-                    } else {
-                        out += "\n제거할 기존 댓글 없음\n";
-                    }
-
-                    out += "\n\n[3] 아이템 명칭 변경\n";
+                    out += "\n\n[2] 아이템 명칭 변경\n";
                     out += "변경된 아이템 수량 : " + numberWithCommas(itemChangeCount) + "개\n";
 
                     if (itemUserLogs.length > 0) {
@@ -25584,7 +26023,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n변경할 아이템 없음\n";
                     }
 
-                    out += "\n\n[4] 펫스킬 데이터 이동\n";
+                    out += "\n\n[3] 펫스킬 데이터 이동\n";
                     out += "이동된 펫스킬 수량 : " + numberWithCommas(petSkillMoveCount) + "개\n";
                     out += "삭제된 petData.petchar 유저 : " + numberWithCommas(petCharDeleteCount) + "명\n";
                     out += "petData.petSkills 삭제 유저 : " + numberWithCommas(petSkillDeleteCount) + "명\n";
@@ -25595,7 +26034,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n이동할 펫스킬 데이터 없음\n";
                     }
 
-                    out += "\n\n[5] 포인트 소수점 정리\n";
+                    out += "\n\n[4] 포인트 소수점 정리\n";
                     out += "정리된 유저 : " + numberWithCommas(pointFloorUserCount) + "명\n";
                     out += "제거된 소수점 포인트 총합 : 🅟" + formatPointValue(pointFloorTotalAmount);
 
@@ -25605,14 +26044,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n소수점 포인트 없음";
                     }
 
-                    out += "\n\n[6] 레거시 패스 명단 데이터 제거\n";
+                    out += "\n\n[5] 레거시 패스 명단 데이터 제거\n";
                     if (legacyPassRemovedLogs.length > 0) {
                         out += legacyPassRemovedLogs.join("\n");
                     } else {
                         out += "제거할 레거시 패스 명단 없음";
                     }
 
-                    out += "\n\n[7] 유저 기존 반지 데이터 삭제\n";
+                    out += "\n\n[6] 유저 기존 반지 데이터 삭제\n";
                     out += "반지 삭제 유저 : " + numberWithCommas(petRingDeleteUserCount) + "명\n";
                     out += "보상 플래그 삭제 유저 : " + numberWithCommas(ringRewardMigrationDeleteUserCount) + "명\n";
                     if (petRingDeleteLogs.length > 0) {
@@ -25621,7 +26060,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n삭제할 유저 반지 데이터 없음";
                     }
 
-                    out += "\n\n[8] 길드창고 기존 반지 데이터 삭제\n";
+                    out += "\n\n[7] 길드창고 기존 반지 데이터 삭제\n";
                     out += "삭제 길드 : " + numberWithCommas(guildRingDeleteGuildCount) + "개\n";
                     out += "삭제 수량 : 💍x" + numberWithCommas(guildRingDeleteTotalAmount) + "\n";
                     out += "※ 펜던트 강화석📿 수량으로 이전하지 않습니다.\n";
@@ -25924,11 +26363,11 @@ function isMatzangOperatorCommandMessage(msg) {
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
-        "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
+        "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
-        "/펫홈댓글파일생성", "/개발자노트"
+        "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈패스개편정리", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -27490,15 +27929,16 @@ function getGuildTerritoryTimeoutMissCount(war, guildId) {
 function buildGuildTerritoryStatusMessage(data, guildData, includeCommand) {
     var war = ensureGuildTerritoryWar(data, guildData);
     var list = getGuildTerritoryList();
-    var out = "🎖️현재 길드 영지전 상황🎖️\n\n";
+    var out = "🎖️현재 길드 영지전 상황🎖️\n━━━━━━━━━━━━\n";
 
     for (var i = 0; i < list.length; i++) {
         var ter = war.territories[String(list[i].no)];
         var g = getGuildByIdSafe(guildData, ter ? ter.ownerGuildId : null);
         out += "[" + list[i].no + "] " + list[i].name + ": " + formatGuildDisplay(g) + "\n";
     }
+    out += "━━━━━━━━━━━━\n";
     out += "[8] 차원의 문 🌀: " + (war.dimensionGateEnabled ? "환생 하고싶누?\n(20% 확률 4턴 증가 80% 확률 탈락 -2턴 차감)" : "닫힘(OFF)") + "\n";
-    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "주인공 되고싶누?\n(70% 확률 점령지 1곳 미점령, 입장 유저 탈락·1턴 차감)" : "닫힘(OFF)") + "\n";
+    out += "[9] 날 기억해줘😭: " + (war.rememberMeEnabled ? "주인공 되고싶누?\n(30% 확률 점령지 1곳 미점령, 공격 1턴 소모)" : "닫힘(OFF)") + "\n";
     if (includeCommand) out += "\n순고한 히셍 간사함니다";
     return out;
 }
@@ -28409,7 +28849,7 @@ function resolveGuildTerritoryDimensionGate(data, petData, guildData, sender, at
         "회";
 }
 
-// 날 기억해줘 이벤트를 판정하고 점령지 해제·입장 유저 탈락을 적용
+// 날 기억해줘 이벤트를 판정하고 성공 시 점령지 한 곳을 해제
 function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attackInfo) {
     var war = ensureGuildTerritoryWar(data, guildData);
     var rank = checkRank(data, petData, guildData, sender);
@@ -28428,13 +28868,6 @@ function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attac
     var success = occupiedTerritories.length > 0 && Math.random() < GLOBAL_CONFIG.guildTerritory.rememberMe.successRate;
     var messages = success ? GLOBAL_CONFIG.guildTerritory.rememberMe.successMessages : GLOBAL_CONFIG.guildTerritory.rememberMe.failMessages;
     var message = messages[Math.floor(Math.random() * messages.length)].replace("{{rank}}", rank);
-
-    war.eliminatedUsers[sender] = {
-        guildId: attackInfo.guildId,
-        reason: "REMEMBER_ME",
-        at: formatDateTime(new Date()),
-        turnsUsed: 1
-    };
 
     if (!success) {
         return "🎖️길드 영지전 결과🎖️\n\n[날 기억해줘 실패😭]\n" +
@@ -28690,6 +29123,7 @@ function resetAttendance(petData, data, replier) {
         data.member[user].battle.count = 0;
         data.member[user].homeLikeCnt = 0;
         data.member[user].cntlike = 0;
+        data.member[user].petHomeCommentCnt = 0;
         data.member[user].towerCnt = 0;
         if (data.member[user].exploreCnt !== undefined) {
             delete data.member[user].exploreCnt;
@@ -28707,6 +29141,9 @@ function resetAttendance(petData, data, replier) {
         }
         if (data.member[user].dailyQuestCnt !== undefined) {
             delete data.member[user].dailyQuestCnt;
+        }
+        if (data.member[user].passDailyQuestCnt !== undefined) {
+            delete data.member[user].passDailyQuestCnt;
         }
         if (data.member[user].isGidoFlag !== undefined) {
             delete data.member[user].isGidoFlag;
@@ -30172,22 +30609,27 @@ function ensureSupportPassStore(data, user) {
 
 // 후원패스 날짜 문자열이 유효한지 확인하는 함수
 function isValidSupportPassDateText(text) {
-    return /^\d{2}\.\d{2}\.\d{2}$/.test(String(text || ""));
+    return getSupportPassDateValue(text) !== null;
 }
 
 // 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
 function getSupportPassDateValue(text) {
     var match = String(text || "").match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
     if (!match) return null;
-    return parseInt("20" + match[1] + match[2] + match[3], 10);
+    var year = 2000 + parseInt(match[1], 10);
+    var month = parseInt(match[2], 10);
+    var day = parseInt(match[3], 10);
+    var date = new Date(Date.UTC(year, month - 1, day));
+    if (date.getUTCFullYear() !== year || date.getUTCMonth() + 1 !== month || date.getUTCDate() !== day) return null;
+    return year * 10000 + month * 100 + day;
 }
 
-// 오늘 날짜를 후원패스 비교값으로 반환하는 함수
+// 한국 시간의 오늘 날짜를 후원패스 비교값으로 반환하는 함수
 function getTodaySupportPassDateValue() {
-    var now = new Date();
-    var y = now.getFullYear();
-    var m = now.getMonth() + 1;
-    var d = now.getDate();
+    var now = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+    var y = now.getUTCFullYear();
+    var m = now.getUTCMonth() + 1;
+    var d = now.getUTCDate();
     return y * 10000 + m * 100 + d;
 }
 
@@ -30211,6 +30653,38 @@ function isSupportPassActive(data, user, passKey) {
     return expireValue >= getTodaySupportPassDateValue();
 }
 
+// 호이패스 또는 초보패스가 현재 활성 상태인지 확인하는 함수
+function hasActiveHoiOrNewbiePass(data, user) {
+    return isSupportPassActive(data, user, "hoi") || isSupportPassActive(data, user, "newbie");
+}
+
+// 패스 미사용 유저의 1:1톡 차단 횟수를 기록하고 주기마다 운영진에게 알리는 함수
+function recordBlockedPrivateChatAttempt(room, sender, msg) {
+    var attemptCount = (privateChatBlockedTracker[sender] || 0) + 1; // 봇 실행 후 유저별 누적 차단 횟수
+    privateChatBlockedTracker[sender] = attemptCount;
+    if (attemptCount % GLOBAL_CONFIG.privateChat.notifyEvery !== 0) return;
+
+    var messagePreview = String(msg || "").replace(/[\r\n]+/g, " ").trim(); // 운영 알림용 최근 메시지 한 줄 요약
+    if (messagePreview.length > GLOBAL_CONFIG.privateChat.messagePreviewMaxLength) {
+        messagePreview = messagePreview.substring(0, GLOBAL_CONFIG.privateChat.messagePreviewMaxLength) + "...";
+    }
+    if (!messagePreview) messagePreview = "-";
+
+    Api.replyRoom(
+        room90,
+        "[패스 미사용 1:1톡 감지]\n" +
+        "유저: " + sender + "\n" +
+        "개인톡방: " + room + "\n" +
+        "누적 횟수: " + attemptCount + "회\n" +
+        "최근 메시지: " + messagePreview
+    );
+}
+
+// 호이패스·초보패스 활성 유저의 펫홈 기능 비용을 면제하는 함수
+function getPetHomePassBenefitCost(data, user, baseCost) {
+    return hasActiveHoiOrNewbiePass(data, user) ? 0 : baseCost;
+}
+
 // 현재 사용 가능한 후원패스 유저 목록을 반환하는 함수
 function getActiveSupportPassUsers(data, passKey) {
     var users = [];
@@ -30218,6 +30692,141 @@ function getActiveSupportPassUsers(data, passKey) {
     for (var user in data.member) {
         if (isSupportPassActive(data, user, passKey)) users.push(user);
     }
+    return users;
+}
+
+// 만료된 후원패스를 정리하고 자격이 끝난 자동탐험권을 회수하는 함수
+function cleanupExpiredSupportPasses(data) {
+    var result = { changed: false, expiredCount: 0, removedTicketCount: 0, invalidDateCount: 0 };
+    if (!data || !data.member) return result;
+    var configs = getSupportPassConfigs();
+    var todayValue = getTodaySupportPassDateValue();
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var member = data.member[user];
+        if (!member || !member.pass) continue;
+        var autoPassExpired = false;
+        for (var i = 0; i < configs.length; i++) {
+            var config = configs[i];
+            var pass = member.pass[config.key];
+            if (!pass || pass.enabled !== true || pass.permanent === true) continue;
+            var expireValue = getSupportPassDateValue(pass.endDate);
+            if (expireValue === null) {
+                result.invalidDateCount++;
+                debuggerLog("[후원패스 만료 정리] 잘못된 날짜로 자동 정리 제외: " + user + " / " + config.key + " / " + pass.endDate);
+                continue;
+            }
+            if (expireValue >= todayValue) continue;
+            pass.enabled = false;
+            result.changed = true;
+            result.expiredCount++;
+            if (config.key === "newbie" || config.key === "hoi") autoPassExpired = true;
+            debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
+        }
+        if (autoPassExpired && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
+            var removedTicketCount = removeAllAutoExploreTickets(data, user);
+            if (removedTicketCount > 0) {
+                result.changed = true;
+                result.removedTicketCount += removedTicketCount;
+                debuggerLog("[후원패스 만료 정리] 자동탐험권 회수: " + user + " / " + removedTicketCount + "개");
+            }
+        }
+    }
+    return result;
+}
+
+// 자동탐험권 아이템명의 숨은 이모지 선택자와 끝 공백을 제거하는 함수
+function normalizeAutoExploreTicketItemName(itemName) {
+    return String(itemName || "").replace(/[\uFE0E\uFE0F]/g, "").trim();
+}
+
+// 유저 가방의 자동탐험권 표기 변형을 합산하는 함수
+function getAutoExploreTicketCount(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
+    var bag = data.member[user].bag;
+    var targetName = normalizeAutoExploreTicketItemName("자동탐험권🌄");
+    var count = 0;
+    for (var itemName in bag) {
+        if (!bag.hasOwnProperty(itemName)) continue;
+        if (normalizeAutoExploreTicketItemName(itemName) !== targetName) continue;
+        count += parseInt(bag[itemName], 10) || 0;
+    }
+    return count;
+}
+
+// 유저 가방의 자동탐험권 표기 변형을 모두 회수하는 함수
+function removeAllAutoExploreTickets(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
+    var bag = data.member[user].bag;
+    var targetName = normalizeAutoExploreTicketItemName("자동탐험권🌄");
+    var removedCount = 0;
+    for (var itemName in bag) {
+        if (!bag.hasOwnProperty(itemName)) continue;
+        if (normalizeAutoExploreTicketItemName(itemName) !== targetName) continue;
+        removedCount += parseInt(bag[itemName], 10) || 0;
+        delete bag[itemName];
+    }
+    return removedCount;
+}
+
+// 자동탐험권 보유 자격이 없는 유저 목록을 반환하는 함수
+function getInvalidAutoExploreTicketUsers(data) {
+    var users = [];
+    if (!data || !data.member) return users;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var ticketCount = getAutoExploreTicketCount(data, user);
+        if (ticketCount < 1) continue;
+        if (isSupportPassActive(data, user, "newbie") || isSupportPassActive(data, user, "hoi")) continue;
+        users.push({ user: user, count: ticketCount });
+    }
+    users.sort(function (a, b) {
+        if (a.user < b.user) return -1;
+        if (a.user > b.user) return 1;
+        return 0;
+    });
+    return users;
+}
+
+// 유저 가방의 호이응원 무료패키지 1~10번 수량을 합산하는 함수
+function getHoiFreeSupportPackageCount(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
+    var packageConfig = GLOBAL_CONFIG.supportPass.freeSupportPackage;
+    var bag = data.member[user].bag;
+    var packagePrefix = packageConfig.baseName.replace(/[\uFE0E\uFE0F]/g, "") + "[";
+    var count = 0;
+    for (var itemName in bag) {
+        if (!bag.hasOwnProperty(itemName)) continue;
+        var normalizedItemName = String(itemName || "").replace(/[\uFE0E\uFE0F]/g, "").trim();
+        if (normalizedItemName.indexOf(packagePrefix) !== 0 || normalizedItemName.charAt(normalizedItemName.length - 1) !== "]") continue;
+        var variantText = normalizedItemName.substring(packagePrefix.length, normalizedItemName.length - 1);
+        if (!/^\d+$/.test(variantText)) continue;
+        var variant = parseInt(variantText, 10);
+        if (variant < packageConfig.minVariant || variant > packageConfig.maxVariant) continue;
+        if (variantText !== String(variant)) continue;
+        var itemCount = parseInt(bag[itemName], 10) || 0;
+        if (itemCount > 0) count += itemCount;
+    }
+    return count;
+}
+
+// 호이응원 무료패키지를 기준 수량 이상 보유한 유저 목록을 반환하는 함수
+function getHoiFreeSupportPackageAlertUsers(data) {
+    var users = [];
+    if (!data || !data.member) return users;
+    var alertCount = GLOBAL_CONFIG.supportPass.freeSupportPackage.alertCount;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var packageCount = getHoiFreeSupportPackageCount(data, user);
+        if (packageCount < alertCount) continue;
+        users.push({ user: user, count: packageCount });
+    }
+    users.sort(function (a, b) {
+        if (a.count !== b.count) return b.count - a.count;
+        if (a.user < b.user) return -1;
+        if (a.user > b.user) return 1;
+        return 0;
+    });
     return users;
 }
 
@@ -30236,6 +30845,44 @@ function buildUserSupportPassLines(data, user) {
     var lines = [];
     for (var i = 0; i < configs.length; i++) {
         lines.push(formatSupportPassStatus(data, user, configs[i]));
+    }
+    return lines;
+}
+
+// 순위 보상 명령의 당일 지급 완료 시각을 기록하는 함수
+function recordDailyRewardPayout(data, rewardKey) {
+    if (!data.rewardPayoutStatus || typeof data.rewardPayoutStatus !== "object" || data.rewardPayoutStatus instanceof Array) {
+        data.rewardPayoutStatus = {};
+    }
+    data.rewardPayoutStatus[rewardKey] = {
+        lastPaidDate: getCurrentDate(),
+        lastPaidAt: formatDateTime(new Date())
+    };
+}
+
+// 순위 보상별 오늘 지급 완료 여부를 확인하는 함수
+function isDailyRewardPayoutDone(data, guildData, rewardKey) {
+    var today = getCurrentDate();
+    if (rewardKey === "tier") {
+        return !!(data.tierReward && data.tierReward.lastPaidDate === today);
+    }
+    if (rewardKey === "territory") {
+        var territoryPaidAt = guildData && guildData.guildTerritoryReward ? guildData.guildTerritoryReward.lastPaidAt : "";
+        return String(territoryPaidAt || "").substring(0, 10).replace(/-/g, "") === today;
+    }
+    var payout = data.rewardPayoutStatus && data.rewardPayoutStatus[rewardKey] ? data.rewardPayoutStatus[rewardKey] : null;
+    return !!(payout && payout.lastPaidDate === today);
+}
+
+// 패스목록에 표시할 당일 순위 보상 지급 현황 줄을 만드는 함수
+function buildDailyRewardPayoutStatusLines(data, guildData) {
+    var schedules = GLOBAL_CONFIG.rewardPayout.schedules;
+    var lines = ["《🎁 금일 순위 보상 지급 현황》"];
+    for (var i = 0; i < schedules.length; i++) {
+        var schedule = schedules[i];
+        var paidMark = isDailyRewardPayoutDone(data, guildData, schedule.key) ? "✅" : "❌";
+        lines.push(schedule.command + " " + schedule.time + " [" + paidMark + "]");
+        lines.push("└ " + schedule.label);
     }
     return lines;
 }
@@ -30270,6 +30917,48 @@ function buildSupportPassListMessage(data, petData, guildData) {
         lines.push("━━━━━━━━━━━");
         lines.push("");
     }
+    var rewardPayoutLines = buildDailyRewardPayoutStatusLines(data, guildData);
+    for (var rewardLineIndex = 0; rewardLineIndex < rewardPayoutLines.length; rewardLineIndex++) {
+        lines.push(rewardPayoutLines[rewardLineIndex]);
+    }
+    lines.push("");
+    var invalidTicketUsers = getInvalidAutoExploreTicketUsers(data);
+    lines.push("━━━━━━━━━━━━");
+    if (invalidTicketUsers.length < 1) {
+        lines.push("✅ 자동탐험권 정합성 검사");
+        lines.push("삭제 대상 유저가 없습니다.");
+    } else {
+        lines.push("⚠️ 자동탐험권 수동 삭제해야하는 유저");
+        lines.push("━━━━━━━━━━━━");
+        lines.push("초보패스·호이패스 명단에는 없지만");
+        lines.push("자동탐험권🌄을 보유 중인 유저입니다.");
+        lines.push("");
+        for (var invalidIndex = 0; invalidIndex < invalidTicketUsers.length; invalidIndex++) {
+            var invalidTicketUser = invalidTicketUsers[invalidIndex];
+            lines.push((invalidIndex + 1) + ". " + checkRank(data, petData, guildData, invalidTicketUser.user) + " — 자동탐험권🌄 x" + invalidTicketUser.count);
+        }
+        lines.push("");
+        lines.push("총 " + invalidTicketUsers.length + "명");
+    }
+    lines.push("");
+    var freeSupportPackageConfig = GLOBAL_CONFIG.supportPass.freeSupportPackage;
+    var freeSupportPackageUsers = getHoiFreeSupportPackageAlertUsers(data);
+    lines.push("━━━━━━━━━━━━");
+    if (freeSupportPackageUsers.length < 1) {
+        lines.push("✅ " + freeSupportPackageConfig.baseName + " 보유 검사");
+        lines.push(freeSupportPackageConfig.alertCount + "개 이상 소지 유저가 없습니다.");
+    } else {
+        lines.push("⚠️ " + freeSupportPackageConfig.baseName + " " + freeSupportPackageConfig.alertCount + "개 이상 소지 유저");
+        lines.push("━━━━━━━━━━━━");
+        lines.push("[" + freeSupportPackageConfig.minVariant + "]~[" + freeSupportPackageConfig.maxVariant + "] 합산 기준입니다.");
+        lines.push("");
+        for (var packageUserIndex = 0; packageUserIndex < freeSupportPackageUsers.length; packageUserIndex++) {
+            var freeSupportPackageUser = freeSupportPackageUsers[packageUserIndex];
+            lines.push((packageUserIndex + 1) + ". " + checkRank(data, petData, guildData, freeSupportPackageUser.user) + " — " + freeSupportPackageConfig.baseName + " x" + freeSupportPackageUser.count);
+        }
+        lines.push("");
+        lines.push("총 " + freeSupportPackageUsers.length + "명");
+    }
     return lines.join("\n");
 }
 
@@ -30299,13 +30988,26 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
         var savedEndText = pass.permanent === true ? "영구권" : pass.endDate + "까지";
         var lines = ["\n저장확인: 패스 저장 완료 (" + savedEndText + ")"];
         if (meta.config.key === "newbie" || meta.config.key === "hoi") {
-            var ticketCount = member.bag && member.bag["자동탐험권🌄"] ? member.bag["자동탐험권🌄"] : 0;
+            var ticketCount = getAutoExploreTicketCount(savedData, meta.user);
             lines.push("저장확인: 자동탐험권🌄 " + ticketCount + "개");
         }
         return lines.join("\n");
     }
     if (pass && pass.enabled === true) return "\n⚠️ 저장확인: member.json에서 패스 삭제를 확인하지 못했습니다.";
-    return "\n저장확인: 패스 삭제 저장 완료";
+    var deleteLines = ["\n저장확인: 패스 삭제 저장 완료"];
+    if (meta.config.key === "newbie" || meta.config.key === "hoi") {
+        var remainingTicketCount = getAutoExploreTicketCount(savedData, meta.user);
+        if (!isSupportPassActive(savedData, meta.user, "newbie") && !isSupportPassActive(savedData, meta.user, "hoi")) {
+            if (remainingTicketCount > 0) {
+                deleteLines.push("⚠️ 저장확인: 자동탐험권🌄 " + remainingTicketCount + "개가 남아 있습니다.");
+            } else {
+                deleteLines.push("저장확인: 자동탐험권🌄 회수 완료");
+            }
+        } else {
+            deleteLines.push("저장확인: 다른 자동탐험 패스가 유효하여 자동탐험권🌄 유지");
+        }
+    }
+    return deleteLines.join("\n");
 }
 
 function processUserIDCommand(msg, data) {
@@ -30353,8 +31055,12 @@ function processUserIDCommand(msg, data) {
     userPassStore[passConfig.key].enabled = false;
     var deleteLines = [userIDText + " 사용자의 패스가 삭제되었습니다."];
     if (passConfig.key === "newbie" || passConfig.key === "hoi") {
-        removeAllItem(data, userIDText, "자동탐험권🌄");
-        deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
+        if (!isSupportPassActive(data, userIDText, "newbie") && !isSupportPassActive(data, userIDText, "hoi")) {
+            removeAllAutoExploreTickets(data, userIDText);
+            deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
+        } else {
+            deleteLines.push("다른 자동탐험 패스가 유효하여 자동탐험권🌄을 유지합니다.");
+        }
     }
     return deleteLines.join("\n");
 }
@@ -31163,6 +31869,14 @@ function ensureAccountSuspensions(data) {
     return data.accountSuspensions.users;
 }
 
+// 계정 삭제 대상의 정지·휴면 목록 항목을 함께 제거하는 함수
+function removeAccountLifecycleEntriesOnDelete(data, userName) {
+    var suspendedAccounts = ensureAccountSuspensions(data);
+    var dormantAccounts = ensureDormantAccounts(data);
+    if (suspendedAccounts[userName]) delete suspendedAccounts[userName];
+    if (dormantAccounts[userName]) delete dormantAccounts[userName];
+}
+
 // 특정 유저가 계정정지 상태인지 확인하는 함수
 function isAccountSuspended(data, userName) {
     if (!data || typeof data !== "object") return false;
@@ -31278,6 +31992,7 @@ function getPetExploreRank(data, petExploreData, sender) {
 }
 
 function getDailyQuestStatus(data, petData, guildData, sender) {
+    var member = data.member[sender]; // 일퀘 상태를 확인할 회원 데이터
     var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
     var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
 
@@ -31305,6 +32020,15 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
     var weeklyUsed = data.member[sender] ? parseInt(data.member[sender].weeklyQuestCnt, 10) || 0 : 0;
     weeklyUsed = Math.max(0, Math.min(weeklyUsed, weeklyMax));
     var dailyRewardDone = data.member[sender] ? (data.member[sender].dailyQuestCnt || 0) >= 1 : false;
+    var hasPassDailyQuest = hasActiveHoiOrNewbiePass(data, sender); // 호이·초보패스 전용 일퀘 적용 여부
+    var petHomeCommentUsed = parseInt(member.petHomeCommentCnt, 10) || 0;
+    var petHomeLikeUsed = parseInt(member.homeLikeCnt, 10) || 0;
+    var userLikeUsed = parseInt(member.cntlike, 10) || 0;
+    var passDailyComplete = hasPassDailyQuest &&
+        petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax &&
+        petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax &&
+        userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax; // 패스 전용 3종 완료 여부
+    var passDailyRewardDone = (parseInt(member.passDailyQuestCnt, 10) || 0) >= 1;
 
     return {
         towerUsed: towerUsed,
@@ -31322,6 +32046,15 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
         weeklyMax: weeklyMax,
         weeklyComplete: weeklyUsed >= weeklyMax,
         dailyRewardDone: dailyRewardDone,
+        hasPassDailyQuest: hasPassDailyQuest,
+        petHomeCommentUsed: petHomeCommentUsed,
+        petHomeCommentMax: GLOBAL_CONFIG.daily.passPetHomeCommentMax,
+        petHomeLikeUsed: petHomeLikeUsed,
+        petHomeLikeMax: GLOBAL_CONFIG.daily.passPetHomeLikeMax,
+        userLikeUsed: userLikeUsed,
+        userLikeMax: GLOBAL_CONFIG.daily.passUserLikeMax,
+        passDailyComplete: passDailyComplete,
+        passDailyRewardDone: passDailyRewardDone,
         isComplete: towerUsed >= towerMax && castleUsed >= castleMax && miniUsed >= miniMax && exploreUsed >= exploreMax
     };
 }
@@ -31398,6 +32131,8 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     var member = data.member[sender];
     var messages = [];
     var claimed = false; // 보상 지급 여부 플래그
+    var dailyClaimed = false; // 기존 4종 일퀘 보상 지급 여부
+    var passDailyClaimed = false; // 호이·초보패스 전용 일퀘 보상 지급 여부
 
     if (status.isComplete && !status.dailyRewardDone) {
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 1);
@@ -31408,8 +32143,17 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         status.weeklyUsed = member.weeklyQuestCnt;
         status.weeklyComplete = status.weeklyUsed >= status.weeklyMax;
         claimed = true;
+        dailyClaimed = true;
 
         messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개");
+    }
+
+    if (status.passDailyComplete && !status.passDailyRewardDone) {
+        addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
+        member.passDailyQuestCnt = (member.passDailyQuestCnt || 0) + 1;
+        claimed = true;
+        passDailyClaimed = true;
+        messages.push("✅ 호이·초보패스 전용 일퀘 보상 지급 완료!\n보상 : 1억포인트상자🪙(/포인트상자오픈) 1개");
     }
 
     if (status.weeklyComplete) {
@@ -31440,6 +32184,8 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
 
     return {
         claimed: claimed,
+        dailyClaimed: dailyClaimed,
+        passDailyClaimed: passDailyClaimed,
         message: messages.join("\n\n")
     };
 }
@@ -31795,10 +32541,10 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     var lines = []; // 결과 메시지 조립 배열
 
     lines.push("[" + nickName + "]");
-    lines.push(rewardResult && rewardResult.claimed ? "자동 일퀘 보상 수령 완료 🐶" : "자동 일퀘 진행 결과 🐶");
+    lines.push(rewardResult && rewardResult.dailyClaimed ? "자동 일퀘 보상 수령 완료 🐶" : "자동 일퀘 진행 결과 🐶");
     lines.push("[자동일퀘 보너스 발동!]");
     lines.push("[시탑😈,🏆캐대,🐹미대 5판 추가 보상👌]");
-    if (rewardResult && rewardResult.claimed) {
+    if (rewardResult && rewardResult.dailyClaimed) {
         lines.push("✅ 일일퀘스트 보상 지급 완료!");
     } else if (status.isComplete && status.dailyRewardDone) {
         lines.push("✅ 오늘 이미 일일퀘스트 보상을 받았습니다.");
@@ -31890,7 +32636,7 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
         var rewardGuildData = loadJsonFile(guildPath);
         var rewardResult = claimQuestReward(rewardData, rewardPetData, rewardGuildData, rewardPetSkillData, sender);
         if (rewardResult.claimed) {
-            if (hasPetSkill(rewardPetSkillData, sender, "일일루틴")) {
+            if (rewardResult.dailyClaimed && hasPetSkill(rewardPetSkillData, sender, "일일루틴")) {
                 var bonusPoint = 100000000;
                 addPoint(rewardData, sender, bonusPoint);
                 rewardResult.message += "\n\n🎉 일일루틴📙 1억 포인트를 지급받습니다.";
@@ -32701,8 +33447,30 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
 function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     var status = getDailyQuestStatus(data, petData, guildData, sender);
     var lines = [];
-    lines.push("[" + checkRank(data, petData, guildData, sender) + "]님의");
-    lines.push("📜 일일 · 주간 퀘스트 보상 안내 🦋 " + allsee);
+    lines.push("📜 일일 · 주간 · 🐶호패,초패🐥 ");
+    lines.push("퀘스트 보상 안내 🦋 ");
+    lines.push("━━━━━━━━━━━━━━━━");
+    lines.push("팁: 자동일퀘권📝 소지시 자동일퀘 가능");
+    lines.push("시탑,캐대,미대 5판을 추가로");
+    lines.push("대전하여 추가 보상을 지급해요👌" + allsee);
+    lines.push("━━━━━━━━━━━━━━━━");
+    lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
+    if (status.hasPassDailyQuest) {
+        lines.push("━━━━━━━━━━━━━━━━");
+        lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
+        lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
+        lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
+        lines.push("");
+        lines.push("《🎁 호패,초패 퀘스트 보상》");
+        lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
+        if (status.passDailyRewardDone) lines.push("[✅ 금일 전용 일퀘 보상 지급 완료]");
+        lines.push("");
+    } else {
+        lines.push("");
+        lines.push("펫홈 댓글 달성📝[호패,초패 회원전용]");
+        lines.push("펫홈 좋아홈🏡[호패,초패 회원전용]");
+        lines.push("유저 좋아요💕[호패,초패 회원전용]");
+    }
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【📜일일 퀘스트 조건 】");
     lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
@@ -34442,9 +35210,9 @@ function runMatzangBattle(attackerName, defenderName, data, petData, homeData, p
 // 맞짱필드 순위 보상 다이아 수량을 반환하는 함수
 function getMatzangRankReward(rank) {
     if (rank >= 1 && rank <= 10) return GLOBAL_CONFIG.matzangField.rankRewards[rank - 1];
-    if (rank >= 11 && rank <= 20) return 10;
-    if (rank >= 21 && rank <= 30) return 5;
-    if (rank >= 31 && rank <= 100) return 3;
+    if (rank >= 11 && rank <= 20) return 4;
+    if (rank >= 21 && rank <= 30) return 2;
+    if (rank >= 31 && rank <= 100) return 1;
     return 0;
 }
 
@@ -34658,8 +35426,8 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
     var listings = getFreeMarketActiveListings(freeMarketData);
     var out = "🏪 호이월드 자유시장 🏪\n";
     out += "━━━━━━━━━━━━\n";
-    out += "💰수수료: 판매금액의 19%\n";
-    out += "🏪 자유시장회원권: 소지시 수수료 10%\n";
+    out += "💰수수료: 판매금액의 10%\n";
+    out += "🏪 자유시장회원권: 소지시 수수료 5%\n";
     out += "🛒구매: /자유시장구매 [번호]\n";
     out += "❌취소: /자유시장취소 [번호]\n";
     out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -34694,8 +35462,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
     out += "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-    out += "💰수수료는 판매금액의 19%\n";
-    out += "🏪 자유시장회원권 소지시 수수료 10%\n"
+    out += "💰수수료는 판매금액의 10%\n";
+    out += "🏪 자유시장회원권 소지시 수수료 5%\n"
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -36092,6 +36860,254 @@ function initPetHomeCommentsData(commentsData) {
     if (!commentsData.comments || typeof commentsData.comments !== "object") commentsData.comments = {};
     if (!commentsData.pinnedComments || typeof commentsData.pinnedComments !== "object") commentsData.pinnedComments = {};
     return commentsData;
+}
+
+// 펫홈 활동 파일의 필수 구조를 검증하는 함수
+function requirePetHomeActivityData(activityData) {
+    if (!activityData || typeof activityData !== "object" || activityData instanceof Array) {
+        throw new Error("Invalid pet home activity data");
+    }
+    if (!activityData.alerts || typeof activityData.alerts !== "object" || activityData.alerts instanceof Array) {
+        throw new Error("Invalid pet home alerts data");
+    }
+    if (!activityData.recentVisitors || typeof activityData.recentVisitors !== "object" || activityData.recentVisitors instanceof Array) {
+        throw new Error("Invalid pet home recent visitors data");
+    }
+    for (var alertOwner in activityData.alerts) {
+        if (!activityData.alerts.hasOwnProperty(alertOwner)) continue;
+        var ownerAlerts = activityData.alerts[alertOwner];
+        if (!(ownerAlerts instanceof Array) || ownerAlerts.length > GLOBAL_CONFIG.petHomeActivity.maxAlerts) {
+            throw new Error("Invalid pet home alert list: " + alertOwner);
+        }
+        for (var alertIndex = 0; alertIndex < ownerAlerts.length; alertIndex++) {
+            var storedAlert = ownerAlerts[alertIndex];
+            if (!storedAlert || typeof storedAlert !== "object" || storedAlert instanceof Array ||
+                typeof storedAlert.type !== "string" || typeof storedAlert.actorId !== "string" ||
+                typeof storedAlert.createdAt !== "string" || typeof storedAlert.read !== "boolean" ||
+                (storedAlert.commentPreview !== undefined && typeof storedAlert.commentPreview !== "string")) {
+                throw new Error("Invalid pet home alert entry: " + alertOwner);
+            }
+        }
+    }
+    for (var visitorOwner in activityData.recentVisitors) {
+        if (!activityData.recentVisitors.hasOwnProperty(visitorOwner)) continue;
+        var ownerVisitors = activityData.recentVisitors[visitorOwner];
+        if (!(ownerVisitors instanceof Array) || ownerVisitors.length > GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors) {
+            throw new Error("Invalid pet home recent visitor list: " + visitorOwner);
+        }
+        for (var visitorIndex = 0; visitorIndex < ownerVisitors.length; visitorIndex++) {
+            var storedVisitor = ownerVisitors[visitorIndex];
+            if (!storedVisitor || typeof storedVisitor !== "object" || storedVisitor instanceof Array ||
+                typeof storedVisitor.visitorId !== "string" || typeof storedVisitor.visitedAt !== "string") {
+                throw new Error("Invalid pet home recent visitor entry: " + visitorOwner);
+            }
+        }
+    }
+    return activityData;
+}
+
+// 특정 유저의 펫홈 활동 알림 목록을 반환하는 함수
+function getPetHomeAlertList(activityData, user) {
+    activityData = requirePetHomeActivityData(activityData);
+    if (!activityData.alerts.hasOwnProperty(user)) activityData.alerts[user] = [];
+    return activityData.alerts[user];
+}
+
+// 특정 유저의 최근 방문자 목록을 반환하는 함수
+function getPetHomeRecentVisitorList(activityData, user) {
+    activityData = requirePetHomeActivityData(activityData);
+    if (!activityData.recentVisitors.hasOwnProperty(user)) activityData.recentVisitors[user] = [];
+    return activityData.recentVisitors[user];
+}
+
+// 펫홈 활동 알림을 추가하고 최대 보관 개수를 유지하는 함수
+function addPetHomeActivityAlert(activityData, targetUser, type, actorId, commentPreview) {
+    var alerts = getPetHomeAlertList(activityData, targetUser);
+    var alert = {
+        type: type,
+        actorId: actorId,
+        createdAt: formatDateTime(new Date()),
+        read: false
+    };
+    if (commentPreview) alert.commentPreview = commentPreview;
+    alerts.push(alert);
+    while (alerts.length > GLOBAL_CONFIG.petHomeActivity.maxAlerts) alerts.shift();
+    return alert;
+}
+
+// 최근 방문자를 중복 없이 최신순으로 기록하는 함수
+function updatePetHomeRecentVisitor(activityData, targetUser, visitorId) {
+    var visitors = getPetHomeRecentVisitorList(activityData, targetUser);
+    for (var i = visitors.length - 1; i >= 0; i--) {
+        if (visitors[i] && visitors[i].visitorId === visitorId) visitors.splice(i, 1);
+    }
+    visitors.unshift({ visitorId: visitorId, visitedAt: formatDateTime(new Date()) });
+    while (visitors.length > GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors) visitors.pop();
+}
+
+// 마음표현 명령어 이름에 해당하는 설정을 반환하는 함수
+function getPetHomeHeartTypeByCommand(commandName) {
+    var heartTypes = GLOBAL_CONFIG.petHomeActivity.heartTypes;
+    for (var i = 0; i < heartTypes.length; i++) {
+        if (heartTypes[i].command === commandName) return heartTypes[i];
+    }
+    return null;
+}
+
+// 마음표현 키에 해당하는 설정을 반환하는 함수
+function getPetHomeHeartTypeByKey(heartKey) {
+    var heartTypes = GLOBAL_CONFIG.petHomeActivity.heartTypes;
+    for (var i = 0; i < heartTypes.length; i++) {
+        if (heartTypes[i].key === heartKey) return heartTypes[i];
+    }
+    return null;
+}
+
+// 기존 펫홈의 마음표현 누적값을 0 기준으로 보정하는 함수
+function ensurePetHomeHeartExpressions(userHome) {
+    if (!userHome.heartExpressions || typeof userHome.heartExpressions !== "object" || userHome.heartExpressions instanceof Array) {
+        userHome.heartExpressions = {};
+    }
+    var heartTypes = GLOBAL_CONFIG.petHomeActivity.heartTypes;
+    for (var i = 0; i < heartTypes.length; i++) {
+        var key = heartTypes[i].key;
+        var count = parseInt(userHome.heartExpressions[key], 10);
+        userHome.heartExpressions[key] = isNaN(count) || count < 0 ? 0 : count;
+    }
+    return userHome.heartExpressions;
+}
+
+// 마음표현 일일 제한에 사용할 현재 날짜를 반환하는 함수
+function getPetHomeTodayText() {
+    var formatter = new java.text.SimpleDateFormat("yyyy-MM-dd");
+    formatter.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Seoul"));
+    return String(formatter.format(new Date()));
+}
+
+// 댓글 알림에 표시할 15자 미리보기를 생성하는 함수
+function getPetHomeCommentPreview(comment) {
+    var text = String(comment || "");
+    var maxLength = GLOBAL_CONFIG.petHomeActivity.commentPreviewMaxLength;
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+}
+
+// 펫홈 화면의 마음표현 누적 영역을 생성하는 함수
+function buildPetHomeHeartExpressionMessage(userHome) {
+    var counts = ensurePetHomeHeartExpressions(userHome);
+    return "💞━━ 나를 향한 마음표현 ━━💞\n" +
+        "귀여워🐾 x" + counts.cute + " | 응원해⭐ x" + counts.cheer + "\n" +
+        "멋져✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n";
+}
+
+// 저장된 활동 유형을 홈알림 표시 문구로 변환하는 함수
+function formatPetHomeActivityAlert(data, petData, guildData, alert) {
+    var actorId = alert && alert.actorId ? alert.actorId : "알 수 없는 유저";
+    var actorName = data.member && data.member[actorId] ? checkRank(data, petData, guildData, actorId) : actorId;
+    if (alert.type === "comment") return actorName + "님이 댓글을 남겼습니다.";
+    if (alert.type === "home_like") return actorName + "님이 좋아홈💌을 눌렀습니다.";
+    var heartKey = String(alert.type || "").replace(/^heart_/, "");
+    var heartType = getPetHomeHeartTypeByKey(heartKey);
+    if (heartType) return actorName + "님이 " + heartType.label + heartType.emoji + "를 남겼습니다.";
+    return actorName + "님의 펫홈 활동이 있습니다.";
+}
+
+// 홈알림과 최근 방문자 목록 메시지를 생성하는 함수
+function buildPetHomeActivityMessage(data, petData, guildData, sender, activityData) {
+    var alerts = getPetHomeAlertList(activityData, sender);
+    var visitors = getPetHomeRecentVisitorList(activityData, sender);
+    var unreadCount = 0; // 아직 확인하지 않은 활동 알림 개수
+    for (var i = 0; i < alerts.length; i++) {
+        if (alerts[i] && alerts[i].read !== true) unreadCount++;
+    }
+
+    var out = "🔔 " + checkRank(data, petData, guildData, sender) + "님의 홈알림\n" +
+        "━━━━━━━━━━━━\n" +
+        "새로운 알림 " + unreadCount + "개 | 보관 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
+        "최근 방문자 " + visitors.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors + "명\n" +
+        allsee + "\n\n";
+
+    if (alerts.length === 0 && visitors.length === 0) return out + "아직 등록된 홈알림이 없습니다.";
+
+    out += "🔔 최근 활동 알림\n━━━━━━━━━━━━\n";
+    if (alerts.length === 0) {
+        out += "등록된 활동 알림이 없습니다.\n";
+    } else {
+        for (var alertIndex = alerts.length - 1, alertNo = 1; alertIndex >= 0; alertIndex--, alertNo++) {
+            var alert = alerts[alertIndex];
+            out += "[" + alertNo + "] " + formatPetHomeActivityAlert(data, petData, guildData, alert) + "\n";
+            if (alert.type === "comment" && alert.commentPreview) out += "💬 “" + alert.commentPreview + "”\n";
+            out += "└ " + (alert.createdAt || "시간 정보 없음") + "\n\n";
+        }
+    }
+
+    out += "\n🐾 최근 방문자\n━━━━━━━━━━━━\n";
+    if (visitors.length === 0) {
+        out += "등록된 최근 방문자가 없습니다.";
+    } else {
+        for (var visitorIndex = 0; visitorIndex < visitors.length; visitorIndex++) {
+            var visitor = visitors[visitorIndex] || {};
+            var visitorId = visitor.visitorId || "알 수 없는 유저";
+            var visitorName = data.member && data.member[visitorId] ? checkRank(data, petData, guildData, visitorId) : visitorId;
+            out += (visitorIndex + 1) + ". " + visitorName + " ─ " + (visitor.visitedAt || "시간 정보 없음") + "\n";
+        }
+    }
+    return out.trim();
+}
+
+// 현재 보관된 펫홈 활동 알림을 모두 읽음 처리하는 함수
+function markPetHomeAlertsRead(activityData, user) {
+    var alerts = getPetHomeAlertList(activityData, user);
+    for (var i = 0; i < alerts.length; i++) {
+        if (alerts[i]) alerts[i].read = true;
+    }
+}
+
+// 모든 일반 댓글을 삭제하고 댓글핀 보존 수량을 집계하는 함수
+function clearPetHomeCommentsPreservingPins(commentsData) {
+    commentsData = initPetHomeCommentsData(commentsData);
+    var result = { removedCommentCount: 0, preservedPinnedCount: 0, removedUsers: [] };
+    for (var commentUser in commentsData.comments) {
+        if (!commentsData.comments.hasOwnProperty(commentUser)) continue;
+        if (!(commentsData.comments[commentUser] instanceof Array)) continue;
+        var commentCount = commentsData.comments[commentUser].length;
+        result.removedCommentCount += commentCount;
+        if (commentCount > 0) result.removedUsers.push({ user: commentUser, count: commentCount });
+    }
+    for (var pinnedUser in commentsData.pinnedComments) {
+        if (!commentsData.pinnedComments.hasOwnProperty(pinnedUser)) continue;
+        if (commentsData.pinnedComments[pinnedUser] instanceof Array) result.preservedPinnedCount += commentsData.pinnedComments[pinnedUser].length;
+    }
+    commentsData.comments = {};
+    return result;
+}
+
+// 패스 혜택 개편을 위해 일반 댓글과 좋아홈 수치를 한 번 정리하는 함수
+function cleanupPetHomePassBenefitData(homeData, commentsData) {
+    commentsData = initPetHomeCommentsData(commentsData);
+    if (!commentsData.migrations || typeof commentsData.migrations !== "object") commentsData.migrations = {};
+    var result = { changed: false, alreadyApplied: false, removedCommentCount: 0, preservedPinnedCount: 0, resetLikeUserCount: 0, resetLikeCount: 0 };
+    if (commentsData.migrations.passBenefits20260726 === true) {
+        result.alreadyApplied = true;
+        return result;
+    }
+
+    var commentCleanupResult = clearPetHomeCommentsPreservingPins(commentsData);
+    result.removedCommentCount = commentCleanupResult.removedCommentCount;
+    result.preservedPinnedCount = commentCleanupResult.preservedPinnedCount;
+
+    if (homeData && typeof homeData === "object") {
+        for (var homeUser in homeData) {
+            if (!homeData.hasOwnProperty(homeUser)) continue;
+            if (!homeData[homeUser] || homeData[homeUser].likeCnt === undefined) continue;
+            result.resetLikeUserCount++;
+            result.resetLikeCount += parseInt(homeData[homeUser].likeCnt, 10) || 0;
+            delete homeData[homeUser].likeCnt;
+        }
+    }
+
+    commentsData.migrations.passBenefits20260726 = true;
+    result.changed = true;
+    return result;
 }
 
 // 특정 유저의 펫홈 댓글 목록을 반환하는 함수

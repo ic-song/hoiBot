@@ -22,6 +22,119 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# 1:1톡 패스 접근 제한
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+
+- `hasActiveHoiOrNewbiePass`
+- `recordBlockedPrivateChatAttempt`
+- `hasInfoPrivateChatPass`
+- `isSupportPassActive`
+- `isInfoSupportPassActive`
+
+## Data Usage
+
+- `data.member[user].pass.newbie`
+- `data.member[user].pass.hoi`
+
+## Save Flow
+
+- 패스 상태를 읽기만 하며 데이터를 변경하거나 저장하지 않는다.
+
+## AI Notes
+
+- 그룹채팅은 기존 명령어 흐름을 유지한다.
+- 1:1톡은 활성 초보패스 또는 호이패스가 없으면 `main.js`와 `Info.js` 모두 명령 실행 전에 반환한다.
+- `main.js`는 패스 없는 1:1 입력에 응답하지 않고 유저별 차단 횟수를 메모리에 누적하며, 3회 단위마다 `room90`에 사용자·방·횟수·최근 메시지를 알린다.
+- `Info.js`는 별도 응답과 카운트 증가 없이 실행만 차단한다.
+- 1:1톡 차단 횟수는 파일에 저장하지 않아 봇 재시작 시 초기화된다.
+- `main.js`의 DEV 데이터 백업과 봇 복구 명령은 기존 비상 복구 흐름을 유지한다.
+
+---
+
+# /로열오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/로열오픈`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `initSweetHomeUser`
+- `createCuId`
+- `sortFurnitureList`
+
+## Data Usage
+
+- `data.member[sender].bag["[🏡가구]로열패키지 확정(/로열오픈)"]`
+- `homeData[sender].furnitureBag`
+- `GLOBAL_CONFIG.guaranteedPackage.royal`
+
+## Save Flow
+
+- 가구 보관함 32칸을 먼저 확인하고 패키지 1개를 소모해 `고대서적📘(+140,000💕)[로열 루미에르]` 1개를 지급한다.
+- 성공 시 `homeDataFile`과 `filePath`를 저장하며, 저장 실패 시 지급 가구 제거와 패키지 복원을 시도한다.
+
+## AI Notes
+
+- Exact command guard: `/로열오픈`.
+- 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+
+---
+
+# /창세오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/창세오픈`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `refreshMiniPetSortIndex`
+
+## Data Usage
+
+- `data.member[sender].bag["[🐹미니펫]창세패키지 확정(/창세오픈)"]`
+- `petData[sender].miniPetBag`
+- `GLOBAL_CONFIG.guaranteedPackage.genesis`
+
+## Save Flow
+
+- 미니펫 가방 8칸을 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
+- 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
+
+## AI Notes
+
+- Exact command guard: `/창세오픈`.
+- 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+
+---
+
 # /글자수통계
 
 Status: VERIFIED
@@ -373,7 +486,16 @@ Status: VERIFIED
 - `/댓글핀삭제 [번호]`
 - `/댓글확인`
 - `/댓글삭제`
+- `/좋아홈 [닉네임]`
+- `/마음 [닉네임]`
+- `/귀여워 [닉네임]`
+- `/응원해 [닉네임]`
+- `/멋져 [닉네임]`
+- `/사랑해 [닉네임]`
+- `/홈알림`
 - `/펫홈댓글파일생성`
+- `/펫홈활동파일생성`
+- `/펫홈패스개편정리`
 
 ## Files
 
@@ -381,6 +503,7 @@ Status: VERIFIED
 - `data/petSweetHomeData.json`
 - runtime `petHomePlacedFurniture.json`
 - `data/petHomeComments.json`
+- runtime `petHomeActivityData.json`
 
 ## Related Helpers
 
@@ -391,6 +514,16 @@ Status: VERIFIED
 - `isPinnedPetHomeComment`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
+- `requirePetHomeActivityData`
+- `addPetHomeActivityAlert`
+- `updatePetHomeRecentVisitor`
+- `buildPetHomeActivityMessage`
+- `buildPetHomeHeartExpressionMessage`
+- `markPetHomeAlertsRead`
+- `cleanupPetHomePassBenefitData`
+- `clearPetHomeCommentsPreservingPins`
+- `hasActiveHoiOrNewbiePass`
+- `getPetHomePassBenefitCost`
 - `getFurnitureExp`
 - `getPlacedFurnitureList`
 - `getFurnitureMaxSlots`
@@ -406,19 +539,30 @@ Status: VERIFIED
 - `homeData[target].visitCnt`
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
+- `homeData[target].heartExpressions`
+- `homeData[sender].lastHeartExpressionDate`
 - `petHomeCommentsData.comments[target]`
 - `petHomeCommentsData.pinnedComments[target]`
-- Legacy `homeData[target].guestComments` is removed by `/데이터정리`; it is not moved into `petHomeCommentsData`.
+- `petHomeCommentsData.migrations.passBenefits20260726`
+- `petHomeActivityData.alerts[target]`
+- `petHomeActivityData.recentVisitors[target]`
+- Legacy `homeData[target].guestComments` is not changed by `/데이터정리`.
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
-- `/댓글`: mutates `data.member[sender].point` and `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
-- `/댓글핀 [번호]`: deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
+- `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
+- `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with `{ alerts: {}, recentVisitors: {} }` only when the active DEV/PROD file does not exist and never overwrites an existing file.
+- `/마음 [닉네임]` and the four direct expression commands require both users to have an active hoi/newbie pass, allow one shared use per day, save the target count and sender use date in `homeDataFile`, and add the target alert to `petHomeActivityFile` with rollback handling.
+- `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, replies newest-first lists, then marks the stored activity alerts as read.
+- `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
+- `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
+- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
 - Duplicate comments by the same writer are allowed.
 
 ## Related Commands
@@ -437,7 +581,10 @@ Status: VERIFIED
 - Comment message uses the guestbook header, inserts `allsee` in the count line, and shows the latest 50 comments while storing up to 50 comments.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
+- `/댓글`, `/댓글핀`, `/좋아홈` 성공 메시지는 포인트 차감·소모 문구를 표시하지 않는다.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
+- `/좋아홈` also uses an exact/full-pattern guard so `/좋아홈순위` and `/좋아홈초기화` do not enter the mutation branch.
+- `petHomeActivityData.json` is intentionally initialized by `/펫홈활동파일생성`; missing or invalid files follow the existing load/error flow and are not silently replaced.
 
 ---
 
@@ -570,7 +717,7 @@ Status: VERIFIED
 - `finishGuildTerritoryWar` keeps final occupation results visible first, then folds reward details, grouped territory point gains, and guide commands behind `allsee`.
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
-- `/길드영지보상지급` is Admin/Master only and pays guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
+- `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 
 ---
@@ -645,7 +792,7 @@ Status: VERIFIED
 - Clears active turn timer before resolving a valid attack
 - Wrong-turn penalty path saves `guildData` after user/guild elimination and attack-count penalty updates
 - `/영지공격 8` saves `guildData` after 차원의 문 failure elimination with 2-turn attack-count penalty or success turn-limit increase
-- `/영지공격 9` saves `guildData` and `data` after one-turn deduction, user elimination, and an optional occupied-territory release
+- `/영지공격 9` saves `guildData` and `data` after one-turn deduction and an optional occupied-territory release
 - Saves `guildData` and `data` after attack resolution and turn advance
 - Finish path saves `guildData` and `data` through `finishGuildTerritoryWar`
 
@@ -679,7 +826,7 @@ Status: VERIFIED
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
-- `/영지공격 9` triggers 날 기억해줘😭 when enabled: the guild and user each consume one attack, the entering user is always eliminated, and a 50% success releases one randomly selected occupied territory among `[1]~[7]`.
+- `/영지공격 9` triggers 날 기억해줘😭 when enabled: the guild and user each consume one attack, the entering user remains in the rotation, and a 30% success releases one randomly selected occupied territory among `[1]~[7]`.
 - Releasing `[1] 호월킹덤🏰` also clears the current lord, earnings, and defense count so `ensureGuildTerritoryWar` cannot restore the released ownership.
 - 공격 시점에 점령지 3개를 보유한 길드는 턴 길드자금 보상이 5천만에서 1억으로 두 배 적용되며 결과에 `점령 3개 추가보너스 획득`이 표시된다.
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
@@ -932,7 +1079,7 @@ Status: VERIFIED
 ## Command Anchors
 
 - Search in `Info.js`: `/펫정보`
-- Alias: `ㅁㅁㅁ`
+- Aliases: `/ㅎ`, `ㅁㅁㅁ`
 
 ## Files
 
@@ -954,6 +1101,7 @@ Status: VERIFIED
 - `getIntimacyUserRank`
 - `getUserIntimacyInfo`
 - Pendant equipment display is handled inline in `/펫정보`; legacy `ring` data should be migrated through `/반지보상받기` and removed from active equipment data.
+- `/펫정보`와 `/ㅎ`의 요약에는 패스 회원일 때만 `[🐶호패 전용]`과 3종 완료 아이콘을 표시한다. 비회원 요약에는 패스 안내 줄을 추가하지 않지만, 상세 화면은 전용 일퀘 영역을 유지하며 세 조건을 `[호패,초패 회원전용]`으로 안내한다.
 
 ## Data Usage
 
@@ -1586,6 +1734,10 @@ Status: VERIFIED
 - `data.member[sender].bag["자동일퀘권📝"]`
 - `data.member[sender].towerCnt`
 - `data.member[sender].battle`
+- `data.member[sender].petHomeCommentCnt`
+- `data.member[sender].homeLikeCnt`
+- `data.member[sender].cntlike`
+- `data.member[sender].passDailyQuestCnt`
 - `petData[sender].miniPetBattle`
 - `trialTower.user[sender]`
 - `petExploreData.record[sender]`
@@ -1625,6 +1777,11 @@ Status: VERIFIED
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
 - 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
+- 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 1개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
+- 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
+- `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
+- 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`를 증가시키고, 좋아홈·유저 좋아요는 기존 일일 제한 카운터를 재사용한다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
@@ -1828,6 +1985,16 @@ Status: VERIFIED
 
 ## Related Helpers
 - `buildSupportPassListMessage`
+- `buildDailyRewardPayoutStatusLines`
+- `isDailyRewardPayoutDone`
+- `recordDailyRewardPayout`
+- `cleanupExpiredSupportPasses`
+- `getInvalidAutoExploreTicketUsers`
+- `getHoiFreeSupportPackageCount`
+- `getHoiFreeSupportPackageAlertUsers`
+- `getAutoExploreTicketCount`
+- `removeAllAutoExploreTickets`
+- `normalizeAutoExploreTicketItemName`
 - `getSupportPassConfigs`
 - `isSupportPassActive`
 - `getActiveSupportPassUsers`
@@ -1835,14 +2002,25 @@ Status: VERIFIED
 ## Data Usage
 - `data.member[user].pass`
 - `data.member[user].bag["자동탐험권🌄"]`
+- `data.member[user].bag["호이응원패키지(무료)🐹[1]" ... "호이응원패키지(무료)🐹[10]"]`
+- `data.rewardPayoutStatus`
+- `data.tierReward.lastPaidDate`
+- `guildData.guildTerritoryReward.lastPaidAt`
 
 ## Save Flow
-- `/패스목록` is read-only
+- `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
+- `/패스목록` removes `자동탐험권🌄` only when a newbie/hoi pass expires during that cleanup and neither automatic-explore pass remains active
+- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
+- `/패스목록` sums `호이응원패키지(무료)🐹[1]` through `[10]` for each user and lists users holding at least 3 in total; this scan is read-only and does not mutate bag data
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
-- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄`
+- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when the other automatic-explore pass is also inactive
 - Past end dates are rejected before pass mutation and automatic ticket grant
-- Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply
+- Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
+- Finite passes remain active through the displayed end date and are removed from the active list on D+1
+- Successful pass add/delete commands reload `member.json` and append a save-confirmation line to the reply; newbie/hoi deletion also confirms whether the automatic-explore ticket was recovered or retained
+- `/패스목록`은 종합·미니펫·길드·티어·길드영지 순위 보상 명령의 예정 시각과 당일 지급 여부를 `[✅]`/`[❌]`로 표시한다. 종합·미니펫·길드 보상은 성공 직후 `data.rewardPayoutStatus`에 기록하며, 티어·길드영지는 기존 지급 기록을 재사용한다.
+- `/보상지급`은 기존 응답 종료 저장, `/연금지급`과 `/길드보상지급`은 각 성공 분기의 `saveJsonFile(data, filePath)`로 당일 지급 기록을 `member.json`에 함께 저장한다.
 
 ## Related Commands
 - `/원데이패스추가, [아이디] [날짜|영구권]`
@@ -1851,6 +2029,11 @@ Status: VERIFIED
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
+- `/보상지급`
+- `/연금지급`
+- `/길드보상지급`
+- `/티어보상지급`
+- `/영지순위보상지급`
 - Standalone legacy pass-list commands were removed; use `/패스목록`.
 
 ---
@@ -2971,7 +3154,7 @@ Status: VERIFIED
 - 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
-- `/계정삭제`와 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
+- `/계삭진행`과 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
@@ -2990,6 +3173,7 @@ Status: VERIFIED
 - isDormantAccount
 - buildDormantAccountListMessage
 - ensureAccountSuspensions
+- removeAccountLifecycleEntriesOnDelete
 - buildAccountSuspensionListMessage
 - formatDormantDateText
 - getDormantDays
@@ -3002,9 +3186,10 @@ Status: VERIFIED
 ## Save Flow
 - `/휴면계정 [아이디]` registers `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
 - `/휴면해제 [아이디]` deletes `data.dormantAccounts[target]` and saves `data` through `saveJsonFile(data, filePath)`
-- `/계정삭제` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
+- `/계삭진행` skips targets registered in `data.dormantAccounts` and reports them under `휴면보호`
 - `/계정잠수명단` and `/계정잠수삭제` exclude registered dormant accounts from removal candidates
 - `/계정잠수삭제` reports dormant accounts that matched the sleep condition but were protected
+- `/계삭진행`과 `/계정잠수삭제`에서 실제 삭제된 아이디는 `data.accountSuspensions.users`와 `data.dormantAccounts`에서도 함께 제거한다.
 - `/휴면계정리스트` and `/계정정지리스트` are read-only and do not save member data
 
 ## Related Commands
@@ -3012,7 +3197,7 @@ Status: VERIFIED
 - `/휴면해제 [아이디]`
 - `/휴면계정리스트`
 - `/계정정지리스트`
-- `/계정삭제`
+- `/계삭진행 [아이디1, 아이디2, ...]`
 - `/계정잠수명단`
 - `/계정잠수삭제 [숫자]`
 
@@ -4257,7 +4442,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- On successful transfer, subtracts transfer amount plus fee from sender, adds transfer amount to target, adds fee to the happy foundation ledger/captain, then saves `member.json`
+- On successful transfer, subtracts transfer amount plus the configured fee from sender and adds transfer amount to target; `호이행복재단 회원권` still applies its existing half-fee benefit, and collected fees are added to the happy foundation ledger/captain before saving `member.json`
 - Reloads `member.json` immediately after save and verifies sender/target point values
 
 ## Related Commands
@@ -4893,7 +5078,6 @@ Status: VERIFIED
 
 - `homeData[*].furnitureBag`
 - `placedFurnitureData[*]` after separation, with legacy home fallback before separation
-- `homeData[*].guestComments`
 - `data.member[*].bag`
 - `data.member[*].point`
 - `data.allowedUsers2`
@@ -4920,11 +5104,11 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Deletes legacy `homeData[*].guestComments` from `homeData` only; `/데이터정리` does not move those comments into `petHomeCommentsData`.
-- Step 5 floors every numeric `data.member[*].point` value to remove decimal point balances.
-- Step 6 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
-- Step 7 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
-- Step 8 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
+- Does not load, mutate, or save `petHomeCommentsData`, and does not delete legacy `homeData[*].guestComments`.
+- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
+- Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
+- Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
+- Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
