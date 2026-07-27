@@ -10,6 +10,67 @@ Add new runtime error records below this line.
 
 ---
 
+# 2026-07-27 - `/펫홈 [아이디]` activity file not initialized
+
+Status: OPERATIONAL_ACTION_REQUIRED
+
+## Raw Error Summary
+
+- System: `main`
+- Error message: `Invalid pet home activity data`
+- Trigger message: `/펫홈 리리 여`
+- Room: `팻 테스트방`
+- Sender: `호이 남`
+- Reported source line: not provided
+
+## Reported Context
+
+펫홈 마음표현·홈알림·최근 방문자 기능을 `feature/prod`에 반영한 뒤 다른 유저의 펫홈을 조회하는 과정에서 오류가 발생했다. 입력 메시지에 `dev/` 접두사가 없으므로 이 명령은 운영 데이터 경로인 `/sdcard/호이랜드/`를 사용한다.
+
+## Investigated Files / Functions
+
+- `main.js`
+  - `/펫홈` 다른 유저 방문 분기
+  - `petHomeActivityFile`
+  - `/펫홈활동파일생성`
+  - `loadJsonFile(...)`
+  - `requirePetHomeActivityData(...)`
+  - `resolveActiveDataPath(...)`
+- `COMMAND_INDEX.md`
+  - `/펫홈`의 활동 파일 초기화 및 방문 저장 흐름
+- Search keywords: `petHomeActivityData`, `requirePetHomeActivityData`, `펫홈활동파일생성`, `loadJsonFile`, `/펫홈`
+
+## Suspected Cause
+
+- 직접 원인: `/펫홈` 방문 분기에서 `loadJsonFile(petHomeActivityFile)`의 결과가 객체가 아니어서 `requirePetHomeActivityData(...)`의 첫 번째 검증에서 오류가 발생했다.
+- 가장 유력한 원인: 운영 경로에 `/sdcard/호이랜드/petHomeActivityData.json`이 아직 생성되지 않아 `loadJsonFile(...)`이 `null`을 반환했다.
+- 다른 가능성: 파일은 존재하지만 최상위 값이 `null`, 배열, 문자열 등 객체가 아닌 유효 JSON으로 저장되어 있다.
+- JSON 문법 자체가 깨졌다면 `parseJsonContent(...)`에서 다른 파싱 오류가 먼저 발생하므로, 이번 오류 문구만으로는 문법 손상 가능성이 낮다.
+- 오류는 방문자 수 증가와 두 파일 저장 전에 발생하므로, 이 요청으로 `visitCnt`나 최근 방문자 데이터가 일부 저장되지는 않았다.
+
+## Recommended Fix
+
+1. 운영 환경에서 Admin/Master가 `/펫홈활동파일생성`을 한 번 실행한다.
+2. 생성 완료 안내와 운영 경로 `/sdcard/호이랜드/petHomeActivityData.json`을 확인한다.
+3. `/펫홈 리리 여`를 다시 실행한다.
+4. 생성 명령이 `이미 있습니다`라고 응답하면 파일을 덮어쓰지 말고 내용을 확인한다. 정상 초기 구조는 `{ "alerts": {}, "recentVisitors": {} }`이다.
+5. 기존 활동 데이터가 들어 있다면 삭제·초기화하지 말고 백업 후 구조를 조사한다.
+
+## Validation Plan
+
+- `/펫홈활동파일생성` 최초 실행 시 통합 활동 파일이 생성되는지 확인
+- 같은 명령을 다시 실행해 기존 파일이 덮어써지지 않는지 확인
+- `/펫홈 리리 여` 재실행 시 방문자 수와 최근 방문자 기록이 각각 한 번만 증가하는지 확인
+- `/홈알림`에서 최근 방문자 목록이 표시되고 방문 기록이 새로운 알림 수에는 포함되지 않는지 확인
+- Android MessengerBot Rhino 운영 경로에서 확인
+
+## Follow-up Notes
+
+- 현재 조사에서는 코드 변경이나 운영 데이터 수정을 수행하지 않았다.
+- 초기화 명령 실행 후에도 같은 오류가 반복되면 실제 파일 내용과 `[ERROR : loadJsonFile]` 로그를 함께 확보해야 한다.
+
+---
+
 # 2026-07-19 - `/자동일퀘` pet-skill activation summary undefined identifier
 
 Status: FIXED_IN_PROD
