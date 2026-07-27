@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.322"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.323"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20180,7 +20180,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petHomeActivityDataForMyHeart, petHomeActivityFile);
                     return;
                 }
-                if (msg === "/홈뱃지" || msg === "/홈뱃지전체" || /^\/홈뱃지정보\s+(?:\d+|[A-Za-z]\d{2})$/.test(msg)) {
+                if (msg === "/홈뱃지" || msg === "/홈뱃지전체" || /^\/홈뱃지정보\s+\S(?:.*\S)?$/.test(msg)) {
                     if (!hasActiveHoiOrNewbiePass(data, sender)) {
                         replier.reply("❌ 펫홈 뱃지는 호이패스·초보패스 이용자만 확인할 수 있습니다.");
                         return;
@@ -20196,7 +20196,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var badgeInfoSelection = msg.replace(/^\/홈뱃지정보\s+/, "").trim();
                         var badgeInfo = resolvePetHomeBadgeSelection(petHomeActivityDataForBadgeView, sender, badgeInfoSelection, false);
                         if (!badgeInfo) {
-                            replier.reply("❌ 존재하지 않는 뱃지 번호 또는 ID입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
+                            replier.reply("❌ 존재하지 않는 뱃지 번호, ID 또는 이름입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
                             return;
                         }
                         var badgeInfoSocial = getPetHomeSocialUser(petHomeActivityDataForBadgeView, sender);
@@ -20407,9 +20407,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
                     ////////
-                    let header = "🏡[" + nickName + "]님의 펫하우스🏡\n\n";
+                    let header = "🏡[" + nickName + "]님의 펫하우스🏡\n━━━━━━━━━━━━\n";
                     var targetHomeSocial = getPetHomeSocialUser(petHomeActivityDataForHome, targetName);
-                    let lineSocial = "팔로워 " + targetHomeSocial.followers.length + "명 | 팔로잉 " + targetHomeSocial.following.length + "명\n" +
+                    let lineSocial = "팔로워🐾 " + targetHomeSocial.followers.length + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
                         "대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForHome, targetName) + "\n\n";
                     let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
                     let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
@@ -20421,9 +20421,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else {
                         lineComment += "(아직 한줄평이 없습니다.\n/한줄평 내용 을 적어보세요!)\n\n";
                     }
-                    let lineHouseInfo = houseName + "\n(+" + numberWithCommas(totalExp) + "💕) [+" + floor + "평]\n\n";
+                    let lineHouseInfo = houseName + "[+" + floor + "평]\n";
                     let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
-                    let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n";
+                    let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n" + lineHouseInfo;
                     if (placedArr.length === 0) {
                         lineFurniture += "[배치된 가구가 없습니다.]\n";
                     } else {
@@ -20437,7 +20437,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     lineFurniture += "────────────────\n";
-                    replier.reply(header + lineHouseInfo + lineSocial + lineHeart + lineStats + lineComment + lineComentend + lineFurniture);
+                    replier.reply(header + lineSocial + lineHeart + lineStats + lineComment + lineComentend + lineFurniture);
 
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
@@ -37566,9 +37566,10 @@ function getOwnedPetHomeBadges(activityData, user) {
     return owned;
 }
 
-// 번호 또는 ID로 펫홈 뱃지 설정을 찾는 함수
+// 번호, ID 또는 정확한 이름으로 펫홈 뱃지 설정을 찾는 함수
 function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwned) {
-    var text = String(selection || "").trim().toUpperCase();
+    var rawText = String(selection || "").trim();
+    var text = rawText.toUpperCase();
     var social = getPetHomeSocialUser(activityData, user);
     var badge = null;
     if (/^\d+$/.test(text)) {
@@ -37577,6 +37578,15 @@ function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwne
         if (index >= 0 && index < owned.length) badge = owned[index];
     } else {
         badge = getPetHomeBadgeById(text);
+        if (!badge) {
+            var allBadges = GLOBAL_CONFIG.petHomeActivity.achievementBadges.concat(GLOBAL_CONFIG.petHomeActivity.specialBadges);
+            for (var i = 0; i < allBadges.length; i++) {
+                if (allBadges[i].name === rawText) {
+                    badge = allBadges[i];
+                    break;
+                }
+            }
+        }
     }
     if (!badge) return null;
     if (requireOwned && !petHomeStringListContains(social.badges, badge.id)) return null;
@@ -37652,7 +37662,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
             (social.equippedBadgeId === badge.id ? " ✅ 장착 중" : "") + "\n" +
             "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n\n";
     }
-    out += "장착: /홈뱃지장착 [번호 또는 ID]\n상세: /홈뱃지정보 [번호 또는 ID]\n삭제: /홈뱃지삭제 [번호 또는 ID]\n전체: /홈뱃지전체";
+    out += "장착: /홈뱃지장착 [번호 또는 ID]\n상세: /홈뱃지정보 [번호, ID 또는 이름]\n삭제: /홈뱃지삭제 [번호 또는 ID]\n전체: /홈뱃지전체";
     return out.trim();
 }
 
