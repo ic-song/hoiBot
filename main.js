@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.324"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.325"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20267,7 +20267,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 특별 뱃지 관리 권한이 없습니다.");
                         return;
                     }
-                    var specialBadgeTargetParsed = findTargetAtStart(specialBadgeCommandMatch[2].trim(), data.member || {});
+                    var specialBadgeTargetParsed = findTargetAtStart(specialBadgeCommandMatch[2].trim(), data.member || {}, true);
                     var specialBadgeName = specialBadgeTargetParsed.rest ? specialBadgeTargetParsed.rest.trim() : "";
                     var specialBadge = getPetHomeSpecialBadgeByName(specialBadgeName);
                     if (!specialBadgeTargetParsed.target || !specialBadge) {
@@ -37413,11 +37413,14 @@ function getPetHomeBadgeById(badgeId) {
     return null;
 }
 
-// 특별 펫홈 뱃지 설정을 이름으로 찾는 함수
+// 특별 펫홈 뱃지를 이름이나 목록 표시 문구로 찾는 함수
 function getPetHomeSpecialBadgeByName(badgeName) {
+    var input = String(badgeName || "").trim();
     var badges = GLOBAL_CONFIG.petHomeActivity.specialBadges;
     for (var i = 0; i < badges.length; i++) {
-        if (badges[i].name === badgeName) return badges[i];
+        var displayName = badges[i].emoji + " " + badges[i].name;
+        var fullDisplayName = "[" + badges[i].id + "] " + displayName;
+        if (badges[i].name === input || displayName === input || fullDisplayName === input) return badges[i];
     }
     return null;
 }
@@ -37685,7 +37688,7 @@ function buildSpecialPetHomeBadgesMessage() {
     var badges = GLOBAL_CONFIG.petHomeActivity.specialBadges;
     var out = "🎖️ 특별 펫홈 뱃지 목록\n━━━━━━━━━━━━\n";
     for (var i = 0; i < badges.length; i++) out += "[" + badges[i].id + "] " + badges[i].emoji + " " + badges[i].name + "\n";
-    out += "\n지급: /특별뱃지지급 [아이디] [뱃지이름]\n회수: /특별뱃지회수 [아이디] [뱃지이름]";
+    out += "\n지급: /특별뱃지지급 [아이디] [뱃지이름]\n회수: /특별뱃지회수 [아이디] [뱃지이름]\n※ 아이디 뒤 쉼표, 이름 앞 이모지와 [ID]는 포함해도 됩니다.";
     return out.trim();
 }
 
@@ -38457,7 +38460,7 @@ function getItemCount(data, user, itemName) {
     return data.member[user].bag[itemName] || 0;
 }
 // 문자열 시작 부분에서 멤버 이름 찾기
-function findTargetAtStart(content, memberMap) {
+function findTargetAtStart(content, memberMap, allowCommaDelimiter) {
     let names = Object.keys(memberMap || {}); // 모든 멤버 닉네임 목록 가져오기
     names.sort(function (a, b) {
         return b.length - a.length;
@@ -38465,12 +38468,15 @@ function findTargetAtStart(content, memberMap) {
     // 긴 닉네임을 먼저 비교
     for (let i = 0; i < names.length; i++) {
         let name = names[i];
-        // 메시지가 해당 닉네임으로 시작하고 그 뒤가 끝이거나 공백인 경우
-        if (content.indexOf(name) === 0 && (content.length === name.length || content.charAt(name.length) === " ")) {
+        // 메시지가 해당 닉네임으로 시작하고 뒤가 끝, 공백 또는 허용된 쉼표인 경우
+        var nextChar = content.charAt(name.length);
+        if (content.indexOf(name) === 0 && (content.length === name.length || nextChar === " " || (allowCommaDelimiter && nextChar === ","))) {
+            var rest = content.substring(name.length).trim();
+            if (allowCommaDelimiter && rest.indexOf(",") === 0) rest = rest.substring(1).trim();
             // target : 닉네임, rest : 나머지
             return {
                 target: name,
-                rest: content.substring(name.length).trim()
+                rest: rest
             };
         }
     }
