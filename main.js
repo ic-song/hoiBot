@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.326"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.327"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -37656,7 +37656,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         "━━━━━━━━━━━━\n" +
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, user) + "\n" +
         "수집 현황: " + owned.length + "/64개\n\n" +
-        "[보유한 뱃지]\n━━━━━━━━━━━━\n";
+        "[보유한 뱃지]\n━━━━━━━━━━━━\n" + allsee + "\n";
     if (owned.length === 0) out += "아직 획득한 뱃지가 없습니다.\n";
     for (var i = 0; i < owned.length; i++) {
         var badge = owned[i];

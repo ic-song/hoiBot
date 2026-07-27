@@ -616,6 +616,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `/펫홈` output is split into two replies: home body first, comments second.
+- `/홈뱃지` keeps the representative badge and collection summary visible, then inserts `allsee` immediately after the owned-badge section divider.
 - Furniture list inserts `allsee` from the second placed furniture.
 - Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
