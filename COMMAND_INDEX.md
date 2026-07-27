@@ -487,7 +487,14 @@ Status: VERIFIED
 - `/댓글확인`
 - `/댓글삭제`
 - `/좋아홈 [닉네임]`
+- `/마음 [닉네임]`
+- `/귀여워 [닉네임]`
+- `/응원해 [닉네임]`
+- `/멋져 [닉네임]`
+- `/사랑해 [닉네임]`
+- `/홈알림`
 - `/펫홈댓글파일생성`
+- `/펫홈활동파일생성`
 - `/펫홈패스개편정리`
 
 ## Files
@@ -496,6 +503,7 @@ Status: VERIFIED
 - `data/petSweetHomeData.json`
 - runtime `petHomePlacedFurniture.json`
 - `data/petHomeComments.json`
+- runtime `petHomeActivityData.json`
 
 ## Related Helpers
 
@@ -506,6 +514,12 @@ Status: VERIFIED
 - `isPinnedPetHomeComment`
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
+- `requirePetHomeActivityData`
+- `addPetHomeActivityAlert`
+- `updatePetHomeRecentVisitor`
+- `buildPetHomeActivityMessage`
+- `buildPetHomeHeartExpressionMessage`
+- `markPetHomeAlertsRead`
 - `cleanupPetHomePassBenefitData`
 - `clearPetHomeCommentsPreservingPins`
 - `hasActiveHoiOrNewbiePass`
@@ -525,23 +539,30 @@ Status: VERIFIED
 - `homeData[target].visitCnt`
 - `homeData[target].likeCnt`
 - `homeData[target].comment`
+- `homeData[target].heartExpressions`
+- `homeData[sender].lastHeartExpressionDate`
 - `petHomeCommentsData.comments[target]`
 - `petHomeCommentsData.pinnedComments[target]`
 - `petHomeCommentsData.migrations.passBenefits20260726`
+- `petHomeActivityData.alerts[target]`
+- `petHomeActivityData.recentVisitors[target]`
 - Legacy `homeData[target].guestComments` is not changed by `/데이터정리`.
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. Saves `homeDataFile` only for visit count updates.
-- `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies and appends to `petHomeCommentsData.comments[target]`, then saves `filePath` and `petHomeCommentsFile`.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
+- `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with `{ alerts: {}, recentVisitors: {} }` only when the active DEV/PROD file does not exist and never overwrites an existing file.
+- `/마음 [닉네임]` and the four direct expression commands require both users to have an active hoi/newbie pass, allow one shared use per day, save the target count and sender use date in `homeDataFile`, and add the target alert to `petHomeActivityFile` with rollback handling.
+- `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, replies newest-first lists, then marks the stored activity alerts as read.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
-- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost.
+- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
 - Duplicate comments by the same writer are allowed.
 
 ## Related Commands
@@ -563,6 +584,7 @@ Status: VERIFIED
 - `/댓글`, `/댓글핀`, `/좋아홈` 성공 메시지는 포인트 차감·소모 문구를 표시하지 않는다.
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 - `/좋아홈` also uses an exact/full-pattern guard so `/좋아홈순위` and `/좋아홈초기화` do not enter the mutation branch.
+- `petHomeActivityData.json` is intentionally initialized by `/펫홈활동파일생성`; missing or invalid files follow the existing load/error flow and are not silently replaced.
 
 ---
 

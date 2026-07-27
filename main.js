@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.319"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.320"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -686,6 +686,7 @@ const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗�
 const petHomePlacedFurniturePath = "/sdcard/호이랜드/petHomePlacedFurniture.json"; // 펫홈 장착 가구 상세 데이터
 const petHomeBeforeSplitBackupPath = "/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json"; // 장착 가구 최초 분리 전 1회 백업
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
+const petHomeActivityFile = "/sdcard/호이랜드/petHomeActivityData.json"; // 펫홈 활동 알림·최근 방문자 데이터
 const petHomePassBenefitHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 펫홈 백업
 const petHomePassBenefitCommentsBackupPath = "/sdcard/호이랜드/backups/petHomeComments_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 댓글 백업
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
@@ -780,6 +781,17 @@ const GLOBAL_CONFIG = {
         maxStored: 50, // 최근 댓글 보관 개수
         maxPinned: 3, // 댓글핀 최대 개수
         pinCost: 50000000 // 댓글핀 등록 비용
+    },
+    petHomeActivity: { // 펫홈 마음표현·활동 알림 설정
+        maxAlerts: 100,
+        maxRecentVisitors: 100,
+        commentPreviewMaxLength: 15,
+        heartTypes: [
+            { key: "cute", command: "귀여워", label: "귀여워", emoji: "🐾", alertType: "heart_cute" },
+            { key: "cheer", command: "응원해", label: "응원해", emoji: "⭐", alertType: "heart_cheer" },
+            { key: "cool", command: "멋져", label: "멋져", emoji: "✨", alertType: "heart_cool" },
+            { key: "love", command: "사랑해", label: "사랑해", emoji: "💖", alertType: "heart_love" }
+        ]
     },
     daily: { // 일일 콘텐츠 진행 설정
         trialTowerMax: 15, // 시련의탑 하루 최대 횟수
@@ -1854,6 +1866,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
             saveJsonFile({ comments: {}, pinnedComments: {} }, petHomeCommentsFile);
             replier.reply("✅ 펫홈 댓글 파일 생성 완료\n" + activePetHomeCommentsFile);
+            return;
+        }
+
+        if (msg === "/펫홈활동파일생성" && (isAdmin(sender) || isMaster(sender))) {
+            var activePetHomeActivityFile = resolveActiveDataPath(petHomeActivityFile);
+            var petHomeActivityFileObj = new java.io.File(activePetHomeActivityFile);
+            if (petHomeActivityFileObj.exists()) {
+                replier.reply("✅ 펫홈 활동 파일이 이미 있습니다.\n" + activePetHomeActivityFile);
+                return;
+            }
+
+            saveJsonFile({ alerts: {}, recentVisitors: {} }, petHomeActivityFile);
+            replier.reply("✅ 펫홈 활동 파일 생성 완료\n" + activePetHomeActivityFile);
             return;
         }
 
@@ -5333,6 +5358,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var titleData = loadJsonFile(memberTitlePath);
                     let homeData = loadJsonFile(homeDataFile);
                     var placedFurnitureBackupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                    var petHomeActivityBackupData = new java.io.File(resolveActiveDataPath(petHomeActivityFile)).exists() ? requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)) : null;
                     savebackupJsonFile(filePath, data);
                     savebackupJsonFile(memberPetPath, petData);
                     savebackupJsonFile(boardPath, board);
@@ -5340,6 +5366,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     savebackupJsonFile(trialTowerPath, trialTower);
                     savebackupJsonFile(homeDataFile, homeData);
                     if (placedFurnitureBackupData) savebackupJsonFile(petHomePlacedFurniturePath, placedFurnitureBackupData);
+                    if (petHomeActivityBackupData) savebackupJsonFile(petHomeActivityFile, petHomeActivityBackupData);
                     savebackupJsonFile(memberTitlePath, titleData);
                     savebackupJsonFile(guildPath, guildData);
                     replier.reply("백업 완료");
@@ -19969,10 +19996,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let userHome = homeData[targetName];
                     // 방문 처리 (자기 자신이 아니면 방문수 증가)
                     if (targetName !== sender) {
-                        // visitCnt 안전하게 초기화 후 증가
-                        userHome.visitCnt = userHome.visitCnt || 0;
-                        userHome.visitCnt += 1;
-                        saveJsonFile(homeData, homeDataFile);
+                        var petHomeActivityDataForVisit = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                        var hadPreviousVisitCnt = userHome.hasOwnProperty("visitCnt");
+                        var previousVisitCnt = userHome.visitCnt || 0;
+                        var hadPreviousVisitors = petHomeActivityDataForVisit.recentVisitors.hasOwnProperty(targetName);
+                        var previousVisitors = JSON.parse(JSON.stringify(getPetHomeRecentVisitorList(petHomeActivityDataForVisit, targetName)));
+                        userHome.visitCnt = previousVisitCnt + 1;
+                        updatePetHomeRecentVisitor(petHomeActivityDataForVisit, targetName, sender);
+                        try {
+                            saveJsonFile(homeData, homeDataFile);
+                            saveJsonFile(petHomeActivityDataForVisit, petHomeActivityFile);
+                        } catch (petHomeVisitSaveError) {
+                            if (hadPreviousVisitCnt) userHome.visitCnt = previousVisitCnt;
+                            else delete userHome.visitCnt;
+                            if (hadPreviousVisitors) petHomeActivityDataForVisit.recentVisitors[targetName] = previousVisitors;
+                            else delete petHomeActivityDataForVisit.recentVisitors[targetName];
+                            try {
+                                saveJsonFile(homeData, homeDataFile);
+                                saveJsonFile(petHomeActivityDataForVisit, petHomeActivityFile);
+                            } catch (petHomeVisitRollbackError) {
+                                debuggerLog("[ERROR : 펫홈 방문 기록 롤백 실패] " + petHomeVisitRollbackError);
+                            }
+                            throw petHomeVisitSaveError;
+                        }
                     }
                     let floor = userHome.floor || 0;
                     let houseName = userHome.houseName || "서울역 4번출구🚉";
@@ -19995,18 +20041,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
                     ////////
-                    let header = "🏡[ " + nickName + " ]님의 펫하우스🏡\n\n";
-                    let lineLike = "좋아홈💌x" + likeCnt + "개 | ";
-                    let lineVisit = "방문자수🫂: " + numberWithCommas(visitCnt) + "명\n\n";
-                    let lineComment = "📣집주인의 한줄평📣\n";
+                    let header = "🏡[" + nickName + "]님의 펫하우스🏡\n\n";
+                    let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
+                    let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
+                    let lineComment = "📣 집주인의 한줄평\n";
 
                     if (userHome.comment) {
-                        let commentTime = userHome.commentTime ? "(" + formatDateTime(userHome.commentTime) + ")" : "";
-                        lineComment += '🎙️ "' + userHome.comment + commentTime + '"\n\n';
+                        let commentTime = userHome.commentTime ? formatDateTime(userHome.commentTime) : "시간 정보 없음";
+                        lineComment += "🎙️ “" + userHome.comment + "”\n└ " + commentTime + "\n\n";
                     } else {
                         lineComment += "(아직 한줄평이 없습니다.\n/한줄평 내용 을 적어보세요!)\n\n";
                     }
-                    let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
+                    let lineHouseInfo = houseName + "\n(+" + numberWithCommas(totalExp) + "💕) [+" + floor + "평]\n\n";
                     let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
                     let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n";
                     if (placedArr.length === 0) {
@@ -20022,12 +20068,105 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     lineFurniture += "────────────────\n";
-                    replier.reply(header + lineHouseInfo + lineLike + lineVisit + lineComment + lineComentend + lineFurniture);
+                    replier.reply(header + lineHouseInfo + lineHeart + lineStats + lineComment + lineComentend + lineFurniture);
 
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
                     var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
                     replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList, petHomePinnedCommentList));
+                    return;
+                }
+                if (msg === "/홈알림") {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("홈알림🔔은 호이패스·초보패스 이용자만\n확인할 수 있습니다.");
+                        return;
+                    }
+                    var petHomeActivityDataForAlert = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    replier.reply(buildPetHomeActivityMessage(data, petData, guildData, sender, petHomeActivityDataForAlert));
+                    markPetHomeAlertsRead(petHomeActivityDataForAlert, sender);
+                    saveJsonFile(petHomeActivityDataForAlert, petHomeActivityFile);
+                    return;
+                }
+                var heartCommandMatch = msg.match(/^\/(마음|사랑해|귀여워|멋져|응원해)(?:\s+(.+))?$/);
+                if (heartCommandMatch) {
+                    var heartCommandName = heartCommandMatch[1];
+                    var heartTargetText = heartCommandMatch[2] ? heartCommandMatch[2].trim() : "";
+                    if (!heartTargetText) {
+                        replier.reply("사용법: /" + heartCommandName + " [아이디]\n예시: /" + heartCommandName + " 조사 남");
+                        return;
+                    }
+                    var heartTargetParsed = findTargetAtStart(heartTargetText, data.member || {});
+                    if (!heartTargetParsed.target || heartTargetParsed.rest) {
+                        replier.reply("존재하지 않는 아이디입니다.\n아이디를 다시 확인해 주세요.");
+                        return;
+                    }
+                    var heartTargetName = heartTargetParsed.target;
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("펫홈 마음표현💞은\n호이패스·초보패스 이용자만 사용할 수 있습니다.");
+                        return;
+                    }
+                    if (!hasActiveHoiOrNewbiePass(data, heartTargetName)) {
+                        replier.reply("상대방이 호이패스·초보패스 이용자가 아니어서\n마음표현을 남길 수 없습니다.");
+                        return;
+                    }
+                    if (heartTargetName === sender) {
+                        replier.reply("본인의 펫홈에는 마음표현을 사용할 수 없습니다.");
+                        return;
+                    }
+
+                    var heartHomeData = loadJsonFile(homeDataFile);
+                    heartHomeData = initSweetHomeUser(heartHomeData, sender);
+                    heartHomeData = initSweetHomeUser(heartHomeData, heartTargetName);
+                    var heartSenderHome = heartHomeData[sender];
+                    var heartTargetHome = heartHomeData[heartTargetName];
+                    var heartToday = getPetHomeTodayText();
+                    if (heartSenderHome.lastHeartExpressionDate === heartToday) {
+                        replier.reply("오늘은 이미 마음표현을 사용했습니다.💞\n내일 다시 마음을 표현해 주세요!");
+                        return;
+                    }
+
+                    var heartType = heartCommandName === "마음"
+                        ? GLOBAL_CONFIG.petHomeActivity.heartTypes[Math.floor(Math.random() * GLOBAL_CONFIG.petHomeActivity.heartTypes.length)]
+                        : getPetHomeHeartTypeByCommand(heartCommandName);
+                    var petHomeActivityDataForHeart = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var hadPreviousHeartExpressions = heartTargetHome.hasOwnProperty("heartExpressions");
+                    var previousHeartExpressions = heartTargetHome.heartExpressions;
+                    if (previousHeartExpressions && typeof previousHeartExpressions === "object") {
+                        previousHeartExpressions = JSON.parse(JSON.stringify(previousHeartExpressions));
+                    }
+                    ensurePetHomeHeartExpressions(heartTargetHome);
+                    var hadPreviousHeartDate = heartSenderHome.hasOwnProperty("lastHeartExpressionDate");
+                    var previousHeartDate = heartSenderHome.lastHeartExpressionDate;
+                    var hadPreviousHeartAlerts = petHomeActivityDataForHeart.alerts.hasOwnProperty(heartTargetName);
+                    var previousHeartAlerts = JSON.parse(JSON.stringify(getPetHomeAlertList(petHomeActivityDataForHeart, heartTargetName)));
+
+                    heartTargetHome.heartExpressions[heartType.key] += 1;
+                    heartSenderHome.lastHeartExpressionDate = heartToday;
+                    addPetHomeActivityAlert(petHomeActivityDataForHeart, heartTargetName, heartType.alertType, sender, "");
+                    try {
+                        saveJsonFile(heartHomeData, homeDataFile);
+                        saveJsonFile(petHomeActivityDataForHeart, petHomeActivityFile);
+                    } catch (heartSaveError) {
+                        if (hadPreviousHeartExpressions) heartTargetHome.heartExpressions = previousHeartExpressions;
+                        else delete heartTargetHome.heartExpressions;
+                        if (hadPreviousHeartDate) heartSenderHome.lastHeartExpressionDate = previousHeartDate;
+                        else delete heartSenderHome.lastHeartExpressionDate;
+                        if (hadPreviousHeartAlerts) petHomeActivityDataForHeart.alerts[heartTargetName] = previousHeartAlerts;
+                        else delete petHomeActivityDataForHeart.alerts[heartTargetName];
+                        try {
+                            saveJsonFile(heartHomeData, homeDataFile);
+                            saveJsonFile(petHomeActivityDataForHeart, petHomeActivityFile);
+                        } catch (heartRollbackError) {
+                            debuggerLog("[ERROR : 펫홈 마음표현 롤백 실패] " + heartRollbackError);
+                        }
+                        throw heartSaveError;
+                    }
+
+                    replier.reply(
+                        "💞 " + checkRank(data, petData, guildData, heartTargetName) + "님의 펫홈에\n[" +
+                        heartType.label + heartType.emoji +
+                        "] 마음을 표현했습니다!\n\n마음표현은 하루에 한 번만 가능합니다."
+                    );
                     return;
                 }
                 if (msg === "/댓글삭제" || /^\/댓글삭제\s+\d+$/.test(msg)) {
@@ -20231,10 +20370,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("포인트가 부족합니다. (필요: 🅟" + numberWithCommas(cost) + ")");
                         return;
                     }
-                    addPoint(data, sender, -cost);
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomeActivityDataForComment = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var hadPreviousPetHomeComments = petHomeCommentsData.comments.hasOwnProperty(targetName);
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
                     var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
+                    var previousCommentPoint = data.member[sender].point;
+                    var previousCommentDailyCount = data.member[sender].petHomeCommentCnt;
+                    var previousPetHomeComments = JSON.parse(JSON.stringify(petHomeCommentList));
+                    var hadPreviousCommentAlerts = petHomeActivityDataForComment.alerts.hasOwnProperty(targetName);
+                    var previousCommentAlerts = JSON.parse(JSON.stringify(getPetHomeAlertList(petHomeActivityDataForComment, targetName)));
+                    addPoint(data, sender, -cost);
                     // 최신 댓글 추가
                     petHomeCommentList.push({
                         from: sender,
@@ -20244,8 +20390,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     data.member[sender].petHomeCommentCnt = Math.min((data.member[sender].petHomeCommentCnt || 0) + 1, GLOBAL_CONFIG.daily.passPetHomeCommentMax);
                     // 최대 50개 유지 (오래된 순으로 삭제)
                     trimPetHomeComments(petHomeCommentList, petHomePinnedCommentList);
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                    addPetHomeActivityAlert(petHomeActivityDataForComment, targetName, "comment", sender, getPetHomeCommentPreview(comment));
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                        saveJsonFile(petHomeActivityDataForComment, petHomeActivityFile);
+                    } catch (petHomeCommentSaveError) {
+                        data.member[sender].point = previousCommentPoint;
+                        if (previousCommentDailyCount === undefined) delete data.member[sender].petHomeCommentCnt;
+                        else data.member[sender].petHomeCommentCnt = previousCommentDailyCount;
+                        if (hadPreviousPetHomeComments) petHomeCommentsData.comments[targetName] = previousPetHomeComments;
+                        else delete petHomeCommentsData.comments[targetName];
+                        if (hadPreviousCommentAlerts) petHomeActivityDataForComment.alerts[targetName] = previousCommentAlerts;
+                        else delete petHomeActivityDataForComment.alerts[targetName];
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(petHomeCommentsData, petHomeCommentsFile);
+                            saveJsonFile(petHomeActivityDataForComment, petHomeActivityFile);
+                        } catch (petHomeCommentRollbackError) {
+                            debuggerLog("[ERROR : 펫홈 댓글 알림 롤백 실패] " + petHomeCommentRollbackError);
+                        }
+                        throw petHomeCommentSaveError;
+                    }
                     let targetNick = checkRank(data, petData, guildData, targetName);
                     replier.reply(
                         "💌 [" +
@@ -21088,6 +21254,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("자기 자신에게는 좋아홈💌을 보낼 수 없습니다!");
                         return;
                     }
+                    var hadPreviousHomeLikeCnt = data.member[sender].hasOwnProperty("homeLikeCnt");
+                    var previousHomeLikeCnt = data.member[sender].homeLikeCnt;
                     if (!data.member[sender].homeLikeCnt) {
                         data.member[sender].homeLikeCnt = 0;
                     }
@@ -21113,15 +21281,40 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
+                    var petHomeActivityDataForLike = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var previousHomeLikePoint = data.member[sender].point;
+                    var previousTargetLikeCnt = targetHome.likeCnt;
+                    var hadPreviousLikeAlerts = petHomeActivityDataForLike.alerts.hasOwnProperty(targetName);
+                    var previousLikeAlerts = JSON.parse(JSON.stringify(getPetHomeAlertList(petHomeActivityDataForLike, targetName)));
                     data.member[sender].homeLikeCnt = (data.member[sender].homeLikeCnt || 0) + 1;
                     addPoint(data, senderName, -cost);
                     // 대상 유저 좋아홈 증가
                     targetHome.likeCnt = targetHome.likeCnt || 0;
                     targetHome.likeCnt += 1;
+                    addPetHomeActivityAlert(petHomeActivityDataForLike, targetName, "home_like", senderName, "");
                     let targetNickName = checkRank(data, petData, guildData, targetName);
                     let replyMsg = "[" + nickName + "] 님이 [" + targetNickName + "] 님에게\n" + "좋아홈💌 을 보냈습니다!";
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(homeData, homeDataFile);
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(homeData, homeDataFile);
+                        saveJsonFile(petHomeActivityDataForLike, petHomeActivityFile);
+                    } catch (petHomeLikeSaveError) {
+                        data.member[sender].point = previousHomeLikePoint;
+                        if (hadPreviousHomeLikeCnt) data.member[sender].homeLikeCnt = previousHomeLikeCnt;
+                        else delete data.member[sender].homeLikeCnt;
+                        if (previousTargetLikeCnt === undefined) delete targetHome.likeCnt;
+                        else targetHome.likeCnt = previousTargetLikeCnt;
+                        if (hadPreviousLikeAlerts) petHomeActivityDataForLike.alerts[targetName] = previousLikeAlerts;
+                        else delete petHomeActivityDataForLike.alerts[targetName];
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(homeData, homeDataFile);
+                            saveJsonFile(petHomeActivityDataForLike, petHomeActivityFile);
+                        } catch (petHomeLikeRollbackError) {
+                            debuggerLog("[ERROR : 좋아홈 알림 롤백 실패] " + petHomeLikeRollbackError);
+                        }
+                        throw petHomeLikeSaveError;
+                    }
                     replier.reply(replyMsg);
                     return;
                 }
@@ -26174,7 +26367,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
-        "/펫홈댓글파일생성", "/펫홈패스개편정리", "/개발자노트"
+        "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈패스개편정리", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -36667,6 +36860,206 @@ function initPetHomeCommentsData(commentsData) {
     if (!commentsData.comments || typeof commentsData.comments !== "object") commentsData.comments = {};
     if (!commentsData.pinnedComments || typeof commentsData.pinnedComments !== "object") commentsData.pinnedComments = {};
     return commentsData;
+}
+
+// 펫홈 활동 파일의 필수 구조를 검증하는 함수
+function requirePetHomeActivityData(activityData) {
+    if (!activityData || typeof activityData !== "object" || activityData instanceof Array) {
+        throw new Error("Invalid pet home activity data");
+    }
+    if (!activityData.alerts || typeof activityData.alerts !== "object" || activityData.alerts instanceof Array) {
+        throw new Error("Invalid pet home alerts data");
+    }
+    if (!activityData.recentVisitors || typeof activityData.recentVisitors !== "object" || activityData.recentVisitors instanceof Array) {
+        throw new Error("Invalid pet home recent visitors data");
+    }
+    for (var alertOwner in activityData.alerts) {
+        if (!activityData.alerts.hasOwnProperty(alertOwner)) continue;
+        var ownerAlerts = activityData.alerts[alertOwner];
+        if (!(ownerAlerts instanceof Array) || ownerAlerts.length > GLOBAL_CONFIG.petHomeActivity.maxAlerts) {
+            throw new Error("Invalid pet home alert list: " + alertOwner);
+        }
+        for (var alertIndex = 0; alertIndex < ownerAlerts.length; alertIndex++) {
+            var storedAlert = ownerAlerts[alertIndex];
+            if (!storedAlert || typeof storedAlert !== "object" || storedAlert instanceof Array ||
+                typeof storedAlert.type !== "string" || typeof storedAlert.actorId !== "string" ||
+                typeof storedAlert.createdAt !== "string" || typeof storedAlert.read !== "boolean" ||
+                (storedAlert.commentPreview !== undefined && typeof storedAlert.commentPreview !== "string")) {
+                throw new Error("Invalid pet home alert entry: " + alertOwner);
+            }
+        }
+    }
+    for (var visitorOwner in activityData.recentVisitors) {
+        if (!activityData.recentVisitors.hasOwnProperty(visitorOwner)) continue;
+        var ownerVisitors = activityData.recentVisitors[visitorOwner];
+        if (!(ownerVisitors instanceof Array) || ownerVisitors.length > GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors) {
+            throw new Error("Invalid pet home recent visitor list: " + visitorOwner);
+        }
+        for (var visitorIndex = 0; visitorIndex < ownerVisitors.length; visitorIndex++) {
+            var storedVisitor = ownerVisitors[visitorIndex];
+            if (!storedVisitor || typeof storedVisitor !== "object" || storedVisitor instanceof Array ||
+                typeof storedVisitor.visitorId !== "string" || typeof storedVisitor.visitedAt !== "string") {
+                throw new Error("Invalid pet home recent visitor entry: " + visitorOwner);
+            }
+        }
+    }
+    return activityData;
+}
+
+// 특정 유저의 펫홈 활동 알림 목록을 반환하는 함수
+function getPetHomeAlertList(activityData, user) {
+    activityData = requirePetHomeActivityData(activityData);
+    if (!activityData.alerts.hasOwnProperty(user)) activityData.alerts[user] = [];
+    return activityData.alerts[user];
+}
+
+// 특정 유저의 최근 방문자 목록을 반환하는 함수
+function getPetHomeRecentVisitorList(activityData, user) {
+    activityData = requirePetHomeActivityData(activityData);
+    if (!activityData.recentVisitors.hasOwnProperty(user)) activityData.recentVisitors[user] = [];
+    return activityData.recentVisitors[user];
+}
+
+// 펫홈 활동 알림을 추가하고 최대 보관 개수를 유지하는 함수
+function addPetHomeActivityAlert(activityData, targetUser, type, actorId, commentPreview) {
+    var alerts = getPetHomeAlertList(activityData, targetUser);
+    var alert = {
+        type: type,
+        actorId: actorId,
+        createdAt: formatDateTime(new Date()),
+        read: false
+    };
+    if (commentPreview) alert.commentPreview = commentPreview;
+    alerts.push(alert);
+    while (alerts.length > GLOBAL_CONFIG.petHomeActivity.maxAlerts) alerts.shift();
+    return alert;
+}
+
+// 최근 방문자를 중복 없이 최신순으로 기록하는 함수
+function updatePetHomeRecentVisitor(activityData, targetUser, visitorId) {
+    var visitors = getPetHomeRecentVisitorList(activityData, targetUser);
+    for (var i = visitors.length - 1; i >= 0; i--) {
+        if (visitors[i] && visitors[i].visitorId === visitorId) visitors.splice(i, 1);
+    }
+    visitors.unshift({ visitorId: visitorId, visitedAt: formatDateTime(new Date()) });
+    while (visitors.length > GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors) visitors.pop();
+}
+
+// 마음표현 명령어 이름에 해당하는 설정을 반환하는 함수
+function getPetHomeHeartTypeByCommand(commandName) {
+    var heartTypes = GLOBAL_CONFIG.petHomeActivity.heartTypes;
+    for (var i = 0; i < heartTypes.length; i++) {
+        if (heartTypes[i].command === commandName) return heartTypes[i];
+    }
+    return null;
+}
+
+// 마음표현 키에 해당하는 설정을 반환하는 함수
+function getPetHomeHeartTypeByKey(heartKey) {
+    var heartTypes = GLOBAL_CONFIG.petHomeActivity.heartTypes;
+    for (var i = 0; i < heartTypes.length; i++) {
+        if (heartTypes[i].key === heartKey) return heartTypes[i];
+    }
+    return null;
+}
+
+// 기존 펫홈의 마음표현 누적값을 0 기준으로 보정하는 함수
+function ensurePetHomeHeartExpressions(userHome) {
+    if (!userHome.heartExpressions || typeof userHome.heartExpressions !== "object" || userHome.heartExpressions instanceof Array) {
+        userHome.heartExpressions = {};
+    }
+    var heartTypes = GLOBAL_CONFIG.petHomeActivity.heartTypes;
+    for (var i = 0; i < heartTypes.length; i++) {
+        var key = heartTypes[i].key;
+        var count = parseInt(userHome.heartExpressions[key], 10);
+        userHome.heartExpressions[key] = isNaN(count) || count < 0 ? 0 : count;
+    }
+    return userHome.heartExpressions;
+}
+
+// 마음표현 일일 제한에 사용할 현재 날짜를 반환하는 함수
+function getPetHomeTodayText() {
+    var formatter = new java.text.SimpleDateFormat("yyyy-MM-dd");
+    formatter.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Seoul"));
+    return String(formatter.format(new Date()));
+}
+
+// 댓글 알림에 표시할 15자 미리보기를 생성하는 함수
+function getPetHomeCommentPreview(comment) {
+    var text = String(comment || "");
+    var maxLength = GLOBAL_CONFIG.petHomeActivity.commentPreviewMaxLength;
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+}
+
+// 펫홈 화면의 마음표현 누적 영역을 생성하는 함수
+function buildPetHomeHeartExpressionMessage(userHome) {
+    var counts = ensurePetHomeHeartExpressions(userHome);
+    return "💞━━ 나를 향한 마음표현 ━━💞\n" +
+        "귀여워🐾 x" + counts.cute + " | 응원해⭐ x" + counts.cheer + "\n" +
+        "멋져✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n";
+}
+
+// 저장된 활동 유형을 홈알림 표시 문구로 변환하는 함수
+function formatPetHomeActivityAlert(data, petData, guildData, alert) {
+    var actorId = alert && alert.actorId ? alert.actorId : "알 수 없는 유저";
+    var actorName = data.member && data.member[actorId] ? checkRank(data, petData, guildData, actorId) : actorId;
+    if (alert.type === "comment") return actorName + "님이 댓글을 남겼습니다.";
+    if (alert.type === "home_like") return actorName + "님이 좋아홈💌을 눌렀습니다.";
+    var heartKey = String(alert.type || "").replace(/^heart_/, "");
+    var heartType = getPetHomeHeartTypeByKey(heartKey);
+    if (heartType) return actorName + "님이 " + heartType.label + heartType.emoji + "를 남겼습니다.";
+    return actorName + "님의 펫홈 활동이 있습니다.";
+}
+
+// 홈알림과 최근 방문자 목록 메시지를 생성하는 함수
+function buildPetHomeActivityMessage(data, petData, guildData, sender, activityData) {
+    var alerts = getPetHomeAlertList(activityData, sender);
+    var visitors = getPetHomeRecentVisitorList(activityData, sender);
+    var unreadCount = 0; // 아직 확인하지 않은 활동 알림 개수
+    for (var i = 0; i < alerts.length; i++) {
+        if (alerts[i] && alerts[i].read !== true) unreadCount++;
+    }
+
+    var out = "🔔 " + checkRank(data, petData, guildData, sender) + "님의 홈알림\n" +
+        "━━━━━━━━━━━━\n" +
+        "새로운 알림 " + unreadCount + "개 | 보관 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
+        "최근 방문자 " + visitors.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors + "명\n" +
+        allsee + "\n\n";
+
+    if (alerts.length === 0 && visitors.length === 0) return out + "아직 등록된 홈알림이 없습니다.";
+
+    out += "🔔 최근 활동 알림\n━━━━━━━━━━━━\n";
+    if (alerts.length === 0) {
+        out += "등록된 활동 알림이 없습니다.\n";
+    } else {
+        for (var alertIndex = alerts.length - 1, alertNo = 1; alertIndex >= 0; alertIndex--, alertNo++) {
+            var alert = alerts[alertIndex];
+            out += "[" + alertNo + "] " + formatPetHomeActivityAlert(data, petData, guildData, alert) + "\n";
+            if (alert.type === "comment" && alert.commentPreview) out += "💬 “" + alert.commentPreview + "”\n";
+            out += "└ " + (alert.createdAt || "시간 정보 없음") + "\n\n";
+        }
+    }
+
+    out += "\n🐾 최근 방문자\n━━━━━━━━━━━━\n";
+    if (visitors.length === 0) {
+        out += "등록된 최근 방문자가 없습니다.";
+    } else {
+        for (var visitorIndex = 0; visitorIndex < visitors.length; visitorIndex++) {
+            var visitor = visitors[visitorIndex] || {};
+            var visitorId = visitor.visitorId || "알 수 없는 유저";
+            var visitorName = data.member && data.member[visitorId] ? checkRank(data, petData, guildData, visitorId) : visitorId;
+            out += (visitorIndex + 1) + ". " + visitorName + " ─ " + (visitor.visitedAt || "시간 정보 없음") + "\n";
+        }
+    }
+    return out.trim();
+}
+
+// 현재 보관된 펫홈 활동 알림을 모두 읽음 처리하는 함수
+function markPetHomeAlertsRead(activityData, user) {
+    var alerts = getPetHomeAlertList(activityData, user);
+    for (var i = 0; i < alerts.length; i++) {
+        if (alerts[i]) alerts[i].read = true;
+    }
 }
 
 // 모든 일반 댓글을 삭제하고 댓글핀 보존 수량을 집계하는 함수
