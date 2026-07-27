@@ -492,9 +492,24 @@ Status: VERIFIED
 - `/응원해 [닉네임]`
 - `/멋져요 [닉네임]`
 - `/사랑해 [닉네임]`
+- `/팔로우 [닉네임]`
+- `/언팔로우 [닉네임]`
+- `/팔로워`
+- `/팔로잉`
+- `/내마음`
+- `/홈뱃지`
+- `/홈뱃지전체`
+- `/홈뱃지정보 [번호|ID]`
+- `/홈뱃지장착 [번호|ID]`
+- `/홈뱃지해제`
+- `/홈뱃지삭제 [번호|ID]`
+- `/특별뱃지목록`
+- `/특별뱃지지급 [닉네임] [뱃지이름]`
+- `/특별뱃지회수 [닉네임] [뱃지이름]`
 - `/홈알림`
 - `/펫홈댓글파일생성`
 - `/펫홈활동파일생성`
+- `/펫홈소셜뱃지마이그레이션`
 - `/펫홈패스개편정리`
 
 ## Files
@@ -519,6 +534,14 @@ Status: VERIFIED
 - `updatePetHomeRecentVisitor`
 - `buildPetHomeActivityMessage`
 - `buildPetHomeHeartExpressionMessage`
+- `getPetHomeSocialUser`
+- `getPetHomeMutualUsers`
+- `getActivePetHomeMutualCount`
+- `awardPetHomeAchievementBadges`
+- `buildPetHomeFollowListMessage`
+- `buildOwnedPetHomeBadgesMessage`
+- `migratePetHomeSocialBadges`
+- `removePetHomeActivityUserOnAccountDelete`
 - `markPetHomeAlertsRead`
 - `cleanupPetHomePassBenefitData`
 - `clearPetHomeCommentsPreservingPins`
@@ -546,6 +569,15 @@ Status: VERIFIED
 - `petHomeCommentsData.migrations.passBenefits20260726`
 - `petHomeActivityData.alerts[target]`
 - `petHomeActivityData.recentVisitors[target]`
+- `petHomeActivityData.petHomeSocial[target].followers`
+- `petHomeActivityData.petHomeSocial[target].following`
+- `petHomeActivityData.petHomeSocial[target].badges`
+- `petHomeActivityData.petHomeSocial[target].deletedBadgeIds`
+- `petHomeActivityData.petHomeSocial[target].equippedBadgeId`
+- `petHomeActivityData.petHomeSocial[target].heartUsage`
+- `petHomeActivityData.petHomeSocial[target].badgeStats`
+- `petHomeActivityData.petHomeSocial[target].specialBadgeLogs`
+- `petHomeActivityData.migrations.petHomeSocialBadges20260727`
 - Legacy `homeData[target].guestComments` is not changed by `/데이터정리`.
 
 ## Save Flow
@@ -557,12 +589,19 @@ Status: VERIFIED
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
-- `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with `{ alerts: {}, recentVisitors: {} }` only when the active DEV/PROD file does not exist and never overwrites an existing file.
-- `/마음 [닉네임]` and the four direct expression commands require both users to have an active hoi/newbie pass, allow one shared use per day, save the target count and sender use date in `homeDataFile`, and add the target alert to `petHomeActivityFile` with rollback handling.
+- `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with empty `alerts`, `recentVisitors`, `petHomeSocial`, and `migrations` only when the active DEV/PROD file does not exist and never overwrites an existing file.
+- `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling.
+- `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
+- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass.
+- `/홈뱃지` rechecks achievement badges, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
+- `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, save an audit log and activity alert, and automatically unequip a revoked representative badge.
+- `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, replies newest-first lists, then marks the stored activity alerts as read.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
 - `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
+- Successful `/댓글`, `/좋아홈`, heart-expression, follow, and visit flows update cumulative badge stats and award badges in the same activity-file save/rollback flow.
+- Both account-deletion flows remove the deleted user's social record and references from other users' followers/following, alerts, and recent visitors before saving `petHomeActivityFile`.
 - Duplicate comments by the same writer are allowed.
 
 ## Related Commands
@@ -585,6 +624,8 @@ Status: VERIFIED
 - Command guards are exact/full-pattern based so adjacent commands such as `/펫홈순위` and `/댓글확인` do not fall through.
 - `/좋아홈` also uses an exact/full-pattern guard so `/좋아홈순위` and `/좋아홈초기화` do not enter the mutation branch.
 - `petHomeActivityData.json` is intentionally initialized by `/펫홈활동파일생성`; missing or invalid files follow the existing load/error flow and are not silently replaced.
+- Legacy valid activity files gain empty `petHomeSocial` and `migrations` containers, while invalid existing social structures still fail validation.
+- `/펫홈` displays stored follower/following counts and the representative badge even after pass expiry; social/badge commands and mutual-heart benefits remain locked until pass activation.
 
 ---
 
