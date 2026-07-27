@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.329"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.330"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -37601,7 +37601,7 @@ function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwne
 function buildPetHomeFollowListMessage(data, petData, guildData, activityData, user, type) {
     var social = getPetHomeSocialUser(activityData, user);
     var list = type === "followers" ? social.followers : social.following;
-    var title = type === "followers" ? "🐾 팔로워 유저" : "🎀 팔로잉 유저";
+    var title = type === "followers" ? "🐾 팔로워 유저[명령어: /팔로우]" : "🎀 팔로잉 유저[명령어: /팔로잉]";
     var out = title + "\n━━━━━━━━━━━━\n";
     if (list.length === 0) return out + "등록된 유저가 없습니다.";
     for (var i = 0; i < list.length; i++) {
