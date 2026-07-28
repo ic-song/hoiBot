@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.333"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.334"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -687,6 +687,7 @@ const petHomePlacedFurniturePath = "/sdcard/호이랜드/petHomePlacedFurniture.
 const petHomeBeforeSplitBackupPath = "/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json"; // 장착 가구 최초 분리 전 1회 백업
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
 const petHomeActivityFile = "/sdcard/호이랜드/petHomeActivityData.json"; // 펫홈 활동 알림·최근 방문자 데이터
+const petHomeActivityBackupFile = "/sdcard/호이랜드/petHomeActivityData_back.json"; // 펫홈 활동 데이터 직전 정상 백업
 const petHomeSocialBadgeActivityBackupPath = "/sdcard/호이랜드/backups/petHomeActivityData_beforeSocialBadges20260727.json"; // 펫홈 소셜·뱃지 적용 전 활동 데이터 백업
 const petHomeFeedHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforeFeeds20260728.json"; // 펫홈 피드 이전 전 홈 데이터 백업
 const petHomePassBenefitHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 펫홈 백업
@@ -742,7 +743,7 @@ USER_REQUEST_WINDOW_MS = requestMonitorConfig.windowMs;
 USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
-var protectedJsonSaveLocks = {}; // member/직전 백업 경로별 저장 잠금
+var protectedJsonSaveLocks = {}; // 보호 JSON과 직전 백업 경로별 저장 잠금
 let initData = loadJsonFile(filePath);
 let Master = initData.master;
 let Admins = getAdminPayoutUsers(initData);
@@ -1626,6 +1627,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             } catch (e) {
                 replier.reply("백파일도 이상 발생...");
                 debuggerLog("[ERROR : Backup error]" + allsee + JSON.stringify(e));
+                return;
+            }
+        }
+
+        if (msg === "/펫홈활동살리기" && (isAdmin(sender) || isMaster(sender))) {
+            try {
+                var activePetHomeActivityBackupPath = resolveActiveDataPath(petHomeActivityBackupFile);
+                var petHomeActivityBackup = new java.io.File(activePetHomeActivityBackupPath);
+                if (!petHomeActivityBackup.exists()) {
+                    replier.reply("❌ 펫홈 활동 백업 파일이 없습니다.");
+                    return;
+                }
+                var petHomeActivityBackupContent = FileStream.read(activePetHomeActivityBackupPath, "utf-8");
+                var restoredPetHomeActivityData = requirePetHomeActivityData(parseJsonContent(petHomeActivityBackupContent, activePetHomeActivityBackupPath));
+                writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), JSON.stringify(restoredPetHomeActivityData), true);
+                replier.reply("✅ 펫홈 활동 데이터를 직전 정상 백업으로 복구했습니다.");
+                return;
+            } catch (petHomeActivityRestoreError) {
+                replier.reply("❌ 펫홈 활동 백업 복구에 실패했습니다.");
+                debuggerLog("[ERROR : 펫홈 활동 백업 복구 실패] " + petHomeActivityRestoreError);
                 return;
             }
         }
@@ -20482,7 +20503,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     lineFurniture += "────────────────\n";
                     if (feedMigrationResultForHome.migrated && targetName === sender) saveJsonFile(homeData, homeDataFile);
                     replier.reply(header + lineSocial + lineHeart + lineStats + lineComentend + lineFurniture);
-                    replier.reply(buildPetHomeFeedMessage(userHome));
+                    if (hasActiveHoiOrNewbiePass(data, targetName)) replier.reply(buildPetHomeFeedMessage(userHome));
 
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
@@ -26872,7 +26893,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터정리", "/장착가구동기화", "/봇살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -27357,7 +27378,7 @@ function loadJsonFile(path) {
         if (autoDailyBatch && autoDailyBatch.managedPaths[path] && Object.prototype.hasOwnProperty.call(autoDailyBatch.files, path)) {
             return autoDailyBatch.files[path];
         }
-        if (isProtectedMemberJsonPath(path)) {
+        if (isProtectedMemberJsonPath(path) || isProtectedPetHomeActivityJsonPath(path)) {
             protectedLock = getProtectedJsonSaveLock(path);
             protectedLock.lock();
         }
@@ -27393,6 +27414,23 @@ function isProtectedMemberJsonPath(path) {
     return fileName === "member.json" || fileName === "member_back.json";
 }
 
+// 펫홈 활동 원본과 직전 백업이 안전 저장 대상인지 확인하는 함수
+function isProtectedPetHomeActivityJsonPath(path) {
+    var fileName = String(new java.io.File(path).getName());
+    return fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json";
+}
+
+// 펫홈 활동 원본 경로인지 확인하는 함수
+function isPetHomeActivityPrimaryJsonPath(path) {
+    return String(new java.io.File(path).getName()) === "petHomeActivityData.json";
+}
+
+// 펫홈 활동 원본과 같은 폴더의 직전 백업 경로를 반환하는 함수
+function getPetHomeActivityBackupPath(path) {
+    var targetFile = new java.io.File(path);
+    return String(new java.io.File(targetFile.getParentFile(), "petHomeActivityData_back.json").getPath());
+}
+
 // 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
 function getProtectedJsonSaveLock(path) {
     path = String(path);
@@ -27403,7 +27441,7 @@ function getProtectedJsonSaveLock(path) {
 }
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
-function writeVerifiedJsonFile(path, jsonText) {
+function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
     var lock = getProtectedJsonSaveLock(path);
     var targetFile = new java.io.File(path);
     var tempFile = new java.io.File(path + ".tmp");
@@ -27432,6 +27470,20 @@ function writeVerifiedJsonFile(path, jsonText) {
 
         parseJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), tempFile.getPath());
 
+        var seedPetHomeActivityBackup = false;
+        var petHomeActivityBackupPath = null;
+        if (isPetHomeActivityPrimaryJsonPath(path) && skipPetHomeActivityBackup !== true) {
+            petHomeActivityBackupPath = getPetHomeActivityBackupPath(path);
+            if (targetFile.exists()) {
+                var currentPetHomeActivityText = FileStream.read(path, "utf-8");
+                parseJsonContent(currentPetHomeActivityText, path);
+                writeVerifiedJsonFile(petHomeActivityBackupPath, currentPetHomeActivityText, true);
+            } else {
+                seedPetHomeActivityBackup = true;
+            }
+        }
+
+        if (seedPetHomeActivityBackup) writeVerifiedJsonFile(petHomeActivityBackupPath, jsonText, true);
         if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
             throw new Error("Current JSON file backup failed: " + path);
         }
@@ -27480,7 +27532,7 @@ function saveJsonFile(data, path) {
         isSaving = true;
         try {
             ensureParentFolder(path);
-            if (isProtectedMemberJsonPath(path)) {
+            if (isProtectedMemberJsonPath(path) || isProtectedPetHomeActivityJsonPath(path)) {
                 writeVerifiedJsonFile(path, jsonText);
             } else {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
