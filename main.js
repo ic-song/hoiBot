@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.337"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.338"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -785,6 +785,9 @@ const GLOBAL_CONFIG = {
         maxLength: 30, // 댓글 최대 글자 수
         maxPinned: 3, // 댓글핀 최대 개수
         pinCost: 50000000 // 댓글핀 등록 비용
+    },
+    petHomeDisplay: { // 펫홈 화면 표시 설정
+        furniturePreviewCount: 1 // 접기 전 표시할 장착 가구 개수
     },
     petHomeActivity: { // 펫홈 마음표현·활동 알림 설정
         maxAlerts: 100,
@@ -20520,7 +20523,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         lineFurniture += "[배치된 가구가 없습니다.]\n";
                     } else {
                         for (var i = 0; i < placedArr.length; i++) {
-                            if (i == 3) {
+                            if (i == GLOBAL_CONFIG.petHomeDisplay.furniturePreviewCount) {
                                 lineFurniture += allsee;
                             }
                             var p = placedArr[i];

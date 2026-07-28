@@ -604,7 +604,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; shows one placed furniture item before the `allsee` fold, migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
 - `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
