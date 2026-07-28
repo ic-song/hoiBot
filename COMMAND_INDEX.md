@@ -591,6 +591,7 @@ Status: VERIFIED
 - `petHomeActivityData.petHomeSocial[target].deletedBadgeIds`
 - `petHomeActivityData.petHomeSocial[target].equippedBadgeId`
 - `petHomeActivityData.petHomeSocial[target].heartUsage`
+- `petHomeActivityData.petHomeSocial[target].feedActivityDates`
 - `petHomeActivityData.petHomeSocial[target].badgeStats`
 - `petHomeActivityData.petHomeSocial[target].specialBadgeLogs`
 - `petHomeActivityData.migrations.petHomeSocialBadges20260727`
@@ -599,7 +600,7 @@ Status: VERIFIED
 ## Save Flow
 
 - `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
-- `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
+- `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
@@ -609,14 +610,14 @@ Status: VERIFIED
 - `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
 - `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
-- `/홈뱃지` rechecks achievement badges, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
+- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus the exact name or `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
-- `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, replies newest-first lists, then marks the stored activity alerts as read.
-- `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, and add a feed alert to each valid follower in `petHomeActivityFile`; both files use rollback handling on save failure.
+- `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, shows feed alerts with a leading `📰` marker, replies newest-first lists, then marks the stored activity alerts as read.
+- `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add a feed alert to each valid follower, record one KST feed activity date per day, and award feed activity badges in `petHomeActivityFile`; both files use rollback handling on save failure.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
-- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users.
+- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/마음순위` also shows each ranked user's 귀여워·멋져요·응원해·사랑해 received counts.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
 - `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.

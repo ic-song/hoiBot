@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.332"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.333"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -781,6 +781,7 @@ const GLOBAL_CONFIG = {
     },
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 50, // 최근 댓글 보관 개수
+        maxLength: 30, // 댓글 최대 글자 수
         maxPinned: 3, // 댓글핀 최대 개수
         pinCost: 50000000 // 댓글핀 등록 비용
     },
@@ -842,6 +843,16 @@ const GLOBAL_CONFIG = {
             { id: "V05", emoji: "🏡", name: "홈마스터", stat: "totalVisits", threshold: 1000 },
             { id: "V06", emoji: "🏙️", name: "호이월드 명소", stat: "totalVisits", threshold: 3000 },
             { id: "V07", emoji: "🗼", name: "호이월드 랜드마크", stat: "totalVisits", threshold: 10000 },
+            { id: "P01", emoji: "📝", name: "첫 소식", stat: "feedActiveDays", threshold: 1 },
+            { id: "P02", emoji: "🌱", name: "이야기의 시작", stat: "feedActiveDays", threshold: 3 },
+            { id: "P03", emoji: "📮", name: "소식 배달부", stat: "feedActiveDays", threshold: 7 },
+            { id: "P04", emoji: "☕", name: "일상의 기록", stat: "feedActiveDays", threshold: 15 },
+            { id: "P05", emoji: "📖", name: "꾸준한 기록가", stat: "feedActiveDays", threshold: 30 },
+            { id: "P06", emoji: "🪶", name: "펫하우스 작가", stat: "feedActiveDays", threshold: 60 },
+            { id: "P07", emoji: "📰", name: "피드 발행인", stat: "feedActiveDays", threshold: 100 },
+            { id: "P08", emoji: "🎙️", name: "호월 이야기꾼", stat: "feedActiveDays", threshold: 180 },
+            { id: "P09", emoji: "🌟", name: "피드 마스터", stat: "feedActiveDays", threshold: 300 },
+            { id: "P10", emoji: "👑", name: "전설의 기록가", stat: "feedActiveDays", threshold: 365 },
             { id: "A01", emoji: "🪴", name: "펫홈 새내기", requirements: { followers: 10, receivedHomeLikes: 10 } },
             { id: "A02", emoji: "🧸", name: "따뜻한 이웃", requirements: { mutual: 10, receivedComments: 30 } },
             { id: "A03", emoji: "🎉", name: "활기찬 펫홈", requirements: { receivedComments: 50, receivedReactions: 50 } },
@@ -20757,7 +20768,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let cost = getPetHomePassBenefitCost(data, sender, 10000000);
                     let raw = msg.substring(3).trim();
                     if (!raw) {
-                        replier.reply("방문 댓글💌\n🎙️ 최대 20자, 호이·초보패스 혜택으로 무료\n예) /댓글 호이 남 멋진 집이에요!🏡");
+                        replier.reply("방문 댓글💌\n🎙️ 최대 " + GLOBAL_CONFIG.petHomeComments.maxLength + "자, 호이·초보패스 혜택으로 무료\n예) /댓글 호이 남 멋진 집이에요!🏡");
                         return;
                     }
                     let parsed = findTargetAtStart(raw, data.member || {});
@@ -20775,8 +20786,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 댓글 내용을 입력해주세요.\n예) /댓글 " + targetName + " 잘들렸다가요!");
                         return;
                     }
-                    if (comment.length > 20) {
-                        replier.reply("❌ 댓글은 최대 20자까지 가능합니다. (" + comment.length + "자 입력됨)");
+                    if (comment.length > GLOBAL_CONFIG.petHomeComments.maxLength) {
+                        replier.reply("❌ 댓글은 최대 " + GLOBAL_CONFIG.petHomeComments.maxLength + "자까지 가능합니다. (" + comment.length + "자 입력됨)");
                         return;
                     }
                     if (!petData[targetName] || !petData[targetName].petname) {
@@ -20912,6 +20923,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     while (feedList.length > GLOBAL_CONFIG.petHomeActivity.feedMaxStored) feedList.pop();
 
                     var feedActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var feedSenderSocialSnapshot = snapshotPetHomeSocialUser(feedActivityData, sender);
                     var feedFollowers = getPetHomeSocialUser(feedActivityData, sender).followers.slice(0);
                     var feedAlertTargets = [];
                     var feedAlertTargetMap = {};
@@ -20922,7 +20934,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             feedAlertTargets.push(feedFollower);
                         }
                     }
-                    var feedAlertSnapshots = snapshotPetHomeAlertLists(feedActivityData, feedAlertTargets);
+                    var feedAlertSnapshots = snapshotPetHomeAlertLists(feedActivityData, [sender].concat(feedAlertTargets));
+                    addPetHomeFeedActivityDate(feedActivityData, sender, getPetHomeTodayText());
+                    var feedAwardedBadges = awardPetHomeAchievementBadges(feedActivityData, sender);
+                    addPetHomeBadgeAwardAlerts(feedActivityData, sender, feedAwardedBadges);
                     var deliveredFeedAlertCount = 0;
                     for (var feedTargetIndex = 0; feedTargetIndex < feedAlertTargets.length; feedTargetIndex++) {
                         addPetHomeFeedActivityAlert(feedActivityData, feedAlertTargets[feedTargetIndex], sender, checkRank(data, petData, guildData, sender), newFeed);
@@ -20933,6 +20948,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(feedActivityData, petHomeActivityFile);
                     } catch (feedSaveError) {
                         feedHomeData[sender] = previousFeedHome;
+                        restorePetHomeSocialUser(feedActivityData, sender, feedSenderSocialSnapshot);
                         restorePetHomeAlertLists(feedActivityData, feedAlertSnapshots);
                         try {
                             saveJsonFile(feedHomeData, homeDataFile);
@@ -37445,6 +37461,16 @@ function validatePetHomeSocialUser(social, user) {
     if (!social.badgeStats || typeof social.badgeStats !== "object" || social.badgeStats instanceof Array) {
         throw new Error("Invalid pet home badge stats: " + user);
     }
+    if (social.feedActivityDates === undefined) social.feedActivityDates = [];
+    if (!(social.feedActivityDates instanceof Array)) throw new Error("Invalid pet home feed activity dates: " + user);
+    var feedActivityDateMap = {};
+    for (var feedDateIndex = 0; feedDateIndex < social.feedActivityDates.length; feedDateIndex++) {
+        var feedActivityDate = social.feedActivityDates[feedDateIndex];
+        if (typeof feedActivityDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(feedActivityDate) || feedActivityDateMap.hasOwnProperty(feedActivityDate)) {
+            throw new Error("Invalid pet home feed activity date: " + user);
+        }
+        feedActivityDateMap[feedActivityDate] = true;
+    }
     var statKeys = ["receivedComments", "receivedHomeLikes", "receivedReactions", "totalVisits"];
     for (var i = 0; i < statKeys.length; i++) {
         var value = social.badgeStats[statKeys[i]];
@@ -37471,6 +37497,7 @@ function createPetHomeSocialUser() {
         deletedBadgeIds: [],
         equippedBadgeId: null,
         heartUsage: { date: "", count: 0 },
+        feedActivityDates: [],
         badgeStats: {
             receivedComments: 0,
             receivedHomeLikes: 0,
@@ -37572,7 +37599,8 @@ function getPetHomeBadgeStatValues(activityData, user) {
         receivedComments: social.badgeStats.receivedComments,
         receivedHomeLikes: social.badgeStats.receivedHomeLikes,
         receivedReactions: social.badgeStats.receivedReactions,
-        totalVisits: social.badgeStats.totalVisits
+        totalVisits: social.badgeStats.totalVisits,
+        feedActiveDays: social.feedActivityDates.length
     };
 }
 
@@ -37750,7 +37778,8 @@ function getPetHomeBadgeProgressText(activityData, user, badge) {
         receivedComments: "받은 댓글",
         receivedHomeLikes: "좋아홈",
         receivedReactions: "마음표현",
-        totalVisits: "누적 방문"
+        totalVisits: "누적 방문",
+        feedActiveDays: "피드 활동"
     };
     if (badge.requiredBadgeIds) return "종합 업적 A01~A08 모두 획득";
     if (badge.requirements) {
@@ -37769,10 +37798,11 @@ function getPetHomeBadgeProgressText(activityData, user, badge) {
 function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var owned = getOwnedPetHomeBadges(activityData, user);
+    var totalBadgeCount = GLOBAL_CONFIG.petHomeActivity.achievementBadges.length + GLOBAL_CONFIG.petHomeActivity.specialBadges.length; // 전체 일반·특별 뱃지 수
     var out = "🏅 " + checkRank(data, petData, guildData, user) + "님의 펫홈 뱃지\n" +
         "━━━━━━━━━━━━\n" +
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, user) + "\n" +
-        "수집 현황: " + owned.length + "/64개\n\n" +
+        "수집 현황: " + owned.length + "/" + totalBadgeCount + "개\n\n" +
         "[보유한 뱃지]\n━━━━━━━━━━━━\n" + allsee + "\n";
     if (owned.length === 0) out += "아직 획득한 뱃지가 없습니다.\n";
     for (var i = 0; i < owned.length; i++) {
@@ -37790,7 +37820,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
 function buildAllPetHomeBadgesMessage(activityData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var allBadges = GLOBAL_CONFIG.petHomeActivity.achievementBadges.concat(GLOBAL_CONFIG.petHomeActivity.specialBadges);
-    var out = "🏅 전체 펫홈 뱃지 64종\n━━━━━━━━━━━━\n" +
+    var out = "🏅 전체 펫홈 뱃지 " + allBadges.length + "종\n━━━━━━━━━━━━\n" +
         "상세: /홈뱃지정보 [번호 또는 ID]\n\n";
     for (var i = 0; i < allBadges.length; i++) {
         var badge = allBadges[i];
@@ -37906,6 +37936,13 @@ function createPetHomeFeed(userHome, content) {
     return { id: feedId, content: content, createdAt: createdAt };
 }
 
+// 피드를 작성한 날짜를 중복 없이 누적하고 현재 활동일 수를 반환하는 함수
+function addPetHomeFeedActivityDate(activityData, user, activityDate) {
+    var social = getPetHomeSocialUser(activityData, user);
+    if (!petHomeStringListContains(social.feedActivityDates, activityDate)) social.feedActivityDates.push(activityDate);
+    return social.feedActivityDates.length;
+}
+
 // 펫홈 최신 피드를 전체보기 형식으로 생성하는 함수
 function buildPetHomeFeedMessage(userHome) {
     var feeds = ensurePetHomeFeedList(userHome).feeds;
@@ -37987,7 +38024,11 @@ function buildPetHomeSocialRankingMessage(data, petData, guildData, homeData, ac
                 if (validBadges.hasOwnProperty(validBadge)) score++;
             }
         }
-        if (score > 0) rows.push({ user: user, score: score });
+        if (score > 0) {
+            var rankingRow = { user: user, score: score };
+            if (command === "/마음순위") rankingRow.heartCounts = heartCounts;
+            rows.push(rankingRow);
+        }
     }
     rows.sort(function (a, b) {
         if (b.score !== a.score) return b.score - a.score;
@@ -37998,13 +38039,20 @@ function buildPetHomeSocialRankingMessage(data, petData, guildData, homeData, ac
     var settings = command === "/팔로워순위"
         ? { title: "🐾━━ 팔로워 순위 TOP 100 ━━🐾", unit: "팔로워 ", suffix: "명" }
         : (command === "/마음순위"
-            ? { title: "💞━━ 마음표현 순위 TOP 100 ━━💞", unit: "총 ", suffix: "회" }
+            ? { title: "💞━━ 마음표현 받은 순위 TOP 100 ━━💞", unit: "총 ", suffix: "회" }
             : { title: "🏅━━ 뱃지 순위 TOP 100 ━━🏅", unit: "뱃지 ", suffix: "개" });
     var out = settings.title + "\n" + allsee + "\n\n";
     if (rows.length === 0) return out + "[순위에 등록된 유저가 없습니다.]";
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
         out += (rowIndex + 1) + "위. " + checkRank(data, petData, guildData, rows[rowIndex].user) + " — " +
             settings.unit + numberWithCommas(rows[rowIndex].score) + settings.suffix + "\n";
+        if (command === "/마음순위") {
+            var rowHeartCounts = rows[rowIndex].heartCounts;
+            out += "└ 귀여워🐾 " + numberWithCommas(rowHeartCounts.cute) +
+                " | 멋져요✨ " + numberWithCommas(rowHeartCounts.cool) +
+                " | 응원해⭐ " + numberWithCommas(rowHeartCounts.cheer) +
+                " | 사랑해💖 " + numberWithCommas(rowHeartCounts.love) + "\n";
+        }
     }
     return out.trim();
 }
@@ -38126,7 +38174,7 @@ function formatPetHomeActivityAlert(data, petData, guildData, alert) {
     if (alert.type === "home_like") return actorName + "님이 좋아홈💌을 눌렀습니다.";
     if (alert.type === "follow") return actorName + "님이 회원님을 팔로우했습니다." + (alert.mutual ? "\n🤝 서로 팔로우 중인 맞팔 유저입니다.\n💞 맞팔 마음표현 추가 사용 가능 +1회" : "");
     if (alert.type === "unfollow") return actorName + "님이 회원님의 팔로우를 해제했습니다.";
-    if (alert.type === "feed") return actorName + "님의 새로운 피드\n└ “" + (alert.feedContent || "내용 없음") + "”";
+    if (alert.type === "feed") return "📰  " + actorName + "님의 새로운 피드를 적었습니다.\n└ “" + (alert.feedContent || "내용 없음") + "”";
     if (alert.type === "badge_earned" || alert.type === "special_badge_granted" || alert.type === "special_badge_revoked") {
         var badge = getPetHomeBadgeById(alert.badgeId);
         var badgeText = badge ? badge.emoji + " " + badge.name : (alert.badgeId || "알 수 없는 뱃지");
