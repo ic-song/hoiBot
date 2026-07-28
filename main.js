@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.331"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.332"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -688,6 +688,7 @@ const petHomeBeforeSplitBackupPath = "/sdcard/호이랜드/petSweetHomeData_befo
 const petHomeCommentsFile = "/sdcard/호이랜드/petHomeComments.json"; // 펫홈 댓글 데이터
 const petHomeActivityFile = "/sdcard/호이랜드/petHomeActivityData.json"; // 펫홈 활동 알림·최근 방문자 데이터
 const petHomeSocialBadgeActivityBackupPath = "/sdcard/호이랜드/backups/petHomeActivityData_beforeSocialBadges20260727.json"; // 펫홈 소셜·뱃지 적용 전 활동 데이터 백업
+const petHomeFeedHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforeFeeds20260728.json"; // 펫홈 피드 이전 전 홈 데이터 백업
 const petHomePassBenefitHomeBackupPath = "/sdcard/호이랜드/backups/petSweetHomeData_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 펫홈 백업
 const petHomePassBenefitCommentsBackupPath = "/sdcard/호이랜드/backups/petHomeComments_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 댓글 백업
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
@@ -787,6 +788,8 @@ const GLOBAL_CONFIG = {
         maxAlerts: 100,
         maxRecentVisitors: 100,
         commentPreviewMaxLength: 15,
+        feedMaxStored: 10,
+        feedMaxLength: 100,
         heartTypes: [
             { key: "cute", command: "귀여워", label: "귀여워", emoji: "🐾", alertType: "heart_cute" },
             { key: "cheer", command: "응원해", label: "응원해", emoji: "⭐", alertType: "heart_cheer" },
@@ -1981,6 +1984,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 "처리 유저: " + numberWithCommas(socialBadgeMigrationResult.userCount) + "명\n" +
                 "기존 업적 지급: " + numberWithCommas(socialBadgeMigrationResult.badgeCount) + "개\n" +
                 "활동 파일 백업: " + socialBadgeBackupStatus
+            );
+            return;
+        }
+
+        if (msg === "/펫홈피드마이그레이션" && (isAdmin(sender) || isMaster(sender))) {
+            var feedMigrationHomeData = loadJsonFile(homeDataFile);
+            if (isPetHomeFeedMigrationComplete(feedMigrationHomeData)) {
+                replier.reply("ℹ️ 펫홈 피드 마이그레이션은 이미 완료되었습니다.");
+                return;
+            }
+            var feedMigrationBackupFile = new java.io.File(resolveActiveDataPath(petHomeFeedHomeBackupPath));
+            var feedMigrationBackupStatus = "기존 백업 유지";
+            if (feedMigrationBackupFile.exists()) {
+                loadJsonFile(petHomeFeedHomeBackupPath);
+            } else {
+                saveJsonFile(feedMigrationHomeData, petHomeFeedHomeBackupPath);
+                loadJsonFile(petHomeFeedHomeBackupPath);
+                feedMigrationBackupStatus = "새 백업 생성";
+            }
+            var feedMigrationResult = migratePetHomeFeeds(feedMigrationHomeData);
+            saveJsonFile(feedMigrationHomeData, homeDataFile);
+            var verifiedFeedMigrationHomeData = loadJsonFile(homeDataFile);
+            if (!isPetHomeFeedMigrationComplete(verifiedFeedMigrationHomeData)) throw new Error("펫홈 피드 마이그레이션 저장 확인 실패");
+            replier.reply(
+                "✅ 펫홈 피드 마이그레이션 완료\n" +
+                "처리 유저: " + numberWithCommas(feedMigrationResult.userCount) + "명\n" +
+                "이전 한줄평: " + numberWithCommas(feedMigrationResult.legacyFeedCount) + "개\n" +
+                "홈 데이터 백업: " + feedMigrationBackupStatus
             );
             return;
         }
@@ -19990,6 +20021,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(result.message); // 메시지 출력
                     return;
                 }
+                if (msg === "/팔로워순위" || msg === "/마음순위" || msg === "/뱃지순위") {
+                    var petHomeRankingActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var petHomeRankingHomeData = loadJsonFile(homeDataFile);
+                    replier.reply(buildPetHomeSocialRankingMessage(data, petData, guildData, petHomeRankingHomeData, petHomeRankingActivityData, msg));
+                    return;
+                }
                 if (msg == "/펫홈방문초기화" && (isAdmin(sender) || isMaster(sender))) {
                     let homeData = loadJsonFile(homeDataFile);
                     let resetCount = 0;
@@ -20351,6 +20388,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     homeData = initSweetHomeUser(homeData, targetName);
                     let userHome = homeData[targetName];
+                    var feedMigrationResultForHome = ensurePetHomeFeedList(userHome);
                     var petHomeActivityDataForHome = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     // 방문 처리 (자기 자신이 아니면 방문수 증가)
                     if (targetName !== sender) {
@@ -20414,14 +20452,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForHome, targetName) + "\n\n";
                     let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
                     let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
-                    let lineComment = "📣 집주인의 한줄평\n";
-
-                    if (userHome.comment) {
-                        let commentTime = userHome.commentTime ? formatDateTime(userHome.commentTime) : "시간 정보 없음";
-                        lineComment += "🎙️ “" + userHome.comment + "”\n└ " + commentTime + "\n\n";
-                    } else {
-                        lineComment += "(아직 한줄평이 없습니다.\n/한줄평 내용 을 적어보세요!)\n\n";
-                    }
                     let displayHouseName = houseName.indexOf("[🏡]") === 0 ? houseName : "[🏡]" + houseName; // 집 아이콘 중복 방지
                     let lineHouseInfo = displayHouseName + "[+" + floor + "평]\n";
                     let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
@@ -20439,7 +20469,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     lineFurniture += "────────────────\n";
-                    replier.reply(header + lineSocial + lineHeart + lineStats + lineComment + lineComentend + lineFurniture);
+                    if (feedMigrationResultForHome.migrated && targetName === sender) saveJsonFile(homeData, homeDataFile);
+                    replier.reply(header + lineSocial + lineHeart + lineStats + lineComentend + lineFurniture);
+                    replier.reply(buildPetHomeFeedMessage(userHome));
 
                     var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
@@ -20815,35 +20847,106 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     );
                     return;
                 }
-                if (msg.startsWith("/한줄평")) {
-                    let parts = msg.trim().split(/\s+/);
-                    let homeData = loadJsonFile(homeDataFile);
-                    let nickName = checkRank(data, petData, guildData, sender);
+                if (msg === "/피드전체삭제") {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("펫홈 피드 작성·삭제는 호이패스·초보패스 이용자만 사용할 수 있습니다.");
+                        return;
+                    }
+                    var feedClearHomeData = loadJsonFile(homeDataFile);
+                    feedClearHomeData = initSweetHomeUser(feedClearHomeData, sender);
+                    var feedClearList = ensurePetHomeFeedList(feedClearHomeData[sender]).feeds;
+                    feedClearList.splice(0, feedClearList.length);
+                    saveJsonFile(feedClearHomeData, homeDataFile);
+                    replier.reply("✅ 작성한 피드를 모두 삭제했습니다.\n현재 보관 중인 피드: 0/" + GLOBAL_CONFIG.petHomeActivity.feedMaxStored);
+                    return;
+                }
+                if (msg === "/피드삭제" || /^\/피드삭제\s+\d+$/.test(msg)) {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("펫홈 피드 작성·삭제는 호이패스·초보패스 이용자만 사용할 수 있습니다.");
+                        return;
+                    }
+                    var feedDeleteMatch = msg.match(/^\/피드삭제\s+(\d+)$/);
+                    if (!feedDeleteMatch) {
+                        replier.reply("사용법: /피드삭제 [번호]");
+                        return;
+                    }
+                    var feedDeleteHomeData = loadJsonFile(homeDataFile);
+                    feedDeleteHomeData = initSweetHomeUser(feedDeleteHomeData, sender);
+                    var feedDeleteList = ensurePetHomeFeedList(feedDeleteHomeData[sender]).feeds;
+                    var feedDeleteIndex = parseInt(feedDeleteMatch[1], 10) - 1;
+                    if (feedDeleteIndex < 0 || feedDeleteIndex >= feedDeleteList.length) {
+                        replier.reply("해당 번호의 피드를 찾을 수 없습니다.");
+                        return;
+                    }
+                    var deletedFeedNumber = feedDeleteIndex + 1;
+                    feedDeleteList.splice(feedDeleteIndex, 1);
+                    saveJsonFile(feedDeleteHomeData, homeDataFile);
+                    replier.reply("✅ " + deletedFeedNumber + "번 피드가 삭제되었습니다.\n현재 보관 중인 피드: " + feedDeleteList.length + "/" + GLOBAL_CONFIG.petHomeActivity.feedMaxStored);
+                    return;
+                }
+                var feedCreateMatch = msg.match(/^\/피드(?:\s+([\s\S]+))?$/);
+                if (feedCreateMatch) {
+                    if (!hasActiveHoiOrNewbiePass(data, sender)) {
+                        replier.reply("펫홈 피드 작성·삭제는 호이패스·초보패스 이용자만 사용할 수 있습니다.");
+                        return;
+                    }
+                    var feedContent = feedCreateMatch[1] ? feedCreateMatch[1].trim() : "";
+                    if (!feedContent) {
+                        replier.reply("작성할 피드 내용을 입력해 주세요.\n사용법: /피드 [내용]");
+                        return;
+                    }
+                    if (feedContent.length > GLOBAL_CONFIG.petHomeActivity.feedMaxLength) {
+                        replier.reply("❌ 피드는 최대 " + GLOBAL_CONFIG.petHomeActivity.feedMaxLength + "자까지 작성할 수 있습니다. (" + feedContent.length + "자 입력됨)");
+                        return;
+                    }
+                    var feedHomeData = loadJsonFile(homeDataFile);
                     if (!petData[sender] || !petData[sender].petname) {
-                        replier.reply("[" + nickName + "] 님은 아직 펫을 생성하지 않았습니다.");
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님은 아직 펫을 생성하지 않았습니다.");
                         return;
                     }
-                    let cost = 10000000; // 천만포인트
-                    if (!hasPoint(data, sender, cost)) {
-                        replier.reply("포인트가 부족합니다. (필요: 🅟" + numberWithCommas(cost) + ")");
-                        return;
+                    feedHomeData = initSweetHomeUser(feedHomeData, sender);
+                    var previousFeedHome = JSON.parse(JSON.stringify(feedHomeData[sender]));
+                    var feedList = ensurePetHomeFeedList(feedHomeData[sender]).feeds;
+                    var newFeed = createPetHomeFeed(feedHomeData[sender], feedContent);
+                    feedList.unshift(newFeed);
+                    while (feedList.length > GLOBAL_CONFIG.petHomeActivity.feedMaxStored) feedList.pop();
+
+                    var feedActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var feedFollowers = getPetHomeSocialUser(feedActivityData, sender).followers.slice(0);
+                    var feedAlertTargets = [];
+                    var feedAlertTargetMap = {};
+                    for (var feedFollowerIndex = 0; feedFollowerIndex < feedFollowers.length; feedFollowerIndex++) {
+                        var feedFollower = feedFollowers[feedFollowerIndex];
+                        if (feedFollower !== sender && data.member && data.member[feedFollower] && !feedAlertTargetMap.hasOwnProperty(feedFollower)) {
+                            feedAlertTargetMap[feedFollower] = true;
+                            feedAlertTargets.push(feedFollower);
+                        }
                     }
-                    if (parts.length < 2) {
-                        replier.reply("집주인의 한줄평📣:\n🎙️ (최대 30자까지 작성가능)\n*포인트 1천만포 소모\n\n예시) /한줄평 우리집이 최고야!");
-                        return;
+                    var feedAlertSnapshots = snapshotPetHomeAlertLists(feedActivityData, feedAlertTargets);
+                    var deliveredFeedAlertCount = 0;
+                    for (var feedTargetIndex = 0; feedTargetIndex < feedAlertTargets.length; feedTargetIndex++) {
+                        addPetHomeFeedActivityAlert(feedActivityData, feedAlertTargets[feedTargetIndex], sender, checkRank(data, petData, guildData, sender), newFeed);
+                        deliveredFeedAlertCount++;
                     }
-                    let comment = msg.replace("/한줄평", "").trim();
-                    if (comment.length > 30) {
-                        replier.reply("❌ 한줄평은 최대 30자까지 가능합니다. (" + comment.length + "자 입력됨)");
-                        return;
+                    try {
+                        saveJsonFile(feedHomeData, homeDataFile);
+                        saveJsonFile(feedActivityData, petHomeActivityFile);
+                    } catch (feedSaveError) {
+                        feedHomeData[sender] = previousFeedHome;
+                        restorePetHomeAlertLists(feedActivityData, feedAlertSnapshots);
+                        try {
+                            saveJsonFile(feedHomeData, homeDataFile);
+                            saveJsonFile(feedActivityData, petHomeActivityFile);
+                        } catch (feedRollbackError) {
+                            debuggerLog("[ERROR : 펫홈 피드 롤백 실패] " + feedRollbackError);
+                        }
+                        throw feedSaveError;
                     }
-                    addPoint(data, sender, -cost);
-                    homeData = initSweetHomeUser(homeData, sender);
-                    homeData[sender].comment = comment;
-                    homeData[sender].commentTime = Date.now();
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(homeData, homeDataFile);
-                    replier.reply("📣 [" + nickName + '] 님의 한줄평이 등록되었습니다!\n\n💬 "' + comment + '"\n🅟' + numberWithCommas(cost) + " 차감되었습니다.");
+                    replier.reply(
+                        "✅ 새로운 피드가 등록되었습니다.\n" +
+                        (deliveredFeedAlertCount > 0 ? "내 팔로워 " + deliveredFeedAlertCount + "명의 홈알림에 새 피드 알림이 전달되었습니다.\n" : "현재 나를 팔로우한 유저가 없어 전달된 알림은 없습니다.\n") +
+                        "현재 보관 중인 피드: " + feedList.length + "/" + GLOBAL_CONFIG.petHomeActivity.feedMaxStored
+                    );
                     return;
                 }
                 if (msg === "/집청소" || /^\/집청소\s+\d+$/.test(msg)) {
@@ -26762,7 +26865,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
-        "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈패스개편정리",
+        "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
         "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
@@ -37282,6 +37385,10 @@ function requirePetHomeActivityData(activityData) {
                 typeof storedAlert.createdAt !== "string" || typeof storedAlert.read !== "boolean" ||
                 (storedAlert.commentPreview !== undefined && typeof storedAlert.commentPreview !== "string") ||
                 (storedAlert.badgeId !== undefined && typeof storedAlert.badgeId !== "string") ||
+                (storedAlert.actorName !== undefined && typeof storedAlert.actorName !== "string") ||
+                (storedAlert.feedId !== undefined && typeof storedAlert.feedId !== "string") ||
+                (storedAlert.feedContent !== undefined && typeof storedAlert.feedContent !== "string") ||
+                (storedAlert.type === "feed" && (typeof storedAlert.feedId !== "string" || !storedAlert.feedId || typeof storedAlert.feedContent !== "string" || !storedAlert.feedContent)) ||
                 (storedAlert.mutual !== undefined && typeof storedAlert.mutual !== "boolean") ||
                 (storedAlert.count !== undefined && (typeof storedAlert.count !== "number" || storedAlert.count <= 0))) {
                 throw new Error("Invalid pet home alert entry: " + alertOwner);
@@ -37610,7 +37717,7 @@ function buildPetHomeFollowListMessage(data, petData, guildData, activityData, u
         else nonMutualUsers.push(listedUser);
     }
     var list = nonMutualUsers.concat(mutualUsers);
-    var title = type === "followers" ? "🐾 팔로워 유저[명령어: /팔로우]" : "🎀 팔로잉 유저[명령어: /팔로잉]";
+    var title = type === "followers" ? "🐾 팔로워 유저[명령어: /팔로우]\n※ 나에게 관심 있는 사람" : "🎀 팔로잉 유저[명령어: /팔로잉]\n※ 내가 관심 있는 사람";
     var out = title + "\n━━━━━━━━━━━━\n";
     if (list.length === 0) return out + "등록된 유저가 없습니다.";
     for (var i = 0; i < list.length; i++) {
@@ -37700,6 +37807,205 @@ function buildSpecialPetHomeBadgesMessage() {
     var out = "🎖️ 특별 펫홈 뱃지 목록\n━━━━━━━━━━━━\n";
     for (var i = 0; i < badges.length; i++) out += "[" + badges[i].id + "] " + badges[i].emoji + " " + badges[i].name + "\n";
     out += "\n지급: /특별뱃지지급 [아이디] [뱃지이름]\n회수: /특별뱃지회수 [아이디] [뱃지이름]\n※ 아이디 뒤 쉼표, 이름 앞 이모지와 [ID]는 포함해도 됩니다.";
+    return out.trim();
+}
+
+// 기존 한줄평을 첫 피드로 이전하고 유저의 피드 목록을 검증하는 함수
+function ensurePetHomeFeedList(userHome) {
+    if (!userHome || typeof userHome !== "object" || userHome instanceof Array) throw new Error("Invalid pet home user data for feeds");
+    if (userHome.feeds === undefined) userHome.feeds = [];
+    if (!(userHome.feeds instanceof Array)) throw new Error("Invalid pet home feed list");
+    if (userHome.feeds.length > GLOBAL_CONFIG.petHomeActivity.feedMaxStored) throw new Error("Invalid pet home feed list size");
+    var feedIds = {};
+    for (var i = 0; i < userHome.feeds.length; i++) {
+        var feed = userHome.feeds[i];
+        if (!feed || typeof feed !== "object" || feed instanceof Array ||
+            typeof feed.id !== "string" || !feed.id || feedIds.hasOwnProperty(feed.id) || typeof feed.content !== "string" || !feed.content ||
+            feed.content.length > GLOBAL_CONFIG.petHomeActivity.feedMaxLength ||
+            (typeof feed.createdAt !== "number" && typeof feed.createdAt !== "string")) {
+            throw new Error("Invalid pet home feed entry");
+        }
+        feedIds[feed.id] = true;
+    }
+    var migrated = false;
+    if (userHome.feedMigration20260728 !== true) {
+        var legacyComment = typeof userHome.comment === "string" ? userHome.comment.trim() : "";
+        if (legacyComment) {
+            var legacyFeedIdBase = "legacy-" + String(userHome.commentTime || Date.now());
+            var legacyFeedId = legacyFeedIdBase;
+            var legacyFeedSequence = 0;
+            while (feedIds.hasOwnProperty(legacyFeedId)) {
+                legacyFeedSequence++;
+                legacyFeedId = legacyFeedIdBase + "-" + legacyFeedSequence;
+            }
+            userHome.feeds.unshift({
+                id: legacyFeedId,
+                content: legacyComment,
+                createdAt: userHome.commentTime || Date.now()
+            });
+            while (userHome.feeds.length > GLOBAL_CONFIG.petHomeActivity.feedMaxStored) userHome.feeds.pop();
+        }
+        delete userHome.comment;
+        delete userHome.commentTime;
+        userHome.feedMigration20260728 = true;
+        migrated = true;
+    }
+    return { feeds: userHome.feeds, migrated: migrated };
+}
+
+// 모든 기존 펫홈 한줄평을 유저별 첫 피드로 일괄 이전하는 함수
+function migratePetHomeFeeds(homeData) {
+    if (!homeData || typeof homeData !== "object" || homeData instanceof Array) throw new Error("Invalid pet home data for feed migration");
+    var result = { userCount: 0, legacyFeedCount: 0 };
+    for (var user in homeData) {
+        if (!homeData.hasOwnProperty(user)) continue;
+        if (!homeData[user] || typeof homeData[user] !== "object" || homeData[user] instanceof Array) throw new Error("Invalid pet home user for feed migration: " + user);
+        if (typeof homeData[user].comment === "string" && homeData[user].comment.trim()) result.legacyFeedCount++;
+        ensurePetHomeFeedList(homeData[user]);
+        result.userCount++;
+    }
+    return result;
+}
+
+// 전체 펫홈 피드 마이그레이션 저장 상태를 변경 없이 검증하는 함수
+function isPetHomeFeedMigrationComplete(homeData) {
+    if (!homeData || typeof homeData !== "object" || homeData instanceof Array) return false;
+    for (var user in homeData) {
+        if (!homeData.hasOwnProperty(user)) continue;
+        if (!homeData[user] || typeof homeData[user] !== "object" || homeData[user] instanceof Array) return false;
+        var userHome = homeData[user];
+        if (userHome.feedMigration20260728 !== true || !(userHome.feeds instanceof Array) ||
+            userHome.comment !== undefined || userHome.commentTime !== undefined) return false;
+        try {
+            ensurePetHomeFeedList(userHome);
+        } catch (feedMigrationValidationError) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// 중복되지 않는 ID와 현재 시각으로 새 펫홈 피드를 생성하는 함수
+function createPetHomeFeed(userHome, content) {
+    var feeds = ensurePetHomeFeedList(userHome).feeds;
+    var createdAt = Date.now();
+    var sequence = 0;
+    var feedId = "feed-" + createdAt;
+    var duplicated = true;
+    while (duplicated) {
+        duplicated = false;
+        for (var i = 0; i < feeds.length; i++) {
+            if (feeds[i].id === feedId) {
+                sequence++;
+                feedId = "feed-" + createdAt + "-" + sequence;
+                duplicated = true;
+                break;
+            }
+        }
+    }
+    return { id: feedId, content: content, createdAt: createdAt };
+}
+
+// 펫홈 최신 피드를 전체보기 형식으로 생성하는 함수
+function buildPetHomeFeedMessage(userHome) {
+    var feeds = ensurePetHomeFeedList(userHome).feeds;
+    var out = "▣━━ 집주인의 최신 피드 ━━▣\n" + allsee + "\n\n";
+    if (feeds.length === 0) return out + "[등록된 피드가 없습니다.]";
+    for (var i = 0; i < feeds.length; i++) {
+        out += (i + 1) + ". ▣ “" + feeds[i].content + "”\n" +
+            "└ " + formatDateTime(feeds[i].createdAt) + "\n\n";
+    }
+    return out.trim();
+}
+
+// 지정 유저들의 펫홈 알림 목록을 저장 전 상태로 보관하는 함수
+function snapshotPetHomeAlertLists(activityData, users) {
+    var snapshots = [];
+    var seen = {};
+    for (var i = 0; i < users.length; i++) {
+        var user = users[i];
+        if (seen.hasOwnProperty(user)) continue;
+        seen[user] = true;
+        snapshots.push({
+            user: user,
+            existed: activityData.alerts.hasOwnProperty(user),
+            alerts: activityData.alerts.hasOwnProperty(user) ? JSON.parse(JSON.stringify(activityData.alerts[user])) : []
+        });
+    }
+    return snapshots;
+}
+
+// 저장 실패 시 지정 유저들의 펫홈 알림 목록을 복구하는 함수
+function restorePetHomeAlertLists(activityData, snapshots) {
+    for (var i = 0; i < snapshots.length; i++) {
+        if (snapshots[i].existed) activityData.alerts[snapshots[i].user] = snapshots[i].alerts;
+        else delete activityData.alerts[snapshots[i].user];
+    }
+}
+
+// 새 피드 알림을 대상 유저의 홈알림에 추가하는 함수
+function addPetHomeFeedActivityAlert(activityData, targetUser, actorId, actorName, feed) {
+    var alerts = getPetHomeAlertList(activityData, targetUser);
+    alerts.push({
+        type: "feed",
+        actorId: actorId,
+        actorName: actorName,
+        feedId: feed.id,
+        feedContent: feed.content,
+        createdAt: formatDateTime(feed.createdAt),
+        read: false
+    });
+    while (alerts.length > GLOBAL_CONFIG.petHomeActivity.maxAlerts) alerts.shift();
+}
+
+// 펫홈 소셜 순위 명령어의 점수를 계산하고 상위 100명을 출력하는 함수
+function buildPetHomeSocialRankingMessage(data, petData, guildData, homeData, activityData, command) {
+    var rows = [];
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var social = activityData.petHomeSocial.hasOwnProperty(user) ? activityData.petHomeSocial[user] : null;
+        var score = 0;
+        if (command === "/팔로워순위" && social) {
+            var validFollowers = {};
+            for (var followerIndex = 0; followerIndex < social.followers.length; followerIndex++) {
+                var follower = social.followers[followerIndex];
+                if (data.member[follower]) validFollowers[follower] = true;
+            }
+            for (var validFollower in validFollowers) {
+                if (validFollowers.hasOwnProperty(validFollower)) score++;
+            }
+        } else if (command === "/마음순위" && homeData[user]) {
+            var heartCounts = ensurePetHomeHeartExpressions(homeData[user]);
+            score = heartCounts.cute + heartCounts.cheer + heartCounts.cool + heartCounts.love;
+        } else if (command === "/뱃지순위" && social) {
+            var validBadges = {};
+            for (var badgeIndex = 0; badgeIndex < social.badges.length; badgeIndex++) {
+                var badgeId = social.badges[badgeIndex];
+                if (getPetHomeBadgeById(badgeId) && !petHomeStringListContains(social.deletedBadgeIds, badgeId)) validBadges[badgeId] = true;
+            }
+            for (var validBadge in validBadges) {
+                if (validBadges.hasOwnProperty(validBadge)) score++;
+            }
+        }
+        if (score > 0) rows.push({ user: user, score: score });
+    }
+    rows.sort(function (a, b) {
+        if (b.score !== a.score) return b.score - a.score;
+        return String(a.user).localeCompare(String(b.user), "ko");
+    });
+    if (rows.length > 100) rows = rows.slice(0, 100);
+
+    var settings = command === "/팔로워순위"
+        ? { title: "🐾━━ 팔로워 순위 TOP 100 ━━🐾", unit: "팔로워 ", suffix: "명" }
+        : (command === "/마음순위"
+            ? { title: "💞━━ 마음표현 순위 TOP 100 ━━💞", unit: "총 ", suffix: "회" }
+            : { title: "🏅━━ 뱃지 순위 TOP 100 ━━🏅", unit: "뱃지 ", suffix: "개" });
+    var out = settings.title + "\n" + allsee + "\n\n";
+    if (rows.length === 0) return out + "[순위에 등록된 유저가 없습니다.]";
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        out += (rowIndex + 1) + "위. " + checkRank(data, petData, guildData, rows[rowIndex].user) + " — " +
+            settings.unit + numberWithCommas(rows[rowIndex].score) + settings.suffix + "\n";
+    }
     return out.trim();
 }
 
@@ -37796,14 +38102,31 @@ function buildPetHomeHeartExpressionMessage(userHome) {
         "멋져요✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n";
 }
 
+// 다른 유저의 행동으로 생성된 홈알림인지 확인하는 함수
+function isPetHomeActorActivityAlert(alert) {
+    if (!alert || typeof alert.type !== "string") return false;
+    if (alert.type === "comment" || alert.type === "home_like" || alert.type === "follow" || alert.type === "unfollow" || alert.type === "feed") return true;
+    return alert.type.indexOf("heart_") === 0;
+}
+
+// 홈알림 작성자의 현재 대표 뱃지를 알림용 형식으로 반환하는 함수
+function getPetHomeAlertActorBadgeText(activityData, alert) {
+    if (!isPetHomeActorActivityAlert(alert) || !alert.actorId || !activityData.petHomeSocial.hasOwnProperty(alert.actorId)) return "없음";
+    var social = activityData.petHomeSocial[alert.actorId];
+    var badge = getPetHomeBadgeById(social.equippedBadgeId);
+    if (!badge || !petHomeStringListContains(social.badges, badge.id) || petHomeStringListContains(social.deletedBadgeIds, badge.id)) return "없음";
+    return badge.emoji + " " + badge.name;
+}
+
 // 저장된 활동 유형을 홈알림 표시 문구로 변환하는 함수
 function formatPetHomeActivityAlert(data, petData, guildData, alert) {
     var actorId = alert && alert.actorId ? alert.actorId : "알 수 없는 유저";
-    var actorName = data.member && data.member[actorId] ? checkRank(data, petData, guildData, actorId) : actorId;
+    var actorName = data.member && data.member[actorId] ? checkRank(data, petData, guildData, actorId) : (alert.actorName || actorId);
     if (alert.type === "comment") return actorName + "님이 댓글을 남겼습니다.";
     if (alert.type === "home_like") return actorName + "님이 좋아홈💌을 눌렀습니다.";
     if (alert.type === "follow") return actorName + "님이 회원님을 팔로우했습니다." + (alert.mutual ? "\n🤝 서로 팔로우 중인 맞팔 유저입니다.\n💞 맞팔 마음표현 추가 사용 가능 +1회" : "");
     if (alert.type === "unfollow") return actorName + "님이 회원님의 팔로우를 해제했습니다.";
+    if (alert.type === "feed") return actorName + "님의 새로운 피드\n└ “" + (alert.feedContent || "내용 없음") + "”";
     if (alert.type === "badge_earned" || alert.type === "special_badge_granted" || alert.type === "special_badge_revoked") {
         var badge = getPetHomeBadgeById(alert.badgeId);
         var badgeText = badge ? badge.emoji + " " + badge.name : (alert.badgeId || "알 수 없는 뱃지");
@@ -37845,7 +38168,12 @@ function buildPetHomeActivityMessage(data, petData, guildData, sender, activityD
     } else {
         for (var alertIndex = alerts.length - 1, alertNo = 1; alertIndex >= 0; alertIndex--, alertNo++) {
             var alert = alerts[alertIndex];
-            out += "[" + alertNo + "] " + formatPetHomeActivityAlert(data, petData, guildData, alert) + "\n";
+            if (isPetHomeActorActivityAlert(alert)) {
+                out += "[" + alertNo + "] 대표 뱃지: [" + getPetHomeAlertActorBadgeText(activityData, alert) + "]\n";
+                out += formatPetHomeActivityAlert(data, petData, guildData, alert) + "\n";
+            } else {
+                out += "[" + alertNo + "] " + formatPetHomeActivityAlert(data, petData, guildData, alert) + "\n";
+            }
             if (alert.type === "comment" && alert.commentPreview) out += "💬 “" + alert.commentPreview + "”\n";
             out += "└ " + (alert.createdAt || "시간 정보 없음") + "\n\n";
         }

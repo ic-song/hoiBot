@@ -507,9 +507,16 @@ Status: VERIFIED
 - `/특별뱃지지급 [닉네임] [뱃지이름]`
 - `/특별뱃지회수 [닉네임] [뱃지이름]`
 - `/홈알림`
+- `/피드 [내용]`
+- `/피드삭제 [번호]`
+- `/피드전체삭제`
+- `/팔로워순위`
+- `/마음순위`
+- `/뱃지순위`
 - `/펫홈댓글파일생성`
 - `/펫홈활동파일생성`
 - `/펫홈소셜뱃지마이그레이션`
+- `/펫홈피드마이그레이션`
 - `/펫홈패스개편정리`
 
 ## Files
@@ -534,6 +541,12 @@ Status: VERIFIED
 - `updatePetHomeRecentVisitor`
 - `buildPetHomeActivityMessage`
 - `buildPetHomeHeartExpressionMessage`
+- `ensurePetHomeFeedList`
+- `createPetHomeFeed`
+- `buildPetHomeFeedMessage`
+- `addPetHomeFeedActivityAlert`
+- `getPetHomeAlertActorBadgeText`
+- `buildPetHomeSocialRankingMessage`
 - `getPetHomeSocialUser`
 - `getPetHomeMutualUsers`
 - `getActivePetHomeMutualCount`
@@ -541,6 +554,8 @@ Status: VERIFIED
 - `buildPetHomeFollowListMessage`
 - `buildOwnedPetHomeBadgesMessage`
 - `migratePetHomeSocialBadges`
+- `migratePetHomeFeeds`
+- `isPetHomeFeedMigrationComplete`
 - `removePetHomeActivityUserOnAccountDelete`
 - `markPetHomeAlertsRead`
 - `cleanupPetHomePassBenefitData`
@@ -561,7 +576,8 @@ Status: VERIFIED
 - `placedFurnitureData[target]`
 - `homeData[target].visitCnt`
 - `homeData[target].likeCnt`
-- `homeData[target].comment`
+- `homeData[target].feeds`
+- `homeData[target].feedMigration20260728`
 - `homeData[target].heartExpressions`
 - `homeData[sender].lastHeartExpressionDate`
 - `petHomeCommentsData.comments[target]`
@@ -582,7 +598,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; replies home body first, then reads `petHomeCommentsFile` and replies comments. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
 - `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
@@ -596,7 +612,11 @@ Status: VERIFIED
 - `/홈뱃지` rechecks achievement badges, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus the exact name or `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
+- `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
 - `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, replies newest-first lists, then marks the stored activity alerts as read.
+- `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, and add a feed alert to each valid follower in `petHomeActivityFile`; both files use rollback handling on save failure.
+- `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
+- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
 - `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
@@ -608,14 +628,21 @@ Status: VERIFIED
 
 - `/펫홈순위`
 - `/펫홈방문초기화`
-- `/한줄평`
+- `/피드`
+- `/피드삭제`
+- `/피드전체삭제`
+- `/팔로워순위`
+- `/마음순위`
+- `/뱃지순위`
 - `/집청소`
 - `/가구가방`
 - `/장착가구동기화`
 
 ## AI Notes
 
-- `/펫홈` output is split into two replies: home body first, comments second.
+- `/펫홈` output is split into three replies: home body first, latest feed second, comments third; feed viewing is available to all registered home users.
+- Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
+- `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
 - `/홈뱃지` keeps the representative badge and collection summary visible, then inserts `allsee` immediately after the owned-badge section divider.
 - Furniture list inserts `allsee` from the second placed furniture.
