@@ -505,8 +505,8 @@ Status: VERIFIED
 - `/홈뱃지삭제 [번호|ID]`
 - `/특별뱃지목록`
 - `/특별뱃지목록 [S01|[S01]]`
-- `/특별뱃지지급 [닉네임] [뱃지이름]`
-- `/특별뱃지회수 [닉네임] [뱃지이름]`
+- `/특별뱃지지급 [닉네임] [뱃지이름|코드]`
+- `/특별뱃지회수 [닉네임] [뱃지이름|코드]`
 - `/홈알림`
 - `/피드 [내용]`
 - `/피드삭제 [번호]`
@@ -616,7 +616,7 @@ Status: VERIFIED
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
 - `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
 - `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
-- `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus the exact name or `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
+- `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
 - `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, shows feed alerts with a leading `📰` marker, replies newest-first lists, then marks the stored activity alerts as read.

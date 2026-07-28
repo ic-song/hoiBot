@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.335"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.336"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20355,7 +20355,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var specialBadgeName = specialBadgeTargetParsed.rest ? specialBadgeTargetParsed.rest.trim() : "";
                     var specialBadge = getPetHomeSpecialBadgeByName(specialBadgeName);
                     if (!specialBadgeTargetParsed.target || !specialBadge) {
-                        replier.reply("❌ 대상 유저 또는 특별 뱃지 이름을 확인해 주세요.\n/특별뱃지목록에서 정확한 이름을 확인할 수 있습니다.");
+                        replier.reply("❌ 대상 유저 또는 특별 뱃지 이름·코드를 확인해 주세요.\n/특별뱃지목록에서 정확한 이름 또는 코드를 확인할 수 있습니다.");
                         return;
                     }
                     var specialBadgeTarget = specialBadgeTargetParsed.target;
@@ -37616,14 +37616,17 @@ function getPetHomeBadgeById(badgeId) {
     return null;
 }
 
-// 특별 펫홈 뱃지를 이름이나 목록 표시 문구로 찾는 함수
+// 특별 펫홈 뱃지를 코드, 이름, 목록 표시 문구로 찾는 함수
 function getPetHomeSpecialBadgeByName(badgeName) {
     var input = String(badgeName || "").trim();
+    var badgeIdInput = input.toUpperCase();
+    var bracketedBadgeIdMatch = badgeIdInput.match(/^\[([A-Z]\d{2})\]$/);
+    if (bracketedBadgeIdMatch) badgeIdInput = bracketedBadgeIdMatch[1];
     var badges = GLOBAL_CONFIG.petHomeActivity.specialBadges;
     for (var i = 0; i < badges.length; i++) {
         var displayName = badges[i].emoji + " " + badges[i].name;
         var fullDisplayName = "[" + badges[i].id + "] " + displayName;
-        if (badges[i].name === input || displayName === input || fullDisplayName === input) return badges[i];
+        if (badges[i].id === badgeIdInput || badges[i].name === input || displayName === input || fullDisplayName === input) return badges[i];
     }
     return null;
 }
@@ -37905,7 +37908,7 @@ function buildSpecialPetHomeBadgesMessage() {
     var badges = GLOBAL_CONFIG.petHomeActivity.specialBadges;
     var out = "🎖️ 특별 펫홈 뱃지 목록\n━━━━━━━━━━━━\n";
     for (var i = 0; i < badges.length; i++) out += "[" + badges[i].id + "] " + badges[i].emoji + " " + badges[i].name + "\n";
-    out += "\n조회: /특별뱃지목록 [코드]\n지급: /특별뱃지지급 [아이디] [뱃지이름]\n회수: /특별뱃지회수 [아이디] [뱃지이름]\n※ 아이디 뒤 쉼표, 이름 앞 이모지와 [ID]는 포함해도 됩니다.";
+    out += "\n조회: /특별뱃지목록 [코드]\n지급: /특별뱃지지급 [아이디] [뱃지이름|코드]\n회수: /특별뱃지회수 [아이디] [뱃지이름|코드]\n※ 아이디 뒤 쉼표를 붙일 수 있고, 코드는 S01 또는 [S01]로 입력할 수 있습니다.";
     return out.trim();
 }
 
