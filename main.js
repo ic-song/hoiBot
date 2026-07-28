@@ -6720,15 +6720,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "펫먹이🍼",
-                                    count: 10
+                                    count: 100
                                 },
                                 {
                                     name: "펫스윗홈인테리어샵🖼️(/샵오픈)",
                                     count: 2
                                 },
+                                  {
+                                    name: "펜던트 강화석📿",
+                                    count: 1
+                                },
                                 {
                                     name: "펫 강화석⭐",
-                                    count: 50
+                                    count: 100
+                                },
+                                {
+                                    name: "미니펫 강화석💫",
+                                    count: 10
                                 },
                                 {
                                     name: "잡템☠️",
@@ -6792,7 +6800,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 },
                                 {
                                     name: "펫먹이🍼",
-                                    count: 30
+                                    count: 100
+                                },
+                                {
+                                    name: "펜던트 강화석📿",
+                                    count: 1
+                                },
+                                {
+                                    name: "미니펫 강화석💫",
+                                    count: 10
                                 },
                                 {
                                     name: "펫스윗홈인테리어샵🖼️(/샵오픈)",
