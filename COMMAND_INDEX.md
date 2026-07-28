@@ -504,6 +504,7 @@ Status: VERIFIED
 - `/홈뱃지해제`
 - `/홈뱃지삭제 [번호|ID]`
 - `/특별뱃지목록`
+- `/특별뱃지목록 [S01|[S01]]`
 - `/특별뱃지지급 [닉네임] [뱃지이름]`
 - `/특별뱃지회수 [닉네임] [뱃지이름]`
 - `/홈알림`
@@ -619,7 +620,7 @@ Status: VERIFIED
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
 - `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, shows feed alerts with a leading `📰` marker, replies newest-first lists, then marks the stored activity alerts as read.
-- `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add a feed alert to each valid follower, record one KST feed activity date per day, and award feed activity badges in `petHomeActivityFile`; both files use rollback handling on save failure. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
+- `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, and award feed activity badges in `petHomeActivityFile`; both files use rollback handling on save failure. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/마음순위` also shows each ranked user's 귀여워·멋져요·응원해·사랑해 received counts.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
@@ -650,6 +651,8 @@ Status: VERIFIED
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
 - `/홈뱃지` keeps the representative badge and collection summary visible, then inserts `allsee` immediately after the owned-badge section divider.
+- `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
+- `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.
 - Furniture list inserts `allsee` from the second placed furniture.
 - Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.

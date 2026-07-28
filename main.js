@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.334"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.335"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20327,8 +20327,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(badgeMutationReply);
                     return;
                 }
-                if (msg === "/특별뱃지목록") {
-                    replier.reply(buildSpecialPetHomeBadgesMessage());
+                if (msg === "/특별뱃지목록" || /^\/특별뱃지목록\s+\S+$/.test(msg)) {
+                    if (msg === "/특별뱃지목록") {
+                        replier.reply(buildSpecialPetHomeBadgesMessage());
+                        return;
+                    }
+                    var specialBadgeLookupText = msg.replace(/^\/특별뱃지목록\s+/, "").trim().toUpperCase();
+                    var specialBadgeLookupMatch = specialBadgeLookupText.match(/^\[?(S\d{2})\]?$/);
+                    var specialBadgeLookup = specialBadgeLookupMatch ? getPetHomeBadgeById(specialBadgeLookupMatch[1]) : null;
+                    if (!specialBadgeLookup || specialBadgeLookup.id.indexOf("S") !== 0) {
+                        replier.reply("❌ 존재하지 않는 특별 뱃지 코드입니다.\n/특별뱃지목록에서 S01~S10 코드를 확인해 주세요.");
+                        return;
+                    }
+                    replier.reply(
+                        "[" + specialBadgeLookup.id + "] " + specialBadgeLookup.emoji + " " + specialBadgeLookup.name + "\n" +
+                        "━━━━━━━━━━━━\n획득 조건: 운영자 지급 특별 뱃지"
+                    );
                     return;
                 }
                 var specialBadgeCommandMatch = msg.match(/^\/특별뱃지(지급|회수)\s+(.+)$/);
@@ -20959,6 +20973,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addPetHomeFeedActivityDate(feedActivityData, sender, getPetHomeTodayText());
                     var feedAwardedBadges = awardPetHomeAchievementBadges(feedActivityData, sender);
                     addPetHomeBadgeAwardAlerts(feedActivityData, sender, feedAwardedBadges);
+                    addPetHomeFeedActivityAlert(feedActivityData, sender, sender, checkRank(data, petData, guildData, sender), newFeed);
                     var deliveredFeedAlertCount = 0;
                     for (var feedTargetIndex = 0; feedTargetIndex < feedAlertTargets.length; feedTargetIndex++) {
                         addPetHomeFeedActivityAlert(feedActivityData, feedAlertTargets[feedTargetIndex], sender, checkRank(data, petData, guildData, sender), newFeed);
@@ -37762,6 +37777,8 @@ function getOwnedPetHomeBadges(activityData, user) {
 function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwned) {
     var rawText = String(selection || "").trim();
     var text = rawText.toUpperCase();
+    var bracketedBadgeIdMatch = text.match(/^\[([A-Z]\d{2})\]$/);
+    if (bracketedBadgeIdMatch) text = bracketedBadgeIdMatch[1];
     var social = getPetHomeSocialUser(activityData, user);
     var badge = null;
     if (/^\d+$/.test(text)) {
@@ -37888,7 +37905,7 @@ function buildSpecialPetHomeBadgesMessage() {
     var badges = GLOBAL_CONFIG.petHomeActivity.specialBadges;
     var out = "🎖️ 특별 펫홈 뱃지 목록\n━━━━━━━━━━━━\n";
     for (var i = 0; i < badges.length; i++) out += "[" + badges[i].id + "] " + badges[i].emoji + " " + badges[i].name + "\n";
-    out += "\n지급: /특별뱃지지급 [아이디] [뱃지이름]\n회수: /특별뱃지회수 [아이디] [뱃지이름]\n※ 아이디 뒤 쉼표, 이름 앞 이모지와 [ID]는 포함해도 됩니다.";
+    out += "\n조회: /특별뱃지목록 [코드]\n지급: /특별뱃지지급 [아이디] [뱃지이름]\n회수: /특별뱃지회수 [아이디] [뱃지이름]\n※ 아이디 뒤 쉼표, 이름 앞 이모지와 [ID]는 포함해도 됩니다.";
     return out.trim();
 }
 
