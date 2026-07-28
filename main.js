@@ -37917,7 +37917,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
             (social.equippedBadgeId === badge.id ? " ✅ 장착 중" : "") + "\n" +
             "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n\n";
     }
-    out += "장착: /홈뱃지장착 [번호 또는 ID]\n상세: /홈뱃지정보 [번호, ID 또는 이름]\n삭제: /홈뱃지삭제 [번호 또는 ID]\n전체: /홈뱃지전체";
+    out += "장착: /홈뱃지장착 [번호 또는 ID]\n해제: /홈뱃지해제\n상세: /홈뱃지정보 [번호, ID 또는 이름]\n삭제: /홈뱃지삭제 [번호 또는 ID]\n전체: /홈뱃지전체";
     return out.trim();
 }
 
