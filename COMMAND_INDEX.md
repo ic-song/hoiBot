@@ -259,9 +259,10 @@ Status: VERIFIED
 
 ## Runtime / Save-Flow Hotspots
 
-- `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore a malformed `member.json` from the strictly parsed `member_back.json` recovery snapshot.
+- `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
 - `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for member and pet-home activity original/backup files; `petHomeActivityData.json` also preserves its previous valid state in `petHomeActivityData_back.json`.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
+- Slash-prefixed commands strictly parse and back up member, pet, and pet skill data before normal command execution; when `petHomeActivityData.json` exists, it is also validated and copied to `petHomeActivityData_back.json`.
 - `main.js`: main `response(...)` entry point for almost all mutable gameplay commands
 - `Info.js`: info/query-oriented `response(...)` entry point
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.336"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.337"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1601,23 +1601,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 let activeFilePathBack = resolveActiveDataPath(filePath_back);
                 let activeMemberPetPathBack = resolveActiveDataPath(memberPetPath_back);
                 let activePetSkillDataPathBack = resolveActiveDataPath(petSkillDataPath_back);
+                let activePetHomeActivityPathBack = resolveActiveDataPath(petHomeActivityBackupFile);
                 let file = new java.io.File(activeFilePathBack);
                 if (file.exists()) {
-                    // main
+                    // 복구 파일을 모두 먼저 검증한 뒤 원본을 교체
                     let fileContent = FileStream.read(activeFilePathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
                     let mainDataBack = parseJsonContent(fileContent, activeFilePathBack);
-                    saveJsonFile(mainDataBack, filePath);
-                    //pet
                     let petContent = FileStream.read(activeMemberPetPathBack, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
                     let petDataBack = parseJsonContent(petContent, activeMemberPetPathBack);
-                    saveJsonFile(petDataBack, memberPetPath);
-                    //petSkill
                     let petSkillFile = new java.io.File(activePetSkillDataPathBack);
+                    let petSkillDataBack = null;
                     if (petSkillFile.exists()) {
                         let petSkillContent = FileStream.read(activePetSkillDataPathBack, "utf-8");
-                        let petSkillDataBack = parseJsonContent(petSkillContent, activePetSkillDataPathBack, {});
-                        saveJsonFile(petSkillDataBack, petSkillDataPath);
+                        petSkillDataBack = parseJsonContent(petSkillContent, activePetSkillDataPathBack, {});
                     }
+                    let petHomeActivityBackContent = FileStream.read(activePetHomeActivityPathBack, "utf-8");
+                    let petHomeActivityDataBack = requirePetHomeActivityData(parseJsonContent(petHomeActivityBackContent, activePetHomeActivityPathBack));
+
+                    saveJsonFile(mainDataBack, filePath);
+                    saveJsonFile(petDataBack, memberPetPath);
+                    if (petSkillDataBack) saveJsonFile(petSkillDataBack, petSkillDataPath);
+                    writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), JSON.stringify(petHomeActivityDataBack), true);
 
                     replier.reply(sender + "님이 직전 데이터로 봇을 살립니다.");
                 } else {
@@ -2238,9 +2242,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 let activeFilePath = resolveActiveDataPath(filePath);
                 let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
                 let activePetSkillDataPath = resolveActiveDataPath(petSkillDataPath);
+                let activePetHomeActivityPath = resolveActiveDataPath(petHomeActivityFile);
                 let mainFile = new java.io.File(activeFilePath);
                 let petFile = new java.io.File(activeMemberPetPath);
                 let petSkillFile = new java.io.File(activePetSkillDataPath);
+                let petHomeActivityFileForBackup = new java.io.File(activePetHomeActivityPath);
 
                 //  모든 파일 존재 체크 (없으면 즉시 throw → catch로 이동)
                 if (!mainFile.exists()) {
@@ -2252,7 +2258,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (!petSkillFile.exists()) {
                     throw new Error("petSkill file not found: " + activePetSkillDataPath);
                 }
-
                 // 읽기 + strict 파싱 (문제 있으면 전부 throw)
                 let parseMainBack = parseJsonContent(
                     FileStream.read(activeFilePath, "utf-8"),
@@ -2269,10 +2274,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     activePetSkillDataPath
                 );
 
+                let parsePetHomeActivityBack = null;
+                if (petHomeActivityFileForBackup.exists()) {
+                    parsePetHomeActivityBack = requirePetHomeActivityData(parseJsonContent(
+                        FileStream.read(activePetHomeActivityPath, "utf-8"),
+                        activePetHomeActivityPath
+                    ));
+                }
+
                 // 모든 과정 성공했을 때만 백업 저장
                 saveJsonFile(parseMainBack, filePath_back);
                 saveJsonFile(parsePetBack, memberPetPath_back);
                 saveJsonFile(parsePetSkillBack, petSkillDataPath_back);
+                if (parsePetHomeActivityBack) saveJsonFile(parsePetHomeActivityBack, petHomeActivityBackupFile);
 
             } catch (e) {
                 replier.reply(
