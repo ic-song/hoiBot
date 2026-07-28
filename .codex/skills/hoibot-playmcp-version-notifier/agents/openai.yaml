@@ -1,0 +1,4 @@
+interface:
+  display_name: "hoiBot PlayMCP 버전 알림"
+  short_description: "운영반영 후 카카오톡으로 호이봇 버전을 알려요"
+  default_prompt: "Use $hoibot-playmcp-version-notifier to send the verified hoiBot production version through PlayMCP."
