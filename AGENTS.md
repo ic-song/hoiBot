@@ -224,6 +224,7 @@ LDPlayer
 - Before production reflection, keep `HoiBotVersion` in `main.js` synchronized with the latest `data/hoiBotChangeLog.json` entry so `/호이봇버전` and `/개발자노트` show the same current version.
 - After production reflection, re-check `origin/feature/prod` and confirm the reflected commit includes the developer-note/version update; report the reflected version in the final response.
 - After any successful `feature/prod` reflection and remote verification, when the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` with no additional text.
+- Use the `hoibot-playmcp-version-notifier` skill for this post-reflection notification whenever the skill is available.
 - Do not send the KakaoTalk version message when `feature/prod` was not updated or remote verification failed. If the PlayMCP tool is unavailable, skip the notification without failing production reflection and report that it was skipped. If the available tool fails to send, retry once when safe and report the notification failure without misreporting it as sent.
 - Workflow-only, documentation-only, and internal agent rule changes may skip `data/hoiBotChangeLog.json` unless they change the live bot behavior or the user explicitly requests a visible change record.
 - Test reflection scripts should use `feature/prod` as their source branch.

@@ -81,7 +81,7 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 11. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
 12. Push `feature/prod`.
 13. Re-check `origin/feature/prod` and confirm the reflected production-facing commit includes the developer-note/version update; report the reflected `/개발자노트` version.
-14. After the remote `feature/prod` verification succeeds, when the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` and no other text. Do not send when production was not updated or verification failed. If the tool is unavailable, skip the notification without failing production reflection and report that it was skipped; if the available tool fails, retry once when safe and report the failure.
+14. After the remote `feature/prod` verification succeeds, use the `hoibot-playmcp-version-notifier` skill when available. When the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` and no other text. Do not send when production was not updated or verification failed. If the tool is unavailable, skip the notification without failing production reflection and report that it was skipped; if the available tool fails, retry once when safe and report the failure.
 15. If `.codex/skills/` changed, update the corresponding local Codex skill files when possible.
 16. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, which `/개발자노트` version is current, whether the KakaoTalk version notification succeeded, and whether local skills were updated.
 
