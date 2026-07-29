@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.338"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.339"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -39,7 +39,8 @@ const ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES = [
     "등록",
     "ㄴㄴ",
     "시작한다",
-    "거절한다"
+    "거절한다",
+    "ㅎㄹ"
 ];
 
 
@@ -6464,6 +6465,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     Api.replyRoom(room12, message);
                     Api.replyRoom(room13, message);
                     Api.replyRoom(room90, message);
+                }
+                if (msg === "/선물삭제" && (isAdmin(sender) || isMaster(sender))) {
+                    var freeSupportPackageDeleteResult = removeAllHoiFreeSupportPackages(data);
+                    saveJsonFile(data, filePath);
+                    replier.reply(
+                        "✅ 무료 호이응원패키지 삭제 완료\n" +
+                        "━━━━━━━━━━━━\n" +
+                        "삭제 유저: " + numberWithCommas(freeSupportPackageDeleteResult.removedUserCount) + "명\n" +
+                        "삭제 수량: " + numberWithCommas(freeSupportPackageDeleteResult.removedPackageCount) + "개\n" +
+                        "삭제 범위: [" + GLOBAL_CONFIG.supportPass.freeSupportPackage.minVariant + "]~[" + GLOBAL_CONFIG.supportPass.freeSupportPackage.maxVariant + "]"
+                    );
+                    return;
                 }
                 if (msg.startsWith("/환생") && sender == "호이 남") {
                     var regex = /^\/환생\s+([^]+)/;
@@ -20700,7 +20713,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList, petHomePinnedCommentList));
                     return;
                 }
-                if (msg === "/홈알림") {
+                if (msg === "/홈알림" || msg === "ㅎㄹ") {
                     if (!hasActiveHoiOrNewbiePass(data, sender)) {
                         replier.reply("홈알림🔔은 호이패스·초보패스 이용자만\n확인할 수 있습니다.");
                         return;
@@ -27090,7 +27103,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
         "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
-        "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인",
+        "/반지보상통계", "/정리알림", "/패스목록", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
         "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/개발자노트"
@@ -31545,26 +31558,57 @@ function getInvalidAutoExploreTicketUsers(data) {
     return users;
 }
 
+// 호이응원 무료패키지 아이템명의 1~10번 변형 번호를 반환하는 함수
+function getHoiFreeSupportPackageVariant(itemName) {
+    var packageConfig = GLOBAL_CONFIG.supportPass.freeSupportPackage;
+    var packagePrefix = packageConfig.baseName.replace(/[\uFE0E\uFE0F]/g, "") + "[";
+    var normalizedItemName = String(itemName || "").replace(/[\uFE0E\uFE0F]/g, "").trim();
+    if (normalizedItemName.indexOf(packagePrefix) !== 0 || normalizedItemName.charAt(normalizedItemName.length - 1) !== "]") return null;
+    var variantText = normalizedItemName.substring(packagePrefix.length, normalizedItemName.length - 1);
+    if (!/^\d+$/.test(variantText)) return null;
+    var variant = parseInt(variantText, 10);
+    if (variant < packageConfig.minVariant || variant > packageConfig.maxVariant) return null;
+    if (variantText !== String(variant)) return null;
+    return variant;
+}
+
 // 유저 가방의 호이응원 무료패키지 1~10번 수량을 합산하는 함수
 function getHoiFreeSupportPackageCount(data, user) {
     if (!data || !data.member || !data.member[user] || !data.member[user].bag) return 0;
-    var packageConfig = GLOBAL_CONFIG.supportPass.freeSupportPackage;
     var bag = data.member[user].bag;
-    var packagePrefix = packageConfig.baseName.replace(/[\uFE0E\uFE0F]/g, "") + "[";
     var count = 0;
     for (var itemName in bag) {
         if (!bag.hasOwnProperty(itemName)) continue;
-        var normalizedItemName = String(itemName || "").replace(/[\uFE0E\uFE0F]/g, "").trim();
-        if (normalizedItemName.indexOf(packagePrefix) !== 0 || normalizedItemName.charAt(normalizedItemName.length - 1) !== "]") continue;
-        var variantText = normalizedItemName.substring(packagePrefix.length, normalizedItemName.length - 1);
-        if (!/^\d+$/.test(variantText)) continue;
-        var variant = parseInt(variantText, 10);
-        if (variant < packageConfig.minVariant || variant > packageConfig.maxVariant) continue;
-        if (variantText !== String(variant)) continue;
+        if (getHoiFreeSupportPackageVariant(itemName) === null) continue;
         var itemCount = parseInt(bag[itemName], 10) || 0;
         if (itemCount > 0) count += itemCount;
     }
     return count;
+}
+
+// 모든 유저 가방에서 호이응원 무료패키지 1~10번 데이터를 제거하는 함수
+function removeAllHoiFreeSupportPackages(data) {
+    var result = { removedUserCount: 0, removedPackageCount: 0 };
+    if (!data || !data.member) return result;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var bag = data.member[user] && data.member[user].bag;
+        if (!bag || typeof bag !== "object" || bag instanceof Array) continue;
+        var removableItemNames = [];
+        for (var itemName in bag) {
+            if (!bag.hasOwnProperty(itemName)) continue;
+            if (getHoiFreeSupportPackageVariant(itemName) === null) continue;
+            removableItemNames.push(itemName);
+        }
+        for (var itemIndex = 0; itemIndex < removableItemNames.length; itemIndex++) {
+            var removableItemName = removableItemNames[itemIndex];
+            var itemCount = parseInt(bag[removableItemName], 10) || 0;
+            if (itemCount > 0) result.removedPackageCount += itemCount;
+            delete bag[removableItemName];
+        }
+        if (removableItemNames.length > 0) result.removedUserCount++;
+    }
+    return result;
 }
 
 // 호이응원 무료패키지를 기준 수량 이상 보유한 유저 목록을 반환하는 함수

@@ -508,7 +508,7 @@ Status: VERIFIED
 - `/특별뱃지목록 [S01|[S01]]`
 - `/특별뱃지지급 [닉네임] [뱃지이름|코드]`
 - `/특별뱃지회수 [닉네임] [뱃지이름|코드]`
-- `/홈알림`
+- `/홈알림` / `ㅎㄹ`
 - `/피드 [내용]`
 - `/피드삭제 [번호]`
 - `/피드전체삭제`
@@ -620,7 +620,7 @@ Status: VERIFIED
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
-- `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, shows feed alerts with a leading `📰` marker, replies newest-first lists, then marks the stored activity alerts as read.
+- `/홈알림` and `ㅎㄹ`: read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, reply newest-first lists, then mark the stored activity alerts as read.
 - `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, and award feed activity badges in `petHomeActivityFile`; both files use rollback handling on save failure. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/마음순위` also shows each ranked user's 귀여워·멋져요·응원해·사랑해 received counts.
@@ -3627,16 +3627,19 @@ Status: VERIFIED
 ## Related Helpers
 - `checkRank`
 - `numberWithCommas`
+- `hasInfoPrivateChatPass`
+- `getInfoUnreadPetHomeAlertCount`
 ## Data Usage
 - `data.member[sender].point`
 - `data.member[sender].diamond`
+- `petHomeActivityData.alerts[sender][].read`
 ## Save Flow
 - Read-only
 ## Related Commands
 - `/레벨`
 - `/포인트확인`
 ## AI Notes
-- `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`
+- `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`; active hoi/newbie pass users additionally see the unread home-alert count only when it is greater than zero, without marking alerts as read.
 
 ---
 
@@ -5494,3 +5497,35 @@ Status: VERIFIED
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
 - 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
 - `결혼못한 대장장이📙` 펫스킬북을 장착하면 `/펜던트강화` 미리보기와 실제 강화 판정에 성공 확률 +1%가 함께 반영된다.
+
+---
+
+# /선물삭제
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/선물삭제`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getHoiFreeSupportPackageVariant`
+- `removeAllHoiFreeSupportPackages`
+
+## Data Usage
+
+- `data.member[*].bag["호이응원패키지(무료)🐹[1]" ... "호이응원패키지(무료)🐹[10]"]`
+
+## Save Flow
+
+- Admin/Master exact command; removes matching entries from the already-loaded member data and saves `filePath` once.
+
+## AI Notes
+
+- `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
+- All users are scanned, and only canonical variants `[1]` through `[10]` are removed.

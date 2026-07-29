@@ -72,6 +72,7 @@ const petSkillDataPath = "/sdcard/호이랜드/petSkillData.json";
 const trialTowerPath = "/sdcard/호이랜드/trialTower.json";
 const miniPetPath = "/sdcard/호이랜드/miniPetData.json"; //미니펫
 const homeDataFile = "/sdcard/호이랜드/petSweetHomeData.json"; // 펫스윗홈 데이터
+const petHomeActivityFile = "/sdcard/호이랜드/petHomeActivityData.json"; // 펫홈 활동 알림 데이터
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const guildPath = "/sdcard/호이랜드/guildData.json"; // 길드 데이터
 var allsee = "​".repeat(500);
@@ -128,6 +129,20 @@ function isInfoSupportPassActive(data, user, passKey) {
 // Info 명령에서 1:1톡 이용 가능한 초보패스·호이패스 여부를 확인하는 함수
 function hasInfoPrivateChatPass(data, user) {
 	return isInfoSupportPassActive(data, user, "newbie") || isInfoSupportPassActive(data, user, "hoi");
+}
+
+// Info 명령에서 아직 읽지 않은 펫홈 활동 알림 개수를 반환하는 함수
+function getInfoUnreadPetHomeAlertCount(activityData, user) {
+	if (!activityData || typeof activityData !== "object" || activityData instanceof Array) throw new Error("Invalid pet home activity data");
+	if (!activityData.alerts || typeof activityData.alerts !== "object" || activityData.alerts instanceof Array) throw new Error("Invalid pet home alerts data");
+	if (!activityData.alerts.hasOwnProperty(user)) return 0;
+	var alerts = activityData.alerts[user];
+	if (!(alerts instanceof Array)) throw new Error("Invalid pet home alert list: " + user);
+	var unreadCount = 0;
+	for (var i = 0; i < alerts.length; i++) {
+		if (alerts[i] && alerts[i].read !== true) unreadCount++;
+	}
+	return unreadCount;
 }
 //미니펫
 var MINIPET_MAX_LV = 300;
@@ -397,7 +412,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/포인트" || msg === "ㅍㅍㅍ") {
 			if (data.member && data.member[sender]) {
 				var pointDiamond = data.member[sender].diamond || 0;
-				replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개");
+				var pointMessage = "[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개";
+				if (hasInfoPrivateChatPass(data, sender)) {
+					var pointActivityData = loadJsonFile(petHomeActivityFile);
+					var pointUnreadAlertCount = getInfoUnreadPetHomeAlertCount(pointActivityData, sender);
+					if (pointUnreadAlertCount > 0) pointMessage += "\n🔔: " + numberWithCommas(pointUnreadAlertCount) + "개";
+				}
+				replier.reply(pointMessage);
 			}
 		}
 		if (msg === "/레벨") {
