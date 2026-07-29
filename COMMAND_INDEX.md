@@ -4729,7 +4729,10 @@ Status: VERIFIED
 - `/땅문서박스오픈` grants `땅문서📜` 1개 per box, and `/샵오픈박스오픈` grants `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 per box; both boxes are auto-opened by `/정리`.
 - Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-40%` success penalty.
 - `/탐 8` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
-- `/탐 9` requires `/종합순위` top 20, can be fixed with `/자동탐고정 9`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `/탐 1` 강화박스는 `펫 강화석⭐` 70~100개, `/탐 2` 펫먹이박스는 `펫먹이🍼` 40~50개, `/탐 3` 행운의박스는 `럭키박스🍀(/럭키오픈)` 5개를 지급한다.
+- `/탐 8` 펜던트미궁박스는 `펜던트 강화석📿` 3~4개와 독립 1% 확률의 `펜던트 복원석🔷` 1개를 지급한다.
+- `/탐 9` requires `/종합순위` top 20, can be fixed with `/자동탐고정 9`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 3~5개 with an independent 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- 이벤트 던전의 `이벤트박스✡️(/이벤박스오픈)`는 샵오픈 100개와 펫던전 입장권 1개를 고정 지급하며 `/이벤트박스오픈✡️`도 같은 박스를 여는 별칭이다.
 - `migratePetExploreContentSlots` runs once through `initPetExploreData`, moves existing participation and auto-fixed selections to the reworked slots, and marks `contentRework20260721` for persistence through the existing migration save flow.
 - `initPetExploreData` preserves current visible participants and only records the old `pendantMazeSlotResetV2191` / `currentExploreSlotOneResetV2192` migration flags when they are missing.
 - `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.

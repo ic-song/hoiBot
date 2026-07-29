@@ -1043,6 +1043,11 @@ blockedNicknameTerms: [
             regularMax: 9
         },
         rewards: {
+            enhanceStoneMinCount: 70,
+            enhanceStoneMaxCount: 100,
+            petFoodMinCount: 40,
+            petFoodMaxCount: 50,
+            luckyBoxCount: 5,
             landDocumentItemName: "땅문서📜",
             landDocumentBoxName: "땅문서던전박스📜(/땅문서박스오픈)",
             shopOpenItemName: "펫스윗홈인테리어샵🖼️(/샵오픈)",
@@ -1064,7 +1069,18 @@ blockedNicknameTerms: [
             ticketItemName: "미궁 입장권🕋",
             rewardItem: "펜던트미궁박스💎(/펜던트미궁박스오픈)",
             archmageRewardItem: "대마법사의 유적박스📜(/대마법박스오픈)",
+            pendantEnhanceMinCount: 3,
+            pendantEnhanceMaxCount: 4,
+            archmageFragmentMinCount: 3,
+            archmageFragmentMaxCount: 5,
+            rareRewardRate: 0.01,
+            archmageRankLimit: 20,
             successPenalty: 40
+        },
+        eventDungeon: {
+            openCommandAlias: "/이벤트박스오픈✡️",
+            shopOpenCount: 100,
+            dungeonTicketCount: 1
         },
         dungeonSuccessPenalty: 10,
         tierReward: {
@@ -22066,7 +22082,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     return;
                 }
-                if (msg === "/이벤박스오픈" || /^\/이벤박스오픈\s+\d+$/.test(msg)) {
+                if (msg === "/이벤박스오픈" || /^\/이벤박스오픈\s+\d+$/.test(msg) || msg === GLOBAL_CONFIG.petExplore.eventDungeon.openCommandAlias || /^\/이벤트박스오픈✡️\s+\d+$/.test(msg)) {
                     runEventBoxOpen(sender, data, petData, guildData, msg, replier, filePath);
                     saveJsonFile(data, filePath);
                     return;
@@ -22572,7 +22588,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (dungeonNo === "9") {
                         var homeData = loadJsonFile(homeDataFile);
-                        if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender,20)) {
+                        if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit)) {
                             replier.reply("❌ 입장 실패\n\n【9】 잊혀진 대마법사의 유적📙은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
                             return;
                         }
@@ -40840,7 +40856,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 }
             }
             if (dk === "9") {
-                if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, 20)) {
+                if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit)) {
                     failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📙 입장 실패(❌)\n/종합순위 20등 밖: 보상 제외");
                     failCnt++;
                     continue;
@@ -42030,8 +42046,10 @@ function editPendantDurabilityByAdmin(petData, msg) {
 // 펜던트 미궁 박스 보상 테이블
 function rollPendantMazeBox() {
     var gain = {};
-    gain[GLOBAL_CONFIG.items.pendantEnhanceStoneName] = Math.floor(Math.random() * 3) + 1;
-    if (Math.random() < 0.01) gain[GLOBAL_CONFIG.items.pendantRestoreStoneName] = 1;
+    var minCount = GLOBAL_CONFIG.petExplore.maze.pendantEnhanceMinCount;
+    var maxCount = GLOBAL_CONFIG.petExplore.maze.pendantEnhanceMaxCount;
+    gain[GLOBAL_CONFIG.items.pendantEnhanceStoneName] = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+    if (Math.random() < GLOBAL_CONFIG.petExplore.maze.rareRewardRate) gain[GLOBAL_CONFIG.items.pendantRestoreStoneName] = 1;
     return {
         gainItems: gain,
         gainTextLines: []
@@ -42046,8 +42064,10 @@ function runPendantMazeBoxOpen(sender, data, petData, guildData, msg, replier) {
 // 대마법사의 유적 박스 보상 테이블
 function rollArchmageMazeBox() {
     var gain = {};
-    gain[GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName] = Math.floor(Math.random() * 4) + 2;
-    if (Math.random() < 0.01) gain[GLOBAL_CONFIG.petSkill.bookItemName] = 1;
+    var minCount = GLOBAL_CONFIG.petExplore.maze.archmageFragmentMinCount;
+    var maxCount = GLOBAL_CONFIG.petExplore.maze.archmageFragmentMaxCount;
+    gain[GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName] = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount;
+    if (Math.random() < GLOBAL_CONFIG.petExplore.maze.rareRewardRate) gain[GLOBAL_CONFIG.petSkill.bookItemName] = 1;
     return {
         gainItems: gain,
         gainTextLines: []
@@ -42140,7 +42160,7 @@ function runPointBoxOpen(sender, data, petData, guildData, msg, replier) {
 
 function rollDdangDungeonBox(data, sender) {
     return {
-        gainItems: { "럭키박스🍀(/럭키오픈)": 10 },
+        gainItems: { "럭키박스🍀(/럭키오픈)": GLOBAL_CONFIG.petExplore.rewards.luckyBoxCount },
         gainTextLines: []
     };
 }
@@ -42178,7 +42198,9 @@ function runJeondorBoxOpen(sender, data, petData, guildData, msg, replier) {
 }
 
 function rollPetFoodBox() {
-    var cnt = Math.floor(Math.random() * 11) + 70; // 70~80
+    var minCount = GLOBAL_CONFIG.petExplore.rewards.petFoodMinCount;
+    var maxCount = GLOBAL_CONFIG.petExplore.rewards.petFoodMaxCount;
+    var cnt = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount; // 펫먹이 보상 범위 계산
     return {
         gainItems: { "펫먹이🍼": cnt },
         gainTextLines: []
@@ -42189,19 +42211,18 @@ function runPetFoodBoxOpen(sender, data, petData, guildData, msg, replier) {
     runExploreBoxOpen(sender, data, petData, guildData, replier, "/펫먹이박스오픈", "펫먹이던전박스🍼(/펫먹이박스오픈)", msg, rollPetFoodBox);
 }
 function rollEventBox() {
+    var gain = {};
+    gain[GLOBAL_CONFIG.petExplore.rewards.shopOpenItemName] = GLOBAL_CONFIG.petExplore.eventDungeon.shopOpenCount;
+    gain["펫던전 입장권🌋"] = GLOBAL_CONFIG.petExplore.eventDungeon.dungeonTicketCount;
     return {
-        gainItems: {
-            "펫스윗홈인테리어샵🖼️(/샵오픈)": 100,
-            "미니펫뽑기🐹(/미니펫오픈)": 50,
-
-            "펫던전 입장권🌋": 1
-        },
+        gainItems: gain,
         gainTextLines: []
     };
 }
 
 function runEventBoxOpen(sender, data, petData, guildData, msg, replier) {
-    runExploreBoxOpen(sender, data, petData, guildData, replier, "/이벤박스오픈", "이벤트박스✡️(/이벤박스오픈)", msg, rollEventBox);
+    var cmdLabel = msg.indexOf(GLOBAL_CONFIG.petExplore.eventDungeon.openCommandAlias) === 0 ? GLOBAL_CONFIG.petExplore.eventDungeon.openCommandAlias : "/이벤박스오픈";
+    runExploreBoxOpen(sender, data, petData, guildData, replier, cmdLabel, "이벤트박스✡️(/이벤박스오픈)", msg, rollEventBox);
 }
 function rollflowerBox() {
     return {
@@ -42214,7 +42235,9 @@ function runflowerBoxOpen(sender, data, petData, guildData, msg, replier) {
     runExploreBoxOpen(sender, data, petData, guildData, replier, "/정령박스오픈", "정령박스🥀(/정령박스오픈)", msg, rollflowerBox);
 }
 function rollEnhanceBox() {
-    var qty = Math.floor(Math.random() * (150 - 100 + 1)) + 100;
+    var minCount = GLOBAL_CONFIG.petExplore.rewards.enhanceStoneMinCount;
+    var maxCount = GLOBAL_CONFIG.petExplore.rewards.enhanceStoneMaxCount;
+    var qty = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount; // 펫 강화석 보상 범위 계산
     return {
         gainItems: { "펫 강화석⭐": qty },
         gainTextLines: []
