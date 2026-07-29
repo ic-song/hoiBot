@@ -877,7 +877,8 @@ const GLOBAL_CONFIG = {
             { id: "S07", emoji: "🏆", name: "펫홈 콘테스트 우승" },
             { id: "S08", emoji: "💎", name: "특별 후원 감사" },
             { id: "S09", emoji: "🌟", name: "호이월드 공로자" },
-            { id: "S10", emoji: "🪽", name: "전설의 홈" }
+            { id: "S10", emoji: "🪽", name: "전설의 홈" },
+            { id: "S11", emoji: "🪽", name: "👑 황제" }
         ]
     },
     daily: { // 일일 콘텐츠 진행 설정
@@ -11928,6 +11929,147 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply(openMsg);
                     }
                 }
+               if (msg === "/황제패키지오픈4") {
+    if (!castleSiegeFlag) {
+        let member = data.member[sender];
+        let bag = member.bag;
+        let itemName = "황제패키지👑[4](/황제패키지오픈4)";
+
+        if (!hasItem(data, sender, itemName, 1)) {
+            replier.reply(
+                "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+                "후원관련은 밑에 링크를 확인해주세요.\n" +
+                "https://hoiland123.tistory.com"
+            );
+            return;
+        }
+
+        // 📦 패키지 소모
+        removeItem(data, sender, itemName, 1);
+
+        // 🎁 기본 지급 아이템
+        let starterItems = {
+            "미니펫뽑기🐹(/미니펫오픈)": 100000,
+            "펫스윗홈인테리어샵🖼️(/샵오픈)": 100000,
+            "미니펫 강화석💫": 10000,
+            "경찰과 도둑🚨(/삐뽀삐뽀)": 50,
+            "펫먹이특식🥡(/특식오픈)": 50,
+            "주간상자🌼": 10,
+            "월간상자🌕": 3,
+            "길드공헌훈장🌟(/길드공헌 숫자)": 200,
+            "땅문서📜": 100,
+            "캐슬코인🥇": 200,
+            "확성기📢(/알림 내용 30자)": 30,
+            "탐험확률UP🗻(50%)": 100,
+            "펫던전 입장권🌋": 100,
+            "🥕당근이세요?": 50,
+            "펫 강화석⭐": 5000,
+            "강화확률뽑기⚒️(/강화뽑기)": 50,
+            "펫먹이🍼": 200000,
+            "전설의 돌맹이🗿": 50,
+            "다이아상자💎(/다이아상자오픈)": 1000
+        };
+
+        for (let item in starterItems) {
+            addItem(data, sender, item, starterItems[item]);
+        }
+
+        // 💰 포인트 지급
+        let memberPoint = 3000000000;
+        addPoint(data, sender, memberPoint);
+
+        // 🐹 컬렉션창조 미니펫 지급
+        const elitePetPool4 = [
+            {
+                name: "컬렉션창조 미니펫",
+                emoji: "🐹",
+                charm: 1,
+                price: 1
+            }
+        ];
+
+        let picked = elitePetPool4[
+            Math.floor(Math.random() * elitePetPool4.length)
+        ];
+
+        let newMiniPet = addMiniPetToUserBag(
+            petData,
+            sender,
+            picked.name,
+            picked.emoji,
+            "창조",
+            picked.price,
+            picked.charm
+        );
+
+        // 🏅 타이틀 지급
+        let titleData = loadJsonFile(memberTitlePath);
+
+        if (!titleData.member) {
+            titleData.member = {};
+        }
+
+        if (!titleData.member[sender]) {
+            titleData.member[sender] = {
+                title: {
+                    list: [],
+                    num: null
+                }
+            };
+        }
+
+        if (!titleData.member[sender].title) {
+            titleData.member[sender].title = {
+                list: [],
+                num: null
+            };
+        }
+
+        let emperorTitleName =
+            "침을 뱉으며.. 받아라 성수다👑";
+
+        let emperorTitlePrice = 100000000; // 1억
+
+        titleData.member[sender].title.list.push({
+            name: emperorTitleName,
+            inDate: new Date().toISOString(),
+            price: emperorTitlePrice
+        });
+
+        saveJsonFile(titleData, memberTitlePath);
+
+        // 📢 결과 메시지
+        let openMsg = "👑👑 이것이 너와 나의 눈높이 ㅋㅋ 👑👑\n";
+        openMsg +=
+            "👑👑👑👑👑👑👑👑👑👑👑👑👑👑👑\n" +
+            "https://ibb.co/x8zp5jLr\n\n";
+
+        for (let item in starterItems) {
+            openMsg += item + " " + starterItems[item] + "개\n";
+        }
+
+        openMsg +=
+            "\n🎁 획득 컬렉션창조 미니펫: " +
+            newMiniPet.emoji + " " +
+            newMiniPet.name + " [" +
+            newMiniPet.grade + "] (매력 +" +
+            newMiniPet.battleExp + ")\n";
+
+        openMsg +=
+            "\n🏅 타이틀 획득: " +
+            emperorTitleName + "\n";
+
+        openMsg +=
+            "🏷️ 타이틀 판매가: 🅟" +
+            numberWithCommas(emperorTitlePrice) + "\n";
+
+        openMsg +=
+            "\n💰 지급 포인트: 🅟" +
+            numberWithCommas(memberPoint);
+
+        replier.reply(openMsg);
+    }
+}
                 if (msg === "/미니펫엘리트오픈") {
                     if (!castleSiegeFlag) {
                         let member = data.member[sender];
