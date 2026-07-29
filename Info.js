@@ -2273,6 +2273,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	var status = getDailyQuestStatus(data, petData, guildData, sender);
 	var lines = [];
 
+	lines.push("[" + checkRank(data, petData, guildData, sender) + "] 님");
 	lines.push("📜 일일 · 주간 · 🐶호패,초패🐥 ");
 	lines.push("퀘스트 보상 안내 🦋 ");
 	lines.push("━━━━━━━━━━━━");
