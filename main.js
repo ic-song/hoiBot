@@ -878,7 +878,7 @@ const GLOBAL_CONFIG = {
             { id: "S08", emoji: "💎", name: "특별 후원 감사" },
             { id: "S09", emoji: "🌟", name: "호이월드 공로자" },
             { id: "S10", emoji: "🪽", name: "전설의 홈" },
-            { id: "S11", emoji: "🪽", name: "👑 황제" }
+            { id: "S11", emoji: "👑", name: "황제" }
         ]
     },
     daily: { // 일일 콘텐츠 진행 설정
@@ -11959,7 +11959,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             "길드공헌훈장🌟(/길드공헌 숫자)": 200,
             "땅문서📜": 100,
             "캐슬코인🥇": 200,
-            "확성기📢(/알림 내용 30자)": 30,
             "탐험확률UP🗻(50%)": 100,
             "펫던전 입장권🌋": 100,
             "🥕당근이세요?": 50,
