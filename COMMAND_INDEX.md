@@ -5003,7 +5003,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (15개) of `다이아상자💎(/다이아상자오픈)`.
+- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (20개) of `다이아상자💎(/다이아상자오픈)`.
 
 ---
 

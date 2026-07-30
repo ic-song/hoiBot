@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.342"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.343"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -769,7 +769,7 @@ const GLOBAL_CONFIG = {
         dailyPayoutPoint: 1000000000
     },
     supportPass: { // 후원 패스 지급 설정
-        diamondBoxCount: 15,
+        diamondBoxCount: 20,
         premium: { // 호이패스 프리미엄 운영 설정
             badgeId: "S13",
             heartBonus: 10,
