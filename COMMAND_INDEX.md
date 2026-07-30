@@ -2107,6 +2107,9 @@ Status: VERIFIED
 - `/원데이패스추가, [아이디] [날짜|영구권]`
 - `/초보패스추가, [아이디] [날짜|영구권]`
 - `/호이패스추가, [아이디] [날짜|영구권]`
+- `/호패프리미엄추가 [아이디] [YY.MM.DD]`
+- `/호패프리미엄삭제, [아이디]`
+- `/호프구독`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
@@ -2116,6 +2119,55 @@ Status: VERIFIED
 - `/티어보상지급`
 - `/영지순위보상지급`
 - Standalone legacy pass-list commands were removed; use `/패스목록`.
+
+---
+
+# /호패프리미엄추가|/호패프리미엄삭제|/호프구독
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+- `isHoiPassPremiumActive`
+- `getHoiPassPremiumHeader`
+- `processHoiPassPremiumCommand`
+- `grantHoiPassPremiumDailyRewards`
+- `expireHoiPassPremium`
+- `cleanupExpiredHoiPassPremium`
+- `returnHoiPassPremiumExtraSkills`
+- `getPetSkillSlotCount`
+- `getPetHomeHeartUsageStatus`
+- `calcExploreSuccessPercent`
+- `claimQuestReward`
+
+## Data Usage
+- `data.member[user].pass.premium`
+- `data.member[user].premiumDailyQuestCnt`
+- `data.member[user].bag`
+- `petSkillData[user].petSkills.equipped`
+- `petSkillData[user].petSkills.bag`
+- `petHomeActivityData.petHomeSocial[user].badges`
+- `petHomeActivityData.petHomeSocial[user].equippedBadgeId`
+
+## Save Flow
+- 추가·삭제 명령은 `member.json`, `petSkillData.json`, `petHomeActivityData.json`을 명령 분기에서 한 번씩 저장한다.
+- `/호프구독`은 활성 프리미엄 유저의 `dailyRewardLastDate`와 지급 아이템을 `member.json`에 함께 저장한다.
+- 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 삭제하지 않고 펫스킬가방에 반환한 뒤 관련 세 파일을 저장한다.
+- 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수한다.
+- DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
+
+## Related Commands
+- `/패스목록`
+- `/패키지가방`
+- `/퀘스트`, `/ㅋ`
+- `/퀘스트완료`, `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ`
+- `/포인트`, `/내정보`, `/정리`
+- `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
+- `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
+- `/이체`
 
 ---
 
