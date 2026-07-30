@@ -2090,12 +2090,12 @@ Status: VERIFIED
 
 ## Save Flow
 - `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
-- `/패스목록` removes `자동탐험권🌄` only when a newbie/hoi pass expires during that cleanup and neither automatic-explore pass remains active
-- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
+- `/패스목록` removes `자동탐험권🌄` only when a newbie/hoi pass expires during that cleanup and no newbie/hoi/premium automatic-explore pass remains active
+- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi/premium pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
 - `/패스목록` sums `호이응원패키지(무료)🐹[1]` through `[10]` for each user and lists users holding at least 3 in total; this scan is read-only and does not mutate bag data
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
-- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when the other automatic-explore pass is also inactive
+- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when no other newbie/hoi/premium automatic-explore pass is active
 - Past end dates are rejected before pass mutation and automatic ticket grant
 - Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
 - Finite passes remain active through the displayed end date and are removed from the active list on D+1
@@ -2107,6 +2107,10 @@ Status: VERIFIED
 - `/원데이패스추가, [아이디] [날짜|영구권]`
 - `/초보패스추가, [아이디] [날짜|영구권]`
 - `/호이패스추가, [아이디] [날짜|영구권]`
+- `/호패프리미엄추가, [아이디] [YY.MM.DD]`
+- `/호패프리미엄삭제, [아이디]`
+- `/호프단체추가 [아이디],[아이디]/[YY.MM.DD]`
+- `/호프구독`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
@@ -2116,6 +2120,59 @@ Status: VERIFIED
 - `/티어보상지급`
 - `/영지순위보상지급`
 - Standalone legacy pass-list commands were removed; use `/패스목록`.
+
+---
+
+# /호패프리미엄추가|/호패프리미엄삭제|/호프단체추가|/호프구독
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+- `isHoiPassPremiumActive`
+- `getHoiPassPremiumHeader`
+- `processHoiPassPremiumCommand`
+- `addHoiPassPremium`
+- `hasActiveAutoExplorePass`
+- `grantHoiPassPremiumDailyRewards`
+- `expireHoiPassPremium`
+- `cleanupExpiredHoiPassPremium`
+- `returnHoiPassPremiumExtraSkills`
+- `getPetSkillSlotCount`
+- `getPetHomeHeartUsageStatus`
+- `calcExploreSuccessPercent`
+- `claimQuestReward`
+
+## Data Usage
+- `data.member[user].pass.premium`
+- `data.member[user].premiumDailyQuestCnt`
+- `data.member[user].bag`
+- `petSkillData[user].petSkills.equipped`
+- `petSkillData[user].petSkills.bag`
+- `petHomeActivityData.petHomeSocial[user].badges`
+- `petHomeActivityData.petHomeSocial[user].equippedBadgeId`
+
+## Save Flow
+- 개인·단체 추가 명령은 `member.json`, `petHomeActivityData.json`을 명령 분기에서 한 번씩 저장하며, 삭제 명령은 `petSkillData.json`도 함께 저장한다.
+- `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
+- `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
+- `/호프구독`은 활성 프리미엄 유저의 `dailyRewardLastDate`와 지급 아이템을 `member.json`에 함께 저장한다.
+- 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 삭제하지 않고 펫스킬가방에 반환한 뒤 관련 세 파일을 저장한다.
+- 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
+- DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
+
+## Related Commands
+- `/패스목록`
+- `/패키지가방`
+- `/퀘스트`, `/ㅋ`
+- `/퀘스트완료`, `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ`
+- `/포인트`, `/내정보`, `/정리`
+- `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
+- `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
+- `/이체`
 
 ---
 
@@ -4725,6 +4782,7 @@ Status: VERIFIED
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
+- `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket or success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-10%` success penalty and check `펫던전 입장권🌋` at settlement.
 - `/탐 6` rewards `땅문서던전박스📜(/땅문서박스오픈)` 1개, and `/탐 7` rewards `샵오픈던전박스🏡(/샵오픈박스오픈)` 1개 on success.
@@ -4951,7 +5009,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (15개) of `다이아상자💎(/다이아상자오픈)`.
+- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (20개) of `다이아상자💎(/다이아상자오픈)`.
 
 ---
 
