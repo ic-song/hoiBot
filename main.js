@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.343"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.344"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6743,11 +6743,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
 
-                if (sender == "호이 남" && (/^\/호패프리미엄추가\s+[^]+\s+\d{2}\.\d{2}\.\d{2}$/.test(msg) || /^\/호패프리미엄삭제,\s*[^]+$/.test(msg))) {
+                if (sender == "호이 남" && isHoiPassPremiumAdminCommandMessage(msg)) {
                     var premiumCommandActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var premiumCommandResult = processHoiPassPremiumCommand(msg, data, petSkillData, premiumCommandActivityData, sender);
                     if (premiumCommandResult.changed) {
-                        if (premiumCommandResult.action === "삭제") {
+                        if (premiumCommandResult.requiresPetSkillSave) {
                             saveJsonFile(petSkillData, petSkillDataPath);
                             saveJsonFile(premiumCommandActivityData, petHomeActivityFile);
                             saveJsonFile(data, filePath);
@@ -27206,7 +27206,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
         "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
-        "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프구독", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
+        "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
         "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/개발자노트"
@@ -31720,7 +31720,7 @@ function cleanupExpiredSupportPasses(data) {
             if (config.key === "newbie" || config.key === "hoi") autoPassExpired = true;
             debuggerLog("[후원패스 만료 정리] 패스 만료: " + user + " / " + config.key + " / " + pass.endDate);
         }
-        if (autoPassExpired && !isSupportPassActive(data, user, "newbie") && !isSupportPassActive(data, user, "hoi")) {
+        if (autoPassExpired && !hasActiveAutoExplorePass(data, user)) {
             var removedTicketCount = removeAllAutoExploreTickets(data, user);
             if (removedTicketCount > 0) {
                 result.changed = true;
@@ -31774,7 +31774,7 @@ function getInvalidAutoExploreTicketUsers(data) {
         if (!data.member.hasOwnProperty(user)) continue;
         var ticketCount = getAutoExploreTicketCount(data, user);
         if (ticketCount < 1) continue;
-        if (isSupportPassActive(data, user, "newbie") || isSupportPassActive(data, user, "hoi")) continue;
+        if (hasActiveAutoExplorePass(data, user)) continue;
         users.push({ user: user, count: ticketCount });
     }
     users.sort(function (a, b) {
@@ -31958,7 +31958,7 @@ function buildSupportPassListMessage(data, petData, guildData) {
     } else {
         lines.push("⚠️ 자동탐험권 수동 삭제해야하는 유저");
         lines.push("━━━━━━━━━━━━");
-        lines.push("초보패스·호이패스 명단에는 없지만");
+        lines.push("초보패스·호이패스·호이패스 프리미엄 명단에는 없지만");
         lines.push("자동탐험권🌄을 보유 중인 유저입니다.");
         lines.push("");
         for (var invalidIndex = 0; invalidIndex < invalidTicketUsers.length; invalidIndex++) {
@@ -32025,7 +32025,7 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
     var deleteLines = ["\n저장확인: 패스 삭제 저장 완료"];
     if (meta.config.key === "newbie" || meta.config.key === "hoi") {
         var remainingTicketCount = getAutoExploreTicketCount(savedData, meta.user);
-        if (!isSupportPassActive(savedData, meta.user, "newbie") && !isSupportPassActive(savedData, meta.user, "hoi")) {
+        if (!hasActiveAutoExplorePass(savedData, meta.user)) {
             if (remainingTicketCount > 0) {
                 deleteLines.push("⚠️ 저장확인: 자동탐험권🌄 " + remainingTicketCount + "개가 남아 있습니다.");
             } else {
@@ -32038,39 +32038,105 @@ function buildSupportPassSaveCheckMessage(msg, savedData) {
     return deleteLines.join("\n");
 }
 
+// 자동탐험권을 유지할 수 있는 후원패스가 활성 상태인지 확인하는 함수
+function hasActiveAutoExplorePass(data, user) {
+    return isSupportPassActive(data, user, "newbie") ||
+        isSupportPassActive(data, user, "hoi") ||
+        isHoiPassPremiumActive(data, user);
+}
+
+// 호이패스 프리미엄 관리자 명령어 형식이 정확한지 확인하는 함수
+function isHoiPassPremiumAdminCommandMessage(msg) {
+    var text = String(msg || "");
+    return /^\/호패프리미엄추가\s+[^]+\s+\d{2}\.\d{2}\.\d{2}$/.test(text) ||
+        /^\/호패프리미엄추가,\s*[^]+\s+\d{2}\.\d{2}\.\d{2}$/.test(text) ||
+        /^\/호패프리미엄삭제,\s*[^]+$/.test(text) ||
+        /^\/호프단체추가\s+[^\/]+\/\d{2}\.\d{2}\.\d{2}$/.test(text);
+}
+
 // 호이패스 프리미엄 관리자 명령어의 대상과 날짜를 분석하는 함수
 function parseHoiPassPremiumCommand(msg) {
-    var addMatch = String(msg || "").match(/^\/호패프리미엄추가\s+([^]+)\s+(\d{2}\.\d{2}\.\d{2})$/);
+    var text = String(msg || "");
+    var addMatch = text.match(/^\/호패프리미엄추가,\s*([^]+)\s+(\d{2}\.\d{2}\.\d{2})$/) ||
+        text.match(/^\/호패프리미엄추가\s+([^]+)\s+(\d{2}\.\d{2}\.\d{2})$/);
     if (addMatch) return { action: "추가", user: addMatch[1].trim(), endDate: addMatch[2] };
-    var deleteMatch = String(msg || "").match(/^\/호패프리미엄삭제,\s*([^]+)$/);
+    var deleteMatch = text.match(/^\/호패프리미엄삭제,\s*([^]+)$/);
     if (deleteMatch) return { action: "삭제", user: deleteMatch[1].trim(), endDate: "" };
+    var groupMatch = text.match(/^\/호프단체추가\s+([^\/]+)\/(\d{2}\.\d{2}\.\d{2})$/);
+    if (groupMatch) {
+        var rawUsers = groupMatch[1].split(",");
+        var users = [];
+        var seenUsers = {};
+        for (var i = 0; i < rawUsers.length; i++) {
+            var user = String(rawUsers[i] || "").trim();
+            if (!user) return null;
+            if (!seenUsers[user]) {
+                seenUsers[user] = true;
+                users.push(user);
+            }
+        }
+        return { action: "단체추가", users: users, endDate: groupMatch[2] };
+    }
     return null;
+}
+
+// 검증된 유저에게 호이패스 프리미엄과 필요한 자동탐험권을 적용하는 함수
+function addHoiPassPremium(data, activityData, user, endDate, operator) {
+    var passStore = ensureSupportPassStore(data, user);
+    var previous = passStore.premium || {};
+    var shouldGrantAutoExploreTicket = !isSupportPassActive(data, user, "hoi"); // 기본 호이패스가 없을 때 프리미엄용 자동탐험권 지급
+    passStore.premium = {
+        enabled: true,
+        endDate: endDate,
+        permanent: false,
+        dailyRewardLastDate: previous.dailyRewardLastDate || "",
+        badgeGranted: true
+    };
+    if (shouldGrantAutoExploreTicket) addItem(data, user, "자동탐험권🌄", 1);
+    grantHoiPassPremiumBadge(activityData, user, operator);
+    return { autoExploreTicketGranted: shouldGrantAutoExploreTicket };
 }
 
 // 호이패스 프리미엄 추가·삭제를 저장 전 데이터에 반영하는 함수
 function processHoiPassPremiumCommand(msg, data, petSkillData, activityData, operator) {
     var meta = parseHoiPassPremiumCommand(msg);
-    if (!meta) return { changed: false, message: "사용법:\n/호패프리미엄추가 아이디 YY.MM.DD\n/호패프리미엄삭제, 아이디" };
+    if (!meta) return { changed: false, message: "사용법:\n/호패프리미엄추가, 아이디 YY.MM.DD\n/호패프리미엄삭제, 아이디\n/호프단체추가 아이디,아이디/YY.MM.DD" };
+
+    if (meta.action === "추가" || meta.action === "단체추가") {
+        var expireValue = getSupportPassDateValue(meta.endDate);
+        if (expireValue === null) return { changed: false, message: "❌ 날짜 형식이 올바르지 않습니다.\n예: /호패프리미엄추가, 콘트 남 26.08.30" };
+        if (expireValue < getTodaySupportPassDateValue()) return { changed: false, message: "❌ 지난 날짜로 호이패스 프리미엄을 추가할 수 없습니다." };
+    }
+
+    if (meta.action === "단체추가") {
+        if (meta.users.length < 1) return { changed: false, message: "❌ 적용할 유저를 한 명 이상 입력해주세요." };
+        var missingUsers = [];
+        for (var groupUserIndex = 0; groupUserIndex < meta.users.length; groupUserIndex++) {
+            if (!data.member || !data.member[meta.users[groupUserIndex]]) missingUsers.push(meta.users[groupUserIndex]);
+        }
+        if (missingUsers.length > 0) return { changed: false, message: "❌ 존재하지 않는 유저가 포함되어 있어 단체 적용을 취소했습니다.\n대상: " + missingUsers.join(", ") };
+        var autoTicketGrantedCount = 0;
+        for (var applyIndex = 0; applyIndex < meta.users.length; applyIndex++) {
+            var groupAddResult = addHoiPassPremium(data, activityData, meta.users[applyIndex], meta.endDate, operator);
+            if (groupAddResult.autoExploreTicketGranted) autoTicketGrantedCount++;
+        }
+        return {
+            changed: true,
+            action: "단체추가",
+            requiresPetSkillSave: false,
+            message: "✅ 호이패스 프리미엄 단체 적용을 완료했습니다.\n종료 예정일: " + meta.endDate + "\n적용: " + meta.users.length + "명\n자동탐험권 지급: " + autoTicketGrantedCount + "명\n대상: " + meta.users.join(", ")
+        };
+    }
+
     if (!data.member || !data.member[meta.user]) return { changed: false, message: "❌ 해당 유저를 찾을 수 없습니다." };
 
     if (meta.action === "추가") {
-        var expireValue = getSupportPassDateValue(meta.endDate);
-        if (expireValue === null) return { changed: false, message: "❌ 날짜 형식이 올바르지 않습니다.\n예: /호패프리미엄추가 콘트 남 26.08.30" };
-        if (expireValue < getTodaySupportPassDateValue()) return { changed: false, message: "❌ 지난 날짜로 호이패스 프리미엄을 추가할 수 없습니다." };
-        var passStore = ensureSupportPassStore(data, meta.user);
-        var previous = passStore.premium || {};
-        passStore.premium = {
-            enabled: true,
-            endDate: meta.endDate,
-            permanent: false,
-            dailyRewardLastDate: previous.dailyRewardLastDate || "",
-            badgeGranted: true
-        };
-        grantHoiPassPremiumBadge(activityData, meta.user, operator);
+        var addResult = addHoiPassPremium(data, activityData, meta.user, meta.endDate, operator);
         return {
             changed: true,
             action: "추가",
-            message: "✅ [" + meta.user + "] 님에게 호이패스 프리미엄을 적용했습니다.\n종료 예정일: " + meta.endDate + "\n전용 홈뱃지: 🐺 호패 프리미엄"
+            requiresPetSkillSave: false,
+            message: "✅ [" + meta.user + "] 님에게 호이패스 프리미엄을 적용했습니다.\n종료 예정일: " + meta.endDate + "\n전용 홈뱃지: 🐺 호패 프리미엄" + (addResult.autoExploreTicketGranted ? "\n자동탐험권🌄 1개를 지급했습니다." : "\n기존 호이패스가 활성 상태여서 자동탐험권🌄을 추가 지급하지 않았습니다.")
         };
     }
 
@@ -32080,6 +32146,7 @@ function processHoiPassPremiumCommand(msg, data, petSkillData, activityData, ope
     return {
         changed: expireResult.changed,
         action: "삭제",
+        requiresPetSkillSave: expireResult.changed,
         message: "✅ [" + meta.user + "] 님의 호이패스 프리미엄을 삭제했습니다.\n프리미엄 전용 혜택과 홈뱃지가 해제되었습니다." + (expireResult.returnedSkillCount > 0 ? "\n장착 초과 펫스킬 " + expireResult.returnedSkillCount + "개를 가방으로 반환했습니다." : "")
     };
 }
@@ -32129,7 +32196,7 @@ function processUserIDCommand(msg, data) {
     userPassStore[passConfig.key].enabled = false;
     var deleteLines = [userIDText + " 사용자의 패스가 삭제되었습니다."];
     if (passConfig.key === "newbie" || passConfig.key === "hoi") {
-        if (!isSupportPassActive(data, userIDText, "newbie") && !isSupportPassActive(data, userIDText, "hoi")) {
+        if (!hasActiveAutoExplorePass(data, userIDText)) {
             removeAllAutoExploreTickets(data, userIDText);
             deleteLines.push("자동탐험권🌄을 모두 회수했습니다.");
         } else {
@@ -43136,14 +43203,14 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
                 n +
                 ")\n" +
                 ticketGuide +
-                "\n\n자동탐험권🌄(호이패스,초보패스) 구독자만 이용가능합니다.",
+                "\n\n자동탐험권🌄(호이패스,초보패스,호이패스 프리미엄) 구독자만 이용가능합니다.",
             petExploreData: petExploreData,
             data: data
         };
     }
 
     return {
-        text: "✅ 자동탐험 고정 완료!\n내 자동탐험지: " + nameMap[n] + " (탐" + n + ")\n\n*탐험고정은 자동탐험권🌄 이(가) 필요하며 호이패스 or 초보패스 구독자만 이용이가능합니다.",
+        text: "✅ 자동탐험 고정 완료!\n내 자동탐험지: " + nameMap[n] + " (탐" + n + ")\n\n*탐험고정은 자동탐험권🌄이 필요하며 호이패스, 초보패스, 호이패스 프리미엄 구독자가 이용할 수 있습니다.",
         petExploreData: petExploreData,
         data: data
     };
