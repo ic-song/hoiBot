@@ -41,6 +41,7 @@ LDPlayer
 - `NEXT_STEPS.md`: 다음 작업을 이어가기 위한 결정사항과 작업 큐
 - `IRIS_INSTALL_RUNBOOK.md`: 운영 PC에서 Iris를 설치하기 위한 1차 실행 절차
 - `OPERATION_PC_ENV_FROM_BAT.md`: 기존 배치 파일 기준 운영 PC 경로와 배포 환경 기록
+- `IRIS_TEST_RESULTS_20260730.md`: 개발 PC LDPlayer 9에서 수행한 Iris HTTP 수신과 이벤트 구조 선행 검증 결과
 - `tools/`: 운영 PC에서 실행할 Iris 초기 부트스트랩 도구
 - `Iris_영상자료_취합.md`: 기존 Iris 영상자료 링크와 요약
 - `Iris_정보취합.md`: 기존 Iris 조사 자료
@@ -49,7 +50,9 @@ LDPlayer
 
 운영 PC에는 이미 LDPlayer, KakaoTalk, 메신저봇R이 설치되어 있다.
 
-따라서 다음 단계는 기존 메신저봇R 운영을 바로 변경하는 것이 아니라, 같은 LDPlayer 환경에서 Iris가 동작 가능한지 별도 테스트방 기준으로 검증하는 것이다.
+2026-07-30 개발 PC의 LDPlayer 9에서는 Iris HTTP 이벤트 수신, 연속 메시지 식별, 삭제 이벤트 감지까지 선행 검증했다. 상세 결과는 `IRIS_TEST_RESULTS_20260730.md`에 기록했다.
+
+다음 단계는 기존 메신저봇R 운영을 바로 변경하는 것이 아니라, 운영 PC의 별도 테스트방에서 같은 수신 경로를 재검증하고 Iris `/reply` 왕복을 확인하는 것이다.
 
 ## 다음 확인 순서
 
@@ -57,9 +60,9 @@ LDPlayer
 2. 운영 PC에서 LDPlayer + KakaoTalk 상태 확인
 3. LDPlayer Root/ADB 접근 확인
 4. Iris.apk 설치와 실행 확인
-5. Iris가 KakaoTalk 테스트방 메시지를 감지하는지 확인
-6. Iris의 HTTP/WS 이벤트 수신 경로 확인
-7. 운영 PC hoiBot Server의 최소 ping/pong PoC 작성
+5. 운영 PC에서 Iris가 KakaoTalk 테스트방 메시지를 감지하는지 재확인
+6. 운영 PC에서 Iris HTTP 수신을 재확인하고 WebSocket 수신을 추가 검증
+7. 운영 PC에 hoiBot Lite 서버를 실행하고 최소 ping/pong PoC 작성
 8. Iris `/reply`를 통한 KakaoTalk 답장 PoC 작성
 9. PC 쪽 데이터 저장소 설계
 10. Discord adapter 추가 가능성 검증
