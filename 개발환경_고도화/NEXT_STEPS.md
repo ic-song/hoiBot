@@ -1,6 +1,8 @@
 # 다음 작업 기록
 
-작성일: 2026-06-22
+최초 작성일: 2026-06-22
+
+최근 갱신일: 2026-07-30
 
 ## 현재 확정된 방향
 
@@ -32,8 +34,19 @@ LDPlayer
 - LDPlayer 설치 완료
 - LDPlayer 안의 KakaoTalk 설치 완료
 - 메신저봇R은 AS-IS 운영환경으로 설치되어 있음
-- Iris는 아직 검증 전
+- 개발 PC LDPlayer 9에서는 Iris HTTP 이벤트 수신 선행 검증 완료
+- 운영 PC에서의 Iris 재현 검증은 아직 진행 전
 - 기존 메신저봇R 운영을 바로 건드리지 않고, Iris는 테스트방 기준으로 별도 검증한다.
+
+## 2026-07-30 진행 기록
+
+- `runtime/`에 hoiBot Lite 서버 기반을 구성했다.
+- health, ping, version, Iris 이벤트 수신, 인증, body 제한, 최근 이벤트 조회 기능을 구현했다.
+- Iris 이벤트 2,050건이 HTTP 202로 수신되는 것을 확인했다.
+- 개인정보를 제외한 표본 7건과 논리 시나리오 4개를 분석했다.
+- 동일 계정 식별 비교, 연속 메시지 3건의 중복 전달 없음, 메시지 삭제 이벤트를 확인했다.
+- 상세 결과와 미검증 범위는 `IRIS_TEST_RESULTS_20260730.md`에 기록했다.
+- 실제 방·사용자·메시지 정보가 포함된 원본 로그와 `.env`는 Git에서 제외한다.
 
 ## 주요 결정
 
@@ -149,11 +162,11 @@ Discord 확장: 서버 중심화 후 가능
 
 ## 다음에 이어서 할 일
 
-1. 운영 PC에서 `IRIS_INSTALL_RUNBOOK.md` 기준으로 Iris 설치 진행
-2. 운영 PC에서 `adb devices` 결과 확인
-3. `Iris.apk`를 `/data/local/tmp`로 push
-4. `iris_control.ps1 install/start/status` 결과 확인
-5. Iris dashboard 접속 확인
-6. 테스트방 메시지 감지 PoC 진행
-7. WS/HTTP 기반 운영 제어 구조를 `TOBE_ARCHITECTURE.md`에 더 구체화
-8. 운영 PC hoiBot Server 최소 ping/pong PoC 설계
+1. 운영 PC 백업과 환경값 기록
+2. 운영 PC에서 `IRIS_INSTALL_RUNBOOK.md` 기준으로 Iris 설치·상태 확인
+3. 운영 PC 별도 테스트방에서 HTTP 이벤트 수신 재검증
+4. Iris `/reply`를 이용한 ping/pong 전체 왕복 검증
+5. Iris WebSocket `/ws` 수신 검증
+6. 이벤트 정규화와 멱등 처리 정책 설계
+7. `Info.js` 읽기 전용 명령 하나를 adapter로 연결
+8. PC 쪽 데이터 저장소 설계
