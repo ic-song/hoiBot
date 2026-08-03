@@ -52,6 +52,8 @@
 - 최근 수신 이미지 2건을 테스트방으로 재전송했고, KakaoTalk DB에서 같은 대상 방에 생성된 발신 이미지 2건을 확인했다.
 - 모든 단일 이미지 전달 버전으로 서버를 재기동한 뒤 원본 방과 테스트방에서 이미지 이벤트가 1건씩 감지돼 자동 전달 왕복을 확인했다.
 - 사용자 요청으로 이미지 자동 전송을 OFF했다. 이미지 감지는 유지하며 대상 방 설정 없이 서버를 재기동했다.
+- 서버 PC의 Node.js 런타임에서 Iris `/query`를 통한 redroid KakaoTalk DB 읽기 연결을 확인했다.
+- KakaoTalk DB의 3개 연결 스키마와 테이블 구조·행 개수를 개인정보 없이 탐색해 `references/KAKAOTALK_DB_SCHEMA_INVENTORY.md`에 기록했다.
 - 이벤트 검증 근거는 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`, 서버 구현용 필드·이벤트 매핑은 `references/IRIS_SERVER_EVENT_MAPPING.json`으로 분리했다.
 
 ## 미검증 항목
