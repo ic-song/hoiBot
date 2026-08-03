@@ -59,48 +59,33 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 # 2-1) Development Environment Modernization
 
-The current production runtime and the target architecture are intentionally different.
+The modernization target is confirmed as a PC-hosted redroid environment.
 
-## AS-IS Runtime
-
-```text
-LDPlayer
--> KakaoTalk
--> MessengerBot R
--> hoiBot scripts: main.js / Info.js
--> JSON data inside LDPlayer/Android storage
-```
-
-## TO-BE Direction
+## Confirmed Target
 
 ```text
-LDPlayer
--> KakaoTalk
--> Iris
--> operation PC hoiBot Server over HTTP/WS
+Windows PC
+-> Hyper-V
+-> Ubuntu/Linux VM
+-> Docker
+-> redroid
+-> KakaoTalk + Iris
+-> hoiBot Server over HTTP/WebSocket
 -> PC-side DB/data
--> adapters such as Discord
 ```
 
 ## Required Agent Awareness
 
-- `hoiBot` is the bot/project name, not the runtime itself.
-- MessengerBot R is the AS-IS runtime.
-- Iris is the TO-BE candidate runtime/message bridge.
-- The operation PC already has LDPlayer, KakaoTalk, and MessengerBot R installed.
-- The current Codex workspace may be a development PC, not the operation PC. Do not assume LDPlayer, ADB, or Iris are locally installed here.
-- The operation PC environment values currently known from legacy BAT files are documented in `개발환경_고도화/OPERATION_PC_ENV_FROM_BAT.md`.
-- Iris installation steps are documented in `개발환경_고도화/IRIS_INSTALL_RUNBOOK.md`.
-- The migration architecture and feasibility notes are documented in:
-  - `개발환경_고도화/TOBE_ARCHITECTURE.md`
-  - `개발환경_고도화/FEASIBILITY_CHECK.md`
-  - `개발환경_고도화/CHECKLIST.md`
-  - `개발환경_고도화/NEXT_STEPS.md`
-- `iris_control.ps1` is a reference/control script for ADB-based Iris management. It is not the final TO-BE control layer.
-- The TO-BE control layer should be the operation PC hoiBot Server exposing HTTP/WS management APIs.
-- BAT files may be used only as bootstrap/check tools before the server-side control API exists.
-- Do not alter existing MessengerBot R production files, LDPlayer JSON data, or KakaoTalk account state during Iris feasibility checks unless explicitly requested.
-- Run Iris checks in a separate test room first; do not treat the production room as the initial test target.
+- `개발환경_고도화/CURRENT_STATE.md` is the single source of truth for modernization decisions and validation state.
+- At the start of every modernization task, read `개발환경_고도화/CURRENT_STATE.md` before relying on chat memory.
+- Do not describe LDPlayer as the modernization environment. The confirmed target is redroid.
+- Use the third referenced YouTube video, `Iris를 이용한 봇 만들기`, as the selected environment baseline.
+- Keep confirmed decisions, user-confirmed observations, and unverified test items separate.
+- Update the shared state document after meaningful validation so later sessions inherit the result.
+- Do not mark Iris HTTP, WebSocket, `/reply`, persistence, or hoiBot Server integration complete without current evidence.
+- Do not store tokens, private operational data, KakaoTalk message contents, or personal information in shared memory documents.
+- Keep the existing production bot unchanged during redroid feasibility checks unless the user explicitly requests migration work.
+- Run redroid/Iris checks in a separate test room first; do not treat the production room as the initial target.
 
 ---
 

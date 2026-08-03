@@ -204,7 +204,7 @@ Non-root Android phone
 - 영상 기준으로도 실험적 성격이 강해 보인다.
 - 운영 안정성, 카카오톡 버전 호환성, 보안/정책 리스크를 반드시 별도로 검증해야 한다.
 
-hoiBot 개발환경 고도화 1차 후보는 `Linux/redroid 기반 PC 서버형`으로 보는 것이 가장 안전하다.
+hoiBot 개발환경 고도화의 확정 기준은 `Linux/redroid 기반 PC 서버형`이다.
 기존 MessengerBot 운영환경은 유지하고, Iris는 별도 실험환경으로 분리한 뒤 adapter PoC를 만드는 접근이 적절하다.
 
 ---
