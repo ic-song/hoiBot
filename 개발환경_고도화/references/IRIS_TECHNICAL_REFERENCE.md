@@ -1,7 +1,7 @@
 # Iris Technical Reference
 
-This file stores informational material for agents. It is not the source of truth for the current migration state.
-Read `../CURRENT_STATE.md` first for confirmed decisions and validation status.
+This file stores informational material for agents. It is not the source of truth for decisions or current migration state.
+Read `../DECISIONS.md` and then `../MEMORY.md` first.
 
 ## Selected Environment
 
@@ -100,7 +100,7 @@ Candidate mapping to the legacy MessengerBot callback:
 - Iris currently depends on privileged Android access.
 - Network retries can create duplicate event delivery; server-side idempotency is required.
 - KakaoTalk policy and account-security implications require operational review.
-- HTTP, WebSocket, `/reply`, persistence, and restart behavior are not complete until recorded in `CURRENT_STATE.md` with current evidence.
+- HTTP, WebSocket, `/reply`, persistence, and restart behavior are not complete until recorded in `MEMORY.md` with current evidence.
 
 ## Sources
 

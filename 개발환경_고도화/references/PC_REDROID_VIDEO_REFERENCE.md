@@ -1,7 +1,7 @@
 # PC redroid Video Reference
 
 This file preserves the selected environment basis only.
-It is informational and does not override `../CURRENT_STATE.md`.
+It is informational and does not override `../DECISIONS.md` or `../MEMORY.md`.
 
 ## Selected Video
 
@@ -34,4 +34,4 @@ Relevant operational tools:
 - Port forwarding/exposure for Iris and ADB connectivity.
 
 Bot-server implementation language and optional client frameworks are not selected by this reference.
-Current validation status is tracked only in `../CURRENT_STATE.md`.
+Current validation status is tracked only in `../MEMORY.md`.
