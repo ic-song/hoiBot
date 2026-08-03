@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.345"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.346"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -912,6 +912,7 @@ const GLOBAL_CONFIG = {
         ],
         gachaItemName: "홈뱃지뽑기🛡️(/홈뱃지오픈)",
         gachaMaxOpenCount: 100,
+        gachaDuplicatePointReward: 100000000, // 중복 홈뱃지 1개당 즉시 지급 포인트
         gachaGradeRates: [
             { grade: "C", rate: 55 },
             { grade: "B", rate: 30 },
@@ -20621,6 +20622,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var homeBadgeSocialSnapshot = snapshotPetHomeSocialUser(homeBadgeActivityData, sender);
                     var homeBadgeBagSnapshot = JSON.parse(JSON.stringify(homeBadgeBag));
+                    var homeBadgePointSnapshot = data.member[sender].point; // 저장 실패 시 되돌릴 기존 포인트
                     var homeBadgeSocial = getPetHomeSocialUser(homeBadgeActivityData, sender);
                     var homeBadgeResults = [];
                     var homeBadgeLegendaryResults = [];
@@ -20629,6 +20631,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var alreadyOwnedHomeBadge = petHomeStringListContains(homeBadgeSocial.badges, drawnHomeBadge.id);
                         var deletedHomeBadge = petHomeStringListContains(homeBadgeSocial.deletedBadgeIds, drawnHomeBadge.id);
                         if (!alreadyOwnedHomeBadge && !deletedHomeBadge) homeBadgeSocial.badges.push(drawnHomeBadge.id);
+                        if (alreadyOwnedHomeBadge) data.member[sender].point = (parseInt(data.member[sender].point, 10) || 0) + GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward;
                         homeBadgeResults.push({ badge: drawnHomeBadge, duplicate: alreadyOwnedHomeBadge, deleted: deletedHomeBadge });
                         if (drawnHomeBadge.grade === "S") homeBadgeLegendaryResults.push(drawnHomeBadge);
                     }
@@ -20640,6 +20643,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(homeBadgeActivityData, petHomeActivityFile);
                     } catch (homeBadgeSaveError) {
                         data.member[sender].bag = homeBadgeBagSnapshot;
+                        data.member[sender].point = homeBadgePointSnapshot;
                         restorePetHomeSocialUser(homeBadgeActivityData, sender, homeBadgeSocialSnapshot);
                         try {
                             saveJsonFile(data, filePath);
@@ -20652,34 +20656,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeBadgeRemainCount = parseInt(data.member[sender].bag[homeBadgeItemName], 10) || 0;
                     var ownedGachaBadgeCount = getOwnedPetHomeGachaBadgeCount(homeBadgeActivityData, sender);
-                    var homeBadgeChunkCount = Math.ceil(homeBadgeResults.length / 10);
-                    for (var homeBadgeChunkIndex = 0; homeBadgeChunkIndex < homeBadgeChunkCount; homeBadgeChunkIndex++) {
-                        var homeBadgeChunkStart = homeBadgeChunkIndex * 10;
-                        var homeBadgeChunkEnd = Math.min(homeBadgeChunkStart + 10, homeBadgeResults.length);
-                        var homeBadgeLines = [];
-                        if (homeBadgeChunkIndex === 0) {
-                            homeBadgeLines.push("🛡️[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지뽑기🛡️를 오픈합니다!");
-                            homeBadgeLines.push("확률정보: 채팅창에 '/홈뽑기확률'을 적어보세요");
-                            homeBadgeLines.push("━━━━━━━━━━━━━━━");
-                            homeBadgeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeOpenCount) + "개");
-                            homeBadgeLines.push("🛡️ 남은 홈뽑권: " + numberWithCommas(homeBadgeRemainCount) + "개");
-                            homeBadgeLines.push("🎒 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
-                            homeBadgeLines.push("━━━━━━━━━━━━━━━");
-                        } else {
-                            homeBadgeLines.push("🛡️ 홈뱃지 오픈 결과 " + (homeBadgeChunkIndex + 1) + "/" + homeBadgeChunkCount);
-                            homeBadgeLines.push("━━━━━━━━━━━━━━━");
-                        }
-                        for (var homeBadgeResultIndex = homeBadgeChunkStart; homeBadgeResultIndex < homeBadgeChunkEnd; homeBadgeResultIndex++) {
-                            if (homeBadgeResultIndex === 4) homeBadgeLines.push(allsee);
-                            var homeBadgeResult = homeBadgeResults[homeBadgeResultIndex];
-                            homeBadgeLines.push((homeBadgeResultIndex + 1) + ". [" + homeBadgeResult.badge.grade + "] " + homeBadgeResult.badge.emoji + " " + homeBadgeResult.badge.name);
-                            homeBadgeLines.push("└ " + homeBadgeResult.badge.text);
-                            if (homeBadgeResult.duplicate) homeBadgeLines.push("└ 이미 보유한 홈뱃지입니다. (중복 획득)");
-                            if (homeBadgeResult.deleted) homeBadgeLines.push("└ 영구 삭제한 홈뱃지라 다시 보관되지 않습니다.");
-                        }
-                        if (homeBadgeChunkIndex === homeBadgeChunkCount - 1) homeBadgeLines.push("\n보유 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
-                        replier.reply(homeBadgeLines.join("\n"));
+                    var homeBadgeLines = [];
+                    homeBadgeLines.push("🛡️[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지뽑기🛡️를 오픈합니다!");
+                    homeBadgeLines.push("확률정보: 채팅창에 '/홈뽑기확률'을 적어보세요");
+                    homeBadgeLines.push("━━━━━━━━━━━━━━━");
+                    homeBadgeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeOpenCount) + "개");
+                    homeBadgeLines.push("🛡️ 남은 홈뽑권: " + numberWithCommas(homeBadgeRemainCount) + "개");
+                    homeBadgeLines.push("🎒 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
+                    homeBadgeLines.push("━━━━━━━━━━━━━━━");
+                    for (var homeBadgeResultIndex = 0; homeBadgeResultIndex < homeBadgeResults.length; homeBadgeResultIndex++) {
+                        if (homeBadgeResultIndex === 4) homeBadgeLines.push(allsee);
+                        var homeBadgeResult = homeBadgeResults[homeBadgeResultIndex];
+                        homeBadgeLines.push((homeBadgeResultIndex + 1) + ". [" + homeBadgeResult.badge.grade + "] " + homeBadgeResult.badge.emoji + " " + homeBadgeResult.badge.name);
+                        homeBadgeLines.push("└ " + homeBadgeResult.badge.text);
+                        if (homeBadgeResult.duplicate) homeBadgeLines.push("└ 중복 보상: 포인트🅟 " + numberWithCommas(GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward) + " 지급");
+                        if (homeBadgeResult.deleted) homeBadgeLines.push("└ 영구 삭제한 홈뱃지라 다시 보관되지 않습니다.");
                     }
+                    homeBadgeLines.push("\n보유 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
+                    replier.reply(homeBadgeLines.join("\n"));
                     for (var homeBadgeNoticeIndex = 0; homeBadgeNoticeIndex < homeBadgeLegendaryResults.length; homeBadgeNoticeIndex++) {
                         var legendaryHomeBadge = homeBadgeLegendaryResults[homeBadgeNoticeIndex];
                         noticeMsg("[🛡️전체알림]\n[" + checkRank(data, petData, guildData, sender) + "]님이 홈뱃지 뽑기에서\n[S] " + legendaryHomeBadge.emoji + " " + legendaryHomeBadge.name + " 뱃지를 획득했습니다!");
