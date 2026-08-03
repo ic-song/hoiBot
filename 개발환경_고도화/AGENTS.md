@@ -2,6 +2,9 @@
 
 - 이 폴더의 고도화 작업을 시작하면 `DECISIONS.md`, `MEMORY.md` 순서로 읽는다.
 - 대화 기억보다 저장소 문서를 우선하며 문서 간 충돌 시 `DECISIONS.md`를 따른다.
+- 고도화 관련 변경은 `feature/modernization` 브랜치에서만 수행한다.
+- 작업 전 최신 `feature/prod`를 확인하고 `feature/modernization`에 반영한다.
+- 사용자가 명시적으로 요청하기 전에는 고도화 커밋을 `feature/prod`에 반영하지 않는다.
 - 고도화 방향은 YouTube의 `Iris를 이용한 봇 만들기`에 나온 PC + redroid 환경으로 확정한다.
 - 고도화 실행환경은 PC의 redroid 구성만 사용한다.
 - 기준 구성은 `Windows -> Hyper-V -> Ubuntu/Linux VM -> Docker -> redroid -> KakaoTalk + Iris`다.

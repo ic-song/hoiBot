@@ -48,6 +48,15 @@
 - 결정: 기술/API 및 조사성 정보는 `references/` 아래의 영문 Markdown으로 관리한다.
 - 적용 범위: 세션 메모리, 결정 기록, 기술 참고자료, 검증 결과
 
+### DEC-005: 고도화 전용 브랜치
+
+- 결정일: 2026-08-03
+- 상태: `ACTIVE`
+- 결정: 고도화 관련 문서, 서버, redroid/Iris 연동 작업은 `feature/modernization` 브랜치에서만 진행한다.
+- 기준: 새 작업을 시작하기 전에 최신 `feature/prod`를 확인하고 `feature/modernization`에 반영한다.
+- 운영 반영: 고도화 변경은 사용자가 명시적으로 요청한 경우에만 검증된 커밋을 `feature/prod`에 반영한다.
+- 적용 범위: `개발환경_고도화/`, `runtime/`, 향후 hoiBot Server 및 adapter 구현
+
 ## 대체된 결정
 
 현재 없음.

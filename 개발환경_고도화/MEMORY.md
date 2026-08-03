@@ -18,6 +18,8 @@
 - hoiBot Server 구현 스택이 확정됐다.
 - `runtime/`에 Fastify 기반 Lite 서버와 Iris HTTP 이벤트 수신 API가 존재한다.
 - 고도화 문서는 결정, 대화 메모리, 정보성 참조자료로 분리됐다.
+- 최신 `feature/prod`의 `4f00533`에서 `feature/modernization` 브랜치를 생성했다.
+- 고도화 전용 작업공간은 `C:\Users\user\Desktop\hoiBot_modernization`이다.
 
 ## 확인된 현상
 
@@ -42,11 +44,12 @@
 
 ## 다음 작업
 
-1. redroid와 Iris의 현재 프로세스·포트·ADB 연결 상태를 읽기 전용으로 확인한다.
-2. 별도 테스트방에서 Iris HTTP 이벤트 수신을 검증한다.
-3. Iris `/reply`로 단순 ping/pong 왕복을 검증한다.
-4. WebSocket `/ws` 수신을 검증한다.
-5. 검증 결과를 메모리에 반영하고 필요한 경우 별도 결과 문서를 작성한다.
+1. 다음 고도화 작업을 `feature/modernization` 브랜치에서 시작한다.
+2. redroid와 Iris의 현재 프로세스·포트·ADB 연결 상태를 읽기 전용으로 확인한다.
+3. 별도 테스트방에서 Iris HTTP 이벤트 수신을 검증한다.
+4. Iris `/reply`로 단순 ping/pong 왕복을 검증한다.
+5. WebSocket `/ws` 수신을 검증한다.
+6. 검증 결과를 메모리에 반영하고 필요한 경우 별도 결과 문서를 작성한다.
 
 ## 최근 대화 요약
 
@@ -54,6 +57,7 @@
 - 선택되지 않은 다른 실행환경 기술스택은 문서에서 제거했다.
 - hoiBot Server 구현 스택을 TypeScript + Node.js 24 LTS + Fastify 5로 확정했다.
 - 대화 메모리와 확정 결정 문서를 분리하기로 했다.
+- 고도화 작업을 별도 `feature/modernization` 브랜치에서 진행하기로 했다.
 
 ## 갱신 규칙
 
