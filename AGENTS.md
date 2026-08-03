@@ -57,38 +57,6 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ---
 
-# 2-1) Development Environment Modernization
-
-The modernization target is confirmed as a PC-hosted redroid environment.
-
-## Confirmed Target
-
-```text
-Windows PC
--> Hyper-V
--> Ubuntu/Linux VM
--> Docker
--> redroid
--> KakaoTalk + Iris
--> hoiBot Server over HTTP/WebSocket
--> PC-side DB/data
-```
-
-## Required Agent Awareness
-
-- `개발환경_고도화/CURRENT_STATE.md` is the single source of truth for modernization decisions and validation state.
-- At the start of every modernization task, read `개발환경_고도화/CURRENT_STATE.md` before relying on chat memory.
-- Do not describe LDPlayer as the modernization environment. The confirmed target is redroid.
-- Use the third referenced YouTube video, `Iris를 이용한 봇 만들기`, as the selected environment baseline.
-- Keep confirmed decisions, user-confirmed observations, and unverified test items separate.
-- Update the shared state document after meaningful validation so later sessions inherit the result.
-- Do not mark Iris HTTP, WebSocket, `/reply`, persistence, or hoiBot Server integration complete without current evidence.
-- Do not store tokens, private operational data, KakaoTalk message contents, or personal information in shared memory documents.
-- Keep the existing production bot unchanged during redroid feasibility checks unless the user explicitly requests migration work.
-- Run redroid/Iris checks in a separate test room first; do not treat the production room as the initial target.
-
----
-
 # 3) Rhino JS Environment Notes
 
 - This is NOT a modern Node.js/browser JavaScript environment.

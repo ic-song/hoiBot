@@ -2,8 +2,6 @@
 
 Iris 연계 전에 HTTP 수신 경로와 기본 안전장치를 검증하는 독립 Node.js 서버입니다. 기존 MessengerBot R의 `main.js`, `Info.js`, Android JSON 데이터는 사용하거나 변경하지 않습니다.
 
-현재 확정된 redroid 실행환경과 검증 상태는 `../개발환경_고도화/CURRENT_STATE.md`를 기준으로 확인합니다.
-
 ## 포함 범위
 
 - 모든 요청에 UUID 기반 `requestId` 발급 및 `x-request-id` 응답 헤더 제공
@@ -53,8 +51,6 @@ http://개발PC_IP:3100/api/v1/integrations/iris/events?token=공유토큰
 ```
 
 서버 로그에는 쿼리 문자열을 제외한 경로만 기록합니다. 실제 운영 환경에서는 HTTPS 또는 사설망, 방화벽/IP 제한을 추가해야 합니다.
-
-redroid와 hoiBot Lite 서버 사이의 실제 호스트 주소와 포트 전달 방식은 현재 환경에서 다시 확인한 뒤 endpoint에 적용합니다.
 
 ## 검증
 
