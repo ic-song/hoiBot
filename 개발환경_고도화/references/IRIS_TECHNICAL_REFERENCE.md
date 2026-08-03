@@ -16,8 +16,6 @@ Windows PC
 -> PC-side DB/data
 ```
 
-LDPlayer is not the selected modernization environment.
-
 ## Iris Responsibilities
 
 - Observe KakaoTalk database changes on Android.
@@ -110,5 +108,4 @@ Candidate mapping to the legacy MessengerBot callback:
 - Iris releases: https://github.com/dolidolih/Iris/releases
 - KBotDocs Iris: https://kbotdocs.dev/reference/iris
 - KBotDocs getting started: https://kbotdocs.dev/reference/iris/get-started
-- KBotDocs irispy-client: https://kbotdocs.dev/reference/irispy-client
 - MessengerBot ADB reference: https://violetxf.gitbook.io/messengerbot/tips/adb
