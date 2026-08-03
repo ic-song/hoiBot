@@ -8,8 +8,10 @@
 
 ## 현재 목표
 
+- Iris를 hoiBot의 KakaoTalk 입출력 계층으로 사용해 고도화한다.
 - PC/redroid 환경에서 KakaoTalk + Iris 연결 상태를 단계적으로 검증한다.
 - TypeScript/Node.js 24 LTS/Fastify 5 기반 hoiBot Server로 기존 게임 로직을 점진적으로 이전한다.
+- 전환 우선순위는 `ASAP`이며 구현과 검증이 완료된 기능부터 가능한 한 빠르게 순차 전환한다.
 - 기존 운영을 즉시 변경하지 않고 별도 테스트 흐름에서 입력·응답·저장 경로를 먼저 확인한다.
 
 ## 현재 진행 위치
@@ -58,6 +60,8 @@
 - hoiBot Server 구현 스택을 TypeScript + Node.js 24 LTS + Fastify 5로 확정했다.
 - 대화 메모리와 확정 결정 문서를 분리하기로 했다.
 - 고도화 작업을 별도 `feature/modernization` 브랜치에서 진행하기로 했다.
+- hoiBot을 Iris 기반으로 고도화하기로 확정했다.
+- 전환 우선순위를 `ASAP`으로 확정했다.
 
 ## 갱신 규칙
 

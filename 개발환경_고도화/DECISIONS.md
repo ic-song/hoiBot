@@ -57,6 +57,16 @@
 - 운영 반영: 고도화 변경은 사용자가 명시적으로 요청한 경우에만 검증된 커밋을 `feature/prod`에 반영한다.
 - 적용 범위: `개발환경_고도화/`, `runtime/`, 향후 hoiBot Server 및 adapter 구현
 
+### DEC-006: Iris 기반 고도화
+
+- 결정일: 2026-08-03
+- 상태: `ACTIVE`
+- 결정: hoiBot은 Iris를 사용해 고도화한다.
+- 역할: Iris는 redroid 안에서 KakaoTalk 메시지 감지와 답장 전송을 담당한다.
+- 역할: hoiBot Server는 Iris의 HTTP/WebSocket 이벤트를 받아 명령과 게임 로직을 처리하고 Iris `/reply`로 응답한다.
+- 전환 시점: `ASAP`. 별도 일정까지 기다리지 않고 구현과 검증이 완료된 기능부터 가능한 한 빠르게 순차 전환한다.
+- 적용 범위: KakaoTalk 입출력 adapter, 이벤트 정규화, 응답 전송, 기존 MessengerBot 의존 로직의 점진적 이전
+
 ## 대체된 결정
 
 현재 없음.
