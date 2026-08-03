@@ -44,10 +44,11 @@
 - 현재 redroid 이력에서 `NEWMEM`, `DELMEM`, `SYNCMODMSG`, `SYNCDLMSG`, `SYNCREWR` 원시 origin을 확인했다.
 - 답글은 `type=26`과 source attachment 필드로 감지 가능하고, 수정·삭제는 각각 `SYNCMODMSG`, `SYNCDLMSG`를 서버가 직접 정규화해야 한다.
 - 현재 서버에서 상대가 보낸 일반 답글을 `type=26`, `isMine=false`, `src_isThread=false`와 source 연결 필드로 실관측했다.
+- 봇을 실제 `@멘션`한 메시지를 `type=1`, `origin=MSG`, `attachment.mentions[]`의 위치·길이·사용자 ID 메타데이터와 `bot_command` 구조로 실관측했다.
 
 ## 미검증 항목
 
-- `@멘션` payload 구조와 자진 퇴장/강퇴 구분 방식
+- 다른 참여자 `@멘션`의 동일 구조 여부와 자진 퇴장/강퇴 구분 방식
 - 닉네임 변경·반응 이벤트를 위한 별도 테이블 감시 필요성
 - Iris WebSocket `/ws` 수신
 - redroid 재시작 후 데이터와 설정 유지
@@ -61,7 +62,7 @@
 
 ## 다음 작업
 
-1. 별도 테스트방에서 답글, 멘션, 수정, 삭제, 입장, 자진 퇴장, 재입장 후 강퇴를 각각 1건씩 실검증한다.
+1. 별도 테스트방에서 다른 참여자 멘션, 수정, 삭제, 입장, 자진 퇴장, 재입장 후 강퇴를 각각 1건씩 실검증한다.
 2. 닉네임 변경, 이미지, 다중 이미지, 파일, 이모티콘과 반응 이벤트를 실검증한다.
 3. HTTP 검증과 별도로 WebSocket 수신을 확인한다.
 4. 검증 결과를 입력 계약으로 삼아 hoiBot Server 이벤트 정규화 계층을 구현한다.

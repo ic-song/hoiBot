@@ -34,7 +34,7 @@ The hoiBot Server therefore needs its own raw-event normalizer for edit, delete,
 | Plain text | `LIVE_CONFIRMED` | `type=1`, `origin=MSG`; current post-restart server sample received this shape | Normalize as a standard message |
 | Reply | `LIVE_CONFIRMED` | A current post-move server event observed `type=26`, `isMine=false`, and source fields `src_linkId`, `src_logId`, `src_message`, `src_type`, and `src_userId`; `src_isThread=false` | Link to the source log using attachment metadata |
 | Thread reply | `UPSTREAM_CONFIRMED` | Iris adds `src_logId` and `src_isThread=true` to `type=1` when `thread_id` or `supplement.threadId` is present | Normalize separately from a normal reply |
-| `@mention` | `UNVERIFIED` | No dedicated mention origin or mention key appeared in the inspected live sample | Test a real mention; inspect attachment/supplement and message encoding |
+| `@mention` | `LIVE_CONFIRMED` for bot mention | `type=1`, `origin=MSG`; live payload contained `attachment.mentions[].at`, `len`, and `user_id`, plus `attachment.bot_command` metadata | Normalize mentions from `attachment.mentions[]`; test another-member mention separately |
 | Message edit | `DB_CONFIRMED` | `type=0`, `origin=SYNCMODMSG`; 15 rows in the latest 10,000-log sample | Treat as a raw update event; confirm target log ID and edited text in a live test |
 | Message delete | `DB_CONFIRMED` | `type=0`, `origin=SYNCDLMSG`; 7 rows in the latest 10,000-log sample; one historical shape exposed `logId`, `feedType`, `hidden`, and `byHost` | Treat as a raw deletion event and correlate by target log ID |
 | Nickname change | `NOT_DIRECT` | Iris polls `chat_logs`, while current nickname data is queried from tables such as `open_chat_member`, `open_profile`, or `friends` | Add a separate snapshot/polling adapter if this feature is required |
@@ -98,7 +98,7 @@ Use a separate KakaoTalk test room and capture one event at a time:
 1. Plain text and exact `/ping`.
 2. Reply to a text message.
 3. Thread reply where supported.
-4. `@mention` of the bot and another member.
+4. `@mention` of another member; bot mention is already live-confirmed.
 5. Edit a previously sent message.
 6. Delete a previously sent message.
 7. Join with a test account.
