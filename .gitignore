@@ -2,9 +2,3 @@
 backups/
 tools/logs/*
 !tools/logs/.gitkeep
-개발환경_아카이브/
-개발환경_고도화/image/
-개발환경_고도화/downloads/
-개발환경_고도화/logs/
-개발환경_고도화/Iris.apk
-개발환경_고도화/tools/Iris.apk
