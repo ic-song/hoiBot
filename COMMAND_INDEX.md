@@ -3490,8 +3490,9 @@ Status: VERIFIED
 - `/부방상여`
 ## AI Notes
 - Payout commands no longer keep separate hardcoded recipient arrays
-- `isAdmin` requires both `data.admin` membership and execution in `호이월드 GM 관리자방`, `팻 테스트방`, or `통합스텝`
-- `isMaster` requires both `data.master` membership and execution in `팻 테스트방`
+- `isAdmin` requires both `data.admin` membership and execution in `호이월드 GM 관리자방`, `팻 테스트방`, `통합스텝`, or `서버관리자`
+- `isMaster` requires both `data.master` membership and execution in `팻 테스트방` or `서버관리자`
+- `/주기리셋` and `/자동탐험시작` additionally allow an Admin in `호이월드 GM 관리자방`; their existing Master access remains available in Master-authorized rooms
 - `/관리자일당` authorization remains `호이 남` and `오픈채팅봇`
 - `/부방상여` authorization remains `호이 남`
 

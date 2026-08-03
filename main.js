@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.353"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.354"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -623,6 +623,7 @@ const room12 = "🐹신생🐹 30대 반말방 보이스룸 수다 벙🍒";
 const room13 = "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻";
 const room90 = "호이월드 GM 관리자방";
 const room91 = "통합스텝";
+const room92 = "서버관리자";
 
 //서버데이터
 const roomToServer = {};
@@ -5309,7 +5310,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     stopAllIntervals(data);
                     delete data.previnterval;
                 }
-                if (msg === "/주기리셋" && isMaster(sender)) {
+                if (msg === "/주기리셋" && (isMaster(sender) || (room === room90 && isAdmin(sender)))) {
                     try {
                         stopAllIntervals(data);
                         replier.reply("주기리셋완");
@@ -5966,7 +5967,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         defenseCount: 0
                     };
                 }
-                if (msg == "/자동탐험시작" && isMaster(sender)) {
+                if (msg == "/자동탐험시작" && (isMaster(sender) || (room === room90 && isAdmin(sender)))) {
                     exploreInterval = true;
                     replier.reply("/자동탐험시작");
                     startInterval(data, replier, setint);
@@ -27284,12 +27285,13 @@ function buildHoiBotChangeLogMessage(changeLogData) {
 // 관리자 권한 여부를 확인하는 함수
 function isAdmin(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
-    return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91);
+    return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92);
 }
 
 // 마스터 권한 여부를 확인하는 함수
 function isMaster(sender) {
-    return Master.includes(sender) && getCurrentContext().permissionRoom === testRoom;
+    var permissionRoom = getCurrentContext().permissionRoom;
+    return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
 }
 
 // 유저 요청이 과부하 기준을 넘었는지 확인하는 함수

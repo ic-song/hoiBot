@@ -1,6 +1,7 @@
 const testRoom = "팻 테스트방";
 const room90 = "호이월드 GM 관리자방";
 const room91 = "통합스텝";
+const room92 = "서버관리자";
 
 // 크리티컬 정보
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
@@ -106,14 +107,15 @@ var COMMON_DATA_FILE_MAP = {
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
 var initData = loadJsonFile(filePath);
-var Master = Object.keys(initData.master);
+var Master = initData.master;
 var Admins = Object.keys(initData.admin);
 function isAdmin(sender) {
 	var permissionRoom = getCurrentContext().permissionRoom;
-	return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91);
+	return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92);
 }
 function isMaster(sender) {
-	return Master.includes(sender) && getCurrentContext().permissionRoom === testRoom;
+	var permissionRoom = getCurrentContext().permissionRoom;
+	return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
 }
 
 // Info 명령에서 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
