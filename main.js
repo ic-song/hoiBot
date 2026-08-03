@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.345"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.346"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -719,6 +719,7 @@ var COMMON_DATA_FILE_MAP = {
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
 var commandDataFlowLock = new java.util.concurrent.locks.ReentrantReadWriteLock(true); // 자동일퀘와 일반 응답의 데이터 처리 순서 보호
+var dataTransactionLock = new java.util.concurrent.locks.ReentrantLock(); // 명령 단위 데이터 로드·백업·변경·저장 동시 실행 방지
 var autoDailyBatchThreadLocal = new java.lang.ThreadLocal(); // 자동일퀘 스레드별 메모리 저장 배치
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
     windowMs: 2000,
@@ -752,7 +753,6 @@ let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 
 var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리 객체 (guildId: timerId)
-let isSaving = false; //메인 정보
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     attendance: { // 출석 보상 설정
@@ -1675,16 +1675,23 @@ const miniPetData = loadJsonFile(miniPetPath);
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     var responseDataLock = getResponseDataFlowLock(msg);
+    var responseTransactionAcquired = false;
+    var commandContextEntered = false;
+    var ctx = null;
+    var prevCtx = null;
     responseDataLock.lock();
-    var ctx = createCommandContext(isDevCommandMessage(msg));
-    var prevCtx = enterCommandContext(ctx);
-    var responseStartMs = Date.now();
-    var responseTimingRows = [];
-    function addResponseTiming(label, startMs) {
-        responseTimingRows.push({ label: label, ms: Date.now() - startMs });
-    }
     //데이터 검사
     try {
+        if (!dataTransactionLock.tryLock()) return;
+        responseTransactionAcquired = true;
+        ctx = createCommandContext(isDevCommandMessage(msg));
+        prevCtx = enterCommandContext(ctx);
+        commandContextEntered = true;
+        var responseStartMs = Date.now();
+        var responseTimingRows = [];
+        function addResponseTiming(label, startMs) {
+            responseTimingRows.push({ label: label, ms: Date.now() - startMs });
+        }
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
             replier = createContextReplier(replier, ctx);
@@ -1728,9 +1735,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let petHomeActivityBackContent = FileStream.read(activePetHomeActivityPathBack, "utf-8");
                     let petHomeActivityDataBack = requirePetHomeActivityData(parseJsonContent(petHomeActivityBackContent, activePetHomeActivityPathBack));
 
-                    saveJsonFile(mainDataBack, filePath);
-                    saveJsonFile(petDataBack, memberPetPath);
-                    if (petSkillDataBack) saveJsonFile(petSkillDataBack, petSkillDataPath);
+                    saveJsonFile(mainDataBack, filePath, true);
+                    saveJsonFile(petDataBack, memberPetPath, true);
+                    if (petSkillDataBack) saveJsonFile(petSkillDataBack, petSkillDataPath, true);
                     writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), JSON.stringify(petHomeActivityDataBack), true);
 
                     replier.reply(sender + "님이 직전 데이터로 봇을 살립니다.");
@@ -2347,67 +2354,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        if (autoDailyQuestInternalDepth <= 0 && msg.startsWith("/")) {
-            try {
-                let activeFilePath = resolveActiveDataPath(filePath);
-                let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
-                let activePetSkillDataPath = resolveActiveDataPath(petSkillDataPath);
-                let activePetHomeActivityPath = resolveActiveDataPath(petHomeActivityFile);
-                let mainFile = new java.io.File(activeFilePath);
-                let petFile = new java.io.File(activeMemberPetPath);
-                let petSkillFile = new java.io.File(activePetSkillDataPath);
-                let petHomeActivityFileForBackup = new java.io.File(activePetHomeActivityPath);
-
-                //  모든 파일 존재 체크 (없으면 즉시 throw → catch로 이동)
-                if (!mainFile.exists()) {
-                    throw new Error("main file not found: " + activeFilePath);
-                }
-                if (!petFile.exists()) {
-                    throw new Error("pet file not found: " + activeMemberPetPath);
-                }
-                if (!petSkillFile.exists()) {
-                    throw new Error("petSkill file not found: " + activePetSkillDataPath);
-                }
-                // 읽기 + strict 파싱 (문제 있으면 전부 throw)
-                let parseMainBack = parseJsonContent(
-                    FileStream.read(activeFilePath, "utf-8"),
-                    activeFilePath
-                );
-
-                let parsePetBack = parseJsonContent(
-                    FileStream.read(activeMemberPetPath, "utf-8"),
-                    activeMemberPetPath
-                );
-
-                let parsePetSkillBack = parseJsonContent(
-                    FileStream.read(activePetSkillDataPath, "utf-8"),
-                    activePetSkillDataPath
-                );
-
-                let parsePetHomeActivityBack = null;
-                if (petHomeActivityFileForBackup.exists()) {
-                    parsePetHomeActivityBack = requirePetHomeActivityData(parseJsonContent(
-                        FileStream.read(activePetHomeActivityPath, "utf-8"),
-                        activePetHomeActivityPath
-                    ));
-                }
-
-                // 모든 과정 성공했을 때만 백업 저장
-                saveJsonFile(parseMainBack, filePath_back);
-                saveJsonFile(parsePetBack, memberPetPath_back);
-                saveJsonFile(parsePetSkillBack, petSkillDataPath_back);
-                if (parsePetHomeActivityBack) saveJsonFile(parsePetHomeActivityBack, petHomeActivityBackupFile);
-
-            } catch (e) {
-                replier.reply(
-                    "호월봇을 후리셨군요?\n" +
-                    "상태를 보니 생명엔 지장이 없어보입니다..살살 부탁드려요.\n" +
-                    "[과부하 3번 이상 반복되면 방장,부방장 을 불러주세요]"
-                );
-                debuggerLog("[ERROR : Backup error]" + allsee + JSON.stringify(e));
-                return;
-            }
-        }
         var commonStepStart = Date.now();
         addResponseTiming("명령 전처리/과부하체크", responseStartMs);
         commonStepStart = Date.now();
@@ -3091,7 +3037,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         //var castleBattleData = loadJsonFile(castleBattlePath);
         //var titleData = loadJsonFile(memberTitlePath);
-        if (isSaving == false || getAutoDailyBatchContext()) {
+        {
             var isSignupPetFlow = isSignupFlow;
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
                 if (!data.member[sender] && msg !== "/가입") {
@@ -27113,7 +27059,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         // }
         FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
     } finally {
-        exitCommandContext(prevCtx);
+        if (commandContextEntered) exitCommandContext(prevCtx);
+        if (responseTransactionAcquired) dataTransactionLock.unlock();
         responseDataLock.unlock();
     }
 }
@@ -27863,20 +27810,23 @@ function getMissingDevDataFiles() {
 // JSON 파일 로드 함수
 function loadJsonFile(path) {
     var protectedLock = null;
+    var transactionLockAcquired = false;
     try {
         path = resolveActiveDataPath(path);
         var autoDailyBatch = getAutoDailyBatchContext();
         if (autoDailyBatch && autoDailyBatch.managedPaths[path] && Object.prototype.hasOwnProperty.call(autoDailyBatch.files, path)) {
             return autoDailyBatch.files[path];
         }
-        if (isProtectedMemberJsonPath(path) || isProtectedPetHomeActivityJsonPath(path)) {
+        if (isProtectedManagedJsonPath(path)) {
+            dataTransactionLock.lock();
+            transactionLockAcquired = true;
             protectedLock = getProtectedJsonSaveLock(path);
             protectedLock.lock();
         }
         let file = new java.io.File(path);
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-            var loadedData = parseJsonContent(fileContent, path);
+            var loadedData = isProtectedManagedJsonPath(path) ? parseManagedJsonContent(fileContent, path) : parseJsonContent(fileContent, path);
             if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = loadedData;
             return loadedData;
         }
@@ -27893,33 +27843,58 @@ function loadJsonFile(path) {
         // 로그 출력 (콘솔)
         // Api.replyRoom(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
         debuggerLog(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
+        var managedBackupPath = getManagedJsonBackupPath(path);
+        if (managedBackupPath) {
+            try {
+                var managedBackupFile = new java.io.File(managedBackupPath);
+                if (managedBackupFile.exists()) {
+                    var managedBackupText = FileStream.read(managedBackupPath, "utf-8");
+                    var restoredData = parseManagedJsonContent(managedBackupText, managedBackupPath);
+                    writeVerifiedJsonFile(path, managedBackupText, true);
+                    debuggerLog("[RECOVERY : loadJsonFile] " + path + " <- " + managedBackupPath);
+                    if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = restoredData;
+                    return restoredData;
+                }
+            } catch (recoveryError) {
+                debuggerLog("[ERROR : loadJsonFile recovery] " + path + " " + recoveryError.toString());
+            }
+        }
         throw e;
     } finally {
         if (protectedLock) protectedLock.unlock();
+        if (transactionLockAcquired) dataTransactionLock.unlock();
     }
 }
 
-// member.json과 직전 백업에 안전 저장을 적용할지 확인하는 함수
-function isProtectedMemberJsonPath(path) {
-    var fileName = String(new java.io.File(path).getName());
-    return fileName === "member.json" || fileName === "member_back.json";
-}
-
-// 펫홈 활동 원본과 직전 백업이 안전 저장 대상인지 확인하는 함수
-function isProtectedPetHomeActivityJsonPath(path) {
-    var fileName = String(new java.io.File(path).getName());
-    return fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json";
-}
-
-// 펫홈 활동 원본 경로인지 확인하는 함수
-function isPetHomeActivityPrimaryJsonPath(path) {
-    return String(new java.io.File(path).getName()) === "petHomeActivityData.json";
-}
-
-// 펫홈 활동 원본과 같은 폴더의 직전 백업 경로를 반환하는 함수
-function getPetHomeActivityBackupPath(path) {
+// 자동 직전 백업을 사용하는 원본 JSON의 백업 경로를 반환하는 함수
+function getManagedJsonBackupPath(path) {
     var targetFile = new java.io.File(path);
-    return String(new java.io.File(targetFile.getParentFile(), "petHomeActivityData_back.json").getPath());
+    var fileName = String(new java.io.File(path).getName());
+    var backupFileName = null;
+    if (fileName === "member.json") backupFileName = "member_back.json";
+    if (fileName === "member_pet.json") backupFileName = "member_pet_back.json";
+    if (fileName === "petSkillData.json") backupFileName = "petSkillData_back.json";
+    if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back.json";
+    if (!backupFileName) return null;
+    return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
+}
+
+// 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
+function isProtectedManagedJsonPath(path) {
+    var fileName = String(new java.io.File(path).getName());
+    return fileName === "member.json" || fileName === "member_back.json" ||
+        fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
+        fileName === "petSkillData.json" || fileName === "petSkillData_back.json" ||
+        fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json";
+}
+
+// 관리 JSON 내용을 엄격하게 파싱하고 파일별 필수 구조를 검증하는 함수
+function parseManagedJsonContent(jsonText, path) {
+    var parsedData = parseJsonContent(jsonText, path);
+    if (String(new java.io.File(path).getName()).indexOf("petHomeActivityData") === 0) {
+        return requirePetHomeActivityData(parsedData);
+    }
+    return parsedData;
 }
 
 // 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
@@ -27932,7 +27907,7 @@ function getProtectedJsonSaveLock(path) {
 }
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
-function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
+function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
     var lock = getProtectedJsonSaveLock(path);
     var targetFile = new java.io.File(path);
     var tempFile = new java.io.File(path + ".tmp");
@@ -27959,22 +27934,21 @@ function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
         writer = null;
         outputStream = null;
 
-        parseJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), tempFile.getPath());
+        parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
-        var seedPetHomeActivityBackup = false;
-        var petHomeActivityBackupPath = null;
-        if (isPetHomeActivityPrimaryJsonPath(path) && skipPetHomeActivityBackup !== true) {
-            petHomeActivityBackupPath = getPetHomeActivityBackupPath(path);
+        var seedManagedBackup = false;
+        var managedBackupPath = getManagedJsonBackupPath(path);
+        if (managedBackupPath && skipManagedBackup !== true) {
             if (targetFile.exists()) {
-                var currentPetHomeActivityText = FileStream.read(path, "utf-8");
-                parseJsonContent(currentPetHomeActivityText, path);
-                writeVerifiedJsonFile(petHomeActivityBackupPath, currentPetHomeActivityText, true);
+                var currentJsonText = FileStream.read(path, "utf-8");
+                parseManagedJsonContent(currentJsonText, path);
+                writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
             } else {
-                seedPetHomeActivityBackup = true;
+                seedManagedBackup = true;
             }
         }
 
-        if (seedPetHomeActivityBackup) writeVerifiedJsonFile(petHomeActivityBackupPath, jsonText, true);
+        if (seedManagedBackup) writeVerifiedJsonFile(managedBackupPath, jsonText, true);
         if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
             throw new Error("Current JSON file backup failed: " + path);
         }
@@ -28005,7 +27979,7 @@ function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
 }
 
 // JSON 파일 저장 함수
-function saveJsonFile(data, path) {
+function saveJsonFile(data, path, skipManagedBackup) {
     if (data === null || (typeof data !== "object" && typeof data !== "function")) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
@@ -28020,11 +27994,11 @@ function saveJsonFile(data, path) {
         if (typeof jsonText !== "string") {
             throw new Error("JSON stringify failed: " + path);
         }
-        isSaving = true;
+        dataTransactionLock.lock();
         try {
             ensureParentFolder(path);
-            if (isProtectedMemberJsonPath(path) || isProtectedPetHomeActivityJsonPath(path)) {
-                writeVerifiedJsonFile(path, jsonText);
+            if (isProtectedManagedJsonPath(path)) {
+                writeVerifiedJsonFile(path, jsonText, skipManagedBackup);
             } else {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             }
@@ -28032,7 +28006,7 @@ function saveJsonFile(data, path) {
             debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString());
             throw e;
         } finally {
-            isSaving = false;
+            dataTransactionLock.unlock();
         }
     }
 }
@@ -33958,11 +33932,6 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
         return { message: "❌ [" + checkRank(before.data, before.petData, before.guildData, sender) + "]님\n자동일퀘권📝이 필요합니다." };
     }
     var beforePetSkillData = loadJsonFile(petSkillDataPath);
-    saveJsonFile(before.data, filePath_back);
-    saveJsonFile(before.petData, memberPetPath_back);
-    if (beforePetSkillData) {
-        saveJsonFile(beforePetSkillData, petSkillDataPath_back);
-    }
     beginAutoDailyBatch(before, beforePetSkillData);
     try {
         var capturedMessages = [];
