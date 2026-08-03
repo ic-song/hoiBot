@@ -11,6 +11,7 @@
 - Iris를 hoiBot의 KakaoTalk 입출력 계층으로 사용해 고도화한다.
 - PC/redroid 환경에서 KakaoTalk + Iris 연결 상태를 단계적으로 검증한다.
 - TypeScript/Node.js 24 LTS/Fastify 5 기반 hoiBot Server로 기존 게임 로직을 점진적으로 이전한다.
+- hoiBot Server 전용 게임·운영 데이터 저장소는 MariaDB를 사용한다.
 - 전환 우선순위는 `ASAP`이며 구현과 검증이 완료된 기능부터 가능한 한 빠르게 순차 전환한다.
 - 기존 운영을 즉시 변경하지 않고 별도 테스트 흐름에서 입력·응답·저장 경로를 먼저 확인한다.
 - 서버 본구현 전에 redroid/KakaoTalk/Iris에서 테스트 명령의 서버 왕복과 이벤트 전송 범위를 실제로 확인한다.
@@ -54,6 +55,7 @@
 - 사용자 요청으로 이미지 자동 전송을 OFF했다. 이미지 감지는 유지하며 대상 방 설정 없이 서버를 재기동했다.
 - 서버 PC의 Node.js 런타임에서 Iris `/query`를 통한 redroid KakaoTalk DB 읽기 연결을 확인했다.
 - KakaoTalk DB의 3개 연결 스키마와 테이블 구조·행 개수를 개인정보 없이 탐색해 `references/KAKAOTALK_DB_SCHEMA_INVENTORY.md`에 기록했다.
+- redroid KakaoTalk DB와 별개인 hoiBot Server 전용 DB로 MariaDB를 사용하기로 확정했다.
 - 이벤트 검증 근거는 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`, 서버 구현용 필드·이벤트 매핑은 `references/IRIS_SERVER_EVENT_MAPPING.json`으로 분리했다.
 
 ## 미검증 항목
@@ -67,7 +69,8 @@
 ## 열린 질문
 
 - hoiBot Server를 Windows 호스트와 Ubuntu/Linux VM 중 어디에서 상시 실행할지
-- PC 데이터 저장소의 DB 종류와 백업·복구 방식
+- MariaDB 배치 위치와 백업·복구 방식
+- Node.js MariaDB 드라이버·쿼리 계층과 마이그레이션 도구
 - 기존 JSON 데이터를 이전할 순서와 읽기 전용 첫 명령
 
 ## 다음 작업
@@ -76,6 +79,7 @@
 2. 단일 이미지의 테스트방 실제 전달을 확인한 뒤 다중 이미지, 파일, 이모티콘과 반응 이벤트를 실검증한다.
 3. HTTP 검증과 별도로 WebSocket 수신을 확인한다.
 4. 검증 결과를 입력 계약으로 삼아 hoiBot Server 이벤트 정규화 계층을 구현한다.
+5. 기존 JSON 저장 흐름을 조사해 MariaDB의 첫 번째 이전 대상과 최소 스키마를 설계한다.
 
 ## 최근 대화 요약
 
@@ -92,6 +96,7 @@
 - 이후 `/ping` 검증은 10건을 상한으로 제한하기로 확정했다.
 - 정확한 `/ping` 입력은 서버 연결 확인 명령으로 사용하고 `발신자이름 pong`으로 답하기로 확정했다.
 - 고도화용 Node.js 프로젝트를 `개발환경_고도화/runtime/` 내부에서만 관리하기로 확정했다.
+- hoiBot Server 전용 데이터베이스로 MariaDB를 사용하기로 확정했다.
 
 ## 갱신 규칙
 

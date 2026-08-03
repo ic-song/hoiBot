@@ -150,6 +150,16 @@
 - 재활성화: 사용자가 이미지 전송 ON을 명시적으로 요청할 때만 대상 테스트방을 다시 설정한다.
 - 적용 범위: hoiBot Lite Server 이미지 자동 전달 기능
 
+### DEC-016: hoiBot Server 전용 DB
+
+- 결정일: 2026-08-03
+- 상태: `ACTIVE`
+- 결정: redroid KakaoTalk DB와 별개인 hoiBot Server 전용 데이터베이스로 MariaDB를 사용한다.
+- 역할: 기존 `/sdcard/호이랜드/` JSON에 저장된 게임·운영 데이터를 서버 측 MariaDB로 점진적으로 이전한다.
+- 분리 원칙: redroid KakaoTalk DB는 Iris 이벤트·조회 원본이며 hoiBot 게임 데이터 저장소로 사용하지 않는다.
+- 미확정: MariaDB 배치 위치, Node.js 드라이버/쿼리 계층, 스키마, 마이그레이션, 백업·복구 방식은 후속 설계에서 정한다.
+- 적용 범위: hoiBot Server 영속성, 데이터 이전, 트랜잭션과 백업 설계
+
 ## 대체된 결정
 
-현재 없음.
+`DEC-012`, `DEC-013`, `DEC-014`는 후속 이미지 전달 결정으로 대체됐다.
