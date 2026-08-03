@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.350"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.351"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1728,6 +1728,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply(backupDevDataFromProduction());
             return;
         }
+        if (msg === "/데이터상태") {
+            if (!isAdmin(sender) && !isMaster(sender)) {
+                replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            replier.reply(buildManagedJsonStatusMessage());
+            return;
+        }
+
+        if (msg === "/데이터복구" || /^\/데이터복구\s+\S+\s+[12]$/.test(msg)) {
+            if (!isAdmin(sender) && !isMaster(sender)) {
+                replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            if (msg === "/데이터복구") {
+                replier.reply(buildManagedJsonRecoveryUsageMessage());
+                return;
+            }
+            var managedRecoveryMatch = msg.match(/^\/데이터복구\s+(\S+)\s+([12])$/);
+            var managedRecoveryTarget = getManagedJsonCommandTarget(managedRecoveryMatch[1]);
+            if (!managedRecoveryTarget) {
+                replier.reply(buildManagedJsonRecoveryUsageMessage());
+                return;
+            }
+            try {
+                var managedRecoveryGeneration = parseInt(managedRecoveryMatch[2], 10);
+                var managedRecoveryPath = resolveActiveDataPath(managedRecoveryTarget.path);
+                var managedRecoveryResult = restoreManagedJsonFromSelectedBackup(managedRecoveryPath, managedRecoveryGeneration, "manual command");
+                replier.reply(
+                    "✅ 데이터 수동복구 완료\n" +
+                    "━━━━━━━━━━━━\n" +
+                    "환경: " + getManagedJsonEnvironmentName(managedRecoveryPath) + "\n" +
+                    "파일: " + managedRecoveryTarget.fileName + "\n" +
+                    "복구 기준: " + managedRecoveryGeneration + "차 백업\n" +
+                    "백업 파일: " + String(new java.io.File(managedRecoveryResult.backupPath).getName())
+                );
+            } catch (managedRecoveryError) {
+                replier.reply("❌ 데이터 수동복구에 실패했습니다.\n" + managedRecoveryError.toString());
+                notifyManagedJsonRecoveryFailure(
+                    managedRecoveryTarget ? resolveActiveDataPath(managedRecoveryTarget.path) : "unknown",
+                    "manual command",
+                    managedRecoveryError.toString()
+                );
+            }
+            return;
+        }
+
         if (ctx.isDev) {
             var missingDevFiles = getMissingDevDataFiles();
             if (missingDevFiles.length > 0) {
@@ -27358,7 +27405,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -27918,6 +27965,122 @@ function getManagedJsonBackupCandidates(path) {
     return candidates;
 }
 
+// 운영 명령에서 조회·복구할 보호 JSON 목록을 반환하는 함수
+function getManagedJsonCommandTargets() {
+    return [
+        { key: "member", fileName: "member.json", path: filePath, aliases: ["member", "멤버"] },
+        { key: "member_pet", fileName: "member_pet.json", path: memberPetPath, aliases: ["member_pet", "펫"] },
+        { key: "petSkillData", fileName: "petSkillData.json", path: petSkillDataPath, aliases: ["petSkillData", "펫스킬"] },
+        { key: "petHomeActivityData", fileName: "petHomeActivityData.json", path: petHomeActivityFile, aliases: ["petHomeActivityData", "펫홈활동"] }
+    ];
+}
+
+// 운영 명령의 파일 인자를 보호 JSON 대상으로 변환하는 함수
+function getManagedJsonCommandTarget(targetName) {
+    targetName = String(targetName || "").trim();
+    var targets = getManagedJsonCommandTargets();
+    for (var i = 0; i < targets.length; i++) {
+        for (var j = 0; j < targets[i].aliases.length; j++) {
+            if (targets[i].aliases[j] === targetName) return targets[i];
+        }
+    }
+    return null;
+}
+
+// 보호 JSON 경로가 운영 또는 DEV 중 어느 환경인지 반환하는 함수
+function getManagedJsonEnvironmentName(path) {
+    return String(path || "").indexOf(DEV_DATA_ROOT_PATH) === 0 ? "DEV" : "운영";
+}
+
+// 보호 JSON 원본이나 백업의 존재·파싱 상태를 읽기 전용으로 검사하는 함수
+function inspectManagedJsonFile(path) {
+    var file = new java.io.File(path);
+    if (!file.exists()) return { exists: false, valid: false, modifiedAt: "-", error: "파일 없음" };
+    try {
+        parseManagedJsonContent(FileStream.read(path, "utf-8"), path);
+        return {
+            exists: true,
+            valid: true,
+            modifiedAt: formatDateTime(new Date(file.lastModified())),
+            error: ""
+        };
+    } catch (e) {
+        return {
+            exists: true,
+            valid: false,
+            modifiedAt: formatDateTime(new Date(file.lastModified())),
+            error: e.toString()
+        };
+    }
+}
+
+// 보호 JSON 한 파일의 상태를 운영자용 한 줄로 만드는 함수
+function formatManagedJsonStatusLine(label, status) {
+    if (!status.exists) return "❔ " + label + ": 파일 없음";
+    return (status.valid ? "✅ " : "❌ ") + label + ": " + (status.valid ? "정상" : "손상") + " (" + status.modifiedAt + ")";
+}
+
+// 보호 JSON 4종과 각 2세대 백업 상태 메시지를 생성하는 함수
+function buildManagedJsonStatusMessage() {
+    var targets = getManagedJsonCommandTargets();
+    var lines = ["🛡️ 데이터 보호 상태", "━━━━━━━━━━━━"];
+    for (var i = 0; i < targets.length; i++) {
+        var originalPath = resolveActiveDataPath(targets[i].path);
+        lines.push("[" + targets[i].key + "] " + targets[i].fileName);
+        lines.push(formatManagedJsonStatusLine("원본", inspectManagedJsonFile(originalPath)));
+        lines.push(formatManagedJsonStatusLine("1차 백업", inspectManagedJsonFile(getManagedJsonBackupPath(originalPath))));
+        lines.push(formatManagedJsonStatusLine("2차 백업", inspectManagedJsonFile(getManagedJsonSecondaryBackupPath(originalPath))));
+        if (i < targets.length - 1) lines.push("");
+    }
+    lines.push("━━━━━━━━━━━━");
+    lines.push("환경: " + getManagedJsonEnvironmentName(resolveActiveDataPath(filePath)));
+    lines.push("복구: /데이터복구 [파일] [1|2]");
+    return lines.join("\n");
+}
+
+// 파일 단위 수동복구 명령 사용법을 반환하는 함수
+function buildManagedJsonRecoveryUsageMessage() {
+    return "사용법: /데이터복구 [파일] [1|2]\n" +
+        "파일: member, member_pet, petSkillData, petHomeActivityData\n" +
+        "예시: /데이터복구 member 1\n" +
+        "복구 전 /데이터상태로 백업 상태를 확인해주세요.";
+}
+
+// 데이터 복구 성공 사실을 관리자방에 알리는 함수
+function notifyManagedJsonRecovery(path, backupPath, reason) {
+    var primaryBackupPath = getManagedJsonBackupPath(path);
+    var generation = String(backupPath) === String(primaryBackupPath) ? 1 : 2;
+    var title = reason === "manual command" ? "✅ 데이터 수동복구 완료" : (reason === "transaction rollback" ? "⚠️ 데이터 트랜잭션 롤백" : "⚠️ 데이터 자동복구 완료");
+    var message = title + "\n" +
+        "━━━━━━━━━━━━\n" +
+        "환경: " + getManagedJsonEnvironmentName(path) + "\n" +
+        "파일: " + String(new java.io.File(path).getName()) + "\n" +
+        "복구 기준: " + generation + "차 백업\n" +
+        "백업 파일: " + String(new java.io.File(backupPath).getName()) + "\n" +
+        "발생 시각: " + formatDateTime(new Date());
+    try {
+        Api.replyRoom(room90, message);
+    } catch (notifyError) {
+        debuggerLog("[ERROR : 데이터 복구 알림 실패] " + notifyError.toString());
+    }
+}
+
+// 데이터 복구 실패 사실을 관리자방에 알리는 함수
+function notifyManagedJsonRecoveryFailure(path, reason, detail) {
+    var message = "🚨 데이터 복구 실패\n" +
+        "━━━━━━━━━━━━\n" +
+        "환경: " + getManagedJsonEnvironmentName(path) + "\n" +
+        "파일: " + String(new java.io.File(path).getName()) + "\n" +
+        "복구 유형: " + reason + "\n" +
+        "확인: " + String(detail || "정상 백업 없음") + "\n" +
+        "발생 시각: " + formatDateTime(new Date());
+    try {
+        Api.replyRoom(room90, message);
+    } catch (notifyError) {
+        debuggerLog("[ERROR : 데이터 복구 실패 알림 전송 실패] " + notifyError.toString());
+    }
+}
+
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
     var fileName = String(new java.io.File(path).getName());
@@ -27940,21 +28103,41 @@ function parseManagedJsonContent(jsonText, path) {
 // 최신 정상 백업부터 검증해 지정한 관리 JSON 원본만 안전하게 복구하는 함수
 function restoreManagedJsonFromBackup(path, reason) {
     var candidates = getManagedJsonBackupCandidates(path);
+    var recoveryErrors = [];
     for (var i = 0; i < candidates.length; i++) {
         var backupPath = candidates[i];
         var backupFile = new java.io.File(backupPath);
-        if (!backupFile.exists()) continue;
+        if (!backupFile.exists()) {
+            recoveryErrors.push(String(new java.io.File(backupPath).getName()) + ": 파일 없음");
+            continue;
+        }
         try {
             var backupText = FileStream.read(backupPath, "utf-8");
             var restoredData = parseManagedJsonContent(backupText, backupPath);
             writeVerifiedJsonFile(path, backupText, true);
             debuggerLog("[RECOVERY : " + reason + "] " + path + " <- " + backupPath);
+            notifyManagedJsonRecovery(path, backupPath, reason);
             return { data: restoredData, backupPath: backupPath };
         } catch (recoveryError) {
+            recoveryErrors.push(String(new java.io.File(backupPath).getName()) + ": " + recoveryError.toString());
             debuggerLog("[WARN : " + reason + " backup invalid] " + backupPath + " " + recoveryError.toString());
         }
     }
+    notifyManagedJsonRecoveryFailure(path, reason, recoveryErrors.join(" / "));
     return null;
+}
+
+// 지정한 세대의 정상 백업으로 보호 JSON 원본 하나만 복구하는 함수
+function restoreManagedJsonFromSelectedBackup(path, generation, reason) {
+    var backupPath = generation === 2 ? getManagedJsonSecondaryBackupPath(path) : getManagedJsonBackupPath(path);
+    if (!backupPath) throw new Error("지원하지 않는 보호 파일입니다.");
+    var backupFile = new java.io.File(backupPath);
+    if (!backupFile.exists()) throw new Error(generation + "차 백업 파일이 없습니다.");
+    var backupText = FileStream.read(backupPath, "utf-8");
+    var restoredData = parseManagedJsonContent(backupText, backupPath);
+    writeVerifiedJsonFile(path, backupText, true);
+    notifyManagedJsonRecovery(path, backupPath, reason);
+    return { data: restoredData, backupPath: backupPath };
 }
 
 // 현재 스레드의 명령 저장 트랜잭션을 반환하는 함수

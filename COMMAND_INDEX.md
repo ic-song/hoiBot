@@ -263,7 +263,8 @@ Status: VERIFIED
 - `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
 - A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
-- `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; if both backups are invalid, the existing error flow remains visible.
+- `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
+- `/데이터상태` reads the original and both backup generations for all four managed JSON files without modifying them; `/데이터복구 [파일] [1|2]` restores only the selected file from the explicitly selected validated backup generation.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
 - Slash-prefixed commands no longer perform an unconditional four-file backup before execution; managed JSON is backed up immediately before that specific original is actually saved.
 - `main.js`: main `response(...)` entry point for almost all mutable gameplay commands
@@ -279,6 +280,7 @@ Status: VERIFIED
 - DEV-prefixed messages are normalized through `stripDevCommandPrefix(msg)` before regular command branching continues
 - Both `loadJsonFile(...)` and `saveJsonFile(...)` pass through `resolveActiveDataPath(...)`, so save-flow verification should check path resolution rather than only literal file constants
 - `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing
+- `/데이터상태` and `/데이터복구` follow `resolveActiveDataPath(...)`; normal commands target production and `dev/` commands target DEV data.
 - If a command looks read-only but still writes, inspect whether it sanitizes or normalizes data before display
 
 ## Core Helper Hotspots
@@ -5223,6 +5225,79 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/포인트상자오픈` or `/포인트상자오픈 숫자`
 - One box grants `🅟100,000,000`; numeric use opens up to the held box count.
+
+---
+
+# /데이터상태
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/데이터상태`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `buildManagedJsonStatusMessage`
+- `inspectManagedJsonFile`
+- `getManagedJsonCommandTargets`
+- `getManagedJsonBackupPath`
+- `getManagedJsonSecondaryBackupPath`
+
+## Data Usage
+
+- `member.json`, `member_back.json`, `member_back2.json`
+- `member_pet.json`, `member_pet_back.json`, `member_pet_back2.json`
+- `petSkillData.json`, `petSkillData_back.json`, `petSkillData_back2.json`
+- `petHomeActivityData.json`, `petHomeActivityData_back.json`, `petHomeActivityData_back2.json`
+
+## Save Flow
+
+- Read-only; each file is strictly parsed without automatic restoration or writes.
+
+## AI Notes
+
+- Admin/Master only.
+- Normal input checks production paths; `dev/데이터상태` checks DEV paths.
+
+---
+
+# /데이터복구 [파일] [1|2]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/데이터복구`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getManagedJsonCommandTarget`
+- `restoreManagedJsonFromSelectedBackup`
+- `notifyManagedJsonRecovery`
+- `writeVerifiedJsonFile`
+
+## Data Usage
+
+- Files: `member`, `member_pet`, `petSkillData`, `petHomeActivityData`
+- Backup generation: `1` for `_back.json`, `2` for `_back2.json`
+
+## Save Flow
+
+- Strictly validates the selected backup and safely replaces only the selected original without rotating or overwriting either backup generation.
+
+## AI Notes
+
+- Admin/Master only; exact full-pattern guard prevents suffix text from executing.
+- Check `/데이터상태` first. Normal input restores production data; `dev/데이터복구 ...` restores DEV data.
 
 ---
 
