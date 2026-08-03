@@ -2,6 +2,8 @@
 
 This document records event-detection evidence for the selected redroid + KakaoTalk + Iris environment. It does not store message bodies, room names, sender names, chat IDs, user IDs, or authentication values.
 
+This document is the validation/evidence record. The machine-readable reference for implementing the hoiBot Server normalizer is `IRIS_SERVER_EVENT_MAPPING.json`. Update evidence here first, then update only the affected mapping entries.
+
 ## Status Definitions
 
 | Status | Meaning |

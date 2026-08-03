@@ -100,6 +100,16 @@
 - 근거: 고도화 관련 파일을 `개발환경_고도화/` 내부에 격리한다.
 - 적용 범위: 서버 소스, 패키지 설정, 테스트, 실행 문서와 로컬 런타임 설정
 
+### DEC-011: Iris 이벤트 정보와 서버 매핑 분리
+
+- 결정일: 2026-08-03
+- 상태: `ACTIVE`
+- 결정: Iris 이벤트의 실제 검증 근거와 hoiBot Server 구현용 매핑 정보를 별도 파일로 관리한다.
+- 검증 기준: `references/IRIS_EVENT_CAPABILITY_MATRIX.md`
+- 서버 구현 참고: `references/IRIS_SERVER_EVENT_MAPPING.json`
+- 관리 원칙: 실관측·원본 코드·DB 근거가 없는 항목은 `unverified` 또는 `not_direct` 상태로 유지한다.
+- 적용 범위: Iris adapter, 이벤트 정규화, 명령 처리 전처리와 향후 테스트 설계
+
 ## 대체된 결정
 
 현재 없음.

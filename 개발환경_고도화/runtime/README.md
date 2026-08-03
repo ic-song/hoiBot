@@ -14,6 +14,12 @@ Iris 연계 전에 HTTP 수신 경로와 기본 안전장치를 검증하는 독
 
 DB, 게임 명령 처리, `/ping` 외 일반 Iris 응답 처리, ADB 제어, 웹 관리 화면은 아직 포함하지 않습니다.
 
+## 이벤트 매핑 기준
+
+Iris 이벤트 정규화 계층을 구현할 때는 `../references/IRIS_SERVER_EVENT_MAPPING.json`을 서버 필드·이벤트 매핑 기준으로 사용합니다. 실제 검증 상태와 미검증 제약은 `../references/IRIS_EVENT_CAPABILITY_MATRIX.md`에서 먼저 확인합니다.
+
+`unverified`와 `not_direct` 항목은 검증 없이 운영 동작으로 구현하지 않습니다.
+
 ## 설치 및 실행
 
 PowerShell 실행 정책과 무관하게 `npm.cmd`를 사용합니다.

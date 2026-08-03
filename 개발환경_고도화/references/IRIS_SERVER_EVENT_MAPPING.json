@@ -1,0 +1,251 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-08-03",
+  "purpose": "Reference mapping for implementing the hoiBot Server Iris event normalization layer.",
+  "sourcePayload": "Iris HTTP/WebSocket payload",
+  "validationDocument": "IRIS_EVENT_CAPABILITY_MATRIX.md",
+  "sourceReferences": [
+    "https://github.com/dolidolih/Iris/blob/main/app/src/main/java/party/qwer/iris/ObserverHelper.kt",
+    "https://github.com/dolidolih/irispy-client/blob/main/iris/bot/__init__.py",
+    "https://kbotdocs.dev/reference/iris/Endpoint/ws"
+  ],
+  "privacy": {
+    "storeExampleIdentityValues": false,
+    "storeExampleMessageBodies": false
+  },
+  "implementationPolicy": {
+    "live_confirmed": "Safe to implement against the observed field shape, with fallback handling.",
+    "upstream_confirmed": "Implement with upstream behavior tests.",
+    "db_confirmed": "Create a raw/probe handler until a dedicated live payload test passes.",
+    "unverified": "Do not enable production behavior; log only type/origin/field names in test mode.",
+    "not_direct": "Requires a separate table observer or snapshot-diff adapter."
+  },
+  "canonicalFields": {
+    "eventId": ["json.id", "json._id"],
+    "roomId": ["json.chat_id"],
+    "roomName": ["room"],
+    "senderId": ["json.user_id"],
+    "senderName": ["sender"],
+    "messageText": ["msg", "json.message"],
+    "messageType": ["json.type"],
+    "origin": ["json.v.origin"],
+    "isMine": ["json.v.isMine"],
+    "createdAt": ["json.created_at"],
+    "attachment": ["json.attachment"],
+    "supplement": ["json.supplement"]
+  },
+  "upstreamSuppressedOrigins": [
+    "SYNCMSG",
+    "MCHATLOGS"
+  ],
+  "primaryMappings": [
+    {
+      "id": "message.text",
+      "status": "live_confirmed",
+      "match": {
+        "type": [1],
+        "origin": ["MSG", "WRITE"]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "text"
+    },
+    {
+      "id": "message.reply",
+      "status": "live_confirmed",
+      "match": {
+        "type": [26],
+        "origin": ["MSG", "WRITE"],
+        "requiredPaths": ["json.attachment.src_logId"]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "reply"
+    },
+    {
+      "id": "message.edited",
+      "status": "db_confirmed",
+      "match": {
+        "type": [0],
+        "origin": ["SYNCMODMSG"]
+      },
+      "normalizedEvent": "message.edited",
+      "normalizedKind": "raw_update",
+      "notes": ["Confirm target log ID and edited content fields with a dedicated live test."]
+    },
+    {
+      "id": "message.deleted",
+      "status": "db_confirmed",
+      "match": {
+        "type": [0],
+        "origin": ["SYNCDLMSG"]
+      },
+      "normalizedEvent": "message.deleted",
+      "normalizedKind": "raw_delete",
+      "candidatePaths": ["json.message.logId", "json.message.feedType", "json.message.hidden", "json.message.byHost"]
+    },
+    {
+      "id": "message.rewritten",
+      "status": "db_confirmed",
+      "match": {
+        "type": [0],
+        "origin": ["SYNCREWR"]
+      },
+      "normalizedEvent": "message.rewritten",
+      "normalizedKind": "raw_rewrite"
+    },
+    {
+      "id": "member.joined",
+      "status": "upstream_confirmed",
+      "match": {
+        "type": [0],
+        "origin": ["NEWMEM"]
+      },
+      "normalizedEvent": "member.joined",
+      "normalizedKind": "membership"
+    },
+    {
+      "id": "member.departed",
+      "status": "upstream_confirmed",
+      "match": {
+        "type": [0],
+        "origin": ["DELMEM"]
+      },
+      "normalizedEvent": "member.departed",
+      "normalizedKind": "membership",
+      "notes": ["Do not classify as voluntary leave or kick until separate live tests identify a stable discriminator."]
+    },
+    {
+      "id": "media.image",
+      "status": "upstream_confirmed",
+      "match": {
+        "type": [2],
+        "origin": ["MSG", "WRITE"]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "image"
+    },
+    {
+      "id": "media.emoticon_candidate",
+      "status": "unverified",
+      "match": {
+        "type": [12],
+        "origin": ["MSG", "WRITE"]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "emoticon_candidate"
+    },
+    {
+      "id": "media.file_candidate",
+      "status": "unverified",
+      "match": {
+        "type": [20],
+        "origin": ["MSG", "WRITE"]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "file_candidate"
+    },
+    {
+      "id": "media.multiple_images_candidate",
+      "status": "upstream_confirmed",
+      "match": {
+        "type": [27],
+        "origin": ["MSG", "WRITE"]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "multiple_images_candidate",
+      "candidatePaths": ["json.attachment.imageUrls"]
+    },
+    {
+      "id": "media.type_71_unknown",
+      "status": "unverified",
+      "match": {
+        "type": [71]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "unknown_media"
+    },
+    {
+      "id": "message.type_72_unknown",
+      "status": "unverified",
+      "match": {
+        "type": [72]
+      },
+      "normalizedEvent": "message.created",
+      "normalizedKind": "unknown"
+    }
+  ],
+  "enrichers": [
+    {
+      "id": "message.direction",
+      "status": "live_confirmed",
+      "readPaths": ["json.v.isMine"],
+      "output": "direction",
+      "mapping": {
+        "true": "outgoing",
+        "false": "incoming"
+      }
+    },
+    {
+      "id": "message.mentions",
+      "status": "live_confirmed",
+      "requiredPaths": ["json.attachment.mentions"],
+      "itemPaths": {
+        "start": "at",
+        "length": "len",
+        "targetUserId": "user_id"
+      },
+      "output": "mentions"
+    },
+    {
+      "id": "message.bot_command",
+      "status": "live_confirmed",
+      "requiredPaths": ["json.attachment.bot_command"],
+      "candidatePaths": ["json.attachment.bot_command.index", "json.attachment.bot_command.plusId", "json.attachment.bot_command.type"],
+      "output": "botCommand"
+    },
+    {
+      "id": "message.reply_source",
+      "status": "live_confirmed",
+      "requiredPaths": ["json.attachment.src_logId"],
+      "readPaths": ["json.attachment.src_linkId", "json.attachment.src_logId", "json.attachment.src_message", "json.attachment.src_type", "json.attachment.src_userId"],
+      "output": "replySource"
+    },
+    {
+      "id": "message.thread_source",
+      "status": "upstream_confirmed",
+      "requiredValues": {
+        "json.attachment.src_isThread": true
+      },
+      "readPaths": ["json.attachment.src_logId"],
+      "output": "threadSource"
+    }
+  ],
+  "nonDirectEvents": [
+    {
+      "id": "profile.nickname_changed",
+      "status": "not_direct",
+      "candidateTables": ["db2.open_chat_member", "db2.open_profile", "db2.friends"],
+      "strategy": "snapshot_diff_or_polling"
+    },
+    {
+      "id": "member.kicked",
+      "status": "unverified",
+      "candidateOrigin": "DELMEM",
+      "strategy": "compare_voluntary_leave_and_kick_payloads"
+    },
+    {
+      "id": "message.reaction_changed",
+      "status": "not_direct",
+      "strategy": "inspect_reaction_tables_and_run_live_test"
+    },
+    {
+      "id": "message.read_state_changed",
+      "status": "not_direct",
+      "strategy": "separate_read_state_observer"
+    }
+  ],
+  "fallback": {
+    "normalizedEvent": "iris.unknown",
+    "storeRawPayload": false,
+    "testLogging": ["json.type", "json.v.origin", "field_names"]
+  }
+}
