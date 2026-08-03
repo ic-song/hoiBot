@@ -19,7 +19,7 @@ DB, 게임 명령 처리, `/ping` 외 일반 Iris 응답 처리, ADB 제어, 웹
 PowerShell 실행 정책과 무관하게 `npm.cmd`를 사용합니다.
 
 ```powershell
-cd C:\Users\user\Desktop\hoiBot\runtime
+cd C:\Users\user\Desktop\hoiBot_modernization\개발환경_고도화\runtime
 Copy-Item .env.example .env
 # .env의 IRIS_SHARED_TOKEN을 16자 이상의 임의 문자열로 변경
 # .env의 IRIS_BASE_URL을 redroid Iris 주소로 변경

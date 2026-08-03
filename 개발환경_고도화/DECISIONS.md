@@ -37,7 +37,7 @@
 - 결정일: 2026-08-03
 - 상태: `ACTIVE`
 - 결정: hoiBot Server는 `TypeScript + Node.js 24 LTS + Fastify 5`로 구현한다.
-- 근거: 기존 JavaScript 게임 로직과 `runtime/`의 TypeScript/Fastify 서버 기반을 점진적으로 재사용한다.
+- 근거: 기존 JavaScript 게임 로직과 `개발환경_고도화/runtime/`의 TypeScript/Fastify 서버 기반을 점진적으로 재사용한다.
 - 적용 범위: HTTP/WebSocket 서버, Iris adapter, 명령 처리, 서버 측 데이터 접근 계층
 
 ### DEC-004: 고도화 문서 관리 범위
@@ -55,7 +55,7 @@
 - 결정: 고도화 관련 문서, 서버, redroid/Iris 연동 작업은 `feature/modernization` 브랜치에서만 진행한다.
 - 기준: 새 작업을 시작하기 전에 최신 `feature/prod`를 확인하고 `feature/modernization`에 반영한다.
 - 운영 반영: 고도화 변경은 사용자가 명시적으로 요청한 경우에만 검증된 커밋을 `feature/prod`에 반영한다.
-- 적용 범위: `개발환경_고도화/`, `runtime/`, 향후 hoiBot Server 및 adapter 구현
+- 적용 범위: `개발환경_고도화/` 내부의 문서, `runtime/`, 향후 hoiBot Server 및 adapter 구현
 
 ### DEC-006: Iris 기반 고도화
 
@@ -91,6 +91,14 @@
 - 결정: KakaoTalk에서 정확히 `/ping`을 입력하면 Iris가 hoiBot Server로 이벤트를 전달하고 서버는 같은 방에 `발신자이름 pong`으로 답한다.
 - 실행 조건: 메시지 전체가 `/ping`과 정확히 일치해야 하며 추가 문자가 붙은 입력은 실행하지 않는다.
 - 적용 범위: redroid/Iris/hoiBot Server 연결 확인 명령
+
+### DEC-010: hoiBot Server 프로젝트 위치
+
+- 결정일: 2026-08-03
+- 상태: `ACTIVE`
+- 결정: 고도화용 Node.js hoiBot Server 프로젝트는 `개발환경_고도화/runtime/` 내부에서만 관리한다.
+- 근거: 고도화 관련 파일을 `개발환경_고도화/` 내부에 격리한다.
+- 적용 범위: 서버 소스, 패키지 설정, 테스트, 실행 문서와 로컬 런타임 설정
 
 ## 대체된 결정
 
