@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
+import type { DatabaseClient } from "./database.js";
 import { RecentEventStore } from "./recent-events.js";
 
 interface TokenQuery {
@@ -34,6 +35,7 @@ interface IrisImageReply {
 interface AppDependencies {
   sendIrisTextReply?: (reply: IrisTextReply) => Promise<void>;
   sendIrisImageReply?: (reply: IrisImageReply) => Promise<void>;
+  database?: DatabaseClient;
 }
 
 // 로그에 인증 쿼리 문자열이 남지 않도록 경로만 반환합니다.
@@ -248,6 +250,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((reply: IrisTextReply) => sendIrisTextReply(config, reply));
   const forwardImageToIris = dependencies.sendIrisImageReply
     ?? ((reply: IrisImageReply) => sendIrisImageReply(config, reply));
+  const database = dependencies.database;
+
+  app.addHook("onClose", async () => {
+    await database?.close();
+  });
 
   app.addHook("onRequest", async (request, reply) => {
     reply.header("x-request-id", request.id);
@@ -281,11 +288,33 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     requestId: request.id
   }));
 
-  app.get("/health/ready", async (request) => ({
-    ok: true,
-    status: "ready",
-    requestId: request.id
-  }));
+  app.get("/health/ready", async (request, reply) => {
+    if (!config.database.enabled) {
+      return { ok: true, status: "ready", database: "disabled", requestId: request.id };
+    }
+
+    if (database === undefined) {
+      return reply.code(503).send({
+        ok: false,
+        status: "not_ready",
+        database: "unavailable",
+        requestId: request.id
+      });
+    }
+
+    try {
+      await database.ping();
+      return { ok: true, status: "ready", database: "ready", requestId: request.id };
+    } catch (error) {
+      request.log.error({ requestId: request.id, err: error }, "database.readiness.failed");
+      return reply.code(503).send({
+        ok: false,
+        status: "not_ready",
+        database: "unavailable",
+        requestId: request.id
+      });
+    }
+  });
 
   app.get("/api/v1/ping", async (request) => ({
     ok: true,

@@ -13,10 +13,14 @@
     "start": "node --env-file-if-exists=.env dist/src/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "fake:event": "node --env-file-if-exists=.env scripts/send-fake-iris-event.mjs"
+    "fake:event": "node --env-file-if-exists=.env scripts/send-fake-iris-event.mjs",
+    "db:migrate": "node --env-file-if-exists=.env --import tsx scripts/migrate.ts",
+    "db:probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database.ts",
+    "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts"
   },
   "dependencies": {
-    "fastify": "^5.10.0"
+    "fastify": "^5.10.0",
+    "mariadb": "3.5.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

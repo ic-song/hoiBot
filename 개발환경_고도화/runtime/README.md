@@ -10,9 +10,10 @@ Iris 연계 전에 HTTP 수신 경로와 기본 안전장치를 검증하는 독
 - Bearer, `x-iris-token`, Iris endpoint 쿼리 토큰 인증
 - health, ready, ping, version API
 - 정확한 `/ping` 이벤트에 `발신자이름 pong`으로 답하는 Iris 연결 확인 명령
+- MariaDB 연결 풀, DB 기반 readiness, 버전 관리 마이그레이션과 롤백·재시작 probe
 - 정상 종료 처리와 가짜 Iris 이벤트 전송 스크립트
 
-DB, 게임 명령 처리, `/ping` 외 일반 Iris 응답 처리, ADB 제어, 웹 관리 화면은 아직 포함하지 않습니다.
+게임 데이터의 실제 JSON→MariaDB 이전, 게임 명령 처리, `/ping` 외 일반 Iris 응답 처리, ADB 제어, 웹 관리 화면은 아직 포함하지 않습니다.
 
 ## 이벤트 매핑 기준
 
@@ -32,6 +33,26 @@ Copy-Item .env.example .env
 npm.cmd install
 npm.cmd run dev
 ```
+
+## MariaDB 실행 및 연결
+
+`infra/.env.example`을 `infra/.env`로 복사하고 두 비밀번호를 서로 다른 임의 값으로 변경합니다. 실제 `.env`는 Git에 포함하지 않습니다.
+
+```powershell
+cd C:\Users\user\Desktop\hoiBot_modernization\개발환경_고도화\infra
+Copy-Item .env.example .env
+docker compose --env-file .env -f compose.yaml up -d mariadb
+
+cd ..\runtime
+# runtime/.env의 DATABASE_* 값을 infra/.env와 맞춤
+npm.cmd run db:migrate
+npm.cmd run db:probe
+npm.cmd run dev
+```
+
+MariaDB는 공식 `11.8.8` 이미지로 고정하며 호스트의 `127.0.0.1:3307`에만 게시합니다. 데이터는 `hoibot_mariadb_data` named volume에 저장됩니다.
+
+`DATABASE_ENABLED=true`이면 `/health/ready`가 매 요청마다 MariaDB `SELECT 1`을 확인합니다. DB가 중단되면 `503 not_ready`, 복구되면 `200 ready`를 반환합니다.
 
 다른 터미널에서 확인합니다.
 
@@ -70,4 +91,6 @@ Iris 이벤트의 `msg`가 정확히 `/ping`이고 `sender`, `json.chat_id`가 �
 npm.cmd run typecheck
 npm.cmd test
 npm.cmd run build
+npm.cmd run db:migrate
+npm.cmd run db:probe
 ```

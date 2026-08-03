@@ -19,6 +19,16 @@ function createConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     rawPayloadLogging: true,
     recentEventsEnabled: true,
     recentEventLimit: 2,
+    database: {
+      enabled: false,
+      host: "",
+      port: 3306,
+      user: "",
+      password: "",
+      name: "",
+      connectionLimit: 2,
+      connectTimeoutMs: 1_000
+    },
     version: "0.1.0-test",
     ...overrides
   };
@@ -92,6 +102,42 @@ describe("hoiBot Lite server", () => {
     });
 
     assert.equal(response.statusCode, 202);
+    await app.close();
+  });
+
+  it("reports ready when the enabled database responds", async () => {
+    let closed = false;
+    const app = buildApp(createConfig({
+      database: { ...createConfig().database, enabled: true }
+    }), {
+      database: {
+        ping: async () => undefined,
+        verifyRollback: async () => true,
+        close: async () => { closed = true; }
+      }
+    });
+    const response = await app.inject({ method: "GET", url: "/health/ready" });
+
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().database, "ready");
+    await app.close();
+    assert.equal(closed, true);
+  });
+
+  it("reports not ready when the enabled database is unavailable", async () => {
+    const app = buildApp(createConfig({
+      database: { ...createConfig().database, enabled: true }
+    }), {
+      database: {
+        ping: async () => { throw new Error("offline"); },
+        verifyRollback: async () => false,
+        close: async () => undefined
+      }
+    });
+    const response = await app.inject({ method: "GET", url: "/health/ready" });
+
+    assert.equal(response.statusCode, 503);
+    assert.equal(response.json().database, "unavailable");
     await app.close();
   });
 

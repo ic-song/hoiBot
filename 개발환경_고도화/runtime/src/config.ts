@@ -11,7 +11,19 @@ export interface AppConfig {
   rawPayloadLogging: boolean;
   recentEventsEnabled: boolean;
   recentEventLimit: number;
+  database: DatabaseConfig;
   version: string;
+}
+
+export interface DatabaseConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  name: string;
+  connectionLimit: number;
+  connectTimeoutMs: number;
 }
 
 const DEFAULT_VERSION = "0.1.0";
@@ -50,6 +62,15 @@ function readBoolean(value: string | undefined, fallback: boolean): boolean {
   return value.toLowerCase() === "true";
 }
 
+// 활성화된 외부 서비스에 필요한 문자열 환경 변수를 검증합니다.
+function readRequiredString(value: string | undefined, name: string): string {
+  const result = value?.trim() ?? "";
+  if (result === "") {
+    throw new Error(`${name} is required when DATABASE_ENABLED is true.`);
+  }
+  return result;
+}
+
 // 서버 실행에 필요한 환경 설정을 구성하고 검증합니다.
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const irisSharedToken = env.IRIS_SHARED_TOKEN?.trim() ?? "";
@@ -58,6 +79,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
 
   const nodeEnv = env.NODE_ENV?.trim() || "development";
+  const databaseEnabled = readBoolean(env.DATABASE_ENABLED, false);
 
   return {
     nodeEnv,
@@ -76,6 +98,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     rawPayloadLogging: readBoolean(env.RAW_PAYLOAD_LOGGING, nodeEnv !== "production"),
     recentEventsEnabled: readBoolean(env.RECENT_EVENTS_ENABLED, nodeEnv !== "production"),
     recentEventLimit: readPositiveInteger(env.RECENT_EVENT_LIMIT, 50, "RECENT_EVENT_LIMIT"),
+    database: {
+      enabled: databaseEnabled,
+      host: databaseEnabled ? readRequiredString(env.DATABASE_HOST, "DATABASE_HOST") : "",
+      port: readPositiveInteger(env.DATABASE_PORT, 3306, "DATABASE_PORT"),
+      user: databaseEnabled ? readRequiredString(env.DATABASE_USER, "DATABASE_USER") : "",
+      password: databaseEnabled ? readRequiredString(env.DATABASE_PASSWORD, "DATABASE_PASSWORD") : "",
+      name: databaseEnabled ? readRequiredString(env.DATABASE_NAME, "DATABASE_NAME") : "",
+      connectionLimit: readPositiveInteger(env.DATABASE_CONNECTION_LIMIT, 5, "DATABASE_CONNECTION_LIMIT"),
+      connectTimeoutMs: readPositiveInteger(env.DATABASE_CONNECT_TIMEOUT_MS, 5_000, "DATABASE_CONNECT_TIMEOUT_MS")
+    },
     version: env.APP_VERSION?.trim() || DEFAULT_VERSION
   };
 }

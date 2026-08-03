@@ -8,6 +8,10 @@ Define enough persistence architecture for a future Codex session to implement h
 
 This is a design blueprint. No MariaDB instance, schema, driver, or migration tool has been implemented yet.
 
+## Implementation Status
+
+The MariaDB foundation is now implemented and live-validated on the development PC. See `MARIADB_CONNECTIVITY_VALIDATION.md`. Legacy JSON import and game-command migration have not started.
+
 ## Persistence Boundaries
 
 ```text

@@ -28,6 +28,7 @@
 - 1단계 redroid/KakaoTalk/Iris → hoiBot Lite Server 연결 및 `/ping` 감지 검증을 완료했다.
 - 실제 redroid DB와 Iris 원본 코드를 기준으로 이벤트 감지 가능 범위를 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`에 정리했다.
 - Iris가 다른 방에서 감지한 모든 단일 이미지를 `/ping` 테스트방으로 전달하는 Lite Server 기능을 구현하고 로컬 검증을 통과했다.
+- Docker MariaDB, 서버 연결 풀, 초기 마이그레이션과 DB 기반 readiness 구현·실검증을 완료했다.
 
 ## 확인된 현상
 
@@ -40,7 +41,7 @@
 - 앞으로 `/ping` 반복 검증은 서로 다른 이벤트 10건까지만 집계하고 즉시 종료한다.
 - 정확한 `/ping` 입력에 hoiBot Server가 Iris `/reply`를 사용해 `발신자이름 pong`으로 자동 응답하도록 구현했다.
 - 실제 KakaoTalk `/ping` 입력과 `발신자이름 pong` 출력이 서버 이벤트에서 연속 관측됐고 응답 이벤트의 `isMine=true`를 확인했다.
-- 자동 테스트 10건, 타입 검사와 빌드는 통과했다.
+- 자동 테스트 15건, 타입 검사와 빌드는 통과했다.
 - Node.js 프로젝트를 저장소 최상위 `runtime/`에서 `개발환경_고도화/runtime/`으로 이동했다.
 - 이동 후 새 경로에서 Lite 서버를 재기동했으며 `0.0.0.0:3100` readiness 확인을 통과했다.
 - Iris는 `chat_logs`의 새 행을 HTTP/WebSocket으로 전달하며 공식 고수준 분류는 `message`, `new_member`, `del_member`, `unknown`이다.
@@ -59,6 +60,10 @@
 - redroid KakaoTalk DB와 별개인 hoiBot Server 전용 DB로 MariaDB를 사용하기로 확정했다.
 - 기존 JSON 저장 흐름을 읽기 전용으로 조사해 주요 저장 대상과 다중 파일 갱신 위험을 확인했다.
 - 재현 가능한 환경 구성은 `references/REPRODUCIBLE_ENVIRONMENT_BLUEPRINT.md`, MariaDB 신규 구축·이전 순서는 `references/MARIADB_IMPLEMENTATION_BLUEPRINT.md`에 정리했다.
+- 공식 MariaDB `11.8.8` 컨테이너를 loopback `3307` 포트와 named volume으로 기동하고 공식 Node Connector `3.5.3`을 연결했다.
+- `001_foundation.sql` 마이그레이션으로 migration/probe/event inbox/사용자/방/멤버십 기반 테이블을 생성했다.
+- 실제 `SELECT 1`, 트랜잭션 롤백, 마이그레이션 재실행, DB 중단 시 readiness `503`, 재기동 후 readiness 복구와 테스트 행 영속·삭제를 검증했다.
+- MariaDB 연결 검증 상세는 `references/MARIADB_CONNECTIVITY_VALIDATION.md`에 기록했다.
 - 이벤트 검증 근거는 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`, 서버 구현용 필드·이벤트 매핑은 `references/IRIS_SERVER_EVENT_MAPPING.json`으로 분리했다.
 
 ## 미검증 항목
@@ -67,13 +72,11 @@
 - 닉네임 변경·반응 이벤트를 위한 별도 테이블 감시 필요성
 - Iris WebSocket `/ws` 수신
 - redroid 재시작 후 데이터와 설정 유지
-- hoiBot Server와 PC 데이터 저장소 연결
 
 ## 열린 질문
 
 - hoiBot Server를 Windows 호스트와 Ubuntu/Linux VM 중 어디에서 상시 실행할지
-- MariaDB 배치 위치와 백업·복구 방식
-- Node.js MariaDB 드라이버·쿼리 계층과 마이그레이션 도구
+- 운영 PC의 MariaDB 최종 배치 위치와 백업·복구 방식
 - 기존 JSON 데이터를 이전할 순서와 읽기 전용 첫 명령
 
 ## 다음 작업
@@ -82,7 +85,7 @@
 2. 단일 이미지의 테스트방 실제 전달을 확인한 뒤 다중 이미지, 파일, 이모티콘과 반응 이벤트를 실검증한다.
 3. HTTP 검증과 별도로 WebSocket 수신을 확인한다.
 4. 검증 결과를 입력 계약으로 삼아 hoiBot Server 이벤트 정규화 계층을 구현한다.
-5. MariaDB와 서버의 실행 위치를 확정하고 재현 환경 청사진의 기반 Compose·마이그레이션 작업을 시작한다.
+5. MariaDB 백업·일회성 복구 검증을 구현한 뒤 첫 읽기 전용 JSON→MariaDB 수직 기능을 선택한다.
 
 ## 최근 대화 요약
 
