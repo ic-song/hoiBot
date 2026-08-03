@@ -261,8 +261,9 @@ Status: VERIFIED
 
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
 - `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
-- `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
-- `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from its matching valid last-known-good backup; invalid backups remain visible through the existing error flow.
+- `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
+- A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
+- `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; if both backups are invalid, the existing error flow remains visible.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
 - Slash-prefixed commands no longer perform an unconditional four-file backup before execution; managed JSON is backed up immediately before that specific original is actually saved.
 - `main.js`: main `response(...)` entry point for almost all mutable gameplay commands

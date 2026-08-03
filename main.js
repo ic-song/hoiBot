@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.348"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.349"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -718,6 +718,7 @@ const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json
 const filePath_back = "/sdcard/호이랜드/member_back.json"; //멤버백
 const memberPetPath_back = "/sdcard/호이랜드/member_pet_back.json";
 const petSkillDataPath_back = "/sdcard/호이랜드/petSkillData_back.json";
+const MANAGED_BACKUP_SECONDARY_ROTATION_MS = 300000; // 2세대 백업 갱신 최소 간격(5분)
 var COMMON_DATA_FILE_MAP = {
     "itemInfo.json": true,
     "miniPetData.json": true,
@@ -730,6 +731,7 @@ var COMMON_DATA_FILE_MAP = {
 var commandContextThreadLocal = new java.lang.ThreadLocal();
 var commandDataFlowLock = new java.util.concurrent.locks.ReentrantReadWriteLock(true); // 자동일퀘와 일반 응답의 데이터 처리 순서 보호
 var dataTransactionLock = new java.util.concurrent.locks.ReentrantLock(); // 명령 단위 데이터 로드·백업·변경·저장 동시 실행 방지
+var dataSaveTransactionThreadLocal = new java.lang.ThreadLocal(); // 명령별 최초 백업과 자동 롤백 상태
 var autoDailyBatchThreadLocal = new java.lang.ThreadLocal(); // 자동일퀘 스레드별 메모리 저장 배치
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
     windowMs: 2000,
@@ -1694,6 +1696,7 @@ const miniPetData = loadJsonFile(miniPetPath);
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     var responseDataLock = getResponseDataFlowLock(msg);
     var responseTransactionAcquired = false;
+    var dataSaveTransactionEntered = false;
     var commandContextEntered = false;
     var ctx = null;
     var prevCtx = null;
@@ -1702,6 +1705,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     try {
         if (!dataTransactionLock.tryLock()) return;
         responseTransactionAcquired = true;
+        beginDataSaveTransaction();
+        dataSaveTransactionEntered = true;
         ctx = createCommandContext(isDevCommandMessage(msg));
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
@@ -27060,6 +27065,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
         }
     } catch (error) {
+        try {
+            rollbackDataSaveTransaction();
+        } catch (rollbackError) {
+            debuggerLog("[ERROR : Data transaction rollback] " + rollbackError.toString());
+        }
         // if (msg.startsWith("/")) {
         let errorObj = {
             system: "main",
@@ -27076,6 +27086,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
     } finally {
         if (commandContextEntered) exitCommandContext(prevCtx);
+        if (dataSaveTransactionEntered) endDataSaveTransaction();
         if (responseTransactionAcquired) dataTransactionLock.unlock();
         responseDataLock.unlock();
     }
@@ -27859,21 +27870,10 @@ function loadJsonFile(path) {
         // 로그 출력 (콘솔)
         // Api.replyRoom(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
         debuggerLog(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
-        var managedBackupPath = getManagedJsonBackupPath(path);
-        if (managedBackupPath) {
-            try {
-                var managedBackupFile = new java.io.File(managedBackupPath);
-                if (managedBackupFile.exists()) {
-                    var managedBackupText = FileStream.read(managedBackupPath, "utf-8");
-                    var restoredData = parseManagedJsonContent(managedBackupText, managedBackupPath);
-                    writeVerifiedJsonFile(path, managedBackupText, true);
-                    debuggerLog("[RECOVERY : loadJsonFile] " + path + " <- " + managedBackupPath);
-                    if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = restoredData;
-                    return restoredData;
-                }
-            } catch (recoveryError) {
-                debuggerLog("[ERROR : loadJsonFile recovery] " + path + " " + recoveryError.toString());
-            }
+        var recoveryResult = restoreManagedJsonFromBackup(path, "loadJsonFile");
+        if (recoveryResult) {
+            if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = recoveryResult.data;
+            return recoveryResult.data;
         }
         throw e;
     } finally {
@@ -27895,13 +27895,37 @@ function getManagedJsonBackupPath(path) {
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
 
+// 자동 직전 백업을 사용하는 원본 JSON의 2세대 백업 경로를 반환하는 함수
+function getManagedJsonSecondaryBackupPath(path) {
+    var targetFile = new java.io.File(path);
+    var fileName = String(targetFile.getName());
+    var backupFileName = null;
+    if (fileName === "member.json") backupFileName = "member_back2.json";
+    if (fileName === "member_pet.json") backupFileName = "member_pet_back2.json";
+    if (fileName === "petSkillData.json") backupFileName = "petSkillData_back2.json";
+    if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back2.json";
+    if (!backupFileName) return null;
+    return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
+}
+
+// 관리 JSON 원본에 대응하는 정상 백업 후보를 최신 순서로 반환하는 함수
+function getManagedJsonBackupCandidates(path) {
+    var candidates = [];
+    var primaryBackupPath = getManagedJsonBackupPath(path);
+    var secondaryBackupPath = getManagedJsonSecondaryBackupPath(path);
+    if (primaryBackupPath) candidates.push(primaryBackupPath);
+    if (secondaryBackupPath) candidates.push(secondaryBackupPath);
+    return candidates;
+}
+
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
     var fileName = String(new java.io.File(path).getName());
     return fileName === "member.json" || fileName === "member_back.json" ||
         fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
-        fileName === "petSkillData.json" || fileName === "petSkillData_back.json" ||
-        fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json";
+        fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
+        fileName === "petSkillData.json" || fileName === "petSkillData_back.json" || fileName === "petSkillData_back2.json" ||
+        fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json" || fileName === "petHomeActivityData_back2.json";
 }
 
 // 관리 JSON 내용을 엄격하게 파싱하고 파일별 필수 구조를 검증하는 함수
@@ -27911,6 +27935,98 @@ function parseManagedJsonContent(jsonText, path) {
         return requirePetHomeActivityData(parsedData);
     }
     return parsedData;
+}
+
+// 최신 정상 백업부터 검증해 지정한 관리 JSON 원본만 안전하게 복구하는 함수
+function restoreManagedJsonFromBackup(path, reason) {
+    var candidates = getManagedJsonBackupCandidates(path);
+    for (var i = 0; i < candidates.length; i++) {
+        var backupPath = candidates[i];
+        var backupFile = new java.io.File(backupPath);
+        if (!backupFile.exists()) continue;
+        try {
+            var backupText = FileStream.read(backupPath, "utf-8");
+            var restoredData = parseManagedJsonContent(backupText, backupPath);
+            writeVerifiedJsonFile(path, backupText, true);
+            debuggerLog("[RECOVERY : " + reason + "] " + path + " <- " + backupPath);
+            return { data: restoredData, backupPath: backupPath };
+        } catch (recoveryError) {
+            debuggerLog("[WARN : " + reason + " backup invalid] " + backupPath + " " + recoveryError.toString());
+        }
+    }
+    return null;
+}
+
+// 현재 스레드의 명령 저장 트랜잭션을 반환하는 함수
+function getDataSaveTransaction() {
+    return dataSaveTransactionThreadLocal.get();
+}
+
+// 중첩 응답을 포함한 명령 저장 트랜잭션을 시작하는 함수
+function beginDataSaveTransaction() {
+    var transaction = getDataSaveTransaction();
+    if (transaction) {
+        transaction.depth++;
+        return transaction;
+    }
+    transaction = {
+        depth: 1,
+        entries: {},
+        order: [],
+        rollingBack: false,
+        rollbackAttempted: false,
+        failed: false
+    };
+    dataSaveTransactionThreadLocal.set(transaction);
+    return transaction;
+}
+
+// 현재 명령 저장 트랜잭션의 중첩 깊이를 줄이고 최상위 종료 시 정리하는 함수
+function endDataSaveTransaction() {
+    var transaction = getDataSaveTransaction();
+    if (!transaction) return;
+    transaction.depth--;
+    if (transaction.depth <= 0) dataSaveTransactionThreadLocal.remove();
+}
+
+// 관리 JSON의 명령 실행 전 백업을 트랜잭션에 최초 한 번만 등록하는 함수
+function prepareManagedJsonTransactionEntry(path, skipManagedBackup) {
+    var transaction = getDataSaveTransaction();
+    var backupPath = getManagedJsonBackupPath(path);
+    if (!transaction || !backupPath || skipManagedBackup === true || transaction.rollingBack) {
+        return { entry: null, skipManagedBackup: skipManagedBackup === true };
+    }
+    if (transaction.failed) throw new Error("Data save transaction already failed");
+    if (transaction.entries[path]) {
+        return { entry: transaction.entries[path], skipManagedBackup: true };
+    }
+    var entry = { path: path, backupPath: backupPath, saved: false };
+    transaction.entries[path] = entry;
+    transaction.order.push(path);
+    return { entry: entry, skipManagedBackup: false };
+}
+
+// 실패한 명령에서 이미 저장한 관리 JSON을 실행 전 백업으로 역순 복구하는 함수
+function rollbackDataSaveTransaction() {
+    var transaction = getDataSaveTransaction();
+    if (!transaction || transaction.rollbackAttempted) return;
+    transaction.rollbackAttempted = true;
+    transaction.failed = true;
+    transaction.rollingBack = true;
+    var rollbackErrors = [];
+    try {
+        for (var i = transaction.order.length - 1; i >= 0; i--) {
+            var entry = transaction.entries[transaction.order[i]];
+            if (!entry || !entry.saved) continue;
+            var recoveryResult = restoreManagedJsonFromBackup(entry.path, "transaction rollback");
+            if (!recoveryResult) rollbackErrors.push(entry.path);
+        }
+    } finally {
+        transaction.rollingBack = false;
+    }
+    if (rollbackErrors.length > 0) {
+        throw new Error("Managed JSON rollback failed: " + rollbackErrors.join(", "));
+    }
 }
 
 // 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
@@ -27954,17 +28070,40 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
 
         var seedManagedBackup = false;
         var managedBackupPath = getManagedJsonBackupPath(path);
+        var secondaryManagedBackupPath = getManagedJsonSecondaryBackupPath(path);
         if (managedBackupPath && skipManagedBackup !== true) {
             if (targetFile.exists()) {
                 var currentJsonText = FileStream.read(path, "utf-8");
                 parseManagedJsonContent(currentJsonText, path);
+                var currentPrimaryBackupFile = new java.io.File(managedBackupPath);
+                if (secondaryManagedBackupPath) {
+                    var secondaryManagedBackupFile = new java.io.File(secondaryManagedBackupPath);
+                    if (currentPrimaryBackupFile.exists()) {
+                        var shouldRotateSecondary = !secondaryManagedBackupFile.exists() ||
+                            Date.now() - secondaryManagedBackupFile.lastModified() >= MANAGED_BACKUP_SECONDARY_ROTATION_MS;
+                        if (shouldRotateSecondary) {
+                            try {
+                                var currentPrimaryBackupText = FileStream.read(managedBackupPath, "utf-8");
+                                parseManagedJsonContent(currentPrimaryBackupText, managedBackupPath);
+                                writeVerifiedJsonFile(secondaryManagedBackupPath, currentPrimaryBackupText, true);
+                            } catch (backupRotationError) {
+                                debuggerLog("[WARN : managed backup rotation] " + managedBackupPath + " " + backupRotationError.toString());
+                            }
+                        }
+                    } else if (!secondaryManagedBackupFile.exists()) {
+                        writeVerifiedJsonFile(secondaryManagedBackupPath, currentJsonText, true);
+                    }
+                }
                 writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
             } else {
                 seedManagedBackup = true;
             }
         }
 
-        if (seedManagedBackup) writeVerifiedJsonFile(managedBackupPath, jsonText, true);
+        if (seedManagedBackup) {
+            writeVerifiedJsonFile(managedBackupPath, jsonText, true);
+            if (secondaryManagedBackupPath) writeVerifiedJsonFile(secondaryManagedBackupPath, jsonText, true);
+        }
         if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
             throw new Error("Current JSON file backup failed: " + path);
         }
@@ -28011,15 +28150,23 @@ function saveJsonFile(data, path, skipManagedBackup) {
             throw new Error("JSON stringify failed: " + path);
         }
         dataTransactionLock.lock();
+        var transactionEntryResult = null;
         try {
             ensureParentFolder(path);
             if (isProtectedManagedJsonPath(path)) {
-                writeVerifiedJsonFile(path, jsonText, skipManagedBackup);
+                transactionEntryResult = prepareManagedJsonTransactionEntry(path, skipManagedBackup);
+                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup);
+                if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
             } else {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             }
         } catch (e) {
             debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString());
+            try {
+                rollbackDataSaveTransaction();
+            } catch (rollbackError) {
+                debuggerLog("[ERROR : saveJsonFile rollback] " + rollbackError.toString());
+            }
             throw e;
         } finally {
             dataTransactionLock.unlock();
