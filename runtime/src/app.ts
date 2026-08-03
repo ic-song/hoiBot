@@ -11,8 +11,17 @@ interface IrisPayload {
   msg?: unknown;
   room?: unknown;
   sender?: unknown;
-  json?: unknown;
+  json?: { chat_id?: unknown; [key: string]: unknown };
   [key: string]: unknown;
+}
+
+interface IrisTextReply {
+  room: string;
+  data: string;
+}
+
+interface AppDependencies {
+  sendIrisTextReply?: (reply: IrisTextReply) => Promise<void>;
 }
 
 // 로그에 인증 쿼리 문자열이 남지 않도록 경로만 반환합니다.
@@ -59,8 +68,27 @@ function createTokenGuard(config: AppConfig) {
   };
 }
 
+// Iris `/reply` API로 텍스트 답장을 전송합니다.
+async function sendIrisTextReply(config: AppConfig, reply: IrisTextReply): Promise<void> {
+  const response = await fetch(`${config.irisBaseUrl}/reply`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "text", room: reply.room, data: reply.data }),
+    signal: AbortSignal.timeout(5_000)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Iris reply failed with HTTP ${response.status}.`);
+  }
+
+  const result = await response.json() as { success?: unknown };
+  if (result.success !== true) {
+    throw new Error("Iris reply response did not report success.");
+  }
+}
+
 // 테스트와 실제 실행에서 공통으로 사용할 Fastify 앱을 생성합니다.
-export function buildApp(config: AppConfig) {
+export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) {
   const app = Fastify({
     bodyLimit: config.bodyLimitBytes,
     logController: new LogController({ disableRequestLogging: true }),
@@ -75,6 +103,8 @@ export function buildApp(config: AppConfig) {
   });
   const recentEvents = new RecentEventStore(config.recentEventLimit);
   const tokenGuard = createTokenGuard(config);
+  const replyToIris = dependencies.sendIrisTextReply
+    ?? ((reply: IrisTextReply) => sendIrisTextReply(config, reply));
 
   app.addHook("onRequest", async (request, reply) => {
     reply.header("x-request-id", request.id);
@@ -143,6 +173,25 @@ export function buildApp(config: AppConfig) {
           receivedAt: new Date().toISOString(),
           payload: request.body
         });
+      }
+
+      if (request.body.msg === "/ping") {
+        const sender = typeof request.body.sender === "string" ? request.body.sender.trim() : "";
+        const rawChatId = request.body.json?.chat_id;
+        const chatId = typeof rawChatId === "string" || typeof rawChatId === "number"
+          ? String(rawChatId)
+          : "";
+
+        if (sender !== "" && chatId !== "") {
+          try {
+            await replyToIris({ room: chatId, data: `${sender} pong` });
+            request.log.info({ requestId: request.id }, "iris.ping_reply.sent");
+          } catch (error) {
+            request.log.error({ requestId: request.id, err: error }, "iris.ping_reply.failed");
+          }
+        } else {
+          request.log.warn({ requestId: request.id }, "iris.ping_reply.missing_context");
+        }
       }
 
       return reply.code(202).send({ ok: true, accepted: true, requestId: request.id });

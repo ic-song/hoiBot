@@ -40,6 +40,7 @@ This document records technical validation evidence without KakaoTalk room names
 
 ## Remaining Validation
 
+- Send a new exact `/ping` from the dedicated KakaoTalk test room and verify that the deployed automatic handler displays `sender-name pong`.
 - Classify the observed Iris message type values using upstream source evidence.
 - Test text, reply, media, emoticon, and supported system/member events in a dedicated test room.
 - Verify WebSocket event delivery separately from the current HTTP endpoint flow.

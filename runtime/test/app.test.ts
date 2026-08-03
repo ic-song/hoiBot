@@ -11,6 +11,7 @@ function createConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     host: "127.0.0.1",
     port: 3000,
     irisSharedToken: TEST_TOKEN,
+    irisBaseUrl: "http://127.0.0.1:3000",
     bodyLimitBytes: 1_048_576,
     rawPayloadLogging: true,
     recentEventsEnabled: true,
@@ -88,6 +89,51 @@ describe("hoiBot Lite server", () => {
     });
 
     assert.equal(response.statusCode, 202);
+    await app.close();
+  });
+
+  it("replies with the sender name and pong for an exact /ping event", async () => {
+    const replies: Array<{ room: string; data: string }> = [];
+    const app = buildApp(createConfig(), {
+      sendIrisTextReply: async (reply) => {
+        replies.push(reply);
+      }
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "/ping",
+        room: "테스트방",
+        sender: "테스터",
+        json: { chat_id: "123" }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(replies, [{ room: "123", data: "테스터 pong" }]);
+    await app.close();
+  });
+
+  it("does not reply when text is appended to /ping", async () => {
+    const replies: Array<{ room: string; data: string }> = [];
+    const app = buildApp(createConfig(), {
+      sendIrisTextReply: async (reply) => {
+        replies.push(reply);
+      }
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "/ping 설명",
+        sender: "테스터",
+        json: { chat_id: "123" }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(replies, []);
     await app.close();
   });
 
