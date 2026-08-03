@@ -11,7 +11,13 @@ interface IrisPayload {
   msg?: unknown;
   room?: unknown;
   sender?: unknown;
-  json?: { chat_id?: unknown; [key: string]: unknown };
+  json?: {
+    chat_id?: unknown;
+    type?: unknown;
+    v?: unknown;
+    attachment?: unknown;
+    [key: string]: unknown;
+  };
   [key: string]: unknown;
 }
 
@@ -20,8 +26,14 @@ interface IrisTextReply {
   data: string;
 }
 
+interface IrisImageReply {
+  room: string;
+  imageUrl: string;
+}
+
 interface AppDependencies {
   sendIrisTextReply?: (reply: IrisTextReply) => Promise<void>;
+  sendIrisImageReply?: (reply: IrisImageReply) => Promise<void>;
 }
 
 // 로그에 인증 쿼리 문자열이 남지 않도록 경로만 반환합니다.
@@ -87,6 +99,135 @@ async function sendIrisTextReply(config: AppConfig, reply: IrisTextReply): Promi
   }
 }
 
+// JSON 문자열 또는 객체로 전달된 Iris 하위 필드를 안전하게 객체로 변환합니다.
+function readRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// 허용된 Kakao CDN HTTPS 이미지 주소만 반환합니다.
+function readTrustedKakaoImageUrl(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    const trustedHost = hostname === "kakaocdn.net"
+      || hostname.endsWith(".kakaocdn.net")
+      || hostname === "kakao.com"
+      || hostname.endsWith(".kakao.com");
+
+    return url.protocol === "https:" && trustedHost ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// 단일 이미지 수신 이벤트에서 전달 가능한 이미지 URL을 추출합니다.
+function readIncomingSingleImageUrl(
+  payload: IrisPayload,
+  targetRoomId: string
+): string | undefined {
+  if (String(payload.json?.type) !== "2") {
+    return undefined;
+  }
+
+  const sourceRoomId = payload.json?.chat_id;
+  if ((typeof sourceRoomId !== "string" && typeof sourceRoomId !== "number")
+    || String(sourceRoomId) === targetRoomId) {
+    return undefined;
+  }
+
+  const attachment = readRecord(payload.json?.attachment);
+  return readTrustedKakaoImageUrl(attachment?.url);
+}
+
+// 제한된 크기로 원격 이미지를 내려받아 Iris 전송용 base64 문자열로 변환합니다.
+async function downloadImageAsBase64(config: AppConfig, imageUrl: string): Promise<string> {
+  const response = await fetch(imageUrl, {
+    redirect: "error",
+    signal: AbortSignal.timeout(config.imageDownloadTimeoutMs)
+  });
+  if (!response.ok) {
+    throw new Error(`Image download failed with HTTP ${response.status}.`);
+  }
+
+  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.startsWith("image/")) {
+    throw new Error("Image download returned a non-image content type.");
+  }
+
+  const contentLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > config.imageMaxBytes) {
+    throw new Error("Image download exceeds the configured size limit.");
+  }
+  if (response.body === null) {
+    throw new Error("Image download returned an empty body.");
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const result = await reader.read();
+      if (result.done) {
+        break;
+      }
+
+      totalBytes += result.value.byteLength;
+      if (totalBytes > config.imageMaxBytes) {
+        await reader.cancel();
+        throw new Error("Image download exceeds the configured size limit.");
+      }
+      chunks.push(Buffer.from(result.value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  if (totalBytes === 0) {
+    throw new Error("Image download returned an empty body.");
+  }
+  return Buffer.concat(chunks, totalBytes).toString("base64");
+}
+
+// Kakao CDN 이미지를 내려받아 Iris `/reply` API로 대상 방에 전송합니다.
+async function sendIrisImageReply(config: AppConfig, reply: IrisImageReply): Promise<void> {
+  const imageData = await downloadImageAsBase64(config, reply.imageUrl);
+  const response = await fetch(`${config.irisBaseUrl}/reply`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "image", room: reply.room, data: imageData }),
+    signal: AbortSignal.timeout(10_000)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Iris image reply failed with HTTP ${response.status}.`);
+  }
+
+  const result = await response.json() as { success?: unknown };
+  if (result.success !== true) {
+    throw new Error("Iris image reply response did not report success.");
+  }
+}
+
 // 테스트와 실제 실행에서 공통으로 사용할 Fastify 앱을 생성합니다.
 export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) {
   const app = Fastify({
@@ -105,6 +246,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const tokenGuard = createTokenGuard(config);
   const replyToIris = dependencies.sendIrisTextReply
     ?? ((reply: IrisTextReply) => sendIrisTextReply(config, reply));
+  const forwardImageToIris = dependencies.sendIrisImageReply
+    ?? ((reply: IrisImageReply) => sendIrisImageReply(config, reply));
 
   app.addHook("onRequest", async (request, reply) => {
     reply.header("x-request-id", request.id);
@@ -191,6 +334,20 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           }
         } else {
           request.log.warn({ requestId: request.id }, "iris.ping_reply.missing_context");
+        }
+      }
+
+      const imageUrl = readIncomingSingleImageUrl(
+        request.body,
+        config.irisImageForwardRoomId
+      );
+      if (imageUrl !== undefined
+        && config.irisImageForwardRoomId !== "") {
+        try {
+          await forwardImageToIris({ room: config.irisImageForwardRoomId, imageUrl });
+          request.log.info({ requestId: request.id }, "iris.image_forward.sent");
+        } catch (error) {
+          request.log.error({ requestId: request.id, err: error }, "iris.image_forward.failed");
         }
       }
 

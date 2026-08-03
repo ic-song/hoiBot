@@ -4,6 +4,9 @@ export interface AppConfig {
   port: number;
   irisSharedToken: string;
   irisBaseUrl: string;
+  irisImageForwardRoomId: string;
+  imageMaxBytes: number;
+  imageDownloadTimeoutMs: number;
   bodyLimitBytes: number;
   rawPayloadLogging: boolean;
   recentEventsEnabled: boolean;
@@ -62,6 +65,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port: readPositiveInteger(env.PORT, 3100, "PORT"),
     irisSharedToken,
     irisBaseUrl: readHttpUrl(env.IRIS_BASE_URL, "http://127.0.0.1:3000", "IRIS_BASE_URL"),
+    irisImageForwardRoomId: env.IRIS_IMAGE_FORWARD_ROOM_ID?.trim() ?? "",
+    imageMaxBytes: readPositiveInteger(env.IMAGE_MAX_BYTES, 10_485_760, "IMAGE_MAX_BYTES"),
+    imageDownloadTimeoutMs: readPositiveInteger(
+      env.IMAGE_DOWNLOAD_TIMEOUT_MS,
+      10_000,
+      "IMAGE_DOWNLOAD_TIMEOUT_MS"
+    ),
     bodyLimitBytes: readPositiveInteger(env.BODY_LIMIT_BYTES, 1_048_576, "BODY_LIMIT_BYTES"),
     rawPayloadLogging: readBoolean(env.RAW_PAYLOAD_LOGGING, nodeEnv !== "production"),
     recentEventsEnabled: readBoolean(env.RECENT_EVENTS_ENABLED, nodeEnv !== "production"),

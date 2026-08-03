@@ -60,6 +60,8 @@ http://개발PC_IP:3100/api/v1/integrations/iris/events?token=공유토큰
 
 Iris 이벤트의 `msg`가 정확히 `/ping`이고 `sender`, `json.chat_id`가 있으면 서버는 `IRIS_BASE_URL/reply`를 호출해 같은 방에 `발신자이름 pong`으로 답합니다.
 
+`IRIS_IMAGE_FORWARD_ROOM_ID`를 `/ping` 테스트방의 ID로 설정하면 다른 방에서 감지된 모든 `type=2` 단일 이미지를 테스트방으로 전달합니다. 테스트방에서 감지된 이미지는 다시 전달하지 않아 반복되지 않습니다. 서버는 허용된 Kakao CDN HTTPS URL만 사용하고 이미지 MIME, `IMAGE_MAX_BYTES`, `IMAGE_DOWNLOAD_TIMEOUT_MS` 제한을 적용합니다. 방 ID는 `.env.example`이나 문서에 기록하지 않습니다. 다중 이미지는 별도 검증 전까지 전달하지 않습니다.
+
 서버 로그에는 쿼리 문자열을 제외한 경로만 기록합니다. 실제 운영 환경에서는 HTTPS 또는 사설망, 방화벽/IP 제한을 추가해야 합니다.
 
 ## 검증

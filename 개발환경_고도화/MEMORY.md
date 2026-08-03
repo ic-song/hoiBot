@@ -25,6 +25,7 @@
 - 고도화 전용 작업공간은 `C:\Users\user\Desktop\hoiBot_modernization`이다.
 - 1단계 redroid/KakaoTalk/Iris → hoiBot Lite Server 연결 및 `/ping` 감지 검증을 완료했다.
 - 실제 redroid DB와 Iris 원본 코드를 기준으로 이벤트 감지 가능 범위를 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`에 정리했다.
+- Iris가 다른 방에서 감지한 모든 단일 이미지를 `/ping` 테스트방으로 전달하는 Lite Server 기능을 구현하고 로컬 검증을 통과했다.
 
 ## 확인된 현상
 
@@ -37,7 +38,7 @@
 - 앞으로 `/ping` 반복 검증은 서로 다른 이벤트 10건까지만 집계하고 즉시 종료한다.
 - 정확한 `/ping` 입력에 hoiBot Server가 Iris `/reply`를 사용해 `발신자이름 pong`으로 자동 응답하도록 구현했다.
 - 실제 KakaoTalk `/ping` 입력과 `발신자이름 pong` 출력이 서버 이벤트에서 연속 관측됐고 응답 이벤트의 `isMine=true`를 확인했다.
-- 자동 테스트 8건, 타입 검사와 빌드는 통과했다.
+- 자동 테스트 10건, 타입 검사와 빌드는 통과했다.
 - Node.js 프로젝트를 저장소 최상위 `runtime/`에서 `개발환경_고도화/runtime/`으로 이동했다.
 - 이동 후 새 경로에서 Lite 서버를 재기동했으며 `0.0.0.0:3100` readiness 확인을 통과했다.
 - Iris는 `chat_logs`의 새 행을 HTTP/WebSocket으로 전달하며 공식 고수준 분류는 `message`, `new_member`, `del_member`, `unknown`이다.
@@ -45,6 +46,11 @@
 - 답글은 `type=26`과 source attachment 필드로 감지 가능하고, 수정·삭제는 각각 `SYNCMODMSG`, `SYNCDLMSG`를 서버가 직접 정규화해야 한다.
 - 현재 서버에서 상대가 보낸 일반 답글을 `type=26`, `isMine=false`, `src_isThread=false`와 source 연결 필드로 실관측했다.
 - 봇을 실제 `@멘션`한 메시지를 `type=1`, `origin=MSG`, `attachment.mentions[]`의 위치·길이·사용자 ID 메타데이터와 `bot_command` 구조로 실관측했다.
+- 단일 이미지를 `type=2`, `origin=MSG`, `isMine=false`로 실관측했고 `attachment.url`, 썸네일 URL, 크기와 이미지 규격 메타데이터를 확인했다.
+- 이미지 본문은 이벤트에 포함되지 않고 Kakao CDN URL로 제공되며, 해당 URL의 GET 요청에서 `image/png` 본문 수신을 확인했다.
+- 단일 이미지 전달은 원본 방과 테스트방의 분리, Kakao CDN HTTPS, 용량·시간 제한을 적용하고 다중 이미지는 제외한다.
+- 최근 수신 이미지 2건을 테스트방으로 재전송했고, KakaoTalk DB에서 같은 대상 방에 생성된 발신 이미지 2건을 확인했다.
+- 모든 단일 이미지 전달 버전으로 서버를 재기동한 뒤 원본 방과 테스트방에서 이미지 이벤트가 1건씩 감지돼 자동 전달 왕복을 확인했다.
 - 이벤트 검증 근거는 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`, 서버 구현용 필드·이벤트 매핑은 `references/IRIS_SERVER_EVENT_MAPPING.json`으로 분리했다.
 
 ## 미검증 항목
@@ -64,7 +70,7 @@
 ## 다음 작업
 
 1. 별도 테스트방에서 다른 참여자 멘션, 수정, 삭제, 입장, 자진 퇴장, 재입장 후 강퇴를 각각 1건씩 실검증한다.
-2. 닉네임 변경, 이미지, 다중 이미지, 파일, 이모티콘과 반응 이벤트를 실검증한다.
+2. 단일 이미지의 테스트방 실제 전달을 확인한 뒤 다중 이미지, 파일, 이모티콘과 반응 이벤트를 실검증한다.
 3. HTTP 검증과 별도로 WebSocket 수신을 확인한다.
 4. 검증 결과를 입력 계약으로 삼아 hoiBot Server 이벤트 정규화 계층을 구현한다.
 

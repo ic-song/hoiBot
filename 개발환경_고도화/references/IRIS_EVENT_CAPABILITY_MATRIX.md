@@ -46,6 +46,7 @@ The hoiBot Server therefore needs its own raw-event normalizer for edit, delete,
 | Room/profile rename | `NOT_DIRECT` or `UNVERIFIED` | No dedicated origin was identified; relevant state can live outside `chat_logs` | Poll relevant room/profile tables or confirm that KakaoTalk emits a system feed row |
 | Reaction/like | `NOT_DIRECT` or `UNVERIFIED` | No reaction origin appeared in the inspected sample and reactions may use a separate table | Inspect schema and run a dedicated reaction test |
 | Read status | `NOT_DIRECT` | The current observer forwards new `chat_logs` rows, not read-state changes | Requires a separate read-state observer if needed |
+| Single image | `LIVE_CONFIRMED` | `type=2`, `origin=MSG`, `isMine=false`; attachment contained the original/thumbnail URLs, dimensions, size, media type, and expiry metadata; a ranged GET returned `image/png` bytes | Treat the Kakao CDN URL as transient input; enforce host, MIME, timeout, and byte limits before forwarding |
 
 ## Observed Message Types
 
@@ -55,7 +56,7 @@ The current redroid sample and prior Lite Server evidence contained the followin
 | --- | --- | --- |
 | `0` | Origins include `NEWMEM`, `DELMEM`, `SYNCMODMSG`, `SYNCDLMSG`, `SYNCREWR`, and a system-like `MSG` payload | System/raw event container |
 | `1` | Dominant `MSG` and `WRITE` rows | Plain text or thread text |
-| `2` | Present in redroid history; upstream model treats it as an image | Single image |
+| `2` | Live server payload contained a downloadable Kakao CDN URL plus image metadata | Single image |
 | `12` | Live pre-restart payload contained emoticon-related attachment keys | Emoticon/sticker candidate |
 | `20` | Present in redroid history | File candidate; live payload test required |
 | `26` | Current live payload contained source-message fields and `src_isThread=false` | Reply |
@@ -107,7 +108,7 @@ Use a separate KakaoTalk test room and capture one event at a time:
 8. Voluntary leave with a test account.
 9. Rejoin and kick the same test account.
 10. Change an open-chat nickname.
-11. Send one image, multiple images, a file, and an emoticon.
+11. Send multiple images, a file, and an emoticon; one image is already live-confirmed.
 12. Add/remove a reaction if the current KakaoTalk room supports it.
 
 For each test, record only the type, origin, field names, correlation behavior, and pass/fail result. Do not store message text or identity values.

@@ -12,6 +12,9 @@ function createConfig(overrides: Partial<AppConfig> = {}): AppConfig {
     port: 3000,
     irisSharedToken: TEST_TOKEN,
     irisBaseUrl: "http://127.0.0.1:3000",
+    irisImageForwardRoomId: "",
+    imageMaxBytes: 10_485_760,
+    imageDownloadTimeoutMs: 10_000,
     bodyLimitBytes: 1_048_576,
     rawPayloadLogging: true,
     recentEventsEnabled: true,
@@ -134,6 +137,62 @@ describe("hoiBot Lite server", () => {
 
     assert.equal(response.statusCode, 202);
     assert.deepEqual(replies, []);
+    await app.close();
+  });
+
+  it("forwards a single image from any sender to the configured test room", async () => {
+    const forwards: Array<{ room: string; imageUrl: string }> = [];
+    const app = buildApp(createConfig({ irisImageForwardRoomId: "test-room-id" }), {
+      sendIrisImageReply: async (input) => {
+        forwards.push(input);
+      }
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "image",
+        json: {
+          type: 2,
+          chat_id: "source-room-id",
+          user_id: "allowed-user-id",
+          v: JSON.stringify({ isMine: true }),
+          attachment: JSON.stringify({ url: "https://talk.kakaocdn.net/example.png" })
+        }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(forwards, [{
+      room: "test-room-id",
+      imageUrl: "https://talk.kakaocdn.net/example.png"
+    }]);
+    await app.close();
+  });
+
+  it("does not forward an image observed in the target room again", async () => {
+    const forwards: Array<{ room: string; imageUrl: string }> = [];
+    const app = buildApp(createConfig({ irisImageForwardRoomId: "test-room-id" }), {
+      sendIrisImageReply: async (input) => {
+        forwards.push(input);
+      }
+    });
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        json: {
+          type: 2,
+          chat_id: "test-room-id",
+          user_id: "allowed-user-id",
+          v: JSON.stringify({ isMine: true }),
+          attachment: JSON.stringify({ url: "https://talk.kakaocdn.net/example.png" })
+        }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(forwards, []);
     await app.close();
   });
 

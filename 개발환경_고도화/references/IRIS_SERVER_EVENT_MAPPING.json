@@ -115,13 +115,28 @@
     },
     {
       "id": "media.image",
-      "status": "upstream_confirmed",
+      "status": "live_confirmed",
       "match": {
         "type": [2],
-        "origin": ["MSG", "WRITE"]
+        "origin": ["MSG", "WRITE"],
+        "requiredPaths": ["json.attachment.url", "json.v.isMine"]
       },
       "normalizedEvent": "message.created",
-      "normalizedKind": "image"
+      "normalizedKind": "image",
+      "observedPaths": [
+        "json.attachment.url",
+        "json.attachment.thumbnailUrl",
+        "json.attachment.w",
+        "json.attachment.h",
+        "json.attachment.s",
+        "json.attachment.mt",
+        "json.attachment.expire"
+      ],
+      "notes": [
+        "The attachment contains a transient URL rather than embedded image bytes.",
+        "Forward single images from any sender, but ignore events already in the target room to prevent forwarding loops.",
+        "Enforce trusted-host, image MIME, timeout, and byte limits before forwarding."
+      ]
     },
     {
       "id": "media.emoticon_candidate",
