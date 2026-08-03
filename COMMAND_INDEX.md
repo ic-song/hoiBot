@@ -259,9 +259,10 @@ Status: VERIFIED
 
 ## Runtime / Save-Flow Hotspots
 
-- `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore a malformed `member.json` from the strictly parsed `member_back.json` recovery snapshot.
-- `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for `member.json` and `member_back.json`; other JSON files keep the existing direct UTF-8 write flow.
+- `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
+- `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for member and pet-home activity original/backup files; `petHomeActivityData.json` also preserves its previous valid state in `petHomeActivityData_back.json`.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
+- Slash-prefixed commands strictly parse and back up member, pet, and pet skill data before normal command execution; when `petHomeActivityData.json` exists, it is also validated and copied to `petHomeActivityData_back.json`.
 - `main.js`: main `response(...)` entry point for almost all mutable gameplay commands
 - `Info.js`: info/query-oriented `response(...)` entry point
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
@@ -503,10 +504,13 @@ Status: VERIFIED
 - `/홈뱃지장착 [번호|ID]`
 - `/홈뱃지해제`
 - `/홈뱃지삭제 [번호|ID]`
+- `/홈뱃지오픈 [숫자]`
+- `/홈뽑기확률`
 - `/특별뱃지목록`
-- `/특별뱃지지급 [닉네임] [뱃지이름]`
-- `/특별뱃지회수 [닉네임] [뱃지이름]`
-- `/홈알림`
+- `/특별뱃지목록 [S01|[S01]]`
+- `/특별뱃지지급 [닉네임] [뱃지이름|코드]`
+- `/특별뱃지회수 [닉네임] [뱃지이름|코드]`
+- `/홈알림` / `ㅎㄹ`
 - `/피드 [내용]`
 - `/피드삭제 [번호]`
 - `/피드전체삭제`
@@ -515,6 +519,7 @@ Status: VERIFIED
 - `/뱃지순위`
 - `/펫홈댓글파일생성`
 - `/펫홈활동파일생성`
+- `/펫홈활동살리기`
 - `/펫홈소셜뱃지마이그레이션`
 - `/펫홈피드마이그레이션`
 - `/펫홈패스개편정리`
@@ -537,6 +542,8 @@ Status: VERIFIED
 - `buildPetHomeCommentsMessage`
 - `trimPetHomeComments`
 - `requirePetHomeActivityData`
+- `isProtectedPetHomeActivityJsonPath`
+- `writeVerifiedJsonFile`
 - `addPetHomeActivityAlert`
 - `updatePetHomeRecentVisitor`
 - `buildPetHomeActivityMessage`
@@ -591,6 +598,7 @@ Status: VERIFIED
 - `petHomeActivityData.petHomeSocial[target].deletedBadgeIds`
 - `petHomeActivityData.petHomeSocial[target].equippedBadgeId`
 - `petHomeActivityData.petHomeSocial[target].heartUsage`
+- `petHomeActivityData.petHomeSocial[target].feedActivityDates`
 - `petHomeActivityData.petHomeSocial[target].badgeStats`
 - `petHomeActivityData.petHomeSocial[target].specialBadgeLogs`
 - `petHomeActivityData.migrations.petHomeSocialBadges20260727`
@@ -598,25 +606,28 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
-- `/댓글`: active hoi/newbie pass users pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; shows one placed furniture item before the `allsee` fold, migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
 - `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with empty `alerts`, `recentVisitors`, `petHomeSocial`, and `migrations` only when the active DEV/PROD file does not exist and never overwrites an existing file.
+- `/펫홈활동살리기`: Admin/Master-only exact command; strictly parses and validates `petHomeActivityData_back.json`, then atomically restores only `petHomeActivityData.json` without replacing the backup.
 - `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
-- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
-- `/홈뱃지` rechecks achievement badges, while the badge view/equip/unequip/permanent-delete commands read or mutate `petHomeActivityFile`; permanent deletion blocks automatic and administrator re-grant.
-- `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus the exact name or `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
+- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
+- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, and 50 gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path.
+- `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB050` IDs in `petHomeActivityFile`, and rolls back both files on save failure. Results insert `allsee` before the fifth draw, split every 10 draws, and send an overall notice for S results.
+- `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
+- `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
-- `/홈알림`: reads up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, replies newest-first lists, then marks the stored activity alerts as read.
-- `/피드 [내용]`: active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, and add a feed alert to each valid follower in `petHomeActivityFile`; both files use rollback handling on save failure.
+- `/홈알림` and `ㅎㄹ`: run under the response data write lock, read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, mark alerts read, and complete the pass `홈알림 열기` daily condition only after activity/member saves succeed; both files roll back together on failure.
+- `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
-- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users.
+- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/마음순위` also shows each ranked user's 귀여워·멋져요·응원해·사랑해 received counts.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
 - `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
@@ -645,6 +656,9 @@ Status: VERIFIED
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
 - `/홈뱃지` keeps the representative badge and collection summary visible, then inserts `allsee` immediately after the owned-badge section divider.
+- Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
+- `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
+- `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.
 - Furniture list inserts `allsee` from the second placed furniture.
 - Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
@@ -1847,11 +1861,12 @@ Status: VERIFIED
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
 - 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
-- 활성 호이패스·초보패스 유저에게 펫홈 댓글·좋아홈·유저 좋아요 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- 활성 호이패스·초보패스 유저에게 펫홈 댓글·피드 글 작성·홈알림 열기 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 좋아홈·유저 좋아요는 이 일퀘에 반영하지 않으며 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
+- `/퀘스트`, `/ㅋ`, `ㄹㄹㄹ` 안내 화면은 첫 줄에 요청 유저의 `[checkRank] 님`을 표시한다.
 - 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
 - `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
-- 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`를 증가시키고, 좋아홈·유저 좋아요는 기존 일일 제한 카운터를 재사용한다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
+- 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`, 피드 글 작성은 저장에 성공한 `/피드`에서 `feedPostCnt`, 홈알림 열기는 정상 저장된 `/홈알림`에서 `homeAlertOpenCnt`를 증가시킨다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
@@ -2079,12 +2094,12 @@ Status: VERIFIED
 
 ## Save Flow
 - `/패스목록` disables finite passes only after their KST end date has passed and saves `member.json` when expiry cleanup changes data
-- `/패스목록` removes `자동탐험권🌄` only when a newbie/hoi pass expires during that cleanup and neither automatic-explore pass remains active
-- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
+- `/패스목록` removes `자동탐험권🌄` only when a newbie/hoi pass expires during that cleanup and no newbie/hoi/premium automatic-explore pass remains active
+- `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi/premium pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
 - `/패스목록` sums `호이응원패키지(무료)🐹[1]` through `[10]` for each user and lists users holding at least 3 in total; this scan is read-only and does not mutate bag data
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
-- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when the other automatic-explore pass is also inactive
+- `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when no other newbie/hoi/premium automatic-explore pass is active
 - Past end dates are rejected before pass mutation and automatic ticket grant
 - Invalid calendar dates are rejected for new pass input and excluded from automatic expiry cleanup with an operator log
 - Finite passes remain active through the displayed end date and are removed from the active list on D+1
@@ -2096,6 +2111,10 @@ Status: VERIFIED
 - `/원데이패스추가, [아이디] [날짜|영구권]`
 - `/초보패스추가, [아이디] [날짜|영구권]`
 - `/호이패스추가, [아이디] [날짜|영구권]`
+- `/호패프리미엄추가, [아이디] [YY.MM.DD]`
+- `/호패프리미엄삭제, [아이디]`
+- `/호프단체추가 [아이디],[아이디]/[YY.MM.DD]`
+- `/호프구독`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
 - `/패키지가방`
@@ -2105,6 +2124,59 @@ Status: VERIFIED
 - `/티어보상지급`
 - `/영지순위보상지급`
 - Standalone legacy pass-list commands were removed; use `/패스목록`.
+
+---
+
+# /호패프리미엄추가|/호패프리미엄삭제|/호프단체추가|/호프구독
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+- `isHoiPassPremiumActive`
+- `getHoiPassPremiumHeader`
+- `processHoiPassPremiumCommand`
+- `addHoiPassPremium`
+- `hasActiveAutoExplorePass`
+- `grantHoiPassPremiumDailyRewards`
+- `expireHoiPassPremium`
+- `cleanupExpiredHoiPassPremium`
+- `returnHoiPassPremiumExtraSkills`
+- `getPetSkillSlotCount`
+- `getPetHomeHeartUsageStatus`
+- `calcExploreSuccessPercent`
+- `claimQuestReward`
+
+## Data Usage
+- `data.member[user].pass.premium`
+- `data.member[user].premiumDailyQuestCnt`
+- `data.member[user].bag`
+- `petSkillData[user].petSkills.equipped`
+- `petSkillData[user].petSkills.bag`
+- `petHomeActivityData.petHomeSocial[user].badges`
+- `petHomeActivityData.petHomeSocial[user].equippedBadgeId`
+
+## Save Flow
+- 개인·단체 추가 명령은 `member.json`, `petHomeActivityData.json`을 명령 분기에서 한 번씩 저장하며, 삭제 명령은 `petSkillData.json`도 함께 저장한다.
+- `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
+- `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
+- `/호프구독`은 활성 프리미엄 유저의 `dailyRewardLastDate`와 지급 아이템을 `member.json`에 함께 저장한다.
+- 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 삭제하지 않고 펫스킬가방에 반환한 뒤 관련 세 파일을 저장한다.
+- 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
+- DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
+
+## Related Commands
+- `/패스목록`
+- `/패키지가방`
+- `/퀘스트`, `/ㅋ`
+- `/퀘스트완료`, `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ`
+- `/포인트`, `/내정보`, `/정리`
+- `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
+- `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
+- `/이체`
 
 ---
 
@@ -3618,16 +3690,19 @@ Status: VERIFIED
 ## Related Helpers
 - `checkRank`
 - `numberWithCommas`
+- `hasInfoPrivateChatPass`
+- `getInfoUnreadPetHomeAlertCount`
 ## Data Usage
 - `data.member[sender].point`
 - `data.member[sender].diamond`
+- `petHomeActivityData.alerts[sender][].read`
 ## Save Flow
 - Read-only
 ## Related Commands
 - `/레벨`
 - `/포인트확인`
 ## AI Notes
-- `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`
+- `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`; active hoi/newbie pass users additionally see the unread home-alert count only when it is greater than zero, without marking alerts as read.
 
 ---
 
@@ -4711,13 +4786,17 @@ Status: VERIFIED
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
+- `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket or success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-10%` success penalty and check `펫던전 입장권🌋` at settlement.
 - `/탐 6` rewards `땅문서던전박스📜(/땅문서박스오픈)` 1개, and `/탐 7` rewards `샵오픈던전박스🏡(/샵오픈박스오픈)` 1개 on success.
 - `/땅문서박스오픈` grants `땅문서📜` 1개 per box, and `/샵오픈박스오픈` grants `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 per box; both boxes are auto-opened by `/정리`.
 - Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-40%` success penalty.
 - `/탐 8` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
-- `/탐 9` requires `/종합순위` top 20, can be fixed with `/자동탐고정 9`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 1~3개 with a 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- `/탐 1` 강화박스는 `펫 강화석⭐` 70~100개, `/탐 2` 펫먹이박스는 `펫먹이🍼` 40~50개, `/탐 3` 행운의박스는 `럭키박스🍀(/럭키오픈)` 5개를 지급한다.
+- `/탐 8` 펜던트미궁박스는 `펜던트 강화석📿` 3~4개와 독립 1% 확률의 `펜던트 복원석🔷` 1개를 지급한다.
+- `/탐 9` requires `/종합순위` top 20, can be fixed with `/자동탐고정 9`, and auto-opens `대마법사의 유적박스📜(/대마법박스오픈)` on success to grant `펫스킬북 조각📙` 3~5개 with an independent 1% chance for `펫스킬북📙(/펫스킬오픈)`.
+- 이벤트 던전의 `이벤트박스✡️(/이벤박스오픈)`는 샵오픈 100개와 펫던전 입장권 1개를 고정 지급하며 `/이벤트박스오픈✡️`도 같은 박스를 여는 별칭이다.
 - `migratePetExploreContentSlots` runs once through `initPetExploreData`, moves existing participation and auto-fixed selections to the reworked slots, and marks `contentRework20260721` for persistence through the existing migration save flow.
 - `initPetExploreData` preserves current visible participants and only records the old `pendantMazeSlotResetV2191` / `currentExploreSlotOneResetV2192` migration flags when they are missing.
 - `/탐험유저확인` is an operator-only command. It loads `petExploreData`, removes deleted-account leftovers from `bet`, `userBet`, `autoFixedDungeon`, and `record`, saves only when cleanup occurs, then reports current participants and fixed auto-explore users.
@@ -4934,7 +5013,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (15개) of `다이아상자💎(/다이아상자오픈)`.
+- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (20개) of `다이아상자💎(/다이아상자오픈)`.
 
 ---
 
@@ -5485,3 +5564,35 @@ Status: VERIFIED
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
 - 펜던트 펫탐험 성공률 보너스는 펫탐험 정산과 확률 표시 공용 계산에 반영된다.
 - `결혼못한 대장장이📙` 펫스킬북을 장착하면 `/펜던트강화` 미리보기와 실제 강화 판정에 성공 확률 +1%가 함께 반영된다.
+
+---
+
+# /선물삭제
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/선물삭제`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getHoiFreeSupportPackageVariant`
+- `removeAllHoiFreeSupportPackages`
+
+## Data Usage
+
+- `data.member[*].bag["호이응원패키지(무료)🐹[1]" ... "호이응원패키지(무료)🐹[10]"]`
+
+## Save Flow
+
+- Admin/Master exact command; removes matching entries from the already-loaded member data and saves `filePath` once.
+
+## AI Notes
+
+- `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
+- All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
