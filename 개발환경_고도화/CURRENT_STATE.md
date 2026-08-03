@@ -7,6 +7,7 @@
 
 ## 확정한 실행환경
 
+hoiBot 고도화 방향은 YouTube의 `Iris를 이용한 봇 만들기`에 나온 PC + redroid 환경으로 확정한다.
 PC에서 redroid를 사용하는 다음 구성을 기준으로 확정한다.
 
 ```text
@@ -33,6 +34,7 @@ PC/redroid 구성의 기준 영상은 `Iris를 이용한 봇 만들기`다.
 - `7:46`: Windows Hyper-V 기반 Linux 설치
 - 이후: Docker와 redroid 구성
 - `21:20`: Iris 설치
+
 상세 환경 요약은 `references/PC_REDROID_VIDEO_REFERENCE.md`를 참고한다.
 
 ## 현재 확인된 사실

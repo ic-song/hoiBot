@@ -2,6 +2,7 @@
 
 - 이 폴더의 고도화 작업을 시작하면 `CURRENT_STATE.md`를 먼저 읽는다.
 - 대화 기억보다 `CURRENT_STATE.md`의 확정 사항과 검증 상태를 우선한다.
+- 고도화 방향은 YouTube의 `Iris를 이용한 봇 만들기`에 나온 PC + redroid 환경으로 확정한다.
 - 고도화 실행환경은 PC의 redroid 구성만 사용한다.
 - 기준 구성은 `Windows -> Hyper-V -> Ubuntu/Linux VM -> Docker -> redroid -> KakaoTalk + Iris`다.
 - 선택되지 않은 휴대폰형·모바일 단독형·대체 에뮬레이터 기술스택은 조사하거나 문서에 유지하지 않는다.
