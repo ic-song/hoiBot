@@ -1181,6 +1181,8 @@ Status: VERIFIED
 - `calculateRaidExp`
 - `calculateCastleExp`
 - `calculateTotalExp`
+- `getEquippedNonTierPetSkillExp`
+- `isInfoPetSkillCharmConditionActive`
 - `getMemberRank`
 - `getTitle`
 - `initPetSkillUser`
@@ -1218,6 +1220,8 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
+- `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 - `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
 
