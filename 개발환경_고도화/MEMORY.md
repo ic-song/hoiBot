@@ -24,6 +24,7 @@
 - 최신 `feature/prod`의 `4f00533`에서 `feature/modernization` 브랜치를 생성했다.
 - 고도화 전용 작업공간은 `C:\Users\user\Desktop\hoiBot_modernization`이다.
 - 1단계 redroid/KakaoTalk/Iris → hoiBot Lite Server 연결 및 `/ping` 감지 검증을 완료했다.
+- 실제 redroid DB와 Iris 원본 코드를 기준으로 이벤트 감지 가능 범위를 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`에 정리했다.
 
 ## 확인된 현상
 
@@ -35,14 +36,19 @@
 - 정확한 `/ping` 이벤트의 `chat_id`를 이용한 Iris `/reply` `pong` 전송이 성공했다.
 - 앞으로 `/ping` 반복 검증은 서로 다른 이벤트 10건까지만 집계하고 즉시 종료한다.
 - 정확한 `/ping` 입력에 hoiBot Server가 Iris `/reply`를 사용해 `발신자이름 pong`으로 자동 응답하도록 구현했다.
+- 실제 KakaoTalk `/ping` 입력과 `발신자이름 pong` 출력이 서버 이벤트에서 연속 관측됐고 응답 이벤트의 `isMine=true`를 확인했다.
 - 자동 테스트 8건, 타입 검사와 빌드는 통과했다.
 - Node.js 프로젝트를 저장소 최상위 `runtime/`에서 `개발환경_고도화/runtime/`으로 이동했다.
 - 이동 후 새 경로에서 Lite 서버를 재기동했으며 `0.0.0.0:3100` readiness 확인을 통과했다.
+- Iris는 `chat_logs`의 새 행을 HTTP/WebSocket으로 전달하며 공식 고수준 분류는 `message`, `new_member`, `del_member`, `unknown`이다.
+- 현재 redroid 이력에서 `NEWMEM`, `DELMEM`, `SYNCMODMSG`, `SYNCDLMSG`, `SYNCREWR` 원시 origin을 확인했다.
+- 답글은 `type=26`과 source attachment 필드로 감지 가능하고, 수정·삭제는 각각 `SYNCMODMSG`, `SYNCDLMSG`를 서버가 직접 정규화해야 한다.
+- 현재 서버에서 상대가 보낸 일반 답글을 `type=26`, `isMine=false`, `src_isThread=false`와 source 연결 필드로 실관측했다.
 
 ## 미검증 항목
 
-- 새 자동응답 빌드에서 실제 KakaoTalk `/ping` 입력에 `발신자이름 pong`이 표시되는 전체 왕복
-- Iris에서 감지 가능한 메시지·이벤트 유형의 전체 범위
+- `@멘션` payload 구조와 자진 퇴장/강퇴 구분 방식
+- 닉네임 변경·반응 이벤트를 위한 별도 테이블 감시 필요성
 - Iris WebSocket `/ws` 수신
 - redroid 재시작 후 데이터와 설정 유지
 - hoiBot Server와 PC 데이터 저장소 연결
@@ -55,11 +61,10 @@
 
 ## 다음 작업
 
-1. 별도 KakaoTalk 테스트방에서 정확히 `/ping`을 입력해 `발신자이름 pong` 자동응답을 실검증한다.
-2. 일반 메시지 외 각종 이벤트와 부가 데이터가 HTTP/WebSocket으로 전송되는지 확인한다.
-3. 실제 관측된 Iris 타입 값과 payload 필드를 원본 소스·문서에 대조해 분류한다.
-4. 누락되거나 의미가 불명확한 이벤트와 제약을 검증 결과로 기록한다.
-5. 검증 결과를 입력 계약으로 삼아 hoiBot Server 본구현을 진행한다.
+1. 별도 테스트방에서 답글, 멘션, 수정, 삭제, 입장, 자진 퇴장, 재입장 후 강퇴를 각각 1건씩 실검증한다.
+2. 닉네임 변경, 이미지, 다중 이미지, 파일, 이모티콘과 반응 이벤트를 실검증한다.
+3. HTTP 검증과 별도로 WebSocket 수신을 확인한다.
+4. 검증 결과를 입력 계약으로 삼아 hoiBot Server 이벤트 정규화 계층을 구현한다.
 
 ## 최근 대화 요약
 

@@ -23,6 +23,7 @@ This document records technical validation evidence without KakaoTalk room names
 | Iris to server live event delivery | Passed |
 | Exact `/ping` command detection | Passed |
 | Iris `/reply` text response | Passed |
+| Deployed automatic `sender-name pong` round trip | Passed |
 
 ## `/ping` Detection Run
 
@@ -32,6 +33,7 @@ This document records technical validation evidence without KakaoTalk room names
 - The first run already contained `16` events when sampled; future runs must stop counting immediately at `10` distinct `/ping` events.
 - The tenth event in the measured window was received at `2026-08-03 14:16:24 KST`.
 - A `pong` response sent through Iris `/reply` returned `success`.
+- A later deployed-handler test observed the exact `/ping` input followed by `sender-name pong` with `isMine=true`; the measured event-to-event interval was approximately `201 ms`.
 
 ## Privacy Handling
 
@@ -40,8 +42,7 @@ This document records technical validation evidence without KakaoTalk room names
 
 ## Remaining Validation
 
-- Send a new exact `/ping` from the dedicated KakaoTalk test room and verify that the deployed automatic handler displays `sender-name pong`.
-- Classify the observed Iris message type values using upstream source evidence.
+- Complete dedicated live tests for mention, edit, delete, membership, media, and profile-change cases listed in `IRIS_EVENT_CAPABILITY_MATRIX.md`.
 - Test text, reply, media, emoticon, and supported system/member events in a dedicated test room.
 - Verify WebSocket event delivery separately from the current HTTP endpoint flow.
 - Record unsupported, missing, or ambiguous event classes before starting the hoiBot Server implementation.
