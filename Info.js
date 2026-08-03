@@ -23,8 +23,8 @@ const GLOBAL_CONFIG = {
 		miniPetBattleFree: 1, // 미니펫대전 무료 횟수
 		petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
 		passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
-		passPetHomeLikeMax: 1, // 패스 전용 좋아홈 일퀘 횟수
-		passUserLikeMax: 1, // 패스 전용 유저 좋아요 일퀘 횟수
+		passFeedPostMax: 1, // 패스 전용 피드 작성 일퀘 횟수
+		passHomeAlertOpenMax: 1, // 패스 전용 홈알림 열기 일퀘 횟수
 		passDailyPointBoxReward: 2 // 패스 전용 일퀘 1억 포인트상자 보상 수량
 	},
 	command: { // 명령어 입력/실행 설정
@@ -1143,10 +1143,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var hasPassDailyQuest = hasInfoPrivateChatPass(data, sender); // 기본·프리미엄 패스 전용 일퀘 표시 여부
 			var hasPremiumPass = isInfoSupportPassActive(data, sender, "premium");
 			var petHomeCommentUsed = parseInt(data.member[sender].petHomeCommentCnt, 10) || 0;
-			var petHomeLikeUsed = parseInt(data.member[sender].homeLikeCnt, 10) || 0;
-			var userLikeUsed = parseInt(data.member[sender].cntlike, 10) || 0;
+			var feedPostUsed = parseInt(data.member[sender].feedPostCnt, 10) || 0;
+			var homeAlertOpenUsed = parseInt(data.member[sender].homeAlertOpenCnt, 10) || 0;
 			var passDailyIconMsg = hasPassDailyQuest
-				? (hasPremiumPass ? "[🐺호프 전용]" : "[🐶호패 전용]") + "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][💌" + getC(petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax) + "][💕" + getC(userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax) + "]\n"
+				? (hasPremiumPass ? "[🐺호프 전용]" : "[🐶호패 전용]") + "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][✍️" + getC(feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax) + "][🔔" + getC(homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax) + "]\n"
 				: ""; // 패스 회원에게만 전용 3종 완료 아이콘 표시
 			var weeklyQuestMax = 7;
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));
@@ -1248,12 +1248,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			resultMsg += "━━━━━━━━━━━━━━━━\n";
 			if (hasPassDailyQuest) {
 				resultMsg += formatDoneLine("펫홈 댓글 달성📝", petHomeCommentUsed, GLOBAL_CONFIG.daily.passPetHomeCommentMax, "패스 전용") + "\n";
-				resultMsg += formatDoneLine("펫홈 좋아홈🏡", petHomeLikeUsed, GLOBAL_CONFIG.daily.passPetHomeLikeMax, "패스 전용") + "\n";
-				resultMsg += formatDoneLine("유저 좋아요💕", userLikeUsed, GLOBAL_CONFIG.daily.passUserLikeMax, "패스 전용") + "\n";
+				resultMsg += formatDoneLine("피드 글 작성✍️", feedPostUsed, GLOBAL_CONFIG.daily.passFeedPostMax, "패스 전용") + "\n";
+				resultMsg += formatDoneLine("홈알림 열기🔔", homeAlertOpenUsed, GLOBAL_CONFIG.daily.passHomeAlertOpenMax, "패스 전용") + "\n";
 			} else {
 				resultMsg += "펫홈 댓글 달성📝[호패,초패 회원전용]\n";
-				resultMsg += "펫홈 좋아홈🏡[호패,초패 회원전용]\n";
-				resultMsg += "유저 좋아요💕[호패,초패 회원전용]\n";
+				resultMsg += "피드 글 작성✍️[호패,초패 회원전용]\n";
+				resultMsg += "홈알림 열기🔔[호패,초패 회원전용]\n";
 			}
 			resultMsg += "주간퀘스트🦋[" + weeklyQuestCnt + "/" + weeklyQuestMax + "]: " + getWeeklyQuestRemainText(weeklyQuestCnt, weeklyQuestMax) + "\n";
 
@@ -2302,8 +2302,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	if (status.hasPassDailyQuest) {
 		lines.push("━━━━━━━━━━━━━━━━");
 		lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
-		lines.push("펫홈 좋아홈🏡[" + status.petHomeLikeUsed + "/" + status.petHomeLikeMax + "][" + getC(status.petHomeLikeUsed >= status.petHomeLikeMax) + "]");
-		lines.push("유저 좋아요💕[" + status.userLikeUsed + "/" + status.userLikeMax + "][" + getC(status.userLikeUsed >= status.userLikeMax) + "]");
+		lines.push("피드 글 작성✍️[" + status.feedPostUsed + "/" + status.feedPostMax + "][" + getC(status.feedPostUsed >= status.feedPostMax) + "]");
+		lines.push("홈알림 열기🔔[" + status.homeAlertOpenUsed + "/" + status.homeAlertOpenMax + "][" + getC(status.homeAlertOpenUsed >= status.homeAlertOpenMax) + "]");
 		lines.push("");
 		if (status.hasBasePassDailyQuest) {
 			lines.push("《🎁 호패,초패 퀘스트 보상》");
@@ -2319,8 +2319,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	} else {
 		lines.push("");
 		lines.push("펫홈 댓글 달성📝[호패,초패 회원전용]");
-		lines.push("펫홈 좋아홈🏡[호패,초패 회원전용]");
-		lines.push("유저 좋아요💕[호패,초패 회원전용]");
+		lines.push("피드 글 작성✍️[호패,초패 회원전용]");
+		lines.push("홈알림 열기🔔[호패,초패 회원전용]");
 	}
 	lines.push("━━━━━━━━━━━━");
 	lines.push("📜일일 퀘스트 조건📜");
@@ -2383,12 +2383,12 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	var hasPremiumDailyQuest = isInfoSupportPassActive(data, sender, "premium"); // 프리미엄 다이아상자 일퀘 적용 여부
 	var hasPassDailyQuest = hasBasePassDailyQuest || hasPremiumDailyQuest;
 	var petHomeCommentUsed = parseInt(member.petHomeCommentCnt, 10) || 0;
-	var petHomeLikeUsed = parseInt(member.homeLikeCnt, 10) || 0;
-	var userLikeUsed = parseInt(member.cntlike, 10) || 0;
+	var feedPostUsed = parseInt(member.feedPostCnt, 10) || 0;
+	var homeAlertOpenUsed = parseInt(member.homeAlertOpenCnt, 10) || 0;
 	var passQuestConditionsComplete =
 		petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax &&
-		petHomeLikeUsed >= GLOBAL_CONFIG.daily.passPetHomeLikeMax &&
-		userLikeUsed >= GLOBAL_CONFIG.daily.passUserLikeMax; // 패스 전용 3종 완료 여부
+		feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax &&
+		homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax; // 패스 전용 3종 완료 여부
 	var passDailyComplete = hasBasePassDailyQuest && passQuestConditionsComplete;
 	var premiumDailyComplete = hasPremiumDailyQuest && passQuestConditionsComplete;
 	var passDailyRewardDone = (parseInt(member.passDailyQuestCnt, 10) || 0) >= 1;
@@ -2415,10 +2415,10 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 		hasPremiumDailyQuest: hasPremiumDailyQuest,
 		petHomeCommentUsed: petHomeCommentUsed,
 		petHomeCommentMax: GLOBAL_CONFIG.daily.passPetHomeCommentMax,
-		petHomeLikeUsed: petHomeLikeUsed,
-		petHomeLikeMax: GLOBAL_CONFIG.daily.passPetHomeLikeMax,
-		userLikeUsed: userLikeUsed,
-		userLikeMax: GLOBAL_CONFIG.daily.passUserLikeMax,
+		feedPostUsed: feedPostUsed,
+		feedPostMax: GLOBAL_CONFIG.daily.passFeedPostMax,
+		homeAlertOpenUsed: homeAlertOpenUsed,
+		homeAlertOpenMax: GLOBAL_CONFIG.daily.passHomeAlertOpenMax,
 		passDailyComplete: passDailyComplete,
 		passDailyRewardDone: passDailyRewardDone,
 		premiumDailyComplete: premiumDailyComplete,
