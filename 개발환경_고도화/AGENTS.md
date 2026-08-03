@@ -6,5 +6,7 @@
 - 기준 구성은 `Windows -> Hyper-V -> Ubuntu/Linux VM -> Docker -> redroid -> KakaoTalk + Iris`다.
 - 확정 결정, 사용자 확인 내용, 실제 검증 완료 항목, 미검증 항목을 구분한다.
 - 실제 검증을 마치면 결과를 `CURRENT_STATE.md` 또는 이 폴더의 별도 결과 문서에 기록한다.
+- 기술/API 및 조사성 정보는 `references/` 아래의 영문 Markdown 문서로 분리한다.
+- `references/` 문서는 참고자료이며 현재 결정과 완료 상태의 기준으로 사용하지 않는다.
 - 토큰, 카카오톡 원문, 계정정보, 개인정보는 기록하지 않는다.
 - 고도화 관련 문서와 메모리는 이 폴더 내부에서만 관리한다.
