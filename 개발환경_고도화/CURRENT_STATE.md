@@ -37,7 +37,7 @@ YouTube 3개 중 PC/redroid 구성의 기준 영상은 세 번째 `Iris를 이�
 - `48:02`: `irispy-client`
 - `56:29`: `iris_bot` 실행
 
-상세 자동자막 요약은 `Iris_영상자료_취합.md`를 참고한다.
+상세 자동자막 요약은 `references/YOUTUBE_RESEARCH.md`를 참고한다.
 
 ## 현재 확인된 사실
 
