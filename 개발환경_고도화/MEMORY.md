@@ -23,19 +23,22 @@
 - 고도화 문서는 결정, 대화 메모리, 정보성 참조자료로 분리됐다.
 - 최신 `feature/prod`의 `4f00533`에서 `feature/modernization` 브랜치를 생성했다.
 - 고도화 전용 작업공간은 `C:\Users\user\Desktop\hoiBot_modernization`이다.
+- 1단계 redroid/KakaoTalk/Iris → hoiBot Lite Server 연결 및 `/ping` 감지 검증을 완료했다.
 
 ## 확인된 현상
 
 - 사용자가 redroid 환경이 현재 실행 중이라고 확인했다.
 - 저장소의 Lite 서버에는 health, ready, ping, version 및 Iris 이벤트 수신 기반이 구현돼 있다.
+- redroid의 KakaoTalk과 Iris가 실행 중이며 Iris HTTP `3000` 포트가 정상 응답한다.
+- Iris가 hoiBot Lite Server `3100` 포트로 실제 KakaoTalk 이벤트를 전달한다.
+- 최근 이벤트 창에서 서로 다른 `/ping` 이벤트 16건을 감지해 요청 기준 10건을 충족했다.
+- 정확한 `/ping` 이벤트의 `chat_id`를 이용한 Iris `/reply` `pong` 전송이 성공했다.
+- 앞으로 `/ping` 반복 검증은 서로 다른 이벤트 10건까지만 집계하고 즉시 종료한다.
 
 ## 미검증 항목
 
-- redroid 내부 KakaoTalk과 Iris의 현재 상세 상태
-- Iris HTTP 이벤트의 redroid 환경 실수신
+- Iris에서 감지 가능한 메시지·이벤트 유형의 전체 범위
 - Iris WebSocket `/ws` 수신
-- Iris `/reply`를 이용한 KakaoTalk 답장
-- `/ping` 입력부터 `pong` 답장까지의 전체 왕복
 - redroid 재시작 후 데이터와 설정 유지
 - hoiBot Server와 PC 데이터 저장소 연결
 
@@ -47,9 +50,9 @@
 
 ## 다음 작업
 
-1. redroid 안의 KakaoTalk + Iris에서 테스트 명령을 보내 hoiBot Server 연결과 기본 왕복을 검증한다.
-2. 별도 테스트방에서 일반 메시지 외 각종 이벤트와 부가 데이터가 HTTP/WebSocket으로 전송되는지 확인한다.
-3. 실제 수신한 이벤트 종류, payload 필드, 누락 항목과 제약을 검증 결과로 기록한다.
+1. 별도 테스트방에서 일반 메시지 외 각종 이벤트와 부가 데이터가 HTTP/WebSocket으로 전송되는지 확인한다.
+2. 실제 관측된 Iris 타입 값과 payload 필드를 원본 소스·문서에 대조해 분류한다.
+3. 누락되거나 의미가 불명확한 이벤트와 제약을 검증 결과로 기록한다.
 4. 검증 결과를 입력 계약으로 삼아 hoiBot Server 본구현을 진행한다.
 5. 구현과 검증이 끝난 기능부터 ASAP 기준으로 순차 전환한다.
 
@@ -64,6 +67,8 @@
 - 전환 우선순위를 `ASAP`으로 확정했다.
 - 서버 본구현 전에 redroid/KakaoTalk/Iris의 연결·왕복을 먼저 검증하고, 메시지 외 이벤트와 부가 데이터의 전송 범위를 확인하기로 했다.
 - 실제 연동 검증 결과를 기준으로 hoiBot Server 구현을 진행하기로 했다.
+- `/ping`을 서로 다른 이벤트 10건 이상 감지할 때까지 확인해 달라는 요청에 따라 16건 감지를 확인했다.
+- 이후 `/ping` 검증은 10건을 상한으로 제한하기로 확정했다.
 
 ## 갱신 규칙
 
