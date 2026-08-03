@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.346"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.347"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -969,7 +969,14 @@ const GLOBAL_CONFIG = {
             { id: "HB047", grade: "S", emoji: "🌌", name: "우주가 밀어주는 관종", text: "온 우주의 관심이 당신에게 집중됩니다!", source: "HOME_BADGE_GACHA" },
             { id: "HB048", grade: "S", emoji: "🔥", name: "접속만 해도 서버 과열", text: "잠시만요! 서버에서 연기가 나고 있습니다!", source: "HOME_BADGE_GACHA" },
             { id: "HB049", grade: "S", emoji: "👑", name: "홈뱃지 재벌", text: "뱃지가 너무 많아 보관함이 비명을 지릅니다!", source: "HOME_BADGE_GACHA" },
-            { id: "HB050", grade: "S", emoji: "🪄", name: "이 뱃지 본 사람 대박", text: "축하합니다! 오늘의 행운을 전부 뽑았습니다!", source: "HOME_BADGE_GACHA" }
+            { id: "HB050", grade: "S", emoji: "🪄", name: "이 뱃지 본 사람 대박", text: "축하합니다! 오늘의 행운을 전부 뽑았습니다!", source: "HOME_BADGE_GACHA" },
+            { id: "HB051", grade: "C", emoji: "🍺", name: "맥주가 물이야", text: "물 대신 맥주 한잔! 오늘도 시원하게 들이킵니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB052", grade: "B", emoji: "🍻", name: "짠의 제왕", text: "잔을 들어라! 모든 건배를 지배하는 짠의 제왕이 등장했습니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB053", grade: "A", emoji: "🍶", name: "타고난 주당", text: "술이 나를 마신다! 태어날 때부터 남달랐던 주당입니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB054", grade: "S", emoji: "🍾", name: "오늘은 내가 쏜다", text: "가격은 묻지 마세요. 오늘 술값은 제가 책임집니다!", source: "HOME_BADGE_GACHA" },
+            { id: "HB055", grade: "C", emoji: "🥴", name: "필름 어디 갔지?", text: "분명 즐거웠는데… 어제의 기억이 통째로 사라졌습니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB056", grade: "C", emoji: "🫗", name: "오늘도 비싼 물을 마신다", text: "마시고 보니 술이었습니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB057", grade: "B", emoji: "🧑", name: "사장님이 맛있고 안주가 멋져요", text: "사장님이 맛있습니다.", source: "HOME_BADGE_GACHA" }
         ]
     },
     daily: { // 일일 콘텐츠 진행 설정
