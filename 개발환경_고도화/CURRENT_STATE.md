@@ -7,7 +7,6 @@
 
 ## 확정한 실행환경
 
-LDPlayer는 고도화 실행환경으로 사용하지 않는다.
 PC에서 redroid를 사용하는 다음 구성을 기준으로 확정한다.
 
 ```text
@@ -28,22 +27,18 @@ Windows PC
 
 ## 기준 영상
 
-YouTube 3개 중 PC/redroid 구성의 기준 영상은 세 번째 `Iris를 이용한 봇 만들기`다.
+PC/redroid 구성의 기준 영상은 `Iris를 이용한 봇 만들기`다.
 
 - 링크: https://www.youtube.com/watch?v=H43VTOsKDXY
 - `7:46`: Windows Hyper-V 기반 Linux 설치
 - 이후: Docker와 redroid 구성
 - `21:20`: Iris 설치
-- `48:02`: `irispy-client`
-- `56:29`: `iris_bot` 실행
-
-상세 자동자막 요약은 `references/YOUTUBE_RESEARCH.md`를 참고한다.
+상세 환경 요약은 `references/PC_REDROID_VIDEO_REFERENCE.md`를 참고한다.
 
 ## 현재 확인된 사실
 
-- 사용자가 현재 고도화 환경은 LDPlayer가 아니라 redroid라고 확인했다.
 - 사용자가 redroid 환경이 현재 실행 중이라고 확인했다.
-- PC/redroid 구성은 위 세 번째 영상을 기준으로 확정했다.
+- PC/redroid 구성은 위 영상을 기준으로 확정했다.
 
 ## 아직 검증 완료로 처리하지 않는 항목
 

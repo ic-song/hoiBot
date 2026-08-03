@@ -2,8 +2,9 @@
 
 - 이 폴더의 고도화 작업을 시작하면 `CURRENT_STATE.md`를 먼저 읽는다.
 - 대화 기억보다 `CURRENT_STATE.md`의 확정 사항과 검증 상태를 우선한다.
-- 고도화 실행환경은 LDPlayer가 아니라 PC의 redroid 구성이다.
+- 고도화 실행환경은 PC의 redroid 구성만 사용한다.
 - 기준 구성은 `Windows -> Hyper-V -> Ubuntu/Linux VM -> Docker -> redroid -> KakaoTalk + Iris`다.
+- 선택되지 않은 휴대폰형·모바일 단독형·대체 에뮬레이터 기술스택은 조사하거나 문서에 유지하지 않는다.
 - 확정 결정, 사용자 확인 내용, 실제 검증 완료 항목, 미검증 항목을 구분한다.
 - 실제 검증을 마치면 결과를 `CURRENT_STATE.md` 또는 이 폴더의 별도 결과 문서에 기록한다.
 - 기술/API 및 조사성 정보는 `references/` 아래의 영문 Markdown 문서로 분리한다.
