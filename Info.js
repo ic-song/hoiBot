@@ -109,10 +109,11 @@ var initData = loadJsonFile(filePath);
 var Master = Object.keys(initData.master);
 var Admins = Object.keys(initData.admin);
 function isAdmin(sender) {
-	return Admins.includes(sender);
+	var permissionRoom = getCurrentContext().permissionRoom;
+	return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91);
 }
 function isMaster(sender) {
-	return Master.includes(sender);
+	return Master.includes(sender) && getCurrentContext().permissionRoom === testRoom;
 }
 
 // Info 명령에서 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
@@ -267,7 +268,7 @@ function applyItemInfoContext(nextItemInfoData) {
 	castleItem = itemInfoData.castleItem;
 }
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-	var ctx = createCommandContext(isDevCommandMessage(msg));
+	var ctx = createCommandContext(isDevCommandMessage(msg), room);
 	var prevCtx = enterCommandContext(ctx);
 	try {
 		msg = String(msg || "").trim();
@@ -1501,11 +1502,14 @@ function stripDevCommandPrefix(msg) {
 	return command.charAt(0) === "/" ? command : "/" + command;
 }
 
-function createCommandContext(isDev) {
+function createCommandContext(isDev, room) {
 	var rootPath = isDev ? DEV_DATA_ROOT_PATH : DATA_ROOT_PATH;
+	var previousContext = commandContextThreadLocal.get();
+	var permissionRoom = typeof room === "string" ? room : (previousContext ? previousContext.permissionRoom : null);
 	return {
 		isDev: !!isDev,
 		rootPath: rootPath,
+		permissionRoom: permissionRoom,
 		path: function (fileName) {
 			fileName = String(fileName || "");
 			var dataFileName = getDataFileName(fileName);

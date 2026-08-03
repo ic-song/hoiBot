@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.352"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.353"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1733,7 +1733,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         responseTransactionAcquired = true;
         beginDataSaveTransaction();
         dataSaveTransactionEntered = true;
-        ctx = createCommandContext(isDevCommandMessage(msg));
+        ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
         var responseStartMs = Date.now();
@@ -27283,12 +27283,13 @@ function buildHoiBotChangeLogMessage(changeLogData) {
 
 // 관리자 권한 여부를 확인하는 함수
 function isAdmin(sender) {
-    return Admins.includes(sender);
+    var permissionRoom = getCurrentContext().permissionRoom;
+    return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91);
 }
 
 // 마스터 권한 여부를 확인하는 함수
 function isMaster(sender) {
-    return Master.includes(sender);
+    return Master.includes(sender) && getCurrentContext().permissionRoom === testRoom;
 }
 
 // 유저 요청이 과부하 기준을 넘었는지 확인하는 함수
@@ -27373,11 +27374,14 @@ function stripDevCommandPrefix(msg) {
 }
 
 // 명령 실행 컨텍스트를 생성하는 함수
-function createCommandContext(isDev) {
+function createCommandContext(isDev, room) {
     var rootPath = isDev ? DEV_DATA_ROOT_PATH : DATA_ROOT_PATH;
+    var previousContext = commandContextThreadLocal.get();
+    var permissionRoom = typeof room === "string" ? room : (previousContext ? previousContext.permissionRoom : null);
     return {
         isDev: !!isDev,
         rootPath: rootPath,
+        permissionRoom: permissionRoom,
         path: function (fileName) {
             fileName = String(fileName || "");
             var dataFileName = getDataFileName(fileName);
