@@ -92,15 +92,16 @@ const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
     B: 20,
     C: 47.7
 };
-var petSkillGradeItemCountCache = null;
 const PET_SKILL_LIST = [
 
-    { name: "청룡언월도", grade: "SS", rate: 0.2, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+    { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
+    { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
+    { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
     { name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
-    { name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+    { name: "장미칼", grade: "A", rate: 0.4, fixedRate: true, raidExp: 500000, castleExp: 500000, effect: "사악한 마녀의 칼입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
     { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
@@ -108,11 +109,15 @@ const PET_SKILL_LIST = [
     { name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
     { name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
     { name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
+    { name: "엑스칼리버", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "선택받은 자만이 사용할 수 있는 전설의 성검입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
     { name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
     { name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
     { name: "숙련된 전사", grade: "A", rate: 1.7, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
     { name: "로열 하우스", grade: "A", rate: 1.6, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+    { name: "셀럽", grade: "A", rate: 1.5, fixedRate: true, followerBonus: 2000, equipComment: "ㅎㅇ 싸인해줌?", equipCommentNoColon: true, effect: "팔로워가 2,000명 증가합니다.\n인플루언서 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 2,000명은 회수됩니다." },
+    { name: "사신의 낫", grade: "A", rate: 0.4, fixedRate: true, raidExp: 500000, castleExp: 500000, effect: "영혼마저 베어버린다는 사신의 거대한 낫입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "아르카나 하우스", grade: "A", rate: 1.5, fixedRate: true, raidExp: 500000, castleExp: 500000, charmCondition: "arcanaFurniture", effect: "가구 [아르카나 루미에르]를 5개 이상 보유하면 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     // { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
     { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
     { name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
@@ -132,6 +137,8 @@ const PET_SKILL_LIST = [
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
+    { name: "인플루언서", grade: "B", rate: 2.0, fixedRate: true, followerBonus: 1000, equipComment: "여러분 안녕 이건 뒷광고 ㄴㄴ 내돈내산이야루~", equipCommentNoColon: true, effect: "팔로워가 1,000명 증가합니다.\n셀럽 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 1,000명은 회수됩니다." },
+    { name: "큐피드의 활", grade: "B", rate: 1.5, fixedRate: true, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
     // { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
 
@@ -145,6 +152,8 @@ const PET_SKILL_LIST = [
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
     { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
+    { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
+    { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
 
     { name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
@@ -153,6 +162,7 @@ const PET_SKILL_LIST = [
     { name: "품행제로", grade: "D", rate: 14.5, effect: "/결투 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
     { name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
     { name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" },
+    { name: "낡은 목검", grade: "D", rate: 14.5, raidExp: 50000, castleExp: 50000, effect: "오랜 세월 수련에 사용된 낡은 목검입니다.\n장착 시 레이드매력 5만과 캐슬매력 5만, 총 종합매력 10만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
     { name: "🪽 엠퍼러의 천공 날개", grade: "C", rate: 0, requiredTier: "엠퍼러", raidExp: 100000, castleExp: 100000, equipComment: "잠깐, 나 지금 날고 있는 거야?!", tierExclusive: true, effect: "엠퍼러 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 10만 증가합니다." },
     { name: "🪬 올마이티의 전능 부적", grade: "C", rate: 0, requiredTier: "올마이티", raidExp: 150000, castleExp: 150000, equipComment: "뭐든 할 수 있을 것 같은 기분이야!", tierExclusive: true, effect: "올마이티 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 15만 증가합니다." },
@@ -3584,7 +3594,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var skillResultKeys = Object.keys(pickedSkillMap).sort(function (a, b) {
                         var ga = pickedSkillMap[a].grade;
                         var gb = pickedSkillMap[b].grade;
-                        var gradeOrder = { S: 1, A: 2, B: 3, C: 4, D: 5 };
+                        var gradeOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5 };
                         if (gradeOrder[ga] !== gradeOrder[gb]) return gradeOrder[ga] - gradeOrder[gb];
                         return pickedSkillMap[a].name.localeCompare(pickedSkillMap[b].name, "ko");
                     });
@@ -3643,7 +3653,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
                     var equippedSkillData = getPetSkillData(equipName);
                     if (equippedSkillData && equippedSkillData.equipComment) {
-                        equipMsg += "\n\n" + formatPetSkillName(equipName) + ": " + equippedSkillData.equipComment;
+                        var equipCommentSeparator = equippedSkillData.equipCommentNoColon === true ? " " : ": ";
+                        equipMsg += "\n\n" + formatPetSkillName(equipName) + equipCommentSeparator + equippedSkillData.equipComment;
                     }
                     if (normalizePetSkillName(equipName) === "징집명령") {
                         equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "징집명령");
@@ -20413,7 +20424,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/팔로워순위" || msg === "/마음순위" || msg === "/뱃지순위") {
                     var petHomeRankingActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var petHomeRankingHomeData = loadJsonFile(homeDataFile);
-                    replier.reply(buildPetHomeSocialRankingMessage(data, petData, guildData, petHomeRankingHomeData, petHomeRankingActivityData, sender, msg));
+                    replier.reply(buildPetHomeSocialRankingMessage(data, petData, petSkillData, guildData, petHomeRankingHomeData, petHomeRankingActivityData, sender, msg));
                     return;
                 }
                 if (msg == "/펫홈방문초기화" && (isAdmin(sender) || isMaster(sender))) {
@@ -20603,7 +20614,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var petHomeActivityDataForMyHeart = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var homeDataForMyHeart = loadJsonFile(homeDataFile);
-                    replier.reply(buildPetHomeHeartUsageMessage(data, petData, guildData, petHomeActivityDataForMyHeart, homeDataForMyHeart, sender));
+                    replier.reply(buildPetHomeHeartUsageMessage(data, petData, petSkillData, guildData, petHomeActivityDataForMyHeart, homeDataForMyHeart, sender));
                     saveJsonFile(petHomeActivityDataForMyHeart, petHomeActivityFile);
                     return;
                 }
@@ -20931,13 +20942,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             totalExp += 300000;
                         }
                     }
+                    if (hasPetSkill(petSkillData, targetName, "아르카나 하우스") && getOwnedFurnitureCountByGrade(homeData, targetName, "아르카나 루미에르") >= 5) {
+                        totalExp += 1000000;
+                    }
                     ////////////////////////////////////////
                     var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
                     ////////
                     let header = "🏡[" + nickName + "] 님의 펫하우스🏡\n━━━━━━━━━━━━\n";
                     var targetHomeSocial = getPetHomeSocialUser(petHomeActivityDataForHome, targetName);
-                    let lineSocial = "팔로워🐾 " + targetHomeSocial.followers.length + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
+                    var targetFollowerDisplayCount = targetHomeSocial.followers.length + getPetSkillFollowerBonus(petSkillData, targetName); // 실제 팔로워와 장착 스킬 보너스 합계
+                    let lineSocial = "팔로워🐾 " + targetFollowerDisplayCount + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
                         "대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForHome, targetName) + "\n\n";
                     let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
                     let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
@@ -20978,7 +20993,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeAlertSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForAlert, sender);
                     var homeAlertListSnapshot = snapshotPetHomeAlertLists(petHomeActivityDataForAlert, [sender]);
                     var previousHomeAlertOpenCnt = data.member[sender].homeAlertOpenCnt;
-                    var homeAlertMessage = buildPetHomeActivityMessage(data, petData, guildData, sender, petHomeActivityDataForAlert, homeDataForAlert);
+                    var homeAlertMessage = buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sender, petHomeActivityDataForAlert, homeDataForAlert);
                     markPetHomeAlertsRead(petHomeActivityDataForAlert, sender);
                     data.member[sender].homeAlertOpenCnt = Math.min((parseInt(data.member[sender].homeAlertOpenCnt, 10) || 0) + 1, GLOBAL_CONFIG.daily.passHomeAlertOpenMax);
                     try {
@@ -21045,7 +21060,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petHomeActivityDataForHeart = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var heartSenderSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForHeart, sender);
                     var heartTargetSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForHeart, heartTargetName);
-                    var heartUsageStatus = getPetHomeHeartUsageStatus(data, petHomeActivityDataForHeart, heartHomeData, sender);
+                    var heartUsageStatus = getPetHomeHeartUsageStatus(data, petSkillData, petHomeActivityDataForHeart, heartHomeData, sender);
                     if (heartUseCount > heartUsageStatus.remaining) {
                         replier.reply("사용 가능한 마음표현 횟수가 부족합니다.💞\n남은 마음: " + heartUsageStatus.remaining + "개 / 오늘 한도: " + heartUsageStatus.limit + "개");
                         return;
@@ -35257,8 +35272,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
     var intimacyExp = getIntimacyExpFromBag(bagItems);
 
     // 펫 스킬
-    var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
-    skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+    var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
     if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
         skillExp += 500000;
     }
@@ -35282,8 +35296,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
     }
 
     // 펫스킬
-    let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
-    skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+    let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
     if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
         skillExp += 500000;
     }
@@ -37104,7 +37117,7 @@ function buildTierPetSkillInfoLine(skillData) {
     var totalExpInTenThousands = totalExp / 10000; // 종합매력을 만 단위로 변환
     return "\n종합매력 " + numberWithCommas(totalExpInTenThousands) + "만 증가" +
         "\n티어전용 펫스킬 중복 장착은 불가합니다." +
-        "\n장미칼,청룡언월도,오딘의 뿅망치 중복장착은 가능합니다.";
+        "\n일반 종합매력 무기 펫스킬과는 중복 장착할 수 있습니다.";
 }
 
 // 펫 스킬 이름에서 불필요한 접두사나 이모지를 제거하여 정규화된 형태로 반환
@@ -37249,6 +37262,64 @@ function hasPetSkill(petSkillData, user, skillName) {
     return equipped.indexOf(skillName) !== -1;
 }
 
+// 장착 중인 펫스킬이 제공하는 표시용 팔로워 보너스를 합산
+function getPetSkillFollowerBonus(petSkillData, user) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var counted = {};
+    var totalBonus = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillName = normalizePetSkillName(equipped[i]);
+        if (counted[skillName]) continue;
+        counted[skillName] = true;
+        var skillData = getPetSkillData(skillName);
+        totalBonus += skillData ? (parseInt(skillData.followerBonus, 10) || 0) : 0;
+    }
+    return totalBonus;
+}
+
+// 장착 중인 펫스킬이 제공하는 일일 마음 보내기 보너스를 합산
+function getPetSkillHeartBonus(petSkillData, user) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var counted = {};
+    var totalBonus = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillName = normalizePetSkillName(equipped[i]);
+        if (counted[skillName]) continue;
+        counted[skillName] = true;
+        var skillData = getPetSkillData(skillName);
+        totalBonus += skillData ? (parseInt(skillData.heartBonus, 10) || 0) : 0;
+    }
+    return totalBonus;
+}
+
+// 조건형 종합매력 펫스킬의 현재 발동 여부를 확인
+function isPetSkillCharmConditionActive(skillData, petData, homeData, user) {
+    if (!skillData || !skillData.charmCondition) return true;
+    if (skillData.charmCondition === "eliteMiniPet") {
+        return !!(petData && petData[user] && isElite(petData[user].miniPet));
+    }
+    if (skillData.charmCondition === "arcanaFurniture") {
+        return getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5;
+    }
+    return false;
+}
+
+// 장착 중인 비티어 종합매력 펫스킬의 레이드 또는 캐슬 보너스를 합산
+function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var counted = {};
+    var totalExp = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillName = normalizePetSkillName(equipped[i]);
+        if (counted[skillName]) continue;
+        counted[skillName] = true;
+        var skillData = getPetSkillData(skillName);
+        if (!skillData || skillData.tierExclusive || !isPetSkillCharmConditionActive(skillData, petData, homeData, user)) continue;
+        totalExp += parseInt(skillData[expType], 10) || 0;
+    }
+    return totalExp;
+}
+
 // 장착된 티어 전용 펫스킬의 레이드 또는 캐슬 매력 보너스를 합산
 function getEquippedTierPetSkillExp(petSkillData, user, expType) {
     var equipped = getEquippedPetSkillNames(petSkillData, user);
@@ -37349,25 +37420,22 @@ function getPetSkillTotalRate() {
     return totalRate;
 }
 
-// 등급별 총확률을 유지하면서 같은 등급 스킬에 균등 분배한 추첨 가중치 반환
+// 명시 확률을 우선하고 남은 등급 확률을 나머지 스킬에 균등 분배한 추첨 가중치 반환
 function getPetSkillRandomWeight(skillData) {
     if (!skillData) return 0;
     var gradeWeightTotal = PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS[skillData.grade];
     if (typeof gradeWeightTotal !== "number") return skillData.rate || 0;
-    var gradeItemCount = getPetSkillGradeItemCount(skillData.grade);
-    return gradeItemCount > 0 ? gradeWeightTotal / gradeItemCount : 0;
-}
-
-// 펫스킬 등급별 등록 개수를 한 번 계산해 재사용
-function getPetSkillGradeItemCount(grade) {
-    if (!petSkillGradeItemCountCache) {
-        petSkillGradeItemCountCache = {};
-        for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-            var skillGrade = PET_SKILL_LIST[i].grade;
-            petSkillGradeItemCountCache[skillGrade] = (petSkillGradeItemCountCache[skillGrade] || 0) + 1;
-        }
+    if (skillData.fixedRate === true) return skillData.rate || 0;
+    var flexibleItemCount = 0;
+    var fixedRateTotal = 0;
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        var gradeSkill = PET_SKILL_LIST[i];
+        if (gradeSkill.grade !== skillData.grade) continue;
+        if (gradeSkill.fixedRate === true) fixedRateTotal += Number(gradeSkill.rate) || 0;
+        else flexibleItemCount++;
     }
-    return petSkillGradeItemCountCache[grade] || 0;
+    var flexibleRateTotal = Math.max(0, gradeWeightTotal - fixedRateTotal);
+    return flexibleItemCount > 0 ? flexibleRateTotal / flexibleItemCount : 0;
 }
 
 function getPetSkillActualRate(skillData) {
@@ -38583,7 +38651,7 @@ function getPetHomeEquippedBadgeText(activityData, user) {
 }
 
 // 펫홈 마음표현의 오늘 사용량과 한도를 반환하는 함수
-function getPetHomeHeartUsageStatus(data, activityData, homeData, user) {
+function getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var today = getPetHomeTodayText();
     if (social.heartUsage.date !== today) {
@@ -38593,9 +38661,10 @@ function getPetHomeHeartUsageStatus(data, activityData, homeData, user) {
     }
     var mutualBonus = getActivePetHomeMutualCount(data, activityData, user); // 활성 맞팔로 추가되는 일일 사용 횟수
     var premiumBonus = isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.heartBonus : 0;
-    var limit = 1 + mutualBonus + premiumBonus; // 기본·맞팔·프리미엄 보너스를 합친 최종 한도
+    var skillBonus = getPetSkillHeartBonus(petSkillData, user); // 망므 등 장착 스킬로 추가되는 일일 사용 횟수
+    var limit = 1 + mutualBonus + premiumBonus + skillBonus; // 기본·맞팔·프리미엄·스킬 보너스를 합친 최종 한도
     var used = parseInt(social.heartUsage.count, 10) || 0;
-    return { date: today, base: 1, mutualBonus: mutualBonus, premiumBonus: premiumBonus, limit: limit, used: used, remaining: Math.max(0, limit - used) };
+    return { date: today, base: 1, mutualBonus: mutualBonus, premiumBonus: premiumBonus, skillBonus: skillBonus, limit: limit, used: used, remaining: Math.max(0, limit - used) };
 }
 
 // 유저가 보유한 펫홈 뱃지 설정을 고정 순서로 반환하는 함수
@@ -38663,14 +38732,15 @@ function buildPetHomeFollowListMessage(data, petData, guildData, activityData, u
 }
 
 // 오늘의 펫홈 마음표현 사용 현황 메시지를 생성하는 함수
-function buildPetHomeHeartUsageMessage(data, petData, guildData, activityData, homeData, user) {
-    var status = getPetHomeHeartUsageStatus(data, activityData, homeData, user);
+function buildPetHomeHeartUsageMessage(data, petData, petSkillData, guildData, activityData, homeData, user) {
+    var status = getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, user);
     return getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 님\n" +
         "💞 맞팔 마음표현 혜택\n" +
         "━━━━━━━━━━━━\n" +
         "기본 사용 가능 횟수: " + status.base + "회\n" +
         "맞팔 보너스: +" + status.mutualBonus + "회\n" +
         (status.premiumBonus > 0 ? "호이패스 프리미엄: +" + status.premiumBonus + "회\n" : "") +
+        (status.skillBonus > 0 ? "망므📙: +" + status.skillBonus + "회\n" : "") +
         "오늘 사용: " + status.used + "회\n" +
         "남은 마음: " + status.remaining + "회\n" +
         "최종 사용 가능 횟수: " + status.limit + "회";
@@ -38905,17 +38975,20 @@ function addPetHomeFeedActivityAlert(activityData, targetUser, actorId, actorNam
 }
 
 // 펫홈 소셜 순위 명령어의 점수를 계산하고 상위 100명을 출력하는 함수
-function buildPetHomeSocialRankingMessage(data, petData, guildData, homeData, activityData, viewer, command) {
+function buildPetHomeSocialRankingMessage(data, petData, petSkillData, guildData, homeData, activityData, viewer, command) {
     var rows = [];
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user)) continue;
         var social = activityData.petHomeSocial.hasOwnProperty(user) ? activityData.petHomeSocial[user] : null;
         var score = 0;
-        if (command === "/팔로워순위" && social) {
+        if (command === "/팔로워순위") {
+            score += getPetSkillFollowerBonus(petSkillData, user);
             var validFollowers = {};
-            for (var followerIndex = 0; followerIndex < social.followers.length; followerIndex++) {
-                var follower = social.followers[followerIndex];
-                if (data.member[follower]) validFollowers[follower] = true;
+            if (social) {
+                for (var followerIndex = 0; followerIndex < social.followers.length; followerIndex++) {
+                    var follower = social.followers[followerIndex];
+                    if (data.member[follower]) validFollowers[follower] = true;
+                }
             }
             for (var validFollower in validFollowers) {
                 if (validFollowers.hasOwnProperty(validFollower)) score++;
@@ -39098,12 +39171,13 @@ function formatPetHomeActivityAlert(data, petData, guildData, alert) {
 }
 
 // 홈알림과 최근 방문자 목록 메시지를 생성하는 함수
-function buildPetHomeActivityMessage(data, petData, guildData, sender, activityData, homeData) {
+function buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sender, activityData, homeData) {
     var alerts = getPetHomeAlertList(activityData, sender);
     var visitors = getPetHomeRecentVisitorList(activityData, sender);
     var social = getPetHomeSocialUser(activityData, sender);
     var mutualCount = getPetHomeMutualUsers(activityData, sender).length; // 현재 보존된 맞팔 관계 수
-    var heartStatus = getPetHomeHeartUsageStatus(data, activityData, homeData, sender); // 활성 패스 기준 오늘 마음 사용 현황
+    var heartStatus = getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, sender); // 활성 패스 기준 오늘 마음 사용 현황
+    var followerDisplayCount = social.followers.length + getPetSkillFollowerBonus(petSkillData, sender); // 실제 팔로워와 장착 스킬 보너스 합계
     var unreadCount = 0; // 아직 확인하지 않은 활동 알림 개수
     for (var i = 0; i < alerts.length; i++) {
         if (alerts[i] && alerts[i].read !== true) unreadCount++;
@@ -39112,7 +39186,7 @@ function buildPetHomeActivityMessage(data, petData, guildData, sender, activityD
     var out = getHoiPassPremiumHeader(data, sender) + "🔔 [" + checkRank(data, petData, guildData, sender) + "] 님의 홈알림\n" +
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, sender) + "\n" +
         "━━━━━━━━━━━━\n" +
-        "팔로워🐾 " + social.followers.length + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
+        "팔로워🐾 " + followerDisplayCount + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
         "맞팔🤝 " + mutualCount + "명 | 남은 마음💌: " + heartStatus.remaining + "개\n" +
         "━━━━━━━━━━━━\n" +
         "새로운 알림🔔 " + unreadCount + "개 | 보관📭 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
@@ -39421,7 +39495,8 @@ function initSweetHomeUser(homeData, user) {
             placedFurnitureSummary: {
                 count: 0,
                 totalExp: 0,
-                royalLumiereCount: 0
+                royalLumiereCount: 0,
+                gradeCounts: {}
             },
             furnitureBag: [],
             visitCnt: 0,
@@ -39537,34 +39612,60 @@ function buildPlacedFurnitureSummary(placedFurniture) {
     var list = Array.isArray(placedFurniture) ? placedFurniture : [];
     var totalExp = 0; // 장착 가구 매력 합계
     var royalLumiereCount = 0; // 로열 하우스 스킬 조건용 가구 개수
+    var gradeCounts = {}; // 등급별 배치 가구 개수
     for (var i = 0; i < list.length; i++) {
         var item = list[i];
         if (!item) continue;
         totalExp += Number(item.exp) || 0;
-        if (String(item.grade || "").trim() === "로열 루미에르") royalLumiereCount++;
+        var itemGrade = String(item.grade || "").trim();
+        if (itemGrade) gradeCounts[itemGrade] = (gradeCounts[itemGrade] || 0) + 1;
+        if (itemGrade === "로열 루미에르") royalLumiereCount++;
     }
     return {
         count: list.length,
         totalExp: totalExp,
-        royalLumiereCount: royalLumiereCount
+        royalLumiereCount: royalLumiereCount,
+        gradeCounts: gradeCounts
     };
 }
 
 // 저장된 요약값을 정수 기준으로 정규화
 function normalizePlacedFurnitureSummary(summary) {
     summary = summary && typeof summary === "object" ? summary : {};
+    var sourceGradeCounts = summary.gradeCounts && typeof summary.gradeCounts === "object" ? summary.gradeCounts : {};
+    var gradeCounts = {};
+    for (var grade in sourceGradeCounts) {
+        if (!sourceGradeCounts.hasOwnProperty(grade)) continue;
+        var gradeCount = Math.max(0, parseInt(sourceGradeCounts[grade], 10) || 0);
+        if (gradeCount > 0) gradeCounts[grade] = gradeCount;
+    }
     return {
         count: Math.max(0, parseInt(summary.count, 10) || 0),
         totalExp: Number(summary.totalExp) || 0,
-        royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0)
+        royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0),
+        gradeCounts: gradeCounts
     };
+}
+
+// 숫자 맵 두 개의 키와 값을 비교
+function isSameNumberMap(a, b) {
+    var left = a && typeof a === "object" ? a : {};
+    var right = b && typeof b === "object" ? b : {};
+    var leftKeys = Object.keys(left);
+    var rightKeys = Object.keys(right);
+    if (leftKeys.length !== rightKeys.length) return false;
+    for (var i = 0; i < leftKeys.length; i++) {
+        var key = leftKeys[i];
+        if (!right.hasOwnProperty(key) || Number(left[key]) !== Number(right[key])) return false;
+    }
+    return true;
 }
 
 // 장착 가구 요약값 두 개가 같은지 확인
 function isSamePlacedFurnitureSummary(a, b) {
     var left = normalizePlacedFurnitureSummary(a);
     var right = normalizePlacedFurnitureSummary(b);
-    return left.count === right.count && left.totalExp === right.totalExp && left.royalLumiereCount === right.royalLumiereCount;
+    return left.count === right.count && left.totalExp === right.totalExp && left.royalLumiereCount === right.royalLumiereCount && isSameNumberMap(left.gradeCounts, right.gradeCounts);
 }
 
 // 분리 상세 파일을 우선 사용하고 이관 전에는 기존 펫홈 목록을 반환
@@ -39809,14 +39910,30 @@ function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
     var target = String(furnitureGrade || "").trim();
     if (!target) return 0;
     if (!homeData || !homeData[username]) return 0;
-    if (target === "로열 루미에르" && homeData[username].placedFurnitureSummary) {
-        return normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary).royalLumiereCount;
+    if (homeData[username].placedFurnitureSummary) {
+        var summary = normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary);
+        if (summary.gradeCounts.hasOwnProperty(target)) return summary.gradeCounts[target];
+        if (target === "로열 루미에르" && summary.royalLumiereCount > 0) return summary.royalLumiereCount;
     }
     if (!homeData[username].placedFurniture) return 0;
     var placed = homeData[username].placedFurniture;
     var count = 0;
     for (var i = 0; i < placed.length; i++) {
         var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
+        if (itemGrade === target) count++;
+    }
+    return count;
+}
+
+// 가구가방과 배치 가구를 합쳐 특정 등급의 총 보유 수를 반환
+function getOwnedFurnitureCountByGrade(homeData, username, furnitureGrade) {
+    if (!homeData || !homeData[username]) return 0;
+    var target = String(furnitureGrade || "").trim();
+    if (!target) return 0;
+    var count = getPlacedFurnitureCountByGrade(homeData, username, target);
+    var furnitureBag = Array.isArray(homeData[username].furnitureBag) ? homeData[username].furnitureBag : [];
+    for (var i = 0; i < furnitureBag.length; i++) {
+        var itemGrade = String((furnitureBag[i] && furnitureBag[i].grade) || "").trim();
         if (itemGrade === target) count++;
     }
     return count;
@@ -40269,10 +40386,8 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return value;
     }
 
-    function calcSkillExp(homeDataForSkill) {
-        var skillExp = 0;
-        if (hasPetSkill(petSkillData, sender, "장미칼")) skillExp += 500000;
-        if (hasPetSkill(petSkillData, sender, "청룡언월도")) skillExp += 1000000;
+    function calcSkillExp(homeDataForSkill, expType) {
+        var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeDataForSkill, sender, expType);
         if (hasPetSkill(petSkillData, sender, "창조림") && hasEquippedCreationMiniPet(petData, sender)) skillExp += 500000;
         if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
             var royalLumiereCount = getPlacedFurnitureCountByGrade(homeDataForSkill, sender, "로열 루미에르");
@@ -40303,7 +40418,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return getIntimacyExpFromBag(bagItems);
     });
     var castleSkillExp = measure("캐슬-펫스킬", function () {
-        return calcSkillExp(homeData);
+        return calcSkillExp(homeData, "castleExp");
     });
     var castleTotal = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp;
 
@@ -40323,7 +40438,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return homeExp;
     });
     var raidSkillExp = measure("레이드-펫스킬", function () {
-        return calcSkillExp(homeData);
+        return calcSkillExp(homeData, "raidExp");
     });
     var raidTotal = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp;
     var upgradeBonus = measure("강화 보너스", function () {
