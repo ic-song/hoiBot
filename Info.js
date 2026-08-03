@@ -50,7 +50,19 @@ const GLOBAL_CONFIG = {
 	petSkill: { // 펫스킬 시스템 설정
 		bookItemName: "펫스킬북📙(/펫스킬오픈)",
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
-		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)"
+		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
+		charmSkills: {
+			"청룡언월도": { raidExp: 1000000, castleExp: 1000000 },
+			"엘리트 박사": { raidExp: 1500000, castleExp: 1500000, condition: "eliteMiniPet" },
+			"오딘의 뿅망치": { raidExp: 2000000, castleExp: 2000000 },
+			"장미칼": { raidExp: 500000, castleExp: 500000 },
+			"엑스칼리버": { raidExp: 1000000, castleExp: 1000000 },
+			"사신의 낫": { raidExp: 500000, castleExp: 500000 },
+			"아르카나 하우스": { raidExp: 500000, castleExp: 500000, condition: "arcanaFurniture" },
+			"큐피드의 활": { raidExp: 250000, castleExp: 250000 },
+			"도깨비 방망이": { raidExp: 100000, castleExp: 100000 },
+			"낡은 목검": { raidExp: 50000, castleExp: 50000 }
+		}
 	},
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪"
@@ -1750,9 +1762,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-	// 펫 스킬 
-	var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
-	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	// 펫 스킬
+	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
 	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
 		skillExp += 500000;
 	}
@@ -1776,8 +1787,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 	}
 
 	// 펫스킬
-	let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
-	skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
 	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
 		skillExp += 500000;
 	}
@@ -2261,6 +2271,33 @@ function hasPetSkill(petSkillData, user, skillName) {
 	skillName = normalizePetSkillName(skillName);
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
+}
+// 조건형 종합매력 펫스킬의 현재 발동 여부를 확인하는 함수
+function isInfoPetSkillCharmConditionActive(skillData, petData, homeData, user) {
+	if (!skillData || !skillData.condition) return true;
+	if (skillData.condition === "eliteMiniPet") {
+		return !!(petData && petData[user] && isElite(petData[user].miniPet));
+	}
+	if (skillData.condition === "arcanaFurniture") {
+		return getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5;
+	}
+	return false;
+}
+// 장착 중인 비티어 종합매력 펫스킬의 레이드 또는 캐슬 보너스를 합산하는 함수
+function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType) {
+	var equipped = getEquippedPetSkillNames(petSkillData, user);
+	var charmSkills = GLOBAL_CONFIG.petSkill.charmSkills;
+	var counted = {};
+	var totalExp = 0;
+	for (var i = 0; i < equipped.length; i++) {
+		var skillName = normalizePetSkillName(equipped[i]);
+		if (counted[skillName]) continue;
+		counted[skillName] = true;
+		var skillData = charmSkills[skillName];
+		if (!skillData || !isInfoPetSkillCharmConditionActive(skillData, petData, homeData, user)) continue;
+		totalExp += parseInt(skillData[expType], 10) || 0;
+	}
+	return totalExp;
 }
 // 장착된 티어 전용 펫스킬의 레이드·캐슬 공통 매력 보너스 합산 함수
 function getEquippedTierPetSkillExp(petSkillData, user) {
@@ -3223,10 +3260,12 @@ function isElite(mini) {
 // 장착 가구 요약값을 정수 기준으로 정규화
 function normalizePlacedFurnitureSummary(summary) {
 	summary = summary && typeof summary === "object" ? summary : {};
+	var gradeCounts = summary.gradeCounts && typeof summary.gradeCounts === "object" ? summary.gradeCounts : {};
 	return {
 		count: Math.max(0, parseInt(summary.count, 10) || 0),
 		totalExp: Number(summary.totalExp) || 0,
-		royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0)
+		royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0),
+		gradeCounts: gradeCounts
 	};
 }
 
@@ -3264,14 +3303,30 @@ function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
 	var target = String(furnitureGrade || "").trim();
 	if (!target) return 0;
 	if (!homeData || !homeData[username]) return 0;
-	if (target === "로열 루미에르" && homeData[username].placedFurnitureSummary) {
-		return normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary).royalLumiereCount;
+	if (homeData[username].placedFurnitureSummary) {
+		var summary = normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary);
+		if (summary.gradeCounts.hasOwnProperty(target)) return parseInt(summary.gradeCounts[target], 10) || 0;
+		if (target === "로열 루미에르" && summary.royalLumiereCount > 0) return summary.royalLumiereCount;
 	}
 	if (!homeData[username].placedFurniture) return 0;
 	var placed = homeData[username].placedFurniture;
 	var count = 0;
 	for (var i = 0; i < placed.length; i++) {
 		var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
+		if (itemGrade === target) count++;
+	}
+	return count;
+}
+
+// 가구가방과 배치 가구를 합쳐 특정 등급의 총 보유 수를 반환하는 함수
+function getOwnedFurnitureCountByGrade(homeData, username, furnitureGrade) {
+	if (!homeData || !homeData[username]) return 0;
+	var target = String(furnitureGrade || "").trim();
+	if (!target) return 0;
+	var count = getPlacedFurnitureCountByGrade(homeData, username, target);
+	var furnitureBag = Array.isArray(homeData[username].furnitureBag) ? homeData[username].furnitureBag : [];
+	for (var i = 0; i < furnitureBag.length; i++) {
+		var itemGrade = String((furnitureBag[i] && furnitureBag[i].grade) || "").trim();
 		if (itemGrade === target) count++;
 	}
 	return count;

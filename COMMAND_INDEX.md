@@ -260,9 +260,13 @@ Status: VERIFIED
 ## Runtime / Save-Flow Hotspots
 
 - `/봇살리기` is handled before account-suspension and normal member-data loading, so an Admin/Master can restore `member.json`, pet data, pet skill data, and `petHomeActivityData.json` from their strictly parsed recovery snapshots.
-- `saveJsonFile(...)` uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for member and pet-home activity original/backup files; `petHomeActivityData.json` also preserves its previous valid state in `petHomeActivityData_back.json`.
+- `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
+- `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
+- A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
+- `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
+- `/데이터상태` reads the original and both backup generations for all four managed JSON files without modifying them; `/데이터복구 [파일] [1|2]` restores only the selected file from the explicitly selected validated backup generation.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
-- Slash-prefixed commands strictly parse and back up member, pet, and pet skill data before normal command execution; when `petHomeActivityData.json` exists, it is also validated and copied to `petHomeActivityData_back.json`.
+- Slash-prefixed commands no longer perform an unconditional four-file backup before execution; managed JSON is backed up immediately before that specific original is actually saved.
 - `main.js`: main `response(...)` entry point for almost all mutable gameplay commands
 - `Info.js`: info/query-oriented `response(...)` entry point
 - `main.js`: `loadJsonFile(path)` resolves DEV/PROD path via `resolveActiveDataPath(path)` and parses UTF-8 JSON through `parseJsonContent(...)`
@@ -276,6 +280,7 @@ Status: VERIFIED
 - DEV-prefixed messages are normalized through `stripDevCommandPrefix(msg)` before regular command branching continues
 - Both `loadJsonFile(...)` and `saveJsonFile(...)` pass through `resolveActiveDataPath(...)`, so save-flow verification should check path resolution rather than only literal file constants
 - `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing
+- `/데이터상태` and `/데이터복구` follow `resolveActiveDataPath(...)`; normal commands target production and `dev/` commands target DEV data.
 - If a command looks read-only but still writes, inspect whether it sanitizes or normalizes data before display
 
 ## Core Helper Hotspots
@@ -505,6 +510,7 @@ Status: VERIFIED
 - `/홈뱃지해제`
 - `/홈뱃지삭제 [번호|ID]`
 - `/홈뱃지오픈 [숫자]`
+- `/홈뱃지오픈2 [숫자]`
 - `/홈뽑기확률`
 - `/특별뱃지목록`
 - `/특별뱃지목록 [S01|[S01]]`
@@ -615,11 +621,12 @@ Status: VERIFIED
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
 - `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with empty `alerts`, `recentVisitors`, `petHomeSocial`, and `migrations` only when the active DEV/PROD file does not exist and never overwrites an existing file.
 - `/펫홈활동살리기`: Admin/Master-only exact command; strictly parses and validates `petHomeActivityData_back.json`, then atomically restores only `petHomeActivityData.json` without replacing the backup.
-- `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling.
+- `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count + 망므📙 5회` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling. 스킬 해제 후에는 이미 사용한 횟수는 유지하고 추가 한도만 즉시 사라진다.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
-- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
-- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, and 50 gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path.
-- `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB050` IDs in `petHomeActivityFile`, and rolls back both files on save failure. Results insert `allsee` before the fifth draw, split every 10 draws, and send an overall notice for S results.
+- `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. `/내마음`은 `망므📙` 장착 시 `+5회`를 별도 표시한다. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
+- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, and 20 MBTI gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path.
+- `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
+- `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -627,7 +634,7 @@ Status: VERIFIED
 - `/홈알림` and `ㅎㄹ`: run under the response data write lock, read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, mark alerts read, and complete the pass `홈알림 열기` daily condition only after activity/member saves succeed; both files roll back together on failure.
 - `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
-- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/마음순위` also shows each ranked user's 귀여워·멋져요·응원해·사랑해 received counts.
+- `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/팔로워순위`는 실제 팔로워에 `인플루언서📙` 1,000명과 `셀럽📙` 2,000명을 합산하고, `/마음순위`는 각 유저의 귀여워·멋져요·응원해·사랑해 받은 수를 표시한다.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
 - `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
@@ -709,6 +716,7 @@ Status: VERIFIED
 - Before the first separation, saves and reload-validates `petSweetHomeData_beforePlacedFurnitureSplit.json`; an existing backup is preserved without overwrite.
 - If the detail file is missing, copies legacy placed lists into it, verifies summaries, then removes legacy fields from home data.
 - If the detail file exists, treats it as the source of truth, merges remaining legacy IDs, removes bag/detail ID duplicates, and recalculates every summary.
+- Summary recalculation stores `gradeCounts` for condition skills such as `아르카나 하우스📙`; its five-item check combines placed furniture with `furnitureBag`.
 - Saves `petHomePlacedFurniturePath` before `homeDataFile`, reloads both, and reports verification mismatches.
 
 ## AI Notes
@@ -1177,6 +1185,8 @@ Status: VERIFIED
 - `calculateRaidExp`
 - `calculateCastleExp`
 - `calculateTotalExp`
+- `getEquippedNonTierPetSkillExp`
+- `isInfoPetSkillCharmConditionActive`
 - `getMemberRank`
 - `getTitle`
 - `initPetSkillUser`
@@ -1214,6 +1224,8 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
+- `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 - `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
 
@@ -2349,7 +2361,7 @@ Status: VERIFIED
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
 - 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
-- 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬·장미칼·청룡언월도·오딘의 뿅망치 중복 장착 안내가 함께 표시된다.
+- 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬끼리는 중복 불가, 일반 종합매력 무기 펫스킬과는 중복 가능하다는 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
 - `장인의 숨결` applies to `/펫강화` and `/정령강화` failure only, preserving the required enhancement stone at 7%; it does not apply to `/반지강화`.
 
@@ -3193,7 +3205,7 @@ Status: VERIFIED
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
-- S/A/B/C의 기존 등급별 총확률은 유지하고, 각 등급 안의 기존 스킬과 티어책에 동일 확률로 균등 분배한다. SS/D는 기존 개별 확률을 유지한다.
+- S/A/B/C의 기존 등급별 총확률은 유지한다. 노션에 개별 확률이 명시된 신규·조정 스킬은 그 값을 우선하고, 남은 등급 확률은 나머지 스킬과 티어책에 균등 분배한다. SS/D는 개별 확률을 사용한다.
 
 ---
 
@@ -3236,7 +3248,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C 등급 내부 균등 확률을 적용하며 티어 전용 펫스킬북도 추첨한다.
+- `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C의 명시 확률을 먼저 배정하고 남은 등급 확률을 균등 분배하며 티어 전용 펫스킬북도 추첨한다.
 - `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
 
 ---
@@ -3300,6 +3312,9 @@ Status: VERIFIED
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
+- `인플루언서📙`과 `셀럽📙`은 중복 장착 시 `/펫홈`, `/홈알림`, `/팔로워순위` 표시 팔로워에 합계 3,000명을 더하며 실제 팔로워 관계와 뱃지 누적값은 바꾸지 않는다.
+- `망므📙` 장착 멘트는 `이건 내 망므야!`이며 일일 마음 한도를 5회 늘린다.
+- 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 장착 미니펫이 엘리트 등급일 때, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
 
 ---
 
@@ -5212,6 +5227,79 @@ Status: VERIFIED
 
 - Exact/full-pattern command guard: `/포인트상자오픈` or `/포인트상자오픈 숫자`
 - One box grants `🅟100,000,000`; numeric use opens up to the held box count.
+
+---
+
+# /데이터상태
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/데이터상태`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `buildManagedJsonStatusMessage`
+- `inspectManagedJsonFile`
+- `getManagedJsonCommandTargets`
+- `getManagedJsonBackupPath`
+- `getManagedJsonSecondaryBackupPath`
+
+## Data Usage
+
+- `member.json`, `member_back.json`, `member_back2.json`
+- `member_pet.json`, `member_pet_back.json`, `member_pet_back2.json`
+- `petSkillData.json`, `petSkillData_back.json`, `petSkillData_back2.json`
+- `petHomeActivityData.json`, `petHomeActivityData_back.json`, `petHomeActivityData_back2.json`
+
+## Save Flow
+
+- Read-only; each file is strictly parsed without automatic restoration or writes.
+
+## AI Notes
+
+- Admin/Master only.
+- Normal input checks production paths; `dev/데이터상태` checks DEV paths.
+
+---
+
+# /데이터복구 [파일] [1|2]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/데이터복구`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getManagedJsonCommandTarget`
+- `restoreManagedJsonFromSelectedBackup`
+- `notifyManagedJsonRecovery`
+- `writeVerifiedJsonFile`
+
+## Data Usage
+
+- Files: `member`, `member_pet`, `petSkillData`, `petHomeActivityData`
+- Backup generation: `1` for `_back.json`, `2` for `_back2.json`
+
+## Save Flow
+
+- Strictly validates the selected backup and safely replaces only the selected original without rotating or overwriting either backup generation.
+
+## AI Notes
+
+- Admin/Master only; exact full-pattern guard prevents suffix text from executing.
+- Check `/데이터상태` first. Normal input restores production data; `dev/데이터복구 ...` restores DEV data.
 
 ---
 

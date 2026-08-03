@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.345"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.352"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -92,15 +92,16 @@ const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
     B: 20,
     C: 47.7
 };
-var petSkillGradeItemCountCache = null;
 const PET_SKILL_LIST = [
 
-    { name: "청룡언월도", grade: "SS", rate: 0.2, effect: "삼국지 관우 전설의 무기입니다.\n장착 시 레이드/캐슬 매력 100만 증가(총:종합매력 200만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+    { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
+    { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
+    { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
     { name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
-    { name: "장미칼", grade: "S", rate: 1.0, effect: "사익한 마녀의 칼입니다.\n장착 시 레이드/캐슬 매력 50만 증가(총:종합매력 100만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+    { name: "장미칼", grade: "A", rate: 0.4, fixedRate: true, raidExp: 500000, castleExp: 500000, effect: "사악한 마녀의 칼입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
     { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
@@ -108,11 +109,15 @@ const PET_SKILL_LIST = [
     { name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
     { name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
     { name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
+    { name: "엑스칼리버", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "선택받은 자만이 사용할 수 있는 전설의 성검입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
     { name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
     { name: "개통령", grade: "A", rate: 1.4, effect: "/미니펫강화 성공 확률 10% 증가" },
     { name: "숙련된 전사", grade: "A", rate: 1.7, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
     { name: "로열 하우스", grade: "A", rate: 1.6, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
+    { name: "셀럽", grade: "A", rate: 1.5, fixedRate: true, followerBonus: 2000, equipComment: "ㅎㅇ 싸인해줌?", equipCommentNoColon: true, effect: "팔로워가 2,000명 증가합니다.\n인플루언서 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 2,000명은 회수됩니다." },
+    { name: "사신의 낫", grade: "A", rate: 0.4, fixedRate: true, raidExp: 500000, castleExp: 500000, effect: "영혼마저 베어버린다는 사신의 거대한 낫입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "아르카나 하우스", grade: "A", rate: 1.5, fixedRate: true, raidExp: 500000, castleExp: 500000, charmCondition: "arcanaFurniture", effect: "가구 [아르카나 루미에르]를 5개 이상 보유하면 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     // { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
     { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
     { name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
@@ -132,6 +137,8 @@ const PET_SKILL_LIST = [
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
+    { name: "인플루언서", grade: "B", rate: 2.0, fixedRate: true, followerBonus: 1000, equipComment: "여러분 안녕 이건 뒷광고 ㄴㄴ 내돈내산이야루~", equipCommentNoColon: true, effect: "팔로워가 1,000명 증가합니다.\n셀럽 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 1,000명은 회수됩니다." },
+    { name: "큐피드의 활", grade: "B", rate: 1.5, fixedRate: true, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
     // { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
 
@@ -145,6 +152,8 @@ const PET_SKILL_LIST = [
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
     { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
+    { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
+    { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
 
     { name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
@@ -153,6 +162,7 @@ const PET_SKILL_LIST = [
     { name: "품행제로", grade: "D", rate: 14.5, effect: "/결투 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
     { name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
     { name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" },
+    { name: "낡은 목검", grade: "D", rate: 14.5, raidExp: 50000, castleExp: 50000, effect: "오랜 세월 수련에 사용된 낡은 목검입니다.\n장착 시 레이드매력 5만과 캐슬매력 5만, 총 종합매력 10만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
     { name: "🪽 엠퍼러의 천공 날개", grade: "C", rate: 0, requiredTier: "엠퍼러", raidExp: 100000, castleExp: 100000, equipComment: "잠깐, 나 지금 날고 있는 거야?!", tierExclusive: true, effect: "엠퍼러 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 10만 증가합니다." },
     { name: "🪬 올마이티의 전능 부적", grade: "C", rate: 0, requiredTier: "올마이티", raidExp: 150000, castleExp: 150000, equipComment: "뭐든 할 수 있을 것 같은 기분이야!", tierExclusive: true, effect: "올마이티 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 15만 증가합니다." },
@@ -708,6 +718,7 @@ const requestMonitorConfigPath = "/sdcard/호이랜드/requestMonitorConfig.json
 const filePath_back = "/sdcard/호이랜드/member_back.json"; //멤버백
 const memberPetPath_back = "/sdcard/호이랜드/member_pet_back.json";
 const petSkillDataPath_back = "/sdcard/호이랜드/petSkillData_back.json";
+const MANAGED_BACKUP_SECONDARY_ROTATION_MS = 300000; // 2세대 백업 갱신 최소 간격(5분)
 var COMMON_DATA_FILE_MAP = {
     "itemInfo.json": true,
     "miniPetData.json": true,
@@ -719,6 +730,8 @@ var COMMON_DATA_FILE_MAP = {
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
 var commandDataFlowLock = new java.util.concurrent.locks.ReentrantReadWriteLock(true); // 자동일퀘와 일반 응답의 데이터 처리 순서 보호
+var dataTransactionLock = new java.util.concurrent.locks.ReentrantLock(); // 명령 단위 데이터 로드·백업·변경·저장 동시 실행 방지
+var dataSaveTransactionThreadLocal = new java.lang.ThreadLocal(); // 명령별 최초 백업과 자동 롤백 상태
 var autoDailyBatchThreadLocal = new java.lang.ThreadLocal(); // 자동일퀘 스레드별 메모리 저장 배치
 const DEFAULT_REQUEST_MONITOR_CONFIG = {
     windowMs: 2000,
@@ -752,7 +765,6 @@ let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 
 var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리 객체 (guildId: timerId)
-let isSaving = false; //메인 정보
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     attendance: { // 출석 보상 설정
@@ -912,6 +924,7 @@ const GLOBAL_CONFIG = {
         ],
         gachaItemName: "홈뱃지뽑기🛡️(/홈뱃지오픈)",
         gachaMaxOpenCount: 100,
+        gachaDuplicatePointReward: 100000000, // 중복 홈뱃지 1개당 즉시 지급 포인트
         gachaGradeRates: [
             { grade: "C", rate: 55 },
             { grade: "B", rate: 30 },
@@ -968,8 +981,41 @@ const GLOBAL_CONFIG = {
             { id: "HB047", grade: "S", emoji: "🌌", name: "우주가 밀어주는 관종", text: "온 우주의 관심이 당신에게 집중됩니다!", source: "HOME_BADGE_GACHA" },
             { id: "HB048", grade: "S", emoji: "🔥", name: "접속만 해도 서버 과열", text: "잠시만요! 서버에서 연기가 나고 있습니다!", source: "HOME_BADGE_GACHA" },
             { id: "HB049", grade: "S", emoji: "👑", name: "홈뱃지 재벌", text: "뱃지가 너무 많아 보관함이 비명을 지릅니다!", source: "HOME_BADGE_GACHA" },
-            { id: "HB050", grade: "S", emoji: "🪄", name: "이 뱃지 본 사람 대박", text: "축하합니다! 오늘의 행운을 전부 뽑았습니다!", source: "HOME_BADGE_GACHA" }
-        ]
+            { id: "HB050", grade: "S", emoji: "🪄", name: "이 뱃지 본 사람 대박", text: "축하합니다! 오늘의 행운을 전부 뽑았습니다!", source: "HOME_BADGE_GACHA" },
+            { id: "HB051", grade: "C", emoji: "🍺", name: "맥주가 물이야", text: "물 대신 맥주 한잔! 오늘도 시원하게 들이킵니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB052", grade: "B", emoji: "🍻", name: "짠의 제왕", text: "잔을 들어라! 모든 건배를 지배하는 짠의 제왕이 등장했습니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB053", grade: "A", emoji: "🍶", name: "타고난 주당", text: "술이 나를 마신다! 태어날 때부터 남달랐던 주당입니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB054", grade: "S", emoji: "🍾", name: "오늘은 내가 쏜다", text: "가격은 묻지 마세요. 오늘 술값은 제가 책임집니다!", source: "HOME_BADGE_GACHA" },
+            { id: "HB055", grade: "C", emoji: "🥴", name: "필름 어디 갔지?", text: "분명 즐거웠는데… 어제의 기억이 통째로 사라졌습니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB056", grade: "C", emoji: "🫗", name: "오늘도 비싼 물을 마신다", text: "마시고 보니 술이었습니다.", source: "HOME_BADGE_GACHA" },
+            { id: "HB057", grade: "B", emoji: "🧑", name: "사장님이 맛있고 안주가 멋져요", text: "사장님이 맛있습니다.", source: "HOME_BADGE_GACHA" }
+        ],
+        gacha2: {
+            itemName: "홈뱃지뽑기🛡️[2](/홈뱃지오픈2)",
+            maxOpenCount: 100,
+            badges: [
+                { id: "MBTI01", emoji: "🧠", name: "INTJ 전략가", description: "이미 머릿속으로 모든 계획을 끝냈습니다.", message: "계획대로 되고 있어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI02", emoji: "🔮", name: "INTP 몽상가", description: "쓸데없지만 흥미로운 생각이 끊이지 않습니다.", message: "근데 갑자기 궁금한 게 생겼어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI03", emoji: "👑", name: "ENTJ 지휘관", description: "모임이 시작되기도 전에 이미 대장입니다.", message: "자, 이제 내 말대로 하면 돼.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI04", emoji: "💡", name: "ENTP 토론왕", description: "말싸움도 하나의 즐거운 콘텐츠입니다.", message: "반박해 봐. 재밌겠다.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI05", emoji: "🌙", name: "INFJ 예언자", description: "말하지 않아도 사람의 속마음을 알아챕니다.", message: "그럴 줄 알았어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI06", emoji: "🌷", name: "INFP 감성요정", description: "혼자 상처받고 혼자 감동합니다.", message: "괜찮아… 안 괜찮지만.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI07", emoji: "✨", name: "ENFJ 인싸대장", description: "모두를 챙기지만 정작 본인은 지칩니다.", message: "너희만 행복하면 됐어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI08", emoji: "🎉", name: "ENFP 댕댕이", description: "낯선 사람과도 3분이면 친구가 됩니다.", message: "우리 오늘부터 친구다!", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI09", emoji: "🧊", name: "ISTJ 원칙주의자", description: "규칙은 지키라고 있는 것입니다.", message: "원래 그렇게 하는 거 아닌데?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI10", emoji: "🧸", name: "ISFJ 수호천사", description: "남들은 다 챙기면서 본인은 뒷전입니다.", message: "밥은 먹었어?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI11", emoji: "💼", name: "ESTJ 총관리자", description: "답답하면 직접 나서서 처리합니다.", message: "내가 하는 게 더 빠르겠다.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI12", emoji: "🍰", name: "ESFJ 사랑둥이", description: "관심과 사랑을 먹고 자랍니다.", message: "우리 사이 좋은 거 맞지?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI13", emoji: "🛠️", name: "ISTP 해결사", description: "말은 적지만 고장 난 건 잘 고칩니다.", message: "일단 줘봐.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI14", emoji: "🎨", name: "ISFP 자유영혼", description: "조용하지만 자신만의 취향은 확실합니다.", message: "그냥 내가 좋으면 됐지.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI15", emoji: "🔥", name: "ESTP 행동대장", description: "생각보다 행동이 항상 먼저 나갑니다.", message: "일단 하고 생각하자!", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI16", emoji: "💃", name: "ESFP 슈퍼스타", description: "어디서든 관심의 중심이 됩니다.", message: "오늘의 주인공은 나야!", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI17", emoji: "🐰", name: "CUTE 귀염둥이", description: "MBTI보다 귀여움이 먼저 보입니다.", message: "내 유형? 그냥 CUTE인데?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI18", emoji: "💋", name: "SEXY 치명적매력", description: "존재 자체가 유혹이자 플러팅입니다.", message: "검사 결과, 너무 섹시합니다.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI19", emoji: "🖕", name: "FUCK 분노조절중", description: "오늘은 세상 모든 것이 마음에 들지 않습니다.", message: "내 MBTI 묻지 마. 지금 FUCK야.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI20", emoji: "🤍", name: "PURE 순수결정체", description: "아직 세상의 때가 묻지 않은 척합니다.", message: "저는 아무것도 몰라요.", source: "HOME_BADGE_GACHA_2" }
+            ]
+        }
     },
     daily: { // 일일 콘텐츠 진행 설정
         trialTowerMax: 15, // 시련의탑 하루 최대 횟수
@@ -1675,16 +1721,26 @@ const miniPetData = loadJsonFile(miniPetPath);
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     var responseDataLock = getResponseDataFlowLock(msg);
+    var responseTransactionAcquired = false;
+    var dataSaveTransactionEntered = false;
+    var commandContextEntered = false;
+    var ctx = null;
+    var prevCtx = null;
     responseDataLock.lock();
-    var ctx = createCommandContext(isDevCommandMessage(msg));
-    var prevCtx = enterCommandContext(ctx);
-    var responseStartMs = Date.now();
-    var responseTimingRows = [];
-    function addResponseTiming(label, startMs) {
-        responseTimingRows.push({ label: label, ms: Date.now() - startMs });
-    }
     //데이터 검사
     try {
+        if (!dataTransactionLock.tryLock()) return;
+        responseTransactionAcquired = true;
+        beginDataSaveTransaction();
+        dataSaveTransactionEntered = true;
+        ctx = createCommandContext(isDevCommandMessage(msg));
+        prevCtx = enterCommandContext(ctx);
+        commandContextEntered = true;
+        var responseStartMs = Date.now();
+        var responseTimingRows = [];
+        function addResponseTiming(label, startMs) {
+            responseTimingRows.push({ label: label, ms: Date.now() - startMs });
+        }
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
             replier = createContextReplier(replier, ctx);
@@ -1698,6 +1754,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply(backupDevDataFromProduction());
             return;
         }
+        if (msg === "/데이터상태") {
+            if (!isAdmin(sender) && !isMaster(sender)) {
+                replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            replier.reply(buildManagedJsonStatusMessage());
+            return;
+        }
+
+        if (msg === "/데이터복구" || /^\/데이터복구\s+\S+\s+[12]$/.test(msg)) {
+            if (!isAdmin(sender) && !isMaster(sender)) {
+                replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            if (msg === "/데이터복구") {
+                replier.reply(buildManagedJsonRecoveryUsageMessage());
+                return;
+            }
+            var managedRecoveryMatch = msg.match(/^\/데이터복구\s+(\S+)\s+([12])$/);
+            var managedRecoveryTarget = getManagedJsonCommandTarget(managedRecoveryMatch[1]);
+            if (!managedRecoveryTarget) {
+                replier.reply(buildManagedJsonRecoveryUsageMessage());
+                return;
+            }
+            try {
+                var managedRecoveryGeneration = parseInt(managedRecoveryMatch[2], 10);
+                var managedRecoveryPath = resolveActiveDataPath(managedRecoveryTarget.path);
+                var managedRecoveryResult = restoreManagedJsonFromSelectedBackup(managedRecoveryPath, managedRecoveryGeneration, "manual command");
+                replier.reply(
+                    "✅ 데이터 수동복구 완료\n" +
+                    "━━━━━━━━━━━━\n" +
+                    "환경: " + getManagedJsonEnvironmentName(managedRecoveryPath) + "\n" +
+                    "파일: " + managedRecoveryTarget.fileName + "\n" +
+                    "복구 기준: " + managedRecoveryGeneration + "차 백업\n" +
+                    "백업 파일: " + String(new java.io.File(managedRecoveryResult.backupPath).getName())
+                );
+            } catch (managedRecoveryError) {
+                replier.reply("❌ 데이터 수동복구에 실패했습니다.\n" + managedRecoveryError.toString());
+                notifyManagedJsonRecoveryFailure(
+                    managedRecoveryTarget ? resolveActiveDataPath(managedRecoveryTarget.path) : "unknown",
+                    "manual command",
+                    managedRecoveryError.toString()
+                );
+            }
+            return;
+        }
+
         if (ctx.isDev) {
             var missingDevFiles = getMissingDevDataFiles();
             if (missingDevFiles.length > 0) {
@@ -1728,9 +1831,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let petHomeActivityBackContent = FileStream.read(activePetHomeActivityPathBack, "utf-8");
                     let petHomeActivityDataBack = requirePetHomeActivityData(parseJsonContent(petHomeActivityBackContent, activePetHomeActivityPathBack));
 
-                    saveJsonFile(mainDataBack, filePath);
-                    saveJsonFile(petDataBack, memberPetPath);
-                    if (petSkillDataBack) saveJsonFile(petSkillDataBack, petSkillDataPath);
+                    saveJsonFile(mainDataBack, filePath, true);
+                    saveJsonFile(petDataBack, memberPetPath, true);
+                    if (petSkillDataBack) saveJsonFile(petSkillDataBack, petSkillDataPath, true);
                     writeVerifiedJsonFile(resolveActiveDataPath(petHomeActivityFile), JSON.stringify(petHomeActivityDataBack), true);
 
                     replier.reply(sender + "님이 직전 데이터로 봇을 살립니다.");
@@ -2347,67 +2450,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        if (autoDailyQuestInternalDepth <= 0 && msg.startsWith("/")) {
-            try {
-                let activeFilePath = resolveActiveDataPath(filePath);
-                let activeMemberPetPath = resolveActiveDataPath(memberPetPath);
-                let activePetSkillDataPath = resolveActiveDataPath(petSkillDataPath);
-                let activePetHomeActivityPath = resolveActiveDataPath(petHomeActivityFile);
-                let mainFile = new java.io.File(activeFilePath);
-                let petFile = new java.io.File(activeMemberPetPath);
-                let petSkillFile = new java.io.File(activePetSkillDataPath);
-                let petHomeActivityFileForBackup = new java.io.File(activePetHomeActivityPath);
-
-                //  모든 파일 존재 체크 (없으면 즉시 throw → catch로 이동)
-                if (!mainFile.exists()) {
-                    throw new Error("main file not found: " + activeFilePath);
-                }
-                if (!petFile.exists()) {
-                    throw new Error("pet file not found: " + activeMemberPetPath);
-                }
-                if (!petSkillFile.exists()) {
-                    throw new Error("petSkill file not found: " + activePetSkillDataPath);
-                }
-                // 읽기 + strict 파싱 (문제 있으면 전부 throw)
-                let parseMainBack = parseJsonContent(
-                    FileStream.read(activeFilePath, "utf-8"),
-                    activeFilePath
-                );
-
-                let parsePetBack = parseJsonContent(
-                    FileStream.read(activeMemberPetPath, "utf-8"),
-                    activeMemberPetPath
-                );
-
-                let parsePetSkillBack = parseJsonContent(
-                    FileStream.read(activePetSkillDataPath, "utf-8"),
-                    activePetSkillDataPath
-                );
-
-                let parsePetHomeActivityBack = null;
-                if (petHomeActivityFileForBackup.exists()) {
-                    parsePetHomeActivityBack = requirePetHomeActivityData(parseJsonContent(
-                        FileStream.read(activePetHomeActivityPath, "utf-8"),
-                        activePetHomeActivityPath
-                    ));
-                }
-
-                // 모든 과정 성공했을 때만 백업 저장
-                saveJsonFile(parseMainBack, filePath_back);
-                saveJsonFile(parsePetBack, memberPetPath_back);
-                saveJsonFile(parsePetSkillBack, petSkillDataPath_back);
-                if (parsePetHomeActivityBack) saveJsonFile(parsePetHomeActivityBack, petHomeActivityBackupFile);
-
-            } catch (e) {
-                replier.reply(
-                    "호월봇을 후리셨군요?\n" +
-                    "상태를 보니 생명엔 지장이 없어보입니다..살살 부탁드려요.\n" +
-                    "[과부하 3번 이상 반복되면 방장,부방장 을 불러주세요]"
-                );
-                debuggerLog("[ERROR : Backup error]" + allsee + JSON.stringify(e));
-                return;
-            }
-        }
         var commonStepStart = Date.now();
         addResponseTiming("명령 전처리/과부하체크", responseStartMs);
         commonStepStart = Date.now();
@@ -3091,7 +3133,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         //var castleBattleData = loadJsonFile(castleBattlePath);
         //var titleData = loadJsonFile(memberTitlePath);
-        if (isSaving == false || getAutoDailyBatchContext()) {
+        {
             var isSignupPetFlow = isSignupFlow;
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
                 if (!data.member[sender] && msg !== "/가입") {
@@ -3576,7 +3618,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var skillResultKeys = Object.keys(pickedSkillMap).sort(function (a, b) {
                         var ga = pickedSkillMap[a].grade;
                         var gb = pickedSkillMap[b].grade;
-                        var gradeOrder = { S: 1, A: 2, B: 3, C: 4, D: 5 };
+                        var gradeOrder = { SS: 0, S: 1, A: 2, B: 3, C: 4, D: 5 };
                         if (gradeOrder[ga] !== gradeOrder[gb]) return gradeOrder[ga] - gradeOrder[gb];
                         return pickedSkillMap[a].name.localeCompare(pickedSkillMap[b].name, "ko");
                     });
@@ -3635,7 +3677,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
                     var equippedSkillData = getPetSkillData(equipName);
                     if (equippedSkillData && equippedSkillData.equipComment) {
-                        equipMsg += "\n\n" + formatPetSkillName(equipName) + ": " + equippedSkillData.equipComment;
+                        var equipCommentSeparator = equippedSkillData.equipCommentNoColon === true ? " " : ": ";
+                        equipMsg += "\n\n" + formatPetSkillName(equipName) + equipCommentSeparator + equippedSkillData.equipComment;
                     }
                     if (normalizePetSkillName(equipName) === "징집명령") {
                         equipMsg += "\n\n" + buildPetSkillMsg(data, petData, guildData, sender, "징집명령");
@@ -20405,7 +20448,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/팔로워순위" || msg === "/마음순위" || msg === "/뱃지순위") {
                     var petHomeRankingActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var petHomeRankingHomeData = loadJsonFile(homeDataFile);
-                    replier.reply(buildPetHomeSocialRankingMessage(data, petData, guildData, petHomeRankingHomeData, petHomeRankingActivityData, sender, msg));
+                    replier.reply(buildPetHomeSocialRankingMessage(data, petData, petSkillData, guildData, petHomeRankingHomeData, petHomeRankingActivityData, sender, msg));
                     return;
                 }
                 if (msg == "/펫홈방문초기화" && (isAdmin(sender) || isMaster(sender))) {
@@ -20595,7 +20638,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var petHomeActivityDataForMyHeart = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var homeDataForMyHeart = loadJsonFile(homeDataFile);
-                    replier.reply(buildPetHomeHeartUsageMessage(data, petData, guildData, petHomeActivityDataForMyHeart, homeDataForMyHeart, sender));
+                    replier.reply(buildPetHomeHeartUsageMessage(data, petData, petSkillData, guildData, petHomeActivityDataForMyHeart, homeDataForMyHeart, sender));
                     saveJsonFile(petHomeActivityDataForMyHeart, petHomeActivityFile);
                     return;
                 }
@@ -20621,6 +20664,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var homeBadgeSocialSnapshot = snapshotPetHomeSocialUser(homeBadgeActivityData, sender);
                     var homeBadgeBagSnapshot = JSON.parse(JSON.stringify(homeBadgeBag));
+                    var homeBadgePointSnapshot = data.member[sender].point; // 저장 실패 시 되돌릴 기존 포인트
                     var homeBadgeSocial = getPetHomeSocialUser(homeBadgeActivityData, sender);
                     var homeBadgeResults = [];
                     var homeBadgeLegendaryResults = [];
@@ -20629,6 +20673,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var alreadyOwnedHomeBadge = petHomeStringListContains(homeBadgeSocial.badges, drawnHomeBadge.id);
                         var deletedHomeBadge = petHomeStringListContains(homeBadgeSocial.deletedBadgeIds, drawnHomeBadge.id);
                         if (!alreadyOwnedHomeBadge && !deletedHomeBadge) homeBadgeSocial.badges.push(drawnHomeBadge.id);
+                        if (alreadyOwnedHomeBadge) data.member[sender].point = (parseInt(data.member[sender].point, 10) || 0) + GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward;
                         homeBadgeResults.push({ badge: drawnHomeBadge, duplicate: alreadyOwnedHomeBadge, deleted: deletedHomeBadge });
                         if (drawnHomeBadge.grade === "S") homeBadgeLegendaryResults.push(drawnHomeBadge);
                     }
@@ -20640,6 +20685,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(homeBadgeActivityData, petHomeActivityFile);
                     } catch (homeBadgeSaveError) {
                         data.member[sender].bag = homeBadgeBagSnapshot;
+                        data.member[sender].point = homeBadgePointSnapshot;
                         restorePetHomeSocialUser(homeBadgeActivityData, sender, homeBadgeSocialSnapshot);
                         try {
                             saveJsonFile(data, filePath);
@@ -20652,38 +20698,104 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeBadgeRemainCount = parseInt(data.member[sender].bag[homeBadgeItemName], 10) || 0;
                     var ownedGachaBadgeCount = getOwnedPetHomeGachaBadgeCount(homeBadgeActivityData, sender);
-                    var homeBadgeChunkCount = Math.ceil(homeBadgeResults.length / 10);
-                    for (var homeBadgeChunkIndex = 0; homeBadgeChunkIndex < homeBadgeChunkCount; homeBadgeChunkIndex++) {
-                        var homeBadgeChunkStart = homeBadgeChunkIndex * 10;
-                        var homeBadgeChunkEnd = Math.min(homeBadgeChunkStart + 10, homeBadgeResults.length);
-                        var homeBadgeLines = [];
-                        if (homeBadgeChunkIndex === 0) {
-                            homeBadgeLines.push("🛡️[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지뽑기🛡️를 오픈합니다!");
-                            homeBadgeLines.push("확률정보: 채팅창에 '/홈뽑기확률'을 적어보세요");
-                            homeBadgeLines.push("━━━━━━━━━━━━━━━");
-                            homeBadgeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeOpenCount) + "개");
-                            homeBadgeLines.push("🛡️ 남은 홈뽑권: " + numberWithCommas(homeBadgeRemainCount) + "개");
-                            homeBadgeLines.push("🎒 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
-                            homeBadgeLines.push("━━━━━━━━━━━━━━━");
-                        } else {
-                            homeBadgeLines.push("🛡️ 홈뱃지 오픈 결과 " + (homeBadgeChunkIndex + 1) + "/" + homeBadgeChunkCount);
-                            homeBadgeLines.push("━━━━━━━━━━━━━━━");
-                        }
-                        for (var homeBadgeResultIndex = homeBadgeChunkStart; homeBadgeResultIndex < homeBadgeChunkEnd; homeBadgeResultIndex++) {
-                            if (homeBadgeResultIndex === 4) homeBadgeLines.push(allsee);
-                            var homeBadgeResult = homeBadgeResults[homeBadgeResultIndex];
-                            homeBadgeLines.push((homeBadgeResultIndex + 1) + ". [" + homeBadgeResult.badge.grade + "] " + homeBadgeResult.badge.emoji + " " + homeBadgeResult.badge.name);
-                            homeBadgeLines.push("└ " + homeBadgeResult.badge.text);
-                            if (homeBadgeResult.duplicate) homeBadgeLines.push("└ 이미 보유한 홈뱃지입니다. (중복 획득)");
-                            if (homeBadgeResult.deleted) homeBadgeLines.push("└ 영구 삭제한 홈뱃지라 다시 보관되지 않습니다.");
-                        }
-                        if (homeBadgeChunkIndex === homeBadgeChunkCount - 1) homeBadgeLines.push("\n보유 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
-                        replier.reply(homeBadgeLines.join("\n"));
+                    var homeBadgeLines = [];
+                    homeBadgeLines.push("🛡️[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지뽑기🛡️를 오픈합니다!");
+                    homeBadgeLines.push("확률정보: 채팅창에 '/홈뽑기확률'을 적어보세요");
+                    homeBadgeLines.push("━━━━━━━━━━━━━━━");
+                    homeBadgeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeOpenCount) + "개");
+                    homeBadgeLines.push("🛡️ 남은 홈뽑권: " + numberWithCommas(homeBadgeRemainCount) + "개");
+                    homeBadgeLines.push("🎒 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
+                    homeBadgeLines.push("━━━━━━━━━━━━━━━");
+                    for (var homeBadgeResultIndex = 0; homeBadgeResultIndex < homeBadgeResults.length; homeBadgeResultIndex++) {
+                        if (homeBadgeResultIndex === 4) homeBadgeLines.push(allsee);
+                        var homeBadgeResult = homeBadgeResults[homeBadgeResultIndex];
+                        homeBadgeLines.push((homeBadgeResultIndex + 1) + ". [" + homeBadgeResult.badge.grade + "] " + homeBadgeResult.badge.emoji + " " + homeBadgeResult.badge.name);
+                        homeBadgeLines.push("└ " + homeBadgeResult.badge.text);
+                        if (homeBadgeResult.duplicate) homeBadgeLines.push("└ 중복 보상: 포인트🅟 " + numberWithCommas(GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward) + " 지급");
+                        if (homeBadgeResult.deleted) homeBadgeLines.push("└ 영구 삭제한 홈뱃지라 다시 보관되지 않습니다.");
                     }
+                    homeBadgeLines.push("\n보유 홈뱃지: " + ownedGachaBadgeCount + "/" + GLOBAL_CONFIG.petHomeActivity.gachaBadges.length + "종");
+                    replier.reply(homeBadgeLines.join("\n"));
                     for (var homeBadgeNoticeIndex = 0; homeBadgeNoticeIndex < homeBadgeLegendaryResults.length; homeBadgeNoticeIndex++) {
                         var legendaryHomeBadge = homeBadgeLegendaryResults[homeBadgeNoticeIndex];
                         noticeMsg("[🛡️전체알림]\n[" + checkRank(data, petData, guildData, sender) + "]님이 홈뱃지 뽑기에서\n[S] " + legendaryHomeBadge.emoji + " " + legendaryHomeBadge.name + " 뱃지를 획득했습니다!");
                     }
+                    return;
+                }
+                if (/^\/홈뱃지오픈2\s+\d+$/.test(msg)) {
+                    var homeBadge2OpenMatch = msg.match(/^\/홈뱃지오픈2\s+(\d+)$/);
+                    var homeBadge2OpenCount = parseInt(homeBadge2OpenMatch[1], 10);
+                    var homeBadge2Config = GLOBAL_CONFIG.petHomeActivity.gacha2;
+                    var homeBadge2ItemName = homeBadge2Config.itemName;
+                    if (homeBadge2OpenCount < 1 || homeBadge2OpenCount > homeBadge2Config.maxOpenCount) {
+                        replier.reply("❌ 홈뱃지는 한 번에 1~" + homeBadge2Config.maxOpenCount + "개까지 오픈할 수 있습니다.\n사용법: /홈뱃지오픈2 숫자");
+                        return;
+                    }
+                    var homeBadge2Bag = data.member[sender].bag || (data.member[sender].bag = {});
+                    var homeBadge2HeldCount = parseInt(homeBadge2Bag[homeBadge2ItemName], 10) || 0;
+                    if (homeBadge2HeldCount < homeBadge2OpenCount) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + homeBadge2ItemName + " 아이템이 부족합니다.\n보유 수량: " + numberWithCommas(homeBadge2HeldCount) + "개\n필요 수량: " + numberWithCommas(homeBadge2OpenCount) + "개");
+                        return;
+                    }
+
+                    var homeBadge2ActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var homeBadge2SocialSnapshot = snapshotPetHomeSocialUser(homeBadge2ActivityData, sender);
+                    var homeBadge2BagSnapshot = JSON.parse(JSON.stringify(homeBadge2Bag));
+                    var homeBadge2PointSnapshot = data.member[sender].point; // 저장 실패 시 되돌릴 기존 포인트
+                    var homeBadge2Social = getPetHomeSocialUser(homeBadge2ActivityData, sender);
+                    var homeBadge2Results = [];
+                    for (var homeBadge2OpenIndex = 0; homeBadge2OpenIndex < homeBadge2OpenCount; homeBadge2OpenIndex++) {
+                        var drawnHomeBadge2 = drawPetHomeGacha2Badge();
+                        var alreadyOwnedHomeBadge2 = petHomeStringListContains(homeBadge2Social.badges, drawnHomeBadge2.id);
+                        var deletedHomeBadge2 = petHomeStringListContains(homeBadge2Social.deletedBadgeIds, drawnHomeBadge2.id);
+                        if (!alreadyOwnedHomeBadge2 && !deletedHomeBadge2) homeBadge2Social.badges.push(drawnHomeBadge2.id);
+                        if (alreadyOwnedHomeBadge2) data.member[sender].point = (parseInt(data.member[sender].point, 10) || 0) + GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward;
+                        homeBadge2Results.push({ badge: drawnHomeBadge2, duplicate: alreadyOwnedHomeBadge2, deleted: deletedHomeBadge2 });
+                    }
+                    homeBadge2Bag[homeBadge2ItemName] = homeBadge2HeldCount - homeBadge2OpenCount;
+                    if (homeBadge2Bag[homeBadge2ItemName] <= 0) delete homeBadge2Bag[homeBadge2ItemName];
+
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(homeBadge2ActivityData, petHomeActivityFile);
+                    } catch (homeBadge2SaveError) {
+                        data.member[sender].bag = homeBadge2BagSnapshot;
+                        data.member[sender].point = homeBadge2PointSnapshot;
+                        restorePetHomeSocialUser(homeBadge2ActivityData, sender, homeBadge2SocialSnapshot);
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(homeBadge2ActivityData, petHomeActivityFile);
+                        } catch (homeBadge2RollbackError) {
+                            debuggerLog("[ERROR : 홈뱃지 오픈2 롤백 실패] " + homeBadge2RollbackError);
+                        }
+                        throw homeBadge2SaveError;
+                    }
+
+                    var homeBadge2RemainCount = parseInt(data.member[sender].bag[homeBadge2ItemName], 10) || 0;
+                    var ownedGacha2BadgeCount = getOwnedPetHomeGacha2BadgeCount(homeBadge2ActivityData, sender);
+                    var homeBadge2Lines = [];
+                    homeBadge2Lines.push("🛡️ 홈뱃지뽑기[2] " + homeBadge2OpenCount + "개 결과");
+                    homeBadge2Lines.push("[" + checkRank(data, petData, guildData, sender) + "] 님");
+                    homeBadge2Lines.push("━━━━━━━━━━━━━━━");
+                    homeBadge2Lines.push("✅️ 사용: " + numberWithCommas(homeBadge2OpenCount) + "개");
+                    homeBadge2Lines.push("🛡️ 남은 홈뽑권[2]: " + numberWithCommas(homeBadge2RemainCount) + "개");
+                    homeBadge2Lines.push("🎒 MBTI 홈뱃지: " + ownedGacha2BadgeCount + "/" + homeBadge2Config.badges.length + "종");
+                    homeBadge2Lines.push("━━━━━━━━━━━━━━━");
+                    for (var homeBadge2ResultIndex = 0; homeBadge2ResultIndex < homeBadge2Results.length; homeBadge2ResultIndex++) {
+                        if (homeBadge2ResultIndex === 4) homeBadge2Lines.push(allsee);
+                        var homeBadge2Result = homeBadge2Results[homeBadge2ResultIndex];
+                        homeBadge2Lines.push((homeBadge2ResultIndex + 1) + ". " + homeBadge2Result.badge.emoji + " " + homeBadge2Result.badge.name);
+                        homeBadge2Lines.push("└ “" + homeBadge2Result.badge.message + "”");
+                        homeBadge2Lines.push("└ " + homeBadge2Result.badge.description);
+                        if (homeBadge2Result.duplicate) homeBadge2Lines.push("└ 중복 보상: 포인트🅟 " + numberWithCommas(GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward) + " 지급");
+                        if (homeBadge2Result.deleted) homeBadge2Lines.push("└ 영구 삭제한 홈뱃지라 다시 보관되지 않습니다.");
+                    }
+                    homeBadge2Lines.push("\n보유 MBTI 홈뱃지: " + ownedGacha2BadgeCount + "/" + homeBadge2Config.badges.length + "종");
+                    replier.reply(homeBadge2Lines.join("\n"));
+                    return;
+                }
+                if (/^\/홈뱃지오픈2(?:\s+.*)?$/.test(msg)) {
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10");
                     return;
                 }
                 if (/^\/홈뱃지오픈(?:\s+.*)?$/.test(msg)) {
@@ -20721,7 +20833,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petHomeActivityDataForBadgeView, petHomeActivityFile);
                     return;
                 }
-                if (msg === "/홈뱃지해제" || /^\/홈뱃지(?:장착|삭제)\s+(?:\d+|[A-Za-z]{1,2}\d{2,3})$/.test(msg)) {
+                if (msg === "/홈뱃지해제" || /^\/홈뱃지(?:장착|삭제)\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg)) {
                     if (!hasActiveHoiPassAccess(data, sender)) {
                         replier.reply("❌ 펫홈 뱃지는 호이패스·초보패스 이용자만 사용할 수 있습니다.");
                         return;
@@ -20930,13 +21042,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             totalExp += 300000;
                         }
                     }
+                    if (hasPetSkill(petSkillData, targetName, "아르카나 하우스") && getOwnedFurnitureCountByGrade(homeData, targetName, "아르카나 루미에르") >= 5) {
+                        totalExp += 1000000;
+                    }
                     ////////////////////////////////////////
                     var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(petData, targetName, userHome.floor || 0, petSkillData);
                     ////////
                     let header = "🏡[" + nickName + "] 님의 펫하우스🏡\n━━━━━━━━━━━━\n";
                     var targetHomeSocial = getPetHomeSocialUser(petHomeActivityDataForHome, targetName);
-                    let lineSocial = "팔로워🐾 " + targetHomeSocial.followers.length + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
+                    var targetFollowerDisplayCount = targetHomeSocial.followers.length + getPetSkillFollowerBonus(petSkillData, targetName); // 실제 팔로워와 장착 스킬 보너스 합계
+                    let lineSocial = "팔로워🐾 " + targetFollowerDisplayCount + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
                         "대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForHome, targetName) + "\n\n";
                     let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
                     let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
@@ -20977,7 +21093,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeAlertSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForAlert, sender);
                     var homeAlertListSnapshot = snapshotPetHomeAlertLists(petHomeActivityDataForAlert, [sender]);
                     var previousHomeAlertOpenCnt = data.member[sender].homeAlertOpenCnt;
-                    var homeAlertMessage = buildPetHomeActivityMessage(data, petData, guildData, sender, petHomeActivityDataForAlert, homeDataForAlert);
+                    var homeAlertMessage = buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sender, petHomeActivityDataForAlert, homeDataForAlert);
                     markPetHomeAlertsRead(petHomeActivityDataForAlert, sender);
                     data.member[sender].homeAlertOpenCnt = Math.min((parseInt(data.member[sender].homeAlertOpenCnt, 10) || 0) + 1, GLOBAL_CONFIG.daily.passHomeAlertOpenMax);
                     try {
@@ -21044,7 +21160,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petHomeActivityDataForHeart = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var heartSenderSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForHeart, sender);
                     var heartTargetSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForHeart, heartTargetName);
-                    var heartUsageStatus = getPetHomeHeartUsageStatus(data, petHomeActivityDataForHeart, heartHomeData, sender);
+                    var heartUsageStatus = getPetHomeHeartUsageStatus(data, petSkillData, petHomeActivityDataForHeart, heartHomeData, sender);
                     if (heartUseCount > heartUsageStatus.remaining) {
                         replier.reply("사용 가능한 마음표현 횟수가 부족합니다.💞\n남은 마음: " + heartUsageStatus.remaining + "개 / 오늘 한도: " + heartUsageStatus.limit + "개");
                         return;
@@ -27098,6 +27214,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
         }
     } catch (error) {
+        try {
+            rollbackDataSaveTransaction();
+        } catch (rollbackError) {
+            debuggerLog("[ERROR : Data transaction rollback] " + rollbackError.toString());
+        }
         // if (msg.startsWith("/")) {
         let errorObj = {
             system: "main",
@@ -27113,7 +27234,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         // }
         FileStream.write(errorLogPath, JSON.stringify(errorObj), "utf-8"); // 명시적으로 UTF-8 인코딩 사용
     } finally {
-        exitCommandContext(prevCtx);
+        if (commandContextEntered) exitCommandContext(prevCtx);
+        if (dataSaveTransactionEntered) endDataSaveTransaction();
+        if (responseTransactionAcquired) dataTransactionLock.unlock();
         responseDataLock.unlock();
     }
 }
@@ -27222,6 +27345,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
+        /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
 
@@ -27384,7 +27508,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -27863,20 +27987,23 @@ function getMissingDevDataFiles() {
 // JSON 파일 로드 함수
 function loadJsonFile(path) {
     var protectedLock = null;
+    var transactionLockAcquired = false;
     try {
         path = resolveActiveDataPath(path);
         var autoDailyBatch = getAutoDailyBatchContext();
         if (autoDailyBatch && autoDailyBatch.managedPaths[path] && Object.prototype.hasOwnProperty.call(autoDailyBatch.files, path)) {
             return autoDailyBatch.files[path];
         }
-        if (isProtectedMemberJsonPath(path) || isProtectedPetHomeActivityJsonPath(path)) {
+        if (isProtectedManagedJsonPath(path)) {
+            dataTransactionLock.lock();
+            transactionLockAcquired = true;
             protectedLock = getProtectedJsonSaveLock(path);
             protectedLock.lock();
         }
         let file = new java.io.File(path);
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
-            var loadedData = parseJsonContent(fileContent, path);
+            var loadedData = isProtectedManagedJsonPath(path) ? parseManagedJsonContent(fileContent, path) : parseJsonContent(fileContent, path);
             if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = loadedData;
             return loadedData;
         }
@@ -27893,33 +28020,299 @@ function loadJsonFile(path) {
         // 로그 출력 (콘솔)
         // Api.replyRoom(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
         debuggerLog(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
+        var recoveryResult = restoreManagedJsonFromBackup(path, "loadJsonFile");
+        if (recoveryResult) {
+            if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = recoveryResult.data;
+            return recoveryResult.data;
+        }
         throw e;
     } finally {
         if (protectedLock) protectedLock.unlock();
+        if (transactionLockAcquired) dataTransactionLock.unlock();
     }
 }
 
-// member.json과 직전 백업에 안전 저장을 적용할지 확인하는 함수
-function isProtectedMemberJsonPath(path) {
-    var fileName = String(new java.io.File(path).getName());
-    return fileName === "member.json" || fileName === "member_back.json";
-}
-
-// 펫홈 활동 원본과 직전 백업이 안전 저장 대상인지 확인하는 함수
-function isProtectedPetHomeActivityJsonPath(path) {
-    var fileName = String(new java.io.File(path).getName());
-    return fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json";
-}
-
-// 펫홈 활동 원본 경로인지 확인하는 함수
-function isPetHomeActivityPrimaryJsonPath(path) {
-    return String(new java.io.File(path).getName()) === "petHomeActivityData.json";
-}
-
-// 펫홈 활동 원본과 같은 폴더의 직전 백업 경로를 반환하는 함수
-function getPetHomeActivityBackupPath(path) {
+// 자동 직전 백업을 사용하는 원본 JSON의 백업 경로를 반환하는 함수
+function getManagedJsonBackupPath(path) {
     var targetFile = new java.io.File(path);
-    return String(new java.io.File(targetFile.getParentFile(), "petHomeActivityData_back.json").getPath());
+    var fileName = String(new java.io.File(path).getName());
+    var backupFileName = null;
+    if (fileName === "member.json") backupFileName = "member_back.json";
+    if (fileName === "member_pet.json") backupFileName = "member_pet_back.json";
+    if (fileName === "petSkillData.json") backupFileName = "petSkillData_back.json";
+    if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back.json";
+    if (!backupFileName) return null;
+    return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
+}
+
+// 자동 직전 백업을 사용하는 원본 JSON의 2세대 백업 경로를 반환하는 함수
+function getManagedJsonSecondaryBackupPath(path) {
+    var targetFile = new java.io.File(path);
+    var fileName = String(targetFile.getName());
+    var backupFileName = null;
+    if (fileName === "member.json") backupFileName = "member_back2.json";
+    if (fileName === "member_pet.json") backupFileName = "member_pet_back2.json";
+    if (fileName === "petSkillData.json") backupFileName = "petSkillData_back2.json";
+    if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back2.json";
+    if (!backupFileName) return null;
+    return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
+}
+
+// 관리 JSON 원본에 대응하는 정상 백업 후보를 최신 순서로 반환하는 함수
+function getManagedJsonBackupCandidates(path) {
+    var candidates = [];
+    var primaryBackupPath = getManagedJsonBackupPath(path);
+    var secondaryBackupPath = getManagedJsonSecondaryBackupPath(path);
+    if (primaryBackupPath) candidates.push(primaryBackupPath);
+    if (secondaryBackupPath) candidates.push(secondaryBackupPath);
+    return candidates;
+}
+
+// 운영 명령에서 조회·복구할 보호 JSON 목록을 반환하는 함수
+function getManagedJsonCommandTargets() {
+    return [
+        { key: "member", fileName: "member.json", path: filePath, aliases: ["member", "멤버"] },
+        { key: "member_pet", fileName: "member_pet.json", path: memberPetPath, aliases: ["member_pet", "펫"] },
+        { key: "petSkillData", fileName: "petSkillData.json", path: petSkillDataPath, aliases: ["petSkillData", "펫스킬"] },
+        { key: "petHomeActivityData", fileName: "petHomeActivityData.json", path: petHomeActivityFile, aliases: ["petHomeActivityData", "펫홈활동"] }
+    ];
+}
+
+// 운영 명령의 파일 인자를 보호 JSON 대상으로 변환하는 함수
+function getManagedJsonCommandTarget(targetName) {
+    targetName = String(targetName || "").trim();
+    var targets = getManagedJsonCommandTargets();
+    for (var i = 0; i < targets.length; i++) {
+        for (var j = 0; j < targets[i].aliases.length; j++) {
+            if (targets[i].aliases[j] === targetName) return targets[i];
+        }
+    }
+    return null;
+}
+
+// 보호 JSON 경로가 운영 또는 DEV 중 어느 환경인지 반환하는 함수
+function getManagedJsonEnvironmentName(path) {
+    return String(path || "").indexOf(DEV_DATA_ROOT_PATH) === 0 ? "DEV" : "운영";
+}
+
+// 보호 JSON 원본이나 백업의 존재·파싱 상태를 읽기 전용으로 검사하는 함수
+function inspectManagedJsonFile(path) {
+    var file = new java.io.File(path);
+    if (!file.exists()) return { exists: false, valid: false, modifiedAt: "-", error: "파일 없음" };
+    try {
+        parseManagedJsonContent(FileStream.read(path, "utf-8"), path);
+        return {
+            exists: true,
+            valid: true,
+            modifiedAt: formatDateTime(new Date(file.lastModified())),
+            error: ""
+        };
+    } catch (e) {
+        return {
+            exists: true,
+            valid: false,
+            modifiedAt: formatDateTime(new Date(file.lastModified())),
+            error: e.toString()
+        };
+    }
+}
+
+// 보호 JSON 한 파일의 상태를 운영자용 한 줄로 만드는 함수
+function formatManagedJsonStatusLine(label, status) {
+    if (!status.exists) return "❔ " + label + ": 파일 없음";
+    return (status.valid ? "✅ " : "❌ ") + label + ": " + (status.valid ? "정상" : "손상") + " (" + status.modifiedAt + ")";
+}
+
+// 보호 JSON 4종과 각 2세대 백업 상태 메시지를 생성하는 함수
+function buildManagedJsonStatusMessage() {
+    var targets = getManagedJsonCommandTargets();
+    var lines = ["🛡️ 데이터 보호 상태", "━━━━━━━━━━━━"];
+    for (var i = 0; i < targets.length; i++) {
+        var originalPath = resolveActiveDataPath(targets[i].path);
+        lines.push("[" + targets[i].key + "] " + targets[i].fileName);
+        lines.push(formatManagedJsonStatusLine("원본", inspectManagedJsonFile(originalPath)));
+        lines.push(formatManagedJsonStatusLine("1차 백업", inspectManagedJsonFile(getManagedJsonBackupPath(originalPath))));
+        lines.push(formatManagedJsonStatusLine("2차 백업", inspectManagedJsonFile(getManagedJsonSecondaryBackupPath(originalPath))));
+        if (i < targets.length - 1) lines.push("");
+    }
+    lines.push("━━━━━━━━━━━━");
+    lines.push("환경: " + getManagedJsonEnvironmentName(resolveActiveDataPath(filePath)));
+    lines.push("복구: /데이터복구 [파일] [1|2]");
+    return lines.join("\n");
+}
+
+// 파일 단위 수동복구 명령 사용법을 반환하는 함수
+function buildManagedJsonRecoveryUsageMessage() {
+    return "사용법: /데이터복구 [파일] [1|2]\n" +
+        "파일: member, member_pet, petSkillData, petHomeActivityData\n" +
+        "예시: /데이터복구 member 1\n" +
+        "복구 전 /데이터상태로 백업 상태를 확인해주세요.";
+}
+
+// 데이터 복구 성공 사실을 관리자방에 알리는 함수
+function notifyManagedJsonRecovery(path, backupPath, reason) {
+    var primaryBackupPath = getManagedJsonBackupPath(path);
+    var generation = String(backupPath) === String(primaryBackupPath) ? 1 : 2;
+    var title = reason === "manual command" ? "✅ 데이터 수동복구 완료" : (reason === "transaction rollback" ? "⚠️ 데이터 트랜잭션 롤백" : "⚠️ 데이터 자동복구 완료");
+    var message = title + "\n" +
+        "━━━━━━━━━━━━\n" +
+        "환경: " + getManagedJsonEnvironmentName(path) + "\n" +
+        "파일: " + String(new java.io.File(path).getName()) + "\n" +
+        "복구 기준: " + generation + "차 백업\n" +
+        "백업 파일: " + String(new java.io.File(backupPath).getName()) + "\n" +
+        "발생 시각: " + formatDateTime(new Date());
+    try {
+        Api.replyRoom(room90, message);
+    } catch (notifyError) {
+        debuggerLog("[ERROR : 데이터 복구 알림 실패] " + notifyError.toString());
+    }
+}
+
+// 데이터 복구 실패 사실을 관리자방에 알리는 함수
+function notifyManagedJsonRecoveryFailure(path, reason, detail) {
+    var message = "🚨 데이터 복구 실패\n" +
+        "━━━━━━━━━━━━\n" +
+        "환경: " + getManagedJsonEnvironmentName(path) + "\n" +
+        "파일: " + String(new java.io.File(path).getName()) + "\n" +
+        "복구 유형: " + reason + "\n" +
+        "확인: " + String(detail || "정상 백업 없음") + "\n" +
+        "발생 시각: " + formatDateTime(new Date());
+    try {
+        Api.replyRoom(room90, message);
+    } catch (notifyError) {
+        debuggerLog("[ERROR : 데이터 복구 실패 알림 전송 실패] " + notifyError.toString());
+    }
+}
+
+// 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
+function isProtectedManagedJsonPath(path) {
+    var fileName = String(new java.io.File(path).getName());
+    return fileName === "member.json" || fileName === "member_back.json" ||
+        fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
+        fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
+        fileName === "petSkillData.json" || fileName === "petSkillData_back.json" || fileName === "petSkillData_back2.json" ||
+        fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json" || fileName === "petHomeActivityData_back2.json";
+}
+
+// 관리 JSON 내용을 엄격하게 파싱하고 파일별 필수 구조를 검증하는 함수
+function parseManagedJsonContent(jsonText, path) {
+    var parsedData = parseJsonContent(jsonText, path);
+    if (String(new java.io.File(path).getName()).indexOf("petHomeActivityData") === 0) {
+        return requirePetHomeActivityData(parsedData);
+    }
+    return parsedData;
+}
+
+// 최신 정상 백업부터 검증해 지정한 관리 JSON 원본만 안전하게 복구하는 함수
+function restoreManagedJsonFromBackup(path, reason) {
+    var candidates = getManagedJsonBackupCandidates(path);
+    var recoveryErrors = [];
+    for (var i = 0; i < candidates.length; i++) {
+        var backupPath = candidates[i];
+        var backupFile = new java.io.File(backupPath);
+        if (!backupFile.exists()) {
+            recoveryErrors.push(String(new java.io.File(backupPath).getName()) + ": 파일 없음");
+            continue;
+        }
+        try {
+            var backupText = FileStream.read(backupPath, "utf-8");
+            var restoredData = parseManagedJsonContent(backupText, backupPath);
+            writeVerifiedJsonFile(path, backupText, true);
+            debuggerLog("[RECOVERY : " + reason + "] " + path + " <- " + backupPath);
+            notifyManagedJsonRecovery(path, backupPath, reason);
+            return { data: restoredData, backupPath: backupPath };
+        } catch (recoveryError) {
+            recoveryErrors.push(String(new java.io.File(backupPath).getName()) + ": " + recoveryError.toString());
+            debuggerLog("[WARN : " + reason + " backup invalid] " + backupPath + " " + recoveryError.toString());
+        }
+    }
+    notifyManagedJsonRecoveryFailure(path, reason, recoveryErrors.join(" / "));
+    return null;
+}
+
+// 지정한 세대의 정상 백업으로 보호 JSON 원본 하나만 복구하는 함수
+function restoreManagedJsonFromSelectedBackup(path, generation, reason) {
+    var backupPath = generation === 2 ? getManagedJsonSecondaryBackupPath(path) : getManagedJsonBackupPath(path);
+    if (!backupPath) throw new Error("지원하지 않는 보호 파일입니다.");
+    var backupFile = new java.io.File(backupPath);
+    if (!backupFile.exists()) throw new Error(generation + "차 백업 파일이 없습니다.");
+    var backupText = FileStream.read(backupPath, "utf-8");
+    var restoredData = parseManagedJsonContent(backupText, backupPath);
+    writeVerifiedJsonFile(path, backupText, true);
+    notifyManagedJsonRecovery(path, backupPath, reason);
+    return { data: restoredData, backupPath: backupPath };
+}
+
+// 현재 스레드의 명령 저장 트랜잭션을 반환하는 함수
+function getDataSaveTransaction() {
+    return dataSaveTransactionThreadLocal.get();
+}
+
+// 중첩 응답을 포함한 명령 저장 트랜잭션을 시작하는 함수
+function beginDataSaveTransaction() {
+    var transaction = getDataSaveTransaction();
+    if (transaction) {
+        transaction.depth++;
+        return transaction;
+    }
+    transaction = {
+        depth: 1,
+        entries: {},
+        order: [],
+        rollingBack: false,
+        rollbackAttempted: false,
+        failed: false
+    };
+    dataSaveTransactionThreadLocal.set(transaction);
+    return transaction;
+}
+
+// 현재 명령 저장 트랜잭션의 중첩 깊이를 줄이고 최상위 종료 시 정리하는 함수
+function endDataSaveTransaction() {
+    var transaction = getDataSaveTransaction();
+    if (!transaction) return;
+    transaction.depth--;
+    if (transaction.depth <= 0) dataSaveTransactionThreadLocal.remove();
+}
+
+// 관리 JSON의 명령 실행 전 백업을 트랜잭션에 최초 한 번만 등록하는 함수
+function prepareManagedJsonTransactionEntry(path, skipManagedBackup) {
+    var transaction = getDataSaveTransaction();
+    var backupPath = getManagedJsonBackupPath(path);
+    if (!transaction || !backupPath || skipManagedBackup === true || transaction.rollingBack) {
+        return { entry: null, skipManagedBackup: skipManagedBackup === true };
+    }
+    if (transaction.failed) throw new Error("Data save transaction already failed");
+    if (transaction.entries[path]) {
+        return { entry: transaction.entries[path], skipManagedBackup: true };
+    }
+    var entry = { path: path, backupPath: backupPath, saved: false };
+    transaction.entries[path] = entry;
+    transaction.order.push(path);
+    return { entry: entry, skipManagedBackup: false };
+}
+
+// 실패한 명령에서 이미 저장한 관리 JSON을 실행 전 백업으로 역순 복구하는 함수
+function rollbackDataSaveTransaction() {
+    var transaction = getDataSaveTransaction();
+    if (!transaction || transaction.rollbackAttempted) return;
+    transaction.rollbackAttempted = true;
+    transaction.failed = true;
+    transaction.rollingBack = true;
+    var rollbackErrors = [];
+    try {
+        for (var i = transaction.order.length - 1; i >= 0; i--) {
+            var entry = transaction.entries[transaction.order[i]];
+            if (!entry || !entry.saved) continue;
+            var recoveryResult = restoreManagedJsonFromBackup(entry.path, "transaction rollback");
+            if (!recoveryResult) rollbackErrors.push(entry.path);
+        }
+    } finally {
+        transaction.rollingBack = false;
+    }
+    if (rollbackErrors.length > 0) {
+        throw new Error("Managed JSON rollback failed: " + rollbackErrors.join(", "));
+    }
 }
 
 // 보호 대상 JSON 경로별 저장 잠금을 반환하는 함수
@@ -27932,7 +28325,7 @@ function getProtectedJsonSaveLock(path) {
 }
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
-function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
+function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
     var lock = getProtectedJsonSaveLock(path);
     var targetFile = new java.io.File(path);
     var tempFile = new java.io.File(path + ".tmp");
@@ -27959,22 +28352,44 @@ function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
         writer = null;
         outputStream = null;
 
-        parseJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), tempFile.getPath());
+        parseManagedJsonContent(FileStream.read(tempFile.getPath(), "utf-8"), path);
 
-        var seedPetHomeActivityBackup = false;
-        var petHomeActivityBackupPath = null;
-        if (isPetHomeActivityPrimaryJsonPath(path) && skipPetHomeActivityBackup !== true) {
-            petHomeActivityBackupPath = getPetHomeActivityBackupPath(path);
+        var seedManagedBackup = false;
+        var managedBackupPath = getManagedJsonBackupPath(path);
+        var secondaryManagedBackupPath = getManagedJsonSecondaryBackupPath(path);
+        if (managedBackupPath && skipManagedBackup !== true) {
             if (targetFile.exists()) {
-                var currentPetHomeActivityText = FileStream.read(path, "utf-8");
-                parseJsonContent(currentPetHomeActivityText, path);
-                writeVerifiedJsonFile(petHomeActivityBackupPath, currentPetHomeActivityText, true);
+                var currentJsonText = FileStream.read(path, "utf-8");
+                parseManagedJsonContent(currentJsonText, path);
+                var currentPrimaryBackupFile = new java.io.File(managedBackupPath);
+                if (secondaryManagedBackupPath) {
+                    var secondaryManagedBackupFile = new java.io.File(secondaryManagedBackupPath);
+                    if (currentPrimaryBackupFile.exists()) {
+                        var shouldRotateSecondary = !secondaryManagedBackupFile.exists() ||
+                            Date.now() - secondaryManagedBackupFile.lastModified() >= MANAGED_BACKUP_SECONDARY_ROTATION_MS;
+                        if (shouldRotateSecondary) {
+                            try {
+                                var currentPrimaryBackupText = FileStream.read(managedBackupPath, "utf-8");
+                                parseManagedJsonContent(currentPrimaryBackupText, managedBackupPath);
+                                writeVerifiedJsonFile(secondaryManagedBackupPath, currentPrimaryBackupText, true);
+                            } catch (backupRotationError) {
+                                debuggerLog("[WARN : managed backup rotation] " + managedBackupPath + " " + backupRotationError.toString());
+                            }
+                        }
+                    } else if (!secondaryManagedBackupFile.exists()) {
+                        writeVerifiedJsonFile(secondaryManagedBackupPath, currentJsonText, true);
+                    }
+                }
+                writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
             } else {
-                seedPetHomeActivityBackup = true;
+                seedManagedBackup = true;
             }
         }
 
-        if (seedPetHomeActivityBackup) writeVerifiedJsonFile(petHomeActivityBackupPath, jsonText, true);
+        if (seedManagedBackup) {
+            writeVerifiedJsonFile(managedBackupPath, jsonText, true);
+            if (secondaryManagedBackupPath) writeVerifiedJsonFile(secondaryManagedBackupPath, jsonText, true);
+        }
         if (targetFile.exists() && !targetFile.renameTo(rollbackFile)) {
             throw new Error("Current JSON file backup failed: " + path);
         }
@@ -28005,7 +28420,7 @@ function writeVerifiedJsonFile(path, jsonText, skipPetHomeActivityBackup) {
 }
 
 // JSON 파일 저장 함수
-function saveJsonFile(data, path) {
+function saveJsonFile(data, path, skipManagedBackup) {
     if (data === null || (typeof data !== "object" && typeof data !== "function")) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
@@ -28020,19 +28435,27 @@ function saveJsonFile(data, path) {
         if (typeof jsonText !== "string") {
             throw new Error("JSON stringify failed: " + path);
         }
-        isSaving = true;
+        dataTransactionLock.lock();
+        var transactionEntryResult = null;
         try {
             ensureParentFolder(path);
-            if (isProtectedMemberJsonPath(path) || isProtectedPetHomeActivityJsonPath(path)) {
-                writeVerifiedJsonFile(path, jsonText);
+            if (isProtectedManagedJsonPath(path)) {
+                transactionEntryResult = prepareManagedJsonTransactionEntry(path, skipManagedBackup);
+                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup);
+                if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
             } else {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             }
         } catch (e) {
             debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString());
+            try {
+                rollbackDataSaveTransaction();
+            } catch (rollbackError) {
+                debuggerLog("[ERROR : saveJsonFile rollback] " + rollbackError.toString());
+            }
             throw e;
         } finally {
-            isSaving = false;
+            dataTransactionLock.unlock();
         }
     }
 }
@@ -33958,11 +34381,6 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
         return { message: "❌ [" + checkRank(before.data, before.petData, before.guildData, sender) + "]님\n자동일퀘권📝이 필요합니다." };
     }
     var beforePetSkillData = loadJsonFile(petSkillDataPath);
-    saveJsonFile(before.data, filePath_back);
-    saveJsonFile(before.petData, memberPetPath_back);
-    if (beforePetSkillData) {
-        saveJsonFile(beforePetSkillData, petSkillDataPath_back);
-    }
     beginAutoDailyBatch(before, beforePetSkillData);
     try {
         var capturedMessages = [];
@@ -35256,8 +35674,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
     var intimacyExp = getIntimacyExpFromBag(bagItems);
 
     // 펫 스킬
-    var skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
-    skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+    var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
     if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
         skillExp += 500000;
     }
@@ -35281,8 +35698,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
     }
 
     // 펫스킬
-    let skillExp = hasPetSkill(petSkillData, memberName, "장미칼") ? 500000 : 0;
-    skillExp += hasPetSkill(petSkillData, memberName, "청룡언월도") ? 1000000 : 0;
+    let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
     if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
         skillExp += 500000;
     }
@@ -37103,7 +37519,7 @@ function buildTierPetSkillInfoLine(skillData) {
     var totalExpInTenThousands = totalExp / 10000; // 종합매력을 만 단위로 변환
     return "\n종합매력 " + numberWithCommas(totalExpInTenThousands) + "만 증가" +
         "\n티어전용 펫스킬 중복 장착은 불가합니다." +
-        "\n장미칼,청룡언월도,오딘의 뿅망치 중복장착은 가능합니다.";
+        "\n일반 종합매력 무기 펫스킬과는 중복 장착할 수 있습니다.";
 }
 
 // 펫 스킬 이름에서 불필요한 접두사나 이모지를 제거하여 정규화된 형태로 반환
@@ -37248,6 +37664,64 @@ function hasPetSkill(petSkillData, user, skillName) {
     return equipped.indexOf(skillName) !== -1;
 }
 
+// 장착 중인 펫스킬이 제공하는 표시용 팔로워 보너스를 합산
+function getPetSkillFollowerBonus(petSkillData, user) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var counted = {};
+    var totalBonus = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillName = normalizePetSkillName(equipped[i]);
+        if (counted[skillName]) continue;
+        counted[skillName] = true;
+        var skillData = getPetSkillData(skillName);
+        totalBonus += skillData ? (parseInt(skillData.followerBonus, 10) || 0) : 0;
+    }
+    return totalBonus;
+}
+
+// 장착 중인 펫스킬이 제공하는 일일 마음 보내기 보너스를 합산
+function getPetSkillHeartBonus(petSkillData, user) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var counted = {};
+    var totalBonus = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillName = normalizePetSkillName(equipped[i]);
+        if (counted[skillName]) continue;
+        counted[skillName] = true;
+        var skillData = getPetSkillData(skillName);
+        totalBonus += skillData ? (parseInt(skillData.heartBonus, 10) || 0) : 0;
+    }
+    return totalBonus;
+}
+
+// 조건형 종합매력 펫스킬의 현재 발동 여부를 확인
+function isPetSkillCharmConditionActive(skillData, petData, homeData, user) {
+    if (!skillData || !skillData.charmCondition) return true;
+    if (skillData.charmCondition === "eliteMiniPet") {
+        return !!(petData && petData[user] && isElite(petData[user].miniPet));
+    }
+    if (skillData.charmCondition === "arcanaFurniture") {
+        return getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5;
+    }
+    return false;
+}
+
+// 장착 중인 비티어 종합매력 펫스킬의 레이드 또는 캐슬 보너스를 합산
+function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var counted = {};
+    var totalExp = 0;
+    for (var i = 0; i < equipped.length; i++) {
+        var skillName = normalizePetSkillName(equipped[i]);
+        if (counted[skillName]) continue;
+        counted[skillName] = true;
+        var skillData = getPetSkillData(skillName);
+        if (!skillData || skillData.tierExclusive || !isPetSkillCharmConditionActive(skillData, petData, homeData, user)) continue;
+        totalExp += parseInt(skillData[expType], 10) || 0;
+    }
+    return totalExp;
+}
+
 // 장착된 티어 전용 펫스킬의 레이드 또는 캐슬 매력 보너스를 합산
 function getEquippedTierPetSkillExp(petSkillData, user, expType) {
     var equipped = getEquippedPetSkillNames(petSkillData, user);
@@ -37348,25 +37822,22 @@ function getPetSkillTotalRate() {
     return totalRate;
 }
 
-// 등급별 총확률을 유지하면서 같은 등급 스킬에 균등 분배한 추첨 가중치 반환
+// 명시 확률을 우선하고 남은 등급 확률을 나머지 스킬에 균등 분배한 추첨 가중치 반환
 function getPetSkillRandomWeight(skillData) {
     if (!skillData) return 0;
     var gradeWeightTotal = PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS[skillData.grade];
     if (typeof gradeWeightTotal !== "number") return skillData.rate || 0;
-    var gradeItemCount = getPetSkillGradeItemCount(skillData.grade);
-    return gradeItemCount > 0 ? gradeWeightTotal / gradeItemCount : 0;
-}
-
-// 펫스킬 등급별 등록 개수를 한 번 계산해 재사용
-function getPetSkillGradeItemCount(grade) {
-    if (!petSkillGradeItemCountCache) {
-        petSkillGradeItemCountCache = {};
-        for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-            var skillGrade = PET_SKILL_LIST[i].grade;
-            petSkillGradeItemCountCache[skillGrade] = (petSkillGradeItemCountCache[skillGrade] || 0) + 1;
-        }
+    if (skillData.fixedRate === true) return skillData.rate || 0;
+    var flexibleItemCount = 0;
+    var fixedRateTotal = 0;
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        var gradeSkill = PET_SKILL_LIST[i];
+        if (gradeSkill.grade !== skillData.grade) continue;
+        if (gradeSkill.fixedRate === true) fixedRateTotal += Number(gradeSkill.rate) || 0;
+        else flexibleItemCount++;
     }
-    return petSkillGradeItemCountCache[grade] || 0;
+    var flexibleRateTotal = Math.max(0, gradeWeightTotal - fixedRateTotal);
+    return flexibleItemCount > 0 ? flexibleRateTotal / flexibleItemCount : 0;
 }
 
 function getPetSkillActualRate(skillData) {
@@ -38385,7 +38856,8 @@ function removePetHomeStringListValue(list, value) {
 function getAllPetHomeBadges() {
     return GLOBAL_CONFIG.petHomeActivity.achievementBadges
         .concat(GLOBAL_CONFIG.petHomeActivity.specialBadges)
-        .concat(GLOBAL_CONFIG.petHomeActivity.gachaBadges);
+        .concat(GLOBAL_CONFIG.petHomeActivity.gachaBadges)
+        .concat(GLOBAL_CONFIG.petHomeActivity.gacha2.badges);
 }
 
 // 등급 확률과 등급 내 균등 확률로 홈뱃지 한 종을 추첨하는 함수
@@ -38413,6 +38885,23 @@ function drawPetHomeGachaBadge() {
 function getOwnedPetHomeGachaBadgeCount(activityData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var badges = GLOBAL_CONFIG.petHomeActivity.gachaBadges;
+    var ownedCount = 0;
+    for (var badgeIndex = 0; badgeIndex < badges.length; badgeIndex++) {
+        if (petHomeStringListContains(social.badges, badges[badgeIndex].id)) ownedCount++;
+    }
+    return ownedCount;
+}
+
+// MBTI 홈뱃지뽑기[2]에서 20종 중 한 종을 균등 추첨하는 함수
+function drawPetHomeGacha2Badge() {
+    var badges = GLOBAL_CONFIG.petHomeActivity.gacha2.badges;
+    return badges[Math.floor(Math.random() * badges.length)];
+}
+
+// 유저가 보유한 MBTI 홈뱃지뽑기[2] 뱃지 수를 반환하는 함수
+function getOwnedPetHomeGacha2BadgeCount(activityData, user) {
+    var social = getPetHomeSocialUser(activityData, user);
+    var badges = GLOBAL_CONFIG.petHomeActivity.gacha2.badges;
     var ownedCount = 0;
     for (var badgeIndex = 0; badgeIndex < badges.length; badgeIndex++) {
         if (petHomeStringListContains(social.badges, badges[badgeIndex].id)) ownedCount++;
@@ -38582,7 +39071,7 @@ function getPetHomeEquippedBadgeText(activityData, user) {
 }
 
 // 펫홈 마음표현의 오늘 사용량과 한도를 반환하는 함수
-function getPetHomeHeartUsageStatus(data, activityData, homeData, user) {
+function getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var today = getPetHomeTodayText();
     if (social.heartUsage.date !== today) {
@@ -38592,9 +39081,10 @@ function getPetHomeHeartUsageStatus(data, activityData, homeData, user) {
     }
     var mutualBonus = getActivePetHomeMutualCount(data, activityData, user); // 활성 맞팔로 추가되는 일일 사용 횟수
     var premiumBonus = isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.heartBonus : 0;
-    var limit = 1 + mutualBonus + premiumBonus; // 기본·맞팔·프리미엄 보너스를 합친 최종 한도
+    var skillBonus = getPetSkillHeartBonus(petSkillData, user); // 망므 등 장착 스킬로 추가되는 일일 사용 횟수
+    var limit = 1 + mutualBonus + premiumBonus + skillBonus; // 기본·맞팔·프리미엄·스킬 보너스를 합친 최종 한도
     var used = parseInt(social.heartUsage.count, 10) || 0;
-    return { date: today, base: 1, mutualBonus: mutualBonus, premiumBonus: premiumBonus, limit: limit, used: used, remaining: Math.max(0, limit - used) };
+    return { date: today, base: 1, mutualBonus: mutualBonus, premiumBonus: premiumBonus, skillBonus: skillBonus, limit: limit, used: used, remaining: Math.max(0, limit - used) };
 }
 
 // 유저가 보유한 펫홈 뱃지 설정을 고정 순서로 반환하는 함수
@@ -38612,7 +39102,7 @@ function getOwnedPetHomeBadges(activityData, user) {
 function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwned) {
     var rawText = String(selection || "").trim();
     var text = rawText.toUpperCase();
-    var bracketedBadgeIdMatch = text.match(/^\[([A-Z]{1,2}\d{2,3})\]$/);
+    var bracketedBadgeIdMatch = text.match(/^\[([A-Z]{1,4}\d{2,3})\]$/);
     if (bracketedBadgeIdMatch) text = bracketedBadgeIdMatch[1];
     var social = getPetHomeSocialUser(activityData, user);
     var badge = null;
@@ -38662,14 +39152,15 @@ function buildPetHomeFollowListMessage(data, petData, guildData, activityData, u
 }
 
 // 오늘의 펫홈 마음표현 사용 현황 메시지를 생성하는 함수
-function buildPetHomeHeartUsageMessage(data, petData, guildData, activityData, homeData, user) {
-    var status = getPetHomeHeartUsageStatus(data, activityData, homeData, user);
+function buildPetHomeHeartUsageMessage(data, petData, petSkillData, guildData, activityData, homeData, user) {
+    var status = getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, user);
     return getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 님\n" +
         "💞 맞팔 마음표현 혜택\n" +
         "━━━━━━━━━━━━\n" +
         "기본 사용 가능 횟수: " + status.base + "회\n" +
         "맞팔 보너스: +" + status.mutualBonus + "회\n" +
         (status.premiumBonus > 0 ? "호이패스 프리미엄: +" + status.premiumBonus + "회\n" : "") +
+        (status.skillBonus > 0 ? "망므📙: +" + status.skillBonus + "회\n" : "") +
         "오늘 사용: " + status.used + "회\n" +
         "남은 마음: " + status.remaining + "회\n" +
         "최종 사용 가능 횟수: " + status.limit + "회";
@@ -38697,6 +39188,7 @@ function getPetHomeBadgeProgressText(activityData, user, badge) {
         return parts.join(" + ");
     }
     if (badge.source === "HOME_BADGE_GACHA") return "[" + badge.grade + "] " + badge.text;
+    if (badge.source === "HOME_BADGE_GACHA_2") return "[MBTI] " + badge.description + " “" + badge.message + "”";
     if (badge.id.indexOf("S") === 0) return "운영자 지급 특별 뱃지";
     return labels[badge.stat] + " " + numberWithCommas(values[badge.stat] || 0) + "/" + numberWithCommas(badge.threshold);
 }
@@ -38715,7 +39207,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
     for (var i = 0; i < owned.length; i++) {
         var badge = owned[i];
         out += "[" + (i + 1) + "] " + badge.emoji + " " + badge.name +
-            (badge.id.indexOf("S") === 0 ? " [특별]" : (badge.source === "HOME_BADGE_GACHA" ? " [" + badge.grade + "]" : "")) +
+            (badge.id.indexOf("S") === 0 ? " [특별]" : (badge.source === "HOME_BADGE_GACHA" ? " [" + badge.grade + "]" : (badge.source === "HOME_BADGE_GACHA_2" ? " [MBTI]" : ""))) +
             (social.equippedBadgeId === badge.id ? " ✅ 장착 중" : "") + "\n" +
             "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n\n";
     }
@@ -38904,17 +39396,20 @@ function addPetHomeFeedActivityAlert(activityData, targetUser, actorId, actorNam
 }
 
 // 펫홈 소셜 순위 명령어의 점수를 계산하고 상위 100명을 출력하는 함수
-function buildPetHomeSocialRankingMessage(data, petData, guildData, homeData, activityData, viewer, command) {
+function buildPetHomeSocialRankingMessage(data, petData, petSkillData, guildData, homeData, activityData, viewer, command) {
     var rows = [];
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user)) continue;
         var social = activityData.petHomeSocial.hasOwnProperty(user) ? activityData.petHomeSocial[user] : null;
         var score = 0;
-        if (command === "/팔로워순위" && social) {
+        if (command === "/팔로워순위") {
+            score += getPetSkillFollowerBonus(petSkillData, user);
             var validFollowers = {};
-            for (var followerIndex = 0; followerIndex < social.followers.length; followerIndex++) {
-                var follower = social.followers[followerIndex];
-                if (data.member[follower]) validFollowers[follower] = true;
+            if (social) {
+                for (var followerIndex = 0; followerIndex < social.followers.length; followerIndex++) {
+                    var follower = social.followers[followerIndex];
+                    if (data.member[follower]) validFollowers[follower] = true;
+                }
             }
             for (var validFollower in validFollowers) {
                 if (validFollowers.hasOwnProperty(validFollower)) score++;
@@ -39097,12 +39592,13 @@ function formatPetHomeActivityAlert(data, petData, guildData, alert) {
 }
 
 // 홈알림과 최근 방문자 목록 메시지를 생성하는 함수
-function buildPetHomeActivityMessage(data, petData, guildData, sender, activityData, homeData) {
+function buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sender, activityData, homeData) {
     var alerts = getPetHomeAlertList(activityData, sender);
     var visitors = getPetHomeRecentVisitorList(activityData, sender);
     var social = getPetHomeSocialUser(activityData, sender);
     var mutualCount = getPetHomeMutualUsers(activityData, sender).length; // 현재 보존된 맞팔 관계 수
-    var heartStatus = getPetHomeHeartUsageStatus(data, activityData, homeData, sender); // 활성 패스 기준 오늘 마음 사용 현황
+    var heartStatus = getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, sender); // 활성 패스 기준 오늘 마음 사용 현황
+    var followerDisplayCount = social.followers.length + getPetSkillFollowerBonus(petSkillData, sender); // 실제 팔로워와 장착 스킬 보너스 합계
     var unreadCount = 0; // 아직 확인하지 않은 활동 알림 개수
     for (var i = 0; i < alerts.length; i++) {
         if (alerts[i] && alerts[i].read !== true) unreadCount++;
@@ -39111,7 +39607,7 @@ function buildPetHomeActivityMessage(data, petData, guildData, sender, activityD
     var out = getHoiPassPremiumHeader(data, sender) + "🔔 [" + checkRank(data, petData, guildData, sender) + "] 님의 홈알림\n" +
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, sender) + "\n" +
         "━━━━━━━━━━━━\n" +
-        "팔로워🐾 " + social.followers.length + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
+        "팔로워🐾 " + followerDisplayCount + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
         "맞팔🤝 " + mutualCount + "명 | 남은 마음💌: " + heartStatus.remaining + "개\n" +
         "━━━━━━━━━━━━\n" +
         "새로운 알림🔔 " + unreadCount + "개 | 보관📭 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
@@ -39420,7 +39916,8 @@ function initSweetHomeUser(homeData, user) {
             placedFurnitureSummary: {
                 count: 0,
                 totalExp: 0,
-                royalLumiereCount: 0
+                royalLumiereCount: 0,
+                gradeCounts: {}
             },
             furnitureBag: [],
             visitCnt: 0,
@@ -39536,34 +40033,60 @@ function buildPlacedFurnitureSummary(placedFurniture) {
     var list = Array.isArray(placedFurniture) ? placedFurniture : [];
     var totalExp = 0; // 장착 가구 매력 합계
     var royalLumiereCount = 0; // 로열 하우스 스킬 조건용 가구 개수
+    var gradeCounts = {}; // 등급별 배치 가구 개수
     for (var i = 0; i < list.length; i++) {
         var item = list[i];
         if (!item) continue;
         totalExp += Number(item.exp) || 0;
-        if (String(item.grade || "").trim() === "로열 루미에르") royalLumiereCount++;
+        var itemGrade = String(item.grade || "").trim();
+        if (itemGrade) gradeCounts[itemGrade] = (gradeCounts[itemGrade] || 0) + 1;
+        if (itemGrade === "로열 루미에르") royalLumiereCount++;
     }
     return {
         count: list.length,
         totalExp: totalExp,
-        royalLumiereCount: royalLumiereCount
+        royalLumiereCount: royalLumiereCount,
+        gradeCounts: gradeCounts
     };
 }
 
 // 저장된 요약값을 정수 기준으로 정규화
 function normalizePlacedFurnitureSummary(summary) {
     summary = summary && typeof summary === "object" ? summary : {};
+    var sourceGradeCounts = summary.gradeCounts && typeof summary.gradeCounts === "object" ? summary.gradeCounts : {};
+    var gradeCounts = {};
+    for (var grade in sourceGradeCounts) {
+        if (!sourceGradeCounts.hasOwnProperty(grade)) continue;
+        var gradeCount = Math.max(0, parseInt(sourceGradeCounts[grade], 10) || 0);
+        if (gradeCount > 0) gradeCounts[grade] = gradeCount;
+    }
     return {
         count: Math.max(0, parseInt(summary.count, 10) || 0),
         totalExp: Number(summary.totalExp) || 0,
-        royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0)
+        royalLumiereCount: Math.max(0, parseInt(summary.royalLumiereCount, 10) || 0),
+        gradeCounts: gradeCounts
     };
+}
+
+// 숫자 맵 두 개의 키와 값을 비교
+function isSameNumberMap(a, b) {
+    var left = a && typeof a === "object" ? a : {};
+    var right = b && typeof b === "object" ? b : {};
+    var leftKeys = Object.keys(left);
+    var rightKeys = Object.keys(right);
+    if (leftKeys.length !== rightKeys.length) return false;
+    for (var i = 0; i < leftKeys.length; i++) {
+        var key = leftKeys[i];
+        if (!right.hasOwnProperty(key) || Number(left[key]) !== Number(right[key])) return false;
+    }
+    return true;
 }
 
 // 장착 가구 요약값 두 개가 같은지 확인
 function isSamePlacedFurnitureSummary(a, b) {
     var left = normalizePlacedFurnitureSummary(a);
     var right = normalizePlacedFurnitureSummary(b);
-    return left.count === right.count && left.totalExp === right.totalExp && left.royalLumiereCount === right.royalLumiereCount;
+    return left.count === right.count && left.totalExp === right.totalExp && left.royalLumiereCount === right.royalLumiereCount && isSameNumberMap(left.gradeCounts, right.gradeCounts);
 }
 
 // 분리 상세 파일을 우선 사용하고 이관 전에는 기존 펫홈 목록을 반환
@@ -39808,14 +40331,30 @@ function getPlacedFurnitureCountByGrade(homeData, username, furnitureGrade) {
     var target = String(furnitureGrade || "").trim();
     if (!target) return 0;
     if (!homeData || !homeData[username]) return 0;
-    if (target === "로열 루미에르" && homeData[username].placedFurnitureSummary) {
-        return normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary).royalLumiereCount;
+    if (homeData[username].placedFurnitureSummary) {
+        var summary = normalizePlacedFurnitureSummary(homeData[username].placedFurnitureSummary);
+        if (summary.gradeCounts.hasOwnProperty(target)) return summary.gradeCounts[target];
+        if (target === "로열 루미에르" && summary.royalLumiereCount > 0) return summary.royalLumiereCount;
     }
     if (!homeData[username].placedFurniture) return 0;
     var placed = homeData[username].placedFurniture;
     var count = 0;
     for (var i = 0; i < placed.length; i++) {
         var itemGrade = String((placed[i] && placed[i].grade) || "").trim();
+        if (itemGrade === target) count++;
+    }
+    return count;
+}
+
+// 가구가방과 배치 가구를 합쳐 특정 등급의 총 보유 수를 반환
+function getOwnedFurnitureCountByGrade(homeData, username, furnitureGrade) {
+    if (!homeData || !homeData[username]) return 0;
+    var target = String(furnitureGrade || "").trim();
+    if (!target) return 0;
+    var count = getPlacedFurnitureCountByGrade(homeData, username, target);
+    var furnitureBag = Array.isArray(homeData[username].furnitureBag) ? homeData[username].furnitureBag : [];
+    for (var i = 0; i < furnitureBag.length; i++) {
+        var itemGrade = String((furnitureBag[i] && furnitureBag[i].grade) || "").trim();
         if (itemGrade === target) count++;
     }
     return count;
@@ -40268,10 +40807,8 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return value;
     }
 
-    function calcSkillExp(homeDataForSkill) {
-        var skillExp = 0;
-        if (hasPetSkill(petSkillData, sender, "장미칼")) skillExp += 500000;
-        if (hasPetSkill(petSkillData, sender, "청룡언월도")) skillExp += 1000000;
+    function calcSkillExp(homeDataForSkill, expType) {
+        var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeDataForSkill, sender, expType);
         if (hasPetSkill(petSkillData, sender, "창조림") && hasEquippedCreationMiniPet(petData, sender)) skillExp += 500000;
         if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
             var royalLumiereCount = getPlacedFurnitureCountByGrade(homeDataForSkill, sender, "로열 루미에르");
@@ -40302,7 +40839,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return getIntimacyExpFromBag(bagItems);
     });
     var castleSkillExp = measure("캐슬-펫스킬", function () {
-        return calcSkillExp(homeData);
+        return calcSkillExp(homeData, "castleExp");
     });
     var castleTotal = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp;
 
@@ -40322,7 +40859,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return homeExp;
     });
     var raidSkillExp = measure("레이드-펫스킬", function () {
-        return calcSkillExp(homeData);
+        return calcSkillExp(homeData, "raidExp");
     });
     var raidTotal = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp;
     var upgradeBonus = measure("강화 보너스", function () {
