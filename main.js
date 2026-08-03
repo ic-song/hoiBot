@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.351"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.352"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -989,7 +989,33 @@ const GLOBAL_CONFIG = {
             { id: "HB055", grade: "C", emoji: "🥴", name: "필름 어디 갔지?", text: "분명 즐거웠는데… 어제의 기억이 통째로 사라졌습니다.", source: "HOME_BADGE_GACHA" },
             { id: "HB056", grade: "C", emoji: "🫗", name: "오늘도 비싼 물을 마신다", text: "마시고 보니 술이었습니다.", source: "HOME_BADGE_GACHA" },
             { id: "HB057", grade: "B", emoji: "🧑", name: "사장님이 맛있고 안주가 멋져요", text: "사장님이 맛있습니다.", source: "HOME_BADGE_GACHA" }
-        ]
+        ],
+        gacha2: {
+            itemName: "홈뱃지뽑기🛡️[2](/홈뱃지오픈2)",
+            maxOpenCount: 100,
+            badges: [
+                { id: "MBTI01", emoji: "🧠", name: "INTJ 전략가", description: "이미 머릿속으로 모든 계획을 끝냈습니다.", message: "계획대로 되고 있어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI02", emoji: "🔮", name: "INTP 몽상가", description: "쓸데없지만 흥미로운 생각이 끊이지 않습니다.", message: "근데 갑자기 궁금한 게 생겼어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI03", emoji: "👑", name: "ENTJ 지휘관", description: "모임이 시작되기도 전에 이미 대장입니다.", message: "자, 이제 내 말대로 하면 돼.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI04", emoji: "💡", name: "ENTP 토론왕", description: "말싸움도 하나의 즐거운 콘텐츠입니다.", message: "반박해 봐. 재밌겠다.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI05", emoji: "🌙", name: "INFJ 예언자", description: "말하지 않아도 사람의 속마음을 알아챕니다.", message: "그럴 줄 알았어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI06", emoji: "🌷", name: "INFP 감성요정", description: "혼자 상처받고 혼자 감동합니다.", message: "괜찮아… 안 괜찮지만.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI07", emoji: "✨", name: "ENFJ 인싸대장", description: "모두를 챙기지만 정작 본인은 지칩니다.", message: "너희만 행복하면 됐어.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI08", emoji: "🎉", name: "ENFP 댕댕이", description: "낯선 사람과도 3분이면 친구가 됩니다.", message: "우리 오늘부터 친구다!", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI09", emoji: "🧊", name: "ISTJ 원칙주의자", description: "규칙은 지키라고 있는 것입니다.", message: "원래 그렇게 하는 거 아닌데?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI10", emoji: "🧸", name: "ISFJ 수호천사", description: "남들은 다 챙기면서 본인은 뒷전입니다.", message: "밥은 먹었어?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI11", emoji: "💼", name: "ESTJ 총관리자", description: "답답하면 직접 나서서 처리합니다.", message: "내가 하는 게 더 빠르겠다.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI12", emoji: "🍰", name: "ESFJ 사랑둥이", description: "관심과 사랑을 먹고 자랍니다.", message: "우리 사이 좋은 거 맞지?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI13", emoji: "🛠️", name: "ISTP 해결사", description: "말은 적지만 고장 난 건 잘 고칩니다.", message: "일단 줘봐.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI14", emoji: "🎨", name: "ISFP 자유영혼", description: "조용하지만 자신만의 취향은 확실합니다.", message: "그냥 내가 좋으면 됐지.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI15", emoji: "🔥", name: "ESTP 행동대장", description: "생각보다 행동이 항상 먼저 나갑니다.", message: "일단 하고 생각하자!", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI16", emoji: "💃", name: "ESFP 슈퍼스타", description: "어디서든 관심의 중심이 됩니다.", message: "오늘의 주인공은 나야!", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI17", emoji: "🐰", name: "CUTE 귀염둥이", description: "MBTI보다 귀여움이 먼저 보입니다.", message: "내 유형? 그냥 CUTE인데?", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI18", emoji: "💋", name: "SEXY 치명적매력", description: "존재 자체가 유혹이자 플러팅입니다.", message: "검사 결과, 너무 섹시합니다.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI19", emoji: "🖕", name: "FUCK 분노조절중", description: "오늘은 세상 모든 것이 마음에 들지 않습니다.", message: "내 MBTI 묻지 마. 지금 FUCK야.", source: "HOME_BADGE_GACHA_2" },
+                { id: "MBTI20", emoji: "🤍", name: "PURE 순수결정체", description: "아직 세상의 때가 묻지 않은 척합니다.", message: "저는 아무것도 몰라요.", source: "HOME_BADGE_GACHA_2" }
+            ]
+        }
     },
     daily: { // 일일 콘텐츠 진행 설정
         trialTowerMax: 15, // 시련의탑 하루 최대 횟수
@@ -20696,6 +20722,82 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
+                if (/^\/홈뱃지오픈2\s+\d+$/.test(msg)) {
+                    var homeBadge2OpenMatch = msg.match(/^\/홈뱃지오픈2\s+(\d+)$/);
+                    var homeBadge2OpenCount = parseInt(homeBadge2OpenMatch[1], 10);
+                    var homeBadge2Config = GLOBAL_CONFIG.petHomeActivity.gacha2;
+                    var homeBadge2ItemName = homeBadge2Config.itemName;
+                    if (homeBadge2OpenCount < 1 || homeBadge2OpenCount > homeBadge2Config.maxOpenCount) {
+                        replier.reply("❌ 홈뱃지는 한 번에 1~" + homeBadge2Config.maxOpenCount + "개까지 오픈할 수 있습니다.\n사용법: /홈뱃지오픈2 숫자");
+                        return;
+                    }
+                    var homeBadge2Bag = data.member[sender].bag || (data.member[sender].bag = {});
+                    var homeBadge2HeldCount = parseInt(homeBadge2Bag[homeBadge2ItemName], 10) || 0;
+                    if (homeBadge2HeldCount < homeBadge2OpenCount) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + homeBadge2ItemName + " 아이템이 부족합니다.\n보유 수량: " + numberWithCommas(homeBadge2HeldCount) + "개\n필요 수량: " + numberWithCommas(homeBadge2OpenCount) + "개");
+                        return;
+                    }
+
+                    var homeBadge2ActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var homeBadge2SocialSnapshot = snapshotPetHomeSocialUser(homeBadge2ActivityData, sender);
+                    var homeBadge2BagSnapshot = JSON.parse(JSON.stringify(homeBadge2Bag));
+                    var homeBadge2PointSnapshot = data.member[sender].point; // 저장 실패 시 되돌릴 기존 포인트
+                    var homeBadge2Social = getPetHomeSocialUser(homeBadge2ActivityData, sender);
+                    var homeBadge2Results = [];
+                    for (var homeBadge2OpenIndex = 0; homeBadge2OpenIndex < homeBadge2OpenCount; homeBadge2OpenIndex++) {
+                        var drawnHomeBadge2 = drawPetHomeGacha2Badge();
+                        var alreadyOwnedHomeBadge2 = petHomeStringListContains(homeBadge2Social.badges, drawnHomeBadge2.id);
+                        var deletedHomeBadge2 = petHomeStringListContains(homeBadge2Social.deletedBadgeIds, drawnHomeBadge2.id);
+                        if (!alreadyOwnedHomeBadge2 && !deletedHomeBadge2) homeBadge2Social.badges.push(drawnHomeBadge2.id);
+                        if (alreadyOwnedHomeBadge2) data.member[sender].point = (parseInt(data.member[sender].point, 10) || 0) + GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward;
+                        homeBadge2Results.push({ badge: drawnHomeBadge2, duplicate: alreadyOwnedHomeBadge2, deleted: deletedHomeBadge2 });
+                    }
+                    homeBadge2Bag[homeBadge2ItemName] = homeBadge2HeldCount - homeBadge2OpenCount;
+                    if (homeBadge2Bag[homeBadge2ItemName] <= 0) delete homeBadge2Bag[homeBadge2ItemName];
+
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(homeBadge2ActivityData, petHomeActivityFile);
+                    } catch (homeBadge2SaveError) {
+                        data.member[sender].bag = homeBadge2BagSnapshot;
+                        data.member[sender].point = homeBadge2PointSnapshot;
+                        restorePetHomeSocialUser(homeBadge2ActivityData, sender, homeBadge2SocialSnapshot);
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(homeBadge2ActivityData, petHomeActivityFile);
+                        } catch (homeBadge2RollbackError) {
+                            debuggerLog("[ERROR : 홈뱃지 오픈2 롤백 실패] " + homeBadge2RollbackError);
+                        }
+                        throw homeBadge2SaveError;
+                    }
+
+                    var homeBadge2RemainCount = parseInt(data.member[sender].bag[homeBadge2ItemName], 10) || 0;
+                    var ownedGacha2BadgeCount = getOwnedPetHomeGacha2BadgeCount(homeBadge2ActivityData, sender);
+                    var homeBadge2Lines = [];
+                    homeBadge2Lines.push("🛡️ 홈뱃지뽑기[2] " + homeBadge2OpenCount + "개 결과");
+                    homeBadge2Lines.push("[" + checkRank(data, petData, guildData, sender) + "] 님");
+                    homeBadge2Lines.push("━━━━━━━━━━━━━━━");
+                    homeBadge2Lines.push("✅️ 사용: " + numberWithCommas(homeBadge2OpenCount) + "개");
+                    homeBadge2Lines.push("🛡️ 남은 홈뽑권[2]: " + numberWithCommas(homeBadge2RemainCount) + "개");
+                    homeBadge2Lines.push("🎒 MBTI 홈뱃지: " + ownedGacha2BadgeCount + "/" + homeBadge2Config.badges.length + "종");
+                    homeBadge2Lines.push("━━━━━━━━━━━━━━━");
+                    for (var homeBadge2ResultIndex = 0; homeBadge2ResultIndex < homeBadge2Results.length; homeBadge2ResultIndex++) {
+                        if (homeBadge2ResultIndex === 4) homeBadge2Lines.push(allsee);
+                        var homeBadge2Result = homeBadge2Results[homeBadge2ResultIndex];
+                        homeBadge2Lines.push((homeBadge2ResultIndex + 1) + ". " + homeBadge2Result.badge.emoji + " " + homeBadge2Result.badge.name);
+                        homeBadge2Lines.push("└ “" + homeBadge2Result.badge.message + "”");
+                        homeBadge2Lines.push("└ " + homeBadge2Result.badge.description);
+                        if (homeBadge2Result.duplicate) homeBadge2Lines.push("└ 중복 보상: 포인트🅟 " + numberWithCommas(GLOBAL_CONFIG.petHomeActivity.gachaDuplicatePointReward) + " 지급");
+                        if (homeBadge2Result.deleted) homeBadge2Lines.push("└ 영구 삭제한 홈뱃지라 다시 보관되지 않습니다.");
+                    }
+                    homeBadge2Lines.push("\n보유 MBTI 홈뱃지: " + ownedGacha2BadgeCount + "/" + homeBadge2Config.badges.length + "종");
+                    replier.reply(homeBadge2Lines.join("\n"));
+                    return;
+                }
+                if (/^\/홈뱃지오픈2(?:\s+.*)?$/.test(msg)) {
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10");
+                    return;
+                }
                 if (/^\/홈뱃지오픈(?:\s+.*)?$/.test(msg)) {
                     replier.reply("사용법: /홈뱃지오픈 [1~" + GLOBAL_CONFIG.petHomeActivity.gachaMaxOpenCount + "]\n예) /홈뱃지오픈\n예) /홈뱃지오픈 10");
                     return;
@@ -20731,7 +20833,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petHomeActivityDataForBadgeView, petHomeActivityFile);
                     return;
                 }
-                if (msg === "/홈뱃지해제" || /^\/홈뱃지(?:장착|삭제)\s+(?:\d+|[A-Za-z]{1,2}\d{2,3})$/.test(msg)) {
+                if (msg === "/홈뱃지해제" || /^\/홈뱃지(?:장착|삭제)\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg)) {
                     if (!hasActiveHoiPassAccess(data, sender)) {
                         replier.reply("❌ 펫홈 뱃지는 호이패스·초보패스 이용자만 사용할 수 있습니다.");
                         return;
@@ -27243,6 +27345,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
+        /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
 
@@ -38753,7 +38856,8 @@ function removePetHomeStringListValue(list, value) {
 function getAllPetHomeBadges() {
     return GLOBAL_CONFIG.petHomeActivity.achievementBadges
         .concat(GLOBAL_CONFIG.petHomeActivity.specialBadges)
-        .concat(GLOBAL_CONFIG.petHomeActivity.gachaBadges);
+        .concat(GLOBAL_CONFIG.petHomeActivity.gachaBadges)
+        .concat(GLOBAL_CONFIG.petHomeActivity.gacha2.badges);
 }
 
 // 등급 확률과 등급 내 균등 확률로 홈뱃지 한 종을 추첨하는 함수
@@ -38781,6 +38885,23 @@ function drawPetHomeGachaBadge() {
 function getOwnedPetHomeGachaBadgeCount(activityData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var badges = GLOBAL_CONFIG.petHomeActivity.gachaBadges;
+    var ownedCount = 0;
+    for (var badgeIndex = 0; badgeIndex < badges.length; badgeIndex++) {
+        if (petHomeStringListContains(social.badges, badges[badgeIndex].id)) ownedCount++;
+    }
+    return ownedCount;
+}
+
+// MBTI 홈뱃지뽑기[2]에서 20종 중 한 종을 균등 추첨하는 함수
+function drawPetHomeGacha2Badge() {
+    var badges = GLOBAL_CONFIG.petHomeActivity.gacha2.badges;
+    return badges[Math.floor(Math.random() * badges.length)];
+}
+
+// 유저가 보유한 MBTI 홈뱃지뽑기[2] 뱃지 수를 반환하는 함수
+function getOwnedPetHomeGacha2BadgeCount(activityData, user) {
+    var social = getPetHomeSocialUser(activityData, user);
+    var badges = GLOBAL_CONFIG.petHomeActivity.gacha2.badges;
     var ownedCount = 0;
     for (var badgeIndex = 0; badgeIndex < badges.length; badgeIndex++) {
         if (petHomeStringListContains(social.badges, badges[badgeIndex].id)) ownedCount++;
@@ -38981,7 +39102,7 @@ function getOwnedPetHomeBadges(activityData, user) {
 function resolvePetHomeBadgeSelection(activityData, user, selection, requireOwned) {
     var rawText = String(selection || "").trim();
     var text = rawText.toUpperCase();
-    var bracketedBadgeIdMatch = text.match(/^\[([A-Z]{1,2}\d{2,3})\]$/);
+    var bracketedBadgeIdMatch = text.match(/^\[([A-Z]{1,4}\d{2,3})\]$/);
     if (bracketedBadgeIdMatch) text = bracketedBadgeIdMatch[1];
     var social = getPetHomeSocialUser(activityData, user);
     var badge = null;
@@ -39067,6 +39188,7 @@ function getPetHomeBadgeProgressText(activityData, user, badge) {
         return parts.join(" + ");
     }
     if (badge.source === "HOME_BADGE_GACHA") return "[" + badge.grade + "] " + badge.text;
+    if (badge.source === "HOME_BADGE_GACHA_2") return "[MBTI] " + badge.description + " “" + badge.message + "”";
     if (badge.id.indexOf("S") === 0) return "운영자 지급 특별 뱃지";
     return labels[badge.stat] + " " + numberWithCommas(values[badge.stat] || 0) + "/" + numberWithCommas(badge.threshold);
 }
@@ -39085,7 +39207,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
     for (var i = 0; i < owned.length; i++) {
         var badge = owned[i];
         out += "[" + (i + 1) + "] " + badge.emoji + " " + badge.name +
-            (badge.id.indexOf("S") === 0 ? " [특별]" : (badge.source === "HOME_BADGE_GACHA" ? " [" + badge.grade + "]" : "")) +
+            (badge.id.indexOf("S") === 0 ? " [특별]" : (badge.source === "HOME_BADGE_GACHA" ? " [" + badge.grade + "]" : (badge.source === "HOME_BADGE_GACHA_2" ? " [MBTI]" : ""))) +
             (social.equippedBadgeId === badge.id ? " ✅ 장착 중" : "") + "\n" +
             "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n\n";
     }
