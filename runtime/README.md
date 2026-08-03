@@ -2,8 +2,6 @@
 
 Iris 연계 전에 HTTP 수신 경로와 기본 안전장치를 검증하는 독립 Node.js 서버입니다. 기존 MessengerBot R의 `main.js`, `Info.js`, Android JSON 데이터는 사용하거나 변경하지 않습니다.
 
-2026-07-30 개발 PC LDPlayer 9에서 수행한 실제 Iris 수신 검증 결과는 `../개발환경_고도화/IRIS_TEST_RESULTS_20260730.md`에 기록되어 있습니다.
-
 ## 포함 범위
 
 - 모든 요청에 UUID 기반 `requestId` 발급 및 `x-request-id` 응답 헤더 제공
@@ -53,12 +51,6 @@ http://개발PC_IP:3100/api/v1/integrations/iris/events?token=공유토큰
 ```
 
 서버 로그에는 쿼리 문자열을 제외한 경로만 기록합니다. 실제 운영 환경에서는 HTTPS 또는 사설망, 방화벽/IP 제한을 추가해야 합니다.
-
-현재 개발 PC의 LDPlayer 9에서는 호스트 게이트웨이 `172.16.1.2` 연결이 확인되었습니다. 따라서 Iris 검증 endpoint는 다음 형태를 사용합니다. 이 주소는 LDPlayer 네트워크 설정이 바뀌면 다시 확인해야 합니다.
-
-```text
-http://172.16.1.2:3100/api/v1/integrations/iris/events?token=공유토큰
-```
 
 ## 검증
 
