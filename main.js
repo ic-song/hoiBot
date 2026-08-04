@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.360"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.361"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17542,8 +17542,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let petTypeBuff = difftypeBuff(attackerPetObj, defenderPetObj);
                     let attackerTypeExp = Math.round(attackerPetExp_origin * petTypeBuff.buff1); // 공격자 상성 적용 매력
                     let defenderTypeExp = Math.round(defenderPetExp_origin * petTypeBuff.buff2); // 방어자 상성 적용 매력
-                    let attackerPetExp = calculateCriticalDamage(attackerPetObj, attackerTypeExp); // 공격자 최종 매력
-                    let defenderPetExp = calculateCriticalDamage(defenderPetObj, defenderTypeExp); // 방어자 최종 매력
+                    let attackerPetExp = calculateCriticalDamage(attackerPetObj, attackerTypeExp, calculateEffectivePetUpgradeLevel(attackerName, data, petData)); // 공격자 최종 매력
+                    let defenderPetExp = calculateCriticalDamage(defenderPetObj, defenderTypeExp, calculateEffectivePetUpgradeLevel(defenderName, data, petData)); // 방어자 최종 매력
                     let attackerCriticalFlag = attackerPetExp > attackerTypeExp;
                     let defenderCriticalFlag = defenderPetExp > defenderTypeExp;
                     let isWinFlag = attackerPetExp > defenderPetExp; // 최종 매력이 높을 때만 공격 승리, 동률은 방어 승리
@@ -18185,8 +18185,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let myBase = getTotalMinipetExp(sender, petData);
                     let enemyBase = getTotalMinipetExp(targetName, petData);
                     // 치명타 확률 계산 및 적용 강화레벨 → 치명타 확률 → 랜덤 발동 → 최종 데미지
-                    let myFinal = calculateCriticalDamage(petData[sender], myBase);
-                    let enemyFinal = calculateCriticalDamage(petData[targetName], enemyBase);
+                    let myFinal = calculateCriticalDamage(petData[sender], myBase, calculateEffectivePetUpgradeLevel(sender, data, petData));
+                    let enemyFinal = calculateCriticalDamage(petData[targetName], enemyBase, calculateEffectivePetUpgradeLevel(targetName, data, petData));
                     // 치명타 발동 여부 확인
                     let isMyCrit = myFinal > myBase; // 내 치명타 여부
                     let isEnemyCrit = enemyFinal > enemyBase; // 상대 치명타 여부
@@ -19365,7 +19365,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let boostedUserPetExp = Math.round(userPetExp);
 
                     //치명타
-                    let userCriticalExp = calculateCriticalDamage(userPetObj, userPetExp);
+                    let userCriticalExp = calculateCriticalDamage(userPetObj, userPetExp, calculateEffectivePetUpgradeLevel(sender, data, petData));
                     let criticalFlag = userPetExp != userCriticalExp ? true : false; // 치명타 여부 플래그
                     userPetExp = userCriticalExp; // 치명타 적용
 
@@ -20998,6 +20998,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeBagSnapshot = JSON.parse(JSON.stringify(homeBadgeCubeBag));
                     var homeBadgeCubeUsedCount = 0;
                     var homeBadgeCubeUpgradeCount = 0;
+                    var homeBadgeCubeDecreaseCount = 0;
                     var homeBadgeCubeProtectedCount = 0;
                     var homeBadgeCubeLastRoll = homeBadgeCubeBefore;
                     var homeBadgeCubeOptionMaxNotice = false;
@@ -21006,12 +21007,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeActualLimit = Math.min(homeBadgeCubeTryCount, homeBadgeCubeMaxAffordable); // 요청·보유량을 반영한 최종 시도 한도
                     for (var homeBadgeCubeTryIndex = 0; homeBadgeCubeTryIndex < homeBadgeCubeActualLimit; homeBadgeCubeTryIndex++) {
                         if (homeBadgeCubeRecord[homeBadgeCubeOption.key] === 10) break;
+                        var homeBadgeCubeCurrent = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
+                        var homeBadgeCubeProtectionFloor = getHomeBadgeCubeProtectionFloor(homeBadgeCubeCurrent);
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        if (homeBadgeCubeLastRoll > homeBadgeCubeRecord[homeBadgeCubeOption.key]) {
-                            homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeLastRoll;
+                        var homeBadgeCubeApplied = Math.max(homeBadgeCubeLastRoll, homeBadgeCubeProtectionFloor); // 3·6·9% 보호선 적용 결과
+                        homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
+                        if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
                             homeBadgeCubeUpgradeCount++;
-                        } else {
+                        } else if (homeBadgeCubeApplied < homeBadgeCubeCurrent) {
+                            homeBadgeCubeDecreaseCount++;
+                        }
+                        if (homeBadgeCubeApplied > homeBadgeCubeLastRoll) {
                             homeBadgeCubeProtectedCount++;
                         }
                     }
@@ -21057,7 +21064,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("선택 옵션: [" + homeBadgeCubeOption.number + "]" + homeBadgeCubeOption.emoji + " " + homeBadgeCubeOption.name);
                     homeBadgeCubeLines.push("변경: +" + formatHomeBadgeCubePercent(homeBadgeCubeBefore) + " → +" + formatHomeBadgeCubePercent(homeBadgeCubeAfter));
                     homeBadgeCubeLines.push("마지막 추첨: " + formatHomeBadgeCubePercent(homeBadgeCubeLastRoll));
-                    homeBadgeCubeLines.push("시도: " + homeBadgeCubeUsedCount + "/" + homeBadgeCubeTryCount + "회 | 상승 " + homeBadgeCubeUpgradeCount + "회 | 보호 " + homeBadgeCubeProtectedCount + "회");
+                    homeBadgeCubeLines.push("시도: " + homeBadgeCubeUsedCount + "/" + homeBadgeCubeTryCount + "회 | 상승 " + homeBadgeCubeUpgradeCount + "회 | 하락 " + homeBadgeCubeDecreaseCount + "회 | 보호 " + homeBadgeCubeProtectedCount + "회");
                     if (!homeBadgeCubeIsEquipped) homeBadgeCubeLines.push("⚠️ 대표 뱃지로 장착해야 매력·펫강화·펫탐험 효과가 적용됩니다.");
                     if (homeBadgeCubeAfter === 10) homeBadgeCubeLines.push("🎉 10.0% 최대 옵션을 달성했습니다!");
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord)) homeBadgeCubeLines.push("💟 올맥스 달성! 장착 시 네 효과가 모두 11.0%로 적용됩니다.");
@@ -29188,8 +29195,8 @@ function getGuildTerritoryDefenderName(guildData, territoryInfo) {
 }
 
 // 영지전 시작 시점의 캐슬매력과 크리티컬 정보를 스냅샷으로 생성
-function createGuildTerritoryCastleBattleSnapshot(petData, user, baseExp) {
-    var upgradeLevel = petData[user] ? parseInt(petData[user].upgrade, 10) || 0 : 0;
+function createGuildTerritoryCastleBattleSnapshot(data, petData, user, baseExp) {
+    var upgradeLevel = calculateEffectivePetUpgradeLevel(user, data, petData);
     return {
         baseExp: baseExp,
         petName: petData[user] && petData[user].petname ? petData[user].petname : "펫 정보 없음",
@@ -29219,7 +29226,7 @@ function buildGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkill
         if (!data.member[user] || !petData[user]) continue;
         var baseExp = calculateCastleExp(user, data, petData, homeData, petSkillData);
         snapshots[user] = baseExp;
-        war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(petData, user, baseExp);
+        war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(data, petData, user, baseExp);
     }
     return snapshots;
 }
@@ -29249,7 +29256,7 @@ function fillGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillD
         var calculatedExp = calculateCastleExp(user, data, petData, homeData, petSkillData);
         var baseExp = typeof war.castleExpSnapshots[user] === "number" ? war.castleExpSnapshots[user] : calculatedExp;
         war.castleExpSnapshots[user] = baseExp;
-        war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(petData, user, baseExp);
+        war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(data, petData, user, baseExp);
     }
 }
 
@@ -30553,9 +30560,9 @@ function decreaseGuildTerritoryItem(data, user, itemName) {
 }
 
 // 영지전 공격자와 방어자의 크리티컬을 한 번씩 판정하고 최종 캐슬매력을 반환
-function resolveGuildTerritoryCastleBattle(war, petData, attackerName, defenderName) {
-    var attackerSnapshot = war.castleBattleSnapshots[attackerName] || createGuildTerritoryCastleBattleSnapshot(petData, attackerName, war.castleExpSnapshots[attackerName]);
-    var defenderSnapshot = war.castleBattleSnapshots[defenderName] || createGuildTerritoryCastleBattleSnapshot(petData, defenderName, war.castleExpSnapshots[defenderName]);
+function resolveGuildTerritoryCastleBattle(war, data, petData, attackerName, defenderName) {
+    var attackerSnapshot = war.castleBattleSnapshots[attackerName] || createGuildTerritoryCastleBattleSnapshot(data, petData, attackerName, war.castleExpSnapshots[attackerName]);
+    var defenderSnapshot = war.castleBattleSnapshots[defenderName] || createGuildTerritoryCastleBattleSnapshot(data, petData, defenderName, war.castleExpSnapshots[defenderName]);
     var isAttackerCritical = Math.random() < attackerSnapshot.critChance;
     var isDefenderCritical = Math.random() < defenderSnapshot.critChance;
     var attackerFinalExp = isAttackerCritical ? Math.round(attackerSnapshot.baseExp * attackerSnapshot.critMultiplier) : attackerSnapshot.baseExp;
@@ -30778,7 +30785,7 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         return out;
     }
 
-    var castleBattleResult = resolveGuildTerritoryCastleBattle(war, petData, sender, defenderName);
+    var castleBattleResult = resolveGuildTerritoryCastleBattle(war, data, petData, sender, defenderName);
     var isAttackerWin = castleBattleResult.attacker.finalExp > castleBattleResult.defender.finalExp; // 크리 적용 후 공격자 캐슬매력이 높을 때만 승리
     var castleBattleDetailMessage = buildGuildTerritoryCastleBattleDetailMessage(data, petData, guildData, attackerGuild, defenderGuild, territory, territoryNo, castleBattleResult, isAttackerWin);
 
@@ -32178,8 +32185,8 @@ function getCritMultiplier(upgradeLevel) {
  * @param {number} damage - 기본 데미지
  * @returns {number} - 크리티컬이 적용된 최종 데미지
  */
-function calculateCriticalDamage(petObj, damage) {
-    var upgradeLevel = (petObj && petObj.upgrade) || 0;
+function calculateCriticalDamage(petObj, damage, effectiveUpgradeLevel) {
+    var upgradeLevel = typeof effectiveUpgradeLevel === "number" ? effectiveUpgradeLevel : ((petObj && petObj.upgrade) || 0);
     var critChance = calculateCritChance(upgradeLevel);
     var isCritical = Math.random() < critChance;
 
@@ -33213,8 +33220,9 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
         petData[sender].upgradeDateTime = new Date();
 
         var newLv = petData[sender].upgrade;
-        var newCritChance = getCritChance(newLv);
-        var critMul = getPetUpgradeCritMul(newLv);
+        var effectiveNewLv = calculateEffectivePetUpgradeLevel(sender, data, petData); // 홈뱃지 반영 후 실제 효과 강화수치
+        var newCritChance = getCritChance(effectiveNewLv);
+        var critMul = getPetUpgradeCritMul(effectiveNewLv);
         var nextLevel = newLv + 1;
         var baseProbNext = nextLevel < 100 ? 0.55 - nextLevel * 0.005 : 0.05;
         var nextBoostEligible = baseProbNext + traitBonus < 1.0;
@@ -37275,8 +37283,8 @@ function runMatzangBattle(attackerName, defenderName, data, petData, homeData, p
     var petTypeBuff = difftypeBuff(attacker.pet, defender.pet);
     var attackerBuffed = Math.round(attacker.baseExp * petTypeBuff.buff1); // 공격자 상성 보정값
     var defenderBuffed = Math.round(defender.baseExp * petTypeBuff.buff2); // 방어자 상성 보정값
-    var attackerFinal = calculateCriticalDamage(attacker.pet, attackerBuffed);
-    var defenderFinal = calculateCriticalDamage(defender.pet, defenderBuffed);
+    var attackerFinal = calculateCriticalDamage(attacker.pet, attackerBuffed, calculateEffectivePetUpgradeLevel(attackerName, data, petData));
+    var defenderFinal = calculateCriticalDamage(defender.pet, defenderBuffed, calculateEffectivePetUpgradeLevel(defenderName, data, petData));
     var attackerSymbol = (petTypeBuff.buff1 === 1.3 ? "⬆" : "") + (attackerFinal > attackerBuffed ? "💥" : "");
     var defenderSymbol = (petTypeBuff.buff2 === 1.3 ? "⬆" : "") + (defenderFinal > defenderBuffed ? "💥" : "");
     attacker.finalExp = attackerFinal;
@@ -39323,12 +39331,16 @@ function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
     return isHomeBadgeCubeAllMax(record) && value === 10 ? 11 : value;
 }
 
-// 펫 강화 단계가 종합매력에 더하는 수치를 홈뱃지 큐브 효과와 함께 계산하는 함수
-function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
-    var upgradeLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
-    var baseCharm = upgradeLevel * GLOBAL_CONFIG.pet.totalCharmPerUpgrade; // 홈뱃지 적용 전 펫강화 매력
+// 홈뱃지 큐브 효과를 반영한 유효 펫 강화수치를 반올림해 계산하는 함수
+function calculateEffectivePetUpgradeLevel(user, data, petData, excludeHomeBadgeCube) {
+    var baseLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
     var cubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade");
-    return Math.floor(baseCharm * (1 + cubePercent / 100));
+    return Math.round(baseLevel * (1 + cubePercent / 100));
+}
+
+// 유효 펫 강화수치가 종합매력에 더하는 값을 계산하는 함수
+function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
+    return calculateEffectivePetUpgradeLevel(user, data, petData, excludeHomeBadgeCube) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 }
 
 // 홈뱃지 큐브 장착 전후 효과를 디버깅용 비교 문구로 생성하는 함수
@@ -39337,15 +39349,15 @@ function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, p
     var castleAfter = calculateCastleExp(user, data, petData, homeData, petSkillData);
     var raidBefore = calculateRaidExp(user, data, petData, homeData, petSkillData, true);
     var raidAfter = calculateRaidExp(user, data, petData, homeData, petSkillData);
-    var upgradeBefore = calculatePetUpgradeCharm(user, data, petData, true);
-    var upgradeAfter = calculatePetUpgradeCharm(user, data, petData);
+    var upgradeBefore = calculateEffectivePetUpgradeLevel(user, data, petData, true);
+    var upgradeAfter = calculateEffectivePetUpgradeLevel(user, data, petData);
     var castleRate = castleBefore > 0 ? (castleAfter - castleBefore) / castleBefore * 100 : 0;
     var raidRate = raidBefore > 0 ? (raidAfter - raidBefore) / raidBefore * 100 : 0;
     var upgradeRate = upgradeBefore > 0 ? (upgradeAfter - upgradeBefore) / upgradeBefore * 100 : 0;
     var lines = ["[💟 홈뱃지 큐브 장착 디버깅]", "대상: " + user, "━━━━━━━━━━━━━━━"];
     lines.push("캐슬 매력: " + numberWithCommas(castleBefore) + " → " + numberWithCommas(castleAfter) + " (기존 대비 +" + castleRate.toFixed(2) + "%)");
     lines.push("레이드 매력: " + numberWithCommas(raidBefore) + " → " + numberWithCommas(raidAfter) + " (기존 대비 +" + raidRate.toFixed(2) + "%)");
-    lines.push("펫강화 수치: " + numberWithCommas(upgradeBefore) + " → " + numberWithCommas(upgradeAfter) + " (기존 대비 +" + upgradeRate.toFixed(2) + "%)");
+    lines.push("펫강화 수치: " + upgradeBefore + "강 → " + upgradeAfter + "강 (기존 대비 +" + upgradeRate.toFixed(2) + "%)");
 
     var exploreDungeon = petExploreData && petExploreData.userBet && petExploreData.userBet[user] !== null && typeof petExploreData.userBet[user] !== "undefined" ? String(petExploreData.userBet[user]) : null;
     var exploreCube = getHomeBadgeCubeActiveOptionPercent(data, user, "explore");
@@ -39422,6 +39434,15 @@ function rollHomeBadgeCubePercent() {
     }
     if (selected.min === 10) return 10;
     return Math.round((selected.min + Math.floor(Math.random() * 10) / 10) * 10) / 10;
+}
+
+// 현재 홈뱃지 큐브 수치에 따라 3·6·9% 단계 보호선을 반환하는 함수
+function getHomeBadgeCubeProtectionFloor(currentPercent) {
+    currentPercent = parseFloat(currentPercent) || 0;
+    if (currentPercent >= 9) return 9;
+    if (currentPercent >= 6) return 6;
+    if (currentPercent >= 3) return 3;
+    return 0;
 }
 
 // 홈뱃지 큐브 확률 안내 메시지를 생성하는 함수

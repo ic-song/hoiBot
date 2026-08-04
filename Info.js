@@ -1094,7 +1094,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var miniPet = petData[sender] && petData[sender].miniPet ? petData[sender].miniPet : { raidExp: 0, castleExp: 0, petexp: 0 };
 
 			// 치명타
-			var critChance = getCritChance(petInfo.upgrade);
+			var effectivePetUpgrade = calculateEffectivePetUpgradeLevel(sender, data, petData);
+			var critChance = getCritChance(effectivePetUpgrade);
 
 			// 친밀도
 			var intimacyMsg = getIntimacyLvFromBag(data.member[sender].bag); // 친밀도 표기
@@ -1117,15 +1118,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var activePetTitle = getTitle(data.member[sender], petTitleData.member[sender]);
 
 			// 펫강화 라인
-			var critMul = getCritMultiplier(petInfo.upgrade);
-			var petUpgradeCharmBefore = calculatePetUpgradeCharm(sender, data, petData, true);
-			var petUpgradeCharmAfter = calculatePetUpgradeCharm(sender, data, petData);
+			var critMul = getCritMultiplier(effectivePetUpgrade);
+			var petUpgradeLevelBefore = calculateEffectivePetUpgradeLevel(sender, data, petData, true);
 			var petUpgradeCubePercent = getHomeBadgeCubeActiveOptionPercent(data, sender, "petUpgrade");
-			var upgradeLine = "펫강화⭐️: " + (petInfo.upgrade || 0) + "강(💥" + critChance + "%)[" + critMul + "배]";
-			upgradeLine += "\n└ 강화 매력🌟: " + numberWithCommas(petUpgradeCharmBefore);
+			var upgradeLine = "펫강화⭐️: " + petUpgradeLevelBefore + "강";
 			if (petUpgradeCubePercent > 0) {
-				upgradeLine += " → " + numberWithCommas(petUpgradeCharmAfter) + " (홈뱃지 +" + petUpgradeCubePercent.toFixed(1) + "%)";
+				upgradeLine += " → " + effectivePetUpgrade + "강 (홈뱃지 +" + petUpgradeCubePercent.toFixed(1) + "%)";
 			}
+			upgradeLine += " (💥" + critChance + "%)[" + critMul + "배]";
 
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
@@ -1450,7 +1450,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			let castleExp = numberWithCommas(calculateCastleItem(sender, data) + calculateItemInfoAll(sender, data, petData).castleExp + petData[sender].petexp + miniPetExp); // 캐슬아이템 + 아이템ll 캐슬매력 + 기본매력 미니펫 캐슬매력
 
 			let message = "[" + checkRank(data, petData, guildData, sender) + "] 님의 캐슬전적\n\n";
-			message += "이름 : " + petData[sender].petname + petData[sender].petimg + castleExp + "💕(" + (petData[sender].upgrade || 0) + "⭐)\n";
+			message += "이름 : " + petData[sender].petname + petData[sender].petimg + castleExp + "💕(" + calculateEffectivePetUpgradeLevel(sender, data, petData) + "⭐)\n";
 			message += "전적 : " + (senderObj.battle.win || 0) + "승 " + (senderObj.battle.lose || 0) + "패" + "(" + winRatio.toFixed(2) + "%)\n";
 			message += "등급 : " + getCastleBattleRankEmoji(senderObj.battle.score, castleBattleData) + "\n";
 			message += "캐슬포인트(CP) : " + numberWithCommas(senderObj.battle.score) + "pt🏆";
@@ -3506,12 +3506,16 @@ function getCritChance(upgradeLevel) {
 	return critChance.toFixed(2);
 }
 
-// 펫 강화 단계가 종합매력에 더하는 수치를 홈뱃지 큐브 효과와 함께 계산하는 함수
-function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
-	var upgradeLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
-	var baseCharm = upgradeLevel * GLOBAL_CONFIG.pet.totalCharmPerUpgrade; // 홈뱃지 적용 전 펫강화 매력
+// 홈뱃지 큐브 효과를 반영한 유효 펫 강화수치를 반올림해 계산하는 함수
+function calculateEffectivePetUpgradeLevel(user, data, petData, excludeHomeBadgeCube) {
+	var baseLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
 	var cubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade");
-	return Math.floor(baseCharm * (1 + cubePercent / 100));
+	return Math.round(baseLevel * (1 + cubePercent / 100));
+}
+
+// 유효 펫 강화수치가 종합매력에 더하는 값을 계산하는 함수
+function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
+	return calculateEffectivePetUpgradeLevel(user, data, petData, excludeHomeBadgeCube) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
 }
 
 /**
