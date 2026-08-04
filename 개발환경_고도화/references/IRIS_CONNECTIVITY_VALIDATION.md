@@ -4,7 +4,7 @@ This document records technical validation evidence without KakaoTalk room names
 
 ## Environment
 
-- Validation date: `2026-08-03` (Asia/Seoul)
+- Validation dates: `2026-08-03` and post-account-switch revalidation on `2026-08-04` (Asia/Seoul)
 - redroid ADB target: network-connected redroid instance
 - KakaoTalk: running inside redroid
 - Iris HTTP port: `3000`
@@ -24,6 +24,7 @@ This document records technical validation evidence without KakaoTalk room names
 | Exact `/ping` command detection | Passed |
 | Iris `/reply` text response | Passed |
 | Deployed automatic `sender-name pong` round trip | Passed |
+| Post-account-switch Iris DB reattachment | Passed after Iris process restart |
 
 ## `/ping` Detection Run
 
@@ -34,6 +35,14 @@ This document records technical validation evidence without KakaoTalk room names
 - The tenth event in the measured window was received at `2026-08-03 14:16:24 KST`.
 - A `pong` response sent through Iris `/reply` returned `success`.
 - A later deployed-handler test observed the exact `/ping` input followed by `sender-name pong` with `isMine=true`; the measured event-to-event interval was approximately `201 ms`.
+
+## Post-Account-Switch Revalidation
+
+- Clearing KakaoTalk application data replaced the active KakaoTalk databases while the existing Iris process was still watching the prior database handles.
+- Iris HTTP remained reachable, but new KakaoTalk events stopped reaching the server until the Iris process was restarted.
+- After restart, Iris opened the current KakaoTalk databases, exact `/ping` delivery resumed, and the outgoing pong event was observed approximately `0.66 seconds` after the incoming event.
+- The separate Iris display-name cache can retain prior-account labels temporarily. This affects top-level `sender` display metadata, not the source `chat_logs.user_id`.
+- Identity and event-field handling for this condition is documented in `KAKAOTALK_DB_SCHEMA_INVENTORY.md` and `IRIS_SERVER_EVENT_MAPPING.json`.
 
 ## Privacy Handling
 

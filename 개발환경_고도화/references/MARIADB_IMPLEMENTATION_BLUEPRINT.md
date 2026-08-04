@@ -1,16 +1,18 @@
 # MariaDB Implementation Blueprint
 
-Updated: 2026-08-03
+Updated: 2026-08-04
 
 ## Purpose
 
 Define enough persistence architecture for a future Codex session to implement hoiBot Server with MariaDB without rediscovering the migration boundaries.
 
-This is a design blueprint. No MariaDB instance, schema, driver, or migration tool has been implemented yet.
+The detailed target table model and complete legacy-source mapping are maintained in `LEGACY_JSON_RDB_SCHEMA_DESIGN.md`.
+
+This is the implementation and migration blueprint. Migrations `001` through `012`, the transaction-aware connector, Iris inbox/outbox path, first profile read model, admin session/RBAC foundation, and dry-run/apply rehearsal importer are implemented. Production legacy data has not been imported.
 
 ## Implementation Status
 
-The MariaDB foundation is now implemented and live-validated on the development PC. See `MARIADB_CONNECTIVITY_VALIDATION.md`. Legacy JSON import and game-command migration have not started.
+The MariaDB foundation and first vertical-slice infrastructure are live-validated on the development PC. The importer parsed all 33 repository JSON snapshots in dry-run mode without writing them. `/내정보` formatting and server-change services exist, but legacy full-output parity remains blocked on a complete field mapping and approved identity links. No production cutover has occurred.
 
 ## Persistence Boundaries
 
@@ -153,7 +155,7 @@ Iris adapter
 -> reply adapter
 ```
 
-The MariaDB driver, query builder/ORM, and migration tool remain unconfirmed. Selection criteria:
+The implementation uses MariaDB Connector `3.5.3`, parameterized SQL repositories, and an explicit `withTransaction()` contract. No ORM is used.
 
 - Node.js 24 and TypeScript support.
 - MariaDB compatibility.
@@ -204,19 +206,28 @@ Avoid long-term dual writes between JSON and MariaDB. Prefer a domain-by-domain 
 - Backup/restore preserves row counts and critical invariants.
 - Legacy JSON snapshots remain unmodified.
 
-## First Implementation Task Definition
+## Implemented Migration Set
 
-The next implementation task should produce only the MariaDB foundation:
+- `001_foundation.sql`: connection probes and compatibility identity tables.
+- `002_event_processing.sql`: inbox metadata, operations, command execution, audit, outbox, delivery attempts.
+- `003_identity_import.sql`: players, external identities, channels, import runs/files/anomalies/maps and compatibility backfill.
+- `004_common_codes_config.sql`: shared codes, game servers, room mappings and versioned configuration.
+- `005_player_profile.sql`: first `/내정보` read model and supporting profile domains.
+- `006_admin_auth.sql`: local operators, Argon2id hashes, RBAC and hashed DB sessions.
+- `007_domain_foundations.sql`: currency/inventory ledgers, catalogs, pet skill/equipment, guild, home, event and market foundations.
+- `008_admin_iris_identity.sql`: explicit administrator-to-approved-Kakao identity mapping for shared `/서버이동` service use.
+- `009_event_identity_links.sql`: normalized event foreign keys plus candidate identity/name/channel observation without automatic player linking.
+- `010_legacy_display_capacity.sql`: lossless long legacy title display values.
+- `011_mini_pet_display_projection.sql`: mini-pet grade, emoji and mode experience required by `/내정보` parity.
+- `012_badge_display_projection.sql`: stable badge codes separated from the exact legacy `checkRank` display projection.
 
-1. Add reproducible MariaDB and server services under `개발환경_고도화/infra/`.
-2. Add local-only environment configuration and startup validation.
-3. Add a pooled server database connection.
-4. Add a migration runner and the infrastructure/identity tables only.
-5. Add database live/readiness checks that do not expose credentials.
-6. Add an integration test that performs `SELECT 1` and a rolled-back test transaction.
-7. Add backup and restore-verification commands.
+## Remaining Implementation Work
 
-Do not migrate production JSON or enable a game mutation command in this foundation task.
+1. Capture real Rhino `/내정보` outputs and finish character-for-character golden parity validation for the implemented projection.
+2. Resolve legacy nickname keys through operator-approved Kakao identity candidates.
+3. Add domain repositories and policies vertically in the documented order.
+4. Validate the implemented admin SPA identity approval, server mutation and audit flows against a separately deployed test environment.
+5. Repeat the completed Windows disposable import and backup/restore rehearsal on the target Ubuntu host, then rehearse the full cutover.
 
 ## Foundation Acceptance Criteria
 

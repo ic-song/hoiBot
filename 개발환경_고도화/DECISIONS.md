@@ -1,6 +1,6 @@
 # hoiBot 고도화 확정 결정
 
-최종 갱신일: 2026-08-03
+최종 갱신일: 2026-08-04
 
 이 문서는 hoiBot 고도화에서 사용자가 명시적으로 확정한 결정의 단일 기준이다.
 `MEMORY.md` 또는 `references/` 문서와 내용이 충돌하면 이 문서를 우선한다.
@@ -60,7 +60,8 @@
 ### DEC-006: Iris 기반 고도화
 
 - 결정일: 2026-08-03
-- 상태: `ACTIVE`
+- 상태: `SUPERSEDED`
+- 대체 결정: `DEC-021` (2026-08-04)
 - 결정: hoiBot은 Iris를 사용해 고도화한다.
 - 역할: Iris는 redroid 안에서 KakaoTalk 메시지 감지와 답장 전송을 담당한다.
 - 역할: hoiBot Server는 Iris의 HTTP/WebSocket 이벤트를 받아 명령과 게임 로직을 처리하고 Iris `/reply`로 응답한다.
@@ -168,6 +169,69 @@
 - 관리 원칙: 공통 구성·스크립트·마이그레이션은 저장소에서 관리하고, PC별 주소·토큰·비밀번호·식별자와 운영 데이터는 Git 밖에서 관리한다.
 - 적용 범위: Windows/Hyper-V/Linux/Docker/redroid/Iris/hoiBot Server/MariaDB 설치, 검증, 백업·복구 절차
 
+### DEC-018: hoiBot Server 상시 실행
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: hoiBot Server는 수동 필요 시 실행이 아니라 상시 실행되도록 구성한다.
+- 관리 원칙: 현재 PC에서는 자동 시작과 장애 재시작을 적용하고, 최종 운영 배치가 확정되면 동일 요구사항을 Windows 작업 스케줄러 또는 Linux/Docker 서비스 관리 방식으로 재현한다.
+- 적용 범위: Node.js 서버 시작, 장애 복구, PC 재부팅 후 자동 실행
+
+### DEC-019: 중앙 서버와 외부 관리·연동 확장
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: 기존 JavaScript + JSON 기반 hoiBot 기능과 데이터를 hoiBot Server로 점진적으로 이전한다.
+- 관리 기능: 별도 관리 홈페이지에서 hoiBot Server API를 통해 게임·운영 데이터를 조회하고 변경할 수 있어야 한다.
+- 외부 연동: Discord 및 기타 외부 API를 동일한 hoiBot Server의 연동 계층을 통해 연결할 수 있어야 한다.
+- 경계 원칙: 관리 홈페이지와 외부 연동은 MariaDB에 직접 접속하지 않고, 인증·권한·검증·감사 기록을 적용한 서버 API를 사용한다.
+- 적용 범위: 서버 모듈 경계, MariaDB 스키마, 관리자 API, 관리 홈페이지, Discord 및 외부 API adapter, 기존 JSON 데이터 이전
+
+### DEC-020: 기존 JSON 기반 확장형 RDB 설계
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: MariaDB 스키마는 현재 hoiBot JSON 데이터와 실제 저장 흐름을 기준으로 설계하되, JSON 파일별 복제 테이블이 아니라 확장 가능한 도메인별 관계형 모델로 구성한다.
+- 식별 원칙: 닉네임 대신 내부 식별자를 기준으로 하고 KakaoTalk, Discord, 관리자 계정 및 기타 외부 식별자는 별도 매핑한다.
+- 데이터 원칙: 재화·아이템·소유권 변경은 트랜잭션과 원장·감사 기록을 적용하며, JSON 컬럼은 과도기 데이터 또는 구조가 실제로 가변적인 메타데이터에만 제한한다.
+- 공통화 원칙: 코드에 하드코딩된 공유 상태·유형·사유 코드는 공통코드로, 속성과 관계가 있는 아이템·스킬·재화 등은 전용 도메인 카탈로그로, 운영 중 조정할 수 있는 제한·확률·보상은 검증·버전·적용시점을 갖는 설정으로 분리한다.
+- 적용 범위: 기존 JSON 분석, MariaDB 논리·물리 설계, 데이터 이전, 관리 홈페이지와 외부 연동 확장
+
+### DEC-021: 별도 환경 완성 후 Iris 일괄 운영 전환
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: 기능 구현과 검증은 `feature/modernization`의 별도 테스트 환경에서 수직 기능 단위로 진행하되, 운영 전환은 전체 기능 검증 후 기존 Rhino를 중단하고 Iris 서버로 일괄 수행한다.
+- 전환 절차: 최종 JSON 스냅샷과 checksum 생성, Rhino 변경 동결, MariaDB import/reconciliation, Rhino 중단, Iris 연결, 읽기 전용 smoke, mutation 일괄 활성화 순서로 진행한다.
+- 롤백: mutation 활성화 전에는 JSON/Rhino로 복귀할 수 있다. mutation 활성화 후에는 이전 서버 이미지 또는 MariaDB backup/point-in-time 복구만 사용하며 오래된 JSON으로 역전환하지 않는다.
+- 적용 범위: 구현 순서, 테스트 환경, 운영 전환, 롤백
+
+### DEC-022: 서버 애플리케이션·DB 접근 구조
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: 서버 구조는 `Controller/Adapter -> Application Service -> Domain Policy -> Repository -> MariaDB`로 구성한다.
+- DB 접근: MariaDB Connector와 파라미터 SQL을 사용하고 ORM은 도입하지 않는다.
+- 경계 원칙: Iris, 관리자 홈페이지, Discord와 외부 API는 동일한 Application Service를 사용한다.
+- 적용 범위: hoiBot Server 모듈, 트랜잭션, API와 외부 adapter
+
+### DEC-023: 첫 수직 기능과 관리자 기반
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: 첫 읽기 수직 기능은 기존 출력 전체를 재현하는 KakaoTalk `/내정보`이며, 첫 변경 기능은 관리자 `/서버이동`이다.
+- 관리 순서: 관리자 API를 먼저 구현하고 관리 화면은 React + Vite SPA로 후속 구축한다.
+- 인증: 첫 관리 기능은 로컬 운영자 계정, Argon2id 비밀번호, DB 세션과 RBAC를 사용한다. 일반 사용자 HTTP 로그인은 이번 범위에서 제외한다.
+- 적용 범위: profile read model, 관리자 인증·조회·서버 변경 API, 관리 홈페이지
+
+### DEC-024: 재현 가능한 최종 배치
+
+- 결정일: 2026-08-04
+- 상태: `ACTIVE`
+- 결정: 기본 운영 배치는 Hyper-V Ubuntu의 Docker Compose에 hoiBot Server와 MariaDB를 함께 배치하고 redroid는 별도 service boundary로 유지한다.
+- 재현 기준: 집 PC와 운영 PC는 동일 image digest, migration version과 `.env` key contract를 사용한다.
+- 적용 범위: Docker image, Compose, 백업·복구와 PC 간 재구축
+
 ## 대체된 결정
 
-`DEC-012`, `DEC-013`, `DEC-014`는 후속 이미지 전달 결정으로 대체됐다.
+`DEC-006`은 `DEC-021`로 대체됐다. `DEC-012`, `DEC-013`, `DEC-014`는 후속 이미지 전달 결정으로 대체됐다.

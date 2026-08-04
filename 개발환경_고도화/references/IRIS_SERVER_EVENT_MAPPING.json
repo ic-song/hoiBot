@@ -1,38 +1,203 @@
 {
-  "schemaVersion": 1,
-  "updatedAt": "2026-08-03",
-  "purpose": "Reference mapping for implementing the hoiBot Server Iris event normalization layer.",
+  "schemaVersion": 2,
+  "updatedAt": "2026-08-04",
+  "purpose": "Machine-readable metadata and event mapping for the hoiBot Server Iris normalization layer.",
+  "sourceTable": "db1.chat_logs",
   "sourcePayload": "Iris HTTP/WebSocket payload",
+  "metadataDocument": "KAKAOTALK_DB_SCHEMA_INVENTORY.md",
   "validationDocument": "IRIS_EVENT_CAPABILITY_MATRIX.md",
   "sourceReferences": [
     "https://github.com/dolidolih/Iris/blob/main/app/src/main/java/party/qwer/iris/ObserverHelper.kt",
+    "https://github.com/dolidolih/Iris/blob/main/app/src/main/java/party/qwer/iris/KakaoDB.kt",
     "https://github.com/dolidolih/irispy-client/blob/main/iris/bot/__init__.py",
-    "https://kbotdocs.dev/reference/iris/Endpoint/ws"
+    "https://kbotdocs.dev/reference/iris/Endpoint/ws",
+    "https://kbotdocs.dev/reference/iris/Endpoint/query"
   ],
   "privacy": {
     "storeExampleIdentityValues": false,
-    "storeExampleMessageBodies": false
+    "storeExampleMessageBodies": false,
+    "storeExampleRoomLabels": false,
+    "storeExampleMediaUrls": false,
+    "diagnosticAllowList": [
+      "json.type",
+      "parsed.v.origin",
+      "parsed.v.isMine",
+      "field_names",
+      "parse_status",
+      "normalization_status"
+    ]
   },
   "implementationPolicy": {
-    "live_confirmed": "Safe to implement against the observed field shape, with fallback handling.",
-    "upstream_confirmed": "Implement with upstream behavior tests.",
-    "db_confirmed": "Create a raw/probe handler until a dedicated live payload test passes.",
-    "unverified": "Do not enable production behavior; log only type/origin/field names in test mode.",
+    "live_confirmed": "Implement against the observed shape with validation and fallback handling.",
+    "upstream_confirmed": "Implement with upstream behavior tests and retain an unknown fallback.",
+    "db_confirmed": "Keep a raw/probe handler until a dedicated live payload test passes.",
+    "unverified": "Do not enable production behavior; record only approved metadata in test mode.",
     "not_direct": "Requires a separate table observer or snapshot-diff adapter."
   },
+  "rawPayloadShape": {
+    "topLevelFields": {
+      "msg": "Decrypted message text or empty string.",
+      "room": "Mutable room display label; never an identity key.",
+      "sender": "Mutable sender display label resolved by Iris; never an identity key.",
+      "json": "Source chat_logs row with string-safe values."
+    },
+    "jsonEncodedStringFields": [
+      "json.v",
+      "json.attachment",
+      "json.supplement",
+      "json.message for raw/system events"
+    ],
+    "stringSafeFields": [
+      "json._id",
+      "json.id",
+      "json.chat_id",
+      "json.thread_id",
+      "json.user_id",
+      "json.created_at",
+      "json.deleted_at",
+      "json.client_message_id",
+      "json.prev_id",
+      "json.referer"
+    ],
+    "parseOrder": [
+      "Validate top-level payload object.",
+      "Preserve provider identifiers as strings.",
+      "Parse json.v once into parsed.v.",
+      "Parse json.attachment once into parsed.attachment when non-empty.",
+      "Parse json.supplement once into parsed.supplement when non-empty.",
+      "For type 0 only, parse json.message into parsed.systemMessage when it is valid JSON.",
+      "Route any unsupported or failed shape to iris.unknown without stopping ingestion."
+    ]
+  },
+  "chatLogColumns": [
+    {
+      "column": "_id",
+      "sqliteType": "INTEGER PRIMARY KEY",
+      "canonicalField": "sourceCursor",
+      "handling": "local_cursor_only",
+      "notes": ["Resets when KakaoTalk application data is reset."]
+    },
+    {
+      "column": "id",
+      "sqliteType": "INTEGER NOT NULL",
+      "canonicalField": "providerEventId",
+      "handling": "decimal_string"
+    },
+    {
+      "column": "type",
+      "sqliteType": "INTEGER",
+      "canonicalField": "messageType",
+      "handling": "integer_code",
+      "notes": ["Classify with parsed v.origin, never by type alone."]
+    },
+    {
+      "column": "chat_id",
+      "sqliteType": "INTEGER NOT NULL",
+      "canonicalField": "roomId",
+      "handling": "sensitive_decimal_string"
+    },
+    {
+      "column": "thread_id",
+      "sqliteType": "INTEGER",
+      "canonicalField": "threadId",
+      "handling": "nullable_decimal_string"
+    },
+    {
+      "column": "scope",
+      "sqliteType": "INTEGER",
+      "canonicalField": "sourceScope",
+      "handling": "raw_integer"
+    },
+    {
+      "column": "user_id",
+      "sqliteType": "INTEGER",
+      "canonicalField": "senderId",
+      "handling": "sensitive_decimal_string"
+    },
+    {
+      "column": "message",
+      "sqliteType": "TEXT",
+      "canonicalField": "messageTextOrSystemPayload",
+      "handling": "iris_decrypt_then_type_aware_parse"
+    },
+    {
+      "column": "attachment",
+      "sqliteType": "TEXT",
+      "canonicalField": "attachment",
+      "handling": "iris_decrypt_then_json_parse"
+    },
+    {
+      "column": "created_at",
+      "sqliteType": "INTEGER",
+      "canonicalField": "sourceCreatedAt",
+      "handling": "raw_timestamp_string"
+    },
+    {
+      "column": "deleted_at",
+      "sqliteType": "INTEGER",
+      "canonicalField": "sourceDeletedAt",
+      "handling": "nullable_or_zero_timestamp_string"
+    },
+    {
+      "column": "client_message_id",
+      "sqliteType": "INTEGER",
+      "canonicalField": "clientMessageId",
+      "handling": "nullable_decimal_string"
+    },
+    {
+      "column": "prev_id",
+      "sqliteType": "INTEGER",
+      "canonicalField": "previousProviderEventId",
+      "handling": "nullable_decimal_string"
+    },
+    {
+      "column": "referer",
+      "sqliteType": "INTEGER",
+      "canonicalField": "referencedProviderEventId",
+      "handling": "nullable_or_zero_decimal_string"
+    },
+    {
+      "column": "supplement",
+      "sqliteType": "TEXT",
+      "canonicalField": "supplement",
+      "handling": "optional_json_parse"
+    },
+    {
+      "column": "v",
+      "sqliteType": "TEXT",
+      "canonicalField": "transportMetadata",
+      "handling": "required_json_parse"
+    }
+  ],
   "canonicalFields": {
-    "eventId": ["json.id", "json._id"],
+    "sourceCursor": ["json._id"],
+    "providerEventId": ["json.id"],
     "roomId": ["json.chat_id"],
     "roomName": ["room"],
     "senderId": ["json.user_id"],
     "senderName": ["sender"],
+    "threadId": ["json.thread_id"],
     "messageText": ["msg", "json.message"],
     "messageType": ["json.type"],
-    "origin": ["json.v.origin"],
-    "isMine": ["json.v.isMine"],
-    "createdAt": ["json.created_at"],
-    "attachment": ["json.attachment"],
-    "supplement": ["json.supplement"]
+    "origin": ["parsed.v.origin"],
+    "isMine": ["parsed.v.isMine"],
+    "sourceCreatedAt": ["json.created_at"],
+    "sourceDeletedAt": ["json.deleted_at"],
+    "clientMessageId": ["json.client_message_id"],
+    "previousProviderEventId": ["json.prev_id"],
+    "referencedProviderEventId": ["json.referer"],
+    "attachment": ["parsed.attachment"],
+    "supplement": ["parsed.supplement"],
+    "systemMessage": ["parsed.systemMessage"]
+  },
+  "identityPolicy": {
+    "defaultMembershipKey": ["roomId", "senderId"],
+    "providerIdsAreStrings": true,
+    "displayLabelsAreMutable": true,
+    "senderNameIsIdentity": false,
+    "roomNameIsIdentity": false,
+    "openChatMayRequireAdditionalContext": ["link_id", "profile_link_id"],
+    "nameCacheWarning": "Iris /data/local/tmp/names.db can retain prior-account display labels after KakaoTalk application data is reset."
   },
   "upstreamSuppressedOrigins": [
     "SYNCMSG",
@@ -55,10 +220,11 @@
       "match": {
         "type": [26],
         "origin": ["MSG", "WRITE"],
-        "requiredPaths": ["json.attachment.src_logId"]
+        "requiredPaths": ["parsed.attachment.src_logId"]
       },
       "normalizedEvent": "message.created",
-      "normalizedKind": "reply"
+      "normalizedKind": "reply",
+      "sensitivePaths": ["parsed.attachment.src_message"]
     },
     {
       "id": "message.edited",
@@ -69,7 +235,13 @@
       },
       "normalizedEvent": "message.edited",
       "normalizedKind": "raw_update",
-      "notes": ["Confirm target log ID and edited content fields with a dedicated live test."]
+      "observedPaths": [
+        "parsed.systemMessage.logId",
+        "parsed.systemMessage.feedType",
+        "parsed.systemMessage.hidden",
+        "parsed.systemMessage.targetRevision"
+      ],
+      "notes": ["Keep disabled for production mutation until a dedicated live edit test confirms correlation and content semantics."]
     },
     {
       "id": "message.deleted",
@@ -80,7 +252,12 @@
       },
       "normalizedEvent": "message.deleted",
       "normalizedKind": "raw_delete",
-      "candidatePaths": ["json.message.logId", "json.message.feedType", "json.message.hidden", "json.message.byHost"]
+      "candidatePaths": [
+        "parsed.systemMessage.logId",
+        "parsed.systemMessage.feedType",
+        "parsed.systemMessage.hidden",
+        "parsed.systemMessage.byHost"
+      ]
     },
     {
       "id": "message.rewritten",
@@ -111,7 +288,7 @@
       },
       "normalizedEvent": "member.departed",
       "normalizedKind": "membership",
-      "notes": ["Do not classify as voluntary leave or kick until separate live tests identify a stable discriminator."]
+      "notes": ["Do not classify as voluntary leave or kick until a stable discriminator is live-confirmed."]
     },
     {
       "id": "media.image",
@@ -119,44 +296,58 @@
       "match": {
         "type": [2],
         "origin": ["MSG", "WRITE"],
-        "requiredPaths": ["json.attachment.url", "json.v.isMine"]
+        "requiredPaths": ["parsed.attachment.url", "parsed.v.isMine"]
       },
       "normalizedEvent": "message.created",
       "normalizedKind": "image",
       "observedPaths": [
-        "json.attachment.url",
-        "json.attachment.thumbnailUrl",
-        "json.attachment.w",
-        "json.attachment.h",
-        "json.attachment.s",
-        "json.attachment.mt",
-        "json.attachment.expire"
+        "parsed.attachment.url",
+        "parsed.attachment.thumbnailUrl",
+        "parsed.attachment.w",
+        "parsed.attachment.h",
+        "parsed.attachment.s",
+        "parsed.attachment.mt",
+        "parsed.attachment.expire",
+        "parsed.attachment.thumbnailWidth",
+        "parsed.attachment.thumbnailHeight"
       ],
       "notes": [
-        "The attachment contains a transient URL rather than embedded image bytes.",
-        "Forward single images from any sender, but ignore events already in the target room to prevent forwarding loops.",
-        "Enforce trusted-host, image MIME, timeout, and byte limits before forwarding."
+        "The attachment contains a transient URL rather than embedded bytes.",
+        "Reject events already in the configured forwarding target room.",
+        "Enforce trusted-host, image MIME, timeout, and byte limits."
       ]
     },
     {
-      "id": "media.emoticon_candidate",
+      "id": "media.type_3_unknown",
       "status": "unverified",
+      "match": {
+        "type": [3]
+      },
+      "normalizedEvent": "iris.unknown",
+      "normalizedKind": "unknown_media",
+      "observedAttachmentKeys": ["url", "urlh", "w", "h", "s", "cs", "csh", "d", "dh", "hh", "sh", "wh", "tk", "tkh", "expire"]
+    },
+    {
+      "id": "media.emoticon_candidate",
+      "status": "db_confirmed",
       "match": {
         "type": [12],
         "origin": ["MSG", "WRITE"]
       },
       "normalizedEvent": "message.created",
-      "normalizedKind": "emoticon_candidate"
+      "normalizedKind": "emoticon_candidate",
+      "observedAttachmentKeys": ["path", "kid", "alt", "name", "emoticonItemPath"]
     },
     {
       "id": "media.file_candidate",
-      "status": "unverified",
+      "status": "db_confirmed",
       "match": {
         "type": [20],
         "origin": ["MSG", "WRITE"]
       },
       "normalizedEvent": "message.created",
-      "normalizedKind": "file_candidate"
+      "normalizedKind": "file_candidate",
+      "notes": ["Historical database evidence only; require a current live payload test."]
     },
     {
       "id": "media.multiple_images_candidate",
@@ -167,7 +358,7 @@
       },
       "normalizedEvent": "message.created",
       "normalizedKind": "multiple_images_candidate",
-      "candidatePaths": ["json.attachment.imageUrls"]
+      "candidatePaths": ["parsed.attachment.imageUrls"]
     },
     {
       "id": "media.type_71_unknown",
@@ -175,16 +366,17 @@
       "match": {
         "type": [71]
       },
-      "normalizedEvent": "message.created",
-      "normalizedKind": "unknown_media"
+      "normalizedEvent": "iris.unknown",
+      "normalizedKind": "unknown_media",
+      "observedAttachmentKeys": ["C", "K", "P"]
     },
     {
       "id": "message.type_72_unknown",
-      "status": "unverified",
+      "status": "db_confirmed",
       "match": {
         "type": [72]
       },
-      "normalizedEvent": "message.created",
+      "normalizedEvent": "iris.unknown",
       "normalizedKind": "unknown"
     }
   ],
@@ -192,7 +384,7 @@
     {
       "id": "message.direction",
       "status": "live_confirmed",
-      "readPaths": ["json.v.isMine"],
+      "readPaths": ["parsed.v.isMine"],
       "output": "direction",
       "mapping": {
         "true": "outgoing",
@@ -200,9 +392,23 @@
       }
     },
     {
+      "id": "membership.identity",
+      "status": "live_confirmed",
+      "readPaths": ["json.chat_id", "json.user_id"],
+      "output": "membershipKey",
+      "notes": ["Keep both values string-safe and scoped together."]
+    },
+    {
+      "id": "display.labels",
+      "status": "live_confirmed",
+      "readPaths": ["room", "sender"],
+      "output": "displayLabels",
+      "notes": ["Replaceable metadata only; never use as identity or uniqueness constraints."]
+    },
+    {
       "id": "message.mentions",
       "status": "live_confirmed",
-      "requiredPaths": ["json.attachment.mentions"],
+      "requiredPaths": ["parsed.attachment.mentions"],
       "itemPaths": {
         "start": "at",
         "length": "len",
@@ -213,24 +419,34 @@
     {
       "id": "message.bot_command",
       "status": "live_confirmed",
-      "requiredPaths": ["json.attachment.bot_command"],
-      "candidatePaths": ["json.attachment.bot_command.index", "json.attachment.bot_command.plusId", "json.attachment.bot_command.type"],
+      "requiredPaths": ["parsed.attachment.bot_command"],
+      "candidatePaths": [
+        "parsed.attachment.bot_command.index",
+        "parsed.attachment.bot_command.plusId",
+        "parsed.attachment.bot_command.type"
+      ],
       "output": "botCommand"
     },
     {
       "id": "message.reply_source",
       "status": "live_confirmed",
-      "requiredPaths": ["json.attachment.src_logId"],
-      "readPaths": ["json.attachment.src_linkId", "json.attachment.src_logId", "json.attachment.src_message", "json.attachment.src_type", "json.attachment.src_userId"],
+      "requiredPaths": ["parsed.attachment.src_logId"],
+      "readPaths": [
+        "parsed.attachment.src_linkId",
+        "parsed.attachment.src_logId",
+        "parsed.attachment.src_type",
+        "parsed.attachment.src_userId"
+      ],
+      "sensitivePaths": ["parsed.attachment.src_message"],
       "output": "replySource"
     },
     {
       "id": "message.thread_source",
       "status": "upstream_confirmed",
       "requiredValues": {
-        "json.attachment.src_isThread": true
+        "parsed.attachment.src_isThread": true
       },
-      "readPaths": ["json.attachment.src_logId"],
+      "readPaths": ["parsed.attachment.src_logId", "json.thread_id"],
       "output": "threadSource"
     }
   ],
@@ -238,8 +454,14 @@
     {
       "id": "profile.nickname_changed",
       "status": "not_direct",
-      "candidateTables": ["db2.open_chat_member", "db2.open_profile", "db2.friends"],
+      "candidateTables": ["db2.open_chat_member", "db2.open_profile", "db3.multi_profiles"],
       "strategy": "snapshot_diff_or_polling"
+    },
+    {
+      "id": "room.renamed",
+      "status": "not_direct",
+      "candidateTables": ["db1.chat_rooms"],
+      "strategy": "snapshot_diff_or_confirm_system_feed"
     },
     {
       "id": "member.kicked",
@@ -261,6 +483,12 @@
   "fallback": {
     "normalizedEvent": "iris.unknown",
     "storeRawPayload": false,
-    "testLogging": ["json.type", "json.v.origin", "field_names"]
+    "retainApprovedMetadata": [
+      "json.type",
+      "parsed.v.origin",
+      "parsed.v.isMine",
+      "field_names",
+      "parse_status"
+    ]
   }
 }

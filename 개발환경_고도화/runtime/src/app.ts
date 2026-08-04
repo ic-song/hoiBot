@@ -1,25 +1,23 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
+import cookie from "@fastify/cookie";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
 import type { DatabaseClient } from "./database.js";
 import { RecentEventStore } from "./recent-events.js";
+import { ApplicationError } from "./shared/application-error.js";
+import { normalizeIrisEvent, type IrisPayload } from "./integration/iris-normalizer.js";
+import { ProcessIrisEventService, recordOutboxDelivery } from "./integration/event-processing-service.js";
+import { AdminAuthService } from "./admin/auth-service.js";
+import { registerAdminRoutes } from "./admin/routes.js";
+import { MariaProfileRepository } from "./player/maria-profile-repository.js";
+import { ChangePlayerServerService } from "./player/change-player-server-service.js";
+import { GetMyProfileService } from "./player/get-my-profile-service.js";
+import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
+import { AdminDirectoryService } from "./admin/directory-service.js";
+import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
 
 interface TokenQuery {
   token?: string;
-}
-
-interface IrisPayload {
-  msg?: unknown;
-  room?: unknown;
-  sender?: unknown;
-  json?: {
-    chat_id?: unknown;
-    type?: unknown;
-    v?: unknown;
-    attachment?: unknown;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
 }
 
 interface IrisTextReply {
@@ -252,6 +250,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((reply: IrisImageReply) => sendIrisImageReply(config, reply));
   const database = dependencies.database;
 
+  void app.register(cookie);
+  if (database !== undefined) {
+    const profiles = new MariaProfileRepository(database);
+    void registerAdminRoutes(app, {
+      auth: new AdminAuthService(database),
+      profiles,
+      changePlayerServer: new ChangePlayerServerService(database),
+      directory: new AdminDirectoryService(database),
+      secureCookies: config.nodeEnv === "production"
+    });
+  }
+
   app.addHook("onClose", async () => {
     await database?.close();
   });
@@ -271,12 +281,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     );
   });
 
-  app.setErrorHandler(async (error: FastifyError, request, reply) => {
-    const statusCode = error.statusCode === 413 ? 413 : (error.statusCode ?? 500);
-    const code = statusCode === 413 ? "PAYLOAD_TOO_LARGE" : "INTERNAL_SERVER_ERROR";
-    const message = statusCode === 413
-      ? `요청 본문은 ${config.bodyLimitBytes}바이트를 초과할 수 없습니다.`
-      : "서버가 요청을 처리하지 못했습니다.";
+  app.setErrorHandler(async (error: FastifyError | ApplicationError, request, reply) => {
+    const isApplicationError = error instanceof ApplicationError;
+    const statusCode = isApplicationError ? error.statusCode
+      : error.statusCode === 413 ? 413 : (error.statusCode ?? 500);
+    const code = isApplicationError ? error.code
+      : statusCode === 413 ? "PAYLOAD_TOO_LARGE" : "INTERNAL_SERVER_ERROR";
+    const message = isApplicationError ? error.message
+      : statusCode === 413 ? `요청 본문은 ${config.bodyLimitBytes}바이트를 초과할 수 없습니다.`
+        : "서버가 요청을 처리하지 못했습니다.";
 
     request.log.error({ requestId: request.id, err: error }, "request.failed");
     await reply.code(statusCode).send({ ok: false, error: { code, message }, requestId: request.id });
@@ -347,7 +360,62 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         });
       }
 
-      if (request.body.msg === "/ping") {
+      const normalizedEvent = normalizeIrisEvent(request.body);
+      const eventProcessor = database === undefined ? undefined : new ProcessIrisEventService(database);
+      const processing = eventProcessor === undefined
+        ? undefined
+        : await eventProcessor.execute(normalizedEvent);
+
+      if (processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const profile = await new GetMyProfileService(new MariaProfileRepository(database!))
+            .execute("kakao", normalizedEvent.userId);
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            "my_profile",
+            formatLegacyMyProfile(profile)
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "IDENTITY_MAPPING_REQUIRED") {
+            request.log.warn({ requestId: request.id }, "iris.profile.identity_mapping_required");
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (processing !== undefined && !processing.duplicate && normalizedEvent.message?.startsWith("/서버이동 ")
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new IrisAdminCommandService(database!).changePlayerServer({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "change_player_server", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (processing !== undefined) {
+        for (const pendingReply of processing.replies) {
+          try {
+            await replyToIris({ room: pendingReply.room, data: pendingReply.data });
+            await recordOutboxDelivery(database!, pendingReply.outboxId, { ok: true });
+            request.log.info({ requestId: request.id }, "iris.outbox_reply.sent");
+          } catch (error) {
+            await recordOutboxDelivery(database!, pendingReply.outboxId, { ok: false, errorCode: "IRIS_REPLY_FAILED" });
+            request.log.error({ requestId: request.id, err: error }, "iris.outbox_reply.failed");
+          }
+        }
+      } else if (request.body.msg === "/ping") {
         const sender = typeof request.body.sender === "string" ? request.body.sender.trim() : "";
         const rawChatId = request.body.json?.chat_id;
         const chatId = typeof rawChatId === "string" || typeof rawChatId === "number"
@@ -380,7 +448,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      return reply.code(202).send({ ok: true, accepted: true, requestId: request.id });
+      return reply.code(202).send({
+        ok: true,
+        accepted: true,
+        duplicate: processing?.duplicate ?? false,
+        requestId: request.id
+      });
     }
   );
 

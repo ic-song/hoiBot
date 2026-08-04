@@ -1,117 +1,167 @@
 # Iris Event Capability Matrix
 
-This document records event-detection evidence for the selected redroid + KakaoTalk + Iris environment. It does not store message bodies, room names, sender names, chat IDs, user IDs, or authentication values.
+Updated: 2026-08-04
 
-This document is the validation/evidence record. The machine-readable reference for implementing the hoiBot Server normalizer is `IRIS_SERVER_EVENT_MAPPING.json`. Update evidence here first, then update only the affected mapping entries.
+This document records event-detection evidence for the selected redroid + KakaoTalk + Iris environment. It does not store message bodies, room names, sender names, chat IDs, user IDs, authentication values, or media URLs.
+
+This is the validation/evidence record. `KAKAOTALK_DB_SCHEMA_INVENTORY.md` defines the `chat_logs` metadata, and `IRIS_SERVER_EVENT_MAPPING.json` is the machine-readable server-normalizer contract. Update evidence here before promoting a mapping status.
 
 ## Status Definitions
 
 | Status | Meaning |
 | --- | --- |
 | `LIVE_CONFIRMED` | Received by the running hoiBot Lite Server from Iris |
-| `DB_CONFIRMED` | Found in the current redroid KakaoTalk `chat_logs` history and covered by the Iris forwarding path |
-| `UPSTREAM_CONFIRMED` | Explicitly classified by the upstream Iris client |
-| `UNVERIFIED` | Plausible metadata or behavior, but a dedicated live test is still required |
-| `NOT_DIRECT` | The current Iris observer does not watch the table required for this change |
+| `DB_CONFIRMED` | Found in redroid `chat_logs` and covered by the Iris forwarding path |
+| `UPSTREAM_CONFIRMED` | Explicitly classified or parsed by the inspected Iris client/source |
+| `UNVERIFIED` | Plausible shape requiring a dedicated live test |
+| `NOT_DIRECT` | Requires a table observer or snapshot diff outside new `chat_logs` rows |
 
-## How Iris Detects Events
+## Detection and Forwarding Pipeline
 
-The inspected Iris implementation polls new rows from KakaoTalk's `chat_logs` table. Every new row is broadcast to WebSocket clients and sent to the configured HTTP endpoint except rows whose `v.origin` is `SYNCMSG` or `MCHATLOGS`.
+```text
+KakaoTalk writes chat_logs
+-> Iris polls rows after its local cursor
+-> Iris skips configured suppressed origins
+-> Iris decrypts message/attachment metadata
+-> Iris resolves mutable room/sender labels
+-> Iris broadcasts the raw row over WebSocket
+-> Iris POSTs the raw row to the configured HTTP endpoint
+-> hoiBot Server parses nested JSON strings
+-> hoiBot Server normalizes or quarantines the event
+```
 
-The upstream `irispy-client` exposes only these high-level classifications:
+The inspected Iris observer suppresses `SYNCMSG` and `MCHATLOGS`. Other origins are forwarded even when the high-level Iris client classifies them as `unknown`.
 
-| `v.origin` | High-level event |
+The upstream high-level event classification is limited to:
+
+| Parsed `v.origin` | Upstream event |
 | --- | --- |
 | `MSG` | `message` |
 | `NEWMEM` | `new_member` |
 | `DELMEM` | `del_member` |
-| Any other value | `unknown` |
+| Any other forwarded origin | `unknown` |
 
-The hoiBot Server therefore needs its own raw-event normalizer for edit, delete, rewrite, mention, and other system events.
+The hoiBot Server therefore needs its own raw-event normalizer for edits, deletions, rewrites, replies, mentions, media, and system events.
 
-## Requested Event Matrix
+## Raw Payload Parsing Contract
 
-| Event | Detection status | Current evidence | Server handling requirement |
+- `msg`, `room`, and `sender` are top-level Iris fields.
+- `json` contains the source `chat_logs` row.
+- IDs, timestamps, and type codes may arrive as strings and must remain string-safe.
+- `json.v`, `json.attachment`, and `json.supplement` are JSON-encoded strings when present.
+- `json.message` can contain JSON for `type=0` system events.
+- `json.v.origin` and similar paths in this document refer to post-parse adapter paths.
+- A nested-JSON parse failure must route to `iris.unknown`; it must not stop ingestion.
+
+## Event Matrix
+
+| Event | Status | Current evidence | Normalizer requirement |
 | --- | --- | --- | --- |
-| Plain text | `LIVE_CONFIRMED` | `type=1`, `origin=MSG`; current post-restart server sample received this shape | Normalize as a standard message |
-| Reply | `LIVE_CONFIRMED` | A current post-move server event observed `type=26`, `isMine=false`, and source fields `src_linkId`, `src_logId`, `src_message`, `src_type`, and `src_userId`; `src_isThread=false` | Link to the source log using attachment metadata |
-| Thread reply | `UPSTREAM_CONFIRMED` | Iris adds `src_logId` and `src_isThread=true` to `type=1` when `thread_id` or `supplement.threadId` is present | Normalize separately from a normal reply |
-| `@mention` | `LIVE_CONFIRMED` for bot mention | `type=1`, `origin=MSG`; live payload contained `attachment.mentions[].at`, `len`, and `user_id`, plus `attachment.bot_command` metadata | Normalize mentions from `attachment.mentions[]`; test another-member mention separately |
-| Message edit | `DB_CONFIRMED` | `type=0`, `origin=SYNCMODMSG`; 15 rows in the latest 10,000-log sample | Treat as a raw update event; confirm target log ID and edited text in a live test |
-| Message delete | `DB_CONFIRMED` | `type=0`, `origin=SYNCDLMSG`; 7 rows in the latest 10,000-log sample; one historical shape exposed `logId`, `feedType`, `hidden`, and `byHost` | Treat as a raw deletion event and correlate by target log ID |
-| Nickname change | `NOT_DIRECT` | Iris polls `chat_logs`, while current nickname data is queried from tables such as `open_chat_member`, `open_profile`, or `friends` | Add a separate snapshot/polling adapter if this feature is required |
-| Member join | `UPSTREAM_CONFIRMED` + `DB_CONFIRMED` | `type=0`, `origin=NEWMEM`; 45 rows in the latest 10,000-log sample; upstream event is `new_member` | Normalize as member join |
-| Member leave | `UPSTREAM_CONFIRMED` + `DB_CONFIRMED` | `type=0`, `origin=DELMEM`; 42 rows in the latest 10,000-log sample; upstream event is `del_member` | Normalize as member departure |
-| Member kick | `UNVERIFIED` | No separate high-level kick event exists; it may share `DELMEM` with voluntary departure | Run separate voluntary-leave and kick tests and compare raw payloads |
-| Room/profile rename | `NOT_DIRECT` or `UNVERIFIED` | No dedicated origin was identified; relevant state can live outside `chat_logs` | Poll relevant room/profile tables or confirm that KakaoTalk emits a system feed row |
-| Reaction/like | `NOT_DIRECT` or `UNVERIFIED` | No reaction origin appeared in the inspected sample and reactions may use a separate table | Inspect schema and run a dedicated reaction test |
-| Read status | `NOT_DIRECT` | The current observer forwards new `chat_logs` rows, not read-state changes | Requires a separate read-state observer if needed |
-| Single image | `LIVE_CONFIRMED` | `type=2`, `origin=MSG`, `isMine=false`; attachment contained the original/thumbnail URLs, dimensions, size, media type, and expiry metadata; a ranged GET returned `image/png` bytes | Treat the Kakao CDN URL as transient input; enforce host, MIME, timeout, and byte limits before forwarding |
+| Plain text | `LIVE_CONFIRMED` | `type=1`, `origin=MSG`; exact `/ping` repeatedly received | Normalize as `message.created/text` |
+| Outgoing text | `LIVE_CONFIRMED` | `type=1`, `origin=WRITE`, parsed `isMine=true`; pong response re-observed | Normalize direction as outgoing and prevent response loops |
+| Reply | `LIVE_CONFIRMED` | `type=26`; `src_logId`, `src_userId`, `src_type`, `src_message`, optional `src_linkId`/`src_spoilers` | Correlate to provider log ID; treat embedded source text as sensitive |
+| Thread reply | `UPSTREAM_CONFIRMED` | Upstream handling uses thread metadata and `src_isThread=true`; no current post-switch row | Keep separate from ordinary reply until live-confirmed |
+| `@mention` | `LIVE_CONFIRMED` for bot mention | Prior live payload contained `mentions[].at`, `len`, `user_id`, and bot-command metadata | Normalize mention ranges and target IDs; test another-member mention separately |
+| Message edit | `DB_CONFIRMED` | Current `type=0`, `origin=SYNCMODMSG` row exposed `logId`, `feedType`, `hidden`, `targetRevision` field names | Correlate by target log ID; live edited-content behavior still required |
+| Message delete | `DB_CONFIRMED` | Pre-switch history contained `type=0`, `origin=SYNCDLMSG` with target-log metadata | Keep raw-delete mapping until a post-switch live test passes |
+| Rewrite sync | `DB_CONFIRMED` | Pre-switch history contained `type=0`, `origin=SYNCREWR` | Preserve as raw rewrite until dedicated live correlation |
+| Member join | `UPSTREAM_CONFIRMED` + `DB_CONFIRMED` | Pre-switch rows contained `type=0`, `origin=NEWMEM`; upstream event is `new_member` | Normalize as membership join |
+| Member leave | `UPSTREAM_CONFIRMED` + `DB_CONFIRMED` | Pre-switch rows contained `type=0`, `origin=DELMEM`; upstream event is `del_member` | Normalize as generic departure |
+| Member kick | `UNVERIFIED` | No separate high-level event; may share `DELMEM` | Compare voluntary leave and kick payloads before classification |
+| Nickname/profile change | `NOT_DIRECT` | State is stored in profile/member tables and Iris name cache; no guaranteed new log row | Use a separate snapshot-diff adapter if required |
+| Room rename | `NOT_DIRECT` or `UNVERIFIED` | Relevant state can live outside `chat_logs`; no dedicated confirmed origin | Poll room state or confirm a system-feed row |
+| Reaction/like | `NOT_DIRECT` or `UNVERIFIED` | Separate reaction tables exist; no confirmed forwarded origin | Inspect the reaction table and run a dedicated test |
+| Read state | `NOT_DIRECT` | Read-state changes do not require a new `chat_logs` row | Requires a separate observer |
+| Single image | `LIVE_CONFIRMED` | `type=2`; attachment field names include URL, thumbnail, dimensions, size, MIME/media and expiry metadata | Treat URLs as transient; enforce host, MIME, timeout, and byte limits |
+| Multiple images | `UPSTREAM_CONFIRMED` + `DB_CONFIRMED` | Pre-switch `type=27`; upstream parser expects `imageUrls` | Keep disabled until a live payload test confirms all URLs and limits |
+| Emoticon/sticker | `DB_CONFIRMED` | Current `type=12`; attachment keys include `path`, `kid`, `alt`, `name`, `emoticonItemPath` | Keep as candidate until a live event is isolated |
+| File | `DB_CONFIRMED` | Pre-switch `type=20`; no current post-switch row | Keep disabled until filename, size, URL, expiry, and MIME are live-confirmed |
+| Opaque media type `3` | `UNVERIFIED` | Current attachment exposes abbreviated media fields including URL, dimensions, duration-like and thumbnail-like keys | Do not assign production behavior |
+| Opaque media type `71` | `UNVERIFIED` | Current attachment contains opaque `C`, `K`, `P` keys | Do not assign production behavior |
+| Unknown type `72` | `DB_CONFIRMED` | Present in pre-switch history; exact semantics unknown | Route to `iris.unknown` |
 
-## Observed Message Types
+## Message-Type Reference
 
-The current redroid sample and prior Lite Server evidence contained the following message types. Names marked as candidates still require a dedicated live payload test.
+| Type | Working classification | Status basis |
+| ---: | --- | --- |
+| `0` | Raw/system event container; classify by origin and decoded message shape | DB/upstream evidence |
+| `1` | Text/standard message family | Live evidence |
+| `2` | Single image | Live evidence |
+| `3` | Opaque media candidate | Current DB field-name evidence only |
+| `12` | Emoticon/sticker candidate | Current DB field-name evidence only |
+| `20` | File candidate | Historical DB evidence only |
+| `26` | Reply | Live evidence |
+| `27` | Multiple-image candidate | Historical DB + upstream evidence |
+| `71` | Opaque media/gift-style candidate | Current DB field-name evidence only |
+| `72` | Unknown | Historical DB evidence only |
 
-| Type | Observed evidence | Working classification |
-| --- | --- | --- |
-| `0` | Origins include `NEWMEM`, `DELMEM`, `SYNCMODMSG`, `SYNCDLMSG`, `SYNCREWR`, and a system-like `MSG` payload | System/raw event container |
-| `1` | Dominant `MSG` and `WRITE` rows | Plain text or thread text |
-| `2` | Live server payload contained a downloadable Kakao CDN URL plus image metadata | Single image |
-| `12` | Live pre-restart payload contained emoticon-related attachment keys | Emoticon/sticker candidate |
-| `20` | Present in redroid history | File candidate; live payload test required |
-| `26` | Current live payload contained source-message fields and `src_isThread=false` | Reply |
-| `27` | Present in redroid history; upstream model reads `imageUrls` | Multiple-image candidate |
-| `71` | Upstream model reads nested image thumbnails | Media/gift-style payload; exact classification required |
-| `72` | Present in redroid history | Unknown; dedicated payload test required |
+## Current Post-Switch Snapshot
 
-## Current Redroid Evidence
+KakaoTalk application data was reset for an account switch on 2026-08-04. The new database contained 124 `chat_logs` rows at validation time.
 
-The latest 1,000-row aggregate contained:
+| Type/origin | Rows | Observer treatment |
+| --- | ---: | --- |
+| `1 / MSG` | 68 | Forwarded |
+| `1 / MCHATLOGS` | 25 | Suppressed |
+| `1 / WRITE` | 13 | Forwarded |
+| `2 / MSG` | 3 | Forwarded |
+| `26 / MSG` | 3 | Forwarded |
+| `0 / MCHATLOGS` | 2 | Suppressed |
+| `2 / MCHATLOGS` | 2 | Suppressed |
+| `3 / MCHATLOGS` | 2 | Suppressed |
+| `26 / MCHATLOGS` | 2 | Suppressed |
+| `0 / SYNCMODMSG` | 1 | Forwarded as raw/unknown upstream |
+| `12 / MSG` | 1 | Forwarded |
+| `71 / MSG` | 1 | Forwarded as unknown upstream |
+| `71 / MCHATLOGS` | 1 | Suppressed |
 
-| Type/origin | Count |
+Direction from parsed `v.isMine`:
+
+| Origin/direction | Rows |
 | --- | ---: |
-| `1 / MSG` | 955 |
-| `1 / WRITE` | 17 |
-| `2 / MSG` | 10 |
-| `26 / MSG` | 5 |
-| `20 / MSG` | 3 |
-| `0 / NEWMEM` | 2 |
-| `0 / DELMEM` | 2 |
-| `0 / SYNCMODMSG` | 2 |
-| `12 / MSG` | 2 |
-| `27 / MSG` | 1 |
-| `72 / MSG` | 1 |
+| `MSG / incoming` | 76 |
+| `WRITE / outgoing` | 13 |
+| `MCHATLOGS / incoming` | 29 |
+| `MCHATLOGS / outgoing` | 5 |
+| `SYNCMODMSG / incoming` | 1 |
 
-The latest 10,000-row nonstandard-origin aggregate contained:
+## Historical Pre-Switch Evidence
 
-| Type/origin | Count |
-| --- | ---: |
-| `0 / NEWMEM` | 45 |
-| `0 / DELMEM` | 42 |
-| `0 / SYNCMODMSG` | 15 |
-| `0 / SYNCDLMSG` | 7 |
-| `0 / SYNCREWR` | 2 |
+The prior account database supplied broader event coverage before application-data reset:
 
-These are historical database observations, not a guarantee that every field is stable across KakaoTalk or Iris versions.
+- latest 10,000-row sample: `NEWMEM` 45, `DELMEM` 42, `SYNCMODMSG` 15, `SYNCDLMSG` 7, `SYNCREWR` 2;
+- live server evidence: plain text, exact `/ping`, reply, bot mention, single image, and outgoing pong;
+- historical type coverage: `20`, `27`, `72`, `16385`, and `16386` in addition to current types.
+
+Historical evidence remains useful for capability planning but is not presented as the current account's row count.
+
+## Sender Identity and Name-Cache Limitation
+
+- The server currently uses the `sender` value supplied by Iris for `/ping` response text.
+- Iris keeps a separate display-name cache at `/data/local/tmp/names.db`; clearing KakaoTalk application data does not clear it.
+- After the account switch, the same message `user_id` was initially emitted with a previous-account display label and later emitted with the current display label after notification polling refreshed the cache.
+- Therefore server identity must use stable provider IDs with room context, normally `(chat_id, user_id)`.
+- `sender` is replaceable display metadata and must never be the sole user key.
+- A safe cache reset/rebuild procedure remains unverified; do not delete the cache automatically in normal operation.
 
 ## Dedicated Test Checklist
 
-Use a separate KakaoTalk test room and capture one event at a time:
+Use a separate test room and isolate one action at a time:
 
-1. Plain text and exact `/ping`.
-2. Reply to a text message.
-3. Thread reply where supported.
-4. `@mention` of another member; bot mention is already live-confirmed.
-5. Edit a previously sent message.
-6. Delete a previously sent message.
-7. Join with a test account.
-8. Voluntary leave with a test account.
-9. Rejoin and kick the same test account.
-10. Change an open-chat nickname.
-11. Send multiple images, a file, and an emoticon; one image is already live-confirmed.
-12. Add/remove a reaction if the current KakaoTalk room supports it.
+1. Another-member mention.
+2. Message edit and target-log correlation.
+3. Message deletion and target-log correlation.
+4. Member join.
+5. Voluntary leave.
+6. Rejoin and kick the same test account.
+7. Open-chat nickname change.
+8. Multiple images.
+9. File.
+10. Emoticon/sticker.
+11. Reaction add/remove.
+12. WebSocket `/ws` delivery for the same event IDs seen over HTTP.
 
-For each test, record only the type, origin, field names, correlation behavior, and pass/fail result. Do not store message text or identity values.
+For each test, record only type, origin, field names, correlation behavior, direction, and pass/fail status. Do not store content or identity values.
 
 ## Sources
 
@@ -119,3 +169,4 @@ For each test, record only the type, origin, field names, correlation behavior, 
 - [Iris `KakaoDB.kt`](https://github.com/dolidolih/Iris/blob/main/app/src/main/java/party/qwer/iris/KakaoDB.kt)
 - [irispy-client event classification](https://github.com/dolidolih/irispy-client/blob/main/iris/bot/__init__.py)
 - [KBotDocs Iris WebSocket payload](https://kbotdocs.dev/reference/iris/Endpoint/ws)
+- [KBotDocs Iris query endpoint](https://kbotdocs.dev/reference/iris/Endpoint/query)
