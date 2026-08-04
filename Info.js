@@ -1755,6 +1755,24 @@ function generateElementalRanking(petData, members) {
 	};
 }
 
+// 장착 홈뱃지의 실제 큐브 옵션 수치를 회원 데이터에서 반환하는 함수
+function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+	var member = data && data.member ? data.member[user] : null;
+	var store = member && member.homeBadgeCube && typeof member.homeBadgeCube === "object" ? member.homeBadgeCube : null;
+	if (!store || !store.equippedBadgeId || !store.badges || !store.badges[store.equippedBadgeId]) return 0;
+	var record = store.badges[store.equippedBadgeId];
+	var optionKeys = ["castle", "raid", "petUpgrade", "explore"];
+	var allMax = true;
+	for (var i = 0; i < optionKeys.length; i++) {
+		if ((parseFloat(record[optionKeys[i]]) || 0) !== 10) {
+			allMax = false;
+			break;
+		}
+	}
+	var value = parseFloat(record[optionKey]) || 0;
+	return allMax && value === 10 ? 11 : value;
+}
+
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	let castleItem = calculateCastleItem(memberName, data) || 0;
 	let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
@@ -1780,7 +1798,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 		}
 	}
 	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
-	return castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp;
+	var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
+	var castleCubePercent = getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
+	return Math.floor(castleTotal * (1 + castleCubePercent / 100));
 }
 
 function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
@@ -1804,7 +1824,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 		}
 	}
 	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
-	return itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 아이템 정보의 레이드 경험치 + 펫 경험치 + 미니펫 레이드 경험치 + 홈 경험치
+	var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
+	var raidCubePercent = getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
+	return Math.floor(raidTotal * (1 + raidCubePercent / 100));
 }
 
 function generateRanking(data, petData, homeData, petSkillData) {
