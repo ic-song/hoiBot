@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.356"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.357"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1018,7 +1018,7 @@ const GLOBAL_CONFIG = {
             ]
         },
         gacha3: {
-            itemName: "홈뱃지뽑기[3](/홈뱃지오픈3)",
+            itemName: "홈뱃지뽑기🛡️[3](/홈뱃지오픈3)",
             maxOpenCount: 100,
             badges: [
                 { id: "LOVE01", emoji: "💘", name: "금사빠", text: "방금 눈 마주쳤으니 이제 우리 1일인가?", source: "HOME_BADGE_GACHA_3" },
