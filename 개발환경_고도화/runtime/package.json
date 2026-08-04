@@ -21,6 +21,7 @@
     "config:inventory": "node --import tsx scripts/inventory-hardcoded-config.ts",
     "db:probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database.ts",
     "db:probe:modernization": "node --env-file-if-exists=.env --import tsx scripts/probe-modernization-flow.ts",
+    "db:probe:domains": "node --env-file-if-exists=.env --import tsx scripts/probe-domain-services.ts",
     "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts"
   },
   "dependencies": {

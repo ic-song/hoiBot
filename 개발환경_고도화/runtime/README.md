@@ -15,6 +15,8 @@ Iris 입출력과 MariaDB 도메인 이전을 검증하는 TypeScript/Fastify �
 - Iris event inbox, 명령 중복 방지, operation/audit/outbox와 background 재시도
 - `/내정보` ProfileView/legacy formatter와 승인된 Kakao identity 기반 조회
 - 관리자 Argon2id 로그인, RBAC, hash 세션, CSRF, 회원 조회·서버 변경·identity 승인·감사 API
+- 공통 transactional operation runner와 재화·인벤토리·펫/스킬/타이틀·길드·홈·이벤트/랭킹·거래소 Application Service
+- 모든 도메인 mutation의 idempotency, optimistic version, audit, ledger, internal outbox 처리
 - 원본을 쓰지 않는 33개 JSON checksum/lossless dry-run importer
 - 정상 종료 처리와 가짜 Iris 이벤트 전송 스크립트
 
@@ -67,6 +69,7 @@ cd ..\runtime
 npm.cmd run db:migrate
 npm.cmd run db:probe
 npm.cmd run db:probe:modernization
+npm.cmd run db:probe:domains # disposable hoibot_import_verify_* DB에서만 실행 가능
 npm.cmd run db:import:dry-run -- --source ..\..\data
 npm.cmd run admin:link-iris -- operator-id kakao-external-user-id
 npm.cmd run dev
@@ -138,6 +141,8 @@ npm.cmd run db:probe
 npm.cmd run db:probe:modernization
 npm.cmd run db:import:dry-run -- --source ..\..\data
 ```
+
+`db:probe:domains`는 재화·인벤토리·펫/스킬/타이틀·길드·홈·이벤트/랭킹·거래소를 실제로 변경하므로 단독으로 개발/운영 DB에서 실행할 수 없습니다. `probe-disposable-import.ps1`이 생성한 `hoibot_import_verify_*` 임시 DB에서만 허용됩니다.
 
 전체 migration과 legacy import를 임시 DB에서 검증하거나, 현재 DB backup을 임시 DB에 복원해 검증할 때는 다음 스크립트를 사용합니다. 두 스크립트 모두 검증용 DB를 끝에 제거하며 운영 JSON을 수정하지 않습니다.
 

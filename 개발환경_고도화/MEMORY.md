@@ -34,7 +34,7 @@
 - 실제 redroid DB와 Iris 원본 코드를 기준으로 이벤트 감지 가능 범위를 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`에 정리했다.
 - Iris가 다른 방에서 감지한 모든 단일 이미지를 `/ping` 테스트방으로 전달하는 Lite Server 기능을 구현하고 로컬 검증을 통과했다.
 - Docker MariaDB, 서버 연결 풀, 초기 마이그레이션과 DB 기반 readiness 구현·실검증을 완료했다.
-- `001`~`011` MariaDB 마이그레이션으로 event processing, identity/import, common code/config, `/내정보` read model, 관리자 인증·Kakao identity 연결, 후속 도메인 기반 테이블을 구현했다.
+- `001`~`014` MariaDB 마이그레이션으로 event processing, identity/import, common code/config, `/내정보` read model, 관리자 인증·Kakao identity 연결, 후속 도메인 테이블과 원장을 구현했다.
 - 서버를 Adapter/Service/Repository/transaction 경계로 분리하고 Iris 중복 방지·operation/audit/outbox·재시도 worker를 연결했다.
 - ProfileView, 기존 `/내정보` 형식 formatter, 관리자 회원 조회와 낙관적 잠금 `/서버이동` Service/API를 구현했다.
 - Argon2id 관리자 계정, DB hash 세션, RBAC, CSRF와 identity 승인·게임 서버·감사 API를 구현했다.
@@ -90,6 +90,9 @@
 - disposable MariaDB에서 33개 JSON을 처음부터 import해 프로필 610, 펫 610, 타이틀 3,086, 홈 610, 길드 회원 155, 랭킹 entry 1,040, 고아 프로필 0건을 확인했다. 610개 legacy nickname identity는 모두 미승인 상태로 유지했다.
 - 기존 `checkRank`의 특별 배지 우선순위와 길드 순위 접미사를 안정적인 badge code와 분리된 표시값으로 import한다.
 - 서버 Docker image `hoibot-server:local` 빌드와 Compose 설정 검증, 관리자 SPA typecheck/build를 완료했다.
+- 공통 transactional operation runner와 currency, inventory, pet/skill/title, guild, home/social, event/ranking, market Application Service를 구현했다.
+- 모든 신규 mutation은 operation idempotency, row lock/expected version, domain ledger, command audit, internal outbox를 같은 MariaDB 트랜잭션에서 처리한다. 거래소 수수료도 별도 append-only 원장에 기록한다.
+- disposable MariaDB 통합 probe에서 신규 Service 26개 operation의 audit/outbox 1:1, 중복 요청 동일 결과, stale version 충돌, 펫 장비·길드 역할, 거래소 수수료·정산·구매·취소 rollback 경계를 확인했다.
 
 ## 미검증 항목
 
@@ -111,7 +114,7 @@
 1. 별도 테스트 계정의 실제 Rhino `/내정보` 출력과 신규 formatter를 문자 단위로 비교해 golden parity를 확정한다.
 2. display-name 후보를 관리자 화면에서 승인해 Kakao identity 연결 흐름을 별도 테스트 계정으로 end-to-end 검증한다.
 3. 구현된 관리자 `/서버이동` API와 Iris 명령의 동일 Service 호출을 승인된 실제 관리자 Kakao identity로 end-to-end 검증한다.
-4. currency ledger → inventory → pet/skill/title → guild → home/social → event/ranking → market 순서로 각 수직 기능의 Service/Repository를 구현한다.
+4. 구현된 domain Service를 legacy 명령별 golden fixture와 대조한 뒤 Iris·Discord·관리 API adapter에 수직 기능 단위로 연결한다.
 5. 다른 참여자 이벤트, WebSocket, 다중 이미지/파일/반응 등 기존 미검증 Iris 입력을 별도 테스트방에서 계속 검증한다.
 6. Windows Docker 검증 결과를 Ubuntu Docker 환경에서도 동일 image digest·migration·backup/restore 절차로 재현한다.
 7. 전체 기능과 운영 snapshot reconciliation을 통과한 뒤 최종 일괄 전환 점검표를 실행한다.

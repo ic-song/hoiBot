@@ -28,6 +28,8 @@ try {
         if ($LASTEXITCODE -ne 0 -or ($repeat -join "`n") -notmatch '"alreadyApplied":true') { throw "Legacy import idempotency verification failed." }
         & node --env-file-if-exists=.env --import tsx scripts/verify-legacy-import.ts
         if ($LASTEXITCODE -ne 0) { throw "Legacy import reconciliation failed." }
+        & npm.cmd run db:probe:domains
+        if ($LASTEXITCODE -ne 0) { throw "Domain service integration probe failed." }
     } finally {
         Pop-Location
     }

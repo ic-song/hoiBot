@@ -8,7 +8,7 @@ Define enough persistence architecture for a future Codex session to implement h
 
 The detailed target table model and complete legacy-source mapping are maintained in `LEGACY_JSON_RDB_SCHEMA_DESIGN.md`.
 
-This is the implementation and migration blueprint. Migrations `001` through `012`, the transaction-aware connector, Iris inbox/outbox path, first profile read model, admin session/RBAC foundation, and dry-run/apply rehearsal importer are implemented. Production legacy data has not been imported.
+This is the implementation and migration blueprint. Migrations `001` through `014`, the transaction-aware connector, Iris inbox/outbox path, profile read model, admin session/RBAC foundation, dry-run/apply rehearsal importer, and the remaining domain Application Services are implemented. Production legacy data has not been imported.
 
 ## Implementation Status
 
@@ -220,12 +220,14 @@ Avoid long-term dual writes between JSON and MariaDB. Prefer a domain-by-domain 
 - `010_legacy_display_capacity.sql`: lossless long legacy title display values.
 - `011_mini_pet_display_projection.sql`: mini-pet grade, emoji and mode experience required by `/내정보` parity.
 - `012_badge_display_projection.sql`: stable badge codes separated from the exact legacy `checkRank` display projection.
+- `013_domain_service_ledgers.sql`: append-only guild warehouse and home activity records plus RBAC permissions for remaining domain mutations.
+- `014_market_fee_ledger.sql`: append-only fee accounting for each successful market settlement.
 
 ## Remaining Implementation Work
 
 1. Capture real Rhino `/내정보` outputs and finish character-for-character golden parity validation for the implemented projection.
 2. Resolve legacy nickname keys through operator-approved Kakao identity candidates.
-3. Add domain repositories and policies vertically in the documented order.
+3. Connect the implemented domain Services to verified Iris commands, Discord adapters and narrowly scoped admin APIs as each legacy command receives a golden parity fixture.
 4. Validate the implemented admin SPA identity approval, server mutation and audit flows against a separately deployed test environment.
 5. Repeat the completed Windows disposable import and backup/restore rehearsal on the target Ubuntu host, then rehearse the full cutover.
 

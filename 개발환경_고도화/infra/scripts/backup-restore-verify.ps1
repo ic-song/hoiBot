@@ -48,7 +48,7 @@ try {
 
     $verifyArgs = @("compose", "-f", $resolvedCompose, "exec", "-T", "-e", "VERIFY_DATABASE=$verifyDatabase", "mariadb", "sh", "-lc", (ConvertTo-ShellWrapper 'exec mariadb -N -u root -p"$MARIADB_ROOT_PASSWORD" "$VERIFY_DATABASE" -e "SELECT COUNT(*) FROM schema_migrations"'))
     $migrationCount = (& docker @verifyArgs).Trim()
-    if ($LASTEXITCODE -ne 0 -or [int]$migrationCount -lt 12) { throw "Restored migration version verification failed." }
+    if ($LASTEXITCODE -ne 0 -or [int]$migrationCount -lt 14) { throw "Restored migration version verification failed." }
     Write-Output "backup=$backupFile"
     Write-Output "restoreVerified=true migrationCount=$migrationCount"
 } finally {
