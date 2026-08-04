@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.362"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.363"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21011,7 +21011,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var homeBadgeCubeProtectionFloor = getHomeBadgeCubeProtectionFloor(homeBadgeCubeCurrent);
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        var homeBadgeCubeApplied = Math.max(homeBadgeCubeLastRoll, homeBadgeCubeProtectionFloor); // 3·6·9% 보호선 적용 결과
+                        var homeBadgeCubeApplied = Math.max(homeBadgeCubeLastRoll, homeBadgeCubeProtectionFloor); // 3·6% 단계와 9% 이상 상승값 보호 결과
                         homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
                         if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
                             homeBadgeCubeUpgradeCount++;
@@ -39436,10 +39436,10 @@ function rollHomeBadgeCubePercent() {
     return Math.round((selected.min + Math.floor(Math.random() * 10) / 10) * 10) / 10;
 }
 
-// 현재 홈뱃지 큐브 수치에 따라 3·6·9% 단계 보호선을 반환하는 함수
+// 현재 홈뱃지 큐브 수치에 따라 3·6% 단계와 9% 이상 상승값 보호선을 반환하는 함수
 function getHomeBadgeCubeProtectionFloor(currentPercent) {
     currentPercent = parseFloat(currentPercent) || 0;
-    if (currentPercent >= 9) return 9;
+    if (currentPercent >= 9) return currentPercent;
     if (currentPercent >= 6) return 6;
     if (currentPercent >= 3) return 3;
     return 0;
@@ -39455,7 +39455,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     }
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("구간을 먼저 추첨한 뒤 구간 안의 0.1% 단위를 같은 확률로 뽑습니다.");
-    lines.push("달성한 3.0%·6.0%·9.0% 단계까지만 보호되며 그 위 수치는 다시 낮아질 수 있습니다.");
+    lines.push("3.0%·6.0%는 단계 보호되며 9.0%부터는 상승한 수치가 매번 보호됩니다.");
     lines.push("네 옵션이 모두 10.0%면 장착 시 각 효과가 11.0%로 적용됩니다.");
     return lines.join("\n");
 }

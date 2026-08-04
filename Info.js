@@ -1123,7 +1123,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var petUpgradeCubePercent = getHomeBadgeCubeActiveOptionPercent(data, sender, "petUpgrade");
 			var upgradeLine = "펫강화⭐️: " + petUpgradeLevelBefore + "강";
 			if (petUpgradeCubePercent > 0) {
-				upgradeLine += " → " + effectivePetUpgrade + "강 (홈뱃지 +" + petUpgradeCubePercent.toFixed(1) + "%)";
+				upgradeLine += " → " + effectivePetUpgrade + "강";
 			}
 			upgradeLine += " (💥" + critChance + "%)[" + critMul + "배]";
 
