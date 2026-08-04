@@ -1,0 +1,12 @@
+:root { font-family: Inter, Pretendard, system-ui, sans-serif; color: #182016; background: #f3f6ef; }
+body { margin: 0; }
+main { width: min(880px, calc(100% - 32px)); margin: 40px auto; display: grid; gap: 20px; }
+header, section { background: #fff; border: 1px solid #dce5d7; border-radius: 18px; padding: 24px; box-shadow: 0 10px 30px #38562a10; }
+header { background: #183f2a; color: white; }
+header p, h1, h2 { margin: 0 0 10px; }
+form { display: flex; gap: 10px; flex-wrap: wrap; }
+input, select, button { border-radius: 10px; border: 1px solid #bdcbb6; padding: 11px 13px; font: inherit; }
+button { background: #2f6b46; color: white; border: 0; cursor: pointer; }
+ul { list-style: none; padding: 0; display: grid; gap: 8px; }
+li { display: flex; justify-content: space-between; gap: 12px; padding: 12px; background: #f6f8f3; border-radius: 10px; }
+li span, footer { color: #62705d; font-size: 14px; }

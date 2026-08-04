@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildApp } from "../src/app.js";
 import type { AppConfig } from "../src/config.js";
+import type { DatabaseClient } from "../src/database.js";
 
 const TEST_TOKEN = "test-shared-token-1234";
 
@@ -30,6 +31,18 @@ function createConfig(overrides: Partial<AppConfig> = {}): AppConfig {
       connectTimeoutMs: 1_000
     },
     version: "0.1.0-test",
+    ...overrides
+  };
+}
+
+function createDatabaseStub(overrides: Partial<DatabaseClient> = {}): DatabaseClient {
+  return {
+    ping: async () => undefined,
+    verifyRollback: async () => true,
+    query: async () => { throw new Error("Unexpected query in test stub."); },
+    execute: async () => { throw new Error("Unexpected execute in test stub."); },
+    withTransaction: async () => { throw new Error("Unexpected transaction in test stub."); },
+    close: async () => undefined,
     ...overrides
   };
 }
@@ -110,11 +123,11 @@ describe("hoiBot Lite server", () => {
     const app = buildApp(createConfig({
       database: { ...createConfig().database, enabled: true }
     }), {
-      database: {
+      database: createDatabaseStub({
         ping: async () => undefined,
         verifyRollback: async () => true,
         close: async () => { closed = true; }
-      }
+      })
     });
     const response = await app.inject({ method: "GET", url: "/health/ready" });
 
@@ -128,11 +141,11 @@ describe("hoiBot Lite server", () => {
     const app = buildApp(createConfig({
       database: { ...createConfig().database, enabled: true }
     }), {
-      database: {
+      database: createDatabaseStub({
         ping: async () => { throw new Error("offline"); },
         verifyRollback: async () => false,
         close: async () => undefined
-      }
+      })
     });
     const response = await app.inject({ method: "GET", url: "/health/ready" });
 
