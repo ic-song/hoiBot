@@ -638,7 +638,7 @@ Status: VERIFIED
 - `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지오픈3 [숫자]` opens 1 badge when the count is omitted or accepts a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[3](/홈뱃지오픈3)"]`, runs under the response data write lock, uniformly draws one of 50 `LOVE01`–`LOVE50` relationship-type badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
-- `/홈뱃지큐브 [번호] [옵션] [횟수]` uses 1 cube per castle/raid attempt and 2 cubes per pet-upgrade/explore attempt, allows 1–100 tries, stops at 10.0% or cube shortage, consumes every actual roll while retaining a higher current value, and saves badge-ID-keyed option values and first-notice flags in member data. Only the representative badge is active; the result marks the target as equipped or unequipped and warns that unequipped options are inactive. Four stored 10.0% options apply as 11.0% each. `/펫강화` displays the actual before/after chance when the active badge has a pet-upgrade option. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room a before/after comparison for castle/raid charm, current pet-upgrade chance, and the current exploration chance. `/큐브확률` is exact/read-only and shows the configured range rates to three decimal places.
+- `/홈뱃지큐브 [번호] [옵션] [횟수]` uses 1 cube per castle/raid attempt and 2 cubes per pet-upgrade/explore attempt, allows 1–100 tries, stops at 10.0% or cube shortage, consumes every actual roll while retaining a higher current value, and saves badge-ID-keyed option values and first-notice flags in member data. Only the representative badge is active; the result marks the target as equipped or unequipped and warns that unequipped options are inactive. Four stored 10.0% options apply as 11.0% each. Option 3 increases the pet-upgrade charm contribution used by total charm and ranking calculations without changing upgrade success probability, cost, or the stored upgrade level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room a before/after comparison for castle/raid charm, pet-upgrade charm, and the current exploration chance. `/큐브확률` is exact/read-only and shows the configured range rates to three decimal places.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -1236,6 +1236,7 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- `/펫정보`의 펫강화 줄은 대표 홈뱃지의 펫강화 큐브 옵션이 활성일 때 적용 전 강화 매력 → 최종 강화 매력과 적용 퍼센트를 표시한다. 강화 성공확률은 변경하지 않는다.
 - 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
@@ -2418,7 +2419,7 @@ Status: VERIFIED
 
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
-- Pet upgrade contribution is `GLOBAL_CONFIG.pet.totalCharmPerUpgrade`; current value is 1,000 total charm per pet upgrade level.
+- Pet upgrade contribution starts at `GLOBAL_CONFIG.pet.totalCharmPerUpgrade`; current value is 1,000 total charm per pet upgrade level, then the equipped representative home badge's option 3 increases that contribution by its percentage.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 

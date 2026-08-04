@@ -1118,7 +1118,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 			// 펫강화 라인
 			var critMul = getCritMultiplier(petInfo.upgrade);
+			var petUpgradeCharmBefore = calculatePetUpgradeCharm(sender, data, petData, true);
+			var petUpgradeCharmAfter = calculatePetUpgradeCharm(sender, data, petData);
+			var petUpgradeCubePercent = getHomeBadgeCubeActiveOptionPercent(data, sender, "petUpgrade");
 			var upgradeLine = "펫강화⭐️: " + (petInfo.upgrade || 0) + "강(💥" + critChance + "%)[" + critMul + "배]";
+			upgradeLine += "\n└ 강화 매력🌟: " + numberWithCommas(petUpgradeCharmBefore);
+			if (petUpgradeCubePercent > 0) {
+				upgradeLine += " → " + numberWithCommas(petUpgradeCharmAfter) + " (홈뱃지 +" + petUpgradeCubePercent.toFixed(1) + "%)";
+			}
 
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
@@ -1838,7 +1845,7 @@ function generateRanking(data, petData, homeData, petSkillData) {
 		if (petData[key]) {
 			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData) || 0;
 			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData) || 0;
-			let upgradeBonus = (petData[key].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+			let upgradeBonus = calculatePetUpgradeCharm(key, data, petData);
 
 			let totalExp = castleExp + raidExp + upgradeBonus;
 
@@ -1911,7 +1918,7 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData) {
 		if (petData[key]) {
 			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData) || 0;
 			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData) || 0;
-			let upgradeBonus = (petData[key].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+			let upgradeBonus = calculatePetUpgradeCharm(key, data, petData);
 			let totalExp = castleExp + raidExp + upgradeBonus;
 
 			userScores.push({ key: key, totalExp: totalExp });
@@ -3499,6 +3506,14 @@ function getCritChance(upgradeLevel) {
 	return critChance.toFixed(2);
 }
 
+// 펫 강화 단계가 종합매력에 더하는 수치를 홈뱃지 큐브 효과와 함께 계산하는 함수
+function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
+	var upgradeLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
+	var baseCharm = upgradeLevel * GLOBAL_CONFIG.pet.totalCharmPerUpgrade; // 홈뱃지 적용 전 펫강화 매력
+	var cubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade");
+	return Math.floor(baseCharm * (1 + cubePercent / 100));
+}
+
 /**
  * 종합매력 계산 (펫정보/시련의탑 등 공용)
  * - /펫정보에서 쓰던 계산식을 그대로 함수화
@@ -3520,7 +3535,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
 	var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData) || 0;
 
 	// 강화 매력 보너스(기존 로직 유지)
-	var upgradeBonus = (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+	var upgradeBonus = calculatePetUpgradeCharm(sender, data, petData);
 
 	var total = totalCastle + totalRaid + upgradeBonus;
 	
