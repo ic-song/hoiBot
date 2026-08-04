@@ -1773,7 +1773,7 @@ function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
 	return allMax && value === 10 ? 11 : value;
 }
 
-function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
+function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube) {
 	let castleItem = calculateCastleItem(memberName, data) || 0;
 	let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
 	let petExp = (petData[memberName] && petData[memberName].petexp) || 0;
@@ -1799,11 +1799,11 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
 	}
 	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
 	var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
-	var castleCubePercent = getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
+	var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
 	return Math.floor(castleTotal * (1 + castleCubePercent / 100));
 }
 
-function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
+function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube) {
 	let itemInfo = calculateItemInfoAll(memberName, data, petData) || { raidExp: 0 }; // `null` 또는 `undefined` 방지
 	let petExp = (petData[memberName] && petData[memberName].petexp) || 0; // `petData` 값이 없을 때 `0` 반환
 	let miniPetExp = (petData[memberName] && petData[memberName].miniPet && petData[memberName].miniPet.raidExp) || 0; // 미니펫 레이드 경험치
@@ -1825,7 +1825,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
 	}
 	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
 	var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
-	var raidCubePercent = getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
+	var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
 	return Math.floor(raidTotal * (1 + raidCubePercent / 100));
 }
 
