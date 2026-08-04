@@ -20878,9 +20878,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10");
                     return;
                 }
-                if (/^\/홈뱃지오픈3\s+\d+$/.test(msg)) {
+                if (msg === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(msg)) {
                     var homeBadge3OpenMatch = msg.match(/^\/홈뱃지오픈3\s+(\d+)$/);
-                    var homeBadge3OpenCount = parseInt(homeBadge3OpenMatch[1], 10);
+                    var homeBadge3OpenCount = homeBadge3OpenMatch ? parseInt(homeBadge3OpenMatch[1], 10) : 1;
                     var homeBadge3Config = GLOBAL_CONFIG.petHomeActivity.gacha3;
                     var homeBadge3ItemName = homeBadge3Config.itemName;
                     if (homeBadge3OpenCount < 1 || homeBadge3OpenCount > homeBadge3Config.maxOpenCount) {
@@ -20950,7 +20950,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (/^\/홈뱃지오픈3(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10");
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10");
                     return;
                 }
                 if (msg === "/큐브확률") {
@@ -27644,7 +27644,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
-        /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
+        command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
