@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.361"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.362"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1081,7 +1081,7 @@ const GLOBAL_CONFIG = {
                 { number: 1, key: "castle", emoji: "⚔️", name: "캐슬 매력", cost: 1 },
                 { number: 2, key: "raid", emoji: "👾", name: "레이드 매력", cost: 1 },
                 { number: 3, key: "petUpgrade", emoji: "🌟", name: "펫 강화 수치", cost: 2 },
-                { number: 4, key: "explore", emoji: "⛰️", name: "펫 탐험 확률", cost: 2 }
+                { number: 4, key: "explore", emoji: "⛰️", name: "펫 탐험 확률", cost: 3 }
             ],
             rates: [
                 { min: 1.0, max: 1.9, rate: 45.000 },
@@ -39455,7 +39455,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     }
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("구간을 먼저 추첨한 뒤 구간 안의 0.1% 단위를 같은 확률로 뽑습니다.");
-    lines.push("현재 옵션보다 낮은 결과는 적용되지 않지만 큐브는 소모됩니다.");
+    lines.push("달성한 3.0%·6.0%·9.0% 단계까지만 보호되며 그 위 수치는 다시 낮아질 수 있습니다.");
     lines.push("네 옵션이 모두 10.0%면 장착 시 각 효과가 11.0%로 적용됩니다.");
     return lines.join("\n");
 }
@@ -39779,6 +39779,8 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
     var equippedOptionText = equippedBadge ? buildHomeBadgeCubeOptionLines(data, user, equippedBadge) + "\n" : "";
     var out = "🏅 [" + checkRank(data, petData, guildData, user) + "] 님의 펫홈 뱃지\n" +
         "━━━━━━━━━━━━\n" +
+        "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, user) + "\n" + equippedOptionText +
+        "━━━━━━━━━━━━\n" +
         "장착: /홈뱃지장착 [번호 또는 ID]\n" +
         "해제: /홈뱃지해제\n" +
         "상세: /홈뱃지정보 [번호, ID 또는 이름]\n" +
@@ -39791,9 +39793,8 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         "옵션 1 ⚔️ 캐슬 매력 (큐브 1개)\n" +
         "옵션 2 👾 레이드 매력 (큐브 1개)\n" +
         "옵션 3 🌟 펫 강화 수치 (큐브 2개)\n" +
-        "옵션 4 ⛰️ 펫 탐험 확률 (큐브 2개)\n" +
+        "옵션 4 ⛰️ 펫 탐험 확률 (큐브 3개)\n" +
         "확률: /큐브확률\n\n" +
-        "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, user) + "\n" + equippedOptionText +
         "수집 현황: " + owned.length + "/" + totalBadgeCount + "개\n\n" +
         "[보유한 뱃지]\n━━━━━━━━━━━━\n";
     if (owned.length === 0) out += "아직 획득한 뱃지가 없습니다.\n";
