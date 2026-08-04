@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.358"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.359"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1084,16 +1084,16 @@ const GLOBAL_CONFIG = {
                 { number: 4, key: "explore", emoji: "⛰️", name: "펫 탐험 확률", cost: 2 }
             ],
             rates: [
-                { min: 1.0, max: 1.9, rate: 30.00 },
-                { min: 2.0, max: 2.9, rate: 22.00 },
-                { min: 3.0, max: 3.9, rate: 16.00 },
-                { min: 4.0, max: 4.9, rate: 11.00 },
-                { min: 5.0, max: 5.9, rate: 8.00 },
-                { min: 6.0, max: 6.9, rate: 5.50 },
-                { min: 7.0, max: 7.9, rate: 3.50 },
-                { min: 8.0, max: 8.9, rate: 2.50 },
-                { min: 9.0, max: 9.9, rate: 1.46 },
-                { min: 10.0, max: 10.0, rate: 0.04 }
+                { min: 1.0, max: 1.9, rate: 45.000 },
+                { min: 2.0, max: 2.9, rate: 30.000 },
+                { min: 3.0, max: 3.9, rate: 15.000 },
+                { min: 4.0, max: 4.9, rate: 6.000 },
+                { min: 5.0, max: 5.9, rate: 3.000 },
+                { min: 6.0, max: 6.9, rate: 0.550 },
+                { min: 7.0, max: 7.9, rate: 0.300 },
+                { min: 8.0, max: 8.9, rate: 0.100 },
+                { min: 9.0, max: 9.9, rate: 0.049 },
+                { min: 10.0, max: 10.0, rate: 0.001 }
             ]
         }
     },
@@ -21042,6 +21042,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeBadgeCubeAfter = homeBadgeCubeRecord[homeBadgeCubeOption.key];
                     var homeBadgeCubeRemain = parseInt(data.member[sender].bag[homeBadgeCubeConfig.itemName], 10) || 0;
+                    var homeBadgeCubeIsEquipped = homeBadgeCubeSocial.equippedBadgeId === homeBadgeCubeBadge.id;
                     var homeBadgeCubeLines = [];
                     homeBadgeCubeLines.push("💟[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지 큐브를 오픈합니다!");
                     homeBadgeCubeLines.push("확률정보: 채팅창에 '/큐브확률'을 적어보세요");
@@ -21049,7 +21050,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeCubeConsumed) + "개");
                     homeBadgeCubeLines.push("💟 남은 큐브: " + numberWithCommas(homeBadgeCubeRemain) + "개");
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
-                    homeBadgeCubeLines.push("[" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge));
+                    homeBadgeCubeLines.push("[" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge) + (homeBadgeCubeIsEquipped ? " ✅ 장착 중" : " ⚠️ 미장착"));
                     homeBadgeCubeLines.push(buildHomeBadgeCubeOptionLines(data, sender, homeBadgeCubeBadge));
                     homeBadgeCubeLines.push("└ " + getPetHomeBadgeProgressText(homeBadgeCubeActivityData, sender, homeBadgeCubeBadge));
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
@@ -21057,6 +21058,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("변경: +" + formatHomeBadgeCubePercent(homeBadgeCubeBefore) + " → +" + formatHomeBadgeCubePercent(homeBadgeCubeAfter));
                     homeBadgeCubeLines.push("마지막 추첨: " + formatHomeBadgeCubePercent(homeBadgeCubeLastRoll));
                     homeBadgeCubeLines.push("시도: " + homeBadgeCubeUsedCount + "/" + homeBadgeCubeTryCount + "회 | 상승 " + homeBadgeCubeUpgradeCount + "회 | 보호 " + homeBadgeCubeProtectedCount + "회");
+                    if (!homeBadgeCubeIsEquipped) homeBadgeCubeLines.push("⚠️ 대표 뱃지로 장착해야 매력·펫강화·펫탐험 효과가 적용됩니다.");
                     if (homeBadgeCubeAfter === 10) homeBadgeCubeLines.push("🎉 10.0% 최대 옵션을 달성했습니다!");
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord)) homeBadgeCubeLines.push("💟 올맥스 달성! 장착 시 네 효과가 모두 11.0%로 적용됩니다.");
                     replier.reply(homeBadgeCubeLines.join("\n"));
@@ -33189,6 +33191,11 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
     var boostApplied = !!chosenBoost;
     var boostBonus = boostApplied ? chosenBoost.addPct / 100 : 0.0;
 
+    var currentProb = baseProbNow + boostBonus + traitBonus + homeBadgeCubeUpgradeBonus;
+    if (currentProb > 1) currentProb = 1;
+    var currentProbBeforeHomeBadgeCube = baseProbNow + boostBonus + traitBonus; // 현재 강화 조건에서 홈뱃지 큐브만 제외한 확률
+    if (currentProbBeforeHomeBadgeCube > 1) currentProbBeforeHomeBadgeCube = 1;
+
     var bonusLines = [];
     if (boostApplied) {
         removeItem(data, sender, chosenBoost.name, 1);
@@ -33199,12 +33206,10 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
         bonusLines.push("대머리 대장장이📙 펫스킬을 적용 받았습니다(5%)");
     }
     if (homeBadgeCubeUpgradePercent > 0) {
-        bonusLines.push("홈뱃지 큐브💟 펫강화 효과를 적용 받았습니다(" + formatHomeBadgeCubePercent(homeBadgeCubeUpgradePercent) + ")");
+        bonusLines.push("홈뱃지 큐브💟 펫강화 확률: " + (currentProbBeforeHomeBadgeCube * 100).toFixed(2) + "% → " + (currentProb * 100).toFixed(2) + "% (+" + ((currentProb - currentProbBeforeHomeBadgeCube) * 100).toFixed(2) + "%p)");
     }
     var bonusText = bonusLines.join("\n");
 
-    var currentProb = baseProbNow + boostBonus + traitBonus + homeBadgeCubeUpgradeBonus;
-    if (currentProb > 1) currentProb = 1;
     var success = Math.random() < currentProb;
 
     addPoint(data, sender, -upgradeCost);
@@ -39437,7 +39442,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     var lines = ["[" + checkRank(data, petData, guildData, user) + "] 님", "💟 홈뱃지 큐브 확률", "━━━━━━━━━━━━━━━"];
     for (var i = 0; i < rates.length; i++) {
         var rangeText = rates[i].min === rates[i].max ? formatHomeBadgeCubePercent(rates[i].min) : formatHomeBadgeCubePercent(rates[i].min) + "~" + formatHomeBadgeCubePercent(rates[i].max);
-        lines.push(rangeText + " : " + rates[i].rate.toFixed(2) + "%");
+        lines.push(rangeText + " : " + rates[i].rate.toFixed(3) + "%");
     }
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("구간을 먼저 추첨한 뒤 구간 안의 0.1% 단위를 같은 확률로 뽑습니다.");
