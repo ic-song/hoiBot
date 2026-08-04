@@ -1119,13 +1119,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 			// 펫강화 라인
 			var critMul = getCritMultiplier(effectivePetUpgrade);
-			var petUpgradeLevelBefore = calculateEffectivePetUpgradeLevel(sender, data, petData, true);
-			var petUpgradeCubePercent = getHomeBadgeCubeActiveOptionPercent(data, sender, "petUpgrade");
-			var upgradeLine = "펫강화⭐️: " + petUpgradeLevelBefore + "강";
-			if (petUpgradeCubePercent > 0) {
-				upgradeLine += " → " + effectivePetUpgrade + "강";
-			}
-			upgradeLine += " (💥" + critChance + "%)[" + critMul + "배]";
+			var upgradeLine = "펫강화⭐️: " + effectivePetUpgrade + "강";
+			upgradeLine += "(💥" + critChance + "%)[" + critMul + "배]";
 
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
