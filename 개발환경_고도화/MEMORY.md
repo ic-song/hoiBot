@@ -40,6 +40,7 @@
 - Argon2id 관리자 계정, DB hash 세션, RBAC, CSRF와 identity 승인·게임 서버·감사 API를 구현했다.
 - React + Vite 관리자 SPA의 로그인, 회원 검색, 서버 변경, identity 승인, 감사 조회 기반을 추가했다.
 - 원본 33개 JSON을 lossless/checksum 방식으로 읽는 기본 dry-run importer를 구현했다. 실제 데이터 apply는 하지 않았다.
+- `/가입` 대기 상태를 MariaDB에 30분간 영속화하고, 약관 동의 시 회원·프로필·초기 펫·재화·카운터·Kakao identity를 한 트랜잭션으로 생성하는 가입 Service와 Iris adapter를 구현했다.
 
 ## 확인된 현상
 
@@ -93,9 +94,12 @@
 - 공통 transactional operation runner와 currency, inventory, pet/skill/title, guild, home/social, event/ranking, market Application Service를 구현했다.
 - 모든 신규 mutation은 operation idempotency, row lock/expected version, domain ledger, command audit, internal outbox를 같은 MariaDB 트랜잭션에서 처리한다. 거래소 수수료도 별도 append-only 원장에 기록한다.
 - disposable MariaDB 통합 probe에서 신규 Service 26개 operation의 audit/outbox 1:1, 중복 요청 동일 결과, stale version 충돌, 펫 장비·길드 역할, 거래소 수수료·정산·구매·취소 rollback 경계를 확인했다.
+- 고도화 가입 정책은 기존 `이름 남/여` 형식과 금칙어 247개를 빠짐없이 유지하며, 정확한 `/가입`, `시작한다`/`/시작한다`, `거절한다`/`/거절한다`만 실행한다.
+- 가입 동의 전에는 player를 생성하지 않고, 동의 시 초기 데이터·identity 연결·감사·outbox를 한 MariaDB 트랜잭션으로 처리하며 동일 Iris 이벤트의 중복 생성을 차단한다.
 
 ## 미검증 항목
 
+- Docker가 현재 Windows 환경에 없어 `015_player_signup.sql`과 가입 Service의 disposable MariaDB probe는 아직 실행하지 못했다. TypeScript typecheck, build와 정책 자동 테스트는 통과했다.
 - 다른 참여자 `@멘션`의 동일 구조 여부와 자진 퇴장/강퇴 구분 방식
 - 닉네임 변경·반응 이벤트를 위한 별도 테이블 감시 필요성
 - Iris WebSocket `/ws` 수신
@@ -111,13 +115,14 @@
 
 ## 다음 작업
 
-1. 별도 테스트 계정의 실제 Rhino `/내정보` 출력과 신규 formatter를 문자 단위로 비교해 golden parity를 확정한다.
-2. display-name 후보를 관리자 화면에서 승인해 Kakao identity 연결 흐름을 별도 테스트 계정으로 end-to-end 검증한다.
-3. 구현된 관리자 `/서버이동` API와 Iris 명령의 동일 Service 호출을 승인된 실제 관리자 Kakao identity로 end-to-end 검증한다.
-4. 구현된 domain Service를 legacy 명령별 golden fixture와 대조한 뒤 Iris·Discord·관리 API adapter에 수직 기능 단위로 연결한다.
-5. 다른 참여자 이벤트, WebSocket, 다중 이미지/파일/반응 등 기존 미검증 Iris 입력을 별도 테스트방에서 계속 검증한다.
-6. Windows Docker 검증 결과를 Ubuntu Docker 환경에서도 동일 image digest·migration·backup/restore 절차로 재현한다.
-7. 전체 기능과 운영 snapshot reconciliation을 통과한 뒤 최종 일괄 전환 점검표를 실행한다.
+1. Docker 사용 가능 환경에서 disposable MariaDB 가입 probe를 실행하고 별도 Kakao 테스트 계정으로 `/가입` 동의·거절을 end-to-end 검증한다.
+2. 별도 테스트 계정의 실제 Rhino `/내정보` 출력과 신규 formatter를 문자 단위로 비교해 golden parity를 확정한다.
+3. display-name 후보를 관리자 화면에서 승인해 Kakao identity 연결 흐름을 별도 테스트 계정으로 end-to-end 검증한다.
+4. 구현된 관리자 `/서버이동` API와 Iris 명령의 동일 Service 호출을 승인된 실제 관리자 Kakao identity로 end-to-end 검증한다.
+5. 구현된 domain Service를 legacy 명령별 golden fixture와 대조한 뒤 Iris·Discord·관리 API adapter에 수직 기능 단위로 연결한다.
+6. 다른 참여자 이벤트, WebSocket, 다중 이미지/파일/반응 등 기존 미검증 Iris 입력을 별도 테스트방에서 계속 검증한다.
+7. Windows Docker 검증 결과를 Ubuntu Docker 환경에서도 동일 image digest·migration·backup/restore 절차로 재현한다.
+8. 전체 기능과 운영 snapshot reconciliation을 통과한 뒤 최종 일괄 전환 점검표를 실행한다.
 
 ## 최근 대화 요약
 

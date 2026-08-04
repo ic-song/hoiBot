@@ -15,6 +15,8 @@ import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
+import { SignupService } from "./signup/signup-service.js";
+import { isSignupCommand } from "./signup/signup-policy.js";
 
 interface TokenQuery {
   token?: string;
@@ -398,6 +400,27 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "change_player_server", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
+        && isSignupCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
+        && normalizedEvent.channelId !== undefined && normalizedEvent.displayName !== undefined) {
+        try {
+          const result = await new SignupService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            displayName: normalizedEvent.displayName,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "signup", error.message));
           } else {
             throw error;
           }

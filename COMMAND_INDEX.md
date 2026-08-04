@@ -5374,6 +5374,10 @@ Status: VERIFIED
 
 - `main.js`
 - `data/attendanceLight.json`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/signup/signup-policy.ts`
+- `개발환경_고도화/runtime/src/signup/signup-service.ts`
+- `개발환경_고도화/runtime/migrations/015_player_signup.sql`
 
 ## Related Helpers
 
@@ -5397,6 +5401,9 @@ Status: VERIFIED
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
+- `SignupService.handle`
+- `validateSignupDisplayName`
+- `isSignupCommand`
 
 ## Data Usage
 
@@ -5407,6 +5414,10 @@ Status: VERIFIED
 - `data.member[sender].server`
 - `attendanceLightData.users[sender]`
 - `attendanceLightData.users[sender].server`
+- MariaDB `player_signup_requests`
+- MariaDB `players`, `player_profiles`, `player_pets`
+- MariaDB `currency_accounts`, `player_counters`, `external_identities`
+- MariaDB `operations`, `command_executions`, `command_audit`, `outbox_messages`
 
 ## Save Flow
 
@@ -5416,6 +5427,10 @@ Status: VERIFIED
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` for new users validates the Kakao sender nickname before creating member data; invalid name/gender format or blocked profanity/political terms return with guidance and do not save data
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
+- 고도화 Iris `/가입`은 회원을 즉시 생성하지 않고 30분 가입 대기를 MariaDB에 저장한다
+- 고도화 `시작한다`/`/시작한다`는 회원·프로필·초기 펫·재화·카운터·Kakao identity 연결·감사·outbox를 한 MariaDB 트랜잭션으로 생성한다
+- 고도화 `거절한다`/`/거절한다`는 회원을 만들지 않고 가입 대기와 닉네임 예약을 해제한다
+- 고도화 가입 흐름은 event inbox와 operation idempotency를 함께 사용해 동일 Iris 이벤트 재전송 시 중복 회원을 만들지 않는다
 - `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
 
 ## Related Commands
@@ -5429,6 +5444,7 @@ Status: VERIFIED
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
 - 신규 `/가입` 닉네임은 `두 글자 이상 이름 + 공백 + 남/여` 형식이어야 한다.
+- 고도화 가입 명령과 동의·거절 응답은 정확히 일치하는 입력만 실행하며 접미 텍스트를 허용하지 않는다.
 - `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
 - `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`

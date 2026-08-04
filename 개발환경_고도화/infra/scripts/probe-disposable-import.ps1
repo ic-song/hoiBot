@@ -30,6 +30,8 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Legacy import reconciliation failed." }
         & npm.cmd run db:probe:domains
         if ($LASTEXITCODE -ne 0) { throw "Domain service integration probe failed." }
+        & npm.cmd run db:probe:signup
+        if ($LASTEXITCODE -ne 0) { throw "Signup service integration probe failed." }
     } finally {
         Pop-Location
     }
