@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.359"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.360"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1080,7 +1080,7 @@ const GLOBAL_CONFIG = {
             options: [
                 { number: 1, key: "castle", emoji: "⚔️", name: "캐슬 매력", cost: 1 },
                 { number: 2, key: "raid", emoji: "👾", name: "레이드 매력", cost: 1 },
-                { number: 3, key: "petUpgrade", emoji: "🌟", name: "펫 강화 확률", cost: 2 },
+                { number: 3, key: "petUpgrade", emoji: "🌟", name: "펫 강화 수치", cost: 2 },
                 { number: 4, key: "explore", emoji: "⛰️", name: "펫 탐험 확률", cost: 2 }
             ],
             rates: [
@@ -18998,11 +18998,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             let A =
                                 (calculateCastleExp(a, data, petData, homeData, petSkillData) || 0) +
                                 (calculateRaidExp(a, data, petData, homeData, petSkillData) || 0) +
-                                (petData[a].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+                                calculatePetUpgradeCharm(a, data, petData);
                             let B =
                                 (calculateCastleExp(b, data, petData, homeData, petSkillData) || 0) +
                                 (calculateRaidExp(b, data, petData, homeData, petSkillData) || 0) +
-                                (petData[b].upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+                                calculatePetUpgradeCharm(b, data, petData);
                             return B - A;
                         });
                     // 보상 구간 설정
@@ -33183,18 +33183,14 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 
     var traitApplied = hasPetSkill(petSkillData, sender, "대머리 대장장이");
     var traitBonus = traitApplied ? 0.05 : 0.0;
-    var homeBadgeCubeUpgradePercent = getHomeBadgeCubeActiveOptionPercent(data, sender, "petUpgrade");
-    var homeBadgeCubeUpgradeBonus = homeBadgeCubeUpgradePercent / 100;
     var baseProbNow = upgradeLevel < 100 ? 0.55 - upgradeLevel * 0.005 : 0.05;
-    var boostEligible = baseProbNow + traitBonus + homeBadgeCubeUpgradeBonus < 1.0;
+    var boostEligible = baseProbNow + traitBonus < 1.0;
     var chosenBoost = boostEligible ? findBestPetBoostItem(user.bag) : null;
     var boostApplied = !!chosenBoost;
     var boostBonus = boostApplied ? chosenBoost.addPct / 100 : 0.0;
 
-    var currentProb = baseProbNow + boostBonus + traitBonus + homeBadgeCubeUpgradeBonus;
+    var currentProb = baseProbNow + boostBonus + traitBonus;
     if (currentProb > 1) currentProb = 1;
-    var currentProbBeforeHomeBadgeCube = baseProbNow + boostBonus + traitBonus; // 현재 강화 조건에서 홈뱃지 큐브만 제외한 확률
-    if (currentProbBeforeHomeBadgeCube > 1) currentProbBeforeHomeBadgeCube = 1;
 
     var bonusLines = [];
     if (boostApplied) {
@@ -33204,9 +33200,6 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
     }
     if (traitApplied) {
         bonusLines.push("대머리 대장장이📙 펫스킬을 적용 받았습니다(5%)");
-    }
-    if (homeBadgeCubeUpgradePercent > 0) {
-        bonusLines.push("홈뱃지 큐브💟 펫강화 확률: " + (currentProbBeforeHomeBadgeCube * 100).toFixed(2) + "% → " + (currentProb * 100).toFixed(2) + "% (+" + ((currentProb - currentProbBeforeHomeBadgeCube) * 100).toFixed(2) + "%p)");
     }
     var bonusText = bonusLines.join("\n");
 
@@ -33224,10 +33217,10 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
         var critMul = getPetUpgradeCritMul(newLv);
         var nextLevel = newLv + 1;
         var baseProbNext = nextLevel < 100 ? 0.55 - nextLevel * 0.005 : 0.05;
-        var nextBoostEligible = baseProbNext + traitBonus + homeBadgeCubeUpgradeBonus < 1.0;
+        var nextBoostEligible = baseProbNext + traitBonus < 1.0;
         var nextBestAfterUse = nextBoostEligible ? findBestPetBoostItem(user.bag) : null;
         var nextItemBonus = nextBestAfterUse ? nextBestAfterUse.addPct / 100 : 0.0;
-        var nextProb = baseProbNext + nextItemBonus + traitBonus + homeBadgeCubeUpgradeBonus;
+        var nextProb = baseProbNext + nextItemBonus + traitBonus;
         if (nextProb > 1) nextProb = 1;
 
         var successMessage =
@@ -33277,10 +33270,10 @@ function runPetUpgradeOnce(sender, data, petData, guildData, petSkillData) {
 
     var nextLevelFail = upgradeLevel;
     var baseProbNextFail = nextLevelFail < 100 ? 0.55 - nextLevelFail * 0.005 : 0.05;
-    var nextBoostEligibleFail = baseProbNextFail + traitBonus + homeBadgeCubeUpgradeBonus < 1.0;
+    var nextBoostEligibleFail = baseProbNextFail + traitBonus < 1.0;
     var nextBestAfterUseFail = nextBoostEligibleFail ? findBestPetBoostItem(user.bag) : null;
     var nextItemBonusFail = nextBestAfterUseFail ? nextBestAfterUseFail.addPct / 100 : 0.0;
-    var nextProbIfFail = baseProbNextFail + nextItemBonusFail + traitBonus + homeBadgeCubeUpgradeBonus;
+    var nextProbIfFail = baseProbNextFail + nextItemBonusFail + traitBonus;
     if (nextProbIfFail > 1) nextProbIfFail = 1;
 
     return {
@@ -39330,34 +39323,29 @@ function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
     return isHomeBadgeCubeAllMax(record) && value === 10 ? 11 : value;
 }
 
+// 펫 강화 단계가 종합매력에 더하는 수치를 홈뱃지 큐브 효과와 함께 계산하는 함수
+function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
+    var upgradeLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
+    var baseCharm = upgradeLevel * GLOBAL_CONFIG.pet.totalCharmPerUpgrade; // 홈뱃지 적용 전 펫강화 매력
+    var cubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade");
+    return Math.floor(baseCharm * (1 + cubePercent / 100));
+}
+
 // 홈뱃지 큐브 장착 전후 효과를 디버깅용 비교 문구로 생성하는 함수
 function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, petExploreData, user) {
     var castleBefore = calculateCastleExp(user, data, petData, homeData, petSkillData, true);
     var castleAfter = calculateCastleExp(user, data, petData, homeData, petSkillData);
     var raidBefore = calculateRaidExp(user, data, petData, homeData, petSkillData, true);
     var raidAfter = calculateRaidExp(user, data, petData, homeData, petSkillData);
-    var upgradeLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
-    var upgradeBase = upgradeLevel < 100 ? 55 - upgradeLevel * 0.5 : 5;
-    var upgradeTrait = hasPetSkill(petSkillData, user, "대머리 대장장이") ? 5 : 0;
-    var upgradeCube = getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade");
-    var upgradeBoost = 0;
-    var upgradeBag = data && data.member && data.member[user] && data.member[user].bag ? data.member[user].bag : {};
-    var upgradeBoostPattern = /^펫강화확률UP🌟\((\d+(?:\.\d+)?)%\)$/;
-    for (var upgradeItemName in upgradeBag) {
-        if (!upgradeBag.hasOwnProperty(upgradeItemName) || !upgradeBag[upgradeItemName] || upgradeBag[upgradeItemName] <= 0) continue;
-        var upgradeBoostMatch = upgradeItemName.match(upgradeBoostPattern);
-        if (upgradeBoostMatch) upgradeBoost = Math.max(upgradeBoost, parseFloat(upgradeBoostMatch[1]) || 0);
-    }
-    var upgradeBefore = Math.min(100, upgradeBase + upgradeTrait + (upgradeBase + upgradeTrait < 100 ? upgradeBoost : 0));
-    var upgradeAfterBase = upgradeBase + upgradeTrait + upgradeCube;
-    var upgradeAfter = Math.min(100, upgradeAfterBase + (upgradeAfterBase < 100 ? upgradeBoost : 0));
+    var upgradeBefore = calculatePetUpgradeCharm(user, data, petData, true);
+    var upgradeAfter = calculatePetUpgradeCharm(user, data, petData);
     var castleRate = castleBefore > 0 ? (castleAfter - castleBefore) / castleBefore * 100 : 0;
     var raidRate = raidBefore > 0 ? (raidAfter - raidBefore) / raidBefore * 100 : 0;
     var upgradeRate = upgradeBefore > 0 ? (upgradeAfter - upgradeBefore) / upgradeBefore * 100 : 0;
     var lines = ["[💟 홈뱃지 큐브 장착 디버깅]", "대상: " + user, "━━━━━━━━━━━━━━━"];
     lines.push("캐슬 매력: " + numberWithCommas(castleBefore) + " → " + numberWithCommas(castleAfter) + " (기존 대비 +" + castleRate.toFixed(2) + "%)");
     lines.push("레이드 매력: " + numberWithCommas(raidBefore) + " → " + numberWithCommas(raidAfter) + " (기존 대비 +" + raidRate.toFixed(2) + "%)");
-    lines.push("펫강화 확률: " + upgradeBefore.toFixed(2) + "% → " + upgradeAfter.toFixed(2) + "% (+" + (upgradeAfter - upgradeBefore).toFixed(2) + "%p, 기존 대비 +" + upgradeRate.toFixed(2) + "%)");
+    lines.push("펫강화 수치: " + numberWithCommas(upgradeBefore) + " → " + numberWithCommas(upgradeAfter) + " (기존 대비 +" + upgradeRate.toFixed(2) + "%)");
 
     var exploreDungeon = petExploreData && petExploreData.userBet && petExploreData.userBet[user] !== null && typeof petExploreData.userBet[user] !== "undefined" ? String(petExploreData.userBet[user]) : null;
     var exploreCube = getHomeBadgeCubeActiveOptionPercent(data, user, "explore");
@@ -39781,7 +39769,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         "예시: /홈뱃지큐브 1 2 100\n" +
         "옵션 1 ⚔️ 캐슬 매력 (큐브 1개)\n" +
         "옵션 2 👾 레이드 매력 (큐브 1개)\n" +
-        "옵션 3 🌟 펫 강화 확률 (큐브 2개)\n" +
+        "옵션 3 🌟 펫 강화 수치 (큐브 2개)\n" +
         "옵션 4 ⛰️ 펫 탐험 확률 (큐브 2개)\n" +
         "확률: /큐브확률\n\n" +
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, user) + "\n" + equippedOptionText +
@@ -41352,7 +41340,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
     var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData) || 0;
 
     // 강화 매력 보너스 계산
-    var upgradeBonus = (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+    var upgradeBonus = calculatePetUpgradeCharm(sender, data, petData);
 
     var total = totalCastle + totalRaid + upgradeBonus;
 
@@ -41446,7 +41434,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     });
     var raidTotal = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp;
     var upgradeBonus = measure("강화 보너스", function () {
-        return (petInfo.upgrade || 0) * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+        return calculatePetUpgradeCharm(sender, data, petData);
     });
 
     result.total = parseInt(castleTotal + raidTotal + upgradeBonus, 10);
