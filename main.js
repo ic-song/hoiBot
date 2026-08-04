@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.357"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.358"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20878,9 +20878,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10");
                     return;
                 }
-                if (/^\/홈뱃지오픈3\s+\d+$/.test(msg)) {
+                if (msg === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(msg)) {
                     var homeBadge3OpenMatch = msg.match(/^\/홈뱃지오픈3\s+(\d+)$/);
-                    var homeBadge3OpenCount = parseInt(homeBadge3OpenMatch[1], 10);
+                    var homeBadge3OpenCount = homeBadge3OpenMatch ? parseInt(homeBadge3OpenMatch[1], 10) : 1;
                     var homeBadge3Config = GLOBAL_CONFIG.petHomeActivity.gacha3;
                     var homeBadge3ItemName = homeBadge3Config.itemName;
                     if (homeBadge3OpenCount < 1 || homeBadge3OpenCount > homeBadge3Config.maxOpenCount) {
@@ -20950,7 +20950,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (/^\/홈뱃지오픈3(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10");
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10");
                     return;
                 }
                 if (msg === "/큐브확률") {
@@ -21043,15 +21043,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeAfter = homeBadgeCubeRecord[homeBadgeCubeOption.key];
                     var homeBadgeCubeRemain = parseInt(data.member[sender].bag[homeBadgeCubeConfig.itemName], 10) || 0;
                     var homeBadgeCubeLines = [];
-                    homeBadgeCubeLines.push("💟 홈뱃지 큐브 결과");
-                    homeBadgeCubeLines.push("[" + checkRank(data, petData, guildData, sender) + "] 님");
+                    homeBadgeCubeLines.push("💟[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지 큐브를 오픈합니다!");
+                    homeBadgeCubeLines.push("확률정보: 채팅창에 '/큐브확률'을 적어보세요");
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
-                    homeBadgeCubeLines.push("홈뱃지: [" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name);
-                    homeBadgeCubeLines.push("옵션: " + homeBadgeCubeOption.emoji + " " + homeBadgeCubeOption.name);
-                    homeBadgeCubeLines.push("변경: " + formatHomeBadgeCubePercent(homeBadgeCubeBefore) + " → " + formatHomeBadgeCubePercent(homeBadgeCubeAfter));
+                    homeBadgeCubeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeCubeConsumed) + "개");
+                    homeBadgeCubeLines.push("💟 남은 큐브: " + numberWithCommas(homeBadgeCubeRemain) + "개");
+                    homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
+                    homeBadgeCubeLines.push("[" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge));
+                    homeBadgeCubeLines.push(buildHomeBadgeCubeOptionLines(data, sender, homeBadgeCubeBadge));
+                    homeBadgeCubeLines.push("└ " + getPetHomeBadgeProgressText(homeBadgeCubeActivityData, sender, homeBadgeCubeBadge));
+                    homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
+                    homeBadgeCubeLines.push("선택 옵션: [" + homeBadgeCubeOption.number + "]" + homeBadgeCubeOption.emoji + " " + homeBadgeCubeOption.name);
+                    homeBadgeCubeLines.push("변경: +" + formatHomeBadgeCubePercent(homeBadgeCubeBefore) + " → +" + formatHomeBadgeCubePercent(homeBadgeCubeAfter));
                     homeBadgeCubeLines.push("마지막 추첨: " + formatHomeBadgeCubePercent(homeBadgeCubeLastRoll));
                     homeBadgeCubeLines.push("시도: " + homeBadgeCubeUsedCount + "/" + homeBadgeCubeTryCount + "회 | 상승 " + homeBadgeCubeUpgradeCount + "회 | 보호 " + homeBadgeCubeProtectedCount + "회");
-                    homeBadgeCubeLines.push("사용: " + numberWithCommas(homeBadgeCubeConsumed) + "개 | 남은 큐브: " + numberWithCommas(homeBadgeCubeRemain) + "개");
                     if (homeBadgeCubeAfter === 10) homeBadgeCubeLines.push("🎉 10.0% 최대 옵션을 달성했습니다!");
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord)) homeBadgeCubeLines.push("💟 올맥스 달성! 장착 시 네 효과가 모두 11.0%로 적용됩니다.");
                     replier.reply(homeBadgeCubeLines.join("\n"));
@@ -21156,6 +21161,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         throw badgeMutationSaveError;
                     }
                     replier.reply(badgeMutationReply);
+                    if (isDebuggerFlag && msg.indexOf("/홈뱃지장착 ") === 0) {
+                        try {
+                            var homeBadgeDebugHomeData = loadJsonFile(homeDataFile);
+                            var homeBadgeDebugExploreData = loadJsonFile(petExplorePath);
+                            debuggerLog(buildHomeBadgeCubeDebugMessage(data, petData, homeBadgeDebugHomeData, petSkillData, homeBadgeDebugExploreData, sender));
+                        } catch (homeBadgeDebugError) {
+                            debuggerLog("[홈뱃지 큐브 디버깅 계산 실패] " + homeBadgeDebugError);
+                        }
+                    }
                     return;
                 }
                 if (msg === "/특별뱃지목록" || /^\/특별뱃지목록\s+\S+$/.test(msg)) {
@@ -27635,7 +27649,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
-        /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
+        command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
@@ -35962,7 +35976,7 @@ function generateBagOutput(bagItems) {
     };
 }
 
-function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
+function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube) {
     let castleItem = calculateCastleItem(memberName, data) || 0;
     let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0;
@@ -35988,11 +36002,11 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData) {
     }
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp");
     var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
-    var castleCubePercent = getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
+    var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
     return Math.floor(castleTotal * (1 + castleCubePercent / 100));
 }
 
-function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
+function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube) {
     let itemInfo = calculateItemInfoAll(memberName, data, petData) || { raidExp: 0 }; // `null` 또는 `undefined` 방지
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0; // `petData` 값이 없을 때 `0` 반환
     let miniPetExp = (petData[memberName] && petData[memberName].miniPet && petData[memberName].miniPet.raidExp) || 0; // 미니펫 레이드 경험치
@@ -36014,7 +36028,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData) {
     }
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp");
     var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
-    var raidCubePercent = getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
+    var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
     return Math.floor(raidTotal * (1 + raidCubePercent / 100));
 }
 function calculateItemInfoAll(memberName, data, petData) {
@@ -39286,6 +39300,11 @@ function formatHomeBadgeCubePercent(value) {
     return (parseFloat(value) || 0).toFixed(1) + "%";
 }
 
+// 홈뱃지 카드의 큐브 옵션 수치를 불필요한 소수점 없이 표시하는 함수
+function formatHomeBadgeCubeCardPercent(value) {
+    return (parseFloat(value) || 0).toFixed(1).replace(/\.0$/, "") + "%";
+}
+
 // 홈뱃지의 네 옵션이 모두 최대 수치인지 확인하는 함수
 function isHomeBadgeCubeAllMax(record) {
     if (!record) return false;
@@ -39304,6 +39323,47 @@ function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
     if (!record) return 0;
     var value = parseFloat(record[optionKey]) || 0;
     return isHomeBadgeCubeAllMax(record) && value === 10 ? 11 : value;
+}
+
+// 홈뱃지 큐브 장착 전후 효과를 디버깅용 비교 문구로 생성하는 함수
+function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, petExploreData, user) {
+    var castleBefore = calculateCastleExp(user, data, petData, homeData, petSkillData, true);
+    var castleAfter = calculateCastleExp(user, data, petData, homeData, petSkillData);
+    var raidBefore = calculateRaidExp(user, data, petData, homeData, petSkillData, true);
+    var raidAfter = calculateRaidExp(user, data, petData, homeData, petSkillData);
+    var upgradeLevel = petData && petData[user] ? (parseInt(petData[user].upgrade, 10) || 0) : 0;
+    var upgradeBase = upgradeLevel < 100 ? 55 - upgradeLevel * 0.5 : 5;
+    var upgradeTrait = hasPetSkill(petSkillData, user, "대머리 대장장이") ? 5 : 0;
+    var upgradeCube = getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade");
+    var upgradeBoost = 0;
+    var upgradeBag = data && data.member && data.member[user] && data.member[user].bag ? data.member[user].bag : {};
+    var upgradeBoostPattern = /^펫강화확률UP🌟\((\d+(?:\.\d+)?)%\)$/;
+    for (var upgradeItemName in upgradeBag) {
+        if (!upgradeBag.hasOwnProperty(upgradeItemName) || !upgradeBag[upgradeItemName] || upgradeBag[upgradeItemName] <= 0) continue;
+        var upgradeBoostMatch = upgradeItemName.match(upgradeBoostPattern);
+        if (upgradeBoostMatch) upgradeBoost = Math.max(upgradeBoost, parseFloat(upgradeBoostMatch[1]) || 0);
+    }
+    var upgradeBefore = Math.min(100, upgradeBase + upgradeTrait + (upgradeBase + upgradeTrait < 100 ? upgradeBoost : 0));
+    var upgradeAfterBase = upgradeBase + upgradeTrait + upgradeCube;
+    var upgradeAfter = Math.min(100, upgradeAfterBase + (upgradeAfterBase < 100 ? upgradeBoost : 0));
+    var castleRate = castleBefore > 0 ? (castleAfter - castleBefore) / castleBefore * 100 : 0;
+    var raidRate = raidBefore > 0 ? (raidAfter - raidBefore) / raidBefore * 100 : 0;
+    var upgradeRate = upgradeBefore > 0 ? (upgradeAfter - upgradeBefore) / upgradeBefore * 100 : 0;
+    var lines = ["[💟 홈뱃지 큐브 장착 디버깅]", "대상: " + user, "━━━━━━━━━━━━━━━"];
+    lines.push("캐슬 매력: " + numberWithCommas(castleBefore) + " → " + numberWithCommas(castleAfter) + " (기존 대비 +" + castleRate.toFixed(2) + "%)");
+    lines.push("레이드 매력: " + numberWithCommas(raidBefore) + " → " + numberWithCommas(raidAfter) + " (기존 대비 +" + raidRate.toFixed(2) + "%)");
+    lines.push("펫강화 확률: " + upgradeBefore.toFixed(2) + "% → " + upgradeAfter.toFixed(2) + "% (+" + (upgradeAfter - upgradeBefore).toFixed(2) + "%p, 기존 대비 +" + upgradeRate.toFixed(2) + "%)");
+
+    var exploreDungeon = petExploreData && petExploreData.userBet && petExploreData.userBet[user] !== null && typeof petExploreData.userBet[user] !== "undefined" ? String(petExploreData.userBet[user]) : null;
+    var exploreCube = getHomeBadgeCubeActiveOptionPercent(data, user, "explore");
+    if (exploreDungeon !== null) {
+        var explorePercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, exploreDungeon);
+        var exploreRate = explorePercent.totalPBeforeHomeBadge > 0 ? (explorePercent.totalP - explorePercent.totalPBeforeHomeBadge) / explorePercent.totalPBeforeHomeBadge * 100 : 0;
+        lines.push("펫탐험 확률[" + exploreDungeon + "]: " + explorePercent.totalPBeforeHomeBadge.toFixed(2) + "% → " + explorePercent.totalP.toFixed(2) + "% (+" + (explorePercent.totalP - explorePercent.totalPBeforeHomeBadge).toFixed(2) + "%p, 기존 대비 +" + exploreRate.toFixed(2) + "%)");
+    } else {
+        lines.push("펫탐험 확률: 현재 참여 던전 없음 (장착 효과 +" + exploreCube.toFixed(1) + "%p, 상한 적용 전)");
+    }
+    return lines.join("\n");
 }
 
 // 대표 홈뱃지 ID를 회원 데이터의 큐브 효과 대상과 동기화하는 함수
@@ -39386,7 +39446,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     return lines.join("\n");
 }
 
-// 홈뱃지의 큐브 옵션 두 줄을 목록용으로 생성하는 함수
+// 홈뱃지의 큐브 옵션 제목과 번호별 두 줄을 카드용으로 생성하는 함수
 function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var record = getHomeBadgeCubeRecord(data, user, badge.id, false);
     var castle = record ? record.castle : 0;
@@ -39394,10 +39454,21 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var petUpgrade = record ? record.petUpgrade : 0;
     var explore = record ? record.explore : 0;
     var lines = [];
-    lines.push("└ ⚔️ 캐슬 " + formatHomeBadgeCubePercent(castle) + " | 👾 레이드 " + formatHomeBadgeCubePercent(raid));
-    lines.push("└ 🌟 펫강화 " + formatHomeBadgeCubePercent(petUpgrade) + " | ⛰️ 펫탐험 " + formatHomeBadgeCubePercent(explore));
+    lines.push("💟 홈뱃지 큐브 옵션");
+    lines.push("[1]⚔️+" + formatHomeBadgeCubeCardPercent(castle) + " [2]👾+" + formatHomeBadgeCubeCardPercent(raid));
+    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + " [4]⛰️+" + formatHomeBadgeCubeCardPercent(explore));
     if (isHomeBadgeCubeAllMax(record)) lines.push("└ 💟 올맥스! 장착 효과가 모두 11.0%로 적용됩니다.");
     return lines.join("\n");
+}
+
+// 홈뱃지 출처에 맞는 카드용 유형·등급 꼬리표를 반환하는 함수
+function getPetHomeBadgeTypeLabel(badge) {
+    if (!badge) return "";
+    if (badge.id.indexOf("S") === 0) return " [특별]";
+    if (badge.source === "HOME_BADGE_GACHA") return " [" + badge.grade + "]";
+    if (badge.source === "HOME_BADGE_GACHA_2") return " [MBTI]";
+    if (badge.source === "HOME_BADGE_GACHA_3") return " [연애유형]";
+    return "";
 }
 
 // 홈뱃지 뽑기의 등급별·개별 확률 안내 메시지를 생성하는 함수
@@ -39714,11 +39785,10 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
     if (owned.length === 0) out += "아직 획득한 뱃지가 없습니다.\n";
     for (var i = 0; i < owned.length; i++) {
         var badge = owned[i];
-        out += "[" + (i + 1) + "] " + badge.emoji + " " + badge.name +
-            (badge.id.indexOf("S") === 0 ? " [특별]" : (badge.source === "HOME_BADGE_GACHA" ? " [" + badge.grade + "]" : (badge.source === "HOME_BADGE_GACHA_2" ? " [MBTI]" : (badge.source === "HOME_BADGE_GACHA_3" ? " [연애유형]" : "")))) +
+        out += "[" + (i + 1) + "] " + badge.emoji + " " + badge.name + getPetHomeBadgeTypeLabel(badge) +
             (social.equippedBadgeId === badge.id ? " ✅ 장착 중" : "") + "\n" +
-            "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n" +
-            buildHomeBadgeCubeOptionLines(data, user, badge) + "\n\n";
+            buildHomeBadgeCubeOptionLines(data, user, badge) + "\n" +
+            "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n\n";
     }
     return out.trim();
 }
@@ -44388,6 +44458,7 @@ function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, 
     var itemP = getExploreItemBonusPercent(data, user);
     var penaltyP = getExploreSuccessPenaltyPercent(dungeonKey);
 
+    var totalPBeforeHomeBadge = Math.min(100, Math.max(0, baseP + tierP + expP + lordP + traitP + pendantP + premiumP + itemP - penaltyP)); // 홈뱃지 효과 적용 전 탐험 확률
     var totalP = Math.min(100, Math.max(0, baseP + tierP + expP + lordP + traitP + pendantP + premiumP + homeBadgeP + itemP - penaltyP));
 
     return {
@@ -44401,6 +44472,7 @@ function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, 
         homeBadgeP: homeBadgeP,
         itemP: itemP,
         penaltyP: penaltyP,
+        totalPBeforeHomeBadge: totalPBeforeHomeBadge,
         totalP: totalP
     };
 }
