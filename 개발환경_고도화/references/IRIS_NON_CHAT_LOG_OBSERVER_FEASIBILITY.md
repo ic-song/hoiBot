@@ -97,4 +97,3 @@ Technical extension is feasible. Start with room membership and room metadata be
 - Upstream `chat_logs` polling and forwarding: <https://github.com/dolidolih/Iris/blob/v0.32/app/src/main/java/party/qwer/iris/ObserverHelper.kt>
 - Attached database connection and query support: <https://github.com/dolidolih/Iris/blob/v0.32/app/src/main/java/party/qwer/iris/KakaoDB.kt>
 - Upstream release: <https://github.com/dolidolih/Iris/releases/tag/v0.32>
-
