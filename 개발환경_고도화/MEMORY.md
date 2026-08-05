@@ -85,6 +85,11 @@
 - Node.js 프로젝트를 저장소 최상위 `runtime/`에서 `개발환경_고도화/runtime/`으로 이동했다.
 - 이동 후 새 경로에서 Lite 서버를 재기동했으며 `0.0.0.0:3100` readiness 확인을 통과했다.
 - Iris는 `chat_logs`의 새 행을 HTTP/WebSocket으로 전달하며 공식 고수준 분류는 `message`, `new_member`, `del_member`, `unknown`이다.
+- KakaoTalk은 Iris 실행 여부와 무관하게 redroid 로컬 DB를 직접 갱신하고, Iris `v0.32`는 현재 `100 ms` 주기로 `chat_logs._id` 증가분을 폴링해 서버로 전달한다. Iris 설정은 KakaoTalk의 저장 범위를 결정하지 않는다.
+- redroid의 `/data/local/tmp/Iris.apk`가 공식 최신 `v0.32` 배포본과 MD5까지 일치함을 확인하고, 공식 소스의 `DBObserver`·`ObserverHelper`·`KakaoDB`를 검토했다.
+- Iris는 SQLite trigger나 Android `ContentObserver`가 아니라 확장 가능한 주기적 SQL 조회 구조다. `chat_rooms`, `open_chat_member`, `open_profile`, `open_link`, `multi_profiles`를 별도 snapshot-diff observer로 감시하는 커스텀 빌드는 기술적으로 가능하다.
+- 현재 계정에는 `friends` 테이블이 없고 테스트한 일반 단체방의 `open_chat_member`도 0행이므로, DB에 존재하지 않는 상대 닉네임·프로필 변화는 Iris를 확장해도 감지할 수 없다.
+- `chat_logs` 외 테이블 감시 가능 범위, 후보 컬럼, 개인정보 최소화, 커스텀 빌드·롤백 제약을 `references/IRIS_NON_CHAT_LOG_OBSERVER_FEASIBILITY.md`에 기록했다.
 - 현재 redroid 이력에서 `NEWMEM`, `DELMEM`, `SYNCMODMSG`, `SYNCDLMSG`, `SYNCREWR` 원시 origin을 확인했다.
 - 답글은 `type=26`과 source attachment 필드로 감지 가능하고, 수정·삭제는 각각 `SYNCMODMSG`, `SYNCDLMSG`를 서버가 직접 정규화해야 한다.
 - 현재 서버에서 상대가 보낸 일반 답글을 `type=26`, `isMine=false`, `src_isThread=false`와 source 연결 필드로 실관측했다.
@@ -134,7 +139,9 @@
 ## 미검증 항목
 
 - 다른 참여자 `@멘션`의 동일 구조 여부와 자진 퇴장/강퇴 구분 방식
-- 닉네임 변경·반응 이벤트를 위한 별도 테이블 감시 필요성
+- `chat_rooms` 참여자·방 메타데이터 snapshot-diff를 실제 커스텀 Iris 빌드로 구현·배포할지 여부
+- 오픈채팅 닉네임·프로필 변경 시 `open_chat_member` 또는 `open_profile` 행이 실제로 갱신되는지에 대한 live test
+- 다른 참여자의 반응이 현재 로컬 DB 어디에 어떤 상관키로 기록되는지에 대한 live test
 - Iris WebSocket `/ws` 수신
 - redroid 재시작 후 데이터와 설정 유지
 - 카카오톡 계정 전환 시 Iris 이름 캐시를 안전하게 초기화·재구축하는 절차
@@ -160,7 +167,7 @@
 7. 구현된 관리자 `/서버이동` API와 Iris 명령의 동일 Service 호출을 승인된 실제 관리자 Kakao identity로 end-to-end 검증한다.
 8. 관리자 콘솔의 실제 API 연결을 기반으로 운영자 생성·기간형 프리패스·기간 정지·서버 배정 변경의 브라우저 mutation acceptance test를 별도 합성 계정에서 수행한다.
 9. 구현된 domain Service를 legacy 명령별 golden fixture와 대조한 뒤 Iris·Discord·관리 API adapter에 수직 기능 단위로 연결한다.
-10. 다른 참여자 이벤트, WebSocket, 다중 이미지/파일/반응 등 기존 미검증 Iris 입력을 별도 테스트방에서 계속 검증한다.
+10. 다른 참여자 이벤트, WebSocket, 다중 이미지/파일/반응 등 기존 미검증 Iris 입력을 별도 테스트방에서 계속 검증한다. 커스텀 Iris를 진행할 경우 공식 `v0.32` fork에서 `chat_rooms` snapshot-diff부터 구현한다.
 11. Windows Docker 검증 결과를 Ubuntu Docker 환경에서도 동일 image digest·migration·backup/restore 절차로 재현한다.
 12. 전체 기능과 운영 snapshot reconciliation을 통과한 뒤 최종 일괄 전환 점검표를 실행한다.
 
