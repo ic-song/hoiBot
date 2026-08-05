@@ -3,8 +3,10 @@ export interface AppConfig {
   host: string;
   port: number;
   irisSharedToken: string;
+  userVerificationPepper: string;
   irisBaseUrl: string;
   irisImageForwardRoomId: string;
+  irisEventMonitorRoomId: string;
   imageMaxBytes: number;
   imageDownloadTimeoutMs: number;
   bodyLimitBytes: number;
@@ -79,6 +81,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   }
 
   const nodeEnv = env.NODE_ENV?.trim() || "development";
+  const userVerificationPepper = env.USER_VERIFICATION_PEPPER?.trim()
+    || (nodeEnv === "production" ? "" : "development-user-verification-pepper");
+  if (nodeEnv === "production" && userVerificationPepper.length < 32) {
+    throw new Error("USER_VERIFICATION_PEPPER must contain at least 32 characters in production.");
+  }
   const databaseEnabled = readBoolean(env.DATABASE_ENABLED, false);
 
   return {
@@ -86,8 +93,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     host: env.HOST?.trim() || "0.0.0.0",
     port: readPositiveInteger(env.PORT, 3100, "PORT"),
     irisSharedToken,
+    userVerificationPepper,
     irisBaseUrl: readHttpUrl(env.IRIS_BASE_URL, "http://127.0.0.1:3000", "IRIS_BASE_URL"),
     irisImageForwardRoomId: env.IRIS_IMAGE_FORWARD_ROOM_ID?.trim() ?? "",
+    irisEventMonitorRoomId: env.IRIS_EVENT_MONITOR_ROOM_ID?.trim() ?? "",
     imageMaxBytes: readPositiveInteger(env.IMAGE_MAX_BYTES, 10_485_760, "IMAGE_MAX_BYTES"),
     imageDownloadTimeoutMs: readPositiveInteger(
       env.IMAGE_DOWNLOAD_TIMEOUT_MS,

@@ -7,6 +7,23 @@ export interface ValidSignupName {
   genderCode: "male" | "female";
 }
 
+// 사이트 계정 이름을 확정된 한글 두 글자·공백·성별 형식으로 검증합니다.
+export function validateSystemAccountName(value: string): ValidSignupName {
+  const match = value.match(/^([가-힣]{2}) (남|여)$/u);
+  if (match === null) {
+    throw new Error("INVALID_SIGNUP_NAME_FORMAT");
+  }
+  const compactName = value.replace(/\s+/g, "").toLowerCase();
+  if (BLOCKED_NICKNAME_TERMS.some((term) => compactName.includes(term))) {
+    throw new Error("BLOCKED_SIGNUP_NAME");
+  }
+  return {
+    displayName: value,
+    normalizedDisplayName: value,
+    genderCode: match[2] === "남" ? "male" : "female"
+  };
+}
+
 const BLOCKED_NICKNAME_TERMS = [
   "시발", "씨발", "쉬발", "슈발", "씹발", "십발", "병신", "빙신", "븅신",
   "개새", "개년", "개놈", "개돼", "좆같", "좇같", "존나", "졸라", "지랄", "지럴", "지롤",

@@ -164,4 +164,18 @@ export class MariaProfileRepository implements ProfileRepository {
     const rows = await this.database.query<ProfileRow[]>(`${PROFILE_SELECT}${where} ORDER BY p.id LIMIT ? OFFSET ?`, values);
     return Promise.all(rows.map((row) => hydrateProfile(this.database, row)));
   }
+
+  async count(search: string | undefined): Promise<number> {
+    const values: unknown[] = [];
+    let where = " WHERE p.status = 'active'";
+    if (search !== undefined && search !== "") {
+      where += " AND (pp.current_display_name LIKE ? OR CAST(p.id AS CHAR) = ?)";
+      values.push(`%${search}%`, search);
+    }
+    const rows = await this.database.query<Array<{ total: bigint }>>(
+      `SELECT COUNT(*) AS total FROM players p JOIN player_profiles pp ON pp.player_id = p.id${where}`,
+      values
+    );
+    return Number(rows[0]?.total ?? 0n);
+  }
 }

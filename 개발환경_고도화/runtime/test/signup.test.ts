@@ -4,6 +4,7 @@ import {
   buildSignupTermsMessage,
   buildSignupWelcomeMessage,
   isSignupCommand,
+  validateSystemAccountName,
   validateSignupDisplayName
 } from "../src/signup/signup-policy.js";
 import { SignupService } from "../src/signup/signup-service.js";
@@ -54,6 +55,17 @@ describe("signup policy", () => {
     assert.throws(() => validateSignupDisplayName("정치인 남"), /BLOCKED_SIGNUP_NAME/);
   });
 
+  it("requires the site account name to match exactly two Hangul characters, one space, and gender", () => {
+    assert.deepEqual(validateSystemAccountName("호이 남"), {
+      displayName: "호이 남",
+      normalizedDisplayName: "호이 남",
+      genderCode: "male"
+    });
+    assert.throws(() => validateSystemAccountName(" 호이 남 "), /INVALID_SIGNUP_NAME_FORMAT/);
+    assert.throws(() => validateSystemAccountName("호이봇 남"), /INVALID_SIGNUP_NAME_FORMAT/);
+    assert.throws(() => validateSystemAccountName("호이남"), /INVALID_SIGNUP_NAME_FORMAT/);
+  });
+
   it("accepts only exact signup and terms response commands", () => {
     for (const command of ["/가입", "시작한다", "/시작한다", "거절한다", "/거절한다"]) {
       assert.equal(isSignupCommand(command), true, command);
@@ -94,7 +106,7 @@ describe("signup policy", () => {
     const scripted = createScriptedDatabase([
       [{ id: 12n, player_id: null, status: "candidate" }],
       [],
-      [{ id: 31n, display_name: "가입완료 여", gender_code: "female", expires_at: new Date(Date.now() + 60_000) }],
+      [{ id: 31n, display_name: "가입완료 여", gender_code: "female", expired: 0 }],
       [],
       [{ game_server_id: 7n }]
     ]);
@@ -118,7 +130,7 @@ describe("signup policy", () => {
     const scripted = createScriptedDatabase([
       [{ id: 13n, player_id: null, status: "candidate" }],
       [],
-      [{ id: 32n, display_name: "가입거절 남", gender_code: "male", expires_at: new Date(Date.now() + 60_000) }]
+      [{ id: 32n, display_name: "가입거절 남", gender_code: "male", expired: 0 }]
     ]);
     const result = await new SignupService(scripted.database).handle({
       externalUserId: "kakao-13",

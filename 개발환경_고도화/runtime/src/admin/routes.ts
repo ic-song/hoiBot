@@ -5,127 +5,197 @@ import type { ProfileRepository } from "../player/profile.js";
 import type { ChangePlayerServerService } from "../player/change-player-server-service.js";
 import { ApplicationError } from "../shared/application-error.js";
 import type { AdminDirectoryService } from "./directory-service.js";
+import type { AdminManagementService } from "./management-service.js";
 
 interface AdminRouteDependencies {
   auth: AdminAuthService;
   profiles: ProfileRepository;
   changePlayerServer: ChangePlayerServerService;
   directory: AdminDirectoryService;
+  management: AdminManagementService;
   secureCookies: boolean;
 }
 
 const SESSION_COOKIE = "hoibot_admin_session";
 
-// 쿠키와 선택적 CSRF 헤더에서 관리자 세션을 확인합니다.
-async function authenticate(
-  request: FastifyRequest,
-  dependencies: AdminRouteDependencies,
-  requireCsrf: boolean
-): Promise<AdminSession> {
+type MutationBody = { reason?: unknown; confirmed?: unknown };
+
+function readPage(query: { page?: string; limit?: string }): { page: number; limit: number; offset: number } {
+  const page = Math.max(Number(query.page ?? 1) || 1, 1);
+  const limit = Math.min(Math.max(Number(query.limit ?? 50) || 50, 1), 200);
+  return { page, limit, offset: (page - 1) * limit };
+}
+
+function readMutation(request: FastifyRequest, body: MutationBody | undefined): { idempotencyKey: string; reason: string } {
+  const idempotencyKey = request.headers["idempotency-key"];
+  if (typeof idempotencyKey !== "string" || idempotencyKey.trim() === "") throw new ApplicationError("IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key 헤더가 필요합니다.", 422);
+  if (typeof body?.reason !== "string" || body.reason.trim() === "") throw new ApplicationError("REASON_REQUIRED", "변경 사유가 필요합니다.", 422);
+  if (body.confirmed !== true) throw new ApplicationError("CONFIRMATION_REQUIRED", "변경 내용을 다시 확인해 주세요.", 422);
+  return { idempotencyKey, reason: body.reason.trim() };
+}
+
+async function authenticate(request: FastifyRequest, dependencies: AdminRouteDependencies, requireCsrf: boolean): Promise<AdminSession> {
   const token = request.cookies[SESSION_COOKIE] ?? "";
   const csrf = requireCsrf ? request.headers["x-csrf-token"] : undefined;
-  if (requireCsrf && typeof csrf !== "string") {
-    throw new ApplicationError("CSRF_TOKEN_REQUIRED", "CSRF 토큰이 필요합니다.", 403);
-  }
+  if (requireCsrf && typeof csrf !== "string") throw new ApplicationError("CSRF_TOKEN_REQUIRED", "CSRF 토큰이 필요합니다.", 403);
   return dependencies.auth.authenticate(token, typeof csrf === "string" ? csrf : undefined);
 }
 
-// 관리자 인증·회원 조회·서버 변경 API를 등록합니다.
+function setSessionCookie(reply: FastifyReply, token: string, secure: boolean): void {
+  reply.setCookie(SESSION_COOKIE, token, { httpOnly: true, secure, sameSite: "strict", path: "/", maxAge: 86_400 });
+}
+
+function requireSuperAdmin(session: AdminSession): void {
+  if (!session.roleCodes.includes("super_admin")) throw new ApplicationError("SUPER_ADMIN_REQUIRED", "최고관리자만 수행할 수 있습니다.", 403);
+}
+
+// 관리자 인증·운영·권한 관리 REST API를 등록합니다.
 export async function registerAdminRoutes(app: FastifyInstance, dependencies: AdminRouteDependencies): Promise<void> {
-  app.post<{ Body: { loginId?: unknown; password?: unknown } }>("/api/v1/admin/auth/login", async (request, reply) => {
-    if (typeof request.body?.loginId !== "string" || typeof request.body?.password !== "string") {
-      throw new ApplicationError("INVALID_LOGIN_REQUEST", "loginId와 password가 필요합니다.", 422);
-    }
+  app.post<{ Body: { loginId?: unknown; password?: unknown } }>("/api/v1/admin/sessions", async (request, reply) => {
+    if (typeof request.body?.loginId !== "string" || typeof request.body?.password !== "string") throw new ApplicationError("INVALID_LOGIN_REQUEST", "loginId와 password가 필요합니다.", 422);
     const result = await dependencies.auth.login(request.body.loginId, request.body.password);
-    reply.setCookie(SESSION_COOKIE, result.sessionToken, {
-      httpOnly: true, secure: dependencies.secureCookies, sameSite: "strict", path: "/", maxAge: 86_400
-    });
-    return { ok: true, session: { operatorId: result.operatorId, loginId: result.loginId, displayName: result.displayName, permissions: result.permissions }, csrfToken: result.csrfToken, requestId: request.id };
+    setSessionCookie(reply, result.sessionToken, dependencies.secureCookies);
+    return reply.code(201).send({ ok: true, session: { operatorId: result.operatorId, loginId: result.loginId, displayName: result.displayName, roleCodes: result.roleCodes, permissions: result.permissions }, csrfToken: result.csrfToken, requestId: request.id });
   });
 
-  app.get("/api/v1/admin/session", async (request) => {
-    const session = await authenticate(request, dependencies, false);
-    return { ok: true, session, requestId: request.id };
-  });
+  app.get("/api/v1/admin/sessions/current", async (request) => ({ ok: true, session: await authenticate(request, dependencies, false), requestId: request.id }));
 
-  app.delete("/api/v1/admin/auth/session", async (request, reply) => {
+  app.delete("/api/v1/admin/sessions/current", async (request, reply) => {
     const token = request.cookies[SESSION_COOKIE] ?? "";
     const csrf = request.headers["x-csrf-token"];
-    if (typeof csrf !== "string") {
-      throw new ApplicationError("CSRF_TOKEN_REQUIRED", "CSRF 토큰이 필요합니다.", 403);
-    }
+    if (typeof csrf !== "string") throw new ApplicationError("CSRF_TOKEN_REQUIRED", "CSRF 토큰이 필요합니다.", 403);
     await dependencies.auth.logout(token, csrf);
     reply.clearCookie(SESSION_COOKIE, { path: "/" });
-    return { ok: true, requestId: request.id };
+    return reply.code(204).send();
   });
 
-  app.get<{ Querystring: { search?: string; limit?: string; offset?: string } }>("/api/v1/admin/players", async (request) => {
-    const session = await authenticate(request, dependencies, false);
-    requirePermission(session, "player.read");
-    const limit = Math.min(Math.max(Number(request.query.limit ?? 50), 1), 100);
-    const offset = Math.max(Number(request.query.offset ?? 0), 0);
-    const players = await dependencies.profiles.list(request.query.search, limit, offset);
-    return { ok: true, players, requestId: request.id };
+  app.get("/api/v1/admin/overview", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "overview.read");
+    return { ok: true, overview: await dependencies.management.overview(), requestId: request.id };
   });
 
-  app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId/profile", async (request) => {
-    const session = await authenticate(request, dependencies, false);
-    requirePermission(session, "player.read");
+  app.get<{ Querystring: { search?: string; page?: string; limit?: string } }>("/api/v1/admin/players", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "player.read");
+    const paging = readPage(request.query);
+    const [items, total] = await Promise.all([dependencies.profiles.list(request.query.search, paging.limit, paging.offset), dependencies.profiles.count(request.query.search)]);
+    return { ok: true, items, page: paging.page, limit: paging.limit, total, requestId: request.id };
+  });
+
+  app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "player.read");
     const profile = await dependencies.profiles.findByPlayerId(request.params.playerId);
-    if (profile === null) {
-      throw new ApplicationError("PLAYER_NOT_FOUND", "회원을 찾을 수 없습니다.", 404);
-    }
-    return { ok: true, profile, requestId: request.id };
+    if (profile === null) throw new ApplicationError("PLAYER_NOT_FOUND", "회원을 찾을 수 없습니다.", 404);
+    const restrictions = await dependencies.management.listRestrictions(request.params.playerId);
+    return { ok: true, player: { ...profile, restrictions }, requestId: request.id };
   });
 
-  app.patch<{ Params: { playerId: string }; Body: { serverCode?: unknown; expectedVersion?: unknown; reason?: unknown } }>(
-    "/api/v1/admin/players/:playerId/server",
-    async (request) => {
-      const session = await authenticate(request, dependencies, true);
-      requirePermission(session, "player.server.change");
-      const idempotencyKey = request.headers["idempotency-key"];
-      if (typeof idempotencyKey !== "string" || idempotencyKey.trim() === "") {
-        throw new ApplicationError("IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key 헤더가 필요합니다.", 422);
-      }
-      const { serverCode, expectedVersion, reason } = request.body ?? {};
-      if (typeof serverCode !== "string" || (typeof expectedVersion !== "string" && typeof expectedVersion !== "number") || typeof reason !== "string" || reason.trim() === "") {
-        throw new ApplicationError("INVALID_SERVER_CHANGE", "serverCode, expectedVersion와 reason이 필요합니다.", 422);
-      }
-      const result = await dependencies.changePlayerServer.execute({
-        playerId: request.params.playerId, serverCode, expectedVersion: String(expectedVersion), reason,
-        idempotencyKey, actorId: session.operatorId, sourceCode: "admin_api"
-      });
-      return { ok: true, ...result, requestId: request.id };
-    }
-  );
-
-  app.get("/api/v1/admin/game-servers", async (request) => {
-    const session = await authenticate(request, dependencies, false);
-    requirePermission(session, "player.read");
-    return { ok: true, servers: await dependencies.directory.listGameServers(), requestId: request.id };
-  });
-
-  app.get("/api/v1/admin/identity-candidates", async (request) => {
-    const session = await authenticate(request, dependencies, false);
-    requirePermission(session, "identity.approve");
-    return { ok: true, candidates: await dependencies.directory.listIdentityCandidates(), requestId: request.id };
-  });
-
-  app.post<{ Params: { id: string }; Body: { playerId?: unknown; reason?: unknown } }>("/api/v1/admin/identity-candidates/:id/approve", async (request) => {
-    const session = await authenticate(request, dependencies, true);
-    requirePermission(session, "identity.approve");
-    const idempotencyKey = request.headers["idempotency-key"];
-    if (typeof idempotencyKey !== "string" || typeof request.body?.playerId !== "string" || typeof request.body?.reason !== "string" || request.body.reason.trim() === "") {
-      throw new ApplicationError("INVALID_IDENTITY_APPROVAL", "Idempotency-Key, playerId와 reason이 필요합니다.", 422);
-    }
-    const result = await dependencies.directory.approveIdentity({ identityId: request.params.id, playerId: request.body.playerId, reason: request.body.reason, actorId: session.operatorId, idempotencyKey });
+  app.put<{ Params: { playerId: string }; Body: MutationBody & { serverCode?: unknown; expectedVersion?: unknown } }>("/api/v1/admin/players/:playerId/server-assignment", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "player.server.assign");
+    const mutation = readMutation(request, request.body);
+    if (typeof request.body?.serverCode !== "string" || (typeof request.body.expectedVersion !== "string" && typeof request.body.expectedVersion !== "number")) throw new ApplicationError("INVALID_SERVER_ASSIGNMENT", "serverCode와 expectedVersion이 필요합니다.", 422);
+    const result = await dependencies.changePlayerServer.execute({ playerId: request.params.playerId, serverCode: request.body.serverCode, expectedVersion: String(request.body.expectedVersion), reason: mutation.reason, idempotencyKey: mutation.idempotencyKey, actorId: session.operatorId, sourceCode: "admin_api" });
     return { ok: true, ...result, requestId: request.id };
   });
 
-  app.get<{ Querystring: { limit?: string } }>("/api/v1/admin/audit", async (request) => {
-    const session = await authenticate(request, dependencies, false);
-    requirePermission(session, "audit.read");
-    const limit = Math.min(Math.max(Number(request.query.limit ?? 100), 1), 200);
-    return { ok: true, entries: await dependencies.directory.listAudit(limit), requestId: request.id };
+  app.get("/api/v1/admin/game-servers", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "player.read");
+    const items = await dependencies.directory.listGameServers();
+    return { ok: true, items, page: 1, limit: items.length, total: items.length, requestId: request.id };
   });
+
+  app.get<{ Querystring: { status?: string; page?: string; limit?: string } }>("/api/v1/admin/external-identities", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "identity.read");
+    const paging = readPage(request.query); const result = await dependencies.directory.listExternalIdentities(request.query.status, paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.put<{ Params: { identityId: string }; Body: MutationBody & { playerId?: unknown } }>("/api/v1/admin/external-identities/:identityId/player-assignment", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "identity.assign");
+    const mutation = readMutation(request, request.body);
+    if (typeof request.body?.playerId !== "string") throw new ApplicationError("PLAYER_ID_REQUIRED", "playerId가 필요합니다.", 422);
+    const result = await dependencies.directory.approveIdentity({ identityId: request.params.identityId, playerId: request.body.playerId, reason: mutation.reason, actorId: session.operatorId, idempotencyKey: mutation.idempotencyKey });
+    return { ok: true, ...result, requestId: request.id };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/audit-entries", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "audit.read");
+    const paging = readPage(request.query); const result = await dependencies.directory.listAudit(paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.post<{ Params: { playerId: string }; Body: MutationBody & { restrictionType?: unknown; endsAt?: unknown } }>("/api/v1/admin/players/:playerId/restrictions", async (request, reply) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "account.restrict"); const mutation = readMutation(request, request.body);
+    if (request.body?.restrictionType !== "temporary_suspension" && request.body?.restrictionType !== "permanent_suspension") throw new ApplicationError("INVALID_RESTRICTION_TYPE", "제재 유형이 올바르지 않습니다.", 422);
+    const result = await dependencies.management.createRestriction({ ...mutation, operatorId: session.operatorId, playerId: request.params.playerId, restrictionType: request.body.restrictionType, endsAt: typeof request.body.endsAt === "string" ? request.body.endsAt : undefined });
+    return reply.code(201).send({ ok: true, ...result, requestId: request.id });
+  });
+
+  app.patch<{ Params: { restrictionId: string }; Body: MutationBody & { status?: unknown } }>("/api/v1/admin/restrictions/:restrictionId", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "account.restrict"); const mutation = readMutation(request, request.body);
+    if (request.body?.status !== "revoked") throw new ApplicationError("INVALID_RESTRICTION_STATUS", "제재 상태는 revoked로만 변경할 수 있습니다.", 422);
+    return { ok: true, ...await dependencies.management.updateRestriction({ ...mutation, operatorId: session.operatorId, restrictionId: request.params.restrictionId, status: "revoked" }), requestId: request.id };
+  });
+
+  app.get("/api/v1/admin/account-deletion-requests", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "account.deletion.manage"); const items = await dependencies.management.listDeletionRequests();
+    return { ok: true, items, page: 1, limit: 200, total: items.length, requestId: request.id };
+  });
+
+  app.patch<{ Params: { requestId: string }; Body: MutationBody & { status?: unknown } }>("/api/v1/admin/account-deletion-requests/:requestId", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "account.deletion.manage"); const mutation = readMutation(request, request.body);
+    if (request.body?.status !== "recovered") throw new ApplicationError("INVALID_DELETION_STATUS", "탈퇴 요청은 recovered로만 변경할 수 있습니다.", 422);
+    return { ok: true, ...await dependencies.management.updateDeletionRequest({ ...mutation, operatorId: session.operatorId, requestId: request.params.requestId, status: "recovered" }), requestId: request.id };
+  });
+
+  app.get("/api/v1/admin/account-cleanup-runs", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "account.deletion.manage"); const items = await dependencies.management.listCleanupRuns();
+    return { ok: true, items, page: 1, limit: 200, total: items.length, requestId: request.id };
+  });
+
+  app.get("/api/v1/admin/operators", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "operator.read"); const items = await dependencies.management.listOperators();
+    return { ok: true, items, page: 1, limit: items.length, total: items.length, requestId: request.id };
+  });
+
+  app.post<{ Body: MutationBody & { loginId?: unknown; displayName?: unknown; password?: unknown; roleCode?: unknown } }>("/api/v1/admin/operators", async (request, reply) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "operator.manage"); requireSuperAdmin(session); const mutation = readMutation(request, request.body);
+    if (typeof request.body?.loginId !== "string" || typeof request.body.displayName !== "string" || typeof request.body.password !== "string" || (request.body.roleCode !== "manager" && request.body.roleCode !== "super_admin")) throw new ApplicationError("INVALID_OPERATOR", "운영자 생성 정보가 올바르지 않습니다.", 422);
+    const result = await dependencies.management.createOperator({ ...mutation, operatorId: session.operatorId, loginId: request.body.loginId, displayName: request.body.displayName, password: request.body.password, roleCode: request.body.roleCode });
+    return reply.code(201).send({ ok: true, ...result, requestId: request.id });
+  });
+
+  app.get<{ Params: { operatorId: string } }>("/api/v1/admin/operators/:operatorId", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "operator.read");
+    return { ok: true, operator: await dependencies.management.getOperator(request.params.operatorId), requestId: request.id };
+  });
+
+  app.patch<{ Params: { operatorId: string }; Body: MutationBody & { displayName?: unknown; status?: unknown } }>("/api/v1/admin/operators/:operatorId", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "operator.manage"); requireSuperAdmin(session); const mutation = readMutation(request, request.body);
+    const status = request.body?.status === "active" || request.body?.status === "suspended" ? request.body.status : undefined;
+    const displayName = typeof request.body?.displayName === "string" ? request.body.displayName : undefined;
+    if (status === undefined && displayName === undefined) throw new ApplicationError("OPERATOR_CHANGE_REQUIRED", "변경할 운영자 정보가 필요합니다.", 422);
+    return { ok: true, ...await dependencies.management.updateOperator({ ...mutation, operatorId: session.operatorId, targetOperatorId: request.params.operatorId, status, displayName }), requestId: request.id };
+  });
+
+  for (const method of ["PUT", "DELETE"] as const) app.route<{ Params: { operatorId: string; roleCode: string }; Body: MutationBody }>({ method, url: "/api/v1/admin/operators/:operatorId/roles/:roleCode", handler: async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "authorization.manage"); requireSuperAdmin(session); const mutation = readMutation(request, request.body);
+    if (request.params.roleCode !== "manager" && request.params.roleCode !== "super_admin") throw new ApplicationError("INVALID_ROLE", "역할 코드가 올바르지 않습니다.", 422);
+    return { ok: true, ...await dependencies.management.setRole({ ...mutation, operatorId: session.operatorId, targetOperatorId: request.params.operatorId, roleCode: request.params.roleCode, remove: method === "DELETE" }), requestId: request.id };
+  }});
+
+  for (const method of ["PUT", "DELETE"] as const) app.route<{ Params: { operatorId: string; permissionCode: string }; Body: MutationBody & { effect?: unknown } }>({ method, url: "/api/v1/admin/operators/:operatorId/permission-overrides/:permissionCode", handler: async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "authorization.manage"); requireSuperAdmin(session); const mutation = readMutation(request, request.body);
+    const effect = request.body?.effect === "deny" ? "deny" : "allow";
+    return { ok: true, ...await dependencies.management.setPermissionOverride({ ...mutation, operatorId: session.operatorId, targetOperatorId: request.params.operatorId, permissionCode: request.params.permissionCode, effect, remove: method === "DELETE" }), requestId: request.id };
+  }});
+
+  app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId/passes", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "pass.read"); const items = await dependencies.management.listPasses(request.params.playerId);
+    return { ok: true, items, page: 1, limit: items.length, total: items.length, requestId: request.id };
+  });
+
+  for (const method of ["PUT", "DELETE"] as const) app.route<{ Params: { playerId: string; passCode: string }; Body: MutationBody & { permanent?: unknown; startsAt?: unknown; endsAt?: unknown } }>({ method, url: "/api/v1/admin/players/:playerId/passes/:passCode", handler: async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, method === "DELETE" ? "pass.revoke" : "pass.grant"); const mutation = readMutation(request, request.body);
+    return { ok: true, ...await dependencies.management.setPass({ ...mutation, operatorId: session.operatorId, playerId: request.params.playerId, passCode: request.params.passCode, permanent: request.body?.permanent === true, startsAt: typeof request.body?.startsAt === "string" ? request.body.startsAt : undefined, endsAt: typeof request.body?.endsAt === "string" ? request.body.endsAt : undefined, revoke: method === "DELETE" }), requestId: request.id };
+  }});
 }

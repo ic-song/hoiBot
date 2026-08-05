@@ -1,10 +1,10 @@
 # Iris Event Capability Matrix
 
-Updated: 2026-08-04
+Updated: 2026-08-05
 
 This document records event-detection evidence for the selected redroid + KakaoTalk + Iris environment. It does not store message bodies, room names, sender names, chat IDs, user IDs, authentication values, or media URLs.
 
-This is the validation/evidence record. `KAKAOTALK_DB_SCHEMA_INVENTORY.md` defines the `chat_logs` metadata, and `IRIS_SERVER_EVENT_MAPPING.json` is the machine-readable server-normalizer contract. Update evidence here before promoting a mapping status.
+This is the validation/evidence record. `KAKAOTALK_DB_SCHEMA_INVENTORY.md` defines the `chat_logs` metadata, `IRIS_KAKAOTALK_USABLE_DATA_CLASSIFICATION.md` separates observable data from approved server use, and `IRIS_SERVER_EVENT_MAPPING.json` is the machine-readable server-normalizer contract. Update evidence here before promoting a mapping status.
 
 ## Status Definitions
 
@@ -137,12 +137,16 @@ Historical evidence remains useful for capability planning but is not presented 
 
 ## Sender Identity and Name-Cache Limitation
 
-- The server currently uses the `sender` value supplied by Iris for `/ping` response text.
+- The server now queries the room-scoped KakaoTalk identity row for exact `/ping`. It prioritizes one `db2.open_chat_member.nickname` row, then one `db2.friends.name` row when that table exists, and falls back to the Iris `sender` when neither is available.
 - Iris keeps a separate display-name cache at `/data/local/tmp/names.db`; clearing KakaoTalk application data does not clear it.
 - After the account switch, the same message `user_id` was initially emitted with a previous-account display label and later emitted with the current display label after notification polling refreshed the cache.
+- The cache schema is `names(sender_id TEXT PRIMARY KEY, sender_name TEXT, room_name TEXT)`. Iris computes `sender_id` as SHA-256 of `person_${chatId}:${userId}` and uses this row only when direct Kakao DB name resolution is empty.
+- For open chat, Iris directly reads `db2.open_chat_member.nickname` by `user_id`. A live random-profile test showed that this nickname, the stale cache label, and the intended system name can all differ; the profile also had a separate `profile_link_id`.
+- A live `/info` in the designated test room confirmed `chat_rooms.type=MultiChat`, `link_id=null`, zero matching `open_chat_member` rows, and no `db2.friends` table. In that room KakaoTalk DB has no participant-name row, so Iris `sender` is the only available display-name fallback.
+- Non-production exact `/info` prints all received Iris fields and related KakaoTalk rows in chunks. Large integers embedded in JSON are displayed string-safe; this diagnostic is disabled in production because it exposes operational identity and room metadata.
 - Therefore server identity must use stable provider IDs with room context, normally `(chat_id, user_id)`.
 - `sender` is replaceable display metadata and must never be the sole user key.
-- A safe cache reset/rebuild procedure remains unverified; do not delete the cache automatically in normal operation.
+- A manual targeted rebuild was verified by backing up `names.db`, deleting only the confirmed `(room,user)` hash row, restarting Iris, and waiting for a new message. Do not delete the whole cache or automate this in normal operation.
 
 ## Dedicated Test Checklist
 

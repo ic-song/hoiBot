@@ -28,4 +28,5 @@ export interface ProfileRepository {
   findByPlayerId(playerId: string): Promise<ProfileView | null>;
   findByExternalIdentity(providerCode: string, externalUserId: string): Promise<ProfileView | null>;
   list(search: string | undefined, limit: number, offset: number): Promise<ProfileView[]>;
+  count(search: string | undefined): Promise<number>;
 }

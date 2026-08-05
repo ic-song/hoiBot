@@ -58,11 +58,16 @@ export class ProcessIrisEventService {
     }
   }
 
-  async queueCommandReply(event: NormalizedIrisEvent, commandCode: string, data: string): Promise<PendingReply> {
-    if (event.channelId === undefined) {
+  async queueCommandReply(
+    event: NormalizedIrisEvent,
+    commandCode: string,
+    data: string,
+    destinationId?: string
+  ): Promise<PendingReply> {
+    if (destinationId === undefined && event.channelId === undefined) {
       throw new Error("Cannot queue an Iris reply without a channel id.");
     }
-    const channelId = event.channelId;
+    const channelId = destinationId ?? event.channelId!;
     return this.database.withTransaction(async (transaction) => {
       const operation = await transaction.execute(
         `INSERT INTO operations

@@ -76,7 +76,7 @@ try {
   operatorId = operator.insertId;
   await database.execute(
     `INSERT INTO admin_operator_roles (operator_id, role_id)
-     SELECT ?, id FROM admin_roles WHERE code = 'administrator'`,
+     SELECT ?, id FROM admin_roles WHERE code = 'super_admin'`,
     [operatorId]
   );
   const auth = new AdminAuthService(database);
@@ -141,6 +141,8 @@ try {
 } finally {
   await database.withTransaction(async (transaction) => {
     if (operatorId !== undefined) {
+      await transaction.execute("DELETE FROM admin_auth_events WHERE operator_id = ?", [operatorId]);
+      await transaction.execute("DELETE FROM admin_operator_permission_overrides WHERE operator_id = ? OR granted_by = ?", [operatorId, operatorId]);
       await transaction.execute("DELETE FROM admin_sessions WHERE operator_id = ?", [operatorId]);
       await transaction.execute("DELETE FROM admin_operator_roles WHERE operator_id = ?", [operatorId]);
       await transaction.execute("DELETE FROM admin_operators WHERE id = ?", [operatorId]);

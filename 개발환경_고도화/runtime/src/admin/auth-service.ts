@@ -8,6 +8,7 @@ export interface AdminSession {
   operatorId: string;
   loginId: string;
   displayName: string;
+  roleCodes: string[];
   permissions: string[];
 }
 
@@ -32,9 +33,16 @@ function hashSecret(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-// 운영자 권한 코드를 역할 매핑에서 조회합니다.
-async function readPermissions(database: DatabaseClient, operatorId: string): Promise<string[]> {
-  const rows = await database.query<Array<{ code: string }>>(
+// 역할 기본 권한과 개인 allow/deny를 결합한 최종 인가 정보를 조회합니다.
+export async function readAuthorization(database: DatabaseClient, operatorId: string): Promise<{ roleCodes: string[]; permissions: string[] }> {
+  const [roles, basePermissions, overrides] = await Promise.all([
+    database.query<Array<{ code: string }>>(
+      `SELECT role.code FROM admin_operator_roles operator_role
+       JOIN admin_roles role ON role.id = operator_role.role_id
+       WHERE operator_role.operator_id = ? AND role.active = TRUE ORDER BY role.code`,
+      [operatorId]
+    ),
+    database.query<Array<{ code: string }>>(
     `SELECT DISTINCT permission.code
      FROM admin_operator_roles operator_role
      JOIN admin_role_permissions role_permission ON role_permission.role_id = operator_role.role_id
@@ -43,8 +51,19 @@ async function readPermissions(database: DatabaseClient, operatorId: string): Pr
      WHERE operator_role.operator_id = ? AND role.active = TRUE
      ORDER BY permission.code`,
     [operatorId]
-  );
-  return rows.map((row) => row.code);
+    ),
+    database.query<Array<{ permission_code: string; effect: "allow" | "deny" }>>(
+      `SELECT permission_code, effect FROM admin_operator_permission_overrides
+       WHERE operator_id = ? ORDER BY permission_code`,
+      [operatorId]
+    )
+  ]);
+  const permissions = new Set(basePermissions.map((row) => row.code));
+  for (const override of overrides) {
+    if (override.effect === "deny") permissions.delete(override.permission_code);
+    else permissions.add(override.permission_code);
+  }
+  return { roleCodes: roles.map((row) => row.code), permissions: [...permissions].sort() };
 }
 
 export class AdminAuthService {
@@ -59,19 +78,36 @@ export class AdminAuthService {
     );
     const operator = operators[0];
     if (operator === undefined || operator.status !== "active") {
+      await this.database.execute(
+        `INSERT INTO admin_auth_events (operator_id, login_id, event_code, result_code)
+         VALUES (?, ?, 'session.created', 'invalid_credentials')`,
+        [operator?.id ?? null, loginId]
+      );
       throw new ApplicationError("INVALID_CREDENTIALS", "로그인 정보를 확인해 주세요.", 401);
     }
     if (Boolean(operator.account_locked)) {
+      await this.database.execute(
+        `INSERT INTO admin_auth_events (operator_id, login_id, event_code, result_code)
+         VALUES (?, ?, 'session.created', 'account_locked')`,
+        [operator.id, operator.login_id]
+      );
       throw new ApplicationError("ACCOUNT_LOCKED", "로그인 실패 횟수 초과로 계정이 잠겼습니다.", 423);
     }
     if (!await verify(operator.password_hash, password)) {
-      await this.database.execute(
-        `UPDATE admin_operators SET
-          locked_until = IF(failed_login_count + 1 >= 5, DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 15 MINUTE), NULL),
-          failed_login_count = failed_login_count + 1,
-          updated_at = UTC_TIMESTAMP(3) WHERE id = ?`,
-        [operator.id]
-      );
+      await this.database.withTransaction(async (transaction) => {
+        await transaction.execute(
+          `UPDATE admin_operators SET
+            locked_until = IF(failed_login_count + 1 >= 5, DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 15 MINUTE), NULL),
+            failed_login_count = failed_login_count + 1,
+            updated_at = UTC_TIMESTAMP(3) WHERE id = ?`,
+          [operator.id]
+        );
+        await transaction.execute(
+          `INSERT INTO admin_auth_events (operator_id, login_id, event_code, result_code)
+           VALUES (?, ?, 'session.created', 'invalid_credentials')`,
+          [operator.id, operator.login_id]
+        );
+      });
       throw new ApplicationError("INVALID_CREDENTIALS", "로그인 정보를 확인해 주세요.", 401);
     }
 
@@ -82,20 +118,27 @@ export class AdminAuthService {
         "UPDATE admin_operators SET failed_login_count = 0, locked_until = NULL, updated_at = UTC_TIMESTAMP(3) WHERE id = ?",
         [operator.id]
       );
-      return transaction.execute(
+      const created = await transaction.execute(
         `INSERT INTO admin_sessions
            (operator_id, token_hash, csrf_secret_hash, last_seen_at, idle_expires_at, absolute_expires_at, created_at)
          VALUES (?, ?, ?, UTC_TIMESTAMP(3), DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 8 HOUR),
            DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 24 HOUR), UTC_TIMESTAMP(3))`,
         [operator.id, hashSecret(sessionToken), hashSecret(csrfToken)]
       );
+      await transaction.execute(
+        `INSERT INTO admin_auth_events (operator_id, login_id, event_code, result_code, session_id)
+         VALUES (?, ?, 'session.created', 'success', ?)`,
+        [operator.id, operator.login_id, created.insertId]
+      );
+      return created;
     });
+    const authorization = await readAuthorization(this.database, operator.id.toString());
     return {
       sessionId: session.insertId.toString(),
       operatorId: operator.id.toString(),
       loginId: operator.login_id,
       displayName: operator.display_name,
-      permissions: await readPermissions(this.database, operator.id.toString()),
+      ...authorization,
       sessionToken,
       csrfToken
     };
@@ -128,16 +171,24 @@ export class AdminAuthService {
        WHERE id = ?`,
       [row.session_id]
     );
+    const authorization = await readAuthorization(this.database, row.operator_id.toString());
     return {
       sessionId: row.session_id.toString(), operatorId: row.operator_id.toString(),
       loginId: row.login_id, displayName: row.display_name,
-      permissions: await readPermissions(this.database, row.operator_id.toString())
+      ...authorization
     };
   }
 
   async logout(sessionToken: string, csrfToken: string): Promise<void> {
     const session = await this.authenticate(sessionToken, csrfToken);
-    await this.database.execute("UPDATE admin_sessions SET revoked_at = UTC_TIMESTAMP(3) WHERE id = ?", [session.sessionId]);
+    await this.database.withTransaction(async (transaction) => {
+      await transaction.execute("UPDATE admin_sessions SET revoked_at = UTC_TIMESTAMP(3) WHERE id = ?", [session.sessionId]);
+      await transaction.execute(
+        `INSERT INTO admin_auth_events (operator_id, login_id, event_code, result_code, session_id)
+         VALUES (?, ?, 'session.revoked', 'success', ?)`,
+        [session.operatorId, session.loginId, session.sessionId]
+      );
+    });
   }
 }
 

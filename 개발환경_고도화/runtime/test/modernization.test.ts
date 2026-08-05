@@ -15,8 +15,19 @@ describe("Iris normalization", () => {
     assert.equal(event.channelId, "34");
     assert.equal(event.userId, "56");
     assert.equal(event.direction, "incoming");
+    assert.equal(event.origin, "MSG");
     assert.equal(event.message, "/ping");
     assert.match(event.payloadHash, /^[a-f0-9]{64}$/);
+  });
+
+  it("reads origin from the encoded v metadata when the top level has no origin", () => {
+    const event = normalizeIrisEvent({
+      msg: "/info",
+      json: { id: "1", v: "{\"origin\":\"WRITE\",\"isMine\":true}" }
+    });
+
+    assert.equal(event.origin, "WRITE");
+    assert.equal(event.direction, "outgoing");
   });
 
   it("uses a deterministic hash when Iris has no event cursor", () => {

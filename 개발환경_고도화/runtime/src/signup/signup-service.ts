@@ -8,6 +8,7 @@ import {
   buildSignupWelcomeMessage,
   validateSignupDisplayName
 } from "./signup-policy.js";
+import { createInitialPlayer } from "./create-initial-player.js";
 
 export interface SignupCommandInput {
   externalUserId: string;
@@ -35,7 +36,7 @@ interface SignupRequestRow {
   id: bigint;
   display_name: string;
   gender_code: "male" | "female";
-  expires_at: Date;
+  expired: number;
 }
 
 // 외부 이벤트 ID를 operations 컬럼 길이에 맞는 안정적인 키로 정규화합니다.
@@ -281,7 +282,7 @@ export class SignupService {
       }
 
       const requests = await transaction.query<SignupRequestRow[]>(
-        `SELECT id, display_name, gender_code, expires_at FROM player_signup_requests
+        `SELECT id, display_name, gender_code, expires_at <= UTC_TIMESTAMP(3) AS expired FROM player_signup_requests
          WHERE external_identity_id = ? AND status = 'pending' FOR UPDATE`,
         [identity.id]
       );
@@ -289,7 +290,7 @@ export class SignupService {
       if (signup === undefined) {
         throw new ApplicationError("SIGNUP_NOT_PENDING", "❌ 진행 중인 가입이 없습니다.\n먼저 /가입을 입력해주세요.", 409);
       }
-      if (signup.expires_at.getTime() <= Date.now()) {
+      if (Boolean(signup.expired)) {
         throw new ApplicationError("SIGNUP_EXPIRED", "❌ 가입 대기 시간이 만료됐습니다.\n/가입을 다시 입력해주세요.", 409);
       }
 
@@ -302,44 +303,10 @@ export class SignupService {
       }
 
       const operationId = await createOperation(transaction, identity.id, scope, command.eventId);
-      const player = await transaction.execute(
-        "INSERT INTO players (status, version, created_at, updated_at) VALUES ('active', 1, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
-      );
-      const serverRows = await transaction.query<Array<{ game_server_id: bigint }>>(
-        `SELECT mapping.game_server_id FROM channels channel_row
-         JOIN channel_server_mappings mapping ON mapping.channel_id = channel_row.id
-         WHERE channel_row.external_channel_id = ? AND channel_row.status = 'active'
-         ORDER BY CASE WHEN channel_row.provider_code = 'iris' THEN 0 ELSE 1 END, mapping.effective_at DESC LIMIT 1`,
-        [command.channelId]
-      );
-      await transaction.execute(
-        `INSERT INTO player_profiles
-          (player_id, current_display_name, joined_at, level, accumulated_level_offset, experience,
-           rebirth_count, game_server_id, tier_code, terms_agreed, first_sponsor, version, updated_at)
-         VALUES (?, ?, UTC_TIMESTAMP(3), 1, 0, 0, 1, ?, 'seedling', TRUE, FALSE, 1, UTC_TIMESTAMP(3))`,
-        [player.insertId, signup.display_name, serverRows[0]?.game_server_id ?? null]
-      );
-      await transaction.execute(
-        "INSERT INTO player_pets (player_id, display_name, pet_type_code, image_value, experience, enhancement_level, version) VALUES (?, NULL, NULL, NULL, 0, 0, 1)",
-        [player.insertId]
-      );
-      await transaction.execute(
-        "INSERT INTO currency_accounts (player_id, currency_code, balance, version) VALUES (?, 'point', 0, 1), (?, 'diamond', 0, 1)",
-        [player.insertId, player.insertId]
-      );
-      await transaction.execute(
-        `INSERT INTO player_counters (player_id, counter_code, period_key, value, updated_at) VALUES
-          (?, 'attendance', 'lifetime', 0, UTC_TIMESTAMP(3)), (?, 'attendance', 'today', 0, UTC_TIMESTAMP(3)),
-          (?, 'like', 'current', 0, UTC_TIMESTAMP(3)), (?, 'like', 'lifetime', 0, UTC_TIMESTAMP(3)),
-          (?, 'chat', 'lifetime', 0, UTC_TIMESTAMP(3)), (?, 'explore', 'daily', 0, UTC_TIMESTAMP(3)),
-          (?, 'battle_ticket', 'current', 0, UTC_TIMESTAMP(3)), (?, 'battle_score', 'current', 0, UTC_TIMESTAMP(3)),
-          (?, 'carrot', 'lifetime', 0, UTC_TIMESTAMP(3)), (?, 'thermo', 'lifetime', 0, UTC_TIMESTAMP(3)),
-          (?, 'home_like', 'lifetime', 0, UTC_TIMESTAMP(3))`,
-        Array(11).fill(player.insertId)
-      );
+      const playerId = await createInitialPlayer(transaction, signup.display_name, command.channelId);
       const identityLink = await transaction.execute(
         "UPDATE external_identities SET player_id = ?, status = 'linked', updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND player_id IS NULL",
-        [player.insertId, identity.id]
+        [playerId, identity.id]
       );
       if (identityLink.affectedRows !== 1n) {
         throw new ApplicationError("SIGNUP_IDENTITY_CONFLICT", "Kakao 계정 연결 상태가 먼저 변경됐습니다.", 409);
@@ -348,7 +315,7 @@ export class SignupService {
         `UPDATE player_signup_requests
          SET player_id = ?, status = 'accepted', accepted_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3)
          WHERE id = ?`,
-        [player.insertId, signup.id]
+        [playerId, signup.id]
       );
       await recordCommandExecution(transaction, command.eventId, "signup_accept", operationId);
       const data = buildSignupWelcomeMessage();
@@ -358,7 +325,7 @@ export class SignupService {
         operationId,
         identity.id,
         "player",
-        player.insertId,
+        playerId,
         "player.signup.accept",
         { displayName: signup.display_name, genderCode: signup.gender_code, termsVersion: SIGNUP_TERMS_VERSION }
       );
@@ -366,13 +333,13 @@ export class SignupService {
         `INSERT INTO outbox_messages
           (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at)
          VALUES (?, 'internal', ?, 'player.signup.completed', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
-        [operationId, player.insertId.toString(), JSON.stringify({ playerId: player.insertId.toString(), displayName: signup.display_name })]
+        [operationId, playerId.toString(), JSON.stringify({ playerId: playerId.toString(), displayName: signup.display_name })]
       );
       const result: SignupCommandResult = {
         status: "accepted",
         data,
         outboxId,
-        playerId: player.insertId.toString(),
+        playerId: playerId.toString(),
         auditId
       };
       await completeOperation(transaction, operationId, result);
@@ -391,7 +358,7 @@ export class SignupService {
         throw new ApplicationError("ALREADY_REGISTERED", "✅ 이미 가입이 완료된 회원입니다.", 409);
       }
       const requests = await transaction.query<SignupRequestRow[]>(
-        `SELECT id, display_name, gender_code, expires_at FROM player_signup_requests
+        `SELECT id, display_name, gender_code, expires_at <= UTC_TIMESTAMP(3) AS expired FROM player_signup_requests
          WHERE external_identity_id = ? AND status = 'pending' FOR UPDATE`,
         [identity.id]
       );

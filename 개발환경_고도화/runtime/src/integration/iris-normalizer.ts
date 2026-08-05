@@ -58,7 +58,9 @@ export function normalizeIrisEvent(payload: IrisPayload): NormalizedIrisEvent {
   const v = readRecord(json.v);
   const isMine = v?.isMine === true;
   const rawType = readExternalId(json.type) ?? "unknown";
-  const origin = typeof json.origin === "string" ? json.origin : undefined;
+  const origin = typeof v?.origin === "string"
+    ? v.origin
+    : typeof json.origin === "string" ? json.origin : undefined;
 
   return {
     eventId: `iris:${providerEventId}`,

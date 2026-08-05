@@ -5,8 +5,15 @@ import type { AppConfig } from "./config.js";
 import type { DatabaseClient } from "./database.js";
 import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
-import { normalizeIrisEvent, type IrisPayload } from "./integration/iris-normalizer.js";
+import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
 import { ProcessIrisEventService, recordOutboxDelivery } from "./integration/event-processing-service.js";
+import {
+  formatIrisKakaoDiagnostic,
+  IrisKakaoDatabaseInspector,
+  splitIrisKakaoDiagnostic,
+  type IrisKakaoDatabaseSnapshot
+} from "./integration/iris-kakao-database-inspector.js";
+import { formatIrisEventMonitorMessage, shouldMonitorIrisEvent } from "./integration/iris-event-monitor.js";
 import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
@@ -14,9 +21,16 @@ import { ChangePlayerServerService } from "./player/change-player-server-service
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
+import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
+import { UserAuthService } from "./user-auth/user-auth-service.js";
+import { registerUserAuthRoutes } from "./user-auth/routes.js";
+import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
+import { ProviderVerificationService } from "./user-auth/provider-verification-service.js";
+import { readKakaoVerificationCode } from "./user-auth/policy.js";
+import { RequestRateLimiter } from "./user-auth/request-rate-limiter.js";
 
 interface TokenQuery {
   token?: string;
@@ -35,6 +49,7 @@ interface IrisImageReply {
 interface AppDependencies {
   sendIrisTextReply?: (reply: IrisTextReply) => Promise<void>;
   sendIrisImageReply?: (reply: IrisImageReply) => Promise<void>;
+  inspectIrisKakaoDatabase?: (event: NormalizedIrisEvent) => Promise<IrisKakaoDatabaseSnapshot>;
   database?: DatabaseClient;
 }
 
@@ -250,7 +265,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((reply: IrisTextReply) => sendIrisTextReply(config, reply));
   const forwardImageToIris = dependencies.sendIrisImageReply
     ?? ((reply: IrisImageReply) => sendIrisImageReply(config, reply));
+  const inspectIrisKakaoDatabase = dependencies.inspectIrisKakaoDatabase
+    ?? ((event: NormalizedIrisEvent) => new IrisKakaoDatabaseInspector(config.irisBaseUrl).inspect(event));
   const database = dependencies.database;
+  let accountCleanupTimer: NodeJS.Timeout | undefined;
 
   void app.register(cookie);
   if (database !== undefined) {
@@ -260,11 +278,36 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       profiles,
       changePlayerServer: new ChangePlayerServerService(database),
       directory: new AdminDirectoryService(database),
+      management: new AdminManagementService(database),
       secureCookies: config.nodeEnv === "production"
     });
+    void registerUserAuthRoutes(app, {
+      auth: new UserAuthService(database, config.userVerificationPepper, config.nodeEnv),
+      rateLimiter: new RequestRateLimiter(config.userVerificationPepper),
+      secureCookies: config.nodeEnv === "production"
+    });
+    if (config.nodeEnv !== "test") {
+      const cleanup = new AccountCleanupService(database);
+      void cleanup.runMaintenance().then((result) => {
+        if (result.pending.processed > 0 || result.pending.failed > 0
+          || result.deleted.processed > 0 || result.deleted.failed > 0) {
+          app.log.info(result, "account_cleanup.completed");
+        }
+      }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
+      accountCleanupTimer = setInterval(() => {
+        void cleanup.runMaintenance().then((result) => {
+          if (result.pending.processed > 0 || result.pending.failed > 0
+            || result.deleted.processed > 0 || result.deleted.failed > 0) {
+            app.log.info(result, "account_cleanup.completed");
+          }
+        }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
+      }, 3_600_000);
+      accountCleanupTimer.unref();
+    }
   }
 
   app.addHook("onClose", async () => {
+    if (accountCleanupTimer !== undefined) clearInterval(accountCleanupTimer);
     await database?.close();
   });
 
@@ -363,10 +406,38 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       const normalizedEvent = normalizeIrisEvent(request.body);
+      const requiresKakaoDatabaseLookup = normalizedEvent.direction === "incoming"
+        && (normalizedEvent.message === "/ping"
+          || (normalizedEvent.message === "/info" && config.nodeEnv !== "production"));
+      const kakaoDatabaseSnapshot = requiresKakaoDatabaseLookup
+        ? await inspectIrisKakaoDatabase(normalizedEvent)
+        : undefined;
+      const commandEvent = kakaoDatabaseSnapshot?.nickname === undefined
+        ? normalizedEvent
+        : { ...normalizedEvent, displayName: kakaoDatabaseSnapshot.nickname };
       const eventProcessor = database === undefined ? undefined : new ProcessIrisEventService(database);
       const processing = eventProcessor === undefined
         ? undefined
-        : await eventProcessor.execute(normalizedEvent);
+        : await eventProcessor.execute(commandEvent);
+      const eventMonitorMessage = config.nodeEnv !== "production"
+        && config.irisEventMonitorRoomId !== ""
+        && shouldMonitorIrisEvent(request.body, normalizedEvent)
+        ? formatIrisEventMonitorMessage(request.body, normalizedEvent)
+        : undefined;
+
+      if (processing !== undefined && !processing.duplicate && normalizedEvent.message === "/info"
+        && commandEvent.channelId !== undefined && kakaoDatabaseSnapshot !== undefined) {
+        const diagnosticChunks = splitIrisKakaoDiagnostic(
+          formatIrisKakaoDiagnostic(request.body, normalizedEvent, kakaoDatabaseSnapshot)
+        );
+        for (const [index, diagnosticChunk] of diagnosticChunks.entries()) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            commandEvent,
+            `iris_kakao_database_info_${index + 1}`,
+            diagnosticChunk
+          ));
+        }
+      }
 
       if (processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
@@ -407,6 +478,33 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
+        && readKakaoVerificationCode(normalizedEvent.message) !== null
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && normalizedEvent.displayName !== undefined) {
+        const verificationCode = readKakaoVerificationCode(normalizedEvent.message)!;
+        try {
+          const result = await new ProviderVerificationService(database!, config.userVerificationPepper)
+            .verifyInitialKakao({
+              code: verificationCode,
+              externalUserId: normalizedEvent.userId,
+              displayName: normalizedEvent.displayName,
+              channelId: normalizedEvent.channelId
+            });
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent, "site_signup_kakao_verify", result.data
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "site_signup_kakao_verify", error.message
+            ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
         && isSignupCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
         && normalizedEvent.channelId !== undefined && normalizedEvent.displayName !== undefined) {
         try {
@@ -427,6 +525,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
+      if (processing !== undefined && !processing.duplicate && eventMonitorMessage !== undefined) {
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          commandEvent,
+          "iris_event_monitor",
+          eventMonitorMessage,
+          config.irisEventMonitorRoomId
+        ));
+      }
+
       if (processing !== undefined) {
         for (const pendingReply of processing.replies) {
           try {
@@ -438,12 +545,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             request.log.error({ requestId: request.id, err: error }, "iris.outbox_reply.failed");
           }
         }
-      } else if (request.body.msg === "/ping") {
-        const sender = typeof request.body.sender === "string" ? request.body.sender.trim() : "";
-        const rawChatId = request.body.json?.chat_id;
-        const chatId = typeof rawChatId === "string" || typeof rawChatId === "number"
-          ? String(rawChatId)
-          : "";
+      } else if (normalizedEvent.message === "/info" && commandEvent.channelId !== undefined
+        && kakaoDatabaseSnapshot !== undefined) {
+        try {
+          const diagnosticChunks = splitIrisKakaoDiagnostic(
+            formatIrisKakaoDiagnostic(request.body, normalizedEvent, kakaoDatabaseSnapshot)
+          );
+          for (const diagnosticChunk of diagnosticChunks) {
+            await replyToIris({ room: commandEvent.channelId, data: diagnosticChunk });
+          }
+          request.log.info({ requestId: request.id }, "iris.database_info_reply.sent");
+        } catch (error) {
+          request.log.error({ requestId: request.id, err: error }, "iris.database_info_reply.failed");
+        }
+      } else if (normalizedEvent.message === "/ping") {
+        const sender = commandEvent.displayName ?? "";
+        const chatId = commandEvent.channelId ?? "";
 
         if (sender !== "" && chatId !== "") {
           try {
@@ -454,6 +571,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           }
         } else {
           request.log.warn({ requestId: request.id }, "iris.ping_reply.missing_context");
+        }
+      }
+
+      if (processing === undefined && eventMonitorMessage !== undefined) {
+        try {
+          await replyToIris({ room: config.irisEventMonitorRoomId, data: eventMonitorMessage });
+          request.log.info({ requestId: request.id }, "iris.event_monitor.sent");
+        } catch (error) {
+          request.log.error({ requestId: request.id, err: error }, "iris.event_monitor.failed");
         }
       }
 

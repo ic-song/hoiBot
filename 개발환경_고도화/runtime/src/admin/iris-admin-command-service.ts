@@ -19,7 +19,7 @@ export class IrisAdminCommandService {
        JOIN admin_role_permissions permission ON permission.role_id = operator_role.role_id
        WHERE identity.provider_code = 'kakao' AND identity.external_user_id = ?
          AND identity.status = 'linked' AND operator.status = 'active'
-         AND permission.permission_code = 'player.server.change' LIMIT 1`,
+         AND permission.permission_code = 'player.server.assign' LIMIT 1`,
       [input.externalUserId]
     );
     if (operators[0] === undefined) throw new ApplicationError("FORBIDDEN", "서버이동 권한이 없습니다.", 403);

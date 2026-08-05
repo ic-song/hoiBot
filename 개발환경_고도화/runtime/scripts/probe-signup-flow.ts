@@ -5,6 +5,8 @@ import { createDatabaseClient } from "../src/database.js";
 import { ProcessIrisEventService } from "../src/integration/event-processing-service.js";
 import { normalizeIrisEvent } from "../src/integration/iris-normalizer.js";
 import { SignupService } from "../src/signup/signup-service.js";
+import { UserAuthService } from "../src/user-auth/user-auth-service.js";
+import { ProviderVerificationService } from "../src/user-auth/provider-verification-service.js";
 
 const config = loadConfig();
 if (!config.database.enabled || !config.database.name.startsWith("hoibot_import_verify_")) {
@@ -114,7 +116,44 @@ try {
   assert.equal(rejectedRows[0]?.player_count, 0n);
   assert.equal(rejectedRows[0]?.rejected_count, 1n);
 
-  process.stdout.write(JSON.stringify({ ok: true, acceptedPlayerId: accepted.playerId, rejectedWithoutPlayer: true }) + "\n");
+  const siteAuth = new UserAuthService(database, config.userVerificationPepper);
+  const siteSignup = await siteAuth.signup({
+    loginId: `probe${suffix}`.slice(0, 20),
+    password: `probePassword${suffix}`,
+    systemAccountName: "솜별 남",
+    acceptTerms: true
+  });
+  assert.equal(siteSignup.status, "pending_kakao_link");
+  const siteVerification = await new ProviderVerificationService(database, config.userVerificationPepper)
+    .verifyInitialKakao({
+      code: siteSignup.verificationCode,
+      externalUserId: `site-signup-probe-${suffix}`,
+      displayName: "솜별 남",
+      channelId
+    });
+  assert.equal(siteVerification.status, "verified");
+  const siteRows = await database.query<Array<{
+    account_count: bigint; consent_count: bigint; verified_count: bigint; linked_count: bigint;
+  }>>(
+    `SELECT
+      (SELECT COUNT(*) FROM user_accounts WHERE id = ? AND player_id = ? AND status = 'active') AS account_count,
+      (SELECT COUNT(*) FROM user_terms_acceptances WHERE user_account_id = ?) AS consent_count,
+      (SELECT COUNT(*) FROM user_verification_challenges WHERE user_account_id = ? AND status = 'verified') AS verified_count,
+      (SELECT COUNT(*) FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ? AND player_id = ?) AS linked_count`,
+    [siteSignup.accountId, siteVerification.playerId, siteSignup.accountId, siteSignup.accountId,
+      `site-signup-probe-${suffix}`, siteVerification.playerId]
+  );
+  assert.equal(siteRows[0]?.account_count, 1n);
+  assert.equal(siteRows[0]?.consent_count, 1n);
+  assert.equal(siteRows[0]?.verified_count, 1n);
+  assert.equal(siteRows[0]?.linked_count, 1n);
+
+  process.stdout.write(JSON.stringify({
+    ok: true,
+    acceptedPlayerId: accepted.playerId,
+    rejectedWithoutPlayer: true,
+    siteSignupPlayerId: siteVerification.playerId
+  }) + "\n");
 } finally {
   await database.close();
 }
