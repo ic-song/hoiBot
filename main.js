@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.372"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.373"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1085,8 +1085,8 @@ const GLOBAL_CONFIG = {
                 { number: 4, key: "explore", emoji: "⛰️", name: "펫 탐험 확률", cost: 3, max: 15 }
             ],
             rates: [
-                { min: 1.0, max: 1.9, rate: 44.200000 },
-                { min: 2.0, max: 2.9, rate: 30.000 },
+                { min: 1.0, max: 1.9, rate: 44.500000 },
+                { min: 2.0, max: 2.9, rate: 30.270000 },
                 { min: 3.0, max: 3.9, rate: 15.000 },
                 { min: 4.0, max: 4.9, rate: 6.000 },
                 { min: 5.0, max: 5.9, rate: 3.000 },
@@ -1095,14 +1095,14 @@ const GLOBAL_CONFIG = {
                 { min: 8.0, max: 8.9, rate: 0.100 },
                 { min: 9.0, max: 9.9, rate: 0.049000 },
                 { min: 10.0, max: 10.0, rate: 0.001000 },
-                { min: 10.1, max: 14.9, rate: 0.320000 },
-                { min: 15.0, max: 19.9, rate: 0.200000 },
-                { min: 20.0, max: 29.9, rate: 0.136000 },
-                { min: 30.0, max: 39.9, rate: 0.080000 },
-                { min: 40.0, max: 44.9, rate: 0.032000 },
-                { min: 45.0, max: 47.9, rate: 0.016000 },
-                { min: 48.0, max: 49.9, rate: 0.012000 },
-                { min: 50.0, max: 50.0, rate: 0.004000 }
+                { min: 10.1, max: 14.9, rate: 0.120000 },
+                { min: 15.0, max: 19.9, rate: 0.060000 },
+                { min: 20.0, max: 29.9, rate: 0.030000 },
+                { min: 30.0, max: 39.9, rate: 0.014000 },
+                { min: 40.0, max: 44.9, rate: 0.004000 },
+                { min: 45.0, max: 47.9, rate: 0.001000 },
+                { min: 48.0, max: 49.9, rate: 0.000500 },
+                { min: 50.0, max: 50.0, rate: 0.000500 }
             ]
         }
     },
