@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.369"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.370"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21025,7 +21025,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var homeBadgeCubeStageCeiling = Math.min(homeBadgeCubeOption.max, homeBadgeCubeNextTarget + 0.9); // 한 번에 적용할 수 있는 다음 보호 구간 상한
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        var homeBadgeCubeApplied = Math.min(homeBadgeCubeStageCeiling, Math.max(homeBadgeCubeLastRoll, homeBadgeCubeProtectionFloor)); // 소수값은 변동시키고 달성한 정수 1% 보호선과 다음 구간 상한 적용
+                        var homeBadgeCubeApplied = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget ? Math.min(homeBadgeCubeStageCeiling, homeBadgeCubeLastRoll) : homeBadgeCubeProtectionFloor; // 다음 정수 1% 단계 달성 시 소수값 적용, 실패 시 현재 정수 보호선 유지
                         homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
                         if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
                             homeBadgeCubeUpgradeCount++;
