@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.371"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.372"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21012,7 +21012,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeUsedCount = 0;
                     var homeBadgeCubeUpgradeCount = 0;
                     var homeBadgeCubeProtectedCount = 0;
-                    var homeBadgeCubeHadCommandUpgrade = false; // 이번 명령에서 다음 정수 보호 단계를 한 번 이상 달성했는지 여부
                     var homeBadgeCubeLastRoll = homeBadgeCubeBefore;
                     var homeBadgeCubeStageNoticePercents = [];
                     var homeBadgeCubeAllMaxNotice = false;
@@ -21022,23 +21021,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (homeBadgeCubeRecord[homeBadgeCubeOption.key] >= homeBadgeCubeOption.max) break;
                         var homeBadgeCubeCurrent = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
                         var homeBadgeCubeProtectionFloor = Math.min(homeBadgeCubeOption.max, Math.floor(homeBadgeCubeCurrent)); // 실패해도 유지할 현재 1% 보호선
-                        var homeBadgeCubeNextTarget = getHomeBadgeCubeNextTarget(homeBadgeCubeCurrent, homeBadgeCubeOption.max); // 현재 보호 단계 다음의 1% 목표 수치
-                        var homeBadgeCubeStageCeiling = Math.min(homeBadgeCubeOption.max, homeBadgeCubeNextTarget + 0.9); // 한 번에 적용할 수 있는 다음 보호 구간 상한
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        var homeBadgeCubeReachedNextTarget = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget; // 이번 추첨으로 다음 정수 1% 단계를 달성했는지 여부
-                        var homeBadgeCubeApplied = homeBadgeCubeReachedNextTarget ? Math.min(homeBadgeCubeStageCeiling, homeBadgeCubeLastRoll) : (homeBadgeCubeHadCommandUpgrade ? homeBadgeCubeCurrent : homeBadgeCubeProtectionFloor); // 이번 명령의 상승 소수값은 유지하고, 상승 전 실패는 정수 보호선 적용
+                        var homeBadgeCubeApplied = getHomeBadgeCubeAppliedPercent(homeBadgeCubeCurrent, homeBadgeCubeLastRoll, homeBadgeCubeOption.max); // 추첨값을 적용하되 달성한 정수 1% 보호선 유지
                         homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
                         if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
-                            homeBadgeCubeHadCommandUpgrade = true;
                             homeBadgeCubeUpgradeCount++;
                             var homeBadgeCubeReachedFloor = Math.floor(homeBadgeCubeApplied); // 소수 추첨값으로 새로 달성한 정수 보호 단계
-                            var homeBadgeCubeLoopNoticeKey = homeBadgeCubeOption.key + ":" + homeBadgeCubeReachedFloor;
-                            var homeBadgeCubeLoopLegacy10Notified = homeBadgeCubeReachedFloor === 10 && homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] === true;
-                            if (homeBadgeCubeReachedFloor > homeBadgeCubeProtectionFloor && homeBadgeCubeReachedFloor % 10 === 0 && !homeBadgeCubeLoopLegacy10Notified && homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] !== true) {
-                                homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] = true;
-                                if (homeBadgeCubeReachedFloor === 10) homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] = true;
-                                homeBadgeCubeStageNoticePercents.push(homeBadgeCubeReachedFloor);
+                            var homeBadgeCubeFirstMilestone = (Math.floor(homeBadgeCubeProtectionFloor / 10) + 1) * 10; // 이번 상승으로 처음 통과할 10% 알림 단계
+                            for (var homeBadgeCubeMilestone = homeBadgeCubeFirstMilestone; homeBadgeCubeMilestone <= homeBadgeCubeReachedFloor; homeBadgeCubeMilestone += 10) {
+                                var homeBadgeCubeLoopNoticeKey = homeBadgeCubeOption.key + ":" + homeBadgeCubeMilestone;
+                                var homeBadgeCubeLoopLegacy10Notified = homeBadgeCubeMilestone === 10 && homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] === true;
+                                if (!homeBadgeCubeLoopLegacy10Notified && homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] !== true) {
+                                    homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] = true;
+                                    if (homeBadgeCubeMilestone === 10) homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] = true;
+                                    homeBadgeCubeStageNoticePercents.push(homeBadgeCubeMilestone);
+                                }
                             }
                         } else {
                             homeBadgeCubeProtectedCount++;
@@ -39455,12 +39453,13 @@ function rollHomeBadgeCubePercent() {
     return (minTenths + Math.floor(Math.random() * (maxTenths - minTenths + 1))) / 10;
 }
 
-// 현재 수치에서 다음 1% 보호 단계 또는 옵션 최대치를 반환하는 함수
-function getHomeBadgeCubeNextTarget(currentPercent, maxPercent) {
+// 홈뱃지 큐브 추첨값에 옵션 최대치와 현재 정수 1% 보호선을 적용하는 함수
+function getHomeBadgeCubeAppliedPercent(currentPercent, rolledPercent, maxPercent) {
     currentPercent = parseFloat(currentPercent) || 0;
+    rolledPercent = parseFloat(rolledPercent) || 0;
     maxPercent = parseFloat(maxPercent) || 0;
-    if (currentPercent >= maxPercent) return maxPercent;
-    return Math.min(maxPercent, Math.floor(currentPercent) + 1);
+    var protectionFloor = Math.min(maxPercent, Math.floor(currentPercent));
+    return Math.round(Math.min(maxPercent, Math.max(protectionFloor, rolledPercent)) * 10) / 10;
 }
 
 // 홈뱃지 큐브 확률 안내 메시지를 생성하는 함수
