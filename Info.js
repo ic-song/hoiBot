@@ -12,7 +12,7 @@ const GLOBAL_CONFIG = {
 	},
 	supportPass: { // 호이패스 프리미엄 표시·혜택 설정
 		premium: {
-			skillSlotBonus: 5,
+			skillSlotBonus: 7,
 			questDiamondBoxCount: 5
 		}
 	},
