@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.365"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.366"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21020,10 +21020,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     for (var homeBadgeCubeTryIndex = 0; homeBadgeCubeTryIndex < homeBadgeCubeActualLimit; homeBadgeCubeTryIndex++) {
                         if (homeBadgeCubeRecord[homeBadgeCubeOption.key] >= homeBadgeCubeOption.max) break;
                         var homeBadgeCubeCurrent = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
-                        var homeBadgeCubeNextTarget = getHomeBadgeCubeNextTarget(homeBadgeCubeCurrent, homeBadgeCubeOption.max); // 현재 보호 단계 다음의 성공 목표 수치
+                        var homeBadgeCubeNextTarget = getHomeBadgeCubeNextTarget(homeBadgeCubeCurrent, homeBadgeCubeOption.max); // 현재 보호 단계 다음의 1% 성공 목표 수치
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        var homeBadgeCubeApplied = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget ? homeBadgeCubeNextTarget : homeBadgeCubeCurrent; // 성공 시 한 단계만 상승하고 실패 시 현재 단계 보호
+                        var homeBadgeCubeApplied = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget ? homeBadgeCubeNextTarget : homeBadgeCubeCurrent; // 성공 시 1% 상승하고 실패 시 현재 단계 보호
                         homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
                         if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
                             homeBadgeCubeUpgradeCount++;
@@ -39449,12 +39449,12 @@ function rollHomeBadgeCubePercent() {
     return (minTenths + Math.floor(Math.random() * (maxTenths - minTenths + 1))) / 10;
 }
 
-// 현재 수치에서 다음 2% 보호 단계 또는 옵션 최대치를 반환하는 함수
+// 현재 수치에서 다음 1% 보호 단계 또는 옵션 최대치를 반환하는 함수
 function getHomeBadgeCubeNextTarget(currentPercent, maxPercent) {
     currentPercent = parseFloat(currentPercent) || 0;
     maxPercent = parseFloat(maxPercent) || 0;
     if (currentPercent >= maxPercent) return maxPercent;
-    return Math.min(maxPercent, Math.floor(currentPercent / 2) * 2 + 2);
+    return Math.min(maxPercent, Math.floor(currentPercent) + 1);
 }
 
 // 홈뱃지 큐브 확률 안내 메시지를 생성하는 함수
@@ -39467,7 +39467,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     }
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("구간을 먼저 추첨한 뒤 구간 안의 0.1% 단위를 같은 확률로 뽑습니다.");
-    lines.push("모든 옵션은 성공 시 2%씩 한 단계 상승하며, 실패해도 현재 단계가 보호됩니다.");
+    lines.push("모든 옵션은 성공 시 1%씩 한 단계 상승하며, 실패해도 현재 단계가 보호됩니다.");
     lines.push("옵션별 최대 수치: 캐슬 50% / 레이드 50% / 펫강화 30% / 펫탐험 15%");
     lines.push("네 옵션의 기본 합계가 100% 이상이면 장착 시 모든 효과에 10% 추가 버프가 적용됩니다.");
     return lines.join("\n");
