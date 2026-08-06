@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.373"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.374"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1076,7 +1076,7 @@ const GLOBAL_CONFIG = {
         },
         cube: {
             itemName: "홈뱃지 큐브💟",
-            maxTryCount: 100,
+            maxTryCount: 1000,
             optionKeys: ["castle", "raid", "petUpgrade", "explore"],
             options: [
                 { number: 1, key: "castle", emoji: "⚔️", name: "캐슬 매력", cost: 1, max: 50 },
@@ -1085,24 +1085,57 @@ const GLOBAL_CONFIG = {
                 { number: 4, key: "explore", emoji: "⛰️", name: "펫 탐험 확률", cost: 3, max: 15 }
             ],
             rates: [
-                { min: 1.0, max: 1.9, rate: 44.500000 },
-                { min: 2.0, max: 2.9, rate: 30.270000 },
-                { min: 3.0, max: 3.9, rate: 15.000 },
-                { min: 4.0, max: 4.9, rate: 6.000 },
-                { min: 5.0, max: 5.9, rate: 3.000 },
-                { min: 6.0, max: 6.9, rate: 0.550 },
-                { min: 7.0, max: 7.9, rate: 0.300 },
-                { min: 8.0, max: 8.9, rate: 0.100 },
-                { min: 9.0, max: 9.9, rate: 0.049000 },
+                { min: 1.0, max: 1.9, rate: 46.000000 },
+                { min: 2.0, max: 2.9, rate: 31.000000 },
+                { min: 3.0, max: 3.9, rate: 15.300000 },
+                { min: 4.0, max: 4.9, rate: 5.200000 },
+                { min: 5.0, max: 5.9, rate: 1.700000 },
+                { min: 6.0, max: 6.9, rate: 0.350000 },
+                { min: 7.0, max: 7.9, rate: 0.180000 },
+                { min: 8.0, max: 8.9, rate: 0.080000 },
+                { min: 9.0, max: 9.9, rate: 0.030000 },
                 { min: 10.0, max: 10.0, rate: 0.001000 },
-                { min: 10.1, max: 14.9, rate: 0.120000 },
-                { min: 15.0, max: 19.9, rate: 0.060000 },
-                { min: 20.0, max: 29.9, rate: 0.030000 },
-                { min: 30.0, max: 39.9, rate: 0.014000 },
-                { min: 40.0, max: 44.9, rate: 0.004000 },
-                { min: 45.0, max: 47.9, rate: 0.001000 },
-                { min: 48.0, max: 49.9, rate: 0.000500 },
-                { min: 50.0, max: 50.0, rate: 0.000500 }
+                { min: 10.1, max: 10.9, rate: 0.016000 },
+                { min: 11.0, max: 11.9, rate: 0.016000 },
+                { min: 12.0, max: 12.9, rate: 0.016000 },
+                { min: 13.0, max: 13.9, rate: 0.016000 },
+                { min: 14.0, max: 14.9, rate: 0.016000 },
+                { min: 15.0, max: 15.9, rate: 0.008000 },
+                { min: 16.0, max: 16.9, rate: 0.008000 },
+                { min: 17.0, max: 17.9, rate: 0.008000 },
+                { min: 18.0, max: 18.9, rate: 0.008000 },
+                { min: 19.0, max: 19.9, rate: 0.008000 },
+                { min: 20.0, max: 20.9, rate: 0.002000 },
+                { min: 21.0, max: 21.9, rate: 0.002000 },
+                { min: 22.0, max: 22.9, rate: 0.002000 },
+                { min: 23.0, max: 23.9, rate: 0.002000 },
+                { min: 24.0, max: 24.9, rate: 0.002000 },
+                { min: 25.0, max: 25.9, rate: 0.002000 },
+                { min: 26.0, max: 26.9, rate: 0.002000 },
+                { min: 27.0, max: 27.9, rate: 0.002000 },
+                { min: 28.0, max: 28.9, rate: 0.002000 },
+                { min: 29.0, max: 29.9, rate: 0.002000 },
+                { min: 30.0, max: 30.9, rate: 0.001000 },
+                { min: 31.0, max: 31.9, rate: 0.001000 },
+                { min: 32.0, max: 32.9, rate: 0.001000 },
+                { min: 33.0, max: 33.9, rate: 0.001000 },
+                { min: 34.0, max: 34.9, rate: 0.001000 },
+                { min: 35.0, max: 35.9, rate: 0.001000 },
+                { min: 36.0, max: 36.9, rate: 0.001000 },
+                { min: 37.0, max: 37.9, rate: 0.001000 },
+                { min: 38.0, max: 38.9, rate: 0.001000 },
+                { min: 39.0, max: 39.9, rate: 0.001000 },
+                { min: 40.0, max: 40.9, rate: 0.000800 },
+                { min: 41.0, max: 41.9, rate: 0.000800 },
+                { min: 42.0, max: 42.9, rate: 0.000800 },
+                { min: 43.0, max: 43.9, rate: 0.000800 },
+                { min: 44.0, max: 44.9, rate: 0.000800 },
+                { min: 45.0, max: 45.9, rate: 0.000667 },
+                { min: 46.0, max: 46.9, rate: 0.000667 },
+                { min: 47.0, max: 47.9, rate: 0.000666 },
+                { min: 48.0, max: 48.9, rate: 0.000500 },
+                { min: 49.0, max: 49.9, rate: 0.000500 },
+                { min: 50.0, max: 50.0, rate: 0.002000 }
             ]
         }
     },
@@ -21092,7 +21125,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (/^\/홈뱃지큐브(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("사용법: /홈뱃지큐브 [홈뱃지번호] [옵션번호] [횟수]\n예시: /홈뱃지큐브 1 2\n예시: /홈뱃지큐브 1 2 100\n옵션 번호와 비용은 /홈뱃지에서 확인해 주세요.");
+                    replier.reply("사용법: /홈뱃지큐브 [홈뱃지번호] [옵션번호] [횟수]\n예시: /홈뱃지큐브 1 2\n예시: /홈뱃지큐브 1 2 1000\n옵션 번호와 비용은 /홈뱃지에서 확인해 주세요.");
                     return;
                 }
                 if (/^\/홈뱃지오픈(?:\s+.*)?$/.test(msg)) {
@@ -39811,7 +39844,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         "💟 홈뱃지 큐브\n" +
         "━━━━━━━━━━━━\n" + allsee + "\n" +
         "사용: /홈뱃지큐브 [뱃지번호] [옵션번호] [횟수]\n" +
-        "예시: /홈뱃지큐브 1 2 100\n" +
+        "예시: /홈뱃지큐브 1 2 1000\n" +
         "옵션 1 ⚔️ 캐슬 매력 (큐브 1개)\n" +
         "옵션 2 👾 레이드 매력 (큐브 1개)\n" +
         "옵션 3 🌟 펫 강화 수치 (큐브 2개)\n" +
