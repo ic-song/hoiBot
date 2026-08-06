@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.370"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.371"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21012,6 +21012,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeUsedCount = 0;
                     var homeBadgeCubeUpgradeCount = 0;
                     var homeBadgeCubeProtectedCount = 0;
+                    var homeBadgeCubeHadCommandUpgrade = false; // 이번 명령에서 다음 정수 보호 단계를 한 번 이상 달성했는지 여부
                     var homeBadgeCubeLastRoll = homeBadgeCubeBefore;
                     var homeBadgeCubeStageNoticePercents = [];
                     var homeBadgeCubeAllMaxNotice = false;
@@ -21025,9 +21026,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var homeBadgeCubeStageCeiling = Math.min(homeBadgeCubeOption.max, homeBadgeCubeNextTarget + 0.9); // 한 번에 적용할 수 있는 다음 보호 구간 상한
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        var homeBadgeCubeApplied = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget ? Math.min(homeBadgeCubeStageCeiling, homeBadgeCubeLastRoll) : homeBadgeCubeProtectionFloor; // 다음 정수 1% 단계 달성 시 소수값 적용, 실패 시 현재 정수 보호선 유지
+                        var homeBadgeCubeReachedNextTarget = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget; // 이번 추첨으로 다음 정수 1% 단계를 달성했는지 여부
+                        var homeBadgeCubeApplied = homeBadgeCubeReachedNextTarget ? Math.min(homeBadgeCubeStageCeiling, homeBadgeCubeLastRoll) : (homeBadgeCubeHadCommandUpgrade ? homeBadgeCubeCurrent : homeBadgeCubeProtectionFloor); // 이번 명령의 상승 소수값은 유지하고, 상승 전 실패는 정수 보호선 적용
                         homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
                         if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
+                            homeBadgeCubeHadCommandUpgrade = true;
                             homeBadgeCubeUpgradeCount++;
                             var homeBadgeCubeReachedFloor = Math.floor(homeBadgeCubeApplied); // 소수 추첨값으로 새로 달성한 정수 보호 단계
                             var homeBadgeCubeLoopNoticeKey = homeBadgeCubeOption.key + ":" + homeBadgeCubeReachedFloor;
