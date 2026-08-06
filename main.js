@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.366"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.367"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -21020,19 +21020,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     for (var homeBadgeCubeTryIndex = 0; homeBadgeCubeTryIndex < homeBadgeCubeActualLimit; homeBadgeCubeTryIndex++) {
                         if (homeBadgeCubeRecord[homeBadgeCubeOption.key] >= homeBadgeCubeOption.max) break;
                         var homeBadgeCubeCurrent = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
-                        var homeBadgeCubeNextTarget = getHomeBadgeCubeNextTarget(homeBadgeCubeCurrent, homeBadgeCubeOption.max); // 현재 보호 단계 다음의 1% 성공 목표 수치
+                        var homeBadgeCubeProtectionFloor = Math.min(homeBadgeCubeOption.max, Math.floor(homeBadgeCubeCurrent)); // 실패해도 유지할 현재 1% 보호선
+                        var homeBadgeCubeNextTarget = getHomeBadgeCubeNextTarget(homeBadgeCubeCurrent, homeBadgeCubeOption.max); // 현재 보호 단계 다음의 1% 목표 수치
+                        var homeBadgeCubeStageCeiling = Math.min(homeBadgeCubeOption.max, homeBadgeCubeNextTarget + 0.9); // 한 번에 적용할 수 있는 다음 보호 구간 상한
                         homeBadgeCubeLastRoll = rollHomeBadgeCubePercent();
                         homeBadgeCubeUsedCount++;
-                        var homeBadgeCubeApplied = homeBadgeCubeLastRoll >= homeBadgeCubeNextTarget ? homeBadgeCubeNextTarget : homeBadgeCubeCurrent; // 성공 시 1% 상승하고 실패 시 현재 단계 보호
+                        var homeBadgeCubeApplied = Math.min(homeBadgeCubeStageCeiling, Math.max(homeBadgeCubeLastRoll, homeBadgeCubeProtectionFloor)); // 추첨 소수값을 유지하되 현재 보호선과 다음 구간 상한 적용
                         homeBadgeCubeRecord[homeBadgeCubeOption.key] = homeBadgeCubeApplied;
                         if (homeBadgeCubeApplied > homeBadgeCubeCurrent) {
                             homeBadgeCubeUpgradeCount++;
-                            var homeBadgeCubeLoopNoticeKey = homeBadgeCubeOption.key + ":" + homeBadgeCubeApplied;
-                            var homeBadgeCubeLoopLegacy10Notified = homeBadgeCubeApplied === 10 && homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] === true;
-                            if (homeBadgeCubeApplied % 10 === 0 && !homeBadgeCubeLoopLegacy10Notified && homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] !== true) {
+                            var homeBadgeCubeReachedFloor = Math.floor(homeBadgeCubeApplied); // 소수 추첨값으로 새로 달성한 정수 보호 단계
+                            var homeBadgeCubeLoopNoticeKey = homeBadgeCubeOption.key + ":" + homeBadgeCubeReachedFloor;
+                            var homeBadgeCubeLoopLegacy10Notified = homeBadgeCubeReachedFloor === 10 && homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] === true;
+                            if (homeBadgeCubeReachedFloor > homeBadgeCubeProtectionFloor && homeBadgeCubeReachedFloor % 10 === 0 && !homeBadgeCubeLoopLegacy10Notified && homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] !== true) {
                                 homeBadgeCubeRecord.notified10[homeBadgeCubeLoopNoticeKey] = true;
-                                if (homeBadgeCubeApplied === 10) homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] = true;
-                                homeBadgeCubeStageNoticePercents.push(homeBadgeCubeApplied);
+                                if (homeBadgeCubeReachedFloor === 10) homeBadgeCubeRecord.notified10[homeBadgeCubeOption.key] = true;
+                                homeBadgeCubeStageNoticePercents.push(homeBadgeCubeReachedFloor);
                             }
                         } else {
                             homeBadgeCubeProtectedCount++;
@@ -39467,7 +39470,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     }
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("구간을 먼저 추첨한 뒤 구간 안의 0.1% 단위를 같은 확률로 뽑습니다.");
-    lines.push("모든 옵션은 성공 시 1%씩 한 단계 상승하며, 실패해도 현재 단계가 보호됩니다.");
+    lines.push("추첨된 소수 첫째 자리 수치를 적용하며, 실패해도 달성한 1% 단위 보호선이 유지됩니다.");
     lines.push("옵션별 최대 수치: 캐슬 50% / 레이드 50% / 펫강화 30% / 펫탐험 15%");
     lines.push("네 옵션의 기본 합계가 100% 이상이면 장착 시 모든 효과에 10% 추가 버프가 적용됩니다.");
     return lines.join("\n");
