@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.378"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.379"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -778,6 +778,9 @@ const GLOBAL_CONFIG = {
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
     },
+    package: { // 통합 패키지 설정
+        maxUseOnce: 1000 // 한 번에 사용할 수 있는 최대 패키지 수량
+    },
     admin: { // 관리자 보상 설정
         dailyPayoutPoint: 1000000000
     },
@@ -1397,7 +1400,6 @@ blockedNicknameTerms: [
     },
     coffeePackage: { // 아이스 아메리카노 패키지 설정
         itemName: "아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)",
-        maxUse: 10,
         coffeeCount: 200,
         coffeeSalePrice: 100000,
         miniPetTicketName: "미니펫뽑기🐹(/미니펫오픈)",
@@ -13036,19 +13038,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 // =======================================================
-// /아아 [횟수]
+// /아아, /아아 [횟수]
 // =======================================================
-                if (msg === "/아아") {
-                    replier.reply("사용법: /아아 [숫자]\n예시: /아아 10");
-                    return;
-                }
-
-                if (/^\/아아\s+\d+$/.test(msg)) {
+                if (msg === "/아아" || /^\/아아\s+\d+$/.test(msg)) {
                     var coffeeConfig = GLOBAL_CONFIG.coffeePackage;
-                    var coffeeUseCount = parseInt(msg.split(/\s+/)[1], 10); // 이번 명령에서 사용할 패키지 수량
+                    var coffeeUseCount = msg === "/아아" ? 1 : parseInt(msg.split(/\s+/)[1], 10); // 이번 명령에서 사용할 패키지 수량
 
-                    if (coffeeUseCount < 1 || coffeeUseCount > coffeeConfig.maxUse) {
-                        replier.reply("❌ 한 번에 1~" + coffeeConfig.maxUse + "개까지 사용할 수 있습니다.\n사용법: /아아 [숫자]");
+                    if (coffeeUseCount < 1) {
+                        replier.reply("❌ 사용할 수량은 1개 이상이어야 합니다.\n사용법: /아아 또는 /아아 [숫자]");
                         return;
                     }
 
@@ -13066,9 +13063,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var coffeeTitleData = loadJsonFile(memberTitlePath);
                     coffeeTitleData = ensureTitleUserData(coffeeTitleData, sender);
 
-                    var coffeeRounds = [];
                     var coffeeBaseCounts = [0, 0]; // 아이스·뜨거운 아메리카노 당첨 횟수
                     var coffeeSpecialCounts = [0, 0, 0, 0]; // 특별 상황별 당첨 횟수
+                    var coffeeSpecialNewTitles = [false, false, false, false]; // 특별 상황별 신규 타이틀 지급 여부
                     var coffeeMiniPetTotal = 0; // 특별 상황 미니펫뽑기 총 지급량
                     var coffeeTitleChanged = false; // 신규 타이틀 지급 여부
 
@@ -13083,14 +13080,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             coffeeSpecialCounts[coffeeSpecialIndex]++;
                             coffeeMiniPetTotal += coffeeSpecial.rewardCount;
                             coffeeNewTitle = addTitle(coffeeTitleData, sender, coffeeSpecial.title, 0);
-                            if (coffeeNewTitle) coffeeTitleChanged = true;
+                            if (coffeeNewTitle) {
+                                coffeeSpecialNewTitles[coffeeSpecialIndex] = true;
+                                coffeeTitleChanged = true;
+                            }
                         }
-
-                        coffeeRounds.push({
-                            baseIndex: coffeeBaseIndex,
-                            specialIndex: coffeeSpecialIndex,
-                            newTitle: coffeeNewTitle
-                        });
                     }
 
                     data.member[sender].bag[coffeeConfig.itemName] -= coffeeUseCount;
@@ -13103,28 +13097,32 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     if (coffeeTitleChanged) saveJsonFile(coffeeTitleData, memberTitlePath);
 
-                    for (var coffeeRoundIndex = 0; coffeeRoundIndex < coffeeRounds.length; coffeeRoundIndex++) {
-                        var coffeeRound = coffeeRounds[coffeeRoundIndex];
-                        var coffeeBase = coffeeConfig.baseResults[coffeeRound.baseIndex];
+                    for (var coffeeBaseResultIndex = 0; coffeeBaseResultIndex < coffeeBaseCounts.length; coffeeBaseResultIndex++) {
+                        if (coffeeBaseCounts[coffeeBaseResultIndex] < 1) continue;
+                        var coffeeBase = coffeeConfig.baseResults[coffeeBaseResultIndex];
+                        var coffeeBaseRewardTotal = coffeeBaseCounts[coffeeBaseResultIndex] * coffeeConfig.coffeeCount; // 기본 결과별 커피 총 지급량
                         var coffeeBaseMessage = "[" + checkRank(data, petData, guildData, sender) + "] 님이 아이스 아메리카노를 주문했습니다!\n";
                         coffeeBaseMessage += coffeeBase.imageLink + "\n";
                         coffeeBaseMessage += "━━━━━━━━━━━━━━━\n";
-                        coffeeBaseMessage += coffeeBase.emoji + " " + coffeeBase.label + "\n";
+                        coffeeBaseMessage += coffeeBase.emoji + " " + coffeeBase.label + " (" + numberWithCommas(coffeeBaseCounts[coffeeBaseResultIndex]) + "회)\n";
                         if (coffeeBase.quote) coffeeBaseMessage += "\"" + coffeeBase.quote + "\"\n";
-                        coffeeBaseMessage += "☕ " + coffeeBase.name + " x" + numberWithCommas(coffeeConfig.coffeeCount) + "\n";
+                        coffeeBaseMessage += "☕ " + coffeeBase.name + " x" + numberWithCommas(coffeeBaseRewardTotal) + "\n";
                         coffeeBaseMessage += "💰 1개당 " + numberWithCommas(coffeeConfig.coffeeSalePrice) + "포 판매 가능\n";
-                        coffeeBaseMessage += "💰 " + numberWithCommas(coffeeConfig.coffeeCount) + "개 판매 시: " + numberWithCommas(coffeeConfig.coffeeCount * coffeeConfig.coffeeSalePrice) + "포\n";
+                        coffeeBaseMessage += "💰 전량 판매 시: " + numberWithCommas(coffeeBaseRewardTotal * coffeeConfig.coffeeSalePrice) + "포\n";
                         coffeeBaseMessage += "━━━━━━━━━━━━━━━";
                         replier.reply(coffeeBaseMessage);
+                    }
 
-                        if (coffeeRound.specialIndex >= 0) {
-                            var coffeeSpecialResult = coffeeConfig.specialResults[coffeeRound.specialIndex];
+                    for (var coffeeSpecialResultIndex = 0; coffeeSpecialResultIndex < coffeeSpecialCounts.length; coffeeSpecialResultIndex++) {
+                        if (coffeeSpecialCounts[coffeeSpecialResultIndex] > 0) {
+                            var coffeeSpecialResult = coffeeConfig.specialResults[coffeeSpecialResultIndex];
+                            var coffeeSpecialRewardTotal = coffeeSpecialResult.rewardCount * coffeeSpecialCounts[coffeeSpecialResultIndex]; // 특별 상황별 총 지급량
                             var coffeeSpecialMessage = coffeeSpecialResult.imageLink + "\n";
-                            coffeeSpecialMessage += coffeeSpecialResult.emoji + " " + coffeeSpecialResult.name + "!\n";
+                            coffeeSpecialMessage += coffeeSpecialResult.emoji + " " + coffeeSpecialResult.name + "! (" + numberWithCommas(coffeeSpecialCounts[coffeeSpecialResultIndex]) + "회)\n";
                             coffeeSpecialMessage += "\"" + coffeeSpecialResult.quote + "\"\n";
                             coffeeSpecialMessage += "━━━━━━━━━━━━━━━\n";
-                            coffeeSpecialMessage += "🎁 " + coffeeConfig.miniPetTicketName + " x" + numberWithCommas(coffeeSpecialResult.rewardCount) + "\n";
-                            coffeeSpecialMessage += "🏷️ 전용 타이틀: " + coffeeSpecialResult.title + (coffeeRound.newTitle ? " (신규 획득)" : " (보유 중)") + "\n";
+                            coffeeSpecialMessage += "🎁 " + coffeeConfig.miniPetTicketName + " x" + numberWithCommas(coffeeSpecialRewardTotal) + "\n";
+                            coffeeSpecialMessage += "🏷️ 전용 타이틀: " + coffeeSpecialResult.title + (coffeeSpecialNewTitles[coffeeSpecialResultIndex] ? " (신규 획득)" : " (보유 중)") + "\n";
                             coffeeSpecialMessage += "━━━━━━━━━━━━━━━";
                             replier.reply(coffeeSpecialMessage);
                         }
@@ -27830,7 +27828,7 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return /^\/아아\s+\d+$/.test(command) ||
+    return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -35228,7 +35226,7 @@ function createPackageInfoFromState(state, packageInfoData) {
         name: state.name,
         desc: state.desc,
         enabled: true,
-        maxUseOnce: 100,
+        maxUseOnce: GLOBAL_CONFIG.package.maxUseOnce,
         rewards: state.rewards
     };
 }
@@ -35439,7 +35437,7 @@ function addPackageInfoByCommand(sender, msg, packageInfoData) {
         name: packageName,
         desc: desc,
         enabled: true,
-        maxUseOnce: 100,
+        maxUseOnce: GLOBAL_CONFIG.package.maxUseOnce,
         rewards: rewardParseResult.rewards
     };
     packageInfoData.push(newPackage);
@@ -35474,7 +35472,7 @@ function editPackageInfoByCommand(sender, msg, packageInfoData) {
 
     var packageName = packageInfo.name || getPackageBagItemName(packageInfo); // 기존 패키지 표시명
     packageInfo.enabled = packageInfo.enabled === false ? false : true;
-    packageInfo.maxUseOnce = parseInt(packageInfo.maxUseOnce, 10) || 100;
+    packageInfo.maxUseOnce = GLOBAL_CONFIG.package.maxUseOnce;
     packageInfo.rewards = rewardParseResult.rewards;
 
     var lines = [];
@@ -35671,7 +35669,7 @@ function validatePackageUse(packageInfo, useCount) {
     if (packageInfo.enabled === false) return "비활성화된 패키지는 사용할 수 없습니다.";
     if (packageInfo.blockCastle && castleSiegeFlag) return "이벤트 진행 중에는 해당 패키지를 사용할 수 없습니다.";
     if (useCount < 1) return "사용 수량은 1개 이상이어야 합니다.";
-    var maxUseOnce = parseInt(packageInfo.maxUseOnce, 10) || 100; // 패키지별 1회 최대 사용량
+    var maxUseOnce = GLOBAL_CONFIG.package.maxUseOnce; // 통합 패키지 1회 최대 사용량
     if (useCount > maxUseOnce) return "1회 최대 사용 수량(" + numberWithCommas(maxUseOnce) + "개)을 초과했습니다.";
     var rewards = packageInfo.rewards || []; // 사용 시 지급할 보상 목록
     for (var i = 0; i < rewards.length; i++) {
