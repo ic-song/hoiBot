@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.377"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.378"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1394,6 +1394,23 @@ blockedNicknameTerms: [
         maxOpen: 100,
         rewardItemName: "미니펫뽑기🐹(/미니펫오픈)",
         legendTitleName: "👑전설의 핵주먹"
+    },
+    coffeePackage: { // 아이스 아메리카노 패키지 설정
+        itemName: "아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)",
+        maxUse: 10,
+        coffeeCount: 200,
+        coffeeSalePrice: 100000,
+        miniPetTicketName: "미니펫뽑기🐹(/미니펫오픈)",
+        baseResults: [
+            { name: "아이스 아메리카노☕", emoji: "🧊", label: "아이스 아메리카노 당첨!", imageLink: "https://ibb.co/kt2gfy9", quote: "" },
+            { name: "뜨거운 아메리카노☕", emoji: "🔥", label: "뜨거운 아메리카노 등장!", imageLink: "https://ibb.co/3yZjh91K", quote: "아이스 시켰는데 뜨아가 왔다..." }
+        ],
+        specialResults: [
+            { rate: 2, name: "알바생의 플러팅", emoji: "💕", rewardCount: 500, title: "아아 시켰는데 썸이 나옴", imageLink: "https://ibb.co/Wvgyt0N0", quote: "심장이 먼저 반응했다." },
+            { rate: 4, name: "얼굴에 커피 세례", emoji: "☕", rewardCount: 250, title: "아아 시켰는데 내가 아아됨", imageLink: "https://ibb.co/nMsq90Tf", quote: "이건 서비스인가 사고인가" },
+            { rate: 8, name: "번호 물어보다 까임", emoji: "💔", rewardCount: 100, title: "번호 달랬더니 진동벨 줌", imageLink: "https://ibb.co/ymp5cC91", quote: "용기 냈지만 결과는 씁쓸" },
+            { rate: 1, name: "번호 따기 성공", emoji: "💘", rewardCount: 500, title: "아아 한 잔에 번호까지 포장완료", imageLink: "https://ibb.co/wNr88RHx", quote: "오늘 커피 운 최고" }
+        ]
     },
     matzangField: { // 맞짱필드 이벤트 설정
         maxCount: 10,
@@ -13015,6 +13032,118 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     replier.reply(msgOut);
+                    return;
+                }
+
+// =======================================================
+// /아아 [횟수]
+// =======================================================
+                if (msg === "/아아") {
+                    replier.reply("사용법: /아아 [숫자]\n예시: /아아 10");
+                    return;
+                }
+
+                if (/^\/아아\s+\d+$/.test(msg)) {
+                    var coffeeConfig = GLOBAL_CONFIG.coffeePackage;
+                    var coffeeUseCount = parseInt(msg.split(/\s+/)[1], 10); // 이번 명령에서 사용할 패키지 수량
+
+                    if (coffeeUseCount < 1 || coffeeUseCount > coffeeConfig.maxUse) {
+                        replier.reply("❌ 한 번에 1~" + coffeeConfig.maxUse + "개까지 사용할 수 있습니다.\n사용법: /아아 [숫자]");
+                        return;
+                    }
+
+                    if (!data.member[sender] || !data.member[sender].bag) {
+                        replier.reply("❌ 유저 또는 가방 데이터가 없습니다.");
+                        return;
+                    }
+
+                    var coffeePackageCount = data.member[sender].bag[coffeeConfig.itemName] || 0; // 현재 패키지 보유 수량
+                    if (coffeePackageCount < coffeeUseCount) {
+                        replier.reply(coffeeConfig.itemName + " 보유 수량이 부족합니다.\n현재 보유: " + numberWithCommas(coffeePackageCount) + "개");
+                        return;
+                    }
+
+                    var coffeeTitleData = loadJsonFile(memberTitlePath);
+                    coffeeTitleData = ensureTitleUserData(coffeeTitleData, sender);
+
+                    var coffeeRounds = [];
+                    var coffeeBaseCounts = [0, 0]; // 아이스·뜨거운 아메리카노 당첨 횟수
+                    var coffeeSpecialCounts = [0, 0, 0, 0]; // 특별 상황별 당첨 횟수
+                    var coffeeMiniPetTotal = 0; // 특별 상황 미니펫뽑기 총 지급량
+                    var coffeeTitleChanged = false; // 신규 타이틀 지급 여부
+
+                    for (var coffeeIndex = 0; coffeeIndex < coffeeUseCount; coffeeIndex++) {
+                        var coffeeBaseIndex = Math.random() < 0.5 ? 0 : 1;
+                        var coffeeSpecialIndex = getCoffeePackageSpecialIndex(Math.random() * 100);
+                        var coffeeSpecial = coffeeSpecialIndex >= 0 ? coffeeConfig.specialResults[coffeeSpecialIndex] : null;
+                        var coffeeNewTitle = false;
+
+                        coffeeBaseCounts[coffeeBaseIndex]++;
+                        if (coffeeSpecial) {
+                            coffeeSpecialCounts[coffeeSpecialIndex]++;
+                            coffeeMiniPetTotal += coffeeSpecial.rewardCount;
+                            coffeeNewTitle = addTitle(coffeeTitleData, sender, coffeeSpecial.title, 0);
+                            if (coffeeNewTitle) coffeeTitleChanged = true;
+                        }
+
+                        coffeeRounds.push({
+                            baseIndex: coffeeBaseIndex,
+                            specialIndex: coffeeSpecialIndex,
+                            newTitle: coffeeNewTitle
+                        });
+                    }
+
+                    data.member[sender].bag[coffeeConfig.itemName] -= coffeeUseCount;
+                    if (data.member[sender].bag[coffeeConfig.itemName] <= 0) delete data.member[sender].bag[coffeeConfig.itemName];
+
+                    addItemToBag(data.member[sender].bag, coffeeConfig.baseResults[0].name, coffeeBaseCounts[0] * coffeeConfig.coffeeCount);
+                    addItemToBag(data.member[sender].bag, coffeeConfig.baseResults[1].name, coffeeBaseCounts[1] * coffeeConfig.coffeeCount);
+                    if (coffeeMiniPetTotal > 0) addItemToBag(data.member[sender].bag, coffeeConfig.miniPetTicketName, coffeeMiniPetTotal);
+
+                    saveJsonFile(data, filePath);
+                    if (coffeeTitleChanged) saveJsonFile(coffeeTitleData, memberTitlePath);
+
+                    for (var coffeeRoundIndex = 0; coffeeRoundIndex < coffeeRounds.length; coffeeRoundIndex++) {
+                        var coffeeRound = coffeeRounds[coffeeRoundIndex];
+                        var coffeeBase = coffeeConfig.baseResults[coffeeRound.baseIndex];
+                        var coffeeBaseMessage = "[" + checkRank(data, petData, guildData, sender) + "] 님이 아이스 아메리카노를 주문했습니다!\n";
+                        coffeeBaseMessage += coffeeBase.imageLink + "\n";
+                        coffeeBaseMessage += "━━━━━━━━━━━━━━━\n";
+                        coffeeBaseMessage += coffeeBase.emoji + " " + coffeeBase.label + "\n";
+                        if (coffeeBase.quote) coffeeBaseMessage += "\"" + coffeeBase.quote + "\"\n";
+                        coffeeBaseMessage += "☕ " + coffeeBase.name + " x" + numberWithCommas(coffeeConfig.coffeeCount) + "\n";
+                        coffeeBaseMessage += "💰 1개당 " + numberWithCommas(coffeeConfig.coffeeSalePrice) + "포 판매 가능\n";
+                        coffeeBaseMessage += "💰 " + numberWithCommas(coffeeConfig.coffeeCount) + "개 판매 시: " + numberWithCommas(coffeeConfig.coffeeCount * coffeeConfig.coffeeSalePrice) + "포\n";
+                        coffeeBaseMessage += "━━━━━━━━━━━━━━━";
+                        replier.reply(coffeeBaseMessage);
+
+                        if (coffeeRound.specialIndex >= 0) {
+                            var coffeeSpecialResult = coffeeConfig.specialResults[coffeeRound.specialIndex];
+                            var coffeeSpecialMessage = coffeeSpecialResult.imageLink + "\n";
+                            coffeeSpecialMessage += coffeeSpecialResult.emoji + " " + coffeeSpecialResult.name + "!\n";
+                            coffeeSpecialMessage += "\"" + coffeeSpecialResult.quote + "\"\n";
+                            coffeeSpecialMessage += "━━━━━━━━━━━━━━━\n";
+                            coffeeSpecialMessage += "🎁 " + coffeeConfig.miniPetTicketName + " x" + numberWithCommas(coffeeSpecialResult.rewardCount) + "\n";
+                            coffeeSpecialMessage += "🏷️ 전용 타이틀: " + coffeeSpecialResult.title + (coffeeRound.newTitle ? " (신규 획득)" : " (보유 중)") + "\n";
+                            coffeeSpecialMessage += "━━━━━━━━━━━━━━━";
+                            replier.reply(coffeeSpecialMessage);
+                        }
+                    }
+
+                    var coffeeSummary = "☕ 아니 아이스아메리카노 주세요 ㅡㅡ 결과\n";
+                    coffeeSummary += "━━━━━━━━━━━━━━━\n";
+                    coffeeSummary += "사용 횟수: " + numberWithCommas(coffeeUseCount) + "회\n";
+                    coffeeSummary += "🧊 아이스 아메리카노: " + numberWithCommas(coffeeBaseCounts[0]) + "회 / x" + numberWithCommas(coffeeBaseCounts[0] * coffeeConfig.coffeeCount) + "\n";
+                    coffeeSummary += "🔥 뜨거운 아메리카노: " + numberWithCommas(coffeeBaseCounts[1]) + "회 / x" + numberWithCommas(coffeeBaseCounts[1] * coffeeConfig.coffeeCount) + "\n";
+                    for (var coffeeSummaryIndex = 0; coffeeSummaryIndex < coffeeSpecialCounts.length; coffeeSummaryIndex++) {
+                        if (coffeeSpecialCounts[coffeeSummaryIndex] > 0) {
+                            coffeeSummary += coffeeConfig.specialResults[coffeeSummaryIndex].emoji + " " + coffeeConfig.specialResults[coffeeSummaryIndex].name + ": " + numberWithCommas(coffeeSpecialCounts[coffeeSummaryIndex]) + "회\n";
+                        }
+                    }
+                    coffeeSummary += "🎁 특별 상황 보상: " + coffeeConfig.miniPetTicketName + " x" + numberWithCommas(coffeeMiniPetTotal) + "\n";
+                    coffeeSummary += "👜 남은 패키지: " + numberWithCommas(data.member[sender].bag[coffeeConfig.itemName] || 0) + "개\n";
+                    coffeeSummary += "━━━━━━━━━━━━━━━";
+                    replier.reply(coffeeSummary);
                     return;
                 }
 
@@ -27701,7 +27830,8 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
+    return /^\/아아\s+\d+$/.test(command) ||
+        command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
@@ -28010,6 +28140,19 @@ function updatePunchRankData(punchRankData, sender, rankName, score, rewardCount
     }
 
     return punchRankData;
+}
+
+// 누적 확률표에서 아이스 아메리카노 특별 상황 번호를 반환하는 함수
+function getCoffeePackageSpecialIndex(roll) {
+    var specialResults = GLOBAL_CONFIG.coffeePackage.specialResults;
+    var cumulativeRate = 0;
+
+    for (var i = 0; i < specialResults.length; i++) {
+        cumulativeRate += specialResults[i].rate;
+        if (roll < cumulativeRate) return i;
+    }
+
+    return -1;
 }
 
 // 사용자 타이틀 데이터 기본 구조 보정 함수
