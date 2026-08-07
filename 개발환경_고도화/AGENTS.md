@@ -20,3 +20,6 @@
 - hoiBot Server 소스, 패키지, 테스트와 실행 문서는 이 폴더의 `runtime/` 내부에서만 관리한다.
 - Iris 이벤트 처리 작업은 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`의 검증 근거를 먼저 확인한 뒤 `references/IRIS_SERVER_EVENT_MAPPING.json`의 서버 매핑을 사용한다.
 - 새 이벤트를 관측하면 검증 문서를 먼저 갱신하고 확인된 필드만 서버 매핑 JSON에 반영한다. 미검증 추정값을 구현 가능 상태로 올리지 않는다.
+- Iris, `/query`, `/decrypt`, 삭제·가리기 상관관계 작업은 저장소의 `hoibot-iris-diagnostics` 스킬을 먼저 사용한다.
+- 기술 문서는 주제별 단일 기준만 유지한다: Iris 일반 계약은 `references/IRIS_TECHNICAL_REFERENCE.md`, 실측 이벤트는 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`, KakaoTalk 스키마는 `references/KAKAOTALK_IRIS_QUERY_ERD.md`, MariaDB는 `references/MARIADB_IMPLEMENTATION_BLUEPRINT.md`, 실행환경은 `references/REPRODUCIBLE_ENVIRONMENT_BLUEPRINT.md`다.
+- 검증 시점의 일회성 행 수·PID·실제 식별자·메시지 원문은 장기 문서에 누적하지 않는다.

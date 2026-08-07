@@ -100,9 +100,9 @@ export class ProviderVerificationService {
       if (identityId === undefined) {
         const identity = await transaction.execute(
           `INSERT INTO external_identities
-            (provider_code, external_user_id, display_name, status, created_at, updated_at)
-           VALUES ('kakao', ?, ?, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
-          [input.externalUserId, input.displayName]
+             (provider_code, external_user_id, display_name, status, created_at, updated_at)
+            VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
+          [input.externalUserId]
         );
         identityId = identity.insertId;
       }
@@ -116,6 +116,12 @@ export class ProviderVerificationService {
       if (linked.affectedRows !== 1n) {
         throw new ApplicationError("PROVIDER_IDENTITY_ALREADY_LINKED", "KakaoTalk 계정 연결 상태가 먼저 변경됐습니다.", 409);
       }
+      await transaction.execute(
+        `INSERT INTO external_identity_names
+          (external_identity_id, display_name, source_code, trust_status, provider_event_id, observed_at)
+         VALUES (?, ?, 'provider_verification', 'verified', ?, UTC_TIMESTAMP(3))`,
+        [identityId, input.displayName, `verification:${challenge.id.toString()}`]
+      );
       await transaction.execute(
         `UPDATE user_accounts SET player_id = ?, status = 'active', pending_expires_at = NULL,
           activated_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3)

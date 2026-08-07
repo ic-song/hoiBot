@@ -14,6 +14,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY migrations ./migrations
+RUN mkdir -p /app/var/retained-event-content && chown -R node:node /app/var
 USER node
-EXPOSE 3100
+EXPOSE 3002
 CMD ["node", "dist/src/server.js"]

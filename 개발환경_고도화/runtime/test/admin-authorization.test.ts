@@ -41,8 +41,11 @@ describe("admin authorization", () => {
     assert.match(adminRoutes, /\/api\/v1\/admin\/sessions\/current/);
     assert.match(adminRoutes, /\/api\/v1\/admin\/players\/:playerId\/server-assignment/);
     assert.match(adminRoutes, /\/api\/v1\/admin\/external-identities\/:identityId\/player-assignment/);
+    assert.match(adminRoutes, /\/api\/v1\/admin\/channel-activity/);
+    assert.match(adminRoutes, /\/api\/v1\/admin\/moderation-incidents/);
     assert.doesNotMatch(adminRoutes, /\/auth\/login|\/approve|\/:playerId\/server["`]/);
     assert.match(userRoutes, /\/api\/v1\/sessions\/current/);
+    assert.match(userRoutes, /\/api\/v1\/player-profiles\/current/);
     assert.doesNotMatch(userRoutes, /\/auth\/login|\/auth\/session/);
   });
 });

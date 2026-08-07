@@ -1,6 +1,6 @@
 # Legacy JSON to MariaDB Schema Design
 
-Updated: 2026-08-04
+Updated: 2026-08-06
 Status: logical design baseline; physical DDL must be delivered domain by domain
 
 ## Purpose
@@ -266,6 +266,31 @@ The server commits domain state and `outbox_events` together, then an integratio
 | `errorLog.json` | do not import as game state; replace with structured application logging |
 | `memberBagCheck/memberBagCheck.json` | migration/reconciliation evidence only, not an authoritative table |
 
+### Import safety and first profile projection
+
+- Source files remain read-only and are checksummed before conversion.
+- Numbers are parsed losslessly and written as strings, bounded integers, or fixed decimal values according to the target column contract.
+- A canonical field wins only when all simultaneously present aliases have the same value.
+- Conflicting canonical/alias values, multiple aliases, invalid numbers/dates, and unknown relationships are written to `legacy_import_anomalies`; the importer does not invent defaults.
+- A legacy nickname can create an internal player and unresolved legacy map, but never an approved KakaoTalk identity link.
+
+| Source field | Target projection |
+| --- | --- |
+| `member.json` object key | profile display value and unresolved legacy key |
+| `join` | `player_profiles.joined_at` after explicit date conversion |
+| `lv`, `lv0`, `exp`, `rebirthcnt` | level, accumulated offset, experience, rebirth count |
+| `server` | approved game-server catalog and profile FK |
+| `agree`, `firstSponsor` | profile flags |
+| `point`, `diamond` | currency accounts using the finalized integer policy |
+| `cnt`, `like`, `like0`, `carrotGiven`, `thermoPoints`, `homeLikeCnt` | approved counter codes |
+| title JSON files | scoped title definition, ownership, and equipped state |
+| `member_pet.json` and mini-pet JSON | pet and owned mini-pet read model |
+| `guildData.json` | guild and single-source membership rows |
+| home JSON | home, furniture ownership, and placement rows |
+| ranking inputs | leaderboard entries and badge assignments |
+
+Approved aliases apply only when the canonical field is absent: `points -> point`, `bostercnt -> boostercnt`, `rebirthnt -> rebirthcnt`, `towerrCnt -> towerCnt`, and `ttle -> title`. Voice, notice, contribution, and other unconfirmed misspellings are never merged automatically. `errorLog.json` is excluded, while `currencyLog.json` and `memberBagCheck.json` are reconciliation evidence only.
+
 ## Transaction Boundaries Derived from Current Save Flow
 
 At minimum, the following operations require one database transaction:
@@ -287,7 +312,7 @@ The Kakao/Discord reply is sent after commit. A failure before commit rolls back
 - Timestamps: UTC `DATETIME(3)`.
 - Primary keys: `BIGINT UNSIGNED`, generated internally.
 - External IDs and legacy keys: `VARCHAR` with explicit unique constraints.
-- Quantities/counters: `BIGINT` or bounded `INT`; currencies use integer or fixed `DECIMAL` based on confirmed limits.
+- Quantities/counters use `BIGINT` or bounded `INT`. Current compatibility DDL uses `DECIMAL(30,3)` for lossless legacy import, but the confirmed target policy is integer currency after explicit rounding and reconciliation.
 - Mutable aggregate roots include `version BIGINT UNSIGNED` for optimistic concurrency when appropriate.
 - Every foreign key has an intentional delete rule; game ownership data should normally restrict or soft-delete rather than cascade silently.
 - Use stable ASCII codes for currencies, items, counters, modes and permissions. Korean names and emoji remain display fields.
@@ -311,7 +336,7 @@ Avoid permanent dual writes. Each domain gets a checksumed source snapshot, rehe
 
 - Sanitized structure-only samples for runtime files missing from the repository.
 - Confirmed maximum values for balances, experience, counters and quantities before choosing final numeric sizes.
-- Field-level conversion rules are now recorded in `LEGACY_JSON_FIELD_MAPPING.md`; unresolved runtime-only fields still require sanitized samples.
+- Unresolved runtime-only fields still require sanitized structure samples before physical columns are finalized.
 - Stable catalog codes for items currently keyed by display name.
 - The selected first read command is `/내정보`; the first low-risk mutation is `/서버이동`.
 - Legacy nickname keys create players and unresolved mapping records. Display-name candidates never auto-link; an administrator must approve the external identity.

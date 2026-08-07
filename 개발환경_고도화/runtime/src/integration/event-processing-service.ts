@@ -11,6 +11,12 @@ export interface PendingReply {
 export interface EventProcessingResult {
   duplicate: boolean;
   replies: PendingReply[];
+  incidentId?: string;
+}
+
+export interface ChannelNameObservation {
+  displayName: string;
+  sourceCode: "kakao_open_link" | "kakao_chat_room_meta";
 }
 
 // MariaDB 중복 키 오류인지 드라이버 코드로 확인합니다.
@@ -23,10 +29,51 @@ function isDuplicateKey(error: unknown): boolean {
 export class ProcessIrisEventService {
   constructor(private readonly database: DatabaseClient) {}
 
-  async execute(event: NormalizedIrisEvent): Promise<EventProcessingResult> {
+  // 진단방의 삭제·가리기 사건은 원문·identity·활동 없이 최소 상관 메타데이터만 기록합니다.
+  async executeDiagnosticModeration(event: NormalizedIrisEvent): Promise<EventProcessingResult> {
+    if (event.eventCode !== "message.deleted" && event.eventCode !== "message.hidden_by_host") {
+      return { duplicate: false, replies: [] };
+    }
     try {
       return await this.database.withTransaction(async (transaction) => {
-        const identity = await observeEventIdentity(transaction, event);
+        await transaction.execute(
+          `INSERT INTO event_inbox (
+             event_id, provider_code, provider_event_id, external_channel_id, channel_id,
+             external_user_id, external_identity_id,
+             event_kind, event_origin, direction, payload_hash, parse_status,
+             processing_status, received_at, attempt_count
+           ) VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)`,
+          [event.eventId, event.providerCode, event.providerEventId, event.channelId ?? null,
+            event.userId ?? null, event.eventKind, event.origin ?? null, event.direction, event.payloadHash]
+        );
+        await recordNormalizedEvent(transaction, event);
+        const incidentId = await recordModerationIncident(transaction, event, {
+          channelId: null,
+          externalIdentityId: null
+        });
+        await transaction.execute(
+          "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+          [event.eventId]
+        );
+        return { duplicate: false, replies: [], incidentId: incidentId?.toString() };
+      });
+    } catch (error) {
+      if (isDuplicateKey(error)) return { duplicate: true, replies: [] };
+      throw error;
+    }
+  }
+
+  async execute(
+    event: NormalizedIrisEvent,
+    replyIdentity?: NormalizedIrisEvent,
+    channelType: "open_group" | "open_direct" = "open_group",
+    options: { allowCommands?: boolean; channelName?: ChannelNameObservation } = {}
+  ): Promise<EventProcessingResult> {
+    try {
+      return await this.database.withTransaction(async (transaction) => {
+        const identityEvent = replyIdentity ?? event;
+        const identity = await observeEventIdentity(transaction, identityEvent, channelType);
+        await recordChannelNameObservation(transaction, event, identity.channelId, options.channelName);
         await transaction.execute(
           `INSERT INTO event_inbox (
              event_id, provider_code, provider_event_id, external_channel_id, channel_id,
@@ -35,20 +82,24 @@ export class ProcessIrisEventService {
              processing_status, received_at, attempt_count
            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)`,
           [event.eventId, event.providerCode, event.providerEventId, event.channelId ?? null, identity.channelId,
-            event.userId ?? null, identity.externalIdentityId, event.eventKind, event.origin ?? null,
-            event.direction, event.payloadHash]
+            identityEvent.userId ?? null, identity.externalIdentityId, event.eventKind, event.origin ?? null,
+             event.direction, event.payloadHash]
         );
+        await recordNormalizedEvent(transaction, event);
+        await recordMembershipEvent(transaction, event, identity);
+        const incidentId = await recordModerationIncident(transaction, event, identity);
+        await recordChannelActivity(transaction, event, identity);
 
         const replies: PendingReply[] = [];
-        if (event.message === "/ping" && event.channelId !== undefined && event.displayName !== undefined) {
-          replies.push(await this.createPingReply(transaction, event));
+        if (options.allowCommands !== false && event.message === "/ping" && event.channelId !== undefined) {
+          replies.push(await this.createPingReply(transaction, event, replyIdentity));
         }
 
         await transaction.execute(
           "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
           [event.eventId]
         );
-        return { duplicate: false, replies };
+        return { duplicate: false, replies, incidentId: incidentId?.toString() };
       });
     } catch (error) {
       if (isDuplicateKey(error)) {
@@ -93,7 +144,8 @@ export class ProcessIrisEventService {
 
   private async createPingReply(
     transaction: DatabaseTransaction,
-    event: NormalizedIrisEvent
+    event: NormalizedIrisEvent,
+    replyIdentity?: NormalizedIrisEvent
   ): Promise<PendingReply> {
     const operation = await transaction.execute(
       `INSERT INTO operations
@@ -107,7 +159,16 @@ export class ProcessIrisEventService {
        VALUES (?, 'ping', ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
       [event.eventId, operation.insertId]
     );
-    const data = `${event.displayName} pong`;
+    const verifiedNames = event.userId === undefined ? [] : await transaction.query<Array<{ display_name: string }>>(
+      `SELECT display_name FROM external_identities
+       WHERE provider_code = 'kakao' AND external_user_id = ? AND status = 'linked'
+         AND display_name IS NOT NULL LIMIT 1`,
+      [event.userId]
+    );
+    const replyName = verifiedNames[0]?.display_name
+      ?? (replyIdentity?.displayNameTrust === "trusted" ? replyIdentity.displayName : undefined)
+      ?? "미확인 사용자";
+    const data = `${replyName} pong`;
     const outbox = await transaction.execute(
       `INSERT INTO outbox_messages
          (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at)
@@ -118,49 +179,178 @@ export class ProcessIrisEventService {
   }
 }
 
-// 관측된 channel/identity/name을 후보 상태로 기록하되 표시명만으로 player를 연결하지 않습니다.
+// 검증된 KakaoTalk DB 방 이름은 변경 시점만 append-only 이력으로 기록합니다.
+async function recordChannelNameObservation(
+  transaction: DatabaseTransaction,
+  event: NormalizedIrisEvent,
+  channelId: bigint | null,
+  observation?: ChannelNameObservation
+): Promise<void> {
+  if (channelId === null || observation === undefined || observation.displayName.trim() === "") return;
+  const previous = await transaction.query<Array<{ display_name: string }>>(
+    `SELECT display_name FROM channel_name_observations
+     WHERE channel_id = ? AND source_code = ? ORDER BY observed_at DESC, id DESC LIMIT 1`,
+    [channelId, observation.sourceCode]
+  );
+  if (previous[0]?.display_name === observation.displayName) return;
+  await transaction.execute(
+    `INSERT INTO channel_name_observations
+      (channel_id, display_name, source_code, provider_event_id, observed_at)
+     VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))`,
+    [channelId, observation.displayName, observation.sourceCode, event.providerEventId]
+  );
+}
+
+// 개인정보 원문 없이 검증된 분류와 최소 상관 메타데이터만 기록합니다.
+async function recordNormalizedEvent(transaction: DatabaseTransaction, event: NormalizedIrisEvent): Promise<void> {
+  await transaction.execute(
+    `INSERT INTO normalized_provider_events
+      (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
+    [event.eventId, event.eventCode, event.eventCategory, event.monitoringGroup, event.targetProviderEventId ?? null,
+      Object.keys(event.eventMetadata).length === 0 ? null : JSON.stringify(event.eventMetadata)]
+  );
+}
+
+// 입장·퇴장 이벤트를 방별 membership 상태와 append-only 이력에 반영합니다.
+async function recordMembershipEvent(
+  transaction: DatabaseTransaction,
+  event: NormalizedIrisEvent,
+  identity: { channelId: bigint | null; externalIdentityId: bigint | null }
+): Promise<void> {
+  if (identity.channelId === null || identity.externalIdentityId === null
+    || (event.eventCode !== "member.joined" && event.eventCode !== "member.departed")) return;
+  const membershipEventCode = event.eventCode === "member.joined" ? "joined" : "departed";
+  await transaction.execute(
+    `INSERT INTO channel_membership_events
+      (event_id, channel_id, external_identity_id, membership_event_code, occurred_at)
+     VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))`,
+    [event.eventId, identity.channelId, identity.externalIdentityId, membershipEventCode]
+  );
+  if (membershipEventCode === "joined") {
+    await transaction.execute(
+      `UPDATE channel_memberships
+       SET status = 'active', joined_at = UTC_TIMESTAMP(3), left_at = NULL, updated_at = UTC_TIMESTAMP(3)
+       WHERE channel_id = ? AND external_identity_id = ?`,
+      [identity.channelId, identity.externalIdentityId]
+    );
+  } else {
+    await transaction.execute(
+      `UPDATE channel_memberships
+       SET status = 'inactive', left_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3)
+       WHERE channel_id = ? AND external_identity_id = ?`,
+      [identity.channelId, identity.externalIdentityId]
+    );
+  }
+}
+
+// 수정·삭제 감지를 원문 내용 없이 운영 사건으로 기록합니다.
+async function recordModerationIncident(
+  transaction: DatabaseTransaction,
+  event: NormalizedIrisEvent,
+  identity: { channelId: bigint | null; externalIdentityId: bigint | null }
+): Promise<bigint | null> {
+  if (event.eventCode !== "message.edited" && event.eventCode !== "message.deleted"
+    && event.eventCode !== "message.hidden_by_host") return null;
+  const incidentType = event.eventCode === "message.edited"
+    ? "message_edited"
+    : event.eventCode === "message.deleted" ? "message_deleted" : "message_hidden_by_host";
+  const result = await transaction.execute(
+    `INSERT INTO moderation_incidents
+      (event_id, channel_id, external_identity_id, incident_type, target_provider_event_id, status, occurred_at)
+     VALUES (?, ?, ?, ?, ?, 'detected', UTC_TIMESTAMP(3))`,
+    [event.eventId, identity.channelId, identity.externalIdentityId,
+      incidentType, event.targetProviderEventId ?? null]
+  );
+  return result.insertId;
+}
+
+// 메시지 본문을 보관하지 않고 방·사용자·일자별 활동 건수만 누적합니다.
+async function recordChannelActivity(
+  transaction: DatabaseTransaction,
+  event: NormalizedIrisEvent,
+  identity: { channelId: bigint | null; externalIdentityId: bigint | null }
+): Promise<void> {
+  if (event.direction !== "incoming" || identity.channelId === null || identity.externalIdentityId === null) return;
+  const isMessage = event.eventCategory === "message";
+  const isMedia = event.eventCategory === "media" || event.eventCategory === "content";
+  if (!isMessage && !isMedia) return;
+  const isReply = event.eventCode === "message.created.reply"
+    || event.eventCode === "message.created.thread_reply";
+  const isMention = event.eventCode === "message.created.mention";
+  await transaction.execute(
+    `INSERT INTO channel_activity_daily
+      (channel_id, external_identity_id, activity_date, message_count, media_count,
+       reply_count, mention_count, event_count, last_event_at)
+     VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3))
+     ON DUPLICATE KEY UPDATE
+       message_count = message_count + VALUES(message_count),
+       media_count = media_count + VALUES(media_count),
+       reply_count = reply_count + VALUES(reply_count),
+       mention_count = mention_count + VALUES(mention_count),
+       event_count = event_count + 1,
+       last_event_at = VALUES(last_event_at)`,
+    [identity.channelId, identity.externalIdentityId, isMessage ? 1 : 0, isMedia ? 1 : 0,
+      isReply ? 1 : 0, isMention ? 1 : 0]
+  );
+}
+
+// 관측된 channel/identity를 후보로 기록하고 Iris sender는 미신뢰 이력으로만 분리합니다.
 async function observeEventIdentity(
   transaction: DatabaseTransaction,
-  event: NormalizedIrisEvent
+  event: NormalizedIrisEvent,
+  channelType: "open_group" | "open_direct"
 ): Promise<{ channelId: bigint | null; externalIdentityId: bigint | null }> {
   let channelId: bigint | null = null;
   let externalIdentityId: bigint | null = null;
   if (event.channelId !== undefined) {
+    const channelProviderCode = event.providerCode === "iris" ? "kakao" : event.providerCode;
     await transaction.execute(
       `INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at)
-       VALUES (?, ?, 'group', 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
-       ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)`,
-      [event.providerCode, event.channelId]
+       VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+       ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)`,
+      [channelProviderCode, event.channelId, channelType]
     );
     const channels = await transaction.query<Array<{ id: bigint }>>(
       "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
-      [event.providerCode, event.channelId]
+      [channelProviderCode, event.channelId]
     );
     channelId = channels[0]?.id ?? null;
   }
   if (event.userId !== undefined) {
-    const existing = await transaction.query<Array<{ id: bigint; display_name: string | null }>>(
-      "SELECT id, display_name FROM external_identities WHERE provider_code = ? AND external_user_id = ? FOR UPDATE",
-      [event.providerCode === "iris" ? "kakao" : event.providerCode, event.userId]
-    );
     await transaction.execute(
       `INSERT INTO external_identities
         (provider_code, external_user_id, display_name, status, created_at, updated_at)
-       VALUES ('kakao', ?, ?, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
+       VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))
        ON DUPLICATE KEY UPDATE
-         display_name = COALESCE(VALUES(display_name), display_name), updated_at = VALUES(updated_at)`,
-      [event.userId, event.displayName ?? null]
+          updated_at = VALUES(updated_at)`,
+      [event.userId]
     );
     const observed = await transaction.query<Array<{ id: bigint }>>(
       "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
       [event.userId]
     );
     externalIdentityId = observed[0]?.id ?? null;
-    if (event.displayName !== undefined && (existing[0] === undefined || existing[0].display_name !== event.displayName)) {
-      await transaction.execute(
-        "INSERT INTO external_identity_names (external_identity_id, display_name, observed_at) VALUES (?, ?, UTC_TIMESTAMP(3))",
-        [externalIdentityId, event.displayName]
+    if (externalIdentityId !== null && event.displayName !== undefined) {
+      const nameSourceCode = event.displayNameSource === "kakao_db" && event.displayNameTrust === "trusted"
+        ? "kakao_membership_feed"
+        : "iris_cache";
+      const nameTrustStatus = nameSourceCode === "kakao_membership_feed" ? "verified" : "untrusted";
+      const previousNames = await transaction.query<Array<{ display_name: string }>>(
+        `SELECT display_name FROM external_identity_names
+         WHERE external_identity_id = ? AND source_code = ?
+         ORDER BY observed_at DESC, id DESC LIMIT 1`,
+        [externalIdentityId, nameSourceCode]
       );
+      if (previousNames[0]?.display_name !== event.displayName) {
+        await transaction.execute(
+          `INSERT INTO external_identity_names
+            (external_identity_id, display_name, source_code, trust_status, channel_id, provider_event_id, observed_at)
+           VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
+          [externalIdentityId, event.displayName, nameSourceCode, nameTrustStatus,
+            channelId, event.providerEventId]
+        );
+      }
     }
   }
   if (channelId !== null && externalIdentityId !== null) {
