@@ -2205,6 +2205,58 @@ Status: VERIFIED
 
 ---
 
+# /아아 [숫자]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/아아`
+- Search in `main.js`: `GLOBAL_CONFIG.coffeePackage`
+
+## Files
+
+- `main.js`
+- `member.json`
+- `member_title.json`
+
+## Related Helpers
+
+- `getCoffeePackageSpecialIndex`
+- `isExclusiveDataMutationCommandMessage`
+- `ensureTitleUserData`
+- `addTitle`
+- `addItemToBag`
+- `checkRank`
+
+## Data Usage
+
+- `GLOBAL_CONFIG.coffeePackage`
+- `data.member[sender].bag`
+- `titleData.member[sender].title.list`
+
+## Save Flow
+
+- `/아아 [숫자]` consumes `아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)`, grants 200 coffee items per use, and separately draws one mutually exclusive special situation from a cumulative 15% table
+- Special situations grant `미니펫뽑기🐹(/미니펫오픈)` and add the matching member title only when it is not already owned
+- The command loads member data in the response flow and member-title data once, then saves `filePath` and saves `memberTitlePath` only when a new title is added
+- `/아아 [숫자]` is handled as an exclusive multi-file mutation command, including when entered through the DEV command context
+
+## Related Commands
+
+- `/아아 [숫자]`
+- `/판매 [아이템번호] [수량]`
+- `/타이틀목록`
+- `/미니펫오픈`
+
+## AI Notes
+
+- Exact/full-pattern guards allow only `/아아` help or `/아아 [숫자]`; suffix guide text does not execute
+- One command accepts 1~10 uses, matching one paid package bundle and limiting result-image reply volume
+- Coffee items use the existing general `/판매` value of 100,000 points per item
+
+---
+
 # /펀치|/펀치순위|/펀치순위초기화
 
 Status: VERIFIED
