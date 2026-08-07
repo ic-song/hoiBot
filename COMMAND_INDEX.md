@@ -1979,6 +1979,7 @@ Status: VERIFIED
 
 ## Data Usage
 
+- `GLOBAL_CONFIG.package.maxUseOnce`
 - `packageInfo.json`
 - `packageLog.json`
 - `data.member[user].bag`
@@ -2017,9 +2018,10 @@ Status: VERIFIED
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
+- `/패키지사용`은 기존·신규 패키지 모두 `GLOBAL_CONFIG.package.maxUseOnce` 기준으로 한 번에 최대 1,000개까지 사용한다
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Package edit quick command format: `/패키지수정 리스트번호 보상목록`
-- `/패키지수정` keeps the existing package name, desc, `id`, enabled state, and max-use value, but updates rewards only
+- `/패키지수정` keeps the existing package name, desc, `id`, and enabled state, updates rewards, and applies the common 1,000-use maximum
 - Package edit does not use `|`; all text after the list number is parsed as the reward spec
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
@@ -2205,7 +2207,7 @@ Status: VERIFIED
 
 ---
 
-# /아아 [숫자]
+# /아아|/아아 [숫자]
 
 Status: VERIFIED
 
@@ -2237,13 +2239,14 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/아아 [숫자]` consumes `아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)`, grants 200 coffee items per use, and separately draws one mutually exclusive special situation from a cumulative 15% table
+- `/아아` 또는 `/아아 [숫자]` consumes `아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)`, grants 200 coffee items per use, and separately draws one mutually exclusive special situation from a cumulative 15% table
 - Special situations grant `미니펫뽑기🐹(/미니펫오픈)` and add the matching member title only when it is not already owned
 - The command loads member data in the response flow and member-title data once, then saves `filePath` and saves `memberTitlePath` only when a new title is added
-- `/아아 [숫자]` is handled as an exclusive multi-file mutation command, including when entered through the DEV command context
+- `/아아`와 `/아아 [숫자]` are handled as exclusive multi-file mutation commands, including when entered through the DEV command context
 
 ## Related Commands
 
+- `/아아`
 - `/아아 [숫자]`
 - `/판매 [아이템번호] [수량]`
 - `/타이틀목록`
@@ -2251,8 +2254,9 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Exact/full-pattern guards allow only `/아아` help or `/아아 [숫자]`; suffix guide text does not execute
-- One command accepts 1~10 uses, matching one paid package bundle and limiting result-image reply volume
+- Exact/full-pattern guards allow only `/아아` or `/아아 [숫자]`; suffix guide text does not execute
+- `/아아` uses one item, while `/아아 [숫자]` has no hard count cap and is limited only by the user's package inventory
+- Bulk results group identical base/special outcomes, so at most six result-image messages plus one summary are sent
 - Coffee items use the existing general `/판매` value of 100,000 points per item
 
 ---
