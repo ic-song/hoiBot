@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T16:41:00+09:00",
+  "updatedAt": "2026-08-11T16:43:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -8,9 +8,9 @@
   "branchEvidence": {
     "required": "feature/modernization",
     "observed": "feature/modernization",
-    "head": "a2f7e1a5e8b7b7a80d04ba803ad5867b8c50d04c",
+    "head": "a83527009d9010efbcc8326c05248e59633ee110",
     "upstream": "origin/feature/modernization",
-    "upstreamHead": "a2f7e1a5e8b7b7a80d04ba803ad5867b8c50d04c",
+    "upstreamHead": "a83527009d9010efbcc8326c05248e59633ee110",
     "workingTreeClean": false,
     "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
     "baselineMergeSafe": false,
@@ -124,18 +124,20 @@
     }
   ],
   "resumeCheckerEvidence": {
-    "localResumeSafe": true,
+    "localResumeSafe": false,
     "crossPcReady": true,
     "checkpointTracked": true,
     "checkpointPushed": true,
     "snapshotMatched": true,
     "databaseReachable": true,
-    "localMigrationCount": 28,
+    "localMigrationCount": 27,
     "appliedMigrationCount": 28,
-    "migrationChecksumMismatches": [],
+    "migrationChecksumMismatches": [
+      "028_character_mvp.sql"
+    ],
     "completedImportRunFound": false,
     "typecheckPassed": true,
-    "verifiedAt": "2026-08-11T16:36:00+09:00"
+    "verifiedAt": "2026-08-11T16:43:00+09:00"
   },
   "dataInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",

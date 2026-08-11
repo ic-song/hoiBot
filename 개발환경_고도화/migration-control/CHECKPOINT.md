@@ -4,8 +4,8 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 8
-- 마지막 갱신: 2026-08-11 16:41 KST
+- 체크포인트 버전: 9
+- 마지막 갱신: 2026-08-11 16:43 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -28,10 +28,10 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 푸시 커밋: `a2f7e1a5e8b7b7a80d04ba803ad5867b8c50d04c`
+- 마지막 푸시 커밋: `a83527009d9010efbcc8326c05248e59633ee110`
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
-- 체크포인트 포함 푸시 커밋: `a2f7e1a5e8b7b7a80d04ba803ad5867b8c50d04c`
+- 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
 
 ## 완료된 작업
 
@@ -50,6 +50,8 @@
 - JSON root hash `b7dfec6b7cb82c579f1a834434f6286c57e6364cd759b1fbcedc2a25db3f0014`가 기존 기준과 일치했다.
 - `main.js`·`Info.js` 경로 선언과 직접 load/save 증거를 결합해 저장소 후보 47개를 분류했다: authoritative 26, reference 8, reconciliation-only 11, excluded 2.
 - 저장소 snapshot에 없는 authoritative Android 파일 `petHomeActivityData.json`, `petHomePlacedFurniture.json`을 별도 미확인 대상으로 기록했다.
+- 데이터 inventory와 생성기를 `a835270`으로 선택 커밋하고 `origin/feature/modernization`에 푸시했다.
+- 푸시 후 resume checker에서 `crossPcReady=true`를 확인했다.
 
 ## 진행 중인 작업
 
@@ -75,6 +77,8 @@
 - 실행 명령: `node 개발환경_고도화/migration-control/scripts/build-data-inventory.mjs`
 - 실행 명령: inventory 요약 검증과 `git diff --check -- 개발환경_고도화/migration-control`
 - 결과: repository file 35, JSON 33, store 후보 47. invalid JSON 0. root hash 기준값 일치. unknown 분류 0. 저장소에 없는 authoritative 파일 2개 확인. diff check 통과.
+- 실행 명령: 푸시 후 `node --env-file-if-exists=.env --import tsx scripts/resume-migration.ts --json`
+- 결과: HEAD/upstream `a835270` 일치, 체크포인트·필수 artifact 추적/푸시 확인, `crossPcReady=true`. 다만 로컬 migration 27개와 DB 적용 migration 28개가 불일치해 `safeToResume=false`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -82,11 +86,12 @@
 - 로컬 `feature/prod`는 `382e068dd5ac9e09cdb4b92de6529e5f40394388`로 원격보다 뒤에 있다.
 - 현재 JSON root hash와 일치하는 완료된 DB import run은 확인되지 않았다.
 - 현재 Git snapshot에 authoritative Android 파일 2개가 없어 실제 구조와 checksum을 아직 확정할 수 없다.
+- DB에는 현재 작업트리에서 제거된 `028_character_mvp.sql` 적용 이력이 남아 있어 migration checksum 검증이 실패한다. 이 상태에서는 DB apply를 진행하지 않는다.
 - 운영 DB apply와 cutover는 승인되지 않았다.
 
 ## 다음 행동
 
-1. migration DDL과 `import-legacy-json.ts`를 기준으로 authoritative 저장소 26개의 DB 수용 coverage 표를 생성한다.
+1. DB를 변경하지 않고 migration DDL과 `import-legacy-json.ts`를 기준으로 authoritative 저장소 26개의 DB 수용 coverage 표를 생성한다.
 
 ## 보안
 
