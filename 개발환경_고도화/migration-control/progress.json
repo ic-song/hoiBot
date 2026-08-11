@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T16:26:00+09:00",
+  "updatedAt": "2026-08-11T16:41:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -8,9 +8,9 @@
   "branchEvidence": {
     "required": "feature/modernization",
     "observed": "feature/modernization",
-    "head": "61a0a1a54be819408b922dc6573c2bab7a41ad4c",
+    "head": "a2f7e1a5e8b7b7a80d04ba803ad5867b8c50d04c",
     "upstream": "origin/feature/modernization",
-    "upstreamHead": "61a0a1a54be819408b922dc6573c2bab7a41ad4c",
+    "upstreamHead": "a2f7e1a5e8b7b7a80d04ba803ad5867b8c50d04c",
     "workingTreeClean": false,
     "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
     "baselineMergeSafe": false,
@@ -38,8 +38,8 @@
     {
       "id": "control-plane",
       "name": "제어면 구축",
-      "completed": false,
-      "lastVerifiedGate": "resume-checker-locally-verified",
+      "completed": true,
+      "lastVerifiedGate": "cross-pc-recovery-ready",
       "prerequisites": [],
       "evidence": [
         "개발환경_고도화/migration-control/CHECKPOINT.md",
@@ -48,22 +48,25 @@
         "개발환경_고도화/runtime/scripts/resume-migration.ts",
         ".codex/skills/hoibot-migrate-legacy-rdb"
       ],
-      "remaining": [
-        "체크포인트와 제어면 artifact를 커밋·push해 다른 PC에서도 복구 가능하게 만들기",
-        "다른 PC 또는 빈 세션에서 동일 판정 확인"
-      ]
+      "remaining": []
     },
     {
       "id": "current-state-inventory",
       "name": "현행 전체 파악",
       "completed": false,
-      "lastVerifiedGate": null,
+      "lastVerifiedGate": "data-store-machine-inventory-recorded",
       "prerequisites": [
         "control-plane"
       ],
-      "evidence": [],
+      "evidence": [
+        "개발환경_고도화/migration-control/inventory/data-stores.json",
+        "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs"
+      ],
       "remaining": [
-        "명령·데이터·자동 처리 inventory 생성"
+        "명령 inventory 생성",
+        "자동 처리 inventory 생성",
+        "저장소 snapshot에 없는 authoritative Android 파일 2개의 실제 구조 확인",
+        "모든 명령·자동 흐름을 기능 슬라이스에 배정"
       ]
     },
     {
@@ -122,9 +125,9 @@
   ],
   "resumeCheckerEvidence": {
     "localResumeSafe": true,
-    "crossPcReady": false,
-    "checkpointTracked": false,
-    "checkpointPushed": false,
+    "crossPcReady": true,
+    "checkpointTracked": true,
+    "checkpointPushed": true,
     "snapshotMatched": true,
     "databaseReachable": true,
     "localMigrationCount": 28,
@@ -132,7 +135,28 @@
     "migrationChecksumMismatches": [],
     "completedImportRunFound": false,
     "typecheckPassed": true,
-    "verifiedAt": "2026-08-11T16:24:00+09:00"
+    "verifiedAt": "2026-08-11T16:36:00+09:00"
+  },
+  "dataInventoryEvidence": {
+    "generator": "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",
+    "artifact": "개발환경_고도화/migration-control/inventory/data-stores.json",
+    "repositoryFileCount": 35,
+    "jsonFileCount": 33,
+    "storeCandidateCount": 47,
+    "classificationCounts": {
+      "authoritative": 26,
+      "reference": 8,
+      "reconciliation-only": 11,
+      "excluded": 2
+    },
+    "unknownCount": 0,
+    "invalidJsonCount": 0,
+    "missingAuthoritativeOperationalFiles": [
+      "/sdcard/호이랜드/petHomeActivityData.json",
+      "/sdcard/호이랜드/petHomePlacedFurniture.json"
+    ],
+    "rootHashMatched": true,
+    "verifiedAt": "2026-08-11T16:41:00+09:00"
   },
   "knownSlices": [
     {
