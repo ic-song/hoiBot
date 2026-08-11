@@ -50,11 +50,17 @@ ON DUPLICATE KEY UPDATE balance = VALUES(balance), version = VALUES(version);
 
 INSERT INTO player_counters (player_id, counter_code, period_key, value) VALUES
   (900000001, 'message_count', 'lifetime', 42),
+  (900000001, 'attendance', 'lifetime', 9),
+  (900000001, 'like', 'current', 11),
+  (900000001, 'like', 'lifetime', 15),
+  (900000001, 'carrot', 'lifetime', 4),
+  (900000001, 'thermo', 'lifetime', 2),
   (900000002, 'message_count', 'lifetime', 17),
   (900000003, 'message_count', 'lifetime', 3)
 ON DUPLICATE KEY UPDATE value = VALUES(value);
 
 INSERT INTO player_passes (player_id, pass_code, enabled, permanent, starts_at, ends_at) VALUES
+  (900000001, 'premium', TRUE, FALSE, '2026-01-01 00:00:00.000', '2027-01-01 00:00:00.000'),
   (900000001, 'support', TRUE, FALSE, '2026-01-01 00:00:00.000', '2027-01-01 00:00:00.000'),
   (900000002, 'support', FALSE, FALSE, NULL, NULL)
 ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), permanent = VALUES(permanent), starts_at = VALUES(starts_at), ends_at = VALUES(ends_at);
@@ -246,12 +252,19 @@ INSERT INTO player_event_progress (season_id, mode_id, player_id, progress_json,
 ON DUPLICATE KEY UPDATE progress_json = VALUES(progress_json), version = VALUES(version);
 
 INSERT INTO leaderboards (id, code, season_key, calculated_at)
-VALUES (900000001, 'synthetic-punch', 'synthetic-season', '2026-01-10 02:00:00.000')
+VALUES
+  (900000001, 'synthetic-punch', 'synthetic-season', '2026-01-10 02:00:00.000'),
+  (900000002, 'home_like', 'lifetime', '2026-01-10 02:00:00.000'),
+  (900000003, 'carrot', 'lifetime', '2026-01-10 02:00:00.000'),
+  (900000004, 'thermo', 'lifetime', '2026-01-10 02:00:00.000')
 ON DUPLICATE KEY UPDATE calculated_at = VALUES(calculated_at);
 
 INSERT INTO leaderboard_entries (leaderboard_id, player_id, rank_no, score, tie_break_key) VALUES
   (900000001, 900000001, 1, 700.000, '001'),
-  (900000001, 900000002, 2, 500.000, '002')
+  (900000001, 900000002, 2, 500.000, '002'),
+  (900000002, 900000001, 1, 2.000, '001'),
+  (900000003, 900000001, 2, 4.000, '001'),
+  (900000004, 900000001, 3, 2.000, '001')
 ON DUPLICATE KEY UPDATE rank_no = VALUES(rank_no), score = VALUES(score), tie_break_key = VALUES(tie_break_key);
 
 INSERT INTO tower_definitions (id, code, display_name, season_key, rules_json, active)

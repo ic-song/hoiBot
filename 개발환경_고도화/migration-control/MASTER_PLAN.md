@@ -344,17 +344,14 @@ node --env-file-if-exists=.env --import tsx scripts/resume-migration.ts
 - 저장소 JSON 33개 dry-run 결과는 회원 610명, anomaly 1건, root hash `b7dfec6b7cb82c579f1a834434f6286c57e6364cd759b1fbcedc2a25db3f0014`다.
 - 개발 DB 연결과 transaction rollback probe는 통과했다.
 - 위 root hash와 일치하는 완료된 import run은 현재 연결된 DB에서 확인되지 않았다.
-- `/내정보` repository·service·formatter는 존재하지만 문자 단위 golden parity는 완료되지 않았다.
+- `/내정보` repository·service·formatter는 합성 DB에서 25개 전체 출력 줄과 U+200B 686개의 문자 단위 contract를 통과했다. 실운영 snapshot과 운영방 smoke는 최종 단계에 남아 있다.
 - 현재 `feature/modernization` worktree에는 별도 캐릭터 MVP 작업을 포함한 미커밋 변경이 있으므로 기준 브랜치 병합과 커밋 범위를 분리해야 한다.
 - 운영 cutover는 수행되지 않았다.
 
 ## 7. 바로 다음 작업
 
-1. 제어면과 resume checker를 안전한 커밋·push로 영속화하고 다른 PC 재개 가능 상태 검증
-2. 현행 명령 inventory 생성 규칙 확정
-3. `main.js`·`Info.js` 전체 명령과 자동 흐름을 기계 수집 후 수동 검증
-4. JSON 파일별 authority와 save-flow inventory 작성
-5. 조사 결과로 기능 슬라이스와 WBS 확정
-6. 첫 슬라이스 `/내정보`를 새 증거 형식으로 재검증
-
-기능 구현을 추가하기 전에 1~5를 완료한다.
+1. active 미확인 17개와 source-only 후보 16개를 실제 guard 기준으로 수동 분류
+2. 삭제 체크 literal 75개가 실행 분기인지 안내문 잔존인지 재검증
+3. 첫 변경 슬라이스 `/서버이동`의 legacy 권한·mutation·save flow와 MariaDB transaction·audit·outbox parity 완료
+4. 조회 슬라이스는 사용자·펫·홈·길드 순으로 묶고 변경 슬라이스는 재화·인벤토리·거래 순으로 반복
+5. 자동 처리와 관리자 경로를 별도 inventory에 추가

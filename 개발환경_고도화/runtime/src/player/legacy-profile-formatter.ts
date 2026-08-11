@@ -1,6 +1,7 @@
 import type { ProfileView } from "./profile.js";
 
 const ALL_SEE = "​".repeat(500);
+const LEGACY_DETAIL_LEAD = "​".repeat(186);
 
 // 정수·소수 문자열에 천 단위 구분자를 추가하되 정밀도를 바꾸지 않습니다.
 function withCommas(value: string): string {
@@ -44,7 +45,7 @@ export function formatLegacyMyProfile(profile: ProfileView): string {
   lines.push(`• 타이틀 개수: ${profile.titleCount}개`);
   lines.push(`• 펫타이틀 개수: ${profile.petTitleCount}개`);
   lines.push(`• 경험치: ${profile.experience.current} / ${nextExperience} (${experiencePercent}%)`);
-  lines.push(`\n• ━ ✦ 내정보 상세보기 ✦ ━${ALL_SEE} `);
+  lines.push(`\n• ━ ✦ 내정보 상세보기 ✦ ━${LEGACY_DETAIL_LEAD} ${ALL_SEE} `);
   lines.push(`\n• 💌 x ${profile.home?.likes ?? "0"} (순위 : ${profile.ranks.home_like ?? "null"}위)`);
   lines.push(`• 💕 x ${profile.counters["like:current"] ?? "0"} (누적 : ${lifetimeLikes})`);
   lines.push(`• 🥕 x ${profile.counters["carrot:lifetime"] ?? "0"} (순위 : ${profile.ranks.carrot === undefined ? "순위 없음" : `${profile.ranks.carrot}위`})`);

@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 19
-- 마지막 갱신: 2026-08-11 17:32 KST
+- 체크포인트 버전: 20
+- 마지막 갱신: 2026-08-11 17:48 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 비식별 임시데이터가 적재된 관계형 schema를 기준으로 기능별 명령 로직 이관 순서와 첫 슬라이스를 확정한다.
+- 첫 변경 슬라이스 `/서버이동`의 legacy guard·권한·mutation·save flow와 기존 서버 구현을 재검증한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -70,10 +70,16 @@
 - loader가 `hoibot_schema_design`·`hoibot_rehearsal_*`만 허용하고 그 외 DB는 mutation 전에 거부하도록 구현했다.
 - 합성 fixture SQL 60문장을 한 transaction으로 적재하고 28개 대표 테이블을 transaction 내부에서 검증했다.
 - 첫 적용, 반복 적용, verify-only에서 동일 건수를 확인했으며 `DATABASE_NAME=hoibot` 대상 거부도 확인했다.
+- `COMMAND_REGISTRY.md` 1,132개 그룹을 실제 `main.js`·`Info.js` literal과 주변 load/save 문맥으로 재검증하는 command inventory 생성기를 추가했다.
+- active command group 837개 중 source literal 820개와 active 미확인 17개를 기록하고, 삭제 체크 literal 75개는 실행 여부 수동 검토 대상으로 분리했다.
+- 첫 조회 슬라이스 `/내정보`의 exact guard, legacy helper·read file과 MariaDB repository/service/formatter 경로를 재검증했다.
+- 실제 legacy 출력은 상세보기 접힘 구간 U+200B가 686개인데 서버 formatter는 500개임을 확인해 정확히 686개와 동일한 공백 위치로 수정했다.
+- 합성 DB의 `synthetic-user-alpha`에 대해 25개 전체 출력 줄과 U+200B 686개 exact contract를 통과했다.
+- `/내정보` 슬라이스 증거를 `verified`로 기록하고 repo validator를 통과했다.
 
 ## 진행 중인 작업
 
-- 전체 명령 inventory를 기능 슬라이스와 DB aggregate에 배정하고 첫 조회 슬라이스를 이관한다.
+- 첫 변경 슬라이스 `/서버이동`의 legacy와 현재 `IrisAdminCommandService` 계약을 대조한다.
 
 ## 변경 파일
 
@@ -91,6 +97,12 @@
 - `개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql`
 - `개발환경_고도화/migration-control/fixtures/synthetic-relational/README.md`
 - `개발환경_고도화/runtime/scripts/load-synthetic-relational.ts`
+- `개발환경_고도화/migration-control/scripts/build-command-inventory.mjs`
+- `개발환경_고도화/migration-control/inventory/commands.json`
+- `개발환경_고도화/migration-control/evidence/player-profile-read/contract.json`
+- `개발환경_고도화/migration-control/evidence/player-profile-read/slice.json`
+- `개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts`
+- `개발환경_고도화/runtime/scripts/probe-my-profile-synthetic.ts`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -121,6 +133,12 @@
 - 결과: fixture checksum `d9ab5aef...e4fd`, SQL 60문장, 대표 테이블 28개 검증 통과. 반복 적용 후 건수 불변. 합성 player 3, currency account 6, guild 2, home 2 등 확인.
 - 실행 명령: 동일 loader에 `DATABASE_NAME=hoibot` 지정
 - 결과: `Synthetic fixture is blocked for database: hoibot`로 mutation 전 거부 확인.
+- 실행 명령: command inventory 생성기 syntax·artifact 요약 검증
+- 결과: registry group 1,132, active 837, source literal found 820, active unverified 17, deleted literal review 75, source-only candidate 16.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `probe-my-profile-synthetic.ts`
+- 결과: typecheck 통과, runtime test 92개 통과, `/내정보` 25줄과 U+200B 686개 exact contract 통과.
+- 실행 명령: `validate-slice-evidence.mjs .../player-profile-read/slice.json`
+- 결과: `valid slice evidence: player-profile-read`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -137,7 +155,7 @@
 
 ## 다음 행동
 
-1. `main.js`·`Info.js` 전체 명령 inventory를 기능 슬라이스와 목적 table에 배정하고 첫 조회 슬라이스를 선택한다.
+1. `/서버이동`의 exact/full-pattern guard, 관리자 권한, member server mutation, save flow와 현재 MariaDB transaction·audit·outbox를 대조한다.
 
 ## 보안
 

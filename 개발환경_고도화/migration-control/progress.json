@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T17:32:00+09:00",
+  "updatedAt": "2026-08-11T17:48:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -225,7 +225,7 @@
     "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
     "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
     "database": "hoibot_schema_design",
-    "fixtureChecksum": "d9ab5aef4f522fa2154f467b1e42da33dd26af533df397cb18486ab9fa65e4fd",
+    "fixtureChecksum": "b5a9fef73710e5bf60d972d4b7be23a3a9ce84e4ed5b421743bb22c06f7de03c",
     "statementCount": 60,
     "verifiedTableCount": 28,
     "syntheticPlayerCount": 3,
@@ -234,7 +234,19 @@
     "productionDatabaseGuardVerified": true,
     "operationalSnapshotTouched": false,
     "validated": true,
-    "verifiedAt": "2026-08-11T17:32:00+09:00"
+    "verifiedAt": "2026-08-11T17:48:00+09:00"
+  },
+  "commandInventoryEvidence": {
+    "generator": "개발환경_고도화/migration-control/scripts/build-command-inventory.mjs",
+    "artifact": "개발환경_고도화/migration-control/inventory/commands.json",
+    "registryCommandGroups": 1132,
+    "activeCommandGroups": 837,
+    "sourceLiteralFound": 820,
+    "unverifiedActive": 17,
+    "deletedLiteralReviewRequired": 75,
+    "unregisteredSourceCandidates": 16,
+    "validated": true,
+    "verifiedAt": "2026-08-11T17:48:00+09:00"
   },
   "knownSlices": [
     {
@@ -242,15 +254,22 @@
       "commands": [
         "/내정보"
       ],
-      "completedGates": [],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-exact-parity"
+      ],
       "observedArtifacts": [
         "개발환경_고도화/runtime/src/player/maria-profile-repository.ts",
         "개발환경_고도화/runtime/src/player/get-my-profile-service.ts",
         "개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts"
       ],
-      "nextRequiredGate": "현행 조사 증거 파일 작성",
+      "nextRequiredGate": "최종 운영 snapshot import와 실운영방 smoke",
       "trialMigrationForCurrentRootHash": false,
-      "parityVerified": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
       "cutoverReady": false
     }
   ]
