@@ -4,22 +4,22 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 9
-- 마지막 갱신: 2026-08-11 16:43 KST
+- 체크포인트 버전: 11
+- 마지막 갱신: 2026-08-11 16:45 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 1단계 현행 파악에서 JSON/TXT 운영 데이터의 구조·사용처·load/save 흐름을 누락 없이 inventory로 기록한다.
+- 1단계 현행 파악에서 운영 데이터 저장소와 현재 MariaDB DDL/importer의 수용 범위를 누락 없이 inventory로 기록한다.
 
 ## 사용자 요청과 승인 범위
 
 - 최신 요청: 데이터 이관 준비를 단계별로 기록하며 진행.
-- 허용된 변경: 이관 제어면을 갱신하고 `data/*`의 구조·사용처·load/save 흐름을 읽기 전용으로 조사해 inventory artifact를 작성.
+- 허용된 변경: 이관 제어면을 갱신하고 `data/*`의 구조·사용처·load/save 흐름과 현재 DDL/importer 수용 범위를 읽기 전용으로 조사해 inventory artifact를 작성.
 - 별도 승인이 필요한 작업: 운영 데이터 apply, 운영 전환, `feature/prod` 반영, 기존 캐릭터 MVP 미커밋 변경 수정·정리.
-- 선언된 파일 범위: `개발환경_고도화/migration-control/CHECKPOINT.md`, `개발환경_고도화/migration-control/progress.json`, `개발환경_고도화/migration-control/inventory/data-stores.json`, `개발환경_고도화/migration-control/scripts/build-data-inventory.mjs`.
+- 선언된 파일 범위: `개발환경_고도화/migration-control/CHECKPOINT.md`, `개발환경_고도화/migration-control/progress.json`, `개발환경_고도화/migration-control/inventory/db-coverage.json`, `개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`.
 
 ## 작업 위치
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 푸시 커밋: `a83527009d9010efbcc8326c05248e59633ee110`
+- 마지막 푸시 커밋: `a6ebc20c97f5f4e282175d6ca294965424c0a0c4`
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -52,17 +52,20 @@
 - 저장소 snapshot에 없는 authoritative Android 파일 `petHomeActivityData.json`, `petHomePlacedFurniture.json`을 별도 미확인 대상으로 기록했다.
 - 데이터 inventory와 생성기를 `a835270`으로 선택 커밋하고 `origin/feature/modernization`에 푸시했다.
 - 푸시 후 resume checker에서 `crossPcReady=true`를 확인했다.
+- authoritative 저장소 26개와 현재 DDL/importer를 읽기 전용으로 대조했다.
+- 전체 domain import 완료 0개, 부분 domain import 6개, manifest-only 18개, source snapshot 누락 2개로 확인했다.
+- importer는 JSON 33개의 checksum은 기록하지만 raw payload와 파일별 record count를 저장하지 않음을 확인했다.
 
 ## 진행 중인 작업
 
-- 현행 MariaDB migration·importer가 authoritative 저장소 26개의 구조를 얼마나 수용하는지 coverage를 대조한다.
+- 첫 데이터 설계 묶음인 `member.json`과 연결 저장소 5개의 legacy field-to-column coverage를 작성한다.
 
 ## 변경 파일
 
 - `개발환경_고도화/migration-control/CHECKPOINT.md`
 - `개발환경_고도화/migration-control/progress.json`
-- `개발환경_고도화/migration-control/inventory/data-stores.json`
-- `개발환경_고도화/migration-control/scripts/build-data-inventory.mjs`
+- `개발환경_고도화/migration-control/inventory/db-coverage.json`
+- `개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -79,6 +82,9 @@
 - 결과: repository file 35, JSON 33, store 후보 47. invalid JSON 0. root hash 기준값 일치. unknown 분류 0. 저장소에 없는 authoritative 파일 2개 확인. diff check 통과.
 - 실행 명령: 푸시 후 `node --env-file-if-exists=.env --import tsx scripts/resume-migration.ts --json`
 - 결과: HEAD/upstream `a835270` 일치, 체크포인트·필수 artifact 추적/푸시 확인, `crossPcReady=true`. 다만 로컬 migration 27개와 DB 적용 migration 28개가 불일치해 `safeToResume=false`.
+- 실행 명령: `node --check 개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`
+- 실행 명령: `node 개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`
+- 결과: authoritative 26개 = partial-domain-import 6 + manifest-only 18 + source-snapshot-missing 2. full-domain-import 0. 매핑 대상 table이 현재 DDL에 모두 존재함을 확인. diff check 통과.
 
 ## 충돌·막힘·미승인 사항
 
@@ -86,12 +92,13 @@
 - 로컬 `feature/prod`는 `382e068dd5ac9e09cdb4b92de6529e5f40394388`로 원격보다 뒤에 있다.
 - 현재 JSON root hash와 일치하는 완료된 DB import run은 확인되지 않았다.
 - 현재 Git snapshot에 authoritative Android 파일 2개가 없어 실제 구조와 checksum을 아직 확정할 수 없다.
+- 전체 legacy field를 domain row로 옮기는 저장소는 현재 0개이므로 기존 importer apply는 전체 데이터 시험 이관으로 사용할 수 없다.
 - DB에는 현재 작업트리에서 제거된 `028_character_mvp.sql` 적용 이력이 남아 있어 migration checksum 검증이 실패한다. 이 상태에서는 DB apply를 진행하지 않는다.
 - 운영 DB apply와 cutover는 승인되지 않았다.
 
 ## 다음 행동
 
-1. DB를 변경하지 않고 migration DDL과 `import-legacy-json.ts`를 기준으로 authoritative 저장소 26개의 DB 수용 coverage 표를 생성한다.
+1. DB를 변경하지 않고 `member.json`, `member_pet.json`, `member_title.json`, `pet_title.json`, `petSweetHomeData.json`, `guildData.json`의 legacy field-to-column coverage를 작성한다.
 
 ## 보안
 

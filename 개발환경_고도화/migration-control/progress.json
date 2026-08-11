@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T16:43:00+09:00",
+  "updatedAt": "2026-08-11T16:45:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -8,9 +8,9 @@
   "branchEvidence": {
     "required": "feature/modernization",
     "observed": "feature/modernization",
-    "head": "a83527009d9010efbcc8326c05248e59633ee110",
+    "head": "a6ebc20c97f5f4e282175d6ca294965424c0a0c4",
     "upstream": "origin/feature/modernization",
-    "upstreamHead": "a83527009d9010efbcc8326c05248e59633ee110",
+    "upstreamHead": "a6ebc20c97f5f4e282175d6ca294965424c0a0c4",
     "workingTreeClean": false,
     "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
     "baselineMergeSafe": false,
@@ -54,13 +54,15 @@
       "id": "current-state-inventory",
       "name": "현행 전체 파악",
       "completed": false,
-      "lastVerifiedGate": "data-store-machine-inventory-recorded",
+      "lastVerifiedGate": "data-store-db-coverage-recorded",
       "prerequisites": [
         "control-plane"
       ],
       "evidence": [
         "개발환경_고도화/migration-control/inventory/data-stores.json",
-        "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs"
+        "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",
+        "개발환경_고도화/migration-control/inventory/db-coverage.json",
+        "개발환경_고도화/migration-control/scripts/build-db-coverage.mjs"
       ],
       "remaining": [
         "명령 inventory 생성",
@@ -159,6 +161,19 @@
     ],
     "rootHashMatched": true,
     "verifiedAt": "2026-08-11T16:41:00+09:00"
+  },
+  "databaseCoverageEvidence": {
+    "generator": "개발환경_고도화/migration-control/scripts/build-db-coverage.mjs",
+    "artifact": "개발환경_고도화/migration-control/inventory/db-coverage.json",
+    "authoritativeStoreCount": 26,
+    "fullDomainImportCount": 0,
+    "partialDomainImportCount": 6,
+    "manifestOnlyCount": 18,
+    "sourceSnapshotMissingCount": 2,
+    "rawPayloadStored": false,
+    "perFileRecordCountStored": false,
+    "dbApplyAllowed": false,
+    "verifiedAt": "2026-08-11T16:45:00+09:00"
   },
   "knownSlices": [
     {
