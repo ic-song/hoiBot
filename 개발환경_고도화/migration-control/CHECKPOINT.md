@@ -4,8 +4,8 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 11
-- 마지막 갱신: 2026-08-11 16:45 KST
+- 체크포인트 버전: 13
+- 마지막 갱신: 2026-08-11 16:53 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -16,10 +16,10 @@
 
 ## 사용자 요청과 승인 범위
 
-- 최신 요청: 데이터 이관 준비를 단계별로 기록하며 진행.
-- 허용된 변경: 이관 제어면을 갱신하고 `data/*`의 구조·사용처·load/save 흐름과 현재 DDL/importer 수용 범위를 읽기 전용으로 조사해 inventory artifact를 작성.
+- 최신 요청: 누락된 운영 파일 2개는 합성 데이터로 개발·시험 이관하고, 운영 오픈 전 시험 데이터를 초기화한 뒤 전체 운영 데이터를 최종 이관.
+- 허용된 변경: 운영 원본 `data/*`는 수정하지 않고 별도 합성 fixture·검증기·초기화 경계를 작성하며 이관 설계를 계속 진행.
 - 별도 승인이 필요한 작업: 운영 데이터 apply, 운영 전환, `feature/prod` 반영, 기존 캐릭터 MVP 미커밋 변경 수정·정리.
-- 선언된 파일 범위: `개발환경_고도화/migration-control/CHECKPOINT.md`, `개발환경_고도화/migration-control/progress.json`, `개발환경_고도화/migration-control/inventory/db-coverage.json`, `개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`.
+- 선언된 파일 범위: `개발환경_고도화/DECISIONS.md`, `개발환경_고도화/migration-control/CHECKPOINT.md`, `개발환경_고도화/migration-control/progress.json`, `개발환경_고도화/migration-control/fixtures/missing-operational/**`, `개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`.
 
 ## 작업 위치
 
@@ -55,6 +55,9 @@
 - authoritative 저장소 26개와 현재 DDL/importer를 읽기 전용으로 대조했다.
 - 전체 domain import 완료 0개, 부분 domain import 6개, manifest-only 18개, source snapshot 누락 2개로 확인했다.
 - importer는 JSON 33개의 checksum은 기록하지만 raw payload와 파일별 record count를 저장하지 않음을 확인했다.
+- 사용자 결정 `DEC-064`로 누락 파일 2개의 합성 fixture 개발, 운영 오픈 전 시험 DB 폐기·재생성, 실제 전체 snapshot 최종 이관 원칙을 기록했다.
+- 실제 `data/`와 분리된 합성 fixture 2개와 검증기를 생성했다.
+- 합성 사용자 1명, 활동·소셜 구조와 장착 가구 2건이 필수 구조를 충족하며 운영 snapshot root hash가 변하지 않음을 확인했다.
 
 ## 진행 중인 작업
 
@@ -64,8 +67,11 @@
 
 - `개발환경_고도화/migration-control/CHECKPOINT.md`
 - `개발환경_고도화/migration-control/progress.json`
-- `개발환경_고도화/migration-control/inventory/db-coverage.json`
-- `개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`
+- `개발환경_고도화/DECISIONS.md`
+- `개발환경_고도화/migration-control/fixtures/missing-operational/README.md`
+- `개발환경_고도화/migration-control/fixtures/missing-operational/petHomeActivityData.json`
+- `개발환경_고도화/migration-control/fixtures/missing-operational/petHomePlacedFurniture.json`
+- `개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -85,6 +91,9 @@
 - 실행 명령: `node --check 개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`
 - 실행 명령: `node 개발환경_고도화/migration-control/scripts/build-db-coverage.mjs`
 - 결과: authoritative 26개 = partial-domain-import 6 + manifest-only 18 + source-snapshot-missing 2. full-domain-import 0. 매핑 대상 table이 현재 DDL에 모두 존재함을 확인. diff check 통과.
+- 실행 명령: `node --check 개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
+- 실행 명령: `node 개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
+- 결과: 합성 fixture JSON 2개 구조 검증 통과. synthetic owner 1명, 장착 가구 2건. 실제 `data/` file count 35, JSON 33, root hash `b7dfec6...0014` 유지.
 
 ## 충돌·막힘·미승인 사항
 
@@ -94,6 +103,8 @@
 - 현재 Git snapshot에 authoritative Android 파일 2개가 없어 실제 구조와 checksum을 아직 확정할 수 없다.
 - 전체 legacy field를 domain row로 옮기는 저장소는 현재 0개이므로 기존 importer apply는 전체 데이터 시험 이관으로 사용할 수 없다.
 - DB에는 현재 작업트리에서 제거된 `028_character_mvp.sql` 적용 이력이 남아 있어 migration checksum 검증이 실패한다. 이 상태에서는 DB apply를 진행하지 않는다.
+- `DECISIONS.md`에는 기존 다른 고도화 결정의 미커밋 변경이 함께 있어 선택 커밋 시 별도 hunk 분리가 필요하다.
+- 합성 fixture는 개발·시험 전용이며 실제 운영 파일 2개의 확보·검증을 대체하지 않는다.
 - 운영 DB apply와 cutover는 승인되지 않았다.
 
 ## 다음 행동
