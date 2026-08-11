@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 20
-- 마지막 갱신: 2026-08-11 17:48 KST
+- 체크포인트 버전: 21
+- 마지막 갱신: 2026-08-11 18:12 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 첫 변경 슬라이스 `/서버이동`의 legacy guard·권한·mutation·save flow와 기존 서버 구현을 재검증한다.
+- 사용자 요청으로 기능 진행을 멈춘 상태다. 다음 요청에서는 회원 가입 슬라이스(`/가입`, `/약관동의`, `/약관거부`)의 현행 명령·데이터·저장 흐름 조사부터 시작한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -76,10 +76,16 @@
 - 실제 legacy 출력은 상세보기 접힘 구간 U+200B가 686개인데 서버 formatter는 500개임을 확인해 정확히 686개와 동일한 공백 위치로 수정했다.
 - 합성 DB의 `synthetic-user-alpha`에 대해 25개 전체 출력 줄과 U+200B 686개 exact contract를 통과했다.
 - `/내정보` 슬라이스 증거를 `verified`로 기록하고 repo validator를 통과했다.
+- 첫 변경 슬라이스 `/서버이동`의 legacy guard, 관리자 권한, 회원 서버 mutation과 save flow를 조사했다.
+- legacy 구현은 메모리의 `member.<target>.server`를 변경한 뒤 `saveJsonFile`을 호출하지 않아 재시작 시 변경 유실 가능성이 있음을 증거에 기록했다.
+- 합성 관리자 Kakao identity, 비관리자 identity와 두 번째 합성 서버를 fixture에 추가했다.
+- 포팅본이 `player.server.assign` 권한을 검사하고, profile update·operation·audit·command execution·internal/Iris outbox를 하나의 transaction으로 저장함을 개발 DB에서 검증했다.
+- 같은 event ID 재전송 시 profile version이 한 번만 증가하고 같은 결과를 반환하는 멱등성을 확인했다.
+- `/서버이동` 슬라이스 증거를 `verified`로 기록하고 repo validator를 통과했다.
 
 ## 진행 중인 작업
 
-- 첫 변경 슬라이스 `/서버이동`의 legacy와 현재 `IrisAdminCommandService` 계약을 대조한다.
+- 없음. `/서버이동` 합성 검증 완료 지점에서 사용자 요청에 따라 중단·푸시한다.
 
 ## 변경 파일
 
@@ -103,6 +109,8 @@
 - `개발환경_고도화/migration-control/evidence/player-profile-read/slice.json`
 - `개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts`
 - `개발환경_고도화/runtime/scripts/probe-my-profile-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/player-server-change/slice.json`
+- `개발환경_고도화/runtime/scripts/probe-player-server-change-synthetic.ts`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -139,6 +147,12 @@
 - 결과: typecheck 통과, runtime test 92개 통과, `/내정보` 25줄과 U+200B 686개 exact contract 통과.
 - 실행 명령: `validate-slice-evidence.mjs .../player-profile-read/slice.json`
 - 결과: `valid slice evidence: player-profile-read`.
+- 실행 명령: 운영 DB 기본 설정으로 합성 fixture loader와 `/서버이동` probe 실행
+- 결과: 두 실행 모두 `Synthetic ... is blocked for database: hoibot`로 mutation 전에 차단됨.
+- 실행 명령: `DATABASE_NAME=hoibot_schema_design`을 명시해 fixture 재적재와 `probe-player-server-change-synthetic.ts` 실행
+- 결과: 비관리자 403, 잘못된 서버 접미사 422, 정상 변경, exact 성공 reply, profile version 2, 동일 event 멱등 재실행, audit 1, command execution 1, outbox 2 검증 통과.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `validate-slice-evidence.mjs .../player-server-change/slice.json`
+- 결과: typecheck 통과, runtime test 92개 통과, `valid slice evidence: player-server-change`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -155,7 +169,9 @@
 
 ## 다음 행동
 
-1. `/서버이동`의 exact/full-pattern guard, 관리자 권한, member server mutation, save flow와 현재 MariaDB transaction·audit·outbox를 대조한다.
+1. Git과 이 체크포인트를 확인한다.
+2. 회원 가입 슬라이스(`/가입`, `/약관동의`, `/약관거부`)의 legacy guard, helper, 초기 데이터 생성과 save flow를 조사한다.
+3. 해당 슬라이스의 DB 매핑·합성 fixture·서비스 계약·비교 검증을 작성한다.
 
 ## 보안
 

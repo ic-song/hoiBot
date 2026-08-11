@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T17:48:00+09:00",
+  "updatedAt": "2026-08-11T18:12:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -61,7 +61,7 @@
       "id": "current-state-inventory",
       "name": "현행 전체 파악",
       "completed": false,
-      "lastVerifiedGate": "data-store-db-coverage-recorded",
+      "lastVerifiedGate": "command-inventory-recorded",
       "prerequisites": [
         "control-plane"
       ],
@@ -72,7 +72,6 @@
         "개발환경_고도화/migration-control/scripts/build-db-coverage.mjs"
       ],
       "remaining": [
-        "명령 inventory 생성",
         "자동 처리 inventory 생성",
         "저장소 snapshot에 없는 authoritative Android 파일 2개의 실제 구조 확인",
         "모든 명령·자동 흐름을 기능 슬라이스에 배정"
@@ -225,8 +224,8 @@
     "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
     "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
     "database": "hoibot_schema_design",
-    "fixtureChecksum": "b5a9fef73710e5bf60d972d4b7be23a3a9ce84e4ed5b421743bb22c06f7de03c",
-    "statementCount": 60,
+    "fixtureChecksum": "3aea400fffb6e0de2c200713e2590bd45d3ac30cd321edcfffe988da4e92e41e",
+    "statementCount": 63,
     "verifiedTableCount": 28,
     "syntheticPlayerCount": 3,
     "repeatApplyVerified": true,
@@ -234,7 +233,7 @@
     "productionDatabaseGuardVerified": true,
     "operationalSnapshotTouched": false,
     "validated": true,
-    "verifiedAt": "2026-08-11T17:48:00+09:00"
+    "verifiedAt": "2026-08-11T18:12:00+09:00"
   },
   "commandInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-command-inventory.mjs",
@@ -267,6 +266,32 @@
         "개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts"
       ],
       "nextRequiredGate": "최종 운영 snapshot import와 실운영방 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "player-server-change",
+      "commands": [
+        "/서버이동"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "permission-denial",
+        "idempotency-audit-outbox"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts",
+        "개발환경_고도화/runtime/src/player/change-player-server-service.ts",
+        "개발환경_고도화/runtime/scripts/probe-player-server-change-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/player-server-change/slice.json"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import, 운영 관리자 identity 연결, 실운영방 smoke",
       "trialMigrationForCurrentRootHash": false,
       "syntheticTrialVerified": true,
       "parityVerified": true,

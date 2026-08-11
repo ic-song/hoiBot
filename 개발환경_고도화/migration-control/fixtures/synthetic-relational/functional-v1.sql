@@ -1,5 +1,6 @@
-INSERT INTO game_servers (id, code, display_name, active)
-VALUES (900000001, 'synthetic-server', '합성 테스트 서버', TRUE)
+INSERT INTO game_servers (id, code, display_name, active) VALUES
+  (900000001, 'synthetic-server', '합성 테스트 서버', TRUE),
+  (900000002, 'synthetic-server-two', '합성 테스트 서버 2', TRUE)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), active = VALUES(active);
 
 INSERT INTO channels (id, provider_code, external_channel_id, channel_type, status)
@@ -19,8 +20,22 @@ ON DUPLICATE KEY UPDATE status = VALUES(status), version = VALUES(version);
 INSERT INTO external_identities (id, player_id, provider_code, external_user_id, display_name, status) VALUES
   (900000001, 900000001, 'synthetic', 'synthetic-user-alpha', '테스트알파', 'linked'),
   (900000002, 900000002, 'synthetic', 'synthetic-user-beta', '테스트베타', 'linked'),
-  (900000003, 900000003, 'synthetic', 'synthetic-user-gamma', '테스트감마', 'linked')
+  (900000003, 900000003, 'synthetic', 'synthetic-user-gamma', '테스트감마', 'linked'),
+  (900000004, 900000001, 'kakao', 'synthetic-admin-alpha', '테스트관리자알파', 'linked'),
+  (900000005, 900000003, 'kakao', 'synthetic-non-admin-gamma', '테스트비관리자감마', 'linked')
 ON DUPLICATE KEY UPDATE player_id = VALUES(player_id), display_name = VALUES(display_name), status = VALUES(status);
+
+INSERT INTO admin_operators (id, login_id, display_name, password_hash, status) VALUES
+  (900000001, 'synthetic-admin-alpha', '합성 테스트 관리자', 'synthetic-disabled-password-hash-not-valid-for-login', 'active')
+ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), password_hash = VALUES(password_hash), status = VALUES(status);
+
+INSERT INTO admin_operator_roles (operator_id, role_id)
+SELECT 900000001, role.id FROM admin_roles role WHERE role.code = 'super_admin'
+ON DUPLICATE KEY UPDATE role_id = VALUES(role_id);
+
+INSERT INTO admin_operator_external_identities (operator_id, external_identity_id)
+VALUES (900000001, 900000004)
+ON DUPLICATE KEY UPDATE operator_id = VALUES(operator_id);
 
 INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at) VALUES
   (900000001, 900000001, 'active', '2026-01-01 00:00:00.000'),
