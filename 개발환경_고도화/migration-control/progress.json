@@ -1,16 +1,23 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T16:55:00+09:00",
+  "updatedAt": "2026-08-11T17:10:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
   "sourceOfTruth": "개발환경_고도화/DECISIONS.md",
+  "executionSequence": [
+    "database-design",
+    "synthetic-data-load",
+    "logic-port",
+    "synthetic-parity",
+    "final-operational-import"
+  ],
   "branchEvidence": {
     "required": "feature/modernization",
     "observed": "feature/modernization",
-    "head": "a6ebc20c97f5f4e282175d6ca294965424c0a0c4",
+    "head": "d05dee35db145b8bc3d79a536f9b753e3a019130",
     "upstream": "origin/feature/modernization",
-    "upstreamHead": "a6ebc20c97f5f4e282175d6ca294965424c0a0c4",
+    "upstreamHead": "d05dee35db145b8bc3d79a536f9b753e3a019130",
     "workingTreeClean": false,
     "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
     "baselineMergeSafe": false,
@@ -86,7 +93,7 @@
     },
     {
       "id": "slice-migrations",
-      "name": "기능별 반복 이관",
+      "name": "DB 설계·임시데이터·로직·검증",
       "completed": false,
       "lastVerifiedGate": null,
       "prerequisites": [
@@ -94,7 +101,9 @@
       ],
       "evidence": [],
       "remaining": [
-        "모든 기능 슬라이스의 시험 이관과 parity 완료"
+        "전체 관계형 DB 설계",
+        "비식별 임시데이터 적재",
+        "모든 기능 슬라이스의 로직 이관과 임시데이터 parity 완료"
       ]
     },
     {
@@ -174,6 +183,18 @@
     "perFileRecordCountStored": false,
     "dbApplyAllowed": false,
     "verifiedAt": "2026-08-11T16:45:00+09:00"
+  },
+  "databaseDesignEvidence": {
+    "migration": "개발환경_고도화/runtime/migrations/028_complete_legacy_domains.sql",
+    "erd": "개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md",
+    "dockerDatabase": "hoibot_schema_design",
+    "migrationCount": 28,
+    "baseTableCount": 118,
+    "foreignKeyCount": 167,
+    "representativeNewTableCount": 7,
+    "operationalDataLoaded": false,
+    "validated": true,
+    "verifiedAt": "2026-08-11T17:10:00+09:00"
   },
   "syntheticMissingDataEvidence": {
     "decisionDraft": "DEC-064",

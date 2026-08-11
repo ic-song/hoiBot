@@ -4,22 +4,22 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 14
-- 마지막 갱신: 2026-08-11 16:55 KST
+- 체크포인트 버전: 17
+- 마지막 갱신: 2026-08-11 17:10 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 1단계 현행 파악에서 운영 데이터 저장소와 현재 MariaDB DDL/importer의 수용 범위를 누락 없이 inventory로 기록한다.
+- 확정한 전체 관계형 schema에 운영 데이터와 분리된 비식별 임시데이터를 적재할 기반을 만든다.
 
 ## 사용자 요청과 승인 범위
 
-- 최신 요청: 누락된 운영 파일 2개는 합성 데이터로 개발·시험 이관하고, 운영 오픈 전 시험 데이터를 초기화한 뒤 전체 운영 데이터를 최종 이관.
-- 허용된 변경: 운영 원본 `data/*`는 수정하지 않고 별도 합성 fixture·검증기·초기화 경계를 작성하며 이관 설계를 계속 진행.
-- 별도 승인이 필요한 작업: 운영 데이터 apply, 운영 전환, `feature/prod` 반영, 기존 캐릭터 MVP 미커밋 변경 수정·정리.
-- 선언된 파일 범위: `개발환경_고도화/DECISIONS.md`, `개발환경_고도화/migration-control/CHECKPOINT.md`, `개발환경_고도화/migration-control/progress.json`, `개발환경_고도화/migration-control/fixtures/missing-operational/**`, `개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`.
+- 최신 요청: `DB 설계 → 임시데이터 적재 → 로직 이관 → 임시데이터 기반 검증 → 마지막 전체 운영 데이터 이관` 순서로 진행한다.
+- 허용된 변경: 운영 원본 `data/*`는 수정하거나 DB에 적재하지 않고, 관계형 schema 설계와 개인정보 없는 임시 fixture·적재기·검증 기반을 구현한다.
+- 별도 승인이 필요한 작업: 실제 운영 snapshot DB 적재, 운영 전환, `feature/prod` 반영, 기존 캐릭터 MVP 미커밋 변경 수정·정리.
+- 선언된 파일 범위: `개발환경_고도화/DECISIONS.md`, `개발환경_고도화/migration-control/MASTER_PLAN.md`, `개발환경_고도화/migration-control/**`와 이후 승인된 관계형 migration·합성 데이터 적재기.
 
 ## 작업 위치
 
@@ -59,10 +59,15 @@
 - 실제 `data/`와 분리된 합성 fixture 2개와 검증기를 생성했다.
 - 합성 사용자 1명, 활동·소셜 구조와 장착 가구 2건이 필수 구조를 충족하며 운영 snapshot root hash가 변하지 않음을 확인했다.
 - 합성 fixture·검증기·초기화 정책을 `03adf05`로 `origin/feature/modernization`에 푸시했다.
+- 운영 snapshot dump 계층을 먼저 만드는 시도는 사용자 확정 순서와 달라 커밋 전에 모두 제거했다.
+- 기존 001~027 schema를 26개 authoritative 저장소와 대조하고 출석·커뮤니티·공성전·패키지·펫 탐험·미니펫 컬렉션·시련탑·운영설정 누락 테이블을 `028_complete_legacy_domains.sql`로 설계했다.
+- 도메인별 Mermaid ERD와 26개 authoritative 저장소별 목적 테이블 매핑을 `migration-control/schema/HOIBOT_DATABASE_ERD.md`에 기록했다.
+- 실제 Docker MariaDB 컨테이너에 운영 DB와 분리된 `hoibot_schema_design` DB를 생성하고 001~028 migration을 적용했다.
+- 물리 schema에서 base table 118개, FK 167개, migration 28개와 신규 대표 테이블 7개 존재를 확인했다.
 
 ## 진행 중인 작업
 
-- 첫 데이터 설계 묶음인 `member.json`과 연결 저장소 5개의 legacy field-to-column coverage를 작성한다.
+- 비식별 임시데이터 fixture와 적재기를 설계한 관계형 schema에 맞춰 구현한다.
 
 ## 변경 파일
 
@@ -73,6 +78,8 @@
 - `개발환경_고도화/migration-control/fixtures/missing-operational/petHomeActivityData.json`
 - `개발환경_고도화/migration-control/fixtures/missing-operational/petHomePlacedFurniture.json`
 - `개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
+- `개발환경_고도화/runtime/migrations/028_complete_legacy_domains.sql`
+- `개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -95,6 +102,8 @@
 - 실행 명령: `node --check 개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
 - 실행 명령: `node 개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
 - 결과: 합성 fixture JSON 2개 구조 검증 통과. synthetic owner 1명, 장착 가구 2건. 실제 `data/` file count 35, JSON 33, root hash `b7dfec6...0014` 유지.
+- 실행 명령: Docker MariaDB에 `hoibot_schema_design` 생성 후 `npm.cmd run db:migrate`
+- 결과: 001~028 migration 적용 성공. base table 118개, FK 167개, migration 28개, 신규 대표 테이블 7개 확인. `npm.cmd run typecheck`와 변경 파일 `git diff --check` 통과.
 
 ## 충돌·막힘·미승인 사항
 
@@ -107,10 +116,11 @@
 - `DEC-064`는 로컬 `DECISIONS.md`에 작성했지만 기존 다른 고도화 결정의 미커밋 변경과 겹쳐 아직 선택 커밋하지 않았다. 원격 재개 시에는 푸시된 fixture `README.md`와 이 체크포인트를 적용 기준으로 사용하고, DECISIONS 정리 시 초안을 함께 반영한다.
 - 합성 fixture는 개발·시험 전용이며 실제 운영 파일 2개의 확보·검증을 대체하지 않는다.
 - 운영 DB apply와 cutover는 승인되지 않았다.
+- `DEC-065`는 기존 다른 고도화 결정의 미커밋 변경과 겹치는 로컬 초안이다. 원격 재개 기준은 선택 커밋할 `MASTER_PLAN.md`와 이 체크포인트로 유지한다.
 
 ## 다음 행동
 
-1. DB를 변경하지 않고 `member.json`, `member_pet.json`, `member_title.json`, `pet_title.json`, `petSweetHomeData.json`, `guildData.json`의 legacy field-to-column coverage를 작성한다.
+1. 개인정보 없는 전체 임시데이터 fixture와 관계형 적재기를 구현해 `hoibot_schema_design`에 적재한다.
 
 ## 보안
 

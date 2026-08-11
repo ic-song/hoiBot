@@ -231,9 +231,9 @@ node --env-file-if-exists=.env --import tsx scripts/resume-migration.ts
 - 순환 의존성과 여러 파일 mutation의 transaction 경계가 해소된다.
 - 각 슬라이스에 명확한 시작 조건과 완료 조건이 있다.
 
-## Phase 3. 기능별 반복 이관
+## Phase 3. 설계·임시데이터·로직·검증
 
-각 기능 슬라이스에서 다음 루프를 순서대로 반복한다.
+운영 데이터는 이 단계에서 이관하지 않는다. 먼저 전체 기능의 관계형 DB 설계를 확정하고 개인정보 없는 임시데이터를 적재한 뒤, 기능 슬라이스별 로직 이관과 parity 검증을 반복한다.
 
 ### Gate A. 명령·현행 조사
 
@@ -249,13 +249,14 @@ node --env-file-if-exists=.env --import tsx scripts/resume-migration.ts
 - ledger·audit·outbox·idempotency 적용 여부 정의
 - 모든 레거시 field를 column, child row, anomaly, explicit exclusion 중 하나로 매핑
 
-### Gate C. 데이터 시험 이관
+### Gate C. 임시데이터 적재
 
-- 원본 snapshot을 읽기 전용으로 고정하고 checksum 생성
+- 개인정보와 운영 원문이 없는 합성 fixture를 기능별 정상·경계·실패 사례로 구성
 - 동일 migration 집합으로 disposable DB 생성
-- dry-run 후 apply
-- 선언된 replay 정책 검증
-- 건수, 합계, 사용자별 잔액, 소유권, FK, orphan, anomaly reconciliation
+- 합성 fixture dry-run 후 적재
+- 선언된 replay 정책과 반복 적재 멱등성 검증
+- 합성 기준 건수, 합계, 잔액, 소유권, FK, orphan, anomaly reconciliation
+- 실제 운영 snapshot은 읽기·적재하지 않음
 
 ### Gate D. 명령 로직 이관
 
@@ -280,7 +281,7 @@ node --env-file-if-exists=.env --import tsx scripts/resume-migration.ts
 
 ### Gate F. 슬라이스 확정
 
-- 시험 이관과 parity가 모두 통과한 증거가 있어야 parity gate의 `completed`를 `true`로 기록한다.
+- 임시데이터 적재와 parity가 모두 통과한 증거가 있어야 parity gate의 `completed`를 `true`로 기록한다.
 - rollback·freeze·smoke 계획이 모두 검증돼야 cutover 준비 gate의 `completed`를 `true`로 기록한다.
 - 하나라도 실패하면 해당 gate를 수정해 다시 반복
 
