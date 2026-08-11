@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 2,
+  "updatedAt": "2026-08-11T16:26:00+09:00",
+  "project": "hoibot-modernization-phase-1",
+  "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
+  "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
+  "sourceOfTruth": "개발환경_고도화/DECISIONS.md",
+  "branchEvidence": {
+    "required": "feature/modernization",
+    "observed": "feature/modernization",
+    "head": "61a0a1a54be819408b922dc6573c2bab7a41ad4c",
+    "upstream": "origin/feature/modernization",
+    "upstreamHead": "61a0a1a54be819408b922dc6573c2bab7a41ad4c",
+    "workingTreeClean": false,
+    "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
+    "baselineMergeSafe": false,
+    "reason": "기존 캐릭터 MVP 작업을 포함한 미커밋 변경을 보존해야 한다."
+  },
+  "environmentEvidence": {
+    "runtime": "TypeScript + Node.js 24 + Fastify 5",
+    "database": "MariaDB 11.8.8",
+    "databaseConnected": true,
+    "transactionRollbackVerified": true,
+    "targetDeployment": "Hyper-V Ubuntu Docker Compose",
+    "environmentFingerprintVerified": false
+  },
+  "sourceSnapshotEvidence": {
+    "path": "data",
+    "readOnly": true,
+    "fileCount": 33,
+    "memberCount": 610,
+    "anomalyCount": 1,
+    "rootHash": "b7dfec6b7cb82c579f1a834434f6286c57e6364cd759b1fbcedc2a25db3f0014",
+    "completedImportRunFound": false,
+    "productionCutoverArtifact": false
+  },
+  "phases": [
+    {
+      "id": "control-plane",
+      "name": "제어면 구축",
+      "completed": false,
+      "lastVerifiedGate": "resume-checker-locally-verified",
+      "prerequisites": [],
+      "evidence": [
+        "개발환경_고도화/migration-control/CHECKPOINT.md",
+        "개발환경_고도화/migration-control/MASTER_PLAN.md",
+        "개발환경_고도화/migration-control/progress.json",
+        "개발환경_고도화/runtime/scripts/resume-migration.ts",
+        ".codex/skills/hoibot-migrate-legacy-rdb"
+      ],
+      "remaining": [
+        "체크포인트와 제어면 artifact를 커밋·push해 다른 PC에서도 복구 가능하게 만들기",
+        "다른 PC 또는 빈 세션에서 동일 판정 확인"
+      ]
+    },
+    {
+      "id": "current-state-inventory",
+      "name": "현행 전체 파악",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "control-plane"
+      ],
+      "evidence": [],
+      "remaining": [
+        "명령·데이터·자동 처리 inventory 생성"
+      ]
+    },
+    {
+      "id": "wbs-and-slice-design",
+      "name": "이관 계획과 WBS 확정",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "current-state-inventory"
+      ],
+      "evidence": [],
+      "remaining": [
+        "현행 inventory를 기능 슬라이스와 의존성 WBS로 변환"
+      ]
+    },
+    {
+      "id": "slice-migrations",
+      "name": "기능별 반복 이관",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "wbs-and-slice-design"
+      ],
+      "evidence": [],
+      "remaining": [
+        "모든 기능 슬라이스의 시험 이관과 parity 완료"
+      ]
+    },
+    {
+      "id": "integrated-verification",
+      "name": "전체 통합 검증",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "slice-migrations"
+      ],
+      "evidence": [],
+      "remaining": [
+        "전체 회귀·재시작·backup/restore·Ubuntu 재현 검증"
+      ]
+    },
+    {
+      "id": "production-cutover",
+      "name": "전체 운영 데이터 최종 이관",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "integrated-verification",
+        "운영 승인"
+      ],
+      "evidence": [],
+      "remaining": [
+        "최종 snapshot 이관과 Iris 단독 운영 전환"
+      ]
+    }
+  ],
+  "resumeCheckerEvidence": {
+    "localResumeSafe": true,
+    "crossPcReady": false,
+    "checkpointTracked": false,
+    "checkpointPushed": false,
+    "snapshotMatched": true,
+    "databaseReachable": true,
+    "localMigrationCount": 28,
+    "appliedMigrationCount": 28,
+    "migrationChecksumMismatches": [],
+    "completedImportRunFound": false,
+    "typecheckPassed": true,
+    "verifiedAt": "2026-08-11T16:24:00+09:00"
+  },
+  "knownSlices": [
+    {
+      "id": "player-profile-read",
+      "commands": [
+        "/내정보"
+      ],
+      "completedGates": [],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/player/maria-profile-repository.ts",
+        "개발환경_고도화/runtime/src/player/get-my-profile-service.ts",
+        "개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts"
+      ],
+      "nextRequiredGate": "현행 조사 증거 파일 작성",
+      "trialMigrationForCurrentRootHash": false,
+      "parityVerified": false,
+      "cutoverReady": false
+    }
+  ]
+}
