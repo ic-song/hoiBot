@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T17:18:00+09:00",
+  "updatedAt": "2026-08-11T17:32:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -220,6 +220,21 @@
     "productionEvidenceAllowed": false,
     "validated": true,
     "verifiedAt": "2026-08-11T16:53:00+09:00"
+  },
+  "syntheticRelationalDataEvidence": {
+    "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
+    "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
+    "database": "hoibot_schema_design",
+    "fixtureChecksum": "d9ab5aef4f522fa2154f467b1e42da33dd26af533df397cb18486ab9fa65e4fd",
+    "statementCount": 60,
+    "verifiedTableCount": 28,
+    "syntheticPlayerCount": 3,
+    "repeatApplyVerified": true,
+    "verifyOnlyPassed": true,
+    "productionDatabaseGuardVerified": true,
+    "operationalSnapshotTouched": false,
+    "validated": true,
+    "verifiedAt": "2026-08-11T17:32:00+09:00"
   },
   "knownSlices": [
     {

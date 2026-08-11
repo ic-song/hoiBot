@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 18
-- 마지막 갱신: 2026-08-11 17:18 KST
+- 체크포인트 버전: 19
+- 마지막 갱신: 2026-08-11 17:32 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 확정한 전체 관계형 schema에 운영 데이터와 분리된 비식별 임시데이터를 적재할 기반을 만든다.
+- 비식별 임시데이터가 적재된 관계형 schema를 기준으로 기능별 명령 로직 이관 순서와 첫 슬라이스를 확정한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -66,10 +66,14 @@
 - 물리 schema에서 base table 118개, FK 167개, migration 28개와 신규 대표 테이블 7개 존재를 확인했다.
 - Docker `information_schema`에서 118개 테이블·817개 컬럼을 읽어 도메인별 전체 물리 컬럼 ERD를 생성했다.
 - 운영 PC 재설치에 필요한 image digest, 환경변수 이름, 초기화 순서, 정상 건수, 검증 SQL, migration SHA-256 28건과 최종 운영 이관 준비물을 `schema/db-table-init.md`에 기록했다.
+- 실제 사용자·운영 원문이 없는 `functional-v1.sql` 관계형 fixture를 개발 전용 ID와 `synthetic-*` namespace로 작성했다.
+- loader가 `hoibot_schema_design`·`hoibot_rehearsal_*`만 허용하고 그 외 DB는 mutation 전에 거부하도록 구현했다.
+- 합성 fixture SQL 60문장을 한 transaction으로 적재하고 28개 대표 테이블을 transaction 내부에서 검증했다.
+- 첫 적용, 반복 적용, verify-only에서 동일 건수를 확인했으며 `DATABASE_NAME=hoibot` 대상 거부도 확인했다.
 
 ## 진행 중인 작업
 
-- 비식별 임시데이터 fixture와 적재기를 설계한 관계형 schema에 맞춰 구현한다.
+- 전체 명령 inventory를 기능 슬라이스와 DB aggregate에 배정하고 첫 조회 슬라이스를 이관한다.
 
 ## 변경 파일
 
@@ -84,6 +88,9 @@
 - `개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md`
 - `개발환경_고도화/migration-control/schema/db-table-init.md`
 - `개발환경_고도화/runtime/scripts/generate-database-erd.ts`
+- `개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql`
+- `개발환경_고도화/migration-control/fixtures/synthetic-relational/README.md`
+- `개발환경_고도화/runtime/scripts/load-synthetic-relational.ts`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -110,6 +117,10 @@
 - 결과: 001~028 migration 적용 성공. base table 118개, FK 167개, migration 28개, 신규 대표 테이블 7개 확인. `npm.cmd run typecheck`와 변경 파일 `git diff --check` 통과.
 - 실행 명령: `node --env-file-if-exists=.env --import tsx scripts/generate-database-erd.ts` (`DATABASE_NAME=hoibot_schema_design`)
 - 결과: 실제 Docker schema 기준 테이블 118개와 컬럼 817개를 컬럼 ERD에 반영. 운영 PC 재설치 문서와 migration checksum manifest 작성.
+- 실행 명령: `load-synthetic-relational.ts` dry-run, `--apply` 2회, `--verify-only`
+- 결과: fixture checksum `d9ab5aef...e4fd`, SQL 60문장, 대표 테이블 28개 검증 통과. 반복 적용 후 건수 불변. 합성 player 3, currency account 6, guild 2, home 2 등 확인.
+- 실행 명령: 동일 loader에 `DATABASE_NAME=hoibot` 지정
+- 결과: `Synthetic fixture is blocked for database: hoibot`로 mutation 전 거부 확인.
 
 ## 충돌·막힘·미승인 사항
 
@@ -126,7 +137,7 @@
 
 ## 다음 행동
 
-1. 개인정보 없는 전체 임시데이터 fixture와 관계형 적재기를 구현해 `hoibot_schema_design`에 적재한다.
+1. `main.js`·`Info.js` 전체 명령 inventory를 기능 슬라이스와 목적 table에 배정하고 첫 조회 슬라이스를 선택한다.
 
 ## 보안
 
