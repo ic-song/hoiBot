@@ -4,8 +4,8 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 13
-- 마지막 갱신: 2026-08-11 16:53 KST
+- 체크포인트 버전: 14
+- 마지막 갱신: 2026-08-11 16:55 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 푸시 커밋: `a6ebc20c97f5f4e282175d6ca294965424c0a0c4`
+- 마지막 푸시 커밋: `03adf05a58935324e4ae7ec23566ca0cd7b861bf`
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -58,6 +58,7 @@
 - 사용자 결정 `DEC-064`로 누락 파일 2개의 합성 fixture 개발, 운영 오픈 전 시험 DB 폐기·재생성, 실제 전체 snapshot 최종 이관 원칙을 기록했다.
 - 실제 `data/`와 분리된 합성 fixture 2개와 검증기를 생성했다.
 - 합성 사용자 1명, 활동·소셜 구조와 장착 가구 2건이 필수 구조를 충족하며 운영 snapshot root hash가 변하지 않음을 확인했다.
+- 합성 fixture·검증기·초기화 정책을 `03adf05`로 `origin/feature/modernization`에 푸시했다.
 
 ## 진행 중인 작업
 
@@ -103,7 +104,7 @@
 - 현재 Git snapshot에 authoritative Android 파일 2개가 없어 실제 구조와 checksum을 아직 확정할 수 없다.
 - 전체 legacy field를 domain row로 옮기는 저장소는 현재 0개이므로 기존 importer apply는 전체 데이터 시험 이관으로 사용할 수 없다.
 - DB에는 현재 작업트리에서 제거된 `028_character_mvp.sql` 적용 이력이 남아 있어 migration checksum 검증이 실패한다. 이 상태에서는 DB apply를 진행하지 않는다.
-- `DECISIONS.md`에는 기존 다른 고도화 결정의 미커밋 변경이 함께 있어 선택 커밋 시 별도 hunk 분리가 필요하다.
+- `DEC-064`는 로컬 `DECISIONS.md`에 작성했지만 기존 다른 고도화 결정의 미커밋 변경과 겹쳐 아직 선택 커밋하지 않았다. 원격 재개 시에는 푸시된 fixture `README.md`와 이 체크포인트를 적용 기준으로 사용하고, DECISIONS 정리 시 초안을 함께 반영한다.
 - 합성 fixture는 개발·시험 전용이며 실제 운영 파일 2개의 확보·검증을 대체하지 않는다.
 - 운영 DB apply와 cutover는 승인되지 않았다.
 

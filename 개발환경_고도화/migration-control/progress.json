@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T16:53:00+09:00",
+  "updatedAt": "2026-08-11T16:55:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -176,7 +176,10 @@
     "verifiedAt": "2026-08-11T16:45:00+09:00"
   },
   "syntheticMissingDataEvidence": {
-    "decision": "DEC-064",
+    "decisionDraft": "DEC-064",
+    "decisionSourcePushed": false,
+    "pushedPolicyArtifact": "개발환경_고도화/migration-control/fixtures/missing-operational/README.md",
+    "pushedCommit": "03adf05a58935324e4ae7ec23566ca0cd7b861bf",
     "fixtureDirectory": "개발환경_고도화/migration-control/fixtures/missing-operational",
     "validator": "개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs",
     "fixtureFiles": [
