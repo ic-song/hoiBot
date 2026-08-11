@@ -4,8 +4,8 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 17
-- 마지막 갱신: 2026-08-11 17:10 KST
+- 체크포인트 버전: 18
+- 마지막 갱신: 2026-08-11 17:18 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -64,6 +64,8 @@
 - 도메인별 Mermaid ERD와 26개 authoritative 저장소별 목적 테이블 매핑을 `migration-control/schema/HOIBOT_DATABASE_ERD.md`에 기록했다.
 - 실제 Docker MariaDB 컨테이너에 운영 DB와 분리된 `hoibot_schema_design` DB를 생성하고 001~028 migration을 적용했다.
 - 물리 schema에서 base table 118개, FK 167개, migration 28개와 신규 대표 테이블 7개 존재를 확인했다.
+- Docker `information_schema`에서 118개 테이블·817개 컬럼을 읽어 도메인별 전체 물리 컬럼 ERD를 생성했다.
+- 운영 PC 재설치에 필요한 image digest, 환경변수 이름, 초기화 순서, 정상 건수, 검증 SQL, migration SHA-256 28건과 최종 운영 이관 준비물을 `schema/db-table-init.md`에 기록했다.
 
 ## 진행 중인 작업
 
@@ -80,6 +82,8 @@
 - `개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs`
 - `개발환경_고도화/runtime/migrations/028_complete_legacy_domains.sql`
 - `개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md`
+- `개발환경_고도화/migration-control/schema/db-table-init.md`
+- `개발환경_고도화/runtime/scripts/generate-database-erd.ts`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -104,6 +108,8 @@
 - 결과: 합성 fixture JSON 2개 구조 검증 통과. synthetic owner 1명, 장착 가구 2건. 실제 `data/` file count 35, JSON 33, root hash `b7dfec6...0014` 유지.
 - 실행 명령: Docker MariaDB에 `hoibot_schema_design` 생성 후 `npm.cmd run db:migrate`
 - 결과: 001~028 migration 적용 성공. base table 118개, FK 167개, migration 28개, 신규 대표 테이블 7개 확인. `npm.cmd run typecheck`와 변경 파일 `git diff --check` 통과.
+- 실행 명령: `node --env-file-if-exists=.env --import tsx scripts/generate-database-erd.ts` (`DATABASE_NAME=hoibot_schema_design`)
+- 결과: 실제 Docker schema 기준 테이블 118개와 컬럼 817개를 컬럼 ERD에 반영. 운영 PC 재설치 문서와 migration checksum manifest 작성.
 
 ## 충돌·막힘·미승인 사항
 

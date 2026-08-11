@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T17:10:00+09:00",
+  "updatedAt": "2026-08-11T17:18:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -191,7 +191,11 @@
     "migrationCount": 28,
     "baseTableCount": 118,
     "foreignKeyCount": 167,
+    "columnCount": 817,
     "representativeNewTableCount": 7,
+    "columnErdGenerator": "개발환경_고도화/runtime/scripts/generate-database-erd.ts",
+    "productionReinstallGuide": "개발환경_고도화/migration-control/schema/db-table-init.md",
+    "migrationChecksumManifestCount": 28,
     "operationalDataLoaded": false,
     "validated": true,
     "verifiedAt": "2026-08-11T17:10:00+09:00"
