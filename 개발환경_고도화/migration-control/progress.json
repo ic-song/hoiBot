@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-13T13:03:00+09:00",
+  "updatedAt": "2026-08-13T13:27:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -15,9 +15,9 @@
   "branchEvidence": {
     "required": "feature/modernization",
     "observed": "feature/modernization",
-    "head": "cddaf29084a7cc4da53edd76b2438cc0918c984f",
+    "head": "dda9b89242ad3ac820d78371df7f9dd2ba890c72",
     "upstream": "origin/feature/modernization",
-    "upstreamHead": "cddaf29084a7cc4da53edd76b2438cc0918c984f",
+    "upstreamHead": "dda9b89242ad3ac820d78371df7f9dd2ba890c72",
     "workingTreeClean": false,
     "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
     "baselineMergeSafe": false,
@@ -94,7 +94,7 @@
       "id": "slice-migrations",
       "name": "DB 설계·임시데이터·로직·검증",
       "completed": false,
-      "lastVerifiedGate": "castle-battle-reset-craft-synthetic-parity",
+      "lastVerifiedGate": "raid-strike-seal-craft-synthetic-parity",
       "prerequisites": [
         "wbs-and-slice-design"
       ],
@@ -102,7 +102,8 @@
         "개발환경_고도화/migration-control/evidence/pet-info/slice.json",
         "개발환경_고도화/migration-control/evidence/pet-rename/slice.json",
         "개발환경_고도화/migration-control/evidence/pet-rename-ticket-craft/slice.json",
-        "개발환경_고도화/migration-control/evidence/castle-battle-reset-craft/slice.json"
+        "개발환경_고도화/migration-control/evidence/castle-battle-reset-craft/slice.json",
+        "개발환경_고도화/migration-control/evidence/raid-strike-seal-craft/slice.json"
       ],
       "remaining": [
         "전체 관계형 DB 설계",
@@ -227,7 +228,7 @@
     "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
     "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
     "database": "hoibot_schema_design",
-    "fixtureChecksum": "a09398195894d281ee8d2492a0985b46006a0141fa5a13f7407b6fcb79ead8ec",
+    "fixtureChecksum": "2d0a26ba87644215c8d6bcc834256132a82fddd21da992511c75891c63b3a778",
     "statementCount": 70,
     "verifiedTableCount": 35,
     "syntheticPlayerCount": 3,
@@ -236,7 +237,7 @@
     "productionDatabaseGuardVerified": true,
     "operationalSnapshotTouched": false,
     "validated": true,
-    "verifiedAt": "2026-08-13T13:03:00+09:00"
+    "verifiedAt": "2026-08-13T13:27:00+09:00"
   },
   "commandInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-command-inventory.mjs",
@@ -465,6 +466,26 @@
         "개발환경_고도화/migration-control/evidence/castle-battle-reset-craft/slice.json"
       ],
       "nextRequiredGate": "final operational snapshot import, lost-unsaved legacy mutation reconciliation and live-room smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "raid-strike-seal-craft",
+      "commands": ["/레이드인장조합", "/레이드인장조합 [수량]"],
+      "completedGates": [
+        "command-investigation", "database-design", "synthetic-data-load", "logic-port",
+        "synthetic-mutation-parity", "inventory-and-currency-ledger-atomicity",
+        "idempotency-audit-outbox", "operational-database-guard"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/raid/raid-strike-seal-craft-service.ts",
+        "개발환경_고도화/runtime/test/raid-strike-seal-craft.test.ts",
+        "개발환경_고도화/runtime/scripts/probe-raid-strike-seal-craft-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/raid-strike-seal-craft/slice.json"
+      ],
+      "nextRequiredGate": "final operational snapshot import, lost-unsaved legacy mutation and rank-decoration reconciliation, live-room smoke",
       "trialMigrationForCurrentRootHash": false,
       "syntheticTrialVerified": true,
       "parityVerified": true,

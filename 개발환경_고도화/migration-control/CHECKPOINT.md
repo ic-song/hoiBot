@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 28
-- 마지막 갱신: 2026-08-13 13:03 KST
+- 체크포인트 버전: 29
+- 마지막 갱신: 2026-08-13 13:27 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 다음 소스 순서 기능 `/레이드인장조합`의 수량 guard, 잡템·포인트 차감, 인장 지급과 MariaDB transaction 범위를 조사한다.
+- 다음 소스 순서 기능 `/펫먹이조합`의 수량 guard, 잡템·포인트 차감, 먹이상자 지급과 MariaDB transaction 범위를 조사한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 확인 푸시 커밋: `cddaf29084a7cc4da53edd76b2438cc0918c984f` (`/펫이름조합` 슬라이스)
+- 마지막 확인 푸시 커밋: `dda9b89242ad3ac820d78371df7f9dd2ba890c72` (`/캐슬대전조합` 슬라이스)
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -124,10 +124,17 @@
 - 실제 개발 MariaDB에서 수량 2 조합으로 치킨 12→0, 리셋권 0→2, inventory ledger 2건과 operation/execution/audit/outbox 각 1건을 확인했다.
 - 동일 event 멱등 재실행과 독립 event 전체 probe 2회를 통과하고 운영 DB 기본 이름은 mutation 전에 차단했다.
 - `/캐슬대전조합` evidence를 `verified`로 기록했다. 입력 폭주 방지를 위해 1회 최대 수량 1,000,000 제한을 추가했다.
+- `/레이드인장조합 [수량]`의 인자 생략 기본값 1, 숫자 0의 최소 수량 1 처리, 잡템 우선·포인트 후순위 검사와 exact reply를 재검증했다.
+- legacy 성공 분기에 `saveJsonFile`이 없어 재시작 시 변경 유실 가능성이 있음을 기록했다.
+- 기존 inventory·currency schema와 양쪽 ledger를 재사용해 잡템·포인트 차감, 인장 지급, operation/execution/audit/outbox를 한 transaction으로 구현했다.
+- 합성 fixture에 레이드 인장 0개 stack을 추가하고 checksum `2d0a26ba...a778`, SQL 70문장, 대표 테이블 35개와 inventory stack 8개를 반복 적재·검증했다.
+- 실제 개발 MariaDB에서 수량 2 기준 잡템 2,000→0, 포인트 30억→10억, 인장 0→2와 inventory ledger 2건·currency ledger 1건·operation/execution/audit/outbox 각 1건을 확인했다.
+- 동일 event 멱등 재실행과 독립 event 전체 probe 2회를 통과하고 운영 DB 기본 이름은 mutation 전에 차단했다.
+- `/레이드인장조합` evidence를 `verified`로 기록했다. 1회 최대 수량 1,000,000과 미완성 전체 rank 장식은 위험에 명시했다.
 
 ## 진행 중인 작업
 
-- 없음. `/캐슬대전조합` 합성 검증 완료 후 `/레이드인장조합` 시작점을 기록한다.
+- 없음. `/레이드인장조합` 합성 검증 완료 후 `/펫먹이조합` 시작점을 기록한다.
 
 ## 변경 파일
 
@@ -185,6 +192,10 @@
 - `개발환경_고도화/runtime/test/castle-battle-reset-craft.test.ts`
 - `개발환경_고도화/runtime/scripts/probe-castle-battle-reset-craft-synthetic.ts`
 - `개발환경_고도화/migration-control/evidence/castle-battle-reset-craft/slice.json`
+- `개발환경_고도화/runtime/src/raid/raid-strike-seal-craft-service.ts`
+- `개발환경_고도화/runtime/test/raid-strike-seal-craft.test.ts`
+- `개발환경_고도화/runtime/scripts/probe-raid-strike-seal-craft-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/raid-strike-seal-craft/slice.json`
 - `COMMAND_INDEX.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
@@ -274,6 +285,12 @@
 - 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 치킨 12→0, 리셋권 0→2, inventory ledger 2건과 operation/execution/audit/outbox 각 1건, 동일 event 멱등성 및 전체 probe 2회를 통과.
 - 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, Rhino syntax, castle-battle-reset-craft evidence validator
 - 결과: TypeScript 통과, runtime test 113개 통과, Rhino 파일 syntax 통과, `valid slice evidence: castle-battle-reset-craft`.
+- 실행 명령: 관계형 fixture dry-run, `--apply` 2회, `--verify-only`
+- 결과: checksum `2d0a26ba...a778`, SQL 70문장, 대표 테이블 35개와 inventory stack 8개 반복 적재·검증 통과.
+- 실행 명령: 운영 DB 기본 설정과 `DATABASE_NAME=hoibot_schema_design` 각각으로 `probe-raid-strike-seal-craft-synthetic.ts`
+- 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 잡템 2,000→0, 포인트 30억→10억, 인장 0→2, 양쪽 원장과 operation/execution/audit/outbox 각 1건, 동일 event 멱등성 및 전체 probe 2회를 통과.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, Rhino syntax, raid-strike-seal-craft evidence validator
+- 결과: TypeScript 통과, runtime test 118개 통과, Rhino 파일 syntax 통과, `valid slice evidence: raid-strike-seal-craft`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -289,7 +306,7 @@
 
 ## 다음 행동
 
-1. `/레이드인장조합`의 수량 guard, 잡템 1,000개·포인트 10억 배수 차감, 인장 지급과 save flow를 조사한다.
+1. `/펫먹이조합`의 수량 guard, 잡템 300개·포인트 2,500만 배수 차감, 먹이상자 지급과 save flow를 조사한다.
 
 ## 보안
 

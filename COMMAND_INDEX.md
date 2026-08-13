@@ -1371,6 +1371,44 @@ Status: VERIFIED
 
 ---
 
+# /레이드인장조합 [수량]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/레이드인장조합`
+- Ported guard: exact command or `/^\/레이드인장조합\s+\d+$/`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/raid/raid-strike-seal-craft-service.ts`
+
+## Data Usage
+
+- Legacy: `member.<sender>.bag["잡템☠️"]`, `member.<sender>.point`, `member.<sender>.bag["레이드타격대인장👑(+600👾)"]`
+- MariaDB: `currency_accounts`, `currency_ledger`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success branch has no `saveJsonFile`, so mutation can be lost after restart.
+- Ported success persists all three balances, both ledgers, operation, execution, audit and Iris outbox in one transaction.
+
+## Related Commands
+
+- `/레이드`
+- `/펫먹이조합 [수량]`
+
+## AI Notes
+
+- 수량 생략은 1개이며 숫자 0도 legacy `Math.max(1, ...)`에 따라 1개로 처리한다.
+- 잡템 부족을 포인트 부족보다 먼저 판정하고 active castle season이면 조용히 종료한다.
+- DB 입력 안전을 위해 1회 최대 조합 수량을 1,000,000개로 제한한다.
+
+---
+
 # /길드목록
 
 Status: VERIFIED
