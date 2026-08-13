@@ -1,0 +1,67 @@
+{
+  "alerts": {
+    "synthetic_user_001": [
+      {
+        "type": "comment",
+        "actorId": "synthetic_user_002",
+        "createdAt": "2026-01-01 00:00:00",
+        "read": false,
+        "commentPreview": "synthetic comment"
+      },
+      {
+        "type": "special_badge_granted",
+        "actorId": "synthetic_operator",
+        "createdAt": "2026-01-01 00:01:00",
+        "read": true,
+        "badgeId": "synthetic_badge_001"
+      }
+    ]
+  },
+  "recentVisitors": {
+    "synthetic_user_001": [
+      {
+        "visitorId": "synthetic_user_002",
+        "visitedAt": "2026-01-01 00:02:00"
+      }
+    ]
+  },
+  "petHomeSocial": {
+    "synthetic_user_001": {
+      "followers": [
+        "synthetic_user_002"
+      ],
+      "following": [
+        "synthetic_user_002"
+      ],
+      "badges": [
+        "synthetic_badge_001"
+      ],
+      "deletedBadgeIds": [],
+      "equippedBadgeId": "synthetic_badge_001",
+      "heartUsage": {
+        "date": "2026-01-01",
+        "count": 1
+      },
+      "feedActivityDates": [
+        "2026-01-01"
+      ],
+      "badgeStats": {
+        "receivedComments": 1,
+        "receivedHomeLikes": 1,
+        "receivedReactions": 1,
+        "totalVisits": 1
+      },
+      "specialBadgeLogs": [
+        {
+          "badgeId": "synthetic_badge_001",
+          "action": "synthetic_grant",
+          "adminId": "synthetic_operator",
+          "createdAt": "2026-01-01 00:01:00"
+        }
+      ]
+    }
+  },
+  "migrations": {
+    "syntheticFixtureV1": true
+  }
+}
