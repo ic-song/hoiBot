@@ -8,7 +8,8 @@ const COMMAND = "/길드가입조건";
 const MAX_EXPERIENCE_DIGITS = 30;
 
 // 길드가입조건 명령 후보만 Iris dispatch 대상으로 분류합니다.
-export function isGuildJoinConditionCommandCandidate(message: string): boolean {
+export function isGuildJoinConditionCommandCandidate(message: string | undefined): boolean {
+  if (message === undefined) return false;
   return message === COMMAND || message.indexOf(COMMAND + " ") === 0;
 }
 
