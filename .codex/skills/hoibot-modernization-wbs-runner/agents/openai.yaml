@@ -1,0 +1,7 @@
+interface:
+  display_name: "hoiBot 고도화 이관 전용"
+  short_description: "고도화 WBS 선점부터 이관·검증·현황 갱신까지 실행"
+  default_prompt: "Use $hoibot-modernization-wbs-runner to resume and complete the next eligible hoiBot modernization migration WBS item."
+
+policy:
+  allow_implicit_invocation: true
