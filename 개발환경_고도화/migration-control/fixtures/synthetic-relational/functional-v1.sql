@@ -102,7 +102,8 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000005, 'legacy-seasoned-chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000006, 'legacy-castle-battle-reset-ticket', '캐슬대전리셋권🐶', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000007, 'legacy-raid-strike-seal-600', '레이드타격대인장👑(+600👾)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000008, 'legacy-pet-food-box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
+  (900000008, 'legacy-pet-food-box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
+  (900000009, 'legacy-guild-join-ticket', '길드가입권🍭(/길드가입 숫자)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
@@ -114,6 +115,7 @@ INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
   (900000001, 900000006, 0, 1),
   (900000001, 900000007, 0, 1),
   (900000001, 900000008, 0, 1),
+  (900000001, 900000009, 0, 1),
   (900000002, 900000001, 7, 1)
 ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = VALUES(version);
 
@@ -244,10 +246,12 @@ INSERT INTO home_reactions (home_player_id, actor_player_id, reaction_code, crea
 VALUES (900000001, 900000002, 'like', '2026-01-07 00:00:00.000')
 ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
-INSERT INTO guilds (id, code, display_name, mark, status, version) VALUES
-  (900000001, 'synthetic-guild-alpha', '합성 알파 길드', 'A', 'active', 1),
-  (900000002, 'synthetic-guild-beta', '합성 베타 길드', 'B', 'active', 1)
-ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), mark = VALUES(mark), status = VALUES(status), version = VALUES(version);
+INSERT INTO guilds (id, code, display_name, mark, server_code, level, join_requirement_experience, member_join_closed, max_members, recruitment_bonus, status, version) VALUES
+  (900000001, 'synthetic-guild-alpha', '합성 알파 길드', 'A', 'synthetic-server', 8, 100, FALSE, 5, 0, 'active', 1),
+  (900000002, 'synthetic-guild-beta', '합성 베타 길드', 'B', 'synthetic-server-two', 5, 0, FALSE, 5, 0, 'active', 1)
+ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), mark = VALUES(mark), server_code = VALUES(server_code), level = VALUES(level),
+  join_requirement_experience = VALUES(join_requirement_experience), member_join_closed = VALUES(member_join_closed),
+  max_members = VALUES(max_members), recruitment_bonus = VALUES(recruitment_bonus), status = VALUES(status), version = VALUES(version);
 
 INSERT INTO guild_members (guild_id, player_id, role_code, joined_at) VALUES
   (900000001, 900000001, 'leader', '2026-01-01 00:00:00.000'),
