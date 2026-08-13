@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sliceId": "guild-join-condition",
-  "status": "ported",
+  "status": "verified",
   "wbsId": "CMD-04-0002",
   "commands": {
     "names": ["/길드가입조건 [숫자]"],
@@ -30,25 +30,32 @@
   },
   "trialMigration": {
     "sourceSnapshot": "synthetic-relational functional-v1 guild leader and guild policy projection",
-    "targetDatabase": "pending coordinator disposable MariaDB rehearsal",
+    "targetDatabase": "disposable Docker MariaDB hoibot_rehearsal_guild_join_condition_6w7khl",
     "sourceReadOnly": true,
     "replayPolicy": "same event id must return the prior result without a second guild update or outbox",
-    "checks": ["pending MariaDB adapter and dispatch integration"],
-    "result": "pending"
+    "checks": [
+      "migrations 001 through 032 applied to a fresh disposable database",
+      "fixture sha256 aa4c0d2ef0bb0228ea6f7b83127d114f8da5c0bf23f060a870d6cf0b7e83e5f5 applied twice and verify-only passed across 35 tables",
+      "leader changed join requirement from 100 to 12345",
+      "same event replay kept one operation, execution, audit and outbox",
+      "same result and relational counts persisted after MariaDB container restart",
+      "operational database and operational snapshots were not changed"
+    ],
+    "result": "passed"
   },
   "logicPort": {
     "services": ["개발환경_고도화/runtime/src/guild/guild-join-condition-service.ts"],
-    "repositories": ["개발환경_고도화/runtime/src/guild/guild-join-condition-repository.ts transaction contract"],
-    "tests": ["개발환경_고도화/runtime/test/guild-join-condition.test.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/guild/guild-join-condition-repository.ts transaction contract", "개발환경_고도화/runtime/src/guild/maria-guild-join-condition-repository.ts"],
+    "tests": ["개발환경_고도화/runtime/test/guild-join-condition.test.ts", "개발환경_고도화/runtime/scripts/probe-guild-join-condition-synthetic.ts"],
     "policies": ["개발환경_고도화/runtime/src/guild/guild-join-condition-policy.ts"]
   },
   "parity": {
     "fixtures": ["in-memory leader, ordinary member and missing membership cases"],
     "comparisonMode": "exact usage/error/success reply and mutation order comparison",
-    "result": "pending",
+    "result": "passed",
     "verified": ["usage reply", "invalid number reply", "leader-equivalent permission denial", "success reply", "zero means unrestricted", "prior-result replay"],
     "intentionalHardening": ["suffix text and malformed thousands separators cannot execute"],
-    "notYetVerified": ["MariaDB transaction", "restart replay", "full import role-code reconciliation", "live-room smoke"]
+    "notYetVerified": ["full import role-code reconciliation", "live-room smoke"]
   },
   "cutover": {
     "freezePlan": "Stop legacy guild policy writes in the approved guild cutover window",

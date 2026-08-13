@@ -45,6 +45,9 @@ import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
+import { GuildJoinConditionService } from "./guild/guild-join-condition-service.js";
+import { isGuildJoinConditionCommandCandidate } from "./guild/guild-join-condition-policy.js";
+import { MariaGuildJoinConditionRepository } from "./guild/maria-guild-join-condition-repository.js";
 import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
@@ -766,6 +769,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && error.code === "PET_NOT_FOUND") {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_info", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildJoinConditionCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuildJoinConditionService(new MariaGuildJoinConditionRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.data !== undefined && result.outboxId !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_join_condition", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_join_condition_error", error.message));
           } else {
             throw error;
           }
