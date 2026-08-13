@@ -27,11 +27,15 @@ const expectedMinimumRows: Record<string, number> = {
   inventory_stacks: 3,
   player_pets: 2,
   player_pet_elementals: 1,
+  player_pet_pendants: 1,
+  player_pet_intimacy: 1,
   pet_skills: 1,
   pet_skill_inventory: 1,
   owned_mini_pets: 1,
   mini_pet_collection_entries: 1,
   player_homes: 2,
+  player_home_badge_cubes: 1,
+  player_pet_daily_records: 1,
   furniture_placements: 2,
   home_comments: 1,
   guilds: 2,
@@ -74,11 +78,11 @@ async function verifyFixture(): Promise<Record<string, number>> {
         table === "external_identities" ? "provider_code = 'synthetic'" :
         table === "currency_accounts" ? "player_id BETWEEN 900000001 AND 900000003" :
         table === "pre_signup_attendance" ? "id = 900000100 AND status = 'active'" :
-        table === "player_profiles" || table === "inventory_stacks" || table === "player_pets" || table === "owned_mini_pets" || table === "mini_pet_collection_entries" || table === "player_homes" || table === "player_attendance" || table === "player_event_progress" || table === "player_tower_progress" || table === "bag_integrity_checks" ? "player_id BETWEEN 900000001 AND 900000003" :
+        table === "player_profiles" || table === "inventory_stacks" || table === "player_pets" || table === "owned_mini_pets" || table === "mini_pet_collection_entries" || table === "player_homes" || table === "player_home_badge_cubes" || table === "player_pet_daily_records" || table === "player_attendance" || table === "player_event_progress" || table === "player_tower_progress" || table === "bag_integrity_checks" ? "player_id BETWEEN 900000001 AND 900000003" :
         table === "guild_members" ? "guild_id BETWEEN 900000001 AND 900000002" :
         table === "castle_battle_participants" ? "season_id = 900000001" :
         table === "leaderboard_entries" ? "leaderboard_id = 900000001" :
-        table === "pet_skills" || table === "pet_skill_inventory" || table === "player_pet_elementals" ? "player_pet_id BETWEEN 900000001 AND 900000002" :
+        table === "pet_skills" || table === "pet_skill_inventory" || table === "player_pet_elementals" || table === "player_pet_pendants" || table === "player_pet_intimacy" ? "player_pet_id BETWEEN 900000001 AND 900000002" :
         "id BETWEEN 900000001 AND 900000010"
       }`
     );

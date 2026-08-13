@@ -14,8 +14,8 @@
 | character set | `utf8mb4` |
 | collation | `utf8mb4_unicode_ci` |
 | timezone | DB container `UTC`, 운영 표시 `Asia/Seoul` |
-| migration | `001_foundation.sql` ~ `030_pet_creation_foundations.sql` |
-| 정상 물리 결과 | migration 30개, base table 121개, column 845개, FK 174개 |
+| migration | `001_foundation.sql` ~ `031_pet_info_projection.sql` |
+| 정상 물리 결과 | migration 31개, base table 125개, column 893개, FK 178개 |
 
 컬럼과 관계 전체는 [HOIBOT_DATABASE_ERD.md](./HOIBOT_DATABASE_ERD.md)의 `전체 물리 컬럼 ERD`를 기준으로 한다.
 
@@ -124,10 +124,10 @@ WHERE constraint_schema = DATABASE();
 예상값:
 
 ```text
-migration_count = 29
-base_table_count = 119
-column_count = 831
-foreign_key_count = 171
+migration_count = 31
+base_table_count = 125
+column_count = 893
+foreign_key_count = 178
 ```
 
 아래 대표 테이블도 모두 존재해야 한다.
@@ -142,9 +142,13 @@ WHERE table_schema = DATABASE()
     'inventory_stacks',
     'player_pets',
     'player_pet_elementals',
+    'player_pet_pendants',
+    'player_pet_intimacy',
+    'player_pet_daily_records',
     'pet_skill_inventory',
     'guilds',
     'player_homes',
+    'player_home_badge_cubes',
     'market_listings',
     'pre_signup_attendance',
     'player_attendance',
@@ -192,6 +196,7 @@ ORDER BY table_name;
 | `028_complete_legacy_domains.sql` | `9cabbe263f59d546d7f8ef5939b13784fba055811b0728ccb80472d15d37124e` |
 | `029_pre_signup_attendance.sql` | `2e86ebccd682730efe86c142680dbb395f175433e505c142ce0ccb3528acc46d` |
 | `030_pet_creation_foundations.sql` | `6c7b1474045ba9c1db67aa2d10e700f24fcc226f8fa954bd219b859041867266` |
+| `031_pet_info_projection.sql` | `c2a41f9c7ae9dd28b5293276b024cda90b5d7fcfec9e027d5c08ec8364502e52` |
 
 ## 9. 실제 운영 데이터 최종 이관 전 필수 자료
 

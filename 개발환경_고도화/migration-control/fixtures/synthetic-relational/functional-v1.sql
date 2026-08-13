@@ -131,6 +131,20 @@ VALUES (900000001, '합성 불새', 'synthetic_king', '합성 정령왕', 3, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), grade_code = VALUES(grade_code),
   grade_display_name = VALUES(grade_display_name), enhancement_level = VALUES(enhancement_level), version = VALUES(version);
 
+INSERT INTO player_pet_pendants
+  (player_pet_id, display_name, grade_code, grade_display_name, durability, max_durability,
+   enhancement_level, raid_charm, castle_charm, version)
+VALUES (900000002, '합성 펜던트', 'synthetic_low', '합성 하급', 9, 10, 1, 100, 100, 1)
+ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), grade_code = VALUES(grade_code),
+  grade_display_name = VALUES(grade_display_name), durability = VALUES(durability),
+  max_durability = VALUES(max_durability), enhancement_level = VALUES(enhancement_level),
+  raid_charm = VALUES(raid_charm), castle_charm = VALUES(castle_charm), version = VALUES(version);
+
+INSERT INTO player_pet_intimacy (player_pet_id, intimacy_level, progress, charm, version)
+VALUES (900000001, 0, 0, 0, 1)
+ON DUPLICATE KEY UPDATE intimacy_level = VALUES(intimacy_level), progress = VALUES(progress),
+  charm = VALUES(charm), version = VALUES(version);
+
 INSERT INTO skill_definitions (id, code, display_name, rules_json, active)
 VALUES (900000001, 'synthetic-skill', '합성 돌진', JSON_OBJECT('power', 10, 'synthetic', TRUE), TRUE)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), rules_json = VALUES(rules_json), active = VALUES(active);
@@ -167,6 +181,29 @@ INSERT INTO player_homes (player_id, display_name, base_experience, like_count, 
   (900000001, '알파의 합성 홈', 100, 2, 16, 1),
   (900000002, '베타의 합성 홈', 30, 0, 9, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), base_experience = VALUES(base_experience), like_count = VALUES(like_count), floor_area = VALUES(floor_area), version = VALUES(version);
+
+INSERT INTO player_home_badge_cubes
+  (player_id, badge_code, castle_percent, raid_percent, pet_upgrade_percent, explore_percent, equipped, version)
+VALUES (900000001, 'synthetic-zero-cube', 0, 0, 0, 0, TRUE, 1)
+ON DUPLICATE KEY UPDATE castle_percent = VALUES(castle_percent), raid_percent = VALUES(raid_percent),
+  pet_upgrade_percent = VALUES(pet_upgrade_percent), explore_percent = VALUES(explore_percent),
+  equipped = VALUES(equipped), version = VALUES(version);
+
+INSERT INTO player_pet_daily_records
+  (player_id, record_date, tower_attempts, tower_floor, castle_battle_attempts, castle_battle_score,
+   castle_rank_label, mini_battle_attempts, mini_battle_wins, mini_battle_losses,
+   explore_attempts, explore_wins, explore_losses, daily_quest_rewarded, weekly_quest_count,
+   pet_home_comment_count, feed_post_count, home_alert_open_count, version)
+VALUES (900000001, DATE(DATE_ADD(UTC_TIMESTAMP(), INTERVAL 9 HOUR)), 0, 0, 0, 0,
+  '합성 초보', 0, 0, 0, 0, 0, 0, FALSE, 0, 0, 0, 0, 1)
+ON DUPLICATE KEY UPDATE tower_attempts = VALUES(tower_attempts), tower_floor = VALUES(tower_floor),
+  castle_battle_attempts = VALUES(castle_battle_attempts), castle_battle_score = VALUES(castle_battle_score),
+  castle_rank_label = VALUES(castle_rank_label), mini_battle_attempts = VALUES(mini_battle_attempts),
+  mini_battle_wins = VALUES(mini_battle_wins), mini_battle_losses = VALUES(mini_battle_losses),
+  explore_attempts = VALUES(explore_attempts), explore_wins = VALUES(explore_wins),
+  explore_losses = VALUES(explore_losses), daily_quest_rewarded = VALUES(daily_quest_rewarded),
+  weekly_quest_count = VALUES(weekly_quest_count), pet_home_comment_count = VALUES(pet_home_comment_count),
+  feed_post_count = VALUES(feed_post_count), home_alert_open_count = VALUES(home_alert_open_count), version = VALUES(version);
 
 INSERT INTO furniture_definitions (id, code, display_name, charm_value, active) VALUES
   (900000001, 'synthetic-chair', '합성 의자', 3, TRUE),

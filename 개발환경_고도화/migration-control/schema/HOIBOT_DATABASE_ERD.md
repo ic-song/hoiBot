@@ -127,7 +127,7 @@ erDiagram
 <!-- GENERATED COLUMN ERD START -->
 ## 전체 물리 컬럼 ERD
 
-이 섹션은 Docker MariaDB `hoibot_schema_design`의 `information_schema`에서 생성한다. 총 121개 테이블, 845개 컬럼이다.
+이 섹션은 Docker MariaDB `hoibot_schema_design`의 `information_schema`에서 생성한다. 총 125개 테이블, 893개 컬럼이다.
 
 ### 식별자·채널
 
@@ -622,6 +622,7 @@ erDiagram
     int mini_pet_definition_id FK "bigint(20) unsigned; NOT NULL"
     string custom_name "varchar(191); NULL"
     int progress "bigint(20) unsigned; NOT NULL"
+    int enhancement_level "bigint(20) unsigned; NOT NULL"
     int battle_experience "bigint(20) unsigned; NOT NULL"
     int castle_experience "bigint(20) unsigned; NOT NULL"
     int raid_experience "bigint(20) unsigned; NOT NULL"
@@ -1315,6 +1316,17 @@ erDiagram
     int value "bigint(20); NOT NULL"
     datetime updated_at "datetime(3); NOT NULL"
   }
+  PLAYER_HOME_BADGE_CUBES {
+    int player_id PK,FK "bigint(20) unsigned; NOT NULL"
+    string badge_code PK "varchar(128); NOT NULL"
+    decimal castle_percent "decimal(6,3); NOT NULL"
+    decimal raid_percent "decimal(6,3); NOT NULL"
+    decimal pet_upgrade_percent "decimal(6,3); NOT NULL"
+    decimal explore_percent "decimal(6,3); NOT NULL"
+    int equipped "tinyint(1); NOT NULL"
+    int version "bigint(20) unsigned; NOT NULL"
+    datetime updated_at "datetime(3); NOT NULL"
+  }
   PLAYER_PASSES {
     int player_id PK,FK "bigint(20) unsigned; NOT NULL"
     string pass_code PK "varchar(128); NOT NULL"
@@ -1323,12 +1335,56 @@ erDiagram
     datetime starts_at "datetime(3); NULL"
     datetime ends_at "datetime(3); NULL"
   }
+  PLAYER_PET_DAILY_RECORDS {
+    int player_id PK,FK "bigint(20) unsigned; NOT NULL"
+    datetime record_date PK "date; NOT NULL"
+    int tower_attempts "bigint(20) unsigned; NOT NULL"
+    int tower_floor "bigint(20) unsigned; NOT NULL"
+    int castle_battle_attempts "bigint(20) unsigned; NOT NULL"
+    int castle_battle_score "bigint(20); NOT NULL"
+    string castle_rank_label "varchar(191); NULL"
+    int mini_battle_attempts "bigint(20) unsigned; NOT NULL"
+    int mini_battle_wins "bigint(20) unsigned; NOT NULL"
+    int mini_battle_losses "bigint(20) unsigned; NOT NULL"
+    int explore_attempts "bigint(20) unsigned; NOT NULL"
+    int explore_wins "bigint(20) unsigned; NOT NULL"
+    int explore_losses "bigint(20) unsigned; NOT NULL"
+    int daily_quest_rewarded "tinyint(1); NOT NULL"
+    int weekly_quest_count "bigint(20) unsigned; NOT NULL"
+    int pet_home_comment_count "bigint(20) unsigned; NOT NULL"
+    int feed_post_count "bigint(20) unsigned; NOT NULL"
+    int home_alert_open_count "bigint(20) unsigned; NOT NULL"
+    int version "bigint(20) unsigned; NOT NULL"
+    datetime updated_at "datetime(3); NOT NULL"
+  }
   PLAYER_PET_ELEMENTALS {
     int player_pet_id PK,FK "bigint(20) unsigned; NOT NULL"
     string display_name "varchar(191); NOT NULL"
     string grade_code "varchar(64); NOT NULL"
     string grade_display_name "varchar(191); NOT NULL"
     int enhancement_level "bigint(20) unsigned; NOT NULL"
+    int raid_charm "bigint(20) unsigned; NOT NULL"
+    int castle_charm "bigint(20) unsigned; NOT NULL"
+    int version "bigint(20) unsigned; NOT NULL"
+  }
+  PLAYER_PET_INTIMACY {
+    int player_pet_id PK,FK "bigint(20) unsigned; NOT NULL"
+    int intimacy_level "bigint(20) unsigned; NOT NULL"
+    int progress "bigint(20) unsigned; NOT NULL"
+    int charm "bigint(20) unsigned; NOT NULL"
+    int version "bigint(20) unsigned; NOT NULL"
+    datetime updated_at "datetime(3); NOT NULL"
+  }
+  PLAYER_PET_PENDANTS {
+    int player_pet_id PK,FK "bigint(20) unsigned; NOT NULL"
+    string display_name "varchar(191); NOT NULL"
+    string grade_code "varchar(64); NOT NULL"
+    string grade_display_name "varchar(191); NOT NULL"
+    int durability "bigint(20) unsigned; NULL"
+    int max_durability "bigint(20) unsigned; NULL"
+    int enhancement_level "bigint(20) unsigned; NOT NULL"
+    int raid_charm "bigint(20) unsigned; NOT NULL"
+    int castle_charm "bigint(20) unsigned; NOT NULL"
     int version "bigint(20) unsigned; NOT NULL"
   }
   PLAYER_TITLES {

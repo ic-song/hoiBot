@@ -35,6 +35,8 @@ import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
+import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
+import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
@@ -736,6 +738,26 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(
               normalizedEvent, "site_signup_kakao_verify", error.message
             ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetInfoCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
+        && normalizedEvent.channelId !== undefined) {
+        try {
+          const replies = await new GetPetInfoService(new MariaPetInfoRepository(database!))
+            .execute("kakao", normalizedEvent.userId);
+          for (let index = 0; index < replies.length; index++) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, `pet_info_${index + 1}`, replies[index]!.data
+            ));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "PET_NOT_FOUND") {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_info", error.message));
           } else {
             throw error;
           }

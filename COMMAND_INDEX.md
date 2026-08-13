@@ -1102,6 +1102,10 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-info.ts`
+- `개발환경_고도화/runtime/src/pet/pet-info-service.ts`
+- `개발환경_고도화/runtime/src/pet/maria-pet-info-repository.ts`
 
 ## Related Helpers
 
@@ -1219,10 +1223,13 @@ Status: VERIFIED
 - `castleBattleData`
 - `petTitleData.member[sender]`
 - `petSkillData`
+- MariaDB `player_pets`, `player_pet_elementals`, `player_pet_pendants`, `player_pet_intimacy`
+- MariaDB `owned_mini_pets`, `player_homes`, `player_home_badge_cubes`, `player_pet_daily_records`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 포팅 경로도 MariaDB projection을 조회만 하며 operation 또는 domain row를 변경하지 않는다.
 
 ## Related Commands
 
@@ -1241,6 +1248,8 @@ Status: VERIFIED
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 - `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
+- 포팅 경로는 exact `/펫정보`, `/ㅎ`, `ㅁㅁㅁ`만 허용하고 이미지·본문 2개 reply 순서와 U+200B 500개를 보존한다.
+- 전체 매력·친밀도·탐험 순위 projection은 아직 materialize하지 않아 포팅 출력에서는 `순위없음`으로 남는다.
 
 ---
 

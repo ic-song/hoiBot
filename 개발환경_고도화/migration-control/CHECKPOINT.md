@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 24
-- 마지막 갱신: 2026-08-13 10:34 KST
+- 체크포인트 버전: 25
+- 마지막 갱신: 2026-08-13 10:52 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- `/펫생성` 다음 조회 기능인 `/펫정보`의 legacy guard, 출력 helper와 MariaDB projection 범위를 조사한다.
+- 다음 펫 변경 기능 `/펫이름 [이름]`의 legacy guard, 변경권 차감, 저장 순서와 MariaDB transaction 범위를 조사한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 확인 푸시 커밋: `b5e7a6a86babe9915f72abdabe99e7865431a97c` (가입 슬라이스)
+- 마지막 확인 푸시 커밋: `5b32b15131a5007127234c35fedd4725a5af183c` (`/펫생성` 슬라이스)
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -98,10 +98,17 @@
 - 합성 fixture에 펫 성격·가입일, 정령, 스킬 가방을 추가하고 checksum `563802fe...99fb`, SQL 66문장, 대표 테이블 31개를 두 번 적용·verify-only 검증했다.
 - `/펫생성` 포팅본이 빈 펫 행 잠금부터 펫·정령·스킬·미니펫·홈·감사·명령 실행·순서 보장 outbox를 한 transaction으로 저장하도록 구현했다.
 - 합성 MariaDB probe로 정상 2개 reply, starter 관계, 동일 event 멱등성, 기존 펫 거부를 검증하고 evidence를 `verified`로 기록했다.
+- `/펫정보`, `/ㅎ`, `ㅁㅁㅁ`의 exact guard와 legacy pet/home/skill/daily 조회 경로를 재검증했다.
+- `031_pet_info_projection.sql`로 펜던트·친밀도·일일 기록·홈뱃지 큐브를 설계하고 Docker MariaDB에 적용했다.
+- 실제 물리 schema 31 migrations, 125 tables, 893 columns, 178 FKs와 migration checksum 일치를 확인했다.
+- 관계형 fixture를 70문장·35개 대표 테이블로 확장해 두 번 적재와 verify-only에서 동일 건수를 확인했다.
+- 합성 MariaDB에서 이미지·본문 2개 reply 순서, 종합매력 2,703, 홈 매력 108, U+200B 500개와 운영 DB 차단을 검증했다.
+- 패스 전용 댓글·피드·알림 아이콘을 각각의 완료 상태로 판정하도록 parity 차이를 수정하고 테스트로 고정했다.
+- `/펫정보` 슬라이스 증거를 `verified`로 기록했다. 전체 매력·친밀도·탐험 순위 projection은 후속 범위로 남겼다.
 
 ## 진행 중인 작업
 
-- 없음. `/펫생성` 합성 검증 완료 후 `/펫정보` 시작점을 기록한다.
+- 없음. `/펫정보` 합성 검증 완료 후 `/펫이름 [이름]` 시작점을 기록한다.
 
 ## 변경 파일
 
@@ -140,6 +147,13 @@
 - `개발환경_고도화/runtime/test/pet-creation.test.ts`
 - `개발환경_고도화/runtime/scripts/probe-pet-creation-synthetic.ts`
 - `개발환경_고도화/migration-control/evidence/pet-creation/slice.json`
+- `개발환경_고도화/runtime/migrations/031_pet_info_projection.sql`
+- `개발환경_고도화/runtime/src/pet/pet-info.ts`
+- `개발환경_고도화/runtime/src/pet/pet-info-service.ts`
+- `개발환경_고도화/runtime/src/pet/maria-pet-info-repository.ts`
+- `개발환경_고도화/runtime/test/pet-info.test.ts`
+- `개발환경_고도화/runtime/scripts/probe-pet-info-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/pet-info/slice.json`
 - `COMMAND_INDEX.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
@@ -203,6 +217,14 @@
 - 결과: full guard, 펫 초기값, 정령·스킬·미니펫·홈 관계, 정상 reply 2개, operation/execution/audit 1개와 outbox 2개, 동일 event replay, 기존 펫 거부 검증 통과.
 - 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`
 - 결과: TypeScript 통과, runtime test 97개 통과.
+- 실행 명령: `031_pet_info_projection.sql` 적용과 `information_schema` 물리 건수 확인
+- 결과: migration 31개, table 125개, column 893개, FK 178개. migration SHA-256 `c2a41f9c...2e52` 확인.
+- 실행 명령: 관계형 fixture dry-run, `--apply` 2회, `--verify-only`
+- 결과: checksum `a4eb2df1...450`, SQL 70문장, 대표 테이블 35개 반복 적재·검증 통과.
+- 실행 명령: 운영 DB 기본 설정과 `DATABASE_NAME=hoibot_schema_design` 각각으로 `probe-pet-info-synthetic.ts`
+- 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 reply 2개, 종합매력 2,703, U+200B 500개와 `operationalSnapshotTouched=false` 검증 통과.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `node --check main.js`, `node --check Info.js`, pet-info evidence validator
+- 결과: TypeScript 통과, runtime test 101개 통과, Rhino 파일 syntax 통과, `valid slice evidence: pet-info`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -218,7 +240,7 @@
 
 ## 다음 행동
 
-1. `/펫정보`의 exact/full guard, legacy 출력 helper·pet/home/skill read 흐름과 현재 MariaDB profile projection의 parity 범위를 조사한다.
+1. `/펫이름 [이름]`의 legacy command guard, 이름 길이 규칙, 변경권 inventory 차감과 save flow를 조사한다.
 
 ## 보안
 
