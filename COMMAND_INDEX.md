@@ -1253,6 +1253,45 @@ Status: VERIFIED
 
 ---
 
+# /펫이름 [이름]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/펫이름 `
+- Ported guard: `/^\/펫이름 ([^\s]{1,6})$/`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-rename-service.ts`
+
+## Data Usage
+
+- Legacy read/write: `petData[sender].petname`
+- Legacy read/write: `data.member[sender].bag["펫 이름변경권🎫"]`
+- MariaDB: `player_pets.display_name`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success order: `saveJsonFile(petData, memberPetPath)` then `saveJsonFile(data, filePath)`
+- Ported success: pet rename, ticket decrement, inventory ledger, operation, command execution, audit and Iris outbox in one transaction
+
+## Related Commands
+
+- `/펫이름조합`
+- `/펫정보`
+
+## AI Notes
+
+- Legacy `startsWith` accepted empty or whitespace-containing suffixes; the port intentionally requires one whitespace-free 1~6 character argument.
+- An active castle siege preserves the legacy silent return without consuming a ticket or creating an operation.
+- The ticket stack row remains at quantity zero instead of being physically deleted; user-visible ownership is still quantity greater than zero.
+
+---
+
 # /길드목록
 
 Status: VERIFIED

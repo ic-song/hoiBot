@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 25
-- 마지막 갱신: 2026-08-13 10:52 KST
+- 체크포인트 버전: 26
+- 마지막 갱신: 2026-08-13 11:25 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 다음 펫 변경 기능 `/펫이름 [이름]`의 legacy guard, 변경권 차감, 저장 순서와 MariaDB transaction 범위를 조사한다.
+- 다음 연결 기능 `/펫이름조합`의 재료·포인트 차감, 변경권 지급과 MariaDB 원장 transaction 범위를 조사한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 확인 푸시 커밋: `5b32b15131a5007127234c35fedd4725a5af183c` (`/펫생성` 슬라이스)
+- 마지막 확인 푸시 커밋: `d375ddde3219bfa0420d3909ee62beac659c3c10` (`/펫정보` 슬라이스)
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -105,10 +105,15 @@
 - 합성 MariaDB에서 이미지·본문 2개 reply 순서, 종합매력 2,703, 홈 매력 108, U+200B 500개와 운영 DB 차단을 검증했다.
 - 패스 전용 댓글·피드·알림 아이콘을 각각의 완료 상태로 판정하도록 parity 차이를 수정하고 테스트로 고정했다.
 - `/펫정보` 슬라이스 증거를 `verified`로 기록했다. 전체 매력·친밀도·탐험 순위 projection은 후속 범위로 남겼다.
+- `/펫이름 [이름]`의 legacy broad-prefix guard, 펫·변경권 두 파일 save order와 공성전 무응답 차단을 재검증했다.
+- 포팅 guard를 공백 없는 1~6자 단일 인자로 제한하고 펫 이름, 변경권 차감, inventory ledger, operation, execution, audit와 outbox를 한 transaction으로 구현했다.
+- 합성 fixture에 `펫 이름변경권🎫` 2개를 추가하고 checksum `ada4f36e...17ac`, SQL 70문장, 대표 테이블 35개를 두 번 적용·verify-only 검증했다.
+- 실제 개발 MariaDB probe로 이름 변경, 변경권 2→1, 각 영속 효과 1건, 동일 event 멱등 재실행과 운영 DB 사전 차단을 확인했다.
+- `/펫이름` evidence를 `verified`로 기록했다. legacy zero-key 삭제는 MariaDB zero quantity row 유지로 정규화했다.
 
 ## 진행 중인 작업
 
-- 없음. `/펫정보` 합성 검증 완료 후 `/펫이름 [이름]` 시작점을 기록한다.
+- 없음. `/펫이름` 합성 검증 완료 후 `/펫이름조합` 시작점을 기록한다.
 
 ## 변경 파일
 
@@ -154,6 +159,10 @@
 - `개발환경_고도화/runtime/test/pet-info.test.ts`
 - `개발환경_고도화/runtime/scripts/probe-pet-info-synthetic.ts`
 - `개발환경_고도화/migration-control/evidence/pet-info/slice.json`
+- `개발환경_고도화/runtime/src/pet/pet-rename-service.ts`
+- `개발환경_고도화/runtime/test/pet-rename.test.ts`
+- `개발환경_고도화/runtime/scripts/probe-pet-rename-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/pet-rename/slice.json`
 - `COMMAND_INDEX.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
@@ -225,6 +234,12 @@
 - 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 reply 2개, 종합매력 2,703, U+200B 500개와 `operationalSnapshotTouched=false` 검증 통과.
 - 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `node --check main.js`, `node --check Info.js`, pet-info evidence validator
 - 결과: TypeScript 통과, runtime test 101개 통과, Rhino 파일 syntax 통과, `valid slice evidence: pet-info`.
+- 실행 명령: 관계형 fixture dry-run, `--apply` 2회, `--verify-only`
+- 결과: checksum `ada4f36e...17ac`, SQL 70문장, 대표 테이블 35개와 inventory stack 4개 반복 적재·검증 통과.
+- 실행 명령: 운영 DB 기본 설정과 `DATABASE_NAME=hoibot_schema_design` 각각으로 `probe-pet-rename-synthetic.ts`
+- 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 펫 이름 변경, 변경권 2→1, ledger/operation/execution/audit/outbox 각 1건과 동일 event 멱등성 통과.
+- 실행 명령: pet rename probe 2회 연속 실행, `npm.cmd run typecheck`, `npm.cmd test`, Rhino syntax, pet-rename evidence validator
+- 결과: 반복 probe가 event별 동일 결과를 반환. TypeScript 통과, runtime test 105개 통과, Rhino 파일 syntax 통과, `valid slice evidence: pet-rename`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -240,7 +255,7 @@
 
 ## 다음 행동
 
-1. `/펫이름 [이름]`의 legacy command guard, 이름 길이 규칙, 변경권 inventory 차감과 save flow를 조사한다.
+1. `/펫이름조합`의 exact guard, 잡템 10개·포인트 1억 차감, 변경권 지급과 save flow를 조사한다.
 
 ## 보안
 

@@ -96,12 +96,14 @@ ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), permanent = VALUES(permanent)
 
 INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable, metadata_json, active, version) VALUES
   (900000001, 'synthetic-carrot', '합성 당근', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000002, 'synthetic-potion', '합성 물약', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
+  (900000002, 'synthetic-potion', '합성 물약', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
+  (900000003, 'legacy-pet-name-change-ticket', '펫 이름변경권🎫', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
   (900000001, 900000001, 20, 1),
   (900000001, 900000002, 3, 1),
+  (900000001, 900000003, 2, 1),
   (900000002, 900000001, 7, 1)
 ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = VALUES(version);
 
