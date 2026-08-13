@@ -29,8 +29,8 @@
 - 브랜치: `feature/workflow`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/workflow`
-- 마지막 푸시 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
-- 원격 동기화 상태: 고도화 이관 전용 스킬을 `feature/workflow`에 푸시 완료, `feature/prod` 반영 예정
+- 스킬 원본 푸시 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
+- 원격 동기화 상태: `feature/workflow` 푸시 및 `feature/prod` 반영 완료
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
 
@@ -45,6 +45,8 @@
 - DB 설계, 합성 데이터, 로직 이관, legacy 비교, MariaDB 검증 및 최종 운영 데이터 이관 분리를 스킬에 고정했다.
 - `AGENTS.md`의 상세 절차를 스킬 호출용 단축 규칙으로 축소했다.
 - workflow 스킬 원본 커밋 `edbf410`을 원격에 푸시했다.
+- `feature/prod` 반영 커밋 `938e370`과 후속 체크포인트 커밋 `967914b`을 원격에서 확인했다.
+- 저장소 스킬 원본을 `C:/Users/user/.codex/skills/hoibot-modernization-wbs-runner`에 동기화하고 SHA-256 일치를 확인했다.
 
 ## 진행 중인 작업
 
