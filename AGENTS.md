@@ -7,6 +7,11 @@ Project explanations for human operators/developers are managed in `README.md`.
 
 # 1) Project Overview
 
+## Modernization Iris diagnostics
+
+- For any redroid/Iris event, `chat_logs`, `/query`, `/decrypt`, deletion, host-hide, sender mapping, monitoring delivery, or Iris-to-MariaDB incident, use the `hoibot-iris-diagnostics` skill before experimenting or editing runtime behavior.
+- Follow its layer-by-layer evidence ladder and official KBotDocs endpoint contract. Distinguish the new event row ID from nested target `logId`, preserve all external IDs as strings, and verify the KakaoTalk DB, Iris delivery, normalization, MariaDB transaction, outbox, and visible echo separately.
+
 - This repository is a game operation script project running in an Android MessengerBot JavaScript environment.
 - Core entry files:
   - `main.js`: command handling and core game logic
