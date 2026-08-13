@@ -18,6 +18,12 @@ export interface GuildJoinEligibility {
   reason: "joinable" | "closed" | "full" | "experience_required";
 }
 
+// 길드가입 요청·확정·취소 후보만 DB 서비스로 전달합니다.
+export function isGuildJoinCommandCandidate(message: string | undefined): boolean {
+  return message?.startsWith("/길드가입") === true
+    || message === "/가입한다" || message === "가입한다" || message === "/안한다";
+}
+
 // 길드가입 명령에서 안내문 뒤붙임을 허용하지 않고 양의 길드 번호만 추출합니다.
 export function parseGuildJoinCommand(message: string): number | null {
   const match = /^\/길드가입\s+([1-9]\d*)$/.exec(message);

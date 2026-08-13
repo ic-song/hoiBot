@@ -39,7 +39,7 @@ export interface GuildJoinTransaction {
   listJoinableGuilds(): Promise<GuildJoinCandidate[]>;
   lockGuild(guildId: string): Promise<GuildJoinCandidate | null>;
   lockPendingJoin(playerId: string): Promise<PendingGuildJoin | null>;
-  savePendingJoin(playerId: string, guildId: string, guildNo: number): Promise<void>;
+  savePendingJoin(playerId: string, guildId: string, guildNo: number, eventId: string): Promise<void>;
   clearPendingJoin(playerId: string, status: "completed" | "cancelled" | "invalidated"): Promise<void>;
   addMembershipAndSpendTicket(operationId: string, playerId: string, guildId: string): Promise<void>;
   completeCommand(operationId: string, record: GuildJoinCommandRecord, result: GuildJoinResult): Promise<GuildJoinResult>;
