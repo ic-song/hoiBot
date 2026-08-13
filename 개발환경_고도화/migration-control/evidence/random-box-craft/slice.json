@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "random-box-craft",
+  "status": "ported",
+  "execution": {
+    "wbsId": "CMD-06-0033",
+    "lane": "A",
+    "worker": "우산",
+    "executionId": "우산-CMD-06-0033-20260813T063840Z-7x2jc0",
+    "claimRow": 7
+  },
+  "commands": {
+    "names": ["/랜덤조합", "/랜덤조합 [수량]"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command defaults to quantity one",
+      "digits-only quantity is accepted and suffix text does not execute",
+      "numeric zero preserves the legacy zero-craft response when a positive heart stack exists",
+      "active castle siege returns silently before inventory mutation"
+    ],
+    "helpers": ["checkRank"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.bag['하트💝']", "member.<sender>.bag['랜덤박스💝']", "guildData.castleSiegeFlag"],
+    "writePaths": [
+      "member.<sender>.bag['하트💝'] decrement and delete at zero",
+      "member.<sender>.bag['랜덤박스💝'] increment"
+    ],
+    "saveOrder": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities", "player_profiles", "item_definitions", "inventory_stacks", "inventory_ledger",
+      "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages"
+    ],
+    "constraints": [
+      "inventory_stacks unique player and item stack",
+      "operations unique idempotency scope and key",
+      "ledger, execution, audit and outbox rows reference one operation"
+    ],
+    "transactionBoundary": "lock active castle state, linked identity and both item stacks; then apply balances, ledger, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "CMD-06-0033 domain-specific anonymized synthetic setup",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "same event ID returns the stored completed result without duplicate mutation",
+    "checks": [
+      "heart 40 to 0 and random box 0 to 2",
+      "inventory ledger 2, operation 1, execution 1, audit 1 and outbox 1",
+      "shared fixture and operational snapshot remain untouched"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/crafting/random-box-craft-service.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/random-box-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-random-box-craft-synthetic.ts"
+    ]
+  },
+  "parity": {
+    "fixtures": ["positive heart stack, zero heart stack, shortage and active castle siege"],
+    "comparisonMode": "exact guard, zero quantity, validation order, reply, two balance deltas, ledger, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory writes in the final shared freeze window",
+    "finalImportPlan": "import every heart and random-box quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity crafts one random box and verifies both balances, reply and ledgers",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "coordinator integration must add the Iris dispatch and shared fixture rows before integrated verification",
+    "legacy success does not call saveJsonFile, so historical in-memory changes may have been lost on restart",
+    "legacy deletes the heart property at zero while MariaDB keeps a zero-quantity stack row",
+    "full checkRank special and guild decorations are not yet centralized",
+    "the port adds a one-million craft limit",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}
