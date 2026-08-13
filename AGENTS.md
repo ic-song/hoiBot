@@ -143,7 +143,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ## Modernization WBS Short Commands
 
-- For `고도화진행`, `고도화 이어서 진행`, `너는 <이름>이야 고도화진행`, `고도화 <도메인> 이어서 진행`, `고도화 통합 진행`, or `고도화 현황 갱신`, MUST use the `hoibot-modernization-wbs-runner` skill.
+- For `고도화진행`, `고도화 이어서 진행`, `너는 <이름>이야 고도화진행`, `고도화 <도메인> 이어서 진행`, `고도화 통합 진행`, `고도화 인계 <실행 ID>`, `고도화 복구 <WBS ID>`, or `고도화 현황 갱신`, MUST use the `hoibot-modernization-wbs-runner` skill.
 - The skill owns worker-name assignment, fixed Drive links, interrupted-work recovery, WBS claims and state flow, staged migration validation, data safety, and dashboard synchronization.
 - The user does not need to repeat repository paths, shared links, or the detailed migration procedure.
 
