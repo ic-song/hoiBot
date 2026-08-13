@@ -29,6 +29,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/get-bag-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts`
+- `개발환경_고도화/runtime/src/inventory/legacy-bag-formatter.ts`
 - `Info.js`
 
 ## Related Helpers
@@ -365,6 +368,7 @@ Status: VERIFIED
 
 - No intended state mutation
 - Branch does not call `saveJsonFile` for member data
+- 고도화 경로도 MariaDB repository read-only 조회만 수행하며 원장이나 stack을 변경하지 않는다.
 
 ## Related Commands
 
@@ -379,6 +383,8 @@ Status: VERIFIED
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
+- 고도화 경로는 exact `/가방`과 `ㄴㄴㄴ`만 허용하고, `item_definitions.metadata_json.legacyBagOrder`로 특수 아이템 순서를 보존한다.
+- 합성 MariaDB에서 31개 migration, fixture 재적용, stack 5개 조회와 7줄 출력을 검증했다. 운영 전체 bag import와 `checkRank`, 캐슬 진행 중 무응답 smoke는 최종 전환 전 확인 대상이다.
 
 ---
 

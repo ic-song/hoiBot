@@ -54,6 +54,9 @@ import {
 } from "./integration/moderation-incident-service.js";
 import { MembershipLogService, type MembershipLogSummary } from "./integration/membership-log-service.js";
 import { RetainedEventContentService } from "./integration/retained-event-content-service.js";
+import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
+import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
+import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 
 interface TokenQuery {
   token?: string;
@@ -698,6 +701,25 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && error.code === "IDENTITY_MAPPING_REQUIRED") {
             request.log.warn({ requestId: request.id }, "iris.profile.identity_mapping_required");
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const bag = await new GetBagService(new MariaBagRepository(database!))
+            .execute("kakao", normalizedEvent.userId);
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            "bag_read",
+            formatLegacyBag(bag)
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "IDENTITY_MAPPING_REQUIRED") {
+            request.log.warn({ requestId: request.id }, "iris.bag.identity_mapping_required");
           } else {
             throw error;
           }

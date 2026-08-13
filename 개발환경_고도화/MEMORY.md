@@ -44,6 +44,7 @@
 - `Controller/Adapter -> Application Service -> Domain Policy -> Repository -> MariaDB` 계층과 transaction manager를 구현했다.
 - `/내정보` read model/formatter, 관리자 서버 배정, identity 승인, 감사, 활동·사건 조회를 구현했다.
 - currency, inventory, pet/skill/title, guild, home/social, event/ranking, market Application Service와 원장·낙관적 잠금·멱등성을 구현했다.
+- `/가방`, `ㄴㄴㄴ`의 read-only inventory repository, legacy 순서 formatter와 Iris adapter를 구현하고 실행 전용 rehearsal DB에서 fixture 재적용과 stack 조회를 검증했다.
 - 사이트-first 가입, Kakao 코드 인증, 사용자 세션, 관리자 Argon2id 세션/RBAC, 제재, 프리패스, 30일 탈퇴 유예·복구·정리 worker를 구현했다.
 - 27개 migration을 실제 개발 MariaDB에 적용했다. 최신 migration은 답글을 별도 관리자 분류에서 제거하고 내부 기타 이벤트로 재분류한다.
 - 33개 JSON lossless/checksum importer와 disposable DB rehearsal을 구현했다. 운영 JSON은 수정하지 않았다.
@@ -86,7 +87,7 @@
 - 방장 가리기는 `SYNCREWR + feedType=26 + coverType=openchat_blind`로 확인했다.
 - 발신 메시지 가리기는 중간 `feedType=13` 행의 `prev_id`를 한 번 따라가고, 수신 메시지 가리기는 재작성된 행의 `v.previous_message`, `v.previous_enc`, `chatLogInfos[0].type`으로 복호화한다.
 - 2026-08-07 최근 membership DB 표본 89건에서 입장 44건은 `NEWMEM/feedType=4/members[0]`, 퇴장 45건은 `DELMEM/feedType=2/member`였고 모두 단일 사용자이며 내부 ID와 최상위 ID가 일치했다.
-- 최신 자동 검증은 runtime 테스트 91개, runtime typecheck/build와 frontend build를 통과했다. `normalized_provider_events.monitoring_group`은 기존 데이터 전체를 `text/media/moderation/membership/event`로 백필하며 미디어에는 이미지·다중 이미지·영상만 포함한다. migration `025`~`027`은 최초 적용과 재실행 무변경을 통과했고 서버·DB readiness가 정상이다. 관리자 화면에서 최종 메뉴 노출과 들낙 상세 팝업의 실제 입·퇴장 이력을 브라우저로 확인했다. 로컬 서버는 1차 `observe_all_open` 및 콘텐츠 `all_verified_open` 모드이며 지정방 외에는 게임·가입·명령을 실행하지 않지만 검증된 모든 오픈방의 허용 콘텐츠는 보관한다.
+- 최신 자동 검증은 runtime 테스트 121개, runtime typecheck/build를 통과했다. `/가방` rehearsal은 migration 31개와 합성 fixture 2회 재적용, 35개 대표 테이블 고정 건수, stack 5개·출력 7줄을 확인했다. `normalized_provider_events.monitoring_group`은 기존 데이터 전체를 `text/media/moderation/membership/event`로 백필하며 미디어에는 이미지·다중 이미지·영상만 포함한다. migration `025`~`027`은 최초 적용과 재실행 무변경을 통과했고 서버·DB readiness가 정상이다. 관리자 화면에서 최종 메뉴 노출과 들낙 상세 팝업의 실제 입·퇴장 이력을 브라우저로 확인했다. 로컬 서버는 1차 `observe_all_open` 및 콘텐츠 `all_verified_open` 모드이며 지정방 외에는 게임·가입·명령을 실행하지 않지만 검증된 모든 오픈방의 허용 콘텐츠는 보관한다.
 
 ## 미검증 항목
 
