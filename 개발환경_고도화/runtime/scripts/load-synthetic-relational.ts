@@ -24,7 +24,7 @@ const expectedMinimumRows: Record<string, number> = {
   player_profiles: 3,
   pre_signup_attendance: 1,
   currency_accounts: 6,
-  inventory_stacks: 4,
+  inventory_stacks: 5,
   player_pets: 2,
   player_pet_elementals: 1,
   player_pet_pendants: 1,

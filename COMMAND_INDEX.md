@@ -1292,6 +1292,46 @@ Status: VERIFIED
 
 ---
 
+# /펫이름조합
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `msg === "/펫이름조합"`
+- Ported guard: exact equality only
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-rename-ticket-craft-service.ts`
+
+## Data Usage
+
+- Legacy read/write: `data.member[sender].bag["잡템☠️"]`
+- Legacy read/write: `data.member[sender].point`
+- Legacy read/write: `data.member[sender].bag["펫 이름변경권🎫"]`
+- MariaDB: `currency_accounts`, `currency_ledger`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success: 세 값을 메모리에서 변경한 뒤 `saveJsonFile(data, filePath)` 한 번 실행
+- Ported success: 잡템 10개·포인트 100,000,000 차감, 변경권 1개 지급, 양쪽 원장·operation·command execution·audit·Iris outbox를 한 transaction으로 저장
+
+## Related Commands
+
+- `/펫이름 [이름]`
+- `/캐슬대전조합`
+
+## AI Notes
+
+- 잡템 부족을 포인트 부족보다 먼저 판정하는 legacy 순서를 보존한다.
+- active castle season이면 legacy와 같이 reply와 mutation 없이 종료한다.
+- legacy는 수량이 0인 잡템 key를 삭제하지만 MariaDB는 수량 0 stack row를 유지한다.
+
+---
+
 # /길드목록
 
 Status: VERIFIED

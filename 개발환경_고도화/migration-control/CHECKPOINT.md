@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 26
-- 마지막 갱신: 2026-08-13 11:25 KST
+- 체크포인트 버전: 27
+- 마지막 갱신: 2026-08-13 12:55 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 다음 연결 기능 `/펫이름조합`의 재료·포인트 차감, 변경권 지급과 MariaDB 원장 transaction 범위를 조사한다.
+- 다음 소스 순서 기능 `/캐슬대전조합`의 exact guard, 재료·포인트 조건, 지급 품목과 MariaDB transaction 범위를 조사한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 확인 푸시 커밋: `d375ddde3219bfa0420d3909ee62beac659c3c10` (`/펫정보` 슬라이스)
+- 마지막 확인 푸시 커밋: `d7b4eb20f23d416ebd8631a901f3c1ac54f0c103` (`/펫이름` 슬라이스)
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -110,10 +110,17 @@
 - 합성 fixture에 `펫 이름변경권🎫` 2개를 추가하고 checksum `ada4f36e...17ac`, SQL 70문장, 대표 테이블 35개를 두 번 적용·verify-only 검증했다.
 - 실제 개발 MariaDB probe로 이름 변경, 변경권 2→1, 각 영속 효과 1건, 동일 event 멱등 재실행과 운영 DB 사전 차단을 확인했다.
 - `/펫이름` evidence를 `verified`로 기록했다. legacy zero-key 삭제는 MariaDB zero quantity row 유지로 정규화했다.
+- `/펫이름조합`의 exact guard, 공성전 무응답 차단, 잡템 10개 우선 검사, 포인트 1억 후순위 검사와 단일 `member.json` save flow를 재검증했다.
+- 기존 schema의 inventory·currency account와 양쪽 ledger를 재사용해 별도 migration 없이 조합 service를 구현했다.
+- 합성 fixture에 `잡템☠️` 20개 stack을 추가하고 checksum `17dace94...182`, SQL 70문장, 대표 테이블 35개와 inventory stack 5개를 반복 적재·verify-only 검증했다.
+- 실제 개발 MariaDB에서 잡템 20→10, 포인트 200,000,000→100,000,000, 변경권 2→3과 inventory ledger 2건·currency ledger 1건·operation/execution/audit/outbox 각 1건을 확인했다.
+- 동일 event 재실행이 재차감 없이 저장 결과를 반환하며, 전체 probe를 서로 다른 event로 두 번 실행해 반복 가능성을 확인했다.
+- 운영 DB 기본 이름 `hoibot`에서는 연결 mutation 전 probe가 차단되고 운영 snapshot을 읽거나 수정하지 않았음을 확인했다.
+- `/펫이름조합` evidence를 `verified`로 기록했다. legacy zero-key 삭제와 전체 `checkRank` 장식은 후속 정규화 위험으로 남겼다.
 
 ## 진행 중인 작업
 
-- 없음. `/펫이름` 합성 검증 완료 후 `/펫이름조합` 시작점을 기록한다.
+- 없음. `/펫이름조합` 합성 검증 완료 후 `/캐슬대전조합` 시작점을 기록한다.
 
 ## 변경 파일
 
@@ -163,6 +170,10 @@
 - `개발환경_고도화/runtime/test/pet-rename.test.ts`
 - `개발환경_고도화/runtime/scripts/probe-pet-rename-synthetic.ts`
 - `개발환경_고도화/migration-control/evidence/pet-rename/slice.json`
+- `개발환경_고도화/runtime/src/pet/pet-rename-ticket-craft-service.ts`
+- `개발환경_고도화/runtime/test/pet-rename-ticket-craft.test.ts`
+- `개발환경_고도화/runtime/scripts/probe-pet-rename-ticket-craft-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/pet-rename-ticket-craft/slice.json`
 - `COMMAND_INDEX.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
@@ -240,6 +251,12 @@
 - 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 펫 이름 변경, 변경권 2→1, ledger/operation/execution/audit/outbox 각 1건과 동일 event 멱등성 통과.
 - 실행 명령: pet rename probe 2회 연속 실행, `npm.cmd run typecheck`, `npm.cmd test`, Rhino syntax, pet-rename evidence validator
 - 결과: 반복 probe가 event별 동일 결과를 반환. TypeScript 통과, runtime test 105개 통과, Rhino 파일 syntax 통과, `valid slice evidence: pet-rename`.
+- 실행 명령: 관계형 fixture dry-run, `--apply` 2회, `--verify-only`
+- 결과: checksum `17dace94...182`, SQL 70문장, 대표 테이블 35개와 inventory stack 5개 반복 적재·검증 통과.
+- 실행 명령: 운영 DB 기본 설정과 `DATABASE_NAME=hoibot_schema_design` 각각으로 `probe-pet-rename-ticket-craft-synthetic.ts`
+- 결과: 운영 DB는 mutation 전에 차단. 개발 DB는 잡템 20→10, 포인트 200,000,000→100,000,000, 변경권 2→3, 원장·operation/execution/audit/outbox 건수와 동일 event 멱등성을 통과했으며 전체 probe 2회도 통과.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, Rhino syntax, pet-rename-ticket-craft evidence validator, resume checker
+- 결과: TypeScript 통과, runtime test 109개 통과, Rhino 파일 syntax 통과, `valid slice evidence: pet-rename-ticket-craft`, `safeToResume=true`, `crossPcReady=true`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -255,7 +272,7 @@
 
 ## 다음 행동
 
-1. `/펫이름조합`의 exact guard, 잡템 10개·포인트 1억 차감, 변경권 지급과 save flow를 조사한다.
+1. `/캐슬대전조합`의 exact guard, 재료·포인트 조건, 지급 품목과 save flow를 조사한다.
 
 ## 보안
 
