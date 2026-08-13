@@ -113,7 +113,7 @@ export class GuildJoinService {
       if (candidate === undefined) throw new ApplicationError("GUILD_NOT_FOUND_BY_NUMBER", "❌ 해당 번호의 길드가 없습니다.", 404);
       requireEligibleGuild(candidate, player.experience);
 
-      await transaction.savePendingJoin(player.playerId, candidate.guildId, guildNo);
+      await transaction.savePendingJoin(player.playerId, candidate.guildId, guildNo, command.eventId);
       const data = buildGuildJoinConfirmationMessage(player.rankLabel, candidate);
       return complete(transaction, operationId, {
         eventId: command.eventId,
