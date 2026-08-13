@@ -141,6 +141,89 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Treat the Notion `상태` change and `운영반영일` update as one operation; if either update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
 - Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` before production reflection is complete.
 
+## Modernization WBS Continuation Workflow
+
+### Fixed Shared Resources
+
+- Google Drive `hoi` project folder:
+  - `https://drive.google.com/drive/folders/1wcM4C3GZ0G8NSwXFJ1U0sq_s0FxWlB08`
+- Google Sheets WBS, the single source of truth for modernization progress:
+  - `https://docs.google.com/spreadsheets/d/15TP6sa36r_cwh49ny-pOiM3nkhgQ5i_KBYzsqdM0NZw/edit`
+- Notion human-readable progress dashboard:
+  - `https://app.notion.com/p/3bb393bdd7aa81e38bb9ea8d773a8caf?pvs=204`
+
+### Short User Commands
+
+- When the user says `고도화 이어서 진행`, treat it as a complete request to recover and continue one eligible modernization WBS item.
+- When the user says `고도화 <도메인> 이어서 진행`, restrict selection to that domain and continue one eligible item.
+- When the user says `고도화 통합 진행`, act as coordinator A and integrate work already marked `통합 준비` or `검증 중` before claiming a new item.
+- When the user says `고도화 현황 갱신`, read the Google Sheets WBS aggregates and synchronize the Notion dashboard without changing runtime code.
+- The user does not need to repeat repository paths, Drive links, the migration sequence, or the safety rules when using these commands.
+
+### Required Start Flow
+
+1. Use the `recover-interrupted-work` skill.
+2. Read this `AGENTS.md` and inspect the relevant project checkpoint, worktree, branch, upstream, and dirty files.
+3. Open the fixed Google Sheets WBS and read at least `WBS_대단계`, `도메인_요약`, and the relevant detail sheet.
+4. Reconcile the WBS claim with current Git files and evidence. Code and database facts determine implementation correctness; Google Sheets remains the progress-management source.
+5. Select only a row whose prerequisites are satisfied, whose state is `대기`, and whose `담당 Agent` is blank.
+6. Before editing code, update that WBS row with the assigned Agent, branch, and state `선점`.
+7. For parallel chats, use a separate worktree and task branch. Never let two chats claim the same WBS ID or edit the same task checkpoint.
+
+### Per-Item Execution Sequence
+
+For every command or automatic-flow slice, follow this order without skipping gates:
+
+```text
+명령·자동 흐름 조사
+→ DB·테이블·컬럼 매핑 확인
+→ 비식별 임시데이터 준비·적재
+→ 로직 이관
+→ legacy 결과 비교
+→ 합성 MariaDB 검증
+→ evidence·체크포인트 기록
+→ Google Sheets WBS 갱신
+→ 커밋·푸시
+```
+
+- Treat a representative command, all aliases, argument forms, and connected automatic flows as one functional slice when they share behavior and persistence.
+- Re-verify guards, helpers, data paths, load/save flow, reply format, ledger effects, idempotency, and DEV/PROD path behavior from current code.
+- A failed search means unverified, not nonexistent. Put unresolved command candidates in the WBS `재확인_대상` sheet.
+- Set WBS progress by evidence, not by chat claims.
+
+### WBS State Flow
+
+```text
+대기 → 선점 → 조사 중 → 구현 중 → 통합 준비 → 검증 중 → 검증 완료
+```
+
+- Update the WBS after each material gate and before ending or handing off a chat.
+- Record the exact next action, changed files, branch, commit, verification result, and remaining risk.
+- Do not mark `검증 완료` until required tests and synthetic MariaDB parity checks pass.
+- If work stops unexpectedly, the next chat resumes the rows in `선점`, `조사 중`, `구현 중`, `통합 준비`, or `검증 중`; do not start a duplicate row.
+
+### Coordinator A And Shared-File Ownership
+
+- Coordinator A owns integration-sensitive shared files and final status synchronization.
+- Only coordinator A should normally edit shared migration ordering, common dispatch such as `app.ts`, shared fixture loaders, queue structure, and dashboard/WBS structure.
+- Domain Agents should prefer domain-local Service, Policy, Repository, test, and evidence files, then hand off a commit SHA and verification summary.
+- `고도화 통합 진행` prioritizes existing `통합 준비` and `검증 중` rows, runs the combined synthetic regression, updates the WBS, and then synchronizes Notion.
+
+### Google Drive And Notion Responsibilities
+
+- Google Sheets WBS is the progress-management source for major phases, domains, commands, data migration, owners, status, and evidence links.
+- Notion is a read-only human dashboard for overall progress, major-stage percentages, domain percentages, and internal-worker/customer decisions.
+- Do not maintain a separate detailed WBS in Notion.
+- At a completed checkpoint, recalculate Google Sheets first and then mirror its aggregates to Notion.
+- If Notion differs from Google Sheets, correct Notion from Google Sheets. If Google Sheets differs from verified code or database evidence, investigate and correct the WBS before continuing.
+
+### Data Safety And Final Cutover
+
+- During development, use only non-identifying synthetic fixtures and the trial database.
+- Do not modify or load full operational `data/*` snapshots into the trial flow.
+- Missing operational files may use isolated synthetic fixtures for design and validation, but never as production evidence.
+- The final production-data migration is a separate last phase: reset trial data, capture the full operational snapshot, verify backup/restore and rollback points, obtain internal-worker and customer approval, then perform the complete migration.
+
 ## Branch Workflow
 
 - `feature/prod` is the operational base branch for production-facing code.
