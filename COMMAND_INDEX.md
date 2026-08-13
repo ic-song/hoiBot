@@ -1332,6 +1332,45 @@ Status: VERIFIED
 
 ---
 
+# /캐슬대전조합 [수량]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/캐슬대전조합`
+- Ported guard: exact command or `/^\/캐슬대전조합\s+\d+$/`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/castle/castle-battle-reset-craft-service.ts`
+
+## Data Usage
+
+- Legacy read/write: `data.member[sender].bag["양념치킨🐔"]`
+- Legacy read/write: `data.member[sender].bag["캐슬대전리셋권🐶"]`
+- MariaDB: `item_definitions`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success branch has no `saveJsonFile`, so mutation can be lost after restart.
+- Ported success: material decrement, ticket grant, inventory ledger, operation, execution, audit and Iris outbox in one transaction.
+
+## Related Commands
+
+- `/캐슬대전`
+- `/레이드인장조합 [수량]`
+
+## AI Notes
+
+- 수량 생략은 1개, 숫자 인자는 양념치킨 6배를 요구한다.
+- legacy가 허용한 수량 0도 보존하며, DB 안전을 위해 1회 최대 1,000,000개로 제한한다.
+- active castle season이면 reply와 mutation 없이 종료한다.
+
+---
+
 # /길드목록
 
 Status: VERIFIED
