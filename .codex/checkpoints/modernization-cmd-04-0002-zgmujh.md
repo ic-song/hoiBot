@@ -2,10 +2,10 @@
 
 - 작업 키: modernization-cmd-04-0002-zgmujh
 - 작업 이름: `/길드가입조건` 고도화
-- 체크포인트 버전: 3
-- 마지막 갱신: 2026-08-13 16:32 KST
-- 작업 상태: 구현·전체 회귀 완료, source push 대기
-- 정리 후보: 아니요
+- 체크포인트 버전: 4
+- 마지막 갱신: 2026-08-13 16:36 KST
+- 작업 상태: 통합 인계 승인
+- 정리 후보: 예
 
 ## 목표와 범위
 
@@ -20,13 +20,13 @@
 ## 소유권과 작업 위치
 
 - 선점 원장 행: 11
-- 선점 상태: 활성
+- 선점 상태: 인계 승인
 - Heartbeat: 2026-08-13 16:32:00 KST
 - Lease 만료: 2026-08-13 17:32:00 KST
 - Worktree: C:/Users/user/Desktop/hoiBot_modernization_04_0002_zgmujh
 - Branch: feature/modernization-cmd-04-0002-zgmujh
 - 기준 commit: feature/prod `4c23d80`, modernization 병합 `c3d3473`, CMD-04-0001 통합 기준 병합 `fbefb06`
-- push 상태: 미푸시
+- push 상태: 도메인 구현 원격 포함 확인 (`772ca80`)
 
 ## 현재 작업
 
@@ -34,10 +34,10 @@
 - 변경 파일: 길드가입조건 policy/service/repository contract/test/evidence와 이 체크포인트.
 - 검증 결과: 실제 main.js에서 broad prefix, 두 번째 token parse, getMyGuildId, isGuildLeader(마스터+부길마), guildData 단일 저장을 확인했다. evidence validator, 집중 테스트 7건, 전체 runtime 144 tests, typecheck/build가 통과했다.
 - 남은 위험: MariaDB adapter·dispatch·합성 DB 재시작 검증과 legacy role/subMasters import 정합화는 coordinator 통합에서 필요하다. WBS의 castle table 매핑은 현재 명령 경로에서 사용되지 않았다.
-- 정확한 다음 행동: evidence validator와 전체 runtime 회귀를 실행하고 source commit을 push한 뒤 coordinator 통합 실행으로 인계한다.
+- 정확한 다음 행동: coordinator 실행 `관문-CMD-04-0002-20260813T072522Z-6w7khl`이 MariaDB adapter·dispatch·restart/replay를 통합한다.
 
 ## 영속성
 
-- 체크포인트 Git 추적: 아직 커밋되지 않음
-- 원격 포함 상태: 미포함
+- 체크포인트 Git 추적: `772ca80` 포함, 이 인계 상태를 후속 커밋으로 고정
+- 원격 포함 상태: 도메인 구현 포함 확인
 - 보안: 비밀 값과 운영 개인정보를 기록하지 않음
