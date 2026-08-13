@@ -29,7 +29,8 @@
 - 브랜치: `feature/workflow`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/workflow`
-- 스킬 원본 푸시 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
+- 스킬 최초 생성 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
+- 중복 선점 방지 강화 커밋: `1a84c330c074149cc77b7a6dd0d259bb46267da6`
 - 원격 동기화 상태: `feature/workflow` 푸시 및 `feature/prod` 반영 완료
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
@@ -54,6 +55,8 @@
 - 활성 Lease 60분, 중요 단계 Heartbeat, 만료 후 재선점, 충돌 시 자동 중단과 명시적 인계 절차를 고정했다.
 - 선점 원장 도입 전 미완료 행은 자동 재개하지 않고 `고도화 복구 WBSID` 명령으로만 증거 기반 소유권을 재발급하도록 분리했다.
 - `작업_선점` A1:N3에서 헤더·레인·상태 validation을 API로 재확인하고 Google Sheets 화면에서 고정 헤더·필터·열 너비를 확인했다.
+- 강화 커밋 `1a84c33`을 `feature/workflow`에 푸시하고 `feature/prod`의 `edff8ca`로 반영했다.
+- 로컬 Codex 설치본을 갱신하고 저장소 원본과 SHA-256 `18BF9259...AD4BC6E` 일치를 확인했다.
 
 ## 진행 중인 작업
 
