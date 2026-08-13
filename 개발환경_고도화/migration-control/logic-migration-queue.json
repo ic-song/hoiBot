@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "mode": "continuous",
+  "statusFlow": ["queued", "investigating", "implementing", "synthetic_verification", "verified", "pushed"],
+  "current": "pet-food-box-craft",
+  "items": [
+    {"id":"pet-food-box-craft","command":"/펫먹이조합","status":"implementing"},
+    {"id":"random-box-craft","command":"/랜덤조합","status":"queued"},
+    {"id":"boutique-box-craft","command":"/부띠끄조합","status":"queued"},
+    {"id":"collection-creation-open","command":"/컬렉션창조오픈","status":"queued"},
+    {"id":"royal-open","command":"/로열오픈","status":"queued"},
+    {"id":"genesis-open","command":"/창세오픈","status":"queued"},
+    {"id":"collection-genesis-open","command":"/컬렉션창세오픈","status":"queued"},
+    {"id":"mini-pet-creation-craft","command":"/미니펫창조조합","status":"queued"},
+    {"id":"irasshaimase","command":"/이랏싸이마쎄","status":"queued"},
+    {"id":"mini-pet-genesis-craft","command":"/미니펫창세조합","status":"queued"}
+  ],
+  "refillPolicy": "현재 작업 창이 완료되면 command inventory의 다음 미이관 기능을 source order로 추가한다."
+}
