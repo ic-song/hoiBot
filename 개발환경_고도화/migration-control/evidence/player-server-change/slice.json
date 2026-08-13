@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "player-server-change",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/서버이동"
+    ],
+    "sourceFiles": [
+      "main.js"
+    ],
+    "guards": [
+      "legacy: msg.startsWith(\"/서버이동 \") && isAdmin(sender)",
+      "ported adapter: /^\\/서버이동\\s+\\S.+$/ plus active player.server.assign permission and active server-name suffix resolution",
+      "suffix guide text after the server name is rejected as INVALID_SERVER"
+    ],
+    "helpers": [
+      "isAdmin"
+    ],
+    "automaticFlows": []
+  },
+  "legacyData": {
+    "files": [
+      "data/member.json"
+    ],
+    "readPaths": [
+      "member.<target>.server",
+      "roomToServer values",
+      "admin identity list through isAdmin"
+    ],
+    "writePaths": [
+      "member.<target>.server"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "002_event_processing.sql",
+      "005_player_profile.sql",
+      "006_admin_auth.sql",
+      "008_admin_iris_identity.sql",
+      "009_event_identity_links.sql",
+      "017_admin_authorization_lifecycle.sql",
+      "018_remove_legacy_admin_authorization.sql"
+    ],
+    "tables": [
+      "game_servers",
+      "player_profiles",
+      "external_identities",
+      "admin_operators",
+      "admin_operator_external_identities",
+      "admin_operator_roles",
+      "admin_role_permissions",
+      "event_inbox",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "constraints": [
+      "player_profiles.game_server_id -> game_servers.id",
+      "admin_operator_external_identities.external_identity_id unique",
+      "operations(idempotency_scope, idempotency_key) unique",
+      "command_executions(event_id, command_code) unique",
+      "command_executions.event_id -> event_inbox.event_id"
+    ],
+    "transactionBoundary": "permission and target resolution precede one MariaDB transaction covering optimistic profile update, operation, audit, command execution, internal event, Iris reply, and completed result"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 3aea400fffb6e0de2c200713e2590bd45d3ac30cd321edcfffe988da4e92e41e",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixture resets the synthetic target profile to server one/version one; command event UUID and operation idempotency key prevent duplicate mutation",
+    "checks": [
+      "default operational DB name hoibot was rejected before fixture or probe mutation",
+      "synthetic fixture applied only after explicitly selecting hoibot_schema_design",
+      "unauthorized Kakao synthetic identity returned FORBIDDEN with no operation",
+      "valid command changed player 900000002 to synthetic-server-two and version 2",
+      "same event replay returned the same result without a second version increment",
+      "one operation, one audit, one command execution, and two outbox messages were stored",
+      "operational data snapshot was not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts",
+      "개발환경_고도화/runtime/src/player/change-player-server-service.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts transaction client"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/scripts/probe-player-server-change-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic-admin-alpha, synthetic-non-admin-gamma, 테스트베타, 합성 테스트 서버 2"
+    ],
+    "comparisonMode": "legacy-visible success/error text and intended server mutation, extended with durable transaction, optimistic version, audit, outbox, and event idempotency checks",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "전체 기능 검증 후 legacy member.json write를 중지하고 최종 snapshot 시각을 고정",
+    "finalImportPlan": "시험 DB를 폐기·재생성한 뒤 최신 전체 운영 snapshot의 회원 서버 값을 player_profiles.game_server_id로 reconcile",
+    "smokePlan": "승인된 운영 관리자 identity로 비운영 대상의 서버 변경·재전송·Iris reply를 확인하고 audit/outbox를 대조",
+    "rollbackPlan": "mutation 활성화 전에는 Rhino 유지; 활성화 후에는 최종 import 전 MariaDB backup과 operation/audit 증거를 기준으로 복구"
+  },
+  "risks": [
+    "legacy /서버이동은 in-memory member.server를 바꾼 뒤 saveJsonFile을 호출하지 않아 재시작 시 유실될 수 있으며, 포팅본은 이 결함을 재현하지 않고 즉시 transaction commit한다",
+    "실제 운영 관리자 Kakao identity 연결과 권한은 최종 운영 준비 단계에서 별도 승인·검증해야 한다",
+    "실제 운영 서버명 중 접미사가 겹치는 조합은 전체 운영 snapshot을 확보한 뒤 길이 우선 해석 결과를 reconcile해야 한다",
+    "실제 전체 운영 데이터 이관과 운영방 smoke는 아직 실행하지 않았다"
+  ]
+}
