@@ -33,6 +33,7 @@
 - evidence schema·JSON parse: 통과
 - 운영 DB명 `hoibot` probe guard: 차단 확인
 - `hoibot_schema_design` DB probe 2회: 재고 2종·원장·감사·outbox·멱등성 통과
+- 구현 커밋: `f0746af83768f85f4517ee80a7f51b4c39763990`
 
 ## 산출물
 
