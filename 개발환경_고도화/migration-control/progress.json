@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 2,
+  "updatedAt": "2026-08-13T13:27:00+09:00",
+  "project": "hoibot-modernization-phase-1",
+  "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
+  "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
+  "sourceOfTruth": "개발환경_고도화/DECISIONS.md",
+  "executionSequence": [
+    "database-design",
+    "synthetic-data-load",
+    "logic-port",
+    "synthetic-parity",
+    "final-operational-import"
+  ],
+  "branchEvidence": {
+    "required": "feature/modernization",
+    "observed": "feature/modernization",
+    "head": "dda9b89242ad3ac820d78371df7f9dd2ba890c72",
+    "upstream": "origin/feature/modernization",
+    "upstreamHead": "dda9b89242ad3ac820d78371df7f9dd2ba890c72",
+    "workingTreeClean": false,
+    "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
+    "baselineMergeSafe": false,
+    "reason": "기존 캐릭터 MVP 작업을 포함한 미커밋 변경을 보존해야 한다."
+  },
+  "environmentEvidence": {
+    "runtime": "TypeScript + Node.js 24 + Fastify 5",
+    "database": "MariaDB 11.8.8",
+    "databaseConnected": true,
+    "transactionRollbackVerified": true,
+    "targetDeployment": "Hyper-V Ubuntu Docker Compose",
+    "environmentFingerprintVerified": false
+  },
+  "sourceSnapshotEvidence": {
+    "path": "data",
+    "readOnly": true,
+    "fileCount": 33,
+    "memberCount": 610,
+    "anomalyCount": 1,
+    "rootHash": "b7dfec6b7cb82c579f1a834434f6286c57e6364cd759b1fbcedc2a25db3f0014",
+    "completedImportRunFound": false,
+    "productionCutoverArtifact": false
+  },
+  "phases": [
+    {
+      "id": "control-plane",
+      "name": "제어면 구축",
+      "completed": true,
+      "lastVerifiedGate": "cross-pc-recovery-ready",
+      "prerequisites": [],
+      "evidence": [
+        "개발환경_고도화/migration-control/CHECKPOINT.md",
+        "개발환경_고도화/migration-control/MASTER_PLAN.md",
+        "개발환경_고도화/migration-control/progress.json",
+        "개발환경_고도화/runtime/scripts/resume-migration.ts",
+        ".codex/skills/hoibot-migrate-legacy-rdb"
+      ],
+      "remaining": []
+    },
+    {
+      "id": "current-state-inventory",
+      "name": "현행 전체 파악",
+      "completed": false,
+      "lastVerifiedGate": "command-inventory-recorded",
+      "prerequisites": [
+        "control-plane"
+      ],
+      "evidence": [
+        "개발환경_고도화/migration-control/inventory/data-stores.json",
+        "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",
+        "개발환경_고도화/migration-control/inventory/db-coverage.json",
+        "개발환경_고도화/migration-control/scripts/build-db-coverage.mjs"
+      ],
+      "remaining": [
+        "자동 처리 inventory 생성",
+        "저장소 snapshot에 없는 authoritative Android 파일 2개의 실제 구조 확인",
+        "모든 명령·자동 흐름을 기능 슬라이스에 배정"
+      ]
+    },
+    {
+      "id": "wbs-and-slice-design",
+      "name": "이관 계획과 WBS 확정",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "current-state-inventory"
+      ],
+      "evidence": [],
+      "remaining": [
+        "현행 inventory를 기능 슬라이스와 의존성 WBS로 변환"
+      ]
+    },
+    {
+      "id": "slice-migrations",
+      "name": "DB 설계·임시데이터·로직·검증",
+      "completed": false,
+      "lastVerifiedGate": "raid-strike-seal-craft-synthetic-parity",
+      "prerequisites": [
+        "wbs-and-slice-design"
+      ],
+      "evidence": [
+        "개발환경_고도화/migration-control/evidence/pet-info/slice.json",
+        "개발환경_고도화/migration-control/evidence/pet-rename/slice.json",
+        "개발환경_고도화/migration-control/evidence/pet-rename-ticket-craft/slice.json",
+        "개발환경_고도화/migration-control/evidence/castle-battle-reset-craft/slice.json",
+        "개발환경_고도화/migration-control/evidence/raid-strike-seal-craft/slice.json"
+      ],
+      "remaining": [
+        "전체 관계형 DB 설계",
+        "비식별 임시데이터 적재",
+        "모든 기능 슬라이스의 로직 이관과 임시데이터 parity 완료"
+      ]
+    },
+    {
+      "id": "integrated-verification",
+      "name": "전체 통합 검증",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "slice-migrations"
+      ],
+      "evidence": [],
+      "remaining": [
+        "전체 회귀·재시작·backup/restore·Ubuntu 재현 검증"
+      ]
+    },
+    {
+      "id": "production-cutover",
+      "name": "전체 운영 데이터 최종 이관",
+      "completed": false,
+      "lastVerifiedGate": null,
+      "prerequisites": [
+        "integrated-verification",
+        "운영 승인"
+      ],
+      "evidence": [],
+      "remaining": [
+        "최종 snapshot 이관과 Iris 단독 운영 전환"
+      ]
+    }
+  ],
+  "resumeCheckerEvidence": {
+    "localResumeSafe": false,
+    "crossPcReady": true,
+    "checkpointTracked": true,
+    "checkpointPushed": true,
+    "snapshotMatched": true,
+    "databaseReachable": true,
+    "localMigrationCount": 31,
+    "appliedMigrationCount": 31,
+    "migrationChecksumMismatches": [],
+    "completedImportRunFound": false,
+    "typecheckPassed": true,
+    "verifiedAt": "2026-08-13T10:52:00+09:00"
+  },
+  "dataInventoryEvidence": {
+    "generator": "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",
+    "artifact": "개발환경_고도화/migration-control/inventory/data-stores.json",
+    "repositoryFileCount": 35,
+    "jsonFileCount": 33,
+    "storeCandidateCount": 47,
+    "classificationCounts": {
+      "authoritative": 26,
+      "reference": 8,
+      "reconciliation-only": 11,
+      "excluded": 2
+    },
+    "unknownCount": 0,
+    "invalidJsonCount": 0,
+    "missingAuthoritativeOperationalFiles": [
+      "/sdcard/호이랜드/petHomeActivityData.json",
+      "/sdcard/호이랜드/petHomePlacedFurniture.json"
+    ],
+    "rootHashMatched": true,
+    "verifiedAt": "2026-08-11T16:41:00+09:00"
+  },
+  "databaseCoverageEvidence": {
+    "generator": "개발환경_고도화/migration-control/scripts/build-db-coverage.mjs",
+    "artifact": "개발환경_고도화/migration-control/inventory/db-coverage.json",
+    "authoritativeStoreCount": 26,
+    "fullDomainImportCount": 0,
+    "partialDomainImportCount": 6,
+    "manifestOnlyCount": 18,
+    "sourceSnapshotMissingCount": 2,
+    "rawPayloadStored": false,
+    "perFileRecordCountStored": false,
+    "dbApplyAllowed": false,
+    "verifiedAt": "2026-08-11T16:45:00+09:00"
+  },
+  "databaseDesignEvidence": {
+    "migration": "개발환경_고도화/runtime/migrations/031_pet_info_projection.sql",
+    "erd": "개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md",
+    "dockerDatabase": "hoibot_schema_design",
+    "migrationCount": 31,
+    "baseTableCount": 125,
+    "foreignKeyCount": 178,
+    "columnCount": 893,
+    "representativeNewTableCount": 14,
+    "columnErdGenerator": "개발환경_고도화/runtime/scripts/generate-database-erd.ts",
+    "productionReinstallGuide": "개발환경_고도화/migration-control/schema/db-table-init.md",
+    "migrationChecksumManifestCount": 31,
+    "operationalDataLoaded": false,
+    "validated": true,
+    "verifiedAt": "2026-08-13T10:52:00+09:00"
+  },
+  "syntheticMissingDataEvidence": {
+    "decisionDraft": "DEC-064",
+    "decisionSourcePushed": false,
+    "pushedPolicyArtifact": "개발환경_고도화/migration-control/fixtures/missing-operational/README.md",
+    "pushedCommit": "03adf05a58935324e4ae7ec23566ca0cd7b861bf",
+    "fixtureDirectory": "개발환경_고도화/migration-control/fixtures/missing-operational",
+    "validator": "개발환경_고도화/migration-control/scripts/validate-synthetic-missing-data.mjs",
+    "fixtureFiles": [
+      "petHomeActivityData.json",
+      "petHomePlacedFurniture.json"
+    ],
+    "syntheticOwnerCount": 1,
+    "syntheticPlacedFurnitureItemCount": 2,
+    "isolatedFromOperationalDataDirectory": true,
+    "operationalRootHashUnchanged": true,
+    "trialDatabaseResetBeforeCutoverRequired": true,
+    "actualOperationalFilesRequiredForFinalImport": true,
+    "productionEvidenceAllowed": false,
+    "validated": true,
+    "verifiedAt": "2026-08-11T16:53:00+09:00"
+  },
+  "syntheticRelationalDataEvidence": {
+    "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
+    "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
+    "database": "hoibot_schema_design",
+    "fixtureChecksum": "2d0a26ba87644215c8d6bcc834256132a82fddd21da992511c75891c63b3a778",
+    "statementCount": 70,
+    "verifiedTableCount": 35,
+    "syntheticPlayerCount": 3,
+    "repeatApplyVerified": true,
+    "verifyOnlyPassed": true,
+    "productionDatabaseGuardVerified": true,
+    "operationalSnapshotTouched": false,
+    "validated": true,
+    "verifiedAt": "2026-08-13T13:27:00+09:00"
+  },
+  "commandInventoryEvidence": {
+    "generator": "개발환경_고도화/migration-control/scripts/build-command-inventory.mjs",
+    "artifact": "개발환경_고도화/migration-control/inventory/commands.json",
+    "registryCommandGroups": 1132,
+    "activeCommandGroups": 837,
+    "sourceLiteralFound": 820,
+    "unverifiedActive": 17,
+    "deletedLiteralReviewRequired": 75,
+    "unregisteredSourceCandidates": 16,
+    "validated": true,
+    "verifiedAt": "2026-08-11T17:48:00+09:00"
+  },
+  "knownSlices": [
+    {
+      "id": "player-profile-read",
+      "commands": [
+        "/내정보"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-exact-parity"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/player/maria-profile-repository.ts",
+        "개발환경_고도화/runtime/src/player/get-my-profile-service.ts",
+        "개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import와 실운영방 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "player-server-change",
+      "commands": [
+        "/서버이동"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "permission-denial",
+        "idempotency-audit-outbox"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts",
+        "개발환경_고도화/runtime/src/player/change-player-server-service.ts",
+        "개발환경_고도화/runtime/scripts/probe-player-server-change-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/player-server-change/slice.json"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import, 운영 관리자 identity 연결, 실운영방 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "player-signup",
+      "commands": [
+        "/가입",
+        "시작한다",
+        "/시작한다",
+        "거절한다",
+        "/거절한다"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "restart-persistence",
+        "pre-signup-attendance-transfer",
+        "idempotency-audit-outbox"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql",
+        "개발환경_고도화/runtime/src/signup/signup-service.ts",
+        "개발환경_고도화/runtime/src/signup/create-initial-player.ts",
+        "개발환경_고도화/runtime/scripts/probe-signup-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/player-signup/slice.json"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import, unresolved attendanceLight identity reconciliation, 실운영방 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "pet-creation",
+      "commands": [
+        "/펫생성 [이름]"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "starter-relations-atomicity",
+        "idempotency-audit-outbox"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/migrations/030_pet_creation_foundations.sql",
+        "개발환경_고도화/runtime/src/pet/pet-creation-policy.ts",
+        "개발환경_고도화/runtime/src/pet/pet-creation-service.ts",
+        "개발환경_고도화/runtime/scripts/probe-pet-creation-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/pet-creation/slice.json"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import, 실운영방 reply 순서와 /펫정보 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "pet-info",
+      "commands": [
+        "/펫정보",
+        "/ㅎ",
+        "ㅁㅁㅁ"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-read-parity",
+        "ordered-replies",
+        "operational-database-guard"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/migrations/031_pet_info_projection.sql",
+        "개발환경_고도화/runtime/src/pet/pet-info-service.ts",
+        "개발환경_고도화/runtime/src/pet/maria-pet-info-repository.ts",
+        "개발환경_고도화/runtime/scripts/probe-pet-info-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/pet-info/slice.json"
+      ],
+      "nextRequiredGate": "rank projections, broader rare-effect fixtures, final operational snapshot import and live-room smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "pet-rename",
+      "commands": [
+        "/펫이름 [이름]"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "inventory-ledger-atomicity",
+        "idempotency-audit-outbox",
+        "operational-database-guard"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/pet/pet-rename-service.ts",
+        "개발환경_고도화/runtime/test/pet-rename.test.ts",
+        "개발환경_고도화/runtime/scripts/probe-pet-rename-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/pet-rename/slice.json"
+      ],
+      "nextRequiredGate": "final operational snapshot import, normalized castleSiegeFlag reconciliation and live-room smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "pet-rename-ticket-craft",
+      "commands": [
+        "/펫이름조합"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "inventory-and-currency-ledger-atomicity",
+        "idempotency-audit-outbox",
+        "operational-database-guard"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/pet/pet-rename-ticket-craft-service.ts",
+        "개발환경_고도화/runtime/test/pet-rename-ticket-craft.test.ts",
+        "개발환경_고도화/runtime/scripts/probe-pet-rename-ticket-craft-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/pet-rename-ticket-craft/slice.json"
+      ],
+      "nextRequiredGate": "final operational snapshot import, normalized castleSiegeFlag and full rank-decoration reconciliation, live-room smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "castle-battle-reset-craft",
+      "commands": [
+        "/캐슬대전조합",
+        "/캐슬대전조합 [수량]"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "inventory-ledger-atomicity",
+        "idempotency-audit-outbox",
+        "operational-database-guard"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/castle/castle-battle-reset-craft-service.ts",
+        "개발환경_고도화/runtime/test/castle-battle-reset-craft.test.ts",
+        "개발환경_고도화/runtime/scripts/probe-castle-battle-reset-craft-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/castle-battle-reset-craft/slice.json"
+      ],
+      "nextRequiredGate": "final operational snapshot import, lost-unsaved legacy mutation reconciliation and live-room smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "raid-strike-seal-craft",
+      "commands": ["/레이드인장조합", "/레이드인장조합 [수량]"],
+      "completedGates": [
+        "command-investigation", "database-design", "synthetic-data-load", "logic-port",
+        "synthetic-mutation-parity", "inventory-and-currency-ledger-atomicity",
+        "idempotency-audit-outbox", "operational-database-guard"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/src/raid/raid-strike-seal-craft-service.ts",
+        "개발환경_고도화/runtime/test/raid-strike-seal-craft.test.ts",
+        "개발환경_고도화/runtime/scripts/probe-raid-strike-seal-craft-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/raid-strike-seal-craft/slice.json"
+      ],
+      "nextRequiredGate": "final operational snapshot import, lost-unsaved legacy mutation and rank-decoration reconciliation, live-room smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    }
+  ]
+}

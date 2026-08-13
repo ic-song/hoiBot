@@ -1,0 +1,4 @@
+interface:
+  display_name: "hoiBot Iris 진단"
+  short_description: "Iris 이벤트·DB·복호화 장애를 계층별로 진단"
+  default_prompt: "Use $hoibot-iris-diagnostics to diagnose this hoiBot Iris event or decryption issue end to end."
