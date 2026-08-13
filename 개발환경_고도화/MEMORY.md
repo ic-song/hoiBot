@@ -1,16 +1,20 @@
 # hoiBot 고도화 대화 메모리
 
-최종 갱신일: 2026-08-07
+최종 갱신일: 2026-08-11
 
 이 문서는 새 세션이 작업을 이어받기 위한 최신 상태 스냅샷이다. 대화 전문과 완료 과정은 누적하지 않는다. 확정 결정은 `DECISIONS.md`, 기술 근거는 `references/`를 따른다.
 
 ## 현재 목표
 
-- PC/redroid의 KakaoTalk + Iris를 입출력 계층으로 사용하고 기존 Rhino/JSON hoiBot을 TypeScript·Fastify·MariaDB 서버로 이전한다.
-- Iris, 홈페이지, Discord, 외부 API가 같은 Application Service를 사용하게 한다.
+- 원이 콘셉트 캐릭터챗은 Kernote의 `프로젝트/character-chat-mvp/`로 코드 이관 중이다. hoiBot과는 현재 PC의 Hyper-V·redroid·KakaoTalk/Iris 실행 환경과 HTTP 계약만 공유하며 hoiBot Server·DB·웹에서는 실행하지 않는다.
+- MessengerBotR/Rhino 기반 hoiBot을 네 단계 사업으로 이전한다: 1차 Iris·서버·운영 로직, 2차 관리자 페이지, 3차 사용자 화면, 4차 Discord 또는 Telegram 외부 플랫폼 연동.
+- 현재 최우선 목표인 1차는 기존 `main.js`와 `Info.js`의 명령·helper·관리자·자동 처리·JSON 저장 흐름 전체와 운영 데이터를 Iris, hoiBot Server와 MariaDB로 완전히 이전하는 것이다.
+- 현재 견적에는 1차만 포함한다. 관리자 페이지, 사용자 화면, Discord·Telegram 연동은 이번 견적에서 제외하고 각각 후속 단계로 별도 산정한다.
+- 관리자·사용자 화면의 기존 선행 구현은 보존하되 사업 공개와 검수는 2차·3차 순서를 따른다.
+- 모든 채널과 화면은 같은 Application Service를 사용하며 MariaDB에 직접 접근하지 않는다.
 - 1차 검증 기간에는 모든 활성·미만료 오픈채팅방의 이벤트를 관찰하되, 명령·회원 인증·게임 기능은 지정방에서만 실행한다. 검증 뒤에는 설정만 바꿔 지정방 관찰로 제한한다.
 - 집 PC와 운영 PC를 동일한 Docker image, migration, 환경변수 계약으로 재현한다.
-- 전체 기능을 별도 환경에서 검증한 뒤 Rhino를 중단하고 Iris 서버로 일괄 전환한다.
+- 1차는 일부 명령의 부분 전환이 아니라 전체 운영 명령 parity, JSON 전체 이관·검증과 Rhino 중단 후 Iris 단독 운영까지 완료해야 한다. 관리자·사용자 웹 공개와 외부 플랫폼 연동은 후속 단계다.
 
 ## 현재 진행 위치
 
@@ -24,6 +28,14 @@
 - 원본 `data/*.json` 33개는 읽기 전용 이전 원본이며 운영 데이터 apply/cutover는 아직 하지 않았다.
 
 ## 구현 완료
+
+### 원이 콘셉트 캐릭터챗 이관 원본
+
+- Character MVP Service, migration `028`, `/character/woni` 화면과 관련 통합 hunk는 Kernote 독립 프로젝트 이관 후 이 작업트리에서 제거했다.
+- 2026-08-11 기존 결합 상태에서 서버 테스트 98개, 서버 typecheck·build와 프런트 build가 통과했다.
+- Kernote 독립 프로젝트의 1차 타입 검사·테스트·빌드도 통과했다.
+- 캐릭터 전용 파일과 hunk만 제거했으며 다른 미커밋 작업은 보존했다.
+- 실제 migration, Agent API와 Iris 실전 송수신은 수행하지 않았다.
 
 ### Iris와 이벤트 처리
 

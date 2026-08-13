@@ -1,6 +1,6 @@
 # hoiBot 고도화 확정 결정
 
-최종 갱신일: 2026-08-07
+최종 갱신일: 2026-08-11
 
 이 문서는 hoiBot 고도화에서 사용자가 명시적으로 확정한 결정의 단일 기준이다.
 `MEMORY.md` 또는 `references/` 문서와 내용이 충돌하면 이 문서를 우선한다.
@@ -202,7 +202,8 @@
 ### DEC-021: 별도 환경 완성 후 Iris 일괄 운영 전환
 
 - 결정일: 2026-08-04
-- 상태: `ACTIVE`
+- 상태: `SUPERSEDED`
+- 대체 결정: `DEC-059` (2026-08-10)
 - 결정: 기능 구현과 검증은 `feature/modernization`의 별도 테스트 환경에서 수직 기능 단위로 진행하되, 운영 전환은 전체 기능 검증 후 기존 Rhino를 중단하고 Iris 서버로 일괄 수행한다.
 - 전환 절차: 최종 JSON 스냅샷과 checksum 생성, Rhino 변경 동결, MariaDB import/reconciliation, Rhino 중단, Iris 연결, 읽기 전용 smoke, mutation 일괄 활성화 순서로 진행한다.
 - 롤백: mutation 활성화 전에는 JSON/Rhino로 복귀할 수 있다. mutation 활성화 후에는 이전 서버 이미지 또는 MariaDB backup/point-in-time 복구만 사용하며 오래된 JSON으로 역전환하지 않는다.
@@ -579,9 +580,91 @@
 - 보관 정책: 수정 전·후 본문은 MariaDB에 새로 저장하지 않으며, 각 열람의 감사 사실만 남긴다. 다중 수정 이력은 별도 검증 전까지 보장하지 않는다.
 - 적용 범위: 관리자 moderation incident REST API, redroid 실시간 조회 adapter, 관리자 모니터링 화면
 
+### DEC-059: MessengerBotR에서 Iris로 전환하는 4단계 사업 범위
+
+- 결정일: 2026-08-10
+- 상태: `ACTIVE`
+- 사업 정의: 기존 MessengerBotR/Rhino 기반 hoiBot을 Iris와 hoiBot Server 기반으로 이전하되, 운영 공개 범위를 네 단계로 분리한다.
+- 1차: `Iris -> hoiBot Server` 연결과 합의된 hoiBot 운영 로직을 이전·검증한 뒤 Iris 기반으로 운영한다. 해당 계약·예산에서 이전할 명령과 도메인 목록은 착수 전에 별도로 동결한다.
+- 2차: hoiBot 관리자 페이지를 공개한다. 운영자 인증·인가, 회원·운영 데이터 관리, 감사와 필요한 모니터링 기능을 실제 서버 API에 연결한다.
+- 3차: hoiBot 사용자 화면을 공개한다. 회원가입·provider 인증, 로그인, 내정보와 검증이 완료된 사용자 기능만 실제 데이터 기준으로 제공한다.
+- 4차: Discord 또는 Telegram 등 외부 플랫폼을 연동한다. 외부 플랫폼도 별도 게임 로직이나 DB 직접 접근 없이 기존 hoiBot Server의 동일한 Application Service와 identity 체계를 사용한다.
+- 단계 원칙: 다음 단계 구현이 일부 선행되어 있어도 사업 공개·검수는 위 순서를 따른다. 각 단계는 독립적으로 범위·금액·완료 조건을 확정할 수 있다.
+- 범위 제외: 신규 게임 콘텐츠와 별도 카카오톡 텍스트 방탈출 서비스는 MessengerBotR 전환 기본 범위에 자동 포함하지 않고 별도 사업으로 산정한다.
+- 대체 관계: 전체 기능 완성 후 한 번에 Iris 운영으로 전환하던 `DEC-021`을 대체하며, 1차에서 합의된 운영 로직부터 Iris로 전환할 수 있다.
+- 적용 범위: 사업 견적, 단계별 개발·검수·운영 공개, 기존 기능 이전 우선순위와 외부 플랫폼 확장
+
+### DEC-060: 현재 견적은 1차 Iris 운영 전환만 산정
+
+- 결정일: 2026-08-10
+- 상태: `SUPERSEDED`
+- 대체 결정: `DEC-061` (2026-08-10)
+- 결정: 현재 계약·견적 범위는 `DEC-059`의 1차인 `Iris -> hoiBot Server 연결 + 합의된 기존 운영 로직 이전 + 실제 운영 전환`만 대상으로 한다.
+- 포함 범위: 공통 Iris 입출력 기반, 선택 명령과 연결 도메인 로직 이전, 해당 데이터 접근·저장, 운영 배치, 오류·중복 방지, 검수와 전환 절차다.
+- 별도 범위: 관리자 페이지 공개, 사용자 화면 공개, Discord·Telegram 등 외부 플랫폼 연동은 현재 견적에서 제외하고 후속 단계에서 별도 산정한다.
+- 산정 원칙: Iris 연결 자체가 아니라 이전할 명령·도메인의 복잡도, 연관 데이터 수, 변경 트랜잭션, 운영 전환과 하자 대응 범위를 기준으로 금액을 계산한다.
+- 적용 범위: 현재 제안서, 견적서, 1차 작업 목록과 완료 조건
+
+### DEC-061: 1차는 MessengerBotR·JSON 전체 운영 시스템 전환
+
+- 결정일: 2026-08-10
+- 상태: `ACTIVE`
+- 결정: 1차 사업은 현재 MessengerBotR/Rhino와 JSON 파일로 운영하는 hoiBot 전체를 Iris, hoiBot Server와 MariaDB 기반으로 완전히 이전하는 작업이다.
+- 로직 범위: 기존 `main.js`와 `Info.js` 전체를 이전 대상으로 삼는다. 두 파일의 명령 분기, 공통 helper, 관리자 기능, 예약·자동 처리, 데이터 조회·변경과 JSON load/save 흐름을 기능 단위로 hoiBot Server의 Application Service와 repository로 이전한다. 일부 명령이나 선택 도메인만 옮기는 부분 이전은 1차 완료로 보지 않는다.
+- 데이터 범위: 현재 JSON 운영 데이터 전체를 도메인별 MariaDB 스키마로 변환·이관하고 건수, 잔액, 아이템 소유권과 관계 무결성을 검증한다. 운영 전환 후 MariaDB를 단일 기준 데이터로 사용한다.
+- 입출력 범위: KakaoTalk 메시지 수신과 답장은 MessengerBotR이 아니라 redroid의 Iris와 hoiBot Server가 담당한다.
+- 운영 범위: 자동 실행·재시작, 중복 방지, 트랜잭션, 감사·원장, 백업·복원, 운영 전환과 롤백 절차까지 포함한다.
+- 현재 제외: 관리자 웹페이지 공개, 사용자 웹화면 공개, Discord·Telegram 등 외부 플랫폼 연동과 신규 게임 콘텐츠는 1차 견적에 포함하지 않는다. 다만 1차 운영에 필요한 기존 카카오톡 관리자 명령은 이전 대상에 포함한다.
+- 완료 조건: 전체 운영 명령 parity, 최종 JSON import와 reconciliation, 실운영방 smoke, 변경 명령 검증, 재시작·백업 복원, Rhino 중단 후 Iris 단독 운영을 모두 통과해야 한다.
+- 대체 관계: 선택한 일부 로직만 이전할 수 있도록 정의한 `DEC-060`의 1차 범위를 전체 운영 시스템 이전으로 대체한다.
+- 적용 범위: 1차 사업 제안서·견적서·WBS·검수 기준·운영 전환 계획
+
+### DEC-062: 원이 콘셉트 캐릭터챗 내부 MVP의 현재 PC 격리 실행
+
+- 결정일: 2026-08-11
+- 상태: `SUPERSEDED` (`DEC-063`으로 대체)
+- 결정: 원이 콘셉트 캐릭터챗 내부 MVP는 현재 PC의 `C:\Users\user\Desktop\hoiBot_modernization`, `feature/modernization` 작업트리에서 실행한다.
+- 입출력: 현재 PC의 redroid/Iris가 카카오톡 메시지 입출력을 담당하고 `개발환경_고도화/runtime/`의 Node.js hoiBot Server가 Agent, 상태 검증, MariaDB 저장과 outbox를 담당한다.
+- 격리: 기능 플래그는 기본 OFF로 유지하며, 활성화할 때 지정 오픈채팅방과 내부 사용자 allowlist를 모두 적용한다. 기존 `feature/prod`, Rhino `main.js`와 `Info.js`에는 캐릭터챗 코드를 넣지 않는다.
+- 공개 경계: 이 결정은 내부 구현·자동 검증 환경만 확정한다. `feature/prod` 반영, 실행 중 서버 설정 변경, 실제 테스트방 활성화, 외부 공개와 유료화는 포함하지 않는다.
+- 사업 범위: 이 MVP는 `DEC-061`의 MessengerBotR 운영 시스템 이전과 분리된 신규 내부 실험이며 1차 이전 완료 범위에 자동 포함하지 않는다.
+- 적용 범위: Character MVP Service, Iris command dispatch, MariaDB migration, 내부 웹 화면과 로컬 검증
+
+### DEC-063: 캐릭터챗 코드의 Kernote 독립 프로젝트 이관
+
+- 결정일: 2026-08-11
+- 상태: `ACTIVE`
+- 결정: 캐릭터챗 코드는 `C:\Users\user\Desktop\Kernote\프로젝트\character-chat-mvp`로 이관하며 hoiBot 런타임에서 실행하지 않는다.
+- 공유 경계: 현재 PC의 Hyper-V·redroid·KakaoTalk/Iris 실행 환경과 Iris HTTP 계약만 공유한다.
+- 분리 경계: hoiBot Server, MariaDB, 웹, outbox, 브랜치와 운영 배포는 캐릭터챗의 실행·저장·배포 대상이 아니다.
+- 정리 조건: 독립 프로젝트의 자동 검증 후 hoiBot 작업트리에서 캐릭터 전용 파일과 hunk만 제거하고 다른 미커밋 작업은 보존한다.
+- 비밀 관리: OpenAI 키는 Kernote 암호화 보관소에서 대상 프로세스에 메모리 주입하며 hoiBot `.env` 계열 파일로 복사하지 않는다.
+- 적용 범위: `DEC-062`의 Character MVP 로컬 변경과 관련 문서
+
+### DEC-064: 누락 운영 파일의 합성 데이터 개발과 운영 전 시험 DB 초기화
+
+- 결정일: 2026-08-11
+- 상태: `ACTIVE`
+- 개발·시험 데이터: 현재 Git snapshot에 없는 `petHomeActivityData.json`, `petHomePlacedFurniture.json`은 개인정보가 없는 별도 합성 fixture로 DB 설계, importer 구현과 기능 검증을 진행한다.
+- 격리: 합성 fixture는 운영 원본 `data/`와 분리하며 운영 snapshot root hash, 운영 reconciliation과 최종 import 증거에 포함하지 않는다.
+- 초기화 경계: 운영 오픈 전 합성 데이터가 들어간 시험용 MariaDB를 폐기·재생성하고 승인된 migration만 새로 적용한다. Android/Rhino 운영 원본은 초기화하거나 덮어쓰지 않는다.
+- 최종 이관: 최신 전체 운영 snapshot을 다시 확보해 파일 목록과 checksum을 고정하고, 실제 운영 데이터로 전체 import와 reconciliation을 통과한 뒤 운영 전환한다.
+- 차단 조건: 합성 fixture 또는 합성 import run이 남아 있거나 실제 누락 파일의 확보·검증이 끝나지 않으면 운영 전환하지 않는다.
+- 적용 범위: 1차 데이터 설계, disposable rehearsal, 최종 운영 데이터 import와 cutover 점검표
+
+### DEC-065: 전체 DB 설계 선행과 운영 데이터 최종 이관 순서
+
+- 결정일: 2026-08-11
+- 상태: `ACTIVE`
+- 실행 순서: `전체 관계형 DB 설계 → 비식별 임시데이터 적재 → 기능별 로직 이관 → 임시데이터 기반 parity 검증 → 전체 운영 데이터 최종 이관` 순서를 고정한다.
+- 임시데이터 경계: 임시 fixture에는 실제 사용자 식별자, KakaoTalk 원문과 운영 콘텐츠를 넣지 않는다. 정상·경계·실패·관계 무결성 검증에 필요한 합성 값만 사용한다.
+- 운영 데이터 경계: 설계·로직 이관·임시 검증 단계에서는 실제 운영 snapshot을 DB에 적재하지 않는다.
+- 최종 이관: 기능별 parity와 통합 검증이 끝나면 시험 DB를 폐기·재생성하고 최신 전체 운영 snapshot의 파일 목록과 checksum을 고정한 뒤 전체 import와 reconciliation을 실행한다.
+- 적용 범위: 1차 RDB 설계, 합성 fixture, 기능 로직 이관, parity 검증, 최종 운영 데이터 이관과 cutover
+
 ## 대체 관계 요약
 
-- `DEC-006`의 점진적 운영 전환은 `DEC-021`의 전체 검증 후 일괄 전환으로 대체됐다.
+- `DEC-006`의 ASAP 순차 전환과 `DEC-021`의 전체 기능 완성 후 일괄 전환은 `DEC-059`의 계약 범위별 4단계 사업 전환으로 대체됐다.
 - `DEC-012`와 `DEC-013`은 `DEC-014`로, `DEC-014`는 이미지 자동 전송을 끈 `DEC-015`로 대체됐다.
 - `DEC-040`의 오픈채팅 단체방 한정은 오픈채팅 1:1까지 허용하는 `DEC-041`로 대체됐다.
 - `DEC-042`의 감지 알림 원문 즉시 표시는 사건번호와 `/열람` 흐름을 사용하는 `DEC-046`으로 대체됐다.
@@ -589,3 +672,4 @@
 - `DEC-035`의 외부 봇 프로필명 `HOIBOT`은 `DEC-049`의 `호월봇`으로 대체됐다.
 - `DEC-054`의 미디어·답글·기타 이벤트 메뉴는 `DEC-055`의 운영 중심 최종 메뉴로 대체됐다.
 - `DEC-031`의 개인정보 처리방침 동의와 CAPTCHA 부분은 각각 `DEC-034`, `DEC-032`로 대체됐다.
+- `DEC-060`의 선택 로직 중심 1차 견적은 MessengerBotR·JSON 전체를 이전하는 `DEC-061`로 대체됐다.
