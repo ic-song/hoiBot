@@ -2,8 +2,8 @@
 
 - 작업 키: modernization-integrate-cmd-04-0003-k3m8ps
 - 작업 이름: `/길드강제제명` coordinator 통합
-- 체크포인트 버전: 1
-- 마지막 갱신: 2026-08-13 16:51 KST
+- 체크포인트 버전: 2
+- 마지막 갱신: 2026-08-13 16:50 KST
 - 작업 상태: 검증 완료
 - 정리 후보: 아니요
 
@@ -34,4 +34,6 @@
 ## 영속성
 
 - 비밀 값과 운영 개인정보를 기록하지 않음.
-- 다음 행동: 통합 commit과 체크포인트를 push하고 WBS·대시보드를 갱신한 뒤 `feature/modernization`에 반영한다.
+- 구현 commit: `571fdd5`
+- WBS·선점 원장: 완료/100% 동기화.
+- 다음 행동: 검증된 길드 도메인 commit을 `feature/modernization`에 반영하고 push한다.
