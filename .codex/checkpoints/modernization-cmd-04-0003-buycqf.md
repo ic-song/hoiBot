@@ -2,9 +2,9 @@
 
 - 작업 키: modernization-cmd-04-0003-buycqf
 - 작업 이름: `/길드강제제명` 고도화
-- 체크포인트 버전: 1
-- 마지막 갱신: 2026-08-13 16:34 KST
-- 작업 상태: 조사 시작
+- 체크포인트 버전: 3
+- 마지막 갱신: 2026-08-13 16:40 KST
+- 작업 상태: 구현 중
 - 정리 후보: 아니요
 
 ## 목표와 범위
@@ -19,10 +19,10 @@
 
 ## 소유권과 작업 위치
 
-- 선점 원장 행: 13
+- 선점 원장 행: 14
 - 선점 상태: 활성
-- Heartbeat: 2026-08-13 16:33:36 KST
-- Lease 만료: 2026-08-13 17:33:36 KST
+- Heartbeat: 2026-08-13 16:40:35 KST
+- Lease 만료: 2026-08-13 17:40:35 KST
 - Worktree: C:/Users/user/Desktop/hoiBot_modernization_04_0003_buycqf
 - Branch: feature/modernization-cmd-04-0003-buycqf
 - 기준 commit: CMD-04-0002 통합 완료 `36bd745`
@@ -30,11 +30,11 @@
 
 ## 현재 작업
 
-- 완료: 대기 WBS와 활성 선점 부재 확인, 새 실행 append, 13행 단독 활성 소유권 재검증, WBS 선점 5% 기록, 전용 worktree를 최신 길드 통합 기준으로 준비.
-- 변경 파일: 이 체크포인트만 생성됨.
-- 검증 결과: 원장 실행 ID·worktree·branch가 현재 작업 위치와 일치한다.
-- 남은 위험: legacy command의 실제 인자, 관리자/길드 권한, 자기 자신·길드마스터 제명 방지, member/guild 양방향 저장 순서를 재확인해야 한다.
-- 정확한 다음 행동: COMMAND_INDEX를 시작점으로 main.js의 `/길드강제제명` guard, helper, 출력, load/save와 관련 명령을 실제 코드에서 추적한다.
+- 완료: broad prefix와 free-form 닉네임, master 전용 권한, 길드마스터 보호, guild→member 저장 순서를 조사하고 policy/service/repository contract/test/evidence로 이관.
+- 변경 파일: 강제제명 policy/service/repository/test/evidence와 이 체크포인트.
+- 검증 결과: 집중 테스트 5건, 전체 회귀 149건, evidence validator, typecheck, build, diff check 통과.
+- 남은 위험: MariaDB operator room scope, adapter·dispatch·restart/replay는 coordinator 통합에서 검증해야 한다.
+- 정확한 다음 행동: source commit을 push하고 coordinator로 인계해 MariaDB adapter·dispatch·restart/replay를 검증한다.
 
 ## 영속성
 
