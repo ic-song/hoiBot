@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "player-profile-read",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/내정보"
+    ],
+    "sourceFiles": [
+      "Info.js"
+    ],
+    "guards": [
+      "msg === \"/내정보\""
+    ],
+    "helpers": [
+      "initSweetHomeUser",
+      "getHomeTotalExp",
+      "getMyGuildInfo",
+      "getTitle",
+      "checkRank",
+      "getHomeLikeRank",
+      "getCarrotRank",
+      "getThermoRank",
+      "formatPetInfo"
+    ],
+    "automaticFlows": []
+  },
+  "legacyData": {
+    "files": [
+      "data/member.json",
+      "data/member_pet.json",
+      "data/member_title.json",
+      "data/pet_title.json",
+      "data/petSweetHomeData.json",
+      "data/guildData.json"
+    ],
+    "readPaths": [
+      "member.<user>.profile/currency/counter/pass fields",
+      "member_pet.<user>.pet/miniPet fields",
+      "member_title.member.<user>.title",
+      "pet_title.member.<user>.title",
+      "petSweetHomeData.<user>.home/furniture fields",
+      "guildData.<guild>.member/mark fields"
+    ],
+    "writePaths": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "003_identity_import.sql",
+      "004_common_codes_config.sql",
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "010_legacy_display_capacity.sql",
+      "011_mini_pet_display_projection.sql",
+      "012_badge_display_projection.sql",
+      "028_complete_legacy_domains.sql"
+    ],
+    "tables": [
+      "players",
+      "external_identities",
+      "player_profiles",
+      "game_servers",
+      "currency_accounts",
+      "player_counters",
+      "player_passes",
+      "title_definitions",
+      "player_titles",
+      "player_pets",
+      "pet_titles",
+      "guilds",
+      "guild_members",
+      "mini_pet_definitions",
+      "owned_mini_pets",
+      "player_homes",
+      "furniture_placements",
+      "owned_furniture",
+      "furniture_definitions",
+      "leaderboards",
+      "leaderboard_entries",
+      "player_badge_assignments"
+    ],
+    "constraints": [
+      "external_identities(provider_code, external_user_id) unique",
+      "player_profiles.player_id -> players.id",
+      "currency_accounts(player_id, currency_code) primary key",
+      "guild_members.player_id unique",
+      "player_pets.player_id unique"
+    ],
+    "transactionBoundary": "read-only profile projection; repository queries only"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 b5a9fef73710e5bf60d972d4b7be23a3a9ce84e4ed5b421743bb22c06f7de03c",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic IDs and upsert statements; repeat apply verified",
+    "checks": [
+      "fixture applied in one transaction",
+      "28 representative table counts verified",
+      "repeat apply preserved counts",
+      "production database name guard rejected hoibot",
+      "operational data snapshot was not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/player/get-my-profile-service.ts",
+      "개발환경_고도화/runtime/src/player/legacy-profile-formatter.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/player/maria-profile-repository.ts"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/modernization.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-my-profile-synthetic.ts",
+      "개발환경_고도화/migration-control/evidence/player-profile-read/contract.json"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic-user-alpha from functional-v1"
+    ],
+    "comparisonMode": "exact 25 output lines plus 686 U+200B allsee characters",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "전체 기능 검증 후 Rhino write freeze",
+    "finalImportPlan": "최신 전체 운영 snapshot을 새 운영 DB에 마지막 단계에서 import/reconcile",
+    "smokePlan": "승인된 운영 identity로 /내정보 read-only exact output 확인",
+    "rollbackPlan": "mutation 활성화 전에는 Rhino 유지; 이후 MariaDB backup/restore 경계 사용"
+  },
+  "risks": [
+    "실제 운영 snapshot의 모든 profile field import와 reconciliation은 최종 데이터 이관 단계 전까지 미완료",
+    "checkRank의 전체 badge 우선순위와 실제 운영 사용자 조합은 후속 rank fixture에서 확대 검증 필요",
+    "미가입 사용자의 무응답은 Iris event 통합 fixture에서 별도 검증 필요",
+    "실운영방 smoke와 운영 identity 연결은 승인 전 미실행"
+  ]
+}
