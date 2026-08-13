@@ -22,8 +22,22 @@ INSERT INTO external_identities (id, player_id, provider_code, external_user_id,
   (900000002, 900000002, 'synthetic', 'synthetic-user-beta', '테스트베타', 'linked'),
   (900000003, 900000003, 'synthetic', 'synthetic-user-gamma', '테스트감마', 'linked'),
   (900000004, 900000001, 'kakao', 'synthetic-admin-alpha', '테스트관리자알파', 'linked'),
-  (900000005, 900000003, 'kakao', 'synthetic-non-admin-gamma', '테스트비관리자감마', 'linked')
+  (900000005, 900000003, 'kakao', 'synthetic-non-admin-gamma', '테스트비관리자감마', 'linked'),
+  (900000100, NULL, 'kakao', 'synthetic-signup-pending-fixture', '합성대기 남', 'candidate')
 ON DUPLICATE KEY UPDATE player_id = VALUES(player_id), display_name = VALUES(display_name), status = VALUES(status);
+
+INSERT INTO pre_signup_attendance (
+  id, external_identity_id, legacy_display_name, normalized_display_name, attendance_count,
+  last_attended_on, game_server_id, status, migrated_player_id, source_import_run_id, version
+) VALUES (
+  900000100, 900000100, '합성대기 남', '합성대기 남', 2,
+  '2026-01-10', 900000001, 'active', NULL, NULL, 1
+)
+ON DUPLICATE KEY UPDATE
+  external_identity_id = VALUES(external_identity_id), legacy_display_name = VALUES(legacy_display_name),
+  normalized_display_name = VALUES(normalized_display_name), attendance_count = VALUES(attendance_count),
+  last_attended_on = VALUES(last_attended_on), game_server_id = VALUES(game_server_id),
+  status = VALUES(status), migrated_player_id = NULL, source_import_run_id = NULL, version = VALUES(version);
 
 INSERT INTO admin_operators (id, login_id, display_name, password_hash, status) VALUES
   (900000001, 'synthetic-admin-alpha', '합성 테스트 관리자', 'synthetic-disabled-password-hash-not-valid-for-login', 'active')

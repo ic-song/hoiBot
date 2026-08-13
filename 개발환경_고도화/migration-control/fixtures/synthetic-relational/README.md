@@ -7,6 +7,7 @@
 - 실제 KakaoTalk ID, 사용자명, 메시지 원문, 운영 콘텐츠를 포함하지 않는다.
 - `hoibot_schema_design` 또는 `hoibot_rehearsal_*` DB에서만 loader가 실행된다.
 - SQL은 같은 결과로 반복 적용할 수 있도록 고정 PK와 upsert를 사용한다.
+- 가입 전 경량 출석을 검증하기 위한 candidate identity와 `pre_signup_attendance` 1건을 포함한다.
 - 운영 오픈 전 합성 DB를 폐기·재생성하며 이 데이터는 최종 import·reconciliation 증거로 인정하지 않는다.
 
 실행:

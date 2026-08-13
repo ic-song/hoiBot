@@ -107,7 +107,7 @@ export class ProviderVerificationService {
         identityId = identity.insertId;
       }
 
-      const playerId = await createInitialPlayer(transaction, challenge.system_account_name, input.channelId);
+      const playerId = await createInitialPlayer(transaction, challenge.system_account_name, input.channelId, identityId);
       const linked = await transaction.execute(
         `UPDATE external_identities SET player_id = ?, display_name = ?, status = 'linked', updated_at = UTC_TIMESTAMP(3)
          WHERE id = ? AND player_id IS NULL`,

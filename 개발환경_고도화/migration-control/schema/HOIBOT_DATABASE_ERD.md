@@ -1,6 +1,6 @@
 # hoiBot MariaDB 설계 ERD
 
-- 설계 버전: `028_complete_legacy_domains`
+- 설계 버전: `029_pre_signup_attendance`
 - 검증 DB: `hoibot_schema_design`
 - 문자셋: `utf8mb4 / utf8mb4_unicode_ci`
 - 원칙: 운영 JSON 값을 그대로 보관하는 dump table 없이 도메인 row로 정규화한다.
@@ -94,7 +94,7 @@ erDiagram
 
 | 기존 저장소 | 목적 테이블 |
 |---|---|
-| `attendanceLight.json` | `attendance_programs`, `player_attendance` |
+| `attendanceLight.json` | 가입 전 `pre_signup_attendance`, 가입 완료 후 `player_attendance`·`player_counters` |
 | `board.json`, `carrotBoard.json` | `community_boards`, `community_posts` |
 | `castleBattle2.json` | `castle_battle_seasons`, `castle_battle_participants` |
 | `currencyLog.json` | `currency_ledger` |
@@ -127,7 +127,7 @@ erDiagram
 <!-- GENERATED COLUMN ERD START -->
 ## 전체 물리 컬럼 ERD
 
-이 섹션은 Docker MariaDB `hoibot_schema_design`의 `information_schema`에서 생성한다. 총 118개 테이블, 817개 컬럼이다.
+이 섹션은 Docker MariaDB `hoibot_schema_design`의 `information_schema`에서 생성한다. 총 119개 테이블, 831개 컬럼이다.
 
 ### 식별자·채널
 
@@ -1317,6 +1317,22 @@ erDiagram
     int title_id PK,FK "bigint(20) unsigned; NOT NULL"
     datetime acquired_at "datetime(3); NULL"
     int equipped "tinyint(1); NOT NULL"
+  }
+  PRE_SIGNUP_ATTENDANCE {
+    int id PK "bigint(20) unsigned; NOT NULL"
+    int external_identity_id FK,UK "bigint(20) unsigned; NULL"
+    string legacy_display_name "varchar(191); NOT NULL"
+    string normalized_display_name "varchar(191); NOT NULL"
+    int attendance_count "bigint(20) unsigned; NOT NULL"
+    datetime last_attended_on "date; NULL"
+    int game_server_id FK "bigint(20) unsigned; NULL"
+    string status "varchar(32); NOT NULL"
+    int migrated_player_id FK "bigint(20) unsigned; NULL"
+    int source_import_run_id FK "bigint(20) unsigned; NULL"
+    int version "bigint(20) unsigned; NOT NULL"
+    datetime created_at "datetime(3); NOT NULL"
+    datetime updated_at "datetime(3); NOT NULL"
+    datetime migrated_at "datetime(3); NULL"
   }
   SKILL_DEFINITIONS {
     int id PK "bigint(20) unsigned; NOT NULL"

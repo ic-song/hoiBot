@@ -14,8 +14,8 @@
 | character set | `utf8mb4` |
 | collation | `utf8mb4_unicode_ci` |
 | timezone | DB container `UTC`, 운영 표시 `Asia/Seoul` |
-| migration | `001_foundation.sql` ~ `028_complete_legacy_domains.sql` |
-| 정상 물리 결과 | migration 28개, base table 118개, column 817개, FK 167개 |
+| migration | `001_foundation.sql` ~ `029_pre_signup_attendance.sql` |
+| 정상 물리 결과 | migration 29개, base table 119개, column 831개, FK 171개 |
 
 컬럼과 관계 전체는 [HOIBOT_DATABASE_ERD.md](./HOIBOT_DATABASE_ERD.md)의 `전체 물리 컬럼 ERD`를 기준으로 한다.
 
@@ -124,10 +124,10 @@ WHERE constraint_schema = DATABASE();
 예상값:
 
 ```text
-migration_count = 28
-base_table_count = 118
-column_count = 817
-foreign_key_count = 167
+migration_count = 29
+base_table_count = 119
+column_count = 831
+foreign_key_count = 171
 ```
 
 아래 대표 테이블도 모두 존재해야 한다.
@@ -144,6 +144,7 @@ WHERE table_schema = DATABASE()
     'guilds',
     'player_homes',
     'market_listings',
+    'pre_signup_attendance',
     'player_attendance',
     'community_posts',
     'castle_battle_seasons',
@@ -187,6 +188,7 @@ ORDER BY table_name;
 | `026_media_image_video_only.sql` | `5d57a7b82058764b61a71c7a01645c6b87866554428f7df9f8b43a7c14137764` |
 | `027_remove_reply_monitoring_group.sql` | `057e71e3ee1eb7f9d78066debb1563eb8386109c6fe5cc2801e2cdedb2638afb` |
 | `028_complete_legacy_domains.sql` | `9cabbe263f59d546d7f8ef5939b13784fba055811b0728ccb80472d15d37124e` |
+| `029_pre_signup_attendance.sql` | `2e86ebccd682730efe86c142680dbb395f175433e505c142ce0ccb3528acc46d` |
 
 ## 9. 실제 운영 데이터 최종 이관 전 필수 자료
 

@@ -108,6 +108,7 @@ describe("signup policy", () => {
       [],
       [{ id: 31n, display_name: "가입완료 여", gender_code: "female", expired: 0 }],
       [],
+      [],
       [{ game_server_id: 7n }]
     ]);
     const result = await new SignupService(scripted.database).handle({
@@ -124,6 +125,29 @@ describe("signup policy", () => {
     }
     assert.ok(scripted.sql.some((statement) => statement.includes("status = 'linked'")));
     assert.ok(scripted.sql.some((statement) => statement.includes("status = 'accepted'")));
+  });
+
+  it("moves pre-signup attendance into the accepted player transaction", async () => {
+    const scripted = createScriptedDatabase([
+      [{ id: 14n, player_id: null, status: "candidate" }],
+      [],
+      [{ id: 33n, display_name: "출석이관 남", gender_code: "male", expired: 0 }],
+      [],
+      [{ id: 41n, attendance_count: 3n, last_attended_on: "2026-08-13", attended_today: 1, game_server_id: 9n }],
+      [{ game_server_id: 7n }]
+    ]);
+    const result = await new SignupService(scripted.database).handle({
+      externalUserId: "kakao-14",
+      displayName: "출석이관 남",
+      channelId: "room-4",
+      message: "시작한다",
+      eventId: "iris:event-attendance"
+    });
+
+    assert.equal(result.status, "accepted");
+    assert.ok(scripted.sql.some((statement) => statement.includes("FROM pre_signup_attendance")));
+    assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO player_attendance")));
+    assert.ok(scripted.sql.some((statement) => statement.includes("status = 'migrated'")));
   });
 
   it("releases the nickname without creating a player when signup is rejected", async () => {

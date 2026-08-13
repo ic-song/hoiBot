@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-11T18:12:00+09:00",
+  "updatedAt": "2026-08-13T10:18:00+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -140,14 +140,12 @@
     "checkpointPushed": true,
     "snapshotMatched": true,
     "databaseReachable": true,
-    "localMigrationCount": 27,
-    "appliedMigrationCount": 28,
-    "migrationChecksumMismatches": [
-      "028_character_mvp.sql"
-    ],
+    "localMigrationCount": 29,
+    "appliedMigrationCount": 29,
+    "migrationChecksumMismatches": [],
     "completedImportRunFound": false,
     "typecheckPassed": true,
-    "verifiedAt": "2026-08-11T16:43:00+09:00"
+    "verifiedAt": "2026-08-13T10:18:00+09:00"
   },
   "dataInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",
@@ -184,20 +182,20 @@
     "verifiedAt": "2026-08-11T16:45:00+09:00"
   },
   "databaseDesignEvidence": {
-    "migration": "개발환경_고도화/runtime/migrations/028_complete_legacy_domains.sql",
+    "migration": "개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql",
     "erd": "개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md",
     "dockerDatabase": "hoibot_schema_design",
-    "migrationCount": 28,
-    "baseTableCount": 118,
-    "foreignKeyCount": 167,
-    "columnCount": 817,
-    "representativeNewTableCount": 7,
+    "migrationCount": 29,
+    "baseTableCount": 119,
+    "foreignKeyCount": 171,
+    "columnCount": 831,
+    "representativeNewTableCount": 8,
     "columnErdGenerator": "개발환경_고도화/runtime/scripts/generate-database-erd.ts",
     "productionReinstallGuide": "개발환경_고도화/migration-control/schema/db-table-init.md",
-    "migrationChecksumManifestCount": 28,
+    "migrationChecksumManifestCount": 29,
     "operationalDataLoaded": false,
     "validated": true,
-    "verifiedAt": "2026-08-11T17:10:00+09:00"
+    "verifiedAt": "2026-08-13T10:18:00+09:00"
   },
   "syntheticMissingDataEvidence": {
     "decisionDraft": "DEC-064",
@@ -224,16 +222,16 @@
     "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
     "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
     "database": "hoibot_schema_design",
-    "fixtureChecksum": "3aea400fffb6e0de2c200713e2590bd45d3ac30cd321edcfffe988da4e92e41e",
-    "statementCount": 63,
-    "verifiedTableCount": 28,
+    "fixtureChecksum": "16570400e8ed5be38333a3513a0ed9b851bc031dd41ab0136ed96799afd4a352",
+    "statementCount": 64,
+    "verifiedTableCount": 29,
     "syntheticPlayerCount": 3,
     "repeatApplyVerified": true,
     "verifyOnlyPassed": true,
     "productionDatabaseGuardVerified": true,
     "operationalSnapshotTouched": false,
     "validated": true,
-    "verifiedAt": "2026-08-11T18:12:00+09:00"
+    "verifiedAt": "2026-08-13T10:18:00+09:00"
   },
   "commandInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-command-inventory.mjs",
@@ -292,6 +290,38 @@
         "개발환경_고도화/migration-control/evidence/player-server-change/slice.json"
       ],
       "nextRequiredGate": "최종 운영 snapshot import, 운영 관리자 identity 연결, 실운영방 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "player-signup",
+      "commands": [
+        "/가입",
+        "시작한다",
+        "/시작한다",
+        "거절한다",
+        "/거절한다"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "restart-persistence",
+        "pre-signup-attendance-transfer",
+        "idempotency-audit-outbox"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql",
+        "개발환경_고도화/runtime/src/signup/signup-service.ts",
+        "개발환경_고도화/runtime/src/signup/create-initial-player.ts",
+        "개발환경_고도화/runtime/scripts/probe-signup-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/player-signup/slice.json"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import, unresolved attendanceLight identity reconciliation, 실운영방 smoke",
       "trialMigrationForCurrentRootHash": false,
       "syntheticTrialVerified": true,
       "parityVerified": true,

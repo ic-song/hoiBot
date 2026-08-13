@@ -5377,7 +5377,9 @@ Status: VERIFIED
 - `개발환경_고도화/runtime/src/app.ts`
 - `개발환경_고도화/runtime/src/signup/signup-policy.ts`
 - `개발환경_고도화/runtime/src/signup/signup-service.ts`
+- `개발환경_고도화/runtime/src/signup/create-initial-player.ts`
 - `개발환경_고도화/runtime/migrations/015_player_signup.sql`
+- `개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql`
 
 ## Related Helpers
 
@@ -5415,6 +5417,7 @@ Status: VERIFIED
 - `attendanceLightData.users[sender]`
 - `attendanceLightData.users[sender].server`
 - MariaDB `player_signup_requests`
+- MariaDB `pre_signup_attendance`, `attendance_programs`, `player_attendance`
 - MariaDB `players`, `player_profiles`, `player_pets`
 - MariaDB `currency_accounts`, `player_counters`, `external_identities`
 - MariaDB `operations`, `command_executions`, `command_audit`, `outbox_messages`
@@ -5429,6 +5432,7 @@ Status: VERIFIED
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
 - 고도화 Iris `/가입`은 회원을 즉시 생성하지 않고 30분 가입 대기를 MariaDB에 저장한다
 - 고도화 `시작한다`/`/시작한다`는 회원·프로필·초기 펫·재화·카운터·Kakao identity 연결·감사·outbox를 한 MariaDB 트랜잭션으로 생성한다
+- 고도화 가입 동의는 external identity에 연결된 가입 전 출석 횟수·최근 출석일·서버를 같은 트랜잭션에서 정식 회원 counter와 attendance projection으로 옮기고 원본 행을 `migrated`로 전환한다
 - 고도화 `거절한다`/`/거절한다`는 회원을 만들지 않고 가입 대기와 닉네임 예약을 해제한다
 - 고도화 가입 흐름은 event inbox와 operation idempotency를 함께 사용해 동일 Iris 이벤트 재전송 시 중복 회원을 만들지 않는다
 - `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`

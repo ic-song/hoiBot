@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 21
-- 마지막 갱신: 2026-08-11 18:12 KST
+- 체크포인트 버전: 23
+- 마지막 갱신: 2026-08-13 10:18 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 사용자 요청으로 기능 진행을 멈춘 상태다. 다음 요청에서는 회원 가입 슬라이스(`/가입`, `/약관동의`, `/약관거부`)의 현행 명령·데이터·저장 흐름 조사부터 시작한다.
+- 가입 다음 기능인 `/펫생성` 슬라이스의 legacy guard, 펫 초기화·저장 흐름과 현재 MariaDB 모델을 조사한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 푸시 커밋: `03adf05a58935324e4ae7ec23566ca0cd7b861bf`
+- 마지막 푸시 커밋: `88b6aca93be79697f53c88692c8eacd819ee884c`
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -82,10 +82,19 @@
 - 포팅본이 `player.server.assign` 권한을 검사하고, profile update·operation·audit·command execution·internal/Iris outbox를 하나의 transaction으로 저장함을 개발 DB에서 검증했다.
 - 같은 event ID 재전송 시 profile version이 한 번만 증가하고 같은 결과를 반환하는 멱등성을 확인했다.
 - `/서버이동` 슬라이스 증거를 `verified`로 기록하고 repo validator를 통과했다.
+- 체크포인트에 적혀 있던 `/약관동의`, `/약관거부`가 실제 명령이 아님을 확인하고 실제 5개 입력(`/가입`, `시작한다`·`/시작한다`, `거절한다`·`/거절한다`)으로 정정했다.
+- legacy `/가입`은 동의 전에 member·pet·title을 저장하고 메모리 `termsState`로 대기하며, 거절해도 생성 데이터를 제거하지 않고 재시작 시 대기 상태가 사라짐을 확인했다.
+- 가입 전 `attendanceLight.json`을 표현할 관계형 테이블이 없음을 발견해 `029_pre_signup_attendance.sql`을 추가했다.
+- 가입 동의 transaction이 가입 전 출석 횟수·최근 출석일·서버를 새 player counter와 attendance projection으로 옮기고 원본을 `migrated` 처리하도록 구현했다.
+- 사이트 Kakao 인증 가입과 Iris 가입이 같은 초기 회원 생성 로직과 출석 이관을 사용하도록 연결했다.
+- 실제 개발 schema에 migration 029를 적용하고 migration 29개, table 119개, column 831개, FK 171개를 확인했다.
+- 합성 관계형 fixture에 미가입 candidate와 경량 출석을 추가하고 29개 대표 테이블을 두 번 적용·verify-only 검증했다.
+- 가입 대기 중 player 미생성, 새 DB client에서도 대기 유지, 동의 초기 행·출석 이관, 거절 시 이름 예약 해제·player 미생성, exact reply와 이벤트 멱등성을 검증했다.
+- 가입 슬라이스 evidence를 `verified`로 기록하고 validator를 통과했다.
 
 ## 진행 중인 작업
 
-- 없음. `/서버이동` 합성 검증 완료 지점에서 사용자 요청에 따라 중단·푸시한다.
+- 없음. 가입 슬라이스 합성 검증 완료 후 다음 기능 시작점을 기록한다.
 
 ## 변경 파일
 
@@ -111,6 +120,14 @@
 - `개발환경_고도화/runtime/scripts/probe-my-profile-synthetic.ts`
 - `개발환경_고도화/migration-control/evidence/player-server-change/slice.json`
 - `개발환경_고도화/runtime/scripts/probe-player-server-change-synthetic.ts`
+- `개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql`
+- `개발환경_고도화/runtime/src/signup/create-initial-player.ts`
+- `개발환경_고도화/runtime/src/signup/signup-service.ts`
+- `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
+- `개발환경_고도화/runtime/test/signup.test.ts`
+- `개발환경_고도화/runtime/scripts/probe-signup-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/player-signup/slice.json`
+- `COMMAND_INDEX.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
 
@@ -153,6 +170,16 @@
 - 결과: 비관리자 403, 잘못된 서버 접미사 422, 정상 변경, exact 성공 reply, profile version 2, 동일 event 멱등 재실행, audit 1, command execution 1, outbox 2 검증 통과.
 - 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `validate-slice-evidence.mjs .../player-server-change/slice.json`
 - 결과: typecheck 통과, runtime test 92개 통과, `valid slice evidence: player-server-change`.
+- 실행 명령: 운영 DB 기본 설정으로 `probe-signup-synthetic.ts` 실행
+- 결과: `Synthetic signup probe is blocked for database: hoibot`로 mutation 전에 차단됨.
+- 실행 명령: `npm.cmd run db:migrate` (`DATABASE_NAME=hoibot_schema_design`)
+- 결과: `029_pre_signup_attendance.sql` 적용, migration 29개 확인. 물리 schema는 table 119개, column 831개, FK 171개.
+- 실행 명령: 합성 fixture `--apply` 2회와 `--verify-only`
+- 결과: checksum `16570400...a352`, SQL 64문장, 대표 테이블 29개와 `pre_signup_attendance` 반복 적용 검증 통과.
+- 실행 명령: `probe-signup-synthetic.ts` (`DATABASE_NAME=hoibot_schema_design`)
+- 결과: exact guard·약관·환영·거절 문구, durable pending, 동의 초기 행, 가입 전 출석 3회·서버 이관, 거절 player 미생성, operation/audit/execution/outbox와 멱등성 통과.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `node --check main.js`, `node --check Info.js`, signup evidence validator
+- 결과: TypeScript 통과, runtime test 93개 통과, Rhino 파일 syntax 통과, `valid slice evidence: player-signup`.
 
 ## 충돌·막힘·미승인 사항
 
@@ -161,7 +188,6 @@
 - 현재 JSON root hash와 일치하는 완료된 DB import run은 확인되지 않았다.
 - 현재 Git snapshot에 authoritative Android 파일 2개가 없어 실제 구조와 checksum을 아직 확정할 수 없다.
 - 전체 legacy field를 domain row로 옮기는 저장소는 현재 0개이므로 기존 importer apply는 전체 데이터 시험 이관으로 사용할 수 없다.
-- DB에는 현재 작업트리에서 제거된 `028_character_mvp.sql` 적용 이력이 남아 있어 migration checksum 검증이 실패한다. 이 상태에서는 DB apply를 진행하지 않는다.
 - `DEC-064`는 로컬 `DECISIONS.md`에 작성했지만 기존 다른 고도화 결정의 미커밋 변경과 겹쳐 아직 선택 커밋하지 않았다. 원격 재개 시에는 푸시된 fixture `README.md`와 이 체크포인트를 적용 기준으로 사용하고, DECISIONS 정리 시 초안을 함께 반영한다.
 - 합성 fixture는 개발·시험 전용이며 실제 운영 파일 2개의 확보·검증을 대체하지 않는다.
 - 운영 DB apply와 cutover는 승인되지 않았다.
@@ -169,9 +195,7 @@
 
 ## 다음 행동
 
-1. Git과 이 체크포인트를 확인한다.
-2. 회원 가입 슬라이스(`/가입`, `/약관동의`, `/약관거부`)의 legacy guard, helper, 초기 데이터 생성과 save flow를 조사한다.
-3. 해당 슬라이스의 DB 매핑·합성 fixture·서비스 계약·비교 검증을 작성한다.
+1. `/펫생성`의 exact/full guard, legacy pet/member/title/pet-skill read·write와 현재 MariaDB pet 초기화 모델을 조사한다.
 
 ## 보안
 

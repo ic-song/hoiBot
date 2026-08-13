@@ -22,6 +22,7 @@ const expectedMinimumRows: Record<string, number> = {
   players: 3,
   external_identities: 3,
   player_profiles: 3,
+  pre_signup_attendance: 1,
   currency_accounts: 6,
   inventory_stacks: 3,
   player_pets: 2,
@@ -70,6 +71,7 @@ async function verifyFixture(): Promise<Record<string, number>> {
         table === "players" ? "id BETWEEN 900000001 AND 900000003" :
         table === "external_identities" ? "provider_code = 'synthetic'" :
         table === "currency_accounts" ? "player_id BETWEEN 900000001 AND 900000003" :
+        table === "pre_signup_attendance" ? "id = 900000100 AND status = 'active'" :
         table === "player_profiles" || table === "inventory_stacks" || table === "player_pets" || table === "owned_mini_pets" || table === "mini_pet_collection_entries" || table === "player_homes" || table === "player_attendance" || table === "player_event_progress" || table === "player_tower_progress" || table === "bag_integrity_checks" ? "player_id BETWEEN 900000001 AND 900000003" :
         table === "guild_members" ? "guild_id BETWEEN 900000001 AND 900000002" :
         table === "castle_battle_participants" ? "season_id = 900000001" :
