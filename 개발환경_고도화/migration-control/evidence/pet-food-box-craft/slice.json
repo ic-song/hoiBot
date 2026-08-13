@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "pet-food-box-craft",
+  "status": "verified",
+  "execution": {
+    "wbsId": "CMD-06-0115",
+    "worker": "A",
+    "executionId": "A-CMD-06-0115-20260813T062826Z-4cs90m",
+    "claimRow": 3
+  },
+  "commands": {
+    "names": ["/펫먹이조합", "/펫먹이조합 [수량]"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command defaults to quantity one",
+      "digits-only argument uses legacy minimum quantity one",
+      "active castle siege returns silently before inventory or point mutation",
+      "junk shortage is checked before point shortage"
+    ],
+    "helpers": ["checkRank"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.bag['잡템☠️']", "member.<sender>.point", "guildData.castleSiegeFlag"],
+    "writePaths": [
+      "member.<sender>.bag['잡템☠️'] decrement and delete at zero",
+      "member.<sender>.point decrement",
+      "member.<sender>.bag['펫먹이상자📦(/상자오픈)'] increment"
+    ],
+    "saveOrder": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities", "player_profiles", "currency_accounts", "currency_ledger", "item_definitions",
+      "inventory_stacks", "inventory_ledger", "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages"
+    ],
+    "constraints": [
+      "inventory_stacks unique player and item stack",
+      "currency_accounts unique player and currency account",
+      "operations unique idempotency scope and key",
+      "ledger, execution, audit and outbox rows reference one operation"
+    ],
+    "newColumns": [],
+    "transactionBoundary": "lock active castle state, linked identity, junk and box stacks and point account; then apply all three balances, both ledgers, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixture apply twice and command replay by the same event ID are idempotent",
+    "checks": [
+      "fixture checksum 6496b6dc96603bea241abd6cce8f5a4db6a6cad4359e9d5d07c10f2f5004b8b9",
+      "35 fixture tables verified with 9 inventory stacks",
+      "junk 600 to 0, point 50000000 to 0 and pet-food box 0 to 2",
+      "inventory ledger 2, currency ledger 1, operation 1, execution 1, audit 1 and outbox 1",
+      "operational snapshot untouched"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/crafting/pet-food-box-craft-service.ts", "개발환경_고도화/runtime/src/app.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/pet-food-box-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-pet-food-box-craft-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": ["synthetic linked player with 600 junk, 50000000 point and zero pet-food boxes"],
+    "comparisonMode": "guard, minimum quantity, validation order, exact replies, three balance deltas, ledgers, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory and point writes in the final shared freeze window",
+    "finalImportPlan": "import every point, junk and pet-food-box quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity crafts one box and verifies all balances, reply and ledgers",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "legacy success does not call saveJsonFile, so historical in-memory changes may have been lost on restart",
+    "legacy deletes the junk property at zero while MariaDB keeps a zero-quantity stack row",
+    "full checkRank special and guild decorations are not yet centralized",
+    "the port adds a one-million craft limit",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}
