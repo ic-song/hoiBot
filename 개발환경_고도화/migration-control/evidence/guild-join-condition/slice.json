@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-join-condition",
+  "status": "ported",
+  "wbsId": "CMD-04-0002",
+  "commands": {
+    "names": ["/길드가입조건 [숫자]"],
+    "sourceFiles": ["main.js"],
+    "automaticFlows": ["the changed threshold is rechecked by /길드가입 request and confirmation"],
+    "guards": [
+      "legacy broad prefix accepts appended suffix text by parsing only the second token",
+      "ported parser accepts one non-negative integer with optional standard thousands separators",
+      "bare command keeps the usage reply and suffix text cannot mutate the guild"
+    ],
+    "helpers": ["getMyGuildId", "isGuildLeader", "numberWithCommas"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.guild.id", "guilds.<id>.master/subMasters/joinConditionExp"],
+    "writePaths": ["guilds.<id>.joinConditionExp"],
+    "saveOrder": ["saveJsonFile(guildData, guildPath)"],
+    "devProdRoutingVerified": true,
+    "relatedCastleData": "No castle battle read or write was found in the current command path despite the initial WBS mapping."
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "032_guild_join.sql"],
+    "tables": ["players", "external_identities", "guilds", "guild_members", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": ["guild_members(player_id) unique keeps one guild membership", "guilds.join_requirement_experience is a non-negative DECIMAL(30,0) projection", "operations idempotency scope and key unique"],
+    "transactionBoundary": "lock actor membership and guild, check leader-equivalent permission, update join_requirement_experience and version, then write operation, command execution, audit and reply outbox atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational functional-v1 guild leader and guild policy projection",
+    "targetDatabase": "pending coordinator disposable MariaDB rehearsal",
+    "sourceReadOnly": true,
+    "replayPolicy": "same event id must return the prior result without a second guild update or outbox",
+    "checks": ["pending MariaDB adapter and dispatch integration"],
+    "result": "pending"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/guild/guild-join-condition-service.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/guild/guild-join-condition-repository.ts transaction contract"],
+    "tests": ["개발환경_고도화/runtime/test/guild-join-condition.test.ts"],
+    "policies": ["개발환경_고도화/runtime/src/guild/guild-join-condition-policy.ts"]
+  },
+  "parity": {
+    "fixtures": ["in-memory leader, ordinary member and missing membership cases"],
+    "comparisonMode": "exact usage/error/success reply and mutation order comparison",
+    "result": "pending",
+    "verified": ["usage reply", "invalid number reply", "leader-equivalent permission denial", "success reply", "zero means unrestricted", "prior-result replay"],
+    "intentionalHardening": ["suffix text and malformed thousands separators cannot execute"],
+    "notYetVerified": ["MariaDB transaction", "restart replay", "full import role-code reconciliation", "live-room smoke"]
+  },
+  "cutover": {
+    "freezePlan": "Stop legacy guild policy writes in the approved guild cutover window",
+    "finalImportPlan": "Import the latest guild joinConditionExp and leader/submaster projection after backup",
+    "smokePlan": "Use an approved leader-equivalent test member to set and reset a threshold, then verify join enforcement",
+    "rollbackPlan": "Keep the Rhino command active until database smoke passes; restore backup and disable database dispatch on failure"
+  },
+  "risks": [
+    "legacy isGuildLeader includes submasters while the reply says guildmaster; the MariaDB adapter must map both permissions explicitly",
+    "the current full import hashes legacy role strings and does not yet project subMasters, so role-code reconciliation is required before cutover",
+    "operational snapshots were read only and were not modified"
+  ]
+}
