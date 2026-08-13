@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sliceId": "guild-join",
-  "status": "investigated",
+  "status": "implementation_in_progress",
   "wbsId": "CMD-04-0001",
   "commands": {
     "names": ["/길드가입 [번호]", "/가입한다", "가입한다", "/안한다"],
@@ -35,17 +35,27 @@
       "synthetic fixture has no guild join ticket item definition or inventory stack",
       "recruitment bonus needs a normalized equipped guild-master skill projection"
     ],
+    "domainSchemaDraft": "개발환경_고도화/migration-control/evidence/guild-join/schema-contract.sql",
+    "fixtureContracts": [
+      "active stackable item code legacy-guild-join-ticket",
+      "equipped guild-master skill projection code legacy-recruitment-command"
+    ],
     "requiredTransactionBoundary": "confirmation must lock pending request, player membership, selected guild capacity/policy and join-ticket stack, then insert membership, spend one ticket, write inventory ledger, operation, execution, audit and reply outbox atomically"
   },
   "logicPort": {
     "policies": ["개발환경_고도화/runtime/src/guild/guild-join-policy.ts"],
-    "tests": ["개발환경_고도화/runtime/test/guild-join-policy.test.ts"],
-    "integrationStatus": "domain policy ready; repository/service/dispatch waits for domain schema and fixture coordination"
+    "services": ["개발환경_고도화/runtime/src/guild/guild-join-service.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/guild/guild-join-repository.ts transaction contract"],
+    "tests": [
+      "개발환경_고도화/runtime/test/guild-join-policy.test.ts",
+      "개발환경_고도화/runtime/test/guild-join-service.test.ts"
+    ],
+    "integrationStatus": "domain policy, transaction orchestration and repository contract ready; MariaDB adapter/dispatch waits for coordinator migration and fixture allocation"
   },
   "parity": {
-    "verified": ["candidate availability", "level/EXP/name ordering", "recruitment capacity bonus", "EXP threshold", "confirmation aliases", "confirmation/completion/shortage text"],
+    "verified": ["candidate availability", "level/EXP/name ordering", "recruitment capacity bonus", "EXP threshold", "confirmation aliases", "confirmation/completion/shortage text", "request/confirm/cancel orchestration", "changed-condition invalidation", "prior-result replay before current-state checks"],
     "intentionalHardening": ["suffix text no longer executes /길드가입"],
-    "notYetVerified": ["MariaDB transaction", "restart-surviving pending request", "duplicate-event replay", "synthetic fixture probe"]
+    "notYetVerified": ["MariaDB adapter transaction", "restart-surviving pending request against MariaDB", "synthetic fixture probe"]
   },
   "risks": [
     "implementing the service against current tables would silently omit legacy guild policy fields",
