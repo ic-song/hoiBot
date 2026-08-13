@@ -17,6 +17,7 @@ Iris 입출력과 MariaDB 도메인 이전을 검증하는 TypeScript/Fastify �
 - 상태가 있는 규칙 레지스트리 기반 이벤트 분류와 후보·미분류 안전 수집
 - 오픈채팅 DB 확인 후 지정 채널만 처리하는 2단계 이벤트 필터
 - `/내정보` ProfileView/legacy formatter와 승인된 Kakao identity 기반 조회
+- `/가방`, `ㄴㄴㄴ` MariaDB stack projection과 legacy 순서·문자열 formatter
 - `/가입` 대기 상태 영속화와 `/시작한다` 동의 시 회원·프로필·초기 펫·재화·카운터·identity 원자 생성
 - `/거절한다` 가입 취소, 닉네임 예약 해제와 가입 이벤트 재시도·중복 생성 방지
 - 사이트 회원가입, 24시간 미인증 계정, 30분 1회용 코드와 정확한 KakaoTalk `/인증 CODE` 연결

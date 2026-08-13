@@ -388,3 +388,7 @@ ON DUPLICATE KEY UPDATE status = VALUES(status), effective_from = VALUES(effecti
 INSERT INTO configuration_values (configuration_set_id, config_key, value_type, string_value)
 VALUES (900000001, 'fixture.version', 'string', 'functional-v1')
 ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = VALUES(string_value), decimal_value = NULL, integer_value = NULL, boolean_value = NULL, json_value = NULL;
+
+INSERT INTO configuration_values (configuration_set_id, config_key, value_type, string_value)
+VALUES (900000001, 'legacy.bag.advertisement', 'string', '합성 가방 광고')
+ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = VALUES(string_value), decimal_value = NULL, integer_value = NULL, boolean_value = NULL, json_value = NULL;
