@@ -1,0 +1,4 @@
+interface:
+  display_name: "hoiBot 레거시 RDB 이관"
+  short_description: "명령별 JSON·로직을 MariaDB로 반복 이관하고 검증"
+  default_prompt: "Use $hoibot-migrate-legacy-rdb to migrate one hoiBot command domain from legacy JSON to MariaDB with parity evidence."
