@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-join",
+  "status": "investigated",
+  "wbsId": "CMD-04-0001",
+  "commands": {
+    "names": ["/길드가입 [번호]", "/가입한다", "가입한다", "/안한다"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "legacy /길드가입 uses a broad prefix and can consume appended guide text",
+      "ported policy requires one positive integer and rejects suffix text",
+      "confirmation keeps /가입한다 and 가입한다 aliases; cancellation keeps /안한다 only"
+    ],
+    "helpers": ["getJoinableGuildRows", "getGuildMaxMemberLimit", "getMyGuildId", "calculateTotalExp", "removeMemberFromAllGuilds", "removeItem", "rebuildGuildNameToId", "checkRank"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json", "data/member_pet.json", "data/petHomeData.json", "data/petSkillData.json"],
+    "readPaths": [
+      "member.<sender>.guild and bag join ticket",
+      "guilds.<id>.members/memberClose/maxMember/level/joinConditionExp/name/mark/server/master",
+      "pet skill equipped recruitment command",
+      "combined player EXP projections"
+    ],
+    "writePaths": ["guilds.<id>.members.<sender>", "member.<sender>.guild", "member.<sender>.bag join ticket"],
+    "saveOrder": ["saveJsonFile(guildData, guildPath)", "saveJsonFile(data, filePath)"],
+    "devProdRoutingVerified": true,
+    "pendingState": "userState.<sender>.guildJoin is memory-only and disappears on Rhino restart"
+  },
+  "database": {
+    "existingTables": ["players", "player_profiles", "guilds", "guild_members", "item_definitions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "usableConstraints": ["guild_members(player_id) unique prevents cross-guild duplicate membership", "inventory stack quantity cannot be negative", "operations idempotency scope and key unique"],
+    "schemaGaps": [
+      "guilds has no mark, server, level, join requirement, member-close, base capacity or master policy projection",
+      "no durable pending guild-join request exists for the two-step confirmation flow",
+      "synthetic fixture has no guild join ticket item definition or inventory stack",
+      "recruitment bonus needs a normalized equipped guild-master skill projection"
+    ],
+    "requiredTransactionBoundary": "confirmation must lock pending request, player membership, selected guild capacity/policy and join-ticket stack, then insert membership, spend one ticket, write inventory ledger, operation, execution, audit and reply outbox atomically"
+  },
+  "logicPort": {
+    "policies": ["개발환경_고도화/runtime/src/guild/guild-join-policy.ts"],
+    "tests": ["개발환경_고도화/runtime/test/guild-join-policy.test.ts"],
+    "integrationStatus": "domain policy ready; repository/service/dispatch waits for domain schema and fixture coordination"
+  },
+  "parity": {
+    "verified": ["candidate availability", "level/EXP/name ordering", "recruitment capacity bonus", "EXP threshold", "confirmation aliases", "confirmation/completion/shortage text"],
+    "intentionalHardening": ["suffix text no longer executes /길드가입"],
+    "notYetVerified": ["MariaDB transaction", "restart-surviving pending request", "duplicate-event replay", "synthetic fixture probe"]
+  },
+  "risks": [
+    "implementing the service against current tables would silently omit legacy guild policy fields",
+    "direct membership insertion without durable confirmation would change the user-visible two-step flow",
+    "live operational snapshots were inspected only for source mapping and were not modified"
+  ]
+}
