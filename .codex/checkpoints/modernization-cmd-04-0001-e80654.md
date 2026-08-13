@@ -2,8 +2,8 @@
 
 - 작업 키: modernization-cmd-04-0001-e80654
 - 작업 이름: `/길드가입` 고도화 이관
-- 체크포인트 버전: 5
-- 마지막 갱신: 2026-08-13 15:58 KST
+- 체크포인트 버전: 6
+- 마지막 갱신: 2026-08-13 16:00 KST
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
 
@@ -27,7 +27,7 @@
 - Worktree: C:/Users/user/Desktop/hoiBot_modernization_04_0001_e80654
 - Branch: feature/modernization-cmd-04-0001-e80654
 - 기준 commit: 871cb0f
-- push 상태: 원격 작업 브랜치 포함 (`9459a1a`)
+- push 상태: 원격 작업 브랜치 포함 (`5dd63f5`)
 
 ## 현재 작업
 
@@ -35,10 +35,10 @@
 - 변경 파일: `개발환경_고도화/runtime/src/guild/guild-join-policy.ts`, `개발환경_고도화/runtime/src/guild/guild-join-repository.ts`, `개발환경_고도화/runtime/src/guild/guild-join-service.ts`, `개발환경_고도화/runtime/test/guild-join-policy.test.ts`, `개발환경_고도화/runtime/test/guild-join-service.test.ts`, `개발환경_고도화/migration-control/evidence/guild-join/slice.json`, `개발환경_고도화/migration-control/evidence/guild-join/schema-contract.sql`, 이 체크포인트.
 - 검증 결과: 길드가입 집중 테스트 13건, runtime 전체 137 tests, typecheck와 build, evidence JSON parse, `git diff --check`가 모두 통과했다. strict guard, 목록 순서, 정원·EXP, request/confirm/cancel, 확정 조건 변경 시 pending 무효화, 현재 상태보다 앞선 prior-result replay를 검증했다.
 - 남은 위험: MariaDB adapter와 실제 migration/fixture/dispatch는 coordinator 통합 전이라 실행되지 않는다. schema 초안의 길드 정책 projection과 가입권/징집명령 코드는 공용 fixture 계약 확정이 필요하다.
-- 정확한 다음 행동: 도메인 산출물을 커밋·푸시하고 WBS 증거에 commit을 기록한 뒤, coordinator에게 `schema-contract.sql` 기준 MariaDB adapter·migration·fixture·dispatch 통합을 인계할 수 있는 상태로 만든다.
+- 정확한 다음 행동: WBS 증거에 `5dd63f5`를 기록하고, coordinator가 `schema-contract.sql` 기준 MariaDB adapter·migration·fixture·dispatch를 통합할 때 이 도메인 브랜치를 선별 반영한다.
 
 ## 영속성
 
-- 체크포인트 Git 추적: 커밋 `9459a1a`에 포함
+- 체크포인트 Git 추적: 커밋 `5dd63f5`에 버전 5 포함; 현재 원격 상태 기록을 후속 체크포인트 커밋으로 반영
 - 원격 포함 상태: `origin/feature/modernization-cmd-04-0001-e80654`에 포함
 - 보안: 비밀 값과 운영 개인정보를 기록하지 않음
