@@ -127,7 +127,7 @@ erDiagram
 <!-- GENERATED COLUMN ERD START -->
 ## 전체 물리 컬럼 ERD
 
-이 섹션은 Docker MariaDB `hoibot_schema_design`의 `information_schema`에서 생성한다. 총 119개 테이블, 831개 컬럼이다.
+이 섹션은 Docker MariaDB `hoibot_schema_design`의 `information_schema`에서 생성한다. 총 121개 테이블, 845개 컬럼이다.
 
 ### 식별자·채널
 
@@ -660,6 +660,13 @@ erDiagram
     text result_json "longtext; NULL"
     int version "bigint(20) unsigned; NOT NULL"
   }
+  PET_SKILL_INVENTORY {
+    int player_pet_id PK,FK "bigint(20) unsigned; NOT NULL"
+    int skill_id PK,FK "bigint(20) unsigned; NOT NULL"
+    int quantity "bigint(20) unsigned; NOT NULL"
+    int version "bigint(20) unsigned; NOT NULL"
+    datetime updated_at "datetime(3); NOT NULL"
+  }
   PET_SKILLS {
     int player_pet_id PK,FK "bigint(20) unsigned; NOT NULL"
     int slot_no PK "int(10) unsigned; NOT NULL"
@@ -687,8 +694,11 @@ erDiagram
     string display_name "varchar(191); NULL"
     string pet_type_code "varchar(128); NULL"
     string image_value "varchar(500); NULL"
+    datetime joined_on "date; NULL"
+    string personality_label "varchar(191); NULL"
     int experience "bigint(20) unsigned; NOT NULL"
     int enhancement_level "bigint(20) unsigned; NOT NULL"
+    datetime enhancement_updated_at "datetime(3); NULL"
     int version "bigint(20) unsigned; NOT NULL"
   }
   PLAYER_HOMES ||--o{ FURNITURE_PLACEMENTS : "player_id"
@@ -705,6 +715,7 @@ erDiagram
   PET_EXPEDITION_DEFINITIONS ||--o{ PET_EXPEDITION_RUNS : "expedition_id"
   PLAYER_PETS ||--o{ PET_EXPEDITION_RUNS : "player_pet_id"
   PLAYER_PETS ||--o{ PET_SKILLS : "player_pet_id"
+  PLAYER_PETS ||--o{ PET_SKILL_INVENTORY : "player_pet_id"
   PLAYER_PETS ||--o{ PET_TITLES : "player_pet_id"
 ```
 
@@ -1311,6 +1322,14 @@ erDiagram
     int permanent "tinyint(1); NOT NULL"
     datetime starts_at "datetime(3); NULL"
     datetime ends_at "datetime(3); NULL"
+  }
+  PLAYER_PET_ELEMENTALS {
+    int player_pet_id PK,FK "bigint(20) unsigned; NOT NULL"
+    string display_name "varchar(191); NOT NULL"
+    string grade_code "varchar(64); NOT NULL"
+    string grade_display_name "varchar(191); NOT NULL"
+    int enhancement_level "bigint(20) unsigned; NOT NULL"
+    int version "bigint(20) unsigned; NOT NULL"
   }
   PLAYER_TITLES {
     int player_id PK,FK "bigint(20) unsigned; NOT NULL"

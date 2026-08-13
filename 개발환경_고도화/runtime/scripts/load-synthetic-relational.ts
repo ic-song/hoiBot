@@ -26,7 +26,9 @@ const expectedMinimumRows: Record<string, number> = {
   currency_accounts: 6,
   inventory_stacks: 3,
   player_pets: 2,
+  player_pet_elementals: 1,
   pet_skills: 1,
+  pet_skill_inventory: 1,
   owned_mini_pets: 1,
   mini_pet_collection_entries: 1,
   player_homes: 2,
@@ -76,7 +78,7 @@ async function verifyFixture(): Promise<Record<string, number>> {
         table === "guild_members" ? "guild_id BETWEEN 900000001 AND 900000002" :
         table === "castle_battle_participants" ? "season_id = 900000001" :
         table === "leaderboard_entries" ? "leaderboard_id = 900000001" :
-        table === "pet_skills" ? "player_pet_id BETWEEN 900000001 AND 900000002" :
+        table === "pet_skills" || table === "pet_skill_inventory" || table === "player_pet_elementals" ? "player_pet_id BETWEEN 900000001 AND 900000002" :
         "id BETWEEN 900000001 AND 900000010"
       }`
     );

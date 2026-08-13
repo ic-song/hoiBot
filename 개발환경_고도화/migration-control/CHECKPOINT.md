@@ -4,15 +4,15 @@
 - 작업 이름: hoiBot 전체 운영 시스템 RDB 이관
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 23
-- 마지막 갱신: 2026-08-13 10:18 KST
+- 체크포인트 버전: 24
+- 마지막 갱신: 2026-08-13 10:34 KST
 - 대화 식별명: 전체 이관 제어면
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 가입 다음 기능인 `/펫생성` 슬라이스의 legacy guard, 펫 초기화·저장 흐름과 현재 MariaDB 모델을 조사한다.
+- `/펫생성` 다음 조회 기능인 `/펫정보`의 legacy guard, 출력 helper와 MariaDB projection 범위를 조사한다.
 
 ## 사용자 요청과 승인 범위
 
@@ -28,7 +28,7 @@
 - 브랜치: `feature/modernization`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/modernization`
-- 마지막 푸시 커밋: `88b6aca93be79697f53c88692c8eacd819ee884c`
+- 마지막 확인 푸시 커밋: `b5e7a6a86babe9915f72abdabe99e7865431a97c` (가입 슬라이스)
 - 원격 동기화 상태: 로컬 HEAD와 upstream은 같지만 working tree가 dirty다.
 - 체크포인트 Git 추적: 예
 - 체크포인트 포함 푸시 상태: 현재 upstream HEAD 포함 여부를 resume checker로 판정
@@ -91,10 +91,17 @@
 - 합성 관계형 fixture에 미가입 candidate와 경량 출석을 추가하고 29개 대표 테이블을 두 번 적용·verify-only 검증했다.
 - 가입 대기 중 player 미생성, 새 DB client에서도 대기 유지, 동의 초기 행·출석 이관, 거절 시 이름 예약 해제·player 미생성, exact reply와 이벤트 멱등성을 검증했다.
 - 가입 슬라이스 evidence를 `verified`로 기록하고 validator를 통과했다.
+- legacy `/펫생성`이 `member_pet.json`, `petSkillData.json`, `petHomeData.json`을 순서대로 저장하며 성격·종족·이모지, 90강, 정령왕 피닉스, 십원 스킬, 초보자 미니펫, 스윗홈을 함께 지급함을 확인했다.
+- broad prefix guard 대신 공백 없는 1~6자 이름 전체 패턴을 적용해 접미 안내문이 mutation으로 해석되지 않도록 했다.
+- 누락된 펫 가입일·성격·강화시각 컬럼과 정령·스킬 가방 관계를 `030_pet_creation_foundations.sql`로 설계했다.
+- 실제 개발 schema에 migration 030을 적용하고 migration 30개, table 121개, column 845개, FK 174개를 확인했다.
+- 합성 fixture에 펫 성격·가입일, 정령, 스킬 가방을 추가하고 checksum `563802fe...99fb`, SQL 66문장, 대표 테이블 31개를 두 번 적용·verify-only 검증했다.
+- `/펫생성` 포팅본이 빈 펫 행 잠금부터 펫·정령·스킬·미니펫·홈·감사·명령 실행·순서 보장 outbox를 한 transaction으로 저장하도록 구현했다.
+- 합성 MariaDB probe로 정상 2개 reply, starter 관계, 동일 event 멱등성, 기존 펫 거부를 검증하고 evidence를 `verified`로 기록했다.
 
 ## 진행 중인 작업
 
-- 없음. 가입 슬라이스 합성 검증 완료 후 다음 기능 시작점을 기록한다.
+- 없음. `/펫생성` 합성 검증 완료 후 `/펫정보` 시작점을 기록한다.
 
 ## 변경 파일
 
@@ -127,6 +134,12 @@
 - `개발환경_고도화/runtime/test/signup.test.ts`
 - `개발환경_고도화/runtime/scripts/probe-signup-synthetic.ts`
 - `개발환경_고도화/migration-control/evidence/player-signup/slice.json`
+- `개발환경_고도화/runtime/migrations/030_pet_creation_foundations.sql`
+- `개발환경_고도화/runtime/src/pet/pet-creation-policy.ts`
+- `개발환경_고도화/runtime/src/pet/pet-creation-service.ts`
+- `개발환경_고도화/runtime/test/pet-creation.test.ts`
+- `개발환경_고도화/runtime/scripts/probe-pet-creation-synthetic.ts`
+- `개발환경_고도화/migration-control/evidence/pet-creation/slice.json`
 - `COMMAND_INDEX.md`
 
 기존 캐릭터 MVP와 그 밖의 미커밋 변경은 소유권이 불명확하므로 건드리지 않는다.
@@ -180,6 +193,16 @@
 - 결과: exact guard·약관·환영·거절 문구, durable pending, 동의 초기 행, 가입 전 출석 3회·서버 이관, 거절 player 미생성, operation/audit/execution/outbox와 멱등성 통과.
 - 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`, `node --check main.js`, `node --check Info.js`, signup evidence validator
 - 결과: TypeScript 통과, runtime test 93개 통과, Rhino 파일 syntax 통과, `valid slice evidence: player-signup`.
+- 실행 명령: 운영 DB 기본 설정으로 `probe-pet-creation-synthetic.ts` 실행
+- 결과: `Synthetic pet-creation probe is blocked for database: hoibot`로 mutation 전에 차단됨.
+- 실행 명령: `npm.cmd run db:migrate` (`DATABASE_NAME=hoibot_schema_design`)
+- 결과: `030_pet_creation_foundations.sql` 적용, migration 30개 확인. 물리 schema는 table 121개, column 845개, FK 174개.
+- 실행 명령: 합성 fixture dry-run, `--apply` 2회, `--verify-only`
+- 결과: checksum `563802fe...99fb`, SQL 66문장, 대표 테이블 31개 반복 적용 검증 통과.
+- 실행 명령: `probe-pet-creation-synthetic.ts` (`DATABASE_NAME=hoibot_schema_design`)
+- 결과: full guard, 펫 초기값, 정령·스킬·미니펫·홈 관계, 정상 reply 2개, operation/execution/audit 1개와 outbox 2개, 동일 event replay, 기존 펫 거부 검증 통과.
+- 실행 명령: `npm.cmd run typecheck`, `npm.cmd test`
+- 결과: TypeScript 통과, runtime test 97개 통과.
 
 ## 충돌·막힘·미승인 사항
 
@@ -195,7 +218,7 @@
 
 ## 다음 행동
 
-1. `/펫생성`의 exact/full guard, legacy pet/member/title/pet-skill read·write와 현재 MariaDB pet 초기화 모델을 조사한다.
+1. `/펫정보`의 exact/full guard, legacy 출력 helper·pet/home/skill read 흐름과 현재 MariaDB profile projection의 parity 범위를 조사한다.
 
 ## 보안
 

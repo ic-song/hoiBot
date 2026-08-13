@@ -2658,6 +2658,66 @@ Status: VERIFIED
 
 ---
 
+# /펫생성 [이름]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Legacy search in `main.js`: `/펫생성 `
+- Ported full guard: `/^\/펫생성\s+(\S+)$/u` plus legacy-compatible JavaScript length 1~6
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-creation-policy.ts`
+- `개발환경_고도화/runtime/src/pet/pet-creation-service.ts`
+- `개발환경_고도화/runtime/migrations/030_pet_creation_foundations.sql`
+
+## Related Helpers
+
+- `createPet`
+- `getRandomCharacter`
+- `applyStarterPet`
+- `applyStarterHome`
+- `updateEmoji`
+- `addPetSkillToBag`
+- `PetCreationService.handle`
+- `generateStarterPet`
+- `parsePetCreationCommand`
+
+## Data Usage
+
+- Legacy `member_pet.<sender>`
+- Legacy `petSkillData.<sender>.petSkills.bag`
+- Legacy `petHomeData.<sender>`
+- MariaDB `player_pets`, `player_pet_elementals`
+- MariaDB `pet_skill_inventory`, `owned_mini_pets`, `player_homes`
+- MariaDB `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Legacy saves `member_pet.json`, `petSkillData.json`, then `petHomeData.json` as three separate file writes.
+- The port locks the signup-created empty pet row and persists pet, elemental, starter skill, starter mini-pet, home, audit and ordered Iris outboxes in one transaction.
+- Same Iris event replay returns the stored operation result and does not create duplicate starter rows.
+
+## Related Commands
+
+- `/가입`
+- `/펫정보`
+- `/펫이름 [이름]`
+- `/펫스킬가방`
+- `/스윗홈`
+
+## AI Notes
+
+- Legacy `startsWith` allowed some suffix text to mutate a name; the port intentionally requires one whitespace-free 1~6 character argument.
+- Normal creation produces two ordered replies; a unique pet produces three.
+- Operational snapshots remain untouched until the final full import stage.
+
+---
+
 # /가입한다
 Status: VERIFIED
 ## Command Anchors

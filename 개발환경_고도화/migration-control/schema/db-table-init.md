@@ -14,8 +14,8 @@
 | character set | `utf8mb4` |
 | collation | `utf8mb4_unicode_ci` |
 | timezone | DB container `UTC`, 운영 표시 `Asia/Seoul` |
-| migration | `001_foundation.sql` ~ `029_pre_signup_attendance.sql` |
-| 정상 물리 결과 | migration 29개, base table 119개, column 831개, FK 171개 |
+| migration | `001_foundation.sql` ~ `030_pet_creation_foundations.sql` |
+| 정상 물리 결과 | migration 30개, base table 121개, column 845개, FK 174개 |
 
 컬럼과 관계 전체는 [HOIBOT_DATABASE_ERD.md](./HOIBOT_DATABASE_ERD.md)의 `전체 물리 컬럼 ERD`를 기준으로 한다.
 
@@ -141,6 +141,8 @@ WHERE table_schema = DATABASE()
     'currency_accounts',
     'inventory_stacks',
     'player_pets',
+    'player_pet_elementals',
+    'pet_skill_inventory',
     'guilds',
     'player_homes',
     'market_listings',
@@ -189,6 +191,7 @@ ORDER BY table_name;
 | `027_remove_reply_monitoring_group.sql` | `057e71e3ee1eb7f9d78066debb1563eb8386109c6fe5cc2801e2cdedb2638afb` |
 | `028_complete_legacy_domains.sql` | `9cabbe263f59d546d7f8ef5939b13784fba055811b0728ccb80472d15d37124e` |
 | `029_pre_signup_attendance.sql` | `2e86ebccd682730efe86c142680dbb395f175433e505c142ce0ccb3528acc46d` |
+| `030_pet_creation_foundations.sql` | `6c7b1474045ba9c1db67aa2d10e700f24fcc226f8fa954bd219b859041867266` |
 
 ## 9. 실제 운영 데이터 최종 이관 전 필수 자료
 

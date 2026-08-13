@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "updatedAt": "2026-08-13T10:18:00+09:00",
+  "updatedAt": "2026-08-13T10:34:48+09:00",
   "project": "hoibot-modernization-phase-1",
   "checkpoint": "개발환경_고도화/migration-control/CHECKPOINT.md",
   "masterPlan": "개발환경_고도화/migration-control/MASTER_PLAN.md",
@@ -15,9 +15,9 @@
   "branchEvidence": {
     "required": "feature/modernization",
     "observed": "feature/modernization",
-    "head": "d05dee35db145b8bc3d79a536f9b753e3a019130",
+    "head": "b5e7a6a86babe9915f72abdabe99e7865431a97c",
     "upstream": "origin/feature/modernization",
-    "upstreamHead": "d05dee35db145b8bc3d79a536f9b753e3a019130",
+    "upstreamHead": "b5e7a6a86babe9915f72abdabe99e7865431a97c",
     "workingTreeClean": false,
     "prodHeadObserved": "288e6bd9626c88f5f3d658c593bfc462e72ca14e",
     "baselineMergeSafe": false,
@@ -140,12 +140,12 @@
     "checkpointPushed": true,
     "snapshotMatched": true,
     "databaseReachable": true,
-    "localMigrationCount": 29,
-    "appliedMigrationCount": 29,
+    "localMigrationCount": 30,
+    "appliedMigrationCount": 30,
     "migrationChecksumMismatches": [],
     "completedImportRunFound": false,
     "typecheckPassed": true,
-    "verifiedAt": "2026-08-13T10:18:00+09:00"
+    "verifiedAt": "2026-08-13T10:34:48+09:00"
   },
   "dataInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-data-inventory.mjs",
@@ -182,20 +182,20 @@
     "verifiedAt": "2026-08-11T16:45:00+09:00"
   },
   "databaseDesignEvidence": {
-    "migration": "개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql",
+    "migration": "개발환경_고도화/runtime/migrations/030_pet_creation_foundations.sql",
     "erd": "개발환경_고도화/migration-control/schema/HOIBOT_DATABASE_ERD.md",
     "dockerDatabase": "hoibot_schema_design",
-    "migrationCount": 29,
-    "baseTableCount": 119,
-    "foreignKeyCount": 171,
-    "columnCount": 831,
-    "representativeNewTableCount": 8,
+    "migrationCount": 30,
+    "baseTableCount": 121,
+    "foreignKeyCount": 174,
+    "columnCount": 845,
+    "representativeNewTableCount": 10,
     "columnErdGenerator": "개발환경_고도화/runtime/scripts/generate-database-erd.ts",
     "productionReinstallGuide": "개발환경_고도화/migration-control/schema/db-table-init.md",
-    "migrationChecksumManifestCount": 29,
+    "migrationChecksumManifestCount": 30,
     "operationalDataLoaded": false,
     "validated": true,
-    "verifiedAt": "2026-08-13T10:18:00+09:00"
+    "verifiedAt": "2026-08-13T10:34:48+09:00"
   },
   "syntheticMissingDataEvidence": {
     "decisionDraft": "DEC-064",
@@ -222,16 +222,16 @@
     "fixture": "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
     "loader": "개발환경_고도화/runtime/scripts/load-synthetic-relational.ts",
     "database": "hoibot_schema_design",
-    "fixtureChecksum": "16570400e8ed5be38333a3513a0ed9b851bc031dd41ab0136ed96799afd4a352",
-    "statementCount": 64,
-    "verifiedTableCount": 29,
+    "fixtureChecksum": "563802fe1e50cfff96c96d12c01379aa69fcb3af56dec8361bef34b91ed499fb",
+    "statementCount": 66,
+    "verifiedTableCount": 31,
     "syntheticPlayerCount": 3,
     "repeatApplyVerified": true,
     "verifyOnlyPassed": true,
     "productionDatabaseGuardVerified": true,
     "operationalSnapshotTouched": false,
     "validated": true,
-    "verifiedAt": "2026-08-13T10:18:00+09:00"
+    "verifiedAt": "2026-08-13T10:34:48+09:00"
   },
   "commandInventoryEvidence": {
     "generator": "개발환경_고도화/migration-control/scripts/build-command-inventory.mjs",
@@ -322,6 +322,33 @@
         "개발환경_고도화/migration-control/evidence/player-signup/slice.json"
       ],
       "nextRequiredGate": "최종 운영 snapshot import, unresolved attendanceLight identity reconciliation, 실운영방 smoke",
+      "trialMigrationForCurrentRootHash": false,
+      "syntheticTrialVerified": true,
+      "parityVerified": true,
+      "cutoverReady": false
+    },
+    {
+      "id": "pet-creation",
+      "commands": [
+        "/펫생성 [이름]"
+      ],
+      "completedGates": [
+        "command-investigation",
+        "database-design",
+        "synthetic-data-load",
+        "logic-port",
+        "synthetic-mutation-parity",
+        "starter-relations-atomicity",
+        "idempotency-audit-outbox"
+      ],
+      "observedArtifacts": [
+        "개발환경_고도화/runtime/migrations/030_pet_creation_foundations.sql",
+        "개발환경_고도화/runtime/src/pet/pet-creation-policy.ts",
+        "개발환경_고도화/runtime/src/pet/pet-creation-service.ts",
+        "개발환경_고도화/runtime/scripts/probe-pet-creation-synthetic.ts",
+        "개발환경_고도화/migration-control/evidence/pet-creation/slice.json"
+      ],
+      "nextRequiredGate": "최종 운영 snapshot import, 실운영방 reply 순서와 /펫정보 smoke",
       "trialMigrationForCurrentRootHash": false,
       "syntheticTrialVerified": true,
       "parityVerified": true,

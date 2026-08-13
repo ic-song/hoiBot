@@ -115,10 +115,21 @@ INSERT INTO player_titles (player_id, title_id, acquired_at, equipped)
 VALUES (900000001, 900000001, '2026-01-04 00:00:00.000', TRUE)
 ON DUPLICATE KEY UPDATE acquired_at = VALUES(acquired_at), equipped = VALUES(equipped);
 
-INSERT INTO player_pets (id, player_id, display_name, pet_type_code, image_value, experience, enhancement_level, version) VALUES
-  (900000001, 900000001, '합성펫알파', 'synthetic-wolf', '🐺', 240, 2, 1),
-  (900000002, 900000002, '합성펫베타', 'synthetic-cat', '🐱', 80, 0, 1)
-ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), pet_type_code = VALUES(pet_type_code), experience = VALUES(experience), enhancement_level = VALUES(enhancement_level), version = VALUES(version);
+INSERT INTO player_pets
+  (id, player_id, display_name, pet_type_code, image_value, joined_on, personality_label,
+   experience, enhancement_level, enhancement_updated_at, version) VALUES
+  (900000001, 900000001, '합성펫알파', 'synthetic-wolf', '🐺', '2026-01-04', '합성 다정함', 240, 2, '2026-01-05 00:00:00.000', 1),
+  (900000002, 900000002, '합성펫베타', 'synthetic-cat', '🐱', '2026-01-05', '합성 씩씩함', 80, 0, NULL, 1)
+ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), pet_type_code = VALUES(pet_type_code),
+  image_value = VALUES(image_value), joined_on = VALUES(joined_on), personality_label = VALUES(personality_label),
+  experience = VALUES(experience), enhancement_level = VALUES(enhancement_level),
+  enhancement_updated_at = VALUES(enhancement_updated_at), version = VALUES(version);
+
+INSERT INTO player_pet_elementals
+  (player_pet_id, display_name, grade_code, grade_display_name, enhancement_level, version)
+VALUES (900000001, '합성 불새', 'synthetic_king', '합성 정령왕', 3, 1)
+ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), grade_code = VALUES(grade_code),
+  grade_display_name = VALUES(grade_display_name), enhancement_level = VALUES(enhancement_level), version = VALUES(version);
 
 INSERT INTO skill_definitions (id, code, display_name, rules_json, active)
 VALUES (900000001, 'synthetic-skill', '합성 돌진', JSON_OBJECT('power', 10, 'synthetic', TRUE), TRUE)
@@ -127,6 +138,10 @@ ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), rules_json = VALUES
 INSERT INTO pet_skills (player_pet_id, slot_no, skill_id, level, equipped)
 VALUES (900000001, 1, 900000001, 2, TRUE)
 ON DUPLICATE KEY UPDATE skill_id = VALUES(skill_id), level = VALUES(level), equipped = VALUES(equipped);
+
+INSERT INTO pet_skill_inventory (player_pet_id, skill_id, quantity, version, updated_at)
+VALUES (900000001, 900000001, 2, 1, '2026-01-05 00:00:00.000')
+ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = VALUES(version), updated_at = VALUES(updated_at);
 
 INSERT INTO pet_titles (player_pet_id, title_id, acquired_at, equipped)
 VALUES (900000001, 900000002, '2026-01-05 00:00:00.000', TRUE)
