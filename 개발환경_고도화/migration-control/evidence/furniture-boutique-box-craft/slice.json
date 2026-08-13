@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "furniture-boutique-box-craft",
+  "status": "verified",
+  "execution": {
+    "wbsId": "CMD-06-0043",
+    "worker": "A",
+    "executionId": "A-CMD-06-0043-20260813T065504Z-akyxp1",
+    "claimRow": 9
+  },
+  "commands": {
+    "names": ["/부띠끄조합", "/부띠끄조합 [수량]"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command defaults to quantity one",
+      "digits-only argument preserves legacy zero quantity success",
+      "active castle siege returns silently before inventory mutation",
+      "shop-ticket shortage is checked before any write"
+    ],
+    "helpers": ["checkRank"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": [
+      "member.<sender>.bag['펫스윗홈인테리어샵🖼️(/샵오픈)']",
+      "guildData.castleSiegeFlag"
+    ],
+    "writePaths": [
+      "member.<sender>.bag['펫스윗홈인테리어샵🖼️(/샵오픈)'] decrement and delete at zero",
+      "member.<sender>.bag['가구 부띠끄상자🧳(/부띠끄오픈)'] increment"
+    ],
+    "saveOrder": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities",
+      "player_profiles",
+      "item_definitions",
+      "inventory_stacks",
+      "inventory_ledger",
+      "castle_battle_seasons",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "constraints": [
+      "inventory_stacks unique player and item stack",
+      "operations unique idempotency scope and key",
+      "inventory ledger, execution, audit and outbox rows reference one operation"
+    ],
+    "newColumns": [],
+    "transactionBoundary": "lock active castle state, linked identity and both inventory stacks; then apply both balances, inventory ledger, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "CMD-06-0043 synthetic probe-owned item definitions and inventory stacks",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "temporary definitions and stacks are reset idempotently; command replay by the same event ID returns the stored result",
+    "checks": [
+      "production database name hoibot was rejected by the probe guard",
+      "shop tickets 10000 to 0 and boutique boxes 1 to 3",
+      "inventory ledger 2, operation 1, execution 1, audit 1 and outbox 1",
+      "duplicate event returned the same result without a second mutation",
+      "operational JSON snapshot untouched"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/crafting/furniture-boutique-box-craft-service.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/furniture-boutique-box-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-furniture-boutique-box-craft-synthetic.ts"
+    ]
+  },
+  "parity": {
+    "fixtures": ["synthetic linked player with 10000 shop tickets and one boutique box"],
+    "comparisonMode": "guard, zero quantity, shortage text, exact success reply, two inventory deltas, ledger, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory writes in the final shared freeze window",
+    "finalImportPlan": "import every interior-shop ticket and boutique-box quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity crafts one box and verifies both balances, reply and inventory ledger",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "legacy success does not call saveJsonFile, so historical in-memory changes may have been lost on restart",
+    "legacy deletes the material property at zero while MariaDB keeps a zero-quantity stack row",
+    "legacy accepts zero quantity and emits a success reply without a balance delta",
+    "full checkRank special and guild decorations are not yet centralized",
+    "the port adds a one-million craft limit",
+    "shared Iris app routing and common synthetic fixture integration are intentionally deferred to the integration coordinator",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}

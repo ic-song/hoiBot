@@ -22,6 +22,47 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /부띠끄조합 [수량]
+
+Status: PARTIAL
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/crafting/furniture-boutique-box-craft-service.ts`
+
+## Related Helpers
+
+- `checkRank`
+- `FurnitureBoutiqueBoxCraftService`
+
+## Data Usage
+
+- Legacy: `data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"]`
+- Legacy: `data.member[sender].bag["가구 부띠끄상자🧳(/부띠끄오픈)"]`
+- Port: `item_definitions`, `inventory_stacks`, `inventory_ledger`
+- Port: `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Legacy success branch has no direct `saveJsonFile`, so mutation can be lost after restart.
+- Ported Service persists both inventory balances, ledger, operation, execution, audit and outbox in one transaction.
+- Iris dispatch and shared synthetic fixture integration remain coordinator work.
+
+## Related Commands
+
+- `/샵오픈 [수량]`
+- `/부띠끄오픈`
+
+## AI Notes
+
+- 수량 생략은 1개이고 펫스윗홈인테리어샵 5,000개당 가구 부띠끄상자 1개를 지급한다.
+- 숫자 0은 legacy에서 재료 보유값이 양수일 때 0개 조합 성공 문구를 출력한다.
+- 재료 보유값이 0이거나 없으면 수량 0에도 `펫스윗홈인테리어샵🖼️(/샵오픈) 0개가 필요해요!`를 출력한다.
+- active castle season이면 조용히 종료한다.
+
+---
+
 # 1:1톡 패스 접근 제한
 
 Status: VERIFIED
