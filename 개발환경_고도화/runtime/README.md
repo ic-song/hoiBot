@@ -23,6 +23,7 @@ Iris 입출력과 MariaDB 도메인 이전을 검증하는 TypeScript/Fastify �
 - 일반 사용자 Argon2id 로그인, hash 세션과 CSRF 검증(CAPTCHA는 현재 범위에서 제외)
 - 관리자 Argon2id 로그인, RBAC, hash 세션, CSRF, 회원 조회·서버 변경·identity 승인·감사 API
 - 공통 transactional operation runner와 재화·인벤토리·펫/스킬/타이틀·길드·홈·이벤트/랭킹·거래소 Application Service
+- Master 전용 `/가방속성`의 레거시 번호 정렬·절대 수량 변경/삭제·감사·원장·Iris outbox 이관
 - 모든 도메인 mutation의 idempotency, optimistic version, audit, ledger, internal outbox 처리
 - 원본을 쓰지 않는 33개 JSON checksum/lossless dry-run importer
 - 정상 종료 처리와 가짜 Iris 이벤트 전송 스크립트
@@ -201,6 +202,7 @@ npm.cmd run db:migrate
 npm.cmd run db:probe
 npm.cmd run db:probe:modernization
 npm.cmd run db:probe:signup
+npm.cmd run db:probe:bag-attribute # hoibot_rehearsal_* 격리 DB에서만 실행 가능
 npm.cmd run account:cleanup
 npm.cmd run db:import:dry-run -- --source ..\..\data
 ```
