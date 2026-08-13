@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "pet-rename",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/펫이름 [이름]"
+    ],
+    "sourceFiles": [
+      "main.js"
+    ],
+    "guards": [
+      "legacy startsWith('/펫이름 ') then JavaScript length <= 6",
+      "ported full-pattern guard accepts exactly one whitespace-free 1..6 character argument",
+      "active castle siege returns silently before pet or ticket mutation"
+    ],
+    "helpers": [],
+    "automaticFlows": [
+      "Iris outbox worker retries the persisted success reply after restart"
+    ]
+  },
+  "legacyData": {
+    "files": [
+      "data/member_pet.json",
+      "data/member.json",
+      "data/guild.json"
+    ],
+    "readPaths": [
+      "petData.<sender>",
+      "member.<sender>.bag['펫 이름변경권🎫']",
+      "guildData.castleSiegeFlag"
+    ],
+    "writePaths": [
+      "petData.<sender>.petname",
+      "member.<sender>.bag['펫 이름변경권🎫'] decrement and delete at zero"
+    ],
+    "saveOrder": [
+      "saveJsonFile(petData, memberPetPath)",
+      "saveJsonFile(data, filePath)"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "028_complete_legacy_domains.sql"
+    ],
+    "tables": [
+      "external_identities",
+      "player_pets",
+      "item_definitions",
+      "inventory_stacks",
+      "inventory_ledger",
+      "castle_battle_seasons",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "newColumns": [],
+    "constraints": [
+      "one pet row per player",
+      "one stack per player and rename-ticket item",
+      "inventory quantity cannot become negative",
+      "one operation per external identity and event id",
+      "one command execution per event and pet_rename command"
+    ],
+    "transactionBoundary": "lock active castle state, linked identity, pet and rename-ticket stack; then rename, decrement ticket, append inventory ledger, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ada4f36e1e4311478e15f3986d99c0ba7784d158ff33542baf19e6c9a5c017ac",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; the command probe replays the exact event through operation idempotency",
+    "checks": [
+      "operational database name hoibot rejected the probe before connection mutation",
+      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "synthetic rename-ticket stack loaded at quantity 2",
+      "valid command changed the pet name and ticket quantity from 2 to 1",
+      "inventory ledger delta -1, operation, command execution, audit and outbox were each persisted once",
+      "same event replay returned the stored result without a second mutation",
+      "invalid appended guide text did not mutate state",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/pet/pet-rename-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts transaction client"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/pet-rename.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-pet-rename-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic linked player with named pet and two rename tickets",
+      "scripted active-siege, missing-ticket and valid-rename cases"
+    ],
+    "comparisonMode": "accepted and rejected guards, exact replies, pet-name delta, ticket delta, ledger/audit/outbox effects, silent siege block and duplicate-event behavior",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member_pet and member inventory writes in the final shared freeze window",
+    "finalImportPlan": "import every pet name and rename-ticket quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity renames a disposable pet once and verifies ticket decrement, reply and /펫정보 output",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "legacy broad prefix allowed blank and whitespace-containing names; the port intentionally hardens this to one non-whitespace argument",
+    "legacy deletes the bag property at zero while MariaDB keeps a zero-quantity stack row",
+    "castle siege parity assumes active season status and current UTC time window are the normalized castleSiegeFlag source",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}

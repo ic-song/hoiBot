@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "raid-strike-seal-craft",
+  "status": "verified",
+  "commands": {
+    "names": ["/레이드인장조합", "/레이드인장조합 [수량]"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command defaults to quantity one",
+      "digits-only argument uses legacy minimum quantity one",
+      "active castle siege returns silently before inventory or point mutation",
+      "junk shortage is checked before point shortage"
+    ],
+    "helpers": ["checkRank"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.bag['잡템☠️']", "member.<sender>.point", "guildData.castleSiegeFlag"],
+    "writePaths": [
+      "member.<sender>.bag['잡템☠️'] decrement and delete at zero",
+      "member.<sender>.point decrement",
+      "member.<sender>.bag['레이드타격대인장👑(+600👾)'] increment"
+    ],
+    "saveOrder": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities", "player_profiles", "currency_accounts", "currency_ledger", "item_definitions",
+      "inventory_stacks", "inventory_ledger", "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages"
+    ],
+    "newColumns": [],
+    "constraints": [
+      "one currency account per player and currency", "one inventory stack per player and item",
+      "inventory quantity cannot become negative", "one operation per external identity and event id"
+    ],
+    "transactionBoundary": "lock active castle state, linked identity, junk and seal stacks and point account; then apply all three balances, both ledgers, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 2d0a26ba87644215c8d6bcc834256132a82fddd21da992511c75891c63b3a778",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; each command probe replays the exact event through operation idempotency",
+    "checks": [
+      "operational database name hoibot rejected the probe before connection mutation",
+      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables and 8 inventory stacks",
+      "quantity two changed junk 2000 to zero, point 3000000000 to 1000000000 and seal zero to two",
+      "inventory ledgers 2, currency ledger 1, operation, execution, audit and outbox were persisted once",
+      "same event replay and two independent complete probes passed",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/raid/raid-strike-seal-craft-service.ts", "개발환경_고도화/runtime/src/app.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/raid-strike-seal-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-raid-strike-seal-craft-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": ["synthetic linked player with 2000 junk, 3000000000 point and zero seals", "scripted zero, shortage and quantity-two cases"],
+    "comparisonMode": "guard, minimum quantity, validation order, exact replies, three balance deltas, ledgers, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory and point writes in the final shared freeze window",
+    "finalImportPlan": "import every point, junk and raid-seal quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity crafts one seal and verifies all balances, reply and ledgers",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "legacy success does not call saveJsonFile, so historical in-memory changes may have been lost on restart",
+    "legacy deletes the junk property at zero while MariaDB keeps a zero-quantity stack row",
+    "full checkRank special and guild decorations are not yet centralized",
+    "the port adds a one-million craft limit",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "player-signup",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/가입",
+      "시작한다",
+      "/시작한다",
+      "거절한다",
+      "/거절한다"
+    ],
+    "sourceFiles": [
+      "main.js"
+    ],
+    "guards": [
+      "msg === \"/가입\"",
+      "termsState[sender].step === \"WAIT\" and exact 시작한다 or /시작한다",
+      "termsState[sender].step === \"WAIT\" and exact 거절한다 or /거절한다",
+      "ported isSignupCommand accepts only the same five exact inputs and rejects suffix text"
+    ],
+    "helpers": [
+      "initializeMember",
+      "initializePet",
+      "initPetSkillUser",
+      "validateSignupNickname",
+      "buildTermsMessage",
+      "buildWelcomeMessage",
+      "migrateLightAttendanceToMember"
+    ],
+    "automaticFlows": [
+      "termsState is an in-memory pending state and is lost on Rhino restart",
+      "attendanceLight rows are pruned separately by /미가입출첵"
+    ]
+  },
+  "legacyData": {
+    "files": [
+      "data/member.json",
+      "data/member_pet.json",
+      "data/member_title.json",
+      "data/petSkillData.json",
+      "data/attendanceLight.json"
+    ],
+    "readPaths": [
+      "member.<sender>",
+      "attendanceLight.users.<sender>",
+      "GLOBAL_CONFIG.signup.blockedNicknameTerms",
+      "roomToServer.<room>"
+    ],
+    "writePaths": [
+      "member.<sender> initial profile/currency/counter/rank/bag fields",
+      "member_pet.<sender> blank pet fields",
+      "member_title.member.<sender>.title empty projection",
+      "petSkillData.<sender>.petSkills in memory",
+      "attendanceLight.users.<sender> removed after transfer"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "002_event_processing.sql",
+      "003_identity_import.sql",
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "009_event_identity_links.sql",
+      "015_player_signup.sql",
+      "028_complete_legacy_domains.sql",
+      "029_pre_signup_attendance.sql"
+    ],
+    "tables": [
+      "external_identities",
+      "player_signup_requests",
+      "pre_signup_attendance",
+      "players",
+      "player_profiles",
+      "player_pets",
+      "currency_accounts",
+      "player_counters",
+      "attendance_programs",
+      "player_attendance",
+      "event_inbox",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "constraints": [
+      "external_identities(provider_code, external_user_id) unique",
+      "player_signup_requests.external_identity_id unique",
+      "player_signup_requests.normalized_display_name unique while non-null",
+      "pre_signup_attendance.external_identity_id unique and nullable for unresolved legacy rows",
+      "pre_signup_attendance migrated player/server/import run foreign keys",
+      "operations(idempotency_scope, idempotency_key) unique",
+      "command_executions(event_id, command_code) unique"
+    ],
+    "transactionBoundary": "request stores durable pending state plus audit/reply; accept atomically creates player/profile/pet/currency/counters, transfers pre-signup attendance, links identity, accepts request, audits and queues replies; reject releases the reserved name without creating a player"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 16570400e8ed5be38333a3513a0ed9b851bc031dd41ab0136ed96799afd4a352 plus per-run synthetic Kakao candidates",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed fixture IDs use upsert and passed two applies; command probes use unique synthetic event/identity keys and replay each state-changing event against operation idempotency",
+    "checks": [
+      "operational database name hoibot rejected the probe before mutation",
+      "migration 029 applied to development schema only",
+      "fixture applied twice and verify-only passed with 29 representative tables",
+      "pending request persisted without a player and survived a new database client",
+      "accept created one profile, one empty pet, two currencies and eleven counters",
+      "three pre-signup attendances and server assignment transferred atomically",
+      "request and accept replays did not duplicate operations, audit, command executions or outbox",
+      "reject released the normalized name and created no player",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/signup/signup-service.ts",
+      "개발환경_고도화/runtime/src/signup/create-initial-player.ts",
+      "개발환경_고도화/runtime/src/signup/signup-policy.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts transaction client"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/signup.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-signup-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "per-run synthetic accept identity with three light attendances",
+      "per-run synthetic reject identity",
+      "fixed synthetic pending-signup fixture"
+    ],
+    "comparisonMode": "five exact guards and exact terms/welcome/reject replies; normalized initial member state and attendance delta; intended durable correction for restart, rejection residue, audit, outbox and duplicate events",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "전체 기능 검증 후 Rhino member, pet, title, pet-skill and attendanceLight writes를 함께 중지",
+    "finalImportPlan": "최신 운영 snapshot에서 기존 회원과 미가입 경량 출석을 분리해 import하고 닉네임-only 경량 행은 unresolved identity로 보존·reconcile",
+    "smokePlan": "승인된 운영방의 신규 테스트 identity로 가입 대기, 재시작 후 동의, 내정보 초기값과 중복 이벤트를 확인하고 테스트 계정을 제거",
+    "rollbackPlan": "가입 mutation 활성화 전에는 Rhino 유지; 활성화 후에는 MariaDB backup과 operation/audit 경계를 기준으로 복구"
+  },
+  "risks": [
+    "legacy /가입은 약관 동의 전에 member/pet/title을 즉시 저장하고 거절해도 남기지만 포팅본은 동의 완료 전 player를 생성하지 않는 의도된 정합성 수정이다",
+    "legacy termsState는 재시작 시 사라지고 petSkillData 초기값도 가입 경로에서 즉시 저장되지 않지만 포팅본은 pending과 초기 정규화 상태를 MariaDB에 영속화한다",
+    "운영 attendanceLight는 닉네임만 있는 행이므로 최종 import에서 실제 external identity 자동 연결을 가정하지 않고 unresolved reconciliation이 필요하다",
+    "가입 후 펫 제목·스킬의 빈 상태는 관계 행 부재로 표현하며 실제 운영 출력의 empty/null 조합은 후속 펫 기능 슬라이스에서 확대 검증해야 한다",
+    "실제 전체 운영 데이터 import와 운영방 smoke는 아직 실행하지 않았다"
+  ]
+}

@@ -1,0 +1,1405 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T07:40:41.039Z",
+  "sourceSnapshot": {
+    "directory": "data",
+    "readOnly": true,
+    "repositoryFileCount": 35,
+    "jsonFileCount": 33,
+    "rootHash": "b7dfec6b7cb82c579f1a834434f6286c57e6364cd759b1fbcedc2a25db3f0014"
+  },
+  "collectionRules": {
+    "codeSources": [
+      "main.js",
+      "Info.js"
+    ],
+    "classifications": {
+      "authoritative": "현재 코드에서 saveJsonFile 대상임을 기계 확인",
+      "reference": "현재 코드에서 loadJsonFile만 확인",
+      "reconciliation-only": "백업 또는 이전 전 snapshot 이름 규칙에 해당",
+      "excluded": "운영 데이터 이관 대상이 아님을 코드 사용처로 확인",
+      "unknown": "현재 기계 조사만으로 역할을 확정할 수 없음"
+    },
+    "privacy": "원본 값, 사용자 키, KakaoTalk 원문은 기록하지 않음"
+  },
+  "pathFlow": {
+    "productionRoot": "/sdcard/호이랜드/",
+    "developmentRoot": "/sdcard/호이랜드_dev/",
+    "resolver": "resolveActiveDataPath",
+    "commonDataFiles": [
+      "eventTowerBoss.json",
+      "hoiBotChangeLog.json",
+      "itemInfo.json",
+      "miniPetCollectionInfo.json",
+      "miniPetData.json",
+      "petSweetHomeInfo.json",
+      "trialTowerBoss.json"
+    ],
+    "note": "공통 파일은 DEV 전환 시에도 운영 루트에서 읽고, 나머지는 command context에 따라 DEV 루트로 치환됨"
+  },
+  "stores": [
+    {
+      "path": "data/attendanceLight.json",
+      "operationalPath": "/sdcard/호이랜드/attendanceLight.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 21,
+      "sha256": "f57607c2512fe3d7a650cf9543e75b36c1aa34d2335ccc12b41dd6e380901df4",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "attendanceLightPath",
+          "loadCount": 6,
+          "saveCount": 5,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/backups/petHomeActivityData_beforeSocialBadges20260727.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomeSocialBadgeActivityBackupPath",
+          "loadCount": 2,
+          "saveCount": 1,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/backups/petHomeComments_beforePassBenefits20260726.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomePassBenefitCommentsBackupPath",
+          "loadCount": 2,
+          "saveCount": 1,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/backups/petSweetHomeData_beforeFeeds20260728.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomeFeedHomeBackupPath",
+          "loadCount": 2,
+          "saveCount": 1,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/backups/petSweetHomeData_beforePassBenefits20260726.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomePassBenefitHomeBackupPath",
+          "loadCount": 2,
+          "saveCount": 1,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": "data/board.json",
+      "operationalPath": "/sdcard/호이랜드/board.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 144980,
+      "sha256": "abaa8125471ae9df64897939d38d2c76446442369bb37bd38c4d2a1ec8c46ad2",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2,
+        "valueKinds": {
+          "array": 2
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "boardPath",
+          "loadCount": 8,
+          "saveCount": 6,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/carrotBoard.json",
+      "operationalPath": "/sdcard/호이랜드/carrotBoard.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 11,
+      "sha256": "d583b531853a56c5e69af1cf382ed4d4428542478b731630a6b35ec30b926947",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "array": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "carrotBoardPath",
+          "loadCount": 3,
+          "saveCount": 2,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/castleBattle.json",
+      "operationalPath": "/sdcard/호이랜드/castleBattle.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 16825,
+      "sha256": "686a5fd5b10b366679cc22349980ab2b4f4a366608ef1e8bd71b46f016a497c5",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 4,
+        "valueKinds": {
+          "boolean": 1,
+          "object": 2,
+          "array": 1
+        }
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": "현재 활성 경로는 castleBattle2.json이며 코드 참조가 없음",
+      "evidence": []
+    },
+    {
+      "path": "data/castleBattle2.json",
+      "operationalPath": "/sdcard/호이랜드/castleBattle2.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 4859,
+      "sha256": "5d840ce6417f371a0b0109af13e4895942cf027438fda24e8e8520c4048171be",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 3,
+        "valueKinds": {
+          "boolean": 1,
+          "object": 2
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "castleBattlePath",
+          "loadCount": 6,
+          "saveCount": 3,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "castleBattlePath",
+          "loadCount": 3,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "castleBattlePath2",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/currencyLog.json",
+      "operationalPath": "/sdcard/호이랜드/currencyLog.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 300,
+      "sha256": "829839c8fec0ee322ff341c1cbf65d44d9852de1aae389b1311d1536d7c9ce7f",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "currencyLogPath",
+          "loadCount": 1,
+          "saveCount": 9,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/errorLog.json",
+      "operationalPath": "/sdcard/호이랜드/errorLog.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 208,
+      "sha256": "471ce2429ee994b79d6b535eac62c41654907cb2640d40e18715198f44fa97c7",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 5,
+        "valueKinds": {
+          "string": 4,
+          "object": 1
+        }
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": "게임 상태가 아닌 최근 오류 진단 기록이며 FileStream.write로 덮어씀",
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "errorLogPath",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "errorLogPath",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": "data/eventTowerBoss.json",
+      "operationalPath": "/sdcard/호이랜드/eventTowerBoss.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 3290,
+      "sha256": "9972af5fdee7b5fe2788d0d00e2464b693d5918d419abc5bdc29b5e7fec19ea2",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "array",
+        "entries": 7
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "eventTowerBossPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/freeMarket.json",
+      "operationalPath": "/sdcard/호이랜드/freeMarket.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 33273,
+      "sha256": "54e2d3f80b349121eef684310288d08e2115296bacdbd7900a246a1e580310d0",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 3,
+        "valueKinds": {
+          "array": 2,
+          "number": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "freeMarketPath",
+          "loadCount": 12,
+          "saveCount": 10,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": "data/game.txt",
+      "operationalPath": "/sdcard/호이랜드/game.txt",
+      "repositoryPresent": true,
+      "extension": ".txt",
+      "bytes": 5029,
+      "sha256": "70a3029b6757969d345a3e3e2d93a3fd3b387b2cbf80e6767532716b0a7f5ccf",
+      "parseStatus": "not-applicable",
+      "root": {
+        "kind": "non-json"
+      },
+      "classification": "reference",
+      "manualClassificationReason": "loadgametxtFromFile에서 읽는 게임 문구 목록",
+      "evidence": []
+    },
+    {
+      "path": "data/guildData.json",
+      "operationalPath": "/sdcard/호이랜드/guildData.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 45211,
+      "sha256": "673ec9020e43d7b045a911c955bc10f670e8fe7dc71c172abb99637e940a0027",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 5,
+        "valueKinds": {
+          "object": 4,
+          "boolean": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "guildPath",
+          "loadCount": 17,
+          "saveCount": 63,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "guildPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/hoiBotChangeLog.json",
+      "operationalPath": "/sdcard/호이랜드/hoiBotChangeLog.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 79217,
+      "sha256": "755e3358eed932d6d66b845d8452dead41c1f1164c28159a4c8787734bf40bb9",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "array": 1
+        }
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "hoiBotChangeLogPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/itemInfo.json",
+      "operationalPath": "/sdcard/호이랜드/itemInfo.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 31289,
+      "sha256": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 5,
+        "valueKinds": {
+          "object": 5
+        }
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "itemInfoPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "itemInfoPath",
+          "loadCount": 2,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/itemList.json",
+      "operationalPath": "/sdcard/호이랜드/itemList.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 43599,
+      "sha256": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2,
+        "valueKinds": {
+          "array": 2
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "itemListPath",
+          "loadCount": 10,
+          "saveCount": 4,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/member_back.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "filePath_back",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/member_pet_back.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "memberPetPath_back",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/member_pet.json",
+      "operationalPath": "/sdcard/호이랜드/member_pet.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 672573,
+      "sha256": "9366caded5be5dea9ec30a2bece5675a642844123a4dbc9dcd16ec5c56f2e1c8",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 610,
+        "valueKinds": {
+          "object": 610
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "memberPetPath",
+          "loadCount": 8,
+          "saveCount": 76,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "memberPetPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/member_title.json",
+      "operationalPath": "/sdcard/호이랜드/member_title.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 561178,
+      "sha256": "54a85e81367785990d7329a5ea0fbb65e3d7e8d27a8dd6f2afae60a4a25dca17",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "memberTitlePath",
+          "loadCount": 22,
+          "saveCount": 19,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "memberTitlePath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/member.json",
+      "operationalPath": "/sdcard/호이랜드/member.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 776816,
+      "sha256": "130b31e1f852c466f7e648a6fa41ed6afe8b3d2898d2a05dc58a970a951672a4",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 30,
+        "valueKinds": {
+          "array": 8,
+          "object": 9,
+          "string": 11,
+          "boolean": 1,
+          "number": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "filePath",
+          "loadCount": 15,
+          "saveCount": 214,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "filePath",
+          "loadCount": 2,
+          "saveCount": 2,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/member2.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "excluded",
+      "manualClassificationReason": "Info.js에 경로만 선언되고 실제 사용처가 없음",
+      "evidence": [
+        {
+          "sourceFile": "Info.js",
+          "variable": "filePath2",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/memberBagCheck/memberBagCheck.json",
+      "operationalPath": "/sdcard/호이랜드/memberBagCheck/memberBagCheck.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 471017,
+      "sha256": "8a717e104660c3ec70c49bd795f17259c26d624a8f8d1c26b9a43dcf3c451dcc",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 581,
+        "valueKinds": {
+          "object": 581
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "memberBagCheckPath",
+          "loadCount": 0,
+          "saveCount": 1,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/miniGameBot.js",
+      "operationalPath": "/sdcard/호이랜드/miniGameBot.js",
+      "repositoryPresent": true,
+      "extension": ".js",
+      "bytes": 12261,
+      "sha256": "bc30a2512324e255ab432aa3874beee2db11fbb904e0e79bef1f4a7f6f5339c2",
+      "parseStatus": "not-applicable",
+      "root": {
+        "kind": "non-json"
+      },
+      "classification": "excluded",
+      "manualClassificationReason": "운영 데이터가 아닌 독립 JavaScript 파일이며 main.js와 Info.js 참조가 없음",
+      "evidence": []
+    },
+    {
+      "path": "data/miniPet_collection.json",
+      "operationalPath": "/sdcard/호이랜드/miniPet_collection.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 27797,
+      "sha256": "2e5609f66aee07c56002f29ce43bebd60338105bcf09ed65944f7173e00a4811",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "miniPetCollectionPath",
+          "loadCount": 5,
+          "saveCount": 6,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/miniPet_title.json",
+      "operationalPath": "/sdcard/호이랜드/miniPet_title.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 10860,
+      "sha256": "120af95d744bb3f82fc5d3e5d5acbdbd2d70f098a9f9b4f184a87c7474f9caa6",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "miniPetTitlePath",
+          "loadCount": 7,
+          "saveCount": 6,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/miniPetCollectionInfo.json",
+      "operationalPath": "/sdcard/호이랜드/miniPetCollectionInfo.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 13567,
+      "sha256": "3dadafd107bb82480d6d5218f98af2a31d0037af7c15b5fecaf8d3c62b9a4e39",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 3,
+        "valueKinds": {
+          "object": 3
+        }
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "miniPetCollectionInfoPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/miniPetData.json",
+      "operationalPath": "/sdcard/호이랜드/miniPetData.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 144246,
+      "sha256": "b361e9d2922a9e7997416f49e49187fd6924642a5aec8018ab68d6c8c9d2b5a7",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2,
+        "valueKinds": {
+          "array": 2
+        }
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "miniPetPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "miniPetPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/packageInfo.json",
+      "operationalPath": "/sdcard/호이랜드/packageInfo.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 2618,
+      "sha256": "c4e4b5a3373e5c4e6baffbf470d52844dbc30f2f82042a262f98fd5886c49123",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "array",
+        "entries": 6
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "packageInfoPath",
+          "loadCount": 9,
+          "saveCount": 5,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/packageLog.json",
+      "operationalPath": "/sdcard/호이랜드/packageLog.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 40429,
+      "sha256": "55f76e6672c3a2874700e91e2e2bf28e6efa59300999b6c9d3cfabe44019c16b",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2,
+        "valueKinds": {
+          "number": 1,
+          "array": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "packageLogPath",
+          "loadCount": 2,
+          "saveCount": 2,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/pet_title.json",
+      "operationalPath": "/sdcard/호이랜드/pet_title.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 57258,
+      "sha256": "1f6f8a2f82bf8658578471112b5ec9ddceda8677a5d7e699d973ee621247319b",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petTitlePath",
+          "loadCount": 11,
+          "saveCount": 10,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "petTitlePath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/petExploreData.json",
+      "operationalPath": "/sdcard/호이랜드/petExploreData.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 43594,
+      "sha256": "bc0138e8eacf4f71dae37405f6fb51d8f0e7627937c40ea422a014c7b5db4add",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 5,
+        "valueKinds": {
+          "object": 4,
+          "string": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petExplorePath",
+          "loadCount": 14,
+          "saveCount": 10,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "petExplorePath",
+          "loadCount": 2,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/petHomeActivityData_back.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomeActivityBackupFile",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/petHomeActivityData.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomeActivityFile",
+          "loadCount": 24,
+          "saveCount": 34,
+          "backupSaveCount": 1,
+          "directFileIoCount": 3
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "petHomeActivityFile",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/petHomeComments.json",
+      "operationalPath": "/sdcard/호이랜드/petHomeComments.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 24,
+      "sha256": "54a622ae700822ef6609dbe0e9607a19587d207f1150de624b902e04dc382485",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomeCommentsFile",
+          "loadCount": 9,
+          "saveCount": 7,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/petHomePlacedFurniture.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomePlacedFurniturePath",
+          "loadCount": 11,
+          "saveCount": 7,
+          "backupSaveCount": 1,
+          "directFileIoCount": 9
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/petSkillData_back.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petSkillDataPath_back",
+          "loadCount": 0,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/petSkillData.json",
+      "operationalPath": "/sdcard/호이랜드/petSkillData.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 133544,
+      "sha256": "c0ed94b654101b476907b7f5c5d3ba6b0e5f0aaee43921b822b35f1a2e420161",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2025,
+        "valueKinds": {
+          "object": 2025
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petSkillDataPath",
+          "loadCount": 5,
+          "saveCount": 23,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "petSkillDataPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": null,
+      "operationalPath": "/sdcard/호이랜드/petSweetHomeData_beforePlacedFurnitureSplit.json",
+      "repositoryPresent": false,
+      "extension": ".json",
+      "bytes": null,
+      "sha256": null,
+      "parseStatus": "not-observed",
+      "root": {
+        "kind": "unknown"
+      },
+      "classification": "reconciliation-only",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "petHomeBeforeSplitBackupPath",
+          "loadCount": 2,
+          "saveCount": 1,
+          "backupSaveCount": 0,
+          "directFileIoCount": 1
+        }
+      ]
+    },
+    {
+      "path": "data/petSweetHomeData.json",
+      "operationalPath": "/sdcard/호이랜드/petSweetHomeData.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 686975,
+      "sha256": "7eb6dbe671dda766fc9d500fd25bf348737e13abdcd0d7649e61e98b7c1da2b5",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 353,
+        "valueKinds": {
+          "object": 353
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "homeDataFile",
+          "loadCount": 67,
+          "saveCount": 43,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "homeDataFile",
+          "loadCount": 7,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/petSweetHomeInfo.json",
+      "operationalPath": "/sdcard/호이랜드/petSweetHomeInfo.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 424921,
+      "sha256": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2,
+        "valueKinds": {
+          "array": 2
+        }
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "homeInfoFile",
+          "loadCount": 4,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/punchRankData.json",
+      "operationalPath": "/sdcard/호이랜드/punchRankData.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 53150,
+      "sha256": "52518ccf902f52c73a69f701440d4d7457957a82420269f68ae12e934b118dcc",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 1,
+        "valueKinds": {
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "punchRankPath",
+          "loadCount": 2,
+          "saveCount": 2,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/requestMonitorConfig.json",
+      "operationalPath": "/sdcard/호이랜드/requestMonitorConfig.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 335,
+      "sha256": "911f00fcecb0934ef4ecd0cae53449f3a831d6b6220e2514054309caffa32a01",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 4,
+        "valueKinds": {
+          "number": 2,
+          "array": 2
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "requestMonitorConfigPath",
+          "loadCount": 1,
+          "saveCount": 2,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/trialTower.json",
+      "operationalPath": "/sdcard/호이랜드/trialTower.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 23098,
+      "sha256": "738544696deaa86b025b610b1a9e9f1501d266c1a54bcdadd426838c2980c90c",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "object",
+        "entries": 2,
+        "valueKinds": {
+          "boolean": 1,
+          "object": 1
+        }
+      },
+      "classification": "authoritative",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "trialTowerPath",
+          "loadCount": 10,
+          "saveCount": 8,
+          "backupSaveCount": 1,
+          "directFileIoCount": 0
+        },
+        {
+          "sourceFile": "Info.js",
+          "variable": "trialTowerPath",
+          "loadCount": 2,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    },
+    {
+      "path": "data/trialTowerBoss.json",
+      "operationalPath": "/sdcard/호이랜드/trialTowerBoss.json",
+      "repositoryPresent": true,
+      "extension": ".json",
+      "bytes": 48165,
+      "sha256": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "parseStatus": "valid",
+      "root": {
+        "kind": "array",
+        "entries": 120
+      },
+      "classification": "reference",
+      "manualClassificationReason": null,
+      "evidence": [
+        {
+          "sourceFile": "main.js",
+          "variable": "trialTowerBossPath",
+          "loadCount": 1,
+          "saveCount": 0,
+          "backupSaveCount": 0,
+          "directFileIoCount": 0
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "변수 별칭, helper 내부 간접 IO와 동적 경로는 수동 추적이 필요함",
+    "repositoryPresent=false는 Android 운영 경로에 존재할 수 있으나 현재 Git snapshot에는 없음을 뜻함",
+    "classification은 1차 기계 판정이며 기능별 조사에서 코드와 실제 운영 snapshot으로 재검증해야 함"
+  ]
+}
