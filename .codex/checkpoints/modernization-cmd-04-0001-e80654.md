@@ -2,8 +2,8 @@
 
 - 작업 키: modernization-cmd-04-0001-e80654
 - 작업 이름: `/길드가입` 고도화 이관
-- 체크포인트 버전: 2
-- 마지막 갱신: 2026-08-13 15:45 KST
+- 체크포인트 버전: 3
+- 마지막 갱신: 2026-08-13 15:47 KST
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
 
@@ -27,7 +27,7 @@
 - Worktree: C:/Users/user/Desktop/hoiBot_modernization_04_0001_e80654
 - Branch: feature/modernization-cmd-04-0001-e80654
 - 기준 commit: 871cb0f
-- push 상태: 미푸시
+- push 상태: 원격 작업 브랜치 포함 (`9459a1a`)
 
 ## 현재 작업
 
@@ -39,6 +39,6 @@
 
 ## 영속성
 
-- 체크포인트 Git 추적: 아직 커밋되지 않음
-- 원격 포함 상태: 미포함
+- 체크포인트 Git 추적: 커밋 `9459a1a`에 포함
+- 원격 포함 상태: `origin/feature/modernization-cmd-04-0001-e80654`에 포함
 - 보안: 비밀 값과 운영 개인정보를 기록하지 않음
