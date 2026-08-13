@@ -2,11 +2,11 @@
 
 - 작업 키: modernization-cmd-06-0033-7x2jc0
 - 작업 이름: `/랜덤조합` 로직 이관
-- 작업 상태: 검증 완료
+- 작업 상태: 작업 완료
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 3
-- 마지막 갱신: 2026-08-13 15:49 KST
+- 체크포인트 버전: 4
+- 마지막 갱신: 2026-08-13 15:51 KST
 - 대화 식별명: 우산 고도화 실행
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -40,11 +40,11 @@
 - 작업 트리: `C:\Users\user\Desktop\hoiBot_modernization_06_0033_7x2jc0`
 - 브랜치: `codex/modernize-umbrella-cmd-06-0033-7x2jc0`
 - 원격 저장소: `origin`
-- 업스트림 브랜치: 미설정
-- 마지막 푸시 커밋: 없음
-- 원격 동기화 상태: `feature/prod`의 `4c23d80`에서 생성
-- 체크포인트 Git 추적: 아니요
-- 체크포인트 포함 푸시 커밋: 없음
+- 업스트림 브랜치: `origin/codex/modernize-umbrella-cmd-06-0033-7x2jc0`
+- 마지막 푸시 커밋: `0bff45c7de4ad5adb5a7f10d3c9bfaaf1db16ca3`
+- 원격 동기화 상태: 로컬 HEAD와 원격 task branch 일치
+- 체크포인트 Git 추적: 예
+- 체크포인트 포함 푸시 커밋: `0bff45c7de4ad5adb5a7f10d3c9bfaaf1db16ca3`
 
 ## 완료된 작업
 
@@ -57,7 +57,7 @@
 
 ## 진행 중인 작업
 
-- 검증 완료 산출물의 선별 커밋·푸시
+- 없음
 
 ## 변경 파일
 
@@ -83,7 +83,7 @@
 
 ## 다음 행동
 
-1. 관련 파일만 커밋·푸시하고 WBS를 `통합 준비`로 갱신한다.
+1. coordinator가 이 task branch의 Service·probe·evidence를 검토하고 공용 dispatch와 공용 fixture를 통합한다.
 
 ## 보안
 
