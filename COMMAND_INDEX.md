@@ -6051,3 +6051,45 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+---
+
+# /랜덤조합 [수량]
+
+Status: PARTIAL
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/crafting/random-box-craft-service.ts`
+
+## Related Helpers
+
+- `checkRank`
+- `RandomBoxCraftService`
+
+## Data Usage
+
+- Legacy: `data.member[sender].bag["하트💝"]`
+- Legacy: `data.member[sender].bag["랜덤박스💝"]`
+- Port: `item_definitions`, `inventory_stacks`, `inventory_ledger`
+- Port: `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Legacy success branch has no direct `saveJsonFile`, so mutation can be lost after restart.
+- Ported Service persists both inventory balances, ledger, operation, execution, audit and outbox in one transaction.
+- Iris dispatch and shared synthetic fixture integration remain coordinator work.
+
+## Related Commands
+
+- `/랜덤오픈 [수량]`
+
+## AI Notes
+
+- 수량 생략은 1개이고 하트💝 20개당 랜덤박스💝 1개를 지급한다.
+- 숫자 0은 legacy에서 하트 보유값이 양수일 때 0개 조합 성공 문구를 출력한다.
+- 하트 보유값이 0이거나 없으면 수량 0에도 `하트💝 0개가 필요해요!`를 출력한다.
+- active castle season이면 조용히 종료한다.
+
+---
