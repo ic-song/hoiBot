@@ -1,11 +1,11 @@
 ---
 name: hoibot-modernization-wbs-runner
-description: Use as the dedicated hoiBot modernization migration skill when the user requests 고도화진행, 고도화 이어서 진행, a named-worker modernization run, a domain-scoped continuation, integration, or status refresh. Recovers interrupted work, assigns or reuses the Google Sheets WBS worker name, claims one eligible row, runs DB design and synthetic-data migration through logic parity validation, and synchronizes progress evidence and the Notion dashboard.
+description: Use as the dedicated hoiBot modernization migration skill for 고도화진행, named-worker runs, domain-scoped continuation, integration, handoff, recovery, or status refresh. Prevents duplicate work across chats and PCs with a Google Sheets claim ledger, unique execution IDs, leases, heartbeats, explicit handoff, separate worktrees, and checkpoint ownership; then runs DB design and synthetic-data migration through logic parity validation and dashboard synchronization.
 ---
 
 # hoiBot 고도화 이관 전용 실행
 
-Google Drive의 WBS를 단일 진행 기준으로 삼아 중단 복구, 작업자 식별, 작업 선점, 단계별 이관, 검증 및 대시보드 갱신까지 수행한다. 사용자는 링크나 절차를 반복할 필요가 없다.
+Google Sheets WBS를 진행 기준으로 삼아 작업 식별·선점·복구·이관·검증·인계를 수행한다. 같은 레인, 브랜치 또는 미완료 상태만으로 기존 작업을 재개하지 않는다.
 
 ## 고정 리소스
 
@@ -13,39 +13,98 @@ Google Drive의 WBS를 단일 진행 기준으로 삼아 중단 복구, 작업�
 - Google Sheets WBS: `https://docs.google.com/spreadsheets/d/15TP6sa36r_cwh49ny-pOiM3nkhgQ5i_KBYzsqdM0NZw/edit`
 - Notion 대시보드: `https://app.notion.com/p/3bb393bdd7aa81e38bb9ea8d773a8caf?pvs=204`
 
-Google Sheets를 진행 상태의 단일 기준으로 사용한다. Notion은 사람용 요약 대시보드이며 상세 WBS를 중복 관리하지 않는다. 구현 사실은 현재 코드, Git 및 DB 증거로 판정한다.
+Google Sheets의 상세 WBS와 `작업_선점` 탭을 진행·소유권 기준으로 사용한다. Notion은 사람용 집계 대시보드다. 구현 정확성은 현재 코드, Git 및 DB 증거로 판정한다.
 
-## 요청 해석과 작업자명
+## 절대 중복 방지 규칙
 
-- `고도화진행`, `고도화 이어서 진행`: 미완료 작업을 복구하거나 조건을 만족하는 작업 하나를 선점해 진행한다.
-- `너는 물병이야 고도화진행`: `물병`을 `담당 Agent`에 사용한다. `너는 <이름>이야`, `너는 <이름>야`, `이름은 <이름>`도 같은 방식으로 해석한다.
-- `고도화 <도메인> 이어서 진행`: 해당 도메인으로 선택 범위를 제한한다.
-- `고도화 통합 진행`: 새 작업보다 `통합 준비` 또는 `검증 중` 작업을 먼저 통합한다.
-- `고도화 현황 갱신`: 런타임 코드를 바꾸지 않고 WBS 집계와 Notion 대시보드만 동기화한다.
+- `담당 Agent`의 A~J는 작업자명이 아니라 업무 레인이다.
+- 작업자명, 실행 ID, 전용 worktree, 전용 branch와 체크포인트 작업 키를 별도로 사용한다.
+- 같은 담당 레인·branch·미완료 상태만으로 재개하지 않는다.
+- `작업_선점`에 유효한 자신의 실행 ID가 없으면 프로젝트 파일과 시험 DB를 변경하지 않는다.
+- 다른 실행 ID의 활성 Lease가 있으면 해당 WBS ID를 읽기 전용으로만 취급한다.
+- dirty worktree의 실행 ID를 체크포인트로 증명할 수 없으면 중단한다. 정리하거나 추정 소유하지 않는다.
+- 한 worktree·branch·체크포인트를 여러 채팅이 공유하지 않는다.
+- WBS 또는 `작업_선점` 연결이 불가능하면 선점·재개·변경했다고 보고하지 않는다.
 
-작업자명은 다음 우선순위로 정한다.
+## 요청과 실행 신원
 
-1. 사용자가 이번 요청에서 지정한 이름
-2. 현재 체크포인트와 동일 브랜치의 미완료 WBS 행에 기록된 이름
-3. 충돌하지 않는 짧은 한국어 사물 이름을 자동 생성한 값
+- `고도화진행`, `고도화 이어서 진행`: 새 실행 신원을 만들고 선점 가능한 작업 하나를 진행한다.
+- `너는 물병이야 고도화진행`: 작업자명을 `물병`으로 사용한다.
+- `고도화 길드 이어서 진행`: 해당 도메인으로 선택 범위를 제한한다.
+- `고도화 통합 진행`: coordinator 레인으로 공유 파일 통합 작업을 선점한다.
+- `고도화 인계 실행ID`: 지정된 실행의 인계 상태와 대상 실행 ID를 확인한 후에만 인수한다.
+- `고도화 복구 WBSID`: 선점 원장 도입 전에 시작됐거나 Lease가 사라진 특정 작업을 명시적으로 복구한다.
+- `고도화 현황 갱신`: 런타임을 바꾸지 않고 WBS 집계와 Notion만 동기화한다.
 
-자동 이름은 `물병`, `나침반`, `등대`처럼 읽기 쉬운 2~4음절로 만들고 기존 미완료 작업자명과 겹치지 않는지 확인한다. 이름이 정해지면 편집 전에 `이름을 <이름>으로 하여 고도화 진행하겠습니다.`라고 알린다. 같은 작업을 재개할 때 이름을 바꾸지 않는다.
+작업자명은 요청에서 지정한 이름을 우선한다. 없으면 `물병`, `나침반`, `등대` 같은 2~4음절 한국어 사물 이름 중 활성 Lease의 작업자명과 겹치지 않는 값을 만든다. 작업자명은 레인 칸이 아니라 `작업_선점`의 `작업자명`에 기록한다.
 
-## 시작 및 복구
+실행 ID는 매 실행마다 다음 형식으로 새로 만든다.
 
-1. `recover-interrupted-work` 스킬로 체크포인트, 브랜치, 업스트림, worktree, dirty 파일과 미완료 작업을 복구한다.
-2. `AGENTS.md`를 읽고 저장소 및 브랜치 규칙을 적용한다.
-3. Google Sheets의 `WBS_대단계`, `도메인_요약` 및 관련 상세 탭을 읽는다.
-4. 체크포인트·Git·DB 증거와 WBS의 담당자·상태를 대조한다.
-5. 기존 작업자의 미완료 행이 있으면 우선 재개한다. 없으면 선행 조건이 충족되고 상태가 `대기`이며 `담당 Agent`가 빈 행 하나만 선택한다.
-6. 코드 편집 전에 WBS 행에 작업자명, 브랜치와 상태 `선점`을 기록한다. 기록 실패 시 편집을 시작하지 않는다.
-7. 병렬 채팅은 각각 별도 worktree와 작업 브랜치를 사용한다. 동일 WBS ID를 중복 선점하지 않는다.
+```text
+작업자명-WBSID-UTC시각-무작위6자
+```
 
-Google Drive나 Sheets 연결을 사용할 수 없으면 로컬 증거 조사까지만 수행한다. WBS를 선점했다고 보고하지 말고 연결 복구에 필요한 사항과 다음 행동을 체크포인트에 남긴다.
+실행 ID를 확정하면 편집 전에 `이름을 작업자명으로 하여 고도화 진행하겠습니다. 실행 ID는 실행ID입니다.`라고 알리고 체크포인트에 영구 기록한다. 다른 채팅에서 같은 작업자명을 사용해도 실행 ID는 달라야 한다.
+
+## `작업_선점` 원장
+
+열 구조는 다음과 같다.
+
+```text
+A WBS ID | B 도메인 | C 작업 레인 | D 작업자명 | E 실행 ID
+F Worktree | G Branch | H 선점 시각(KST) | I Heartbeat(KST)
+J Lease 만료(KST) | K 상태 | L 인계 대상 실행 ID | M 체크포인트 | N 비고
+```
+
+- 새 선점은 기존 행을 덮어쓰지 말고 `appendCells`로 한 행을 추가한다.
+- Lease 기본 시간은 60분이다. 시각은 `YYYY-MM-DD HH:mm:ss KST` 리터럴로 기록한다.
+- 같은 WBS ID에서 `상태=활성`이고 Lease가 만료되지 않은 행 중 시트 행 번호가 가장 작은 실행만 소유자다.
+- 행 추가 직후 해당 WBS ID의 모든 선점 행을 다시 읽어 자신의 실행 ID가 소유자인지 확인한다.
+- 소유자가 아니면 자신의 상태를 `충돌`로 바꾸고 프로젝트 변경 없이 다른 대기 작업을 선택하거나 종료한다.
+- 소유권 확인 후 상세 WBS 행을 `선점`으로 바꾸고 담당 레인, 실행 ID, branch 근거를 기록한다. 다시 읽어 두 표의 실행 ID가 일치해야 작업을 시작한다.
+- 상세 WBS가 `선점` 이상이어도 대응하는 활성 실행 ID가 없으면 `소유권 미확인`이다. 일반 `고도화진행`으로 자동 재개하지 않는다.
+
+## 기존·고립 작업 복구
+
+`고도화 복구 WBSID`에서만 다음 절차를 허용한다.
+
+1. 해당 WBS ID에 만료되지 않은 활성 Lease가 전혀 없는지 다시 확인한다. 하나라도 있으면 복구하지 않는다.
+2. 관련 checkpoint, branch, worktree, dirty 파일, 마지막 commit과 push 증거를 읽기 전용으로 조사한다.
+3. 다른 작업 범위가 섞였거나 파일 소유권을 구분할 수 없으면 복구하지 않고 충돌 목록을 보고한다.
+4. 사용자가 지정한 작업자명 또는 새 자동 이름으로 `recovery` 표시가 포함된 새 실행 ID를 만든다.
+5. `작업_선점`에 새 활성 행을 append하고 일반 선점과 동일하게 행 번호 우선 소유권을 재검증한다.
+6. 소유권을 얻은 후 체크포인트 실행 ID·버전을 갱신하고 별도 worktree로 안전하게 분리할 수 있을 때만 변경을 재개한다.
+
+만료 또는 채팅 중단만으로 자동 복구하지 않는다. 복구 명령은 사용자의 명시적 작업 대상 지정이며, dirty 파일 삭제·되돌리기·덮어쓰기 승인은 아니다.
+
+## 시작과 작업 선택
+
+1. `recover-interrupted-work`로 체크포인트, branch, worktree, dirty 파일과 push 증거를 조사한다.
+2. `AGENTS.md`와 Google Sheets 메타데이터를 읽는다.
+3. `작업_선점`, `WBS_대단계`, `도메인_요약`과 관련 상세 탭을 읽는다.
+4. 새 실행 ID와 새 작업 체크포인트를 만든다. 기존 체크포인트를 재사용하려면 그 안의 실행 ID가 현재 활성 소유자와 정확히 일치해야 한다.
+5. 새 작업은 선행 조건이 충족되고 상세 상태가 `대기`이며 활성 선점이 없는 행만 선택한다.
+6. 업데이트된 `feature/prod`를 기준으로 실행 ID 전용 branch와 worktree를 준비한다.
+7. `작업_선점`에 append하고 소유권을 재검증한 후에만 상세 WBS를 갱신한다.
+8. 편집 직전 worktree·branch·실행 ID·체크포인트가 모두 일치하는지 다시 확인한다.
+
+## Lease와 Heartbeat
+
+- 중요 단계 전후, 20분 이상 작업 전, 장시간 DB 검증 전후, 커밋·푸시 전과 종료 전에 Heartbeat와 Lease 만료를 갱신한다.
+- Heartbeat 갱신 직전에 자신의 행 상태와 현재 소유권을 다시 읽는다.
+- 이미 만료된 Lease를 단순 연장하지 않는다. 새 실행으로 선점 절차를 다시 수행한다.
+- 소유권을 잃었거나 다른 활성 행이 먼저 존재하면 즉시 쓰기를 중단하고 체크포인트에 충돌을 기록한다.
+- 네트워크 장애로 Heartbeat를 기록하지 못하면 새 장기 작업을 시작하지 말고 안전한 로컬 검증까지만 수행한 뒤 중단한다.
+
+## 명시적 인계와 완료
+
+- 인계자는 자신의 상태를 `인계 요청`, 인계 대상 실행 ID를 대상 값으로 기록하고 체크포인트·commit·정확한 다음 행동을 남긴다.
+- 인수자는 대상 실행 ID가 자신과 일치하는지 확인하고 별도 선점 행을 append한다.
+- 인계자는 인수 확인 후 자신의 상태를 `인계 승인` 또는 `해제`로 바꾼다. 그 전에는 인수자가 수정하지 않는다.
+- 완료 시 상세 WBS 증거를 먼저 갱신하고 자신의 선점 상태를 `완료`로 바꾼다.
+- 채팅 강제 중단은 인계가 아니다. Lease 만료 후 새 실행이 명시적 복구 절차를 수행해야 한다.
 
 ## 기능 단위 이관 순서
-
-동일 동작과 저장 흐름을 공유하는 대표 명령, 별칭, 인자 형태 및 자동 흐름을 하나의 기능 단위로 묶어 아래 순서를 지킨다.
 
 ```text
 명령·자동 흐름 조사
@@ -59,44 +118,28 @@ Google Drive나 Sheets 연결을 사용할 수 없으면 로컬 증거 조사까
 → 커밋·푸시
 ```
 
-- 현재 코드에서 명령 guard, helper, 데이터 경로, load/save, 출력 형식, 원장 영향, 멱등성 및 DEV/PROD 흐름을 재확인한다.
-- 명령 조사에는 `hoibot-command-navigator`를 사용한다.
-- 저장·로드 또는 데이터 변경에는 `hoibot-save-flow-guard`를 사용한다.
-- Rhino 실행 코드를 건드리면 `hoibot-rhino-js-review`를 사용한다.
-- 검색 실패는 부재가 아니라 미확인이다. 미해결 후보는 `재확인_대상` 탭에 기록한다.
-- 누락된 운영 파일 구조는 코드와 기존 스냅샷으로 추론하되 시험에는 비식별 합성 데이터만 사용한다.
-- 진행률과 상태는 대화의 주장 대신 재현 가능한 증거로 갱신한다.
+- 동일 동작과 저장 흐름을 공유하는 명령·별칭·인자·자동 흐름을 한 기능 단위로 묶는다.
+- 명령 조사에는 `hoibot-command-navigator`, 데이터 변경에는 `hoibot-save-flow-guard`, Rhino 코드에는 `hoibot-rhino-js-review`를 사용한다.
+- guard, helper, 경로, load/save, 출력, 원장, 멱등성 및 DEV/PROD 흐름을 현재 코드에서 재확인한다.
+- 검색 실패는 부재가 아니라 미확인이다. 미해결 후보는 `재확인_대상`에 기록한다.
+- 상태는 `대기 → 선점 → 조사 중 → 구현 중 → 통합 준비 → 검증 중 → 검증 완료` 순서로 증거에 따라 갱신한다.
 
-## 상태와 체크포인트
+## 체크포인트 필수 항목
 
-```text
-대기 → 선점 → 조사 중 → 구현 중 → 통합 준비 → 검증 중 → 검증 완료
-```
+- WBS ID·도메인·작업 레인·작업자명·실행 ID
+- 선점 원장 행 번호·Heartbeat·Lease 만료·인계 상태
+- worktree·branch·checkpoint version·commit·push 상태
+- 변경 파일·DB 객체·검증 결과·남은 위험·정확한 다음 행동
 
-각 중요 단계 직후와 채팅 종료·인계 전에 WBS와 작업 체크포인트에 다음을 기록한다.
+체크포인트의 실행 ID가 원장과 다르면 현재 작업을 재개하지 않는다.
 
-- WBS ID와 도메인
-- 작업자명, worktree, 브랜치 및 커밋
-- 현재 상태와 완료 단계
-- 변경 파일 및 DB 객체
-- 실행한 검증과 결과
-- 남은 위험 및 정확한 다음 행동
+## 통합과 데이터 안전
 
-필수 테스트와 합성 MariaDB 결과 비교가 통과하기 전에는 `검증 완료`로 바꾸지 않는다. 중단 후에는 `선점`, `조사 중`, `구현 중`, `통합 준비`, `검증 중` 행을 먼저 복구한다.
-
-## 통합과 공유 파일
-
-통합 담당 A는 공용 migration 순서, 공통 dispatch, 공유 fixture loader, 큐 구조 및 WBS/대시보드 구조를 관리한다. 도메인 작업자는 가능한 한 도메인 전용 Service, Policy, Repository, 테스트 및 evidence만 수정한 뒤 커밋 SHA와 검증 결과를 인계한다.
-
-`고도화 통합 진행`에서는 `통합 준비`와 `검증 중` 행을 우선 처리하고 통합 합성 회귀 테스트를 수행한 뒤 WBS와 Notion을 순서대로 갱신한다.
-
-## 데이터 안전과 최종 이관
-
-- 개발 중에는 비식별 합성 fixture와 시험 DB만 사용한다.
-- 전체 운영 `data/*` 스냅샷을 시험 흐름에 적재하거나 변경하지 않는다.
-- 합성 fixture는 설계와 검증 자료이며 운영 이관 완료 증거가 아니다.
-- 전체 운영 데이터 이관은 마지막 별도 단계다. 시험 데이터 초기화, 전체 운영 백업, 복원·롤백 확인, 내부 작업자와 고객사 승인 후 수행한다.
+- coordinator 레인만 공용 migration 순서, 공통 dispatch, 공유 fixture loader, 큐와 WBS 구조를 통합한다.
+- 도메인 실행은 도메인 전용 Service, Policy, Repository, 테스트와 evidence를 우선한다.
+- 개발 중에는 비식별 합성 fixture와 시험 DB만 사용한다. 운영 `data/*`를 시험 DB에 적재하거나 수정하지 않는다.
+- 전체 운영 데이터 이관은 기능 parity와 통합 검증 후 시험 DB 폐기·재생성, 전체 운영 백업, 복원·롤백 확인과 내부 작업자·고객사 승인을 거쳐 별도로 수행한다.
 
 ## 완료 보고
 
-작업 종료 시 작업자명, 처리한 WBS ID, 단계별 상태, 변경·검증 증거, Google Sheets 갱신 여부, Notion 갱신 여부 및 다음 재개 명령을 보고한다. 실제 갱신하지 못한 외부 상태를 갱신했다고 표현하지 않는다.
+작업자명, 실행 ID, WBS ID, 선점 원장 행, Lease 상태, 단계별 결과, Git·DB 증거, Sheets·Notion 갱신 여부와 다음 명령을 보고한다. 실제 갱신하지 못한 상태는 완료로 표현하지 않는다.
