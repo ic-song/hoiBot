@@ -26,7 +26,8 @@
     "db:probe:authorization": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-authorization.ts",
     "db:probe:domains": "node --env-file-if-exists=.env --import tsx scripts/probe-domain-services.ts",
     "db:probe:signup": "node --env-file-if-exists=.env --import tsx scripts/probe-signup-flow.ts",
-    "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts"
+    "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts",
+    "db:probe:bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-read-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

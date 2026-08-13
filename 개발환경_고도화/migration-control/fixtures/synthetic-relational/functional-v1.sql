@@ -98,8 +98,8 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000001, 'synthetic-carrot', '합성 당근', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000002, 'synthetic-potion', '합성 물약', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000003, 'legacy-pet-name-change-ticket', '펫 이름변경권🎫', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000004, 'legacy-junk-item', '잡템☠️', 'material', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000005, 'legacy-seasoned-chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
+  (900000004, 'legacy-junk-item', '잡템☠️', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'legacyBagOrder', 20), TRUE, 1),
+  (900000005, 'legacy-seasoned-chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'legacyBagOrder', 21), TRUE, 1),
   (900000006, 'legacy-castle-battle-reset-ticket', '캐슬대전리셋권🐶', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000007, 'legacy-raid-strike-seal-600', '레이드타격대인장👑(+600👾)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
@@ -385,4 +385,8 @@ ON DUPLICATE KEY UPDATE status = VALUES(status), effective_from = VALUES(effecti
 
 INSERT INTO configuration_values (configuration_set_id, config_key, value_type, string_value)
 VALUES (900000001, 'fixture.version', 'string', 'functional-v1')
+ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = VALUES(string_value), decimal_value = NULL, integer_value = NULL, boolean_value = NULL, json_value = NULL;
+
+INSERT INTO configuration_values (configuration_set_id, config_key, value_type, string_value)
+VALUES (900000001, 'legacy.bag.advertisement', 'string', '합성 가방 광고')
 ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = VALUES(string_value), decimal_value = NULL, integer_value = NULL, boolean_value = NULL, json_value = NULL;
