@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "bag-attribute",
+  "status": "verified",
+  "commands": {
+    "names": ["/가방속성 [유저명] [아이템번호] [갯수]"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "startsWith candidate guard is retained for Master-only legacy routing",
+      "execution requires the full target-name plus two unsigned numeric arguments",
+      "unauthorized Kakao identities are ignored without a reply"
+    ],
+    "helpers": ["generateBagOutput", "checkRank"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/memberPet.json", "data/guild.json"],
+    "readPaths": ["member.<target>.bag", "member/pet/guild rank display projection"],
+    "writePaths": ["member.<target>.bag.<selected item> absolute quantity update or property deletion at zero"],
+    "saveOrder": ["saveJsonFile(petData, memberPetPath)", "saveJsonFile(data, filePath)"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["002_event_processing.sql", "006_admin_auth.sql", "007_domain_foundations.sql", "017_admin_authorization_lifecycle.sql"],
+    "tables": [
+      "external_identities", "admin_operator_external_identities", "admin_operators", "admin_operator_roles",
+      "admin_role_permissions", "admin_operator_permission_overrides", "player_profiles", "item_definitions",
+      "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages"
+    ],
+    "newColumns": [],
+    "constraints": [
+      "one inventory stack per player and item",
+      "one operation per operator and normalized event id",
+      "one command execution per event and bag_attribute command",
+      "inventory mutation uses the locked stack version"
+    ],
+    "transactionBoundary": "lock prior operation, target profile and active stackable inventory rows; then replace or delete the selected stack and append ledger, operation, command execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 77a037e0a744d131d08d6302eae08f1af30bcc63087445a4bd8eeb225dfa5cb6",
+    "targetDatabase": "hoibot_rehearsal_cmd_01_0002_ucxzlq",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; the exact command event replays through operation idempotency",
+    "checks": [
+      "31 migrations applied to an isolated rehearsal database",
+      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "legacy special-item metadata selected junk as item number one before ordinary Korean items",
+      "absolute quantity change moved junk from 20 to 7 and recorded delta minus 13",
+      "inventory ledger, operation, command execution, audit and outbox were persisted once",
+      "same event replay returned the stored result without a second mutation",
+      "runtime 127 tests, typecheck and build passed",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/inventory/bag-attribute-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": ["개발환경_고도화/runtime/src/inventory/maria-bag-attribute-repository.ts"],
+    "tests": [
+      "개발환경_고도화/runtime/test/bag-attribute.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-bag-attribute-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic linked administrator with game.inventory.change permission",
+      "synthetic target with positive special items, zero special item and ordinary Korean inventory"
+    ],
+    "comparisonMode": "candidate and full guards, silent authorization failure, legacy item numbering, zero deletion, absolute quantity update, replies, ledger/audit/outbox effects and duplicate-event behavior",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member bag writes in the final shared freeze window",
+    "finalImportPlan": "import every bag property and the complete generateBagOutput special order into item metadata before enabling mutation routing",
+    "smokePlan": "an approved administrator changes and restores one test item quantity while verifying item number, reply and ledger",
+    "rollbackPlan": "keep Rhino routing until final inventory reconciliation and administrator smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "the complete production special-item order metadata must be populated and reconciled during final import",
+    "the legacy checkRank-decorated target label is currently represented by the canonical player display name",
+    "dynamic pet-intimacy display keys require a dedicated relational projection before they can be adjusted by legacy number",
+    "legacy property deletion at zero maps to deleting the relational stack row",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}

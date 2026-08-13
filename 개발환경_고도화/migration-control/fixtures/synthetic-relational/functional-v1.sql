@@ -98,8 +98,8 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000001, 'synthetic-carrot', '합성 당근', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000002, 'synthetic-potion', '합성 물약', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000003, 'legacy-pet-name-change-ticket', '펫 이름변경권🎫', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000004, 'legacy-junk-item', '잡템☠️', 'material', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000005, 'legacy-seasoned-chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
+  (900000004, 'legacy-junk-item', '잡템☠️', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'legacyBagOrder', 20), TRUE, 1),
+  (900000005, 'legacy-seasoned-chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'legacyBagOrder', 21), TRUE, 1),
   (900000006, 'legacy-castle-battle-reset-ticket', '캐슬대전리셋권🐶', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000007, 'legacy-raid-strike-seal-600', '레이드타격대인장👑(+600👾)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000008, 'legacy-pet-food-box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)

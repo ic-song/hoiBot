@@ -54,6 +54,8 @@ import {
 } from "./integration/moderation-incident-service.js";
 import { MembershipLogService, type MembershipLogSummary } from "./integration/membership-log-service.js";
 import { RetainedEventContentService } from "./integration/retained-event-content-service.js";
+import { BagAttributeService, isBagAttributeCommandCandidate } from "./inventory/bag-attribute-service.js";
+import { MariaBagAttributeRepository } from "./inventory/maria-bag-attribute-repository.js";
 
 interface TokenQuery {
   token?: string;
@@ -701,6 +703,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isBagAttributeCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new BagAttributeService(new MariaBagAttributeRepository(database!)).handle({
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.outboxId !== undefined && result.data !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } else if (result.status !== "ignored_forbidden" && result.data !== undefined) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "bag_attribute_validation", result.data));
         }
       }
 

@@ -2202,6 +2202,8 @@ Status: VERIFIED
 
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/bag-attribute-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-attribute-repository.ts`
 
 ## Related Helpers
 - `setOperationNoticeByCommand`
@@ -3372,7 +3374,9 @@ Status: VERIFIED
 ## Data Usage
 - `data.member[targetUser].bag`
 ## Save Flow
-- Mutates target bag item counts; surrounding persistence should be checked in local save cycle
+- `generateBagOutput(...).sortedItemList` 번호로 대상 아이템을 정하고 수량 `0`이면 속성을 삭제하며 양수이면 절대 수량으로 바꾼다.
+- 레거시 응답 종료부에서 `saveJsonFile(petData, memberPetPath)` 다음 `saveJsonFile(data, filePath)`로 저장한다.
+- 고도화 경로는 stack 변경·inventory ledger·operation·command execution·audit·Iris outbox를 한 MariaDB transaction으로 저장한다.
 ## Related Commands
 - `/가방`
 - `/가방추가`
