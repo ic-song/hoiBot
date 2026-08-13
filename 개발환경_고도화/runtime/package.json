@@ -1,0 +1,43 @@
+{
+  "name": "hoibot-lite-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Iris 연계 검증을 위한 hoiBot Lite 서버",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --import tsx src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node --env-file-if-exists=.env dist/src/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "fake:event": "node --env-file-if-exists=.env scripts/send-fake-iris-event.mjs",
+    "db:migrate": "node --env-file-if-exists=.env --import tsx scripts/migrate.ts",
+    "db:import:dry-run": "node --env-file-if-exists=.env --import tsx scripts/import-legacy-json.ts",
+    "admin:bootstrap": "node --env-file-if-exists=.env --import tsx scripts/bootstrap-admin.ts",
+    "admin:link-iris": "node --env-file-if-exists=.env --import tsx scripts/link-admin-iris-identity.ts",
+    "admin:create-test-account": "node --env-file-if-exists=.env --import tsx scripts/create-test-account.ts",
+    "account:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup-deleted-accounts.ts",
+    "config:inventory": "node --import tsx scripts/inventory-hardcoded-config.ts",
+    "db:probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database.ts",
+    "db:probe:modernization": "node --env-file-if-exists=.env --import tsx scripts/probe-modernization-flow.ts",
+    "db:probe:authorization": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-authorization.ts",
+    "db:probe:domains": "node --env-file-if-exists=.env --import tsx scripts/probe-domain-services.ts",
+    "db:probe:signup": "node --env-file-if-exists=.env --import tsx scripts/probe-signup-flow.ts",
+    "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.1.2",
+    "argon2": "^0.45.1",
+    "fastify": "^5.10.0",
+    "lossless-json": "^4.3.1",
+    "mariadb": "3.5.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}
