@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.379"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.381"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1470,6 +1470,18 @@ blockedNicknameTerms: [
             }
         }
     },
+    guildContributionCube: { // 길드공헌 큐브 설정
+        successRate: 0.1,
+        stepUnits: 1, // 0.1%를 1단위로 저장
+        maxAttempts: 100,
+        logLimit: 50,
+        options: {
+            "1": { key: "castle", emoji: "⚔️", name: "캐슬 매력", cost: 30, maxUnits: 500 },
+            "2": { key: "raid", emoji: "👾", name: "레이드 매력", cost: 30, maxUnits: 500 },
+            "3": { key: "territoryPoint", emoji: "💸", name: "영지 공격 시 포인트 획득", cost: 15, maxUnits: 1000 },
+            "4": { key: "ambushDefense", emoji: "🛡️", name: "기습방어확률", cost: 40, maxUnits: 250 }
+        }
+    },
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
@@ -2737,7 +2749,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             var homeDataForJoin = loadJsonFile(homeDataFile);
-            joinPart.totalExp = Math.round(calculateTotalExp(sender, data, petData, homeDataForJoin, petSkillData) || 0);
+            joinPart.totalExp = Math.round(calculateTotalExp(sender, data, petData, homeDataForJoin, petSkillData, guildData) || 0);
             joinPart.totalExpUpdatedAt = formatDateTime(new Date());
             joinPart.active = true;
             joinPart.eliminated = false;
@@ -2888,15 +2900,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (myPart.totalExp <= 0 || opponentPart.totalExp <= 0) {
                 homeDataForMatzang = loadJsonFile(homeDataFile);
                 if (myPart.totalExp <= 0) {
-                    myPart.totalExp = Math.round(calculateTotalExp(sender, data, petData, homeDataForMatzang, petSkillData) || 0);
+                    myPart.totalExp = Math.round(calculateTotalExp(sender, data, petData, homeDataForMatzang, petSkillData, guildData) || 0);
                     myPart.totalExpUpdatedAt = formatDateTime(new Date());
                 }
                 if (opponentPart.totalExp <= 0) {
-                    opponentPart.totalExp = Math.round(calculateTotalExp(opponentName, data, petData, homeDataForMatzang, petSkillData) || 0);
+                    opponentPart.totalExp = Math.round(calculateTotalExp(opponentName, data, petData, homeDataForMatzang, petSkillData, guildData) || 0);
                     opponentPart.totalExpUpdatedAt = formatDateTime(new Date());
                 }
             }
-            var battle = runMatzangBattle(sender, opponentName, data, petData, homeDataForMatzang, petSkillData, myPart.totalExp, opponentPart.totalExp);
+            var battle = runMatzangBattle(sender, opponentName, data, petData, homeDataForMatzang, petSkillData, myPart.totalExp, opponentPart.totalExp, guildData);
             var isWin = battle.isAttackerWin;
             var winnerName = isWin ? sender : opponentName;
             var loserName = isWin ? opponentName : sender;
@@ -3518,6 +3530,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "획득 포인트: 🅟" +
                         numberWithCommas(sellAllGain)
                     );
+                    return;
+                }
+
+                if (msg === "/펫스킬북분해" || /^\/펫스킬북분해\s+\d+\s+\d+$/.test(msg)) {
+                    var petSkillDecomposeResult = decomposePetSkillFromBag(data, petData, guildData, petSkillData, sender, msg);
+                    if (petSkillDecomposeResult.ok) {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(petSkillData, petSkillDataPath);
+                    }
+                    replier.reply(petSkillDecomposeResult.message);
                     return;
                 }
 
@@ -7214,7 +7236,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (authorizedUsers2.includes(sender)) {
                             const itemsToAdd7 = [{
                                 name: "길드공헌훈장🌟(/길드공헌 숫자)",
-                                count: 1
+                                count: 3
                             },
                                 {
                                     name: "길드창고패키지🧳(/길드창고패키지오픈)",
@@ -14137,7 +14159,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var lord = data.HoiCastle.lord;
                         var petInfo = petData[lord];
 
-                        var castleExp = numberWithCommas(calculateCastleItem(lord, data) + calculateItemInfoAll(lord, data, petData).castleExp + petInfo.petexp);
+                        var lordCastleExpBase = calculateCastleItem(lord, data) + calculateItemInfoAll(lord, data, petData).castleExp + petInfo.petexp;
+                        var lordGuildCastlePercent = getGuildContributionCubeMemberPercent(data, guildData, lord, "castle");
+                        var castleExp = numberWithCommas(Math.floor(lordCastleExpBase * (1 + lordGuildCastlePercent / 100)));
 
                         var lordGuildInfo = getMyGuildInfo(data, guildData, lord);
                         var guildName = "없음";
@@ -17706,8 +17730,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let defenderPetObj = petData[defenderName];
                     // 공용 캐슬매력 계산에 사용할 펫홈 데이터
                     let homeData = loadJsonFile(homeDataFile);
-                    let attackerPetExp_origin = Math.round(calculateCastleExp(attackerName, data, petData, homeData, petSkillData)); // 공격자 전체 캐슬매력
-                    let defenderPetExp_origin = Math.round(calculateCastleExp(defenderName, data, petData, homeData, petSkillData)); // 방어자 전체 캐슬매력
+                    let attackerPetExp_origin = Math.round(calculateCastleExp(attackerName, data, petData, homeData, petSkillData, false, guildData)); // 공격자 전체 캐슬매력
+                    let defenderPetExp_origin = Math.round(calculateCastleExp(defenderName, data, petData, homeData, petSkillData, false, guildData)); // 방어자 전체 캐슬매력
                     let petTypeBuff = difftypeBuff(attackerPetObj, defenderPetObj);
                     let attackerTypeExp = Math.round(attackerPetExp_origin * petTypeBuff.buff1); // 공격자 상성 적용 매력
                     let defenderTypeExp = Math.round(defenderPetExp_origin * petTypeBuff.buff2); // 방어자 상성 적용 매력
@@ -19165,12 +19189,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         .filter((key) => petData[key])
                         .sort((a, b) => {
                             let A =
-                                (calculateCastleExp(a, data, petData, homeData, petSkillData) || 0) +
-                                (calculateRaidExp(a, data, petData, homeData, petSkillData) || 0) +
+                                (calculateCastleExp(a, data, petData, homeData, petSkillData, false, guildData) || 0) +
+                                (calculateRaidExp(a, data, petData, homeData, petSkillData, false, guildData) || 0) +
                                 calculatePetUpgradeCharm(a, data, petData);
                             let B =
-                                (calculateCastleExp(b, data, petData, homeData, petSkillData) || 0) +
-                                (calculateRaidExp(b, data, petData, homeData, petSkillData) || 0) +
+                                (calculateCastleExp(b, data, petData, homeData, petSkillData, false, guildData) || 0) +
+                                (calculateRaidExp(b, data, petData, homeData, petSkillData, false, guildData) || 0) +
                                 calculatePetUpgradeCharm(b, data, petData);
                             return B - A;
                         });
@@ -19511,7 +19535,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let bossExp = originBossExp;
 
                     // 유저 매력 (종합)
-                    let baseUserTotalExp = calculateTotalExp(sender, data, petData, homeData, petSkillData); // /종합정보와 동일한 원본 종합매력
+                    let baseUserTotalExp = calculateTotalExp(sender, data, petData, homeData, petSkillData, guildData); // /종합정보와 동일한 원본 종합매력
                     let userPetExp = baseUserTotalExp;
                     let towerBonusExp = 0; // 구원·십원으로 전투 중 추가된 일시 매력
 
@@ -21346,7 +21370,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         try {
                             var homeBadgeDebugHomeData = loadJsonFile(homeDataFile);
                             var homeBadgeDebugExploreData = loadJsonFile(petExplorePath);
-                            debuggerLog(buildHomeBadgeCubeDebugMessage(data, petData, homeBadgeDebugHomeData, petSkillData, homeBadgeDebugExploreData, sender));
+                            debuggerLog(buildHomeBadgeCubeDebugMessage(data, petData, homeBadgeDebugHomeData, petSkillData, homeBadgeDebugExploreData, sender, guildData));
                         } catch (homeBadgeDebugError) {
                             debuggerLog("[홈뱃지 큐브 디버깅 계산 실패] " + homeBadgeDebugError);
                         }
@@ -23450,7 +23474,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (dungeonNo === "9") {
                         var homeData = loadJsonFile(homeDataFile);
-                        if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit)) {
+                        if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, sender, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit, guildData)) {
                             replier.reply("❌ 입장 실패\n\n【9】 잊혀진 대마법사의 유적📙은\n/종합순위 20등 안에 들어간 유저만 입장할 수 있습니다.");
                             return;
                         }
@@ -23663,6 +23687,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         joinConditionExp: 0,
                         notice: "",
                         warehouse: { fund: 0, elemental: 0, pendant: 0, pet: 0, miniPet: 0 },
+                        cubeOptions: { castle: 0, raid: 0, territoryPoint: 0, ambushDefense: 0 },
+                        cubeLogs: [],
                         createdAt: formatDateTime(new Date()),
                         members: {}
                     };
@@ -23814,7 +23840,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var memberKeys = Object.keys(g.members || {});
                     var memberCount = memberKeys.length;
                     var homeData = loadJsonFile(homeDataFile);
-                    var guildTotalCharm = calculateGuildTotalExp(g, data, petData, homeData, petSkillData);
+                    var guildTotalCharm = calculateGuildTotalExp(g, data, petData, homeData, petSkillData, guildData);
                     var guildRank = g.rank || null;
                     var guildRankTitle = g.rankTitle || null;
 
@@ -23850,6 +23876,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "다음 길드레벨: MAX\n";
                     }
                     out += "길드영지 부스터🔮: " + numberWithCommas(ensureGuildTerritoryBoosterCount(g)) + "개\n";
+                    out += "━━━━━━━━━━━━\n";
+                    out += "💠 길드공헌 큐브 옵션\n" + buildGuildContributionCubeOptionDisplay(g) + "\n";
                     if (occupiedTerritoryNames.length > 0) {
                         out += "━━━━━━━━━━━━\n";
                         out += "점령 영지🗺️: " + occupiedTerritoryNames.join(", ") + "\n";
@@ -23865,7 +23893,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var boosterContribCnt = data.member[name] ? (data.member[name].gBoosterContribCnt || 0) : 0;
                         var c = g.members[name] && g.members[name].contribution ? g.members[name].contribution : 0;
                         var boosterContribution = g.members[name] && g.members[name].boosterContribution ? g.members[name].boosterContribution : 0;
-                        var memberExp = calculateTotalExp(name, data, petData, homeData, petSkillData);
+                        var memberExp = calculateTotalExp(name, data, petData, homeData, petSkillData, guildData);
 
                         out += k + 1 + ". [" + checkRank(data, petData, guildData, name) + "]";
                         out += "[" + formatKoreanShort(memberExp) + "💞]\n";
@@ -23875,10 +23903,124 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     out += "━━━━━━━━━━━━\n";
                     out += buildGuildResourceDisplay(g);
+                    out += "━━━━━━━━━━━━\n";
+                    out += buildGuildContributionCubeCostDisplay() + "\n";
                     if (g.mark) {
                         replier.reply(g.mark);
                     }
                     replier.reply(out);
+                    return;
+                }
+                if (msg === "/길드큐브확률" || msg === "/길드큐브기록" || msg === "/길드큐브" || /^\/길드큐브\s+\d+\s+\d+$/.test(msg)) {
+                    var guildCubeActorHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님\n";
+                    var guildCubeGuildId = getMyGuildId(data, sender);
+                    if (!guildCubeGuildId) {
+                        replier.reply(guildCubeActorHeader + "❌ 가입된 길드가 없습니다.");
+                        return;
+                    }
+                    var guildCubeGuild = guildData && guildData.guilds ? guildData.guilds[guildCubeGuildId] : null;
+                    if (!guildCubeGuild || !guildCubeGuild.members || !guildCubeGuild.members[sender]) {
+                        replier.reply(guildCubeActorHeader + "❌ 길드 데이터가 올바르지 않습니다.");
+                        return;
+                    }
+                    if (msg === "/길드큐브확률") {
+                        replier.reply(buildGuildContributionCubeProbabilityMessage());
+                        return;
+                    }
+                    if (msg === "/길드큐브기록") {
+                        replier.reply(buildGuildContributionCubeLogMessage(guildCubeGuild));
+                        return;
+                    }
+
+                    // 길드공헌 큐브 변경 명령은 실제 길드마스터만 실행 가능
+                    if (guildCubeGuild.master !== sender) {
+                        replier.reply(guildCubeActorHeader + "❌ 길드마스터 전용 명령어입니다.\n길드마스터만 길드공헌 큐브를 사용할 수 있습니다.");
+                        return;
+                    }
+                    if (msg === "/길드큐브") {
+                        replier.reply(guildCubeActorHeader + "사용법: /길드큐브 [길드옵션번호] [시도횟수]");
+                        return;
+                    }
+
+                    var guildCubeParts = msg.split(/\s+/);
+                    var guildCubeOptionNo = parseInt(guildCubeParts[1], 10);
+                    var guildCubeRequestedAttempts = parseInt(guildCubeParts[2], 10); // 사용자가 요청한 전체 시도 횟수
+                    var guildCubeOption = getGuildContributionCubeOption(guildCubeOptionNo);
+                    if (!guildCubeOption) {
+                        replier.reply(guildCubeActorHeader + "❌ 길드옵션번호는 1~4만 입력할 수 있습니다.\n사용법: /길드큐브 [길드옵션번호] [시도횟수]");
+                        return;
+                    }
+                    if (isNaN(guildCubeRequestedAttempts) || guildCubeRequestedAttempts < 1 || guildCubeRequestedAttempts > GLOBAL_CONFIG.guildContributionCube.maxAttempts) {
+                        replier.reply(guildCubeActorHeader + "❌ 길드큐브는 한 번에 1~" + GLOBAL_CONFIG.guildContributionCube.maxAttempts + "회까지 사용할 수 있습니다.\n사용법: /길드큐브 [길드옵션번호] [시도횟수]");
+                        return;
+                    }
+
+                    var guildCubeData = getGuildContributionCubeData(guildCubeGuild, false);
+                    var guildCubeBeforeUnits = guildCubeData.options[guildCubeOption.key]; // 선택 옵션의 실행 전 0.1% 단위 수치
+                    if (guildCubeBeforeUnits >= guildCubeOption.maxUnits) {
+                        replier.reply(guildCubeActorHeader + "✅ 해당 길드 옵션은 이미 최대치에 도달했습니다.");
+                        return;
+                    }
+                    var guildCubeMember = guildCubeGuild.members[sender];
+                    var guildCubeHeldContribution = parseInt(guildCubeMember.contribution, 10) || 0;
+                    var guildCubeRequestedCost = guildCubeOption.cost * guildCubeRequestedAttempts; // 전체 요청을 실행할 때 필요한 공헌
+                    if (guildCubeHeldContribution < guildCubeRequestedCost) {
+                        replier.reply(guildCubeActorHeader + "❌ 길드공헌이 부족합니다.\n필요 공헌🌟: " + numberWithCommas(guildCubeRequestedCost) + "개\n보유 공헌🌟: " + numberWithCommas(guildCubeHeldContribution) + "개");
+                        return;
+                    }
+
+                    guildCubeData = getGuildContributionCubeData(guildCubeGuild, true);
+
+                    var guildCubeActualAttempts = 0; // 최대치 조기 도달을 반영한 실제 시도 횟수
+                    var guildCubeSuccesses = 0;
+                    var guildCubeProtections = 0;
+                    var guildCubeLastSuccess = false;
+                    for (var guildCubeAttemptIndex = 0; guildCubeAttemptIndex < guildCubeRequestedAttempts; guildCubeAttemptIndex++) {
+                        if (guildCubeData.options[guildCubeOption.key] >= guildCubeOption.maxUnits) break;
+                        guildCubeActualAttempts++;
+                        guildCubeLastSuccess = Math.random() < GLOBAL_CONFIG.guildContributionCube.successRate;
+                        if (guildCubeLastSuccess) {
+                            guildCubeData.options[guildCubeOption.key] = Math.min(guildCubeOption.maxUnits, guildCubeData.options[guildCubeOption.key] + GLOBAL_CONFIG.guildContributionCube.stepUnits);
+                            guildCubeSuccesses++;
+                        } else {
+                            guildCubeProtections++;
+                        }
+                    }
+
+                    var guildCubeContributionUsed = guildCubeOption.cost * guildCubeActualAttempts; // 실제 처리된 횟수만큼 차감할 공헌
+                    guildCubeMember.contribution = guildCubeHeldContribution - guildCubeContributionUsed;
+                    var guildCubeAfterUnits = guildCubeData.options[guildCubeOption.key];
+                    guildCubeData.logs.unshift({
+                        createdAt: formatDateTime(new Date()),
+                        user: sender,
+                        optionNo: String(guildCubeOptionNo),
+                        optionKey: guildCubeOption.key,
+                        attempts: guildCubeActualAttempts,
+                        requestedAttempts: guildCubeRequestedAttempts,
+                        successes: guildCubeSuccesses,
+                        protections: guildCubeProtections,
+                        contributionUsed: guildCubeContributionUsed,
+                        beforeUnits: guildCubeBeforeUnits,
+                        afterUnits: guildCubeAfterUnits
+                    });
+                    if (guildCubeData.logs.length > GLOBAL_CONFIG.guildContributionCube.logLimit) {
+                        guildCubeData.logs.splice(GLOBAL_CONFIG.guildContributionCube.logLimit);
+                    }
+                    saveJsonFile(guildData, guildPath);
+
+                    var guildCubeResult = (guildCubeGuild.name || "") + "(" + (guildCubeGuild.mark || "") + ") 길드의 공헌 큐브 결과\n";
+                    guildCubeResult += "확률정보: 채팅창에 '/길드큐브확률'을 적어보세요\n\n";
+                    guildCubeResult += "━━━━━━━━━━━━━━━\n";
+                    guildCubeResult += "✅️ 사용: " + numberWithCommas(guildCubeActualAttempts) + "개\n";
+                    guildCubeResult += "🌟 남은 공헌: " + numberWithCommas(guildCubeMember.contribution) + "개\n";
+                    guildCubeResult += "━━━━━━━━━━━━━━━\n";
+                    guildCubeResult += "💠 길드공헌 큐브 옵션\n\n" + buildGuildContributionCubeOptionDisplay(guildCubeGuild) + "\n";
+                    guildCubeResult += "━━━━━━━━━━━━━━━\n";
+                    guildCubeResult += "선택 옵션: [" + guildCubeOptionNo + "]" + guildCubeOption.emoji + " " + guildCubeOption.name + "\n\n";
+                    guildCubeResult += "변경: +" + formatGuildContributionCubePercent(guildCubeBeforeUnits) + "% → +" + formatGuildContributionCubePercent(guildCubeAfterUnits) + "%\n\n";
+                    guildCubeResult += "마지막 추첨: " + (guildCubeLastSuccess ? "상승 성공 ✅ (+0.1%)" : "보호 ❌") + "\n\n";
+                    guildCubeResult += "시도: " + numberWithCommas(guildCubeActualAttempts) + "/" + numberWithCommas(guildCubeRequestedAttempts) + "회 | 상승 " + numberWithCommas(guildCubeSuccesses) + "회 | 보호 " + numberWithCommas(guildCubeProtections) + "회";
+                    replier.reply(guildCubeResult);
                     return;
                 }
                 if (msg === "/길드부스터공헌" || /^\/길드부스터공헌\s+\d+$/.test(msg)) {
@@ -24019,7 +24161,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 가입조건 체크
                     var needExp = g.joinConditionExp || 0;
                     if (needExp > 0) {
-                        var myExp = calculateTotalExp(sender, data, petData, homeData, petSkillData);
+                        var myExp = calculateTotalExp(sender, data, petData, homeData, petSkillData, guildData);
 
                         if (myExp < needExp) {
                             replier.reply("❌ 가입조건 미달입니다.\n" + "필요 EXP: " + numberWithCommas(needExp) + " 이상\n" + "내 EXP: " + numberWithCommas(myExp));
@@ -24123,7 +24265,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 가입조건 재확인
                     var needExp = g.joinConditionExp || 0;
                     if (needExp > 0) {
-                        var myExp = calculateTotalExp(sender, data, petData, homeData, petSkillData);
+                        var myExp = calculateTotalExp(sender, data, petData, homeData, petSkillData, guildData);
 
                         if (myExp < needExp) {
                             delete userState[sender].guildJoin;
@@ -27833,6 +27975,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
+        /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
 
@@ -29410,7 +29553,7 @@ function buildGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkill
     for (var user in targets) {
         if (!targets.hasOwnProperty(user)) continue;
         if (!data.member[user] || !petData[user]) continue;
-        var baseExp = calculateCastleExp(user, data, petData, homeData, petSkillData);
+        var baseExp = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
         snapshots[user] = baseExp;
         war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(data, petData, user, baseExp);
     }
@@ -29439,7 +29582,7 @@ function fillGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillD
     for (var i = 0; i < users.length; i++) {
         var user = users[i];
         if (typeof war.castleExpSnapshots[user] === "number" && war.castleBattleSnapshots[user]) continue;
-        var calculatedExp = calculateCastleExp(user, data, petData, homeData, petSkillData);
+        var calculatedExp = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
         var baseExp = typeof war.castleExpSnapshots[user] === "number" ? war.castleExpSnapshots[user] : calculatedExp;
         war.castleExpSnapshots[user] = baseExp;
         war.castleBattleSnapshots[user] = createGuildTerritoryCastleBattleSnapshot(data, petData, user, baseExp);
@@ -30264,7 +30407,9 @@ function applyGuildTerritoryTurnReward(data, guildData, guildId, user) {
     var ownedTerritoryCount = getGuildTerritoryOwnedCount(war, guildId); // 공격 시점 길드 점령지 수
     var hasMaxTerritoryBonus = ownedTerritoryCount >= GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories;
     var turnFundMultiplier = hasMaxTerritoryBonus ? GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier : 1;
-    var turnFundReward = GLOBAL_CONFIG.guildTerritory.rewards.turnFundReward * turnFundMultiplier;
+    var turnFundBaseReward = GLOBAL_CONFIG.guildTerritory.rewards.turnFundReward; // 큐브 보너스 계산 기준 기본 포인트
+    var territoryPointPercent = getGuildContributionCubeMemberPercent(data, guildData, user, "territoryPoint");
+    var turnFundReward = turnFundBaseReward * turnFundMultiplier + Math.floor(turnFundBaseReward * territoryPointPercent / 100);
     g.warehouse.fund += turnFundReward;
 
     var medalSuccess = Math.random() < GLOBAL_CONFIG.guildTerritory.rates.medalRewardRate;
@@ -30941,6 +31086,16 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     if (offenseItem && Math.random() <= offenseItem.successRate) {
         // 공격 아이템
         decreaseGuildTerritoryItem(data, sender, offenseItem.name);
+        var guildCubeAmbushDefensePercent = defenderName ? getGuildContributionCubeMemberPercent(data, guildData, defenderName, "ambushDefense") : 0;
+        if (guildCubeAmbushDefensePercent > 0 && Math.random() < guildCubeAmbushDefensePercent / 100) {
+            out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
+            out += "[💠 길드공헌 큐브] 기습방어 +" + guildCubeAmbushDefensePercent.toFixed(1) + "% 발동!\n";
+            out += "공격/방어/보상 상세보기" + allsee;
+            out += "[" + formatGuildDisplay(attackerGuild) + "] 길드의 [" + checkRank(data, petData, guildData, sender) + "] 이(가)\n";
+            out += "[" + territoryNo + "] " + territory.name + " 기습 공격에 실패합니다!\n🆚\n";
+            out += "[" + formatGuildDisplay(defenderGuild) + "] 길드의 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
+            return out;
+        }
         ter.ownerGuildId = attackerGuildInfo.guildId;
         ter.ownerUser = sender;
         if (territoryNo === 1 && data.HoiCastle) {
@@ -36194,7 +36349,7 @@ function generateBagOutput(bagItems) {
     };
 }
 
-function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube) {
+function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
     let castleItem = calculateCastleItem(memberName, data) || 0;
     let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0;
@@ -36221,10 +36376,11 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp");
     var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
     var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
+    castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
     return Math.floor(castleTotal * (1 + castleCubePercent / 100));
 }
 
-function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube) {
+function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
     let itemInfo = calculateItemInfoAll(memberName, data, petData) || { raidExp: 0 }; // `null` 또는 `undefined` 방지
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0; // `petData` 값이 없을 때 `0` 반환
     let miniPetExp = (petData[memberName] && petData[memberName].miniPet && petData[memberName].miniPet.raidExp) || 0; // 미니펫 레이드 경험치
@@ -36247,6 +36403,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp");
     var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
     var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
+    raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
     return Math.floor(raidTotal * (1 + raidCubePercent / 100));
 }
 function calculateItemInfoAll(memberName, data, petData) {
@@ -37338,8 +37495,59 @@ function combinePetSkillBookFragment(data, petData, guildData, sender, msg) {
     };
 }
 
+// 펫스킬가방의 선택한 스킬을 분해하고 펫스킬북 조각을 지급하는 함수
+function decomposePetSkillFromBag(data, petData, guildData, petSkillData, sender, msg) {
+    var match = String(msg || "").match(/^\/펫스킬북분해\s+(\d+)\s+(\d+)$/);
+    var nick = checkRank(data, petData, guildData, sender);
+    if (!match) {
+        return {
+            ok: false,
+            message: "사용법: /펫스킬북분해 [펫스킬가방번호] [분해개수]\n예) /펫스킬북분해 1 3"
+        };
+    }
+
+    var skillIndex = parseInt(match[1], 10);
+    var decomposeCount = parseInt(match[2], 10);
+    if (isNaN(skillIndex) || skillIndex < 1) {
+        return { ok: false, message: "❌ 펫스킬가방 번호가 올바르지 않습니다." };
+    }
+    if (isNaN(decomposeCount) || decomposeCount < 1) {
+        return { ok: false, message: "❌ 분해 개수는 1개 이상이어야 합니다." };
+    }
+
+    var skills = initPetSkillUser(petSkillData, sender);
+    var skillList = getPetSkillBagList(petSkillData, sender);
+    if (skillList.length === 0) {
+        return { ok: false, message: "❌ 분해할 펫스킬이 없습니다." };
+    }
+    if (skillIndex > skillList.length) {
+        return { ok: false, message: "❌ 해당 번호의 펫스킬이 없습니다." };
+    }
+
+    var skillName = skillList[skillIndex - 1];
+    var ownedCount = skills.bag[skillName] || 0;
+    if (ownedCount < decomposeCount) {
+        return {
+            ok: false,
+            message: "❌ 보유 수량이 부족합니다.\n펫스킬: " + formatPetSkillName(skillName) + "\n보유: " + numberWithCommas(ownedCount) + "개\n요청: " + numberWithCommas(decomposeCount) + "개"
+        };
+    }
+
+    var fragmentCount = 0; // 각 스킬에서 획득한 3~4개 조각의 총합
+    for (var i = 0; i < decomposeCount; i++) {
+        fragmentCount += Math.floor(Math.random() * 2) + 3;
+    }
+    removePetSkillFromBag(petSkillData, sender, skillName, decomposeCount);
+    addItem(data, sender, GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName, fragmentCount);
+
+    return {
+        ok: true,
+        message: "✅ 펫스킬북 분해 완료\n━━━━━━━━━━━━━━\n[" + nick + "]\n펫스킬: " + formatPetSkillName(skillName) + "\n분해 수량: " + numberWithCommas(decomposeCount) + "개\n획득: " + GLOBAL_CONFIG.petExplore.tierReward.fragmentItemName + " " + numberWithCommas(fragmentCount) + "개\n남은 수량: " + numberWithCommas(skills.bag[skillName] || 0) + "개"
+    };
+}
+
 // 유저가 종합순위 상위 제한 안에 있는지 확인하는 함수
-function isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, limit) {
+function isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, limit, guildData) {
     if (!data || !data.member || !petData || !data.member[user]) return false;
     var rows = [];
     for (var name in data.member) {
@@ -37347,7 +37555,7 @@ function isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, li
         if (!petData[name]) continue;
         rows.push({
             user: name,
-            totalExp: calculateTotalExp(name, data, petData, homeData, petSkillData)
+            totalExp: calculateTotalExp(name, data, petData, homeData, petSkillData, guildData)
         });
     }
     rows.sort(function (a, b) {
@@ -37473,10 +37681,10 @@ function getMatzangPointRanking(field, data) {
 }
 
 // 맞짱필드 참여 시점 종합매력 기반 전투 수치를 반환하는 함수
-function getMatzangBattleProfile(user, data, petData, homeData, petSkillData, cachedTotalExp) {
+function getMatzangBattleProfile(user, data, petData, homeData, petSkillData, cachedTotalExp, guildData) {
     var petObj = petData[user] || {};
     var miniPet = petObj.miniPet || null;
-    var baseExp = cachedTotalExp > 0 ? cachedTotalExp : (calculateTotalExp(user, data, petData, homeData, petSkillData) || 0);
+    var baseExp = cachedTotalExp > 0 ? cachedTotalExp : (calculateTotalExp(user, data, petData, homeData, petSkillData, guildData) || 0);
     return {
         user: user,
         pet: petObj,
@@ -37489,9 +37697,9 @@ function getMatzangBattleProfile(user, data, petData, homeData, petSkillData, ca
 }
 
 // 맞짱필드 전투 결과와 출력용 상세 데이터를 계산하는 함수
-function runMatzangBattle(attackerName, defenderName, data, petData, homeData, petSkillData, attackerTotalExp, defenderTotalExp) {
-    var attacker = getMatzangBattleProfile(attackerName, data, petData, homeData, petSkillData, attackerTotalExp);
-    var defender = getMatzangBattleProfile(defenderName, data, petData, homeData, petSkillData, defenderTotalExp);
+function runMatzangBattle(attackerName, defenderName, data, petData, homeData, petSkillData, attackerTotalExp, defenderTotalExp, guildData) {
+    var attacker = getMatzangBattleProfile(attackerName, data, petData, homeData, petSkillData, attackerTotalExp, guildData);
+    var defender = getMatzangBattleProfile(defenderName, data, petData, homeData, petSkillData, defenderTotalExp, guildData);
     var petTypeBuff = difftypeBuff(attacker.pet, defender.pet);
     var attackerBuffed = Math.round(attacker.baseExp * petTypeBuff.buff1); // 공격자 상성 보정값
     var defenderBuffed = Math.round(defender.baseExp * petTypeBuff.buff2); // 방어자 상성 보정값
@@ -38411,6 +38619,7 @@ function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
     msg += "━━━━━━━━━━━━━\n";
     msg += "※ 스킬 장착: /펫스킬장착 [번호]\n";
     msg += "※ 스킬 판매: /펫스킬판매 [번호]\n";
+    msg += "※ 스킬 분해: /펫스킬북분해 [번호] [개수]\n";
     msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
     msg += "━━━━━━━━━━━━━\n";
 
@@ -39578,11 +39787,11 @@ function calculatePetUpgradeCharm(user, data, petData, excludeHomeBadgeCube) {
 }
 
 // 홈뱃지 큐브 장착 전후 효과를 디버깅용 비교 문구로 생성하는 함수
-function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, petExploreData, user) {
-    var castleBefore = calculateCastleExp(user, data, petData, homeData, petSkillData, true);
-    var castleAfter = calculateCastleExp(user, data, petData, homeData, petSkillData);
-    var raidBefore = calculateRaidExp(user, data, petData, homeData, petSkillData, true);
-    var raidAfter = calculateRaidExp(user, data, petData, homeData, petSkillData);
+function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, petExploreData, user, guildData) {
+    var castleBefore = calculateCastleExp(user, data, petData, homeData, petSkillData, true, guildData);
+    var castleAfter = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
+    var raidBefore = calculateRaidExp(user, data, petData, homeData, petSkillData, true, guildData);
+    var raidAfter = calculateRaidExp(user, data, petData, homeData, petSkillData, false, guildData);
     var upgradeBefore = calculateEffectivePetUpgradeLevel(user, data, petData, true);
     var upgradeAfter = calculateEffectivePetUpgradeLevel(user, data, petData);
     var castleRate = castleBefore > 0 ? (castleAfter - castleBefore) / castleBefore * 100 : 0;
@@ -39596,7 +39805,7 @@ function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, p
     var exploreDungeon = petExploreData && petExploreData.userBet && petExploreData.userBet[user] !== null && typeof petExploreData.userBet[user] !== "undefined" ? String(petExploreData.userBet[user]) : null;
     var exploreCube = getHomeBadgeCubeActiveOptionPercent(data, user, "explore");
     if (exploreDungeon !== null) {
-        var explorePercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, exploreDungeon);
+        var explorePercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, exploreDungeon, guildData);
         var exploreRate = explorePercent.totalPBeforeHomeBadge > 0 ? (explorePercent.totalP - explorePercent.totalPBeforeHomeBadge) / explorePercent.totalPBeforeHomeBadge * 100 : 0;
         lines.push("펫탐험 확률[" + exploreDungeon + "]: " + explorePercent.totalPBeforeHomeBadge.toFixed(2) + "% → " + explorePercent.totalP.toFixed(2) + "% (+" + (explorePercent.totalP - explorePercent.totalPBeforeHomeBadge).toFixed(2) + "%p, 기존 대비 +" + exploreRate.toFixed(2) + "%)");
     } else {
@@ -41551,14 +41760,14 @@ function applyStarterHome(homeData, userName) {
  * @param {object=} homeData  // 선택: 이미 로드된 homeData가 있으면 넘겨 중복 로드 방지
  * @returns {number} 종합매력(정수)
  */
-function calculateTotalExp(sender, data, petData, homeData, petSkillData) {
+function calculateTotalExp(sender, data, petData, homeData, petSkillData, guildData) {
     if (!petData || !petData[sender]) return 0;
 
     var petInfo = petData[sender];
     var homeData = homeData || loadJsonFile(homeDataFile);
 
-    var totalCastle = calculateCastleExp(sender, data, petData, homeData, petSkillData) || 0;
-    var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData) || 0;
+    var totalCastle = calculateCastleExp(sender, data, petData, homeData, petSkillData, false, guildData) || 0;
+    var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData, false, guildData) || 0;
 
     // 강화 매력 보너스 계산
     var upgradeBonus = calculatePetUpgradeCharm(sender, data, petData);
@@ -42593,8 +42802,8 @@ function getExploreTierBonusPercent(data, user) {
 }
 
 /** 종합매력 보너스(퍼센트포인트) */
-function getExploreExpBonusPercent(data, petData, homeData, user, petSkillData) {
-    var exp = calculateTotalExp(user, data, petData, homeData, petSkillData);
+function getExploreExpBonusPercent(data, petData, homeData, user, petSkillData, guildData) {
+    var exp = calculateTotalExp(user, data, petData, homeData, petSkillData, guildData);
 
     // 구간표
     if (exp >= 100000000) return 20;
@@ -42786,7 +42995,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 }
             }
             if (dk === "9") {
-                if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit)) {
+                if (!isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, GLOBAL_CONFIG.petExplore.maze.archmageRankLimit, guildData)) {
                     failLines.push("[" + checkRank(data, petData, guildData, user) + "]잊혀진 대마법사의 유적📙 입장 실패(❌)\n/종합순위 20등 밖: 보상 제외");
                     failCnt++;
                     continue;
@@ -42823,7 +43032,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
             // 티어/매력/영주 가산
             var tierP = getExploreTierBonusPercent(data, user);
-            var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
+            var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData, guildData);
             var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
             var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
             var pendantP = getPendantExploreBonusPercent(petData, user);
@@ -44308,7 +44517,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
     // 공용 확률(정산/지도 동일): 기본 + 티어 + 매력 + 영주
     var p = null;
     try {
-        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, dungeonNo);
+        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, dungeonNo, guildData);
     } catch (e) {
         p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, pendantP: 0, premiumP: 0, homeBadgeP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
     }
@@ -44469,7 +44678,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 
     var p = null;
     try {
-        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, myBet);
+        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, myBet, guildData);
     } catch (e) {
         p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, pendantP: 0, premiumP: 0, homeBadgeP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
     }
@@ -44658,10 +44867,10 @@ function getExploreSuccessPenaltyPercent(dungeonKey) {
 }
 
 //확률
-function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, dungeonKey) {
+function calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, dungeonKey, guildData) {
     var baseP = 5;
     var tierP = getExploreTierBonusPercent(data, user);
-    var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData);
+    var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData, guildData);
     var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
     var traitP = getExploreTraitBonusPercent(petSkillData, user, dungeonKey);
     var pendantP = getPendantExploreBonusPercent(petData, user);
@@ -45146,6 +45355,117 @@ function getMyGuildId(data, sender) {
     if (!data.member[sender]) return null; // 유저 없음
     if (!data.member[sender].guild) return null; // 길드 미가입
     return data.member[sender].guild.id || null;
+}
+
+// 길드공헌 큐브 옵션 번호에 해당하는 설정 반환
+function getGuildContributionCubeOption(optionNo) {
+    return GLOBAL_CONFIG.guildContributionCube.options[String(optionNo)] || null;
+}
+
+// 길드공헌 큐브 옵션 키에 해당하는 설정 반환
+function getGuildContributionCubeOptionByKey(optionKey) {
+    var options = GLOBAL_CONFIG.guildContributionCube.options;
+    for (var optionNo in options) {
+        if (!options.hasOwnProperty(optionNo)) continue;
+        if (options[optionNo].key === optionKey) return options[optionNo];
+    }
+    return null;
+}
+
+// 길드공헌 큐브 저장값과 최근 기록을 안전한 형태로 반환
+function getGuildContributionCubeData(guild, createIfMissing) {
+    var storedOptions = guild && guild.cubeOptions && typeof guild.cubeOptions === "object" ? guild.cubeOptions : {};
+    var normalizedOptions = {};
+    var optionConfigs = GLOBAL_CONFIG.guildContributionCube.options;
+    for (var optionNo in optionConfigs) {
+        if (!optionConfigs.hasOwnProperty(optionNo)) continue;
+        var option = optionConfigs[optionNo];
+        var units = parseInt(storedOptions[option.key], 10);
+        if (isNaN(units) || units < 0) units = 0;
+        if (units > option.maxUnits) units = option.maxUnits;
+        normalizedOptions[option.key] = units;
+    }
+    var logs = guild && Array.isArray(guild.cubeLogs) ? guild.cubeLogs : [];
+    if (createIfMissing === true && guild) {
+        guild.cubeOptions = normalizedOptions;
+        guild.cubeLogs = logs;
+        return { options: guild.cubeOptions, logs: guild.cubeLogs };
+    }
+    return { options: normalizedOptions, logs: logs };
+}
+
+// 현재 길드 소속이 유효한 유저의 길드공헌 큐브 옵션 퍼센트 반환
+function getGuildContributionCubeMemberPercent(data, guildData, memberName, optionKey) {
+    var option = getGuildContributionCubeOptionByKey(optionKey);
+    if (!option || !data || !data.member || !data.member[memberName]) return 0;
+    var guildId = getMyGuildId(data, memberName);
+    if (!guildId || !guildData || !guildData.guilds) return 0;
+    var guild = guildData.guilds[guildId];
+    if (!guild || !guild.members || !guild.members[memberName]) return 0;
+    var cubeData = getGuildContributionCubeData(guild, false);
+    return cubeData.options[option.key] / 10;
+}
+
+// 길드공헌 큐브 정수 저장값을 소수점 한 자리 퍼센트로 표시
+function formatGuildContributionCubePercent(units) {
+    return (Math.max(0, parseInt(units, 10) || 0) / 10).toFixed(1);
+}
+
+// 길드공헌 큐브 전체 옵션의 현재 수치 표시 문자열 생성
+function buildGuildContributionCubeOptionDisplay(guild) {
+    var cubeData = getGuildContributionCubeData(guild, false);
+    var options = GLOBAL_CONFIG.guildContributionCube.options;
+    return "[1]" + options["1"].emoji + "+" + formatGuildContributionCubePercent(cubeData.options.castle) + "% " +
+        "[2]" + options["2"].emoji + "+" + formatGuildContributionCubePercent(cubeData.options.raid) + "%\n" +
+        "[3]" + options["3"].emoji + "+" + formatGuildContributionCubePercent(cubeData.options.territoryPoint) + "% " +
+        "[4]" + options["4"].emoji + "+" + formatGuildContributionCubePercent(cubeData.options.ambushDefense) + "%";
+}
+
+// 길드공헌 큐브 옵션별 필요 공헌 안내 문자열 생성
+function buildGuildContributionCubeCostDisplay() {
+    var options = GLOBAL_CONFIG.guildContributionCube.options;
+    var out = "";
+    for (var optionNo = 1; optionNo <= 4; optionNo++) {
+        var option = options[String(optionNo)];
+        out += "[" + optionNo + "] " + option.emoji + " " + option.name + " (공헌 " + numberWithCommas(option.cost) + "개)";
+        if (optionNo < 4) out += "\n";
+    }
+    return out;
+}
+
+// 길드공헌 큐브 확률과 옵션 안내 메시지 생성
+function buildGuildContributionCubeProbabilityMessage() {
+    var options = GLOBAL_CONFIG.guildContributionCube.options;
+    var out = "💠 길드공헌 큐브 확률\n━━━━━━━━━━━━━━━\n";
+    out += "상승 성공: 10%\n기존 수치 보호: 90%\n성공 시 상승: +0.1%\n━━━━━━━━━━━━━━━\n";
+    for (var optionNo = 1; optionNo <= 4; optionNo++) {
+        var option = options[String(optionNo)];
+        out += "[" + optionNo + "] " + option.emoji + " " + option.name + "\n";
+        out += "공헌 " + numberWithCommas(option.cost) + "개 | 최대 +" + formatGuildContributionCubePercent(option.maxUnits) + "%";
+        if (optionNo < 4) out += "\n\n";
+    }
+    return out;
+}
+
+// 길드공헌 큐브 최근 사용 기록 메시지 생성
+function buildGuildContributionCubeLogMessage(guild) {
+    var cubeData = getGuildContributionCubeData(guild, false);
+    var logs = cubeData.logs;
+    var out = (guild.name || "") + "(" + (guild.mark || "") + ") 길드공헌 큐브 기록\n━━━━━━━━━━━━━━━\n";
+    if (logs.length === 0) return out + "아직 길드공헌 큐브 사용 기록이 없습니다.\n━━━━━━━━━━━━━━━";
+    var displayCount = Math.min(logs.length, GLOBAL_CONFIG.guildContributionCube.logLimit);
+    for (var i = 0; i < displayCount; i++) {
+        var log = logs[i] || {};
+        var option = getGuildContributionCubeOption(log.optionNo) || getGuildContributionCubeOptionByKey(log.optionKey);
+        var optionText = option ? option.emoji + " " + option.name : "알 수 없는 옵션";
+        out += (i + 1) + ". " + (log.user || "알 수 없음") + " | " + optionText + "\n";
+        out += numberWithCommas(log.attempts || 0) + "회 | 상승 " + numberWithCommas(log.successes || 0) + "회 | 보호 " + numberWithCommas(log.protections || 0) + "회\n";
+        out += "공헌 " + numberWithCommas(log.contributionUsed || 0) + "개 사용 | +" + formatGuildContributionCubePercent(log.beforeUnits) + "% → +" + formatGuildContributionCubePercent(log.afterUnits) + "%\n";
+        out += "사용 일시: " + (log.createdAt || "기록 없음") + "\n";
+        if (i < displayCount - 1) out += "\n";
+    }
+    out += "━━━━━━━━━━━━━━━\n최근 " + GLOBAL_CONFIG.guildContributionCube.logLimit + "건까지 표시됩니다.";
+    return out;
 }
 
 function ensureUserState(sender) {
@@ -45683,7 +46003,7 @@ function getGuildMasterRankEmoji(rank) {
 }
 
 // 길드의 총 매력 계산 (길드원들의 총 매력 합산)
-function calculateGuildTotalExp(guild, data, petData, homeData, petSkillData) {
+function calculateGuildTotalExp(guild, data, petData, homeData, petSkillData, guildData) {
     if (!guild || !guild.members) return 0;
 
     var total = 0;
@@ -45691,7 +46011,7 @@ function calculateGuildTotalExp(guild, data, petData, homeData, petSkillData) {
 
     for (user in guild.members) {
         if (!guild.members.hasOwnProperty(user)) continue;
-        total += calculateTotalExp(user, data, petData, homeData, petSkillData) || 0;
+        total += calculateTotalExp(user, data, petData, homeData, petSkillData, guildData) || 0;
     }
 
     total = parseInt(total, 10);
@@ -45722,7 +46042,7 @@ function buildGuildRankingRows(guildData, data, petData, homeData, petSkillData)
             server: guild.server || "",
             master: guild.master || "없음",
             level: guild.level || 1,
-            totalCharm: calculateGuildTotalExp(guild, data, petData, homeData, petSkillData)
+            totalCharm: calculateGuildTotalExp(guild, data, petData, homeData, petSkillData, guildData)
         });
     }
 

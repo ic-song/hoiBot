@@ -963,6 +963,8 @@ Status: VERIFIED
 - `getGuildTerritoryList`
 - `buildGuildResourceDisplay`
 - `ensureGuildTerritoryBoosterCount`
+- `buildGuildContributionCubeOptionDisplay`
+- `buildGuildContributionCubeCostDisplay`
 
 ## Data Usage
 
@@ -975,6 +977,7 @@ Status: VERIFIED
 - `guildData.guilds[myGid].members[*].boosterContribution`
 - `data.member[*].gContribCnt`
 - `data.member[*].gBoosterContribCnt`
+- `guildData.guilds[myGid].cubeOptions`
 
 ## Save Flow
 
@@ -997,8 +1000,93 @@ Status: VERIFIED
 - Territory-related display here depends on `ensureGuildTerritoryWar`
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
 - Displays current `길드영지 부스터🔮` count through `ensureGuildTerritoryBoosterCount`
+- Displays all four current 길드공헌 큐브 percentages below the territory booster and each option's contribution cost below the guild warehouse.
 - Member rows display total guild contribution and total booster contribution with daily check marks.
 - Displays `subMasters` through `getGuildSubMasterDisplay`
+
+---
+
+# /길드큐브 [길드옵션번호] [시도횟수]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/길드큐브`
+- Guard: exact usage command or two complete numeric arguments
+
+## Files
+
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+
+- `getGuildContributionCubeData`
+- `getGuildContributionCubeMemberPercent`
+- `buildGuildContributionCubeOptionDisplay`
+- `buildGuildContributionCubeProbabilityMessage`
+- `buildGuildContributionCubeLogMessage`
+- `calculateCastleExp`
+- `calculateRaidExp`
+- `applyGuildTerritoryTurnReward`
+- `resolveGuildTerritoryAttack`
+
+## Data Usage
+
+- `guildData.guilds[guildId].members[sender].contribution`
+- `guildData.guilds[guildId].cubeOptions`
+- `guildData.guilds[guildId].cubeLogs`
+
+## Save Flow
+
+- Loads member and guild data once in the common response flow.
+- A successful cube run deducts only the actually processed contribution, updates integer 0.1% units, keeps the latest 50 logs, and saves `guildData` through `saveJsonFile(guildData, guildPath)`.
+- Permission, maximum, count, and insufficient-contribution failures do not save or mutate persistent data.
+
+## Related Commands
+
+- `/길드큐브확률`
+- `/길드큐브기록`
+- `/길드정보`
+- `/길드공헌`
+- `/영지공격 [1-9]`
+
+## AI Notes
+
+- Only the exact current guild master can mutate cube state; sub-masters and global operators do not bypass this rule.
+- Castle and raid percentages are added to the active home-badge percentage before one multiplication.
+- A member must match both `data.member[*].guild.id` and the guild's `members` map, so leaving or expulsion removes the buff immediately.
+- Territory point bonus applies only to the base attack-turn guild point reward; ambush defense is checked only after a surprise-attack item succeeds.
+- The common response transaction lock and exclusive mutation lock prevent concurrent cube updates from double-spending contribution.
+
+---
+
+# /길드큐브확률
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Save Flow
+
+- Read-only; requires current guild membership and does not save data.
+
+---
+
+# /길드큐브기록
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Save Flow
+
+- Read-only; displays the current guild's most recent 50 `cubeLogs` entries and does not save data.
 
 ---
 
@@ -3253,6 +3341,31 @@ Status: VERIFIED
 
 ---
 
+# /펫스킬북분해 [펫스킬가방번호] [분해개수]
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/펫스킬북분해`
+## Files
+- `main.js`
+## Related Helpers
+- `decomposePetSkillFromBag`
+- `getPetSkillBagList`
+- `removePetSkillFromBag`
+- `addItem`
+## Data Usage
+- `petSkillData[sender].bag`
+- `data.member[sender].bag["펫스킬북 조각📙"]`
+## Save Flow
+- 선택한 펫스킬을 요청 수량만큼 차감하고 스킬 1개당 조각 3~4개를 지급한 뒤 member data와 `petSkillData`를 각각 한 번 저장한다.
+## Related Commands
+- `/펫스킬가방`
+- `/펫스킬북조합`
+## AI Notes
+- `/펫스킬가방`에 표시되는 정렬 번호를 사용한다.
+- 정확히 숫자 인자 2개를 입력한 경우에만 분해 로직을 실행한다.
+
+---
+
 # /펫스킬확률
 Status: VERIFIED
 ## Command Anchors
@@ -4423,12 +4536,14 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateCastleRanking`
+- `getGuildContributionCubeMemberPercent`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
 - `homeData`
+- `guildData.guilds[*].cubeOptions.castle`
 
 ## Save Flow
 
@@ -4443,6 +4558,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Castle-focused charm leaderboard that depends on loaded home data
+- Applies the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
 - Re-check `initSweetHomeUser` when home normalization affects ranking totals
 
 ---
@@ -4464,12 +4580,14 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateRaidRanking`
+- `getGuildContributionCubeMemberPercent`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
 - `homeData`
+- `guildData.guilds[*].cubeOptions.raid`
 
 ## Save Flow
 
@@ -4484,6 +4602,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Raid-focused charm leaderboard parallel to `/캐슬매력순위`
+- Applies the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
 - Good anchor when raid total calculations diverge from displayed pet/home state
 
 ---
@@ -4580,6 +4699,7 @@ Status: VERIFIED
 - `numberWithCommas`
 - `calculateCastleItem`
 - `calculateItemInfoAll`
+- `getGuildContributionCubeMemberPercent`
 - `getCastleBattleRank`
 - `getCastleBattleRankEmoji`
 
@@ -4590,6 +4710,7 @@ Status: VERIFIED
 - `data.member[sender].battle.score`
 - `petData[sender].miniPet.castleExp`
 - `castleBattleData`
+- `guildData.guilds[*].cubeOptions.castle`
 
 ## Save Flow
 
@@ -4604,6 +4725,7 @@ Status: VERIFIED
 
 - Primary self-profile for castle battle record and CP display
 - Good first anchor when win-rate, castle rank emoji, or CP totals look inconsistent
+- The displayed castle charm adds the current valid guild's cube percentage to the existing record-display base value.
 
 ---
 
