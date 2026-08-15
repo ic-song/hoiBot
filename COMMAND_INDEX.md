@@ -1002,6 +1002,7 @@ Status: VERIFIED
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
 - Displays current `길드영지 부스터🔮` count through `ensureGuildTerritoryBoosterCount`
 - Displays all four current 길드공헌 큐브 percentages below the territory booster and each option's contribution cost below the guild warehouse.
+- Member rows show a fixed Master/SubMaster/SwordMaster legend, append `│👑🛡️⚔️` role emojis to the right of each displayed nickname in that order, and sort Master → SubMaster → SwordMaster → regular members before applying the existing contribution-descending order inside each group. The same numbered order is reused by `/소드마스터`, `/부길마`, and `/길드분배` selections.
 - Member rows display total guild contribution and total booster contribution with daily check marks.
 - Displays `subMasters` through `getGuildSubMasterDisplay`
 
@@ -1055,7 +1056,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Only the exact current guild master can mutate cube state; sub-masters and global operators do not bypass this rule.
+- Any valid current guild member can use the cube with only their own stored guild contribution; each successful command deducts the actual processed cost from that member while the shared guild option continues accumulating.
 - Castle and raid percentages are added to the active home-badge percentage before one multiplication.
 - A member must match both `data.member[*].guild.id` and the guild's `members` map, so leaving or expulsion removes the buff immediately.
 - Territory point bonus applies only to the base attack-turn guild point reward; ambush defense is checked only after a surprise-attack item succeeds.

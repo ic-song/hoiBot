@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.382"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.383"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4640,7 +4640,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    var orderedGuildMembers = getGuildOrderedMemberKeys(swordGuild);
+                    var orderedGuildMembers = getGuildOrderedMemberKeys(swordGuild, petSkillData);
                     var pickedIndexes = [];
                     var pickedMembers = [];
 
@@ -4696,7 +4696,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    var orderedSubMasterMembers = getGuildOrderedMemberKeys(subMasterGuild);
+                    var orderedSubMasterMembers = getGuildOrderedMemberKeys(subMasterGuild, petSkillData);
                     var pickedSubMasterIndexes = [];
                     var pickedSubMasters = [];
 
@@ -23844,8 +23844,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var guildRank = g.rank || null;
                     var guildRankTitle = g.rankTitle || null;
 
-                    // 길드원 정렬: 공헌도 desc
-                    memberKeys = getGuildOrderedMemberKeys(g);
+                    // 길드원 정렬: 직책 우선순위 asc, 공헌도 desc
+                    memberKeys = getGuildOrderedMemberKeys(g, petSkillData);
 
                     var levelInfo = getGuildNextLevelInfo(g);
 
@@ -23886,6 +23886,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     out += "━━━━━━━━━━━━\n";
                     out += "길드공지📢: " + (g.notice ? g.notice : "없음") + "\n";
                     out += "길드원 정보 및 길드자금창고 ℹ️ 더보기\n" + allsee;
+                    out += "👑 Master : 길드마스터\n";
+                    out += "🛡️ SubMaster : 부길드마스터\n";
+                    out += "⚔️ SwordMaster : 소드마스터\n";
+                    out += "━━━━━━━━━━━━━━━\n";
 
                     for (var k = 0; k < memberKeys.length; k++) {
                         var name = memberKeys[k];
@@ -23895,7 +23899,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var boosterContribution = g.members[name] && g.members[name].boosterContribution ? g.members[name].boosterContribution : 0;
                         var memberExp = calculateTotalExp(name, data, petData, homeData, petSkillData, guildData);
 
-                        out += k + 1 + ". [" + checkRank(data, petData, guildData, name) + "]";
+                        var guildMemberRoleEmoji = getGuildMemberRoleEmoji(g, name, petSkillData);
+                        out += k + 1 + ". [" + checkRank(data, petData, guildData, name) + (guildMemberRoleEmoji ? "│" + guildMemberRoleEmoji : "") + "]";
                         out += "[" + formatKoreanShort(memberExp) + "💞]\n";
                         out += "길드공헌 [" + numberWithCommas(c) + "🌟]" + (contribCnt > 0 ? "[✅]" : "[❌]") + " ";
                         out += "부스터공헌 [" + numberWithCommas(boosterContribution) + "🔮]" + (boosterContribCnt > 0 ? "[✅]" : "[❌]") + "\n";
@@ -23932,11 +23937,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    // 길드공헌 큐브 변경 명령은 실제 길드마스터만 실행 가능
-                    if (guildCubeGuild.master !== sender) {
-                        replier.reply(guildCubeActorHeader + "❌ 길드마스터 전용 명령어입니다.\n길드마스터만 길드공헌 큐브를 사용할 수 있습니다.");
-                        return;
-                    }
                     if (msg === "/길드큐브") {
                         replier.reply(guildCubeActorHeader + "사용법: /길드큐브 [길드옵션번호] [시도횟수]");
                         return;
@@ -25172,7 +25172,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     ensureGuildWarehouseObj(g);
 
                     var memberNumberArgs = msg === "/길드분배" ? [] : msg.trim().split(/\s+/).slice(1);
-                    var distributionSelection = getGuildDistributionMembersByNumbers(g, memberNumberArgs);
+                    var distributionSelection = getGuildDistributionMembersByNumbers(g, memberNumberArgs, petSkillData);
                     if (!distributionSelection.ok) {
                         replier.reply(distributionSelection.message);
                         return;
@@ -45573,20 +45573,45 @@ function ensureGuildSwordMasters(g, petSkillData) {
     return g.swordMasters;
 }
 
-// 길드원의 기여도 순으로 정렬된 멤버 키 배열 반환
-function getGuildOrderedMemberKeys(g) {
+// 길드원의 직책 표시 이모지를 고정 순서로 반환
+function getGuildMemberRoleEmoji(g, memberName, petSkillData) {
+    var roleEmoji = "";
+    if (g && g.master === memberName) roleEmoji += "👑";
+    if (ensureGuildSubMasters(g).indexOf(memberName) !== -1) roleEmoji += "🛡️";
+    if (ensureGuildSwordMasters(g, petSkillData).indexOf(memberName) !== -1) roleEmoji += "⚔️";
+    return roleEmoji;
+}
+
+// 길드원의 가장 높은 직책 정렬 우선순위 반환
+function getGuildMemberRolePriority(g, memberName, petSkillData) {
+    if (g && g.master === memberName) return 1;
+    if (ensureGuildSubMasters(g).indexOf(memberName) !== -1) return 2;
+    if (ensureGuildSwordMasters(g, petSkillData).indexOf(memberName) !== -1) return 3;
+    return 4;
+}
+
+// 길드원의 직책 우선순위와 기여도 순으로 정렬된 멤버 키 배열 반환
+function getGuildOrderedMemberKeys(g, petSkillData) {
     var memberKeys = Object.keys((g && g.members) || {});
+    var originalIndexes = {};
+    for (var memberIndex = 0; memberIndex < memberKeys.length; memberIndex++) {
+        originalIndexes[memberKeys[memberIndex]] = memberIndex;
+    }
     memberKeys.sort(function (a, b) {
+        var priorityA = getGuildMemberRolePriority(g, a, petSkillData);
+        var priorityB = getGuildMemberRolePriority(g, b, petSkillData);
+        if (priorityA !== priorityB) return priorityA - priorityB;
         var ca = g.members[a] && g.members[a].contribution ? g.members[a].contribution : 0;
         var cb = g.members[b] && g.members[b].contribution ? g.members[b].contribution : 0;
-        return cb - ca;
+        if (ca !== cb) return cb - ca;
+        return originalIndexes[a] - originalIndexes[b];
     });
     return memberKeys;
 }
 
 // /길드정보 멤버번호를 길드 자원 분배 대상으로 변환하고 번호가 없으면 전체 길드원 반환
-function getGuildDistributionMembersByNumbers(g, memberNumberArgs) {
-    var allGuildMembers = getGuildOrderedMemberKeys(g); // /길드정보와 동일한 공헌도 순서
+function getGuildDistributionMembersByNumbers(g, memberNumberArgs, petSkillData) {
+    var allGuildMembers = getGuildOrderedMemberKeys(g, petSkillData); // /길드정보와 동일한 직책·공헌도 순서
     var members = [];
     var selectedMemberNumbers = {};
 
