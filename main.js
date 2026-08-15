@@ -10041,13 +10041,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                 }
-                if (msg === "/창조오픈") {
+                if (msg === "/창조리오픈") {
                     if (castleSiegeFlag) return;
 
                     let member = data.member[sender];
                     if (!member) return;
 
-                    let packItem = "창조패키지🐹(/창조오픈)";
+                    let packItem = "창조패키지🐹(/창조리오픈)";
                     // 미니펫뽑기 지급 로직 제거됨
 
                     let nickName = checkRank(data, petData, guildData, sender);
@@ -14565,12 +14565,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             saveJsonFile(petData, memberPetPath);
                             saveJsonFile(data, filePath);
                         } catch (genesisRollbackError) {
-                            debuggerLog("[ERROR : 창세패키지 확정 롤백 실패] " + genesisRollbackError);
+                            debuggerLog("[ERROR : 창조패키지 확정 롤백 실패] " + genesisRollbackError);
                         }
                         throw genesisOpenError;
                     }
 
-                    replier.reply("🐹 창세패키지 확정 오픈!\n\n가온빛💖(+1001280💕)[창세]을(를) 획득했습니다.");
+                    replier.reply("🐹 창조패키지 확정 오픈!\n\n호이빛💖(+1350000💕)[창조]을(를) 획득했습니다.");
                     return;
                 }
 
