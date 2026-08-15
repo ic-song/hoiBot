@@ -14527,7 +14527,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 // - 창세패키지 확정 1개 소모
                 // - 가온빛 미니펫을 미니펫 가방에 지급
                 // ==============================
-                if (msg === "/창세오픈") {
+                if (msg === "/창조오픈") {
                     var genesisMember = data.member[sender];
                     if (!genesisMember) return;
 
