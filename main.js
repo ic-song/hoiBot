@@ -1458,15 +1458,15 @@ blockedNicknameTerms: [
             }
         },
         genesis: {
-            itemName: "[🐹미니펫]창세패키지 확정(/창세오픈)",
+            itemName: "[🐹미니펫]창조패키지 확정(/창조오픈)",
             maxBagSize: 8,
             reward: {
-                name: "가온빛",
+                name: "호이빛",
                 emoji: "💖",
-                grade: "창세",
-                battleExp: 1001280,
-                castleExp: 1001280,
-                raidExp: 1001280
+                grade: "창조",
+                battleExp: 1350000,
+                castleExp: 1350000,
+                raidExp: 1350000
             }
         }
     },
