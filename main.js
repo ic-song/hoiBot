@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.381"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.382"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -31019,6 +31019,22 @@ function resolveGuildTerritoryRememberMe(data, petData, guildData, sender, attac
         "미점령 상태로 변경됩니다.";
 }
 
+// 디버깅 모드에서 영지 방어권과 기습방어 큐브 확률의 합산 내역 생성
+function buildGuildTerritoryAmbushDefenseDebugMessage(data, petData, guildData, defenderName, defenseItem, guildCubeAmbushDefensePercent) {
+    var defenseItemPercent = defenseItem ? defenseItem.successRate * 100 : 0; // 보유 중인 최우선 영지절대방어권 확률
+    var combinedPercent = Math.min(100, defenseItemPercent + guildCubeAmbushDefensePercent); // 방어권과 큐브의 단순 합산 확인값
+    var defenderDisplay = defenderName ? checkRank(data, petData, guildData, defenderName) : "방어자 없음";
+    var defenseItemDisplay = defenseItem ? defenseItem.label : "미보유";
+
+    return "🛡️ 영지공격 기습방어 디버깅\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "방어자: [" + defenderDisplay + "]\n" +
+        "영지절대방어권: " + defenseItemDisplay + " = " + defenseItemPercent.toFixed(1) + "%\n" +
+        "기습방어 큐브: +" + guildCubeAmbushDefensePercent.toFixed(1) + "%\n" +
+        "단순 합산: " + defenseItemPercent.toFixed(1) + "% + " + guildCubeAmbushDefensePercent.toFixed(1) + "% = " + combinedPercent.toFixed(1) + "%\n" +
+        "※ 실제 전투에서는 절대방어권을 먼저 판정하고, 기습공격이 발동하면 큐브를 별도로 판정합니다.";
+}
+
 // 영지전 공격 결과 처리
 function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo) {
     var war = guildData.territoryWar;
@@ -31065,9 +31081,13 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
         { name: "영지기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" },
         { name: "영지기습공격권🔥(10%)", successRate: 0.1, label: "기습🔥(10%)" }
     ];
+    var defenseItem = defenderName && data.member[defenderName] ? getGuildTerritorySpecialItem(data.member[defenderName].bag, defenseItems) : null;
+    var guildCubeAmbushDefensePercent = defenderName ? getGuildContributionCubeMemberPercent(data, guildData, defenderName, "ambushDefense") : 0;
+    if (isDebuggerFlag) {
+        debuggerLog(buildGuildTerritoryAmbushDefenseDebugMessage(data, petData, guildData, defenderName, defenseItem, guildCubeAmbushDefensePercent));
+    }
     if (defenderName && data.member[defenderName]) {
         // 방어 아이템
-        var defenseItem = getGuildTerritorySpecialItem(data.member[defenderName].bag, defenseItems);
         if (defenseItem && Math.random() <= defenseItem.successRate) {
             decreaseGuildTerritoryItem(data, defenderName, defenseItem.name);
 
@@ -31086,7 +31106,6 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     if (offenseItem && Math.random() <= offenseItem.successRate) {
         // 공격 아이템
         decreaseGuildTerritoryItem(data, sender, offenseItem.name);
-        var guildCubeAmbushDefensePercent = defenderName ? getGuildContributionCubeMemberPercent(data, guildData, defenderName, "ambushDefense") : 0;
         if (guildCubeAmbushDefensePercent > 0 && Math.random() < guildCubeAmbushDefensePercent / 100) {
             out = "🎖️길드 영지전 결과🎖️[공격 실패❌]\n";
             out += "[💠 길드공헌 큐브] 기습방어 +" + guildCubeAmbushDefensePercent.toFixed(1) + "% 발동!\n";
