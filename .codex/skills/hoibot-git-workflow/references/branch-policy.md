@@ -27,6 +27,10 @@ documentation, workflow, branch strategy, tools, or Codex skill changes unless
 the user explicitly confirms `feature/prod` reflection for that specific
 workflow change.
 
+User-authored skill source changes belong in `CODEX-CONFIG`. The hoiBot
+`.codex/skills/` tree is a generated deployment mirror and should reach
+`feature/workflow` only after the canonical change is validated and pushed.
+
 ## Freshness Rule
 
 When starting work on a specific branch:

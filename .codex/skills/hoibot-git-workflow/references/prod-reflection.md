@@ -71,14 +71,16 @@ after the validated commit has been pushed, reflected into `feature/prod`, and
 
 For workflow changes:
 
-1. commit and push the workflow change on `feature/workflow`
-2. switch to `feature/prod`
-3. pull `feature/prod`
-4. cherry-pick or merge only the validated workflow commit(s)
-5. verify those commit(s) already exist on the pushed `feature/workflow`
-6. push `feature/prod`
-7. if `.codex/skills/` changed, update the corresponding local Codex skill files when possible
-8. report both the workflow source commit and the `feature/prod` reflected commit, plus whether local skills were updated
+1. for skill changes, update and validate the canonical `CODEX-CONFIG` folder and push its `main`
+2. synchronize the hoiBot `.codex/skills/` deployment mirror from `CODEX-CONFIG`
+3. commit and push the workflow change on `feature/workflow`
+4. switch to `feature/prod`
+5. pull `feature/prod`
+6. cherry-pick or merge only the validated workflow commit(s)
+7. verify those commit(s) already exist on the pushed `feature/workflow`
+8. push `feature/prod`
+9. verify personal skill paths are junctions to the canonical folders and the project mirror has no drift
+10. report the `CODEX-CONFIG`, workflow source, and `feature/prod` commits plus junction and mirror verification
 
 ## Commit Messages
 

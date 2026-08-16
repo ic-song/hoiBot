@@ -4,7 +4,7 @@
 - 작업 이름: 슬라이스 중심 고도화 WBS 재정립
 - 작업 상태: 검증 완료
 - 정리 후보: 아니요
-- 체크포인트 버전: 9
+- 체크포인트 버전: 10
 - 마지막 갱신: 2026-08-17 KST
 - 대화 식별명: 고도화 프로세스 재정립
 
@@ -24,6 +24,7 @@
 - 역할 표현은 `사용자`, `운영자`, `총괄 운영자`, `개발자`만 사용한다.
 - `미사용 검토`는 판단 대기 상태로 유지하고, `미사용` 확정 명령만 이관 대상과 진행률에서 제외한다.
 - `미사용` 명령의 기존 Rhino 코드는 유지한다. 이미 생성된 새 시스템 이관 산출물은 공유 의존성 확인 후 제거한다.
+- hoiBot 사용자 제작 스킬의 중앙 원본은 `CODEX-CONFIG`이며, 프로젝트 `.codex/skills/`는 동기화된 배포 미러로 사용한다.
 - workflow 변경은 `feature/workflow`에서 검증 후 `feature/prod`에 반영한다.
 
 ## 고정 리소스
@@ -52,6 +53,8 @@
 - Notion을 새 WBS 링크와 7개 퍼센티지만 보이는 화면으로 교체하고 다시 읽어 확인했다.
 - `명령어_이관` 사용 상태를 `사용 / 미사용 검토 / 미사용`으로 고정하고 확정 `미사용`만 제외하는 대시보드·도메인 수식을 적용했다.
 - WBS 사용안내와 Notion에 `미사용 검토` 및 `미사용` 처리 기준을 추가했다.
+- `CODEX-CONFIG/main`에 고도화 스킬과 최신 hoiBot 스킬을 등록하고 로컬 스킬을 중앙 원본 junction으로 전환했다.
+- 기존 로컬 hoiBot 스킬은 `%LOCALAPPDATA%/CODEX-CONFIG/backups/skills-20260817-033138`에 보존했다.
 
 ## 현재 퍼센티지
 
@@ -66,25 +69,30 @@
 ## 저장소 변경 범위
 
 - `AGENTS.md`
-- `.codex/skills/hoibot-modernization-wbs-runner/**`
-- `.codex/skills/hoibot-command-navigator/SKILL.md`
-- `.codex/skills/hoibot-save-flow-guard/SKILL.md`
+- `README.md`
+- `.codex/skills/hoibot-*/**` 중앙 배포 미러
 - `.codex/checkpoints/modernization-wbs-workflow.md`
+- `tools/05_skills_설치.bat`
+- `tools/사용법.md`
+- 외부 중앙 원본 `CODEX-CONFIG`
 
 ## 검증
 
-- 관련 스킬 3개 `quick_validate.py`: 모두 `Skill is valid!`
+- 중앙 레지스트리 검증과 암호화 금고 테스트 7개 통과
+- hoiBot 중앙 스킬 7개와 프로젝트 미러 `quick_validate.py`: 모두 `Skill is valid!`
+- 중앙 원본과 프로젝트 미러 7개 내용 일치 확인
+- 로컬 hoiBot 스킬 7개 junction 대상 일치 확인
 - `git diff --check`: 공백 오류 없음
 - 제한된 역할 표현 검색: 저장소 변경 범위와 새 WBS에서 불허 표현 없음
 - Sheets: 사용 상태 validation, 확정 `미사용` 제외 수식, 사용안내와 7개 퍼센티지 재조회 완료
 - Notion: 새 WBS 링크, 동일한 7개 퍼센티지와 사용 상태 설명 재조회 완료
 - 브라우저: 시트 제목과 기존·신규 탭 노출 확인
 
-## 남은 작업
+## 중앙화 완료 조건
 
-1. 저장소 변경을 검증하고 한국어 커밋으로 `feature/workflow`에 푸시한다.
-2. 검증된 커밋만 `feature/prod`에 반영한다.
-3. 변경된 hoiBot 스킬을 로컬 Codex 스킬과 동기화한다.
+1. `CODEX-CONFIG/main`에 중앙 원본과 등록·동기화 규칙이 반영되어야 한다.
+2. hoiBot 프로젝트 미러는 `feature/workflow`를 거쳐 `feature/prod`에 반영되어야 한다.
+3. 로컬 Codex 스킬은 중앙 원본 junction이어야 하며 기존 복사본 백업 경로가 보존되어야 한다.
 
 ## 보안
 

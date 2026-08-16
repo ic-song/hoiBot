@@ -37,23 +37,26 @@ README에서는 사람이 전체 협업 구조를 빠르게 이해할 수 있도
 | `Info.js` | 정보 조회용 보조 스크립트입니다. 회원/펫/아이템 등 조회성 기능을 담당합니다. |
 | `data/` | 봇이 사용하는 JSON/TXT 데이터 예시 및 운영 데이터 확인용 폴더입니다. |
 | `tools/` | Git 작업, 운영 반영 등 로컬 개발/운영 보조 배치파일을 모아둔 폴더입니다. |
-| `.codex/skills/` | Codex가 사용할 hoiBot 전용 skill 원본입니다. 작업 환경 변경 시 로컬 Codex skill 폴더로 동기화합니다. |
+| `.codex/skills/` | 중앙 `CODEX-CONFIG`에서 동기화된 hoiBot 전용 skill 배포 미러입니다. |
 | `.codex/skill-drafts-ko/` | 사람이 검토하기 위한 hoiBot skill 한글판 초안입니다. Codex 자동 로딩용이 아닙니다. |
 
 ## Codex Skills
 
-hoiBot 반복 작업용 Codex skill 원본은 저장소의 `.codex/skills/`에서 관리합니다.
-새 작업 환경에서는 아래 배치파일로 로컬 Codex skill 폴더에 동기화합니다.
+hoiBot 반복 작업용 Codex skill 원본은 비공개 `CODEX-CONFIG` 저장소에서 중앙 관리합니다.
+이 저장소의 `.codex/skills/`는 중앙 원본에서 생성된 배포 미러이므로 직접 수정하지 않습니다.
+새 작업 환경에서는 `CODEX-CONFIG`를 `%USERPROFILE%\CODEX-CONFIG`에 복제한 뒤 아래 배치파일을 실행합니다.
+배치파일은 로컬 junction을 갱신하며, 프로젝트 미러는 `feature/workflow` 브랜치에서 실행할 때만 갱신합니다.
 
 ```bat
 tools\05_skills_설치.bat
 ```
 
-동기화 대상:
+중앙화 구조:
 
 ```text
-저장소 원본: .codex/skills/
-로컬 사용:  %USERPROFILE%\.codex\skills\
+중앙 원본:   %USERPROFILE%\CODEX-CONFIG\skills\
+프로젝트 미러: .codex/skills/
+로컬 사용:   %USERPROFILE%\.codex\skills\ → 중앙 원본 junction
 한글 검토본: .codex/skill-drafts-ko/
 ```
 
