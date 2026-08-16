@@ -688,6 +688,7 @@ const miniPetCollectionPath = "/sdcard/호이랜드/miniPet_collection.json"; //
 const miniPetCollectionInfoPath = "/sdcard/호이랜드/miniPetCollectionInfo.json"; //미니펫 타이틀에 대한 정보
 const memberPetPath = "/sdcard/호이랜드/member_pet.json"; //멤버펫 유저 정보
 const petSkillDataPath = "/sdcard/호이랜드/petSkillData.json"; //펫스킬 데이터
+const petSkillCollectionPath = "/sdcard/호이랜드/petSkillCollection.json"; //펫스킬 컬렉션 유저 정보
 const punchRankPath = "/sdcard/호이랜드/punchRankData.json"; // 펀치데이터
 
 const trialTowerPath = "/sdcard/호이랜드/trialTower.json"; //시련의탑 유저정보
@@ -820,6 +821,13 @@ const GLOBAL_CONFIG = {
             maxVariant: 10,
             alertCount: 3
         }
+    },
+    petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
+        gradeOrder: ["SS", "S", "A", "B", "C", "D"],
+        maxCounts: { SS: 5, S: 10, A: 20, B: 50, C: 100, D: 200 },
+        rewardCounts: { SS: 1000, S: 500, A: 300, B: 200, C: 100, D: 50 },
+        rewardItemName: "홈뱃지 큐브💟",
+        maxSelectionCount: 10
     },
     privateChat: { // 1:1톡 이용 제한 설정
         notifyEvery: 3, // 패스 미사용 1:1톡 운영 알림 주기
@@ -26618,6 +26626,148 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg === "/펫스킬컬렉션") {
+                    if (castleSiegeFlag) return;
+                    var petSkillCollectionData = loadJsonFile(petSkillCollectionPath);
+                    var petSkillCollection = ensurePetSkillCollection(petSkillCollectionData, sender);
+                    replier.reply(buildPetSkillCollectionMessage(data, petData, guildData, sender, petSkillCollection));
+                    return;
+                }
+
+                if (/^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(msg)) {
+                    if (castleSiegeFlag) return;
+                    var petSkillCollectionArgs = msg.replace("/펫스킬컬렉션등록", "").trim().split(/\s+/);
+                    var petSkillCollectionConfig = GLOBAL_CONFIG.petSkillCollection;
+                    if (petSkillCollectionArgs.length > petSkillCollectionConfig.maxSelectionCount) {
+                        replier.reply("❌ 한 번에 최대 " + petSkillCollectionConfig.maxSelectionCount + "개까지 등록할 수 있습니다.");
+                        return;
+                    }
+
+                    var petSkillCollectionBagList = getPetSkillBagList(petSkillData, sender);
+                    var petSkillCollectionUsedNumbers = {};
+                    var petSkillCollectionSelected = [];
+                    var petSkillCollectionPreviewData = loadJsonFile(petSkillCollectionPath);
+                    var petSkillCollectionPreview = ensurePetSkillCollection(petSkillCollectionPreviewData, sender);
+                    var petSkillCollectionPlannedCounts = {};
+
+                    for (var petSkillCollectionArgIndex = 0; petSkillCollectionArgIndex < petSkillCollectionArgs.length; petSkillCollectionArgIndex++) {
+                        var petSkillCollectionBagNumber = parseInt(petSkillCollectionArgs[petSkillCollectionArgIndex], 10);
+                        if (petSkillCollectionBagNumber < 1 || petSkillCollectionBagNumber > petSkillCollectionBagList.length) {
+                            replier.reply("❌ 해당 번호의 펫스킬북이 존재하지 않습니다: " + petSkillCollectionBagNumber + "번");
+                            return;
+                        }
+                        if (petSkillCollectionUsedNumbers[petSkillCollectionBagNumber]) {
+                            replier.reply("❌ 같은 가방번호를 중복 입력할 수 없습니다: " + petSkillCollectionBagNumber + "번");
+                            return;
+                        }
+
+                        var petSkillCollectionSkillName = petSkillCollectionBagList[petSkillCollectionBagNumber - 1];
+                        var petSkillCollectionSkillData = getPetSkillData(petSkillCollectionSkillName);
+                        if (!petSkillCollectionSkillData || !petSkillCollectionConfig.maxCounts[petSkillCollectionSkillData.grade]) {
+                            replier.reply("❌ 컬렉션 등록 대상이 아닌 펫스킬입니다: " + formatPetSkillName(petSkillCollectionSkillName));
+                            return;
+                        }
+
+                        var petSkillCollectionCurrentCount = getPetSkillCollectionCount(petSkillCollectionPreview, petSkillCollectionSkillName);
+                        if (petSkillCollectionPlannedCounts[petSkillCollectionSkillName] !== undefined) {
+                            petSkillCollectionCurrentCount = petSkillCollectionPlannedCounts[petSkillCollectionSkillName];
+                        }
+                        var petSkillCollectionMaxCount = petSkillCollectionConfig.maxCounts[petSkillCollectionSkillData.grade];
+                        var petSkillCollectionCanRegister = petSkillCollectionCurrentCount < petSkillCollectionMaxCount;
+                        var petSkillCollectionAfterCount = petSkillCollectionCanRegister ? petSkillCollectionCurrentCount + 1 : petSkillCollectionCurrentCount;
+                        petSkillCollectionPlannedCounts[petSkillCollectionSkillName] = petSkillCollectionAfterCount;
+                        petSkillCollectionUsedNumbers[petSkillCollectionBagNumber] = true;
+                        petSkillCollectionSelected.push({
+                            bagNumber: petSkillCollectionBagNumber,
+                            name: petSkillCollectionSkillName,
+                            grade: petSkillCollectionSkillData.grade,
+                            beforeCount: petSkillCollectionCurrentCount,
+                            afterCount: petSkillCollectionAfterCount,
+                            maxCount: petSkillCollectionMaxCount,
+                            canRegister: petSkillCollectionCanRegister
+                        });
+                    }
+
+                    if (!userState[sender]) userState[sender] = {};
+                    userState[sender].petSkillCollection = { selectedList: petSkillCollectionSelected };
+                    replier.reply(buildPetSkillCollectionConfirmMessage(data, petData, guildData, sender, petSkillCollectionSelected, petSkillCollectionPreview));
+                    return;
+                }
+
+                if (/^\/펫스킬컬렉션등록(?:\s+.*)?$/.test(msg)) {
+                    replier.reply("사용법: /펫스킬컬렉션등록 [펫스킬가방번호] ...\n※ 한 번에 최대 10개까지 등록할 수 있습니다.");
+                    return;
+                }
+
+                if (msg === "등록" && userState[sender] && userState[sender].petSkillCollection) {
+                    var petSkillCollectionState = userState[sender].petSkillCollection;
+                    var petSkillCollectionSelectedList = petSkillCollectionState.selectedList || [];
+                    var petSkillCollectionSaveData = loadJsonFile(petSkillCollectionPath);
+                    var petSkillCollectionSave = ensurePetSkillCollection(petSkillCollectionSaveData, sender);
+                    var petSkillCollectionCurrentBagList = getPetSkillBagList(petSkillData, sender);
+                    var petSkillCollectionRegisteredLines = [];
+                    var petSkillCollectionSkippedLines = [];
+                    var petSkillCollectionRegisteredCount = 0;
+                    var petSkillCollectionTotalReward = 0;
+
+                    for (var petSkillCollectionIndex = 0; petSkillCollectionIndex < petSkillCollectionSelectedList.length; petSkillCollectionIndex++) {
+                        var petSkillCollectionPicked = petSkillCollectionSelectedList[petSkillCollectionIndex];
+                        var petSkillCollectionCurrentName = petSkillCollectionCurrentBagList[petSkillCollectionPicked.bagNumber - 1];
+                        var petSkillCollectionCurrentSkillData = getPetSkillData(petSkillCollectionPicked.name);
+                        var petSkillCollectionCurrentMax = petSkillCollectionCurrentSkillData ? GLOBAL_CONFIG.petSkillCollection.maxCounts[petSkillCollectionCurrentSkillData.grade] : 0;
+                        var petSkillCollectionBefore = getPetSkillCollectionCount(petSkillCollectionSave, petSkillCollectionPicked.name);
+
+                        if (petSkillCollectionCurrentName !== petSkillCollectionPicked.name || !petSkillCollectionCurrentSkillData) {
+                            petSkillCollectionSkippedLines.push("[" + petSkillCollectionPicked.bagNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "\n└ 가방 정보가 변경되어 등록에서 제외되었습니다.");
+                            continue;
+                        }
+                        if (petSkillCollectionBefore >= petSkillCollectionCurrentMax) {
+                            petSkillCollectionSkippedLines.push("[" + petSkillCollectionPicked.bagNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "[" + petSkillCollectionCurrentSkillData.grade + "]\n└ 이미 컬렉션 최대 등록 수량까지 완성된 상태입니다.");
+                            continue;
+                        }
+                        if (!removePetSkillFromBag(petSkillData, sender, petSkillCollectionPicked.name, 1)) {
+                            petSkillCollectionSkippedLines.push("[" + petSkillCollectionPicked.bagNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "\n└ 펫스킬북 수량이 부족하여 등록에서 제외되었습니다.");
+                            continue;
+                        }
+
+                        var petSkillCollectionAfter = petSkillCollectionBefore + 1;
+                        var petSkillCollectionReward = GLOBAL_CONFIG.petSkillCollection.rewardCounts[petSkillCollectionCurrentSkillData.grade];
+                        petSkillCollectionSave.skillCounts[petSkillCollectionPicked.name] = petSkillCollectionAfter;
+                        addItem(data, sender, GLOBAL_CONFIG.petSkillCollection.rewardItemName, petSkillCollectionReward);
+                        petSkillCollectionRegisteredCount++;
+                        petSkillCollectionTotalReward += petSkillCollectionReward;
+                        petSkillCollectionRegisteredLines.push(
+                            "[" + petSkillCollectionPicked.bagNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "[" + petSkillCollectionCurrentSkillData.grade + "] : [" + petSkillCollectionBefore + "/" + petSkillCollectionCurrentMax + "] → [" + petSkillCollectionAfter + "/" + petSkillCollectionCurrentMax + "] 등록 완료" + (petSkillCollectionAfter === petSkillCollectionCurrentMax ? "✅" : "") +
+                            "\n└ " + GLOBAL_CONFIG.petSkillCollection.rewardItemName + " " + numberWithCommas(petSkillCollectionReward) + "개 획득"
+                        );
+                    }
+
+                    delete userState[sender].petSkillCollection;
+                    if (petSkillCollectionRegisteredCount === 0) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님\n등록 가능한 펫스킬북이 없습니다.\n\n" + petSkillCollectionSkippedLines.join("\n\n"));
+                        return;
+                    }
+
+                    saveJsonFile(petSkillCollectionSaveData, petSkillCollectionPath);
+                    saveJsonFile(petSkillData, petSkillDataPath);
+                    saveJsonFile(data, filePath);
+
+                    var petSkillCollectionResult = "✅[" + checkRank(data, petData, guildData, sender) + "]님 펫스킬 컬렉션 등록 완료!\n이미지링크:\n\n";
+                    petSkillCollectionResult += "등록 성공✅ [" + petSkillCollectionRegisteredCount + "개]\n" + petSkillCollectionRegisteredLines.join("\n\n");
+                    if (petSkillCollectionSkippedLines.length > 0) {
+                        petSkillCollectionResult += "\n\n━━━━━━━━━━━━━━━\n등록 제외❌ [" + petSkillCollectionSkippedLines.length + "개]\n\n" + petSkillCollectionSkippedLines.join("\n\n");
+                    }
+                    petSkillCollectionResult += "\n\n━━━━━━━━━━━━━━━\n※ 펫스킬 컬렉션 등록내역📜:\n등록한 펫스킬북📙 [" + petSkillCollectionRegisteredCount + "개]\n" + GLOBAL_CONFIG.petSkillCollection.rewardItemName + " 총 " + numberWithCommas(petSkillCollectionTotalReward) + "개 획득";
+                    replier.reply(petSkillCollectionResult);
+                    return;
+                }
+
+                if (msg === "ㄴㄴ" && userState[sender] && userState[sender].petSkillCollection) {
+                    delete userState[sender].petSkillCollection;
+                    replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 펫스킬 컬렉션 등록이 취소되었습니다.");
+                    return;
+                }
+
                 if (msg === "/컬렉션등록" || msg.indexOf("/컬렉션등록 ") === 0) {
                     // 컬렉션등록 명령어
 
@@ -38257,6 +38407,108 @@ function removeFreeMarketDataByUser(freeMarketData, user) {
         }
     }
     return freeMarketData;
+}
+
+// 유저의 펫스킬 컬렉션 저장 구조를 보장하고 반환하는 함수
+function ensurePetSkillCollection(collectionData, user) {
+    if (!collectionData.member || typeof collectionData.member !== "object") collectionData.member = {};
+    if (!collectionData.member[user] || typeof collectionData.member[user] !== "object") collectionData.member[user] = {};
+    if (!collectionData.member[user].collection || typeof collectionData.member[user].collection !== "object") {
+        collectionData.member[user].collection = { skillCounts: {} };
+    }
+    if (!collectionData.member[user].collection.skillCounts || typeof collectionData.member[user].collection.skillCounts !== "object") {
+        collectionData.member[user].collection.skillCounts = {};
+    }
+    return collectionData.member[user].collection;
+}
+
+// 펫스킬 컬렉션에 저장된 특정 스킬의 등록 수를 등급 한도 안에서 반환하는 함수
+function getPetSkillCollectionCount(collection, skillName) {
+    var skillData = getPetSkillData(skillName);
+    var maxCount = skillData ? GLOBAL_CONFIG.petSkillCollection.maxCounts[skillData.grade] : 0;
+    var count = collection && collection.skillCounts ? parseInt(collection.skillCounts[skillName], 10) || 0 : 0;
+    if (count < 0) return 0;
+    return maxCount > 0 && count > maxCount ? maxCount : count;
+}
+
+// 펫스킬 컬렉션 등급별 진행 목록을 생성하는 함수
+function buildPetSkillCollectionProgressLines(collection) {
+    var lines = [];
+    var gradeOrder = GLOBAL_CONFIG.petSkillCollection.gradeOrder;
+    for (var gradeIndex = 0; gradeIndex < gradeOrder.length; gradeIndex++) {
+        var grade = gradeOrder[gradeIndex];
+        var maxCount = GLOBAL_CONFIG.petSkillCollection.maxCounts[grade];
+        lines.push("━━━" + grade + " 등급━━━");
+        for (var skillIndex = 0; skillIndex < PET_SKILL_LIST.length; skillIndex++) {
+            var skillData = PET_SKILL_LIST[skillIndex];
+            if (skillData.grade !== grade) continue;
+            var count = getPetSkillCollectionCount(collection, skillData.name);
+            lines.push(formatPetSkillName(skillData.name) + " [" + count + "/" + maxCount + "]" + (count === maxCount ? " ✅" : ""));
+        }
+        if (gradeIndex < gradeOrder.length - 1) lines.push("");
+    }
+    return lines;
+}
+
+// 펫스킬 컬렉션 전체 현황 메시지를 생성하는 함수
+function buildPetSkillCollectionMessage(data, petData, guildData, user, collection) {
+    var config = GLOBAL_CONFIG.petSkillCollection;
+    var lines = [];
+    lines.push("📙[" + checkRank(data, petData, guildData, user) + "]의 펫스킬 컬렉션📙");
+    lines.push("");
+    lines.push("각 펫스킬은 등급별 최대 등록 수량까지 등록 가능합니다.");
+    lines.push("SS 5개 / S 10개 / A 20개 / B 50개 / C 100개 / D 200개");
+    lines.push("펫스킬북📙 1개 등록 시 등급에 따라");
+    lines.push(config.rewardItemName + "가 즉시 지급됩니다.");
+    lines.push("");
+    lines.push("━━━컬렉션 등록 보상━━━");
+    for (var gradeIndex = 0; gradeIndex < config.gradeOrder.length; gradeIndex++) {
+        var grade = config.gradeOrder[gradeIndex];
+        lines.push("[" + grade + "] 1개당 " + config.rewardItemName + " " + numberWithCommas(config.rewardCounts[grade]) + "개");
+    }
+    lines.push("");
+    lines.push("📊펫스킬 컬렉션 보러가기📊");
+    lines.push(allsee);
+    lines.push("");
+    lines = lines.concat(buildPetSkillCollectionProgressLines(collection));
+    lines.push("");
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("📙 컬렉션 등록");
+    lines.push("/펫스킬컬렉션등록 [펫스킬가방번호] ...");
+    lines.push("");
+    lines.push("※ 한 번에 최대 " + config.maxSelectionCount + "개까지 등록 가능합니다.");
+    lines.push("※ 등록한 펫스킬북📙은 가방에서 소모됩니다.");
+    lines.push("※ 실제 등록 성공한 펫스킬만 보상이 지급됩니다.");
+    return lines.join("\n");
+}
+
+// 펫스킬 컬렉션 등록 전 선택 목록과 현재 현황을 생성하는 함수
+function buildPetSkillCollectionConfirmMessage(data, petData, guildData, user, selectedList, collection) {
+    var lines = [];
+    lines.push("✅ [" + checkRank(data, petData, guildData, user) + "] 님");
+    lines.push("📙 펫스킬 컬렉션에 오신 것을 환영합니다");
+    lines.push("※ 선택한 펫스킬들을 컬렉션에 등록 하실껀가요?");
+    lines.push("");
+    lines.push("👉 [등록] / [ㄴㄴ]");
+    lines.push("");
+    lines.push("선택 목록[" + selectedList.length + "개]");
+    for (var i = 0; i < selectedList.length; i++) {
+        var selected = selectedList[i];
+        if (selected.canRegister) {
+            lines.push("- [" + selected.bagNumber + "번] " + formatPetSkillName(selected.name) + "[" + selected.grade + "] [" + selected.beforeCount + "/" + selected.maxCount + "] → [" + selected.afterCount + "/" + selected.maxCount + "] (등록 가능🅾️)");
+        } else {
+            lines.push("- [" + selected.bagNumber + "번] " + formatPetSkillName(selected.name) + "[" + selected.grade + "] [" + selected.beforeCount + "/" + selected.maxCount + "] (등록 제외❌)");
+        }
+    }
+    lines.push("");
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("※ [등록]을 입력하면 등록 가능한 펫스킬들만 한 번에 등록합니다.");
+    lines.push("※ 등록 제외된 펫스킬북📙은 소모되지 않습니다.");
+    lines.push("※ 현재 펫스킬 컬렉션 목록📊:");
+    lines.push(allsee);
+    lines.push("");
+    lines = lines.concat(buildPetSkillCollectionProgressLines(collection));
+    return lines.join("\n");
 }
 
 // 펫 스킬 이름을 기준으로 PET_SKILL_LIST에서 해당 스킬 데이터를 찾아 반환하는 함수
