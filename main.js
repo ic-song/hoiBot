@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.392"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.393"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2686,7 +2686,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지시작, /길드영지종료, /길드영지, /맞짱시작, /휴식, /맞짱종료"
+                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
             );
             return;
         }
@@ -2727,7 +2727,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(data, filePath);
         }
         var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 운영 명령 사용 가능 대상
-        var isMatzangOperatorCommand = isMatzangOperator && isMatzangOperatorCommandMessage(msg); // 운영자에게만 허용할 관리 명령 여부
+        var isMatzangOperatorCommand = (isMatzangOperator && isMatzangOperatorCommandMessage(msg)) || isCastleSiegeRoomOperatorCommand(sender, msg); // 운영자에게만 허용할 관리 명령 여부
         if (matzangField.active && !matzangField.resting && !isMatzangOperatorCommand && !isMatzangAllowedDuringFieldCommand(msg)) {
             if (msg.indexOf("/") === 0 || isMatzangBlockedPlainCommandAlias(msg)) {
                 replier.reply(
@@ -2738,7 +2738,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg === "/맞짱시작") {
-            if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
+            if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇" || isCastleSiegeRoomOperatorCommand(sender, msg))) return;
             if (room !== room8) {
                 replier.reply("맞짱필드👊는 공성전 방에서만 시작할 수 있습니다.");
                 return;
@@ -2756,7 +2756,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg === "/휴식") {
-            if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
+            if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇" || isCastleSiegeRoomOperatorCommand(sender, msg))) return;
             if (!matzangField.active) {
                 replier.reply("현재 맞짱필드👊가 진행 중이 아닙니다.");
                 return;
@@ -3014,7 +3014,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg === "/맞짱종료") {
-            if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
+            if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇" || isCastleSiegeRoomOperatorCommand(sender, msg))) return;
             if (!matzangField.active) {
                 var staleMatzangParticipantCount = Object.keys(matzangField.participants).length; // 비활성 필드에 남은 과거 참가자 수
                 if (staleMatzangParticipantCount > 0) {
@@ -28162,6 +28162,18 @@ function isMaster(sender) {
     return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
 }
 
+// 공성전 전용방에서 요청된 다섯 운영 명령의 기존 권한을 확인하는 함수
+function isCastleSiegeRoomOperatorCommand(sender, msg) {
+    if (getCurrentContext().permissionRoom !== room8 || typeof msg !== "string") return false;
+    if (msg === "/맞짱시작" || msg === "/휴식" || msg === "/맞짱종료") {
+        return Master.includes(sender) || Admins.includes(sender) || sender === "오픈채팅봇";
+    }
+    if (msg === "/길드영지시작" || msg === "/길드영지종료") {
+        return sender === "오픈채팅봇" || sender === "호이 남" || sender === "티모 여" || sender === "벨라 여";
+    }
+    return false;
+}
+
 // 유저 요청이 과부하 기준을 넘었는지 확인하는 함수
 function isRapidUserRequest(sender) {
     let now = Date.now();
@@ -28343,10 +28355,6 @@ function isGuildTerritoryWarCommandLockActive(guildData) {
 function isGuildTerritoryAllowedDuringWarCommand(msg) {
     if (typeof msg !== "string") return false;
     return (
-        msg === "/맞짱시작" ||
-        msg === "/휴식" ||
-        msg === "/맞짱종료" ||
-        msg === "/길드영지시작" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지초기화" ||
         msg === "/길드영지종료" ||
