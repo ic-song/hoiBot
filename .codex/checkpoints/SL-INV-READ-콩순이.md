@@ -7,6 +7,7 @@
 - 구현 커밋: `0ea01c6`
 - Worktree: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot-modernization-bag`
 - 상태: 개발 검증 완료, Shadow 대기
+- 재개 시작점: **MariaDB 검증부터 진행**
 
 ## 승계 및 재검증
 
@@ -16,5 +17,6 @@
 
 ## 다음 작업
 
-- 재현용 MariaDB에서 migration과 bag-read probe를 다시 실행한다.
+- 다음 실행은 코드 재구현 없이 재현용 MariaDB 검증부터 시작한다.
+- migration을 적용한 뒤 `db:probe:bag-read`를 실행하고 조회 결과와 legacy 결과를 대사한다.
 - 승인된 운영 identity와 운영 데이터 대사 후 Shadow·운영 준비 Gate를 판단한다.

@@ -7,6 +7,7 @@
 - 구현 커밋: `0ea01c6`
 - Worktree: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot-modernization-bag`
 - 상태: 구현·코드 통합 완료, DB rehearsal 대기
+- 재개 시작점: **MariaDB 검증부터 진행**
 
 ## 완료 범위
 
@@ -25,6 +26,7 @@
 
 ## 다음 작업
 
+- 다음 실행은 코드 재구현 없이 MariaDB 검증부터 시작한다.
 - `hoibot_rehearsal_*` 격리 DB에서 migration, fixture 2회 적용, `db:probe:bag-read`, `db:probe:bag-attribute`, `db:probe:bag-mutate`를 실행한다.
 - 성공 후 parity·재시작·Shadow Gate와 WBS evidence를 완료 처리한다.
 - 운영 데이터 import와 운영방 검증은 총괄 운영자 승인 후에만 수행한다.
