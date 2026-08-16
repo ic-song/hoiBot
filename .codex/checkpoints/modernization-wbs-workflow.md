@@ -5,8 +5,8 @@
 - 작업 상태: 작업 완료
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 6
-- 마지막 갱신: 2026-08-13 15:20 KST
+- 체크포인트 버전: 7
+- 마지막 갱신: 2026-08-17 00:55 KST
 - 대화 식별명: 고도화 WBS 규칙 정의
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -17,15 +17,15 @@
 
 ## 사용자 요청과 승인 범위
 
-- 최신 요청: 실제 두 세션이 동일 `/펫먹이조합`을 재개한 문제를 근거로 관련 스킬을 전체적으로 고도화한다.
+- 최신 요청: 고도화 현황과 관련 Codex 스킬을 현재 원본 기준으로 최신화한다.
 - 허용된 변경: 저장소 관리 스킬, Google Sheets 선점 원장과 작업 복구 체크포인트 문서.
 - 별도 승인이 필요한 작업: 없음. workflow 문서는 저장소 규칙에 따라 `feature/workflow`에서 검증 후 `feature/prod`에 반영한다.
 - 선언된 파일 범위: `AGENTS.md`, `.codex/skills/hoibot-modernization-wbs-runner/**`, `.codex/checkpoints/modernization-wbs-workflow.md`, Google Sheets `작업_선점`
 
 ## 작업 위치
 
-- 저장소: `C:/Users/user/Desktop/hoiBot`
-- 작업 트리: `C:/Users/user/Desktop/hoiBot`
+- 저장소: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot`
+- 작업 트리: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot`
 - 브랜치: `feature/workflow`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/feature/workflow`
@@ -57,6 +57,9 @@
 - `작업_선점` A1:N3에서 헤더·레인·상태 validation을 API로 재확인하고 Google Sheets 화면에서 고정 헤더·필터·열 너비를 확인했다.
 - 강화 커밋 `1a84c33`을 `feature/workflow`에 푸시하고 `feature/prod`의 `edff8ca`로 반영했다.
 - 로컬 Codex 설치본을 갱신하고 저장소 원본과 SHA-256 `18BF9259...AD4BC6E` 일치를 확인했다.
+- `고도화 현황 갱신`을 이관 실행과 분리하고, 실행 ID·선점 없이 Sheets 집계와 Notion을 비교하는 전용 흐름을 추가했다.
+- 활성 Lease 판정, 집계 불일치 처리, 최소 구간 갱신, 값이 같을 때 `이미 최신`으로 종료하는 규칙을 명시했다.
+- Google Sheets의 전체 837건·검증 완료 15건·진행 4건·평균 2%와 Notion 대시보드 표시가 일치함을 재확인했다.
 
 ## 진행 중인 작업
 
@@ -71,8 +74,8 @@
 
 ## 검증
 
-- 실행 명령: UTF-8 모드 `quick_validate.py`, `git diff --check`, Sheets `작업_선점` A1:N3 API 재조회, Chrome 화면 확인
-- 결과: `Skill is valid!`, 공백 오류 없음, 헤더·validation·고정 행·필터·표시 너비 정상
+- 실행 명령: UTF-8 모드 `quick_validate.py`, `git diff --check`, Sheets 메타데이터·`WBS_대단계`·`도메인_요약`·`작업_선점` API 재조회, Notion 대시보드 fetch
+- 결과: `Skill is valid!`, 공백 오류 없음, Sheets 집계와 Notion 표시값 일치
 
 ## 충돌·막힘·미승인 사항
 
