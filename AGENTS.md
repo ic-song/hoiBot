@@ -148,6 +148,9 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Use a slice as the durable unit that combines commands, shared logic, JSON-to-DB mapping, synthetic fixtures, and verification scenarios. Every active command and final data set must eventually be mapped to a slice.
 - Never reset verified development. Carry forward only the gates supported by current Git, DB, and test evidence; leave unverified integration, Shadow, and operational-readiness gates incomplete.
 - Treat the new `슬라이스_*` tabs as the active WBS source of truth. Preserve the copied legacy tabs as history and as the unclassified-command backlog.
+- In `명령어_이관`, treat `사용` as active migration scope, `미사용 검토` as a paused decision backlog that remains in progress denominators, and `미사용` as confirmed exclusion from migration scope and progress calculations.
+- When a command becomes `미사용`, preserve its current Rhino source behavior and do not migrate it. If migration artifacts already exist, remove only the new-system implementation, command-specific DB mapping/schema, fixtures, and validation links after dependency checks; preserve shared objects still used by active slices and retain WBS history/evidence.
+- A later return from `미사용` to `사용` requires current-source re-verification and fresh slice mapping before work resumes.
 - Keep Notion limited to the current WBS link and percentages. Keep detailed work, counts, ownership, and evidence in Google Sheets.
 - When a human role must be named, use only `사용자`, `운영자`, `총괄 운영자`, or `개발자`.
 - The user does not need to repeat repository paths, shared links, or the detailed migration procedure.

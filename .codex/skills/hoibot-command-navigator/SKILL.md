@@ -38,6 +38,13 @@ When command exploration is part of hoiBot modernization, also return:
 
 Do not reset a previously verified command merely because it is regrouped into a slice. Carry forward only evidence confirmed in the current code, Git, DB, or tests.
 
+When `명령어_이관` usage status is involved:
+
+- keep `미사용 검토` as a paused decision backlog and do not silently convert it to `미사용`
+- exclude confirmed `미사용` commands from new slice mapping and migration progress, while preserving their current Rhino source code
+- if a confirmed `미사용` command was already migrated, identify command-specific new-system code, DB mappings, fixtures, tests, and shared dependencies so the migration artifacts can be removed without deleting objects used by active slices
+- do not mark legacy source removal or `COMMAND_REGISTRY.md` deletion solely from the WBS usage status
+
 ## Guard Rules
 
 For mutation-heavy or execution commands, prefer exact or full-pattern command guards over broad prefix checks.
