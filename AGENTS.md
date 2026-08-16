@@ -143,8 +143,13 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ## Modernization WBS Short Commands
 
-- For `고도화진행`, `고도화 이어서 진행`, `너는 <이름>이야 고도화진행`, `고도화 <도메인> 이어서 진행`, `고도화 통합 진행`, `고도화 인계 <실행 ID>`, `고도화 복구 <WBS ID>`, or `고도화 현황 갱신`, MUST use the `hoibot-modernization-wbs-runner` skill.
-- The skill owns worker-name assignment, fixed Drive links, interrupted-work recovery, WBS claims and state flow, staged migration validation, data safety, and dashboard synchronization.
+- For `고도화진행`, `고도화 이어서 진행`, `너는 <이름>이야 고도화진행`, `고도화 <도메인> 이어서 진행`, `고도화 통합 진행`, `고도화 인계 <실행 ID>`, `고도화 복구 <슬라이스 ID>`, or `고도화 현황 갱신`, MUST use the `hoibot-modernization-wbs-runner` skill.
+- The skill owns worker-name assignment, fixed Drive links, interrupted-work recovery, slice claims and state flow, eight-gate migration validation, data safety, and percentage-dashboard synchronization.
+- Use a slice as the durable unit that combines commands, shared logic, JSON-to-DB mapping, synthetic fixtures, and verification scenarios. Every active command and final data set must eventually be mapped to a slice.
+- Never reset verified development. Carry forward only the gates supported by current Git, DB, and test evidence; leave unverified integration, Shadow, and operational-readiness gates incomplete.
+- Treat the new `슬라이스_*` tabs as the active WBS source of truth. Preserve the copied legacy tabs as history and as the unclassified-command backlog.
+- Keep Notion limited to the current WBS link and percentages. Keep detailed work, counts, ownership, and evidence in Google Sheets.
+- When a human role must be named, use only `사용자`, `운영자`, `총괄 운영자`, or `개발자`.
 - The user does not need to repeat repository paths, shared links, or the detailed migration procedure.
 
 ## Branch Workflow
