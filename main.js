@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.390"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.392"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -862,7 +862,7 @@ const GLOBAL_CONFIG = {
     petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
         gradeOrder: ["SS", "S", "A", "B", "C", "D"],
         maxCounts: { SS: 5, S: 10, A: 20, B: 50, C: 100, D: 200 },
-        rewardCounts: { SS: 500, S: 300, A: 150, B: 100, C: 30, D: 20 },
+        rewardCounts: { SS: 500, S: 150, A: 80, B: 50, C: 20, D: 10 },
         rewardItemName: "홈뱃지 큐브💟",
         maxSelectionCount: 10
     },
@@ -2686,7 +2686,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
+                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지시작, /길드영지종료, /길드영지, /맞짱시작, /휴식, /맞짱종료"
             );
             return;
         }
@@ -28343,6 +28343,10 @@ function isGuildTerritoryWarCommandLockActive(guildData) {
 function isGuildTerritoryAllowedDuringWarCommand(msg) {
     if (typeof msg !== "string") return false;
     return (
+        msg === "/맞짱시작" ||
+        msg === "/휴식" ||
+        msg === "/맞짱종료" ||
+        msg === "/길드영지시작" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지초기화" ||
         msg === "/길드영지종료" ||
