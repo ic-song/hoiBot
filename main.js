@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.386"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.387"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -26815,12 +26815,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petSkillData, petSkillDataPath);
                     saveJsonFile(data, filePath);
 
-                    var petSkillCollectionResult = "✅[" + checkRank(data, petData, guildData, sender) + "]님 펫스킬 컬렉션 등록 완료!\n이미지링크:\n\n";
-                    petSkillCollectionResult += "등록 성공✅ [" + petSkillCollectionRegisteredCount + "개]\n" + petSkillCollectionRegisteredLines.join("\n\n");
+                    var petSkillCollectionResult = "✅[" + checkRank(data, petData, guildData, sender) + "]님 펫스킬 컬렉션 등록 완료!\n";
+                    petSkillCollectionResult += "━━━━━━━━━━━━━━━\n※ 펫스킬 컬렉션 등록내역📜:\n";
+                    petSkillCollectionResult += "등록한 펫스킬북📙 [" + petSkillCollectionRegisteredCount + "개]\n";
+                    petSkillCollectionResult += GLOBAL_CONFIG.petSkillCollection.rewardItemName + " 총 " + numberWithCommas(petSkillCollectionTotalReward) + "개 획득\n";
+                    petSkillCollectionResult += "이미지링크:https://ibb.co/WvFJhfvZ\n━━━━━━━━━━━━━━━\n";
+                    petSkillCollectionResult += "등록 성공✅ [" + petSkillCollectionRegisteredCount + "개]\n" + allsee + "\n" + petSkillCollectionRegisteredLines.join("\n\n");
                     if (petSkillCollectionSkippedLines.length > 0) {
                         petSkillCollectionResult += "\n\n━━━━━━━━━━━━━━━\n등록 제외❌ [" + petSkillCollectionSkippedLines.length + "개]\n\n" + petSkillCollectionSkippedLines.join("\n\n");
                     }
-                    petSkillCollectionResult += "\n\n━━━━━━━━━━━━━━━\n※ 펫스킬 컬렉션 등록내역📜:\n등록한 펫스킬북📙 [" + petSkillCollectionRegisteredCount + "개]\n" + GLOBAL_CONFIG.petSkillCollection.rewardItemName + " 총 " + numberWithCommas(petSkillCollectionTotalReward) + "개 획득";
+                    petSkillCollectionResult += "\n\n━━━━━━━━━━━━━━━";
                     replier.reply(petSkillCollectionResult);
                     return;
                 }
