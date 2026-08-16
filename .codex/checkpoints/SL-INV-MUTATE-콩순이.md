@@ -4,6 +4,7 @@
 - 작업자명: 콩순이
 - 실행 ID: `콩순이-SL-INV-MUTATE-20260816T192717Z-79jxzg`
 - Branch: `feature/modernization`
+- 구현 커밋: `0ea01c6`
 - Worktree: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot-modernization-bag`
 - 상태: 구현·코드 통합 완료, DB rehearsal 대기
 
