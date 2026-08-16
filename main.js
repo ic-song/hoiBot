@@ -24384,8 +24384,46 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg === "/길드해산") {
+                    if (!isMaster(sender)) {
+                        replier.reply("❌ 사용할 수 없는 명령어입니다.\n\n해당 명령어는 MASTER 권한만 사용할 수 있습니다.");
+                        return;
+                    }
+                    replier.reply("사용법: /길드해산 [길드명]");
+                    return;
+                }
+
+                if (/^\/길드해산\s+\S(?:.*\S)?$/.test(msg)) {
+                    if (!isMaster(sender)) {
+                        replier.reply("❌ 사용할 수 없는 명령어입니다.\n\n해당 명령어는 MASTER 권한만 사용할 수 있습니다.");
+                        return;
+                    }
+
+                    var disbandGuildName = msg.replace("/길드해산", "").trim();
+                    var disbandGuildResult = disbandGuildByExactName(data, guildData, disbandGuildName);
+                    if (!disbandGuildResult.ok) {
+                        replier.reply("❌ 존재하지 않는 길드입니다.\n\n입력한 길드명: " + disbandGuildName + "\n\n길드명을 다시 확인해주세요.");
+                        return;
+                    }
+
+                    saveJsonFile(guildData, guildPath);
+                    saveJsonFile(data, filePath);
+                    replier.reply(
+                        "🏰 길드 해산 완료\n" +
+                        "━━━━━━━━━━━━━━━\n" +
+                        "길드명: " + disbandGuildResult.guild.name + "\n" +
+                        "길드원: " + disbandGuildResult.memberCount + "명\n\n" +
+                        "해당 길드가 정상적으로 해산되었습니다.\n\n" +
+                        "✅ 길드 데이터 삭제\n" +
+                        "✅ 길드원 소속 초기화\n" +
+                        "✅ 길드 버프 삭제\n" +
+                        "━━━━━━━━━━━━━━━"
+                    );
+                    return;
+                }
+
                 // (관리자권한 전용) /길드해지 길드명 : 길드 자체 삭제
-                if (msg.indexOf("/길드해지") === 0) {
+                if (msg === "/길드해지" || /^\/길드해지\s+\S(?:.*\S)?$/.test(msg)) {
                     // 권한 체크 (관리자권한만)
                     if (!(sender === "호이 남" || isMaster(sender))) {
                         replier.reply("❌ 관리자권한 사용자만 길드를 해지(삭제)할 수 있습니다.");
@@ -24407,44 +24445,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     // var guildData = loadJsonFile(guildPath);
 
-                    // 길드ID 찾기
-                    var gid = findGuildIdByNameSafe(guildData, guildName);
-                    if (!gid) {
+                    var legacyDisbandResult = disbandGuildByExactName(data, guildData, guildName);
+                    if (!legacyDisbandResult.ok) {
                         replier.reply("❌ 해당 길드를 찾을 수 없습니다.\n길드명: " + guildName);
                         return;
                     }
-
-                    var g = guildData.guilds[gid];
-                    if (!g) {
-                        replier.reply("❌ 길드 데이터 오류(길드가 존재하지 않음).");
-                        return;
-                    }
-
-                    // 길드 멤버들의 data.member[].guild 참조 제거
-                    var memberKeys = Object.keys(g.members || {});
-                    for (var i = 0; i < memberKeys.length; i++) {
-                        var u = memberKeys[i];
-                        if (!data.member[u]) continue;
-
-                        // guild가 삭제 대상 길드를 가리키는 경우만 제거(다른 길드로 오염된 케이스 방지)
-                        if (data.member[u].guild && data.member[u].guild.id === gid) {
-                            delete data.member[u].guild;
-                        }
-                    }
-
-                    // nameToId 매핑 제거(있을 때만)
-                    if (guildData.nameToId && guildData.nameToId[g.name] === gid) {
-                        delete guildData.nameToId[g.name];
-                    }
-
-                    //  길드 본체 삭제
-                    delete guildData.guilds[gid];
 
                     saveJsonFile(guildData, guildPath);
                     saveJsonFile(data, filePath);
 
                     replier.reply(
-                        "✅ 길드 해지(삭제) 완료!\n" + "길드: " + g.name + "(" + g.mark + ")[" + g.server + "]\n" + "길드마스터: " + g.master + "\n" + "처리 길드원: " + memberKeys.length + "명"
+                        "✅ 길드 해지(삭제) 완료!\n" + "길드: " + legacyDisbandResult.guild.name + "(" + legacyDisbandResult.guild.mark + ")[" + legacyDisbandResult.guild.server + "]\n" + "길드마스터: " + legacyDisbandResult.guild.master + "\n" + "처리 길드원: " + legacyDisbandResult.memberCount + "명"
                     );
                     return;
                 }
@@ -28296,7 +28307,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
-        "/자유시장생성", "/거래소강제취소", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
+        "/자유시장생성", "/거래소강제취소", "/길드해산", "/길드해지", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
@@ -45804,6 +45815,68 @@ function findGuildIdByNameSafe(guildData, guildName) {
         if (g && g.name === guildName) return gid;
     }
     return null;
+}
+
+// 해산 길드의 영지전 참조 데이터를 제거하는 함수
+function removeDisbandedGuildTerritoryReferences(guildData, guildId, memberNames) {
+    var war = guildData && guildData.territoryWar ? guildData.territoryWar : null;
+    if (!war) return;
+    var guildMapKeys = ["readyGuilds", "guildAttackCounts", "timeoutMissCounts", "eliminatedGuilds", "instabilityUses", "riftGuideUses", "guildAttackLimits", "riftCommandUses", "commandDiscretionUses"];
+    for (var mapIndex = 0; mapIndex < guildMapKeys.length; mapIndex++) {
+        var map = war[guildMapKeys[mapIndex]];
+        if (map && typeof map === "object" && !Array.isArray(map)) delete map[guildId];
+    }
+    if (Array.isArray(war.turnOrder)) {
+        war.turnOrder = war.turnOrder.filter(function (row) {
+            return row && row.guildId !== guildId;
+        });
+        if (war.currentTurnIndex >= war.turnOrder.length) war.currentTurnIndex = 0;
+    }
+    if (war.territories && typeof war.territories === "object") {
+        for (var territoryNo in war.territories) {
+            if (!war.territories.hasOwnProperty(territoryNo)) continue;
+            var territory = war.territories[territoryNo];
+            if (territory && territory.ownerGuildId === guildId) {
+                territory.ownerGuildId = "";
+                territory.ownerUser = "";
+            }
+        }
+    }
+    if (war.eliminatedUsers && typeof war.eliminatedUsers === "object") {
+        for (var memberIndex = 0; memberIndex < memberNames.length; memberIndex++) {
+            delete war.eliminatedUsers[memberNames[memberIndex]];
+        }
+    }
+    if (war.riftEventGuildId === guildId) {
+        war.riftEventGuildId = "";
+        war.riftEventStatus = "";
+        war.riftEventAt = 0;
+    }
+}
+
+// 정확히 일치하는 길드를 해산하고 연결된 회원·길드 데이터를 정리하는 함수
+function disbandGuildByExactName(data, guildData, guildName) {
+    var guildId = findGuildIdByNameSafe(guildData, guildName);
+    if (!guildId || !guildData.guilds || !guildData.guilds[guildId]) return { ok: false };
+    var guild = guildData.guilds[guildId];
+    var memberNames = Object.keys(guild.members || {});
+    if (data && data.member) {
+        for (var user in data.member) {
+            if (!data.member.hasOwnProperty(user)) continue;
+            if (data.member[user] && data.member[user].guild && data.member[user].guild.id === guildId) {
+                delete data.member[user].guild;
+            }
+        }
+    }
+    if (guildData.nameToId && typeof guildData.nameToId === "object") {
+        for (var mappedName in guildData.nameToId) {
+            if (!guildData.nameToId.hasOwnProperty(mappedName)) continue;
+            if (guildData.nameToId[mappedName] === guildId) delete guildData.nameToId[mappedName];
+        }
+    }
+    removeDisbandedGuildTerritoryReferences(guildData, guildId, memberNames);
+    delete guildData.guilds[guildId];
+    return { ok: true, guildId: guildId, guild: guild, memberCount: memberNames.length };
 }
 
 // 길드마스터 위임 권한 확인 (길드마스터 / 어드민 / 마스터권한 유저)
