@@ -189,10 +189,22 @@ for (const [legacyKey, rawMember] of Object.entries(members)) {
   if (record.join !== undefined && legacyDate(record.join) === undefined) {
     anomalies.push({ sourceFile: memberFile?.name ?? "member.json", sourcePath: `member.${legacyKey}`, fieldName: "join", reasonCode: "invalid_date" });
   }
+  const bag = asRecord(record.bag) ?? {};
+  for (const [itemName, quantity] of Object.entries(bag)) {
+    const parsedQuantity = integerString(quantity);
+    if (parsedQuantity === undefined || BigInt(parsedQuantity) < 0n) {
+      anomalies.push({ sourceFile: memberFile?.name ?? "member.json", sourcePath: `member.${legacyKey}.bag`, fieldName: itemName, reasonCode: "invalid_inventory_quantity" });
+    }
+  }
 }
 
+const bagEntryCount = Object.values(members).reduce((total, rawMember) => {
+  const member = asRecord(rawMember);
+  return total + Object.keys(asRecord(member?.bag) ?? {}).length;
+}, 0);
+
 if (!apply) {
-  process.stdout.write(JSON.stringify({ mode: "dry-run", fileCount: parsedFiles.length, memberCount: Object.keys(members).length, anomalyCount: anomalies.length, rootHash }, null, 2) + "\n");
+  process.stdout.write(JSON.stringify({ mode: "dry-run", fileCount: parsedFiles.length, memberCount: Object.keys(members).length, bagEntryCount, anomalyCount: anomalies.length, rootHash }, null, 2) + "\n");
   process.exit(0);
 }
 
@@ -288,6 +300,25 @@ async function importMembers(
       );
       if (point !== undefined) await transaction.execute("INSERT INTO currency_accounts (player_id, currency_code, balance) VALUES (?, 'point', ?)", [player.insertId, point]);
       if (diamond !== undefined) await transaction.execute("INSERT INTO currency_accounts (player_id, currency_code, balance) VALUES (?, 'diamond', ?)", [player.insertId, diamond]);
+      const bag = asRecord(member.bag) ?? {};
+      for (const [itemName, rawQuantity] of Object.entries(bag)) {
+        const quantity = integerString(rawQuantity);
+        if (quantity === undefined || BigInt(quantity) < 0n) continue;
+        const itemCode = stableLegacyCode("bag", itemName);
+        await transaction.execute(
+          `INSERT INTO item_definitions (code, display_name, asset_type_code, stackable, metadata_json, active, version)
+           VALUES (?, ?, 'legacy_bag_item', TRUE, JSON_OBJECT('legacyImported', TRUE), TRUE, 1)
+           ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), active = TRUE`,
+          [itemCode, itemName]
+        );
+        const itemRows = await transaction.query<Array<{ id: bigint }>>("SELECT id FROM item_definitions WHERE code = ?", [itemCode]);
+        if (itemRows[0] !== undefined) {
+          await transaction.execute(
+            "INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES (?, ?, ?, 1)",
+            [player.insertId, itemRows[0].id, quantity]
+          );
+        }
+      }
       const counterValues: Array<[string, string, string | undefined]> = [
         ["attendance", "lifetime", integerString(member.cnt)],
         ["like", "current", integerString(member.like)],

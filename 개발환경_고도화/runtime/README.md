@@ -204,6 +204,7 @@ npm.cmd run db:probe
 npm.cmd run db:probe:modernization
 npm.cmd run db:probe:signup
 npm.cmd run db:probe:bag-attribute # hoibot_rehearsal_* 격리 DB에서만 실행 가능
+npm.cmd run db:probe:bag-mutate # hoibot_rehearsal_* 격리 DB에서만 실행 가능
 npm.cmd run account:cleanup
 npm.cmd run db:import:dry-run -- --source ..\..\data
 ```

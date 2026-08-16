@@ -65,8 +65,12 @@ import { MembershipLogService, type MembershipLogSummary } from "./integration/m
 import { RetainedEventContentService } from "./integration/retained-event-content-service.js";
 import { BagAttributeService, isBagAttributeCommandCandidate } from "./inventory/bag-attribute-service.js";
 import { MariaBagAttributeRepository } from "./inventory/maria-bag-attribute-repository.js";
+import { BagAddService, isBagAddCommandCandidate } from "./inventory/bag-add-service.js";
+import { MariaBagAddRepository } from "./inventory/maria-bag-add-repository.js";
 import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
 import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
+import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
+import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 
 interface TokenQuery {
@@ -750,6 +754,36 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         } else if (result.status !== "ignored_forbidden" && result.data !== undefined) {
           processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "bag_attribute_validation", result.data));
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isBagAddCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new BagAddService(new MariaBagAddRepository(database!)).handle({
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.outboxId !== undefined && result.data !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } else if (result.status !== "ignored_forbidden" && result.data !== undefined) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "bag_add_validation", result.data));
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isInventorySnapshotCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new InventorySnapshotService(new MariaInventorySnapshotRepository(database!)).handle({
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.outboxId !== undefined && result.data !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
       }
 

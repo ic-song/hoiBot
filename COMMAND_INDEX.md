@@ -2299,8 +2299,6 @@ Status: VERIFIED
 
 ## Files
 - `main.js`
-- `개발환경_고도화/runtime/src/inventory/bag-attribute-service.ts`
-- `개발환경_고도화/runtime/src/inventory/maria-bag-attribute-repository.ts`
 
 ## Related Helpers
 - `setOperationNoticeByCommand`
@@ -3475,6 +3473,8 @@ Status: VERIFIED
 - Search in main.js: `/가방속성`
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/bag-attribute-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-attribute-repository.ts`
 ## Related Helpers
 - `generateBagOutput`
 - `checkRank`
@@ -3496,14 +3496,43 @@ Status: VERIFIED
 - Search in `main.js`: `/가방추가`
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/bag-add-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-add-repository.ts`
 ## Related Helpers
 - `checkRank`
 ## Data Usage
 - `data.member[targetUser].bag[itemName]`
 ## Save Flow
-- Mutates target bag state; surrounding persistence should be checked in local save cycle
+- 레거시는 대상 가방의 아이템명 속성을 생성하거나 기존 수량에 입력 수량을 누적하고 응답 종료부에서 회원 데이터를 저장한다.
+- 고도화 경로는 안정적인 item code를 생성해 catalog·stack 수량을 연결하고 inventory ledger·operation·command execution·audit·Iris outbox를 한 MariaDB transaction으로 저장한다.
+- 동일 Iris event 재실행은 저장된 결과를 반환해 중복 지급하지 않는다.
 ## Related Commands
 - `/가방속성`
+- `/소지품저장`
+
+---
+
+# /소지품저장
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/소지품저장`
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/inventory/inventory-snapshot-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-inventory-snapshot-repository.ts`
+- `개발환경_고도화/runtime/migrations/033_inventory_snapshots.sql`
+## Related Helpers
+- `saveJsonFile`
+## Data Usage
+- 레거시: `data.member[*].bag` 전체를 `memberBagCheckPath` JSON으로 복사
+- 고도화: `inventory_stacks` 전체와 각 행의 version을 `inventory_snapshots`, `inventory_snapshot_entries`에 저장
+## Save Flow
+- 정확한 `/소지품저장`만 실행하며 인벤토리 변경 권한이 있는 운영자 identity만 처리한다.
+- 전체 stack을 잠근 동일 시점의 건수·수량·SHA-256과 상세 행, operation·command execution·audit·Iris outbox를 한 transaction으로 저장한다.
+- 응답의 저장 위치는 Android 파일 경로 대신 `db://inventory_snapshots/<ID>`를 사용한다.
+## Related Commands
+- `/가방`
+- `/가방추가`
 
 ---
 

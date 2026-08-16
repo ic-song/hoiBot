@@ -44,6 +44,10 @@ try {
     missing_profiles: bigint;
     duplicate_players: bigint;
     currencies: bigint;
+    inventory_definitions: bigint;
+    inventory_stacks: bigint;
+    inventory_quantity: string;
+    orphan_inventory: bigint;
     pets: bigint;
     titles: bigint;
     homes: bigint;
@@ -60,17 +64,27 @@ try {
       WHERE map.import_run_id = ? AND profile.player_id IS NULL) AS missing_profiles,
     (SELECT COUNT(*) FROM (SELECT player_id FROM legacy_identity_map WHERE import_run_id = ? GROUP BY player_id HAVING COUNT(*) > 1) duplicates) AS duplicate_players,
     (SELECT COUNT(*) FROM currency_accounts currency JOIN legacy_identity_map map ON map.player_id = currency.player_id WHERE map.import_run_id = ?) AS currencies,
+    (SELECT COUNT(DISTINCT item.id) FROM item_definitions item JOIN inventory_stacks stack ON stack.item_id = item.id
+      JOIN legacy_identity_map map ON map.player_id = stack.player_id WHERE map.import_run_id = ?) AS inventory_definitions,
+    (SELECT COUNT(*) FROM inventory_stacks stack JOIN legacy_identity_map map ON map.player_id = stack.player_id WHERE map.import_run_id = ?) AS inventory_stacks,
+    (SELECT CAST(COALESCE(SUM(stack.quantity), 0) AS CHAR) FROM inventory_stacks stack
+      JOIN legacy_identity_map map ON map.player_id = stack.player_id WHERE map.import_run_id = ?) AS inventory_quantity,
+    (SELECT COUNT(*) FROM inventory_stacks stack JOIN legacy_identity_map map ON map.player_id = stack.player_id
+      LEFT JOIN players player ON player.id = stack.player_id LEFT JOIN item_definitions item ON item.id = stack.item_id
+      WHERE map.import_run_id = ? AND (player.id IS NULL OR item.id IS NULL)) AS orphan_inventory,
     (SELECT COUNT(*) FROM player_pets pet JOIN legacy_identity_map map ON map.player_id = pet.player_id WHERE map.import_run_id = ?) AS pets,
     (SELECT COUNT(*) FROM player_titles title_row JOIN legacy_identity_map map ON map.player_id = title_row.player_id WHERE map.import_run_id = ?) AS titles,
     (SELECT COUNT(*) FROM player_homes home JOIN legacy_identity_map map ON map.player_id = home.player_id WHERE map.import_run_id = ?) AS homes,
     (SELECT COUNT(*) FROM guild_members member_row JOIN legacy_identity_map map ON map.player_id = member_row.player_id WHERE map.import_run_id = ?) AS guild_members,
     (SELECT COUNT(*) FROM leaderboard_entries entry JOIN legacy_identity_map map ON map.player_id = entry.player_id WHERE map.import_run_id = ?) AS leaderboard_entries`,
-    Array(13).fill(importRunId)
+    Array(17).fill(importRunId)
   );
   const value = rows[0];
   if (value === undefined || value.files !== expectedFiles || value.mappings !== expectedMembers
     || value.mapped_players !== expectedMembers || value.anomalies !== expectedAnomalies
-    || value.missing_profiles !== 0n || value.duplicate_players !== 0n) {
+    || value.missing_profiles !== 0n || value.duplicate_players !== 0n
+    || value.inventory_definitions === 0n || value.inventory_stacks === 0n
+    || BigInt(value.inventory_quantity) < 0n || value.orphan_inventory !== 0n) {
     throw new Error("Selected legacy import reconciliation failed.");
   }
 
