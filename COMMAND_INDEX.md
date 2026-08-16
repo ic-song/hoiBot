@@ -3143,6 +3143,7 @@ Status: VERIFIED
 ## Related Helpers
 - `generateBagOutput`
 - `isTradableItem`
+- `isMemberTierKing`
 ## Data Usage
 - `data.member[sender].bag`
 - `data.member[receiver].bag`
@@ -3151,6 +3152,13 @@ Status: VERIFIED
 ## Related Commands
 - `/당근게시판`
 - `/당근완료`
+- `/미니펫당근`
+- `/가구당근`
+- `/펫스킬당근`
+- `/펜던트당근`
+
+## AI Notes
+- Direct carrot trades require both sender and receiver to be currently tier `킹` or higher before inventory mutation.
 
 ---
 
@@ -3564,6 +3572,7 @@ Status: VERIFIED
 - `getPetSkillBagRemainCount`
 - `addPetSkillToBag`
 - `removePetSkillFromBag`
+- `isMemberTierKing`
 ## Data Usage
 - sender/receiver `petSkillData[*].bag`
 ## Save Flow
@@ -4787,6 +4796,7 @@ Status: VERIFIED
 - `isSafePointValue`
 - `calculateTransferFee`
 - `ensureHappyFoundationData`
+- `isMemberTierKing`
 - `addPoint`
 - `addHappyFoundationFee`
 
@@ -4811,6 +4821,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Exact/full-pattern command guard: `/이체 [유저] [숫자]`
+- Both sender and recipient must currently be tier `킹` or higher before any point mutation.
 - Amount input is rejected when the transfer amount, fee, or total required point exceeds the safe range used for point arithmetic; existing held balances are not used as a separate safe-range blocker
 - Fee calculation must never use `total - amount` as the primary fee value; oversized or negative fee/total values must be rejected before mutating points
 
@@ -4870,6 +4881,7 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `initPetSkillUser`
 - `addHappyFoundationFee`
+- `isMemberTierKing`
 
 ## Data Usage
 
@@ -4922,7 +4934,7 @@ Status: VERIFIED
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
 - `/자유시장` and `/자유시장거래현황` append `[개당 ...]` to item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
-- Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
+- Free-market registration requires tier `킹` or higher; purchase re-checks that both buyer and seller are currently tier `킹` or higher before points or items move.
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]` is handled before the common invalid registration usage guard so it does not require a quantity argument.

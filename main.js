@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.389"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.390"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -3953,6 +3953,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 당근 거래는 티어 👑킹 이상부터 가능합니다.");
                         return;
                     }
+                    if (!isMemberTierKing(data, skillReceiver)) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, skillReceiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
+                        return;
+                    }
                     var senderSkillBag = getPetSkillBagList(petSkillData, sender);
                     if (isNaN(skillTradeIndex) || skillTradeIndex < 1 || skillTradeIndex > senderSkillBag.length) {
                         replier.reply("❌ 유효하지 않은 스킬가방 번호입니다.");
@@ -4458,6 +4462,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (/^\/자유시장구매\s+\d+$/.test(msg)) {
+                    if (!isMemberTierKing(data, sender)) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 자유시장 구매는 티어 👑킹 이상부터 가능합니다.\n채팅창에 \"티어 컨텐츠\"를 입력해보세요.");
+                        return;
+                    }
                     var buyNo = parseInt(msg.trim().split(/\s+/)[1], 10);
                     var freeMarketBuyData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
                     var buyListing = null;
@@ -4476,6 +4484,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (!data.member[buyListing.seller]) {
                         replier.reply("❌ 판매자 계정이 존재하지 않아 구매할 수 없습니다.");
+                        return;
+                    }
+                    if (!isMemberTierKing(data, buyListing.seller)) {
+                        replier.reply("❌ 판매자가 현재 티어 👑킹 미만이라 판매대금을 받을 수 없습니다.\n해당 거래는 구매할 수 없습니다.");
                         return;
                     }
                     var buyPrice = parseInt(buyListing.price, 10) || 0;
@@ -5146,6 +5158,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌[" + checkRank(data, petData, guildData, sender) + ']님 당근 거래는 티어 👑킹 이상부터 가능합니다.\n채팅창에 "티어 컨텐츠"를 입력해보세요.');
                         return;
                     }
+                    if (!isMemberTierKing(data, receiver)) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, receiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
+                        return;
+                    }
                     var bagInfo = generateBagOutput(data.member[sender].bag);
                     var sortedItemList = bagInfo.sortedItemList;
                     if (!sortedItemList || bagIndex < 1 || bagIndex > sortedItemList.length) {
@@ -5223,6 +5239,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (!data.member[receiver]) {
                         replier.reply("❌ 받는 유저 [" + receiver + "] 가 존재하지 않습니다.");
+                        return;
+                    }
+                    if (!isMemberTierKing(data, receiver)) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, receiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
                         return;
                     }
                     if (!petData[sender] || !Array.isArray(petData[sender].miniPetBag)) {
@@ -5303,6 +5323,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (!data.member[receiver]) {
                         replier.reply("❌ 받는 유저 [" + receiver + "] 가 존재하지 않습니다.");
+                        return;
+                    }
+                    if (!isMemberTierKing(data, receiver)) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, receiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
                         return;
                     }
                     let homeData = loadJsonFile(homeDataFile);
@@ -17178,6 +17202,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     if (!data.member[targetUser]) {
                         replier.reply("[" + targetUser + "] 이름을 가진 멤버가 존재하지 않습니다.");
+                        return;
+                    }
+                    if (!isMemberTierKing(data, targetUser)) {
+                        replier.reply("❌[" + checkRank(data, petData, guildData, targetUser) + "]님은 티어 👑킹 미만이라 포인트를 받을 수 없습니다.");
                         return;
                     }
 
@@ -39112,10 +39140,16 @@ function isTradableItem(itemName) {
     return true;
 }
 
-// 티어가 킹 이상인지 확인하는 함수 (당근거래/자유시장 등록)
+// 티어가 킹 이상인지 확인하는 함수 (당근거래/자유시장/포인트 이체)
 function isTierKing(tier) {
     const rankOrder = Object.keys(ticketTierData);
     return rankOrder.indexOf(tier) >= rankOrder.indexOf("킹");
+}
+
+// 회원이 현재 킹 이상 티어인지 안전하게 확인하는 함수
+function isMemberTierKing(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].rank) return false;
+    return isTierKing(data.member[user].rank.tier);
 }
 
 // 당근온도순위 생성 함수
@@ -44477,6 +44511,8 @@ function tradePendantByCarrot(data, petData, guildData, sender, msg) {
     var target = m[1].trim();
     var index = parseInt(m[2], 10);
     if (!data.member[target] || !petData[target]) return { ok: false, message: "거래 대상 유저를 찾을 수 없습니다." };
+    if (!isMemberTierKing(data, sender)) return { ok: false, message: "❌[" + checkRank(data, petData, guildData, sender) + "]님 펜던트 거래는 티어 👑킹 이상부터 가능합니다." };
+    if (!isMemberTierKing(data, target)) return { ok: false, message: "❌[" + checkRank(data, petData, guildData, target) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다." };
     if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100)) return { ok: false, message: "펜던트 거래 수수료 당근🥕 100개가 부족합니다." };
     var senderBag = getPendantBag(petData, sender);
     sortPendantBagByGrade(senderBag);
