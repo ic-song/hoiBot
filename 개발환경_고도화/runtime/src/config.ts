@@ -5,10 +5,18 @@ export interface AppConfig {
   irisSharedToken: string;
   userVerificationPepper: string;
   irisBaseUrl: string;
+  irisAllowedOpenChatIds: string[];
+  irisOpenChatObservationMode: "observe_all_open" | "designated_only";
   irisImageForwardRoomId: string;
   irisEventMonitorRoomId: string;
+  irisEventMonitorRoomLabel: string;
   imageMaxBytes: number;
   imageDownloadTimeoutMs: number;
+  retainedEventContentEnabled: boolean;
+  retainedEventContentDays: number;
+  retainedEventContentStorageDirectory: string;
+  retainedEventContentChannelIds: string[];
+  retainedEventContentScope: "all_verified_open" | "designated_only";
   bodyLimitBytes: number;
   rawPayloadLogging: boolean;
   recentEventsEnabled: boolean;
@@ -64,6 +72,30 @@ function readBoolean(value: string | undefined, fallback: boolean): boolean {
   return value.toLowerCase() === "true";
 }
 
+// 쉼표로 구분된 외부 채팅방 ID를 중복 없이 문자열 배열로 읽습니다.
+function readExternalIdList(value: string | undefined): string[] {
+  if (value === undefined || value.trim() === "") return [];
+  return [...new Set(value.split(",").map((item) => item.trim()).filter((item) => item !== ""))];
+}
+
+// 오픈채팅 이벤트 관찰 범위를 명시적인 운영 단계 값으로 읽습니다.
+function readOpenChatObservationMode(value: string | undefined): "observe_all_open" | "designated_only" {
+  const mode = value?.trim() || "designated_only";
+  if (mode !== "observe_all_open" && mode !== "designated_only") {
+    throw new Error("IRIS_OPEN_CHAT_OBSERVATION_MODE must be observe_all_open or designated_only.");
+  }
+  return mode;
+}
+
+// 이벤트 콘텐츠 보관 범위를 검증된 전체 오픈방 또는 별도 지정방으로 제한합니다.
+function readRetainedEventContentScope(value: string | undefined): "all_verified_open" | "designated_only" {
+  const scope = value?.trim() || "designated_only";
+  if (scope !== "all_verified_open" && scope !== "designated_only") {
+    throw new Error("RETAINED_EVENT_CONTENT_SCOPE must be all_verified_open or designated_only.");
+  }
+  return scope;
+}
+
 // 활성화된 외부 서비스에 필요한 문자열 환경 변수를 검증합니다.
 function readRequiredString(value: string | undefined, name: string): string {
   const result = value?.trim() ?? "";
@@ -87,22 +119,39 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error("USER_VERIFICATION_PEPPER must contain at least 32 characters in production.");
   }
   const databaseEnabled = readBoolean(env.DATABASE_ENABLED, false);
+  const irisAllowedOpenChatIds = readExternalIdList(env.IRIS_ALLOWED_OPEN_CHAT_IDS);
+  const retainedEventContentChannelIds = env.RETAINED_EVENT_CONTENT_CHANNEL_IDS === undefined
+    ? irisAllowedOpenChatIds
+    : readExternalIdList(env.RETAINED_EVENT_CONTENT_CHANNEL_IDS);
 
   return {
     nodeEnv,
     host: env.HOST?.trim() || "0.0.0.0",
-    port: readPositiveInteger(env.PORT, 3100, "PORT"),
+    port: readPositiveInteger(env.PORT, 3002, "PORT"),
     irisSharedToken,
     userVerificationPepper,
     irisBaseUrl: readHttpUrl(env.IRIS_BASE_URL, "http://127.0.0.1:3000", "IRIS_BASE_URL"),
+    irisAllowedOpenChatIds,
+    irisOpenChatObservationMode: readOpenChatObservationMode(env.IRIS_OPEN_CHAT_OBSERVATION_MODE),
     irisImageForwardRoomId: env.IRIS_IMAGE_FORWARD_ROOM_ID?.trim() ?? "",
     irisEventMonitorRoomId: env.IRIS_EVENT_MONITOR_ROOM_ID?.trim() ?? "",
+    irisEventMonitorRoomLabel: env.IRIS_EVENT_MONITOR_ROOM_LABEL?.trim() ?? "",
     imageMaxBytes: readPositiveInteger(env.IMAGE_MAX_BYTES, 10_485_760, "IMAGE_MAX_BYTES"),
     imageDownloadTimeoutMs: readPositiveInteger(
       env.IMAGE_DOWNLOAD_TIMEOUT_MS,
       10_000,
       "IMAGE_DOWNLOAD_TIMEOUT_MS"
     ),
+    retainedEventContentEnabled: readBoolean(env.RETAINED_EVENT_CONTENT_ENABLED, false),
+    retainedEventContentDays: readPositiveInteger(
+      env.RETAINED_EVENT_CONTENT_DAYS,
+      7,
+      "RETAINED_EVENT_CONTENT_DAYS"
+    ),
+    retainedEventContentStorageDirectory: env.RETAINED_EVENT_CONTENT_STORAGE_DIRECTORY?.trim()
+      || "./var/retained-event-content",
+    retainedEventContentChannelIds,
+    retainedEventContentScope: readRetainedEventContentScope(env.RETAINED_EVENT_CONTENT_SCOPE),
     bodyLimitBytes: readPositiveInteger(env.BODY_LIMIT_BYTES, 1_048_576, "BODY_LIMIT_BYTES"),
     rawPayloadLogging: readBoolean(env.RAW_PAYLOAD_LOGGING, nodeEnv !== "production"),
     recentEventsEnabled: readBoolean(env.RECENT_EVENTS_ENABLED, nodeEnv !== "production"),

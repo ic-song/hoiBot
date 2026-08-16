@@ -1,6 +1,7 @@
 import type { IrisPayload, NormalizedIrisEvent } from "./iris-normalizer.js";
 
 export type KakaoNicknameSource = "open_chat_member" | "friends" | "iris_sender";
+export type KakaoRoomNameSource = "open_link" | "chat_room_meta" | "unavailable";
 
 export interface IrisQuerySnapshot {
   rows: Array<Record<string, unknown>>;
@@ -10,8 +11,13 @@ export interface IrisQuerySnapshot {
 export interface IrisKakaoDatabaseSnapshot {
   nickname?: string;
   nicknameSource: KakaoNicknameSource;
+  subjectUserId?: string;
+  roomName?: string;
+  roomNameSource: KakaoRoomNameSource;
   db2IdentityTables: IrisQuerySnapshot;
   chatLog: IrisQuerySnapshot;
+  targetChatLog: IrisQuerySnapshot;
+  previousTargetChatLog?: IrisQuerySnapshot;
   chatRoom: IrisQuerySnapshot;
   openChatMember: IrisQuerySnapshot;
   friend: IrisQuerySnapshot;
@@ -83,6 +89,70 @@ function readText(row: Record<string, unknown> | undefined, key: string): string
   return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
 }
 
+// 외부 ID를 숫자로 계산하지 않고 문자열 값으로만 읽습니다.
+function readExternalId(row: Record<string, unknown> | undefined, key: string): string | undefined {
+  const value = row?.[key];
+  return typeof value === "string" || typeof value === "number" ? String(value) : undefined;
+}
+
+// 시스템 피드 행이 실제 메시지를 가리키는지 필요한 JSON 필드만 안전하게 읽습니다.
+function readJsonRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value !== "string" || value.trim() === "") return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// 수정 이력 중 가장 최근의 직전 본문 암호문과 암호화 방식을 읽습니다.
+function readLatestModifyLog(value: unknown): { message: string; enc: string | number } | undefined {
+  if (typeof value !== "string" || value.trim() === "") return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!Array.isArray(parsed)) return undefined;
+    for (let index = parsed.length - 1; index >= 0; index -= 1) {
+      const entry = parsed[index];
+      if (typeof entry !== "object" || entry === null || Array.isArray(entry)) continue;
+      const record = entry as Record<string, unknown>;
+      if (typeof record.message === "string" && record.message !== ""
+        && (typeof record.enc === "string" || typeof record.enc === "number")) {
+        return { message: record.message, enc: record.enc };
+      }
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+// open_link 이름을 우선하고 chat_rooms meta의 type=3 방 제목을 보조로 읽습니다.
+function resolveRoomName(
+  openLinkRow: Record<string, unknown> | undefined,
+  chatRoomRow: Record<string, unknown> | undefined
+): { roomName?: string; roomNameSource: KakaoRoomNameSource } {
+  const openLinkName = readText(openLinkRow, "name");
+  if (openLinkName !== undefined) return { roomName: openLinkName, roomNameSource: "open_link" };
+  const meta = chatRoomRow?.meta;
+  if (typeof meta === "string") {
+    try {
+      const parsed: unknown = JSON.parse(meta);
+      if (Array.isArray(parsed)) {
+        const title = parsed.find((entry) => typeof entry === "object" && entry !== null
+          && String((entry as Record<string, unknown>).type) === "3") as Record<string, unknown> | undefined;
+        const content = readText(title, "content");
+        if (content !== undefined) return { roomName: content, roomNameSource: "chat_room_meta" };
+      }
+    } catch {
+      // 잘못된 meta는 이름 없음으로 처리하고 이벤트 수신은 계속합니다.
+    }
+  }
+  return { roomNameSource: "unavailable" };
+}
+
 export class IrisKakaoDatabaseInspector {
   private readonly fetchRows: IrisQueryFetcher;
 
@@ -103,13 +173,23 @@ export class IrisKakaoDatabaseInspector {
       []
     );
     const availableDb2Tables = new Set(db2IdentityTables.rows.map((row) => readText(row, "name")));
-    const [chatLog, chatRoom, openChatMember, friend, openLink] = await Promise.all([
+    const [chatLog, initialTargetChatLog, chatRoom, openChatMember, friend, openLink] = await Promise.all([
       captureQuery(
         this.fetchRows,
         chatId !== undefined && hasProviderEventId
           ? "SELECT * FROM chat_logs WHERE id = ? AND chat_id = ? LIMIT 2"
           : undefined,
         [providerEventId, chatId ?? ""]
+      ),
+      captureQuery(
+        this.fetchRows,
+        chatId !== undefined && event.targetProviderEventId !== undefined
+          ? `SELECT _id, id, type, chat_id, user_id, message, attachment, v, thread_id, scope, created_at, prev_id
+               FROM db1.chat_logs
+              WHERE chat_id = ? AND id = ?
+              LIMIT 2`
+          : undefined,
+        [chatId ?? "", event.targetProviderEventId ?? ""]
       ),
       captureQuery(
         this.fetchRows,
@@ -143,19 +223,99 @@ export class IrisKakaoDatabaseInspector {
       )
     ]);
 
-    const openChatNickname = openChatMember.rows.length === 1
-      ? readText(openChatMember.rows[0], "nickname")
+    let targetChatLog = initialTargetChatLog;
+    const targetRow = initialTargetChatLog.rows.length === 1 ? initialTargetChatLog.rows[0] : undefined;
+    const targetMessage = readJsonRecord(targetRow?.message);
+    const targetVersion = readJsonRecord(targetRow?.v);
+    const previousId = targetRow?.prev_id;
+    const previousMessage = targetVersion?.previous_message;
+    const previousEncryption = targetVersion?.previous_enc;
+    const targetType = event.eventMetadata.targetType;
+    const isHostBlindSystemFeed = String(targetRow?.type) === "0"
+      && targetVersion?.origin === "WRITE"
+      && String(targetMessage?.feedType) === "13"
+      && (typeof previousId === "string" || typeof previousId === "number");
+    const isHostBlindRewrittenRow = String(targetRow?.type) === "0"
+      && targetVersion?.origin === "MSG"
+      && String(targetMessage?.feedType) === "13"
+      && typeof previousMessage === "string"
+      && (typeof targetType === "string" || typeof targetType === "number");
+    if (chatId !== undefined && isHostBlindRewrittenRow) {
+      const decryptionVersion = JSON.stringify({
+        ...targetVersion,
+        enc: previousEncryption ?? targetVersion?.enc
+      });
+      targetChatLog = await captureQuery(
+        this.fetchRows,
+        `SELECT _id, id, ? AS type, chat_id, user_id, ? AS message, attachment, ? AS v,
+                thread_id, scope, created_at, prev_id
+           FROM db1.chat_logs
+          WHERE chat_id = ? AND id = ?
+          LIMIT 2`,
+        [String(targetType), previousMessage, decryptionVersion, chatId, event.targetProviderEventId ?? ""]
+      );
+    } else if (chatId !== undefined && isHostBlindSystemFeed) {
+      targetChatLog = await captureQuery(
+        this.fetchRows,
+        `SELECT _id, id, type, chat_id, user_id, message, attachment, v, thread_id, scope, created_at, prev_id
+           FROM db1.chat_logs
+          WHERE chat_id = ? AND id = ?
+          LIMIT 2`,
+        [chatId, String(previousId)]
+      );
+    }
+
+    let previousTargetChatLog: IrisQuerySnapshot | undefined;
+    const editedTargetRow = targetChatLog.rows.length === 1 ? targetChatLog.rows[0] : undefined;
+    const editedTargetVersion = readJsonRecord(editedTargetRow?.v);
+    const latestModifyLog = readLatestModifyLog(editedTargetVersion?.modifyLog);
+    const editedTargetUserId = readExternalId(editedTargetRow, "user_id");
+    if (event.eventCode === "message.edited" && chatId !== undefined && latestModifyLog !== undefined && editedTargetUserId !== undefined) {
+      const decryptionVersion = JSON.stringify({ ...editedTargetVersion, enc: latestModifyLog.enc });
+      previousTargetChatLog = await captureQuery(
+        this.fetchRows,
+        `SELECT _id, id, type, chat_id, user_id, ? AS message, attachment, ? AS v,
+                thread_id, scope, created_at, prev_id
+           FROM db1.chat_logs
+          WHERE chat_id = ? AND id = ?
+          LIMIT 2`,
+        [latestModifyLog.message, decryptionVersion, chatId, event.targetProviderEventId ?? ""]
+      );
+    }
+
+    const subjectUserId = readExternalId(targetChatLog.rows[0], "user_id") ?? userId;
+    const subjectOpenChatMember = chatId !== undefined && subjectUserId !== undefined
+      && subjectUserId !== userId
+      ? await captureQuery(
+          this.fetchRows,
+          `SELECT member.*
+             FROM db2.open_chat_member AS member
+             JOIN chat_rooms AS room ON room.link_id = member.link_id
+            WHERE room.id = ? AND member.user_id = ?
+            LIMIT 2`,
+          [chatId, subjectUserId]
+        )
+      : openChatMember;
+    const openChatNickname = subjectOpenChatMember.rows.length === 1
+      ? readText(subjectOpenChatMember.rows[0], "nickname")
       : undefined;
-    const friendNickname = friend.rows.length === 1 ? readText(friend.rows[0], "name") : undefined;
+    const friendNickname = subjectUserId === userId && friend.rows.length === 1
+      ? readText(friend.rows[0], "name")
+      : undefined;
+    const roomName = resolveRoomName(openLink.rows[0], chatRoom.rows[0]);
     return {
       nickname: openChatNickname ?? friendNickname ?? event.displayName,
       nicknameSource: openChatNickname !== undefined
         ? "open_chat_member"
         : friendNickname !== undefined ? "friends" : "iris_sender",
+      subjectUserId,
+      ...roomName,
       db2IdentityTables,
       chatLog,
+      targetChatLog,
+      previousTargetChatLog,
       chatRoom,
-      openChatMember,
+      openChatMember: subjectOpenChatMember,
       friend,
       openLink
     };
@@ -263,7 +423,7 @@ export function formatIrisKakaoDiagnostic(
     `• Iris sender: ${rawEvent.displayName ?? "없음"}`,
     `• DB 우선 닉네임: ${snapshot.nickname ?? "없음"}`,
     `• 닉네임 출처: ${snapshot.nicknameSource}`,
-    `• /ping 응답 이름: ${snapshot.nickname ?? rawEvent.displayName ?? "결정 불가"}`,
+    `• /ping 응답 이름: ${snapshot.nicknameSource === "iris_sender" ? "미확인 사용자" : snapshot.nickname ?? "결정 불가"}`,
     `• Iris/DB 이름 일치: ${rawEvent.displayName === snapshot.nickname ? "예" : "아니요"}`
   ].join("\n");
 }

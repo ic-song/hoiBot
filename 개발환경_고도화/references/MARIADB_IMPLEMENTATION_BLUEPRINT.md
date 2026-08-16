@@ -1,18 +1,30 @@
 # MariaDB Implementation Blueprint
 
-Updated: 2026-08-04
+Updated: 2026-08-06
 
 ## Purpose
 
-Define enough persistence architecture for a future Codex session to implement hoiBot Server with MariaDB without rediscovering the migration boundaries.
+Describe the implemented MariaDB foundation, migration boundaries, and remaining cutover work so later sessions do not rediscover them.
 
 The detailed target table model and complete legacy-source mapping are maintained in `LEGACY_JSON_RDB_SCHEMA_DESIGN.md`.
 
-This is the implementation and migration blueprint. Migrations `001` through `014`, the transaction-aware connector, Iris inbox/outbox path, profile read model, admin session/RBAC foundation, dry-run/apply rehearsal importer, and the remaining domain Application Services are implemented. Production legacy data has not been imported.
+This is the implementation and migration blueprint. Migrations `001` through `021`, the transaction-aware connector, Iris inbox/outbox path, profile read model, user/admin authentication, RBAC, account lifecycle, trusted identity observations, moderation incidents, dry-run/apply rehearsal importer, and domain Application Services are implemented. Production legacy data has not been imported.
 
 ## Implementation Status
 
-The MariaDB foundation and first vertical-slice infrastructure are live-validated on the development PC. The importer parsed all 33 repository JSON snapshots in dry-run mode without writing them. `/내정보` formatting and server-change services exist, but legacy full-output parity remains blocked on a complete field mapping and approved identity links. No production cutover has occurred.
+The MariaDB foundation and first vertical-slice infrastructure are live-validated on the development PC. The importer parsed all 33 repository JSON snapshots without modifying them and completed a disposable-database rehearsal. `/내정보` formatting and server-change services exist, but character-for-character legacy output parity and approved live identity links remain incomplete. No production cutover has occurred.
+
+### Verified development foundation
+
+| Component | Verified value |
+| --- | --- |
+| MariaDB image | Official `mariadb:11.8.8`, pinned digest |
+| Character set/collation | `utf8mb4` / `utf8mb4_unicode_ci` |
+| Development host mapping | `127.0.0.1:3308` |
+| Persistence | Docker named volume `hoibot_mariadb_data` |
+| Node connector | Official `mariadb` package `3.5.3` |
+
+Verified checks include application-credential `SELECT 1`, transaction rollback with no residue, migration checksum/idempotency, readiness failure while MariaDB is stopped, readiness recovery, restart persistence, disposable backup restore, and cleanup. The named volume provides restart persistence but is not a backup.
 
 ## Persistence Boundaries
 
@@ -124,7 +136,7 @@ External IDs must be treated as strings in Node.js to avoid JavaScript integer p
 - Use `utf8mb4` for Korean text and emoji.
 - Store time in UTC and convert at application boundaries.
 - Store external Kakao IDs as `VARCHAR`, not JavaScript numbers.
-- Store currency and quantities as integer/decimal values with explicit bounds; never floating point.
+- The current compatibility DDL stores currency in `DECIMAL(30,3)` so legacy values can be imported losslessly. The active business policy requires integer currency, so import reconciliation must round explicitly and a later validated migration must enforce scale zero before cutover. Never use floating point.
 - Use foreign keys, unique constraints and check/application validation for invariants.
 - Add `created_at`, `updated_at`, and a version/revision field where concurrent updates matter.
 - Keep JSON columns only for transitional or genuinely variable metadata, not as a replacement for domain modeling.
@@ -222,6 +234,13 @@ Avoid long-term dual writes between JSON and MariaDB. Prefer a domain-by-domain 
 - `012_badge_display_projection.sql`: stable badge codes separated from the exact legacy `checkRank` display projection.
 - `013_domain_service_ledgers.sql`: append-only guild warehouse and home activity records plus RBAC permissions for remaining domain mutations.
 - `014_market_fee_ledger.sql`: append-only fee accounting for each successful market settlement.
+- `015_player_signup.sql`: Kakao-first pending signup, consent, and transactional player initialization.
+- `016_site_signup_auth.sql`: site-first credentials, verification challenges, user sessions, and Kakao linking.
+- `017_admin_authorization_lifecycle.sql`: detailed permissions, operator overrides, restrictions, passes, and deletion lifecycle.
+- `018_remove_legacy_admin_authorization.sql`: removes superseded administrator authorization structures.
+- `019_user_auth_hardening.sql`: user login lockout, session hardening, and pending-account cleanup support.
+- `020_trusted_identity_activity_events.sql`: trust-aware name observations, normalized provider activity, moderation incidents, and membership events.
+- `021_moderation_hidden_by_host.sql`: permits the verified host-hide incident type.
 
 ## Remaining Implementation Work
 
@@ -230,6 +249,8 @@ Avoid long-term dual writes between JSON and MariaDB. Prefer a domain-by-domain 
 3. Connect the implemented domain Services to verified Iris commands, Discord adapters and narrowly scoped admin APIs as each legacy command receives a golden parity fixture.
 4. Validate the implemented admin SPA identity approval, server mutation and audit flows against a separately deployed test environment.
 5. Repeat the completed Windows disposable import and backup/restore rehearsal on the target Ubuntu host, then rehearse the full cutover.
+
+Current automated runtime verification contains 73 tests. This number is a snapshot, not an acceptance substitute; typecheck, build, migrations, actual MariaDB rollback, and live Iris tests remain separate gates.
 
 ## Foundation Acceptance Criteria
 

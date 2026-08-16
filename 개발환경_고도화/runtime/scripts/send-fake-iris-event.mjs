@@ -1,4 +1,4 @@
-const port = process.env.PORT || "3100";
+const port = process.env.PORT || "3002";
 const token = process.env.IRIS_SHARED_TOKEN;
 
 if (!token) {

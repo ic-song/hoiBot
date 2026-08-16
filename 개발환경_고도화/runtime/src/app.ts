@@ -13,7 +13,16 @@ import {
   splitIrisKakaoDiagnostic,
   type IrisKakaoDatabaseSnapshot
 } from "./integration/iris-kakao-database-inspector.js";
-import { formatIrisEventMonitorMessage, shouldMonitorIrisEvent } from "./integration/iris-event-monitor.js";
+import {
+  formatIrisEventMonitorMessage,
+  formatModerationIncidentReadMessage,
+  shouldMonitorIrisEvent,
+  type IrisOriginalMessageResult
+} from "./integration/iris-event-monitor.js";
+import {
+  IrisChannelPolicyInspector,
+  type IrisChannelAccessDecision
+} from "./integration/iris-channel-policy.js";
 import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
@@ -25,12 +34,40 @@ import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
+import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
+import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
+import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
+import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
+import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
+import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
+import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
+import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
+import { GuildJoinService } from "./guild/guild-join-service.js";
+import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
+import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
+import { GuildJoinConditionService } from "./guild/guild-join-condition-service.js";
+import { isGuildJoinConditionCommandCandidate } from "./guild/guild-join-condition-policy.js";
+import { MariaGuildJoinConditionRepository } from "./guild/maria-guild-join-condition-repository.js";
+import { GuildForceExpelService } from "./guild/guild-force-expel-service.js";
+import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-policy.js";
+import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
 import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
 import { ProviderVerificationService } from "./user-auth/provider-verification-service.js";
 import { readKakaoVerificationCode } from "./user-auth/policy.js";
 import { RequestRateLimiter } from "./user-auth/request-rate-limiter.js";
+import {
+  ModerationIncidentService,
+  readModerationIncidentNumber
+} from "./integration/moderation-incident-service.js";
+import { MembershipLogService, type MembershipLogSummary } from "./integration/membership-log-service.js";
+import { RetainedEventContentService } from "./integration/retained-event-content-service.js";
+import { BagAttributeService, isBagAttributeCommandCandidate } from "./inventory/bag-attribute-service.js";
+import { MariaBagAttributeRepository } from "./inventory/maria-bag-attribute-repository.js";
+import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
+import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
+import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 
 interface TokenQuery {
   token?: string;
@@ -46,11 +83,23 @@ interface IrisImageReply {
   imageUrl: string;
 }
 
-interface AppDependencies {
+export interface AppDependencies {
   sendIrisTextReply?: (reply: IrisTextReply) => Promise<void>;
   sendIrisImageReply?: (reply: IrisImageReply) => Promise<void>;
   inspectIrisKakaoDatabase?: (event: NormalizedIrisEvent) => Promise<IrisKakaoDatabaseSnapshot>;
+  inspectIrisChannel?: (event: NormalizedIrisEvent) => Promise<IrisChannelAccessDecision>;
+  retainIrisEventContent?: (payload: IrisPayload, event: NormalizedIrisEvent) => Promise<number>;
   database?: DatabaseClient;
+}
+
+// KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
+function readOriginalMessage(snapshot: IrisKakaoDatabaseSnapshot): IrisOriginalMessageResult {
+  const target = snapshot.targetChatLog;
+  if (target.error !== undefined) return { status: "failed" };
+  if (target.rows.length !== 1 || typeof target.rows[0]?.message !== "string") {
+    return { status: "not_found" };
+  }
+  return { status: "recovered", message: target.rows[0].message };
 }
 
 // 로그에 인증 쿼리 문자열이 남지 않도록 경로만 반환합니다.
@@ -267,8 +316,29 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((reply: IrisImageReply) => sendIrisImageReply(config, reply));
   const inspectIrisKakaoDatabase = dependencies.inspectIrisKakaoDatabase
     ?? ((event: NormalizedIrisEvent) => new IrisKakaoDatabaseInspector(config.irisBaseUrl).inspect(event));
+  const designatedChannelIds = new Set(config.irisAllowedOpenChatIds);
+  const diagnosticChannelIds = new Set(
+    config.nodeEnv === "production" || config.irisEventMonitorRoomId === ""
+      ? []
+      : [config.irisEventMonitorRoomId]
+  );
+  const inspectIrisChannel = dependencies.inspectIrisChannel
+    ?? ((event: NormalizedIrisEvent) => new IrisChannelPolicyInspector(config.irisBaseUrl)
+      .inspect(event, designatedChannelIds, diagnosticChannelIds, config.irisOpenChatObservationMode));
   const database = dependencies.database;
+  const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
+    enabled: config.retainedEventContentEnabled,
+    retentionDays: config.retainedEventContentDays,
+    storageDirectory: config.retainedEventContentStorageDirectory,
+    maxBytes: config.imageMaxBytes,
+    downloadTimeoutMs: config.imageDownloadTimeoutMs
+  });
+  const retainIrisEventContent = dependencies.retainIrisEventContent
+    ?? (retainedEventContents === undefined ? undefined
+      : (payload: IrisPayload, event: NormalizedIrisEvent) => retainedEventContents.retain(payload, event));
+  const retainedContentChannelIds = new Set(config.retainedEventContentChannelIds);
   let accountCleanupTimer: NodeJS.Timeout | undefined;
+  let retainedContentCleanupTimer: NodeJS.Timeout | undefined;
 
   void app.register(cookie);
   if (database !== undefined) {
@@ -279,10 +349,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       changePlayerServer: new ChangePlayerServerService(database),
       directory: new AdminDirectoryService(database),
       management: new AdminManagementService(database),
+      moderationIncidents: new ModerationIncidentService(database),
+      retainedEventContents: retainedEventContents!,
+      inspectIrisKakaoDatabase,
       secureCookies: config.nodeEnv === "production"
     });
     void registerUserAuthRoutes(app, {
       auth: new UserAuthService(database, config.userVerificationPepper, config.nodeEnv),
+      profiles,
       rateLimiter: new RequestRateLimiter(config.userVerificationPepper),
       secureCookies: config.nodeEnv === "production"
     });
@@ -303,11 +377,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
       }, 3_600_000);
       accountCleanupTimer.unref();
+      if (config.retainedEventContentEnabled && retainedEventContents !== undefined) {
+        void retainedEventContents.purgeExpired()
+          .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
+          .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
+        retainedContentCleanupTimer = setInterval(() => {
+          void retainedEventContents.purgeExpired()
+            .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
+            .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
+        }, 3_600_000);
+        retainedContentCleanupTimer.unref();
+      }
     }
   }
 
   app.addHook("onClose", async () => {
     if (accountCleanupTimer !== undefined) clearInterval(accountCleanupTimer);
+    if (retainedContentCleanupTimer !== undefined) clearInterval(retainedContentCleanupTimer);
     await database?.close();
   });
 
@@ -386,10 +472,71 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     requestId: request.id
   }));
 
+  app.get("/api/v1/public/overview", async (request) => {
+    if (database === undefined || !config.database.enabled) {
+      return {
+        ok: true,
+        service: { api: "ready", database: "disabled" },
+        metrics: null,
+        requestId: request.id
+      };
+    }
+    try {
+      const rows = await database.query<Array<{
+        active_players: bigint;
+        active_channels: bigint;
+        events_last_24_hours: bigint;
+        last_event_at: Date | null;
+      }>>(
+        `SELECT
+          (SELECT COUNT(*) FROM players WHERE status = 'active') AS active_players,
+          (SELECT COUNT(*) FROM channels WHERE provider_code = 'iris' AND status = 'active') AS active_channels,
+          (SELECT COUNT(*) FROM event_inbox WHERE received_at >= UTC_TIMESTAMP(3) - INTERVAL 24 HOUR) AS events_last_24_hours,
+          (SELECT MAX(received_at) FROM event_inbox) AS last_event_at`
+      );
+      const row = rows[0];
+      return {
+        ok: true,
+        service: { api: "ready", database: "ready" },
+        metrics: row === undefined ? null : {
+          activePlayers: row.active_players.toString(),
+          activeChannels: row.active_channels.toString(),
+          eventsLast24Hours: row.events_last_24_hours.toString(),
+          lastEventAt: row.last_event_at?.toISOString() ?? null
+        },
+        requestId: request.id
+      };
+    } catch (error) {
+      request.log.error({ requestId: request.id, err: error }, "public.overview.failed");
+      return {
+        ok: true,
+        service: { api: "ready", database: "unavailable" },
+        metrics: null,
+        requestId: request.id
+      };
+    }
+  });
+
   app.post<{ Body: IrisPayload; Querystring: TokenQuery }>(
     "/api/v1/integrations/iris/events",
     { preHandler: tokenGuard },
     async (request, reply) => {
+      const normalizedEvent = normalizeIrisEvent(request.body);
+      const channelAccess = await inspectIrisChannel(normalizedEvent);
+      if (channelAccess.mode === "denied") {
+        request.log.info(
+          { requestId: request.id, reason: channelAccess.reason, channelClass: channelAccess.channelClass },
+          "iris.event_ignored_by_channel_policy"
+        );
+        return reply.code(202).send({
+          ok: true,
+          accepted: true,
+          ignored: true,
+          ignoreReason: channelAccess.reason,
+          requestId: request.id
+        });
+      }
+
       if (config.rawPayloadLogging) {
         request.log.info(
           { requestId: request.id, irisPayload: request.body },
@@ -405,27 +552,140 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         });
       }
 
-      const normalizedEvent = normalizeIrisEvent(request.body);
-      const requiresKakaoDatabaseLookup = normalizedEvent.direction === "incoming"
-        && (normalizedEvent.message === "/ping"
-          || (normalizedEvent.message === "/info" && config.nodeEnv !== "production"));
+      const isOperationalChannel = channelAccess.mode === "operational";
+      const isObservationChannel = channelAccess.mode === "observation";
+      const isInteractiveChannel = isOperationalChannel || channelAccess.mode === "diagnostic";
+      const verificationCode = readKakaoVerificationCode(normalizedEvent.message);
+      const moderationIncidentNumber = readModerationIncidentNumber(normalizedEvent.message);
+      const shouldCreateEventMonitorMessage = config.nodeEnv !== "production"
+        && config.irisEventMonitorRoomId !== ""
+        && shouldMonitorIrisEvent(request.body, normalizedEvent);
+      const requiresOriginalMessageLookup = shouldCreateEventMonitorMessage
+        && (normalizedEvent.eventCode === "message.deleted"
+          || normalizedEvent.eventCode === "message.hidden_by_host");
+      const requiresKakaoDatabaseLookup = requiresOriginalMessageLookup
+        || (normalizedEvent.direction === "incoming" && (normalizedEvent.message === "/ping"
+          || verificationCode !== null
+          || isSignupCommand(normalizedEvent.message)
+          || (normalizedEvent.message === "/info" && config.nodeEnv !== "production")
+          || shouldCreateEventMonitorMessage));
       const kakaoDatabaseSnapshot = requiresKakaoDatabaseLookup
         ? await inspectIrisKakaoDatabase(normalizedEvent)
         : undefined;
-      const commandEvent = kakaoDatabaseSnapshot?.nickname === undefined
-        ? normalizedEvent
-        : { ...normalizedEvent, displayName: kakaoDatabaseSnapshot.nickname };
-      const eventProcessor = database === undefined ? undefined : new ProcessIrisEventService(database);
+      const commandEvent = {
+        ...normalizedEvent,
+        ...(kakaoDatabaseSnapshot?.subjectUserId === undefined
+          ? {}
+          : { userId: kakaoDatabaseSnapshot.subjectUserId }),
+        ...(kakaoDatabaseSnapshot?.nickname === undefined
+          || kakaoDatabaseSnapshot.nicknameSource === "iris_sender"
+          ? {}
+          : { displayName: kakaoDatabaseSnapshot.nickname,
+              displayNameSource: "kakao_db" as const, displayNameTrust: "trusted" as const })
+      };
+      const isDiagnosticModeration = channelAccess.mode === "diagnostic"
+        && (normalizedEvent.eventCode === "message.deleted"
+          || normalizedEvent.eventCode === "message.hidden_by_host");
+      const isMembershipEvent = normalizedEvent.eventCode === "member.joined"
+        || normalizedEvent.eventCode === "member.departed";
+      const isDiagnosticMembership = channelAccess.mode === "diagnostic" && isMembershipEvent;
+      const eventProcessor = database === undefined
+        || (!isOperationalChannel && !isObservationChannel && !isDiagnosticModeration && !isDiagnosticMembership)
+        ? undefined
+        : new ProcessIrisEventService(database);
       const processing = eventProcessor === undefined
         ? undefined
-        : await eventProcessor.execute(commandEvent);
-      const eventMonitorMessage = config.nodeEnv !== "production"
-        && config.irisEventMonitorRoomId !== ""
-        && shouldMonitorIrisEvent(request.body, normalizedEvent)
-        ? formatIrisEventMonitorMessage(request.body, normalizedEvent)
+        : isOperationalChannel || isObservationChannel || isDiagnosticMembership
+          ? await eventProcessor.execute(normalizedEvent, commandEvent, channelAccess.channelClass === "open_direct"
+            ? "open_direct"
+            : "open_group", {
+              allowCommands: isOperationalChannel,
+              channelName: kakaoDatabaseSnapshot?.roomName === undefined
+                || kakaoDatabaseSnapshot.roomNameSource === "unavailable"
+                ? undefined
+                : {
+                    displayName: kakaoDatabaseSnapshot.roomName,
+                    sourceCode: kakaoDatabaseSnapshot.roomNameSource === "open_link"
+                      ? "kakao_open_link"
+                      : "kakao_chat_room_meta"
+                  }
+            })
+          : await eventProcessor.executeDiagnosticModeration(normalizedEvent);
+      const isRetainedContentChannel = commandEvent.channelId !== undefined
+        && (isOperationalChannel || isObservationChannel);
+      const isWithinRetainedContentScope = isRetainedContentChannel
+        && (config.retainedEventContentScope === "all_verified_open"
+          || retainedContentChannelIds.has(commandEvent.channelId!));
+      if (config.retainedEventContentEnabled && isWithinRetainedContentScope && retainIrisEventContent !== undefined
+        && (processing === undefined || !processing.duplicate)) {
+        try {
+          await retainIrisEventContent(request.body, commandEvent);
+        } catch (error) {
+          request.log.error({ requestId: request.id, err: error }, "retained_event_content.failed");
+        }
+      }
+      let membershipSummary: MembershipLogSummary | null | undefined;
+      if (database !== undefined && processing !== undefined && !processing.duplicate
+        && isMembershipEvent && commandEvent.channelId !== undefined && commandEvent.userId !== undefined) {
+        try {
+          membershipSummary = await new MembershipLogService(database)
+            .getSummary(commandEvent.channelId, commandEvent.userId);
+        } catch (error) {
+          request.log.warn({ requestId: request.id, err: error }, "membership.summary_unavailable");
+        }
+      }
+      const eventMonitorMessage = shouldCreateEventMonitorMessage
+        ? formatIrisEventMonitorMessage(
+            request.body,
+            commandEvent,
+            kakaoDatabaseSnapshot?.roomName,
+            processing?.incidentId,
+            membershipSummary ?? undefined
+          )
         : undefined;
 
-      if (processing !== undefined && !processing.duplicate && normalizedEvent.message === "/info"
+      if (isInteractiveChannel && moderationIncidentNumber !== null && database !== undefined
+        && commandEvent.channelId !== undefined) {
+        const incidentService = new ModerationIncidentService(database);
+        const incident = await incidentService.findByNumber(moderationIncidentNumber);
+        let incidentReply: string;
+        if (incident === null) {
+          incidentReply = `🔎 [삭제 메시지 열람]\n⚠️ 열람 번호 #${moderationIncidentNumber}을(를) 찾을 수 없습니다.`;
+        } else {
+          const isSourceRoom = commandEvent.channelId === incident.sourceChannelId;
+          const isMonitoringRoom = commandEvent.channelId === config.irisEventMonitorRoomId;
+          if (!isSourceRoom && !isMonitoringRoom) {
+            incidentReply = "🔎 [삭제 메시지 열람]\n⚠️ 삭제가 감지된 방 또는 모니터링방에서만 열람할 수 있습니다.";
+          } else {
+            const incidentSnapshot = await inspectIrisKakaoDatabase(incident.lookupEvent);
+            incidentReply = formatModerationIncidentReadMessage({
+              incidentId: incident.incidentId,
+              incidentType: incident.incidentType,
+              roomName: incidentSnapshot.roomName,
+              displayName: incidentSnapshot.nicknameSource === "iris_sender"
+                ? undefined
+                : incidentSnapshot.nickname,
+              originalMessage: readOriginalMessage(incidentSnapshot)
+            });
+          }
+        }
+        if (processing !== undefined && !processing.duplicate) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            commandEvent,
+            "moderation_incident_read",
+            incidentReply
+          ));
+        } else if (processing === undefined) {
+          try {
+            await replyToIris({ room: commandEvent.channelId, data: incidentReply });
+            request.log.info({ requestId: request.id }, "iris.moderation_incident_read.sent");
+          } catch (error) {
+            request.log.error({ requestId: request.id, err: error }, "iris.moderation_incident_read.failed");
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message === "/info"
         && commandEvent.channelId !== undefined && kakaoDatabaseSnapshot !== undefined) {
         const diagnosticChunks = splitIrisKakaoDiagnostic(
           formatIrisKakaoDiagnostic(request.body, normalizedEvent, kakaoDatabaseSnapshot)
@@ -439,7 +699,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const profile = await new GetMyProfileService(new MariaProfileRepository(database!))
@@ -458,7 +718,42 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (processing !== undefined && !processing.duplicate && normalizedEvent.message?.startsWith("/서버이동 ")
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const bag = await new GetBagService(new MariaBagRepository(database!))
+            .execute("kakao", normalizedEvent.userId);
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            "bag_read",
+            formatLegacyBag(bag)
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "IDENTITY_MAPPING_REQUIRED") {
+            request.log.warn({ requestId: request.id }, "iris.bag.identity_mapping_required");
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isBagAttributeCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new BagAttributeService(new MariaBagAttributeRepository(database!)).handle({
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.outboxId !== undefined && result.data !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } else if (result.status !== "ignored_forbidden" && result.data !== undefined) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "bag_attribute_validation", result.data));
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message?.startsWith("/서버이동 ")
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const result = await new IrisAdminCommandService(database!).changePlayerServer({
@@ -477,17 +772,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
-        && readKakaoVerificationCode(normalizedEvent.message) !== null
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
+        && verificationCode !== null
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
-        && normalizedEvent.displayName !== undefined) {
-        const verificationCode = readKakaoVerificationCode(normalizedEvent.message)!;
+        && commandEvent.displayNameTrust === "trusted" && commandEvent.displayName !== undefined) {
         try {
           const result = await new ProviderVerificationService(database!, config.userVerificationPepper)
             .verifyInitialKakao({
               code: verificationCode,
               externalUserId: normalizedEvent.userId,
-              displayName: normalizedEvent.displayName,
+              displayName: commandEvent.displayName,
               channelId: normalizedEvent.channelId
             });
           processing.replies.push(await eventProcessor!.queueCommandReply(
@@ -504,13 +798,246 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetInfoCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
+        && normalizedEvent.channelId !== undefined) {
+        try {
+          const replies = await new GetPetInfoService(new MariaPetInfoRepository(database!))
+            .execute("kakao", normalizedEvent.userId);
+          for (let index = 0; index < replies.length; index++) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, `pet_info_${index + 1}`, replies[index]!.data
+            ));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "PET_NOT_FOUND") {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_info", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildForceExpelCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuildForceExpelService(new MariaGuildForceExpelRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.data !== undefined && result.outboxId !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_force_expel", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_force_expel_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildJoinConditionCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuildJoinConditionService(new MariaGuildJoinConditionRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.data !== undefined && result.outboxId !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_join_condition", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_join_condition_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildJoinCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuildJoinService(new MariaGuildJoinRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.data !== undefined && result.outboxId !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_join_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetFoodBoxCraftCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetFoodBoxCraftService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_food_box_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isRaidStrikeSealCraftCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new RaidStrikeSealCraftService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "raid_strike_seal_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleBattleResetCraftCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new CastleBattleResetCraftService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "castle_battle_reset_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetRenameTicketCraftCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetRenameTicketCraftService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_rename_ticket_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetRenameCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetRenameService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "renamed") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_rename", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetCreationCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetCreationService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          for (const petReply of result.replies) {
+            processing.replies.push({ outboxId: petReply.outboxId, room: normalizedEvent.channelId, data: petReply.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_create", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
+        && verificationCode !== null && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && commandEvent.displayNameTrust !== "trusted") {
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "site_signup_kakao_verify_name_unavailable",
+          "카카오톡 DB에서 현재 닉네임을 확인할 수 없어 인증을 완료하지 않았습니다. Iris sender 캐시값은 인증에 사용하지 않습니다."
+        ));
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
         && isSignupCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
-        && normalizedEvent.channelId !== undefined && normalizedEvent.displayName !== undefined) {
+        && normalizedEvent.channelId !== undefined && commandEvent.displayNameTrust === "trusted"
+        && commandEvent.displayName !== undefined) {
         try {
           const result = await new SignupService(database!).handle({
             externalUserId: normalizedEvent.userId,
-            displayName: normalizedEvent.displayName,
+            displayName: commandEvent.displayName,
             channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!,
             eventId: normalizedEvent.eventId
@@ -545,7 +1072,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             request.log.error({ requestId: request.id, err: error }, "iris.outbox_reply.failed");
           }
         }
-      } else if (normalizedEvent.message === "/info" && commandEvent.channelId !== undefined
+      } else if (isInteractiveChannel && normalizedEvent.message === "/info" && commandEvent.channelId !== undefined
         && kakaoDatabaseSnapshot !== undefined) {
         try {
           const diagnosticChunks = splitIrisKakaoDiagnostic(
@@ -558,8 +1085,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           request.log.error({ requestId: request.id, err: error }, "iris.database_info_reply.failed");
         }
-      } else if (normalizedEvent.message === "/ping") {
-        const sender = commandEvent.displayName ?? "";
+      } else if (isInteractiveChannel && normalizedEvent.message === "/ping") {
+        const sender = commandEvent.displayNameTrust === "trusted"
+          ? commandEvent.displayName ?? ""
+          : "미확인 사용자";
         const chatId = commandEvent.channelId ?? "";
 
         if (sender !== "" && chatId !== "") {
@@ -587,7 +1116,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         request.body,
         config.irisImageForwardRoomId
       );
-      if (imageUrl !== undefined
+      if (isOperationalChannel && imageUrl !== undefined
         && config.irisImageForwardRoomId !== "") {
         try {
           await forwardImageToIris({ room: config.irisImageForwardRoomId, imageUrl });
@@ -600,6 +1129,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       return reply.code(202).send({
         ok: true,
         accepted: true,
+        ignored: false,
+        channelMode: channelAccess.mode,
         duplicate: processing?.duplicate ?? false,
         requestId: request.id
       });

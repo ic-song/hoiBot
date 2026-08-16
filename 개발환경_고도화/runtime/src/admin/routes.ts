@@ -6,6 +6,9 @@ import type { ChangePlayerServerService } from "../player/change-player-server-s
 import { ApplicationError } from "../shared/application-error.js";
 import type { AdminDirectoryService } from "./directory-service.js";
 import type { AdminManagementService } from "./management-service.js";
+import type { ModerationIncidentService } from "../integration/moderation-incident-service.js";
+import type { IrisKakaoDatabaseSnapshot } from "../integration/iris-kakao-database-inspector.js";
+import type { RetainedEventContentService } from "../integration/retained-event-content-service.js";
 
 interface AdminRouteDependencies {
   auth: AdminAuthService;
@@ -13,6 +16,9 @@ interface AdminRouteDependencies {
   changePlayerServer: ChangePlayerServerService;
   directory: AdminDirectoryService;
   management: AdminManagementService;
+  moderationIncidents: ModerationIncidentService;
+  inspectIrisKakaoDatabase: (event: import("../integration/iris-normalizer.js").NormalizedIrisEvent) => Promise<IrisKakaoDatabaseSnapshot>;
+  retainedEventContents: RetainedEventContentService;
   secureCookies: boolean;
 }
 
@@ -120,6 +126,108 @@ export async function registerAdminRoutes(app: FastifyInstance, dependencies: Ad
   app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/audit-entries", async (request) => {
     const session = await authenticate(request, dependencies, false); requirePermission(session, "audit.read");
     const paging = readPage(request.query); const result = await dependencies.directory.listAudit(paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/channel-activity", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "activity.read");
+    const paging = readPage(request.query); const result = await dependencies.directory.listChannelActivity(paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string; type?: string } }>("/api/v1/admin/moderation-incidents", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "incident.read");
+    const paging = readPage(request.query);
+    const kind = request.query.type === "deleted" || request.query.type === "edited" ? request.query.type : "all";
+    const result = await dependencies.directory.listModerationIncidents(paging.limit, paging.offset, kind);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string; group?: string } }>("/api/v1/admin/monitoring-events", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "monitoring.read");
+    const paging = readPage(request.query);
+    const group = request.query.group === "media" || request.query.group === "event"
+      ? request.query.group : "all";
+    const result = await dependencies.directory.listMonitoringEvents(paging.limit, paging.offset, group);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/retained-event-contents", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "monitoring.read");
+    const paging = readPage(request.query); const result = await dependencies.directory.listRetainedEventContents(paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Params: { contentId: string } }>("/api/v1/admin/retained-event-contents/:contentId", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "event.content.read");
+    const content = await dependencies.retainedEventContents.readDetail(request.params.contentId, session.operatorId);
+    if (content === null) throw new ApplicationError("RETAINED_CONTENT_NOT_FOUND", "보관된 이벤트 내용을 찾을 수 없습니다.", 404);
+    return { ok: true, content, requestId: request.id };
+  });
+
+  app.get<{ Params: { contentId: string } }>("/api/v1/admin/retained-event-contents/:contentId/media", async (request, reply) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "event.content.read");
+    const media = await dependencies.retainedEventContents.readMedia(request.params.contentId, session.operatorId);
+    if (media === null) throw new ApplicationError("RETAINED_MEDIA_NOT_FOUND", "보관된 미디어를 찾을 수 없습니다.", 404);
+    return reply.header("cache-control", "private, no-store").type(media.mimeType).send(media.data);
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string; channelId?: string; externalIdentityId?: string } }>("/api/v1/admin/channel-membership-events", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "monitoring.read");
+    const paging = readPage(request.query);
+    const hasFilter = request.query.channelId !== undefined || request.query.externalIdentityId !== undefined;
+    if (hasFilter && (!/^\d+$/.test(request.query.channelId ?? "") || !/^\d+$/.test(request.query.externalIdentityId ?? ""))) {
+      throw new ApplicationError("MEMBERSHIP_FILTER_INVALID", "방과 사용자 식별자를 모두 확인해 주세요.", 422);
+    }
+    const filter = hasFilter
+      ? { channelId: request.query.channelId!, externalIdentityId: request.query.externalIdentityId! }
+      : undefined;
+    const result = await dependencies.directory.listMembershipEvents(paging.limit, paging.offset, filter);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/channel-membership-patterns", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "monitoring.read");
+    const paging = readPage(request.query); const result = await dependencies.directory.listMembershipPatterns(paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Params: { incidentId: string } }>("/api/v1/admin/moderation-incidents/:incidentId/content", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "incident.content.read");
+    const incident = await dependencies.moderationIncidents.findByNumber(request.params.incidentId);
+    if (incident === null) throw new ApplicationError("INCIDENT_NOT_FOUND", "삭제 감지 기록을 찾을 수 없습니다.", 404);
+    const snapshot = await dependencies.inspectIrisKakaoDatabase(incident.lookupEvent);
+    const recoverMessage = (source: IrisKakaoDatabaseSnapshot["targetChatLog"] | undefined) => source === undefined
+      ? { status: "not_found" as const }
+      : source.error !== undefined
+        ? { status: "failed" as const }
+        : source.rows.length !== 1 || typeof source.rows[0]?.message !== "string"
+          ? { status: "not_found" as const }
+          : { status: "recovered" as const, content: source.rows[0].message.slice(0, 1_000) };
+    const originalMessage = recoverMessage(snapshot.targetChatLog);
+    const editedMessage = incident.incidentType === "message_edited"
+      ? { before: recoverMessage(snapshot.previousTargetChatLog), after: originalMessage }
+      : undefined;
+    await dependencies.moderationIncidents.recordContentRead(
+      incident.incidentId, session.operatorId,
+      editedMessage === undefined ? originalMessage.status : `before_${editedMessage.before.status}_after_${editedMessage.after.status}`
+    );
+    return {
+      ok: true,
+      incident: {
+        id: incident.incidentId, incidentType: incident.incidentType,
+        roomName: snapshot.roomName ?? null,
+        displayName: snapshot.nicknameSource === "iris_sender" ? null : snapshot.nickname ?? null,
+        originalMessage,
+        editedMessage
+      },
+      requestId: request.id
+    };
+  });
+
+  app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/delivery-failures", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "monitoring.read");
+    const paging = readPage(request.query); const result = await dependencies.directory.listDeliveryFailures(paging.limit, paging.offset);
     return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
   });
 

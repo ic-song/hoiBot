@@ -1,6 +1,6 @@
 # Reproducible Environment Blueprint
 
-Updated: 2026-08-03
+Updated: 2026-08-06
 
 ## Objective
 
@@ -21,7 +21,26 @@ Windows PC
 -> hoiBot database: MariaDB
 ```
 
-The exact placement of the hoiBot Server and MariaDB is still an implementation decision. The recommended reproducible default is to run both as Docker Compose services in the same Ubuntu/Linux VM while keeping redroid as a separate container/service boundary.
+The target placement is fixed: run hoiBot Server and MariaDB as Docker Compose services in the same Ubuntu/Linux VM while keeping redroid as a separate service boundary. The current development server still runs as a Windows scheduled `node.exe` process; this is an interim validation arrangement, not the final deployment shape.
+
+## Selected setup reference
+
+- Video: `Iris를 이용한 봇 만들기`
+- URL: <https://www.youtube.com/watch?v=H43VTOsKDXY>
+- Relevant flow: Hyper-V/Linux from `7:46`, followed by Docker/redroid, and Iris installation around `21:20`
+
+The video is an installation reference only. `../DECISIONS.md` remains authoritative for architecture and implementation choices.
+
+## Development port allocation
+
+| Service | Bind | Port | Rule |
+| --- | --- | ---: | --- |
+| hoiBot API | `0.0.0.0` | `3002` | Existing local `3000` + 2; fail if occupied |
+| hoiWorld Vite server | `127.0.0.1` | `5175` | Default `5173` + 2 with `strictPort` |
+| hoiBot MariaDB mapping | `127.0.0.1` | `3308` | Existing local `3306` + 2; fail if occupied |
+| redroid Iris API | redroid/VM address | `3000` | Remote dependency; no collision with PC loopback port |
+
+Do not silently select another port. When an allocation changes, update runtime environment files, Compose, frontend proxy, Iris callback configuration, and this document together.
 
 ## Target Runtime Shape
 

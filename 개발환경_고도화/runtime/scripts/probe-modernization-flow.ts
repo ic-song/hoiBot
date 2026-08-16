@@ -13,22 +13,56 @@ const config = loadConfig();
 const database = createDatabaseClient(config.database);
 const suffix = randomUUID();
 const providerEventId = `probe-${suffix}`;
+const deleteProviderEventId = `probe-delete-${suffix}`;
+const joinProviderEventId = `probe-join-${suffix}`;
+const departProviderEventId = `probe-depart-${suffix}`;
 let playerId: bigint | undefined;
 let serverId: bigint | undefined;
 let operatorId: bigint | undefined;
 let externalIdentityId: bigint | undefined;
 try {
   const processor = new ProcessIrisEventService(database);
-  const event = normalizeIrisEvent({ msg: "/ping", sender: "probe", json: { id: providerEventId, chat_id: `room-${suffix}`, user_id: `user-${suffix}`, type: 1 } });
+  const event = normalizeIrisEvent({ msg: "/ping", sender: "untrusted-probe-name", json: { id: providerEventId, chat_id: `room-${suffix}`, user_id: `user-${suffix}`, type: 1, v: JSON.stringify({ origin: "MSG", isMine: false }) } });
   const first = await processor.execute(event);
   const duplicate = await processor.execute(event);
-  const eventCounts = await database.query<Array<{ commands: bigint; outboxes: bigint }>>(
+  const eventCounts = await database.query<Array<{ commands: bigint; outboxes: bigint; normalized: bigint; activity: bigint; untrusted_names: bigint; canonical_name: string | null }>>(
     `SELECT (SELECT COUNT(*) FROM command_executions WHERE event_id = ?) AS commands,
-      (SELECT COUNT(*) FROM outbox_messages outbox JOIN command_executions command ON command.operation_id = outbox.operation_id WHERE command.event_id = ?) AS outboxes`,
-    [event.eventId, event.eventId]
+      (SELECT COUNT(*) FROM outbox_messages outbox JOIN command_executions command ON command.operation_id = outbox.operation_id WHERE command.event_id = ?) AS outboxes,
+      (SELECT COUNT(*) FROM normalized_provider_events WHERE event_id = ?) AS normalized,
+      (SELECT COUNT(*) FROM channel_activity_daily activity JOIN event_inbox inbox ON inbox.channel_id = activity.channel_id AND inbox.external_identity_id = activity.external_identity_id WHERE inbox.event_id = ?) AS activity,
+      (SELECT COUNT(*) FROM external_identity_names observed JOIN event_inbox inbox ON inbox.external_identity_id = observed.external_identity_id WHERE inbox.event_id = ? AND observed.source_code = 'iris_cache' AND observed.trust_status = 'untrusted') AS untrusted_names,
+      (SELECT identity.display_name FROM external_identities identity JOIN event_inbox inbox ON inbox.external_identity_id = identity.id WHERE inbox.event_id = ?) AS canonical_name`,
+    [event.eventId, event.eventId, event.eventId, event.eventId, event.eventId, event.eventId]
   );
-  if (first.duplicate || !duplicate.duplicate || eventCounts[0]?.commands !== 1n || eventCounts[0]?.outboxes !== 1n) {
+  if (first.duplicate || !duplicate.duplicate || eventCounts[0]?.commands !== 1n || eventCounts[0]?.outboxes !== 1n
+    || eventCounts[0]?.normalized !== 1n || eventCounts[0]?.activity !== 1n
+    || eventCounts[0]?.untrusted_names !== 1n || eventCounts[0]?.canonical_name !== null) {
     throw new Error("Iris duplicate processing invariant failed.");
+  }
+
+  const deleteEvent = normalizeIrisEvent({
+    msg: JSON.stringify({ logId: `target-${suffix}`, hidden: true, byHost: false }), sender: "untrusted-probe-name",
+    json: { id: deleteProviderEventId, chat_id: `room-${suffix}`, user_id: `user-${suffix}`, type: 0,
+      v: JSON.stringify({ origin: "SYNCDLMSG", isMine: false }) }
+  });
+  const joinEvent = normalizeIrisEvent({ msg: "입장", sender: "untrusted-probe-name", json: { id: joinProviderEventId, chat_id: `room-${suffix}`, user_id: `user-${suffix}`, type: 0, v: JSON.stringify({ origin: "NEWMEM", isMine: false }) } });
+  const departEvent = normalizeIrisEvent({ msg: "퇴장", sender: "untrusted-probe-name", json: { id: departProviderEventId, chat_id: `room-${suffix}`, user_id: `user-${suffix}`, type: 0, v: JSON.stringify({ origin: "DELMEM", isMine: false }) } });
+  await processor.execute(deleteEvent);
+  await processor.execute(joinEvent);
+  await processor.execute(departEvent);
+  const blueBotFeatures = await database.query<Array<{ incidents: bigint; target_id: string | null; membership_events: bigint; membership_status: string }>>(
+    `SELECT
+      (SELECT COUNT(*) FROM moderation_incidents WHERE event_id = ?) AS incidents,
+      (SELECT target_provider_event_id FROM moderation_incidents WHERE event_id = ?) AS target_id,
+      (SELECT COUNT(*) FROM channel_membership_events WHERE event_id IN (?, ?)) AS membership_events,
+      (SELECT membership.status FROM channel_memberships membership JOIN event_inbox inbox
+       ON inbox.channel_id = membership.channel_id AND inbox.external_identity_id = membership.external_identity_id
+       WHERE inbox.event_id = ?) AS membership_status`,
+    [deleteEvent.eventId, deleteEvent.eventId, joinEvent.eventId, departEvent.eventId, departEvent.eventId]
+  );
+  if (blueBotFeatures[0]?.incidents !== 1n || blueBotFeatures[0]?.target_id !== `target-${suffix}`
+    || blueBotFeatures[0]?.membership_events !== 2n || blueBotFeatures[0]?.membership_status !== "inactive") {
+    throw new Error("Normalized incident or membership invariant failed.");
   }
   await database.execute("UPDATE outbox_messages SET attempt_count = 9 WHERE id = ?", [first.replies[0]!.outboxId]);
   await recordOutboxDelivery(database, first.replies[0]!.outboxId, { ok: false, errorCode: "PROBE_FAILURE" });
@@ -137,7 +171,7 @@ try {
   });
   if (!irisAdminResult.data.includes("이동되었습니다") || irisAdminResult.outboxId === "") throw new Error("Iris admin command did not use the server-change service.");
 
-  process.stdout.write(JSON.stringify({ eventDuplicateVerified: true, outboxDeadLetterVerified: true, serverChangeIdempotencyVerified: true, optimisticConflictVerified: true, adminSessionVerified: true, csrfVerified: true, fiveFailureLockVerified: true, irisAdminServiceVerified: true }) + "\n");
+  process.stdout.write(JSON.stringify({ eventDuplicateVerified: true, untrustedNameSeparated: true, activityAggregateVerified: true, incidentCorrelationVerified: true, membershipHistoryVerified: true, outboxDeadLetterVerified: true, serverChangeIdempotencyVerified: true, optimisticConflictVerified: true, adminSessionVerified: true, csrfVerified: true, fiveFailureLockVerified: true, irisAdminServiceVerified: true }) + "\n");
 } finally {
   await database.withTransaction(async (transaction) => {
     if (operatorId !== undefined) {
@@ -163,7 +197,8 @@ try {
     }
     if (serverId !== undefined) await transaction.execute("DELETE FROM game_servers WHERE id = ?", [serverId]);
     await transaction.execute("DELETE FROM event_inbox WHERE event_id = ?", [`iris-admin-${suffix}`]);
-    const eventId = `iris:${providerEventId}`;
+    const eventIds = [providerEventId, deleteProviderEventId, joinProviderEventId, departProviderEventId].map((id) => `iris:${id}`);
+    const eventId = eventIds[0]!;
     const eventLinks = await transaction.query<Array<{ channel_id: bigint | null; external_identity_id: bigint | null }>>(
       "SELECT channel_id, external_identity_id FROM event_inbox WHERE event_id = ?",
       [eventId]
@@ -174,9 +209,15 @@ try {
       await transaction.execute("DELETE FROM command_executions WHERE operation_id = ?", [operation.id]);
       await transaction.execute("DELETE FROM operations WHERE id = ?", [operation.id]);
     }
-    await transaction.execute("DELETE FROM event_inbox WHERE event_id = ?", [eventId]);
+    await transaction.execute("DELETE FROM moderation_incidents WHERE event_id IN (?, ?, ?, ?)", eventIds);
+    await transaction.execute("DELETE FROM channel_membership_events WHERE event_id IN (?, ?, ?, ?)", eventIds);
+    await transaction.execute("DELETE FROM normalized_provider_events WHERE event_id IN (?, ?, ?, ?)", eventIds);
     const eventChannelId = eventLinks[0]?.channel_id;
     const eventIdentityId = eventLinks[0]?.external_identity_id;
+    if (eventChannelId !== null && eventChannelId !== undefined && eventIdentityId !== null && eventIdentityId !== undefined) {
+      await transaction.execute("DELETE FROM channel_activity_daily WHERE channel_id = ? AND external_identity_id = ?", [eventChannelId, eventIdentityId]);
+    }
+    await transaction.execute("DELETE FROM event_inbox WHERE event_id IN (?, ?, ?, ?)", eventIds);
     if (eventChannelId !== null && eventChannelId !== undefined && eventIdentityId !== null && eventIdentityId !== undefined) {
       await transaction.execute("DELETE FROM channel_memberships WHERE channel_id = ? AND external_identity_id = ?", [eventChannelId, eventIdentityId]);
     }

@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { StrictMode, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
@@ -13,6 +13,10 @@ type UserSession = {
 
 type AdminSession = { operatorId: string; loginId: string; displayName: string; roleCodes: string[]; permissions: string[] };
 type JsonRecord = Record<string, unknown>;
+type PublicOverview = {
+  service: { api: string; database: string };
+  metrics: { activePlayers: string; activeChannels: string; eventsLast24Hours: string; lastEventAt: string | null } | null;
+};
 
 type SignupResult = {
   challengeId: string;
@@ -30,7 +34,6 @@ const visibleFeatures = {
   guild: false,
   collection: false,
   adminConsole: false,
-  operationalDashboard: false,
   futureOverview: false
 } as const;
 
@@ -111,7 +114,23 @@ function Login({ onSignup, onResumeSignup, onLoggedIn }: {
 function Account({ session, onLogout }: { session: UserSession; onLogout: () => Promise<void> }) {
   const [loggingOut, setLoggingOut] = useState(false);
   const [error, setError] = useState("");
-  return <main className="auth-page page-shell"><section className="card account-card"><div className="account-avatar">{session.systemAccountName.slice(0, 1)}</div><span className="eyebrow">MY ACCOUNT</span><h1>{session.systemAccountName}</h1><p>시스템 계정</p><dl><div><dt>로그인 아이디</dt><dd>{session.loginId}</dd></div><div><dt>Player ID</dt><dd>{session.playerId}</dd></div><div><dt>연결 상태</dt><dd className="active-text">카카오톡 연결됨</dd></div></dl>{error && <p className="form-error" role="alert">{error}</p>}<button className="logout-button" disabled={loggingOut} onClick={async () => { setError(""); setLoggingOut(true); try { await onLogout(); } catch (caught) { setError(caught instanceof Error ? caught.message : "로그아웃하지 못했어요."); } finally { setLoggingOut(false); } }}>{loggingOut ? "로그아웃 중..." : "로그아웃"}</button></section></main>;
+  const [profile, setProfile] = useState<JsonRecord | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  useEffect(() => {
+    void fetch("/api/v1/player-profiles/current", { credentials: "include" }).then(async (response) => {
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error?.message ?? "캐릭터 정보를 불러오지 못했어요.");
+      setProfile(payload.profile as JsonRecord);
+    }).catch((caught) => setError(caught instanceof Error ? caught.message : "캐릭터 정보를 불러오지 못했어요."))
+      .finally(() => setProfileLoading(false));
+  }, []);
+  const server = profile?.server as JsonRecord | null | undefined;
+  const currencies = profile?.currencies as JsonRecord | undefined;
+  const guild = profile?.guild as JsonRecord | null | undefined;
+  const pet = profile?.pet as JsonRecord | null | undefined;
+  const home = profile?.home as JsonRecord | null | undefined;
+  const passes = (profile?.passes as JsonRecord[] | undefined)?.filter((pass) => pass.enabled === true) ?? [];
+  return <main className="auth-page page-shell"><section className="card account-card account-profile"><div className="account-avatar">{session.systemAccountName.slice(0, 1)}</div><span className="eyebrow">MY ACCOUNT</span><h1>{session.systemAccountName}</h1><p>MariaDB에 저장된 현재 캐릭터 정보예요.</p>{profileLoading ? <p className="account-loading">캐릭터 정보를 불러오는 중...</p> : profile && <><dl><div><dt>로그인 아이디</dt><dd>{session.loginId}</dd></div><div><dt>Player ID</dt><dd>{session.playerId}</dd></div><div><dt>서버</dt><dd>{valueText(server?.displayName)}</dd></div><div><dt>레벨</dt><dd>{numberText(profile.level)}</dd></div><div><dt>누적 레벨</dt><dd>{numberText(profile.accumulatedLevel)}</dd></div><div><dt>환생</dt><dd>{numberText(profile.rebirthCount)}회</dd></div><div><dt>포인트</dt><dd>{numberText(currencies?.point)} P</dd></div><div><dt>다이아</dt><dd>{numberText(currencies?.diamond)}</dd></div><div><dt>활성 타이틀</dt><dd>{valueText(profile.activeTitle)}</dd></div><div><dt>길드</dt><dd>{valueText(guild?.name)}</dd></div><div><dt>펫</dt><dd>{valueText(pet?.name)}</dd></div><div><dt>홈</dt><dd>{valueText(home?.name)}</dd></div><div><dt>활성 패스</dt><dd>{passes.length === 0 ? "없음" : passes.map((pass) => valueText(pass.code)).join(", ")}</dd></div></dl></>}{error && <p className="form-error" role="alert">{error}</p>}<button className="logout-button" disabled={loggingOut} onClick={async () => { setError(""); setLoggingOut(true); try { await onLogout(); } catch (caught) { setError(caught instanceof Error ? caught.message : "로그아웃하지 못했어요."); } finally { setLoggingOut(false); } }}>{loggingOut ? "로그아웃 중..." : "로그아웃"}</button></section></main>;
 }
 
 function AdminLogin({ onLoggedIn }: { onLoggedIn: (session: AdminSession, csrfToken: string) => void }) {
@@ -124,7 +143,8 @@ function AdminLogin({ onLoggedIn }: { onLoggedIn: (session: AdminSession, csrfTo
   return <main className="auth-page page-shell"><section className="card auth-card"><span className="admin-label">ADMIN</span><h1>관리자 로그인</h1><p>호이월드 운영자 계정으로 로그인해 주세요.</p><form onSubmit={submit} className="signup-form"><label>관리자 ID<input value={loginId} onChange={(event) => setLoginId(event.target.value)} autoComplete="username" /></label><label>비밀번호<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" /></label>{error && <p className="form-error" role="alert">{error}</p>}<button className="primary-action" disabled={submitting}>{submitting ? "확인 중..." : "관리자 로그인"}</button></form></section></main>;
 }
 
-type AdminTab = "overview" | "players" | "identities" | "deletions" | "operators" | "audit";
+type AdminTab = "overview" | "players" | "identities" | "monitoring" | "activity" | "incidents" | "deletions" | "operators" | "audit";
+type MonitoringSection = "summary" | "deletions" | "edits" | "patterns" | "memberships" | "media" | "failures";
 
 function valueText(value: unknown): string {
   if (value === null || value === undefined) return "-";
@@ -133,20 +153,95 @@ function valueText(value: unknown): string {
   return String(value);
 }
 
+// 문자열로 전달되는 큰 정수도 정밀도 손실 없이 보기 좋게 표시합니다.
+function numberText(value: unknown): string {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "bigint") return "-";
+  const text = String(value);
+  if (!/^-?\d+(?:\.\d+)?$/.test(text)) return text;
+  const [integer, decimal] = text.split(".");
+  const formatted = BigInt(integer).toLocaleString("ko-KR");
+  return decimal === undefined || /^0+$/.test(decimal) ? formatted : `${formatted}.${decimal.replace(/0+$/, "")}`;
+}
+
+const monitoringEventLabels: Record<string, string> = {
+  "message.edited": "메시지 수정",
+  "message.deleted": "메시지 삭제",
+  "message.hidden_by_host": "방장 가리기",
+  "message.rewritten": "메시지 변경",
+  "member.joined": "입장",
+  "member.departed": "퇴장",
+  "message.created.thread_reply": "스레드 답글",
+  "message.created.reply": "답글",
+  "message.created.reply_candidate": "답글 추정",
+  "message.created.mention": "멘션",
+  "media.image": "이미지",
+  "media.image_candidate": "이미지 추정",
+  "media.video": "동영상",
+  "media.video_candidate": "동영상 추정",
+  "media.sticker_candidate": "이모티콘 추정",
+  "media.animated_sticker": "움직이는 이모티콘",
+  "media.animated_sticker_candidate": "움직이는 이모티콘 추정",
+  "media.multi_image": "여러 이미지",
+  "media.multi_image_candidate": "여러 이미지 추정",
+  "content.rich_card": "검색·링크 카드",
+  "content.rich_card_candidate": "검색·링크 카드 추정",
+  "iris.unknown": "분류되지 않은 이벤트"
+};
+
+// 운영 화면에는 내부 코드 대신 이해하기 쉬운 이벤트 이름을 표시합니다.
+function monitoringEventLabel(value: unknown): string {
+  return monitoringEventLabels[String(value ?? "")] ?? "기타 이벤트";
+}
+
+// 모니터링 발생 시각을 한국 시간의 동일한 형식으로 표시합니다.
+function monitoringDate(value: unknown): string {
+  if (typeof value !== "string") return "시간 미확인";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "시간 미확인";
+  return date.toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
+  });
+}
+
+// 내부 식별자 대신 검증된 표시 이름 또는 명확한 미확인 상태만 보여줍니다.
+// redroid 실시간 조회 결과를 운영자가 이해할 수 있는 본문 상태로 표시합니다.
+function monitoringMessageText(message: JsonRecord | undefined): string {
+  if (message?.status === "recovered") return valueText(message.content);
+  if (message?.status === "failed") return "redroid 연결 문제로 원문을 조회하지 못했어요.";
+  return "KakaoTalk DB에 원문이 남아 있지 않아요.";
+}
+
+function monitoringName(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() !== "" ? value : fallback;
+}
+
 function AdminConsole({ session, csrfToken, onLogout }: { session: AdminSession; csrfToken: string; onLogout: () => Promise<void> }) {
   const [tab, setTab] = useState<AdminTab>("overview");
   const [readiness, setReadiness] = useState<{ server: string; database: string }>({ server: "확인 중", database: "확인 중" });
   const [items, setItems] = useState<JsonRecord[]>([]);
+  const [total, setTotal] = useState(0);
   const [overview, setOverview] = useState<JsonRecord>({});
+  const [monitoring, setMonitoring] = useState<{ media: JsonRecord[]; deletedIncidents: JsonRecord[]; editedIncidents: JsonRecord[]; memberships: JsonRecord[]; patterns: JsonRecord[]; contents: JsonRecord[]; failures: JsonRecord[] }>({ media: [], deletedIncidents: [], editedIncidents: [], memberships: [], patterns: [], contents: [], failures: [] });
+  const [monitoringTotals, setMonitoringTotals] = useState({ media: 0, deletedIncidents: 0, editedIncidents: 0, memberships: 0, patterns: 0, contents: 0, failures: 0 });
+  const [monitoringSection, setMonitoringSection] = useState<MonitoringSection>("summary");
+  const [incidentContents, setIncidentContents] = useState<Record<string, JsonRecord>>({});
+  const [incidentContentLoading, setIncidentContentLoading] = useState("");
+  const [retainedContentDetails, setRetainedContentDetails] = useState<Record<string, JsonRecord>>({});
+  const [retainedContentLoading, setRetainedContentLoading] = useState("");
+  const [membershipDetail, setMembershipDetail] = useState<{ subject: JsonRecord; items: JsonRecord[]; total: number } | null>(null);
+  const [membershipDetailLoading, setMembershipDetailLoading] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<JsonRecord | null>(null);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const loadRequestId = useRef(0);
   const can = (permission: string) => session.permissions.includes(permission);
   const menu: Array<{ key: AdminTab; label: string; permission: string }> = [
     { key: "overview", label: "대시보드", permission: "overview.read" },
     { key: "players", label: "회원 관리", permission: "player.read" },
     { key: "identities", label: "계정 연동", permission: "identity.read" },
+    { key: "monitoring", label: "로그·모니터링", permission: "monitoring.read" },
     { key: "deletions", label: "탈퇴 관리", permission: "account.deletion.manage" },
     { key: "operators", label: "운영자·권한", permission: "operator.read" },
     { key: "audit", label: "감사 기록", permission: "audit.read" }
@@ -160,25 +255,62 @@ function AdminConsole({ session, csrfToken, onLogout }: { session: AdminSession;
   }
 
   async function load(target = tab, query = search) {
+    const requestId = ++loadRequestId.current;
     setLoading(true); setError(""); setSelectedPlayer(null);
     try {
-      if (target === "overview") { const payload = await api("/api/v1/admin/overview"); setOverview(payload.overview as JsonRecord); setItems([]); }
+      if (target === "overview") { const payload = await api("/api/v1/admin/overview"); setOverview(payload.overview as JsonRecord); if (requestId !== loadRequestId.current) return; setItems([]); setTotal(0); }
+      else if (target === "monitoring") {
+        const [media, deletedIncidents, editedIncidents, memberships, patterns, contents, failures] = await Promise.all([
+          api("/api/v1/admin/monitoring-events?group=media&page=1&limit=100"),
+          api("/api/v1/admin/moderation-incidents?type=deleted&page=1&limit=100"),
+          api("/api/v1/admin/moderation-incidents?type=edited&page=1&limit=100"),
+          api("/api/v1/admin/channel-membership-events?page=1&limit=100"),
+          api("/api/v1/admin/channel-membership-patterns?page=1&limit=100"),
+          api("/api/v1/admin/retained-event-contents?page=1&limit=100"),
+          api("/api/v1/admin/delivery-failures?page=1&limit=100")
+        ]);
+        if (requestId !== loadRequestId.current) return;
+        setMonitoring({
+          media: (media.items as JsonRecord[]) ?? [],
+          deletedIncidents: (deletedIncidents.items as JsonRecord[]) ?? [],
+          editedIncidents: (editedIncidents.items as JsonRecord[]) ?? [],
+          memberships: (memberships.items as JsonRecord[]) ?? [],
+          patterns: (patterns.items as JsonRecord[]) ?? [],
+          contents: (contents.items as JsonRecord[]) ?? [],
+          failures: (failures.items as JsonRecord[]) ?? []
+        });
+        setMonitoringTotals({
+          media: Number(media.total ?? 0), deletedIncidents: Number(deletedIncidents.total ?? 0), editedIncidents: Number(editedIncidents.total ?? 0),
+          memberships: Number(memberships.total ?? 0), patterns: Number(patterns.total ?? 0),
+          contents: Number(contents.total ?? 0),
+          failures: Number(failures.total ?? 0)
+        });
+        setItems([]);
+        setTotal(0);
+      }
       else {
         const paths: Record<Exclude<AdminTab, "overview">, string> = {
           players: `/api/v1/admin/players?search=${encodeURIComponent(query)}&page=1&limit=50`, identities: "/api/v1/admin/external-identities?status=candidate&page=1&limit=50",
+          activity: "/api/v1/admin/channel-activity?page=1&limit=100", incidents: "/api/v1/admin/moderation-incidents?page=1&limit=100",
+          monitoring: "/api/v1/admin/monitoring-events?page=1&limit=100",
           deletions: "/api/v1/admin/account-deletion-requests", operators: "/api/v1/admin/operators", audit: "/api/v1/admin/audit-entries?page=1&limit=100"
         };
-        const payload = await api(paths[target]); setItems((payload.items as JsonRecord[]) ?? []);
+        const payload = await api(paths[target]); if (requestId !== loadRequestId.current) return; setItems((payload.items as JsonRecord[]) ?? []); setTotal(Number(payload.total ?? 0));
       }
-    } catch (caught) { setError(caught instanceof Error ? caught.message : "데이터를 불러오지 못했어요."); }
-    finally { setLoading(false); }
+    } catch (caught) { if (requestId === loadRequestId.current) setError(caught instanceof Error ? caught.message : "데이터를 불러오지 못했어요."); }
+    finally { if (requestId === loadRequestId.current) setLoading(false); }
   }
 
   async function mutate(path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", values: JsonRecord, promptText: string) {
     const reason = window.prompt("변경 사유를 입력해 주세요.");
     if (!reason?.trim() || !window.confirm(promptText)) return;
-    await api(path, { method, headers: { "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ ...values, reason: reason.trim(), confirmed: true }) });
-    await load();
+    setError("");
+    try {
+      await api(path, { method, headers: { "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ ...values, reason: reason.trim(), confirmed: true }) });
+      await load();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "변경 요청을 처리하지 못했어요.");
+    }
   }
 
   useEffect(() => {
@@ -188,19 +320,83 @@ function AdminConsole({ session, csrfToken, onLogout }: { session: AdminSession;
 
   async function selectPlayer(playerId: string) { setError(""); try { const payload = await api(`/api/v1/admin/players/${playerId}`); setSelectedPlayer(payload.player as JsonRecord); } catch (caught) { setError(caught instanceof Error ? caught.message : "회원을 불러오지 못했어요."); } }
 
+  async function loadIncidentContent(incidentId: string) {
+    setError(""); setIncidentContentLoading(incidentId);
+    try {
+      const payload = await api(`/api/v1/admin/moderation-incidents/${incidentId}/content`);
+      setIncidentContents((current) => ({ ...current, [incidentId]: payload.incident as JsonRecord }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "원문을 조회하지 못했어요.");
+    } finally { setIncidentContentLoading(""); }
+  }
+
+  async function loadRetainedContent(contentId: string) {
+    setError(""); setRetainedContentLoading(contentId);
+    try {
+      const payload = await api(`/api/v1/admin/retained-event-contents/${contentId}`);
+      setRetainedContentDetails((current) => ({ ...current, [contentId]: payload.content as JsonRecord }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "보관된 내용을 조회하지 못했어요.");
+    } finally { setRetainedContentLoading(""); }
+  }
+
+  async function loadMembershipDetail(subject: JsonRecord) {
+    setError(""); setMembershipDetailLoading(true);
+    try {
+      const query = new URLSearchParams({
+        channelId: valueText(subject.channelId),
+        externalIdentityId: valueText(subject.externalIdentityId),
+        page: "1",
+        limit: "200"
+      });
+      const payload = await api(`/api/v1/admin/channel-membership-events?${query.toString()}`);
+      setMembershipDetail({ subject, items: (payload.items as JsonRecord[]) ?? [], total: Number(payload.total ?? 0) });
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "입장·퇴장 상세 기록을 불러오지 못했어요.");
+    } finally { setMembershipDetailLoading(false); }
+  }
+
+  function renderRetainedContents(eventItem: JsonRecord) {
+    const related = monitoring.contents.filter((content) => content.eventId === eventItem.eventId);
+    if (related.length === 0) {
+      return <small className="retained-content-status">{String(eventItem.eventCode).startsWith("media.video") ? "영상 파일 보관은 아직 적용되지 않았어요." : "보관된 내용이 없어요."}</small>;
+    }
+    return <div className="retained-content-group">{related.map((content, index) => {
+      const contentId = valueText(content.id);
+      const detail = retainedContentDetails[contentId];
+      return <div className="retained-content-item" key={contentId}><button disabled={retainedContentLoading === contentId} onClick={() => void loadRetainedContent(contentId)}>{retainedContentLoading === contentId ? "조회 중" : related.length > 1 ? `내용 ${index + 1} 보기` : "내용 보기"}</button>{detail !== undefined && <div className="retained-content-preview">{typeof detail.messageText === "string" && detail.messageText !== "" && <p><b>답글</b><br />{detail.messageText}</p>}{typeof detail.replySourceText === "string" && detail.replySourceText !== "" && <p><b>답글 대상</b><br />{detail.replySourceText}</p>}{detail.mediaAvailable === true && <img src={`/api/v1/admin/retained-event-contents/${contentId}/media`} alt={monitoringEventLabel(eventItem.eventCode)} />}{detail.mediaAvailable !== true && content.contentKind !== "reply" && <p>미디어 파일을 보관하지 못했거나 보관 기간이 끝났어요.</p>}</div>}</div>;
+    })}</div>;
+  }
+
   const overviewCards: Array<[string, unknown]> = [
     ["활성 회원", overview.activePlayers], ["활성 제재", overview.activeRestrictions], ["탈퇴 유예", overview.deletionGrace],
     ["연동 후보", overview.identityCandidates], ["Outbox 실패", overview.outboxFailures], ["운영자", overview.activeOperators]
   ];
+  const hasAssignablePlayer = Number(overview.activePlayers ?? 0) > 0;
 
   return <main className="console-page page-shell"><aside className="console-sidebar"><span className="admin-label">ADMIN CONSOLE</span><h2>운영 메뉴</h2>{menu.filter((item) => can(item.permission)).map((item) => <button key={item.key} className={tab === item.key ? "active" : ""} onClick={() => { setTab(item.key); void load(item.key); }}>{item.label}</button>)}<div className="console-operator"><strong>{session.displayName}</strong><span>{session.roleCodes.join(", ") || "권한 없음"}</span><small>{session.loginId}</small></div><button className="console-logout" onClick={() => void onLogout()}>로그아웃</button></aside><section className="console-content"><div className="console-heading"><div><span className="eyebrow">{tab.toUpperCase()}</span><h1>{menu.find((item) => item.key === tab)?.label}</h1><p>권한이 있는 운영 기능만 표시돼요. 모든 변경은 사유와 재확인이 필요합니다.</p></div><span className="console-session"><i />관리자 로그인됨</span></div>{error && <p className="form-error" role="alert">{error}</p>}{loading && <p className="console-loading">불러오는 중...</p>}
     {tab === "overview" && <><div className="console-status-grid"><article className="card"><span>Node.js 서버</span><strong>{readiness.server}</strong><small>hoiBot Server</small></article><article className="card"><span>MariaDB</span><strong>{readiness.database}</strong><small>데이터베이스</small></article><article className="card"><span>현재 권한</span><strong>{session.permissions.length}개</strong><small>{session.roleCodes.join(", ")}</small></article></div><div className="console-metric-grid">{overviewCards.map(([label, value]) => <article className="card" key={String(label)}><span>{label}</span><strong>{valueText(value)}</strong></article>)}</div><section className="card permission-panel"><h2>현재 권한</h2><div className="permission-list">{session.permissions.map((permission) => <span key={permission}>{permission}</span>)}</div></section></>}
-    {tab === "players" && <><form className="console-toolbar" onSubmit={(event) => { event.preventDefault(); void load("players", search); }}><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="캐릭터 이름 또는 Player ID" /><button>검색</button></form><div className="console-split"><section className="card console-list"><h2>회원 목록</h2>{items.map((item) => <button key={valueText(item.playerId)} onClick={() => void selectPlayer(valueText(item.playerId))}><strong>{valueText(item.displayName)}</strong><span>#{valueText(item.playerId)} · {valueText((item.server as JsonRecord | null)?.displayName)}</span></button>)}</section>{selectedPlayer && <section className="card console-detail"><h2>{valueText(selectedPlayer.displayName)}</h2><p>Player #{valueText(selectedPlayer.playerId)} · 버전 {valueText(selectedPlayer.profileVersion)}</p><dl><div><dt>서버</dt><dd>{valueText((selectedPlayer.server as JsonRecord | null)?.displayName)}</dd></div><div><dt>프리패스</dt><dd>{valueText((selectedPlayer.passes as JsonRecord[] | undefined)?.map((pass) => pass.code))}</dd></div><div><dt>제재</dt><dd>{valueText((selectedPlayer.restrictions as JsonRecord[] | undefined)?.map((row) => row.status))}</dd></div></dl><div className="console-actions">{can("player.server.assign") && <button onClick={() => { const code = window.prompt("배정할 서버 코드를 입력해 주세요."); if (code) void mutate(`/api/v1/admin/players/${valueText(selectedPlayer.playerId)}/server-assignment`, "PUT", { serverCode: code, expectedVersion: selectedPlayer.profileVersion }, "서버 배정을 변경할까요?"); }}>서버 배정</button>}{can("pass.grant") && <button onClick={() => { const code = window.prompt("프리패스 코드를 입력해 주세요.", "premium"); if (code) void mutate(`/api/v1/admin/players/${valueText(selectedPlayer.playerId)}/passes/${code}`, "PUT", { permanent: true }, "영구 프리패스를 지급할까요?"); }}>프리패스 지급</button>}{can("account.restrict") && <button className="danger" onClick={() => void mutate(`/api/v1/admin/players/${valueText(selectedPlayer.playerId)}/restrictions`, "POST", { restrictionType: "permanent_suspension" }, "이 계정을 영구 정지할까요?")}>영구 정지</button>}</div></section>}</div></>}
-    {tab === "identities" && <section className="card console-table"><h2>연동 후보</h2>{items.length === 0 ? <p>대기 중인 연동 후보가 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><span>{valueText(item.providerCode)}</span><strong>{valueText(item.displayName)}</strong><small>{valueText(item.externalUserId)}</small>{can("identity.assign") && <button onClick={() => { const playerId = window.prompt("연결할 Player ID를 입력해 주세요."); if (playerId) void mutate(`/api/v1/admin/external-identities/${valueText(item.id)}/player-assignment`, "PUT", { playerId }, "외부 계정을 연결할까요?"); }}>연결</button>}</div>)}</section>}
-    {tab === "deletions" && <section className="card console-table"><h2>30일 탈퇴 유예</h2>{items.length === 0 ? <p>처리할 탈퇴 요청이 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><strong>요청 #{valueText(item.id)}</strong><span>Player #{valueText(item.playerId)}</span><small>{valueText(item.scheduledDeleteAt)}</small><button onClick={() => void mutate(`/api/v1/admin/account-deletion-requests/${valueText(item.id)}`, "PATCH", { status: "recovered" }, "이 계정을 복구할까요?")}>복구</button></div>)}</section>}
-    {tab === "operators" && <section className="card console-table"><h2>운영자와 권한</h2>{items.map((item) => <div key={valueText(item.id)}><strong>{valueText(item.displayName)}</strong><span>{valueText(item.loginId)}</span><small>{valueText(item.roleCodes)} · {valueText(item.status)}</small>{can("authorization.manage") && !((item.roleCodes as unknown[] | undefined)?.includes("super_admin")) && <button onClick={() => { const permissionCode = window.prompt("부여할 권한 코드를 입력해 주세요."); if (permissionCode) void mutate(`/api/v1/admin/operators/${valueText(item.id)}/permission-overrides/${permissionCode}`, "PUT", { effect: "allow" }, "이 권한을 부여할까요?"); }}>권한 부여</button>}</div>)}</section>}
-    {tab === "audit" && <section className="card console-table"><h2>변경 감사 기록</h2>{items.map((item) => <div key={valueText(item.id)}><strong>{valueText(item.actionCode)}</strong><span>{valueText(item.targetType)} #{valueText(item.targetId)}</span><small>{valueText(item.reason)} · {valueText(item.createdAt)}</small></div>)}</section>}
-  </section></main>;
+    {tab === "players" && <><form className="console-toolbar" onSubmit={(event) => { event.preventDefault(); void load("players", search); }}><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="캐릭터 이름 또는 Player ID" /><button>검색</button></form><div className="console-split"><section className="card console-list"><h2>회원 목록 <small>전체 {numberText(total)}명</small></h2>{items.length === 0 ? <p>조건에 맞는 실제 회원이 없어요.</p> : items.map((item) => <button key={valueText(item.playerId)} onClick={() => void selectPlayer(valueText(item.playerId))}><strong>{valueText(item.displayName)}</strong><span>#{valueText(item.playerId)} · {valueText((item.server as JsonRecord | null)?.displayName)}</span></button>)}</section>{selectedPlayer && <section className="card console-detail"><h2>{valueText(selectedPlayer.displayName)}</h2><p>Player #{valueText(selectedPlayer.playerId)} · 버전 {valueText(selectedPlayer.profileVersion)}</p><dl><div><dt>서버</dt><dd>{valueText((selectedPlayer.server as JsonRecord | null)?.displayName)}</dd></div><div><dt>프리패스</dt><dd>{valueText((selectedPlayer.passes as JsonRecord[] | undefined)?.map((pass) => pass.code))}</dd></div><div><dt>제재</dt><dd>{valueText((selectedPlayer.restrictions as JsonRecord[] | undefined)?.map((row) => row.status))}</dd></div></dl><div className="console-actions">{can("player.server.assign") && <button onClick={() => { const code = window.prompt("배정할 서버 코드를 입력해 주세요."); if (code) void mutate(`/api/v1/admin/players/${valueText(selectedPlayer.playerId)}/server-assignment`, "PUT", { serverCode: code, expectedVersion: selectedPlayer.profileVersion }, "서버 배정을 변경할까요?"); }}>서버 배정</button>}{can("pass.grant") && <button onClick={() => { const code = window.prompt("프리패스 코드를 입력해 주세요.", "premium"); if (code) void mutate(`/api/v1/admin/players/${valueText(selectedPlayer.playerId)}/passes/${code}`, "PUT", { permanent: true }, "영구 프리패스를 지급할까요?"); }}>프리패스 지급</button>}{can("account.restrict") && <button className="danger" onClick={() => void mutate(`/api/v1/admin/players/${valueText(selectedPlayer.playerId)}/restrictions`, "POST", { restrictionType: "permanent_suspension" }, "이 계정을 영구 정지할까요?")}>영구 정지</button>}</div></section>}</div></>}
+    {tab === "identities" && <section className="card console-table"><h2>연동 후보 <small>전체 {numberText(total)}건 · 최대 {numberText(items.length)}건 표시</small></h2>{!hasAssignablePlayer && total > 0 && <p className="monitoring-note">연결할 활성 캐릭터가 없어 연결 기능을 숨겼어요. 회원가입과 카카오톡 인증이 완료된 캐릭터가 생기면 사용할 수 있어요.</p>}{items.length === 0 ? <p>대기 중인 연동 후보가 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><span>{valueText(item.providerCode)}</span><strong>{item.displayName ? valueText(item.displayName) : "검증된 이름 없음"}</strong><small>미검증 관측명 {valueText(item.observedDisplayName)} · 신뢰 상태 {valueText(item.observedNameTrust)} · 계정 키 {valueText(item.externalUserId)}</small>{can("identity.assign") && hasAssignablePlayer && <button onClick={() => { const playerId = window.prompt("연결할 Player ID를 입력해 주세요."); if (playerId) void mutate(`/api/v1/admin/external-identities/${valueText(item.id)}/player-assignment`, "PUT", { playerId }, "외부 계정을 연결할까요?"); }}>연결</button>}</div>)}</section>}
+    {tab === "monitoring" && <div className="monitoring-grid">
+      <nav className="monitoring-subnav" aria-label="모니터링 메뉴">{([
+        ["summary", "종합 현황"], ["deletions", "삭제·가리기"], ["edits", "메시지 수정"], ["patterns", "들낙"],
+        ["memberships", "입장·퇴장"], ["media", "미디어 (이미지·영상)"], ["failures", "처리 이상"]
+      ] as Array<[MonitoringSection, string]>).map(([key, label]) => <button key={key} className={monitoringSection === key ? "active" : ""} onClick={() => setMonitoringSection(key)}>{label}</button>)}</nav>
+      {monitoringSection === "summary" && <><div className="console-metric-grid monitoring-summary"><article className="card"><span>삭제·가리기</span><strong>{numberText(monitoringTotals.deletedIncidents)}</strong></article><article className="card"><span>메시지 수정</span><strong>{numberText(monitoringTotals.editedIncidents)}</strong></article><article className="card"><span>들낙</span><strong>{numberText(monitoringTotals.patterns)}</strong></article><article className="card"><span>입장·퇴장</span><strong>{numberText(monitoringTotals.memberships)}</strong></article><article className="card"><span>미디어 (이미지·영상)</span><strong>{numberText(monitoringTotals.media)}</strong></article><article className="card"><span>처리 이상</span><strong>{numberText(monitoringTotals.failures)}</strong></article></div><section className="card console-table"><h2>모니터링 안내</h2><p className="monitoring-note">위 수치는 MariaDB 전체 건수예요. 삭제·가리기와 메시지 수정은 각각 분리해 표시해요. 검색·링크는 내용을 확인할 수 없어 제외했고, 답글과 이모지도 별도 메뉴에 표시하지 않아요.</p></section></>}
+      {monitoringSection === "deletions" && <section className="card console-table"><h2>삭제·가리기 기록 <small>전체 {numberText(monitoringTotals.deletedIncidents)}건</small></h2>{monitoring.deletedIncidents.length === 0 ? <p>감지된 삭제·가리기가 없어요.</p> : monitoring.deletedIncidents.map((item) => { const incidentId = valueText(item.id); const content = incidentContents[incidentId]; const original = content?.originalMessage as JsonRecord | undefined; return <div key={incidentId}><strong>{item.incidentType === "message_hidden_by_host" ? "방장 가리기" : "메시지 삭제"} · #{incidentId}</strong><span><b>방</b> {monitoringName(item.channelName, "이름 미확인")} · <b>사용자</b> {monitoringName(item.verifiedDisplayName, "이름 미확인")}</span><small>{monitoringDate(item.occurredAt)}</small><button disabled={incidentContentLoading === incidentId} onClick={() => void loadIncidentContent(incidentId)}>{incidentContentLoading === incidentId ? "조회 중" : content === undefined ? "원문 보기" : "다시 조회"}</button>{content !== undefined && <p className="incident-content">{monitoringMessageText(original)}</p>}</div>; })}</section>}
+      {monitoringSection === "edits" && <section className="card console-table"><h2>메시지 수정 기록 <small>전체 {numberText(monitoringTotals.editedIncidents)}건</small></h2><p className="monitoring-note">원문 보기를 누르면 redroid의 현재 기록에서 수정 전과 수정 후를 함께 조회해요.</p>{monitoring.editedIncidents.length === 0 ? <p>감지된 메시지 수정이 없어요.</p> : monitoring.editedIncidents.map((item) => { const incidentId = valueText(item.id); const content = incidentContents[incidentId]; const edited = content?.editedMessage as JsonRecord | undefined; const before = edited?.before as JsonRecord | undefined; const after = edited?.after as JsonRecord | undefined; return <div key={incidentId}><strong>메시지 수정 · #{incidentId}</strong><span><b>방</b> {monitoringName(item.channelName, "이름 미확인")} · <b>사용자</b> {monitoringName(item.verifiedDisplayName, "이름 미확인")}</span><small>{monitoringDate(item.occurredAt)}</small><button disabled={incidentContentLoading === incidentId} onClick={() => void loadIncidentContent(incidentId)}>{incidentContentLoading === incidentId ? "조회 중" : content === undefined ? "수정 전·후 보기" : "다시 조회"}</button>{content !== undefined && <div className="incident-edit-content"><p><b>수정 전</b><br />{monitoringMessageText(before)}</p><p><b>수정 후</b><br />{monitoringMessageText(after)}</p></div>}</div>; })}</section>}
+      {monitoringSection === "patterns" && <section className="card console-table"><h2>들낙 감지</h2><p className="monitoring-note">기간 제한 없이 같은 방에 2회 이상 입장하거나 2회 이상 퇴장한 사용자를 보여줘요.</p>{monitoring.patterns.length === 0 ? <p>반복 입장·퇴장이 감지된 사용자가 없어요.</p> : monitoring.patterns.map((item) => <div key={`${valueText(item.channelId)}-${valueText(item.externalIdentityId)}`}><strong>반복 {valueText(item.repeatCount)}회</strong><span><b>방</b> {monitoringName(item.channelName, "이름 미확인")} · <b>사용자</b> {monitoringName(item.verifiedDisplayName, "이름 미확인")}</span><small>입장 {valueText(item.joinedCount)}회 · 퇴장 {valueText(item.departedCount)}회 · 최근 {monitoringDate(item.lastOccurredAt)}</small><button disabled={membershipDetailLoading} onClick={() => void loadMembershipDetail(item)}>{membershipDetailLoading ? "불러오는 중" : "상세 보기"}</button></div>)}</section>}
+      {monitoringSection === "memberships" && <section className="card console-table"><h2>입장·퇴장 기록</h2>{monitoring.memberships.length === 0 ? <p>감지된 입장·퇴장이 없어요.</p> : monitoring.memberships.map((item) => <div key={valueText(item.id)}><strong>{item.membershipEventCode === "joined" ? "입장" : "퇴장"}</strong><span><b>방</b> {monitoringName(item.channelName, "이름 미확인")} · <b>사용자</b> {monitoringName(item.verifiedDisplayName, "이름 미확인")}</span><small>{monitoringDate(item.occurredAt)}</small></div>)}</section>}
+      {monitoringSection === "media" && <section className="card console-table"><h2>미디어 (이미지·영상) <small>전체 {numberText(monitoringTotals.media)}건</small></h2><p className="monitoring-note">이미지, 다중 이미지와 영상 감지만 모아 보여줘요. 영상 파일 저장은 아직 적용되지 않았어요.</p>{monitoring.media.length === 0 ? <p>감지된 이미지·영상이 없어요.</p> : monitoring.media.map((item) => <div key={valueText(item.id)}><strong>{monitoringEventLabel(item.eventCode)}</strong><span><b>방</b> {monitoringName(item.channelName, "이름 미확인")} · <b>사용자</b> {monitoringName(item.verifiedDisplayName, "이름 미확인")}</span><small>{monitoringDate(item.occurredAt)}</small>{can("event.content.read") && renderRetainedContents(item)}</div>)}</section>}
+      {monitoringSection === "failures" && <section className="card console-table"><h2>처리 이상</h2>{monitoring.failures.length === 0 ? <p>현재 확인이 필요한 전송 실패가 없어요.</p> : monitoring.failures.map((item) => <div key={valueText(item.id)}><strong>{item.status === "dead_letter" ? "반복 전송 실패" : "전송 재시도 중"}</strong><span>시도 {valueText(item.attemptCount)}회</span><small>{monitoringDate(item.createdAt)}</small></div>)}</section>}
+    </div>}
+    {tab === "activity" && <section className="card console-table"><h2>본문을 저장하지 않는 일별 활동량</h2>{items.length === 0 ? <p>집계된 활동이 없어요.</p> : items.map((item, index) => <div key={`${valueText(item.channelId)}-${valueText(item.externalIdentityId)}-${valueText(item.activityDate)}-${index}`}><strong>{item.verifiedDisplayName ? valueText(item.verifiedDisplayName) : "미연결 사용자"}</strong><span>메시지 {valueText(item.messageCount)} · 미디어 {valueText(item.mediaCount)} · 답글 {valueText(item.replyCount)} · 멘션 {valueText(item.mentionCount)}</span><small>{valueText(item.activityDate)} · Iris 관측명(미신뢰) {valueText(item.observedDisplayName)}</small></div>)}</section>}
+    {tab === "incidents" && <section className="card console-table"><h2>수정·삭제 감지 사건</h2>{items.length === 0 ? <p>감지된 사건이 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><strong>{valueText(item.incidentType)}</strong><span>상태 {valueText(item.status)} · 대상 이벤트 {valueText(item.targetProviderEventId)}</span><small>{valueText(item.occurredAt)} · 원문 메시지는 저장하지 않아요.</small></div>)}</section>}
+    {tab === "deletions" && <section className="card console-table"><h2>30일 탈퇴 유예 <small>전체 {numberText(total)}건</small></h2>{items.length === 0 ? <p>처리할 탈퇴 요청이 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><strong>요청 #{valueText(item.id)}</strong><span>Player #{valueText(item.playerId)}</span><small>{monitoringDate(item.scheduledDeleteAt)}</small><button onClick={() => void mutate(`/api/v1/admin/account-deletion-requests/${valueText(item.id)}`, "PATCH", { status: "recovered" }, "이 계정을 복구할까요?")}>복구</button></div>)}</section>}
+    {tab === "operators" && <section className="card console-table"><h2>운영자와 권한 <small>전체 {numberText(total)}명</small></h2>{items.length === 0 ? <p>등록된 운영자가 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><strong>{valueText(item.displayName)}</strong><span>{valueText(item.loginId)}</span><small>{valueText(item.roleCodes)} · {valueText(item.status)}</small>{can("authorization.manage") && !((item.roleCodes as unknown[] | undefined)?.includes("super_admin")) && <button onClick={() => { const permissionCode = window.prompt("부여할 권한 코드를 입력해 주세요."); if (permissionCode) void mutate(`/api/v1/admin/operators/${valueText(item.id)}/permission-overrides/${permissionCode}`, "PUT", { effect: "allow" }, "이 권한을 부여할까요?"); }}>권한 부여</button>}</div>)}</section>}
+    {tab === "audit" && <section className="card console-table"><h2>변경 감사 기록 <small>전체 {numberText(total)}건 · 최신 {numberText(items.length)}건 표시</small></h2>{items.length === 0 ? <p>기록된 관리자 변경이 없어요.</p> : items.map((item) => <div key={valueText(item.id)}><strong>{valueText(item.actionCode)}</strong><span>{valueText(item.targetType)} #{valueText(item.targetId)}</span><small>{valueText(item.reason)} · {monitoringDate(item.createdAt)}</small></div>)}</section>}
+  </section>{membershipDetail !== null && <div className="console-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setMembershipDetail(null); }}><section className="card console-modal" role="dialog" aria-modal="true" aria-labelledby="membership-detail-title"><div className="console-modal-heading"><div><span className="eyebrow">MEMBERSHIP HISTORY</span><h2 id="membership-detail-title">입장·퇴장 상세</h2><p><b>방</b> {monitoringName(membershipDetail.subject.channelName, "이름 미확인")} · <b>사용자</b> {monitoringName(membershipDetail.subject.verifiedDisplayName, "이름 미확인")}</p></div><button aria-label="닫기" onClick={() => setMembershipDetail(null)}>닫기</button></div><div className="membership-history-summary"><span>입장 {valueText(membershipDetail.subject.joinedCount)}회</span><span>퇴장 {valueText(membershipDetail.subject.departedCount)}회</span><span>전체 {numberText(membershipDetail.total)}건</span></div><div className="membership-history-list">{membershipDetail.items.length === 0 ? <p>확인할 입장·퇴장 기록이 없어요.</p> : membershipDetail.items.map((item) => <div key={valueText(item.id)}><strong>{item.membershipEventCode === "joined" ? "입장" : "퇴장"}</strong><span>{monitoringDate(item.occurredAt)}</span></div>)}</div>{membershipDetail.total > membershipDetail.items.length && <small>최신 {numberText(membershipDetail.items.length)}건까지 표시해요.</small>}</section></div>}</main>;
 }
 
 function Signup({ onHome, onLogin, mode = "new" }: {
@@ -279,10 +475,10 @@ function Signup({ onHome, onLogin, mode = "new" }: {
       <div className="signup-intro">
         <h1>카카오톡에서 시작하고,<br />어디서든 이어서 플레이해요.</h1>
         <p>사이트 계정을 먼저 만든 뒤 카카오톡에서 한 번만 인증하면 돼요. 이메일과 전화번호는 받지 않아요.</p>
-        <ol><li><b>1</b><span>사이트 계정과 캐릭터 이름 만들기</span></li><li><b>2</b><span>카카오톡의 HOIBOT 프로필에 인증코드 입력하기</span></li><li><b>3</b><span>같은 캐릭터로 명령어 사용하기</span></li></ol>
+        <ol><li><b>1</b><span>사이트 계정과 캐릭터 이름 만들기</span></li><li><b>2</b><span>카카오톡의 호월봇 프로필에 인증코드 입력하기</span></li><li><b>3</b><span>같은 캐릭터로 명령어 사용하기</span></li></ol>
       </div>
       <section className="card signup-card">
-        {status === "verified" ? <div className="signup-success"><span>✓</span><h2>연동이 완료됐어요</h2><p>이제 카카오톡의 HOIBOT 프로필에서 <strong>{systemAccountName}</strong> 이름으로 명령어를 사용할 수 있어요.</p><button className="primary-action" onClick={onLogin}>로그인하기</button><button className="text-button" onClick={onHome}>홈으로 가기</button></div>
+        {status === "verified" ? <div className="signup-success"><span>✓</span><h2>연동이 완료됐어요</h2><p>이제 카카오톡의 호월봇 프로필에서 <strong>{systemAccountName}</strong> 이름으로 명령어를 사용할 수 있어요.</p><button className="primary-action" onClick={onLogin}>로그인하기</button><button className="text-button" onClick={onHome}>홈으로 가기</button></div>
           : result ? <div className="verification-panel"><span className="eyebrow">KAKAOTALK VERIFICATION</span><h2>카카오톡에서 인증해 주세요</h2><p>현재 닉네임을 <strong>{systemAccountName}</strong>(으)로 맞춘 뒤 봇이 있는 방에 아래 명령어를 보내세요.</p><div className="verification-code">/인증 {result.verificationCode}</div><small>인증코드는 {new Date(result.codeExpiresAt).toLocaleString("ko-KR")}까지 한 번만 사용할 수 있어요.</small>{status === "pending" || status === "PENDING" ? <div className="waiting"><span className="live-dot" />카카오톡 인증을 기다리는 중이에요</div> : <div className="verification-reissue"><p>인증코드가 더 이상 유효하지 않아요.</p><button className="primary-action" disabled={submitting} onClick={reissue}>{submitting ? "다시 발급 중..." : "새 인증코드 발급"}</button>{error && <p className="form-error" role="alert">{error}</p>}</div>}</div>
           : mode === "resume" ? <form onSubmit={(event) => { event.preventDefault(); void reissue(); }} className="signup-form">
             <h2>카카오톡 인증 계속하기</h2><p className="form-description">가입할 때 만든 아이디와 비밀번호를 확인한 뒤 새 인증코드를 발급해요.</p>
@@ -317,29 +513,31 @@ function SearchBar({ initial = "", onSearch, compact = false }: { initial?: stri
 }
 
 function Home({ onSearch, onSignup }: { onSearch: (name: string) => void; onSignup: () => void }) {
+  const [overview, setOverview] = useState<PublicOverview | null>(null);
+  const [overviewUnavailable, setOverviewUnavailable] = useState(false);
+  useEffect(() => {
+    void fetch("/api/v1/public/overview").then(async (response) => {
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error("overview unavailable");
+      setOverview(payload as PublicOverview);
+    }).catch(() => setOverviewUnavailable(true));
+  }, []);
+  const metrics = overview?.metrics;
+  const databaseReady = overview?.service.database === "ready";
   return <>
     <section className="hero">
-      <div className="hero-copy"><span className="eyebrow">ACCOUNT</span><h1>계정을 만들고<br />카카오톡과 연결해요.</h1><p>사이트에서 계정을 만든 뒤 발급된 인증코드를<br />HOIBOT 프로필에 입력하면 가입이 완료돼요.</p></div>
+      <div className="hero-copy"><span className="eyebrow">ACCOUNT</span><h1>계정을 만들고<br />카카오톡과 연결해요.</h1><p>사이트에서 계정을 만든 뒤 발급된 인증코드를<br />호월봇 프로필에 입력하면 가입이 완료돼요.</p></div>
       <div className="hero-orbit" aria-hidden="true"><span className="orb orb-a">✦</span><span className="orb orb-b">H</span><span className="orb orb-c">♢</span><div className="orbit-ring" /></div>
       {visibleFeatures.playerSearch ? <SearchBar onSearch={onSearch} /> : <button className="hero-signup" onClick={onSignup}>회원가입 시작하기</button>}
     </section>
 
     <main className="page-shell home-content">
-      {visibleFeatures.operationalDashboard && <><div className="quick-grid">
-        <article className="card status-card"><div className="card-title"><Icon>◉</Icon><span>서버 상태</span></div><strong><span className="live-dot" />모든 시스템 정상</strong><p>Iris · API · MariaDB 연결됨</p></article>
-        <article className="card"><div className="card-title"><Icon>♙</Icon><span>등록 모험가</span></div><strong className="metric">610</strong><p>오늘 신규 가입 3명</p></article>
-        <article className="card"><div className="card-title"><Icon>⌁</Icon><span>오늘의 명령</span></div><strong className="metric">12,482</strong><p>어제보다 8.4% 증가</p></article>
-        <article className="card accent-card"><span className="eyebrow">LIVE EVENT</span><h3>별빛 미니펫 페스타</h3><p>이벤트 종료까지 2일 18시간</p><div className="progress"><span /></div></article>
+      <div className="quick-grid live-overview" aria-live="polite">
+        <article className="card status-card"><div className="card-title"><Icon>◉</Icon><span>서버 상태</span></div><strong>{overviewUnavailable ? "연결 확인 필요" : overview === null ? "확인 중" : databaseReady ? <><span className="live-dot" />정상</> : "DB 점검 필요"}</strong><p>hoiBot API · MariaDB 실시간 확인</p></article>
+        <article className="card"><div className="card-title"><Icon>♙</Icon><span>활성 캐릭터</span></div><strong className="metric">{metrics ? numberText(metrics.activePlayers) : "-"}</strong><p>현재 MariaDB 기준</p></article>
+        <article className="card"><div className="card-title"><Icon>⌁</Icon><span>관찰 채널</span></div><strong className="metric">{metrics ? numberText(metrics.activeChannels) : "-"}</strong><p>활성 Iris 채널</p></article>
+        <article className="card"><div className="card-title"><Icon>↗</Icon><span>최근 24시간 이벤트</span></div><strong className="metric">{metrics ? numberText(metrics.eventsLast24Hours) : "-"}</strong><p>{metrics?.lastEventAt ? `최근 수신 ${monitoringDate(metrics.lastEventAt)}` : "수신 기록 없음"}</p></article>
       </div>
-
-      <div className="home-layout">
-        <section className="card notice-card"><div className="section-heading"><div><span className="eyebrow">NOTICE</span><h2>호이랜드 소식</h2></div><button className="text-button">전체보기 →</button></div>
-          <ul className="notice-list"><li><span className="notice-tag important">중요</span><strong>신규 Iris 서버 전환 사전 안내</strong><time>08.05</time></li><li><span className="notice-tag update">업데이트</span><strong>거래소 수수료 원장과 길드 창고 개선</strong><time>08.04</time></li><li><span className="notice-tag event">이벤트</span><strong>여름 출석 이벤트 보상 안내</strong><time>08.03</time></li></ul>
-        </section>
-        <section className="card ranking-card"><div className="section-heading"><div><span className="eyebrow">RANKING</span><h2>레벨 TOP 4</h2></div><button className="text-button">더보기 →</button></div>
-          <ol>{ranking.map((row) => <li key={row.rank}><span className={`rank ${row.accent ?? ""}`}>{row.rank}</span><span className="mini-avatar">{row.name.slice(0, 1)}</span><strong>{row.name}</strong><em>{row.value}</em></li>)}</ol>
-        </section>
-      </div></>}
 
       {visibleFeatures.futureOverview && <section className="feature-banner"><div><span className="eyebrow">NEW FEATURE</span><h2>내 캐릭터의 모든 기록이<br />하나의 이야기로 이어져요.</h2><p>재화 원장부터 길드와 홈 활동까지 안전하게 기록하고 보여드립니다.</p></div><div className="banner-cards"><span>💎<b>다이아</b></span><span>🐾<b>펫 성장</b></span><span>🏡<b>마이 홈</b></span></div></section>}
     </main>

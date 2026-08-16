@@ -303,7 +303,7 @@ export class SignupService {
       }
 
       const operationId = await createOperation(transaction, identity.id, scope, command.eventId);
-      const playerId = await createInitialPlayer(transaction, signup.display_name, command.channelId);
+      const playerId = await createInitialPlayer(transaction, signup.display_name, command.channelId, identity.id);
       const identityLink = await transaction.execute(
         "UPDATE external_identities SET player_id = ?, status = 'linked', updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND player_id IS NULL",
         [playerId, identity.id]

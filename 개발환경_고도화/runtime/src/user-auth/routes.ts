@@ -5,9 +5,11 @@ import {
   USER_AUTH_RATE_WINDOW_MS
 } from "./policy.js";
 import type { RequestRateLimiter } from "./request-rate-limiter.js";
+import type { ProfileRepository } from "../player/profile.js";
 
 interface UserRouteDependencies {
   auth: UserAuthService;
+  profiles: ProfileRepository;
   rateLimiter: RequestRateLimiter;
   secureCookies: boolean;
 }
@@ -85,6 +87,15 @@ export async function registerUserAuthRoutes(app: FastifyInstance, dependencies:
   app.get("/api/v1/sessions/current", async (request) => {
     const refreshed = await dependencies.auth.refreshSession(request.cookies[USER_SESSION_COOKIE] ?? "");
     return { ok: true, session: refreshed.session, csrfToken: refreshed.csrfToken, requestId: request.id };
+  });
+
+  app.get("/api/v1/player-profiles/current", async (request) => {
+    const refreshed = await dependencies.auth.refreshSession(request.cookies[USER_SESSION_COOKIE] ?? "");
+    const profile = await dependencies.profiles.findByPlayerId(refreshed.session.playerId);
+    if (profile === null) {
+      throw new ApplicationError("PLAYER_PROFILE_NOT_FOUND", "캐릭터 정보를 찾을 수 없습니다.", 404);
+    }
+    return { ok: true, profile, requestId: request.id };
   });
 
   app.delete("/api/v1/sessions/current", async (request, reply) => {

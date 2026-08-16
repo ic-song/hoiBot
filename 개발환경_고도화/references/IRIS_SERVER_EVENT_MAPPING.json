@@ -1,10 +1,10 @@
 {
-  "schemaVersion": 2,
-  "updatedAt": "2026-08-04",
+  "schemaVersion": 5,
+  "updatedAt": "2026-08-07",
   "purpose": "Machine-readable metadata and event mapping for the hoiBot Server Iris normalization layer.",
   "sourceTable": "db1.chat_logs",
   "sourcePayload": "Iris HTTP/WebSocket payload",
-  "metadataDocument": "KAKAOTALK_DB_SCHEMA_INVENTORY.md",
+  "metadataDocument": "KAKAOTALK_IRIS_QUERY_ERD.md",
   "validationDocument": "IRIS_EVENT_CAPABILITY_MATRIX.md",
   "sourceReferences": [
     "https://github.com/dolidolih/Iris/blob/main/app/src/main/java/party/qwer/iris/ObserverHelper.kt",
@@ -31,14 +31,52 @@
     "live_confirmed": "Implement against the observed shape with validation and fallback handling.",
     "upstream_confirmed": "Implement with upstream behavior tests and retain an unknown fallback.",
     "db_confirmed": "Keep a raw/probe handler until a dedicated live payload test passes.",
+    "candidate": "Expose a labeled candidate with field names only; do not run domain behavior or activity aggregation.",
     "unverified": "Do not enable production behavior; record only approved metadata in test mode.",
     "not_direct": "Requires a separate table observer or snapshot-diff adapter."
+  },
+  "moderationIncidentWorkflow": {
+    "alert": "Show #moderation_incidents.id, verified room name, and verified room-scoped participant name without the recovered body.",
+    "readCommandPattern": "^/열람\\s+#[1-9]\\d{0,19}$",
+    "readScope": [
+      "incident_source_channel",
+      "configured_non_production_monitor_channel"
+    ],
+    "contentSource": "Live indexed db1.chat_logs lookup by source chat_id and target provider log ID.",
+    "participantNameSource": "db2.open_chat_member.nickname scoped by room link_id and the target chat_logs row user_id; the system-event user_id is only a fallback.",
+    "roomNamePriority": [
+      "db2.open_link.name",
+      "db1.chat_rooms.meta type=3 content"
+    ],
+    "plaintextRetention": "none"
+  },
+  "membershipLogWorkflow": {
+    "joinShape": "type=0, origin=NEWMEM, feedType=4, exactly one members[0].userId/nickName",
+    "departureShape": "type=0, origin=DELMEM, feedType=2, exactly one member.userId/nickName",
+    "identityKey": "String-safe embedded userId scoped to the Kakao provider; top-level user_id is fallback only.",
+    "displayNameSource": "Embedded membership-feed nickName stored as a verified room-scoped observation.",
+    "history": "Append-only channel_membership_events joined/departed rows.",
+    "summary": [
+      "visit count",
+      "first join",
+      "previous departure",
+      "current event time",
+      "message count",
+      "deletion count",
+      "previous verified nicknames",
+      "latest five membership events"
+    ],
+    "unsupported": [
+      "voluntary departure versus kick discrimination",
+      "warning count",
+      "first or last chat message bodies"
+    ]
   },
   "rawPayloadShape": {
     "topLevelFields": {
       "msg": "Decrypted message text or empty string.",
       "room": "Mutable room display label; never an identity key.",
-      "sender": "Mutable sender display label resolved by Iris; never an identity key.",
+      "sender": "Untrusted mutable display label resolved by the Iris name cache; diagnostics only and never an identity or authorization key.",
       "json": "Source chat_logs row with string-safe values."
     },
     "jsonEncodedStringFields": [
@@ -195,9 +233,18 @@
     "providerIdsAreStrings": true,
     "displayLabelsAreMutable": true,
     "senderNameIsIdentity": false,
+    "irisSenderTrust": "untrusted",
+    "irisSenderStorage": "append_only_observation_only",
+    "canonicalNameUpdateAllowed": false,
     "roomNameIsIdentity": false,
     "openChatMayRequireAdditionalContext": ["link_id", "profile_link_id"],
     "nameCacheWarning": "Iris /data/local/tmp/names.db can retain prior-account display labels after KakaoTalk application data is reset."
+  },
+  "channelPolicy": {
+    "stage1": "Require verified open-chat database evidence: OM plus a matching active and unexpired open_link for the currently verified open-group mapping.",
+    "stage2": "Require the string-safe chat_id in IRIS_ALLOWED_OPEN_CHAT_IDS for operational processing.",
+    "diagnosticException": "A configured non-production monitor room can run ping, info, and non-mutating event diagnostics only.",
+    "deniedHandling": "Return HTTP 202 to prevent retries, then stop before raw recent-event retention, identity observation, activity aggregation, incidents, commands, and outbox."
   },
   "upstreamSuppressedOrigins": [
     "SYNCMSG",
@@ -215,6 +262,19 @@
       "normalizedKind": "text"
     },
     {
+      "id": "message.thread_reply",
+      "status": "upstream_confirmed",
+      "match": {
+        "type": [26],
+        "origin": ["MSG", "WRITE"],
+        "requiredPaths": ["parsed.attachment.src_logId"],
+        "requiredValues": { "parsed.attachment.src_isThread": true }
+      },
+      "normalizedEvent": "message.created.thread_reply",
+      "normalizedKind": "thread_reply",
+      "notes": ["Kept separate from ordinary replies until a live thread-reply row is isolated."]
+    },
+    {
       "id": "message.reply",
       "status": "live_confirmed",
       "match": {
@@ -228,7 +288,7 @@
     },
     {
       "id": "message.edited",
-      "status": "db_confirmed",
+      "status": "live_confirmed",
       "match": {
         "type": [0],
         "origin": ["SYNCMODMSG"]
@@ -241,23 +301,46 @@
         "parsed.systemMessage.hidden",
         "parsed.systemMessage.targetRevision"
       ],
-      "notes": ["Keep disabled for production mutation until a dedicated live edit test confirms correlation and content semantics."]
+      "notes": ["Live delivery is confirmed; keep production mutation disabled until a controlled edit test confirms correlation and content semantics."]
     },
     {
       "id": "message.deleted",
-      "status": "db_confirmed",
+      "status": "live_confirmed",
       "match": {
         "type": [0],
         "origin": ["SYNCDLMSG"]
       },
       "normalizedEvent": "message.deleted",
       "normalizedKind": "raw_delete",
-      "candidatePaths": [
+      "observedPaths": [
         "parsed.systemMessage.logId",
         "parsed.systemMessage.feedType",
         "parsed.systemMessage.hidden",
         "parsed.systemMessage.byHost"
-      ]
+      ],
+      "notes": ["Live delivery and target correlation are confirmed. Two controlled deleted-text rows recovered plaintext through an indexed full-context Iris query; media and retention duration remain unverified."]
+    },
+    {
+      "id": "message.hidden_by_host",
+      "status": "live_confirmed",
+      "match": {
+        "type": [0],
+        "origin": ["SYNCREWR"],
+        "systemMessage": {
+          "feedType": 26,
+          "coverType": "openchat_blind"
+        }
+      },
+      "normalizedEvent": "message.hidden_by_host",
+      "normalizedKind": "moderation",
+      "observedPaths": [
+        "parsed.systemMessage.logId",
+        "parsed.systemMessage.chatLogInfos[].logId",
+        "parsed.systemMessage.feedType",
+        "parsed.systemMessage.coverType",
+        "parsed.systemMessage.hidden"
+      ],
+      "notes": ["The user confirmed this controlled event was produced by the room host hiding a message."]
     },
     {
       "id": "message.rewritten",
@@ -267,7 +350,8 @@
         "origin": ["SYNCREWR"]
       },
       "normalizedEvent": "message.rewritten",
-      "normalizedKind": "raw_rewrite"
+      "normalizedKind": "raw_rewrite",
+      "notes": ["Fallback for SYNCREWR shapes other than the live-confirmed openchat_blind host action."]
     },
     {
       "id": "member.joined",
@@ -318,14 +402,26 @@
       ]
     },
     {
-      "id": "media.type_3_unknown",
-      "status": "unverified",
+      "id": "media.video",
+      "status": "live_confirmed",
       "match": {
-        "type": [3]
+        "type": [3],
+        "origin": ["MSG", "WRITE"],
+        "requiredPaths": ["parsed.attachment.url", "parsed.attachment.d"]
       },
-      "normalizedEvent": "iris.unknown",
-      "normalizedKind": "unknown_media",
-      "observedAttachmentKeys": ["url", "urlh", "w", "h", "s", "cs", "csh", "d", "dh", "hh", "sh", "wh", "tk", "tkh", "expire"]
+      "normalizedEvent": "message.created",
+      "normalizedKind": "video",
+      "observedPaths": [
+        "parsed.attachment.url",
+        "parsed.attachment.w",
+        "parsed.attachment.h",
+        "parsed.attachment.s",
+        "parsed.attachment.d",
+        "parsed.attachment.cs",
+        "parsed.attachment.tk",
+        "parsed.attachment.expire"
+      ],
+      "notes": ["Two incoming TEST-monitor events were live-correlated as video; retain the global unknown fallback for incompatible future shapes."]
     },
     {
       "id": "media.emoticon_candidate",
@@ -334,41 +430,81 @@
         "type": [12],
         "origin": ["MSG", "WRITE"]
       },
-      "normalizedEvent": "message.created",
-      "normalizedKind": "emoticon_candidate",
+      "normalizedEvent": "media.sticker_candidate",
+      "normalizedKind": "candidate",
       "observedAttachmentKeys": ["path", "kid", "alt", "name", "emoticonItemPath"]
     },
     {
-      "id": "media.file_candidate",
-      "status": "db_confirmed",
+      "id": "media.animated_sticker",
+      "status": "live_confirmed",
       "match": {
         "type": [20],
-        "origin": ["MSG", "WRITE"]
+        "origin": ["MSG", "WRITE"],
+        "requiredValues": {
+          "parsed.attachment.type": "animated-sticker/digital-item"
+        }
       },
       "normalizedEvent": "message.created",
-      "normalizedKind": "file_candidate",
-      "notes": ["Historical database evidence only; require a current live payload test."]
+      "normalizedKind": "animated_sticker",
+      "observedPaths": [
+        "parsed.attachment.type",
+        "parsed.attachment.path",
+        "parsed.attachment.name",
+        "parsed.attachment.sound",
+        "parsed.attachment.width",
+        "parsed.attachment.height",
+        "parsed.attachment.msg",
+        "parsed.attachment.alt",
+        "parsed.attachment.welcome"
+      ],
+      "notes": ["Do not map type 20 generically as a file; the live-confirmed shape is an animated sticker/digital item."]
     },
     {
-      "id": "media.multiple_images_candidate",
-      "status": "upstream_confirmed",
+      "id": "media.multiple_images",
+      "status": "live_confirmed",
       "match": {
         "type": [27],
         "origin": ["MSG", "WRITE"]
       },
       "normalizedEvent": "message.created",
-      "normalizedKind": "multiple_images_candidate",
-      "candidatePaths": ["parsed.attachment.imageUrls"]
+      "normalizedKind": "multiple_images",
+      "observedPaths": [
+        "parsed.attachment.imageUrls",
+        "parsed.attachment.thumbnailUrls",
+        "parsed.attachment.thumbnailWidths",
+        "parsed.attachment.thumbnailHeights",
+        "parsed.attachment.wl",
+        "parsed.attachment.hl",
+        "parsed.attachment.sl",
+        "parsed.attachment.mtl",
+        "parsed.attachment.kl",
+        "parsed.attachment.expire"
+      ]
     },
     {
-      "id": "media.type_71_unknown",
-      "status": "unverified",
+      "id": "message.rich_content_card",
+      "status": "live_confirmed",
       "match": {
-        "type": [71]
+        "type": [71],
+        "origin": ["MSG", "WRITE"],
+        "requiredPaths": ["parsed.attachment.P", "parsed.attachment.C"]
       },
-      "normalizedEvent": "iris.unknown",
-      "normalizedKind": "unknown_media",
-      "observedAttachmentKeys": ["C", "K", "P"]
+      "normalizedEvent": "message.created",
+      "normalizedKind": "rich_content_card",
+      "observedPaths": [
+        "parsed.attachment.P.TP",
+        "parsed.attachment.P.L",
+        "parsed.attachment.P.SID",
+        "parsed.attachment.C",
+        "parsed.attachment.K"
+      ],
+      "observedValues": {
+        "parsed.attachment.P.TP": ["Feed", "List"]
+      },
+      "notes": [
+        "A controlled Kakao #search action was live-correlated with a type 71 Feed card and a search-result link host.",
+        "Type 71 is not assumed to be search-exclusive; normalize the generic card first and classify subtypes only with stronger discriminators."
+      ]
     },
     {
       "id": "message.type_72_unknown",
@@ -488,7 +624,10 @@
       "parsed.v.origin",
       "parsed.v.isMine",
       "field_names",
-      "parse_status"
+      "parse_status",
+      "classification_rule",
+      "attachment_field_names",
+      "system_field_names"
     ]
   }
 }
