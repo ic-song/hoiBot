@@ -2421,6 +2421,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `formatSkillBagMessage`
+- `getPetSkillData`
 
 ## Data Usage
 
@@ -2441,6 +2442,7 @@ Status: VERIFIED
 - Canonical full skill inventory display
 - Best entry point for total skill count and bag listing format
 - Top guide lines should point skill lookup to `/펫스킬정보 [스킬이름]`
+- Each skill row displays the grade from `PET_SKILL_LIST` after the skill name.
 
 ---
 
