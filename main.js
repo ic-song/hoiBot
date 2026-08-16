@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.383"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.386"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -688,7 +688,6 @@ const miniPetCollectionPath = "/sdcard/호이랜드/miniPet_collection.json"; //
 const miniPetCollectionInfoPath = "/sdcard/호이랜드/miniPetCollectionInfo.json"; //미니펫 타이틀에 대한 정보
 const memberPetPath = "/sdcard/호이랜드/member_pet.json"; //멤버펫 유저 정보
 const petSkillDataPath = "/sdcard/호이랜드/petSkillData.json"; //펫스킬 데이터
-const petSkillCollectionPath = "/sdcard/호이랜드/petSkillCollection.json"; //펫스킬 컬렉션 유저 정보
 const punchRankPath = "/sdcard/호이랜드/punchRankData.json"; // 펀치데이터
 
 const trialTowerPath = "/sdcard/호이랜드/trialTower.json"; //시련의탑 유저정보
@@ -7132,7 +7131,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
-                if (msg.startsWith("/호이패스구독")) {
+                if (msg === "/호이패스구독") {
                     if (!castleSiegeFlag) {
                         const authorizedUsersHoipass = ["호이 남", "오픈채팅봇"]; // 권한을 가진 사용자 목록
                         if (authorizedUsersHoipass.includes(sender)) {
@@ -26696,8 +26695,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (msg === "/펫스킬컬렉션") {
                     if (castleSiegeFlag) return;
-                    var petSkillCollectionData = loadJsonFile(petSkillCollectionPath);
-                    var petSkillCollection = ensurePetSkillCollection(petSkillCollectionData, sender);
+                    var petSkillCollection = ensurePetSkillCollection(petSkillData, sender);
                     replier.reply(buildPetSkillCollectionMessage(data, petData, guildData, sender, petSkillCollection));
                     return;
                 }
@@ -26714,8 +26712,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petSkillCollectionBagList = getPetSkillBagList(petSkillData, sender);
                     var petSkillCollectionUsedNumbers = {};
                     var petSkillCollectionSelected = [];
-                    var petSkillCollectionPreviewData = loadJsonFile(petSkillCollectionPath);
-                    var petSkillCollectionPreview = ensurePetSkillCollection(petSkillCollectionPreviewData, sender);
+                    var petSkillCollectionPreview = ensurePetSkillCollection(petSkillData, sender);
                     var petSkillCollectionPlannedCounts = {};
 
                     for (var petSkillCollectionArgIndex = 0; petSkillCollectionArgIndex < petSkillCollectionArgs.length; petSkillCollectionArgIndex++) {
@@ -26770,8 +26767,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "등록" && userState[sender] && userState[sender].petSkillCollection) {
                     var petSkillCollectionState = userState[sender].petSkillCollection;
                     var petSkillCollectionSelectedList = petSkillCollectionState.selectedList || [];
-                    var petSkillCollectionSaveData = loadJsonFile(petSkillCollectionPath);
-                    var petSkillCollectionSave = ensurePetSkillCollection(petSkillCollectionSaveData, sender);
+                    var petSkillCollectionSave = ensurePetSkillCollection(petSkillData, sender);
                     var petSkillCollectionCurrentBagList = getPetSkillBagList(petSkillData, sender);
                     var petSkillCollectionRegisteredLines = [];
                     var petSkillCollectionSkippedLines = [];
@@ -26800,7 +26796,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                         var petSkillCollectionAfter = petSkillCollectionBefore + 1;
                         var petSkillCollectionReward = GLOBAL_CONFIG.petSkillCollection.rewardCounts[petSkillCollectionCurrentSkillData.grade];
-                        petSkillCollectionSave.skillCounts[petSkillCollectionPicked.name] = petSkillCollectionAfter;
+                        petSkillCollectionSave[petSkillCollectionPicked.name] = petSkillCollectionAfter;
                         addItem(data, sender, GLOBAL_CONFIG.petSkillCollection.rewardItemName, petSkillCollectionReward);
                         petSkillCollectionRegisteredCount++;
                         petSkillCollectionTotalReward += petSkillCollectionReward;
@@ -26816,7 +26812,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    saveJsonFile(petSkillCollectionSaveData, petSkillCollectionPath);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     saveJsonFile(data, filePath);
 
@@ -38538,23 +38533,19 @@ function removeFreeMarketDataByUser(freeMarketData, user) {
 }
 
 // 유저의 펫스킬 컬렉션 저장 구조를 보장하고 반환하는 함수
-function ensurePetSkillCollection(collectionData, user) {
-    if (!collectionData.member || typeof collectionData.member !== "object") collectionData.member = {};
-    if (!collectionData.member[user] || typeof collectionData.member[user] !== "object") collectionData.member[user] = {};
-    if (!collectionData.member[user].collection || typeof collectionData.member[user].collection !== "object") {
-        collectionData.member[user].collection = { skillCounts: {} };
+function ensurePetSkillCollection(petSkillData, user) {
+    initPetSkillUser(petSkillData, user);
+    if (!petSkillData[user].petSkillCollection || typeof petSkillData[user].petSkillCollection !== "object") {
+        petSkillData[user].petSkillCollection = {};
     }
-    if (!collectionData.member[user].collection.skillCounts || typeof collectionData.member[user].collection.skillCounts !== "object") {
-        collectionData.member[user].collection.skillCounts = {};
-    }
-    return collectionData.member[user].collection;
+    return petSkillData[user].petSkillCollection;
 }
 
 // 펫스킬 컬렉션에 저장된 특정 스킬의 등록 수를 등급 한도 안에서 반환하는 함수
 function getPetSkillCollectionCount(collection, skillName) {
     var skillData = getPetSkillData(skillName);
     var maxCount = skillData ? GLOBAL_CONFIG.petSkillCollection.maxCounts[skillData.grade] : 0;
-    var count = collection && collection.skillCounts ? parseInt(collection.skillCounts[skillName], 10) || 0 : 0;
+    var count = collection ? parseInt(collection[skillName], 10) || 0 : 0;
     if (count < 0) return 0;
     return maxCount > 0 && count > maxCount ? maxCount : count;
 }
