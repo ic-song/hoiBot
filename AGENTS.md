@@ -13,7 +13,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
   - `tools/`: local helper scripts for development/operation workflows
-  - `.codex/skills/`: repo-managed source copies of hoiBot Codex skills
+  - `.codex/skills/`: deployment mirrors synchronized from the private `CODEX-CONFIG` canonical skill registry
   - `.codex/skill-drafts-ko/`: Korean review drafts for hoiBot Codex skills, not auto-loaded skill sources
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
@@ -140,6 +140,32 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY/HOTFIX to DEV and set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
 - Treat the Notion `상태` change and `운영반영일` update as one operation; if either update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
 - Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` before production reflection is complete.
+
+## Modernization WBS Short Commands
+
+- For `고도화진행`, `고도화 이어서 진행`, `너는 <이름>이야 고도화진행`, `고도화 <도메인> 이어서 진행`, `고도화 통합 진행`, `고도화 인계 <실행 ID>`, `고도화 복구 <슬라이스 ID>`, or `고도화 현황 갱신`, MUST use the `hoibot-modernization-wbs-runner` skill.
+- The skill owns worker-name assignment, fixed Drive links, interrupted-work recovery, slice claims and state flow, eight-gate migration validation, data safety, and percentage-dashboard synchronization.
+- Use a slice as the durable unit that combines commands, shared logic, JSON-to-DB mapping, synthetic fixtures, and verification scenarios. Every active command and final data set must eventually be mapped to a slice.
+- Never reset verified development. Carry forward only the gates supported by current Git, DB, and test evidence; leave unverified integration, Shadow, and operational-readiness gates incomplete.
+- Treat the new `슬라이스_*` tabs as the active WBS source of truth. Preserve the copied legacy tabs as history and as the unclassified-command backlog.
+- In `명령어_이관`, treat `사용` as active migration scope, `미사용 검토` as a paused decision backlog that remains in progress denominators, and `미사용` as confirmed exclusion from migration scope and progress calculations.
+- When a command becomes `미사용`, preserve its current Rhino source behavior and do not migrate it. If migration artifacts already exist, remove only the new-system implementation, command-specific DB mapping/schema, fixtures, and validation links after dependency checks; preserve shared objects still used by active slices and retain WBS history/evidence.
+- A later return from `미사용` to `사용` requires current-source re-verification and fresh slice mapping before work resumes.
+- Keep Notion limited to the current WBS link and percentages. Keep detailed work, counts, ownership, and evidence in Google Sheets.
+- When a human role must be named, use only `사용자`, `운영자`, `총괄 운영자`, or `개발자`.
+- The user does not need to repeat repository paths, shared links, or the detailed migration procedure.
+
+## Central Codex Skill Registry
+
+- The private `https://github.com/ic-song/CODEX-CONFIG.git` repository is the canonical source for user-authored hoiBot Codex skills.
+- Edit hoiBot skills only under `CODEX-CONFIG/skills/projects/hoibot/`. Do not make the first or only skill edit in this repository's `.codex/skills/` mirror or in `%USERPROFILE%/.codex/skills`.
+- Keep every hoiBot skill registered under the hoiBot entry in `CODEX-CONFIG/projects.json`.
+- Validate and push `CODEX-CONFIG/main` before synchronizing a project mirror.
+- Refresh this repository's `.codex/skills/` only with `CODEX-CONFIG/scripts/sync-skills.ps1 -ProjectPath <hoiBot-path> -Force`, then commit the generated mirror on `feature/workflow` and reflect the validated commit into `feature/prod`.
+- Installed personal skill folders must be junctions to their canonical `CODEX-CONFIG` folders. Use `link-skills.ps1 -MigrateExisting` for first-time conversion so existing directories are retained in the timestamped backup path.
+- Treat `.codex/skill-drafts-ko/` as human review drafts only; they are not canonical skill sources.
+- A skill change is complete only when the canonical repository is pushed, the project mirror has no drift, the personal junction target is correct, and required validation passes.
+- If the canonical repository is unavailable or dirty with unrelated work, do not bypass it by editing a mirror. Report the blocker.
 
 ## Branch Workflow
 
@@ -308,7 +334,7 @@ head-agent
 - Task branches should branch from `feature/prod`.
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
-- After validated documentation, agent strategy, branch strategy, `tools/`, or Codex skill changes are committed and pushed on `feature/workflow`, reflect those commits into `feature/prod` by default unless the user explicitly says not to.
+- After validated documentation, agent strategy, branch strategy, `tools/`, or synchronized Codex skill mirror changes are committed and pushed on `feature/workflow`, reflect those commits into `feature/prod` by default unless the user explicitly says not to.
 - Bug fixes should use a fresh `feature/bugFix` created from the latest `feature/prod` unless the user explicitly requests another exact branch.
 - After the bug-fix commit is pushed and reflected into `feature/prod`, delete local and remote `feature/bugFix` by default.
 - If an old `feature/bugFix` exists, verify reflected commits before deleting/recreating it from `feature/prod`.
@@ -333,8 +359,8 @@ head-agent
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
 - Commit messages should be written in Korean as clear, human-readable summaries of the change.
 - Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
-- Keep repo-managed Codex skill sources in `.codex/skills/` synchronized with workflow changes when those skills encode the affected workflow.
-- When repo-managed Codex skill sources in `.codex/skills/` change, after `feature/prod` is updated, update the corresponding local Codex skill files under the user's Codex skills directory when filesystem permissions allow it.
+- Update user-authored Codex skills in `CODEX-CONFIG` first, then synchronize the generated `.codex/skills/` mirror on `feature/workflow`.
+- After `.codex/skills/` mirror changes reach `feature/prod`, verify the corresponding personal skill paths remain junctions to the same canonical `CODEX-CONFIG` folders; do not manually copy over those junctions.
 - PR titles and bodies must summarize:
   - changed files or areas
   - user-visible behavior changes

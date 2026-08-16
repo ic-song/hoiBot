@@ -28,6 +28,17 @@ Use this skill when a change mutates game data or touches persistence.
 6. Validate JSON parsing for any changed data file or generated snapshot.
 7. Confirm helpers do not perform repeated `loadJsonFile` / `saveJsonFile` calls in loops or reusable calculation paths.
 
+## Modernization Slice Checklist
+
+When the work belongs to a modernization slice:
+
+1. Map each touched JSON path and field to an existing DB table, column, key, and ledger before proposing a new table.
+2. State the transaction boundary for all inventory, point, item, profile, guild, or event mutations in the slice.
+3. Prepare non-identifying synthetic fixtures and expected rows; do not use operational snapshots as test input.
+4. Verify normal, boundary, failure, duplicate-execution, and restart outcomes.
+5. Record which DB mapping, synthetic-data, parity, Shadow, and operational-readiness gates have direct evidence.
+6. Do not reset verified save-flow evidence when commands are regrouped; leave only unsupported gates incomplete.
+
 ## References
 
 - Read `references/save-load-flow.md` for save/load review.

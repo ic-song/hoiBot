@@ -638,7 +638,7 @@ Status: VERIFIED
 - `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지오픈3 [숫자]` opens 1 badge when the count is omitted or accepts a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[3](/홈뱃지오픈3)"]`, runs under the response data write lock, uniformly draws one of 50 `LOVE01`–`LOVE50` relationship-type badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
-- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. It allows 1–100 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room a before/after comparison for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows the configured range rates to six decimal places.
+- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. It allows 1–1,000 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Rates from 10.1% through 49.9% are configured as separate 1% bands before selecting a uniform 0.1% value inside the chosen band. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room a before/after comparison for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows every configured 1% range rate to six decimal places with blank lines between high-value groups.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -823,6 +823,7 @@ Status: VERIFIED
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
 - `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
+- `/길드영지시작` and `/길드영지종료` can also be entered from the dedicated siege room by their existing named operators; this room allowance does not bypass the active territory-war command lock.
 
 ---
 
@@ -936,6 +937,7 @@ Status: VERIFIED
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
 - 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
 - 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
+- `/디버깅모드`가 켜진 상태에서 `/영지공격 [1-7]`을 실행하면 방어자의 영지절대방어권 확률, 길드공헌 큐브 기습방어 증가분, 두 수치의 단순 합산값을 테스트방에 표시한다. 실제 전투는 합산 확률 한 번이 아니라 절대방어권 선판정 후 기습공격 발동 시 큐브를 별도로 판정한다.
 - 일반 캐슬매력 대결 상세보기에는 영지, 공격·방어 길드, 유저·펫, 기본·최종 매력, 크리 발동, 비교식과 점령 결과를 카드형 UI로 표시한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
 - `dev/영지공격 [1-9]`의 정상 처리 결과 뒤에는 응답 진입 전체 시간과 공통 데이터 로드·보정, 검증, 스냅샷 준비, 전투 판정, 후처리, 결과 출력, 저장, 다음 턴 안내 단계별 소요 시간이 ms로 표시된다. 일반 `/영지공격`에는 속도 정보가 표시되지 않는다.
@@ -963,6 +965,8 @@ Status: VERIFIED
 - `getGuildTerritoryList`
 - `buildGuildResourceDisplay`
 - `ensureGuildTerritoryBoosterCount`
+- `buildGuildContributionCubeOptionDisplay`
+- `buildGuildContributionCubeCostDisplay`
 
 ## Data Usage
 
@@ -975,6 +979,7 @@ Status: VERIFIED
 - `guildData.guilds[myGid].members[*].boosterContribution`
 - `data.member[*].gContribCnt`
 - `data.member[*].gBoosterContribCnt`
+- `guildData.guilds[myGid].cubeOptions`
 
 ## Save Flow
 
@@ -997,8 +1002,94 @@ Status: VERIFIED
 - Territory-related display here depends on `ensureGuildTerritoryWar`
 - Guild resource display is shared with `/길드상세정보` through `buildGuildResourceDisplay`
 - Displays current `길드영지 부스터🔮` count through `ensureGuildTerritoryBoosterCount`
+- Displays all four current 길드공헌 큐브 percentages below the territory booster and each option's contribution cost below the guild warehouse.
+- Member rows show a fixed Master/SubMaster/SwordMaster legend, append `│👑🛡️⚔️` role emojis to the right of each displayed nickname in that order, and sort Master → SubMaster → SwordMaster → regular members before applying the existing contribution-descending order inside each group. The same numbered order is reused by `/소드마스터`, `/부길마`, and `/길드분배` selections.
 - Member rows display total guild contribution and total booster contribution with daily check marks.
 - Displays `subMasters` through `getGuildSubMasterDisplay`
+
+---
+
+# /길드큐브 [길드옵션번호] [시도횟수]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/길드큐브`
+- Guard: exact usage command or two complete numeric arguments
+
+## Files
+
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+
+- `getGuildContributionCubeData`
+- `getGuildContributionCubeMemberPercent`
+- `buildGuildContributionCubeOptionDisplay`
+- `buildGuildContributionCubeProbabilityMessage`
+- `buildGuildContributionCubeLogMessage`
+- `calculateCastleExp`
+- `calculateRaidExp`
+- `applyGuildTerritoryTurnReward`
+- `resolveGuildTerritoryAttack`
+
+## Data Usage
+
+- `guildData.guilds[guildId].members[sender].contribution`
+- `guildData.guilds[guildId].cubeOptions`
+- `guildData.guilds[guildId].cubeLogs`
+
+## Save Flow
+
+- Loads member and guild data once in the common response flow.
+- A successful cube run deducts only the actually processed contribution, updates integer 0.1% units, keeps the latest 50 logs, and saves `guildData` through `saveJsonFile(guildData, guildPath)`.
+- Permission, maximum, count, and insufficient-contribution failures do not save or mutate persistent data.
+
+## Related Commands
+
+- `/길드큐브확률`
+- `/길드큐브기록`
+- `/길드정보`
+- `/길드공헌`
+- `/영지공격 [1-9]`
+
+## AI Notes
+
+- Any valid current guild member can use the cube with only their own stored guild contribution; each successful command deducts the actual processed cost from that member while the shared guild option continues accumulating.
+- Castle and raid percentages are added to the active home-badge percentage before one multiplication.
+- A member must match both `data.member[*].guild.id` and the guild's `members` map, so leaving or expulsion removes the buff immediately.
+- Territory point bonus applies only to the base attack-turn guild point reward; ambush defense is checked only after a surprise-attack item succeeds.
+- The common response transaction lock and exclusive mutation lock prevent concurrent cube updates from double-spending contribution.
+
+---
+
+# /길드큐브확률
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Save Flow
+
+- Read-only; requires current guild membership and does not save data.
+
+---
+
+# /길드큐브기록
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Save Flow
+
+- Read-only; displays the current guild's most recent 50 `cubeLogs` entries and does not save data.
 
 ---
 
@@ -1979,6 +2070,7 @@ Status: VERIFIED
 
 ## Data Usage
 
+- `GLOBAL_CONFIG.package.maxUseOnce`
 - `packageInfo.json`
 - `packageLog.json`
 - `data.member[user].bag`
@@ -2017,9 +2109,10 @@ Status: VERIFIED
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
+- `/패키지사용`은 기존·신규 패키지 모두 `GLOBAL_CONFIG.package.maxUseOnce` 기준으로 한 번에 최대 1,000개까지 사용한다
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Package edit quick command format: `/패키지수정 리스트번호 보상목록`
-- `/패키지수정` keeps the existing package name, desc, `id`, enabled state, and max-use value, but updates rewards only
+- `/패키지수정` keeps the existing package name, desc, `id`, and enabled state, updates rewards, and applies the common 1,000-use maximum
 - Package edit does not use `|`; all text after the list number is parsed as the reward spec
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
@@ -2188,7 +2281,7 @@ Status: VERIFIED
 - 개인·단체 추가 명령은 `member.json`, `petHomeActivityData.json`을 명령 분기에서 한 번씩 저장하며, 삭제 명령은 `petSkillData.json`도 함께 저장한다.
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
-- `/호프구독`은 활성 프리미엄 유저에게 홈뱃지 큐브💟 1개를 포함한 일일 보상을 지급하고 `dailyRewardLastDate`와 지급 아이템을 `member.json`에 함께 저장한다.
+- `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
 - 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸이다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 효과 없는 잠금 상태로 보존한다. 재가입 시 잠금 스킬을 다시 활성화하고 관련 세 파일을 저장한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
@@ -2202,6 +2295,60 @@ Status: VERIFIED
 - `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
 - `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
 - `/이체`
+
+---
+
+# /아아|/아아 [숫자]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/아아`
+- Search in `main.js`: `GLOBAL_CONFIG.coffeePackage`
+
+## Files
+
+- `main.js`
+- `member.json`
+- `member_title.json`
+
+## Related Helpers
+
+- `getCoffeePackageSpecialIndex`
+- `isExclusiveDataMutationCommandMessage`
+- `ensureTitleUserData`
+- `addTitle`
+- `addItemToBag`
+- `checkRank`
+
+## Data Usage
+
+- `GLOBAL_CONFIG.coffeePackage`
+- `data.member[sender].bag`
+- `titleData.member[sender].title.list`
+
+## Save Flow
+
+- `/아아` 또는 `/아아 [숫자]` consumes `아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)`, grants 200 coffee items per use, and separately draws one mutually exclusive special situation from a cumulative 15% table
+- Special situations grant `미니펫뽑기🐹(/미니펫오픈)` and add the matching member title only when it is not already owned
+- The command loads member data in the response flow and member-title data once, then saves `filePath` and saves `memberTitlePath` only when a new title is added
+- `/아아`와 `/아아 [숫자]` are handled as exclusive multi-file mutation commands, including when entered through the DEV command context
+
+## Related Commands
+
+- `/아아`
+- `/아아 [숫자]`
+- `/판매 [아이템번호] [수량]`
+- `/타이틀목록`
+- `/미니펫오픈`
+
+## AI Notes
+
+- Exact/full-pattern guards allow only `/아아` or `/아아 [숫자]`; suffix guide text does not execute
+- `/아아` uses one item, while `/아아 [숫자]` has no hard count cap and is limited only by the user's package inventory
+- Bulk results group identical base/special outcomes, so at most six result-image messages plus one summary are sent
+- Coffee items use the existing general `/판매` value of 100,000 points per item
 
 ---
 
@@ -2275,6 +2422,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `formatSkillBagMessage`
+- `getPetSkillData`
 
 ## Data Usage
 
@@ -2295,6 +2443,7 @@ Status: VERIFIED
 - Canonical full skill inventory display
 - Best entry point for total skill count and bag listing format
 - Top guide lines should point skill lookup to `/펫스킬정보 [스킬이름]`
+- Each skill row displays the grade from `PET_SKILL_LIST` after the skill name.
 
 ---
 
@@ -2995,6 +3144,7 @@ Status: VERIFIED
 ## Related Helpers
 - `generateBagOutput`
 - `isTradableItem`
+- `isMemberTierKing`
 ## Data Usage
 - `data.member[sender].bag`
 - `data.member[receiver].bag`
@@ -3003,6 +3153,13 @@ Status: VERIFIED
 ## Related Commands
 - `/당근게시판`
 - `/당근완료`
+- `/미니펫당근`
+- `/가구당근`
+- `/펫스킬당근`
+- `/펜던트당근`
+
+## AI Notes
+- Direct carrot trades require both sender and receiver to be currently tier `킹` or higher before inventory mutation.
 
 ---
 
@@ -3194,6 +3351,31 @@ Status: VERIFIED
 - Removes selected skill count, adds points, saves member data and `petSkillData`
 ## Related Commands
 - `/펫스킬전체판매`
+
+---
+
+# /펫스킬북분해 [펫스킬가방번호] [분해개수]
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/펫스킬북분해`
+## Files
+- `main.js`
+## Related Helpers
+- `decomposePetSkillFromBag`
+- `getPetSkillBagList`
+- `removePetSkillFromBag`
+- `addItem`
+## Data Usage
+- `petSkillData[sender].bag`
+- `data.member[sender].bag["펫스킬북 조각📙"]`
+## Save Flow
+- 선택한 펫스킬을 요청 수량만큼 차감하고 스킬 1개당 조각 3~4개를 지급한 뒤 member data와 `petSkillData`를 각각 한 번 저장한다.
+## Related Commands
+- `/펫스킬가방`
+- `/펫스킬북조합`
+## AI Notes
+- `/펫스킬가방`에 표시되는 정렬 번호를 사용한다.
+- 정확히 숫자 인자 2개를 입력한 경우에만 분해 로직을 실행한다.
 
 ---
 
@@ -3391,6 +3573,7 @@ Status: VERIFIED
 - `getPetSkillBagRemainCount`
 - `addPetSkillToBag`
 - `removePetSkillFromBag`
+- `isMemberTierKing`
 ## Data Usage
 - sender/receiver `petSkillData[*].bag`
 ## Save Flow
@@ -4367,12 +4550,14 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateCastleRanking`
+- `getGuildContributionCubeMemberPercent`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
 - `homeData`
+- `guildData.guilds[*].cubeOptions.castle`
 
 ## Save Flow
 
@@ -4387,6 +4572,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Castle-focused charm leaderboard that depends on loaded home data
+- Applies the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
 - Re-check `initSweetHomeUser` when home normalization affects ranking totals
 
 ---
@@ -4408,12 +4594,14 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateRaidRanking`
+- `getGuildContributionCubeMemberPercent`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
 - `homeData`
+- `guildData.guilds[*].cubeOptions.raid`
 
 ## Save Flow
 
@@ -4428,6 +4616,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Raid-focused charm leaderboard parallel to `/캐슬매력순위`
+- Applies the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
 - Good anchor when raid total calculations diverge from displayed pet/home state
 
 ---
@@ -4524,6 +4713,7 @@ Status: VERIFIED
 - `numberWithCommas`
 - `calculateCastleItem`
 - `calculateItemInfoAll`
+- `getGuildContributionCubeMemberPercent`
 - `getCastleBattleRank`
 - `getCastleBattleRankEmoji`
 
@@ -4534,6 +4724,7 @@ Status: VERIFIED
 - `data.member[sender].battle.score`
 - `petData[sender].miniPet.castleExp`
 - `castleBattleData`
+- `guildData.guilds[*].cubeOptions.castle`
 
 ## Save Flow
 
@@ -4548,6 +4739,7 @@ Status: VERIFIED
 
 - Primary self-profile for castle battle record and CP display
 - Good first anchor when win-rate, castle rank emoji, or CP totals look inconsistent
+- The displayed castle charm adds the current valid guild's cube percentage to the existing record-display base value.
 
 ---
 
@@ -4605,6 +4797,7 @@ Status: VERIFIED
 - `isSafePointValue`
 - `calculateTransferFee`
 - `ensureHappyFoundationData`
+- `isMemberTierKing`
 - `addPoint`
 - `addHappyFoundationFee`
 
@@ -4629,6 +4822,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Exact/full-pattern command guard: `/이체 [유저] [숫자]`
+- Both sender and recipient must currently be tier `킹` or higher before any point mutation.
 - Amount input is rejected when the transfer amount, fee, or total required point exceeds the safe range used for point arithmetic; existing held balances are not used as a separate safe-range blocker
 - Fee calculation must never use `total - amount` as the primary fee value; oversized or negative fee/total values must be rejected before mutating points
 
@@ -4688,6 +4882,7 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `initPetSkillUser`
 - `addHappyFoundationFee`
+- `isMemberTierKing`
 
 ## Data Usage
 
@@ -4740,7 +4935,7 @@ Status: VERIFIED
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
 - `/자유시장` and `/자유시장거래현황` append `[개당 ...]` to item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
-- Free-market registration commands require tier `킹` or higher through `isTierKing`; `/자유시장구매` has no tier gate
+- Free-market registration requires tier `킹` or higher; purchase re-checks that both buyer and seller are currently tier `킹` or higher before points or items move.
 - Free-market active listing-count limit is additive: base 1 + equipped `타고난 장사꾼📙` 2 + `자유시장회원권🏪` 7, so ticket-only allows 8 active listings and both active bonuses allow 10 active listings; listing quantity itself is not capped by this limit
 - `자유시장회원권🏪` checks tolerate bag-name suffixes such as parenthesized guide text
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]` is handled before the common invalid registration usage guard so it does not require a quantity argument.
@@ -4936,6 +5131,7 @@ Status: VERIFIED
 - `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
 - `/맞짱순위`는 `/맞짱시작`부터 현재까지 PT를 획득한 참가자를 누적 PT 내림차순으로 보여주며, 동점은 이름 오름차순으로 정렬한다. 조회만 수행하며 데이터를 저장하지 않는다.
 - While the field is active outside rest time, normal users may use only `/참여` (`ㅊㅇ`), `/맞짱` (`ㅁㅁ`), `/맞짱필드목록`, and `/맞짱순위`; confirmed management commands such as `/휴식`, `/맞짱종료`, `/미정`, `/정보`, `/미니펫정보`, and `/패키지리스트` require the Admin/Master/오픈채팅봇 command-specific bypass. Operators no longer bypass the lock for ordinary slash commands. `/맞짱` outside the siege room includes the siege-room link.
+- `/맞짱시작`, `/휴식`, and `/맞짱종료` recognize existing Admin/Master/오픈채팅봇 authority in the dedicated siege room without expanding global Admin/Master room permissions. This room allowance does not bypass the active territory-war command lock.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아상점구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
@@ -5044,7 +5240,107 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (20개) of `다이아상자💎(/다이아상자오픈)`.
+- `/다이아패스구독`은 사용 중단 안내만 출력하며, 활성 다이아패스 보상은 `/구독패스지급`에서 함께 처리한다.
+
+---
+
+# /펫스킬컬렉션|/펫스킬컬렉션등록 [펫스킬가방번호] ...
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/펫스킬컬렉션`, `/펫스킬컬렉션등록`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `ensurePetSkillCollection`
+- `getPetSkillCollectionCount`
+- `buildPetSkillCollectionProgressLines`
+- `buildPetSkillCollectionMessage`
+- `buildPetSkillCollectionConfirmMessage`
+- `getPetSkillBagList`
+- `removePetSkillFromBag`
+
+## Data Usage
+- `petSkillData.json -> [user].petSkillCollection[skillName]`
+- `petSkillData.json -> [user].petSkills.bag[skillName]`
+- `member.json -> member[user].bag["홈뱃지 큐브💟"]`
+
+## Save Flow
+- `/펫스킬컬렉션`은 컬렉션 파일을 읽어 SS~D 현황만 출력한다.
+- `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 펫스킬가방 번호를 확인 상태에 저장한다.
+- `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상 아이템을 `member.json`에 저장한다.
+- 두 파일은 기존 1·2세대 자동 백업과 명령 단위 롤백 보호 흐름을 재사용한다.
+
+## Related Commands
+- `/펫스킬가방`
+- `등록`
+- `ㄴㄴ`
+
+---
+
+# /길드해산 [길드명]
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/길드해산`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `disbandGuildByExactName`
+- `removeDisbandedGuildTerritoryReferences`
+- `findGuildIdByNameSafe`
+
+## Data Usage
+- `guildData.json -> guilds[guildId]`, `nameToId`, `territoryWar`
+- `member.json -> member[user].guild`
+
+## Save Flow
+- MASTER 권한과 길드명 완전 일치를 확인한 뒤 회원 길드 참조와 길드·버프·영지전 참조를 정리한다.
+- 성공 시 `guildData.json`과 `member.json`을 저장한다.
+
+## Related Commands
+- `/길드해지`
+- `/길드정보`
+
+---
+
+# /구독패스지급
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/구독패스지급`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `grantAllSupportPassDailyRewards`
+- `grantSupportPassDailyRewards`
+- `grantHoiPassPremiumDailyRewards`
+- `buildSupportPassPayoutResultMessage`
+- `getActiveSupportPassUsers`
+
+## Data Usage
+- `member.json -> member[user].pass[premium|hoi|newbie|contribution|diamond]`
+- `member.json -> member[user].bag`
+- 각 패스의 `dailyRewardLastDate`로 당일 중복 지급을 방지한다.
+
+## Save Flow
+- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 실제 지급 건수가 있을 때 `member.json`을 한 번 저장한다.
+
+## Related Commands
+- `/호프구독`
+- `/호이패스구독`
+- `/초보패스구독`
+- `/공헌패스구독`
+- `/다이아패스구독`
 
 ---
 

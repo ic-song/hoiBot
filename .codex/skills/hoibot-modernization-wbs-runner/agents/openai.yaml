@@ -1,0 +1,7 @@
+interface:
+  display_name: "hoiBot 슬라이스 고도화"
+  short_description: "기존 성과를 승계하는 슬라이스 이관·검증·현황 동기화"
+  default_prompt: "Use $hoibot-modernization-wbs-runner to continue one hoiBot slice without resetting verified work, or refresh the percentage dashboard."
+
+policy:
+  allow_implicit_invocation: true
