@@ -13,7 +13,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
   - `tools/`: local helper scripts for development/operation workflows
-  - `.codex/skills/`: repo-managed source copies of hoiBot Codex skills
+  - `.codex/skills/`: deployment mirrors synchronized from the private `CODEX-CONFIG` canonical skill registry
   - `.codex/skill-drafts-ko/`: Korean review drafts for hoiBot Codex skills, not auto-loaded skill sources
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
@@ -154,6 +154,18 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Keep Notion limited to the current WBS link and percentages. Keep detailed work, counts, ownership, and evidence in Google Sheets.
 - When a human role must be named, use only `사용자`, `운영자`, `총괄 운영자`, or `개발자`.
 - The user does not need to repeat repository paths, shared links, or the detailed migration procedure.
+
+## Central Codex Skill Registry
+
+- The private `https://github.com/ic-song/CODEX-CONFIG.git` repository is the canonical source for user-authored hoiBot Codex skills.
+- Edit hoiBot skills only under `CODEX-CONFIG/skills/projects/hoibot/`. Do not make the first or only skill edit in this repository's `.codex/skills/` mirror or in `%USERPROFILE%/.codex/skills`.
+- Keep every hoiBot skill registered under the hoiBot entry in `CODEX-CONFIG/projects.json`.
+- Validate and push `CODEX-CONFIG/main` before synchronizing a project mirror.
+- Refresh this repository's `.codex/skills/` only with `CODEX-CONFIG/scripts/sync-skills.ps1 -ProjectPath <hoiBot-path> -Force`, then commit the generated mirror on `feature/workflow` and reflect the validated commit into `feature/prod`.
+- Installed personal skill folders must be junctions to their canonical `CODEX-CONFIG` folders. Use `link-skills.ps1 -MigrateExisting` for first-time conversion so existing directories are retained in the timestamped backup path.
+- Treat `.codex/skill-drafts-ko/` as human review drafts only; they are not canonical skill sources.
+- A skill change is complete only when the canonical repository is pushed, the project mirror has no drift, the personal junction target is correct, and required validation passes.
+- If the canonical repository is unavailable or dirty with unrelated work, do not bypass it by editing a mirror. Report the blocker.
 
 ## Branch Workflow
 
@@ -322,7 +334,7 @@ head-agent
 - Task branches should branch from `feature/prod`.
 - Operational PRs should target `feature/prod`.
 - Documentation, agent strategy, branch strategy, and `tools/` workflow changes should use `feature/workflow`.
-- After validated documentation, agent strategy, branch strategy, `tools/`, or Codex skill changes are committed and pushed on `feature/workflow`, reflect those commits into `feature/prod` by default unless the user explicitly says not to.
+- After validated documentation, agent strategy, branch strategy, `tools/`, or synchronized Codex skill mirror changes are committed and pushed on `feature/workflow`, reflect those commits into `feature/prod` by default unless the user explicitly says not to.
 - Bug fixes should use a fresh `feature/bugFix` created from the latest `feature/prod` unless the user explicitly requests another exact branch.
 - After the bug-fix commit is pushed and reflected into `feature/prod`, delete local and remote `feature/bugFix` by default.
 - If an old `feature/bugFix` exists, verify reflected commits before deleting/recreating it from `feature/prod`.
@@ -347,8 +359,8 @@ head-agent
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
 - Commit messages should be written in Korean as clear, human-readable summaries of the change.
 - Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
-- Keep repo-managed Codex skill sources in `.codex/skills/` synchronized with workflow changes when those skills encode the affected workflow.
-- When repo-managed Codex skill sources in `.codex/skills/` change, after `feature/prod` is updated, update the corresponding local Codex skill files under the user's Codex skills directory when filesystem permissions allow it.
+- Update user-authored Codex skills in `CODEX-CONFIG` first, then synchronize the generated `.codex/skills/` mirror on `feature/workflow`.
+- After `.codex/skills/` mirror changes reach `feature/prod`, verify the corresponding personal skill paths remain junctions to the same canonical `CODEX-CONFIG` folders; do not manually copy over those junctions.
 - PR titles and bodies must summarize:
   - changed files or areas
   - user-visible behavior changes
