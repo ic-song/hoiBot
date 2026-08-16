@@ -1,89 +1,86 @@
 # 작업 복구 체크포인트
 
 - 작업 키: modernization-wbs-workflow
-- 작업 이름: 고도화 병렬 선점·Lease 체계 강화
-- 작업 상태: 작업 완료
+- 작업 이름: 슬라이스 중심 고도화 WBS 재정립
+- 작업 상태: 검증 완료
 - 정리 후보: 아니요
-- 정리 후보 기준 커밋:
-- 체크포인트 버전: 7
-- 마지막 갱신: 2026-08-17 00:55 KST
-- 대화 식별명: 고도화 WBS 규칙 정의
+- 체크포인트 버전: 8
+- 마지막 갱신: 2026-08-17 KST
+- 대화 식별명: 고도화 프로세스 재정립
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
 
 ## 현재 목표
 
-- 여러 채팅과 PC가 동시에 실행돼도 동일 WBS 작업을 중복 수정하지 않도록 실행 ID·선점 원장·Lease·Heartbeat·인계·전용 worktree 체계를 제공한다.
+- 기존 개발 성과를 RESET하지 않고 기능 슬라이스와 8개 Gate로 승계한다.
+- 모든 활성 명령과 최종 데이터를 명령·공유 로직·DB 매핑·합성 fixture·검증 시나리오가 결합된 작업 단위로 관리한다.
+- Notion은 새 WBS 링크와 퍼센티지만 표시한다.
 
 ## 사용자 요청과 승인 범위
 
-- 최신 요청: 고도화 현황과 관련 Codex 스킬을 현재 원본 기준으로 최신화한다.
-- 허용된 변경: 저장소 관리 스킬, Google Sheets 선점 원장과 작업 복구 체크포인트 문서.
-- 별도 승인이 필요한 작업: 없음. workflow 문서는 저장소 규칙에 따라 `feature/workflow`에서 검증 후 `feature/prod`에 반영한다.
-- 선언된 파일 범위: `AGENTS.md`, `.codex/skills/hoibot-modernization-wbs-runner/**`, `.codex/checkpoints/modernization-wbs-workflow.md`, Google Sheets `작업_선점`
+- 기존 WBS를 복제해 새 Google Sheets WBS를 만들어도 된다.
+- 새 WBS를 기준 원장으로 사용하고 기존 탭은 이력과 미분류 명령 확인용으로 보존한다.
+- WBS 재정립과 관련 스킬·저장소 규칙 변경을 허용한다.
+- 역할 표현은 `사용자`, `운영자`, `총괄 운영자`, `개발자`만 사용한다.
+- workflow 변경은 `feature/workflow`에서 검증 후 `feature/prod`에 반영한다.
 
-## 작업 위치
+## 고정 리소스
 
-- 저장소: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot`
-- 작업 트리: `C:/Users/obbad/OneDrive/바탕 화면/hoiBot`
-- 브랜치: `feature/workflow`
-- 원격 저장소: `origin`
-- 업스트림 브랜치: `origin/feature/workflow`
-- 스킬 최초 생성 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
-- 중복 선점 방지 강화 커밋: `1a84c330c074149cc77b7a6dd0d259bb46267da6`
-- 원격 동기화 상태: `feature/workflow` 푸시 및 `feature/prod` 반영 완료
-- 체크포인트 Git 추적: 예
-- 체크포인트 포함 푸시 커밋: `edbf41003ee8b3e89ed95263d44052cf3f8144b1`
+- 새 WBS: `https://docs.google.com/spreadsheets/d/1tlvrlQ1dGb2ijRc6kDKEBRkSdLjQyhc1u9OfiJES3Ps/edit`
+- 보존 WBS: `https://docs.google.com/spreadsheets/d/15TP6sa36r_cwh49ny-pOiM3nkhgQ5i_KBYzsqdM0NZw/edit`
+- Notion: `https://app.notion.com/p/3bb393bdd7aa81e38bb9ea8d773a8caf?pvs=204`
 
-## 완료된 작업
+## 새 기준 구조
 
-- Google Drive `hoi` 폴더, 전체 WBS, Notion 대시보드 고정 링크를 확인했다.
-- 짧은 사용자 명령과 자동 실행 흐름을 설계했다.
-- `AGENTS.md`에 단축 명령, WBS 선점, 기능별 이관, 다중 worktree, 통합 담당, Google Drive 단일 진행 기준을 기록했다.
-- workflow 원본 커밋 `36212b8`을 푸시하고 `feature/prod` 커밋 `df118e1`로 반영했다.
-- `hoibot-modernization-wbs-runner`를 고도화 이관 전용 스킬로 생성했다.
-- 명시 작업자명, 기존 작업자명 재사용, 자동 작업자명 생성과 WBS 중복 방지 규칙을 추가했다.
-- DB 설계, 합성 데이터, 로직 이관, legacy 비교, MariaDB 검증 및 최종 운영 데이터 이관 분리를 스킬에 고정했다.
-- `AGENTS.md`의 상세 절차를 스킬 호출용 단축 규칙으로 축소했다.
-- workflow 스킬 원본 커밋 `edbf410`을 원격에 푸시했다.
-- `feature/prod` 반영 커밋 `938e370`과 후속 체크포인트 커밋 `967914b`을 원격에서 확인했다.
-- 저장소 스킬 원본을 `C:/Users/user/.codex/skills/hoibot-modernization-wbs-runner`에 동기화하고 SHA-256 일치를 확인했다.
-- 두 세션이 `담당 A + feature/modernization + 구현 중`만으로 같은 WBS ID를 재개할 수 있음을 확인했다.
-- Google Sheets에 append 기반 `작업_선점` 탭과 실행 신원·Lease·인계 열을 생성했다.
-- 작업 레인과 작업자명을 분리하고 실행 ID 소유권 없이는 기존 미완료 작업을 재개하지 않도록 스킬을 강화했다.
-- `AGENTS.md` 단축 호출에 명시적 인계와 WBS ID 복구 명령을 추가했다.
-- 활성 Lease 60분, 중요 단계 Heartbeat, 만료 후 재선점, 충돌 시 자동 중단과 명시적 인계 절차를 고정했다.
-- 선점 원장 도입 전 미완료 행은 자동 재개하지 않고 `고도화 복구 WBSID` 명령으로만 증거 기반 소유권을 재발급하도록 분리했다.
-- `작업_선점` A1:N3에서 헤더·레인·상태 validation을 API로 재확인하고 Google Sheets 화면에서 고정 헤더·필터·열 너비를 확인했다.
-- 강화 커밋 `1a84c33`을 `feature/workflow`에 푸시하고 `feature/prod`의 `edff8ca`로 반영했다.
-- 로컬 Codex 설치본을 갱신하고 저장소 원본과 SHA-256 `18BF9259...AD4BC6E` 일치를 확인했다.
-- `고도화 현황 갱신`을 이관 실행과 분리하고, 실행 ID·선점 없이 Sheets 집계와 Notion을 비교하는 전용 흐름을 추가했다.
-- 활성 Lease 판정, 집계 불일치 처리, 최소 구간 갱신, 값이 같을 때 `이미 최신`으로 종료하는 규칙을 명시했다.
-- Google Sheets의 전체 837건·검증 완료 15건·진행 4건·평균 2%와 Notion 대시보드 표시가 일치함을 재확인했다.
+- `슬라이스_대시보드`: 퍼센티지 계산
+- `슬라이스_WBS`: 슬라이스 상태, 8개 Gate, evidence와 다음 작업
+- `슬라이스_명령매핑`: 기존 CMD WBS ID와 명령·별칭·역할 연결
+- `슬라이스_DB매핑`: JSON→DB 테이블·컬럼·키·transaction·fixture 연결
+- `슬라이스_검증`: 정상·경계·실패·중복·재시작·parity·Shadow 근거
+- `슬라이스_선점`: 실행 ID, Lease, Heartbeat, 인계와 worktree 소유권
 
-## 진행 중인 작업
+## 완료된 외부 작업
 
-- 없음
+- 기존 WBS를 `hoiBot 고도화 슬라이스 WBS v2`로 복제했다.
+- 새 기준 탭 6개와 초기 슬라이스 16개를 만들었다.
+- 확인된 개발 성과는 Gate로 승계하고 통합·Shadow·운영 준비 미확인 단계는 미완료로 유지했다.
+- 구현 산출물이 확인되지 않은 2개 항목은 `복구 필요`로 분리했다.
+- 새 탭에 헤더, 필터, 열 너비, 상태 validation과 Gate checkbox를 적용했다.
+- 브라우저에서 시트 제목과 기존·신규 탭이 함께 보이는지 확인했다.
+- Notion을 새 WBS 링크와 7개 퍼센티지만 보이는 화면으로 교체하고 다시 읽어 확인했다.
 
-## 변경 파일
+## 현재 퍼센티지
+
+- 전체 명령 이관률: 1.8%
+- 슬라이스 분류율: 2.5%
+- 정의 슬라이스 Gate 평균: 60.2%
+- DB 전체 필드 매핑률: 23.0%
+- 최종 검증 완료율: 0.0%
+- 운영환경 검증률: 0.0%
+- 최종 데이터 이관률: 0.0%
+
+## 저장소 변경 범위
 
 - `AGENTS.md`
-- `.codex/skills/hoibot-modernization-wbs-runner/SKILL.md`
-- `.codex/skills/hoibot-modernization-wbs-runner/agents/openai.yaml`
+- `.codex/skills/hoibot-modernization-wbs-runner/**`
+- `.codex/skills/hoibot-command-navigator/SKILL.md`
+- `.codex/skills/hoibot-save-flow-guard/SKILL.md`
 - `.codex/checkpoints/modernization-wbs-workflow.md`
 
 ## 검증
 
-- 실행 명령: UTF-8 모드 `quick_validate.py`, `git diff --check`, Sheets 메타데이터·`WBS_대단계`·`도메인_요약`·`작업_선점` API 재조회, Notion 대시보드 fetch
-- 결과: `Skill is valid!`, 공백 오류 없음, Sheets 집계와 Notion 표시값 일치
+- 관련 스킬 3개 `quick_validate.py`: 모두 `Skill is valid!`
+- `git diff --check`: 공백 오류 없음
+- 제한된 역할 표현 검색: 저장소 변경 범위와 새 WBS에서 불허 표현 없음
+- Sheets: Gate checkbox·수식·status validation·7개 퍼센티지 재조회 완료
+- Notion: 새 WBS 링크와 동일한 7개 퍼센티지 재조회 완료
+- 브라우저: 시트 제목과 기존·신규 탭 노출 확인
 
-## 충돌·막힘·미승인 사항
+## 남은 작업
 
-- 별도 고도화 worktree의 미커밋 구현 작업은 이 문서 작업 범위에서 제외한다.
-
-## 다음 행동
-
-1. 신규 채팅에서 `고도화진행`으로 새 실행 ID와 전용 worktree를 발급해 선점 프로토콜을 적용한다.
+1. 저장소 변경을 검증하고 한국어 커밋으로 `feature/workflow`에 푸시한다.
+2. 검증된 커밋만 `feature/prod`에 반영한다.
+3. 변경된 hoiBot 스킬을 로컬 Codex 스킬과 동기화한다.
 
 ## 보안
 
