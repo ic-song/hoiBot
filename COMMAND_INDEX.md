@@ -2280,7 +2280,7 @@ Status: VERIFIED
 - 개인·단체 추가 명령은 `member.json`, `petHomeActivityData.json`을 명령 분기에서 한 번씩 저장하며, 삭제 명령은 `petSkillData.json`도 함께 저장한다.
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
-- `/호프구독`은 활성 프리미엄 유저에게 홈뱃지 큐브💟 1개를 포함한 일일 보상을 지급하고 `dailyRewardLastDate`와 지급 아이템을 `member.json`에 함께 저장한다.
+- `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
 - 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸이다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 효과 없는 잠금 상태로 보존한다. 재가입 시 잠금 스킬을 다시 활성화하고 관련 세 파일을 저장한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
@@ -5224,7 +5224,107 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/다이아패스구독` gives each active `data.member[*].pass.diamond` member `GLOBAL_CONFIG.supportPass.diamondBoxCount` (20개) of `다이아상자💎(/다이아상자오픈)`.
+- `/다이아패스구독`은 사용 중단 안내만 출력하며, 활성 다이아패스 보상은 `/구독패스지급`에서 함께 처리한다.
+
+---
+
+# /펫스킬컬렉션|/펫스킬컬렉션등록 [펫스킬가방번호] ...
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/펫스킬컬렉션`, `/펫스킬컬렉션등록`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `ensurePetSkillCollection`
+- `getPetSkillCollectionCount`
+- `buildPetSkillCollectionProgressLines`
+- `buildPetSkillCollectionMessage`
+- `buildPetSkillCollectionConfirmMessage`
+- `getPetSkillBagList`
+- `removePetSkillFromBag`
+
+## Data Usage
+- `petSkillData.json -> [user].petSkillCollection[skillName]`
+- `petSkillData.json -> [user].petSkills.bag[skillName]`
+- `member.json -> member[user].bag["홈뱃지 큐브💟"]`
+
+## Save Flow
+- `/펫스킬컬렉션`은 컬렉션 파일을 읽어 SS~D 현황만 출력한다.
+- `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 펫스킬가방 번호를 확인 상태에 저장한다.
+- `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상 아이템을 `member.json`에 저장한다.
+- 두 파일은 기존 1·2세대 자동 백업과 명령 단위 롤백 보호 흐름을 재사용한다.
+
+## Related Commands
+- `/펫스킬가방`
+- `등록`
+- `ㄴㄴ`
+
+---
+
+# /길드해산 [길드명]
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/길드해산`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `disbandGuildByExactName`
+- `removeDisbandedGuildTerritoryReferences`
+- `findGuildIdByNameSafe`
+
+## Data Usage
+- `guildData.json -> guilds[guildId]`, `nameToId`, `territoryWar`
+- `member.json -> member[user].guild`
+
+## Save Flow
+- MASTER 권한과 길드명 완전 일치를 확인한 뒤 회원 길드 참조와 길드·버프·영지전 참조를 정리한다.
+- 성공 시 `guildData.json`과 `member.json`을 저장한다.
+
+## Related Commands
+- `/길드해지`
+- `/길드정보`
+
+---
+
+# /구독패스지급
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/구독패스지급`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `grantAllSupportPassDailyRewards`
+- `grantSupportPassDailyRewards`
+- `grantHoiPassPremiumDailyRewards`
+- `buildSupportPassPayoutResultMessage`
+- `getActiveSupportPassUsers`
+
+## Data Usage
+- `member.json -> member[user].pass[premium|hoi|newbie|contribution|diamond]`
+- `member.json -> member[user].bag`
+- 각 패스의 `dailyRewardLastDate`로 당일 중복 지급을 방지한다.
+
+## Save Flow
+- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 실제 지급 건수가 있을 때 `member.json`을 한 번 저장한다.
+
+## Related Commands
+- `/호프구독`
+- `/호이패스구독`
+- `/초보패스구독`
+- `/공헌패스구독`
+- `/다이아패스구독`
 
 ---
 
