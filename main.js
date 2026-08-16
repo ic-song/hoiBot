@@ -787,6 +787,44 @@ const GLOBAL_CONFIG = {
     },
     supportPass: { // 후원 패스 지급 설정
         diamondBoxCount: 20,
+        hoiDailyRewards: [
+            { name: "자동탐험권🌄", count: 1 },
+            { name: "미니펫뽑기🐹(/미니펫오픈)", count: 2 },
+            { name: "강화확률뽑기⚒️(/강화뽑기)", count: 1 },
+            { name: "럭키박스🍀(/럭키오픈)", count: 2 },
+            { name: "미니펫대전리셋권🐹", count: 2 },
+            { name: "펫먹이🍼", count: 100 },
+            { name: "펫스윗홈인테리어샵🖼️(/샵오픈)", count: 2 },
+            { name: "펜던트 강화석📿", count: 1 },
+            { name: "펫 강화석⭐", count: 100 },
+            { name: "미니펫 강화석💫", count: 10 },
+            { name: "잡템☠️", count: 10 },
+            { name: "양념치킨🐔", count: 5 },
+            { name: "캐슬대전리셋권🐶", count: 2 },
+            { name: "티어 승급티켓🎟", count: 2 },
+            { name: "펫먹이특식🥡(/특식오픈)", count: 1 },
+            { name: "다이아상자💎(/다이아상자오픈)", count: 1 }
+        ],
+        newbieDailyRewards: [
+            { name: "자동탐험권🌄", count: 1 },
+            { name: "미니펫뽑기🐹(/미니펫오픈)", count: 5 },
+            { name: "미니펫대전리셋권🐹", count: 5 },
+            { name: "펫먹이🍼", count: 100 },
+            { name: "펜던트 강화석📿", count: 1 },
+            { name: "미니펫 강화석💫", count: 10 },
+            { name: "펫스윗홈인테리어샵🖼️(/샵오픈)", count: 2 },
+            { name: "펫 강화석⭐", count: 100 },
+            { name: "잡템☠️", count: 20 },
+            { name: "양념치킨🐔", count: 5 },
+            { name: "티어 승급티켓🎟", count: 5 },
+            { name: "캐슬대전리셋권🐶", count: 5 },
+            { name: "다이아상자💎(/다이아상자오픈)", count: 1 }
+        ],
+        contributionDailyRewards: [
+            { name: "길드공헌훈장🌟(/길드공헌 숫자)", count: 3 },
+            { name: "길드창고패키지🧳(/길드창고패키지오픈)", count: 1 },
+            { name: "길드영지 부스터🔮(/길드부스터공헌 숫자)", count: 1 }
+        ],
         premium: { // 호이패스 프리미엄 운영 설정
             badgeId: "S13",
             heartBonus: 15,
@@ -2666,7 +2704,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petSkillData, petSkillDataPath);
             addResponseTiming("펫스킬 보정 저장", commonStepStart);
         }
-        var shouldCleanupAllPremiumUsers = (msg === "/패스목록" || msg === "/호프구독") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇");
+        var shouldCleanupAllPremiumUsers = (msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇");
         var premiumExpiryTarget = shouldCleanupAllPremiumUsers ? "" : sender;
         var premiumExpiredUsers = getExpiredHoiPassPremiumUsers(data, premiumExpiryTarget);
         if (premiumExpiredUsers.length > 0) {
@@ -7041,6 +7079,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         result += buildSupportPassSaveCheckMessage(msg, savedMemberData);
                     }
                     replier.reply(result);
+                    return;
+                }
+                if (msg === "/구독패스지급") {
+                    if (castleSiegeFlag) return;
+                    if (!(isMaster(sender) || sender === "오픈채팅봇")) {
+                        replier.reply("❌ /구독패스지급 명령어를 사용할 권한이 없습니다.");
+                        return;
+                    }
+                    var supportPassPayoutResult = grantAllSupportPassDailyRewards(data);
+                    if (supportPassPayoutResult.changed) saveJsonFile(data, filePath);
+                    replier.reply(buildSupportPassPayoutResultMessage(supportPassPayoutResult));
+                    return;
+                }
+                if (/^\/구독패스지급(?:\s+.*)$/.test(msg)) {
+                    replier.reply("사용법: /구독패스지급\n※ 추가 인자 없이 명령어만 입력해 주세요.");
+                    return;
+                }
+                if (/^\/(?:호프구독|호이패스구독|초보패스구독|공헌패스구독|다이아패스구독)(?:\s+.*)?$/.test(msg)) {
+                    replier.reply("⚠️ 기존 패스 지급 명령어는 사용이 중단되었습니다.\n패스 지급 명령어가 /구독패스지급 으로 통합되었습니다.");
                     return;
                 }
                 if (msg === "/다이아패스구독") {
@@ -28309,7 +28366,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/다이아상점추가", "/다이아상점삭제", "/다이아추가", "/다이아차감", "/다이아전체초기화",
         "/자유시장생성", "/거래소강제취소", "/길드해산", "/길드해지", "/길드영지보상지급", "/영지순위보상지급", "/길드영지시작", "/길드영지종료", "/길드영지초기화",
         "/차원의문on", "/차원의문off", "/차원의문온", "/차원의문오프", "/날기억해줘온", "/날기억해줘오프",
-        "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
+        "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
         "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/개발자노트"
@@ -33142,6 +33199,66 @@ function getActiveSupportPassUsers(data, passKey) {
         if (isSupportPassActive(data, user, passKey)) users.push(user);
     }
     return users;
+}
+
+// 지정 후원패스의 일일 보상을 계정당 하루 한 번 지급하는 함수
+function grantSupportPassDailyRewards(data, passKey, rewards) {
+    var result = { grantedUserCount: 0, skippedUserCount: 0 };
+    var users = getActiveSupportPassUsers(data, passKey);
+    var today = String(getTodaySupportPassDateValue());
+    for (var userIndex = 0; userIndex < users.length; userIndex++) {
+        var user = users[userIndex];
+        var pass = data.member[user].pass[passKey];
+        if (pass.dailyRewardLastDate === today) {
+            result.skippedUserCount++;
+            continue;
+        }
+        for (var rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
+            addItem(data, user, rewards[rewardIndex].name, rewards[rewardIndex].count);
+        }
+        pass.dailyRewardLastDate = today;
+        result.grantedUserCount++;
+    }
+    return result;
+}
+
+// 모든 구독패스의 일일 보상을 순서대로 지급하고 패스별 처리 수를 반환하는 함수
+function grantAllSupportPassDailyRewards(data) {
+    var config = GLOBAL_CONFIG.supportPass;
+    var rows = [];
+    rows.push({ label: "호프", result: grantHoiPassPremiumDailyRewards(data) });
+    rows.push({ label: "호이패스", result: grantSupportPassDailyRewards(data, "hoi", config.hoiDailyRewards) });
+    rows.push({ label: "초보패스", result: grantSupportPassDailyRewards(data, "newbie", config.newbieDailyRewards) });
+    rows.push({ label: "공헌패스", result: grantSupportPassDailyRewards(data, "contribution", config.contributionDailyRewards) });
+    rows.push({
+        label: "다이아패스",
+        result: grantSupportPassDailyRewards(data, "diamond", [{ name: GLOBAL_CONFIG.items.diamondBoxName, count: config.diamondBoxCount }])
+    });
+    var totalGrantedCount = 0; // 패스별 실제 지급 건수 합계
+    var totalSkippedCount = 0; // 당일 중복으로 제외된 패스 건수 합계
+    for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        totalGrantedCount += rows[rowIndex].result.grantedUserCount;
+        totalSkippedCount += rows[rowIndex].result.skippedUserCount;
+    }
+    return {
+        changed: totalGrantedCount > 0,
+        rows: rows,
+        totalGrantedCount: totalGrantedCount,
+        totalSkippedCount: totalSkippedCount
+    };
+}
+
+// 구독패스 통합 지급 결과를 운영자용 요약 메시지로 생성하는 함수
+function buildSupportPassPayoutResultMessage(result) {
+    var lines = ["🎁 구독 패스 일괄 지급 완료", "━━━━━━━━━━━━━━━"];
+    for (var rowIndex = 0; rowIndex < result.rows.length; rowIndex++) {
+        var row = result.rows[rowIndex];
+        lines.push(row.label + ": " + row.result.grantedUserCount + "명");
+    }
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("총 지급 처리: " + result.totalGrantedCount + "건");
+    if (result.totalSkippedCount > 0) lines.push("금일 지급 완료로 제외: " + result.totalSkippedCount + "건");
+    return lines.join("\n");
 }
 
 // 호이패스 프리미엄 일일 아이템을 계정당 하루 한 번 지급하는 함수
