@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.391"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.392"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2686,7 +2686,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
+                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지시작, /길드영지종료, /길드영지, /맞짱시작, /휴식, /맞짱종료"
             );
             return;
         }
@@ -28343,6 +28343,10 @@ function isGuildTerritoryWarCommandLockActive(guildData) {
 function isGuildTerritoryAllowedDuringWarCommand(msg) {
     if (typeof msg !== "string") return false;
     return (
+        msg === "/맞짱시작" ||
+        msg === "/휴식" ||
+        msg === "/맞짱종료" ||
+        msg === "/길드영지시작" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지초기화" ||
         msg === "/길드영지종료" ||

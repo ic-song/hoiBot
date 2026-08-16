@@ -822,7 +822,7 @@ Status: VERIFIED
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
 - `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
-- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
+- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked except the territory-war allowlist and the operator commands `/맞짱시작`, `/휴식`, `/맞짱종료`, `/길드영지시작`, and `/길드영지종료`.
 
 ---
 
@@ -5130,6 +5130,7 @@ Status: VERIFIED
 - `/맞짱종료` clears all participant data and rest state after rank rewards and reports the cleared participant count. If the field is already inactive but legacy participant rows remain, the same command clears and saves those stale rows without issuing rewards again.
 - `/맞짱순위`는 `/맞짱시작`부터 현재까지 PT를 획득한 참가자를 누적 PT 내림차순으로 보여주며, 동점은 이름 오름차순으로 정렬한다. 조회만 수행하며 데이터를 저장하지 않는다.
 - While the field is active outside rest time, normal users may use only `/참여` (`ㅊㅇ`), `/맞짱` (`ㅁㅁ`), `/맞짱필드목록`, and `/맞짱순위`; confirmed management commands such as `/휴식`, `/맞짱종료`, `/미정`, `/정보`, `/미니펫정보`, and `/패키지리스트` require the Admin/Master/오픈채팅봇 command-specific bypass. Operators no longer bypass the lock for ordinary slash commands. `/맞짱` outside the siege room includes the siege-room link.
+- `/맞짱시작`, `/휴식`, and `/맞짱종료` remain reachable for authorized operators while a guild territory war is active in the siege room.
 - Cumulative 맞짱 win/lose storage is intentionally not used
 - `/다이아순위` uses cumulative earned 다이아 from `currencyLog.json` `user[유저명].diamond`; current held 다이아 remains in `data.member[*].diamond`
 - 다이아 사용 누적은 `currencyLog.json` `user[유저명].usedDiamond`에 저장하며 `/다이아상점구매`는 구매 금액, `/다이아차감`은 실제 차감된 금액만 기록한다
