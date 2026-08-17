@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
 import { FurnitureBoutiqueBoxCraftService, isFurnitureBoutiqueBoxCraftCommand } from "../src/crafting/furniture-boutique-box-craft-service.js";
 import { ApplicationError } from "../src/shared/application-error.js";
+
+describe("furniture boutique box craft integration", () => {
+  it("wires the exact command guard and service into the Iris dispatch", () => {
+    const appSource = readFileSync(new URL("../src/app.ts", import.meta.url), "utf8");
+    assert.match(appSource, /isFurnitureBoutiqueBoxCraftCommand\(normalizedEvent\.message\)/);
+    assert.match(appSource, /new FurnitureBoutiqueBoxCraftService\(database!\)\.handle/);
+  });
+});
 
 // 부띠끄상자 조합 SQL 순서와 mutation 유무를 기록하는 테스트 DB를 만듭니다.
 function createScriptedDatabase(queryResults: unknown[]) {
