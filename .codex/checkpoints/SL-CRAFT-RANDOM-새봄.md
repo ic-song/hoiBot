@@ -6,15 +6,16 @@
 - 작업자: `새봄`
 - 실행 ID: `새봄-SL-CRAFT-RANDOM-20260817T171514Z-65262b`
 - 선점 행: `슬라이스_선점!12행`
-- Heartbeat: `2026-08-18 02:24:30 +09:00`
-- Lease 만료: `2026-08-18 03:24:30 +09:00`
+- Heartbeat: `2026-08-18 02:28:17 +09:00`
+- Lease 만료: `2026-08-18 03:28:17 +09:00`
 - Worktree: `C:\Users\user\Desktop\hoiBot-worktrees\새봄-SL-CRAFT-RANDOM-20260817T171514Z-65262b`
 - Branch: `feature/modernization-craft-random-saebom-65262b`
 - 기준: `feature/prod@f79f21b`
-- 체크포인트 버전: `4`
+- 체크포인트 버전: `5`
 - 승계 커밋: `4706ad2`, `589accc`, `e645e09`
-- Push 상태: 새 실행 브랜치 미푸시
-- 상태: `ACTIVE`
+- 구현 커밋: `d938a7d`
+- Push 상태: 원격 실행 브랜치에 구현 커밋 반영 완료
+- 상태: `HANDOFF_READY`
 
 ## 승계 근거
 
@@ -46,10 +47,11 @@
 
 ## 다음 행동
 
-1. 격리 MariaDB 연결과 migration 상태를 확인한다. — 기존 DB checksum 불일치로 중단 후 전용 `hoibot_rehearsal_random_65262b`에 001~033 적용 완료
-2. `db:probe:random-box-craft`를 실행해 정상·중복 event·ledger·outbox 결과를 검증한다. — 하트 40→0, 랜덤박스 0→2, ledger 2건과 operation·execution·audit·outbox 각 1건 확인
-3. DB 재시작 후 동일 operation의 멱등성과 잔액 불변을 확인한다. — 재시작 후 동일 event replay에서 잔액·원장 건수 불변 확인
-4. evidence·WBS·Heartbeat를 갱신하고 검증 결과를 커밋·푸시한다. — 진행 중
+1. 운영 전 최종 snapshot import와 legacy↔MariaDB 수량 대사를 수행한다.
+2. backup·restore rehearsal과 live-room smoke 계획을 승인받는다.
+3. cutover 승인 뒤에만 운영 전환을 수행한다.
+
+격리 검증 DB `hoibot_rehearsal_random_65262b`는 검증 후 제거했다.
 
 ## 남은 위험
 
