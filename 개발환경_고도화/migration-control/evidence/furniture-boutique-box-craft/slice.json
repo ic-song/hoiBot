@@ -69,6 +69,20 @@
     ],
     "result": "passed"
   },
+  "shadow": {
+    "date": "2026-08-18",
+    "databaseClass": "disposable hoibot_rehearsal_*",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "fixtureTablesVerified": 35,
+    "fixtureChecksum": "f98c019a4194e91cbde8fa07da95d08045d25beb4c71fde0816d76fb2de3f51e",
+    "balances": { "shopTicketBefore": 10000, "shopTicketAfter": 0, "boutiqueBoxBefore": 1, "boutiqueBoxAfter": 3 },
+    "effects": { "inventoryLedger": 2, "operation": 1, "execution": 1, "audit": 1, "outbox": 1 },
+    "duplicateEvent": "passed",
+    "mariadbRestartReplay": "passed",
+    "operationalSnapshotTouched": false,
+    "result": "passed"
+  },
   "logicPort": {
     "services": ["개발환경_고도화/runtime/src/crafting/furniture-boutique-box-craft-service.ts"],
     "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
@@ -94,7 +108,7 @@
     "legacy accepts zero quantity and emits a success reply without a balance delta",
     "full checkRank special and guild decorations are not yet centralized",
     "the port adds a one-million craft limit",
-    "shared Iris app routing and common synthetic fixture integration are intentionally deferred to the integration coordinator",
+    "operational readiness still requires final snapshot import, reconciliation, backup and cutover approval",
     "actual full operational data import and live-room smoke have not been executed"
   ]
 }

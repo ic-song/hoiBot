@@ -11,12 +11,14 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 }
 
 const database = createDatabaseClient(config.database);
-const eventId = `boutique-box-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const eventId = process.env.FURNITURE_BOUTIQUE_BOX_CRAFT_PROBE_EVENT_ID
+  ?? `boutique-box-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const replayOnly = process.env.FURNITURE_BOUTIQUE_BOX_CRAFT_PROBE_REPLAY_ONLY === "true";
 const externalUserId = "synthetic-admin-alpha";
 const channelId = "synthetic-room-001";
 
 try {
-  await database.withTransaction(async (transaction) => {
+  if (!replayOnly) await database.withTransaction(async (transaction) => {
     await transaction.execute(
       `INSERT INTO item_definitions (code, display_name, asset_type_code, stackable, metadata_json, active, version) VALUES
         ('legacy-pet-home-interior-shop-ticket', '펫스윗홈인테리어샵🖼️(/샵오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'wbsId', 'CMD-06-0043'), TRUE, 1),
@@ -94,6 +96,7 @@ try {
     balances: { shopTicket: result.shopTicketQuantity, boutiqueBox: result.boutiqueBoxQuantity },
     effects: { inventoryLedger: 2, operation: 1, execution: 1, audit: 1, outbox: 1 },
     idempotent: true,
+    restartReplay: replayOnly,
     temporaryDefinitions: ["legacy-pet-home-interior-shop-ticket", "legacy-furniture-boutique-box"],
     operationalSnapshotTouched: false
   })}\n`);

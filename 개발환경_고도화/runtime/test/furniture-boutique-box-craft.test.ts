@@ -8,8 +8,12 @@ import { ApplicationError } from "../src/shared/application-error.js";
 describe("furniture boutique box craft integration", () => {
   it("wires the exact command guard and service into the Iris dispatch", () => {
     const appSource = readFileSync(new URL("../src/app.ts", import.meta.url), "utf8");
+    const probeSource = readFileSync(new URL("../scripts/probe-furniture-boutique-box-craft-synthetic.ts", import.meta.url), "utf8");
     assert.match(appSource, /isFurnitureBoutiqueBoxCraftCommand\(normalizedEvent\.message\)/);
     assert.match(appSource, /new FurnitureBoutiqueBoxCraftService\(database!\)\.handle/);
+    assert.match(probeSource, /FURNITURE_BOUTIQUE_BOX_CRAFT_PROBE_EVENT_ID/);
+    assert.match(probeSource, /FURNITURE_BOUTIQUE_BOX_CRAFT_PROBE_REPLAY_ONLY/);
+    assert.match(probeSource, /if \(!replayOnly\) await database\.withTransaction/);
   });
 });
 
