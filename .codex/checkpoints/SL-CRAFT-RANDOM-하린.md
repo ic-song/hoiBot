@@ -4,15 +4,15 @@
 - 도메인: `상점·패키지·제작`
 - 작업 레인: `통합`
 - 작업자: `하린`
-- 실행 ID: `하린-SL-CRAFT-RANDOM-20260817T163447Z-ul13qw`
-- 선점 행: `슬라이스_선점!8행`
-- Heartbeat: `2026-08-18 01:39:30 +09:00`
-- Lease 만료: `2026-08-18 02:39:30 +09:00`
+- 실행 ID: `하린-SL-CRAFT-RANDOM-20260817T164136Z-rb6n4q`
+- 선점 행: `슬라이스_선점!9행`
+- Heartbeat: `2026-08-18 01:44:30 +09:00`
+- Lease 만료: `2026-08-18 02:44:30 +09:00`
 - Worktree: `C:\Users\obbad\OneDrive\바탕 화면\hoiBot-modernization-craft-random`
 - Branch: `feature/modernization-craft-random`
 - 기준: `feature/prod@f79f21b`
-- 체크포인트 버전: `3`
-- 구현 커밋: `4706ad28e7da45124ab4e8cf84bc6bf8ba0d4a0c`
+- 체크포인트 버전: `4`
+- 구현 커밋: `4706ad28e7da45124ab4e8cf84bc6bf8ba0d4a0c`, `589accc`
 - Push 상태: `origin/feature/modernization-craft-random` 반영 완료
 - 상태: `HANDOFF_READY`
 
@@ -40,9 +40,11 @@
 - 대표 명령: `/랜덤조합`
 - 주요 DB: `item_definitions`, `inventory_stacks`, `inventory_instances`, `inventory_ledger`
 - 통합 변경: `app.ts` dispatch, `db:probe:random-box-craft`, 런타임 문서와 wiring 회귀 테스트
-- 검증: `npm.cmd run typecheck`, 41 suites·165 tests, `npm.cmd run build` 통과
+- 공용 fixture: `legacy-heart` 40개와 `legacy-random-box` 0개 합성 stack 추가
+- 검증: evidence JSON parse, `npm.cmd run typecheck`, 41 suites·166 tests, `npm.cmd run build`, `git diff --check` 통과
 - Legacy 저장 위험: 현재 `main.js`의 `/랜덤조합` 성공 분기에는 직접 `saveJsonFile(data, filePath)`가 없으며 새 서비스는 DB transaction·ledger·operation·audit·outbox로 원자 저장한다.
-- 다음 행동: 비운영 Shadow 실행과 격리 MariaDB 합성 probe·재시작 검증
+- 환경 확인: Docker·MariaDB CLI·`.env`가 없어 실 DB 검증을 수행하지 못함
+- 다음 행동: Docker/MariaDB 준비 후 비운영 Shadow와 `db:probe:random-box-craft`·재시작 검증
 
 ## 저장·푸시 정책
 
