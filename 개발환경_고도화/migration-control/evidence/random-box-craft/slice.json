@@ -65,7 +65,10 @@
     ]
   },
   "parity": {
-    "fixtures": ["positive heart stack, zero heart stack, shortage and active castle siege"],
+    "fixtures": [
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
+      "positive heart stack, zero heart stack, shortage and active castle siege"
+    ],
     "comparisonMode": "exact guard, zero quantity, validation order, reply, two balance deltas, ledger, audit, outbox and duplicate event",
     "result": "passed"
   },

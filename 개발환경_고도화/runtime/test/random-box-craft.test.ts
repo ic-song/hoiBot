@@ -53,6 +53,14 @@ describe("random box craft integration", () => {
     assert.match(appSource, /isRandomBoxCraftCommand\(normalizedEvent\.message\)/);
     assert.match(appSource, /new RandomBoxCraftService\(database!\)\.handle/);
   });
+
+  it("keeps reusable heart and random-box rows in the shared synthetic fixture", () => {
+    const fixture = readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/functional-v1.sql", import.meta.url), "utf8");
+    assert.match(fixture, /'legacy-heart', '하트💝'/);
+    assert.match(fixture, /'legacy-random-box', '랜덤박스💝'/);
+    assert.match(fixture, /\(900000001, 900000010, 40, 1\)/);
+    assert.match(fixture, /\(900000001, 900000011, 0, 1\)/);
+  });
 });
 
 describe("random box craft service", () => {

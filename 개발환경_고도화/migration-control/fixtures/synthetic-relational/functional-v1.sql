@@ -103,7 +103,9 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000006, 'legacy-castle-battle-reset-ticket', '캐슬대전리셋권🐶', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000007, 'legacy-raid-strike-seal-600', '레이드타격대인장👑(+600👾)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000008, 'legacy-pet-food-box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000009, 'legacy-guild-join-ticket', '길드가입권🍭(/길드가입 숫자)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
+  (900000009, 'legacy-guild-join-ticket', '길드가입권🍭(/길드가입 숫자)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
+  (900000010, 'legacy-heart', '하트💝', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'legacyBagOrder', 22), TRUE, 1),
+  (900000011, 'legacy-random-box', '랜덤박스💝', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
@@ -116,6 +118,8 @@ INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
   (900000001, 900000007, 0, 1),
   (900000001, 900000008, 0, 1),
   (900000001, 900000009, 0, 1),
+  (900000001, 900000010, 40, 1),
+  (900000001, 900000011, 0, 1),
   (900000002, 900000001, 7, 1)
 ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = VALUES(version);
 
