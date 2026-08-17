@@ -141,12 +141,44 @@ export async function registerAdminRoutes(app: FastifyInstance, dependencies: Ad
     return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
   });
 
-  app.put<{ Params: { identityId: string }; Body: MutationBody & { playerId?: unknown } }>("/api/v1/admin/external-identities/:identityId/player-assignment", async (request) => {
+  app.get<{ Querystring: { status?: string; page?: string; limit?: string } }>("/api/v1/admin/external-platform-links", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "identity.read");
+    const paging = readPage(request.query);
+    const result = await dependencies.management.listExternalPlatformLinks(request.query.status, paging.limit, paging.offset);
+    return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.get<{ Params: { linkId: string } }>("/api/v1/admin/external-platform-links/:linkId/history", async (request) => {
+    const session = await authenticate(request, dependencies, false); requirePermission(session, "identity.read");
+    return {
+      ok: true,
+      items: await dependencies.management.listExternalPlatformLinkHistory(request.params.linkId),
+      requestId: request.id
+    };
+  });
+
+  app.post<{ Params: { linkId: string }; Body: MutationBody }>("/api/v1/admin/external-platform-links/:linkId/unlink", async (request) => {
     const session = await authenticate(request, dependencies, true); requirePermission(session, "identity.assign");
     const mutation = readMutation(request, request.body);
-    if (typeof request.body?.playerId !== "string") throw new ApplicationError("PLAYER_ID_REQUIRED", "playerId가 필요합니다.", 422);
-    const result = await dependencies.directory.approveIdentity({ identityId: request.params.identityId, playerId: request.body.playerId, reason: mutation.reason, actorId: session.operatorId, idempotencyKey: mutation.idempotencyKey });
-    return { ok: true, ...result, requestId: request.id };
+    return {
+      ok: true,
+      externalPlatformLink: await dependencies.management.changeExternalPlatformLinkStatus({
+        ...mutation, operatorId: session.operatorId, linkId: request.params.linkId, action: "unlink"
+      }),
+      requestId: request.id
+    };
+  });
+
+  app.post<{ Params: { linkId: string }; Body: MutationBody }>("/api/v1/admin/external-platform-links/:linkId/block", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "identity.assign");
+    const mutation = readMutation(request, request.body);
+    return {
+      ok: true,
+      externalPlatformLink: await dependencies.management.changeExternalPlatformLinkStatus({
+        ...mutation, operatorId: session.operatorId, linkId: request.params.linkId, action: "block"
+      }),
+      requestId: request.id
+    };
   });
 
   app.get<{ Querystring: { page?: string; limit?: string } }>("/api/v1/admin/audit-entries", async (request) => {

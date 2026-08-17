@@ -1,6 +1,4 @@
-import { randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
-import { ApplicationError } from "../shared/application-error.js";
 
 export class AdminDirectoryService {
   constructor(private readonly database: DatabaseClient) {}
@@ -26,46 +24,6 @@ export class AdminDirectoryService {
     );
     const counts = await this.database.query<Array<{ total: bigint }>>(`SELECT COUNT(*) AS total FROM external_identities${where}`, values);
     return { items: rows.map((row) => ({ id: row.id.toString(), providerCode: row.provider_code, externalUserId: row.external_user_id, displayName: row.display_name, observedDisplayName: row.observed_display_name, observedNameTrust: row.observed_name_trust, playerId: row.player_id?.toString() ?? null, status: row.status })), total: Number(counts[0]?.total ?? 0n) };
-  }
-
-  async approveIdentity(input: { identityId: string; playerId: string; actorId: string; reason: string; idempotencyKey: string }): Promise<{ identityId: string; playerId: string; auditId: string }> {
-    return this.database.withTransaction(async (transaction) => {
-      const scope = `identity.approve:${input.identityId}`;
-      const previous = await transaction.query<Array<{ result_json: string | Record<string, string> }>>(
-        "SELECT result_json FROM operations WHERE idempotency_scope = ? AND idempotency_key = ? FOR UPDATE",
-        [scope, input.idempotencyKey]
-      );
-      if (previous[0]?.result_json !== undefined) {
-        return typeof previous[0].result_json === "string" ? JSON.parse(previous[0].result_json) : previous[0].result_json as { identityId: string; playerId: string; auditId: string };
-      }
-      const operation = await transaction.execute(
-        `INSERT INTO operations
-          (operation_key, idempotency_scope, idempotency_key, actor_type, actor_id, source_code, status, created_at)
-         VALUES (?, ?, ?, 'admin_operator', ?, 'admin_api', 'processing', UTC_TIMESTAMP(3))`,
-        [randomUUID(), scope, input.idempotencyKey, input.actorId]
-      );
-      const update = await transaction.execute(
-        `UPDATE external_identities SET player_id = ?, status = 'linked', updated_at = UTC_TIMESTAMP(3)
-         WHERE id = ? AND status = 'candidate'`,
-        [input.playerId, input.identityId]
-      );
-      if (update.affectedRows !== 1n) throw new ApplicationError("IDENTITY_CANDIDATE_NOT_FOUND", "승인할 identity 후보가 없습니다.", 404);
-      await transaction.execute(
-        `UPDATE legacy_identity_map SET candidate_external_identity_id = ?, resolution_status = 'approved',
-          approved_by = ?, approved_at = UTC_TIMESTAMP(3)
-         WHERE player_id = ? AND resolution_status = 'unresolved'`,
-        [input.identityId, input.actorId, input.playerId]
-      );
-      const audit = await transaction.execute(
-        `INSERT INTO command_audit
-          (operation_id, actor_type, actor_id, target_type, target_id, action_code, result_code, reason, created_at)
-         VALUES (?, 'admin_operator', ?, 'external_identity', ?, 'identity.approve', 'success', ?, UTC_TIMESTAMP(3))`,
-        [operation.insertId, input.actorId, input.identityId, input.reason]
-      );
-      const result = { identityId: input.identityId, playerId: input.playerId, auditId: audit.insertId.toString() };
-      await transaction.execute("UPDATE operations SET status = 'completed', result_json = ?, completed_at = UTC_TIMESTAMP(3) WHERE id = ?", [JSON.stringify(result), operation.insertId]);
-      return result;
-    });
   }
 
   async listAudit(limit: number, offset: number): Promise<{ items: Array<Record<string, unknown>>; total: number }> {

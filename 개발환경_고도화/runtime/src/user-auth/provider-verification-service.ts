@@ -186,6 +186,18 @@ export class ProviderVerificationService {
            unlinked_at = NULL, blocked_at = NULL, updated_at = UTC_TIMESTAMP(3)`,
         [challenge.user_account_id, identityId, input.purpose, challenge.id]
       );
+      const linkedRows = await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM user_account_external_identities WHERE external_identity_id = ? FOR UPDATE",
+        [identityId]
+      );
+      const linkId = linkedRows[0]!.id;
+      await transaction.execute(
+        `INSERT INTO user_account_external_identity_history
+          (link_id, user_account_id, external_identity_id, action_code, actor_type, actor_id, reason, challenge_id, created_at)
+         VALUES (?, ?, ?, 'linked', 'external_identity', ?, ?, ?, UTC_TIMESTAMP(3))`,
+        [linkId, challenge.user_account_id, identityId, identityId,
+          input.purpose === "signup_link" ? "사이트 회원가입 인증" : "사이트 계정 추가 연결", challenge.id]
+      );
       if (input.purpose === "signup_link") {
         await transaction.execute(
           `UPDATE user_accounts SET player_id = ?, status = 'active', pending_expires_at = NULL,
@@ -210,8 +222,8 @@ export class ProviderVerificationService {
         `INSERT INTO command_audit
           (operation_id, actor_type, actor_id, target_type, target_id, action_code, result_code, reason,
            change_summary_json, created_at)
-         VALUES (?, 'external_identity', ?, 'user_account', ?, ?, 'success', ?, ?, UTC_TIMESTAMP(3))`,
-        [operation.insertId, identityId, challenge.user_account_id,
+         VALUES (?, 'external_identity', ?, 'user_account_external_identity', ?, ?, 'success', ?, ?, UTC_TIMESTAMP(3))`,
+        [operation.insertId, identityId, linkId,
           input.purpose === "signup_link" ? "user.signup.kakao.verify" : "user.external_identity.kakao.link",
           input.purpose === "signup_link" ? "사이트 회원가입 Kakao 인증" : "사이트 계정 Kakao 추가 연결",
           JSON.stringify({ accountId: challenge.user_account_id.toString(), playerId: playerId.toString() })]

@@ -21,7 +21,8 @@ Iris 입출력과 MariaDB 도메인 이전을 검증하는 TypeScript/Fastify �
 - `/가입` 대기 상태 영속화와 `/시작한다` 동의 시 회원·프로필·초기 펫·재화·카운터·identity 원자 생성
 - `/거절한다` 가입 취소, 닉네임 예약 해제와 가입 이벤트 재시도·중복 생성 방지
 - 사이트 회원가입, 24시간 미인증 계정, 30분 1회용 가입·계정 연결 코드와 정확한 KakaoTalk `/가입인증 CODE`, `/계정인증 CODE` 연결
-- 사이트 계정당 여러 외부 계정 연결, 기본 10개 전역 한도와 관리자 설정 API
+- 사이트 계정당 여러 외부 계정 연결, 사용자 직접 해제, 관리자 강제 해제·차단·이력과 기본 10개 전역 한도 설정 API
+- 미연결 외부 사용자는 인증·도움말·연결 진단 명령만 허용하고 게임·재화·관리 명령은 공통 dispatch gate에서 차단
 - 일반 사용자 Argon2id 로그인, hash 세션과 CSRF 검증(CAPTCHA는 현재 범위에서 제외)
 - 관리자 Argon2id 로그인, RBAC, hash 세션, CSRF, 회원 조회·서버 변경·identity 승인·감사 API
 - 공통 transactional operation runner와 재화·인벤토리·펫/스킬/타이틀·길드·홈·이벤트/랭킹·거래소 Application Service
@@ -121,6 +122,8 @@ npm.cmd run fake:event
 | POST | `/api/v1/sessions` | 사용자 계정 | 사용자 로그인·CSRF 발급 |
 | GET/DELETE | `/api/v1/sessions/current` | 사용자 세션 | 현재 사용자 세션 조회·종료 |
 | GET | `/api/v1/player-profiles/current` | 사용자 세션 | 로그인한 사용자의 MariaDB 캐릭터 프로필 조회 |
+| GET/DELETE | `/api/v1/external-platform-links[/:linkId]` | 사용자 세션(+해제 시 CSRF·멱등키) | 외부 플랫폼 연결 조회·직접 해제 |
+| POST | `/api/v1/external-platform-links/challenges` | 사용자 세션+CSRF | 추가 외부 계정의 30분 연결 코드 발급 |
 | GET | `/api/v1/public/overview` | 없음 | 공개 홈용 서버 상태·활성 캐릭터·관찰 채널·최근 이벤트 집계 |
 | POST | `/api/v1/account-deletion-requests` | 사용자 세션+CSRF | 30일 탈퇴 유예 시작 |
 | DELETE | `/api/v1/account-deletion-requests/current` | 로그인 정보 | 유예 중 계정 복구 |
@@ -130,7 +133,11 @@ npm.cmd run fake:event
 | GET | `/api/v1/admin/players` | `player.read` | 회원 검색 |
 | GET | `/api/v1/admin/players/:playerId` | `player.read` | 회원 ProfileView·제재 조회 |
 | PUT | `/api/v1/admin/players/:playerId/server-assignment` | `player.server.assign`+CSRF | 낙관적 잠금 서버 배정 |
-| GET/PUT | `/api/v1/admin/external-identities[/:identityId/player-assignment]` | `identity.read/assign` | identity 조회·연결 |
+| GET | `/api/v1/admin/external-identities` | `identity.read` | 외부 identity 후보 조회 |
+| GET | `/api/v1/admin/external-platform-links` | `identity.read` | 사이트 계정별 외부 플랫폼 연결 조회 |
+| GET | `/api/v1/admin/external-platform-links/:linkId/history` | `identity.read` | 연결·재연결·해제·차단 이력 조회 |
+| POST | `/api/v1/admin/external-platform-links/:linkId/unlink` | `identity.assign`+CSRF·멱등키 | 관리자 강제 연결 해제 |
+| POST | `/api/v1/admin/external-platform-links/:linkId/block` | `identity.assign`+CSRF·멱등키 | 관리자 연결 차단 |
 | GET | `/api/v1/admin/game-servers` | `player.read` | 게임 서버 목록 |
 | GET | `/api/v1/admin/audit-entries` | `audit.read` | 감사 기록 조회 |
 | GET | `/api/v1/admin/channel-activity` | `activity.read` | 본문 없는 방·사용자 일별 활동량 조회 |
@@ -170,7 +177,7 @@ MariaDB가 활성화된 경우 provider event ID를 inbox의 UNIQUE key로 사�
 
 신규 사이트 가입 흐름은 로그인 ID, 비밀번호, 정확한 `한글 2글자 + 공백 + 남/여` 시스템 이름과 이용약관 동의를 받은 뒤 아직 player를 만들지 않은 미인증 계정을 생성합니다. 개인정보 처리방침의 별도 동의는 받지 않고 최소 계정정보 처리 안내만 표시합니다. 사용자가 정확히 `/가입인증 ABCD2345` 형식으로 입력하면 30분 가입용 코드와 KakaoTalk의 안정적인 `user_id`를 검증해 player와 초기 데이터를 한 트랜잭션으로 생성합니다. KakaoTalk 닉네임은 표시용 관측값이며 사이트 계정 소유권 판정에는 사용하지 않습니다. CAPTCHA는 이번 1차 구현에 포함하지 않습니다.
 
-로그인된 사용자는 사이트 인증관리에서 별도의 30분 계정 연결 코드를 발급받고 `/계정인증 ABCD2345`로 추가 KakaoTalk 계정을 같은 사이트 계정에 연결할 수 있습니다. 가입용 코드와 계정 연결용 코드는 서로 바꿔 쓸 수 없습니다. 외부 계정은 사이트 계정의 단일 player를 공유하므로 포인트·다이아·캐시와 게임 데이터가 플랫폼별로 분리되지 않습니다. 활성 연결 한도는 기본 10개이며 관리자 설정 API에서 1~10개로 변경할 수 있습니다. 한도를 낮춰도 기존 연결은 제거하지 않고 신규 연결만 차단합니다. Discord·Telegram은 같은 provider 확장 구조를 사용하되 현재 실제 연결은 KakaoTalk만 지원합니다.
+로그인된 사용자는 사이트 인증관리에서 별도의 30분 계정 연결 코드를 발급받고 `/계정인증 ABCD2345`로 추가 KakaoTalk 계정을 같은 사이트 계정에 연결하거나 직접 해제할 수 있습니다. 가입용 코드와 계정 연결용 코드는 서로 바꿔 쓸 수 없습니다. 외부 계정은 사이트 계정의 단일 player를 공유하므로 포인트·다이아·캐시와 게임 데이터가 플랫폼별로 분리되지 않습니다. 활성 연결 한도는 기본 10개이며 관리자 설정 API에서 1~10개로 변경할 수 있습니다. 한도를 낮춰도 기존 연결은 제거하지 않고 신규 연결만 차단합니다. 관리자는 직접 외부 ID를 입력해 연결하지 않고 기존 연결의 강제 해제·차단과 이력 조회만 수행합니다. 미연결 외부 사용자는 `/가입인증`, `/계정인증`, 도움말과 연결 진단만 사용할 수 있습니다. Discord·Telegram은 같은 provider 확장 구조를 사용하되 현재 실제 연결은 KakaoTalk만 지원합니다.
 
 브라우저를 닫았거나 새로고침한 미인증 사용자는 `로그인 -> 인증 계속하기`에서 아이디·비밀번호를 확인하고 새 코드를 발급받을 수 있습니다. 가입·재발급·로그인 요청은 원문 IP를 저장하지 않는 프로세스 메모리 HMAC 범위 제한을 적용합니다. 일반 사용자 비밀번호를 5회 틀리면 DB에 15분 잠금이 기록됩니다. 24시간이 지난 미인증 계정은 서버 시작 시와 1시간마다 challenge·동의 이력·임시 세션과 함께 삭제됩니다.
 

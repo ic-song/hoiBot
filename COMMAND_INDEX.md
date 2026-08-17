@@ -6015,7 +6015,7 @@ Status: VERIFIED
 
 ---
 
-# 고도화 Iris `/ping` · `/info` · `/가입인증` · `/계정인증`
+# 고도화 Iris `/ping` · `/info` · `/도움말` · `/가입인증` · `/계정인증`
 
 Status: VERIFIED
 
@@ -6027,7 +6027,9 @@ Status: VERIFIED
 - `개발환경_고도화/runtime/src/integration/iris-kakao-database-inspector.ts`
 - `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
 - `개발환경_고도화/runtime/src/user-auth/user-auth-service.ts`
+- `개발환경_고도화/runtime/src/user-auth/external-platform-access-service.ts`
 - `개발환경_고도화/runtime/migrations/034_user_account_external_links.sql`
+- `개발환경_고도화/runtime/migrations/035_external_platform_link_history.sql`
 - `개발환경_고도화/runtime/migrations/020_trusted_identity_activity_events.sql`
 
 ## Related Helpers
@@ -6038,12 +6040,14 @@ Status: VERIFIED
 - `formatIrisKakaoFullDiagnostic`
 - `ProviderVerificationService.verifyKakao`
 - `readKakaoVerificationCommand`
+- `requiresLinkedSiteAccount`
+- `ExternalPlatformAccessService.hasActiveSiteAccount`
 
 ## Data Usage
 
 - MariaDB `external_identities`
 - MariaDB `external_identity_names`
-- MariaDB `user_accounts`, `user_account_external_identities`, `user_verification_challenges`
+- MariaDB `user_accounts`, `user_account_external_identities`, `user_account_external_identity_history`, `user_verification_challenges`
 - MariaDB `configuration_sets`, `configuration_values`
 - MariaDB `normalized_provider_events`
 - MariaDB `channel_memberships`, `channel_membership_events`
@@ -6055,10 +6059,14 @@ Status: VERIFIED
 
 - Iris `sender`는 `iris_cache / untrusted` 이름 관측 이력으로만 저장하며 `external_identities.display_name`을 갱신하지 않는다.
 - `/ping` 표시명은 연결된 시스템 이름, 직접 조회한 KakaoTalk DB 이름 순서로 사용하며 둘 다 없으면 `미확인 사용자`로 응답한다.
+- `/도움말`은 사이트 가입·기존 계정 추가 연결과 게임 명령 사용 조건을 안내하며 사이트 연결 전에도 사용할 수 있다.
 - `/가입인증 [코드]`는 사이트 가입을 완료하고 `/계정인증 [코드]`는 로그인된 사이트 계정에 외부 계정을 추가한다.
 - 인증 소유권은 KakaoTalk의 안정적인 `user_id`로 판정하며 닉네임은 표시용 관측값으로만 저장한다.
 - 가입용 코드와 계정 연결용 코드는 용도가 달라 서로 바꿔 사용할 수 없고, 모두 30분 뒤 만료된다.
 - 활성 외부 계정 연결 수는 사이트 계정 단위이며 관리자 설정값을 따르고 최대 10개를 넘지 않는다.
+- 미연결 외부 사용자는 인증·도움말·연결 진단 명령만 사용할 수 있고, 게임·재화·관리 슬래시 명령은 공통 gate에서 실행 전에 차단된다.
+- 사용자는 사이트에서 자신의 연결을 직접 해제할 수 있으며 관리자는 직접 ID를 입력해 연결하지 않고 강제 해제·차단·이력 조회만 수행한다.
+- 연결·재연결·사용자 해제·관리자 강제 해제·차단은 append-only 연결 이력과 command audit에 함께 기록한다.
 - 일반 메시지 본문은 활동 통계와 감지 사건에 저장하지 않고 날짜·채널·방향·이벤트 분류·건수만 집계한다.
 - 수정·삭제는 대상 이벤트 ID와 감지 시각만 사건으로 남기며 원문 메시지를 복제하지 않는다.
 - 입장·이탈은 현재 membership과 append-only 이력을 함께 갱신하고, 이탈만으로 자진 퇴장과 강퇴를 구분하지 않는다.

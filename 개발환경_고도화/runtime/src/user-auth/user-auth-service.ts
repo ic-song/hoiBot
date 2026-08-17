@@ -452,6 +452,72 @@ export class UserAuthService {
     };
   }
 
+  // 로그인된 사용자가 자신의 활성 외부 플랫폼 연결을 직접 해제합니다.
+  async unlinkExternalLink(input: {
+    sessionToken: string;
+    csrfToken: string;
+    linkId: string;
+    idempotencyKey: string;
+  }): Promise<{ linkId: string; status: "unlinked"; auditId: string }> {
+    if (!/^\d+$/.test(input.linkId)) {
+      throw new ApplicationError("INVALID_EXTERNAL_LINK_ID", "외부 플랫폼 연결 번호가 올바르지 않습니다.", 422);
+    }
+    const session = await this.authenticate(input.sessionToken, input.csrfToken);
+    return this.database.withTransaction(async (transaction) => {
+      const scope = `user.external-link.unlink:${session.accountId}:${input.linkId}`;
+      const previous = await transaction.query<Array<{ result_json: string | { linkId: string; status: "unlinked"; auditId: string } }>>(
+        "SELECT result_json FROM operations WHERE idempotency_scope = ? AND idempotency_key = ? FOR UPDATE",
+        [scope, input.idempotencyKey]
+      );
+      if (previous[0]?.result_json !== undefined) {
+        return typeof previous[0].result_json === "string"
+          ? JSON.parse(previous[0].result_json) as { linkId: string; status: "unlinked"; auditId: string }
+          : previous[0].result_json;
+      }
+      const links = await transaction.query<Array<{ id: bigint; external_identity_id: bigint; status: string }>>(
+        `SELECT id, external_identity_id, status FROM user_account_external_identities
+         WHERE id = ? AND user_account_id = ? FOR UPDATE`,
+        [input.linkId, session.accountId]
+      );
+      const link = links[0];
+      if (link === undefined) throw new ApplicationError("EXTERNAL_LINK_NOT_FOUND", "외부 플랫폼 연결을 찾을 수 없습니다.", 404);
+      if (link.status !== "active") throw new ApplicationError("EXTERNAL_LINK_NOT_ACTIVE", "이미 해제되었거나 차단된 연결입니다.", 409);
+      const operation = await transaction.execute(
+        `INSERT INTO operations
+          (operation_key, idempotency_scope, idempotency_key, actor_type, actor_id, source_code, status, created_at)
+         VALUES (?, ?, ?, 'user_account', ?, 'user_api', 'processing', UTC_TIMESTAMP(3))`,
+        [randomUUID(), scope, input.idempotencyKey, session.accountId]
+      );
+      await transaction.execute(
+        `UPDATE user_account_external_identities SET status = 'unlinked', unlinked_at = UTC_TIMESTAMP(3),
+          blocked_at = NULL, updated_at = UTC_TIMESTAMP(3) WHERE id = ?`, [link.id]
+      );
+      await transaction.execute(
+        `UPDATE external_identities SET player_id = NULL, status = 'candidate', updated_at = UTC_TIMESTAMP(3)
+         WHERE id = ?`, [link.external_identity_id]
+      );
+      await transaction.execute(
+        `INSERT INTO user_account_external_identity_history
+          (link_id, user_account_id, external_identity_id, action_code, actor_type, actor_id, reason, created_at)
+         VALUES (?, ?, ?, 'unlinked', 'user_account', ?, '사용자 직접 연결 해제', UTC_TIMESTAMP(3))`,
+        [link.id, session.accountId, link.external_identity_id, session.accountId]
+      );
+      const audit = await transaction.execute(
+        `INSERT INTO command_audit
+          (operation_id, actor_type, actor_id, target_type, target_id, action_code, result_code, reason, change_summary_json, created_at)
+         VALUES (?, 'user_account', ?, 'user_account_external_identity', ?, 'user.external_identity.unlink',
+           'success', '사용자 직접 연결 해제', ?, UTC_TIMESTAMP(3))`,
+        [operation.insertId, session.accountId, link.id, JSON.stringify({ linkId: input.linkId, status: "unlinked" })]
+      );
+      const result = { linkId: input.linkId, status: "unlinked" as const, auditId: audit.insertId.toString() };
+      await transaction.execute(
+        "UPDATE operations SET status = 'completed', result_json = ?, completed_at = UTC_TIMESTAMP(3) WHERE id = ?",
+        [JSON.stringify(result), operation.insertId]
+      );
+      return result;
+    });
+  }
+
   // 일반 로그아웃 시 현재 세션만 폐기합니다.
   async logout(sessionToken: string, csrfToken: string): Promise<void> {
     const session = await this.authenticate(sessionToken, csrfToken);

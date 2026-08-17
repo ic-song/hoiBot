@@ -139,7 +139,8 @@ describe("site user authentication", () => {
       [{ id: 30n, player_id: 20n }],
       [],
       [{ active_links: 1n }],
-      [{ max_active_links: 10n }]
+      [{ max_active_links: 10n }],
+      [{ id: 40n }]
     ]);
     const result = await new ProviderVerificationService(scripted.database, pepper).verifyKakao({
       purpose: "account_link", code, externalUserId: "kakao-test",

@@ -27,6 +27,14 @@ function readRequiredCsrf(request: FastifyRequest): string {
   return value;
 }
 
+function readIdempotencyKey(request: FastifyRequest): string {
+  const value = request.headers["idempotency-key"];
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new ApplicationError("IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key 헤더가 필요합니다.", 422);
+  }
+  return value.trim();
+}
+
 // 사용자 회원가입·Kakao 인증 대기·로그인·현재 세션 API를 등록합니다.
 export async function registerUserAuthRoutes(app: FastifyInstance, dependencies: UserRouteDependencies): Promise<void> {
   app.post<{ Body: Record<string, unknown> }>("/api/v1/user-accounts", async (request, reply) => {
@@ -114,6 +122,22 @@ export async function registerUserAuthRoutes(app: FastifyInstance, dependencies:
       providerCode
     );
     return reply.code(201).send({ ok: true, challenge, requestId: request.id });
+  });
+
+  app.delete<{ Params: { linkId: string }; Body: { confirmed?: unknown } }>("/api/v1/external-platform-links/:linkId", async (request) => {
+    if (request.body?.confirmed !== true) {
+      throw new ApplicationError("CONFIRMATION_REQUIRED", "연결 해제를 다시 확인해 주세요.", 422);
+    }
+    return {
+      ok: true,
+      externalPlatformLink: await dependencies.auth.unlinkExternalLink({
+        sessionToken: request.cookies[USER_SESSION_COOKIE] ?? "",
+        csrfToken: readRequiredCsrf(request),
+        linkId: request.params.linkId,
+        idempotencyKey: readIdempotencyKey(request)
+      }),
+      requestId: request.id
+    };
   });
 
   app.delete("/api/v1/sessions/current", async (request, reply) => {

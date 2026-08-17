@@ -124,6 +124,105 @@ export class AdminManagementService {
     });
   }
 
+  // 관리자 연결관리 화면에 표시할 사이트 계정별 외부 플랫폼 연결을 조회합니다.
+  async listExternalPlatformLinks(status: string | undefined, limit: number, offset: number): Promise<{
+    items: Array<Record<string, unknown>>;
+    total: number;
+  }> {
+    const allowedStatuses = new Set(["active", "unlinked", "blocked"]);
+    if (status !== undefined && !allowedStatuses.has(status)) {
+      throw new ApplicationError("INVALID_EXTERNAL_LINK_STATUS", "외부 플랫폼 연결 상태가 올바르지 않습니다.", 422);
+    }
+    const where = status === undefined ? "" : "WHERE link.status = ?";
+    const values = status === undefined ? [] : [status];
+    const rows = await this.database.query<Array<{
+      id: bigint; user_account_id: bigint; login_id: string; system_account_name: string;
+      provider_code: string; external_user_id: string; display_name: string | null; status: string;
+      linked_at: Date | string; unlinked_at: Date | string | null; blocked_at: Date | string | null;
+    }>>(
+      `SELECT link.id, link.user_account_id, account_row.login_id, account_row.system_account_name,
+        identity.provider_code, identity.external_user_id, identity.display_name, link.status,
+        link.linked_at, link.unlinked_at, link.blocked_at
+       FROM user_account_external_identities link
+       JOIN user_accounts account_row ON account_row.id = link.user_account_id
+       JOIN external_identities identity ON identity.id = link.external_identity_id
+       ${where} ORDER BY link.updated_at DESC, link.id DESC LIMIT ? OFFSET ?`,
+      [...values, limit, offset]
+    );
+    const counts = await this.database.query<Array<{ total: bigint }>>(
+      `SELECT COUNT(*) AS total FROM user_account_external_identities link ${where}`, values
+    );
+    return {
+      items: rows.map((row) => ({
+        id: row.id.toString(), accountId: row.user_account_id.toString(), loginId: row.login_id,
+        systemAccountName: row.system_account_name, providerCode: row.provider_code,
+        externalUserId: row.external_user_id, displayName: row.display_name, status: row.status,
+        linkedAt: new Date(row.linked_at).toISOString(),
+        unlinkedAt: row.unlinked_at === null ? null : new Date(row.unlinked_at).toISOString(),
+        blockedAt: row.blocked_at === null ? null : new Date(row.blocked_at).toISOString()
+      })),
+      total: Number(counts[0]?.total ?? 0n)
+    };
+  }
+
+  // 한 외부 플랫폼 연결의 생성·재연결·해제·차단 이력을 조회합니다.
+  async listExternalPlatformLinkHistory(linkId: string): Promise<Array<Record<string, unknown>>> {
+    if (!/^\d+$/.test(linkId)) throw new ApplicationError("INVALID_EXTERNAL_LINK_ID", "외부 플랫폼 연결 번호가 올바르지 않습니다.", 422);
+    const rows = await this.database.query<Array<{
+      id: bigint; action_code: string; actor_type: string; actor_id: bigint | null; reason: string | null; created_at: Date | string;
+    }>>(
+      `SELECT id, action_code, actor_type, actor_id, reason, created_at
+       FROM user_account_external_identity_history WHERE link_id = ? ORDER BY created_at DESC, id DESC`,
+      [linkId]
+    );
+    return rows.map((row) => ({
+      id: row.id.toString(), actionCode: row.action_code, actorType: row.actor_type,
+      actorId: row.actor_id?.toString() ?? null, reason: row.reason,
+      createdAt: new Date(row.created_at).toISOString()
+    }));
+  }
+
+  // 관리자가 연결을 강제 해제하거나 차단하고 변경 이력과 감사를 함께 남깁니다.
+  async changeExternalPlatformLinkStatus(input: Actor & { linkId: string; action: "unlink" | "block" }): Promise<Record<string, unknown>> {
+    if (!/^\d+$/.test(input.linkId)) throw new ApplicationError("INVALID_EXTERNAL_LINK_ID", "외부 플랫폼 연결 번호가 올바르지 않습니다.", 422);
+    const nextStatus = input.action === "block" ? "blocked" : "unlinked";
+    return this.mutate({
+      ...input,
+      scope: `admin.external-link.${input.action}:${input.linkId}`,
+      actionCode: `admin.external_identity.${input.action}`,
+      targetType: "user_account_external_identity",
+      targetId: input.linkId
+    }, async (transaction) => {
+      const links = await transaction.query<Array<{
+        id: bigint; user_account_id: bigint; external_identity_id: bigint; status: string;
+      }>>(
+        `SELECT id, user_account_id, external_identity_id, status
+         FROM user_account_external_identities WHERE id = ? FOR UPDATE`, [input.linkId]
+      );
+      const link = links[0];
+      if (link === undefined) throw new ApplicationError("EXTERNAL_LINK_NOT_FOUND", "외부 플랫폼 연결을 찾을 수 없습니다.", 404);
+      if (link.status === nextStatus) return { linkId: input.linkId, status: nextStatus };
+      await transaction.execute(
+        `UPDATE user_account_external_identities SET status = ?,
+          unlinked_at = IF(? = 'unlinked', UTC_TIMESTAMP(3), NULL),
+          blocked_at = IF(? = 'blocked', UTC_TIMESTAMP(3), NULL), updated_at = UTC_TIMESTAMP(3)
+         WHERE id = ?`,
+        [nextStatus, nextStatus, nextStatus, link.id]
+      );
+      await transaction.execute(
+        `UPDATE external_identities SET player_id = NULL, status = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = ?`,
+        [nextStatus === "blocked" ? "blocked" : "candidate", link.external_identity_id]
+      );
+      await transaction.execute(
+        `INSERT INTO user_account_external_identity_history
+          (link_id, user_account_id, external_identity_id, action_code, actor_type, actor_id, reason, created_at)
+         VALUES (?, ?, ?, ?, 'admin_operator', ?, ?, UTC_TIMESTAMP(3))`,
+        [link.id, link.user_account_id, link.external_identity_id, nextStatus, input.operatorId, input.reason]
+      );
+      return { linkId: input.linkId, status: nextStatus };
+    });
+  }
+
   async listOperators(): Promise<Array<Record<string, unknown>>> {
     const rows = await this.database.query<Array<{
       id: bigint; login_id: string; display_name: string; status: string; roles: string | null; created_at: Date;

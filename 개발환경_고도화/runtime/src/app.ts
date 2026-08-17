@@ -53,6 +53,7 @@ import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-pol
 import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
 import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
+import { ExternalPlatformAccessService, requiresLinkedSiteAccount } from "./user-auth/external-platform-access-service.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
 import { ProviderVerificationService } from "./user-auth/provider-verification-service.js";
 import { readKakaoVerificationCommand } from "./user-auth/policy.js";
@@ -647,6 +648,27 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             membershipSummary ?? undefined
           )
         : undefined;
+      const requiresLinkedAccount = database !== undefined && isOperationalChannel && normalizedEvent.direction === "incoming"
+        && commandEvent.userId !== undefined && requiresLinkedSiteAccount(normalizedEvent.message);
+      const canRunLinkedCommands = !requiresLinkedAccount
+        || await new ExternalPlatformAccessService(database!).hasActiveSiteAccount("kakao", commandEvent.userId!);
+      if (!canRunLinkedCommands && processing !== undefined && !processing.duplicate
+        && normalizedEvent.channelId !== undefined) {
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "site_account_link_required",
+          "🔐 사이트 계정 연결이 필요합니다.\n사이트에서 회원가입 후 /가입인증 [코드]를 입력하거나, 로그인 후 /계정인증 [코드]를 입력해 주세요."
+        ));
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.message === "/도움말" && normalizedEvent.channelId !== undefined) {
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "site_account_help",
+          "📌 사이트 계정 도움말\n• 새 회원가입: 사이트에서 코드를 받은 뒤 /가입인증 [코드]\n• 기존 계정 연결: 사이트 로그인 후 /계정인증 [코드]\n• 게임 명령: 외부 계정 연결 완료 후 사용 가능"
+        ));
+      }
 
       if (isInteractiveChannel && moderationIncidentNumber !== null && database !== undefined
         && commandEvent.channelId !== undefined) {
@@ -703,7 +725,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const profile = await new GetMyProfileService(new MariaProfileRepository(database!))
@@ -722,7 +744,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const bag = await new GetBagService(new MariaBagRepository(database!))
@@ -741,7 +763,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAttributeCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new BagAttributeService(new MariaBagAttributeRepository(database!)).handle({
@@ -757,7 +779,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAddCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new BagAddService(new MariaBagAddRepository(database!)).handle({
@@ -773,7 +795,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isInventorySnapshotCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new InventorySnapshotService(new MariaInventorySnapshotRepository(database!)).handle({
@@ -787,7 +809,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message?.startsWith("/서버이동 ")
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message?.startsWith("/서버이동 ")
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const result = await new IrisAdminCommandService(database!).changePlayerServer({
@@ -834,7 +856,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetInfoCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
         && normalizedEvent.channelId !== undefined) {
         try {
@@ -854,7 +876,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isGuildForceExpelCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -878,7 +900,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isGuildJoinConditionCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -902,7 +924,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isGuildJoinCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -924,7 +946,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetFoodBoxCraftCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -946,7 +968,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isRaidStrikeSealCraftCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -968,7 +990,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isCastleBattleResetCraftCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -990,7 +1012,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetRenameTicketCraftCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -1012,7 +1034,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetRenameCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -1034,7 +1056,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetCreationCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -1056,7 +1078,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
+      if (canRunLinkedCommands && isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
         && isSignupCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
         && normalizedEvent.channelId !== undefined && commandEvent.displayNameTrust === "trusted"
         && commandEvent.displayName !== undefined) {
