@@ -29,6 +29,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/get-bag-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts`
+- `개발환경_고도화/runtime/src/inventory/legacy-bag-formatter.ts`
 - `Info.js`
 
 ## Related Helpers
@@ -365,6 +368,7 @@ Status: VERIFIED
 
 - No intended state mutation
 - Branch does not call `saveJsonFile` for member data
+- 고도화 경로도 MariaDB repository read-only 조회만 수행하며 원장이나 stack을 변경하지 않는다.
 
 ## Related Commands
 
@@ -379,6 +383,8 @@ Status: VERIFIED
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
+- 고도화 경로는 exact `/가방`과 `ㄴㄴㄴ`만 허용하고, `item_definitions.metadata_json.legacyBagOrder`로 특수 아이템 순서를 보존한다.
+- 합성 MariaDB에서 31개 migration, fixture 재적용, stack 5개 조회와 7줄 출력을 검증했다. 운영 전체 bag import와 `checkRank`, 캐슬 진행 중 무응답 smoke는 최종 전환 전 확인 대상이다.
 
 ---
 
@@ -1193,6 +1199,10 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-info.ts`
+- `개발환경_고도화/runtime/src/pet/pet-info-service.ts`
+- `개발환경_고도화/runtime/src/pet/maria-pet-info-repository.ts`
 
 ## Related Helpers
 
@@ -1310,10 +1320,13 @@ Status: VERIFIED
 - `castleBattleData`
 - `petTitleData.member[sender]`
 - `petSkillData`
+- MariaDB `player_pets`, `player_pet_elementals`, `player_pet_pendants`, `player_pet_intimacy`
+- MariaDB `owned_mini_pets`, `player_homes`, `player_home_badge_cubes`, `player_pet_daily_records`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 포팅 경로도 MariaDB projection을 조회만 하며 operation 또는 domain row를 변경하지 않는다.
 
 ## Related Commands
 
@@ -1332,6 +1345,164 @@ Status: VERIFIED
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 - `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
+- 포팅 경로는 exact `/펫정보`, `/ㅎ`, `ㅁㅁㅁ`만 허용하고 이미지·본문 2개 reply 순서와 U+200B 500개를 보존한다.
+- 전체 매력·친밀도·탐험 순위 projection은 아직 materialize하지 않아 포팅 출력에서는 `순위없음`으로 남는다.
+
+---
+
+# /펫이름 [이름]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/펫이름 `
+- Ported guard: `/^\/펫이름 ([^\s]{1,6})$/`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-rename-service.ts`
+
+## Data Usage
+
+- Legacy read/write: `petData[sender].petname`
+- Legacy read/write: `data.member[sender].bag["펫 이름변경권🎫"]`
+- MariaDB: `player_pets.display_name`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success order: `saveJsonFile(petData, memberPetPath)` then `saveJsonFile(data, filePath)`
+- Ported success: pet rename, ticket decrement, inventory ledger, operation, command execution, audit and Iris outbox in one transaction
+
+## Related Commands
+
+- `/펫이름조합`
+- `/펫정보`
+
+## AI Notes
+
+- Legacy `startsWith` accepted empty or whitespace-containing suffixes; the port intentionally requires one whitespace-free 1~6 character argument.
+- An active castle siege preserves the legacy silent return without consuming a ticket or creating an operation.
+- The ticket stack row remains at quantity zero instead of being physically deleted; user-visible ownership is still quantity greater than zero.
+
+---
+
+# /펫이름조합
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `msg === "/펫이름조합"`
+- Ported guard: exact equality only
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-rename-ticket-craft-service.ts`
+
+## Data Usage
+
+- Legacy read/write: `data.member[sender].bag["잡템☠️"]`
+- Legacy read/write: `data.member[sender].point`
+- Legacy read/write: `data.member[sender].bag["펫 이름변경권🎫"]`
+- MariaDB: `currency_accounts`, `currency_ledger`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success: 세 값을 메모리에서 변경한 뒤 `saveJsonFile(data, filePath)` 한 번 실행
+- Ported success: 잡템 10개·포인트 100,000,000 차감, 변경권 1개 지급, 양쪽 원장·operation·command execution·audit·Iris outbox를 한 transaction으로 저장
+
+## Related Commands
+
+- `/펫이름 [이름]`
+- `/캐슬대전조합`
+
+## AI Notes
+
+- 잡템 부족을 포인트 부족보다 먼저 판정하는 legacy 순서를 보존한다.
+- active castle season이면 legacy와 같이 reply와 mutation 없이 종료한다.
+- legacy는 수량이 0인 잡템 key를 삭제하지만 MariaDB는 수량 0 stack row를 유지한다.
+
+---
+
+# /캐슬대전조합 [수량]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/캐슬대전조합`
+- Ported guard: exact command or `/^\/캐슬대전조합\s+\d+$/`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/castle/castle-battle-reset-craft-service.ts`
+
+## Data Usage
+
+- Legacy read/write: `data.member[sender].bag["양념치킨🐔"]`
+- Legacy read/write: `data.member[sender].bag["캐슬대전리셋권🐶"]`
+- MariaDB: `item_definitions`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success branch has no `saveJsonFile`, so mutation can be lost after restart.
+- Ported success: material decrement, ticket grant, inventory ledger, operation, execution, audit and Iris outbox in one transaction.
+
+## Related Commands
+
+- `/캐슬대전`
+- `/레이드인장조합 [수량]`
+
+## AI Notes
+
+- 수량 생략은 1개, 숫자 인자는 양념치킨 6배를 요구한다.
+- legacy가 허용한 수량 0도 보존하며, DB 안전을 위해 1회 최대 1,000,000개로 제한한다.
+- active castle season이면 reply와 mutation 없이 종료한다.
+
+---
+
+# /레이드인장조합 [수량]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/레이드인장조합`
+- Ported guard: exact command or `/^\/레이드인장조합\s+\d+$/`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/raid/raid-strike-seal-craft-service.ts`
+
+## Data Usage
+
+- Legacy: `member.<sender>.bag["잡템☠️"]`, `member.<sender>.point`, `member.<sender>.bag["레이드타격대인장👑(+600👾)"]`
+- MariaDB: `currency_accounts`, `currency_ledger`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Legacy success branch has no `saveJsonFile`, so mutation can be lost after restart.
+- Ported success persists all three balances, both ledgers, operation, execution, audit and Iris outbox in one transaction.
+
+## Related Commands
+
+- `/레이드`
+- `/펫먹이조합 [수량]`
+
+## AI Notes
+
+- 수량 생략은 1개이며 숫자 0도 legacy `Math.max(1, ...)`에 따라 1개로 처리한다.
+- 잡템 부족을 포인트 부족보다 먼저 판정하고 active castle season이면 조용히 종료한다.
+- DB 입력 안전을 위해 1회 최대 조합 수량을 1,000,000개로 제한한다.
 
 ---
 
@@ -2807,6 +2978,66 @@ Status: VERIFIED
 
 ---
 
+# /펫생성 [이름]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Legacy search in `main.js`: `/펫생성 `
+- Ported full guard: `/^\/펫생성\s+(\S+)$/u` plus legacy-compatible JavaScript length 1~6
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/pet-creation-policy.ts`
+- `개발환경_고도화/runtime/src/pet/pet-creation-service.ts`
+- `개발환경_고도화/runtime/migrations/030_pet_creation_foundations.sql`
+
+## Related Helpers
+
+- `createPet`
+- `getRandomCharacter`
+- `applyStarterPet`
+- `applyStarterHome`
+- `updateEmoji`
+- `addPetSkillToBag`
+- `PetCreationService.handle`
+- `generateStarterPet`
+- `parsePetCreationCommand`
+
+## Data Usage
+
+- Legacy `member_pet.<sender>`
+- Legacy `petSkillData.<sender>.petSkills.bag`
+- Legacy `petHomeData.<sender>`
+- MariaDB `player_pets`, `player_pet_elementals`
+- MariaDB `pet_skill_inventory`, `owned_mini_pets`, `player_homes`
+- MariaDB `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Legacy saves `member_pet.json`, `petSkillData.json`, then `petHomeData.json` as three separate file writes.
+- The port locks the signup-created empty pet row and persists pet, elemental, starter skill, starter mini-pet, home, audit and ordered Iris outboxes in one transaction.
+- Same Iris event replay returns the stored operation result and does not create duplicate starter rows.
+
+## Related Commands
+
+- `/가입`
+- `/펫정보`
+- `/펫이름 [이름]`
+- `/펫스킬가방`
+- `/스윗홈`
+
+## AI Notes
+
+- Legacy `startsWith` allowed some suffix text to mutate a name; the port intentionally requires one whitespace-free 1~6 character argument.
+- Normal creation produces two ordered replies; a unique pet produces three.
+- Operational snapshots remain untouched until the final full import stage.
+
+---
+
 # /가입한다
 Status: VERIFIED
 ## Command Anchors
@@ -3242,13 +3473,17 @@ Status: VERIFIED
 - Search in main.js: `/가방속성`
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/bag-attribute-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-attribute-repository.ts`
 ## Related Helpers
 - `generateBagOutput`
 - `checkRank`
 ## Data Usage
 - `data.member[targetUser].bag`
 ## Save Flow
-- Mutates target bag item counts; surrounding persistence should be checked in local save cycle
+- `generateBagOutput(...).sortedItemList` 번호로 대상 아이템을 정하고 수량 `0`이면 속성을 삭제하며 양수이면 절대 수량으로 바꾼다.
+- 레거시 응답 종료부에서 `saveJsonFile(petData, memberPetPath)` 다음 `saveJsonFile(data, filePath)`로 저장한다.
+- 고도화 경로는 stack 변경·inventory ledger·operation·command execution·audit·Iris outbox를 한 MariaDB transaction으로 저장한다.
 ## Related Commands
 - `/가방`
 - `/가방추가`
@@ -3261,14 +3496,43 @@ Status: VERIFIED
 - Search in `main.js`: `/가방추가`
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/inventory/bag-add-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-add-repository.ts`
 ## Related Helpers
 - `checkRank`
 ## Data Usage
 - `data.member[targetUser].bag[itemName]`
 ## Save Flow
-- Mutates target bag state; surrounding persistence should be checked in local save cycle
+- 레거시는 대상 가방의 아이템명 속성을 생성하거나 기존 수량에 입력 수량을 누적하고 응답 종료부에서 회원 데이터를 저장한다.
+- 고도화 경로는 안정적인 item code를 생성해 catalog·stack 수량을 연결하고 inventory ledger·operation·command execution·audit·Iris outbox를 한 MariaDB transaction으로 저장한다.
+- 동일 Iris event 재실행은 저장된 결과를 반환해 중복 지급하지 않는다.
 ## Related Commands
 - `/가방속성`
+- `/소지품저장`
+
+---
+
+# /소지품저장
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/소지품저장`
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/inventory/inventory-snapshot-service.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-inventory-snapshot-repository.ts`
+- `개발환경_고도화/runtime/migrations/033_inventory_snapshots.sql`
+## Related Helpers
+- `saveJsonFile`
+## Data Usage
+- 레거시: `data.member[*].bag` 전체를 `memberBagCheckPath` JSON으로 복사
+- 고도화: `inventory_stacks` 전체와 각 행의 version을 `inventory_snapshots`, `inventory_snapshot_entries`에 저장
+## Save Flow
+- 정확한 `/소지품저장`만 실행하며 인벤토리 변경 권한이 있는 운영자 identity만 처리한다.
+- 전체 stack을 잠근 동일 시점의 건수·수량·SHA-256과 상세 행, operation·command execution·audit·Iris outbox를 한 transaction으로 저장한다.
+- 응답의 저장 위치는 Android 파일 경로 대신 `db://inventory_snapshots/<ID>`를 사용한다.
+## Related Commands
+- `/가방`
+- `/가방추가`
 
 ---
 
@@ -5670,6 +5934,12 @@ Status: VERIFIED
 
 - `main.js`
 - `data/attendanceLight.json`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/signup/signup-policy.ts`
+- `개발환경_고도화/runtime/src/signup/signup-service.ts`
+- `개발환경_고도화/runtime/src/signup/create-initial-player.ts`
+- `개발환경_고도화/runtime/migrations/015_player_signup.sql`
+- `개발환경_고도화/runtime/migrations/029_pre_signup_attendance.sql`
 
 ## Related Helpers
 
@@ -5693,6 +5963,9 @@ Status: VERIFIED
 - `initializeMember`
 - `saveJsonFile`
 - `loadJsonFile`
+- `SignupService.handle`
+- `validateSignupDisplayName`
+- `isSignupCommand`
 
 ## Data Usage
 
@@ -5703,6 +5976,11 @@ Status: VERIFIED
 - `data.member[sender].server`
 - `attendanceLightData.users[sender]`
 - `attendanceLightData.users[sender].server`
+- MariaDB `player_signup_requests`
+- MariaDB `pre_signup_attendance`, `attendance_programs`, `player_attendance`
+- MariaDB `players`, `player_profiles`, `player_pets`
+- MariaDB `currency_accounts`, `player_counters`, `external_identities`
+- MariaDB `operations`, `command_executions`, `command_audit`, `outbox_messages`
 
 ## Save Flow
 
@@ -5712,6 +5990,11 @@ Status: VERIFIED
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/가입` for new users validates the Kakao sender nickname before creating member data; invalid name/gender format or blocked profanity/political terms return with guidance and do not save data
 - `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
+- 고도화 Iris `/가입`은 회원을 즉시 생성하지 않고 30분 가입 대기를 MariaDB에 저장한다
+- 고도화 `시작한다`/`/시작한다`는 회원·프로필·초기 펫·재화·카운터·Kakao identity 연결·감사·outbox를 한 MariaDB 트랜잭션으로 생성한다
+- 고도화 가입 동의는 external identity에 연결된 가입 전 출석 횟수·최근 출석일·서버를 같은 트랜잭션에서 정식 회원 counter와 attendance projection으로 옮기고 원본 행을 `migrated`로 전환한다
+- 고도화 `거절한다`/`/거절한다`는 회원을 만들지 않고 가입 대기와 닉네임 예약을 해제한다
+- 고도화 가입 흐름은 event inbox와 operation idempotency를 함께 사용해 동일 Iris 이벤트 재전송 시 중복 회원을 만들지 않는다
 - `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
 
 ## Related Commands
@@ -5725,9 +6008,60 @@ Status: VERIFIED
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
 - 신규 `/가입` 닉네임은 `두 글자 이상 이름 + 공백 + 남/여` 형식이어야 한다.
+- 고도화 가입 명령과 동의·거절 응답은 정확히 일치하는 입력만 실행하며 접미 텍스트를 허용하지 않는다.
 - `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
 - `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
+
+---
+
+# 고도화 Iris `/ping` · `/info` · `/인증`
+
+Status: VERIFIED
+
+## Files
+
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/integration/iris-normalizer.ts`
+- `개발환경_고도화/runtime/src/integration/event-processing-service.ts`
+- `개발환경_고도화/runtime/src/integration/iris-kakao-database-inspector.ts`
+- `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
+- `개발환경_고도화/runtime/migrations/020_trusted_identity_activity_events.sql`
+
+## Related Helpers
+
+- `normalizeIrisEvent`
+- `ProcessIrisEventService.execute`
+- `inspectIrisKakaoDatabase`
+- `formatIrisKakaoFullDiagnostic`
+- `ProviderVerificationService.verify`
+
+## Data Usage
+
+- MariaDB `external_identities`
+- MariaDB `external_identity_names`
+- MariaDB `normalized_provider_events`
+- MariaDB `channel_memberships`, `channel_membership_events`
+- MariaDB `moderation_incidents`
+- MariaDB `channel_activity_daily`
+- MariaDB `event_inbox`, `operations`, `command_executions`, `outbox_messages`
+
+## Save Flow
+
+- Iris `sender`는 `iris_cache / untrusted` 이름 관측 이력으로만 저장하며 `external_identities.display_name`을 갱신하지 않는다.
+- `/ping` 표시명은 연결된 시스템 이름, 직접 조회한 KakaoTalk DB 이름 순서로 사용하며 둘 다 없으면 `미확인 사용자`로 응답한다.
+- `/인증 [코드]`와 가입 흐름은 직접 조회한 KakaoTalk DB 이름이 없으면 인증을 완료하지 않는다.
+- 일반 메시지 본문은 활동 통계와 감지 사건에 저장하지 않고 날짜·채널·방향·이벤트 분류·건수만 집계한다.
+- 수정·삭제는 대상 이벤트 ID와 감지 시각만 사건으로 남기며 원문 메시지를 복제하지 않는다.
+- 입장·이탈은 현재 membership과 append-only 이력을 함께 갱신하고, 이탈만으로 자진 퇴장과 강퇴를 구분하지 않는다.
+
+## AI Notes
+
+- Iris가 전달하는 `sender`는 캐시 오염 사례가 확인되어 인증, 소유권, 권한, canonical 이름의 근거로 사용할 수 없다.
+- `user_id`는 Kakao 외부 identity 식별 키로 사용하되 내부 `player_id`와 분리한다.
+- `/info`는 비운영 환경 진단 명령이며 Iris 원문, 정규화 결과, 조회 가능한 KakaoTalk DB 값을 구분해 출력한다.
+- 이미지·동영상 본문은 전달하지 않고 이벤트 종류만 정규화·집계한다.
+- 이벤트 모니터 출력은 종류·방·사용자 ID·미신뢰 Iris 이름·방향·상관 ID 순서의 요약형이며 메시지 본문과 attachment/v 필드 목록은 `/info`에만 남긴다.
 
 ---
 

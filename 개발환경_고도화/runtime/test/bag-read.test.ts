@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { GetBagService, isBagCommand } from "../src/inventory/get-bag-service.js";
+import { formatLegacyBag } from "../src/inventory/legacy-bag-formatter.js";
+import type { BagRepository, BagView } from "../src/inventory/bag.js";
+
+const BAG: BagView = {
+  playerId: "900000001",
+  ownerLabel: "테스트알파",
+  advertisement: "합성 광고",
+  items: [
+    { displayName: "합성 물약", quantity: "3", legacyBagOrder: null },
+    { displayName: "잡템☠️", quantity: "20", legacyBagOrder: 20 },
+    { displayName: "양념치킨🐔", quantity: "12", legacyBagOrder: 21 },
+    { displayName: "ABC", quantity: "2", legacyBagOrder: null },
+    { displayName: "펫 친밀도🐾 [Lv.2](3/1000)+4💕", quantity: "1", legacyBagOrder: null }
+  ]
+};
+
+class FixtureBagRepository implements BagRepository {
+  constructor(private readonly value: BagView | null) {}
+  async findByExternalIdentity(): Promise<BagView | null> { return this.value; }
+}
+
+describe("legacy bag read slice", () => {
+  it("accepts only the exact command and legacy alias", () => {
+    assert.equal(isBagCommand("/가방"), true);
+    assert.equal(isBagCommand("ㄴㄴㄴ"), true);
+    assert.equal(isBagCommand("/가방 1"), false);
+    assert.equal(isBagCommand("/가방 보여줘"), false);
+  });
+
+  it("reproduces intimacy, special, Korean and non-Korean ordering", () => {
+    assert.equal(formatLegacyBag(BAG), [
+      "[테스트알파]의 가방🧳",
+      "(알림📢)후원은 봇 개발에 많은 도움이됩니다.",
+      "   1. 펫 친밀도🐾 [Lv.2](3/1000)+4💕 x 1",
+      "   2. 잡템☠️ x 20",
+      "   3. 양념치킨🐔 x 12",
+      "   4. 합성 물약 x 3",
+      "   5. ABC x 2"
+    ].join("\n"));
+  });
+
+  it("keeps an empty bag reply and resolves through the application service", async () => {
+    assert.equal(formatLegacyBag({ ...BAG, items: [] }), "가방이 비어 있습니다.");
+    assert.equal((await new GetBagService(new FixtureBagRepository(BAG)).execute("kakao", "fixture")).playerId, BAG.playerId);
+    await assert.rejects(
+      () => new GetBagService(new FixtureBagRepository(null)).execute("kakao", "missing"),
+      (error: unknown) => error instanceof Error && error.message === "연결된 캐릭터를 찾을 수 없습니다."
+    );
+  });
+});
