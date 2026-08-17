@@ -29,6 +29,7 @@ export class AccountCleanupService {
             [account.id]
           );
           if (rows[0] === undefined) return false;
+          await transaction.execute("DELETE FROM user_account_external_identities WHERE user_account_id = ?", [account.id]);
           await transaction.execute("DELETE FROM user_verification_challenges WHERE user_account_id = ?", [account.id]);
           await transaction.execute("DELETE FROM user_terms_acceptances WHERE user_account_id = ?", [account.id]);
           await transaction.execute("DELETE FROM user_sessions WHERE user_account_id = ?", [account.id]);
@@ -67,6 +68,11 @@ export class AccountCleanupService {
           const run = await transaction.execute("INSERT INTO account_cleanup_runs (deletion_request_id, status, attempt_no) VALUES (?, 'processing', ?)", [request.id, attempts[0]?.next_attempt ?? 1n]);
           await transaction.execute("UPDATE account_deletion_requests SET status = 'processing', updated_at = UTC_TIMESTAMP(3) WHERE id = ?", [request.id]);
           await transaction.execute("DELETE FROM user_sessions WHERE user_account_id = ?", [row.user_account_id]);
+          await transaction.execute(
+            `UPDATE user_account_external_identities SET status = 'unlinked', linked_via_challenge_id = NULL,
+              unlinked_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3) WHERE user_account_id = ?`,
+            [row.user_account_id]
+          );
           await transaction.execute("DELETE FROM user_verification_challenges WHERE user_account_id = ?", [row.user_account_id]);
           await transaction.execute("DELETE identity_name FROM external_identity_names identity_name JOIN external_identities identity ON identity.id = identity_name.external_identity_id WHERE identity.player_id = ?", [row.player_id]);
           const identities = await transaction.query<Array<{ id: bigint; provider_code: string; external_user_id: string }>>("SELECT id, provider_code, external_user_id FROM external_identities WHERE player_id = ? FOR UPDATE", [row.player_id]);

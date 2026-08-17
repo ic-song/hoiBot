@@ -68,6 +68,62 @@ export class AdminManagementService {
     return Object.fromEntries(Object.entries(rows[0] ?? {}).map(([key, value]) => [key, value.toString()]));
   }
 
+  // 관리자 사이트에 표시할 외부 플랫폼 연결 제한 설정을 조회합니다.
+  async getExternalPlatformSettings(): Promise<{ maxActiveLinks: number }> {
+    const rows = await this.database.query<Array<{ max_active_links: bigint | null }>>(
+      `SELECT COALESCE((SELECT value_row.integer_value
+        FROM configuration_sets config
+        JOIN configuration_values value_row ON value_row.configuration_set_id = config.id
+        WHERE config.set_code = 'site.external_platform' AND config.status = 'active'
+          AND value_row.config_key = 'max_active_links'
+        ORDER BY config.version DESC LIMIT 1), 10) AS max_active_links`
+    );
+    return { maxActiveLinks: Number(rows[0]?.max_active_links ?? 10n) };
+  }
+
+  // 기존 연결은 유지하면서 이후 신규 연결에 적용할 전역 최대 개수를 변경합니다.
+  async updateExternalPlatformSettings(input: Actor & { maxActiveLinks: number }): Promise<Record<string, unknown>> {
+    if (!Number.isInteger(input.maxActiveLinks) || input.maxActiveLinks < 1 || input.maxActiveLinks > 10) {
+      throw new ApplicationError("INVALID_EXTERNAL_LINK_LIMIT", "외부 플랫폼 연결 한도는 1~10개로 설정해 주세요.", 422);
+    }
+    return this.mutate({
+      ...input,
+      scope: `settings.external-platform:${input.maxActiveLinks}`,
+      actionCode: "settings.external_platform.updated",
+      targetType: "configuration_set",
+      targetId: "site.external_platform"
+    }, async (transaction) => {
+      const versions = await transaction.query<Array<{ version: bigint }>>(
+        `SELECT version FROM configuration_sets
+         WHERE set_code = 'site.external_platform' ORDER BY version DESC LIMIT 1 FOR UPDATE`
+      );
+      const nextVersion = (versions[0]?.version ?? 0n) + 1n;
+      await transaction.execute(
+        `UPDATE configuration_sets SET status = 'superseded', effective_to = UTC_TIMESTAMP(3)
+         WHERE set_code = 'site.external_platform' AND status = 'active'`
+      );
+      const created = await transaction.execute(
+        `INSERT INTO configuration_sets
+          (set_code, version, status, effective_from, approved_by, created_at)
+         VALUES ('site.external_platform', ?, 'active', UTC_TIMESTAMP(3), ?, UTC_TIMESTAMP(3))`,
+        [nextVersion, input.operatorId]
+      );
+      await transaction.execute(
+        `INSERT INTO configuration_values
+          (configuration_set_id, config_key, value_type, integer_value, validation_json)
+         VALUES (?, 'max_active_links', 'integer', ?, JSON_OBJECT('minimum', 1, 'maximum', 10))`,
+        [created.insertId, input.maxActiveLinks]
+      );
+      await transaction.execute(
+        `INSERT INTO configuration_change_log
+          (configuration_set_id, actor_id, action_code, change_json, created_at)
+         VALUES (?, ?, 'max_active_links.updated', ?, UTC_TIMESTAMP(3))`,
+        [created.insertId, input.operatorId, JSON.stringify({ maxActiveLinks: input.maxActiveLinks })]
+      );
+      return { maxActiveLinks: input.maxActiveLinks, version: nextVersion.toString() };
+    });
+  }
+
   async listOperators(): Promise<Array<Record<string, unknown>>> {
     const rows = await this.database.query<Array<{
       id: bigint; login_id: string; display_name: string; status: string; roles: string | null; created_at: Date;

@@ -98,6 +98,24 @@ export async function registerUserAuthRoutes(app: FastifyInstance, dependencies:
     return { ok: true, profile, requestId: request.id };
   });
 
+  app.get("/api/v1/external-platform-links", async (request) => ({
+    ok: true,
+    externalPlatformLinks: await dependencies.auth.listExternalLinks(request.cookies[USER_SESSION_COOKIE] ?? ""),
+    requestId: request.id
+  }));
+
+  app.post<{ Body: { providerCode?: unknown } }>("/api/v1/external-platform-links/challenges", async (request, reply) => {
+    const providerCode = request.body?.providerCode === undefined
+      ? "kakao"
+      : readString(request.body.providerCode, "providerCode");
+    const challenge = await dependencies.auth.issueExternalLinkCode(
+      request.cookies[USER_SESSION_COOKIE] ?? "",
+      readRequiredCsrf(request),
+      providerCode
+    );
+    return reply.code(201).send({ ok: true, challenge, requestId: request.id });
+  });
+
   app.delete("/api/v1/sessions/current", async (request, reply) => {
     const token = request.cookies[USER_SESSION_COOKIE] ?? "";
     await dependencies.auth.logout(token, readRequiredCsrf(request));

@@ -50,8 +50,19 @@ export function validateUserAccountName(value: string): ValidSignupName {
   }
 }
 
-// KakaoTalk 봇이 처리할 정확한 인증 코드 명령만 판별합니다.
-export function readKakaoVerificationCode(message: string | undefined): string | null {
-  const match = message?.match(/^\/인증 ([A-Z0-9]{8})$/i);
-  return match?.[1]?.toUpperCase() ?? null;
+export type KakaoVerificationPurpose = "signup_link" | "account_link";
+
+export interface KakaoVerificationCommand {
+  purpose: KakaoVerificationPurpose;
+  code: string;
+}
+
+// 가입용과 계정 연결용 KakaoTalk 인증 명령을 정확히 구분합니다.
+export function readKakaoVerificationCommand(message: string | undefined): KakaoVerificationCommand | null {
+  const match = message?.match(/^\/(가입인증|계정인증) ([A-HJ-NP-Z2-9]{8})$/i);
+  if (match?.[1] === undefined || match[2] === undefined) return null;
+  return {
+    purpose: match[1] === "가입인증" ? "signup_link" : "account_link",
+    code: match[2].toUpperCase()
+  };
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
-import { validateLoginId, validateUserPassword, readKakaoVerificationCode } from "../src/user-auth/policy.js";
+import { validateLoginId, validateUserPassword, readKakaoVerificationCommand } from "../src/user-auth/policy.js";
 import { UserAuthService } from "../src/user-auth/user-auth-service.js";
 import { hashVerificationCode } from "../src/user-auth/user-auth-service.js";
 import { RequestRateLimiter } from "../src/user-auth/request-rate-limiter.js";
@@ -47,12 +47,12 @@ describe("site user authentication", () => {
     assert.throws(() => validateUserPassword("12345678"), /비밀번호/);
   });
 
-  it("recognizes only the exact KakaoTalk verification command", () => {
-    assert.equal(readKakaoVerificationCode("/인증 ABCD2345"), "ABCD2345");
-    assert.equal(readKakaoVerificationCode("/인증 abcd2345"), "ABCD2345");
-    assert.equal(readKakaoVerificationCode("/인증 ABCD2345 해줘"), null);
-    assert.equal(readKakaoVerificationCode(" /인증 ABCD2345"), null);
-    assert.equal(readKakaoVerificationCode("/인증 ABCD-234"), null);
+  it("distinguishes exact signup and account-link KakaoTalk verification commands", () => {
+    assert.deepEqual(readKakaoVerificationCommand("/가입인증 ABCD2345"), { purpose: "signup_link", code: "ABCD2345" });
+    assert.deepEqual(readKakaoVerificationCommand("/계정인증 abcd2345"), { purpose: "account_link", code: "ABCD2345" });
+    assert.equal(readKakaoVerificationCommand("/가입인증 ABCD2345 해줘"), null);
+    assert.equal(readKakaoVerificationCommand(" /계정인증 ABCD2345"), null);
+    assert.equal(readKakaoVerificationCommand("/인증 ABCD2345"), null);
   });
 
   it("creates a pending site account, consent history, and one-time code without a player", async () => {
@@ -126,23 +126,54 @@ describe("site user authentication", () => {
     assert.ok(sql.some((statement) => statement.includes("failed_login_count = failed_login_count + 1")));
   });
 
-  it("includes the currently observed KakaoTalk nickname in mismatch guidance", async () => {
+  it("links an additional KakaoTalk identity by stable user ID without requiring a nickname match", async () => {
     const pepper = "test-verification-pepper";
     const code = "ABCD2345";
-    const scripted = createScriptedDatabase([[
-      {
+    const scripted = createScriptedDatabase([
+      [{
         id: 1n, user_account_id: 2n, code_hash: hashVerificationCode(code, pepper),
-        failed_attempt_count: 0, challenge_expired: 0, account_status: "pending_kakao_link",
-        pending_expired: 0, system_account_name: "테스 남"
-      }
-    ]]);
+        failed_attempt_count: 0, challenge_expired: 0, account_status: "active",
+        pending_expired: 0, system_account_name: "테스 남", player_id: 20n
+      }],
+      [{ id: 2n }],
+      [{ id: 30n, player_id: 20n }],
+      [],
+      [{ active_links: 1n }],
+      [{ max_active_links: 10n }]
+    ]);
+    const result = await new ProviderVerificationService(scripted.database, pepper).verifyKakao({
+      purpose: "account_link", code, externalUserId: "kakao-test",
+      displayName: "손 흔드는 스카피", channelId: "test-room"
+    });
+    assert.equal(result.status, "verified");
+    assert.equal(result.playerId, "20");
+    assert.equal(result.purpose, "account_link");
+    assert.ok(scripted.sql.some((statement) => statement.includes("user_account_external_identities")));
+  });
+
+  it("blocks a new external identity when the administrator link limit is reached", async () => {
+    const pepper = "test-verification-pepper";
+    const code = "WXYZ6789";
+    const scripted = createScriptedDatabase([
+      [{
+        id: 1n, user_account_id: 2n, code_hash: hashVerificationCode(code, pepper),
+        failed_attempt_count: 0, challenge_expired: 0, account_status: "active",
+        pending_expired: 0, system_account_name: "테스 남", player_id: 20n
+      }],
+      [{ id: 2n }],
+      [{ id: 31n, player_id: 20n }],
+      [],
+      [{ active_links: 10n }],
+      [{ max_active_links: 10n }]
+    ]);
     await assert.rejects(
-      new ProviderVerificationService(scripted.database, pepper).verifyInitialKakao({
-        code, externalUserId: "kakao-test", displayName: "손 흔드는 스카피", channelId: "test-room"
+      new ProviderVerificationService(scripted.database, pepper).verifyKakao({
+        purpose: "account_link", code, externalUserId: "kakao-limit", channelId: "test-room"
       }),
-      (error: unknown) => error instanceof Error
-        && error.message === '"손 흔드는 스카피"님 카카오톡 닉네임을 "테스 남"(으)로 변경한 뒤 다시 인증해 주세요.'
+      (error: unknown) => typeof error === "object" && error !== null
+        && "code" in error && error.code === "EXTERNAL_LINK_LIMIT_REACHED"
     );
+    assert.equal(scripted.sql.some((statement) => statement.includes("UPDATE external_identities SET player_id")), false);
   });
 
   it("removes expired pending accounts and their temporary records", async () => {

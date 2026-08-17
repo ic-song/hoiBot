@@ -80,6 +80,32 @@ export async function registerAdminRoutes(app: FastifyInstance, dependencies: Ad
     return { ok: true, overview: await dependencies.management.overview(), requestId: request.id };
   });
 
+  app.get("/api/v1/admin/settings/external-platforms", async (request) => {
+    const session = await authenticate(request, dependencies, false); requireSuperAdmin(session);
+    return {
+      ok: true,
+      settings: await dependencies.management.getExternalPlatformSettings(),
+      requestId: request.id
+    };
+  });
+
+  app.put<{ Body: MutationBody & { maxActiveLinks?: unknown } }>("/api/v1/admin/settings/external-platforms", async (request) => {
+    const session = await authenticate(request, dependencies, true); requireSuperAdmin(session);
+    const mutation = readMutation(request, request.body);
+    if (typeof request.body?.maxActiveLinks !== "number") {
+      throw new ApplicationError("INVALID_EXTERNAL_LINK_LIMIT", "maxActiveLinks 숫자 값이 필요합니다.", 422);
+    }
+    return {
+      ok: true,
+      settings: await dependencies.management.updateExternalPlatformSettings({
+        ...mutation,
+        operatorId: session.operatorId,
+        maxActiveLinks: request.body.maxActiveLinks
+      }),
+      requestId: request.id
+    };
+  });
+
   app.get<{ Querystring: { search?: string; page?: string; limit?: string } }>("/api/v1/admin/players", async (request) => {
     const session = await authenticate(request, dependencies, false); requirePermission(session, "player.read");
     const paging = readPage(request.query);

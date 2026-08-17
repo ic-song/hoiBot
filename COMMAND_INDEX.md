@@ -6015,7 +6015,7 @@ Status: VERIFIED
 
 ---
 
-# 고도화 Iris `/ping` · `/info` · `/인증`
+# 고도화 Iris `/ping` · `/info` · `/가입인증` · `/계정인증`
 
 Status: VERIFIED
 
@@ -6026,6 +6026,8 @@ Status: VERIFIED
 - `개발환경_고도화/runtime/src/integration/event-processing-service.ts`
 - `개발환경_고도화/runtime/src/integration/iris-kakao-database-inspector.ts`
 - `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
+- `개발환경_고도화/runtime/src/user-auth/user-auth-service.ts`
+- `개발환경_고도화/runtime/migrations/034_user_account_external_links.sql`
 - `개발환경_고도화/runtime/migrations/020_trusted_identity_activity_events.sql`
 
 ## Related Helpers
@@ -6034,12 +6036,15 @@ Status: VERIFIED
 - `ProcessIrisEventService.execute`
 - `inspectIrisKakaoDatabase`
 - `formatIrisKakaoFullDiagnostic`
-- `ProviderVerificationService.verify`
+- `ProviderVerificationService.verifyKakao`
+- `readKakaoVerificationCommand`
 
 ## Data Usage
 
 - MariaDB `external_identities`
 - MariaDB `external_identity_names`
+- MariaDB `user_accounts`, `user_account_external_identities`, `user_verification_challenges`
+- MariaDB `configuration_sets`, `configuration_values`
 - MariaDB `normalized_provider_events`
 - MariaDB `channel_memberships`, `channel_membership_events`
 - MariaDB `moderation_incidents`
@@ -6050,7 +6055,10 @@ Status: VERIFIED
 
 - Iris `sender`는 `iris_cache / untrusted` 이름 관측 이력으로만 저장하며 `external_identities.display_name`을 갱신하지 않는다.
 - `/ping` 표시명은 연결된 시스템 이름, 직접 조회한 KakaoTalk DB 이름 순서로 사용하며 둘 다 없으면 `미확인 사용자`로 응답한다.
-- `/인증 [코드]`와 가입 흐름은 직접 조회한 KakaoTalk DB 이름이 없으면 인증을 완료하지 않는다.
+- `/가입인증 [코드]`는 사이트 가입을 완료하고 `/계정인증 [코드]`는 로그인된 사이트 계정에 외부 계정을 추가한다.
+- 인증 소유권은 KakaoTalk의 안정적인 `user_id`로 판정하며 닉네임은 표시용 관측값으로만 저장한다.
+- 가입용 코드와 계정 연결용 코드는 용도가 달라 서로 바꿔 사용할 수 없고, 모두 30분 뒤 만료된다.
+- 활성 외부 계정 연결 수는 사이트 계정 단위이며 관리자 설정값을 따르고 최대 10개를 넘지 않는다.
 - 일반 메시지 본문은 활동 통계와 감지 사건에 저장하지 않고 날짜·채널·방향·이벤트 분류·건수만 집계한다.
 - 수정·삭제는 대상 이벤트 ID와 감지 시각만 사건으로 남기며 원문 메시지를 복제하지 않는다.
 - 입장·이탈은 현재 membership과 append-only 이력을 함께 갱신하고, 이탈만으로 자진 퇴장과 강퇴를 구분하지 않는다.
@@ -6059,6 +6067,7 @@ Status: VERIFIED
 
 - Iris가 전달하는 `sender`는 캐시 오염 사례가 확인되어 인증, 소유권, 권한, canonical 이름의 근거로 사용할 수 없다.
 - `user_id`는 Kakao 외부 identity 식별 키로 사용하되 내부 `player_id`와 분리한다.
+- KakaoTalk·Discord·Telegram은 클라이언트이며 게임 데이터와 재화는 사이트 계정의 단일 `player_id`에 귀속한다. 현재 구현 provider는 KakaoTalk뿐이다.
 - `/info`는 비운영 환경 진단 명령이며 Iris 원문, 정규화 결과, 조회 가능한 KakaoTalk DB 값을 구분해 출력한다.
 - 이미지·동영상 본문은 전달하지 않고 이벤트 종류만 정규화·집계한다.
 - 이벤트 모니터 출력은 종류·방·사용자 ID·미신뢰 Iris 이름·방향·상관 ID 순서의 요약형이며 메시지 본문과 attachment/v 필드 목록은 `/info`에만 남긴다.

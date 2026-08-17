@@ -14,6 +14,9 @@ import {
 } from "./policy.js";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export const DEFAULT_MAX_EXTERNAL_LINKS = 10;
+
+export type VerificationPurpose = "signup_link" | "account_link";
 
 export interface SignupResult {
   accountId: string;
@@ -92,16 +95,18 @@ async function cleanupExpiredPendingAccounts(
   }
 }
 
-// 기존 challenge를 만료시키고 새 KakaoTalk 인증 코드를 생성합니다.
-async function createChallenge(
+// 같은 용도의 기존 challenge를 만료시키고 새 외부 플랫폼 인증 코드를 생성합니다.
+export async function createVerificationChallenge(
   transaction: DatabaseTransaction,
   accountId: bigint,
-  pepper: string
+  pepper: string,
+  providerCode: string,
+  purpose: VerificationPurpose
 ): Promise<{ publicId: string; code: string; expiresAt: Date }> {
   await transaction.execute(
     `UPDATE user_verification_challenges SET status = 'superseded', updated_at = UTC_TIMESTAMP(3)
-     WHERE user_account_id = ? AND provider_code = 'kakao' AND purpose_code = 'initial_link' AND status = 'pending'`,
-    [accountId]
+     WHERE user_account_id = ? AND provider_code = ? AND purpose_code = ? AND status = 'pending'`,
+    [accountId, providerCode, purpose]
   );
   const code = generateVerificationCode();
   const publicId = randomUUID();
@@ -110,8 +115,8 @@ async function createChallenge(
     `INSERT INTO user_verification_challenges
       (public_id, user_account_id, provider_code, purpose_code, code_hint, code_hash, status,
        failed_attempt_count, expires_at, created_at, updated_at)
-     VALUES (?, ?, 'kakao', 'initial_link', ?, ?, 'pending', 0, ?, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
-    [publicId, accountId, code.slice(0, 4), hashVerificationCode(code, pepper), expiresAt]
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', 0, ?, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
+    [publicId, accountId, providerCode, purpose, code.slice(0, 4), hashVerificationCode(code, pepper), expiresAt]
   );
   return { publicId, code, expiresAt };
 }
@@ -173,7 +178,9 @@ export class UserAuthService {
            VALUES (?, 'terms_of_service', ?, UTC_TIMESTAMP(3))`,
           [account.insertId, USER_TERMS_VERSION]
         );
-        const challenge = await createChallenge(transaction, account.insertId, this.verificationPepper);
+        const challenge = await createVerificationChallenge(
+          transaction, account.insertId, this.verificationPepper, "kakao", "signup_link"
+        );
         return {
           accountId: account.insertId.toString(), status: "pending_kakao_link",
           systemAccountName: name.displayName, challengeId: challenge.publicId,
@@ -214,7 +221,9 @@ export class UserAuthService {
       throw new ApplicationError("SIGNUP_NOT_PENDING", "KakaoTalk 인증을 재발급할 수 없는 계정입니다.", 409);
     }
     return this.database.withTransaction(async (transaction) => {
-      const challenge = await createChallenge(transaction, account.id, this.verificationPepper);
+      const challenge = await createVerificationChallenge(
+        transaction, account.id, this.verificationPepper, "kakao", "signup_link"
+      );
       return {
         accountId: account.id.toString(), status: "pending_kakao_link",
         systemAccountName: account.system_account_name, challengeId: challenge.publicId,
@@ -348,6 +357,99 @@ export class UserAuthService {
       [hashSecret(csrfToken), session.sessionId]
     );
     return { session, csrfToken };
+  }
+
+  // 로그인된 사용자가 추가 외부 계정을 연결할 30분 인증 코드를 발급합니다.
+  async issueExternalLinkCode(sessionToken: string, csrfToken: string, providerCode = "kakao"): Promise<{
+    challengeId: string;
+    providerCode: string;
+    purpose: "account_link";
+    verificationCode: string;
+    codeExpiresAt: string;
+  }> {
+    if (providerCode !== "kakao") {
+      throw new ApplicationError("PROVIDER_NOT_AVAILABLE", "현재는 KakaoTalk 연결만 지원합니다.", 422);
+    }
+    const session = await this.authenticate(sessionToken, csrfToken);
+    return this.database.withTransaction(async (transaction) => {
+      const accountRows = await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM user_accounts WHERE id = ? AND status = 'active' FOR UPDATE",
+        [session.accountId]
+      );
+      if (accountRows[0] === undefined) {
+        throw new ApplicationError("ACCOUNT_UNAVAILABLE", "현재 사용할 수 없는 계정입니다.", 403);
+      }
+      const limitRows = await transaction.query<Array<{ max_active_links: bigint | null }>>(
+        `SELECT COALESCE((SELECT value_row.integer_value
+          FROM configuration_sets config
+          JOIN configuration_values value_row ON value_row.configuration_set_id = config.id
+          WHERE config.set_code = 'site.external_platform' AND config.status = 'active'
+            AND value_row.config_key = 'max_active_links'
+            AND (config.effective_from IS NULL OR config.effective_from <= UTC_TIMESTAMP(3))
+            AND (config.effective_to IS NULL OR config.effective_to > UTC_TIMESTAMP(3))
+          ORDER BY config.version DESC LIMIT 1), ?) AS max_active_links`,
+        [DEFAULT_MAX_EXTERNAL_LINKS]
+      );
+      const countRows = await transaction.query<Array<{ active_links: bigint }>>(
+        "SELECT COUNT(*) AS active_links FROM user_account_external_identities WHERE user_account_id = ? AND status = 'active'",
+        [session.accountId]
+      );
+      const maxActiveLinks = Number(limitRows[0]?.max_active_links ?? BigInt(DEFAULT_MAX_EXTERNAL_LINKS));
+      const activeLinks = Number(countRows[0]?.active_links ?? 0n);
+      if (activeLinks >= maxActiveLinks) {
+        throw new ApplicationError(
+          "EXTERNAL_LINK_LIMIT_REACHED",
+          `외부 플랫폼 계정은 최대 ${maxActiveLinks}개까지 연결할 수 있습니다.`,
+          409
+        );
+      }
+      const challenge = await createVerificationChallenge(
+        transaction, BigInt(session.accountId), this.verificationPepper, providerCode, "account_link"
+      );
+      return {
+        challengeId: challenge.publicId,
+        providerCode,
+        purpose: "account_link" as const,
+        verificationCode: challenge.code,
+        codeExpiresAt: challenge.expiresAt.toISOString()
+      };
+    });
+  }
+
+  // 로그인된 사용자의 활성 외부 플랫폼 연결과 현재 설정 한도를 조회합니다.
+  async listExternalLinks(sessionToken: string): Promise<{
+    maxActiveLinks: number;
+    activeLinkCount: number;
+    links: Array<{ id: string; providerCode: string; externalUserId: string; displayName: string | null; linkedAt: string }>;
+  }> {
+    const session = await this.authenticate(sessionToken);
+    const links = await this.database.query<Array<{
+      id: bigint; provider_code: string; external_user_id: string; display_name: string | null; linked_at: Date | string;
+    }>>(
+      `SELECT link.id, identity.provider_code, identity.external_user_id, identity.display_name, link.linked_at
+       FROM user_account_external_identities link
+       JOIN external_identities identity ON identity.id = link.external_identity_id
+       WHERE link.user_account_id = ? AND link.status = 'active'
+       ORDER BY link.linked_at, link.id`,
+      [session.accountId]
+    );
+    const limitRows = await this.database.query<Array<{ max_active_links: bigint | null }>>(
+      `SELECT COALESCE((SELECT value_row.integer_value
+        FROM configuration_sets config
+        JOIN configuration_values value_row ON value_row.configuration_set_id = config.id
+        WHERE config.set_code = 'site.external_platform' AND config.status = 'active'
+          AND value_row.config_key = 'max_active_links'
+        ORDER BY config.version DESC LIMIT 1), ?) AS max_active_links`,
+      [DEFAULT_MAX_EXTERNAL_LINKS]
+    );
+    return {
+      maxActiveLinks: Number(limitRows[0]?.max_active_links ?? BigInt(DEFAULT_MAX_EXTERNAL_LINKS)),
+      activeLinkCount: links.length,
+      links: links.map((row) => ({
+        id: row.id.toString(), providerCode: row.provider_code, externalUserId: row.external_user_id,
+        displayName: row.display_name, linkedAt: new Date(row.linked_at).toISOString()
+      }))
+    };
   }
 
   // 일반 로그아웃 시 현재 세션만 폐기합니다.

@@ -55,7 +55,7 @@ import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
 import { ProviderVerificationService } from "./user-auth/provider-verification-service.js";
-import { readKakaoVerificationCode } from "./user-auth/policy.js";
+import { readKakaoVerificationCommand } from "./user-auth/policy.js";
 import { RequestRateLimiter } from "./user-auth/request-rate-limiter.js";
 import {
   ModerationIncidentService,
@@ -559,7 +559,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const isOperationalChannel = channelAccess.mode === "operational";
       const isObservationChannel = channelAccess.mode === "observation";
       const isInteractiveChannel = isOperationalChannel || channelAccess.mode === "diagnostic";
-      const verificationCode = readKakaoVerificationCode(normalizedEvent.message);
+      const verificationCommand = readKakaoVerificationCommand(normalizedEvent.message);
       const moderationIncidentNumber = readModerationIncidentNumber(normalizedEvent.message);
       const shouldCreateEventMonitorMessage = config.nodeEnv !== "production"
         && config.irisEventMonitorRoomId !== ""
@@ -569,7 +569,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           || normalizedEvent.eventCode === "message.hidden_by_host");
       const requiresKakaoDatabaseLookup = requiresOriginalMessageLookup
         || (normalizedEvent.direction === "incoming" && (normalizedEvent.message === "/ping"
-          || verificationCode !== null
+          || verificationCommand !== null
           || isSignupCommand(normalizedEvent.message)
           || (normalizedEvent.message === "/info" && config.nodeEnv !== "production")
           || shouldCreateEventMonitorMessage));
@@ -807,15 +807,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
-        && verificationCode !== null
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
-        && commandEvent.displayNameTrust === "trusted" && commandEvent.displayName !== undefined) {
+        && verificationCommand !== null
+        && commandEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const result = await new ProviderVerificationService(database!, config.userVerificationPepper)
-            .verifyInitialKakao({
-              code: verificationCode,
-              externalUserId: normalizedEvent.userId,
-              displayName: commandEvent.displayName,
+            .verifyKakao({
+              purpose: verificationCommand.purpose,
+              code: verificationCommand.code,
+              externalUserId: commandEvent.userId,
+              ...(commandEvent.displayNameTrust === "trusted" && commandEvent.displayName !== undefined
+                ? { displayName: commandEvent.displayName }
+                : {}),
               channelId: normalizedEvent.channelId
             });
           processing.replies.push(await eventProcessor!.queueCommandReply(
@@ -1052,16 +1054,6 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
-        && verificationCode !== null && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
-        && commandEvent.displayNameTrust !== "trusted") {
-        processing.replies.push(await eventProcessor!.queueCommandReply(
-          normalizedEvent,
-          "site_signup_kakao_verify_name_unavailable",
-          "카카오톡 DB에서 현재 닉네임을 확인할 수 없어 인증을 완료하지 않았습니다. Iris sender 캐시값은 인증에 사용하지 않습니다."
-        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
