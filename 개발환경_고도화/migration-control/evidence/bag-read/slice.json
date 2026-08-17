@@ -40,6 +40,34 @@
     ],
     "result": "passed"
   },
+  "shadow": {
+    "verifiedAt": "2026-08-18",
+    "executionId": "새봄-SL-INV-READ-20260817T174455Z-w9or92",
+    "databaseClass": "execution-specific disposable rehearsal database",
+    "targetDatabase": "hoibot_rehearsal_inv_read_w9or92",
+    "migrationCount": 33,
+    "fixture": {
+      "checksumSha256": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+      "statementCount": 71,
+      "applyCount": 2,
+      "verifiedTableCount": 35
+    },
+    "bagProbe": {
+      "runs": 2,
+      "mariaDbRestartBetweenRuns": true,
+      "replayOutputEqual": true,
+      "itemCount": 5,
+      "outputLines": 7
+    },
+    "regression": {
+      "runtimeTests": 158,
+      "runtimeTypecheck": "passed",
+      "runtimeBuild": "passed",
+      "rhinoSourceSyntax": "main.js and Info.js passed node --check"
+    },
+    "operationalSnapshotTouched": false,
+    "result": "passed"
+  },
   "logicPort": {
     "services": [
       "개발환경_고도화/runtime/src/inventory/get-bag-service.ts",
@@ -67,6 +95,6 @@
     "운영 snapshot importer의 전체 bag stack과 legacyBagOrder 적재·대사는 최종 데이터 이관 단계 전까지 미완료",
     "checkRank 전체 badge 우선순위는 이 슬라이스에서 재포팅하지 않아 합성 ownerLabel만 exact 검증됨",
     "castleSiegeFlag 무응답은 서버 전역 캐슬 상태 projection이 연결될 때 adapter gate로 추가 검증 필요",
-    "실운영방 smoke와 운영 identity 연결은 승인 전 미실행"
+    "승인된 운영 identity의 전체 snapshot 대사와 실운영방 smoke는 운영 준비 단계 전까지 미실행"
   ]
 }
