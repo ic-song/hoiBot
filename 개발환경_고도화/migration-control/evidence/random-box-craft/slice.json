@@ -56,6 +56,18 @@
     ],
     "result": "passed"
   },
+  "shadow": {
+    "date": "2026-08-18",
+    "databaseClass": "disposable hoibot_rehearsal_*",
+    "migrationCount": 33,
+    "fixtureTablesVerified": 35,
+    "balances": { "heartBefore": 40, "heartAfter": 0, "randomBoxBefore": 0, "randomBoxAfter": 2 },
+    "effects": { "inventoryLedger": 2, "operation": 1, "execution": 1, "audit": 1, "outbox": 1 },
+    "duplicateEvent": "passed",
+    "mariadbRestartReplay": "passed",
+    "operationalSnapshotTouched": false,
+    "result": "passed"
+  },
   "logicPort": {
     "services": ["개발환경_고도화/runtime/src/crafting/random-box-craft-service.ts"],
     "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
@@ -79,7 +91,7 @@
     "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
   },
   "risks": [
-    "coordinator integration must add the Iris dispatch and shared fixture rows before integrated verification",
+    "operational readiness still requires final snapshot import, reconciliation, backup and cutover approval",
     "legacy success does not call saveJsonFile, so historical in-memory changes may have been lost on restart",
     "legacy deletes the heart property at zero while MariaDB keeps a zero-quantity stack row",
     "full checkRank special and guild decorations are not yet centralized",

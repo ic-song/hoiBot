@@ -4,8 +4,8 @@ import { loadConfig } from "../src/config.js";
 import { createDatabaseClient } from "../src/database.js";
 import { RandomBoxCraftService } from "../src/crafting/random-box-craft-service.js";
 
-const HEART_ITEM_ID = 906003301n;
-const RANDOM_BOX_ITEM_ID = 906003302n;
+const HEART_ITEM_ID = 900000010n;
+const RANDOM_BOX_ITEM_ID = 900000011n;
 const config = loadConfig();
 if (!config.database.enabled) throw new Error("DATABASE_ENABLED must be true.");
 if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0-9_]+$/i.test(config.database.name)) {
@@ -13,12 +13,14 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 }
 
 const database = createDatabaseClient(config.database);
-const eventId = `random-box-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const eventId = process.env.RANDOM_BOX_CRAFT_PROBE_EVENT_ID
+  ?? `random-box-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const replayOnly = process.env.RANDOM_BOX_CRAFT_PROBE_REPLAY_ONLY === "true";
 const externalUserId = "synthetic-admin-alpha";
 const channelId = "synthetic-room-001";
 
 try {
-  await database.withTransaction(async (transaction) => {
+  if (!replayOnly) await database.withTransaction(async (transaction) => {
     await transaction.execute(
       `INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable, metadata_json, active, version)
        VALUES (?, 'legacy-heart', '하트💝', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'wbsId', 'CMD-06-0033'), TRUE, 1),
@@ -26,11 +28,19 @@ try {
        ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = TRUE`,
       [HEART_ITEM_ID, RANDOM_BOX_ITEM_ID]
     );
+    const itemRows = await transaction.query<Array<{ id: bigint; code: string }>>(
+      `SELECT id, code FROM item_definitions
+       WHERE code IN ('legacy-heart', 'legacy-random-box')
+       FOR UPDATE`
+    );
+    const heartItem = itemRows.find((row) => row.code === "legacy-heart");
+    const randomBoxItem = itemRows.find((row) => row.code === "legacy-random-box");
+    assert.ok(heartItem !== undefined && randomBoxItem !== undefined, "Synthetic item definitions must exist.");
     await transaction.execute(
       `INSERT INTO inventory_stacks (player_id, item_id, quantity, version)
        VALUES (900000001, ?, 40, 1), (900000001, ?, 0, 1)
        ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = version + 1`,
-      [HEART_ITEM_ID, RANDOM_BOX_ITEM_ID]
+      [heartItem.id, randomBoxItem.id]
     );
     await transaction.execute(
       `INSERT INTO event_inbox
@@ -82,7 +92,8 @@ try {
     database: config.database.name, playerId: result.playerId,
     balances: { heart: result.heartQuantity, randomBox: result.boxQuantity },
     effects: { inventoryLedger: 2, operation: 1, execution: 1, audit: 1, outbox: 1 },
-    idempotent: true, operationalSnapshotTouched: false, sharedFixtureTouched: false
+    idempotent: true, restartReplay: replayOnly,
+    operationalSnapshotTouched: false, sharedFixtureTouched: false
   })}\n`);
 } finally {
   await database.close();

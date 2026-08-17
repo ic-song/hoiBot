@@ -100,7 +100,7 @@
 - 방장 가리기는 `SYNCREWR + feedType=26 + coverType=openchat_blind`로 확인했다.
 - 발신 메시지 가리기는 중간 `feedType=13` 행의 `prev_id`를 한 번 따라가고, 수신 메시지 가리기는 재작성된 행의 `v.previous_message`, `v.previous_enc`, `chatLogInfos[0].type`으로 복호화한다.
 - 2026-08-07 최근 membership DB 표본 89건에서 입장 44건은 `NEWMEM/feedType=4/members[0]`, 퇴장 45건은 `DELMEM/feedType=2/member`였고 모두 단일 사용자이며 내부 ID와 최상위 ID가 일치했다.
-- 최신 자동 검증은 runtime 테스트 130개와 runtime typecheck/build를 통과했다. `/가방` rehearsal은 migration 31개, 합성 fixture 2회, 대표 35개 테이블, stack 5개·출력 7줄을 확인했다. `/가방속성` 격리 리허설은 수량 20→7·delta -13과 동일 event 재실행 시 ledger/operation/execution/audit/outbox 각 1건을 확인했다. 운영 JSON과 운영 DB는 건드리지 않았다.
+- 최신 자동 검증은 runtime 테스트 166개와 runtime typecheck/build를 통과했다. `/가방` rehearsal은 migration 31개, 합성 fixture 2회, 대표 35개 테이블, stack 5개·출력 7줄을 확인했다. `/가방속성` 격리 리허설은 수량 20→7·delta -13과 동일 event 재실행 시 ledger/operation/execution/audit/outbox 각 1건을 확인했다. `/랜덤조합` 전용 rehearsal은 migration 33개와 합성 fixture 35개 테이블을 적용하고 하트 40→0·랜덤박스 0→2, ledger 2건, operation/execution/audit/outbox 각 1건을 확인했으며 MariaDB 재시작 뒤 동일 event replay에도 수량과 건수가 변하지 않았다. 전용 rehearsal DB는 검증 후 제거했고 운영 JSON과 운영 DB는 건드리지 않았다.
 
 ## 미검증 항목
 
