@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
 import { RandomBoxCraftService, isRandomBoxCraftCommand } from "../src/crafting/random-box-craft-service.js";
@@ -42,6 +43,15 @@ describe("random box craft policy", () => {
   it("accepts omission or one numeric quantity only", () => {
     for (const message of ["/랜덤조합", "/랜덤조합 0", "/랜덤조합 2"]) assert.equal(isRandomBoxCraftCommand(message), true);
     for (const message of ["/랜덤조합 ", "/랜덤조합 -1", "/랜덤조합 2 안내", "/랜덤조합2"]) assert.equal(isRandomBoxCraftCommand(message), false);
+  });
+});
+
+describe("random box craft integration", () => {
+  it("wires the exact command guard and service into the Iris dispatch", () => {
+    const appSource = readFileSync(new URL("../src/app.ts", import.meta.url), "utf8");
+    assert.match(appSource, /import \{ isRandomBoxCraftCommand, RandomBoxCraftService \}/);
+    assert.match(appSource, /isRandomBoxCraftCommand\(normalizedEvent\.message\)/);
+    assert.match(appSource, /new RandomBoxCraftService\(database!\)\.handle/);
   });
 });
 
