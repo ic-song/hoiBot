@@ -48,11 +48,13 @@ describe("site user authentication", () => {
   });
 
   it("recognizes only the exact KakaoTalk verification command", () => {
-    assert.equal(readKakaoVerificationCode("/인증 ABCD2345"), "ABCD2345");
-    assert.equal(readKakaoVerificationCode("/인증 abcd2345"), "ABCD2345");
-    assert.equal(readKakaoVerificationCode("/인증 ABCD2345 해줘"), null);
-    assert.equal(readKakaoVerificationCode(" /인증 ABCD2345"), null);
-    assert.equal(readKakaoVerificationCode("/인증 ABCD-234"), null);
+    assert.equal(readKakaoVerificationCode("/가입인증 ABCD2345"), "ABCD2345");
+    assert.equal(readKakaoVerificationCode("/가입인증 abcd2345"), "ABCD2345");
+    assert.equal(readKakaoVerificationCode("/가입인증 ABCD2345 해줘"), null);
+    assert.equal(readKakaoVerificationCode(" /가입인증 ABCD2345"), null);
+    assert.equal(readKakaoVerificationCode("/가입인증 ABCD-234"), null);
+    assert.equal(readKakaoVerificationCode("/인증 ABCD2345"), null);
+    assert.equal(readKakaoVerificationCode("/계정인증 ABCD2345"), null);
   });
 
   it("creates a pending site account, consent history, and one-time code without a player", async () => {
@@ -67,6 +69,8 @@ describe("site user authentication", () => {
     assert.equal(result.status, "pending_kakao_link");
     assert.equal(result.systemAccountName, "호이 남");
     assert.match(result.verificationCode, /^[A-Z2-9]{8}$/);
+    assert.equal(result.verificationCommand, `/가입인증 ${result.verificationCode}`);
+    assert.equal(result.verificationPurpose, "initial_link");
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_accounts")));
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_terms_acceptances")));
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_verification_challenges")));
