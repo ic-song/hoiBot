@@ -39,10 +39,14 @@ describe("starter-package raw guard and reply parity", () => {
       ["tier_upgrade_ticket:10", "lucky_box:30", "pet_enhance_stone:200", "spirit_stone:200", "pet_food_special:35", "pet_food:1000"]
     ]);
     const replies = STARTER_PACKAGE_DEFINITIONS.map((definition) => buildStarterPackageOpenReply(definition, "합성계정"));
-    assert.match(replies[0]!, /첫 후원자 \[합성계정\]님/);
-    for (const reply of replies.slice(1)) assert.match(reply, /\n후원자 \[합성계정\]님/);
-    for (const reply of replies) assert.equal(reply.endsWith("🅟100,000,000"), true);
-    assert.equal(replies[3]!.includes("펫먹이🍼"), false);
+    assert.deepEqual(replies, [
+      "초보자 스타터패키지🌟[1] 패키지오픈!!\n\n첫 후원자 [합성계정]님 감사합니다.\n본 후원은 봇개발 기획 및 외주 비용입니다\n더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n티어 승급티켓🎟 10개\n정령 강화석🥀 100개\n펫먹이특식🥡(/특식오픈) 30개\n펫먹이🍼 700개\n🅟100,000,000",
+      "초보자 스타터패키지🌟[2] 패키지오픈!!\n\n후원자 [합성계정]님 감사합니다.\n본 후원은 봇개발 기획 및 외주 비용입니다\n더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n티어 승급티켓🎟 10개\n정령 강화석🥀 100개\n펫먹이특식🥡(/특식오픈) 35개\n펫먹이🍼 700개\n🅟100,000,000",
+      "초보자 스타터패키지🌟[3] 패키지오픈!!\n\n후원자 [합성계정]님 감사합니다.\n본 후원은 봇개발 기획 및 외주 비용입니다\n더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n티어 승급티켓🎟 10개\n펫 강화석⭐ 200개\n정령 강화석🥀 100개\n펫먹이특식🥡(/특식오픈) 35개\n펫먹이🍼 700개\n🅟100,000,000",
+      "초보자 스타터패키지🌟[4] 패키지오픈!!\n\n후원자 [합성계정]님 감사합니다.\n본 후원은 봇개발 기획 및 외주 비용입니다\n더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n티어 승급티켓🎟 10개\n펫 강화석⭐ 200개\n정령 강화석🥀 200개\n펫먹이특식🥡(/특식오픈) 35개\n🅟100,000,000",
+      "초보자 스타터패키지🌟[5] 패키지오픈!!\n\n후원자 [합성계정]님 감사합니다.\n본 후원은 봇개발 기획 및 외주 비용입니다\n더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n티어 승급티켓🎟 10개\n펫 강화석⭐ 200개\n정령 강화석🥀 200개\n펫먹이특식🥡(/특식오픈) 35개\n펫먹이🍼 1000개\n🅟100,000,000",
+      "초보자 스타터패키지🌟[6] 패키지오픈!!\n\n후원자 [합성계정]님 감사합니다.\n본 후원은 봇개발 기획 및 외주 비용입니다\n더욱더 좋은 커뮤니티 발전에 힘쓰겠습니다 😊\n\n티어 승급티켓🎟 10개\n럭키박스🍀(/럭키오픈) 30개\n펫 강화석⭐ 200개\n정령 강화석🥀 200개\n펫먹이특식🥡(/특식오픈) 35개\n펫먹이🍼 1000개\n🅟100,000,000"
+    ]);
     assert.equal(buildStarterPackageRequiredReply("합성계정"), "[합성계정] 님\n후원관련은 밑에 링크를 확인해주세요.\nhttps://hoiland123.tistory.com");
   });
 
