@@ -4541,6 +4541,46 @@ Status: VERIFIED
 
 ---
 
+# /정령조합
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/정령조합`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/crafting/spirit-combine-service.ts`
+
+## Related Helpers
+
+- `checkRank`
+- `SpiritCombineService`
+- `isSpiritCombineCommand`
+
+## Data Usage
+
+- `data.member[sender].bag["정령조각🥀"]`
+- `data.member[sender].bag["정령 강화석🥀"]`
+- MariaDB `item_definitions`, `inventory_stacks`, `inventory_ledger`
+
+## Save Flow
+
+- Rhino는 이미 로드된 `data`의 가방을 변경하고 `response(...)` 끝의 `saveJsonFile(data, filePath)`에서 저장한다.
+- 고도화 도메인 서비스는 정령조각 차감, 정령 강화석 지급, 원장, 감사, outbox를 한 MariaDB 트랜잭션으로 저장한다.
+
+## AI Notes
+
+- 인자 없는 명령은 1개, 숫자 인자 하나는 해당 수량으로 처리하며 접미 안내 문구는 실행하지 않는다.
+- 기존 호환상 `/정령조합 0`은 조각을 보유한 경우 0개 성공으로 처리한다.
+- 공성전 진행 중에는 응답과 mutation 없이 종료한다.
+- `/전체조합`, `/전체조합2`도 같은 아이템을 다루지만 별도 슬라이스다.
+- 현재 도메인 복구 범위는 공용 앱 dispatch를 변경하지 않는다.
+
+---
+
 # /정령순위
 
 Status: VERIFIED

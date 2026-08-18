@@ -29,7 +29,8 @@
     "db:probe:bag-attribute": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-attribute-synthetic.ts",
     "db:probe:bag-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-mutate-synthetic.ts",
     "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts",
-    "db:probe:bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-read-synthetic.ts"
+    "db:probe:bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-read-synthetic.ts",
+    "db:probe:spirit-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-combine-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
