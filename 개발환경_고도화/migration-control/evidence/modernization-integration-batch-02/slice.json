@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "modernization-integration-batch-02",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-MODERNIZATION-INTEGRATION-BATCH-02",
+    "worker": "다온",
+    "executionId": "다온-SL-MODERNIZATION-INTEGRATION-BATCH-02-20260818T075441Z-ln07ds",
+    "claimRow": 702,
+    "branch": "feature/modernization-integration-batch-02-daon-ln07ds",
+    "baseHead": "d9b36ae9e2f1ffe950e3a24d6b1aaf55ec24ed14"
+  },
+  "commands": {
+    "ids": ["CMD-05-0028", "CMD-05-0029", "CMD-05-0030", "CMD-05-0031", "CMD-05-0032", "CMD-05-0033", "CMD-05-0034", "CMD-06-0081"],
+    "names": ["/미니펫조합창세", "/미니펫조합창조", "/미니펫조합태초+", "/컬렉션창조오픈", "/컬렉션창세오픈", "/미니펫창세조합", "/창조오픈", "/전체오픈"],
+    "sourceFiles": ["main.js"],
+    "guards": ["등급 조합 broad startsWith와 parseInt 접미 허용 보존", "나머지 exact dispatch 보존"],
+    "helpers": ["미니펫 5 services", "OpenAllService", "공용 MariaDB transaction client", "operations/result replay", "command_audit", "outbox_messages"],
+    "automaticFlows": ["Iris app.ts dispatch", "동일 event 저장 결과 replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/miniPetData.json", "data/guild.json"],
+    "readPaths": ["member.bag/point/guild", "miniPetData", "guild resources/warehouse"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 Rhino source read-only 조사", "DB transaction/outbox 안전 차이 별도 기록"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["034_collection_creation_open.sql", "035_collection_genesis_open.sql", "036_guaranteed_creation_open.sql", "037_open_all_guild_resources.sql"],
+    "migrationSha256": {
+      "034": "46b7896cf5903d3548088b0feea569a0503a77328554321b87f4b1aaa1fa866a",
+      "035": "badba9c354fc3934863acdb51e54041b30f6f2521814976227b0af0f0b6980a8",
+      "036": "87aa2c33ec4597212c0e04dcd6aff61b014de50f06b35f3492e5c6777cb88b64",
+      "037": "5d5bc2327689122b678ca4b066a5fe3ef5f7d3bba38b5702b9ab0435091f72fa"
+    },
+    "tables": ["mini_pet_definitions", "owned_mini_pets", "item_definitions", "inventory_stacks", "inventory_ledger", "currency_accounts", "currency_ledger", "guild_resource_accounts", "guild_resource_ledger", "guild_warehouse_stacks", "guild_warehouse_ledger", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"],
+    "constraints": ["migrations 034~037 각각 단일", "미니펫 5 services/7 commands와 /전체오픈 단일 dispatch", "범위 밖 spirit/combine dispatch 없음"],
+    "newColumns": [],
+    "transactionBoundary": "도메인 상태·ledger·operation·execution·audit·outbox를 동일 transaction으로 commit하고 delivery는 재시작 안전하게 후속 기록"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_b02_ln07ds",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~037 신규 적용·재적용, fixture apply+verify-only, 5 mini prepare 후 MariaDB restart replay, /전체오픈 Shadow verify-restart",
+    "checks": ["migration-count 37", "fixture checksum d5d7ebd8882691bf8b6074f7352940f4acfed5793594f3de0886a0df2edc1282와 35 tables", "정상·실패·중복·경계·rollback", "restart replay"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["CollectionCreationOpenService", "CollectionGenesisOpenService", "GenesisTicketCraftService", "GradeCombineService", "GuaranteedCreationOpenService", "OpenAllService"],
+    "repositories": ["공용 database.ts transaction client", "mini-pet repositories", "MariaOpenAllRepository"],
+    "tests": ["npm ci", "typecheck", "build", "runtime 210/210", "main.js·Info.js node --check", "최신-schema evidence validator 7/7", "격리 MariaDB fresh/reapply", "fixture apply/verify-only", "restart probes/Shadow"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "5 mini probe scripts", "shadow-open-all-synthetic.ts"],
+    "comparisonMode": "검증된 두 통합 결과의 guard·확률·보상·정렬·RNG/source order를 보존하고 공용 DB 경계 상호 운용을 재검증",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "전용 비식별 MariaDB container와 Iris HTTP adapter",
+    "result": "passed",
+    "event": "iris:b02-ln07ds-open-all-restart",
+    "effects": {"operations": 16, "executions": 12, "audit": 12, "outbox": 12, "delivery": 3},
+    "restartReplay": "passed",
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "integration": {
+    "sourceHeads": ["eccd437415d66833b6f5794a214913a2fdf573fc", "8db0bc50c1c16407507d02b8ab42a6561810cf74"],
+    "selectedTransformedCommits": ["bcab28c", "608ea4b", "45fb9d7", "e4fa389", "9496fb9", "f08eebb", "bd0794a", "b4d3f9e", "22ad7a0", "bc442c7", "8d9bba5", "0ed9635"],
+    "excludedCommits": ["c4e6322 duplicate common foundation"],
+    "conflictsResolved": ["app.ts에서 미니펫 5 services와 OpenAllService만 공존", "package.json에서 mini probes/parity와 open-all Shadow만 공존", "functional-v1/README는 더 포괄적인 minipet 통합본 보존", "범위 밖 spirit/combine dispatch 제외"]
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 snapshot freeze 필요",
+    "finalImportPlan": "운영 member/member_pet/miniPetData/guild reconciliation 필요",
+    "smokePlan": "승인된 실운영방과 비운영 identity smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지; 불일치 시 DB route 비활성화"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "DB rollback/outbox가 현행 JSON save/direct reply보다 원자적인 안전 차이는 parity 승인 대상이다",
+    "등급 조합 broad startsWith와 parseInt 접미 허용은 현행 parity로 보존되어 넓은 입력 위험이 남는다",
+    "historical inventory-open-all 원 evidence는 최신 validator 이전 형식이며 최신 integration evidence로 승계 검증했다",
+    "운영 snapshot reconciliation, backup/restore, 승인된 실운영 smoke와 cutover 증거가 없어 Gate 8은 미완료다"
+  ]
+}
