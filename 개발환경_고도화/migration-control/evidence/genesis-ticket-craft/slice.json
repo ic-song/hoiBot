@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "genesis-ticket-craft",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-MINIPET-GENESIS-TICKET-CRAFT",
+    "worker": "새봄",
+    "executionId": "새봄-SL-MINIPET-GENESIS-TICKET-CRAFT-20260818T060141Z-204rbk",
+    "claimRow": 32
+  },
+  "commands": {
+    "names": ["/미니펫창세조합"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command only",
+      "active castle siege returns silently before identity or inventory mutation",
+      "missing member or linked identity returns silently before mutation",
+      "mini-pet bag capacity eight is checked before ticket consumption",
+      "ticket shortage preserves the current owned quantity in the reply",
+      "executing needCount 10000 is authoritative despite the nearby 30000 comment"
+    ],
+    "helpers": ["checkRank", "hasItem", "removeItem", "isMiniPetBagFull", "refreshMiniPetSortIndex"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/guild.json"],
+    "readPaths": [
+      "member.<sender>.bag['미니펫뽑기🐹(/미니펫오픈)']",
+      "member_pet.<sender>.miniPetBag",
+      "guildData.castleSiegeFlag"
+    ],
+    "writePaths": [
+      "member.<sender>.bag mini-pet ticket decrement by 10000",
+      "member_pet.<sender>.miniPetBag append one genesis-grade mini pet"
+    ],
+    "saveOrder": [
+      "member_pet.json immediate save in command branch",
+      "member_pet.json and member.json response-tail saves"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "011_mini_pet_display_projection.sql",
+      "031_pet_info_projection.sql",
+      "035_collection_genesis_open.sql"
+    ],
+    "tables": [
+      "external_identities", "player_profiles", "item_definitions", "inventory_stacks", "inventory_ledger",
+      "mini_pet_definitions", "owned_mini_pets", "castle_battle_seasons", "operations", "command_executions",
+      "command_audit", "outbox_messages"
+    ],
+    "constraints": [
+      "one inventory stack per player and item",
+      "mini-pet bag count stays below eight before insert",
+      "one operation per linked identity and event id",
+      "ticket, mini pet, ledger, execution, audit and outbox share one transaction"
+    ],
+    "newColumns": [],
+    "transactionBoundary": "lock active castle state, linked identity, prior operation, mini-pet bag, ticket stack and genesis mini-pet definition; then consume 10000 tickets, insert one mini pet, append inventory ledger, command execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_genesis_ticket_204rbk",
+    "sourceReadOnly": true,
+    "replayPolicy": "35 migrations and the synthetic fixture pass repeat apply; the fixed command event replays through operation idempotency before and after MariaDB restart",
+    "checks": [
+      "migration-count 35 passed twice",
+      "fixture checksum ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9 applied twice and verify-only checked 35 representative tables",
+      "ticket quantity 10000 to 0",
+      "one unequipped genesis mini pet with battle experience one",
+      "inventory ledger 1, operation 1, command execution 1, audit 1 and outbox 1",
+      "same event replay without a second mutation",
+      "MariaDB restart preserves state and replay",
+      "operational JSON snapshots and operational database are untouched"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/mini-pet/genesis-ticket-craft-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/genesis-ticket-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-genesis-ticket-craft-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "scripted active-siege, full-bag, 9999-ticket shortage and duplicate-event cases",
+      "synthetic linked player with exactly 10000 tickets and available mini-pet bag capacity"
+    ],
+    "comparisonMode": "exact guard, silent siege block, capacity and shortage ordering, exact replies, 10000 ticket delta, mini-pet fields, ledger, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory and member-pet writes in the final shared freeze window",
+    "finalImportPlan": "import ticket stacks plus every miniPetBag entry from the approved final member and member_pet snapshots",
+    "smokePlan": "an approved test identity spends 10000 tickets and verifies the new mini pet, reply and ledger",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "the legacy source comment says 30000 while executed needCount is 10000; parity intentionally follows 10000",
+    "Rhino deletes the ticket bag property at zero while MariaDB keeps a zero-quantity stack row",
+    "full checkRank special and guild decorations are not yet centralized",
+    "price one is represented by the same battle-experience-one projection until a separate sale-price projection is defined",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}
