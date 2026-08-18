@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-join",
+  "status": "verified",
+  "wbsId": "CMD-04-0001",
+  "commands": {
+    "names": ["/길드가입 [번호]", "/가입한다", "가입한다", "/안한다"],
+    "sourceFiles": ["main.js"],
+    "automaticFlows": ["/길드가입 request stores durable pending state consumed by 가입한다 or /안한다"],
+    "guards": [
+      "legacy /길드가입 uses a broad prefix and can consume appended guide text",
+      "ported policy requires one positive integer and rejects suffix text",
+      "confirmation keeps /가입한다 and 가입한다 aliases; cancellation keeps /안한다 only"
+    ],
+    "helpers": ["getJoinableGuildRows", "getGuildMaxMemberLimit", "getMyGuildId", "calculateTotalExp", "removeMemberFromAllGuilds", "removeItem", "rebuildGuildNameToId", "checkRank"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json", "data/member_pet.json", "data/petHomeData.json", "data/petSkillData.json"],
+    "readPaths": [
+      "member.<sender>.guild and bag join ticket",
+      "guilds.<id>.members/memberClose/maxMember/level/joinConditionExp/name/mark/server/master",
+      "pet skill equipped recruitment command",
+      "combined player EXP projections"
+    ],
+    "writePaths": ["guilds.<id>.members.<sender>", "member.<sender>.guild", "member.<sender>.bag join ticket"],
+    "saveOrder": ["saveJsonFile(guildData, guildPath)", "saveJsonFile(data, filePath)"],
+    "devProdRoutingVerified": true,
+    "pendingState": "userState.<sender>.guildJoin is memory-only and disappears on Rhino restart"
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "009_event_identity_links.sql", "032_guild_join.sql"],
+    "tables": ["players", "player_profiles", "guilds", "guild_members", "guild_join_requests", "item_definitions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": ["guild_members(player_id) unique prevents cross-guild duplicate membership", "guild_join_requests(player_id) unique keeps one durable request per player", "inventory stack quantity cannot be negative", "operations idempotency scope and key unique"],
+    "existingTables": ["players", "player_profiles", "guilds", "guild_members", "item_definitions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "usableConstraints": ["guild_members(player_id) unique prevents cross-guild duplicate membership", "inventory stack quantity cannot be negative", "operations idempotency scope and key unique"],
+    "migration": "개발환경_고도화/runtime/migrations/032_guild_join.sql",
+    "newColumns": ["guilds.server_code", "guilds.level", "guilds.join_requirement_experience", "guilds.member_join_closed", "guilds.max_members", "guilds.recruitment_bonus"],
+    "newTables": ["guild_join_requests"],
+    "domainSchemaDraft": "개발환경_고도화/migration-control/evidence/guild-join/schema-contract.sql",
+    "fixtureContracts": ["active stackable item code legacy-guild-join-ticket", "guild policy projection fields on synthetic guilds"],
+    "requiredTransactionBoundary": "confirmation must lock pending request, player membership, selected guild capacity/policy and join-ticket stack, then insert membership, spend one ticket, write inventory ledger, operation, execution, audit and reply outbox atomically",
+    "transactionBoundary": "confirmation locks pending request, player membership, selected guild capacity/policy and join-ticket stack, then inserts membership, spends one ticket and writes inventory ledger, operation, execution, audit and reply outbox atomically"
+  },
+  "logicPort": {
+    "policies": ["개발환경_고도화/runtime/src/guild/guild-join-policy.ts"],
+    "services": ["개발환경_고도화/runtime/src/guild/guild-join-service.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/guild/guild-join-repository.ts transaction contract", "개발환경_고도화/runtime/src/guild/maria-guild-join-repository.ts"],
+    "tests": [
+      "개발환경_고도화/runtime/test/guild-join-policy.test.ts",
+      "개발환경_고도화/runtime/test/guild-join-service.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-guild-join-synthetic.ts"
+    ],
+    "integrationStatus": "migration, synthetic fixture, MariaDB adapter and Iris dispatch integrated"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 c42d839b7d0196a4f6af954a91cb1c01e09f37df721457701f5ae61609b220b0 plus per-run synthetic guild join player",
+    "targetDatabase": "disposable Docker MariaDB hoibot_rehearsal_guild_join_9uhpkj",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixture applied twice; request persisted across restart; confirmation event replayed exactly",
+    "checks": [
+      "fixture applied twice and verify-only passed across 35 representative tables",
+      "pending guild join request survived a MariaDB container restart",
+      "confirmation inserted exactly one membership and spent exactly one join ticket",
+      "inventory ledger, operation, command execution, audit and outbox were committed atomically",
+      "same confirmation event replay preserved one operation, execution, audit and outbox",
+      "operational database hoibot was not migrated or loaded"
+    ],
+    "result": "passed"
+  },
+  "parity": {
+    "fixtures": ["functional-v1 synthetic guilds and join ticket", "per-run synthetic unjoined Kakao player"],
+    "comparisonMode": "exact guard/reply and relational state/ledger/idempotency comparison",
+    "result": "passed",
+    "verified": ["candidate availability", "level/EXP/name ordering", "recruitment capacity bonus", "EXP threshold", "confirmation aliases", "confirmation/completion/shortage text", "request/confirm/cancel orchestration", "changed-condition invalidation", "prior-result replay before current-state checks"],
+    "intentionalHardening": ["suffix text no longer executes /길드가입"],
+    "notYetVerified": ["full operational snapshot import", "live-room smoke after cutover"]
+  },
+  "cutover": {
+    "freezePlan": "Stop legacy guild/member/bag writes in the approved guild cutover window",
+    "finalImportPlan": "Import latest guild/member/bag and policy snapshots after backup into normalized tables",
+    "smokePlan": "Use an approved test member to request, restart, confirm and verify membership, ticket and reply",
+    "rollbackPlan": "Keep the Rhino path active until the database smoke passes; restore backup and disable database dispatch on failure"
+  },
+  "risks": [
+    "combined legacy total EXP currently maps to the normalized player profile experience projection and needs full-import reconciliation",
+    "recruitment_bonus is persisted as a guild policy projection; the equipped guild-master skill refresh belongs to the pet-skill integration slice",
+    "live operational snapshots were inspected only for source mapping and were not modified"
+  ]
+}
