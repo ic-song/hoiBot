@@ -12,8 +12,9 @@
 - Worktree: `C:\Users\user\Desktop\hoiBot-worktrees\새봄-SL-MINIPET-COLLECTION-CREATE-20260818T044451Z-gb725t`
 - Branch: `feature/modernization-minipet-collection-create-saebom-gb725t`
 - 기준 commit: `f79f21b`
-- 체크포인트 버전: `2`
-- 커밋·푸시: 구현 커밋 준비 중
+- 체크포인트 버전: `3`
+- 구현 commit: `7f85c9e`
+- 커밋·푸시: 최종 체크포인트 commit 준비 중
 
 ## 복구 근거
 
@@ -38,3 +39,15 @@
 
 - 구현·증거 commit을 push하고 WBS의 Gate 1~7 근거를 동기화한다.
 - 운영 준비는 최종 freeze snapshot, 운영 DB 이관, 승인된 실방 smoke 전까지 완료 처리하지 않는다.
+
+## 검증 증거
+
+- `npm run typecheck`: 통과
+- `npm test`: 166/166 통과
+- `npm run build`: 통과
+- `node --check main.js`, `node --check Info.js`: 통과
+- 격리 DB `hoibot_rehearsal_collection_gb725t`: migration 34개 2회 통과
+- 합성 fixture: 2회 적용 및 verify-only 통과, 35개 표본 테이블 확인
+- `/컬렉션창조오픈`: 패키지 1→0, 뽑기권 0→2000, 미니펫 1개, 원장 2개
+- 동일 event 재실행 및 MariaDB 재시작 후 재실행: 중복 mutation 없이 통과
+- 운영 JSON·운영 DB: 미사용
