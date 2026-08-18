@@ -37,18 +37,19 @@
     "transactionBoundary": "lock prior operation, target profile and active stackable inventory rows; then replace or delete the selected stack and append ledger, operation, command execution, audit and outbox in one MariaDB transaction"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 77a037e0a744d131d08d6302eae08f1af30bcc63087445a4bd8eeb225dfa5cb6",
-    "targetDatabase": "hoibot_rehearsal_cmd_01_0002_ucxzlq",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_inv_mutate_qu1e2h",
     "sourceReadOnly": true,
     "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; the exact command event replays through operation idempotency",
     "checks": [
-      "31 migrations applied to an isolated rehearsal database",
-      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "33 migrations applied to an isolated rehearsal database",
+      "fixture reported 71 statements and repeated apply plus verify-only verified 35 representative tables",
       "legacy special-item metadata selected junk as item number one before ordinary Korean items",
       "absolute quantity change moved junk from 20 to 7 and recorded delta minus 13",
       "inventory ledger, operation, command execution, audit and outbox were persisted once",
       "same event replay returned the stored result without a second mutation",
-      "runtime 127 tests, typecheck and build passed",
+      "same fixed event replay after a MariaDB restart returned the identical result with ledger, operation, execution, audit and outbox each remaining at one row",
+      "runtime 158 tests, typecheck and build plus main.js and Info.js syntax checks passed",
       "operational data snapshots were not read or mutated"
     ],
     "result": "passed"
@@ -72,6 +73,21 @@
     ],
     "comparisonMode": "candidate and full guards, silent authorization failure, legacy item numbering, zero deletion, absolute quantity update, replies, ledger/audit/outbox effects and duplicate-event behavior",
     "result": "passed"
+  },
+  "shadow": {
+    "executionId": "새봄-SL-INV-MUTATE-20260818T010121Z-qu1e2h",
+    "date": "2026-08-18",
+    "mode": "isolated synthetic MariaDB rehearsal; no operational snapshot or live-room traffic",
+    "database": "hoibot_rehearsal_inv_mutate_qu1e2h",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "result": "passed",
+    "observations": [
+      "junk quantity changed from 20 to 7 with delta minus 13",
+      "same fixed event replay remained idempotent before and after MariaDB restart",
+      "ledger, operation, command execution, audit and outbox each remained at one row"
+    ]
   },
   "cutover": {
     "freezePlan": "stop member bag writes in the final shared freeze window",

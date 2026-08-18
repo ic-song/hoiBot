@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sliceId": "bag-mutate",
-  "status": "ported",
+  "status": "verified",
   "commands": {
     "names": ["/가방속성 [유저명] [아이템번호] [갯수]", "/가방추가 [유저명], [아이템명] [갯수]", "/소지품저장"],
     "sourceFiles": ["main.js"],
@@ -26,8 +26,17 @@
     "targetDatabase": "hoibot_rehearsal_* execution database",
     "sourceReadOnly": true,
     "replayPolicy": "the same Iris event returns operations.result_json without a second mutation or snapshot",
-    "checks": ["migration 033", "bag addition ledger/audit/outbox", "snapshot counts/hash/entries", "duplicate event replay", "restart-safe outbox"],
-    "result": "pending"
+    "checks": [
+      "33 migrations applied to an isolated rehearsal database",
+      "71-statement fixture applied twice and verify-only checked 35 representative tables",
+      "bag addition created synthetic item bag_f7839a0148320d00 with quantity 3",
+      "inventory snapshot stored two players and 11 item entries with SHA-256 b7f594361d267463999a1216794f78b4b56fe574769b5d247a9246f908abcc6c",
+      "duplicate event replay kept one operation, command execution, audit, ledger or snapshot effect",
+      "same fixed events returned identical results after MariaDB restart",
+      "runtime 158 tests, typecheck and build plus main.js and Info.js syntax checks passed",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
   },
   "logicPort": {
     "services": ["개발환경_고도화/runtime/src/inventory/bag-add-service.ts", "개발환경_고도화/runtime/src/inventory/inventory-snapshot-service.ts", "개발환경_고도화/runtime/src/app.ts"],
@@ -37,7 +46,23 @@
   "parity": {
     "fixtures": ["pure command guard and authorization fixtures", "synthetic linked administrator and target inventory"],
     "comparisonMode": "exact command parsing and replies plus relational quantity, ledger, snapshot, audit, outbox and duplicate-event effects",
-    "result": "pending"
+    "result": "passed"
+  },
+  "shadow": {
+    "executionId": "새봄-SL-INV-MUTATE-20260818T010121Z-qu1e2h",
+    "date": "2026-08-18",
+    "mode": "isolated synthetic MariaDB rehearsal; no operational snapshot or live-room traffic",
+    "database": "hoibot_rehearsal_inv_mutate_qu1e2h",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "result": "passed",
+    "observations": [
+      "bag addition and inventory snapshot returned identical stored results for the same fixed events after MariaDB restart",
+      "the generated item remained quantity 3 without a duplicate ledger effect",
+      "the inventory snapshot remained one row with two players, 11 entries and the same SHA-256 hash",
+      "outbox replay safety remained true"
+    ]
   },
   "cutover": {
     "freezePlan": "stop member bag writes during the shared final inventory freeze",
@@ -46,7 +71,6 @@
     "rollbackPlan": "keep Rhino routing active until rehearsal and operating approval; disable the MariaDB adapter route to return to legacy handling"
   },
   "risks": [
-    "this PC has no Docker or configured MariaDB connection, so the new migration and relational probe remain pending",
     "operational member.json import and live-room smoke require total-operator approval and were not executed",
     "the snapshot reply intentionally replaces the Android path with a DB snapshot URI"
   ]

@@ -13,13 +13,14 @@ if (!config.database.enabled || !/^hoibot_rehearsal_[a-z0-9_]+$/i.test(config.da
 }
 
 const database = createDatabaseClient(config.database);
-const runKey = randomUUID().replaceAll("-", "").slice(0, 12);
+const runKey = process.env.PROBE_RUN_KEY ?? randomUUID().replaceAll("-", "").slice(0, 12);
+if (!/^[a-z0-9]{6,32}$/i.test(runKey)) throw new Error("PROBE_RUN_KEY must be 6-32 alphanumeric characters.");
 const bagEventId = `bag-add-${runKey}`;
 const snapshotEventId = `inventory-snapshot-${runKey}`;
 
 async function insertEvent(eventId: string): Promise<void> {
   await database.execute(
-    `INSERT INTO event_inbox
+    `INSERT IGNORE INTO event_inbox
       (event_id, provider_code, provider_event_id, external_channel_id, channel_id,
        external_user_id, external_identity_id, event_kind, event_origin, direction,
        payload_hash, parse_status, processing_status, received_at)

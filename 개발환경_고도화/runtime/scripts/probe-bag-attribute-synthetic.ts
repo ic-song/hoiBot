@@ -12,7 +12,8 @@ if (!/^hoibot_rehearsal_[a-z0-9_]+$/i.test(config.database.name)) {
 }
 
 const database = createDatabaseClient(config.database);
-const runKey = randomUUID().replaceAll("-", "").slice(0, 12);
+const runKey = process.env.PROBE_RUN_KEY ?? randomUUID().replaceAll("-", "").slice(0, 12);
+if (!/^[a-z0-9]{6,32}$/i.test(runKey)) throw new Error("PROBE_RUN_KEY must be 6-32 alphanumeric characters.");
 const eventId = `bag-attribute-${runKey}`;
 const command = {
   externalUserId: "synthetic-admin-alpha",
@@ -22,13 +23,19 @@ const command = {
 };
 
 try {
-  await database.execute(
-    `UPDATE inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
-        SET stack.quantity = 20, stack.version = stack.version + 1
-      WHERE stack.player_id = 900000001 AND item.code = 'legacy-junk-item'`
+  const priorOperations = await database.query<Array<{ count: bigint }>>(
+    "SELECT COUNT(*) AS count FROM operations WHERE idempotency_scope = 'inventory.bag_attribute:900000001' AND idempotency_key = ?",
+    [eventId]
   );
+  if (priorOperations[0]?.count === 0n) {
+    await database.execute(
+      `UPDATE inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+          SET stack.quantity = 20, stack.version = stack.version + 1
+        WHERE stack.player_id = 900000001 AND item.code = 'legacy-junk-item'`
+    );
+  }
   await database.execute(
-    `INSERT INTO event_inbox
+    `INSERT IGNORE INTO event_inbox
       (event_id, provider_code, provider_event_id, external_channel_id, channel_id,
        external_user_id, external_identity_id, event_kind, event_origin, direction,
        payload_hash, parse_status, processing_status, received_at)

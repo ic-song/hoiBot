@@ -100,7 +100,7 @@
 - 방장 가리기는 `SYNCREWR + feedType=26 + coverType=openchat_blind`로 확인했다.
 - 발신 메시지 가리기는 중간 `feedType=13` 행의 `prev_id`를 한 번 따라가고, 수신 메시지 가리기는 재작성된 행의 `v.previous_message`, `v.previous_enc`, `chatLogInfos[0].type`으로 복호화한다.
 - 2026-08-07 최근 membership DB 표본 89건에서 입장 44건은 `NEWMEM/feedType=4/members[0]`, 퇴장 45건은 `DELMEM/feedType=2/member`였고 모두 단일 사용자이며 내부 ID와 최상위 ID가 일치했다.
-- 최신 자동 검증은 runtime 테스트 130개와 runtime typecheck/build를 통과했다. `/가방` rehearsal은 migration 31개, 합성 fixture 2회, 대표 35개 테이블, stack 5개·출력 7줄을 확인했다. `/가방속성` 격리 리허설은 수량 20→7·delta -13과 동일 event 재실행 시 ledger/operation/execution/audit/outbox 각 1건을 확인했다. 운영 JSON과 운영 DB는 건드리지 않았다.
+- 최신 자동 검증은 runtime 테스트 158개와 runtime typecheck/build, `main.js`·`Info.js` 구문 검사를 통과했다. 인벤토리 격리 rehearsal은 migration 33개, 71문장 합성 fixture 2회 적용·verify-only, 대표 35개 테이블을 확인했다. `/가방`은 mutation 전 stack 5개·출력 7줄, `/가방속성`은 수량 20→7·delta -13, `/가방추가`는 합성 아이템 수량 3, `/소지품저장`은 2명·11개 항목과 동일 SHA-256을 확인했다. MariaDB 재시작 후 같은 고정 event를 다시 실행해 결과가 같고 ledger/operation/execution/audit/outbox와 snapshot 효과가 각각 한 번만 남는 것도 확인했다. 운영 JSON과 운영 DB는 건드리지 않았다.
 
 ## 미검증 항목
 
