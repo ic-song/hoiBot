@@ -3882,6 +3882,43 @@ Status: VERIFIED
 
 ---
 
+# /컬렉션창세오픈
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/컬렉션창세오픈`
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/mini-pet/collection-genesis-open-service.ts`
+## Related Helpers
+- `checkRank`
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `isMiniPetBagFull`
+- `refreshMiniPetSortIndex`
+## Data Usage
+- `data.member[sender].bag["컬렉션창세패키지🐹(/컬렉션창세오픈)"]`
+- `data.member[sender].bag["미니펫뽑기🐹(/미니펫오픈)"]`
+- `petData[sender].miniPetBag`
+- `guildData.castleSiegeFlag`
+## Save Flow
+- Success consumes one package, grants 1500 mini-pet draw tickets, appends one genesis-grade mini pet, and immediately saves `memberPetPath`
+- The response tail also saves `filePath` and `memberPetPath`
+- The MariaDB port persists both item deltas, the mini pet, two inventory ledgers, command execution, audit, outbox and idempotency result in one transaction
+## Related Commands
+- `/미니펫가방`
+- `/미니펫오픈`
+- `/창세오픈`
+- `/미니펫창세조합`
+- `/미니펫조합창세`
+## AI Notes
+- The command uses exact equality and ignores suffixed guide text
+- An active castle siege and an unregistered sender are silent no-ops; the mini-pet bag limit is 8
+- Related genesis commands are dependencies only and are not included in `SL-MINIPET-COLLECTION-GENESIS`
+- `COMMAND_REGISTRY.md` and the legacy command usage status were intentionally left unchanged
+
+---
+
 # /미니펫장착 [번호]
 Status: VERIFIED
 ## Command Anchors
