@@ -69,17 +69,18 @@
     "transactionBoundary": "lock active castle state, linked identity, pet and rename-ticket stack; then rename, decrement ticket, append inventory ledger, operation, execution, audit and outbox in one MariaDB transaction"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ada4f36e1e4311478e15f3986d99c0ba7784d158ff33542baf19e6c9a5c017ac",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_pet_rename_c35g1q",
     "sourceReadOnly": true,
-    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; the command probe replays the exact event through operation idempotency",
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; a fixed command event replays through operation idempotency both before and after a MariaDB restart",
     "checks": [
       "operational database name hoibot rejected the probe before connection mutation",
-      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "all 33 migrations passed twice and repeated fixture apply plus verify-only verified 35 representative tables",
       "synthetic rename-ticket stack loaded at quantity 2",
       "valid command changed the pet name and ticket quantity from 2 to 1",
       "inventory ledger delta -1, operation, command execution, audit and outbox were each persisted once",
-      "same event replay returned the stored result without a second mutation",
+      "same fixed event replay after a healthy MariaDB restart returned the stored result without a second mutation",
+      "restart replay kept inventory ledger, operation, command execution, audit and outbox at one row each",
       "invalid appended guide text did not mutate state",
       "operational data snapshots were not read or mutated"
     ],

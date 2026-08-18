@@ -12,31 +12,34 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 
 const database = createDatabaseClient(config.database);
 const runKey = randomUUID().replaceAll("-", "").slice(0, 12);
-const eventId = `pet-rename-ticket-craft-${runKey}`;
+const eventId = process.env.PET_RENAME_TICKET_CRAFT_PROBE_EVENT_ID ?? `pet-rename-ticket-craft-${runKey}`;
+const replayOnly = process.env.PET_RENAME_TICKET_CRAFT_PROBE_REPLAY_ONLY === "true";
 const externalUserId = "synthetic-admin-alpha";
 const channelId = "synthetic-room-001";
 
 try {
-  await database.withTransaction(async (transaction) => {
-    await transaction.execute(
-      "UPDATE currency_accounts SET balance = 200000000, version = version + 1 WHERE player_id = 900000001 AND currency_code = 'point'"
-    );
-    await transaction.execute(
-      `UPDATE inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
-       SET stack.quantity = CASE item.code WHEN 'legacy-junk-item' THEN 20 WHEN 'legacy-pet-name-change-ticket' THEN 2 END,
-           stack.version = stack.version + 1
-       WHERE stack.player_id = 900000001 AND item.code IN ('legacy-junk-item', 'legacy-pet-name-change-ticket')`
-    );
-    await transaction.execute(
-      `INSERT INTO event_inbox
-        (event_id, provider_code, provider_event_id, external_channel_id, channel_id,
-         external_user_id, external_identity_id, event_kind, event_origin, direction,
-         payload_hash, parse_status, processing_status, received_at)
-       VALUES (?, 'iris', ?, ?, 900000001, ?, 900000004, 'message', 'synthetic_probe', 'incoming',
-         REPEAT('0', 64), 'parsed', 'processed', UTC_TIMESTAMP(3))`,
-      [eventId, eventId, channelId, externalUserId]
-    );
-  });
+  if (!replayOnly) {
+    await database.withTransaction(async (transaction) => {
+      await transaction.execute(
+        "UPDATE currency_accounts SET balance = 200000000, version = version + 1 WHERE player_id = 900000001 AND currency_code = 'point'"
+      );
+      await transaction.execute(
+        `UPDATE inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+         SET stack.quantity = CASE item.code WHEN 'legacy-junk-item' THEN 20 WHEN 'legacy-pet-name-change-ticket' THEN 2 END,
+             stack.version = stack.version + 1
+         WHERE stack.player_id = 900000001 AND item.code IN ('legacy-junk-item', 'legacy-pet-name-change-ticket')`
+      );
+      await transaction.execute(
+        `INSERT INTO event_inbox
+          (event_id, provider_code, provider_event_id, external_channel_id, channel_id,
+           external_user_id, external_identity_id, event_kind, event_origin, direction,
+           payload_hash, parse_status, processing_status, received_at)
+         VALUES (?, 'iris', ?, ?, 900000001, ?, 900000004, 'message', 'synthetic_probe', 'incoming',
+           REPEAT('0', 64), 'parsed', 'processed', UTC_TIMESTAMP(3))`,
+        [eventId, eventId, channelId, externalUserId]
+      );
+    });
+  }
 
   const service = new PetRenameTicketCraftService(database);
   const command = { externalUserId, channelId, message: "/펫이름조합", eventId };
@@ -90,7 +93,7 @@ try {
     database: config.database.name, playerId: result.playerId,
     balances: { junk: result.junkQuantity, point: result.pointBalance, ticket: result.ticketQuantity },
     effects: { inventoryLedger: 2, currencyLedger: 1, operation: 1, execution: 1, audit: 1, outbox: 1 },
-    idempotent: true, operationalSnapshotTouched: false
+    idempotent: true, restartReplay: replayOnly, operationalSnapshotTouched: false
   })}\n`);
 } finally {
   await database.close();

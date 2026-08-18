@@ -72,18 +72,18 @@
     "transactionBoundary": "lock active castle state, linked identity, junk and rename-ticket stacks and point account; then apply all three balances, both ledgers, operation, execution, audit and outbox in one MariaDB transaction"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 17dace942298b0df75b614c2325d4e20d4849b0daa50034d082a7570289f5182",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_pet_rename_c35g1q",
     "sourceReadOnly": true,
-    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; each command probe replays the exact event through operation idempotency",
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; a fixed command event replays through operation idempotency both before and after a MariaDB restart",
     "checks": [
       "operational database name hoibot rejected the probe before connection mutation",
-      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "all 33 migrations passed twice and repeated fixture apply plus verify-only verified 35 representative tables",
       "synthetic junk stack loaded at quantity 20 and rename-ticket stack at quantity 2",
       "valid command changed junk 20 to 10, point 200000000 to 100000000 and ticket 2 to 3",
       "inventory ledgers 2, currency ledger 1, operation, command execution, audit and outbox were persisted once for the event",
-      "same event replay returned the stored result without a second mutation",
-      "the complete database probe passed twice with independent event IDs",
+      "same fixed event replay after a healthy MariaDB restart returned the stored result without a second mutation",
+      "restart replay kept both inventory ledgers, the currency ledger, operation, command execution, audit and outbox at their single-event counts",
       "operational data snapshots were not read or mutated"
     ],
     "result": "passed"
