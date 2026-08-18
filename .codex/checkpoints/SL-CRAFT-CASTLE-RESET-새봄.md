@@ -18,7 +18,8 @@
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/새봄-SL-CRAFT-CASTLE-RESET-20260818T024920Z-vrmxu4`
 - Branch: `feature/modernization-craft-castle-reset-saebom-vrmxu4`
 - 기준 commit: `origin/feature/modernization`의 `a554f2c`와 최신 `feature/prod` 병합
-- push 상태: 커밋 후 원격 push 예정
+- 구현·검증 commit: `975dc45` 원격 push 완료
+- push 상태: 완료
 
 ## 승계한 Gate evidence
 
