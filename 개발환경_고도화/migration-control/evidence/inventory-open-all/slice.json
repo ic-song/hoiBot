@@ -6,7 +6,8 @@
     "worker": "윤슬",
     "executionId": "윤슬-SL-INVENTORY-OPEN-ALL-20260818T064024Z-x086kq",
     "claimRow": 39,
-    "branch": "feature/modernization-inventory-open-all-yoonseul-x086kq"
+    "branch": "feature/modernization-inventory-open-all-yoonseul-x086kq",
+    "implementationCommit": "3661f84"
   },
   "command": {
     "id": "CMD-06-0081",
