@@ -23,6 +23,8 @@ if (verifyRestart && process.env.OPEN_ALL_SHADOW_EVENT_ID === undefined) {
 const externalUserId = "synthetic-admin-alpha";
 const channelId = "synthetic-room-001";
 const playerId = 900000001n;
+const guildId = 900000001n;
+const guildMemberId = 900000002n;
 const database = createDatabaseClient(config.database);
 const replies: Array<{ room: string; data: string }> = [];
 const app = buildApp(config, {
@@ -60,6 +62,35 @@ async function resetStacks(entries: Record<string, bigint>): Promise<void> {
   }
 }
 
+async function resetGuildState(): Promise<void> {
+  await database.execute("UPDATE guilds SET level = 10, max_members = 5, version = 1 WHERE id = ?", [guildId]);
+  await database.execute(
+    `INSERT INTO player_counters (player_id, counter_code, period_key, value) VALUES
+       (?, 'guild_contribution', 'lifetime', 0), (?, 'guild_contribution_use_count', 'lifetime', 0)
+     ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = UTC_TIMESTAMP(3)`,
+    [playerId, playerId]
+  );
+  await database.execute(
+    `INSERT INTO guild_resource_accounts (guild_id, currency_code, balance, version) VALUES
+       (?, 'guild_experience', 39999, 1), (?, 'point', 5000, 1)
+     ON DUPLICATE KEY UPDATE balance = VALUES(balance), version = VALUES(version)`,
+    [guildId, guildId]
+  );
+  await database.execute(
+    `INSERT INTO guild_warehouse_stacks (guild_id, item_id, quantity, version)
+     SELECT ?, id, 0, 1 FROM item_definitions
+     WHERE code IN ('pet_skill_book', 'guild_warehouse_pendant', 'guild_warehouse_pet_enhance', 'guild_warehouse_mini_pet_enhance')
+     ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = VALUES(version)`,
+    [guildId]
+  );
+  await database.execute(
+    `INSERT INTO inventory_stacks (player_id, item_id, quantity, version)
+     SELECT ?, id, 7, 1 FROM item_definitions WHERE code = 'pet_food'
+     ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), version = VALUES(version)`,
+    [guildMemberId]
+  );
+}
+
 async function dispatch(providerEventId: string) {
   return app.inject({
     method: "POST", url: "/api/v1/integrations/iris/events",
@@ -71,7 +102,7 @@ async function dispatch(providerEventId: string) {
   });
 }
 
-function failingAfterInventoryMutation(inner: DatabaseClient): DatabaseClient {
+function failingOnSql(inner: DatabaseClient, fragment: string): DatabaseClient {
   return {
     ping: () => inner.ping(), query: (sql, params) => inner.query(sql, params), execute: (sql, params) => inner.execute(sql, params),
     verifyRollback: () => inner.verifyRollback(), close: async () => undefined,
@@ -79,7 +110,7 @@ function failingAfterInventoryMutation(inner: DatabaseClient): DatabaseClient {
       const wrapped: DatabaseTransaction = {
         query: (sql, params) => transaction.query(sql, params),
         execute: async (sql, params) => {
-          if (sql.includes("INSERT INTO inventory_ledger")) throw new Error("synthetic mid-write failure");
+          if (sql.includes(fragment)) throw new Error("synthetic mid-write failure");
           return transaction.execute(sql, params);
         }
       };
@@ -88,15 +119,57 @@ function failingAfterInventoryMutation(inner: DatabaseClient): DatabaseClient {
   };
 }
 
+async function readGuildState() {
+  const rows = await database.query<Array<Record<string, bigint | number | string>>>(
+    `SELECT guild.level, guild.max_members,
+       (SELECT value FROM player_counters WHERE player_id = ? AND counter_code = 'guild_contribution' AND period_key = 'lifetime') AS contribution,
+       (SELECT value FROM player_counters WHERE player_id = ? AND counter_code = 'guild_contribution_use_count' AND period_key = 'lifetime') AS contribution_uses,
+       (SELECT balance FROM guild_resource_accounts WHERE guild_id = ? AND currency_code = 'guild_experience') AS experience,
+       (SELECT balance FROM guild_resource_accounts WHERE guild_id = ? AND currency_code = 'point') AS guild_point,
+       (SELECT quantity FROM guild_warehouse_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+         WHERE stack.guild_id = ? AND item.code = 'pet_skill_book') AS pet_skill_book,
+       (SELECT quantity FROM guild_warehouse_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+         WHERE stack.guild_id = ? AND item.code = 'guild_warehouse_pendant') AS pendant,
+       (SELECT quantity FROM guild_warehouse_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+         WHERE stack.guild_id = ? AND item.code = 'guild_warehouse_pet_enhance') AS pet,
+       (SELECT quantity FROM guild_warehouse_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+         WHERE stack.guild_id = ? AND item.code = 'guild_warehouse_mini_pet_enhance') AS mini_pet,
+       (SELECT quantity FROM inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
+         WHERE stack.player_id = ? AND item.code = 'pet_food') AS member_food
+     FROM guilds guild WHERE guild.id = ?`,
+    [playerId, playerId, guildId, guildId, guildId, guildId, guildId, guildId, guildMemberId, guildId]
+  );
+  return Object.fromEntries(Object.entries(rows[0] ?? {}).map(([key, value]) => [key, value.toString()]));
+}
+
 try {
   await seedCatalog();
   const normalEvent = `${baseEventId}-normal`;
   if (!verifyRestart) {
-    await resetStacks({ trash_box: 2n, mini_point_box: 1n, pet_food_special: 2n, guild_contribution_medal: 1n });
+    await resetGuildState();
+    await resetStacks({ guild_contribution_medal: 1n, guild_warehouse_package: 1n });
+    const guildBefore = await readGuildState();
+    await assert.rejects(
+      () => new OpenAllService(new MariaOpenAllRepository(failingOnSql(database, "INSERT INTO guild_warehouse_ledger")), { next: () => 0 }).handle({
+        externalUserId, channelId, message: "/전체오픈", eventId: `iris:${baseEventId}-guild-failure`
+      }),
+      /synthetic mid-write failure/
+    );
+    assert.deepEqual(await readGuildState(), guildBefore);
+    const guildRolledBack = await database.query<Array<{ count: bigint }>>(
+      "SELECT COUNT(*) AS count FROM operations WHERE idempotency_key = ?", [`iris:${baseEventId}-guild-failure`]
+    );
+    assert.equal(guildRolledBack[0]?.count, 0n);
+
+    await resetGuildState();
+    await resetStacks({ trash_box: 2n, mini_point_box: 1n, guild_contribution_medal: 1n, guild_warehouse_package: 2n });
     const normal = await dispatch(normalEvent);
     assert.equal(normal.statusCode, 202);
     assert.equal(normal.json().duplicate, false);
-    assert.match(replies.at(-1)?.data ?? "", /전체 오픈/);
+    const normalReply = replies.at(-1)?.data ?? "";
+    assert.match(normalReply, /전체 오픈/);
+    assert.ok(normalReply.indexOf("길드공헌훈장🌟 1개 사용") < normalReply.indexOf("길드창고패키지🧳 2개 오픈"));
+    assert.ok(normalReply.indexOf("길드창고패키지🧳 2개 오픈") < normalReply.indexOf("미니상자🎁 1개 오픈"));
 
     const duplicate = await dispatch(normalEvent);
     assert.equal(duplicate.statusCode, 202);
@@ -118,7 +191,7 @@ try {
        WHERE stack.player_id = ? AND item.code IN ('trash_box', 'spirit_box') ORDER BY item.code`, [playerId]
     );
     await assert.rejects(
-      () => new OpenAllService(new MariaOpenAllRepository(failingAfterInventoryMutation(database)), { next: () => 0 }).handle({
+      () => new OpenAllService(new MariaOpenAllRepository(failingOnSql(database, "INSERT INTO inventory_ledger")), { next: () => 0 }).handle({
         externalUserId, channelId, message: "/전체오픈", eventId: `iris:${baseEventId}-failure`
       }),
       /synthetic mid-write failure/
@@ -143,6 +216,7 @@ try {
   const scope = "inventory.open-all:900000004";
   const effects = await database.query<Array<{
     operation_count: bigint; execution_count: bigint; audit_count: bigint; outbox_count: bigint; delivery_count: bigint;
+    guild_resource_ledger_count: bigint; guild_warehouse_ledger_count: bigint;
   }>>(
     `SELECT
        (SELECT COUNT(*) FROM operations WHERE idempotency_scope = ? AND idempotency_key = ?) AS operation_count,
@@ -153,15 +227,27 @@ try {
          WHERE operation_row.idempotency_scope = ? AND operation_row.idempotency_key = ?) AS outbox_count,
        (SELECT COUNT(*) FROM delivery_attempts delivery JOIN outbox_messages outbox ON outbox.id = delivery.outbox_message_id
          JOIN operations operation_row ON operation_row.id = outbox.operation_id
-         WHERE operation_row.idempotency_scope = ? AND operation_row.idempotency_key = ?) AS delivery_count`,
-    [scope, eventId, eventId, scope, eventId, scope, eventId, scope, eventId]
+         WHERE operation_row.idempotency_scope = ? AND operation_row.idempotency_key = ?) AS delivery_count,
+       (SELECT COUNT(*) FROM guild_resource_ledger ledger JOIN operations operation_row ON operation_row.id = ledger.operation_id
+         WHERE operation_row.idempotency_scope = ? AND operation_row.idempotency_key = ?) AS guild_resource_ledger_count,
+       (SELECT COUNT(*) FROM guild_warehouse_ledger ledger JOIN operations operation_row ON operation_row.id = ledger.operation_id
+         WHERE operation_row.idempotency_scope = ? AND operation_row.idempotency_key = ?) AS guild_warehouse_ledger_count`,
+    [scope, eventId, eventId, scope, eventId, scope, eventId, scope, eventId, scope, eventId, scope, eventId]
   );
-  assert.deepEqual(effects[0], { operation_count: 1n, execution_count: 1n, audit_count: 1n, outbox_count: 1n, delivery_count: 1n });
+  assert.deepEqual(effects[0], {
+    operation_count: 1n, execution_count: 1n, audit_count: 1n, outbox_count: 1n, delivery_count: 1n,
+    guild_resource_ledger_count: 2n, guild_warehouse_ledger_count: 4n
+  });
+  assert.deepEqual(await readGuildState(), {
+    level: "11", max_members: "5", contribution: "1", contribution_uses: "1",
+    experience: "40000.000", guild_point: "100005000.000", pet_skill_book: "2", pendant: "2",
+    pet: "30", mini_pet: "10", member_food: "100007"
+  });
 
   process.stdout.write(`${JSON.stringify({
     mode: verifyRestart ? "verify-restart" : "shadow", database: config.database.name, baseEventId,
-    scenarios: ["normal", "empty", "partial", "multiple", "duplicate", "mid-write-rollback", "restart-replay"],
-    effects: { operation: 1, execution: 1, audit: 1, outbox: 1, delivery: 1 },
+    scenarios: ["normal", "empty", "partial", "multiple", "duplicate", "inventory-rollback", "guild-rollback", "restart-replay"],
+    effects: { operation: 1, execution: 1, audit: 1, outbox: 1, delivery: 1, guildResourceLedger: 2, guildWarehouseLedger: 4 },
     operationalSnapshotTouched: false
   })}\n`);
 } finally {
