@@ -41,6 +41,7 @@ import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
 import { isSpiritCombineCommand, SpiritCombineService } from "./crafting/spirit-combine-service.js";
+import { CombineAllService, readCombineAllVariant } from "./crafting/combine-all-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
 import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
@@ -961,6 +962,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "spirit_combine_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      const combineAllVariant = readCombineAllVariant(normalizedEvent.message);
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && combineAllVariant !== null
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new CombineAllService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            const errorCode = combineAllVariant === "primary" ? "combine_all_error" : "combine_all_2_error";
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, errorCode, error.message));
           } else {
             throw error;
           }

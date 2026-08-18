@@ -4541,6 +4541,49 @@ Status: VERIFIED
 
 ---
 
+# /전체조합, /전체조합2
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/전체조합`, `/전체조합2`, `runCombineAll`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/crafting/combine-all-service.ts`
+
+## Related Helpers
+
+- `runCombineAll`
+- `CombineAllService`
+- `readCombineAllVariant`
+
+## Data Usage
+
+- `data.member[sender].bag["정령조각🥀"]`
+- `data.member[sender].bag["정령 강화석🥀"]`
+- MariaDB `item_definitions`, `inventory_stacks`, `inventory_ledger`, `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Rhino의 두 명령은 이미 로드된 `data`의 가방을 변경하고 `response(...)` 끝의 `saveJsonFile(data, filePath)`에서 저장한다.
+- 고도화 서비스는 가능한 최대 수량을 계산해 조각 차감, 강화석 지급, 원장, 감사, outbox를 한 MariaDB 트랜잭션으로 저장한다.
+- 조각을 모두 소모하면 legacy bag property 삭제와 맞춰 해당 inventory stack을 삭제한다.
+
+## AI Notes
+
+- 두 명령 모두 exact guard이며 인자나 접미 안내 문구가 붙으면 실행하지 않는다.
+- `/전체조합`은 공성전 중과 미가입자를 응답 없이 차단한 뒤 `runCombineAll`을 호출한다.
+- `/전체조합2`는 별도 inline 로직이라 로컬 공성전·회원 guard를 반복하지 않지만, 공통 response 회원 gate가 미가입자를 먼저 응답 없이 차단한다.
+- 두 명령 모두 정령조각 10개당 정령 강화석 1개를 가능한 최대 수량으로 변환하고, 재료가 부족하면 `❌ 조합 가능한 재료가 없습니다.`를 응답한다.
+- `/정리`, `ㅇㅇㅇ`의 `runCombineAll` 자동 호출은 지원 의존성이다. 전체 정리 기능은 이 슬라이스에 포함하지 않는다.
+- `SL-SPIRIT-COMBINE`의 공용 item code, inventory, ledger, audit, outbox와 Iris dispatch 구조를 재사용한다.
+
+---
+
 # /정령조합
 
 Status: VERIFIED
