@@ -1,0 +1,7 @@
+interface:
+  display_name: "hoiBot 작업반장"
+  short_description: "작업자 병렬 배치와 고도화 검수·후속 업무 자동 관리"
+  default_prompt: "Use $hoibot-modernization-foreman to coordinate hoiBot modernization workers and keep assigning verified, non-overlapping slices."
+
+policy:
+  allow_implicit_invocation: true
