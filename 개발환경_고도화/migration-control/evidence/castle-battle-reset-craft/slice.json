@@ -39,18 +39,19 @@
     "transactionBoundary": "lock active castle state, linked identity, chicken and reset-ticket stacks; then decrement and grant, append two inventory ledgers, operation, execution, audit and outbox in one MariaDB transaction"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 a09398195894d281ee8d2492a0985b46006a0141fa5a13f7407b6fcb79ead8ec",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_castle_reset_vrmxu4",
     "sourceReadOnly": true,
     "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; each command probe replays the exact event through operation idempotency",
     "checks": [
       "operational database name hoibot rejected the probe before connection mutation",
-      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "33 migrations applied to an isolated rehearsal database",
+      "fixture dry-run reported 71 statements and repeated apply plus verify-only checked 35 representative tables and 10 inventory stacks",
       "synthetic chicken stack loaded at quantity 12 and reset-ticket stack at quantity zero",
       "quantity two changed chicken 12 to zero and reset ticket zero to two",
       "inventory ledgers 2, operation, command execution, audit and outbox were persisted once for the event",
-      "same event replay returned the stored result without a second mutation",
-      "the complete database probe passed twice with independent event IDs",
+      "same fixed event replay before and after MariaDB restart kept every mutation and effect count unchanged",
+      "runtime 158 tests, typecheck and build plus main.js and Info.js syntax checks passed",
       "operational data snapshots were not read or mutated"
     ],
     "result": "passed"
@@ -73,6 +74,22 @@
       "scripted active-siege, chicken-shortage and quantity-two cases"
     ],
     "comparisonMode": "accepted guards, multiplied requirement, exact replies, two inventory deltas, ledger/audit/outbox effects, silent siege block and duplicate-event behavior",
+    "result": "passed"
+  },
+  "shadow": {
+    "executionId": "새봄-SL-CRAFT-CASTLE-RESET-20260818T024920Z-vrmxu4",
+    "date": "2026-08-18",
+    "mode": "isolated synthetic MariaDB rehearsal; no operational snapshot or live-room traffic",
+    "database": "hoibot_rehearsal_castle_reset_vrmxu4",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "fixtureChecksum": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "balances": { "seasonedChicken": 0, "castleResetTicket": 2 },
+    "effects": { "inventoryLedger": 2, "operation": 1, "execution": 1, "audit": 1, "outbox": 1 },
+    "duplicateEvent": "passed",
+    "mariadbRestartReplay": "passed",
+    "operationalSnapshotTouched": false,
     "result": "passed"
   },
   "cutover": {

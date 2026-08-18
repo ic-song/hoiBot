@@ -11,13 +11,14 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 }
 
 const database = createDatabaseClient(config.database);
-const runKey = randomUUID().replaceAll("-", "").slice(0, 12);
-const eventId = `castle-battle-reset-craft-${runKey}`;
+const eventId = process.env.CASTLE_BATTLE_RESET_CRAFT_PROBE_EVENT_ID
+  ?? `castle-battle-reset-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const replayOnly = process.env.CASTLE_BATTLE_RESET_CRAFT_PROBE_REPLAY_ONLY === "true";
 const externalUserId = "synthetic-admin-alpha";
 const channelId = "synthetic-room-001";
 
 try {
-  await database.withTransaction(async (transaction) => {
+  if (!replayOnly) await database.withTransaction(async (transaction) => {
     await transaction.execute(
       `UPDATE inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
        SET stack.quantity = CASE item.code WHEN 'legacy-seasoned-chicken' THEN 12 WHEN 'legacy-castle-battle-reset-ticket' THEN 0 END,
@@ -81,7 +82,7 @@ try {
     database: config.database.name, playerId: result.playerId,
     balances: { chicken: result.chickenQuantity, ticket: result.ticketQuantity },
     effects: { inventoryLedger: 2, operation: 1, execution: 1, audit: 1, outbox: 1 },
-    idempotent: true, operationalSnapshotTouched: false
+    idempotent: true, restartReplay: replayOnly, operationalSnapshotTouched: false
   })}\n`);
 } finally {
   await database.close();
