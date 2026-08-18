@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "starter-package-open-01-06",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-STARTER-PACKAGE-OPEN-01-06",
+    "worker": "다온",
+    "executionId": "다온-SL-STARTER-PACKAGE-OPEN-01-06-20260818T085922Z-md5zl0",
+    "claimRow": 705,
+    "branch": "feature/modernization-starter-package-open-01-06-daon-md5zl0",
+    "baseHead": "68dadaa7192a24b5609f9224aabdbc56d0f09d3b",
+    "featureProdObservedHead": "d9b36ae9e2f1ffe950e3a24d6b1aaf55ec24ed14"
+  },
+  "commands": {
+    "ids": ["CMD-06-0087", "CMD-06-0088", "CMD-06-0089", "CMD-06-0090", "CMD-06-0091", "CMD-06-0092"],
+    "names": ["/초보오픈1", "/초보오픈2", "/초보오픈3", "/초보오픈4", "/초보오픈5", "/초보오픈6"],
+    "sourceFiles": ["main.js"],
+    "guards": ["여섯 exact 명령만 진입", "접미·공백·탭 입력 미진입"],
+    "helpers": ["StarterPackageOpenPolicy", "StarterPackageOpenService", "MariaStarterPackageOpenRepository"],
+    "automaticFlows": ["Iris app.ts exact dispatch", "operations result_json replay", "ordered outbox replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json", "data/member_pet.json"],
+    "readPaths": ["member[sender].bag[초보자 스타터패키지🌟[1..6]]", "member[sender].point", "guild.castleSiegeFlag"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 직접 reply 뒤 outer petData/member save", "신규 DB에서는 package·reward·point·ledger·execution·audit·outbox 단일 transaction commit"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 37,
+    "inheritedMigrationSha256": {
+      "034": "46b7896cf5903d3548088b0feea569a0503a77328554321b87f4b1aaa1fa866a",
+      "035": "badba9c354fc3934863acdb51e54041b30f6f2521814976227b0af0f0b6980a8",
+      "036": "87aa2c33ec4597212c0e04dcd6aff61b014de50f06b35f3492e5c6777cb88b64",
+      "037": "5d5bc2327689122b678ca4b066a5fe3ef5f7d3bba38b5702b9ab0435091f72fa"
+    },
+    "tables": ["package_definitions", "package_contents", "item_definitions", "inventory_stacks", "inventory_ledger", "currency_accounts", "currency_ledger", "external_identities", "player_profiles", "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"],
+    "packageCodes": ["starter_01", "starter_02", "starter_03", "starter_04", "starter_05", "starter_06"],
+    "consumerCodes": ["starter_package_01", "starter_package_02", "starter_package_03", "starter_package_04", "starter_package_05", "starter_package_06"],
+    "rewardCodes": ["tier_upgrade_ticket", "pet_enhance_stone", "spirit_stone", "pet_food_special", "pet_food", "lucky_box"],
+    "constraints": ["package/item active and stackable", "consumer metadata packageCode and legacyBagKey match", "ordered contents exactly match policy", "quantity one deletes zero stack", "point account must already exist and stay in DECIMAL range", "no new schema or migration"],
+    "newColumns": [],
+    "transactionBoundary": "actor and stored result, castle active, package and ordered contents, sorted consumer/reward stacks and point account lock; package decrement/delete, ordered rewards, point, both ledgers, execution, audit, outbox and operation completion commit atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_starter_daon",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~037 fresh/reapply, fixture apply/verify-only 35 tables, prepare, MariaDB restart, pending outbox and committed replay",
+    "fixtureChecksum": "2105c4ece8d256fde06a9a1499f8eaf5ae0e3c28363787c72bf8b9004a5e1cb6",
+    "checks": ["six exact stages", "package undefined/zero/one/two", "reward missing/zero/existing", "castle and unregistered silent", "same-event no effect", "different-event locked remaining", "five configuration policies", "eleven post-write rollback points", "restart delivery exactly once"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["StarterPackageOpenService"],
+    "repositories": ["MariaStarterPackageOpenRepository", "shared DatabaseClient transaction", "shared OutboxWorker"],
+    "tests": ["npm ci", "typecheck", "build", "runtime 234/234", "main.js and Info.js node --check", "evidence validator", "MariaDB fresh/reapply and restart probe"],
+    "resultJson": ["stage", "packageBefore", "packageAfter", "pointBefore", "pointAfter", "rewards", "outboxId", "auditId"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "starter-package-open.test.ts", "probe-starter-package-open-synthetic.ts"],
+    "comparisonMode": "Rhino exact raw guard, silent branches, package semantics, reward declaration order and quantities, point and six reply snapshots compared against isolated MariaDB effects",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "DB rollback and durable outbox make mid-write and restart behavior atomic compared with the historical direct reply followed by outer JSON saves"
+  },
+  "shadow": {
+    "mode": "isolated synthetic MariaDB prepare/restart/replay",
+    "result": "passed",
+    "effects": {"operations": 13, "executions": 13, "audits": 13, "outboxes": 13, "restartDeliveryAttempts": 1},
+    "failpointRollbackCount": 11,
+    "configurationPolicyCount": 5,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 snapshot freeze 필요",
+    "finalImportPlan": "운영 package/item stable code, point range and rank projection reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 단계별 reply와 후원 링크 smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "DB rollback/outbox 원자성은 현행 direct reply 뒤 outer JSON save보다 안전한 차이이므로 parity 승인이 필요하다",
+    "legacy checkRank의 동적 성주·랭킹·길드 표식은 current_display_name만으로 완전 재현되지 않는다",
+    "정의 누락·비활성·내용 불일치와 미초기화/범위초과 point는 DB에서 명시적 409 rollback으로 처리한다",
+    "운영 package/item code reconciliation, snapshot, backup/restore, 실운영방 smoke 증거가 없어 Gate 8은 미완료다"
+  ]
+}
