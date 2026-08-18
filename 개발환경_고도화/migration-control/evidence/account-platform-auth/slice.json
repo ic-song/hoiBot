@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "account-platform-auth",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/가입인증 [8자리 코드]",
+      "/계정인증 [8자리 코드]",
+      "/도움말"
+    ],
+    "sourceFiles": [
+      "개발환경_고도화/runtime/src/app.ts",
+      "개발환경_고도화/runtime/src/user-auth/policy.ts"
+    ],
+    "guards": [
+      "가입인증과 계정인증은 공백 없는 정확한 8자리 코드 형식만 허용",
+      "도움말은 정확 일치이며 미연결 외부 사용자에게도 허용",
+      "미연결 외부 사용자의 게임·재화·관리 슬래시 명령은 공통 연결 gate에서 차단"
+    ],
+    "helpers": [
+      "readKakaoVerificationCommand",
+      "isPublicExternalPlatformCommand",
+      "requiresLinkedSiteAccount"
+    ],
+    "automaticFlows": [
+      "사이트 가입·로그인 상태에서 용도별 30분 challenge 생성",
+      "외부 플랫폼 연결 상태에 따른 명령 실행 전 공통 gate"
+    ]
+  },
+  "legacyData": {
+    "files": [
+      "신규 플랫폼 인증 기능으로 legacy data JSON을 사용하지 않음"
+    ],
+    "readPaths": [],
+    "writePaths": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "016_site_signup_auth.sql",
+      "017_admin_authorization_lifecycle.sql",
+      "019_user_auth_hardening.sql",
+      "020_trusted_identity_activity_events.sql",
+      "034_user_account_external_links.sql",
+      "035_external_platform_link_history.sql"
+    ],
+    "tables": [
+      "user_accounts",
+      "external_identities",
+      "external_identity_names",
+      "user_account_external_identities",
+      "user_account_external_identity_history",
+      "user_verification_challenges",
+      "user_sessions",
+      "configuration_sets",
+      "configuration_values",
+      "operations",
+      "command_audit"
+    ],
+    "constraints": [
+      "외부 identity 하나는 user_account_external_identities에서 하나의 연결만 가짐",
+      "사이트 계정은 활성 player 하나를 공유하고 설정된 1~10개 활성 외부 연결 한도를 따름",
+      "인증 확인 표시명은 external_identity_names의 verified trust 상태만 사용",
+      "연결·해제·차단은 append-only history와 command audit을 함께 기록"
+    ],
+    "transactionBoundary": "인증 연결·재연결·사용자 해제·관리자 해제 또는 차단과 identity 상태·history·operation·audit을 각 명령의 단일 MariaDB transaction으로 처리"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9 plus non-identifying account-platform probe rows",
+    "targetDatabase": "hoibot_rehearsal_account_auth_7bzh6v",
+    "sourceReadOnly": true,
+    "replayPolicy": "35 migrations are ledger-idempotent; fixture applied twice; unlink and block operations replay by idempotency scope and key",
+    "checks": [
+      "all 35 migrations applied and a second pass remained at migration-count 35",
+      "two fixture applies and verify-only preserved 35 representative table counts",
+      "account_link verified the stable external user id and wrote verified display-name trust",
+      "duplicate verification did not add link history",
+      "user unlink and administrator block replay returned the stored result without duplicate history or audit",
+      "link limit 1 rejected an additional identity and rolled its transaction back",
+      "MariaDB restart preserved one active link, blocked target state, four ordered history rows, four audits, two verified challenges, and one pending limit challenge",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts",
+      "개발환경_고도화/runtime/src/user-auth/user-auth-service.ts",
+      "개발환경_고도화/runtime/src/user-auth/external-platform-access-service.ts",
+      "개발환경_고도화/runtime/src/admin/management-service.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/user-auth.test.ts",
+      "개발환경_고도화/runtime/test/external-platform-links.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-account-platform-auth-synthetic.ts"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic active site account with initial and secondary Kakao identities",
+      "three purpose-bound account-link challenges and deterministic session tokens"
+    ],
+    "comparisonMode": "exact command parsing plus MariaDB state, ordered history actions, audit count, challenge status, idempotent replay, limit rollback, and restart equality",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "외부 플랫폼 연결 기능의 운영 활성화 직전 신규 challenge 발급을 잠시 중지하고 활성 연결 수를 고정",
+    "finalImportPlan": "승인된 운영 계정·player·identity 관계를 최종 snapshot에서 import한 뒤 계정별 활성 연결, 소유권, 중복 identity와 history backfill을 대사",
+    "smokePlan": "승인된 시험 계정으로 가입인증·계정인증·도움말·연결 해제·관리자 차단과 미연결 명령 gate를 운영과 같은 방에서 확인",
+    "rollbackPlan": "운영 활성화 전에는 기존 인증 경로를 유지하고, 활성화 후에는 DB backup 복원과 challenge 발급 중지로 연결 변경을 롤백"
+  },
+  "risks": [
+    "실제 운영 계정·player·identity 전체 관계 import와 중복 소유권 대사는 수행하지 않음",
+    "승인된 실제 외부 플랫폼 identity와 운영방 smoke는 수행하지 않음",
+    "운영 backup/restore와 cutover 승인 근거가 없어 운영 준비 게이트는 미완료"
+  ]
+}

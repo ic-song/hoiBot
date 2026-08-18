@@ -150,6 +150,7 @@ describe("site user authentication", () => {
     assert.equal(result.playerId, "20");
     assert.equal(result.purpose, "account_link");
     assert.ok(scripted.sql.some((statement) => statement.includes("user_account_external_identities")));
+    assert.ok(scripted.sql.some((statement) => statement.includes("'provider_verification', 'verified'")));
   });
 
   it("blocks a new external identity when the administrator link limit is reached", async () => {
