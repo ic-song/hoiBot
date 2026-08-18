@@ -31,3 +31,14 @@
 - `/창세오픈`은 WBS에서 사용이나 현재 실행 guard가 없고 주석/기존 COMMAND_INDEX가 `/창조오픈` 코드와 불일치한다. 별칭으로 추정하지 않았고 별도 재확인이 필요하다.
 - Rhino 저장 실패는 수동 복원 재저장 시도이고 DB는 transaction 원자 rollback이다.
 - 운영 snapshot 대사, backup/restore, 승인된 실운영방 smoke, cutover 승인 전까지 Gate 8은 미완료다.
+
+## Git·Sheets 체크포인트
+
+- 구현 commit: `00932f6` (`origin/feature/modernization-minipet-guaranteed-creation-open-saebom-tekxp2` push 확인)
+- WBS: `슬라이스_WBS` 23행, Gate 1~7 TRUE / Gate 8 FALSE / 87.5%
+- 명령 매핑: `슬라이스_명령매핑` 33행
+- DB 매핑: `슬라이스_DB매핑` 23행
+- 검증: `슬라이스_검증` 46행
+- 선점: `슬라이스_선점` 36행
+- append 과정에서 `슬라이스_WBS` 1001행에 임시 생성된 중복 행은 23행으로 옮긴 뒤 비워 재확인했다.
+- CMD-05-0051 `명령어_이관` 376행의 사용 상태는 `사용` 그대로다.
