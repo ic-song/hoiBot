@@ -12,7 +12,9 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 }
 
 const database = createDatabaseClient(config.database);
-const runKey = randomUUID().replaceAll("-", "").slice(0, 12);
+const runKey = process.env.PET_CREATION_PROBE_RUN_KEY ?? randomUUID().replaceAll("-", "").slice(0, 12);
+if (!/^[a-z0-9]{6,32}$/i.test(runKey)) throw new Error("PET_CREATION_PROBE_RUN_KEY must be 6-32 alphanumeric characters.");
+const replayOnly = process.env.PET_CREATION_PROBE_REPLAY_ONLY === "true";
 const externalUserId = `synthetic-pet-create-${runKey}`;
 const displayName = `합성펫${runKey} 남`;
 const eventId = `pet-create-${runKey}`;
@@ -54,17 +56,32 @@ async function seedSyntheticPlayer(): Promise<{ playerId: bigint; identityId: bi
   });
 }
 
+// 재시작 검증용으로 이미 생성된 합성 회원과 펫 식별자를 조회합니다.
+async function loadSyntheticPlayer(): Promise<{ playerId: bigint; identityId: bigint; petId: bigint }> {
+  const rows = await database.query<Array<{ player_id: bigint; identity_id: bigint; pet_id: bigint }>>(
+    `SELECT identity.player_id, identity.id AS identity_id, pet.id AS pet_id
+       FROM external_identities identity
+       JOIN player_pets pet ON pet.player_id = identity.player_id
+      WHERE identity.provider_code = 'kakao' AND identity.external_user_id = ?`,
+    [externalUserId]
+  );
+  if (rows.length !== 1) throw new Error(`Expected one synthetic player for replay, found ${rows.length}.`);
+  return { playerId: rows[0].player_id, identityId: rows[0].identity_id, petId: rows[0].pet_id };
+}
+
 // 지정한 ApplicationError 코드가 발생하는지 확인합니다.
 async function assertApplicationError(work: () => Promise<unknown>, code: string): Promise<void> {
   await assert.rejects(work, (error: unknown) => error instanceof ApplicationError && error.code === code);
 }
 
 try {
-  const seeded = await seedSyntheticPlayer();
-  const invalidService = new PetCreationService(database);
-  await assertApplicationError(() => invalidService.handle({
-    externalUserId, channelId, message: "/펫생성 봉봉 해봐", eventId
-  }), "INVALID_PET_CREATE_COMMAND");
+  const seeded = replayOnly ? await loadSyntheticPlayer() : await seedSyntheticPlayer();
+  if (!replayOnly) {
+    const invalidService = new PetCreationService(database);
+    await assertApplicationError(() => invalidService.handle({
+      externalUserId, channelId, message: "/펫생성 봉봉 해봐", eventId
+    }), "INVALID_PET_CREATE_COMMAND");
+  }
 
   const randomValues = [0, 0, 0.5, 0];
   const service = new PetCreationService(
@@ -145,15 +162,18 @@ try {
     audit: state[0]?.audit_count, outbox: state[0]?.outbox_count
   }, { elemental: 1n, skill: 1n, miniPet: 1n, home: 1n, operation: 1n, execution: 1n, audit: 1n, outbox: 2n });
 
-  await assertApplicationError(() => new PetCreationService(database).handle({
-    externalUserId, channelId, message: "/펫생성 새이름", eventId: `${eventId}-again`
-  }), "PET_ALREADY_EXISTS");
+  if (!replayOnly) {
+    await assertApplicationError(() => new PetCreationService(database).handle({
+      externalUserId, channelId, message: "/펫생성 새이름", eventId: `${eventId}-again`
+    }), "PET_ALREADY_EXISTS");
+  }
 
   process.stdout.write(`${JSON.stringify({
     database: config.database.name, playerId: seeded.playerId.toString(), petId: seeded.petId.toString(),
     petName: result.petName, petTypeCode: result.petTypeCode, personality: result.personality,
     relations: { elemental: 1, skillInventory: 1, miniPet: 1, home: 1 },
-    effects: { operation: 1, execution: 1, audit: 1, outbox: 2 }, idempotent: true
+    effects: { operation: 1, execution: 1, audit: 1, outbox: 2 }, idempotent: true,
+    restartReplay: replayOnly, operationalSnapshotTouched: false
   })}\n`);
 } finally {
   await database.close();

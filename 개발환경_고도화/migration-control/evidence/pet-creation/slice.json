@@ -95,19 +95,21 @@
     "transactionBoundary": "lock linked Kakao identity/profile and empty signup-created pet row, then update pet and create elemental, skill inventory, equipped mini-pet, home, operation, command execution, audit and all Iris reply outboxes in one MariaDB transaction"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 563802fe1e50cfff96c96d12c01379aa69fcb3af56dec8361bef34b91ed499fb plus per-run synthetic linked player",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9 plus deterministic synthetic linked player ugw4ku",
+    "targetDatabase": "hoibot_rehearsal_pet_create_ugw4ku",
     "sourceReadOnly": true,
-    "replayPolicy": "fixed fixture IDs use upsert and passed two applies; the command probe replays the exact event against operation idempotency",
+    "replayPolicy": "fixed fixture IDs use upsert and passed two applies; the exact pet creation event is replayed after a MariaDB restart against operation idempotency",
     "checks": [
       "operational database name hoibot rejected the probe before connection mutation",
-      "migration 030 applied to the development schema only",
-      "fixture applied twice and verify-only passed with 31 representative tables",
+      "all 33 migrations applied to a disposable rehearsal database only",
+      "fixture dry-run reported 71 statements; two applies and verify-only passed with 35 representative tables and 10 inventory stacks",
       "pet name, joined date, personality, type, image, experience 35000 and enhancement 90 persisted",
       "elemental level 80, starter skill quantity 1, equipped starter mini-pet experiences 100000 each and starter home persisted",
       "legacy two-message normal reply order persisted as two Iris outboxes",
       "same event replay returned the same result without duplicate operation, execution, audit or outbox",
+      "MariaDB restarted healthy and the same fixed event replay preserved one pet, operation, execution and audit plus two outboxes",
       "a second event for a player with a named pet was rejected without starter mutation",
+      "158 runtime tests, typecheck, build, main.js check and Info.js check passed",
       "operational data snapshots were not read or mutated"
     ],
     "result": "passed"
@@ -133,6 +135,32 @@
       "per-run synthetic linked player with an empty signup-created pet row"
     ],
     "comparisonMode": "deterministic legacy personality/type/image candidate selection, normalized starter state, ordered replies and intended full-pattern command hardening",
+    "result": "passed"
+  },
+  "shadow": {
+    "executionId": "새봄-SL-PET-CREATE-20260818T034555Z-ugw4ku",
+    "verifiedOn": "2026-08-18",
+    "mode": "isolated synthetic rehearsal",
+    "database": "hoibot_rehearsal_pet_create_ugw4ku",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "fixtureChecksum": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "relations": {
+      "elemental": 1,
+      "skillInventory": 1,
+      "miniPet": 1,
+      "home": 1
+    },
+    "effects": {
+      "operation": 1,
+      "execution": 1,
+      "audit": 1,
+      "outbox": 2
+    },
+    "duplicateEvent": "passed",
+    "mariaDbRestartReplay": "passed",
+    "operationalSnapshotTouched": false,
     "result": "passed"
   },
   "cutover": {
