@@ -89,16 +89,17 @@
     "transactionBoundary": "read-only repository query; event processing persists each ordered reply through the existing outbox transaction boundary"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 a4eb2df1206cd1c5ba69a9612ee7dc94939a57956999413dfff62a2bddf5e450",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_pet_info_v6wgrm",
     "sourceReadOnly": true,
-    "replayPolicy": "fixed synthetic IDs use upsert; two applies and verify-only produced the same 35-table counts",
+    "replayPolicy": "fixed synthetic IDs use upsert; two applies and verify-only produced the same 35-table counts, and the read projection remained identical after a healthy MariaDB restart",
     "checks": [
       "operational database name hoibot rejected the pet-info probe before connection mutation",
-      "migration 031 applied only to the development schema",
-      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "all 33 migrations passed twice in the isolated rehearsal schema",
+      "repeated fixture apply plus verify-only verified 35 representative tables",
       "MariaDB projection returned the synthetic pet, elemental, mini-pet, home, pass and charm totals",
       "formatter returned image then body and exactly 500 U+200B all-see characters",
+      "MariaDB restart preserved player 900000001, two replies, image, total charm 2703 and 500 all-see characters",
       "pass-only summary icons use independent completion conditions",
       "operational data snapshots were not read or mutated"
     ],

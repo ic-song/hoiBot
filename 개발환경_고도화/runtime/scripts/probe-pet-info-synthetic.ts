@@ -11,6 +11,7 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 }
 
 const database = createDatabaseClient(config.database);
+const restartVerification = process.env.PET_INFO_PROBE_RESTART_VERIFICATION === "true";
 try {
   const repository = new MariaPetInfoRepository(database);
   const view = await repository.findByExternalIdentity("synthetic", "synthetic-user-alpha");
@@ -38,7 +39,8 @@ try {
   assert.equal((text.match(/​/g) ?? []).length, 500);
   process.stdout.write(`${JSON.stringify({ database: config.database.name, playerId: view.playerId,
     replies: replies.length, image: replies[0]?.data, totalCharm: view.charm.total,
-    allSeeCount: (text.match(/​/g) ?? []).length, operationalSnapshotTouched: false })}\n`);
+    allSeeCount: (text.match(/​/g) ?? []).length, restartVerification,
+    operationalSnapshotTouched: false })}\n`);
 } finally {
   await database.close();
 }
