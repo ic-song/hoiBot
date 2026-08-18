@@ -3584,6 +3584,40 @@ Status: VERIFIED
 
 ---
 
+# /컬렉션창조오픈
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/컬렉션창조오픈`
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/mini-pet/collection-creation-open-service.ts`
+## Related Helpers
+- `checkRank`
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `isMiniPetBagFull`
+- `refreshMiniPetSortIndex`
+## Data Usage
+- `data.member[sender].bag["컬렉션창조패키지🐹(/컬렉션창조오픈)"]`
+- `data.member[sender].bag["미니펫뽑기🐹(/미니펫오픈)"]`
+- `petData[sender].miniPetBag`
+- `guildData.castleSiegeFlag`
+## Save Flow
+- Success consumes one package, grants 2000 mini-pet draw tickets, appends one creation-grade mini pet, and immediately saves `memberPetPath`
+- The response tail also saves `filePath` and `memberPetPath`
+- The MariaDB port persists both item deltas, the mini pet, two inventory ledgers, command execution, audit, outbox and idempotency result in one transaction
+## Related Commands
+- `/미니펫가방`
+- `/미니펫오픈`
+- `/창조패키지`
+## AI Notes
+- The command uses exact equality and ignores suffixed guide text
+- An active castle siege is a silent no-op and the mini-pet bag limit is 8
+- `COMMAND_REGISTRY.md` and the legacy command usage status were intentionally left unchanged during slice recovery
+
+---
+
 # /미니펫장착 [번호]
 Status: VERIFIED
 ## Command Anchors
