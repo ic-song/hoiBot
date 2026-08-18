@@ -18,8 +18,8 @@
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/윤슬-SL-ACCOUNT-PLATFORM-AUTH-20260818T042105Z-x13uq2`
 - Branch: `feature/modernization-account-auth-yoonseul-x13uq2`
 - 기준: `origin/feature/modernization-account-auth`와 최신 `feature/prod`
-- 구현 commit: 커밋 후 기록
-- push 상태: 커밋·푸시 전
+- 구현 commit: `744c49d`
+- push 상태: `origin/feature/modernization-account-auth-yoonseul-x13uq2` 푸시 완료
 
 ## 승계한 Gate evidence
 
@@ -43,7 +43,6 @@
 
 ## 정확한 다음 행동
 
-- 구현 commit을 푸시하고 이 체크포인트에 commit·push 증거를 기록한다.
 - `슬라이스_WBS`에서 parity·Shadow Gate를 완료하고 87.5%로 갱신한다.
 - `슬라이스_검증`과 선점 행에 evidence·commit·HANDOFF_READY를 기록한다.
 - 운영 준비 Gate는 실제 전체 계정 대사·실운영방 smoke·backup/rollback 승인 전까지 미완료로 유지한다.
