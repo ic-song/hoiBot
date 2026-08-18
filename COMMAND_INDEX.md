@@ -6415,3 +6415,57 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+---
+
+# /정리
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/정리`, `ㅇㅇㅇ`, `runOpenAll`, `runCombineAll`, `runSellAll`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getOperationNotice`
+- `runOpenAll`
+- `openExploreBoxesAllForOpenAll`
+- `runCombineAll`
+- `runSellAll`
+- `contributeGuildTerritoryBooster`
+- `ensureGuildShop`
+- `ensureGuildMemberBuyData`
+- `applyTax`
+- `claimQuestReward`
+- `beginDataSaveTransaction`
+- `rollbackDataSaveTransaction`
+
+## Data Usage
+
+- `data.member[sender].bag`
+- `data.member[sender].point`
+- `data.member[sender].gMedalBuyCnt`
+- `data.member[sender].gBoosterContribCnt`
+- `guildData.shop`
+- guild member contribution, exp, warehouse, territory booster
+- daily/weekly/pass quest counters
+- `petData`, `petSkillData`
+
+## Save Flow
+
+- 정리는 오픈 → 조합 → 판매 → 길드영지 부스터 공헌 → 길드 훈장 자동구매 → 퀘스트 보상 순으로 같은 in-memory data를 변경한다.
+- booster와 quest 성공 경로는 `data`를 중간 저장하고, outer command block은 `guildData`, response 끝은 `petData`와 `data`를 저장한다.
+- response 저장 트랜잭션은 관리 JSON을 즉시 기록하되 실행 전 backup을 등록하고 예외 시 역순 복구한다. 이미 보낸 reply는 rollback 대상이 아니다.
+
+## AI Notes
+
+- `/정리`와 bare `ㅇㅇㅇ`만 정리 entrypoint다. `/ㅇㅇㅇ`은 `/퀘스트완료`의 별도 slash 별칭이다.
+- 공성전 중이거나 회원 데이터가 없으면 정리 branch는 응답 없이 실행하지 않는다.
+- `runOpenAll`이 만든 정령조각은 같은 실행의 `runCombineAll`에서 변환될 수 있다.
+- `runCombineAll` 이관은 `SL-CRAFT-COMBINE-ALL`을 지원 의존성으로 재사용한다.
+- `runOpenAll`은 난수와 bag/point/guild mutation을 함께 포함하므로 독립 하위 슬라이스로 검증한다.
