@@ -18,7 +18,8 @@
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/새봄-SL-CRAFT-PET-FOOD-20260818T025528Z-o3hvxi`
 - Branch: `feature/modernization-craft-pet-food-saebom-o3hvxi`
 - 기준: `origin/feature/modernization`의 `a554f2c`와 최신 `feature/prod` 병합
-- push 상태: 미푸시
+- 구현·검증 commit: `2eed6bc` 원격 push 완료
+- push 상태: 완료
 
 ## 승계한 Gate evidence
 
