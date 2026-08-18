@@ -100,11 +100,11 @@ Status: VERIFIED
 
 # /창세오픈
 
-Status: VERIFIED
+Status: STALE
 
 ## Command Anchors
 
-- Search in `main.js`: `/창세오픈`
+- Search in `main.js`: `/창세오픈` (현재 실행 guard 미발견, 주석만 존재)
 
 ## Files
 
@@ -119,19 +119,57 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[sender].bag["[🐹미니펫]창세패키지 확정(/창세오픈)"]`
+- 현재 소스 재확인 전에는 데이터 경로를 확정하지 않는다.
+
+## Save Flow
+
+- 문서 설명과 현재 실행 코드가 일치하지 않아 저장 흐름을 미검증 상태로 둔다.
+
+## AI Notes
+
+- `/창조오픈`을 별칭으로 추정하지 않는다.
+- CMD-05-0050의 사용 상태는 별도 재확인 전까지 변경하지 않는다.
+
+---
+
+# /창조오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Exact guard in `main.js`: `msg === "/창조오픈"`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/mini-pet/guaranteed-creation-open-service.ts`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `addItem`
+- `refreshMiniPetSortIndex`
+
+## Data Usage
+
+- `data.member[sender].bag["[🐹미니펫]창조패키지 확정(/창조오픈)"]`
 - `petData[sender].miniPetBag`
 - `GLOBAL_CONFIG.guaranteedPackage.genesis`
 
 ## Save Flow
 
-- 미니펫 가방 8칸을 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
-- 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
+- 미가입자는 무응답이며, 패키지 보유를 먼저 확인한 뒤 미니펫 가방 최대 8개를 검사한다.
+- 패키지 1개를 차감하고 `호이빛💖[창조]`를 battle/castle/raid 경험치 1,350,000으로 지급한다.
+- Rhino는 `member_pet.json`과 `member.json` 저장 실패 시 지급 제거와 패키지 복원을 수동으로 재저장 시도한다.
+- MariaDB 이관은 package stack, owned mini pet, inventory ledger, operation, execution, audit, outbox를 한 transaction으로 commit/rollback한다.
 
 ## AI Notes
 
-- Exact command guard: `/창세오픈`.
-- 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+- 접미사·인자 입력은 실행하지 않는다.
+- 현행 `/창조오픈` 분기에는 공성전 차단이 없으므로 임의로 추가하지 않는다.
+- `/창세오픈`은 별도 불일치 위험이며 이 명령의 별칭이 아니다.
 
 ---
 
