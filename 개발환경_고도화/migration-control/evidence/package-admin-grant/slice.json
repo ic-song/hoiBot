@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "package-admin-grant",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-PACKAGE-ADMIN-GRANT",
+    "worker": "다온",
+    "executionId": "다온-SL-PACKAGE-ADMIN-GRANT-20260818T093004Z-9duq9c",
+    "claimRow": 707,
+    "branch": "feature/modernization-package-admin-grant-daon-9duq9c",
+    "baseHead": "4b618ba5b0b8d434f165e1a24daf68ff00be31c9",
+    "implementationCommit": "dc1e132",
+    "featureProdObservedHead": "d9b36ae9e2f1ffe950e3a24d6b1aaf55ec24ed14"
+  },
+  "commands": {
+    "ids": ["CMD-06-0106"],
+    "names": ["/패키지지급"],
+    "sourceFiles": ["main.js"],
+    "guards": ["^/패키지지급\\s+.+\\s+\\d+\\s+\\d+$ 원문 anchored guard", "선후행 공백·음수·소수·접미는 미진입", "복수 공백·탭과 다단어 대상은 진입"],
+    "helpers": ["PackageAdminGrantService", "MariaPackageAdminGrantRepository", "configuration_sets package-catalog"],
+    "automaticFlows": ["Iris app.ts 단일 dispatch", "operations result_json replay", "sequence 1 outbox restart replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/packageInfo.json", "data/packageLog.json"],
+    "readPaths": ["packageInfo[listNumber-1].id/name/itemName/enabled", "member[target].bag[package item]", "packageLog.lastId/logs"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 member.json 저장", "현행 packageLog.json GRANT 저장", "현행 reply", "신규 DB는 stack·ledger·execution·audit·result·outbox 단일 transaction"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 37,
+    "inheritedMigrationSha256": {
+      "034": "46b7896cf5903d3548088b0feea569a0503a77328554321b87f4b1aaa1fa866a",
+      "035": "badba9c354fc3934863acdb51e54041b30f6f2521814976227b0af0f0b6980a8",
+      "036": "87aa2c33ec4597212c0e04dcd6aff61b014de50f06b35f3492e5c6777cb88b64",
+      "037": "5d5bc2327689122b678ca4b066a5fe3ef5f7d3bba38b5702b9ab0435091f72fa"
+    },
+    "tables": ["external_identities", "admin_operator_external_identities", "admin_operators", "admin_operator_roles", "admin_role_permissions", "admin_operator_permission_overrides", "configuration_sets", "configuration_values", "package_definitions", "item_definitions", "player_profiles", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"],
+    "catalog": {"setCode": "package-catalog", "fixtureVersion": 1, "entryFields": ["listNumber", "packageCode", "bagItemCode"]},
+    "permission": "game.inventory.change",
+    "constraints": ["count 1..10000 BigInt", "stable packageCode→bagItemCode", "package/item active", "item stackable and metadata packageCode/legacyBagKey", "exact unique target profile", "BIGINT UNSIGNED stack overflow rejection", "no package_grant_ledger", "no new migration"],
+    "newColumns": [],
+    "transactionBoundary": "effective inventory permission, active catalog version FOR UPDATE, stable package/item, exact target and stack FOR UPDATE; stack delta, inventory ledger, CMD-06-0106 execution, command audit, result_json and one ordered outbox commit atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_package_admin_daon",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~037 fresh/reapply, fixture apply/verify-only 35 tables, prepare, MariaDB restart, pending outbox and committed replay",
+    "fixtureChecksum": "b5c3da9d250ad9c4785fb403a225d171f5c1791fadc4c710774d65a86287adda",
+    "checks": ["normal 1 and 10000", "0 and 10001 count", "list 0 and unsafe-large list", "raw guard rejection", "permission and target", "disabled package and invalid stable binding", "missing/existing stack", "different-event concurrent exact sum", "unsigned BIGINT overflow rollback", "eight post-write rollback points", "same-event no effect", "restart delivery exactly once"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["PackageAdminGrantService"],
+    "repositories": ["MariaPackageAdminGrantRepository", "shared DatabaseClient transaction", "shared OutboxWorker"],
+    "tests": ["npm ci", "typecheck", "build", "runtime 241/241", "main.js and Info.js node --check", "evidence validator", "MariaDB migration37 fresh/reapply", "fixture apply/verify-only 35 tables", "prepare/restart/replay probe"],
+    "resultJson": ["catalogVersion", "listNumber", "packageCode", "packageName", "bagItemCode", "targetName", "count", "quantityBefore", "quantityAfter", "data", "outboxId", "auditId"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "package-admin-grant.test.ts", "probe-package-admin-grant-synthetic.ts"],
+    "comparisonMode": "Rhino raw guard/parser, permission silence, validation order, exact seven-line reply and isolated MariaDB effects",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "BigInt strict range and overflow rejection, version-pinned stable catalog, append-only ledger/audit and atomic outbox replace legacy parseInt coercion, order-sensitive JSON list, 1000-log trim and sequential saves"
+  },
+  "shadow": {
+    "mode": "isolated synthetic MariaDB prepare/restart/replay",
+    "result": "passed",
+    "effects": {"operations": 7, "executions": 7, "audits": 7, "outboxes": 7, "inventoryLedgers": 7, "restartDeliveryAttempts": 1},
+    "failpointRollbackCount": 8,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 packageInfo/member/packageLog snapshot freeze 필요",
+    "finalImportPlan": "운영 package list를 stable package/item code와 catalog version으로 대사 필요",
+    "smokePlan": "승인된 실운영방에서 권한·대상·번호·수량 reply smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "chat 입력에 expected catalog version이 없어 운영자가 오래 본 번호를 쓰는 사이 새 catalog version이 활성화되면 최신 번호로 해석된다",
+    "DB strict BigInt·전량 감사·atomic outbox는 legacy parseInt·최근1000 log·순차 JSON save보다 안전한 차이이므로 parity 승인 상태를 유지한다",
+    "운영 packageInfo의 각 항목과 stable package/item code를 아직 대사하지 않았고 운영 snapshot·backup/restore·실운영방 smoke가 없어 Gate8은 미완료다"
+  ]
+}
