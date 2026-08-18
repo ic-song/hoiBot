@@ -7,35 +7,34 @@
 - 실행 ID: `새봄-SL-MINIPET-COLLECTION-CREATE-20260818T044451Z-gb725t`
 - 선점 원장 행: 29
 - 선점 상태: `ACTIVE`
-- Heartbeat: `2026-08-18 13:45:24 KST`
-- Lease 만료: `2026-08-18 14:45:24 KST`
+- Heartbeat: `2026-08-18 14:01:00 KST`
+- Lease 만료: `2026-08-18 15:01:00 KST`
 - Worktree: `C:\Users\user\Desktop\hoiBot-worktrees\새봄-SL-MINIPET-COLLECTION-CREATE-20260818T044451Z-gb725t`
 - Branch: `feature/modernization-minipet-collection-create-saebom-gb725t`
 - 기준 commit: `f79f21b`
-- 체크포인트 버전: `1`
-- 커밋·푸시: 미완료
+- 체크포인트 버전: `2`
+- 커밋·푸시: 구현 커밋 준비 중
 
 ## 복구 근거
 
 - 이전 복구 감사 commit: `ddefb7d`
 - 이전 실행은 체크포인트 외 기능 산출물이 없으므로 완료 Gate를 승계하지 않는다.
-- 이전 브랜치는 최신 `feature/prod`와 크게 갈라져 있어 병합하지 않는다.
-- 현재 `feature/prod`에서 새 실행 전용 branch와 worktree를 생성했다.
+- 이전 실행의 기능 산출물은 승계하지 않고 공용 고도화 기반만 새 실행 branch에 병합했다.
+- 현재 `feature/prod` 기준 새 실행 전용 branch와 worktree에서 복구했다.
 - 명령어 이관 사용 상태는 변경하지 않는다.
 
 ## 현재 Gate
 
-1. 현행 조사: 미완료
-2. DB 매핑: 미완료
-3. 합성데이터: 미완료
-4. 구현: 미완료
-5. 통합: 미완료
-6. parity: 미완료
-7. Shadow: 미완료
+1. 현행 조사: 완료 — exact guard, helper, 응답, JSON 경로, 즉시·tail save 확인
+2. DB 매핑: 완료 — item/inventory 및 mini-pet 소유 테이블·원장 매핑
+3. 합성데이터: 완료 — 비식별 fixture 2회 적용 및 35개 표본 테이블 검증
+4. 구현: 완료 — 서비스, importer, migration, app dispatch, 단위 테스트
+5. 통합: 완료 — 격리 DB migration 34개 2회, 합성 명령 probe 통과
+6. parity: 완료 — siege·가방 한도·부족·성공 응답과 delta 검증
+7. Shadow: 완료 — 동일 event 중복 실행 및 MariaDB 재시작 뒤 재실행 검증
 8. 운영 준비: 미완료
 
 ## 다음 행동
 
-- `/컬렉션창조오픈`의 현재 guard, helper, 응답, JSON 경로와 load/save 흐름을 조사한다.
-- 기존 DB 테이블·컬럼·원장 재사용 가능성을 확인한다.
-- 운영 데이터 대신 비식별 합성 fixture와 검증 시나리오를 준비한다.
+- 구현·증거 commit을 push하고 WBS의 Gate 1~7 근거를 동기화한다.
+- 운영 준비는 최종 freeze snapshot, 운영 DB 이관, 승인된 실방 smoke 전까지 완료 처리하지 않는다.
