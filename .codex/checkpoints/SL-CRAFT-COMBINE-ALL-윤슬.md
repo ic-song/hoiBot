@@ -5,9 +5,9 @@
 - 작업 레인: 통합
 - 작업자명: 윤슬
 - 실행 ID: `윤슬-SL-CRAFT-COMBINE-ALL-20260818T060246Z-s545p4`
-- 체크포인트 버전: 1
-- 마지막 갱신: 2026-08-18 KST
-- 작업 상태: `RELEASED 준비`
+- 체크포인트 버전: 2
+- 마지막 갱신: 2026-08-18 15:17 KST
+- 작업 상태: `RELEASED`
 
 ## 소유권과 작업 위치
 
@@ -15,6 +15,8 @@
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/윤슬-SL-CRAFT-COMBINE-ALL-20260818T060246Z-s545p4`
 - Branch: `feature/modernization-craft-combine-all-yoonseul-s545p4`
 - 기준 commit: `a69787b`
+- 구현 commit: `5c0f205`
+- push 상태: `origin/feature/modernization-craft-combine-all-yoonseul-s545p4` push 확인
 
 ## Gate
 
