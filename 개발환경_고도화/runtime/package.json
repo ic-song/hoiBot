@@ -32,7 +32,8 @@
     "db:probe:bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-read-synthetic.ts",
     "db:probe:collection-creation-open": "node --env-file-if-exists=.env --import tsx scripts/probe-collection-creation-open-synthetic.ts",
     "db:probe:collection-genesis-open": "node --env-file-if-exists=.env --import tsx scripts/probe-collection-genesis-open-synthetic.ts",
-    "db:probe:genesis-ticket-craft": "node --env-file-if-exists=.env --import tsx scripts/probe-genesis-ticket-craft-synthetic.ts"
+    "db:probe:genesis-ticket-craft": "node --env-file-if-exists=.env --import tsx scripts/probe-genesis-ticket-craft-synthetic.ts",
+    "db:probe:guaranteed-creation-open": "node --env-file-if-exists=.env --import tsx scripts/probe-guaranteed-creation-open-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

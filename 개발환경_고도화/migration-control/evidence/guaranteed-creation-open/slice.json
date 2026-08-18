@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guaranteed-creation-open",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-MINIPET-GUARANTEED-CREATION-OPEN",
+    "worker": "새봄",
+    "executionId": "새봄-SL-MINIPET-GUARANTEED-CREATION-OPEN-20260818T061847Z-tekxp2",
+    "claimRow": 36
+  },
+  "commands": {
+    "names": ["/창조오픈"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command only",
+      "missing member returns silently before mutation",
+      "package ownership is checked before bag capacity",
+      "mini-pet bag capacity eight blocks without package consumption",
+      "the current branch has no castle-siege guard and the port does not invent one"
+    ],
+    "helpers": ["hasItem", "removeItem", "addItem", "refreshMiniPetSortIndex"],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json"],
+    "readPaths": [
+      "member.<sender>.bag['[🐹미니펫]창조패키지 확정(/창조오픈)']",
+      "member_pet.<sender>.miniPetBag",
+      "GLOBAL_CONFIG.guaranteedPackage.genesis"
+    ],
+    "writePaths": [
+      "member.<sender>.bag guaranteed package decrement by one",
+      "member_pet.<sender>.miniPetBag append one 호이빛 creation-grade mini pet"
+    ],
+    "saveOrder": [
+      "member_pet.json",
+      "member.json",
+      "on failure remove reward and restore package in memory, then attempt both saves again"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "011_mini_pet_display_projection.sql",
+      "031_pet_info_projection.sql",
+      "034_collection_creation_open.sql",
+      "035_collection_genesis_open.sql",
+      "036_guaranteed_creation_open.sql"
+    ],
+    "tables": [
+      "external_identities", "item_definitions", "inventory_stacks", "inventory_ledger",
+      "mini_pet_definitions", "owned_mini_pets", "operations", "command_executions",
+      "command_audit", "outbox_messages"
+    ],
+    "constraints": [
+      "one inventory stack per player and item",
+      "mini-pet bag count stays below eight before insert",
+      "one operation per linked identity and event id",
+      "package, mini pet, ledger, execution, audit and outbox share one transaction"
+    ],
+    "newColumns": [],
+    "transactionBoundary": "lock linked identity, prior operation, guaranteed package stack, mini-pet bag and reward definition; then consume one package, insert one mini pet, append inventory ledger, command execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_guaranteed_creation_tekxp2",
+    "sourceReadOnly": true,
+    "replayPolicy": "36 migrations and the synthetic fixture pass repeat apply; the fixed command event replays through operation idempotency after an isolated MariaDB container restart",
+    "checks": [
+      "migration-count 36 passed twice on the first isolated rehearsal database",
+      "fixture checksum ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9 applied twice and verify-only checked 35 representative tables",
+      "package quantity one to zero",
+      "one unequipped 호이빛/창조 mini pet with battle, castle and raid experience 1350000",
+      "inventory ledger 1, operation 1, command execution 1, audit 1 and outbox 1",
+      "same event replay without a second mutation",
+      "dedicated MariaDB container restart preserves state and replay",
+      "scripted transaction write failure crosses the rollback boundary",
+      "operational JSON snapshots and operational database are untouched"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/mini-pet/guaranteed-creation-open-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/guaranteed-creation-open.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-guaranteed-creation-open-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "scripted missing-member, missing-package, full-bag, transaction-failure and duplicate-event cases",
+      "synthetic linked player with exactly one package and available mini-pet bag capacity"
+    ],
+    "comparisonMode": "exact guard, silent missing member, package-before-capacity ordering, exact replies, package delta, mini-pet fields, ledger, audit, outbox, rollback and duplicate event",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory and member-pet writes in the final shared freeze window",
+    "finalImportPlan": "import guaranteed package stacks plus every miniPetBag entry from approved final member and member_pet snapshots",
+    "smokePlan": "an approved test identity spends one package and verifies 호이빛, reply and ledger",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "Rhino save failure uses best-effort manual removal/restoration and a second pair of saves; MariaDB uses atomic rollback instead",
+    "the nearby source comment and COMMAND_INDEX described /창세오픈 and 가온빛, but current executable code is exact /창조오픈 with 호이빛; /창세오픈 remains a separate unverified command and was not mapped or implemented",
+    "the current /창조오픈 branch does not check castleSiegeFlag; adding such a block would break parity",
+    "sortIndex remains a read projection derived from DB ordering rather than a stored authoritative field",
+    "actual full operational data import, backup/restore and live-room smoke have not been executed"
+  ]
+}

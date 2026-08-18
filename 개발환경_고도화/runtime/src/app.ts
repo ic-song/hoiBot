@@ -43,6 +43,7 @@ import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet
 import { CollectionCreationOpenService, isCollectionCreationOpenCommand } from "./mini-pet/collection-creation-open-service.js";
 import { CollectionGenesisOpenService, isCollectionGenesisOpenCommand } from "./mini-pet/collection-genesis-open-service.js";
 import { GenesisTicketCraftService, isGenesisTicketCraftCommand } from "./mini-pet/genesis-ticket-craft-service.js";
+import { GuaranteedCreationOpenService, isGuaranteedCreationOpenCommand } from "./mini-pet/guaranteed-creation-open-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
 import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
@@ -1007,6 +1008,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "genesis_ticket_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuaranteedCreationOpenCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuaranteedCreationOpenService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "opened") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guaranteed_creation_open", error.message));
           } else {
             throw error;
           }
