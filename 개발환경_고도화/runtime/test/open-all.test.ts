@@ -9,7 +9,14 @@ import type {
 } from "../src/inventory/open-all-repository.js";
 import { OpenAllService } from "../src/inventory/open-all-service.js";
 
-const state = (quantities: Record<string, bigint>): OpenAllState => ({ rankLabel: "합성계정", point: 0n, quantities });
+const state = (quantities: Record<string, bigint>, guild: OpenAllState["guild"] = null): OpenAllState => ({
+  rankLabel: "합성계정", point: 0n, quantities, guild
+});
+
+const guild = (overrides: Partial<NonNullable<OpenAllState["guild"]>> = {}): NonNullable<OpenAllState["guild"]> => ({
+  guildId: "91", displayName: "합성길드", mark: "S", level: 1, experience: 0n, maxMembers: 5,
+  memberPlayerIds: ["21", "22"], ...overrides
+});
 
 function sequence(values: number[]): RandomSource & { calls: number } {
   let index = 0;
@@ -59,11 +66,45 @@ describe("open-all legacy order and boundaries", () => {
     assert.match(result.reply, /펫먹이🍼 x 100\n펫먹이🍼 \+100개/);
   });
 
-  it("keeps partial/guild-only inventory and records guild work as deferred", () => {
+  it("keeps guild items when membership lookup fails and reports both failures in source order", () => {
     const result = planOpenAll(state({ guild_contribution_medal: 2n, guild_warehouse_package: 1n, trash_box: 1n }), sequence([0]));
     assert.equal(result.quantities.guild_contribution_medal, 2n);
     assert.equal(result.quantities.guild_warehouse_package, 1n);
-    assert.deepEqual(result.deferredGuildItems, ["guild_contribution_medal", "guild_warehouse_package"]);
+    assert.equal(result.guildMutation, null);
+    assert.match(result.reply, /길드공헌훈장🌟 2개 사용 실패[\s\S]*길드창고패키지🧳 1개 오픈 실패/);
+  });
+
+  it("applies contribution and warehouse-package mutations before fixed boxes without consuming RNG", () => {
+    const random = sequence([0]);
+    const result = planOpenAll(state({
+      guild_contribution_medal: 2n, guild_warehouse_package: 3n, mini_point_box: 1n
+    }, guild()), random);
+    assert.equal(random.calls, 1);
+    assert.equal(result.quantities.guild_contribution_medal, undefined);
+    assert.equal(result.quantities.guild_warehouse_package, undefined);
+    assert.equal(result.quantities.pet_food, 10n);
+    assert.equal(result.quantities.mini_pet_ticket, 6n);
+    assert.equal(result.quantities.pet_home_shop_open, 4n);
+    assert.deepEqual(result.guildMutation, {
+      guildId: "91", contributionDelta: 2n, contributionUseCountDelta: 1n, experienceDelta: 2n,
+      levelAfter: 1, maxMembersDelta: 0, resourceDeltas: { point: 150000000n },
+      warehouseDeltas: {
+        pet_skill_book: 3n, guild_warehouse_pendant: 3n,
+        guild_warehouse_pet_enhance: 45n, guild_warehouse_mini_pet_enhance: 15n
+      },
+      memberPetFoodDelta: 0n
+    });
+    assert.ok(result.reply.indexOf("길드공헌훈장🌟 2개 사용") < result.reply.indexOf("길드창고패키지🧳 3개 오픈"));
+    assert.ok(result.reply.indexOf("길드창고패키지🧳 3개 오픈") < result.reply.indexOf("미니상자🎁 1개 오픈"));
+  });
+
+  it("applies every crossed guild level reward and gives the actor the all-member food in the same plan", () => {
+    const result = planOpenAll(state({ guild_contribution_medal: 1n }, guild({ level: 10, experience: 39999n })), sequence([]));
+    assert.equal(result.guildMutation?.levelAfter, 11);
+    assert.equal(result.guildMutation?.maxMembersDelta, 0);
+    assert.equal(result.guildMutation?.memberPetFoodDelta, 100000n);
+    assert.equal(result.quantities.pet_food, 100005n);
+    assert.match(result.reply, /Lv\.10 → 11/);
   });
 
   it("keeps the 13 exploration-box order and rare-roll boundaries", () => {

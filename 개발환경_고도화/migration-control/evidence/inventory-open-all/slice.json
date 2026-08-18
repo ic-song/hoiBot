@@ -4,10 +4,11 @@
   "status": "verified_gate_1_to_7",
   "execution": {
     "worker": "윤슬",
-    "executionId": "윤슬-SL-INVENTORY-OPEN-ALL-20260818T064024Z-x086kq",
-    "claimRow": 39,
-    "branch": "feature/modernization-inventory-open-all-yoonseul-x086kq",
-    "implementationCommit": "3661f84"
+    "executionId": "윤슬-SL-INVENTORY-OPEN-ALL-20260818T070113Z-8a9740",
+    "claimRow": 600,
+    "branch": "feature/modernization-inventory-open-all-guild-yoonseul-8a9740",
+    "baseEvidenceCommit": "b8a71ee",
+    "implementationCommit": "pending"
   },
   "command": {
     "id": "CMD-06-0081",
@@ -18,52 +19,61 @@
   },
   "sourceParity": {
     "boxGroups": ["7 range boxes", "random box", "4 fixed point boxes", "pet food box", "special food", "13 exploration boxes"],
-    "mutationDomains": ["inventory item quantities", "point balance"],
+    "mutationDomains": [
+      "inventory item quantities", "point balance", "player guild contribution counters",
+      "guild experience and level", "guild resource balances", "guild warehouse stacks", "all-member pet food"
+    ],
     "noCurrentMutation": ["mini pet state"],
-    "deferred": ["guild contribution medal", "guild warehouse package", "full cleanup orchestration", "sell-all", "guild shop/contribution", "quest rewards"],
+    "deferred": ["full cleanup orchestration", "sell-all", "standalone guild contribution/shop commands", "quest rewards"],
     "preservedBehaviors": [
       "current RNG call order and inclusive boundaries",
       "new items are visible to later stages only; a special-food-created food box is not reopened in the same run",
       "legacy special-food direct pet-food double addition and duplicate reply lines",
-      "500 zero-width allsee separator and aggregate reply"
+      "500 zero-width allsee separator and aggregate reply",
+      "guild contribution then guild warehouse package before fixed point boxes",
+      "guild level rewards, including actor and other-member pet food, are visible in the same transaction"
     ]
   },
   "database": {
-    "newMigration": false,
-    "migrationConflict": "none; no migration number allocated",
-    "dispatchConflict": "none; exact guard inserted beside released combine-all dispatch",
+    "newMigration": "037_open_all_guild_resources.sql",
+    "migrationConflict": "none; origin/feature/prod has no 037 migration as of 2026-08-18; 034-036 remain reserved by other active work",
+    "dispatchConflict": "none; origin/feature/prod has no competing open-all dispatch; exact guard remains shared with the inherited implementation",
     "reusedTables": [
       "external_identities", "item_definitions", "inventory_stacks", "inventory_ledger",
-      "currency_accounts", "currency_ledger", "operations", "command_executions",
-      "command_audit", "outbox_messages", "delivery_attempts"
+      "currency_accounts", "currency_ledger", "player_counters", "guilds", "guild_members",
+      "guild_resource_accounts", "guild_resource_ledger", "guild_warehouse_stacks", "guild_warehouse_ledger",
+      "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"
     ],
-    "transactionBoundary": "identity/state locks, item and point changes, ledgers, operation, execution, audit and ordered outbox commit atomically"
+    "transactionBoundary": "identity/state and inventory/point locks precede guild/member/resource/warehouse/member-food locks; all mutations, ledgers, operation, execution, audit and ordered outbox commit atomically"
   },
   "verification": {
-    "unitAndRegressionTests": "179 passed",
+    "unitAndRegressionTests": "181 passed",
     "typecheck": "passed",
     "build": "passed",
     "rhinoSyntax": "main.js and Info.js passed node --check; both files unchanged",
-    "fixtures": "anonymous scripted fixtures and disposable hoibot_rehearsal_open_all_x086kq MariaDB",
+    "fixtures": "anonymous 3-player/2-guild fixture and disposable hoibot_rehearsal_open_all_8a9740 MariaDB",
     "scenarios": [
       "normal", "empty bag", "partial boxes", "multiple boxes", "RNG boundaries",
-      "duplicate event", "mid-write failure rollback", "MariaDB restart replay"
+      "guild membership failure", "guild contribution and warehouse package", "guild level-up all-member reward",
+      "duplicate event", "inventory and guild mid-write failure rollback", "MariaDB restart replay"
     ],
     "shadow": {
       "dispatch": "shared Iris HTTP adapter",
-      "event": "iris:open-all-x086kq-restart-normal",
-      "effects": { "operation": 1, "execution": 1, "audit": 1, "outbox": 1, "delivery": 1 },
+      "event": "iris:open-all-8a9740-restart-normal",
+      "effects": {
+        "operation": 1, "execution": 1, "audit": 1, "outbox": 1, "delivery": 1,
+        "guildResourceLedger": 2, "guildWarehouseLedger": 4
+      },
       "restartReplay": "passed",
       "temporaryDatabaseRemoved": true,
       "operationalSnapshotTouched": false
     }
   },
   "parityRisks": [
-    "runOpenAll receives replier but its current body does not call it; outer dispatch and standalone exploration helper directly call replier",
+    "runOpenAll receives replier but its current body does not call it; the outer dispatch performs the direct reply, so legacy reply delivery is outside the save boundary",
     "random outcomes depend on the exact call order and are not reconstructible unless the stored trace is retained",
     "items created by one stage can affect later stages, while items created after an earlier stage are not revisited",
-    "legacy save and reply flow is non-atomic, unlike the MariaDB mutation/outbox transaction",
-    "guild item behavior is intentionally deferred and those stacks remain unchanged"
+    "legacy save and reply flow is non-atomic, unlike the MariaDB mutation/outbox transaction"
   ],
   "gates": {
     "gate1Through7": "passed",

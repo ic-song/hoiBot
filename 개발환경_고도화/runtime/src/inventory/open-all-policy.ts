@@ -4,6 +4,29 @@ export interface OpenAllState {
   rankLabel: string;
   point: bigint;
   quantities: Record<string, bigint>;
+  guild: OpenAllGuildState | null;
+}
+
+export interface OpenAllGuildState {
+  guildId: string;
+  displayName: string;
+  mark: string;
+  level: number;
+  experience: bigint;
+  maxMembers: number;
+  memberPlayerIds: string[];
+}
+
+export interface OpenAllGuildMutation {
+  guildId: string;
+  contributionDelta: bigint;
+  contributionUseCountDelta: bigint;
+  experienceDelta: bigint;
+  levelAfter: number;
+  maxMembersDelta: number;
+  resourceDeltas: Record<string, bigint>;
+  warehouseDeltas: Record<string, bigint>;
+  memberPetFoodDelta: bigint;
 }
 
 export interface OpenAllPlan {
@@ -14,6 +37,7 @@ export interface OpenAllPlan {
   randomTrace: number[];
   openedBoxes: string[];
   deferredGuildItems: string[];
+  guildMutation: OpenAllGuildMutation | null;
 }
 
 export const OPEN_ALL_COMMAND = "/전체오픈";
@@ -49,10 +73,31 @@ const I = {
   legendaryStone: item("legendary_stone", "전설의 돌맹이🗿"), luckyBox: item("lucky_box", "럭키박스🍀(/럭키오픈)"), landDocument: item("land_document", "땅문서📜"),
   diamondBox: item("diamond_box", "다이아상자💎(/다이아상자오픈)"), weeklyBox: item("weekly_box", "주간상자🌼"), miniEnhancePackage: item("mini_pet_enhance_package", "미니펫강화석패키지💫"),
   miniPetTicket: item("mini_pet_ticket", "미니펫뽑기🐹(/미니펫오픈)"), petSkillBook: item("pet_skill_book", "펫스킬북📙(/펫스킬오픈)"),
+  guildPendant: item("guild_warehouse_pendant", "길드창고 펜던트📿"), guildPetEnhance: item("guild_warehouse_pet_enhance", "길드창고 펫 강화⭐️"),
+  guildMiniPetEnhance: item("guild_warehouse_mini_pet_enhance", "길드창고 미니펫 강화💫"),
   pendantEnhance: item("pendant_enhance_stone", "펜던트 강화석📿"), pendantRestore: item("pendant_restore_stone", "펜던트 복구석💎"), petSkillFragment: item("pet_skill_book_fragment", "펫스킬북 조각📙")
 };
 
 export const OPEN_ALL_ITEMS: readonly Item[] = Object.values(I);
+export const OPEN_ALL_GUILD_WAREHOUSE_ITEM_CODES = {
+  petSkillBook: I.petSkillBook.code,
+  pendant: I.guildPendant.code,
+  pet: I.guildPetEnhance.code,
+  miniPet: I.guildMiniPetEnhance.code
+} as const;
+
+const GUILD_LEVELS: Readonly<Record<number, { need: bigint; reward: { maxMembers?: number; fund?: bigint; petSkillBook?: bigint; pet?: bigint; petFoodAll?: bigint } }>> = {
+  1: { need: 1000n, reward: { maxMembers: 1 } }, 2: { need: 2000n, reward: { maxMembers: 1 } },
+  3: { need: 4000n, reward: { maxMembers: 1 } }, 4: { need: 8000n, reward: { maxMembers: 1 } },
+  5: { need: 12000n, reward: { maxMembers: 1 } }, 6: { need: 16000n, reward: { maxMembers: 1 } },
+  7: { need: 20000n, reward: { maxMembers: 1 } }, 8: { need: 24000n, reward: { maxMembers: 1 } },
+  9: { need: 28000n, reward: { maxMembers: 1 } }, 10: { need: 40000n, reward: { petFoodAll: 100000n } },
+  11: { need: 50000n, reward: { fund: 300000000000n } }, 12: { need: 60000n, reward: { petSkillBook: 30000n } },
+  13: { need: 70000n, reward: { petSkillBook: 35000n } }, 14: { need: 80000n, reward: { fund: 500000000000n } },
+  15: { need: 90000n, reward: { pet: 100000n } }, 16: { need: 100000n, reward: { petFoodAll: 300000n } },
+  17: { need: 120000n, reward: { fund: 700000000000n } }, 18: { need: 150000n, reward: { petSkillBook: 60000n } },
+  19: { need: 180000n, reward: { petSkillBook: 70000n } }, 20: { need: 250000n, reward: { fund: 900000000000n } }
+};
 
 const RANGE_BOXES: readonly RangeBox[] = [
   { box: I.trashBox, reward: I.trash, min: 5, max: 10, unit: "개" },
@@ -97,6 +142,16 @@ export function planOpenAll(state: OpenAllState, source: RandomSource): OpenAllP
   const results1: string[] = [], results2: string[] = [], results3: string[] = [];
   const openedBoxes: string[] = [];
   let pointDelta = 0n;
+  let guildMutation: OpenAllGuildMutation | null = null;
+
+  function mutationForGuild(): OpenAllGuildMutation {
+    const guild = state.guild!;
+    if (guildMutation === null) guildMutation = { guildId: guild.guildId, contributionDelta: 0n, contributionUseCountDelta: 0n,
+      experienceDelta: 0n, levelAfter: guild.level, maxMembersDelta: 0, resourceDeltas: {}, warehouseDeltas: {}, memberPetFoodDelta: 0n };
+    return guildMutation;
+  }
+
+  function addResource(target: Record<string, bigint>, code: string, amount: bigint): void { target[code] = (target[code] ?? 0n) + amount; }
 
   for (const spec of RANGE_BOXES) {
     const count = consumeAll(bag, spec.box);
@@ -119,6 +174,50 @@ export function planOpenAll(state: OpenAllState, source: RandomSource): OpenAllP
     }
     openedBoxes.push(I.randomBox.code); results1.push(`${I.randomBox.name} ${randomCount}개 오픈`);
     results2.push("랜덤💝\n" + [...acquired].map(([reward, count]) => `${reward.name} ${count}개`).join("\n") + "\n");
+  }
+
+  const medalCount = quantity(bag, I.guildMedal.code);
+  if (medalCount > 0n) {
+    if (state.guild === null) {
+      results1.push(`길드공헌훈장🌟 ${medalCount}개 사용 실패`); results2.push("길드 미가입 또는 데이터 오류\n");
+    } else {
+      consumeAll(bag, I.guildMedal);
+      const guild = state.guild; const mutation = mutationForGuild();
+      mutation.contributionDelta += medalCount; mutation.contributionUseCountDelta += 1n; mutation.experienceDelta += medalCount;
+      add(bag, I.petFood, medalCount * 5n); add(bag, I.miniPetTicket, medalCount * 3n); add(bag, I.shopOpen, medalCount * 2n);
+      const oldLevel = guild.level; let level = oldLevel; const experience = guild.experience + mutation.experienceDelta;
+      while (GUILD_LEVELS[level] !== undefined && experience >= GUILD_LEVELS[level]!.need) {
+        const reward = GUILD_LEVELS[level]!.reward;
+        mutation.maxMembersDelta += reward.maxMembers ?? 0;
+        addResource(mutation.resourceDeltas, "point", reward.fund ?? 0n);
+        addResource(mutation.warehouseDeltas, I.petSkillBook.code, reward.petSkillBook ?? 0n);
+        addResource(mutation.warehouseDeltas, I.guildPetEnhance.code, reward.pet ?? 0n);
+        mutation.memberPetFoodDelta += reward.petFoodAll ?? 0n;
+        if ((reward.petFoodAll ?? 0n) > 0n) add(bag, I.petFood, reward.petFoodAll!);
+        level++;
+      }
+      mutation.levelAfter = level;
+      results1.push(`길드공헌훈장🌟 ${medalCount}개 사용`);
+      results2.push(`[${guild.displayName}(${guild.mark})] 공헌 완료\n공헌도 +${comma(medalCount)}\n펫먹이🍼 +${comma(medalCount * 5n)}\n미니펫뽑기🐹 +${comma(medalCount * 3n)}\n펫홈샵🖼️ +${comma(medalCount * 2n)}\n`);
+      if (level > oldLevel) results2.push(`🎉 길드 레벨업!\nLv.${oldLevel} → ${level}\n`);
+    }
+  }
+
+  const guildPackageCount = quantity(bag, I.guildPackage.code);
+  if (guildPackageCount > 0n) {
+    if (state.guild === null) {
+      results1.push(`길드창고패키지🧳 ${guildPackageCount}개 오픈 실패`); results2.push("길드 미가입 또는 길드 데이터 오류로 오픈하지 못했습니다.\n");
+    } else {
+      consumeAll(bag, I.guildPackage);
+      const guild = state.guild; const mutation = mutationForGuild();
+      const fund = 50000000n * guildPackageCount, books = guildPackageCount, pendants = guildPackageCount;
+      const pet = 15n * guildPackageCount, miniPet = 5n * guildPackageCount;
+      addResource(mutation.resourceDeltas, "point", fund); addResource(mutation.warehouseDeltas, I.petSkillBook.code, books);
+      addResource(mutation.warehouseDeltas, I.guildPendant.code, pendants); addResource(mutation.warehouseDeltas, I.guildPetEnhance.code, pet);
+      addResource(mutation.warehouseDeltas, I.guildMiniPetEnhance.code, miniPet);
+      results1.push(`길드창고패키지🧳 ${guildPackageCount}개 오픈`);
+      results2.push(`[${guild.displayName}(${guild.mark})] 길드창고 지급\n🅟 +${comma(fund)}\n📙 +${comma(books)}\n📿 +${comma(pendants)}\n⭐️ +${comma(pet)}\n💫 +${comma(miniPet)}\n`);
+    }
   }
 
   const fixed: readonly [Item, bigint, string][] = [[I.miniBox, 250000n, "🎁"], [I.giftBox, 500000n, "🎁"], [I.paradiseBox, 1000000n, "👹"], [I.abyssBox, 1000000n, "👹"]];
@@ -186,5 +285,5 @@ export function planOpenAll(state: OpenAllState, source: RandomSource): OpenAllP
     ? `${results1.join("\n")}\n${"\u200b".repeat(500)}\n${results3.join("\n")}\n종합 획득 포인트 : 🅟${comma(pointDelta)}\n\n${results2.join("\n")}`
     : "오픈할 상자가 없습니다.");
   return { reply: reply.trim(), pointDelta, quantities: bag, deltas: delta(before, bag), randomTrace: trace, openedBoxes,
-    deferredGuildItems: [I.guildMedal.code, I.guildPackage.code].filter((code) => quantity(before, code) > 0n) };
+    deferredGuildItems: [], guildMutation };
 }
