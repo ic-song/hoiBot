@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "pet-info",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/펫정보",
+      "/ㅎ",
+      "ㅁㅁㅁ"
+    ],
+    "sourceFiles": [
+      "Info.js"
+    ],
+    "guards": [
+      "legacy and port accept only the three exact command strings",
+      "suffix text and trailing whitespace do not execute the ported read flow"
+    ],
+    "helpers": [
+      "getHomeTotalExp",
+      "getCritChance",
+      "calculateRaidExp",
+      "calculateCastleExp",
+      "calculateTotalExp",
+      "getPetSkillSlotCount",
+      "getIntimacyUserRank",
+      "formatKoreanShort"
+    ],
+    "automaticFlows": [
+      "event processor preserves the legacy image-first then text reply order through two durable outbox rows"
+    ]
+  },
+  "legacyData": {
+    "files": [
+      "data/member_pet.json",
+      "data/member.json",
+      "data/petSkillData.json",
+      "data/petTitleData.json",
+      "data/petHomeData.json",
+      "data/petExploreData.json",
+      "data/trialTower.json",
+      "data/castleBattle2.json",
+      "data/guild.json"
+    ],
+    "readPaths": [
+      "petData.<sender> pet, elemental, pendant and equipped mini-pet projections",
+      "member.<sender> rank, pass and daily quest projections",
+      "petSkillData.<sender> equipped skills and slot projections",
+      "homeData.<sender> home name, furniture charm, area and badge cube projections",
+      "petExploreData, trialTower and castleBattleData daily records"
+    ],
+    "writePaths": [],
+    "saveOrder": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "011_mini_pet_display_projection.sql",
+      "012_badge_display_projection.sql",
+      "030_pet_creation_foundations.sql",
+      "031_pet_info_projection.sql"
+    ],
+    "tables": [
+      "external_identities",
+      "player_profiles",
+      "player_pets",
+      "player_pet_elementals",
+      "player_pet_pendants",
+      "player_pet_intimacy",
+      "pet_skill_inventory",
+      "owned_mini_pets",
+      "player_homes",
+      "player_home_badge_cubes",
+      "player_pet_daily_records",
+      "outbox_messages"
+    ],
+    "newColumns": [
+      "player_pet_elementals.raid_charm",
+      "player_pet_elementals.castle_charm",
+      "owned_mini_pets.enhancement_level"
+    ],
+    "constraints": [
+      "one pendant projection per player_pet",
+      "one intimacy projection per player_pet",
+      "one daily projection per player and KST record date",
+      "one home badge cube projection per player and badge code"
+    ],
+    "transactionBoundary": "read-only repository query; event processing persists each ordered reply through the existing outbox transaction boundary"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 a4eb2df1206cd1c5ba69a9612ee7dc94939a57956999413dfff62a2bddf5e450",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic IDs use upsert; two applies and verify-only produced the same 35-table counts",
+    "checks": [
+      "operational database name hoibot rejected the pet-info probe before connection mutation",
+      "migration 031 applied only to the development schema",
+      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "MariaDB projection returned the synthetic pet, elemental, mini-pet, home, pass and charm totals",
+      "formatter returned image then body and exactly 500 U+200B all-see characters",
+      "pass-only summary icons use independent completion conditions",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/pet/pet-info-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/pet/maria-pet-info-repository.ts"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/pet-info.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-pet-info-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic pet, elemental, pendant, intimacy, mini-pet, home cube and daily record projections"
+    ],
+    "comparisonMode": "exact command guards, deterministic normalized charm values, legacy section markers, ordered replies and U+200B count",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "all pet, home, quest, tower, castle and exploration legacy writes stop in one final freeze window",
+    "finalImportPlan": "latest approved operational snapshots populate every normalized projection only after all functional slices pass",
+    "smokePlan": "approved live-room identity verifies the three exact aliases, two-reply order, total charm and daily status after final import",
+    "rollbackPlan": "keep Rhino read path active until imported projection reconciliation and live smoke pass"
+  },
+  "risks": [
+    "total charm, intimacy and exploration ranking projections are not materialized yet and render as no rank",
+    "legacy formulas with rare item, skill and badge combinations require broader fixtures in their owning slices",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}
