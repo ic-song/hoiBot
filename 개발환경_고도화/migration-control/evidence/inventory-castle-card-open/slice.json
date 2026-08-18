@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "inventory-castle-card-open",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-INVENTORY-CASTLE-CARD-OPEN",
+    "worker": "다온",
+    "executionId": "다온-SL-INVENTORY-CASTLE-CARD-OPEN-20260818T084034Z-l0vro3",
+    "claimRow": 704,
+    "branch": "feature/modernization-inventory-castle-card-open-daon-l0vro3",
+    "baseHead": "3c55f315a28790e11e81ad84f95df141947b617e",
+    "featureProdObservedHead": "d9b36ae9e2f1ffe950e3a24d6b1aaf55ec24ed14"
+  },
+  "commands": {
+    "ids": ["CMD-06-0094"],
+    "names": ["/카드오픈"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact 기본 1", "한 칸 숫자 N", "0·복수 공백 오류", "탭+숫자 기본 1", "음수·소수·접미·후행공백 guard 미진입"],
+    "helpers": ["CastleCardOpenService", "MariaCastleCardOpenRepository", "CastleCardOpenPolicy"],
+    "automaticFlows": ["Iris app.ts exact/raw dispatch", "eventId+commandCode 안정 seed", "operations result_json replay", "800ms delayed outbox worker replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json"],
+    "readPaths": ["member[sender].bag[펫먹이특식🥡(/특식오픈)]", "castle.isCastleBattle"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 소비·보상 bag mutation 뒤 saveJsonFile", "신규 DB에서는 소비·보상·ledger·execution·audit·outbox 단일 transaction commit"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 37,
+    "inheritedMigrationSha256": {
+      "034": "46b7896cf5903d3548088b0feea569a0503a77328554321b87f4b1aaa1fa866a",
+      "035": "badba9c354fc3934863acdb51e54041b30f6f2521814976227b0af0f0b6980a8",
+      "036": "87aa2c33ec4597212c0e04dcd6aff61b014de50f06b35f3492e5c6777cb88b64",
+      "037": "5d5bc2327689122b678ca4b066a5fe3ef5f7d3bba38b5702b9ab0435091f72fa"
+    },
+    "tables": ["item_definitions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts", "external_identities", "player_profiles", "castle_battle_seasons"],
+    "itemCodes": ["pet_food_special", "castle_immortal_unit", "castle_myth_unit", "castle_legend_unit", "castle_hero_unit", "castle_unique_unit", "castle_rare_unit", "pet_food", "pet_food_box", "trash_box"],
+    "constraints": ["10 definitions active and stackable", "consumer zero deletes stack", "missing reward stack inserts safely", "no new schema or migration"],
+    "newColumns": [],
+    "transactionBoundary": "actor, consumer and all reward stacks sorted lock, castle active recheck, consumer/reward deltas, ordered inventory ledger, operation, execution, audit and immediate/delayed outbox commit atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_castle_card_l0vro3",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~037 fresh/reapply, fixture apply/verify-only 35 tables, prepare, MariaDB restart, delayed worker and committed replay",
+    "fixtureChecksum": "29da197649c17c1618bc3e8b35beea972d0c3aa87985fa9c357a6bcaff1cefcd",
+    "checks": ["migration-count 37", "all eight strict threshold equality boundaries", "pet food quantity 4", "first-appearance aggregation", "immortal/myth notice order", "nine post-write failpoint rollbacks", "same-event no-RNG replay", "different-event locked remaining", "restart delayed delivery exactly once"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["CastleCardOpenService"],
+    "repositories": ["MariaCastleCardOpenRepository", "shared DatabaseClient transaction", "shared OutboxWorker"],
+    "tests": ["npm ci", "typecheck", "build", "runtime 228/228", "main.js and Info.js node --check", "evidence validator", "MariaDB fresh/reapply and restart probe"],
+    "resultJson": ["rngSeed", "rngTrace", "openCount", "aggregates", "immediateOutboxId", "delayedOutboxIds", "auditId"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "castle-card-open.test.ts", "probe-castle-card-open-synthetic.ts"],
+    "comparisonMode": "Rhino raw guard/split, strict RNG threshold, quantity, first-occurrence aggregate and delayed/special ordering compared against deterministic policy and isolated MariaDB effects",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "DB rollback and durable ordered outbox make mid-write and restart behavior atomic; stable seeded RNG preserves threshold/order/call count but not the historical random stream"
+  },
+  "shadow": {
+    "mode": "isolated synthetic MariaDB prepare/restart/replay",
+    "result": "passed",
+    "effects": {"operations": 6, "executions": 6, "audits": 6, "outboxes": 21, "inventoryLedgerRows": 24},
+    "failpointRollbackCount": 9,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 snapshot freeze 필요",
+    "finalImportPlan": "운영 item-code와 rank projection reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 800ms notice destination smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "실제 소비 key는 펫먹이특식인데 부족 문구는 캐슬카드인 legacy 불일치를 parity로 보존했다",
+    "DB rollback/outbox 원자성과 안정 seed는 현행 JSON save/Math.random/direct reply 대비 안전 차이이므로 parity 승인이 필요하다",
+    "legacy checkRank의 동적 성주·랭킹·길드 표식은 현재 profile display name projection만으로 완전 재현되지 않는다",
+    "legacy special notice 다중 운영방 broadcast destination은 운영 자산을 사용하지 않은 Gate 7 범위에서 검증하지 않았고 Gate 8 전 routing 승인이 필요하다",
+    "운영 snapshot, 운영 DB, 실운영방 smoke, backup/restore 증거가 없어 Gate 8은 미완료다"
+  ]
+}
