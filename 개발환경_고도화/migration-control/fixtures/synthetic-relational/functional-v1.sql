@@ -103,7 +103,11 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000006, 'legacy-castle-battle-reset-ticket', '캐슬대전리셋권🐶', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000007, 'legacy-raid-strike-seal-600', '레이드타격대인장👑(+600👾)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
   (900000008, 'legacy-pet-food-box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
-  (900000009, 'legacy-guild-join-ticket', '길드가입권🍭(/길드가입 숫자)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1)
+  (900000009, 'legacy-guild-join-ticket', '길드가입권🍭(/길드가입 숫자)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE), TRUE, 1),
+  (900000010, 'spirit_box', '정령상자🥀', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
+  (900000011, 'spirit_fragment', '정령조각🥀', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
+  (900000012, 'chicken_box', '치킨상자🐔', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
+  (900000013, 'seasoned_chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
