@@ -172,7 +172,7 @@ export class ProviderVerificationService {
         await transaction.execute(
           `INSERT INTO external_identity_names
             (external_identity_id, display_name, source_code, trust_status, provider_event_id, observed_at)
-           VALUES (?, ?, 'provider_verification', 'observed', ?, UTC_TIMESTAMP(3))`,
+           VALUES (?, ?, 'provider_verification', 'verified', ?, UTC_TIMESTAMP(3))`,
           [identityId, input.displayName, `verification:${challenge.id.toString()}`]
         );
       }

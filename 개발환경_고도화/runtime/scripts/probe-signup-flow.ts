@@ -124,8 +124,11 @@ try {
     acceptTerms: true
   });
   assert.equal(siteSignup.status, "pending_kakao_link");
+  assert.equal(siteSignup.verificationCommand, `/가입인증 ${siteSignup.verificationCode}`);
+  assert.equal(siteSignup.verificationPurpose, "initial_link");
   const siteVerification = await new ProviderVerificationService(database, config.userVerificationPepper)
-    .verifyInitialKakao({
+    .verifyKakao({
+      purpose: "signup_link",
       code: siteSignup.verificationCode,
       externalUserId: `site-signup-probe-${suffix}`,
       displayName: "솜별 남",

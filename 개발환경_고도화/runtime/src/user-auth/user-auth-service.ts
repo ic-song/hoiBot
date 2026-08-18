@@ -24,6 +24,8 @@ export interface SignupResult {
   systemAccountName: string;
   challengeId: string;
   verificationCode: string;
+  verificationCommand: string;
+  verificationPurpose: "initial_link";
   codeExpiresAt: string;
   pendingExpiresAt: string;
 }
@@ -184,7 +186,8 @@ export class UserAuthService {
         return {
           accountId: account.insertId.toString(), status: "pending_kakao_link",
           systemAccountName: name.displayName, challengeId: challenge.publicId,
-          verificationCode: challenge.code, codeExpiresAt: challenge.expiresAt.toISOString(),
+          verificationCode: challenge.code, verificationCommand: `/가입인증 ${challenge.code}`,
+          verificationPurpose: "initial_link", codeExpiresAt: challenge.expiresAt.toISOString(),
           pendingExpiresAt: new Date(Date.now() + USER_PENDING_HOURS * 3_600_000).toISOString()
         };
       });
@@ -227,7 +230,8 @@ export class UserAuthService {
       return {
         accountId: account.id.toString(), status: "pending_kakao_link",
         systemAccountName: account.system_account_name, challengeId: challenge.publicId,
-        verificationCode: challenge.code, codeExpiresAt: challenge.expiresAt.toISOString(),
+        verificationCode: challenge.code, verificationCommand: `/가입인증 ${challenge.code}`,
+        verificationPurpose: "initial_link", codeExpiresAt: challenge.expiresAt.toISOString(),
         pendingExpiresAt: new Date(Date.now() + USER_PENDING_HOURS * 3_600_000).toISOString()
       };
     });
@@ -365,6 +369,8 @@ export class UserAuthService {
     providerCode: string;
     purpose: "account_link";
     verificationCode: string;
+    verificationCommand: string;
+    verificationPurpose: "existing_link";
     codeExpiresAt: string;
   }> {
     if (providerCode !== "kakao") {
@@ -411,6 +417,8 @@ export class UserAuthService {
         providerCode,
         purpose: "account_link" as const,
         verificationCode: challenge.code,
+        verificationCommand: `/계정인증 ${challenge.code}`,
+        verificationPurpose: "existing_link" as const,
         codeExpiresAt: challenge.expiresAt.toISOString()
       };
     });

@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "account-platform-auth",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/가입인증 [코드]",
+      "/계정인증 [코드]",
+      "/도움말"
+    ],
+    "sourceFiles": [
+      "개발환경_고도화/runtime/src/app.ts",
+      "개발환경_고도화/runtime/src/user-auth/policy.ts",
+      "개발환경_고도화/runtime/src/user-auth/user-auth-service.ts",
+      "개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts",
+      "개발환경_고도화/runtime/src/user-auth/external-platform-access-service.ts"
+    ],
+    "guards": [
+      "가입 인증: /^\\/(가입인증) ([A-HJ-NP-Z2-9]{8})$/i and purpose signup_link",
+      "기존 계정 연결: /^\\/(계정인증) ([A-HJ-NP-Z2-9]{8})$/i and purpose account_link",
+      "공백·접미 안내 문구·구형 /인증 명령은 실행하지 않음",
+      "사이트 연결 전 공개 범위는 인증 명령, /도움말, /ping, /info로 제한"
+    ],
+    "helpers": [
+      "readKakaoVerificationCommand",
+      "createVerificationChallenge",
+      "ProviderVerificationService.verifyKakao",
+      "ExternalPlatformAccessService.hasActiveSiteAccount"
+    ],
+    "automaticFlows": [
+      "사이트 가입 API가 /가입인증 코드와 initial_link 용도를 반환",
+      "로그인·CSRF 확인 후 추가 연결 API가 /계정인증 코드와 existing_link 용도를 반환"
+    ]
+  },
+  "legacyData": {
+    "files": [],
+    "readPaths": [],
+    "writePaths": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "016_site_signup_auth.sql",
+      "019_user_auth_hardening.sql",
+      "020_trusted_identity_activity_events.sql",
+      "034_user_account_external_links.sql",
+      "035_external_platform_link_history.sql"
+    ],
+    "tables": [
+      "user_accounts",
+      "user_terms_acceptances",
+      "user_sessions",
+      "user_verification_challenges",
+      "external_identities",
+      "external_identity_names",
+      "user_account_external_identities",
+      "user_account_external_identity_history",
+      "operations",
+      "command_audit",
+      "configuration_sets",
+      "configuration_values"
+    ],
+    "constraints": [
+      "user_verification_challenges.code_hash unique and raw code not stored",
+      "user_account_external_identities.external_identity_id unique",
+      "active external links limited by site.external_platform.max_active_links, default 10",
+      "provider verification names use the allowed verified trust status",
+      "verification purpose is separated into signup_link and account_link"
+    ],
+    "transactionBoundary": "challenge consumption, stable external identity resolution, link upsert, append-only history, account activation when applicable, operation and audit commit in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_account_auth_x13uq2",
+    "sourceReadOnly": true,
+    "replayPolicy": "fresh disposable database, one-time verification challenge, purpose-specific lookup, and consumed challenge rejection prevent duplicate link/history/audit mutation",
+    "checks": [
+      "all migrations 001 through 035 applied in the disposable database",
+      "site signup response returned the exact /가입인증 command and initial_link contract",
+      "signed-in CSRF-protected response returned the exact /계정인증 command and existing_link contract",
+      "expired account-link code returned VERIFICATION_CODE_EXPIRED",
+      "account-link code presented as signup_link returned VERIFICATION_CODE_INVALID",
+      "MariaDB restart preserved the pending account-link challenge",
+      "post-restart verification produced two active links and two append-only link history rows",
+      "consumed code replay returned VERIFICATION_CODE_INVALID without extra link, history, or audit rows",
+      "operational data snapshots and operational database were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/user-auth/user-auth-service.ts",
+      "개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts",
+      "개발환경_고도화/runtime/src/user-auth/external-platform-access-service.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts transaction client"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/user-auth.test.ts",
+      "개발환경_고도화/runtime/test/external-platform-links.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-account-platform-auth-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "인증 남 site account, account-auth-initial, account-auth-existing-link, synthetic-room-001"
+    ],
+    "comparisonMode": "exact command parsing and user-facing command contract, extended with session/CSRF, purpose isolation, expiration, link limit, append-only history, audit, restart persistence, and one-time replay checks",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "사이트 계정과 외부 플랫폼 연결 변경을 잠시 중지하고 마지막 challenge·session 생성 시각을 고정",
+    "finalImportPlan": "기존 사이트 계정·Kakao stable user ID를 대사한 뒤 purpose별 pending challenge는 재발급",
+    "smokePlan": "비운영 계정으로 가입 인증, 로그인, 추가 계정 인증, 목록, 연결 해제와 audit/history를 순서대로 확인",
+    "rollbackPlan": "외부 플랫폼 접근 gate 활성화 전에는 기존 Rhino 명령을 유지하고, 활성화 후에는 MariaDB backup과 link history/audit로 연결 상태를 복구"
+  },
+  "risks": [
+    "실제 운영 Kakao stable user ID와 사이트 계정 전수 대사는 운영 준비 Gate에서 별도 승인·검증해야 한다",
+    "실운영방 Iris 전달과 브라우저 cookie 동작은 합성 Shadow 범위 밖이다",
+    "운영 계정 연결 해제·차단 smoke와 최종 backup/rollback 훈련은 아직 실행하지 않았다"
+  ]
+}

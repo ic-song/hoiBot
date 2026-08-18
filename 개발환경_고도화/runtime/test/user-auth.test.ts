@@ -67,6 +67,8 @@ describe("site user authentication", () => {
     assert.equal(result.status, "pending_kakao_link");
     assert.equal(result.systemAccountName, "호이 남");
     assert.match(result.verificationCode, /^[A-Z2-9]{8}$/);
+    assert.equal(result.verificationCommand, `/가입인증 ${result.verificationCode}`);
+    assert.equal(result.verificationPurpose, "initial_link");
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_accounts")));
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_terms_acceptances")));
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_verification_challenges")));
@@ -149,6 +151,7 @@ describe("site user authentication", () => {
     assert.equal(result.status, "verified");
     assert.equal(result.playerId, "20");
     assert.equal(result.purpose, "account_link");
+    assert.ok(scripted.sql.some((statement) => statement.includes("'provider_verification', 'verified'")));
     assert.ok(scripted.sql.some((statement) => statement.includes("user_account_external_identities")));
   });
 
