@@ -37,7 +37,8 @@
     "parity:grade-combine": "node --import tsx scripts/validate-grade-combine-parity.ts",
     "db:probe:guaranteed-creation-open": "node --env-file-if-exists=.env --import tsx scripts/probe-guaranteed-creation-open-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
-    "db:probe:fixed-range-box-open": "node --env-file-if-exists=.env --import tsx scripts/probe-fixed-range-box-open-synthetic.ts"
+    "db:probe:fixed-range-box-open": "node --env-file-if-exists=.env --import tsx scripts/probe-fixed-range-box-open-synthetic.ts",
+    "db:probe:castle-card-open": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-card-open-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

@@ -107,7 +107,17 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000010, 'spirit_box', '정령상자🥀', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
   (900000011, 'spirit_fragment', '정령조각🥀', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
   (900000012, 'chicken_box', '치킨상자🐔', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
-  (900000013, 'seasoned_chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1)
+  (900000013, 'seasoned_chicken', '양념치킨🐔', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-FIXED-RANGE-BOX-OPEN'), TRUE, 1),
+  (900000014, 'pet_food_special', '펫먹이특식🥡(/특식오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000015, 'castle_immortal_unit', '캐슬불멸유닛🐉(+1500💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000016, 'castle_myth_unit', '캐슬신화유닛🧚🏻‍♀(+1000💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000017, 'castle_legend_unit', '캐슬전설유닛🧝🏻‍♀(+500💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000018, 'castle_hero_unit', '캐슬영웅유닛💠(+300💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000019, 'castle_unique_unit', '캐슬유니크유닛👑(+200💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000020, 'castle_rare_unit', '캐슬레어유닛⭐(+100💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000021, 'pet_food', '펫먹이🍼', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000022, 'pet_food_box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000023, 'trash_box', '잡템상자☠', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
