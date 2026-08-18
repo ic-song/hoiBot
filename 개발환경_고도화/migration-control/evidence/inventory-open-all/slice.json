@@ -8,7 +8,7 @@
     "claimRow": 600,
     "branch": "feature/modernization-inventory-open-all-guild-yoonseul-8a9740",
     "baseEvidenceCommit": "b8a71ee",
-    "implementationCommit": "pending"
+    "implementationCommit": "dc6ab13"
   },
   "command": {
     "id": "CMD-06-0081",
