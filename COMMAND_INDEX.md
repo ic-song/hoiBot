@@ -3655,6 +3655,41 @@ Status: VERIFIED
 
 ---
 
+# /미니펫창세조합
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/미니펫창세조합`
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/mini-pet/genesis-ticket-craft-service.ts`
+## Related Helpers
+- `checkRank`
+- `hasItem`
+- `removeItem`
+- `isMiniPetBagFull`
+- `refreshMiniPetSortIndex`
+## Data Usage
+- `data.member[sender].bag["미니펫뽑기🐹(/미니펫오픈)"]`
+- `petData[sender].miniPetBag`
+- `guildData.castleSiegeFlag`
+## Save Flow
+- Success consumes 10,000 mini-pet draw tickets and appends one genesis-grade mini pet
+- The command branch immediately saves `memberPetPath`; the response tail saves both `memberPetPath` and `filePath`
+- The MariaDB port persists the ticket delta, mini pet, inventory ledger, command execution, audit, outbox and idempotency result in one transaction
+## Related Commands
+- `/미니펫가방`
+- `/미니펫오픈`
+- `/컬렉션창세오픈`
+- `/미니펫조합창세`
+## AI Notes
+- The command uses exact equality and ignores suffixed guide text
+- An active castle siege and an unregistered sender are silent no-ops; the mini-pet bag limit is 8 and is checked before ticket consumption
+- The nearby comment says 30,000 tickets, but the executing `needCount` is 10,000; parity follows 10,000 without modifying the comment
+- `/미니펫조합창세` is a different mini-pet material-combination flow and is excluded from `SL-MINIPET-GENESIS-TICKET-CRAFT`
+- `COMMAND_REGISTRY.md` and the legacy command usage status were intentionally left unchanged
+
+---
+
 # /미니펫장착 [번호]
 Status: VERIFIED
 ## Command Anchors
