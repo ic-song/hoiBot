@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "inventory-fixed-range-box-open",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-INVENTORY-FIXED-RANGE-BOX-OPEN",
+    "worker": "다온",
+    "executionId": "다온-SL-INVENTORY-FIXED-RANGE-BOX-OPEN-20260818T081656Z-44cb69",
+    "claimRow": 703,
+    "branch": "feature/modernization-inventory-fixed-range-box-open-daon-44cb69",
+    "baseHead": "b1b9a63d39e57601a73f4f020b5f15472db0d2d6",
+    "featureProdObservedHead": "d9b36ae9e2f1ffe950e3a24d6b1aaf55ec24ed14"
+  },
+  "commands": {
+    "ids": ["CMD-09-0016", "CMD-06-0093"],
+    "names": ["/정령오픈", "/치킨오픈"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact 기본 1", "한 칸 숫자 N", "두 칸 이상 공백 전량", "탭+숫자 기본 1", "음수·소수·접미 guard 미진입"],
+    "helpers": ["FixedRangeBoxOpenService", "MariaFixedRangeBoxOpenRepository", "FixedRangeBoxOpenPolicy"],
+    "automaticFlows": ["Iris app.ts 공용 dispatch", "eventId+commandCode 안정 seed", "operations 저장 결과 replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json"],
+    "readPaths": ["member[sender].bag[정령상자🥀|정령조각🥀|치킨상자🐔|양념치킨🐔]"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 bag 차감·보상 증가·saveJsonFile 흐름 조사", "신규 DB에서는 동일 효과를 ledger·execution·audit·outbox와 단일 transaction commit"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 37,
+    "inheritedMigrationSha256": {
+      "034": "46b7896cf5903d3548088b0feea569a0503a77328554321b87f4b1aaa1fa866a",
+      "035": "badba9c354fc3934863acdb51e54041b30f6f2521814976227b0af0f0b6980a8",
+      "036": "87aa2c33ec4597212c0e04dcd6aff61b014de50f06b35f3492e5c6777cb88b64",
+      "037": "5d5bc2327689122b678ca4b066a5fe3ef5f7d3bba38b5702b9ab0435091f72fa"
+    },
+    "tables": ["item_definitions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts", "external_identities", "player_profiles"],
+    "itemCodes": ["spirit_box", "spirit_fragment", "chicken_box", "seasoned_chicken"],
+    "constraints": ["inventory_stacks quantity BIGINT UNSIGNED permits zero", "four definitions must be active and stackable", "no new schema or migration"],
+    "newColumns": [],
+    "transactionBoundary": "actor and box/reward stacks lock, box/reward delta, two inventory ledger rows, operation, command execution, audit and ordered outbox commit atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_fixed_range_44cb69",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~037 fresh/reapply, fixture apply/verify-only 35 tables, prepare, MariaDB restart, committed replay",
+    "fixtureChecksum": "ba044bae5f941689880c056354959721c12fde5c8787f79ee45c428e0126ef64",
+    "checks": ["migration-count 37", "RNG 0→5 and upper→10", "zero-stack", "five post-write failpoint rollbacks", "same-event replay", "different-event remaining cap", "restart replay without RNG"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["FixedRangeBoxOpenService"],
+    "repositories": ["MariaFixedRangeBoxOpenRepository", "shared DatabaseClient transaction"],
+    "tests": ["npm ci", "typecheck", "build", "runtime 219/219", "main.js and Info.js node --check", "evidence validator", "MariaDB fresh/reapply and restart probe"],
+    "resultJson": ["rngSeed", "rngTrace", "totalQuantity", "reply", "before/after quantities", "parse mode and requested/effective count"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "fixed-range-box-open.test.ts", "probe-fixed-range-box-open-synthetic.ts"],
+    "comparisonMode": "raw Rhino guard/split behavior and exact replies compared against deterministic policy and isolated MariaDB effects",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "DB rollback and outbox make a mid-write failure atomic, unlike legacy direct JSON mutation/save/reply ordering; stable seeded RNG preserves range/order/call count but not the historical random stream"
+  },
+  "shadow": {
+    "mode": "isolated synthetic MariaDB prepare/restart/replay",
+    "result": "passed",
+    "effects": {"operations": 9, "executions": 9, "audits": 9, "outboxes": 9, "inventoryLedgerRows": 18},
+    "failpointRollbackCount": 5,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 snapshot freeze 필요",
+    "finalImportPlan": "운영 item-code reconciliation 필요",
+    "smokePlan": "승인된 실운영방과 비운영 identity smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "DB rollback/outbox의 원자성은 현행 JSON save/direct reply 대비 안전 차이이므로 parity 승인이 필요하다",
+    "legacy checkRank의 동적 성주·랭킹·길드 표식은 현재 player profile display name projection만으로 완전 재현되지 않아 운영 이관 전 rank projection reconciliation이 필요하다",
+    "seasoned_chicken 공용 code와 legacy-seasoned-chicken 기존 code의 운영 이관 reconciliation이 Gate 8 전에 필요하다",
+    "운영 snapshot, 운영 DB, 실운영방 smoke, backup/restore 증거가 없어 Gate 8은 미완료다"
+  ]
+}
