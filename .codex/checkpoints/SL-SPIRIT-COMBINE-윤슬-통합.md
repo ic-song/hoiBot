@@ -5,20 +5,21 @@
 - 작업 레인: 통합
 - 작업자명: 윤슬
 - 실행 ID: `윤슬-SL-SPIRIT-COMBINE-20260818T050800Z-4hd2y1`
-- 체크포인트 버전: 2
-- 마지막 갱신: 2026-08-18 14:14:00 KST
-- 작업 상태: 통합·합성 Shadow 검증 완료
+- 체크포인트 버전: 3
+- 마지막 갱신: 2026-08-18 14:17:00 KST
+- 작업 상태: `INTEGRATED`
 
 ## 소유권과 작업 위치
 
 - 선점 원장 행: 30
-- 선점 상태: `ACTIVE`
-- Heartbeat: 2026-08-18 14:08:16 KST
-- Lease 만료: 2026-08-18 15:08:16 KST
+- 선점 상태: `INTEGRATED`
+- Heartbeat: 2026-08-18 14:17:00 KST
+- Lease 만료: 2026-08-18 14:17:00 KST
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/윤슬-SL-SPIRIT-COMBINE-20260818T050800Z-4hd2y1`
 - Branch: `feature/modernization-spirit-combine-integrate-yoonseul-4hd2y1`
 - 인수 commit: `1ceed66`
-- push 상태: 미푸시
+- 통합 commit: `4abe599`
+- push 상태: `origin/feature/modernization-spirit-combine-integrate-yoonseul-4hd2y1` push 확인
 
 ## 승계한 Gate
 
@@ -45,6 +46,8 @@
 - HTTP dispatch 성공 응답 1회, 중복 이벤트 추가 전송 없음
 - MariaDB 재시작 후 조각 0, 강화석 7, operation 1, inventory ledger 2, execution/audit/outbox/delivery 각 1
 - runtime tests 164개와 TypeScript 검사 통과
+- 격리 DB `hoibot_rehearsal_spirit_shadow_4hd2y1`는 검증 후 삭제했고 스키마 부재를 확인했다.
+- 최종 Gate: 7/8 (87.5%); 운영 준비는 사용자 지시에 따라 미완료다.
 
 ## 안전 제한
 
