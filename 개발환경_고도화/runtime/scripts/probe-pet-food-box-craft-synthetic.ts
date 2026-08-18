@@ -11,12 +11,14 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 }
 
 const database = createDatabaseClient(config.database);
-const eventId = `pet-food-box-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const eventId = process.env.PET_FOOD_BOX_CRAFT_PROBE_EVENT_ID
+  ?? `pet-food-box-craft-${randomUUID().replaceAll("-", "").slice(0, 12)}`;
+const replayOnly = process.env.PET_FOOD_BOX_CRAFT_PROBE_REPLAY_ONLY === "true";
 const externalUserId = "synthetic-admin-alpha";
 const channelId = "synthetic-room-001";
 
 try {
-  await database.withTransaction(async (transaction) => {
+  if (!replayOnly) await database.withTransaction(async (transaction) => {
     await transaction.execute("UPDATE currency_accounts SET balance = 50000000, version = version + 1 WHERE player_id = 900000001 AND currency_code = 'point'");
     await transaction.execute(
       `UPDATE inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id
@@ -80,7 +82,7 @@ try {
     database: config.database.name, playerId: result.playerId,
     balances: { junk: result.junkQuantity, point: result.pointBalance, box: result.boxQuantity },
     effects: { inventoryLedger: 2, currencyLedger: 1, operation: 1, execution: 1, audit: 1, outbox: 1 },
-    idempotent: true, operationalSnapshotTouched: false
+    idempotent: true, restartReplay: replayOnly, operationalSnapshotTouched: false
   })}\n`);
 } finally {
   await database.close();
