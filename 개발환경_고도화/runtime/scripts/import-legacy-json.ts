@@ -384,6 +384,31 @@ async function importMembers(
             );
           }
         }
+        const miniPetBag = asArray(pet.miniPetBag);
+        for (const miniPetRaw of miniPetBag) {
+          const bagMiniPet = asRecord(miniPetRaw);
+          if (bagMiniPet === undefined || typeof bagMiniPet.name !== "string" || bagMiniPet.name.trim() === "") continue;
+          const definitionCode = stableLegacyCode("mini_pet", `${bagMiniPet.name}|${String(bagMiniPet.grade ?? "")}|${String(bagMiniPet.emoji ?? "")}`);
+          await transaction.execute(
+            `INSERT INTO mini_pet_definitions (code, display_name, grade_code, grade_display_name, emoji_value, active)
+             VALUES (?, ?, ?, ?, ?, TRUE) ON DUPLICATE KEY UPDATE display_name = VALUES(display_name),
+               grade_display_name = VALUES(grade_display_name), emoji_value = VALUES(emoji_value)`,
+            [definitionCode, bagMiniPet.name, typeof bagMiniPet.grade === "string" ? stableLegacyCode("grade", bagMiniPet.grade) : null,
+              typeof bagMiniPet.grade === "string" ? bagMiniPet.grade : null, typeof bagMiniPet.emoji === "string" ? bagMiniPet.emoji : null]
+          );
+          const definitions = await transaction.query<Array<{ id: bigint }>>("SELECT id FROM mini_pet_definitions WHERE code = ?", [definitionCode]);
+          if (definitions[0] !== undefined) {
+            await transaction.execute(
+              `INSERT INTO owned_mini_pets
+                (player_id, mini_pet_definition_id, custom_name, progress, enhancement_level,
+                 battle_experience, castle_experience, raid_experience, equipped)
+               VALUES (?, ?, ?, 0, ?, ?, ?, ?, FALSE)`,
+              [player.insertId, definitions[0].id, bagMiniPet.name, integerString(bagMiniPet.upgrade) ?? 0,
+                integerString(bagMiniPet.battleExp) ?? 0, integerString(bagMiniPet.castleExp) ?? 0,
+                integerString(bagMiniPet.raidExp) ?? 0]
+            );
+          }
+        }
       }
 
       await importTitles(transaction, player.insertId, undefined, sources.memberTitles[legacyKey], "player");
