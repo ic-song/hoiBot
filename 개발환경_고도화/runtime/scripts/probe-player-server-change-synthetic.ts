@@ -13,7 +13,10 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 
 const database = createDatabaseClient(config.database);
 const service = new IrisAdminCommandService(database);
-const eventId = `synthetic-server-change-${randomUUID()}`;
+const runKey = process.env.PLAYER_SERVER_PROBE_RUN_KEY ?? randomUUID().replaceAll("-", "").slice(0, 12);
+if (!/^[a-z0-9]{6,32}$/i.test(runKey)) throw new Error("PLAYER_SERVER_PROBE_RUN_KEY must be 6-32 alphanumeric characters.");
+const replayOnly = process.env.PLAYER_SERVER_PROBE_REPLAY_ONLY === "true";
+const eventId = `synthetic-server-change-${runKey}`;
 const expectedReply = "✅ [테스트베타] 님의 서버가 [합성 테스트 서버 2] 로 이동되었습니다.";
 
 // 거부 응답이 기대한 코드인지 확인합니다.
@@ -24,36 +27,38 @@ async function assertApplicationError(work: () => Promise<unknown>, code: string
 }
 
 try {
-  const before = await database.query<Array<{ game_server_id: bigint; version: bigint }>>(
-    "SELECT game_server_id, version FROM player_profiles WHERE player_id = 900000002"
-  );
-  assert.equal(before[0]?.game_server_id.toString(), "900000001");
-  assert.equal(before[0]?.version.toString(), "1");
+  if (!replayOnly) {
+    const before = await database.query<Array<{ game_server_id: bigint; version: bigint }>>(
+      "SELECT game_server_id, version FROM player_profiles WHERE player_id = 900000002"
+    );
+    assert.equal(before[0]?.game_server_id.toString(), "900000001");
+    assert.equal(before[0]?.version.toString(), "1");
 
-  await assertApplicationError(() => service.changePlayerServer({
-    externalUserId: "synthetic-non-admin-gamma",
-    channelId: "synthetic-room-001",
-    message: "/서버이동 테스트베타 합성 테스트 서버 2",
-    eventId: `denied-${eventId}`
-  }), "FORBIDDEN", 403);
+    await assertApplicationError(() => service.changePlayerServer({
+      externalUserId: "synthetic-non-admin-gamma",
+      channelId: "synthetic-room-001",
+      message: "/서버이동 테스트베타 합성 테스트 서버 2",
+      eventId: `denied-${eventId}`
+    }), "FORBIDDEN", 403);
 
-  await assertApplicationError(() => service.changePlayerServer({
-    externalUserId: "synthetic-admin-alpha",
-    channelId: "synthetic-room-001",
-    message: "/서버이동 테스트베타 합성 테스트 서버 2 안내",
-    eventId: `invalid-${eventId}`
-  }), "INVALID_SERVER", 422);
+    await assertApplicationError(() => service.changePlayerServer({
+      externalUserId: "synthetic-admin-alpha",
+      channelId: "synthetic-room-001",
+      message: "/서버이동 테스트베타 합성 테스트 서버 2 안내",
+      eventId: `invalid-${eventId}`
+    }), "INVALID_SERVER", 422);
 
-  await database.execute(
-    `INSERT INTO event_inbox
-       (event_id, provider_code, provider_event_id, external_channel_id, channel_id,
-        external_user_id, external_identity_id, event_kind, event_origin, direction,
-        payload_hash, parse_status, processing_status, received_at)
-     VALUES (?, 'iris', ?, 'synthetic-room-001', 900000001,
-       'synthetic-admin-alpha', 900000004, 'message', 'synthetic_probe', 'incoming',
-       REPEAT('0', 64), 'parsed', 'processed', UTC_TIMESTAMP(3))`,
-    [eventId, eventId]
-  );
+    await database.execute(
+      `INSERT INTO event_inbox
+         (event_id, provider_code, provider_event_id, external_channel_id, channel_id,
+          external_user_id, external_identity_id, event_kind, event_origin, direction,
+          payload_hash, parse_status, processing_status, received_at)
+       VALUES (?, 'iris', ?, 'synthetic-room-001', 900000001,
+         'synthetic-admin-alpha', 900000004, 'message', 'synthetic_probe', 'incoming',
+         REPEAT('0', 64), 'parsed', 'processed', UTC_TIMESTAMP(3))`,
+      [eventId, eventId]
+    );
+  }
 
   const command = {
     externalUserId: "synthetic-admin-alpha",
@@ -116,7 +121,9 @@ try {
     auditCount: audits.length,
     commandExecutionCount: executions.length,
     outboxCount: outbox.length,
-    exactReplyMatched: true
+    exactReplyMatched: true,
+    restartReplay: replayOnly,
+    operationalSnapshotTouched: false
   })}\n`);
 } finally {
   await database.close();

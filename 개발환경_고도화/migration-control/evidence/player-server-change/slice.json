@@ -67,17 +67,20 @@
     "transactionBoundary": "permission and target resolution precede one MariaDB transaction covering optimistic profile update, operation, audit, command execution, internal event, Iris reply, and completed result"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 3aea400fffb6e0de2c200713e2590bd45d3ac30cd321edcfffe988da4e92e41e",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_player_server_eingt9",
     "sourceReadOnly": true,
-    "replayPolicy": "fixture resets the synthetic target profile to server one/version one; command event UUID and operation idempotency key prevent duplicate mutation",
+    "replayPolicy": "fixture resets the synthetic target profile to server one/version one; the fixed command event replays after a MariaDB restart through operation idempotency",
     "checks": [
       "default operational DB name hoibot was rejected before fixture or probe mutation",
-      "synthetic fixture applied only after explicitly selecting hoibot_schema_design",
+      "all 33 migrations applied to a disposable rehearsal database only",
+      "fixture dry-run reported 71 statements; two applies and verify-only passed with 35 representative tables and 10 inventory stacks",
       "unauthorized Kakao synthetic identity returned FORBIDDEN with no operation",
       "valid command changed player 900000002 to synthetic-server-two and version 2",
       "same event replay returned the same result without a second version increment",
       "one operation, one audit, one command execution, and two outbox messages were stored",
+      "MariaDB restarted healthy and the fixed event replay preserved server two, profile version two and the same operation effects",
+      "158 runtime tests, typecheck, build, main.js check and Info.js check passed",
       "operational data snapshot was not read or mutated"
     ],
     "result": "passed"
@@ -100,6 +103,29 @@
       "synthetic-admin-alpha, synthetic-non-admin-gamma, 테스트베타, 합성 테스트 서버 2"
     ],
     "comparisonMode": "legacy-visible success/error text and intended server mutation, extended with durable transaction, optimistic version, audit, outbox, and event idempotency checks",
+    "result": "passed"
+  },
+  "shadow": {
+    "executionId": "윤슬-SL-PLAYER-SERVER-20260818T041346Z-eingt9",
+    "verifiedOn": "2026-08-18",
+    "mode": "isolated synthetic rehearsal",
+    "database": "hoibot_rehearsal_player_server_eingt9",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "fixtureChecksum": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetPlayerId": "900000002",
+    "serverCode": "synthetic-server-two",
+    "profileVersion": 2,
+    "effects": {
+      "operation": 1,
+      "audit": 1,
+      "commandExecution": 1,
+      "outbox": 2
+    },
+    "duplicateEvent": "passed",
+    "mariaDbRestartReplay": "passed",
+    "operationalSnapshotTouched": false,
     "result": "passed"
   },
   "cutover": {
