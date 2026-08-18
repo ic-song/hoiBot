@@ -7,19 +7,26 @@
 - 실행 ID: `윤슬-SL-ACCOUNT-PLATFORM-AUTH-20260818T042105Z-x13uq2`
 - 체크포인트 버전: 2
 - 마지막 갱신: 2026-08-18 13:32:38 KST
-- 작업 상태: Shadow 검증 완료
+- 작업 상태: HANDOFF_READY
 
 ## 소유권과 작업 위치
 
-- 선점 원장 행: 26
-- 선점 상태: `ACTIVE`
-- Heartbeat: 2026-08-18 13:32:38 KST
-- Lease 만료: 2026-08-18 14:32:38 KST
+- 선점 원장 행: 27 (원래 26행은 동시 고정 행 쓰기로 덮여 append로 복원)
+- 선점 상태: `HANDOFF_READY`
+- Heartbeat: 2026-08-18 13:34:30 KST
+- Lease 만료: 2026-08-18 14:34:30 KST
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/윤슬-SL-ACCOUNT-PLATFORM-AUTH-20260818T042105Z-x13uq2`
 - Branch: `feature/modernization-account-auth-yoonseul-x13uq2`
 - 기준: `origin/feature/modernization-account-auth`와 최신 `feature/prod`
 - 구현 commit: `744c49d`
 - push 상태: `origin/feature/modernization-account-auth-yoonseul-x13uq2` 푸시 완료
+
+## 동시 작업 정합성
+
+- 시작 시 26행에 먼저 append하고 단독 ACTIVE 소유권을 확인했으나, 이후 다른 실행의 고정 행 쓰기가 26행을 덮었다.
+- 다른 실행 `새봄-SL-ACCOUNT-PLATFORM-AUTH-20260818T042136Z-7bzh6v`도 같은 슬라이스의 관리 흐름을 더 넓게 검증해 `c4cf8a9/c7d422e`를 푸시했다.
+- 그 실행의 WBS·Gate 성과를 되돌리지 않고, 윤슬 실행은 27행에 append 복원했다.
+- WBS Evidence와 `AUTH-DB-001`에는 두 브랜치 증거를 함께 기록하고 `AUTH-API-001`을 append했다.
 
 ## 승계한 Gate evidence
 
@@ -43,8 +50,8 @@
 
 ## 정확한 다음 행동
 
-- `슬라이스_WBS`에서 parity·Shadow Gate를 완료하고 87.5%로 갱신한다.
-- `슬라이스_검증`과 선점 행에 evidence·commit·HANDOFF_READY를 기록한다.
+- 통합 작업자는 `c4cf8a9`의 연결 해제·재연결·한도·차단 검증을 기준으로 삼고, `744c49d`의 API 명령/용도 응답 계약과 만료·purpose 불일치 검증을 선별 병합한다.
+- 두 evidence/probe 파일은 동일 경로이므로 파일 전체 cherry-pick 대신 필요한 코드·증적을 비교해 통합한다.
 - 운영 준비 Gate는 실제 전체 계정 대사·실운영방 smoke·backup/rollback 승인 전까지 미완료로 유지한다.
 
 ## 안전
