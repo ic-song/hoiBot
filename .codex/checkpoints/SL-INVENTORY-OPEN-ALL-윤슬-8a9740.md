@@ -21,5 +21,5 @@
 
 ## 남은 작업
 
-- 구현·evidence commit 및 push 후 WBS Evidence와 Lease를 최종 hash/종료 상태로 동기화
+- 구현 commit `dc6ab13`; evidence commit/push 후 WBS Evidence와 Lease를 최종 hash/종료 상태로 동기화
 - Gate8은 운영 snapshot 대사·backup/restore·승인된 운영방 smoke·cutover 승인 전 금지
