@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-11T07:45:33.457Z",
+  "inputs": {
+    "dataInventory": "개발환경_고도화/migration-control/inventory/data-stores.json",
+    "importer": "개발환경_고도화/runtime/scripts/import-legacy-json.ts",
+    "migrations": [
+      "개발환경_고도화/runtime/migrations/001_foundation.sql",
+      "개발환경_고도화/runtime/migrations/002_event_processing.sql",
+      "개발환경_고도화/runtime/migrations/003_identity_import.sql",
+      "개발환경_고도화/runtime/migrations/004_common_codes_config.sql",
+      "개발환경_고도화/runtime/migrations/005_player_profile.sql",
+      "개발환경_고도화/runtime/migrations/006_admin_auth.sql",
+      "개발환경_고도화/runtime/migrations/007_domain_foundations.sql",
+      "개발환경_고도화/runtime/migrations/008_admin_iris_identity.sql",
+      "개발환경_고도화/runtime/migrations/009_event_identity_links.sql",
+      "개발환경_고도화/runtime/migrations/010_legacy_display_capacity.sql",
+      "개발환경_고도화/runtime/migrations/011_mini_pet_display_projection.sql",
+      "개발환경_고도화/runtime/migrations/012_badge_display_projection.sql",
+      "개발환경_고도화/runtime/migrations/013_domain_service_ledgers.sql",
+      "개발환경_고도화/runtime/migrations/014_market_fee_ledger.sql",
+      "개발환경_고도화/runtime/migrations/015_player_signup.sql",
+      "개발환경_고도화/runtime/migrations/016_site_signup_auth.sql",
+      "개발환경_고도화/runtime/migrations/017_admin_authorization_lifecycle.sql",
+      "개발환경_고도화/runtime/migrations/018_remove_legacy_admin_authorization.sql",
+      "개발환경_고도화/runtime/migrations/019_user_auth_hardening.sql",
+      "개발환경_고도화/runtime/migrations/020_trusted_identity_activity_events.sql",
+      "개발환경_고도화/runtime/migrations/021_moderation_hidden_by_host.sql",
+      "개발환경_고도화/runtime/migrations/022_monitoring_console.sql",
+      "개발환경_고도화/runtime/migrations/023_incident_content_read.sql",
+      "개발환경_고도화/runtime/migrations/024_event_content_retention.sql",
+      "개발환경_고도화/runtime/migrations/025_monitoring_event_groups.sql",
+      "개발환경_고도화/runtime/migrations/026_media_image_video_only.sql",
+      "개발환경_고도화/runtime/migrations/027_remove_reply_monitoring_group.sql"
+    ],
+    "sourceRootHash": "b7dfec6b7cb82c579f1a834434f6286c57e6364cd759b1fbcedc2a25db3f0014"
+  },
+  "importerEvidence": {
+    "parsesAllJsonFiles": true,
+    "recordsAllFileChecksums": true,
+    "storesRawPayload": false,
+    "recordsPerFileRecordCount": false,
+    "domainSourceFiles": [
+      "guildData.json",
+      "member.json",
+      "member_pet.json",
+      "member_title.json",
+      "petSweetHomeData.json",
+      "pet_title.json"
+    ]
+  },
+  "summary": {
+    "authoritativeStoreCount": 26,
+    "fullDomainImportCount": 0,
+    "manifest-only": 18,
+    "partial-domain-import": 6,
+    "source-snapshot-missing": 2
+  },
+  "coverage": [
+    {
+      "operationalPath": "/sdcard/호이랜드/attendanceLight.json",
+      "repositoryPath": "data/attendanceLight.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/board.json",
+      "repositoryPath": "data/board.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/carrotBoard.json",
+      "repositoryPath": "data/carrotBoard.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/castleBattle2.json",
+      "repositoryPath": "data/castleBattle2.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/currencyLog.json",
+      "repositoryPath": "data/currencyLog.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/freeMarket.json",
+      "repositoryPath": "data/freeMarket.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/guildData.json",
+      "repositoryPath": "data/guildData.json",
+      "status": "partial-domain-import",
+      "mappedTables": [
+        "guilds",
+        "guild_members"
+      ],
+      "reason": "importer가 일부 필드를 domain table로 적재하지만 전체 legacy field 매핑과 reconciliation 증거는 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/itemList.json",
+      "repositoryPath": "data/itemList.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/member_pet.json",
+      "repositoryPath": "data/member_pet.json",
+      "status": "partial-domain-import",
+      "mappedTables": [
+        "player_pets",
+        "mini_pet_definitions",
+        "owned_mini_pets"
+      ],
+      "reason": "importer가 일부 필드를 domain table로 적재하지만 전체 legacy field 매핑과 reconciliation 증거는 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/member_title.json",
+      "repositoryPath": "data/member_title.json",
+      "status": "partial-domain-import",
+      "mappedTables": [
+        "title_definitions",
+        "player_titles"
+      ],
+      "reason": "importer가 일부 필드를 domain table로 적재하지만 전체 legacy field 매핑과 reconciliation 증거는 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/member.json",
+      "repositoryPath": "data/member.json",
+      "status": "partial-domain-import",
+      "mappedTables": [
+        "players",
+        "player_profiles",
+        "currency_accounts",
+        "player_counters",
+        "player_passes",
+        "player_badge_assignments",
+        "leaderboards",
+        "leaderboard_entries",
+        "legacy_identity_map"
+      ],
+      "reason": "importer가 일부 필드를 domain table로 적재하지만 전체 legacy field 매핑과 reconciliation 증거는 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/memberBagCheck/memberBagCheck.json",
+      "repositoryPath": "data/memberBagCheck/memberBagCheck.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/miniPet_collection.json",
+      "repositoryPath": "data/miniPet_collection.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/miniPet_title.json",
+      "repositoryPath": "data/miniPet_title.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/packageInfo.json",
+      "repositoryPath": "data/packageInfo.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/packageLog.json",
+      "repositoryPath": "data/packageLog.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/pet_title.json",
+      "repositoryPath": "data/pet_title.json",
+      "status": "partial-domain-import",
+      "mappedTables": [
+        "title_definitions",
+        "pet_titles"
+      ],
+      "reason": "importer가 일부 필드를 domain table로 적재하지만 전체 legacy field 매핑과 reconciliation 증거는 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/petExploreData.json",
+      "repositoryPath": "data/petExploreData.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/petHomeActivityData.json",
+      "repositoryPath": null,
+      "status": "source-snapshot-missing",
+      "mappedTables": [],
+      "reason": "현재 Git data snapshot에 파일이 없어 구조·checksum·import coverage를 검증할 수 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/petHomeComments.json",
+      "repositoryPath": "data/petHomeComments.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/petHomePlacedFurniture.json",
+      "repositoryPath": null,
+      "status": "source-snapshot-missing",
+      "mappedTables": [],
+      "reason": "현재 Git data snapshot에 파일이 없어 구조·checksum·import coverage를 검증할 수 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/petSkillData.json",
+      "repositoryPath": "data/petSkillData.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/petSweetHomeData.json",
+      "repositoryPath": "data/petSweetHomeData.json",
+      "status": "partial-domain-import",
+      "mappedTables": [
+        "player_homes",
+        "furniture_definitions",
+        "owned_furniture",
+        "furniture_placements",
+        "leaderboards",
+        "leaderboard_entries"
+      ],
+      "reason": "importer가 일부 필드를 domain table로 적재하지만 전체 legacy field 매핑과 reconciliation 증거는 없음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/punchRankData.json",
+      "repositoryPath": "data/punchRankData.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/requestMonitorConfig.json",
+      "repositoryPath": "data/requestMonitorConfig.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    },
+    {
+      "operationalPath": "/sdcard/호이랜드/trialTower.json",
+      "repositoryPath": "data/trialTower.json",
+      "status": "manifest-only",
+      "mappedTables": [],
+      "reason": "importer가 파일명·checksum·parse 상태만 legacy_import_files에 기록하고 domain row는 적재하지 않음"
+    }
+  ],
+  "conclusion": "현재 importer는 전체 운영 데이터 이관기가 아니라 첫 수직 기능용 부분 importer다. DB apply 전에 26개 authoritative 저장소 각각에 전체 field mapping과 reconciliation을 추가해야 한다.",
+  "blockers": [
+    "petHomeActivityData.json과 petHomePlacedFurniture.json의 실제 운영 snapshot이 Git data에 없음",
+    "partial-domain-import 6개도 전체 field coverage와 문자·잔액·소유권 reconciliation 증거가 없음",
+    "manifest-only 파일은 checksum만 기록되며 원본 payload나 domain row가 보존되지 않음",
+    "현재 DB에는 로컬에 없는 028_character_mvp.sql 적용 이력이 남아 있어 DB apply가 차단됨"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    { "symbol": "roomToServer", "classification": "channel_server_mapping" },
+    { "symbol": "GLOBAL_CONFIG.attendance", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.level", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.daily", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.fee", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.freeMarket", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.pet", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.miniPet", "classification": "versioned_configuration" },
+    { "symbol": "GLOBAL_CONFIG.guildTerritory", "classification": "versioned_configuration" },
+    { "symbol": "filePath", "classification": "environment" },
+    { "symbol": "memberPetPath", "classification": "environment" },
+    { "symbol": "PET_SKILL_LIST", "classification": "domain_catalog" }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "castle-battle-reset-craft",
+  "status": "verified",
+  "commands": {
+    "names": ["/캐슬대전조합", "/캐슬대전조합 [수량]"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "exact no-argument command defaults to quantity one",
+      "numeric argument command accepts digits only, including legacy quantity zero",
+      "active castle siege returns silently before inventory mutation"
+    ],
+    "helpers": [],
+    "automaticFlows": ["Iris outbox worker retries the persisted success reply after restart"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.bag['양념치킨🐔']", "guildData.castleSiegeFlag"],
+    "writePaths": [
+      "member.<sender>.bag['양념치킨🐔'] decrement and delete at zero",
+      "member.<sender>.bag['캐슬대전리셋권🐶'] increment"
+    ],
+    "saveOrder": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities", "item_definitions", "inventory_stacks", "inventory_ledger",
+      "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages"
+    ],
+    "newColumns": [],
+    "constraints": [
+      "one inventory stack per player and item",
+      "inventory quantity cannot become negative",
+      "one operation per external identity and event id",
+      "one command execution per event and castle_battle_reset_craft command"
+    ],
+    "transactionBoundary": "lock active castle state, linked identity, chicken and reset-ticket stacks; then decrement and grant, append two inventory ledgers, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 a09398195894d281ee8d2492a0985b46006a0141fa5a13f7407b6fcb79ead8ec",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; each command probe replays the exact event through operation idempotency",
+    "checks": [
+      "operational database name hoibot rejected the probe before connection mutation",
+      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "synthetic chicken stack loaded at quantity 12 and reset-ticket stack at quantity zero",
+      "quantity two changed chicken 12 to zero and reset ticket zero to two",
+      "inventory ledgers 2, operation, command execution, audit and outbox were persisted once for the event",
+      "same event replay returned the stored result without a second mutation",
+      "the complete database probe passed twice with independent event IDs",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/castle/castle-battle-reset-craft-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/castle-battle-reset-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-castle-battle-reset-craft-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic linked player with 12 seasoned chickens and zero reset tickets",
+      "scripted active-siege, chicken-shortage and quantity-two cases"
+    ],
+    "comparisonMode": "accepted guards, multiplied requirement, exact replies, two inventory deltas, ledger/audit/outbox effects, silent siege block and duplicate-event behavior",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory writes in the final shared freeze window",
+    "finalImportPlan": "import every seasoned-chicken and castle-reset-ticket quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity crafts one reset ticket and verifies both balances, reply and ledger entries",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "legacy success does not call saveJsonFile, so historical in-memory changes may have been lost on restart; final import must trust the frozen file snapshot",
+    "legacy deletes the chicken bag property at zero while MariaDB keeps a zero-quantity stack row",
+    "the port adds a one-million craft limit to prevent unbounded BIGINT input",
+    "castle siege parity assumes active season status and current UTC time window are the normalized castleSiegeFlag source",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "pet-rename-ticket-craft",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/펫이름조합"
+    ],
+    "sourceFiles": [
+      "main.js"
+    ],
+    "guards": [
+      "legacy and port accept exact /펫이름조합 only",
+      "active castle siege returns silently before inventory or point mutation",
+      "junk shortage is checked before point shortage"
+    ],
+    "helpers": [
+      "checkRank"
+    ],
+    "automaticFlows": [
+      "Iris outbox worker retries the persisted success reply after restart"
+    ]
+  },
+  "legacyData": {
+    "files": [
+      "data/member.json",
+      "data/guild.json"
+    ],
+    "readPaths": [
+      "member.<sender>.bag['잡템☠️']",
+      "member.<sender>.point",
+      "guildData.castleSiegeFlag"
+    ],
+    "writePaths": [
+      "member.<sender>.bag['잡템☠️'] decrement and delete at zero",
+      "member.<sender>.point decrement",
+      "member.<sender>.bag['펫 이름변경권🎫'] increment"
+    ],
+    "saveOrder": [
+      "saveJsonFile(data, filePath)"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "028_complete_legacy_domains.sql"
+    ],
+    "tables": [
+      "external_identities",
+      "player_profiles",
+      "currency_accounts",
+      "currency_ledger",
+      "item_definitions",
+      "inventory_stacks",
+      "inventory_ledger",
+      "castle_battle_seasons",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "newColumns": [],
+    "constraints": [
+      "one currency account per player and currency",
+      "one inventory stack per player and item",
+      "inventory quantity cannot become negative",
+      "one operation per external identity and event id",
+      "one command execution per event and pet_rename_ticket_craft command"
+    ],
+    "transactionBoundary": "lock active castle state, linked identity, junk and rename-ticket stacks and point account; then apply all three balances, both ledgers, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 17dace942298b0df75b614c2325d4e20d4849b0daa50034d082a7570289f5182",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and passed two applies; each command probe replays the exact event through operation idempotency",
+    "checks": [
+      "operational database name hoibot rejected the probe before connection mutation",
+      "fixture dry-run reported 70 statements and repeated apply verified 35 representative tables",
+      "synthetic junk stack loaded at quantity 20 and rename-ticket stack at quantity 2",
+      "valid command changed junk 20 to 10, point 200000000 to 100000000 and ticket 2 to 3",
+      "inventory ledgers 2, currency ledger 1, operation, command execution, audit and outbox were persisted once for the event",
+      "same event replay returned the stored result without a second mutation",
+      "the complete database probe passed twice with independent event IDs",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/pet/pet-rename-ticket-craft-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts transaction client"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/pet-rename-ticket-craft.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-pet-rename-ticket-craft-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "synthetic linked player with 20 junk items, 200000000 point and two rename tickets",
+      "scripted active-siege, junk-shortage, point-shortage and valid-craft cases"
+    ],
+    "comparisonMode": "exact guard, validation order, exact replies, three balance deltas, ledger/audit/outbox effects, silent siege block and duplicate-event behavior",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member inventory and point writes in the final shared freeze window",
+    "finalImportPlan": "import every point balance and junk/rename-ticket quantity from the approved final snapshot before enabling mutation routing",
+    "smokePlan": "an approved test identity crafts one rename ticket and verifies all three balances, reply and ledger entries",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and mutation smoke pass; after activation use MariaDB backup and operation boundary"
+  },
+  "risks": [
+    "legacy deletes the junk bag property at zero while MariaDB keeps a zero-quantity stack row",
+    "castle siege parity assumes active season status and current UTC time window are the normalized castleSiegeFlag source",
+    "full checkRank special and guild decorations are not yet centralized; the current port covers starter rank decoration and otherwise uses the display name",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}
