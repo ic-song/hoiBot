@@ -35,7 +35,8 @@
     "db:probe:genesis-ticket-craft": "node --env-file-if-exists=.env --import tsx scripts/probe-genesis-ticket-craft-synthetic.ts",
     "db:probe:grade-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-grade-combine-synthetic.ts",
     "parity:grade-combine": "node --import tsx scripts/validate-grade-combine-parity.ts",
-    "db:probe:guaranteed-creation-open": "node --env-file-if-exists=.env --import tsx scripts/probe-guaranteed-creation-open-synthetic.ts"
+    "db:probe:guaranteed-creation-open": "node --env-file-if-exists=.env --import tsx scripts/probe-guaranteed-creation-open-synthetic.ts",
+    "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
