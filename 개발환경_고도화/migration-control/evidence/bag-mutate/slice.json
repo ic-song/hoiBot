@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "bag-mutate",
+  "status": "ported",
+  "commands": {
+    "names": ["/가방속성 [유저명] [아이템번호] [갯수]", "/가방추가 [유저명], [아이템명] [갯수]", "/소지품저장"],
+    "sourceFiles": ["main.js"],
+    "guards": ["Master-only candidates use full numeric forms", "/소지품저장 uses exact equality", "unauthorized identities are ignored"],
+    "helpers": ["generateBagOutput", "checkRank", "saveJsonFile"],
+    "automaticFlows": ["persisted Iris outbox replies are restart-retryable"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "memberBagCheckPath JSON"],
+    "readPaths": ["member.<target>.bag", "member.*.bag"],
+    "writePaths": ["member.<target>.bag.<item>", "memberBagCheckPath snapshot"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["007_domain_foundations.sql", "033_inventory_snapshots.sql"],
+    "tables": ["item_definitions", "inventory_stacks", "inventory_ledger", "inventory_snapshots", "inventory_snapshot_entries", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": ["one stack per player and item", "one snapshot per operation", "one snapshot entry per snapshot/player/item", "event-scoped idempotency per operator and command"],
+    "transactionBoundary": "each addition or complete inventory snapshot is stored with operation, audit, command execution and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql plus generated non-identifying bag item",
+    "targetDatabase": "hoibot_rehearsal_* execution database",
+    "sourceReadOnly": true,
+    "replayPolicy": "the same Iris event returns operations.result_json without a second mutation or snapshot",
+    "checks": ["migration 033", "bag addition ledger/audit/outbox", "snapshot counts/hash/entries", "duplicate event replay", "restart-safe outbox"],
+    "result": "pending"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/inventory/bag-add-service.ts", "개발환경_고도화/runtime/src/inventory/inventory-snapshot-service.ts", "개발환경_고도화/runtime/src/app.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/inventory/maria-bag-add-repository.ts", "개발환경_고도화/runtime/src/inventory/maria-inventory-snapshot-repository.ts"],
+    "tests": ["개발환경_고도화/runtime/test/bag-mutate.test.ts", "개발환경_고도화/runtime/scripts/probe-bag-mutate-synthetic.ts"]
+  },
+  "parity": {
+    "fixtures": ["pure command guard and authorization fixtures", "synthetic linked administrator and target inventory"],
+    "comparisonMode": "exact command parsing and replies plus relational quantity, ledger, snapshot, audit, outbox and duplicate-event effects",
+    "result": "pending"
+  },
+  "cutover": {
+    "freezePlan": "stop member bag writes during the shared final inventory freeze",
+    "finalImportPlan": "dry-run and import every member bag property into item_definitions and inventory_stacks, then reconcile entry count and quantity total",
+    "smokePlan": "an approved operator adds and restores one synthetic item, creates one inventory snapshot and verifies its hash and entry count",
+    "rollbackPlan": "keep Rhino routing active until rehearsal and operating approval; disable the MariaDB adapter route to return to legacy handling"
+  },
+  "risks": [
+    "this PC has no Docker or configured MariaDB connection, so the new migration and relational probe remain pending",
+    "operational member.json import and live-room smoke require total-operator approval and were not executed",
+    "the snapshot reply intentionally replaces the Android path with a DB snapshot URI"
+  ]
+}

@@ -1,0 +1,73 @@
+name: hoibot-modernization
+
+services:
+  server:
+    image: ${HOIBOT_SERVER_IMAGE:-hoibot-server:local}
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3002
+      IRIS_SHARED_TOKEN: ${IRIS_SHARED_TOKEN:-replace-before-server-start}
+      IRIS_BASE_URL: ${IRIS_BASE_URL:-http://host.docker.internal:3000}
+      IRIS_ALLOWED_OPEN_CHAT_IDS: ${IRIS_ALLOWED_OPEN_CHAT_IDS:-}
+      IRIS_OPEN_CHAT_OBSERVATION_MODE: ${IRIS_OPEN_CHAT_OBSERVATION_MODE:-designated_only}
+      IRIS_IMAGE_FORWARD_ROOM_ID: ""
+      RETAINED_EVENT_CONTENT_ENABLED: ${RETAINED_EVENT_CONTENT_ENABLED:-false}
+      RETAINED_EVENT_CONTENT_DAYS: ${RETAINED_EVENT_CONTENT_DAYS:-7}
+      RETAINED_EVENT_CONTENT_CHANNEL_IDS: ${RETAINED_EVENT_CONTENT_CHANNEL_IDS:-}
+      RETAINED_EVENT_CONTENT_SCOPE: ${RETAINED_EVENT_CONTENT_SCOPE:-designated_only}
+      RETAINED_EVENT_CONTENT_STORAGE_DIRECTORY: /app/var/retained-event-content
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: mariadb
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${MARIADB_USER:-hoibot_app}
+      DATABASE_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD}
+      DATABASE_NAME: ${MARIADB_DATABASE:-hoibot}
+    ports:
+      - "127.0.0.1:${HOIBOT_SERVER_HOST_PORT:-3002}:3002"
+    volumes:
+      - hoibot_retained_event_content:/app/var/retained-event-content
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3002/health/ready').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - hoibot_private
+
+  mariadb:
+    image: mariadb:11.8.8@sha256:efb4959ef2c835cd735dbc388eb9ad6aab0c78dd64febcd51bc17481111890c4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-hoibot}
+      MARIADB_USER: ${MARIADB_USER:-hoibot_app}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:?set MARIADB_PASSWORD}
+      TZ: UTC
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "127.0.0.1:${MARIADB_HOST_PORT:-3308}:3306"
+    volumes:
+      - hoibot_mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    networks:
+      - hoibot_private
+
+volumes:
+  hoibot_mariadb_data:
+  hoibot_retained_event_content:
+
+networks:
+  hoibot_private:
