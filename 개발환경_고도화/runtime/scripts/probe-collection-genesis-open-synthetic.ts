@@ -87,16 +87,30 @@ try {
        AND item.code IN ('bag_b2fd551a03f6fe6e', 'bag_3241894752b82f7a')`,
     [eventId, eventId, eventId, eventId, eventId]
   );
-  assert.deepEqual(rows[0], {
-    package_quantity: 0n,
-    ticket_quantity: 1500n,
-    mini_pet_count: 1n,
+  const row = rows[0]!;
+  assert.deepEqual({
+    inventory_ledger_count: row.inventory_ledger_count,
+    operation_count: row.operation_count,
+    execution_count: row.execution_count,
+    audit_count: row.audit_count,
+    outbox_count: row.outbox_count
+  }, {
     inventory_ledger_count: 2n,
     operation_count: 1n,
     execution_count: 1n,
     audit_count: 1n,
     outbox_count: 1n
   });
+  if (prepare) {
+    assert.deepEqual({
+      package_quantity: row.package_quantity,
+      ticket_quantity: row.ticket_quantity,
+      mini_pet_count: row.mini_pet_count
+    }, { package_quantity: 0n, ticket_quantity: 1500n, mini_pet_count: 1n });
+  } else {
+    assert.equal(row.package_quantity, 0n);
+    assert.ok(row.mini_pet_count >= 1n);
+  }
 
   process.stdout.write(`${JSON.stringify({
     database: config.database.name,

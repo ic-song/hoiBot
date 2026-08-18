@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "minipet-integration-batch-01",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-MINIPET-INTEGRATION-BATCH-01",
+    "worker": "다온",
+    "executionId": "다온-SL-MINIPET-INTEGRATION-BATCH-01-20260818T064441Z-n5lmq6",
+    "claimRow": 40
+  },
+  "commands": {
+    "ids": ["CMD-05-0028", "CMD-05-0029", "CMD-05-0030"],
+    "names": ["/컬렉션창조오픈", "/컬렉션창세오픈", "/미니펫창세조합", "/미니펫조합창세", "/미니펫조합창조", "/미니펫조합태초+", "/창조오픈"],
+    "sourceFiles": ["main.js"],
+    "guards": ["각 오픈·티켓 명령은 exact guard를 유지", "등급 조합 broad startsWith와 parseInt 접미 허용을 현행 parity로 보존"],
+    "helpers": ["공용 MariaDB transaction client", "operations replay", "command_executions", "command_audit", "outbox_messages"],
+    "automaticFlows": ["Iris app.ts에서 다섯 서비스 guard를 각각 한 번 dispatch", "동일 event는 저장된 operation 결과를 재생"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/miniPetData.json", "data/guild.json"],
+    "readPaths": ["각 원 슬라이스 evidence의 현행 JSON 경로"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["Rhino 운영 source와 저장 흐름은 변경하지 않음"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["034_collection_creation_open.sql", "035_collection_genesis_open.sql", "036_guaranteed_creation_open.sql"],
+    "tables": ["item_definitions", "inventory_stacks", "inventory_ledger", "mini_pet_definitions", "owned_mini_pets", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": ["migration 번호가 034·035·036으로 유일", "모든 서비스 mutation과 execution/audit/outbox가 원자 transaction에 포함", "event별 completed operation 재생으로 중복 mutation 차단"],
+    "newColumns": [],
+    "transactionBoundary": "각 원 슬라이스 서비스의 lock·inventory/mini-pet mutation·ledger·execution·audit·outbox·operation 완료를 동일 transaction으로 유지"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture와 각 probe 전용 synthetic rows",
+    "targetDatabase": "hoibot_rehearsal_integration_n5lmq6",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~036 두 번 적용 후 다섯 probe prepare, MariaDB restart, prepare 없는 replay",
+    "checks": ["migration-count 36 반복 적용", "034/035/036 checksum 고정", "fixture apply 후 verify-only 35 tables", "다섯 슬라이스 operation/execution/audit/outbox 멱등성", "등급 조합 성공·실패·자동·수동·경계·누락 reward rollback", "공유 티켓·미니펫 상태 변경 뒤 컬렉션 replay 검증"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["collection-creation-open-service.ts", "collection-genesis-open-service.ts", "genesis-ticket-craft-service.ts", "grade-combine-service.ts", "guaranteed-creation-open-service.ts", "app.ts"],
+    "repositories": ["database.ts transaction client", "공용 mini_pet_definitions/owned_mini_pets 및 operation 계열 테이블"],
+    "tests": ["전체 runtime tests 200/200", "mini-pet-integration.test.ts", "다섯 synthetic MariaDB probes", "validate-grade-combine-parity.ts", "다섯 원 슬라이스 및 통합 evidence validator"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "각 원 슬라이스 synthetic probe"],
+    "comparisonMode": "원 슬라이스 parity 결과를 보존하고 공용 dispatch·migration·fixture·restart 상호 운용을 추가 검증",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "전용 비식별 MariaDB container",
+    "result": "passed",
+    "liveTraffic": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 최종 운영 snapshot freeze 필요",
+    "finalImportPlan": "정의 151건과 운영 member/member_pet snapshot reconciliation 필요",
+    "smokePlan": "승인된 비운영 identity와 실운영방에서 7개 명령 smoke 필요",
+    "rollbackPlan": "운영 승인 전 Rhino routing 유지; 불일치 시 DB route 비활성화"
+  },
+  "integration": {
+    "sourceHeads": ["4b1ccdb", "7b1d8b5", "7b72982", "96a4727", "c14adb2"],
+    "selectedImplementationCommits": ["7f85c9e", "83bdcaf", "f933b9b", "8116800", "00932f6"],
+    "sharedFoundation": "924d359의 개발환경_고도화/runtime 경계만 승계",
+    "conflictsResolved": ["app.ts import와 다섯 dispatch 공존", "package.json probe/parity script 공존", "034/035/036 migration 유일성", "공용 fixture loader 입력 복원", "컬렉션 restart probe의 공유 잔액 절대값 가정 제거"]
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "broad startsWith와 parseInt 접미 허용은 현행 parity 위험으로 보존했으며 수정하지 않았다",
+    "reward 정의 누락 시 DB rollback으로 source를 보존하는 안전 차이는 parity 승인 필요 상태다",
+    "실운영 snapshot reconciliation, backup/restore, 승인된 실운영방 smoke와 cutover 증거가 없어 Gate 8은 미완료다",
+    "공통 고도화 런타임 전체가 아직 feature/prod에 없으므로 통합 브랜치 검수 후 별도 승인된 반영 절차가 필요하다"
+  ]
+}
