@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "bag-read",
+  "status": "verified",
+  "commands": {
+    "names": ["/가방", "ㄴㄴㄴ"],
+    "sourceFiles": ["main.js"],
+    "guards": ["msg === \"/가방\" || msg === \"ㄴㄴㄴ\""],
+    "helpers": ["generateBagOutput", "normalizeItemName", "checkRank"],
+    "automaticFlows": []
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/guildData.json"],
+    "readPaths": ["member.<user>.bag", "adv", "rank and badge fields read by checkRank"],
+    "writePaths": [],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["003_identity_import.sql", "004_common_codes_config.sql", "007_domain_foundations.sql"],
+    "tables": ["external_identities", "item_definitions", "inventory_stacks", "configuration_sets", "configuration_values"],
+    "constraints": [
+      "external_identities(provider_code, external_user_id) unique",
+      "inventory_stacks(player_id, item_id) primary key",
+      "inventory_stacks.item_id -> item_definitions.id",
+      "item_definitions.metadata_json.legacyBagOrder stores legacy special-item ordering"
+    ],
+    "transactionBoundary": "read-only identity and inventory projection; repository queries only"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 c74a6480ebde28d25aae7c0a1cf1c061e8a29c77d6c2c1036460c804e0b86fa5",
+    "targetDatabase": "hoibot_rehearsal_cmd_01_0001_41f6bd",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic IDs and upsert statements; repeat apply verified",
+    "checks": [
+      "31 migrations applied to an execution-specific rehearsal database",
+      "fixture applied twice with unchanged counts across 35 representative tables",
+      "repository returned five positive inventory stacks for synthetic-user-alpha",
+      "production database name guard rejected hoibot before any fixture write",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/inventory/get-bag-service.ts",
+      "개발환경_고도화/runtime/src/inventory/legacy-bag-formatter.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": ["개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts"],
+    "tests": [
+      "개발환경_고도화/runtime/test/bag-read.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-bag-read-synthetic.ts"
+    ]
+  },
+  "parity": {
+    "fixtures": ["synthetic-user-alpha stack projection", "pure formatter intimacy/special/Korean/non-Korean fixture"],
+    "comparisonMode": "exact guard and exact reply text including line breaks, emoji, numbering and ordering",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "전체 기능 검증 후 Rhino write freeze",
+    "finalImportPlan": "최신 전체 운영 snapshot import에서 모든 special item의 legacyBagOrder와 가방 광고 설정을 reconcile",
+    "smokePlan": "승인된 운영 identity로 /가방과 ㄴㄴㄴ exact reply, 10개/11개 경계와 빈 가방을 확인",
+    "rollbackPlan": "read routing 활성화 전에는 Rhino 유지; 신규 adapter route를 비활성화해 즉시 legacy read로 복귀"
+  },
+  "risks": [
+    "운영 snapshot importer의 전체 bag stack과 legacyBagOrder 적재·대사는 최종 데이터 이관 단계 전까지 미완료",
+    "checkRank 전체 badge 우선순위는 이 슬라이스에서 재포팅하지 않아 합성 ownerLabel만 exact 검증됨",
+    "castleSiegeFlag 무응답은 서버 전역 캐슬 상태 projection이 연결될 때 adapter gate로 추가 검증 필요",
+    "실운영방 smoke와 운영 identity 연결은 승인 전 미실행"
+  ]
+}
