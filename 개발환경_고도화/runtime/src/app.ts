@@ -207,6 +207,7 @@ import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventor
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
 import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
+import { CombineAllService, readCombineAllVariant } from "./crafting/combine-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import {
@@ -3483,6 +3484,29 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
+      const combineAllVariant = readCombineAllVariant(normalizedEvent.message);
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && combineAllVariant !== null
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new CombineAllService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            const errorCode = combineAllVariant === "primary" ? "combine_all_error" : "combine_all_2_error";
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, errorCode, error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isRaidStrikeSealCraftCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {

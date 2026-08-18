@@ -106,6 +106,7 @@
     "db:probe:spirit-name-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-combine-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
+    "db:shadow:combine-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-combine-all-synthetic.ts",
     "db:probe:partial-dispatch": "node --env-file-if-exists=.env --import tsx scripts/probe-partial-dispatch-synthetic.ts",
     "db:probe:matzang-command": "tsx scripts/probe-matzang-command-synthetic.ts",
     "db:probe:matzang-time-check": "tsx scripts/probe-matzang-time-check-synthetic.ts",
