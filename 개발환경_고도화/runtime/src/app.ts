@@ -43,6 +43,7 @@ import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet
 import { CollectionCreationOpenService, isCollectionCreationOpenCommand } from "./mini-pet/collection-creation-open-service.js";
 import { CollectionGenesisOpenService, isCollectionGenesisOpenCommand } from "./mini-pet/collection-genesis-open-service.js";
 import { GenesisTicketCraftService, isGenesisTicketCraftCommand } from "./mini-pet/genesis-ticket-craft-service.js";
+import { GradeCombineService, isGradeCombineCommand } from "./mini-pet/grade-combine-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
 import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
@@ -941,6 +942,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_food_box_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGradeCombineCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GradeCombineService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "succeeded" || result.status === "failed") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_grade_combine", error.message));
           } else {
             throw error;
           }
