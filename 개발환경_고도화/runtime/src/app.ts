@@ -32,6 +32,9 @@ import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
+import { MariaMinipetPackageGrantRepository } from "./admin/maria-minipet-package-grant-repository.js";
+import { isMinipetPackageGrantCandidate } from "./admin/minipet-package-grant-policy.js";
+import { MinipetPackageGrantService } from "./admin/minipet-package-grant-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
@@ -817,6 +820,36 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "change_player_server", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (processing !== undefined && !processing.duplicate
+        && isMinipetPackageGrantCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new MinipetPackageGrantService(new MariaMinipetPackageGrantRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId,
+            roomAllowed: isOperationalChannel
+          });
+          if (result.status === "granted" && !result.duplicate) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (isOperationalChannel
+            && (result.status === "invalid_format" || result.status === "invalid_amount" || result.status === "target_not_found")) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "admin_minipet_package_grant_error", result.data
+            ));
+          }
+        } catch (error) {
+          if (isOperationalChannel && error instanceof ApplicationError && error.statusCode === 409) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "admin_minipet_package_grant_error", error.message
+            ));
           } else {
             throw error;
           }
