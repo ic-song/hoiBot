@@ -18,7 +18,9 @@ if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0
 
 const database = createDatabaseClient(config.database);
 const service = new SignupService(database);
-const runKey = randomUUID().replaceAll("-", "").slice(0, 12);
+const runKey = process.env.SIGNUP_PROBE_RUN_KEY ?? randomUUID().replaceAll("-", "").slice(0, 12);
+if (!/^[a-z0-9]{6,32}$/i.test(runKey)) throw new Error("SIGNUP_PROBE_RUN_KEY must be 6-32 alphanumeric characters.");
+const replayOnly = process.env.SIGNUP_PROBE_REPLAY_ONLY === "true";
 const channelId = "synthetic-room-001";
 const acceptExternalUserId = `synthetic-signup-accept-${runKey}`;
 const rejectExternalUserId = `synthetic-signup-reject-${runKey}`;
@@ -49,6 +51,16 @@ async function seedCandidate(externalUserId: string, displayName: string): Promi
   return result.insertId;
 }
 
+// 재시작 검증용으로 이미 생성된 합성 Kakao identity를 조회합니다.
+async function loadCandidate(externalUserId: string): Promise<bigint> {
+  const rows = await database.query<Array<{ id: bigint }>>(
+    "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+    [externalUserId]
+  );
+  if (rows.length !== 1) throw new Error(`Expected one synthetic signup identity, found ${rows.length}.`);
+  return rows[0].id;
+}
+
 // 기대한 가입 오류 코드와 상태인지 확인합니다.
 async function assertApplicationError(work: () => Promise<unknown>, code: string, statusCode: number): Promise<void> {
   await assert.rejects(work, (error: unknown) =>
@@ -57,6 +69,78 @@ async function assertApplicationError(work: () => Promise<unknown>, code: string
 }
 
 try {
+  if (replayOnly) {
+    const acceptIdentityId = await loadCandidate(acceptExternalUserId);
+    const requestCommand = {
+      externalUserId: acceptExternalUserId,
+      displayName: acceptDisplayName,
+      channelId,
+      message: "/가입",
+      eventId: `signup-request-${runKey}`
+    };
+    const requestResult = await service.handle(requestCommand);
+    assert.equal(requestResult.status, "pending");
+    assert.equal(requestResult.data, buildSignupTermsMessage());
+
+    const acceptCommand = { ...requestCommand, message: "/시작한다", eventId: `signup-accept-${runKey}` };
+    const acceptResult = await service.handle(acceptCommand);
+    assert.equal(acceptResult.status, "accepted");
+    assert.equal(acceptResult.data, buildSignupWelcomeMessage());
+    assert.ok(acceptResult.playerId);
+
+    const replayState = await database.query<Array<{
+      identity_count: bigint; player_count: bigint; profile_count: bigint; pet_count: bigint;
+      currency_count: bigint; counter_count: bigint; attendance_count: bigint;
+      operation_count: bigint; audit_count: bigint; execution_count: bigint; outbox_count: bigint;
+    }>>(
+      `SELECT
+         (SELECT COUNT(*) FROM external_identities WHERE id = ? AND player_id = ?) AS identity_count,
+         (SELECT COUNT(*) FROM players WHERE id = ?) AS player_count,
+         (SELECT COUNT(*) FROM player_profiles WHERE player_id = ?) AS profile_count,
+         (SELECT COUNT(*) FROM player_pets WHERE player_id = ?) AS pet_count,
+         (SELECT COUNT(*) FROM currency_accounts WHERE player_id = ?) AS currency_count,
+         (SELECT COUNT(*) FROM player_counters WHERE player_id = ?) AS counter_count,
+         (SELECT COUNT(*) FROM player_attendance WHERE player_id = ? AND attendance_count = 3) AS attendance_count,
+         (SELECT COUNT(*) FROM operations WHERE actor_type = 'external_identity' AND actor_id = ?) AS operation_count,
+         (SELECT COUNT(*) FROM command_audit WHERE actor_type = 'external_identity' AND actor_id = ?) AS audit_count,
+         (SELECT COUNT(*) FROM command_executions execution JOIN operations operation_row ON operation_row.id = execution.operation_id WHERE operation_row.actor_type = 'external_identity' AND operation_row.actor_id = ?) AS execution_count,
+         (SELECT COUNT(*) FROM outbox_messages outbox JOIN operations operation_row ON operation_row.id = outbox.operation_id WHERE operation_row.actor_type = 'external_identity' AND operation_row.actor_id = ?) AS outbox_count`,
+      [acceptIdentityId, acceptResult.playerId, acceptResult.playerId, acceptResult.playerId,
+        acceptResult.playerId, acceptResult.playerId, acceptResult.playerId, acceptResult.playerId,
+        acceptIdentityId, acceptIdentityId, acceptIdentityId, acceptIdentityId]
+    );
+    assert.deepEqual(replayState, [{
+      identity_count: 1n, player_count: 1n, profile_count: 1n, pet_count: 1n,
+      currency_count: 2n, counter_count: 11n, attendance_count: 1n,
+      operation_count: 2n, audit_count: 2n, execution_count: 2n, outbox_count: 3n
+    }]);
+
+    const rejectIdentityId = await loadCandidate(rejectExternalUserId);
+    const rejectRequest = await service.handle({
+      externalUserId: rejectExternalUserId, displayName: rejectDisplayName, channelId,
+      message: "/가입", eventId: `signup-reject-request-${runKey}`
+    });
+    assert.equal(rejectRequest.status, "pending");
+    const rejectResult = await service.handle({
+      externalUserId: rejectExternalUserId, displayName: rejectDisplayName, channelId,
+      message: "거절한다", eventId: `signup-reject-${runKey}`
+    });
+    assert.equal(rejectResult.status, "rejected");
+    const rejected = await database.query<Array<{ player_count: bigint; rejected_count: bigint }>>(
+      `SELECT
+         (SELECT COUNT(*) FROM external_identities WHERE id = ? AND player_id IS NOT NULL) AS player_count,
+         (SELECT COUNT(*) FROM player_signup_requests WHERE external_identity_id = ? AND status = 'rejected' AND normalized_display_name IS NULL) AS rejected_count`,
+      [rejectIdentityId, rejectIdentityId]
+    );
+    assert.deepEqual(rejected, [{ player_count: 0n, rejected_count: 1n }]);
+
+    process.stdout.write(`${JSON.stringify({
+      sliceId: "player-signup", acceptedPlayerId: acceptResult.playerId,
+      acceptedInitialRows: { pet: 1, currency: 2, counter: 11, preSignupAttendance: 3 },
+      acceptedEffects: { operation: 2, audit: 2, commandExecution: 2, outbox: 3 },
+      rejectedWithoutPlayer: true, restartReplay: true, operationalSnapshotTouched: false
+    })}\n`);
+  } else {
   await assertApplicationError(() => service.handle({
     externalUserId: acceptExternalUserId,
     displayName: acceptDisplayName,
@@ -265,8 +349,11 @@ try {
     rejectedWithoutPlayer: true,
     rejectedNameReservationReleased: true,
     rejectedIdempotencyVerified: true,
-    exactRejectReplyMatched: true
+    exactRejectReplyMatched: true,
+    restartReplay: false,
+    operationalSnapshotTouched: false
   })}\n`);
+  }
 } finally {
   await database.close();
 }

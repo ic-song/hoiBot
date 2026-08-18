@@ -96,19 +96,21 @@
     "transactionBoundary": "request stores durable pending state plus audit/reply; accept atomically creates player/profile/pet/currency/counters, transfers pre-signup attendance, links identity, accepts request, audits and queues replies; reject releases the reserved name without creating a player"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 16570400e8ed5be38333a3513a0ed9b851bc031dd41ab0136ed96799afd4a352 plus per-run synthetic Kakao candidates",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9 plus deterministic synthetic Kakao candidates wj1t6v",
+    "targetDatabase": "hoibot_rehearsal_player_signup_wj1t6v",
     "sourceReadOnly": true,
-    "replayPolicy": "fixed fixture IDs use upsert and passed two applies; command probes use unique synthetic event/identity keys and replay each state-changing event against operation idempotency",
+    "replayPolicy": "fixed fixture IDs use upsert and passed two applies; fixed request, accept and reject events replay after a MariaDB restart against operation idempotency",
     "checks": [
       "operational database name hoibot rejected the probe before mutation",
-      "migration 029 applied to development schema only",
-      "fixture applied twice and verify-only passed with 29 representative tables",
+      "all 33 migrations applied to a disposable rehearsal database only",
+      "fixture dry-run reported 71 statements; two applies and verify-only passed with 35 representative tables and 10 inventory stacks",
       "pending request persisted without a player and survived a new database client",
       "accept created one profile, one empty pet, two currencies and eleven counters",
       "three pre-signup attendances and server assignment transferred atomically",
       "request and accept replays did not duplicate operations, audit, command executions or outbox",
       "reject released the normalized name and created no player",
+      "MariaDB restarted healthy and fixed request, accept and reject events preserved one accepted player and zero rejected players",
+      "158 runtime tests, typecheck, build, main.js check and Info.js check passed",
       "operational data snapshots were not read or mutated"
     ],
     "result": "passed"
@@ -136,6 +138,35 @@
       "fixed synthetic pending-signup fixture"
     ],
     "comparisonMode": "five exact guards and exact terms/welcome/reject replies; normalized initial member state and attendance delta; intended durable correction for restart, rejection residue, audit, outbox and duplicate events",
+    "result": "passed"
+  },
+  "shadow": {
+    "executionId": "새봄-SL-PLAYER-SIGNUP-20260818T035447Z-wj1t6v",
+    "verifiedOn": "2026-08-18",
+    "mode": "isolated synthetic rehearsal",
+    "database": "hoibot_rehearsal_player_signup_wj1t6v",
+    "migrationCount": 33,
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "fixtureChecksum": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "acceptedInitialRows": {
+      "player": 1,
+      "profile": 1,
+      "pet": 1,
+      "currency": 2,
+      "counter": 11,
+      "preSignupAttendance": 3
+    },
+    "acceptedEffects": {
+      "operation": 2,
+      "audit": 2,
+      "commandExecution": 2,
+      "outbox": 3
+    },
+    "rejectedPlayerCount": 0,
+    "duplicateEvents": "passed",
+    "mariaDbRestartReplay": "passed",
+    "operationalSnapshotTouched": false,
     "result": "passed"
   },
   "cutover": {
