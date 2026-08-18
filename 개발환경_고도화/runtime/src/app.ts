@@ -76,6 +76,9 @@ import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
 import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
 import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
+import { MariaStarterPackageOpenRepository } from "./package/maria-starter-package-open-repository.js";
+import { isStarterPackageOpenCommand } from "./package/starter-package-open-policy.js";
+import { StarterPackageOpenService } from "./package/starter-package-open-service.js";
 import { isCastleCardOpenCommandCandidate } from "./inventory/castle-card-open-policy.js";
 import { CastleCardOpenService } from "./inventory/castle-card-open-service.js";
 import { MariaCastleCardOpenRepository } from "./inventory/maria-castle-card-open-repository.js";
@@ -974,6 +977,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_grade_combine", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isStarterPackageOpenCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new StarterPackageOpenService(new MariaStarterPackageOpenRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if ((result.status === "opened" || result.status === "package_required") && !result.duplicate) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "starter_package_open_error", error.message));
           } else {
             throw error;
           }

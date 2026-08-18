@@ -117,7 +117,17 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000020, 'castle_rare_unit', '캐슬레어유닛⭐(+100💕)', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
   (900000021, 'pet_food', '펫먹이🍼', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
   (900000022, 'pet_food_box', '펫먹이상자📦(/상자오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
-  (900000023, 'trash_box', '잡템상자☠', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1)
+  (900000023, 'trash_box', '잡템상자☠', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-INVENTORY-CASTLE-CARD-OPEN'), TRUE, 1),
+  (900000024, 'starter_package_01', '초보자 스타터패키지🌟[1](/초보오픈1)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06', 'packageCode', 'starter_01', 'legacyBagKey', '초보자 스타터패키지🌟[1](/초보오픈1)'), TRUE, 1),
+  (900000025, 'starter_package_02', '초보자 스타터패키지🌟[2](/초보오픈2)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06', 'packageCode', 'starter_02', 'legacyBagKey', '초보자 스타터패키지🌟[2](/초보오픈2)'), TRUE, 1),
+  (900000026, 'starter_package_03', '초보자 스타터패키지🌟[3](/초보오픈3)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06', 'packageCode', 'starter_03', 'legacyBagKey', '초보자 스타터패키지🌟[3](/초보오픈3)'), TRUE, 1),
+  (900000027, 'starter_package_04', '초보자 스타터패키지🌟[4](/초보오픈4)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06', 'packageCode', 'starter_04', 'legacyBagKey', '초보자 스타터패키지🌟[4](/초보오픈4)'), TRUE, 1),
+  (900000028, 'starter_package_05', '초보자 스타터패키지🌟[5](/초보오픈5)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06', 'packageCode', 'starter_05', 'legacyBagKey', '초보자 스타터패키지🌟[5](/초보오픈5)'), TRUE, 1),
+  (900000029, 'starter_package_06', '초보자 스타터패키지🌟[6](/초보오픈6)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06', 'packageCode', 'starter_06', 'legacyBagKey', '초보자 스타터패키지🌟[6](/초보오픈6)'), TRUE, 1),
+  (900000030, 'tier_upgrade_ticket', '티어 승급티켓🎟', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
+  (900000031, 'pet_enhance_stone', '펫 강화석⭐', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
+  (900000032, 'spirit_stone', '정령 강화석🥀', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
+  (900000033, 'lucky_box', '럭키박스🍀(/럭키오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
@@ -309,13 +319,53 @@ INSERT INTO castle_battle_participants (season_id, guild_id, score, rank_no, sta
   (900000001, 900000002, 800.000, 2, 'registered')
 ON DUPLICATE KEY UPDATE score = VALUES(score), rank_no = VALUES(rank_no), state_code = VALUES(state_code);
 
-INSERT INTO package_definitions (id, code, display_name, price_currency_code, price_amount, purchase_limit, starts_at, ends_at, active)
-VALUES (900000001, 'synthetic-starter-package', '합성 스타터 패키지', 'point', 100.000, 1, '2026-01-01 00:00:00.000', '2027-01-01 00:00:00.000', TRUE)
+INSERT INTO package_definitions (id, code, display_name, price_currency_code, price_amount, purchase_limit, starts_at, ends_at, active) VALUES
+  (900000001, 'synthetic-starter-package', '합성 스타터 패키지', 'point', 100.000, 1, '2026-01-01 00:00:00.000', '2027-01-01 00:00:00.000', TRUE),
+  (900000002, 'starter_01', '초보 패키지 1', NULL, NULL, NULL, NULL, NULL, TRUE),
+  (900000003, 'starter_02', '초보 패키지 2', NULL, NULL, NULL, NULL, NULL, TRUE),
+  (900000004, 'starter_03', '초보 패키지 3', NULL, NULL, NULL, NULL, NULL, TRUE),
+  (900000005, 'starter_04', '초보 패키지 4', NULL, NULL, NULL, NULL, NULL, TRUE),
+  (900000006, 'starter_05', '초보 패키지 5', NULL, NULL, NULL, NULL, NULL, TRUE),
+  (900000007, 'starter_06', '초보 패키지 6', NULL, NULL, NULL, NULL, NULL, TRUE)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), price_currency_code = VALUES(price_currency_code), price_amount = VALUES(price_amount), purchase_limit = VALUES(purchase_limit), active = VALUES(active);
 
 INSERT INTO package_contents (package_id, sequence_no, asset_type_code, asset_code, quantity) VALUES
   (900000001, 1, 'item', 'synthetic-carrot', 5.000),
-  (900000001, 2, 'currency', 'diamond', 1.000)
+  (900000001, 2, 'currency', 'diamond', 1.000),
+  (900000002, 1, 'item', 'tier_upgrade_ticket', 10.000),
+  (900000002, 2, 'item', 'spirit_stone', 100.000),
+  (900000002, 3, 'item', 'pet_food_special', 30.000),
+  (900000002, 4, 'item', 'pet_food', 700.000),
+  (900000002, 5, 'currency', 'point', 100000000.000),
+  (900000003, 1, 'item', 'tier_upgrade_ticket', 10.000),
+  (900000003, 2, 'item', 'spirit_stone', 100.000),
+  (900000003, 3, 'item', 'pet_food_special', 35.000),
+  (900000003, 4, 'item', 'pet_food', 700.000),
+  (900000003, 5, 'currency', 'point', 100000000.000),
+  (900000004, 1, 'item', 'tier_upgrade_ticket', 10.000),
+  (900000004, 2, 'item', 'pet_enhance_stone', 200.000),
+  (900000004, 3, 'item', 'spirit_stone', 100.000),
+  (900000004, 4, 'item', 'pet_food_special', 35.000),
+  (900000004, 5, 'item', 'pet_food', 700.000),
+  (900000004, 6, 'currency', 'point', 100000000.000),
+  (900000005, 1, 'item', 'tier_upgrade_ticket', 10.000),
+  (900000005, 2, 'item', 'pet_enhance_stone', 200.000),
+  (900000005, 3, 'item', 'spirit_stone', 200.000),
+  (900000005, 4, 'item', 'pet_food_special', 35.000),
+  (900000005, 5, 'currency', 'point', 100000000.000),
+  (900000006, 1, 'item', 'tier_upgrade_ticket', 10.000),
+  (900000006, 2, 'item', 'pet_enhance_stone', 200.000),
+  (900000006, 3, 'item', 'spirit_stone', 200.000),
+  (900000006, 4, 'item', 'pet_food_special', 35.000),
+  (900000006, 5, 'item', 'pet_food', 1000.000),
+  (900000006, 6, 'currency', 'point', 100000000.000),
+  (900000007, 1, 'item', 'tier_upgrade_ticket', 10.000),
+  (900000007, 2, 'item', 'lucky_box', 30.000),
+  (900000007, 3, 'item', 'pet_enhance_stone', 200.000),
+  (900000007, 4, 'item', 'spirit_stone', 200.000),
+  (900000007, 5, 'item', 'pet_food_special', 35.000),
+  (900000007, 6, 'item', 'pet_food', 1000.000),
+  (900000007, 7, 'currency', 'point', 100000000.000)
 ON DUPLICATE KEY UPDATE asset_type_code = VALUES(asset_type_code), asset_code = VALUES(asset_code), quantity = VALUES(quantity);
 
 INSERT INTO operations (id, operation_key, idempotency_scope, idempotency_key, actor_type, actor_id, source_code, status, result_json, completed_at) VALUES

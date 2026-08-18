@@ -17,6 +17,7 @@
 - `/펫먹이조합`을 검증하기 위한 `펫먹이상자📦(/상자오픈)` 0개 stack을 포함한다.
 - `/정령오픈`·`/치킨오픈`을 검증하기 위한 상자·보상 item definition 4개를 포함하되, 시나리오별 stack은 전용 probe가 격리 DB에서 준비한다.
 - `/카드오픈`을 검증하기 위한 실제 소비 item 1개와 확률 보상 item definition 9개를 포함하되, stack·RNG 경계·지연 outbox는 전용 probe가 준비한다.
+- `/초보오픈1~6`을 검증하기 위한 `starter_01~06` package와 소비 item metadata, 현행 순서의 item·point 보상을 포함하되, stack·rollback·restart 시나리오는 전용 probe가 준비한다.
 - 운영 오픈 전 합성 DB를 폐기·재생성하며 이 데이터는 최종 import·reconciliation 증거로 인정하지 않는다.
 
 실행:
