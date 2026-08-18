@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-SPIRIT-COMBINE",
+  "status": "verified",
+  "execution": {
+    "worker": "윤슬",
+    "executionId": "윤슬-SL-SPIRIT-COMBINE-20260818T050800Z-4hd2y1",
+    "claimRow": 30
+  },
+  "commands": {
+    "names": ["/정령조합", "/정령조합 [수량]"],
+    "sourceFiles": ["main.js", "개발환경_고도화/runtime/src/app.ts"],
+    "guards": [
+      "exact no-argument command defaults to quantity one",
+      "digits-only argument accepts legacy zero quantity",
+      "active castle siege returns silently before inventory mutation",
+      "a truthy fragment balance is required even when requested quantity is zero"
+    ],
+    "helpers": ["checkRank"],
+    "automaticFlows": [
+      "the outer response saveJsonFile(data, filePath) persists the legacy mutation",
+      "the shared Iris app dispatch routes exact spirit-combine commands and marks the persisted outbox delivery"
+    ]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.bag['정령조각🥀']", "member.<sender>.bag['정령 강화석🥀']", "guildData.castleSiegeFlag"],
+    "writePaths": [
+      "member.<sender>.bag['정령조각🥀'] decrement and property deletion at zero",
+      "member.<sender>.bag['정령 강화석🥀'] increment"
+    ],
+    "saveOrder": ["outer response saveJsonFile(petData, memberPetPath)", "outer response saveJsonFile(data, filePath)"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities", "player_profiles", "item_definitions", "inventory_stacks", "inventory_ledger",
+      "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"
+    ],
+    "itemCodes": {
+      "정령조각🥀": "bag_9b3e69dbd2e91260",
+      "정령 강화석🥀": "bag_55b34cbde0088b29"
+    },
+    "constraints": [
+      "one inventory stack per player and item",
+      "inventory quantity cannot become negative",
+      "one operation per external identity and event id"
+    ],
+    "transactionBoundary": "lock active castle state, linked identity and both item definitions/stacks; then apply balances, ledger, operation, execution, audit and outbox in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 79e338aef8603f4609e730d2910403fabb70bbb6cbc4402d6023774dc4cee2e2 plus spirit reset fixture sha256 6e5ad8f1c286b053a68c09417c0b0cbe2a40afb0c2ed96786ccc3f1268b1c132",
+    "targetDatabase": "disposable hoibot_rehearsal_* database",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed synthetic fixture IDs use upsert and the command replays the exact event through operation idempotency",
+    "checks": [
+      "quantity two changes fragments 20 to zero and stones five to seven",
+      "two inventory ledgers and one operation, execution, audit and outbox are persisted",
+      "same event replay does not duplicate mutation",
+      "33 migrations and two repeated shared and spirit fixture applies passed",
+      "MariaDB restart retained fragment zero, stone seven and the exact single operation effects",
+      "shared item catalog contains both stable spirit item codes and 12 verified inventory stacks",
+      "Iris HTTP dispatch sent the exact reply once and restart replay remained duplicate-suppressed",
+      "operational snapshots are not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/crafting/spirit-combine-service.ts", "개발환경_고도화/runtime/src/app.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/spirit-combine.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-spirit-combine-synthetic.ts",
+      "개발환경_고도화/runtime/scripts/shadow-spirit-combine-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql",
+      "개발환경_고도화/migration-control/evidence/spirit-combine/synthetic-fixture.sql"
+    ],
+    "integrationDispatch": "shared Iris app dispatch connects /정령조합 to SpiritCombineService and queues only crafted replies"
+  },
+  "parity": {
+    "fixtures": ["scripted siege, shortage, zero, quantity-two and missing-output-stack cases", "synthetic linked player with 20 fragments and five stones"],
+    "comparisonMode": "guard, zero quantity, exact replies, two balance deltas, ledger, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "shadow": {
+    "mode": "non-operational synthetic Iris HTTP dispatch",
+    "database": "disposable hoibot_rehearsal_spirit_shadow_4hd2y1",
+    "eventId": "iris:spirit-shadow-3a9928fbbd14",
+    "checks": [
+      "exact success reply delivered once through app dispatch",
+      "duplicate HTTP event produced no second delivery",
+      "MariaDB restart replay preserved fragments zero, stones seven and one delivery attempt",
+      "operational data and operational rooms were not accessed"
+    ],
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "stop member bag writes in the final shared freeze window",
+    "finalImportPlan": "import every fragment and stone quantity and ensure both stable item definitions before enabling dispatch",
+    "smokePlan": "an approved test identity crafts one stone and verifies both balances, reply and ledgers",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation, approved mutation smoke and cutover approval pass"
+  },
+  "risks": [
+    "MariaDB retains a zero-quantity fragment stack while legacy deletes the JSON property",
+    "full checkRank special and guild decorations are not yet centralized",
+    "the port adds a one-million combine limit",
+    "/전체조합 and /전체조합2 share these items but remain separate slices",
+    "actual full operational data import, live-room smoke and operational-readiness approval have not been executed"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "synthetic_user_001": [
+    {
+      "id": "synthetic_furniture_001",
+      "name": "synthetic furniture standard",
+      "exp": 100,
+      "rate": 0.5,
+      "grade": "synthetic_standard",
+      "display": "fixture"
+    },
+    {
+      "id": "synthetic_furniture_002",
+      "name": "synthetic furniture rare",
+      "exp": 500,
+      "rate": 0.1,
+      "grade": "synthetic_rare",
+      "display": "fixture"
+    }
+  ]
+}

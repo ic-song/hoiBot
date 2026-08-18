@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "pet-creation",
+  "status": "verified",
+  "commands": {
+    "names": [
+      "/펫생성 [이름]"
+    ],
+    "sourceFiles": [
+      "main.js"
+    ],
+    "guards": [
+      "legacy msg.startsWith(\"/펫생성 \"), then trim and JavaScript length 1..6",
+      "ported full-pattern guard accepts one whitespace-free 1..6 character argument",
+      "ported guard rejects appended guide text instead of treating it as a pet name"
+    ],
+    "helpers": [
+      "createPet",
+      "getRandomCharacter",
+      "applyStarterPet",
+      "applyStarterHome",
+      "updateEmoji",
+      "addPetSkillToBag",
+      "initSweetHomeUser",
+      "checkRank"
+    ],
+    "automaticFlows": [
+      "signup creates one empty player_pets row before /펫생성",
+      "Iris outbox worker can retry persisted pet creation replies after restart"
+    ]
+  },
+  "legacyData": {
+    "files": [
+      "data/member_pet.json",
+      "data/petSkillData.json",
+      "data/petHomeData.json",
+      "data/member.json",
+      "data/guild.json"
+    ],
+    "readPaths": [
+      "member_pet.<sender>.petname",
+      "petSkillData.<sender>.petSkills.bag",
+      "petHomeData.<sender>",
+      "member.<sender>.rank",
+      "guild/checkRank projections"
+    ],
+    "writePaths": [
+      "member_pet.<sender> petjoin/pettype/petimg/pettitle/petexp/upgrade/upgradeDateTime/elemental/miniPetBag/miniPet",
+      "petSkillData.<sender>.petSkills.bag['십원✨']",
+      "petHomeData.<sender> houseName/exp/floor/likeCnt/visitCnt/furnitureBag"
+    ],
+    "saveOrder": [
+      "saveJsonFile(petData, memberPetPath)",
+      "saveJsonFile(petSkillData, petSkillDataPath)",
+      "saveJsonFile(homeData, homeDataFile)"
+    ],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [
+      "005_player_profile.sql",
+      "007_domain_foundations.sql",
+      "011_mini_pet_display_projection.sql",
+      "030_pet_creation_foundations.sql"
+    ],
+    "tables": [
+      "external_identities",
+      "player_profiles",
+      "player_pets",
+      "player_pet_elementals",
+      "skill_definitions",
+      "pet_skill_inventory",
+      "mini_pet_definitions",
+      "owned_mini_pets",
+      "player_homes",
+      "event_inbox",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "newColumns": [
+      "player_pets.joined_on",
+      "player_pets.personality_label",
+      "player_pets.enhancement_updated_at"
+    ],
+    "constraints": [
+      "one player_pet per player",
+      "one elemental projection per player_pet",
+      "one skill inventory stack per player_pet and skill",
+      "one starter home per player",
+      "operations(idempotency_scope, idempotency_key) unique",
+      "command_executions(event_id, command_code) unique"
+    ],
+    "transactionBoundary": "lock linked Kakao identity/profile and empty signup-created pet row, then update pet and create elemental, skill inventory, equipped mini-pet, home, operation, command execution, audit and all Iris reply outboxes in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 563802fe1e50cfff96c96d12c01379aa69fcb3af56dec8361bef34b91ed499fb plus per-run synthetic linked player",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "fixed fixture IDs use upsert and passed two applies; the command probe replays the exact event against operation idempotency",
+    "checks": [
+      "operational database name hoibot rejected the probe before connection mutation",
+      "migration 030 applied to the development schema only",
+      "fixture applied twice and verify-only passed with 31 representative tables",
+      "pet name, joined date, personality, type, image, experience 35000 and enhancement 90 persisted",
+      "elemental level 80, starter skill quantity 1, equipped starter mini-pet experiences 100000 each and starter home persisted",
+      "legacy two-message normal reply order persisted as two Iris outboxes",
+      "same event replay returned the same result without duplicate operation, execution, audit or outbox",
+      "a second event for a player with a named pet was rejected without starter mutation",
+      "operational data snapshots were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "개발환경_고도화/runtime/src/pet/pet-creation-policy.ts",
+      "개발환경_고도화/runtime/src/pet/pet-creation-service.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "repositories": [
+      "개발환경_고도화/runtime/src/database.ts transaction client"
+    ],
+    "tests": [
+      "개발환경_고도화/runtime/test/pet-creation.test.ts",
+      "개발환경_고도화/runtime/scripts/probe-pet-creation-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ]
+  },
+  "parity": {
+    "fixtures": [
+      "fixed relational pet, elemental and skill-inventory rows",
+      "per-run synthetic linked player with an empty signup-created pet row"
+    ],
+    "comparisonMode": "deterministic legacy personality/type/image candidate selection, normalized starter state, ordered replies and intended full-pattern command hardening",
+    "result": "passed"
+  },
+  "cutover": {
+    "freezePlan": "전체 기능 검증 후 member_pet, petSkillData and petHomeData writes를 같은 freeze window에서 중지",
+    "finalImportPlan": "최신 운영 snapshots의 pet, elemental, mini-pet, skill bag and home fields를 normalized tables에 전체 import하고 starter values are not re-applied to existing named pets",
+    "smokePlan": "승인된 운영방의 신규 테스트 회원으로 /펫생성, reply order, /펫정보 projection and duplicate event rejection을 확인한 뒤 테스트 계정을 제거",
+    "rollbackPlan": "pet mutation 활성화 전에는 Rhino 유지; 활성화 후에는 MariaDB backup and operation/audit boundary로 복구"
+  },
+  "risks": [
+    "legacy broad prefix accepted whitespace inside a pet name and some appended text; the port intentionally requires one whitespace-free argument to prevent accidental mutation",
+    "legacy random outcome distribution is preserved but deterministic parity uses injected random values and does not prove live statistical distribution",
+    "newly joined users format as the seedling rank prefix; later rank and guild decorations remain a shared profile-display concern",
+    "actual full operational data import and live-room smoke have not been executed"
+  ]
+}
