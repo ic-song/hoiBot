@@ -6,15 +6,16 @@
 - 작업자명: 새봄
 - 실행 ID: `새봄-SL-MINIPET-COLLECTION-CREATE-20260818T044451Z-gb725t`
 - 선점 원장 행: 29
-- 선점 상태: `ACTIVE`
-- Heartbeat: `2026-08-18 14:01:00 KST`
+- 선점 상태: `DONE`
+- Heartbeat: `2026-08-18 14:05:00 KST`
 - Lease 만료: `2026-08-18 15:01:00 KST`
 - Worktree: `C:\Users\user\Desktop\hoiBot-worktrees\새봄-SL-MINIPET-COLLECTION-CREATE-20260818T044451Z-gb725t`
 - Branch: `feature/modernization-minipet-collection-create-saebom-gb725t`
 - 기준 commit: `f79f21b`
-- 체크포인트 버전: `3`
+- 체크포인트 버전: `4`
 - 구현 commit: `7f85c9e`
-- 커밋·푸시: 최종 체크포인트 commit 준비 중
+- 검증 체크포인트 commit: `a51d5d3`
+- 커밋·푸시: 원격 검증 완료
 
 ## 복구 근거
 
@@ -37,8 +38,8 @@
 
 ## 다음 행동
 
-- 구현·증거 commit을 push하고 WBS의 Gate 1~7 근거를 동기화한다.
-- 운영 준비는 최종 freeze snapshot, 운영 DB 이관, 승인된 실방 smoke 전까지 완료 처리하지 않는다.
+- WBS 동기화 완료: 슬라이스 87.5% (Gate 7/8), 전체 정의 슬라이스 Gate 평균 86.0%.
+- 운영 준비는 최종 freeze snapshot, 운영 DB 이관, 승인된 실방 smoke 전까지 미완료로 유지한다.
 
 ## 검증 증거
 
