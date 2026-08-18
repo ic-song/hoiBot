@@ -2,6 +2,9 @@
 
 - 이 폴더의 고도화 작업을 시작하면 `DECISIONS.md`, `MEMORY.md` 순서로 읽는다.
 - 대화 기억보다 저장소 문서를 우선하며 문서 간 충돌 시 `DECISIONS.md`를 따른다.
+- 고도화 관련 변경은 `feature/modernization` 브랜치에서만 수행한다.
+- 작업 전 최신 `feature/prod`를 확인하고 `feature/modernization`에 반영한다.
+- 사용자가 명시적으로 요청하기 전에는 고도화 커밋을 `feature/prod`에 반영하지 않는다.
 - 고도화 방향은 YouTube의 `Iris를 이용한 봇 만들기`에 나온 PC + redroid 환경으로 확정한다.
 - 고도화 실행환경은 PC의 redroid 구성만 사용한다.
 - 기준 구성은 `Windows -> Hyper-V -> Ubuntu/Linux VM -> Docker -> redroid -> KakaoTalk + Iris`다.
@@ -14,3 +17,9 @@
 - `references/` 문서는 참고자료이며 결정과 현재 상태의 기준으로 사용하지 않는다.
 - 토큰, 카카오톡 원문, 계정정보, 개인정보는 기록하지 않는다.
 - 고도화 관련 문서와 메모리는 이 폴더 내부에서만 관리한다.
+- hoiBot Server 소스, 패키지, 테스트와 실행 문서는 이 폴더의 `runtime/` 내부에서만 관리한다.
+- Iris 이벤트 처리 작업은 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`의 검증 근거를 먼저 확인한 뒤 `references/IRIS_SERVER_EVENT_MAPPING.json`의 서버 매핑을 사용한다.
+- 새 이벤트를 관측하면 검증 문서를 먼저 갱신하고 확인된 필드만 서버 매핑 JSON에 반영한다. 미검증 추정값을 구현 가능 상태로 올리지 않는다.
+- Iris, `/query`, `/decrypt`, 삭제·가리기 상관관계 작업은 저장소의 `hoibot-iris-diagnostics` 스킬을 먼저 사용한다.
+- 기술 문서는 주제별 단일 기준만 유지한다: Iris 일반 계약은 `references/IRIS_TECHNICAL_REFERENCE.md`, 실측 이벤트는 `references/IRIS_EVENT_CAPABILITY_MATRIX.md`, KakaoTalk 스키마는 `references/KAKAOTALK_IRIS_QUERY_ERD.md`, MariaDB는 `references/MARIADB_IMPLEMENTATION_BLUEPRINT.md`, 실행환경은 `references/REPRODUCIBLE_ENVIRONMENT_BLUEPRINT.md`다.
+- 검증 시점의 일회성 행 수·PID·실제 식별자·메시지 원문은 장기 문서에 누적하지 않는다.
