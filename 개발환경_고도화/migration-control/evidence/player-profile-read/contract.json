@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "player-profile-read",
+  "command": "/내정보",
+  "legacySource": "Info.js",
+  "syntheticIdentity": {
+    "providerCode": "synthetic",
+    "externalUserId": "synthetic-user-alpha"
+  },
+  "expected": {
+    "playerId": "900000001",
+    "zeroWidthCount": 686,
+    "linesWithoutZeroWidth": [
+      "• 합성 개척자",
+      "• [🐺호이패스 프리미엄🐺]",
+      "• 합성 테스트 서버",
+      "• 🐹호이월드 후원자🐹",
+      "• [테스트알파] 님의 종합 정보",
+      "• 길드: 합성 알파 길드(A)",
+      "• 인생:1회차",
+      "• 레벨: 12 (누적 레벨 : 12)",
+      "• 가입일: 2026년 01월 01일",
+      "• 총 출석일: 9일",
+      "• 다이아💎: 25개",
+      "• 보유 포인트: 🅟1,250",
+      "• 타이틀 개수: 1개",
+      "• 펫타이틀 개수: 1개",
+      "• 경험치: 345 / 156 (221%)",
+      "",
+      "• ━ ✦ 내정보 상세보기 ✦ ━  ",
+      "",
+      "• 💌 x 2 (순위 : 1위)",
+      "• 💕 x 11 (누적 : 15)",
+      "• 🥕 x 4 (순위 : 2위)",
+      "• 🌡️ x 2 (순위 : 3위)",
+      "• 펫: 🐺합성펫알파 💕240",
+      "• 미니펫🐹: 합성별이✨(+10💕)[희귀]",
+      "• 펫스윗홈🏡: 알파의 합성 홈(+108💕)[+16평]"
+    ]
+  },
+  "legacyEvidence": {
+    "guard": "msg === \"/내정보\"",
+    "readFiles": [
+      "member.json",
+      "member_pet.json",
+      "member_title.json",
+      "pet_title.json",
+      "petSweetHomeData.json",
+      "guildData.json"
+    ],
+    "saveFlow": "read-only",
+    "uncertainAreas": [
+      "checkRank의 전체 badge 우선순위는 별도 rank 슬라이스에서 추가 parity가 필요함",
+      "미가입 사용자 무응답은 Iris event 통합 test에서 별도 검증 필요"
+    ]
+  }
+}
