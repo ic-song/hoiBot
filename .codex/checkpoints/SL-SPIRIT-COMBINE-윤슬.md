@@ -18,7 +18,8 @@
 - Worktree: `C:/Users/user/Desktop/hoiBot-worktrees/윤슬-SL-SPIRIT-COMBINE-20260818T044400Z-fc4c7f`
 - Branch: `feature/modernization-spirit-combine-yoonseul-fc4c7f`
 - 기준: `feature/prod` commit `f79f21b`
-- push 상태: 미푸시
+- 구현 commit: `44ca599`
+- push 상태: `origin/feature/modernization-spirit-combine-yoonseul-fc4c7f`에 구현 commit push 확인
 
 ## 복구 감사 승계
 
@@ -40,6 +41,7 @@
 - 격리 DB에 33 migrations 및 fixture 2회 적용 후 조각 20→0, 강화석 5→7을 확인했다.
 - 동일 event 재처리는 단일 operation으로 유지됐고 MariaDB 재시작 뒤 0/7 및 원장·감사·outbox가 보존됐다.
 - 공용 `app.ts` dispatch는 도메인 레인 범위 밖이라 변경하지 않았다.
+- 격리 DB `hoibot_rehearsal_spirit_fc4c7f`는 검증 후 삭제했고 스키마 부재를 확인했다.
 
 ## 안전
 
