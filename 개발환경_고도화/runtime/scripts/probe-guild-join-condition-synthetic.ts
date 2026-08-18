@@ -9,6 +9,12 @@ const externalUserId = process.argv[3] ?? "synthetic-admin-alpha";
 
 // 합성 길드마스터의 가입조건 변경·재처리 결과를 실제 MariaDB에서 확인합니다.
 async function main(): Promise<void> {
+  await database.execute(
+    `INSERT INTO event_inbox (event_id, provider_event_id, external_channel_id, external_user_id, event_kind, direction, payload_hash, processing_status, received_at)
+     VALUES (?, ?, 'synthetic-room', ?, 'message', 'incoming', REPEAT('2', 64), 'processed', UTC_TIMESTAMP(3))
+     ON DUPLICATE KEY UPDATE processing_status = VALUES(processing_status)`,
+    [eventId, eventId, externalUserId]
+  );
   const service = new GuildJoinConditionService(new MariaGuildJoinConditionRepository(database));
   const input = { externalUserId, channelId: "synthetic-room", message: "/길드가입조건 12,345", eventId };
   const first = await service.handle(input);

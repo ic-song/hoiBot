@@ -44,7 +44,7 @@ try {
     process.stdout.write(JSON.stringify({ phase: "request", status: result.status, guildId: result.guildId, pending: pending[0]?.status }));
   } else {
     await database.execute(
-      "INSERT INTO event_inbox (event_id, provider_event_id, external_channel_id, external_user_id, event_kind, direction, payload_hash, processing_status, received_at) VALUES (?, ?, ?, ?, 'message', 'incoming', REPEAT('1', 64), 'processed', UTC_TIMESTAMP(3))",
+      "INSERT INTO event_inbox (event_id, provider_event_id, external_channel_id, external_user_id, event_kind, direction, payload_hash, processing_status, received_at) VALUES (?, ?, ?, ?, 'message', 'incoming', REPEAT('1', 64), 'processed', UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE processing_status = VALUES(processing_status)",
       [CONFIRM_EVENT_ID, CONFIRM_EVENT_ID, CHANNEL_ID, EXTERNAL_USER_ID]
     );
     const service = new GuildJoinService(new MariaGuildJoinRepository(database));

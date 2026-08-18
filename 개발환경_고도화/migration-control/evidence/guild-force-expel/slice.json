@@ -20,6 +20,22 @@
   "parity": { "fixtures": ["in-memory master, ordinary operator, leader and ordinary target cases", "synthetic MariaDB super-admin and ordinary guild member"], "comparisonMode": "exact guard/error/success reply and membership deletion order", "result": "passed",
     "verified": ["usage reply", "master permission", "missing player/membership errors", "leader protection", "success reply", "prior-result replay"],
     "intentionalHardening": ["command-name suffix cannot execute"], "notYetVerified": ["live-room smoke"] },
+  "shadow": {
+    "executionId": "새봄-SL-GUILD-MEMBERSHIP-20260818T023237Z-6ijr53",
+    "date": "2026-08-18",
+    "mode": "three-command isolated synthetic MariaDB rehearsal; no operational snapshot or live-room traffic",
+    "database": "hoibot_rehearsal_guild_membership_6ijr53",
+    "migrationCount": 33,
+    "fixtureChecksum": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "result": "passed",
+    "observations": [
+      "ordinary synthetic member relation was removed once",
+      "same event returned the identical result after MariaDB restart",
+      "operation, execution, audit and outbox each remained one"
+    ]
+  },
   "cutover": { "freezePlan": "Stop legacy membership writes during approved guild cutover", "finalImportPlan": "Import latest guild memberships and operator grants after backup",
     "smokePlan": "Expel an approved ordinary test member and verify membership/reply/audit", "rollbackPlan": "Keep Rhino path active until DB smoke passes; restore backup and disable DB dispatch on failure" },
   "risks": ["legacy isMaster also depends on permitted room; adapter must preserve operator grant and channel scope", "operational snapshots were read only and were not modified"]

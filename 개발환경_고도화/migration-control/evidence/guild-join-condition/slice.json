@@ -30,7 +30,7 @@
   },
   "trialMigration": {
     "sourceSnapshot": "synthetic-relational functional-v1 guild leader and guild policy projection",
-    "targetDatabase": "disposable Docker MariaDB hoibot_rehearsal_guild_join_condition_6w7khl",
+    "targetDatabase": "disposable Docker MariaDB hoibot_rehearsal_guild_membership_6ijr53",
     "sourceReadOnly": true,
     "replayPolicy": "same event id must return the prior result without a second guild update or outbox",
     "checks": [
@@ -56,6 +56,22 @@
     "verified": ["usage reply", "invalid number reply", "leader-equivalent permission denial", "success reply", "zero means unrestricted", "prior-result replay"],
     "intentionalHardening": ["suffix text and malformed thousands separators cannot execute"],
     "notYetVerified": ["full import role-code reconciliation", "live-room smoke"]
+  },
+  "shadow": {
+    "executionId": "새봄-SL-GUILD-MEMBERSHIP-20260818T023237Z-6ijr53",
+    "date": "2026-08-18",
+    "mode": "three-command isolated synthetic MariaDB rehearsal; no operational snapshot or live-room traffic",
+    "database": "hoibot_rehearsal_guild_membership_6ijr53",
+    "migrationCount": 33,
+    "fixtureChecksum": "ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "fixtureStatements": 71,
+    "verifiedTables": 35,
+    "result": "passed",
+    "observations": [
+      "join requirement changed to 12345",
+      "same event returned the identical result after MariaDB restart",
+      "operation, execution, audit and outbox each remained one"
+    ]
   },
   "cutover": {
     "freezePlan": "Stop legacy guild policy writes in the approved guild cutover window",
