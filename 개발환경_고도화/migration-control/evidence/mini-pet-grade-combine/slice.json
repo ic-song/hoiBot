@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "mini-pet-grade-combine",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-MINIPET-GRADE-COMBINE",
+    "worker": "다온",
+    "executionId": "다온-SL-MINIPET-GRADE-COMBINE-20260818T061300Z-bicbsq",
+    "claimRow": 35
+  },
+  "commands": {
+    "ids": ["CMD-05-0028", "CMD-05-0029", "CMD-05-0030"],
+    "names": ["/미니펫조합창세", "/미니펫조합창조", "/미니펫조합태초+"],
+    "sourceFiles": ["main.js"],
+    "guards": [
+      "broad startsWith aliases and suffixes remain accepted for current parity",
+      "Rhino parseInt index suffixes remain accepted for current parity",
+      "primordial-plus and genesis require exactly two parsed indexes",
+      "creation supports both no-argument automatic selection and two-index manual selection",
+      "the two indexes must differ, exist in the sorted bag and match the required grade"
+    ],
+    "helpers": ["getMiniPetCombinationConfig", "createMiniPetFromCombination", "refreshMiniPetSortIndex", "sortMiniPetBag", "getMiniPetBySortIndex", "removeMiniPetsFromBag", "formatPetInfo", "checkRank"],
+    "automaticFlows": ["creation selects the first two genesis-grade pets after legacy bag sorting", "Iris outbox and stored operation result support retry/restart replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/miniPetData.json", "data/guild.json"],
+    "readPaths": ["member_pet.<sender>.miniPetBag", "miniPetData.gradeTable", "MINI_PET_COMBINATION_REWARDS", "member/guild rank decoration inputs"],
+    "writePaths": ["remove two source mini pets", "on success append one reward mini pet", "refresh sortIndex and save member_pet.json once"],
+    "saveOrder": ["remove source pets", "resolve success and optional reward", "refresh sort indexes", "save member_pet.json"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "011_mini_pet_display_projection.sql", "031_pet_info_projection.sql", "034_collection_creation_open.sql", "035_collection_genesis_open.sql"],
+    "tables": ["external_identities", "player_profiles", "mini_pet_definitions", "owned_mini_pets", "castle_battle_seasons", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": [
+      "linked identity, prior operation and all unequipped mini-pet rows are locked before mutation",
+      "exactly two unequipped source rows must be deleted or the transaction rolls back",
+      "success reward definition must be active and match legacy name, emoji and output grade or the whole transaction rolls back",
+      "source delete, optional reward insert, execution, audit, outbox and completed operation share one transaction",
+      "one completed result per linked identity and event id"
+    ],
+    "newColumns": [],
+    "transactionBoundary": "lock siege, identity, idempotency operation and sorted owned mini pets; resolve success; delete exactly two sources; on success lock the active reward definition and insert one reward; append execution/audit/outbox before completing, with any missing definition rolling the whole transaction back"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "비식별 synthetic rows inserted only into hoibot_schema_design by probe-grade-combine-synthetic.ts",
+    "targetDatabase": "hoibot_schema_design",
+    "sourceReadOnly": true,
+    "replayPolicy": "no new migration number; reuse existing shared mini-pet and operation schema; fixed events replay from operations before and after MariaDB restart",
+    "checks": [
+      "primordial-plus 50 percent failure consumes two sources",
+      "genesis 30 percent success policy means the verified failure branch consumes two sources",
+      "creation automatic and manual selection both consume two sorted genesis sources and create one collection-creation reward",
+      "success creates the exact selected legacy reward attributes",
+      "missing active reward definition raises after transactional deletion and real MariaDB rollback preserves both sources",
+      "five completed events create exactly five operations, executions, audits and outbox rows",
+      "same event replay does not repeat random selection or mutation",
+      "operational JSON, operational database and live rooms remain untouched"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/mini-pet/grade-combine-service.ts", "개발환경_고도화/runtime/src/mini-pet/grade-combine-rewards.ts", "개발환경_고도화/runtime/src/app.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": ["개발환경_고도화/runtime/test/grade-combine.test.ts", "개발환경_고도화/runtime/scripts/probe-grade-combine-synthetic.ts", "개발환경_고도화/runtime/scripts/validate-grade-combine-parity.ts"]
+  },
+  "parity": {
+    "fixtures": ["scripted parser, index, grade, failure, success, automatic, manual, missing-definition and duplicate-event cases", "synthetic linked player with grade-specific source definitions and five fixed command events"],
+    "comparisonMode": "exact Rhino reward pools, broad startsWith, parseInt suffixes, sort priority, success rates, source consumption, reward attributes, reply format, idempotency and transaction effects",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "synthetic non-operational MariaDB",
+    "result": "passed",
+    "liveTraffic": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "stop member_pet writes in the approved final shared freeze window",
+    "finalImportPlan": "import active mini-pet definitions and every approved miniPetBag row, then reconcile counts and grade/reward coverage",
+    "smokePlan": "an approved non-production identity exercises each success/failure path and verifies source/reward/outbox effects",
+    "rollbackPlan": "keep Rhino routing until final import reconciliation and approved smoke pass; restore MariaDB backup and route back on mismatch"
+  },
+  "risks": [
+    "broad startsWith and parseInt suffix acceptance are preserved parity risks and were not fixed",
+    "Rhino removes sources before discovering a missing reward and returns without save; the DB port intentionally resolves the active definition first and rolls back, preserving sources. This safer difference requires parity approval",
+    "full checkRank special and guild decorations are not yet centralized",
+    "reward definitions for all 151 legacy tuples must exist after final import or successful combinations roll back safely",
+    "actual operational snapshot reconciliation, backup/restore, approved live-room smoke and Gate 8 cutover evidence are absent"
+  ]
+}

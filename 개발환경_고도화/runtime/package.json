@@ -31,7 +31,9 @@
     "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts",
     "db:probe:bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-read-synthetic.ts",
     "db:probe:collection-creation-open": "node --env-file-if-exists=.env --import tsx scripts/probe-collection-creation-open-synthetic.ts",
-    "db:probe:collection-genesis-open": "node --env-file-if-exists=.env --import tsx scripts/probe-collection-genesis-open-synthetic.ts"
+    "db:probe:collection-genesis-open": "node --env-file-if-exists=.env --import tsx scripts/probe-collection-genesis-open-synthetic.ts",
+    "db:probe:grade-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-grade-combine-synthetic.ts",
+    "parity:grade-combine": "node --import tsx scripts/validate-grade-combine-parity.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
