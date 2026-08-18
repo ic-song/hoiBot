@@ -5,7 +5,9 @@
   "execution": {
     "worker": "윤슬",
     "executionId": "윤슬-SL-CRAFT-COMBINE-ALL-20260818T060246Z-s545p4",
-    "claimRow": 33
+    "claimRow": 33,
+    "branch": "feature/modernization-craft-combine-all-yoonseul-s545p4",
+    "implementationCommit": "5c0f205e5ad4949b322734d1501c3b47695ae9d5"
   },
   "commands": {
     "names": ["/전체조합", "/전체조합2"],
