@@ -10,8 +10,8 @@
 - Heartbeat: `2026-08-18 13:29:06 +09:00`
 - Lease 만료: `2026-08-18 14:29:06 +09:00`
 - 상태: `ACTIVE`
-- 체크포인트 버전: `1`
-- 커밋·푸시: 미완료
+- 체크포인트 버전: `2`
+- 구현·검증 커밋: `c4cf8a9` (`origin/feature/modernization-account-platform-auth-saebom-7bzh6v` push 완료)
 
 ## 승계한 게이트
 
