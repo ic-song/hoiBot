@@ -5,7 +5,7 @@
 - 작업 상태: 완료(운영 준비 제외)
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 2
+- 체크포인트 버전: 3
 - 마지막 갱신: 2026-08-18 15:38 KST
 - 대화 식별명: 작업반장 01a0132e-f8db-7172-8192-101f6b8f4070
 
@@ -27,10 +27,10 @@
 - 브랜치: feature/modernization-minipet-grade-combine-daon-bicbsq
 - 원격 저장소: origin
 - 업스트림 브랜치: origin/feature/modernization-minipet-collection-genesis-saebom-58lpev
-- 마지막 푸시 커밋: 커밋 전
+- 마지막 푸시 커밋: 8116800 (구현; push 예정)
 - 원격 동기화 상태: collection-genesis 기준 + origin/main 병합 완료
 - 체크포인트 Git 추적: 예(이번 커밋 예정)
-- 체크포인트 포함 푸시 커밋: 없음
+- 체크포인트 포함 푸시 커밋: 다음 체크포인트 커밋 예정
 
 ## 완료된 작업
 
@@ -47,7 +47,7 @@
 
 ## 진행 중인 작업
 
-- 없음. 커밋·push와 WBS/선점 종료 기록만 남았다.
+- 없음. 체크포인트 커밋·push와 WBS/선점 종료 기록만 남았다.
 
 ## 변경 파일
 
@@ -80,7 +80,7 @@
 
 ## 다음 행동
 
-1. 전용 브랜치를 커밋·push하고 WBS를 Gate 1~7 완료/87.5%로 갱신한 뒤 선점을 RELEASED로 닫는다.
+1. 체크포인트를 커밋·push하고 WBS에 원격 커밋을 기록한 뒤 선점을 RELEASED로 닫는다.
 
 ## 보안
 
