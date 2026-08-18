@@ -90,15 +90,18 @@
     "transactionBoundary": "read-only profile projection; repository queries only"
   },
   "trialMigration": {
-    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 b5a9fef73710e5bf60d972d4b7be23a3a9ce84e4ed5b421743bb22c06f7de03c",
-    "targetDatabase": "hoibot_schema_design",
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 ddab14f172b31057792ab9cb8da658e609a8861f7fb928d469766fbb05ac3cf9",
+    "targetDatabase": "hoibot_rehearsal_player_profile_9xg724",
     "sourceReadOnly": true,
     "replayPolicy": "fixed synthetic IDs and upsert statements; repeat apply verified",
     "checks": [
       "fixture applied in one transaction",
-      "28 representative table counts verified",
-      "repeat apply preserved counts",
-      "production database name guard rejected hoibot",
+      "all 33 migrations applied and a second migration pass remained idempotent",
+      "35 representative table counts verified",
+      "two fixture applies and verify-only preserved the same counts",
+      "profile projection matched player 900000001, 25 lines, and 686 U+200B characters",
+      "the same exact profile projection passed after a healthy MariaDB restart",
+      "non-rehearsal database names remain blocked by the synthetic probe guard",
       "operational data snapshot was not read or mutated"
     ],
     "result": "passed"

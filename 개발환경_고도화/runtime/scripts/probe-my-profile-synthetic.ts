@@ -8,6 +8,7 @@ import { formatLegacyMyProfile } from "../src/player/legacy-profile-formatter.js
 import { MariaProfileRepository } from "../src/player/maria-profile-repository.js";
 
 const config = loadConfig();
+const restartVerification = process.env.PROFILE_PROBE_RESTART_VERIFICATION === "true";
 if (!config.database.enabled) throw new Error("DATABASE_ENABLED must be true.");
 if (config.database.name !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0-9_]+$/i.test(config.database.name)) {
   throw new Error(`Synthetic profile probe is blocked for database: ${config.database.name}`);
@@ -36,7 +37,8 @@ try {
     playerId: profile.playerId,
     zeroWidthCount,
     lineCount: linesWithoutZeroWidth.length,
-    exactContractMatched: true
+    exactContractMatched: true,
+    restartVerification
   })}\n`);
 } finally {
   await database.close();
