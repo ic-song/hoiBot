@@ -79,6 +79,9 @@ import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-sn
 import { MariaStarterPackageOpenRepository } from "./package/maria-starter-package-open-repository.js";
 import { isStarterPackageOpenCommand } from "./package/starter-package-open-policy.js";
 import { StarterPackageOpenService } from "./package/starter-package-open-service.js";
+import { MariaPackageAdminGrantRepository } from "./package/maria-package-admin-grant-repository.js";
+import { isPackageAdminGrantCommand } from "./package/package-admin-grant-policy.js";
+import { PackageAdminGrantService } from "./package/package-admin-grant-service.js";
 import { isCastleCardOpenCommandCandidate } from "./inventory/castle-card-open-policy.js";
 import { CastleCardOpenService } from "./inventory/castle-card-open-service.js";
 import { MariaCastleCardOpenRepository } from "./inventory/maria-castle-card-open-repository.js";
@@ -999,6 +1002,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "starter_package_open_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPackageAdminGrantCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PackageAdminGrantService(new MariaPackageAdminGrantRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "granted" && !result.duplicate) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if ("data" in result) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "package_admin_grant_error", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "package_admin_grant_error", error.message));
           } else {
             throw error;
           }

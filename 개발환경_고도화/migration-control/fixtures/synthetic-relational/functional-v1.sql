@@ -127,7 +127,8 @@ INSERT INTO item_definitions (id, code, display_name, asset_type_code, stackable
   (900000030, 'tier_upgrade_ticket', '티어 승급티켓🎟', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
   (900000031, 'pet_enhance_stone', '펫 강화석⭐', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
   (900000032, 'spirit_stone', '정령 강화석🥀', 'material', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
-  (900000033, 'lucky_box', '럭키박스🍀(/럭키오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1)
+  (900000033, 'lucky_box', '럭키박스🍀(/럭키오픈)', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-STARTER-PACKAGE-OPEN-01-06'), TRUE, 1),
+  (900000034, 'synthetic_package_token', '합성 스타터 패키지', 'consumable', TRUE, JSON_OBJECT('synthetic', TRUE, 'slice', 'SL-PACKAGE-ADMIN-GRANT', 'packageCode', 'synthetic-starter-package', 'legacyBagKey', '합성 스타터 패키지'), TRUE, 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), metadata_json = VALUES(metadata_json), active = VALUES(active), version = VALUES(version);
 
 INSERT INTO inventory_stacks (player_id, item_id, quantity, version) VALUES
@@ -452,6 +453,20 @@ ON DUPLICATE KEY UPDATE enabled = VALUES(enabled), observation_mode = VALUES(obs
 INSERT INTO configuration_sets (id, set_code, version, status, effective_from)
 VALUES (900000001, 'synthetic-functional-fixture', 1, 'active', '2026-01-01 00:00:00.000')
 ON DUPLICATE KEY UPDATE status = VALUES(status), effective_from = VALUES(effective_from);
+
+INSERT INTO configuration_sets (id, set_code, version, status, effective_from)
+VALUES (900000010, 'package-catalog', 1, 'active', '2026-01-01 00:00:00.000')
+ON DUPLICATE KEY UPDATE status = VALUES(status), effective_from = VALUES(effective_from);
+
+INSERT INTO configuration_values (configuration_set_id, config_key, value_type, json_value)
+VALUES (
+  900000010,
+  'package.catalog.entries',
+  'json',
+  JSON_ARRAY(JSON_OBJECT('listNumber', 1, 'packageCode', 'synthetic-starter-package', 'bagItemCode', 'synthetic_package_token'))
+)
+ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = NULL, decimal_value = NULL,
+  integer_value = NULL, boolean_value = NULL, json_value = VALUES(json_value);
 
 INSERT INTO configuration_values (configuration_set_id, config_key, value_type, string_value)
 VALUES (900000001, 'fixture.version', 'string', 'functional-v1')

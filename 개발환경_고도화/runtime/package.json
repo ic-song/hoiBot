@@ -39,7 +39,8 @@
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
     "db:probe:fixed-range-box-open": "node --env-file-if-exists=.env --import tsx scripts/probe-fixed-range-box-open-synthetic.ts",
     "db:probe:castle-card-open": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-card-open-synthetic.ts",
-    "db:probe:starter-package-open": "node --env-file-if-exists=.env --import tsx scripts/probe-starter-package-open-synthetic.ts"
+    "db:probe:starter-package-open": "node --env-file-if-exists=.env --import tsx scripts/probe-starter-package-open-synthetic.ts",
+    "db:probe:package-admin-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-package-admin-grant-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

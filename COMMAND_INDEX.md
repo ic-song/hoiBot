@@ -2141,6 +2141,9 @@ Status: VERIFIED
 - `main.js`
 - `data/packageInfo.json`
 - `data/packageLog.json`
+- `개발환경_고도화/runtime/src/package/package-admin-grant-policy.ts`
+- `개발환경_고도화/runtime/src/package/package-admin-grant-service.ts`
+- `개발환경_고도화/runtime/src/package/maria-package-admin-grant-repository.ts`
 
 ## Related Helpers
 
@@ -2156,6 +2159,8 @@ Status: VERIFIED
 - `grantPackageToUser`
 - `buildUserPackageBagMessage`
 - `usePackageFromBag`
+- `PackageAdminGrantService`
+- `MariaPackageAdminGrantRepository`
 
 ## Data Usage
 
@@ -2164,6 +2169,10 @@ Status: VERIFIED
 - `packageLog.json`
 - `data.member[user].bag`
 - `data.member[user].point`
+- `configuration_sets/package.catalog.entries`
+- `package_definitions`
+- `item_definitions/inventory_stacks/inventory_ledger`
+- `operations/command_executions/command_audit/outbox_messages`
 
 ## Save Flow
 
@@ -2171,6 +2180,7 @@ Status: VERIFIED
 - `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
 - `/패키지알림` mutates `data.operationNotices.packageBag` and saves `member.json`
+- 신규 runtime의 `/패키지지급`은 version-pinned catalog, stable package/item, target stack, ledger, execution, audit, result, reply outbox를 한 DB transaction으로 저장한다.
 
 ## Related Commands
 
@@ -2198,6 +2208,7 @@ Status: VERIFIED
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
+- 신규 runtime의 `/패키지지급`은 기존 `game.inventory.change` 권한을 재사용하고, 별도 grant ledger나 신규 migration 없이 전량 inventory ledger·audit에 남긴다.
 - `/패키지사용`은 기존·신규 패키지 모두 `GLOBAL_CONFIG.package.maxUseOnce` 기준으로 한 번에 최대 1,000개까지 사용한다
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Package edit quick command format: `/패키지수정 리스트번호 보상목록`
