@@ -1,0 +1,98 @@
+export const SIGNUP_TERMS_VERSION = "2026-08-04";
+export const SIGNUP_PENDING_MINUTES = 30;
+
+export interface ValidSignupName {
+  displayName: string;
+  normalizedDisplayName: string;
+  genderCode: "male" | "female";
+}
+
+// 사이트 계정 이름을 확정된 한글 두 글자·공백·성별 형식으로 검증합니다.
+export function validateSystemAccountName(value: string): ValidSignupName {
+  const match = value.match(/^([가-힣]{2}) (남|여)$/u);
+  if (match === null) {
+    throw new Error("INVALID_SIGNUP_NAME_FORMAT");
+  }
+  const compactName = value.replace(/\s+/g, "").toLowerCase();
+  if (BLOCKED_NICKNAME_TERMS.some((term) => compactName.includes(term))) {
+    throw new Error("BLOCKED_SIGNUP_NAME");
+  }
+  return {
+    displayName: value,
+    normalizedDisplayName: value,
+    genderCode: match[2] === "남" ? "male" : "female"
+  };
+}
+
+const BLOCKED_NICKNAME_TERMS = [
+  "시발", "씨발", "쉬발", "슈발", "씹발", "십발", "병신", "빙신", "븅신",
+  "개새", "개년", "개놈", "개돼", "좆같", "좇같", "존나", "졸라", "지랄", "지럴", "지롤",
+  "염병", "옘병", "엠병", "꺼져", "닥쳐", "뒤져", "뒈져", "뒤질", "뒈질", "죽어", "죽자",
+  "미친", "또라", "호구", "찐따", "찌질", "꼰대", "관종", "벌레", "버러", "폐급", "걸레",
+  "쌍년", "썅년", "쌍놈", "니미", "느금", "애미", "애비", "에미", "에비", "고아", "싸물",
+  "빡침", "빡대", "대갈", "똥꼬", "엿먹", "재수", "싸가", "극혐",
+  "섹스", "야스", "자지", "보지", "고추", "꼬추", "성기", "음경", "정액", "사정", "발기",
+  "자위", "강간", "윤간", "야동", "누드", "유두", "후장", "오럴", "펠라", "애널", "로리",
+  "쇼타", "페도", "창녀", "갈보", "매춘", "변태",
+  "짱깨", "홍어", "한남", "한녀", "메갈", "일베", "맘충", "틀딱", "급식", "외노", "조선",
+  "흑형", "토왜", "왜구", "국뽕", "국까", "여혐", "남혐", "혐한", "혐중", "혐일", "인종",
+  "장애", "저능", "정박", "게이", "레즈", "트젠",
+  "정치", "국회", "의원", "총리", "장관", "정부", "정권", "여당", "야당", "선거", "대선",
+  "총선", "투표", "후보", "공천", "탄핵", "계엄", "내란", "특검", "헌재", "검찰", "공수",
+  "국정", "선관", "좌파", "우파", "좌익", "우익", "보수", "진보", "극좌", "극우", "종북",
+  "친북", "친중", "친일", "친미", "친러", "반일", "반미", "반중", "반공", "멸공", "독재",
+  "공산", "사회", "촛불", "태극", "북한", "북괴", "평양", "탈북", "통일", "남북", "주사", "빨갱",
+  "국힘", "민주", "더민", "조국", "혁신", "개혁", "정의", "기본", "새누", "한나라", "열우",
+  "자한", "바미", "민생", "공화", "좌빨", "우빨", "좌좀", "우좀", "문빠", "윤빠", "명빠",
+  "박빠", "노빠", "이빠", "개딸", "수박", "대깨", "찢빠", "굥빠", "문슬", "깨시", "한경",
+  "조빠", "윤석", "재앙", "굥정", "찢명", "승만", "보선", "정희", "규하", "두환", "태우",
+  "영삼", "대중", "무현", "명박", "근혜", "재인", "석열", "재명", "슨상", "쥐박", "그네",
+  "노짱", "문통", "윤통", "이통", "박통", "전통", "문재", "이재", "굥석", "문죄",
+  "ㅅㅂ", "ㅆㅂ", "ㅂㅅ", "ㅈㄹ", "ㅈㄴ", "ㅅㄲ", "ㄴㅁ", "ㄷㅊ", "ㄲㅈ"
+] as const;
+
+// Kakao 표시명을 기존 이름+성별 규칙에 맞게 정규화하고 검증합니다.
+export function validateSignupDisplayName(value: string): ValidSignupName {
+  const displayName = value.replace(/\s+/g, " ").trim();
+  const match = displayName.match(/^([^\s]{2,}) (남|여)$/u);
+  if (match === null || displayName.length > 191) {
+    throw new Error("INVALID_SIGNUP_NAME_FORMAT");
+  }
+
+  const compactName = displayName.replace(/\s+/g, "").toLowerCase();
+  if (BLOCKED_NICKNAME_TERMS.some((term) => compactName.includes(term))) {
+    throw new Error("BLOCKED_SIGNUP_NAME");
+  }
+
+  return {
+    displayName,
+    normalizedDisplayName: displayName.toLowerCase(),
+    genderCode: match[2] === "남" ? "male" : "female"
+  };
+}
+
+// 가입 상태를 변경할 수 있는 정확한 명령만 판별합니다.
+export function isSignupCommand(message: string | undefined): boolean {
+  return message === "/가입" || message === "시작한다" || message === "/시작한다"
+    || message === "거절한다" || message === "/거절한다";
+}
+
+// 기존 Rhino 가입 약관 문구를 그대로 반환합니다.
+export function buildSignupTermsMessage(): string {
+  return "호이월드는\n" +
+    "호월 봇과 함께 펫을 키우고 성장시키는 RPG 게임 공간입니다.\n\n" +
+    "이용자는 자신만의 펫을 돌보고,\n다양한 활동과 상호작용을 통해\n펫의 성장을 경험하며 게임을 즐길 수 있습니다.\n\n" +
+    "게임 내에서 획득한 재화와 아이템은\n모두 게임 플레이와 펫 성장에만 사용되며,\n현실 세계의 재산적 가치와는 연동되지 않습니다.\n\n" +
+    "호이월드는 경쟁이나 순위보다\n펫과의 교감과 성장의 재미를 중심으로 구성된 게임으로,\n모든 이용자가 부담 없이 즐길 수 있도록 설계되었습니다.\n\n" +
+    "지금 호이월드에 가입하고\n나만의 호월 봇과 함께 RPG 세계를 시작해보세요.\n\n" +
+    "시작하시겠습니까?\n\n봇규칙 이용 약관을 확인하시려면 채팅창에\n'호월 봇 이용약관'을 적어주세요." +
+    "\nhttps://ibb.co/jkbgrzHt\n이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.\n\n" +
+    "[시작한다] / [거절한다]\n\n";
+}
+
+// 기존 Rhino 가입 완료 안내 문구를 그대로 반환합니다.
+export function buildSignupWelcomeMessage(): string {
+  return "호이월드에 오신 것을 환영합니다\n" +
+    "채팅창에 \"가이드\"를 입력하시면 가이드 확인이 가능합니다.\n" +
+    "1. /펫생성 아이디\n2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
+}
