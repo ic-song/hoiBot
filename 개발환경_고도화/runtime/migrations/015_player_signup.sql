@@ -1,0 +1,22 @@
+CREATE TABLE player_signup_requests (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  external_identity_id BIGINT UNSIGNED NOT NULL,
+  player_id BIGINT UNSIGNED NULL,
+  display_name VARCHAR(191) NOT NULL,
+  normalized_display_name VARCHAR(191) NULL,
+  gender_code VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  status VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  terms_version VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_channel_id VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
+  accepted_at DATETIME(3) NULL,
+  rejected_at DATETIME(3) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_signup_request_identity (external_identity_id),
+  UNIQUE KEY uq_signup_request_display_name (normalized_display_name),
+  KEY idx_signup_request_status_expiry (status, expires_at),
+  CONSTRAINT fk_signup_request_identity FOREIGN KEY (external_identity_id) REFERENCES external_identities (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_signup_request_player FOREIGN KEY (player_id) REFERENCES players (id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
