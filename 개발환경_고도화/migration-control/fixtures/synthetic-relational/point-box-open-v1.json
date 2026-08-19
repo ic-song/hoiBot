@@ -1,0 +1,1 @@
+{"slice":"SL-INVENTORY-POINT-BOX-OPEN","synthetic":true,"player":{"externalUserId":"synthetic-point-box","point":"9000000000000000"},"inventory":{"point_box_100m":"3"},"commands":[{"message":"/포인트상자오픈 99","eventId":"point-normal","effective":"3","reward":"300000000"},{"message":"/포인트상자오픈 0","eventId":"point-zero","error":"INVALID_POINT_BOX_OPEN"}]}
