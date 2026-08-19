@@ -1,0 +1,15 @@
+{
+  "sliceId": "SL-INVENTORY-PET-FOOD-BOX-OPEN",
+  "commands": ["CMD-06-0113", "CMD-06-0114"],
+  "legacy": { "guard": "exact or /^\\/펫먹이박스오픈\\s+\\d+$/", "reward": "Math.floor(random * 11) + 40", "cap": "min(have, requested)", "zeroStack": "delete" },
+  "dependency": { "slice": "SL-INVENTORY-OPEN-ALL-INTEGRATION-01", "commits": ["c4e6322", "cbcdf7d", "33bb766", "8db0bc5"] },
+  "fixture": "fixtures/synthetic-relational/pet-food-box-open-v1.json",
+  "implementation": ["runtime/src/inventory/pet-food-box-open-service.ts", "runtime/src/app.ts"],
+  "verification": {
+    "typecheck": "passed",
+    "unit": "4 targeted tests passed",
+    "regression": "172 runtime tests passed",
+    "mariadb": { "database": "hoibot_rehearsal_petfood_78ew3o", "migrations": 34, "normal": true, "duplicateReplay": true, "failpointRollback": true, "restartReplay": true, "operationalSnapshotTouched": false }
+  },
+  "gates": { "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false }
+}

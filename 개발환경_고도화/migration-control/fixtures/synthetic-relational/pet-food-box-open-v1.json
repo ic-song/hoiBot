@@ -1,0 +1,16 @@
+{
+  "fixtureVersion": "pet-food-box-open-v1",
+  "sliceId": "SL-INVENTORY-PET-FOOD-BOX-OPEN",
+  "syntheticOnly": true,
+  "actor": { "externalUserId": "synthetic-pet-food-user", "playerId": "910000113", "rankLabel": "합성펫먹이" },
+  "items": [
+    { "code": "pet_food_dungeon_box", "quantity": "3" },
+    { "code": "pet_food", "quantity": "5" }
+  ],
+  "events": [
+    { "eventId": "pet-food-normal", "message": "/펫먹이박스오픈 99", "rng": [0, 0.5, 0.999999], "expected": { "effectiveOpenCount": "3", "rewardTotal": "135", "boxQuantity": "0", "foodQuantity": "140" } },
+    { "eventId": "pet-food-empty", "message": "/펫먹이박스오픈", "expected": { "effectiveOpenCount": "0", "reply": "오픈할 상자가 없습니다" } },
+    { "eventId": "pet-food-zero", "message": "/펫먹이박스오픈 0", "expected": { "error": "INVALID_PET_FOOD_BOX_OPEN" } }
+  ],
+  "assertions": ["event replay has one operation/execution/audit/outbox", "failpoint rolls back stack and ledger", "restart reuses stored result and RNG trace"]
+}

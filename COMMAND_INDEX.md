@@ -6047,3 +6047,37 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+---
+
+# /펫먹이박스오픈
+
+Status: PARTIAL
+
+## Files
+
+- `main.js` (legacy source)
+- `개발환경_고도화/runtime/src/inventory/pet-food-box-open-service.ts` (modernization runtime)
+- `개발환경_고도화/runtime/src/app.ts` (Iris dispatch)
+
+## Related Helpers
+
+- `runPetFoodBoxOpen`
+- `runExploreBoxOpen`
+- `rollPetFoodBox`
+- `PetFoodBoxOpenService`
+
+## Data Usage
+
+- Legacy: `data.member[sender].bag["펫먹이던전박스🍼(/펫먹이박스오픈)"]`, `펫먹이🍼`
+- Runtime: `inventory_stacks`, `inventory_ledger`, `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Legacy saves `member.json` before the direct reply.
+- Runtime locks box/reward stacks, stores RNG trace and outbox in one transaction, then replays the stored result for the same event.
+
+## AI Notes
+
+- Exact `/펫먹이박스오픈` opens one; only the full numeric form accepts a requested count. Trailing text does not execute.
+- Every actual open rolls 40 through 50 inclusively; requested quantity is capped to the locked current box quantity and an empty box leaves no inventory mutation.
