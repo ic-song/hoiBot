@@ -77,7 +77,9 @@ Gate 시작, 완료, 인계, 차단 또는 재개 시점마다 작업 종료를 
 보고 행: A 종류=REPORT | B 보고 ID | C 보고 시각(KST) | D 작업자명 | E 실행 ID | F 슬라이스 ID | G claim 행 | H 사건(Gate전환/완료/차단/인계) | I Gate 요약 | J WBS·매핑·DB·검증 행 | K commit/push | L 위험·다음 행동 | M 대상 task ID | N 수신 상태(PENDING/ACKED/REJECTED) | O 수신 시각(KST) | P 검수 결과
 ```
 
-- 작업자는 제어 행을 먼저 재읽어 `ACTIVE` task ID를 얻고, Gate·Lease 원장 갱신 후 보고 행을 append한다. 과거 또는 보관 task ID를 복사해 쓰지 않는다.
+- 작업자는 제어 행 전체를 먼저 재읽어 가장 최근의 단일 `ACTIVE` task ID를 얻고, Gate·Lease 원장 갱신 후 보고 행을 append한다. 작업 캡슐·이전 chat에 들어 있는 task ID는 보고 대상 권위가 아니며 과거 또는 보관 task ID를 복사해 쓰지 않는다.
+- 실행 중에는 Lease Heartbeat 전, Gate 전환 전, 완료·차단·인계 보고 직전에 제어 행을 다시 읽는다. 대상 task가 바뀌면 새 task ID로만 보고 행을 append하고, 이전 대상에는 보고를 보내지 않는다.
+- 단일 `ACTIVE` 제어 행을 찾지 못하거나 `ACTIVE`가 둘 이상이면 실행을 중지하고 `PENDING` 차단 보고를 append한다. 작업반장 task chat의 active/archived 표시는 제어 행을 대체하지 않는다.
 - 보고 ID는 `실행ID-사건-UTC시각`으로 만들며, 재전달은 같은 보고 ID의 새 append 행으로 남긴다.
 - `PENDING` 보고는 작업반장이 evidence를 재검수한 뒤에만 `ACKED`로 갱신한다. `REJECTED`면 Gate를 추정해 되돌리지 말고 새 실행·Lease로 정정한다.
 - 완료·차단·인계 보고는 `ACKED` 확인 전 종료가 아니다. 현재 작업반장 task가 보관되었거나 수신 불가이면 제어 행을 재읽어 새 대상에 재전달한다.
