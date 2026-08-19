@@ -74,6 +74,7 @@ import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-sn
 import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
+import { isLuckyBoxOpenCommand, LuckyBoxOpenService } from "./inventory/lucky-box-open-service.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 
 interface TokenQuery {
@@ -966,6 +967,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isLuckyBoxOpenCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new LuckyBoxOpenService(database!).handle({ externalUserId: normalizedEvent.userId, channelId: normalizedEvent.channelId, message: normalizedEvent.message!, eventId: normalizedEvent.eventId });
+          if (result.status === "opened" && !result.duplicate) processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "lucky_box_open", error.message));
+          else throw error;
         }
       }
 

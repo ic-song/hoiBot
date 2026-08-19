@@ -1,0 +1,1 @@
+{"slice":"SL-INVENTORY-LUCKY-BOX-OPEN","synthetic":true,"inventory":{"lucky_box":"3","reward_lucky_box":"5"},"commands":[{"message":"/행운의박스오픈 99","effective":"3","reward":"15"},{"message":"/행운의박스오픈 0","error":"INVALID_LUCKY_BOX_OPEN"}],"rng":"none"}

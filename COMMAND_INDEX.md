@@ -5588,6 +5588,40 @@ Status: VERIFIED
 
 ---
 
+# /행운의박스오픈
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/행운의박스오픈`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `runExploreBoxOpen`
+- `openAllOne`
+- `rollDdangDungeonBox`
+
+## Data Usage
+
+- `data.member[sender].bag["행운의박스🍀(/행운의박스오픈)"]`
+- `data.member[sender].bag["럭키박스🍀(/럭키오픈)"]`
+
+## Save Flow
+
+- `runExploreBoxOpen` applies the inventory mutation and preserves the command's current member save/reply boundary.
+
+## AI Notes
+
+- Exact/full-pattern command guard: `/행운의박스오픈` or `/행운의박스오픈 숫자`.
+- Each box grants a fixed `럭키박스🍀(/럭키오픈)` 5개; the current source does not draw RNG for this reward.
+
+---
+
 # /데이터상태
 
 Status: VERIFIED

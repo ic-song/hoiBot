@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-INVENTORY-LUCKY-BOX-OPEN",
+  "status": "verified_gate_1_to_7",
+  "execution": {
+    "worker": "새봄",
+    "executionId": "새봄-SL-INVENTORY-LUCKY-BOX-OPEN-20260819T033400Z-k2v8ra",
+    "claimRow": 622,
+    "branch": "codex/modernization-inventory-lucky-box-open-saebom-k2v8ra",
+    "baseFeatureProd": "5dd7610148212179f6b1e52a50129cb4d33f314b"
+  },
+  "dependencies": {
+    "reconciled": ["dc6ab135ce9498f21a4b07061196755e74d41f68", "c8f064ae423d3ea86857e5da3ed464a0078a0b65", "393a217"],
+    "selectivelyInherited": ["95626f9", "5c33c18", "ba0b029"],
+    "reused": ["database transaction client", "operations", "command_executions", "command_audit", "outbox_messages", "fixture loader"]
+  },
+  "command": {
+    "ids": ["CMD-06-0120", "CMD-06-0121"],
+    "names": ["/행운의박스오픈", "/행운의박스오픈 [숫자]"],
+    "legacyGuard": "msg === '/행운의박스오픈' || /^\\/행운의박스오픈\\s+\\d+$/.test(msg)",
+    "legacyItem": "행운의박스🍀(/행운의박스오픈)",
+    "legacyReward": "럭키박스🍀(/럭키오픈) 5 per box",
+    "usageStatusChanged": false
+  },
+  "parity": {
+    "quantity": "strict raw decimal input, capped to held stack, zero stack removed",
+    "rng": "none; legacy rollDdangDungeonBox has a fixed five-item reward",
+    "rankSnapshot": "display name and tier are captured in the stored result/outbox response",
+    "transaction": "identity/player/item locks; input and reward inventory changes, two inventory ledgers, operation, execution, audit and ordered outbox commit atomically"
+  },
+  "verification": {
+    "fixture": "fixtures/synthetic-relational/lucky-box-open-v1.json",
+    "typecheck": "npm run typecheck passed",
+    "unit": "node --import tsx --test test/lucky-box-open.test.ts: 2/2 passed",
+    "shadow": "isolated hoibot_rehearsal_lucky_k2v8ra MariaDB: normal cap 99->3 and reward 15, duplicate replay after reconnect, failpoint rollback, restart replay passed",
+    "rollbackProof": "post-failpoint box/reward stacks and operations, inventory_ledger, command_executions, command_audit and outbox_messages counts equal their pre-command values",
+    "operationalSnapshotTouched": false,
+    "temporaryDatabaseRemoved": true
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "The MariaDB transaction and ordered outbox are intentionally safer than legacy JSON save/direct reply behavior; operational cutover approval remains required.",
+    "The command has no RNG trace because the current source outcome is fixed.",
+    "Gate 8 requires approved operational snapshot reconciliation, route cutover and live-room smoke evidence."
+  ]
+}
