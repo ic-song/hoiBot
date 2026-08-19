@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 2,
+  "sliceId": "SL-ADMIN-ADMIN-LIST-READ",
+  "executionId": "다온-SL-ADMIN-ADMIN-LIST-READ-20260819T072000Z-m9k4s2",
+  "baseCommit": "30753723412a1a8a9e2d3767576dd143231d9eed",
+  "gate": "Gate3 synthetic data",
+  "scope": "Synthetic fixture and read-model parity rehearsal only; no database connection or runtime implementation.",
+  "legacyContract": {
+    "command": "/관리자명단",
+    "source": "main.js:6770-6776 -> getAdminPayoutUsers(data):28464-28467 -> buildAdminListMessage(admins):28470-28481",
+    "visibility": "Every data.admin key is public to this legacy command; no member, role, status, or caller-permission filter is applied in this branch.",
+    "ordering": "Korean name order through localeCompare(..., 'ko')",
+    "emptyReply": "현재 관리자가 없습니다."
+  },
+  "syntheticFixtures": {
+    "legacyMultiAdmin": { "다온": "", "가온": "", "나래": "" },
+    "expectedSortedNames": ["가온", "나래", "다온"],
+    "legacyEmptyAdmin": {},
+    "expectedEmptyReply": "현재 관리자가 없습니다.",
+    "relationalFixture": "migration-control/fixtures/synthetic-relational/functional-v1.sql",
+    "relationalFixtureOperator": "900000001 / synthetic-admin-alpha / 합성 테스트 관리자 / active / super_admin"
+  },
+  "readModelSeparation": {
+    "legacy": "Public data.admin-name projection, Korean-name ordering, no command-local authorization filter.",
+    "internalGetOperators": "GET /api/v1/admin/operators requires operator.read; AdminManagementService.listOperators orders by operator.id and projects status and roleCodes.",
+    "decision": "Preserve legacy public visibility for the migrated /관리자명단 contract. Do not reuse or alter the internal GET /operators projection for this command."
+  },
+  "verification": {
+    "command": "node migration-control/evidence/admin-admin-list-read-gate3/verify-rehearsal.mjs",
+    "expected": "legacy multi-admin order and empty parity pass; internal read model remains demonstrably separate",
+    "database": "not connected",
+    "forbiddenWorkNotPerformed": ["app.ts", "dispatch", "new migration", "shared fixture loader", "test database", "operational JSON/DB/chat", "Gate4 through Gate8"]
+  }
+}
