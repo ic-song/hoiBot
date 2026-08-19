@@ -79,6 +79,41 @@ describe("hoiBot Lite server", () => {
     await app.close();
   });
 
+  it("integrates VERSION-001 through VERSION-006 at the Iris entrypoint", async () => {
+    const app = buildApp(createConfig());
+    const request = (msg: unknown) => app.inject({
+      method: "POST",
+      url: "/api/v1/integrations/iris/events",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: { msg, room: "테스트방", sender: "일반 사용자", json: {} }
+    });
+
+    // VERSION-001 exact reply and VERSION-004 sender-independent behavior.
+    const exact = await request("/호이봇버전");
+    assert.equal(exact.statusCode, 202);
+    assert.equal(exact.json().commandReply, "ver_2.393");
+
+    // VERSION-002 exact guard keeps suffix and whitespace out of the adapter.
+    assert.equal((await request("/호이봇버전 1")).json().commandReply, undefined);
+    assert.equal((await request("/호이봇버전 ")).json().commandReply, undefined);
+
+    // VERSION-003 is pinned to the legacy source value, while VERSION-005 is stateless.
+    assert.equal((await request("/호이봇버전")).json().commandReply, "ver_2.393");
+    assert.equal((await request("/호이봇버전")).json().commandReply, "ver_2.393");
+
+    // VERSION-006 stays identical after a fresh runtime entrypoint is built.
+    await app.close();
+    const restarted = buildApp(createConfig());
+    const afterRestart = await restarted.inject({
+      method: "POST",
+      url: "/api/v1/integrations/iris/events",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: { msg: "/호이봇버전" }
+    });
+    assert.equal(afterRestart.json().commandReply, "ver_2.393");
+    await restarted.close();
+  });
+
   it("supports a query token for Iris endpoint compatibility", async () => {
     const app = buildApp(createConfig());
     const response = await app.inject({

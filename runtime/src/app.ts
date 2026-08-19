@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
+import { adaptHoiBotVersionCommand } from "./hoibot-version.js";
 import { RecentEventStore } from "./recent-events.js";
 
 interface TokenQuery {
@@ -145,7 +146,18 @@ export function buildApp(config: AppConfig) {
         });
       }
 
-      return reply.code(202).send({ ok: true, accepted: true, requestId: request.id });
+      // Keep this exact read command local to the existing Iris entrypoint.  It
+      // deliberately does not add a shared command-dispatch abstraction.
+      const commandReply = typeof request.body.msg === "string"
+        ? adaptHoiBotVersionCommand(request.body.msg)
+        : undefined;
+
+      return reply.code(202).send({
+        ok: true,
+        accepted: true,
+        requestId: request.id,
+        ...(commandReply === undefined ? {} : { commandReply })
+      });
     }
   );
 
