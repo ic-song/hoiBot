@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ADMIN-CONSTRUCTION-EDIT",
+  "status": "verified_gate_1_to_7",
+  "execution": {
+    "worker": "가온",
+    "executionId": "가온-SL-ADMIN-CONSTRUCTION-EDIT-20260819T045451Z-d06d13",
+    "claimRow": 719,
+    "branch": "codex/modernization-admin-construction-edit-gaon-d06d13",
+    "baseHead": "56d223a6c0a96a1e0804a16628acd4f0853b5404"
+  },
+  "commands": {
+    "ids": ["CMD-07-0002"],
+    "names": ["/건설수정"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact /건설수정 token followed by whitespace-delimited arguments"],
+    "helpers": ["ConstructionEditService", "MariaConstructionEditRepository", "legacy home catalog policy"],
+    "automaticFlows": ["operational Iris app dispatch", "stored operation result replay for the same event"]
+  },
+  "legacyData": {
+    "files": ["data/petSweetHomeInfo.json", "data/petSweetHomeData.json"],
+    "readPaths": ["homeInfo[].floor/display", "homeData[targetName].floor/houseName/exp"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 Rhino source와 운영 data/*는 변경하지 않음"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["001_foundation.sql through 033_inventory_snapshots.sql"],
+    "newMigration": false,
+    "tables": [
+      "player_profiles", "player_homes", "furniture_definitions", "owned_furniture",
+      "furniture_placements", "operations", "command_executions", "command_audit",
+      "outbox_messages", "delivery_attempts"
+    ],
+    "constraints": [
+      "새 sweet_home_* 객체 없음",
+      "player_homes version 조건부 갱신",
+      "동일 event idempotency와 저장 결과 replay",
+      "가구 소유·배치 관계 보존"
+    ],
+    "newColumns": [],
+    "transactionBoundary": "player home update, operation, command execution, audit and Iris outbox commit atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_construction_final_d06d13",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~033 fresh/reapply, fixture apply/verify-only, probe, 별도 process restart replay, Shadow",
+    "checks": [
+      "migration-count 33 fresh/reapply",
+      "fixture checksum 6d6368da50838f4560e835a70b96d335b08c408216044f2885d46625641552db and 35 tables",
+      "legacy home catalog 300 entries and exact reply parity",
+      "direct duplicate and mid-write rollback",
+      "separate process restart replay",
+      "non-operational Shadow 8 scenarios"
+    ],
+    "result": "passed",
+    "temporaryDatabaseRemoved": true
+  },
+  "logicPort": {
+    "services": ["construction-edit-policy.ts", "construction-edit-service.ts", "app.ts"],
+    "repositories": ["maria-construction-edit-repository.ts", "shared database transaction client"],
+    "tests": [
+      "runtime 172/172",
+      "typecheck",
+      "build",
+      "main.js and Info.js node --check",
+      "MariaDB fresh/reapply",
+      "fixture apply/verify-only",
+      "construction probe/restart replay",
+      "construction non-operational Shadow"
+    ]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "probe-construction-edit-synthetic.ts", "shadow-construction-edit-synthetic.ts"],
+    "comparisonMode": "legacy catalog/reply behavior plus relational transaction, idempotency, rollback and restart replay",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "비식별 rehearsal MariaDB와 in-process Iris reply adapter",
+    "result": "passed",
+    "event": "iris:construction-edit-final-g7-d06d13-normal",
+    "scenarios": ["usage", "numeric suffix", "gap 189", "missing player", "prefix collision", "forbidden", "normal 190", "duplicate"],
+    "effects": {"operation": 1, "execution": 1, "audit": 1, "outbox": 1, "delivery": 1},
+    "restartReplay": "passed",
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "범위 밖; 별도 승인 필요",
+    "finalImportPlan": "범위 밖; 운영 snapshot reconciliation 미수행",
+    "smokePlan": "범위 밖; 실운영방 smoke 미수행",
+    "rollbackPlan": "Gate8 승인 전 Rhino 운영 경로 유지"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "risks": [
+    "DB transaction/outbox가 현행 JSON 저장·직접 reply보다 원자적인 안전 차이는 parity 승인 대상이다",
+    "표시명이 중복되면 player ID 기반 관리자 화면으로 처리해야 한다",
+    "운영 snapshot reconciliation, 실운영 smoke와 cutover 증거가 없어 Gate8은 미완료다",
+    "source branch는 운영 feature/prod에 반영하지 않았다"
+  ]
+}

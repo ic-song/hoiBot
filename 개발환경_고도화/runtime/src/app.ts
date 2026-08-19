@@ -51,6 +51,9 @@ import { MariaGuildJoinConditionRepository } from "./guild/maria-guild-join-cond
 import { GuildForceExpelService } from "./guild/guild-force-expel-service.js";
 import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-policy.js";
 import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
+import { ConstructionEditService } from "./home/construction-edit-service.js";
+import { isConstructionEditCommandCandidate } from "./home/construction-edit-policy.js";
+import { MariaConstructionEditRepository } from "./home/maria-construction-edit-repository.js";
 import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
@@ -873,6 +876,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "guild_force_expel_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isConstructionEditCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new ConstructionEditService(new MariaConstructionEditRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.data !== undefined && result.outboxId !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "construction_edit", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "construction_edit_error", error.message));
           } else {
             throw error;
           }
