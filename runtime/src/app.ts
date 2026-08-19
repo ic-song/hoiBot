@@ -2,6 +2,7 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
 import { RecentEventStore } from "./recent-events.js";
+import { adaptFreeMarketHistoryCommand, type FreeMarketHistoryProvider } from "./free-market-history.js";
 
 interface TokenQuery {
   token?: string;
@@ -60,7 +61,7 @@ function createTokenGuard(config: AppConfig) {
 }
 
 // 테스트와 실제 실행에서 공통으로 사용할 Fastify 앱을 생성합니다.
-export function buildApp(config: AppConfig) {
+export function buildApp(config: AppConfig, freeMarketHistory?: FreeMarketHistoryProvider) {
   const app = Fastify({
     bodyLimit: config.bodyLimitBytes,
     logController: new LogController({ disableRequestLogging: true }),
@@ -145,7 +146,10 @@ export function buildApp(config: AppConfig) {
         });
       }
 
-      return reply.code(202).send({ ok: true, accepted: true, requestId: request.id });
+      const commandReply = typeof request.body.msg === "string" && freeMarketHistory
+        ? adaptFreeMarketHistoryCommand(request.body.msg, freeMarketHistory)
+        : undefined;
+      return reply.code(202).send({ ok: true, accepted: true, requestId: request.id, commandReply });
     }
   );
 

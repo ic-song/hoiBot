@@ -91,6 +91,18 @@ describe("hoiBot Lite server", () => {
     await app.close();
   });
 
+  it("adapts exact free-market history aliases with newest-first, rank, fee-marker, and empty parity", async () => {
+    const provider = { listCompletedLogs: () => [{ id: 1, itemName: "오래된", quantity: 1, price: 10, seller: "a", buyer: "b", completedAtMs: 1 }, { id: 2, itemName: "최신", quantity: 2, price: 20, seller: "c", buyer: "d", completedAtMs: 2, memberFeeApplied: true }], rankOf: (name: string) => `R:${name}` };
+    const app = buildApp(createConfig(), provider);
+    const exact = await app.inject({ method: "POST", url: "/api/v1/integrations/iris/events", headers: { authorization: `Bearer ${TEST_TOKEN}` }, payload: { msg: "/자유시장거래현황" } });
+    const alias = await app.inject({ method: "POST", url: "/api/v1/integrations/iris/events", headers: { authorization: `Bearer ${TEST_TOKEN}` }, payload: { msg: "ㅅㅅ" } });
+    const suffix = await app.inject({ method: "POST", url: "/api/v1/integrations/iris/events", headers: { authorization: `Bearer ${TEST_TOKEN}` }, payload: { msg: "ㅅㅅ 확인" } });
+    assert.match(exact.json().commandReply, /1\. \[최신x2개\].*R:c.*R:d.*자유시장회원권/);
+    assert.equal(alias.json().commandReply, exact.json().commandReply);
+    assert.equal(suffix.json().commandReply, undefined);
+    await app.close();
+  });
+
   it("rejects a payload over the configured size", async () => {
     const app = buildApp(createConfig({ bodyLimitBytes: 128 }));
     const response = await app.inject({
