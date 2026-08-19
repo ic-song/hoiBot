@@ -22,6 +22,14 @@ function failCurrency(inner: DatabaseClient): DatabaseClient { return { ping:()=
 try {
   await seed(3n); await seedEvent(event); const normal = await new PointBoxOpenService(db).handle({externalUserId:external,channelId:"synthetic-room",message:"/포인트상자오픈 99",eventId:event});
   assert.equal(normal.effectiveOpenCount,"3"); assert.equal(normal.rewardTotal,"300000000");
+  const failEvent = `${event}-fail`; await seed(1n); await seedEvent(failEvent);
+  const before = await db.query<Array<{ stacks: bigint; accounts: bigint; inventory_ledger: bigint; currency_ledger: bigint; operations: bigint; executions: bigint; audit: bigint; outbox: bigint }>>(
+    "SELECT (SELECT COUNT(*) FROM inventory_stacks WHERE player_id = ?) AS stacks, (SELECT COUNT(*) FROM currency_accounts WHERE player_id = ? AND currency_code = 'point') AS accounts, (SELECT COUNT(*) FROM inventory_ledger) AS inventory_ledger, (SELECT COUNT(*) FROM currency_ledger) AS currency_ledger, (SELECT COUNT(*) FROM operations) AS operations, (SELECT COUNT(*) FROM command_executions) AS executions, (SELECT COUNT(*) FROM command_audit) AS audit, (SELECT COUNT(*) FROM outbox_messages) AS outbox", [playerId, playerId]
+  );
+  await assert.rejects(() => new PointBoxOpenService(failCurrency(db)).handle({externalUserId:external,channelId:"synthetic-room",message:"/포인트상자오픈",eventId:failEvent}));
+  const state = await db.query<Array<{ quantity: bigint; balance: string }>>("SELECT stack.quantity, CAST(account.balance AS CHAR) AS balance FROM inventory_stacks stack JOIN currency_accounts account ON account.player_id = stack.player_id AND account.currency_code = 'point' WHERE stack.player_id = ? AND stack.item_id = 910000113", [playerId]);
+  const after = await db.query<typeof before>("SELECT (SELECT COUNT(*) FROM inventory_stacks WHERE player_id = ?) AS stacks, (SELECT COUNT(*) FROM currency_accounts WHERE player_id = ? AND currency_code = 'point') AS accounts, (SELECT COUNT(*) FROM inventory_ledger) AS inventory_ledger, (SELECT COUNT(*) FROM currency_ledger) AS currency_ledger, (SELECT COUNT(*) FROM operations) AS operations, (SELECT COUNT(*) FROM command_executions) AS executions, (SELECT COUNT(*) FROM command_audit) AS audit, (SELECT COUNT(*) FROM outbox_messages) AS outbox", [playerId, playerId]);
+  assert.deepEqual(state[0], { quantity: 1n, balance: "9000000000000000.000" }); assert.deepEqual(after, before);
   await db.close(); const replayDb = createDatabaseClient(config.database); const duplicate = await new PointBoxOpenService(replayDb).handle({externalUserId:external,channelId:"synthetic-room",message:"/포인트상자오픈 99",eventId:event}); assert.equal(duplicate.duplicate,true);
-  console.log(JSON.stringify({slice:"SL-INVENTORY-POINT-BOX-OPEN",normal:true,duplicateReplay:true,restartReplay:true})); await replayDb.close();
+  console.log(JSON.stringify({slice:"SL-INVENTORY-POINT-BOX-OPEN",normal:true,duplicateReplay:true,failpointRollback:true,restartReplay:true})); await replayDb.close();
 } finally { await db.close().catch(()=>undefined); }
