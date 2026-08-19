@@ -14788,7 +14788,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var packItem = "태초야키토리 10세트🥩(/이랏싸이마쎄)";
                     var ticketItem = "미니펫뽑기🐹(/미니펫오픈)";
-                    var ticketGive = 1500;
+                    var ticketGive = 2500;
 
                     var nickName = checkRank(data, petData, guildData, sender);
 
