@@ -155,6 +155,19 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When a human role must be named, use only `사용자`, `운영자`, `총괄 운영자`, or `개발자`.
 - The user does not need to repeat repository paths, shared links, or the detailed migration procedure.
 
+## Modernization Foreman Skill Improvement Authority
+
+- The modernization foreman monitors worker reports, blocked reasons, correction runs, handoffs, and repeated manual procedures to identify reusable prevention or automation candidates.
+- Classify every report by event type and requested action before interpreting command names or implementation terms. A report about missing predecessor assets, Lease conflicts, evidence mismatch, or row correction is not a new implementation request unless it explicitly asks for implementation.
+- Frequently recurring issues belong to the foreman. When the same or materially similar issue appears across workers or slices, the foreman may create a prevention skill or improve the existing foreman skill.
+- Repetitive execution work belongs to the worker closest to the procedure. A worker who repeatedly performs the same discovery, reconciliation, validation, or reporting sequence may prepare a reusable skill draft.
+- Worker-created skill content remains a draft. Workers MUST NOT register, activate, synchronize, or distribute it as a canonical skill without foreman review.
+- The foreman is the final approval gate for skill scope, trigger description, overlap with existing skills, authoritative sources, validation steps, stop conditions, and ownership.
+- Prefer updating an existing skill when it can cover the pattern clearly. Create a new skill only when the workflow has a distinct trigger, reusable procedure, and independent responsibility.
+- Do not turn a single ordinary mistake into a skill. First improve the task capsule or existing rule; promote it to a skill after recurrence, cross-worker impact, or a high-cost/high-risk deterministic procedure is confirmed.
+- Skills must encode the decision procedure, required inputs, evidence checks, stop conditions, and report format. They must not hard-code one execution's row numbers, task IDs, worker names, commits, or results.
+- All hoiBot skill drafts and approved changes follow the Central Codex Skill Registry workflow. The canonical change is made under `CODEX-CONFIG/skills/projects/hoibot/`, validated and approved by the foreman, then synchronized to mirrors.
+
 ## Central Codex Skill Registry
 
 - The private `https://github.com/ic-song/CODEX-CONFIG.git` repository is the canonical source for user-authored hoiBot Codex skills.
