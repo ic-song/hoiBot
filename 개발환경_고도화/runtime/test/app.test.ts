@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildApp as buildRuntimeApp, type AppDependencies } from "../src/app.js";
 import type { AppConfig } from "../src/config.js";
-import type { DatabaseClient } from "../src/database.js";
+import type { DatabaseClient, DatabaseTransaction } from "../src/database.js";
 import type { IrisKakaoDatabaseSnapshot } from "../src/integration/iris-kakao-database-inspector.js";
 
 const TEST_TOKEN = "test-shared-token-1234";
@@ -56,6 +56,17 @@ function createDatabaseStub(overrides: Partial<DatabaseClient> = {}): DatabaseCl
     close: async () => undefined,
     ...overrides
   };
+}
+
+function createEventProcessingDatabase(): DatabaseClient {
+  let insertId = 1n;
+  const transaction: DatabaseTransaction = {
+    query: async <T>() => [] as T,
+    execute: async () => ({ affectedRows: 1n, insertId: insertId++ })
+  };
+  return createDatabaseStub({
+    withTransaction: async <T>(work: (value: DatabaseTransaction) => Promise<T>) => work(transaction)
+  });
 }
 
 function createKakaoSnapshot(overrides: Partial<IrisKakaoDatabaseSnapshot> = {}): IrisKakaoDatabaseSnapshot {
@@ -398,6 +409,86 @@ describe("hoiBot Lite server", () => {
 
     assert.equal(response.statusCode, 202);
     assert.deepEqual(replies, []);
+    await app.close();
+  });
+
+  it("dispatches the exact public /관리자명단 command through the legacy policy without using operator projection", async () => {
+    const replies: Array<{ room: string; data: string }> = [];
+    const app = buildApp(createConfig(), {
+      database: createEventProcessingDatabase(),
+      legacyAdminSource: {
+        다온: { status: "suspended", roles: [] },
+        가온: { status: "active", roles: ["manager"] },
+        나래: null
+      },
+      legacyAdminAllsee: "[allsee]",
+      sendIrisTextReply: async (reply) => { replies.push(reply); }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "/관리자명단",
+        room: "테스트방",
+        sender: "테스터",
+        json: { id: "admin-list-1", chat_id: "123", user_id: "456", type: "1" }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(replies, [{
+      room: "123",
+      data: "🛠 관리자 명단\n━━━━━━━━━━━━\n총 관리자 수: 3명\n━━━━━━━━━━━━\n관리자 명단 보기👈[allsee]\n1. 가온\n2. 나래\n3. 다온"
+    }]);
+    await app.close();
+  });
+
+  it("does not dispatch /관리자명단 when text is appended", async () => {
+    const replies: Array<{ room: string; data: string }> = [];
+    const app = buildApp(createConfig(), {
+      database: createEventProcessingDatabase(),
+      legacyAdminSource: { 가온: {} },
+      sendIrisTextReply: async (reply) => { replies.push(reply); }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "/관리자명단 안내",
+        room: "테스트방",
+        sender: "테스터",
+        json: { id: "admin-list-2", chat_id: "123", user_id: "456", type: "1" }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(replies, []);
+    await app.close();
+  });
+
+  it("keeps the legacy empty administrator-list reply through the command adapter", async () => {
+    const replies: Array<{ room: string; data: string }> = [];
+    const app = buildApp(createConfig(), {
+      database: createEventProcessingDatabase(),
+      legacyAdminSource: {},
+      sendIrisTextReply: async (reply) => { replies.push(reply); }
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "/관리자명단",
+        room: "테스트방",
+        sender: "테스터",
+        json: { id: "admin-list-empty", chat_id: "123", user_id: "456", type: "1" }
+      }
+    });
+
+    assert.equal(response.statusCode, 202);
+    assert.deepEqual(replies, [{ room: "123", data: "현재 관리자가 없습니다." }]);
     await app.close();
   });
 

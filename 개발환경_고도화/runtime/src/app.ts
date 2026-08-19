@@ -25,6 +25,7 @@ import {
 } from "./integration/iris-channel-policy.js";
 import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
+import { buildLegacyAdminListReply } from "./admin/legacy-admin-list-read-policy.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
@@ -99,6 +100,8 @@ export interface AppDependencies {
   inspectIrisKakaoDatabase?: (event: NormalizedIrisEvent) => Promise<IrisKakaoDatabaseSnapshot>;
   inspectIrisChannel?: (event: NormalizedIrisEvent) => Promise<IrisChannelAccessDecision>;
   retainIrisEventContent?: (payload: IrisPayload, event: NormalizedIrisEvent) => Promise<number>;
+  legacyAdminSource?: unknown;
+  legacyAdminAllsee?: string;
   database?: DatabaseClient;
 }
 
@@ -726,6 +729,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.message === "/관리자명단") {
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "legacy_admin_list_read",
+          buildLegacyAdminListReply(dependencies.legacyAdminSource, dependencies.legacyAdminAllsee ?? "")
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
