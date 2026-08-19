@@ -58,11 +58,23 @@ function createDatabaseStub(overrides: Partial<DatabaseClient> = {}): DatabaseCl
   };
 }
 
-function createEventProcessingDatabase(): DatabaseClient {
+function createEventProcessingDatabase(options: { rejectDuplicateEventInbox?: boolean } = {}): DatabaseClient {
   let insertId = 1n;
+  const inboxEventIds = new Set<string>();
   const transaction: DatabaseTransaction = {
     query: async <T>() => [] as T,
-    execute: async () => ({ affectedRows: 1n, insertId: insertId++ })
+    execute: async (sql: string, values: readonly unknown[] = []) => {
+      if (options.rejectDuplicateEventInbox && sql.includes("INSERT INTO event_inbox")) {
+        const eventId = String(values[0]);
+        if (inboxEventIds.has(eventId)) {
+          const error = new Error("Duplicate inbox event.") as Error & { code?: string };
+          error.code = "ER_DUP_ENTRY";
+          throw error;
+        }
+        inboxEventIds.add(eventId);
+      }
+      return { affectedRows: 1n, insertId: insertId++ };
+    }
   };
   return createDatabaseStub({
     withTransaction: async <T>(work: (value: DatabaseTransaction) => Promise<T>) => work(transaction)
@@ -490,6 +502,42 @@ describe("hoiBot Lite server", () => {
     assert.equal(response.statusCode, 202);
     assert.deepEqual(replies, [{ room: "123", data: "현재 관리자가 없습니다." }]);
     await app.close();
+  });
+
+  it("keeps the legacy administrator-list reply single across duplicate delivery and restart", async () => {
+    const replies: Array<{ room: string; data: string }> = [];
+    const database = createEventProcessingDatabase({ rejectDuplicateEventInbox: true });
+    const dependencies = {
+      database,
+      legacyAdminSource: { 다온: {}, 가온: {} },
+      legacyAdminAllsee: "[allsee]",
+      sendIrisTextReply: async (reply: { room: string; data: string }) => { replies.push(reply); }
+    };
+    const request = {
+      method: "POST" as const,
+      url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`,
+      payload: {
+        msg: "/관리자명단",
+        room: "테스트방",
+        sender: "테스터",
+        json: { id: "admin-list-restart", chat_id: "123", user_id: "456", type: "1" }
+      }
+    };
+    const firstApp = buildApp(createConfig(), dependencies);
+    const firstResponse = await firstApp.inject(request);
+    assert.equal(firstResponse.statusCode, 202);
+    assert.equal(firstResponse.json().duplicate, false);
+    await firstApp.close();
+
+    const restartedApp = buildApp(createConfig(), dependencies);
+    const repeatedResponse = await restartedApp.inject(request);
+    assert.equal(repeatedResponse.statusCode, 202);
+    assert.equal(repeatedResponse.json().duplicate, true);
+    assert.deepEqual(replies, [{
+      room: "123",
+      data: "🛠 관리자 명단\n━━━━━━━━━━━━\n총 관리자 수: 2명\n━━━━━━━━━━━━\n관리자 명단 보기👈[allsee]\n1. 가온\n2. 다온"
+    }]);
+    await restartedApp.close();
   });
 
   it("does not mirror an ordinary text event", async () => {
