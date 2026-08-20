@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.396"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.397"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -20019,7 +20019,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (!usePremiumFreeNotice) {
                         // 아이템 보유 여부 확인
                         if (!hasItem(data, sender, useItemName, 1)) {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 오늘의 호이패스 프리미엄 무료 알림 " + GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount + "회를 모두 사용했습니다.\n[" + useItemName + "] 아이템이 없어 추가 알림을 보낼 수 없습니다.");
+                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 오늘의 호이패스 프리미엄 무료 알림\n" + GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount + "회를 모두 사용했습니다.");
                             return;
                         }
                         if (data.member[sender].noticeItemCount >= 2) {
