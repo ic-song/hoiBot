@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.394"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.395"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -19043,18 +19043,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var textCleanHomeData = loadJsonFile(homeDataFile);
                     var textCleanMiniPetCountBefore = countAllMiniPetBagItems(petData); // 정리 전 전체 미니펫 가방 수량
                     var textCleanFurnitureCountBefore = countAllFurnitureBagItems(textCleanHomeData); // 정리 전 전체 가구 가방 수량
-                    var miniCleanAllResult = buildProtectedBagCleanupResult(textCleanMiniPetCountBefore, "마리");
-                    var furnitureCleanAllResult = buildProtectedBagCleanupResult(textCleanFurnitureCountBefore, "개");
+                    var miniCleanAllResult = cleanAllMiniPetBags(data, petData, guildData, miniPetData);
+                    var furnitureCleanAllResult = cleanAllFurnitureBags(data, petData, guildData, textCleanHomeData);
                     var pendantCleanAllResultForText = cleanAllPendantBags(data, petData, guildData);
                     var textCleanMiniPetCountAfter = countAllMiniPetBagItems(petData); // 정리 후 전체 미니펫 가방 수량
                     var textCleanFurnitureCountAfter = countAllFurnitureBagItems(textCleanHomeData); // 정리 후 전체 가구 가방 수량
-                    if (textCleanMiniPetCountAfter < textCleanMiniPetCountBefore || textCleanFurnitureCountAfter < textCleanFurnitureCountBefore) {
-                        debuggerLog("[ERROR : 글자수전체정리 데이터 보호] 미니펫 " + textCleanMiniPetCountBefore + "→" + textCleanMiniPetCountAfter + " / 가구 " + textCleanFurnitureCountBefore + "→" + textCleanFurnitureCountAfter);
-                        replier.reply("❌ 가구·미니펫 수량 감소가 감지되어 저장을 중단했습니다. 관리자 로그를 확인해주세요.");
+                    var textCleanMiniPetRemoved = textCleanMiniPetCountBefore - textCleanMiniPetCountAfter; // 실제 미니펫 삭제 수량
+                    var textCleanFurnitureRemoved = textCleanFurnitureCountBefore - textCleanFurnitureCountAfter; // 실제 가구 삭제 수량
+                    if (textCleanMiniPetRemoved !== miniCleanAllResult.totalRemovedCount || textCleanFurnitureRemoved !== furnitureCleanAllResult.totalRemovedCount) {
+                        debuggerLog("[ERROR : 글자수전체정리 수량 불일치] 미니펫 " + textCleanMiniPetRemoved + "/" + miniCleanAllResult.totalRemovedCount + " / 가구 " + textCleanFurnitureRemoved + "/" + furnitureCleanAllResult.totalRemovedCount);
+                        replier.reply("❌ 가구·미니펫 정리 수량이 일치하지 않아 저장을 중단했습니다. 관리자 로그를 확인해주세요.");
                         return;
                     }
-                    var shouldSaveTextCleanPetData = pendantCleanAllResultForText.ok; // 펜던트 정리 결과 저장 여부
+                    var shouldSaveTextCleanPetData = miniCleanAllResult.ok || pendantCleanAllResultForText.ok; // 미니펫·펜던트 정리 결과 저장 여부
                     if (shouldSaveTextCleanPetData) saveJsonFile(petData, memberPetPath);
+                    if (furnitureCleanAllResult.ok) saveJsonFile(textCleanHomeData, homeDataFile);
                     replier.reply(buildTextLengthCleanupMessage(miniCleanAllResult, furnitureCleanAllResult, pendantCleanAllResultForText));
                     return;
                 }
@@ -19986,22 +19989,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 알림 내용은 최대 " + maxLength + "글자까지 입력할 수 있습니다.");
                         return;
                     }
+                    let hasPremiumNotice = isHoiPassPremiumActive(data, sender);
+                    if (!hasPremiumNotice) {
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 🐺호패프리미엄🐺 유저가 아닙니다.");
+                        return;
+                    }
                     if (typeof data.member[sender].noticePremiumCount !== "number") {
                         data.member[sender].noticePremiumCount = 0;
                     }
                     if (typeof data.member[sender].noticeItemCount !== "number") {
                         data.member[sender].noticeItemCount = 0;
                     }
-                    let hasPremiumNotice = isHoiPassPremiumActive(data, sender);
                     let usePremiumFreeNotice = hasPremiumNotice && data.member[sender].noticePremiumCount < GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount;
                     if (!usePremiumFreeNotice) {
                         // 아이템 보유 여부 확인
                         if (!hasItem(data, sender, useItemName, 1)) {
-                            if (hasPremiumNotice) {
-                                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 오늘의 호이패스 프리미엄 무료 알림 " + GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount + "회를 모두 사용했습니다.\n[" + useItemName + "] 아이템이 없어 추가 알림을 보낼 수 없습니다.");
-                            } else {
-                                replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 [" + useItemName + "] 아이템이 없습니다.");
-                            }
+                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 오늘의 호이패스 프리미엄 무료 알림 " + GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount + "회를 모두 사용했습니다.\n[" + useItemName + "] 아이템이 없어 추가 알림을 보낼 수 없습니다.");
                             return;
                         }
                         if (data.member[sender].noticeItemCount >= 2) {
@@ -40302,6 +40305,7 @@ function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, p
     var raidRate = raidBefore > 0 ? (raidAfter - raidBefore) / raidBefore * 100 : 0;
     var upgradeRate = upgradeBefore > 0 ? (upgradeAfter - upgradeBefore) / upgradeBefore * 100 : 0;
     var lines = ["[💟 홈뱃지 큐브 장착 디버깅]", "대상: " + user, "━━━━━━━━━━━━━━━"];
+    lines.push("실제 적용 옵션: ⚔️+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "castle")) + " / 👾+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "raid")) + " / 🌟+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade")) + " / ⛰️+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "explore")));
     lines.push("캐슬 매력: " + numberWithCommas(castleBefore) + " → " + numberWithCommas(castleAfter) + " (기존 대비 +" + castleRate.toFixed(2) + "%)");
     lines.push("레이드 매력: " + numberWithCommas(raidBefore) + " → " + numberWithCommas(raidAfter) + " (기존 대비 +" + raidRate.toFixed(2) + "%)");
     lines.push("펫강화 수치: " + upgradeBefore + "강 → " + upgradeAfter + "강 (기존 대비 +" + upgradeRate.toFixed(2) + "%)");
@@ -40367,7 +40371,7 @@ function buildHomeBadgeCubeRateMessage(data, petData, guildData, user) {
     return lines.join("\n");
 }
 
-// 홈뱃지의 큐브 옵션 제목과 번호별 두 줄을 카드용으로 생성하는 함수
+// 홈뱃지의 큐브 옵션 제목과 번호별 한 줄씩을 카드용으로 생성하는 함수
 function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var record = getHomeBadgeCubeRecord(data, user, badge.id, false);
     var castle = record ? record.castle : 0;
@@ -40375,11 +40379,18 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var petUpgrade = record ? record.petUpgrade : 0;
     var explore = record ? record.explore : 0;
     var store = getHomeBadgeCubeStore(data, user, false);
-    var premiumSuffix = isHoiPassPremiumActive(data, user) && store && store.equippedBadgeId === badge.id ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%🐺)" : "";
+    var showPremiumAppliedValue = isHoiPassPremiumActive(data, user) && store && store.equippedBadgeId === badge.id;
+    var premiumSuffix = showPremiumAppliedValue ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%🐺)" : "";
+    var castleFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "castle")) : "";
+    var raidFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "raid")) : "";
+    var petUpgradeFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade")) : "";
+    var exploreFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "explore")) : "";
     var lines = [];
     lines.push("💟 홈뱃지 큐브 옵션");
-    lines.push("[1]⚔️+" + formatHomeBadgeCubeCardPercent(castle) + premiumSuffix + " [2]👾+" + formatHomeBadgeCubeCardPercent(raid) + premiumSuffix);
-    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + premiumSuffix + " [4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + premiumSuffix);
+    lines.push("[1]⚔️+" + formatHomeBadgeCubeCardPercent(castle) + premiumSuffix + castleFinal);
+    lines.push("[2]👾+" + formatHomeBadgeCubeCardPercent(raid) + premiumSuffix + raidFinal);
+    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + premiumSuffix + petUpgradeFinal);
+    lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + premiumSuffix + exploreFinal);
     if (isHomeBadgeCubeTotalBuffActive(record)) lines.push("└ 💟 기본 합계 100%! 장착 효과에 10% 추가 버프가 적용됩니다.");
     return lines.join("\n");
 }
@@ -44512,19 +44523,6 @@ function countAllFurnitureBagItems(homeData) {
     return totalCount;
 }
 
-// 글자수 전체정리에서 가방 데이터를 삭제하지 않았음을 나타내는 결과를 생성하는 함수
-function buildProtectedBagCleanupResult(protectedCount, unit) {
-    return {
-        ok: false,
-        totalUserCount: 0,
-        totalRemovedCount: 0,
-        protectedCount: protectedCount,
-        protectedUnit: unit,
-        userLogLines: [],
-        message: "가방 데이터 보호"
-    };
-}
-
 // 전체 미니펫 가방 초과분 정리
 function cleanAllMiniPetBags(data, petData, guildData, miniPetData) {
     if (!petData) return { ok: false, totalUserCount: 0, totalRemovedCount: 0, userLogLines: [], message: "❌ 미니펫 데이터가 없습니다." };
@@ -44629,8 +44627,8 @@ function cleanAllPendantBags(data, petData, guildData) {
 function buildTextLengthCleanupMessage(miniResult, furnitureResult, pendantResult) {
     var msg = "[관리자 정리 시스템🧹]\n글자수 전체 정리가 완료되었습니다.\n\n";
     msg += "정리 결과\n";
-    msg += "- 미니펫 보호: " + numberWithCommas(miniResult.protectedCount || 0) + (miniResult.protectedUnit || "마리") + " 유지\n";
-    msg += "- 가구 보호: " + numberWithCommas(furnitureResult.protectedCount || 0) + (furnitureResult.protectedUnit || "개") + " 유지\n";
+    msg += "- 미니펫 정리: " + numberWithCommas(miniResult.totalRemovedCount || 0) + "마리 삭제\n";
+    msg += "- 가구 정리: " + numberWithCommas(furnitureResult.totalRemovedCount || 0) + "개 삭제\n";
     msg += "- 펜던트 정리: " + numberWithCommas(pendantResult.totalRemovedCount || 0) + "개 삭제\n";
     if (!miniResult.ok && !furnitureResult.ok && !pendantResult.ok) {
         msg += "\n정리할 초과 데이터가 없습니다.";
