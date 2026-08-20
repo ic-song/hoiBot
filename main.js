@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.395"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.396"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -5575,6 +5575,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg == "/디버깅모드" && (sender == "호이 남" || sender == "쓱싹 여" || sender == "찰리 봇")) {
                     let debugMode = debuggerToggle();
                     replier.reply("디버깅 모드 : " + (debugMode ? "ON" : "OFF"));
+                }
+                if ((msg === "/매력버프체크" || /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg)) && (sender == "호이 남" || sender == "쓱싹 여" || sender == "찰리 봇")) {
+                    if (!isDebuggerFlag) {
+                        replier.reply("❌ /디버깅모드를 먼저 켜주세요.");
+                        return;
+                    }
+                    var charmBuffTarget = msg === "/매력버프체크" ? sender : msg.substring("/매력버프체크".length).trim();
+                    if (!data.member[charmBuffTarget] || !petData[charmBuffTarget]) {
+                        replier.reply("❌ 매력 데이터를 확인할 수 없는 유저입니다.");
+                        return;
+                    }
+                    var charmBuffHomeData = loadJsonFile(homeDataFile);
+                    debuggerLog(buildCharmBuffDebugMessage(data, petData, charmBuffHomeData, petSkillData, guildData, charmBuffTarget));
+                    replier.reply("🧪 [" + checkRank(data, petData, guildData, charmBuffTarget) + "] 님의 매력 버프 적용 내역을 테스트방에 출력했습니다.");
+                    return;
                 }
                 if (msg.startsWith("/경매등록 ") && (isMaster(sender) || sender == "칠가 남" || sender == "감자 여" || sender == "벨라 여" || sender == "티모 여" || sender == "진주 여")) {
                     regex = /\/경매등록\s+([^]+)\s+(\d+)\s*$/;
@@ -28409,6 +28424,9 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/길드영지순위" ||
         msg === "/영지순위보상" ||
         msg === "/영지보상순위" ||
+        msg === "/디버깅모드" ||
+        msg === "/매력버프체크" ||
+        /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg) ||
         /^\/영지공격(?:\s+[1-9])?$/.test(msg) ||
         /^\/안정(?:\s+\d+)?$/.test(msg) ||
         /^\/불안정(?:\s+\d+)?$/.test(msg) ||
@@ -28441,7 +28459,7 @@ function isMatzangAllowedDuringFieldCommand(msg) {
 function isMatzangOperatorCommandMessage(msg) {
     if (typeof msg !== "string") return false;
     var commandRoots = [
-        "/맞짱시작", "/휴식", "/맞짱종료", "/맞짱시간체크",
+        "/맞짱시작", "/휴식", "/맞짱종료", "/맞짱시간체크", "/디버깅모드", "/매력버프체크",
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
@@ -40318,6 +40336,112 @@ function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, p
         lines.push("펫탐험 확률[" + exploreDungeon + "]: " + explorePercent.totalPBeforeHomeBadge.toFixed(2) + "% → " + explorePercent.totalP.toFixed(2) + "% (+" + (explorePercent.totalP - explorePercent.totalPBeforeHomeBadge).toFixed(2) + "%p, 기존 대비 +" + exploreRate.toFixed(2) + "%)");
     } else {
         lines.push("펫탐험 확률: 현재 참여 던전 없음 (장착 효과 +" + exploreCube.toFixed(1) + "%p, 상한 적용 전)");
+    }
+    return lines.join("\n");
+}
+
+// 홈뱃지 옵션의 기본값·합계 버프·프리미엄 보너스·실제 적용값을 디버깅용으로 반환하는 함수
+function getHomeBadgeCubeOptionDebugDetail(data, user, optionKey) {
+    var store = getHomeBadgeCubeStore(data, user, false);
+    var equippedBadgeId = store && store.equippedBadgeId ? store.equippedBadgeId : null;
+    var record = equippedBadgeId ? getHomeBadgeCubeRecord(data, user, equippedBadgeId, false) : null;
+    var basePercent = record ? (parseFloat(record[optionKey]) || 0) : 0;
+    var totalBuffActive = !!(record && isHomeBadgeCubeTotalBuffActive(record));
+    var totalBuffAppliedPercent = totalBuffActive ? Math.round(basePercent * 11) / 10 : basePercent;
+    var premiumBonusPercent = equippedBadgeId && isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent : 0;
+    return {
+        equippedBadgeId: equippedBadgeId,
+        basePercent: basePercent,
+        totalBuffActive: totalBuffActive,
+        totalBuffAppliedPercent: totalBuffAppliedPercent,
+        premiumBonusPercent: premiumBonusPercent,
+        appliedPercent: getHomeBadgeCubeActiveOptionPercent(data, user, optionKey)
+    };
+}
+
+// 홈뱃지 옵션의 단계별 적용 수식을 디버깅 문구로 반환하는 함수
+function formatHomeBadgeCubeDebugOptionFormula(detail) {
+    var text = "+" + formatHomeBadgeCubeCardPercent(detail.basePercent);
+    if (detail.totalBuffActive) text += " → +" + formatHomeBadgeCubeCardPercent(detail.totalBuffAppliedPercent) + "(기본합계 100% ×1.1)";
+    if (detail.premiumBonusPercent > 0) text += " +" + formatHomeBadgeCubeCardPercent(detail.premiumBonusPercent) + "🐺";
+    return text + " = +" + formatHomeBadgeCubeCardPercent(detail.appliedPercent);
+}
+
+// 현재 매력 구성과 콘텐츠별 실시간·스냅샷 적용값을 디버깅 메시지로 생성하는 함수
+function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guildData, user) {
+    var pet = petData && petData[user] ? petData[user] : {};
+    var miniPet = pet.miniPet || {};
+    var rawHomeExp = getHomeTotalExp(homeData, user) || 0;
+    var appliedHomeExp = hasPetSkill(petSkillData, user, "인테리어 장인") ? Math.floor(rawHomeExp * 1.1) : rawHomeExp;
+    var castleHomeDetail = getHomeBadgeCubeOptionDebugDetail(data, user, "castle");
+    var raidHomeDetail = getHomeBadgeCubeOptionDebugDetail(data, user, "raid");
+    var upgradeHomeDetail = getHomeBadgeCubeOptionDebugDetail(data, user, "petUpgrade");
+    var guildCastlePercent = getGuildContributionCubeMemberPercent(data, guildData, user, "castle");
+    var guildRaidPercent = getGuildContributionCubeMemberPercent(data, guildData, user, "raid");
+    var castleBase = calculateCastleExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 적용 전 캐슬매력
+    var raidBase = calculateRaidExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 적용 전 레이드매력
+    var castleTotalPercent = castleHomeDetail.appliedPercent + guildCastlePercent; // 홈뱃지와 길드큐브 캐슬 합산 퍼센트
+    var raidTotalPercent = raidHomeDetail.appliedPercent + guildRaidPercent; // 홈뱃지와 길드큐브 레이드 합산 퍼센트
+    var expectedCastle = Math.floor(castleBase * (1 + castleTotalPercent / 100)); // 표시 수식으로 재계산한 캐슬매력
+    var expectedRaid = Math.floor(raidBase * (1 + raidTotalPercent / 100)); // 표시 수식으로 재계산한 레이드매력
+    var actualCastle = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
+    var actualRaid = calculateRaidExp(user, data, petData, homeData, petSkillData, false, guildData);
+    var baseUpgradeLevel = parseInt(pet.upgrade, 10) || 0;
+    var expectedUpgradeLevel = Math.round(baseUpgradeLevel * (1 + upgradeHomeDetail.appliedPercent / 100));
+    var actualUpgradeLevel = calculateEffectivePetUpgradeLevel(user, data, petData);
+    var upgradeCharm = calculatePetUpgradeCharm(user, data, petData);
+    var expectedTotal = expectedCastle + expectedRaid + expectedUpgradeLevel * GLOBAL_CONFIG.pet.totalCharmPerUpgrade;
+    var actualTotal = calculateTotalExp(user, data, petData, homeData, petSkillData, guildData);
+    var premiumActive = isHoiPassPremiumActive(data, user);
+    var lines = ["[🧪 매력 버프 적용 체크]", "대상: [" + checkRank(data, petData, guildData, user) + "] 님", "━━━━━━━━━━━━━━━"];
+
+    lines.push("호패프리미엄: " + (premiumActive ? "ON" : "OFF"));
+    lines.push("대표 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeId || "없음"));
+    lines.push("프리미엄 홈뱃지 +" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%p: " + (castleHomeDetail.premiumBonusPercent > 0 ? "적용 [✅]" : "미적용 [❌]"));
+    lines.push("");
+    lines.push("[기본 구성]");
+    lines.push("펫 매력: " + numberWithCommas(pet.petexp || 0) + " (캐슬·레이드 각각 반영)");
+    lines.push("미니펫: 캐슬 " + numberWithCommas(miniPet.castleExp || 0) + " / 레이드 " + numberWithCommas(miniPet.raidExp || 0));
+    lines.push("가구: " + numberWithCommas(rawHomeExp) + (appliedHomeExp !== rawHomeExp ? " → " + numberWithCommas(appliedHomeExp) + " (인테리어 장인)" : ""));
+    lines.push("펫강화: " + baseUpgradeLevel + "강 → " + actualUpgradeLevel + "강 / 종합매력 +" + numberWithCommas(upgradeCharm));
+    lines.push("");
+    lines.push("[캐슬매력]");
+    lines.push("큐브 전: " + numberWithCommas(castleBase));
+    lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(castleHomeDetail));
+    lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildCastlePercent));
+    lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(castleTotalPercent));
+    lines.push("계산 검증: " + numberWithCommas(expectedCastle) + " / 공용함수 " + numberWithCommas(actualCastle) + (expectedCastle === actualCastle ? " [✅일치]" : " [❌불일치]"));
+    lines.push("");
+    lines.push("[레이드매력]");
+    lines.push("큐브 전: " + numberWithCommas(raidBase));
+    lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(raidHomeDetail));
+    lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildRaidPercent));
+    lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(raidTotalPercent));
+    lines.push("계산 검증: " + numberWithCommas(expectedRaid) + " / 공용함수 " + numberWithCommas(actualRaid) + (expectedRaid === actualRaid ? " [✅일치]" : " [❌불일치]"));
+    lines.push("");
+    lines.push("[종합매력]");
+    lines.push("캐슬 " + numberWithCommas(actualCastle) + " + 레이드 " + numberWithCommas(actualRaid) + " + 펫강화 " + numberWithCommas(upgradeCharm));
+    lines.push("계산 검증: " + numberWithCommas(expectedTotal) + " / 공용함수 " + numberWithCommas(actualTotal) + (expectedTotal === actualTotal && expectedUpgradeLevel === actualUpgradeLevel ? " [✅일치]" : " [❌불일치]"));
+    lines.push("");
+    lines.push("[콘텐츠 사용값]");
+    lines.push("펫정보·종합순위·시련의탑: " + numberWithCommas(actualTotal) + " (현재값, 시련의탑 일시보정 전)");
+    lines.push("캐슬대전: " + numberWithCommas(actualCastle) + " (현재값)");
+
+    var matzangParticipant = data && data.matzangField && data.matzangField.participants ? data.matzangField.participants[user] : null;
+    if (matzangParticipant && typeof matzangParticipant.totalExp === "number" && matzangParticipant.totalExp > 0) {
+        var matzangDifference = matzangParticipant.totalExp - actualTotal; // 맞짱필드 참여 스냅샷과 현재 종합매력 차이
+        lines.push("맞짱필드: " + numberWithCommas(matzangParticipant.totalExp) + " (참여 종합매력 스냅샷, 현재 대비 " + (matzangDifference >= 0 ? "+" : "") + numberWithCommas(matzangDifference) + ", " + (matzangParticipant.totalExpUpdatedAt || "시각 없음") + ", 치명타 강화는 현재 " + actualUpgradeLevel + "강)");
+    } else {
+        lines.push("맞짱필드: 참여 스냅샷 없음");
+    }
+
+    var territoryWar = guildData && guildData.territoryWar ? guildData.territoryWar : null;
+    var territorySnapshot = territoryWar && territoryWar.castleExpSnapshots ? territoryWar.castleExpSnapshots[user] : null;
+    if (typeof territorySnapshot === "number") {
+        var territoryDifference = territorySnapshot - actualCastle; // 영지전 시작 스냅샷과 현재 캐슬매력 차이
+        lines.push("길드영지전: " + numberWithCommas(territorySnapshot) + " (시작 캐슬·치명타 스냅샷, 현재 대비 " + (territoryDifference >= 0 ? "+" : "") + numberWithCommas(territoryDifference) + ", 전쟁 " + (territoryWar.active ? "진행 중" : "종료") + ")");
+    } else {
+        lines.push("길드영지전: 캐슬매력 스냅샷 없음");
     }
     return lines.join("\n");
 }

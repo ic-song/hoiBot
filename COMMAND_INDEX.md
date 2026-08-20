@@ -1331,6 +1331,7 @@ Status: VERIFIED
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
+- `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함)과 길드공헌 큐브를 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
 - 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
@@ -2572,6 +2573,7 @@ Status: VERIFIED
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
+- `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용하므로 장착 홈뱃지 프리미엄 +3%p와 길드공헌 큐브가 동일하게 반영된다.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 
@@ -5127,7 +5129,7 @@ Status: VERIFIED
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
-- A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
+- A participant's base battle charm is fixed at entry/re-entry time through `totalExp`, while critical chance and multiplier use the current effective pet-upgrade level at battle time; the participation UI tells users the base battle charm uses entry-time total charm.
 - `/휴식` sends start/end notices through `noticeMsg`, includes the siege-room link in both notices, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late; `/맞짱` shows the remaining break time and tells users to prepare with `/참여` or `ㅊㅇ`, while `ㅊㅇ` shows the remaining break time before the participation card
 - A user who reaches 10 event matches is marked field-out and receives the `[✅완료]` message instead of the participation guide
 - Each `/맞짱` or `ㅁㅁ` run grants the acting user 50,000,000 points on a win or 25,000,000 points on a loss. `/맞짱종료` still pays event PT rank rewards in diamonds to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
@@ -5864,6 +5866,47 @@ Status: VERIFIED
 ## AI Notes
 
 - 정리 전후 실제 감소량과 각 정리 함수가 보고한 삭제량이 다르면 저장을 중단하고 오류 로그를 남긴다.
+
+---
+
+# /매력버프체크 [닉네임]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `buildCharmBuffDebugMessage`
+- `getHomeBadgeCubeOptionDebugDetail`
+- `formatHomeBadgeCubeDebugOptionFormula`
+- `calculateCastleExp`
+- `calculateRaidExp`
+- `calculateTotalExp`
+- `calculateEffectivePetUpgradeLevel`
+- `getGuildContributionCubeMemberPercent`
+
+## Data Usage
+
+- `member.json -> member[user].pass.premium`
+- `member.json -> member[user].homeBadgeCube`
+- `member.json -> matzangField.participants[user].totalExp`
+- `member_pet.json -> [user]`
+- `homeData.json -> [user]`
+- `guildData.json -> guilds[*].cubeOptions`
+- `guildData.json -> territoryWar.castleExpSnapshots[user]`
+
+## Save Flow
+
+- 읽기 전용이며 홈 데이터만 명령 분기에서 한 번 추가 로드한다.
+
+## AI Notes
+
+- `/디버깅모드`가 ON일 때 지정한 닉네임 또는 명령 실행자의 기본 펫·미니펫·가구·펫강화 수치와 홈뱃지 기본 옵션, 기본합계 100% 버프, 프리미엄 +3%p, 길드공헌 큐브, 최종 캐슬·레이드·종합매력 계산 일치 여부를 테스트방에 출력한다.
+- `/펫정보`, `/종합순위`, `/캐슬대전`, `/시련의탑`은 현재 공용 계산값을 사용한다. 맞짱필드는 참여 시점 종합매력 스냅샷과 전투 시점의 현재 유효 펫강화 치명타를 함께 사용하고, 길드영지전은 시작 시점 캐슬매력·치명타 스냅샷을 사용하므로 현재값과 차이가 날 수 있다.
+- 맞짱필드 또는 길드영지전 진행 중에도 권한이 있는 운영자가 진단할 수 있다.
 
 ---
 
