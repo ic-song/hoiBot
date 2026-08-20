@@ -125,7 +125,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- 미니펫 가방 8칸을 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
+- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
 - 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
 
 ## AI Notes
@@ -422,6 +422,7 @@ Status: VERIFIED
 - Canonical entry point for mini-pet bag rendering
 - For bag format and viewer-target split, inspect `buildMiniPetBagMessage` in `main.js`
 - Nearby branches contain most mini-pet bag mutation logic
+- 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한하며 프리미엄 종료 후 초과 보유 데이터는 삭제하지 않는다.
 
 ---
 
@@ -473,6 +474,8 @@ Status: VERIFIED
 
 - Canonical read path for sweet-home furniture bag
 - This branch normalizes home user data before output
+- 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 최근 배치한 초과 가구를 가방으로 회수한다.
+- `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 
@@ -2282,7 +2285,7 @@ Status: VERIFIED
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
 - `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
-- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸이다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 효과 없는 잠금 상태로 보존한다. 재가입 시 잠금 스킬을 다시 활성화하고 관련 세 파일을 저장한다.
+- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 최근 배치한 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
 
@@ -3874,23 +3877,23 @@ Status: VERIFIED
 - `checkRank`
 - `hasItem`
 - `removeItem`
-- `hasPetSkill`
-- `buildPetSkillMsg`
+- `isHoiPassPremiumActive`
+- `getHoiPassPremiumHeader`
 - `noticeMsg`
 ## Data Usage
 - `guildData.territoryWar.active`
-- `data.member[sender].noticeYahoCount`
+- `data.member[sender].noticePremiumCount`
 - `data.member[sender].noticeItemCount`
 - `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
-- `petSkillData[sender]`
 ## Save Flow
-- The execution block is commented out. `/알림` does not reply, consume `확성기📢(/알림 내용 30자)`, mutate counters, or save member data.
+- 최대 40글자의 알림을 전체방에 전송한 뒤 프리미엄 무료 횟수 또는 확성기 아이템 사용 횟수를 반영하고 `member.json`을 저장한다.
 ## Related Commands
 - `/길드영지시작`
 - `/길드영지종료`
 - `/영지공격`
 ## AI Notes
-- `/알림` and the `야호📙` effect are intentionally disabled while existing item and skill ownership data remain intact.
+- 호이패스 프리미엄 이용자는 하루 3회까지 아이템 없이 사용하고 이후에는 기존 확성기 아이템 흐름을 사용한다. 일반 이용자는 처음부터 확성기 아이템을 사용한다.
+- 무료 횟수는 메시지가 정상 전송된 뒤 증가하며 일일 초기화에서 삭제된다. 재가입해도 같은 날 사용 기록은 유지한다.
 
 ---
 
@@ -5833,9 +5836,10 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `cleanAllMiniPetBags`
-- `cleanAllFurnitureBags`
 - `cleanAllPendantBags`
+- `countAllMiniPetBagItems`
+- `countAllFurnitureBagItems`
+- `buildProtectedBagCleanupResult`
 - `buildTextLengthCleanupMessage`
 
 ## Data Usage
@@ -5846,9 +5850,8 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Master 전용 통합 정리 명령이다.
-- 미니펫 정리 결과가 있으면 `member_pet.json`을 저장한다.
-- 가구 정리 결과가 있으면 `homeDataFile`을 저장한다.
+- Master 또는 `호이월드 GM 관리자방`의 Admin이 실행하는 통합 정리 명령이다.
+- 미니펫·가구 가방은 수량만 전후 비교하며 삭제하거나 저장하지 않는다.
 - 펜던트 정리 결과가 있으면 `member_pet.json`을 저장한다.
 
 ## Related Commands
@@ -5859,8 +5862,8 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/미니펫전체정리`, `/가구전체정리`, `/펜던트전체정리`의 공용 정리 헬퍼를 순차 실행한다.
-- 초과 데이터가 없으면 저장하지 않고 0개 삭제 결과를 출력한다.
+- 프리미엄 확장 칸과 프리미엄 종료 후 초과 보관 데이터를 포함해 미니펫·가구는 전부 보존한다.
+- 정리 전후 미니펫·가구 수량이 감소하면 저장을 중단하고 오류 로그를 남긴다.
 
 ---
 

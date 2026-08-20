@@ -13,6 +13,7 @@ const GLOBAL_CONFIG = {
 	supportPass: { // 호이패스 프리미엄 표시·혜택 설정
 		premium: {
 			skillSlotBonus: 7,
+			cubeOptionBonusPercent: 3,
 			questDiamondBoxCount: 5
 		}
 	},
@@ -1768,18 +1769,17 @@ function generateElementalRanking(petData, members) {
 function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
 	var member = data && data.member ? data.member[user] : null;
 	var store = member && member.homeBadgeCube && typeof member.homeBadgeCube === "object" ? member.homeBadgeCube : null;
-	if (!store || !store.equippedBadgeId || !store.badges || !store.badges[store.equippedBadgeId]) return 0;
-	var record = store.badges[store.equippedBadgeId];
+	if (!store || !store.equippedBadgeId) return 0;
+	var record = store.badges && store.badges[store.equippedBadgeId] ? store.badges[store.equippedBadgeId] : null;
 	var optionKeys = ["castle", "raid", "petUpgrade", "explore"];
-	var allMax = true;
+	var total = 0;
 	for (var i = 0; i < optionKeys.length; i++) {
-		if ((parseFloat(record[optionKeys[i]]) || 0) !== 10) {
-			allMax = false;
-			break;
-		}
+		total += record ? (parseFloat(record[optionKeys[i]]) || 0) : 0;
 	}
-	var value = parseFloat(record[optionKey]) || 0;
-	return allMax && value === 10 ? 11 : value;
+	var value = record ? (parseFloat(record[optionKey]) || 0) : 0;
+	var appliedValue = total >= 100 ? Math.round(value * 11) / 10 : value;
+	if (isInfoSupportPassActive(data, user, "premium")) appliedValue += GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent;
+	return appliedValue;
 }
 
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
