@@ -204,6 +204,7 @@ var MINIPET_MAX_LV = 300;
 var ELITE_MINIPET_MAX_LV = MINIPET_MAX_LV;
 var MINI_PROB = buildMiniUpgradeProbabilityTable(MINIPET_MAX_LV);
 var MINI_COST = buildMiniUpgradeCostTable(MINIPET_MAX_LV);
+var MINI_CHARM_MASTER = buildMiniUpgradeCharmTable(MINIPET_MAX_LV, 15000);
 var MINI_CHARM_ELITE = buildMiniUpgradeCharmTable(ELITE_MINIPET_MAX_LV, 12000);
 var MINI_CHARM_OTHER = buildMiniUpgradeCharmTable(MINIPET_MAX_LV, 10000);
 
@@ -1442,6 +1443,12 @@ blockedNicknameTerms: [
         elite: { // 엘리트 미니펫 조합 설정
             cost: 35000000000,
             successRate: 0.1
+        },
+        master: { // 마스터 미니펫 조합 설정
+            allowedRoom: "팻 테스트방",
+            allowedSender: "호이 남",
+            cost: 35000000000,
+            successRate: 0.05
         }
     },
     punchMachine: { // 오락실 펀치기계 설정
@@ -1850,6 +1857,40 @@ const ELITE_MINIPET_COMBINATION_REWARDS = [
         history: "로고스는 혼돈을 질서로 바꾸는 우주의 법칙이다.\n모든 규칙과 균형,\n세계가 유지되는 원리를 상징하며\n법칙 그 자체가 의지를 가진 존재로 설정한다.",
         line: "로고스🔱:\n흩어진 질서가 강제로 정렬되고,\n우주의 법칙이 네 이름 아래 재작성된다.",
         finalLine: "필멸자여법칙 위에 서는 자가 되었다."
+    }
+];
+
+// 마스터 미니펫 조합 보상표
+const MASTER_MINIPET_COMBINATION_REWARDS = [
+    {
+        name: "영겁의 템푸스",
+        emoji: "⏳",
+        charm: 81000000,
+        price: 500000000000,
+        meaning: "시간의 시작과 끝을 다스리는 영겁의 지배자.",
+        history: "영겁의 템푸스는 최초의 순간이 태어나기 전부터\n과거와 현재, 미래를 하나의 흐름으로 바라보았다.\n그에게 시간은 흘러가는 것이 아니라,\n명령에 따라 움직이는 절대적인 권능이다.",
+        line: "영겁의 템푸스⏳:\n멈춰 있던 영겁의 시계가 다시 움직이고,\n시간의 지배자가 그대의 부름에 응답한다.",
+        finalLine: "필멸자여, 마침내 영원의 주인이 그대와 함께한다."
+    },
+    {
+        name: "무한의 인피니타",
+        emoji: "♾️",
+        charm: 82000000,
+        price: 500000000000,
+        meaning: "모든 경계와 한계를 초월한 무한의 절대자.",
+        history: "무한의 인피니타는 우주의 끝 너머,\n존재조차 닿을 수 없는 무한에서 태어났다.\n수많은 별과 차원이 그의 안에서 피어나고 사라지며,\n그 끝을 목격한 존재는 아직 아무도 없다.",
+        line: "무한의 인피니타♾️:\n우주의 경계가 무너지고,\n끝없는 무한이 그대 앞에 모습을 드러낸다.",
+        finalLine: "필멸자여, 그대는 셀 수 없는 별들의 주인이 되었다."
+    },
+    {
+        name: "천상의 엠피레온",
+        emoji: "🔥",
+        charm: 83000000,
+        price: 500000000000,
+        meaning: "신성한 불꽃이 영원히 타오르는 최고천의 지배자.",
+        history: "천상의 엠피레온은 신들조차 올려다보는 최고천에서\n창조의 불꽃과 천상의 권능을 수호해 왔다.\n그의 불길은 모든 부정을 태워 없애지만,\n선택받은 자에게는 영원한 축복과 영광을 내린다.",
+        line: "천상의 엠피레온🔥:\n하늘의 문이 열리고 신성한 불꽃이 쏟아지며,\n최고천의 지배자가 그대 앞에 강림한다.",
+        finalLine: "필멸자여, 신들의 불꽃마저 그대를 선택하였다."
     }
 ];
 // 펫탐험
@@ -3347,6 +3388,67 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(data, filePath);
             saveJsonFile(petData, memberPetPath);
             replier.reply(buildEliteMiniPetCombinationSuccessMessage(eliteRewardData, eliteNickName));
+            return;
+        }
+        if (msg === "/미니펫조합마스터" || /^\/미니펫조합마스터(?:\s+\d+){5}$/.test(msg)) {
+            var masterCombinationConfig = GLOBAL_CONFIG.miniPetCombination.master;
+            if (room !== masterCombinationConfig.allowedRoom || sender !== masterCombinationConfig.allowedSender) return;
+
+            if (msg === "/미니펫조합마스터") {
+                replier.reply(buildMasterMiniPetGuideMessage());
+                return;
+            }
+
+            var masterCombinationArgs = msg.trim().split(/\s+/);
+            var masterNickName = checkRank(data, petData, guildData, sender);
+            if (!data.member[sender] || !petData[sender] || !Array.isArray(petData[sender].miniPetBag) || petData[sender].miniPetBag.length < 5) {
+                replier.reply(buildMasterMiniPetCombinationConditionFailMessage(masterNickName));
+                return;
+            }
+
+            refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+            var masterBag = petData[sender].miniPetBag || [];
+            var masterSortIndexes = [];
+            var masterIndexMap = {};
+            for (var masterArgIndex = 1; masterArgIndex < masterCombinationArgs.length; masterArgIndex++) {
+                var masterSortIndex = parseInt(masterCombinationArgs[masterArgIndex], 10);
+                if (masterIndexMap[masterSortIndex]) {
+                    replier.reply("❌ 동일한 번호의 미니펫은 조합할 수 없습니다.");
+                    return;
+                }
+                masterIndexMap[masterSortIndex] = true;
+                masterSortIndexes.push(masterSortIndex);
+            }
+
+            for (var masterMaterialIndex = 0; masterMaterialIndex < masterSortIndexes.length; masterMaterialIndex++) {
+                var masterMaterialPet = getMiniPetBySortIndex(masterBag, masterSortIndexes[masterMaterialIndex]);
+                if (!isMasterMiniPetCombinationMaterial(masterMaterialPet)) {
+                    replier.reply(buildMasterMiniPetCombinationConditionFailMessage(masterNickName));
+                    return;
+                }
+            }
+
+            if ((data.member[sender].point || 0) < masterCombinationConfig.cost) {
+                replier.reply(buildMasterMiniPetCombinationConditionFailMessage(masterNickName));
+                return;
+            }
+
+            data.member[sender].point = (data.member[sender].point || 0) - masterCombinationConfig.cost;
+            var masterCombinationSuccess = Math.random() < masterCombinationConfig.successRate;
+            if (!masterCombinationSuccess) {
+                saveJsonFile(data, filePath);
+                replier.reply(buildMasterMiniPetCombinationFailMessage());
+                return;
+            }
+
+            var masterRewardData = pickMasterMiniPetCombinationReward();
+            var masterRewardPet = createMasterMiniPetFromCombination(masterRewardData);
+            removeMiniPetsFromBag(masterBag, masterSortIndexes);
+            masterBag.push(masterRewardPet);
+            refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+            saveJsonFile(data, filePath);
+            saveJsonFile(petData, memberPetPath);
+            replier.reply(buildMasterMiniPetCombinationSuccessMessage(masterRewardData, masterNickName));
             return;
         }
         //var castleBattleData = loadJsonFile(castleBattlePath);
@@ -39715,11 +39817,15 @@ function findBestMiniBoostItem(bag) {
 function isElite(mini) {
     return mini && (mini.grade === "엘리트" || mini.grade === "엘리트급" || mini.grade === "ELITE");
 }
+// 마스터 등급 판정
+function isMasterMiniPet(mini) {
+    return mini && mini.grade === "마스터";
+}
 // 도달 레벨(targetLv)에서 오르는 매력 수치
 function getCharmGainFor(mini, targetLv) {
     if (!mini) return 0;
 
-    let table = isElite(mini) ? MINI_CHARM_ELITE : MINI_CHARM_OTHER;
+    let table = isMasterMiniPet(mini) ? MINI_CHARM_MASTER : isElite(mini) ? MINI_CHARM_ELITE : MINI_CHARM_OTHER;
     return table[targetLv] || 0;
 }
 //  불변 필드 위주 동일성 체크 (battleExp 등 가변값은 제외)
@@ -42320,6 +42426,103 @@ function buildEliteMiniPetCombinationSuccessMessage(reward, nickName) {
         reward.line +
         "\n\n" +
         "[" +
+        nickName +
+        "]" +
+        reward.finalLine
+    );
+}
+
+// 마스터 미니펫 조합 재료 조건 확인 함수
+function isMasterMiniPetCombinationMaterial(pet) {
+    return isElite(pet) && parseInt(pet.upgrade || 0, 10) >= 300;
+}
+
+// 마스터 미니펫 조합 보상 추첨 함수
+function pickMasterMiniPetCombinationReward() {
+    return MASTER_MINIPET_COMBINATION_REWARDS[Math.floor(Math.random() * MASTER_MINIPET_COMBINATION_REWARDS.length)];
+}
+
+// 마스터 미니펫 조합 결과 생성 함수
+function createMasterMiniPetFromCombination(reward) {
+    return {
+        name: reward.name,
+        emoji: reward.emoji,
+        grade: "마스터",
+        price: reward.price,
+        battleExp: reward.charm,
+        castleExp: reward.charm,
+        raidExp: reward.charm
+    };
+}
+
+// 마스터 미니펫 조합 안내 메시지 생성 함수
+function buildMasterMiniPetGuideMessage() {
+    return (
+        "👑 마스터 미니펫 👑\n\n" +
+        "엘리트 미니펫 5개를 조합하면\n" +
+        "최상위 등급인 [마스터] 미니펫을 획득할 수 있습니다.\n\n" +
+        "/미니펫조합마스터 [미니펫번호] [미니펫번호] [미니펫번호] [미니펫번호] [미니펫번호]\n\n" +
+        "필요 재료:\n" +
+        "300강 엘리트 미니펫 5개 + 350억\n" +
+        "→ [마스터] 조합 성공 확률 5%\n\n" +
+        "⚠️컬렉션창조미니펫🐹은 조합불가 합니다.\n\n" +
+        "조합 성공 시 다음 마스터 미니펫 중 1종이 무작위로 지급됩니다.\n\n" +
+        "영겁의 템푸스⏳(+8100만💕)[마스터]\n" +
+        "무한의 인피니타♾️(+8200만💕)[마스터]\n" +
+        "천상의 엠피레온🔥(+8300만💕)[마스터]\n\n" +
+        "1강 강화 시 매력이 15,000💕 상승하며,\n" +
+        "최대 300강까지 강화할 수 있습니다.\n\n" +
+        "판매 금액은 5000억입니다.\n\n" +
+        "※ 팻 테스트방에서 호이 남 전용 테스트 콘텐츠입니다."
+    );
+}
+
+// 마스터 미니펫 조합 조건 실패 메시지 생성 함수
+function buildMasterMiniPetCombinationConditionFailMessage(nickName) {
+    return (
+        "❌ [" +
+        nickName +
+        "]님\n" +
+        "마스터 미니펫 조합 조건을 만족하지 못했습니다.\n\n" +
+        "조합 조건:\n" +
+        "300강 엘리트 미니펫 5개\n" +
+        "조합 비용:\n" +
+        "350억 포인트"
+    );
+}
+
+// 마스터 미니펫 조합 실패 메시지 생성 함수
+function buildMasterMiniPetCombinationFailMessage() {
+    return (
+        "❌ 마스터 미니펫 조합 실패\n" +
+        "━━━━━━━━━━━━\n" +
+        "마스터의 권능이 모습을 드러내지 않았습니다.\n\n" +
+        "조합비용 350억 포인트가 소모되었습니다.\n" +
+        "선택한 엘리트 미니펫 5개는 소멸하지 않습니다.\n" +
+        "━━━━━━━━━━━━\n" +
+        "다시 현현을 시도해 주세요."
+    );
+}
+
+// 마스터 미니펫 조합 성공 메시지 생성 함수
+function buildMasterMiniPetCombinationSuccessMessage(reward, nickName) {
+    return (
+        "👑 마스터 미니펫 현현 성공 👑\n" +
+        "[" +
+        reward.name +
+        reward.emoji +
+        "(+" +
+        reward.charm +
+        "💕)[마스터]]\n" +
+        "━━━━━━━━━━━━\n" +
+        "의미:\n" +
+        reward.meaning +
+        "\n\n" +
+        "히스토리:\n" +
+        reward.history +
+        "\n━━━━━━━━━━━━\n" +
+        reward.line +
+        "\n\n[" +
         nickName +
         "]" +
         reward.finalLine
