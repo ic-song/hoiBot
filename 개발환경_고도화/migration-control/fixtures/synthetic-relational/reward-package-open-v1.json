@@ -1,0 +1,23 @@
+{
+  "fixture": "reward-package-open-v1",
+  "syntheticOnly": true,
+  "externalUserId": "synthetic-admin-alpha",
+  "playerId": "900000001",
+  "command": "/고생하셨습니다",
+  "consumer": { "code": "deputy_reward_package_3", "quantity": "2" },
+  "rewards": [
+    { "code": "pet_sweet_home_interior_shop", "quantity": "20000" },
+    { "code": "exploration_probability_up_20", "quantity": "20" },
+    { "code": "guild_contribution_medal", "quantity": "30" },
+    { "code": "guild_warehouse_package", "quantity": "1" },
+    { "code": "loudspeaker_notice", "quantity": "5" }
+  ],
+  "expectedEffects": {
+    "packageDelta": "-1",
+    "inventoryLedgerRows": 6,
+    "operationRows": 1,
+    "commandExecutionRows": 1,
+    "commandAuditRows": 1,
+    "outboxRows": 1
+  }
+}

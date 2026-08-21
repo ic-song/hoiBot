@@ -74,6 +74,7 @@ import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
 import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
 import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
+import { isRewardPackageOpenCommand, RewardPackageOpenService } from "./package/reward-package-open-service.js";
 import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
@@ -968,6 +969,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_food_box_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isRewardPackageOpenCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new RewardPackageOpenService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.outboxId !== undefined && !result.duplicate) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.outboxId === undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "reward_package_open", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "reward_package_open_error", error.message));
           } else {
             throw error;
           }
