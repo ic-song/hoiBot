@@ -3111,8 +3111,10 @@ Status: VERIFIED
 - `main.js`
 ## Related Helpers
 - `getGuildMasterRankTitle`
+- `GuildRankTitleReferenceService` (`개발환경_고도화/runtime`)
 ## Data Usage
 - static guild rank-title mapping
+- 신규 runtime은 도메인 DB를 변경하지 않고 공용 command execution/outbox만 기록
 ## Save Flow
 - Read-only
 ## Related Commands

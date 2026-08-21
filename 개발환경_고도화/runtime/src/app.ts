@@ -51,6 +51,7 @@ import { MariaGuildJoinConditionRepository } from "./guild/maria-guild-join-cond
 import { GuildForceExpelService } from "./guild/guild-force-expel-service.js";
 import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-policy.js";
 import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
+import { GuildRankTitleReferenceService, isGuildRankTitleReferenceCommand } from "./guild/guild-rank-title-reference-service.js";
 import { ConstructionEditService } from "./home/construction-edit-service.js";
 import { isConstructionEditCommandCandidate } from "./home/construction-edit-policy.js";
 import { MariaConstructionEditRepository } from "./home/maria-construction-edit-repository.js";
@@ -855,6 +856,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildRankTitleReferenceCommand(normalizedEvent.message)
+        && normalizedEvent.channelId !== undefined) {
+        const result = new GuildRankTitleReferenceService().handle(normalizedEvent.message);
+        if (result.status === "completed") {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            "guild_rank_title_reference",
+            result.data
+          ));
         }
       }
 

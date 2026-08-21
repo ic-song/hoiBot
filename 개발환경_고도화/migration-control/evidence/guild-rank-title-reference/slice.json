@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-GUILD-RANK-TITLE-REFERENCE",
+  "status": "implemented_pending_validation",
+  "execution": {
+    "worker": "Euler",
+    "executionId": "01a022cf-a7a3-7b71-8411-1e7ca8cef63d",
+    "claimRow": 938,
+    "branch": "feature/modernization-guild-rank-title-euler",
+    "providerCommit": "30753723412a1a8a9e2d3767576dd143231d9eed"
+  },
+  "commands": {
+    "ids": ["CMD-04-0008"],
+    "names": ["/길드계급표"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact equality"],
+    "helpers": ["getGuildMasterRankTitle", "GuildRankTitleReferenceService"],
+    "automaticFlows": ["operational Iris app dispatch and queued reply"]
+  },
+  "legacyData": {
+    "files": [],
+    "readPaths": ["main.js static getGuildMasterRankTitle"],
+    "writePaths": ["none"],
+    "saveOrder": ["loadJsonFile/saveJsonFile not called by the command"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["001_foundation.sql through 033_inventory_snapshots.sql"],
+    "newMigration": false,
+    "tables": ["operations", "command_executions", "outbox_messages", "delivery_attempts"],
+    "newColumns": [],
+    "transactionBoundary": "common queued reply transaction only; domain mutation none"
+  },
+  "parity": {
+    "comparisonMode": "exact command guard, rank titles, 1-to-20 order and complete reply text",
+    "result": "pending_validation"
+  },
+  "shadow": {
+    "mode": "non-operational rehearsal MariaDB and in-process Iris reply adapter",
+    "result": "pending_validation",
+    "scenarios": ["exact", "suffix ignored", "duplicate", "separate-process restart replay"],
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": false,
+    "gate7": false,
+    "gate8": false
+  },
+  "risks": [
+    "current Rhino rank>=20 helper behavior is intentionally preserved",
+    "Gate8 requires separate operational readiness approval"
+  ]
+}
