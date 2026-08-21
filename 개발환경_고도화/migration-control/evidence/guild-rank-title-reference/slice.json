@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "sliceId": "SL-GUILD-RANK-TITLE-REFERENCE",
-  "status": "implemented_pending_validation",
+  "status": "verified_gate_1_to_7",
   "execution": {
     "worker": "Euler",
     "executionId": "01a022cf-a7a3-7b71-8411-1e7ca8cef63d",
@@ -33,11 +33,11 @@
   },
   "parity": {
     "comparisonMode": "exact command guard, rank titles, 1-to-20 order and complete reply text",
-    "result": "pending_validation"
+    "result": "passed"
   },
   "shadow": {
     "mode": "non-operational rehearsal MariaDB and in-process Iris reply adapter",
-    "result": "pending_validation",
+    "result": "passed",
     "scenarios": ["exact", "suffix ignored", "duplicate", "separate-process restart replay"],
     "liveTraffic": false,
     "operationalSnapshotTouched": false
@@ -48,8 +48,8 @@
     "gate3": true,
     "gate4": true,
     "gate5": true,
-    "gate6": false,
-    "gate7": false,
+    "gate6": true,
+    "gate7": true,
     "gate8": false
   },
   "risks": [
