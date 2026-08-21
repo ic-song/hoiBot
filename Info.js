@@ -3241,10 +3241,12 @@ function getMiniPetGradeStats(petData, gradeTable) {
 
 		for (let pet of bag) {
 			let grade = pet.grade || "기타";
-			if (isElite(pet)) {
+			if (isMasterMiniPet(pet)) {
+				grade = "마스터";
+			} else if (isElite(pet)) {
 				grade = "엘리트";
 			}
-			if (grade !== "엘리트" && !definedGrades.includes(grade)) {
+			if (grade !== "마스터" && grade !== "엘리트" && !definedGrades.includes(grade)) {
 				grade = "기타";
 			}
 			if (!gradeStats[grade]) gradeStats[grade] = 0;
@@ -3261,8 +3263,9 @@ function getMiniPetGradeStats(petData, gradeTable) {
 
 		let creationIndex = definedGrades.indexOf("창조");
 		let eliteIndex = creationIndex === -1 ? definedGrades.length : creationIndex + 0.5;
-		let indexA = a === "엘리트" ? eliteIndex : definedGrades.indexOf(a);
-		let indexB = b === "엘리트" ? eliteIndex : definedGrades.indexOf(b);
+		let masterIndex = creationIndex === -1 ? definedGrades.length + 1 : creationIndex + 1;
+		let indexA = a === "마스터" ? masterIndex : a === "엘리트" ? eliteIndex : definedGrades.indexOf(a);
+		let indexB = b === "마스터" ? masterIndex : b === "엘리트" ? eliteIndex : definedGrades.indexOf(b);
 
 		if (indexA !== -1 && indexB !== -1) {
 			return indexA - indexB;
@@ -3300,6 +3303,11 @@ function getMiniPetUpgradeDisplay(miniPetObj) {
 
 function isElite(mini) {
 	return mini && (mini.grade === "엘리트" || mini.grade === "엘리트급" || mini.grade === "ELITE");
+}
+
+// 마스터 등급 판정
+function isMasterMiniPet(mini) {
+	return mini && mini.grade === "마스터";
 }
 
 // 장착 가구 요약값을 정수 기준으로 정규화
