@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "inventory-open-all-integration-01",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-INVENTORY-OPEN-ALL-INTEGRATION-01",
+    "worker": "다온",
+    "executionId": "다온-SL-INVENTORY-OPEN-ALL-INTEGRATION-01-20260818T073142Z-zdsgak",
+    "claimRow": 701,
+    "branch": "feature/modernization-inventory-open-all-integration-daon-zdsgak",
+    "baseHead": "d9b36ae9e2f1ffe950e3a24d6b1aaf55ec24ed14"
+  },
+  "commands": {
+    "ids": ["CMD-06-0081"],
+    "names": ["/전체오픈"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact standalone /전체오픈"],
+    "helpers": ["runOpenAll", "공용 MariaDB transaction client", "operations replay", "command_executions", "command_audit", "outbox_messages"],
+    "automaticFlows": ["Iris app.ts exact dispatch 1회", "동일 event는 저장된 operation 결과 replay"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/guild.json"],
+    "readPaths": ["member.bag", "member.point", "member.guild", "guilds/resources/warehouse"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 runOpenAll 이후 외부 reply/save 경계 조사; Rhino source 변경 없음"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["037_open_all_guild_resources.sql"],
+    "migrationSha256": "5d5bc2327689122b678ca4b066a5fe3ef5f7d3bba38b5702b9ab0435091f72fa",
+    "tables": ["item_definitions", "inventory_stacks", "inventory_ledger", "currency_accounts", "currency_ledger", "player_counters", "guilds", "guild_members", "guild_resource_accounts", "guild_resource_ledger", "guild_warehouse_stacks", "guild_warehouse_ledger", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"],
+    "constraints": ["migration 037 유일", "app.ts /전체오픈 dispatch 단일", "mutation·ledger·execution·audit·outbox 원자 transaction", "event idempotency와 result replay"],
+    "newColumns": [],
+    "transactionBoundary": "개인 inventory/currency와 길드 공헌·길드 자원·길드 창고·전체 회원 보상, operation/execution/audit/outbox를 동일 transaction으로 commit"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture와 /전체오픈 synthetic rows",
+    "targetDatabase": "hoibot_rehearsal_open_all_integration_zdsgak",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~033+037 신규 적용 및 재적용, fixture apply+verify-only, Shadow 후 MariaDB restart와 동일 event replay",
+    "checks": ["migration-count 34 반복 적용", "037 checksum 고정", "fixture checksum 200032ce470479cd8b1040c1df52a92c1583ec794899f8b75690c0966a71d17e와 35 tables", "정상·빈 가방·부분·다중·중복", "길드 공헌·길드 창고 패키지·전체 회원 보상", "inventory와 guild 중간 실패 rollback", "restart replay"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["open-all-policy.ts", "open-all-service.ts", "app.ts"],
+    "repositories": ["maria-open-all-repository.ts", "공용 database.ts transaction client"],
+    "tests": ["runtime 전체 168/168", "typecheck", "build", "main.js·Info.js node --check", "MariaDB fresh/reapply", "fixture apply/verify-only", "open-all Shadow/restart replay", "slice evidence validator"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "shadow-open-all-synthetic.ts"],
+    "comparisonMode": "윤슬 원 슬라이스 parity를 보존하고 공용 foundation·dispatch·migration·fixture·rollback·restart 상호 운용을 추가 검증",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "전용 비식별 MariaDB container와 Iris HTTP adapter",
+    "result": "passed",
+    "event": "iris:open-all-integration-zdsgak-normal",
+    "effects": {"operation": 1, "execution": 1, "audit": 1, "outbox": 1, "delivery": 1, "guildResourceLedger": 2, "guildWarehouseLedger": 4},
+    "restartReplay": "passed",
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 snapshot freeze 필요",
+    "finalImportPlan": "운영 member/member_pet/guild reconciliation 필요",
+    "smokePlan": "승인된 비운영 identity와 실운영방 smoke 필요",
+    "rollbackPlan": "운영 승인 전 Rhino routing 유지; 불일치 시 DB route 비활성화"
+  },
+  "integration": {
+    "sourceHead": "c8f064ae423d3ea86857e5da3ed464a0078a0b65",
+    "sourceLineage": ["3661f84d11ac87b1ddda54936c3e95d9e33e1a7e", "b8a71ee", "dc6ab13", "c8f064ae423d3ea86857e5da3ed464a0078a0b65"],
+    "sharedFoundationSource": "2655a93061aafae97a16d8a73d185016dd8bc547",
+    "selectedCommits": ["c4e6322", "cbcdf7d", "bba5433", "33bb766", "489b5a2"],
+    "sharedArtifacts": ["functional-v1.sql from eccd437", "validate-slice-evidence.mjs from 8116800/eccd437"],
+    "conflictsResolved": ["package.json에서 미승계 spirit/combine scripts 제외하고 open-all Shadow만 추가", "app.ts에서 미승계 spirit/combine dispatch 제외하고 open-all exact dispatch만 추가", "공용 fixture SQL 누락을 최신 통합본으로 복원"]
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "DB transaction/outbox가 현행 JSON 저장·직접 reply보다 원자적인 안전 차이는 parity 승인 대상이다",
+    "RNG 결과는 저장 trace 없이 사후 재구성할 수 없다",
+    "실운영 snapshot reconciliation, backup/restore, 승인된 실운영방 smoke와 cutover 증거가 없어 Gate 8은 미완료다",
+    "공용 고도화 런타임 전체가 feature/prod에 없으므로 검수 후 별도 승인된 반영 절차가 필요하다"
+  ]
+}
