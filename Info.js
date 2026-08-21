@@ -166,7 +166,7 @@ function hasInfoBasePass(data, user) {
 
 // Info 명령에서 호이패스 프리미엄 공통 헤더를 반환하는 함수
 function getInfoHoiPassPremiumHeader(data, user) {
-	return isInfoSupportPassActive(data, user, "premium") ? "[🐺호이패스 프리미엄🐺]\n" : "";
+	return isInfoSupportPassActive(data, user, "premium") ? "[👑호이패스 프리미엄👑]\n" : "";
 }
 
 // Info 명령에서 아직 읽지 않은 펫홈 활동 알림 개수를 반환하는 함수
@@ -559,7 +559,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				resultMsg += "• " + activeTitle + "\n";
 			}
 			if (isInfoSupportPassActive(data, sender, "premium")) {
-				resultMsg += "• [🐺호이패스 프리미엄🐺]\n";
+				resultMsg += "• 👑호이패스 프리미엄👑\n";
 			}
 
 			resultMsg += memberInfo.server ? "• " + memberInfo.server + "\n" : "";
@@ -2393,7 +2393,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 			if (status.passDailyRewardDone) lines.push("[✅ 금일 호패,초패 일퀘 보상 지급 완료]");
 		}
 		if (status.hasPremiumDailyQuest) {
-			lines.push("《🐺 호이패스 프리미엄 추가 보상》");
+			lines.push("《👑 호이패스 프리미엄 추가 보상》");
 			lines.push("다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
 			if (status.premiumDailyRewardDone) lines.push("[✅ 금일 프리미엄 일퀘 보상 지급 완료]");
 		}

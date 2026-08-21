@@ -15448,7 +15448,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                     statusMsg += status.passDailyRewardDone ? "[✅ 호패,초패 퀘스트 보상 지급 완료]\n" : "《🎁 호패,초패 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개\n";
                                 }
                                 if (status.hasPremiumDailyQuest) {
-                                    statusMsg += "\n" + (status.premiumDailyRewardDone ? "[✅ 호이패스 프리미엄 추가 보상 지급 완료]\n" : "《🐺 호이패스 프리미엄 추가 보상》\n다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개\n");
+                                    statusMsg += "\n" + (status.premiumDailyRewardDone ? "[✅ 호이패스 프리미엄 추가 보상 지급 완료]\n" : "《👑 호이패스 프리미엄 추가 보상》\n다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개\n");
                                 }
                             }
                             statusMsg += "주간퀘스트🦋[" + status.weeklyUsed + "/" + status.weeklyMax + "]: " + getWeeklyQuestRemainText(status.weeklyUsed, status.weeklyMax) + "\n";
@@ -20019,7 +20019,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (!usePremiumFreeNotice) {
                         // 아이템 보유 여부 확인
                         if (!hasItem(data, sender, useItemName, 1)) {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 오늘의 호이패스 프리미엄 무료 알림\n" + GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount + "회를 모두 사용했습니다.");
+                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 오늘의 👑호이패스 프리미엄 무료 알림\n" + GLOBAL_CONFIG.supportPass.premium.freeNoticeDailyCount + "회를 모두 사용했습니다.");
                             return;
                         }
                         if (data.member[sender].noticeItemCount >= 2) {
@@ -33071,7 +33071,7 @@ function getSupportPassConfigs() {
         { key: "oneday", label: "원데이패스🎲", commandNames: ["원데이패스"] },
         { key: "newbie", label: "초보패스🐥", commandNames: ["초보", "초보패스"] },
         { key: "hoi", label: "호이패스🐶", commandNames: ["호이패스"] },
-        { key: "premium", label: "호이패스 프리미엄🐺", commandNames: ["호패프리미엄"] },
+        { key: "premium", label: "호이패스 프리미엄👑", commandNames: ["호패프리미엄"] },
         { key: "contribution", label: "길드공헌패스🎖️", commandNames: ["공헌패스"] },
         { key: "diamond", label: "다이아패스💎", commandNames: ["다이아패스"] }
     ];
@@ -33170,7 +33170,7 @@ function isPassFreeHomeBadgeCommand(msg) {
 
 // 호이패스 프리미엄 활성 유저용 공통 출력 헤더를 반환하는 함수
 function getHoiPassPremiumHeader(data, user) {
-    return isHoiPassPremiumActive(data, user) ? "[🐺호이패스 프리미엄🐺]\n" : "";
+    return isHoiPassPremiumActive(data, user) ? "[👑호이패스 프리미엄👑]\n" : "";
 }
 
 // 호이패스 프리미엄 적용 여부에 따른 가구 가방 최대 칸 수를 반환하는 함수
