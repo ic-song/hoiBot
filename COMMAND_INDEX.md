@@ -426,6 +426,43 @@ Status: VERIFIED
 
 ---
 
+# /미니펫강화 [미니펫가방번호] [시도횟수]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getMiniUpgradeTargetInfo`
+- `runMiniPetUpgradeOnce`
+- `runRepeatMiniPetUpgrade`
+
+## Data Usage
+
+- `petData[sender].miniPet`
+- `petData[sender].miniPetBag`
+- `data.member[sender].point`
+- `data.member[sender].bag["미니펫 강화석💫"]`
+
+## Save Flow
+
+- 강화 시 회원 포인트·강화석과 대상 미니펫의 강화·매력 수치를 변경한다.
+- 명령 흐름에서 `filePath`와 `memberPetPath`를 각각 한 번 저장한다.
+
+## Related Commands
+
+- `/미니펫가방`
+
+## AI Notes
+
+- 가방 미니펫 강화 중에는 기존 `sortIndex`를 유지하고, `/미니펫가방` 조회 시 매력 기준으로 재정렬한다.
+- 연속 강화는 처음 선택한 가방 번호의 미니펫만 계속 강화해야 한다.
+
+---
+
 # /가구가방
 
 Status: VERIFIED

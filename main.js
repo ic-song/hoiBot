@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.398"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.399"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -34423,7 +34423,7 @@ function runMiniPetUpgradeOnce(sender, data, petData, guildData, petSkillData, i
         mini.battleExp = beforeBattle + gain;
         mini.castleExp = beforeCastle + gain;
         mini.raidExp = beforeRaid + gain;
-        refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+        // 강화 중에는 가방 번호를 유지하고 /미니펫가방 조회 시 재정렬한다.
 
         if (mini.upgrade == maxLv) {
             noticeMsg("[" + nickname + "] 님의 [" + mini.name + (mini.emoji || "") + "] 미니펫이 +MAX💫에 도달했습니다! 축하해주세요!");
