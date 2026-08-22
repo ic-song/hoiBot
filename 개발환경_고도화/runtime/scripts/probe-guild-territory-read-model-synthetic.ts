@@ -11,6 +11,7 @@ const service = new GuildTerritoryReadModelService(new MariaGuildTerritoryReadMo
 async function readMutationCounts() {
   const rows = await database.query<Array<{
     seasons: bigint; snapshots: bigint; turns: bigint; rankings: bigint; rules: bigint;
+    ready_snapshots: bigint; ready_entries: bigint;
     operations: bigint; audits: bigint; outboxes: bigint;
   }>>(
     `SELECT
@@ -19,6 +20,8 @@ async function readMutationCounts() {
       (SELECT COUNT(*) FROM guild_territory_turn_order_entries) AS turns,
       (SELECT COUNT(*) FROM guild_territory_ranking_entries) AS rankings,
       (SELECT COUNT(*) FROM guild_territory_reward_rule_versions) AS rules,
+      (SELECT COUNT(*) FROM guild_territory_ready_snapshots) AS ready_snapshots,
+      (SELECT COUNT(*) FROM guild_territory_ready_entries) AS ready_entries,
       (SELECT COUNT(*) FROM operations) AS operations,
       (SELECT COUNT(*) FROM command_audit) AS audits,
       (SELECT COUNT(*) FROM outbox_messages) AS outboxes`
@@ -68,13 +71,25 @@ async function main(): Promise<void> {
   ]);
   assert.deepEqual(active.rankingSnapshot?.entries.slice(0, 2).map((entry) => entry.score), [5000n, 5000n]);
   assert.equal(active.rankingSnapshot?.entries[2]?.guild, null);
+  assert.equal(active.readyRegistry?.seasonId, "910000001");
+  assert.equal(active.readyRegistry?.startSnapshotVersion, 3n);
+  assert.deepEqual(active.readyRegistry?.entries.map((entry) => [entry.ordinal, entry.eligible, entry.ready]),
+    [[1, true, true], [2, true, false], [3, true, true]]);
+  assert.equal(active.readyRegistry?.entries[0]?.preparedBy?.displayName, "테스트알파");
+  assert.equal(active.readyRegistry?.entries[1]?.preparedBy, null);
+  assert.equal(active.readyRegistry?.entries[2]?.guild, null);
+  assert.equal(active.readyRegistry?.entries[2]?.storedGuildName, "합성 보관 길드명");
+  assert.equal(active.readyRegistry?.entries[2]?.preparedBy?.displayName, "테스트베타");
   assert.equal(active.rankingSnapshot?.rulePin.ruleVersion, 2n);
   assert.equal(active.rewardGuide?.pin.ruleVersion, 2n);
   assert.equal(active.rememberPreference?.desiredState, true);
   assert.equal(pending.season.state, "pending");
   assert.equal(pending.rankingSnapshot, null);
   assert.deepEqual(pending.turnOrder, []);
+  assert.equal(pending.readyRegistry?.startSnapshotVersion, 1n);
+  assert.deepEqual(pending.readyRegistry?.entries, []);
   assert.deepEqual(noWar.season, { state: "no-war", season: null });
+  assert.equal(noWar.readyRegistry, null);
   assert.equal(missingSnapshot.rankingSnapshot, null);
   assert.deepEqual(missingSnapshot.turnOrder, []);
   assert.equal(missingRule.rewardGuide, null);
@@ -95,6 +110,8 @@ async function main(): Promise<void> {
   assert.equal(afterRemember.turns, beforeRead.turns);
   assert.equal(afterRemember.rankings, beforeRead.rankings);
   assert.equal(afterRemember.rules, beforeRead.rules);
+  assert.equal(afterRemember.ready_snapshots, beforeRead.ready_snapshots);
+  assert.equal(afterRemember.ready_entries, beforeRead.ready_entries);
   assert.equal(afterRemember.operations, beforeRead.operations);
   assert.equal(afterRemember.audits, beforeRead.audits);
   assert.equal(afterRemember.outboxes, beforeRead.outboxes);

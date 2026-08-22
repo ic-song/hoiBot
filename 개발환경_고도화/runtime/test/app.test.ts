@@ -104,7 +104,7 @@ describe("hoiBot Lite server", () => {
     const reads: GuildTerritoryReadRequest[] = [];
     const model: GuildTerritoryReadModel = {
       season: { state: "active", season: { seasonId: "77", seasonKey: "s1", snapshotVersion: 4n, startsAt: null, endsAt: null } },
-      pin: { seasonId: "77", snapshotVersion: 4n }, turnOrder: [],
+      pin: { seasonId: "77", snapshotVersion: 4n }, turnOrder: [], readyRegistry: null,
       rankingSnapshot: { pin: { seasonId: "77", snapshotVersion: 4n }, rulePin: { territoryScope: "world", ruleVersion: 9n }, capturedAt: "2026-02-20", entries: [] },
       rewardGuide: null, rememberPreference: null
     };

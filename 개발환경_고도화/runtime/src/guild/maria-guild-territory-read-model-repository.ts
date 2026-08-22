@@ -2,6 +2,7 @@ import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import type {
   GuildTerritoryGuildProjection,
   GuildTerritoryPlayerProjection,
+  GuildTerritoryReadyEntry,
   GuildTerritoryReadModel,
   GuildTerritoryReadModelRepository,
   GuildTerritoryReadRequest,
@@ -62,6 +63,17 @@ interface RankingRow extends GuildRow {
   last_scored_at: string;
 }
 
+interface ReadyEntryRow extends GuildRow {
+  ordinal: number;
+  eligible: number;
+  ready: number;
+  stored_guild_name: string;
+  prepared_by_player_id: bigint | null;
+  prepared_by_display_name: string | null;
+  prepared_by_profile_name: string | null;
+  prepared_at: string | null;
+}
+
 // A nullable joined guild is represented explicitly instead of dropping its projection row.
 function projectGuild(row: GuildRow): GuildTerritoryGuildProjection | null {
   return row.display_name === null ? null : { guildId: row.guild_id.toString(), displayName: row.display_name, mark: row.mark };
@@ -119,6 +131,23 @@ function projectRankingGuild(row: RankingRow) {
   return { ...guild, serverCode: row.server_code, level: row.level, master };
 }
 
+// Ready entries preserve insertion order and stored display fallbacks when live projections are unavailable.
+function projectReadyEntry(row: ReadyEntryRow): GuildTerritoryReadyEntry {
+  const preparedDisplayName = row.prepared_by_profile_name ?? row.prepared_by_display_name;
+  return {
+    ordinal: row.ordinal,
+    eligible: Boolean(row.eligible),
+    ready: Boolean(row.ready),
+    guild: projectGuild(row),
+    storedGuildName: row.stored_guild_name,
+    preparedBy: preparedDisplayName === null ? null : {
+      playerId: row.prepared_by_player_id?.toString() ?? null,
+      displayName: preparedDisplayName
+    },
+    preparedAt: row.prepared_at
+  };
+}
+
 // MariaDB JSON columns may arrive as text or as a decoded value depending on the driver configuration.
 function parseJson(value: string | unknown): unknown {
   return typeof value === "string" ? JSON.parse(value) as unknown : value;
@@ -135,7 +164,7 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
       if (season === null) {
         const rewardGuide = request.rulePin === undefined ? null : await this.readRewardGuide(transaction, request.rulePin.territoryScope, request.rulePin.ruleVersion);
         return {
-          season: { state: "no-war", season: null }, pin: null, turnOrder: [], rankingSnapshot: null,
+          season: { state: "no-war", season: null }, pin: null, turnOrder: [], readyRegistry: null, rankingSnapshot: null,
           rewardGuide, rememberPreference
         };
       }
@@ -148,16 +177,17 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
           startsAt: season.starts_at, endsAt: season.ends_at
         }
       } as const;
+      const readyRegistry = await this.readReadyRegistry(transaction, season.id.toString());
       if (snapshotVersion === null) {
         const rewardGuide = request.rulePin === undefined ? null : await this.readRewardGuide(transaction, request.rulePin.territoryScope, request.rulePin.ruleVersion);
-        return { season: seasonProjection, pin: null, turnOrder: [], rankingSnapshot: null, rewardGuide, rememberPreference };
+        return { season: seasonProjection, pin: null, turnOrder: [], readyRegistry, rankingSnapshot: null, rewardGuide, rememberPreference };
       }
 
       const pin = { seasonId: season.id.toString(), snapshotVersion };
       const snapshot = await this.readSnapshot(transaction, pin.seasonId, pin.snapshotVersion);
       if (snapshot === null) {
         const rewardGuide = request.rulePin === undefined ? null : await this.readRewardGuide(transaction, request.rulePin.territoryScope, request.rulePin.ruleVersion);
-        return { season: seasonProjection, pin, turnOrder: [], rankingSnapshot: null, rewardGuide, rememberPreference };
+        return { season: seasonProjection, pin, turnOrder: [], readyRegistry, rankingSnapshot: null, rewardGuide, rememberPreference };
       }
 
       const [turnOrder, entries] = await Promise.all([
@@ -171,6 +201,7 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
         season: seasonProjection,
         pin,
         turnOrder,
+        readyRegistry,
         rankingSnapshot: {
           pin,
           rulePin: { territoryScope: snapshot.rule_scope_code, ruleVersion: snapshot.rule_version },
@@ -255,6 +286,30 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
        ORDER BY entry.score DESC, guild.level DESC,
          guild.display_name COLLATE utf8mb4_unicode_ci ASC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
     return rows.map((row) => ({ ordinal: row.ordinal, guild: projectRankingGuild(row), score: row.score, lastScoredAt: row.last_scored_at }));
+  }
+
+  private async readReadyRegistry(transaction: DatabaseTransaction, seasonId: string) {
+    const snapshots = await transaction.query<Array<{ start_snapshot_version: bigint }>>(
+      `SELECT start_snapshot_version FROM guild_territory_ready_snapshots
+       WHERE season_id = ? ORDER BY start_snapshot_version DESC LIMIT 1`, [seasonId]);
+    const snapshot = snapshots[0];
+    if (snapshot === undefined) return null;
+    const rows = await transaction.query<ReadyEntryRow[]>(
+      `SELECT entry.insertion_ordinal AS ordinal, entry.eligible, entry.ready,
+        entry.guild_id, guild.display_name, guild.mark, entry.stored_guild_name,
+        entry.prepared_by_player_id, entry.prepared_by_display_name,
+        prepared_profile.current_display_name AS prepared_by_profile_name, entry.prepared_at
+       FROM guild_territory_ready_entries entry
+       LEFT JOIN guilds guild ON guild.id = entry.guild_id AND guild.status = 'active'
+       LEFT JOIN players prepared_player ON prepared_player.id = entry.prepared_by_player_id AND prepared_player.status = 'active'
+       LEFT JOIN player_profiles prepared_profile ON prepared_profile.player_id = prepared_player.id
+       WHERE entry.season_id = ? AND entry.start_snapshot_version = ?
+       ORDER BY entry.insertion_ordinal ASC`, [seasonId, snapshot.start_snapshot_version]);
+    return {
+      seasonId,
+      startSnapshotVersion: snapshot.start_snapshot_version,
+      entries: rows.map(projectReadyEntry)
+    };
   }
 
   private async readRewardGuide(transaction: DatabaseTransaction, scope: string, version: bigint): Promise<GuildTerritoryRewardGuide | null> {

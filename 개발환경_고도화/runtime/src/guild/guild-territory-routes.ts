@@ -85,6 +85,10 @@ function serializeReadModel(model: GuildTerritoryReadModel) {
     },
     pin: model.pin === null ? null : { ...model.pin, snapshotVersion: model.pin.snapshotVersion.toString() },
     turnOrder: model.turnOrder.map((entry) => ({ ...entry, player: serializePlayer(entry.player) })),
+    readyRegistry: model.readyRegistry === null ? null : {
+      ...model.readyRegistry,
+      startSnapshotVersion: model.readyRegistry.startSnapshotVersion.toString()
+    },
     rankingSnapshot: model.rankingSnapshot === null ? null : {
       ...model.rankingSnapshot,
       pin: { ...model.rankingSnapshot.pin, snapshotVersion: model.rankingSnapshot.pin.snapshotVersion.toString() },

@@ -10,7 +10,7 @@ import type {
 } from "../src/guild/guild-territory-read-model-repository.js";
 
 const emptyModel: GuildTerritoryReadModel = {
-  season: { state: "no-war", season: null }, pin: null, turnOrder: [], rankingSnapshot: null,
+  season: { state: "no-war", season: null }, pin: null, turnOrder: [], readyRegistry: null, rankingSnapshot: null,
   rewardGuide: null, rememberPreference: null
 };
 

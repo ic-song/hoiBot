@@ -307,6 +307,21 @@ INSERT INTO player_rank_projections
 ON DUPLICATE KEY UPDATE rank_label = VALUES(rank_label), source_code = VALUES(source_code),
   version = VALUES(version), source_updated_at = VALUES(source_updated_at), updated_at = UTC_TIMESTAMP(3);
 
+INSERT INTO guild_territory_ready_snapshots (season_id, start_snapshot_version, captured_at) VALUES
+  (910000001, 3, '2026-02-20 11:50:00.000'),
+  (910000002, 1, '2026-02-28 23:50:00.000')
+ON DUPLICATE KEY UPDATE captured_at = VALUES(captured_at);
+
+INSERT INTO guild_territory_ready_entries
+  (season_id, start_snapshot_version, insertion_ordinal, guild_id, stored_guild_name,
+   eligible, ready, prepared_by_player_id, prepared_by_display_name, prepared_at) VALUES
+  (910000001, 3, 1, 900000001, '합성 알파 길드', TRUE, TRUE, 900000001, '테스트알파', '2026-02-20 11:51:00.000'),
+  (910000001, 3, 2, 900000002, '합성 베타 길드', TRUE, FALSE, NULL, NULL, NULL),
+  (910000001, 3, 3, 900000003, '합성 보관 길드명', TRUE, TRUE, 900000002, '테스트베타', '2026-02-20 11:53:00.000')
+ON DUPLICATE KEY UPDATE stored_guild_name = VALUES(stored_guild_name), eligible = VALUES(eligible),
+  ready = VALUES(ready), prepared_by_player_id = VALUES(prepared_by_player_id),
+  prepared_by_display_name = VALUES(prepared_by_display_name), prepared_at = VALUES(prepared_at);
+
 INSERT INTO guild_territory_turn_order_entries
   (season_id, snapshot_version, ordinal, guild_id, player_id, user_eliminated, guild_eliminated,
    exclusion_reason_code, turn_state_code, scheduled_at) VALUES

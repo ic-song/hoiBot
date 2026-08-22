@@ -65,6 +65,19 @@ export interface GuildTerritoryRankingEntry {
   lastScoredAt: string;
 }
 
+export interface GuildTerritoryReadyEntry {
+  ordinal: number;
+  eligible: boolean;
+  ready: boolean;
+  guild: GuildTerritoryGuildProjection | null;
+  storedGuildName: string;
+  preparedBy: null | {
+    playerId: string | null;
+    displayName: string;
+  };
+  preparedAt: string | null;
+}
+
 export interface GuildTerritoryRewardTier {
   rankFrom: number;
   rankTo: number;
@@ -97,6 +110,11 @@ export interface GuildTerritoryReadModel {
   season: GuildTerritorySeasonProjection;
   pin: GuildTerritorySeasonPin | null;
   turnOrder: GuildTerritoryTurnOrderEntry[];
+  readyRegistry: null | {
+    seasonId: string;
+    startSnapshotVersion: bigint;
+    entries: GuildTerritoryReadyEntry[];
+  };
   rankingSnapshot: null | {
     pin: GuildTerritorySeasonPin;
     rulePin: GuildTerritoryRulePin;
