@@ -56,7 +56,11 @@ export interface GuildTerritoryTurnOrderEntry {
 
 export interface GuildTerritoryRankingEntry {
   ordinal: number;
-  guild: GuildTerritoryGuildProjection | null;
+  guild: null | GuildTerritoryGuildProjection & {
+    serverCode: string | null;
+    level: number;
+    master: GuildTerritoryPlayerProjection | null;
+  };
   score: bigint;
   lastScoredAt: string;
 }

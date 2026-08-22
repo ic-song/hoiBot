@@ -48,6 +48,20 @@ interface TurnOrderRow extends GuildRow {
   scheduled_at: string | null;
 }
 
+interface RankingRow extends GuildRow {
+  ordinal: number;
+  server_code: string | null;
+  level: number;
+  master_player_id: bigint | null;
+  master_status: string | null;
+  master_display_name: string | null;
+  master_rank_label: string | null;
+  master_rank_source_code: string | null;
+  master_rank_projection_version: bigint | null;
+  score: bigint;
+  last_scored_at: string;
+}
+
 // A nullable joined guild is represented explicitly instead of dropping its projection row.
 function projectGuild(row: GuildRow): GuildTerritoryGuildProjection | null {
   return row.display_name === null ? null : { guildId: row.guild_id.toString(), displayName: row.display_name, mark: row.mark };
@@ -87,6 +101,22 @@ function projectTurnOrder(row: TurnOrderRow) {
     turnState: row.turn_state_code,
     scheduledAt: row.scheduled_at
   };
+}
+
+// Ranking guild details preserve the authoritative guild leader and optional complete rank projection.
+function projectRankingGuild(row: RankingRow) {
+  const guild = projectGuild(row);
+  if (guild === null) return null;
+  const master = row.master_player_id === null || row.master_status !== "active" || row.master_display_name === null
+    ? null
+    : {
+      playerId: row.master_player_id.toString(),
+      displayName: row.master_display_name,
+      rankProjection: row.master_rank_label === null || row.master_rank_source_code === null || row.master_rank_projection_version === null
+        ? null
+        : { label: row.master_rank_label, sourceCode: row.master_rank_source_code, version: row.master_rank_projection_version }
+    };
+  return { ...guild, serverCode: row.server_code, level: row.level, master };
 }
 
 // MariaDB JSON columns may arrive as text or as a decoded value depending on the driver configuration.
@@ -208,13 +238,23 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
   }
 
   private async readRanking(transaction: DatabaseTransaction, seasonId: string, snapshotVersion: bigint) {
-    const rows = await transaction.query<Array<GuildRow & { ordinal: number; score: bigint; last_scored_at: string }>>(
-      `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark, entry.score, entry.last_scored_at
+    const rows = await transaction.query<RankingRow[]>(
+      `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark, guild.server_code, guild.level,
+        master_player.id AS master_player_id, master_player.status AS master_status,
+        master_profile.current_display_name AS master_display_name,
+        master_rank.rank_label AS master_rank_label, master_rank.source_code AS master_rank_source_code,
+        master_rank.version AS master_rank_projection_version,
+        entry.score, entry.last_scored_at
        FROM guild_territory_ranking_entries entry
        LEFT JOIN guilds guild ON guild.id = entry.guild_id AND guild.status = 'active'
+       LEFT JOIN guild_members master_member ON master_member.guild_id = guild.id AND master_member.role_code = 'leader'
+       LEFT JOIN players master_player ON master_player.id = master_member.player_id AND master_player.status = 'active'
+       LEFT JOIN player_profiles master_profile ON master_profile.player_id = master_player.id
+       LEFT JOIN player_rank_projections master_rank ON master_rank.player_id = master_player.id
        WHERE entry.season_id = ? AND entry.snapshot_version = ?
-       ORDER BY entry.score DESC, entry.last_scored_at DESC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
-    return rows.map((row) => ({ ordinal: row.ordinal, guild: projectGuild(row), score: row.score, lastScoredAt: row.last_scored_at }));
+       ORDER BY entry.score DESC, guild.level DESC,
+         guild.display_name COLLATE utf8mb4_unicode_ci ASC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
+    return rows.map((row) => ({ ordinal: row.ordinal, guild: projectRankingGuild(row), score: row.score, lastScoredAt: row.last_scored_at }));
   }
 
   private async readRewardGuide(transaction: DatabaseTransaction, scope: string, version: bigint): Promise<GuildTerritoryRewardGuide | null> {

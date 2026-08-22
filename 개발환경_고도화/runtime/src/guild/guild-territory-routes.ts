@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ApplicationError } from "../shared/application-error.js";
 import type { GuildTerritoryReadModelService } from "./guild-territory-read-model-service.js";
 import type {
+  GuildTerritoryPlayerProjection,
   GuildTerritoryReadModel,
   GuildTerritoryRememberPreference
 } from "./guild-territory-read-model-repository.js";
@@ -14,6 +15,17 @@ const REMEMBER_BODY_KEYS = new Set(["territoryScope", "operatorPlayerId", "playe
 interface GuildTerritoryRouteDependencies {
   service: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference">;
   tokenGuard: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+}
+
+// Nested player rank versions are serialized without precision loss.
+function serializePlayer(player: GuildTerritoryPlayerProjection | null) {
+  return player === null ? null : {
+    ...player,
+    rankProjection: player.rankProjection === null ? null : {
+      ...player.rankProjection,
+      version: player.rankProjection.version.toString()
+    }
+  };
 }
 
 // HTTP query and body values must be plain records with no free-form fields.
@@ -72,11 +84,16 @@ function serializeReadModel(model: GuildTerritoryReadModel) {
       }
     },
     pin: model.pin === null ? null : { ...model.pin, snapshotVersion: model.pin.snapshotVersion.toString() },
+    turnOrder: model.turnOrder.map((entry) => ({ ...entry, player: serializePlayer(entry.player) })),
     rankingSnapshot: model.rankingSnapshot === null ? null : {
       ...model.rankingSnapshot,
       pin: { ...model.rankingSnapshot.pin, snapshotVersion: model.rankingSnapshot.pin.snapshotVersion.toString() },
       rulePin: { ...model.rankingSnapshot.rulePin, ruleVersion: model.rankingSnapshot.rulePin.ruleVersion.toString() },
-      entries: model.rankingSnapshot.entries.map((entry) => ({ ...entry, score: entry.score.toString() }))
+      entries: model.rankingSnapshot.entries.map((entry) => ({
+        ...entry,
+        guild: entry.guild === null ? null : { ...entry.guild, master: serializePlayer(entry.guild.master) },
+        score: entry.score.toString()
+      }))
     },
     rewardGuide: model.rewardGuide === null ? null : {
       ...model.rewardGuide,

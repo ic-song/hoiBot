@@ -59,6 +59,14 @@ async function main(): Promise<void> {
   assert.equal(active.turnOrder[2]?.visibility.exclusionReasonCode, "GREAT_RIFT");
   assert.equal(active.turnOrder[2]?.visibility.projectionIssue, "missing-guild");
   assert.deepEqual(active.rankingSnapshot?.entries.slice(0, 2).map((entry) => entry.guild?.guildId), ["900000001", "900000002"]);
+  assert.deepEqual(active.rankingSnapshot?.entries.slice(0, 2).map((entry) => [
+    entry.guild?.serverCode, entry.guild?.level, entry.guild?.master?.displayName,
+    entry.guild?.master?.rankProjection?.label
+  ]), [
+    ["synthetic-server", 8, "테스트알파", "🧪테스트알파"],
+    ["synthetic-server-two", 5, "테스트감마", "🧪테스트감마"]
+  ]);
+  assert.deepEqual(active.rankingSnapshot?.entries.slice(0, 2).map((entry) => entry.score), [5000n, 5000n]);
   assert.equal(active.rankingSnapshot?.entries[2]?.guild, null);
   assert.equal(active.rankingSnapshot?.rulePin.ruleVersion, 2n);
   assert.equal(active.rewardGuide?.pin.ruleVersion, 2n);
