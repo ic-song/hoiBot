@@ -263,14 +263,26 @@ ON DUPLICATE KEY UPDATE role_code = VALUES(role_code), joined_at = VALUES(joined
 INSERT INTO guild_territory_reward_rule_versions
   (territory_scope_code, rule_version, status, effective_from, published_at) VALUES
   ('world', 1, 'retired', '2026-01-01 00:00:00.000', '2026-01-01 00:00:00.000'),
-  ('world', 2, 'published', '2026-02-01 00:00:00.000', '2026-02-01 00:00:00.000')
+  ('world', 2, 'published', '2026-02-01 00:00:00.000', '2026-02-01 00:00:00.000'),
+  ('world-finish', 1, 'published', '2026-02-01 00:00:00.000', '2026-02-01 00:00:00.000')
 ON DUPLICATE KEY UPDATE status = VALUES(status), effective_from = VALUES(effective_from), published_at = VALUES(published_at);
 
 INSERT INTO guild_territory_reward_rule_tiers
   (territory_scope_code, rule_version, rank_from, rank_to, reward_json, guide_text) VALUES
   ('world', 1, 1, 1, JSON_OBJECT('point', 100, 'synthetic', TRUE), '이전 1위 보상'),
-  ('world', 2, 1, 1, JSON_OBJECT('point', 200, 'synthetic', TRUE), '현재 1위 보상'),
-  ('world', 2, 2, 3, JSON_OBJECT('point', 100, 'synthetic', TRUE), '현재 2~3위 보상')
+  ('world', 2, 1, 1, JSON_OBJECT('fund', 500000000, 'synthetic', TRUE), '1위 길드창고 포인트'),
+  ('world', 2, 2, 2, JSON_OBJECT('fund', 400000000, 'synthetic', TRUE), '2위 길드창고 포인트'),
+  ('world', 2, 3, 3, JSON_OBJECT('fund', 300000000, 'synthetic', TRUE), '3위 길드창고 포인트'),
+  ('world', 2, 4, 4, JSON_OBJECT('fund', 200000000, 'synthetic', TRUE), '4위 길드창고 포인트'),
+  ('world', 2, 5, 5, JSON_OBJECT('fund', 100000000, 'synthetic', TRUE), '5위 길드창고 포인트'),
+  ('world', 2, 6, 10, JSON_OBJECT('fund', 50000000, 'synthetic', TRUE), '6~10위 길드창고 포인트'),
+  ('world-finish', 1, 1, 1, JSON_OBJECT('taxRatePercent', 15, 'synthetic', TRUE), '호월킹덤 세금 15%'),
+  ('world-finish', 1, 2, 2, JSON_OBJECT('petSkillBookFragment', 5, 'synthetic', TRUE), '펫스킬북 조각 5개'),
+  ('world-finish', 1, 3, 3, JSON_OBJECT('pendantStone', 5, 'synthetic', TRUE), '펜던트 강화석 5개'),
+  ('world-finish', 1, 4, 4, JSON_OBJECT('petStone', 200, 'synthetic', TRUE), '펫 강화석 200개'),
+  ('world-finish', 1, 5, 5, JSON_OBJECT('miniPetStone', 150, 'synthetic', TRUE), '미니펫 강화석 150개'),
+  ('world-finish', 1, 6, 6, JSON_OBJECT('diamond', 20, 'synthetic', TRUE), '다이아 20개'),
+  ('world-finish', 1, 7, 7, JSON_OBJECT('guildFund', 2000000000, 'territoryScore', 100, 'synthetic', TRUE), '길드창고 포인트와 영지점수')
 ON DUPLICATE KEY UPDATE rank_to = VALUES(rank_to), reward_json = VALUES(reward_json), guide_text = VALUES(guide_text);
 
 INSERT INTO guild_territory_seasons
