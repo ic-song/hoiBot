@@ -38,6 +38,9 @@ interface TurnOrderRow extends GuildRow {
   player_id: bigint | null;
   player_status: string | null;
   player_display_name: string | null;
+  rank_label: string | null;
+  rank_source_code: string | null;
+  rank_projection_version: bigint | null;
   user_eliminated: number;
   guild_eliminated: number;
   exclusion_reason_code: string | null;
@@ -54,7 +57,13 @@ function projectGuild(row: GuildRow): GuildTerritoryGuildProjection | null {
 function projectPlayer(row: TurnOrderRow): GuildTerritoryPlayerProjection | null {
   return row.player_id === null || row.player_status !== "active" || row.player_display_name === null
     ? null
-    : { playerId: row.player_id.toString(), displayName: row.player_display_name };
+    : {
+      playerId: row.player_id.toString(),
+      displayName: row.player_display_name,
+      rankProjection: row.rank_label === null || row.rank_source_code === null || row.rank_projection_version === null
+        ? null
+        : { label: row.rank_label, sourceCode: row.rank_source_code, version: row.rank_projection_version }
+    };
 }
 
 // Visibility makes legacy user/guild elimination and missing projections explicit to consumers.
@@ -184,12 +193,15 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
     const rows = await transaction.query<TurnOrderRow[]>(
       `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark,
         entry.player_id, player.status AS player_status, profile.current_display_name AS player_display_name,
+        rank_projection.rank_label, rank_projection.source_code AS rank_source_code,
+        rank_projection.version AS rank_projection_version,
         entry.user_eliminated, entry.guild_eliminated, entry.exclusion_reason_code,
         entry.turn_state_code, entry.scheduled_at
        FROM guild_territory_turn_order_entries entry
        LEFT JOIN guilds guild ON guild.id = entry.guild_id AND guild.status = 'active'
        LEFT JOIN players player ON player.id = entry.player_id AND player.status = 'active'
        LEFT JOIN player_profiles profile ON profile.player_id = player.id
+       LEFT JOIN player_rank_projections rank_projection ON rank_projection.player_id = player.id
        WHERE entry.season_id = ? AND entry.snapshot_version = ?
        ORDER BY entry.ordinal ASC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
     return rows.map(projectTurnOrder);

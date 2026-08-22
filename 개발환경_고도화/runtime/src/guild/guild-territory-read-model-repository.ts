@@ -19,6 +19,11 @@ export interface GuildTerritoryGuildProjection {
 export interface GuildTerritoryPlayerProjection {
   playerId: string;
   displayName: string;
+  rankProjection: null | {
+    label: string;
+    sourceCode: string;
+    version: bigint;
+  };
 }
 
 export interface GuildTerritoryTurnVisibility {

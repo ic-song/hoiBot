@@ -47,6 +47,11 @@ async function main(): Promise<void> {
   assert.equal(active.pin?.snapshotVersion, 7n);
   assert.deepEqual(active.turnOrder.map((entry) => entry.ordinal), [1, 2, 3]);
   assert.deepEqual(active.turnOrder.map((entry) => entry.player?.playerId), ["900000003", "900000001", "900000002"]);
+  assert.deepEqual(active.turnOrder.map((entry) => entry.player?.rankProjection?.label),
+    ["🧪테스트감마", "🧪테스트알파", "🧪테스트베타"]);
+  assert.deepEqual(active.turnOrder.map((entry) => entry.player?.rankProjection?.sourceCode),
+    ["synthetic-fixture", "synthetic-fixture", "synthetic-fixture"]);
+  assert.deepEqual(active.turnOrder.map((entry) => entry.player?.rankProjection?.version), [1n, 1n, 1n]);
   assert.deepEqual(active.turnOrder.map((entry) => entry.visibility.visible), [true, false, false]);
   assert.equal(active.turnOrder[1]?.visibility.userEliminated, true);
   assert.equal(active.turnOrder[1]?.visibility.exclusionReasonCode, "TURN_MISMATCH");

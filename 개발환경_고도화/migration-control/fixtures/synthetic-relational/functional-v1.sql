@@ -299,6 +299,14 @@ ON DUPLICATE KEY UPDATE rule_scope_code = VALUES(rule_scope_code), rule_version 
 
 UPDATE guild_territory_seasons SET published_snapshot_version = 7, updated_at = UTC_TIMESTAMP(3) WHERE id = 910000001;
 
+INSERT INTO player_rank_projections
+  (player_id, rank_label, source_code, version, source_updated_at) VALUES
+  (900000001, '🧪테스트알파', 'synthetic-fixture', 1, '2026-02-20 12:00:00.000'),
+  (900000002, '🧪테스트베타', 'synthetic-fixture', 1, '2026-02-20 12:00:00.000'),
+  (900000003, '🧪테스트감마', 'synthetic-fixture', 1, '2026-02-20 12:00:00.000')
+ON DUPLICATE KEY UPDATE rank_label = VALUES(rank_label), source_code = VALUES(source_code),
+  version = VALUES(version), source_updated_at = VALUES(source_updated_at), updated_at = UTC_TIMESTAMP(3);
+
 INSERT INTO guild_territory_turn_order_entries
   (season_id, snapshot_version, ordinal, guild_id, player_id, user_eliminated, guild_eliminated,
    exclusion_reason_code, turn_state_code, scheduled_at) VALUES
