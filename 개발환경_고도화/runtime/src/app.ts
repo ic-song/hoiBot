@@ -81,6 +81,10 @@ import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
 import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
 import { registerGuildTerritoryRoutes } from "./guild/guild-territory-routes.js";
+import {
+  GuildTerritoryTurnOrderCommand,
+  isGuildTerritoryTurnOrderCommand
+} from "./guild/guild-territory-turn-order-command.js";
 
 interface TokenQuery {
   token?: string;
@@ -717,6 +721,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             diagnosticChunk
           ));
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildTerritoryTurnOrderCommand(normalizedEvent.message)
+        && normalizedEvent.channelId !== undefined && guildTerritoryReadModel !== undefined) {
+        const data = await new GuildTerritoryTurnOrderCommand(guildTerritoryReadModel).execute();
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "guild_territory_turn_order_read",
+          data
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
