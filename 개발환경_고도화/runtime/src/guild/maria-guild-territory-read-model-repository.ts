@@ -1,6 +1,7 @@
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import type {
   GuildTerritoryGuildProjection,
+  GuildTerritoryPlayerProjection,
   GuildTerritoryReadModel,
   GuildTerritoryReadModelRepository,
   GuildTerritoryReadRequest,
@@ -32,9 +33,51 @@ interface GuildRow {
   mark: string | null;
 }
 
+interface TurnOrderRow extends GuildRow {
+  ordinal: number;
+  player_id: bigint | null;
+  player_status: string | null;
+  player_display_name: string | null;
+  user_eliminated: number;
+  guild_eliminated: number;
+  exclusion_reason_code: string | null;
+  turn_state_code: "active" | "pending" | "completed" | "skipped";
+  scheduled_at: string | null;
+}
+
 // A nullable joined guild is represented explicitly instead of dropping its projection row.
 function projectGuild(row: GuildRow): GuildTerritoryGuildProjection | null {
   return row.display_name === null ? null : { guildId: row.guild_id.toString(), displayName: row.display_name, mark: row.mark };
+}
+
+// Turn-order player identity is omitted when the active profile projection is unavailable.
+function projectPlayer(row: TurnOrderRow): GuildTerritoryPlayerProjection | null {
+  return row.player_id === null || row.player_status !== "active" || row.player_display_name === null
+    ? null
+    : { playerId: row.player_id.toString(), displayName: row.player_display_name };
+}
+
+// Visibility makes legacy user/guild elimination and missing projections explicit to consumers.
+function projectTurnOrder(row: TurnOrderRow) {
+  const guild = projectGuild(row);
+  const player = projectPlayer(row);
+  const userEliminated = Boolean(row.user_eliminated);
+  const guildEliminated = Boolean(row.guild_eliminated);
+  const projectionIssue = player === null ? "missing-player" : guild === null ? "missing-guild" : null;
+  return {
+    ordinal: row.ordinal,
+    guild,
+    player,
+    visibility: {
+      visible: !userEliminated && !guildEliminated && projectionIssue === null,
+      userEliminated,
+      guildEliminated,
+      exclusionReasonCode: row.exclusion_reason_code,
+      projectionIssue
+    },
+    turnState: row.turn_state_code,
+    scheduledAt: row.scheduled_at
+  };
 }
 
 // MariaDB JSON columns may arrive as text or as a decoded value depending on the driver configuration.
@@ -138,13 +181,18 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
   }
 
   private async readTurnOrder(transaction: DatabaseTransaction, seasonId: string, snapshotVersion: bigint) {
-    const rows = await transaction.query<Array<GuildRow & { ordinal: number; turn_state_code: "active" | "pending" | "completed" | "skipped"; scheduled_at: string | null }>>(
-      `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark, entry.turn_state_code, entry.scheduled_at
+    const rows = await transaction.query<TurnOrderRow[]>(
+      `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark,
+        entry.player_id, player.status AS player_status, profile.current_display_name AS player_display_name,
+        entry.user_eliminated, entry.guild_eliminated, entry.exclusion_reason_code,
+        entry.turn_state_code, entry.scheduled_at
        FROM guild_territory_turn_order_entries entry
        LEFT JOIN guilds guild ON guild.id = entry.guild_id AND guild.status = 'active'
+       LEFT JOIN players player ON player.id = entry.player_id AND player.status = 'active'
+       LEFT JOIN player_profiles profile ON profile.player_id = player.id
        WHERE entry.season_id = ? AND entry.snapshot_version = ?
        ORDER BY entry.ordinal ASC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
-    return rows.map((row) => ({ ordinal: row.ordinal, guild: projectGuild(row), turnState: row.turn_state_code, scheduledAt: row.scheduled_at }));
+    return rows.map(projectTurnOrder);
   }
 
   private async readRanking(transaction: DatabaseTransaction, seasonId: string, snapshotVersion: bigint) {

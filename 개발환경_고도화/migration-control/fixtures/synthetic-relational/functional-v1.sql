@@ -300,11 +300,15 @@ ON DUPLICATE KEY UPDATE rule_scope_code = VALUES(rule_scope_code), rule_version 
 UPDATE guild_territory_seasons SET published_snapshot_version = 7, updated_at = UTC_TIMESTAMP(3) WHERE id = 910000001;
 
 INSERT INTO guild_territory_turn_order_entries
-  (season_id, snapshot_version, ordinal, guild_id, turn_state_code, scheduled_at) VALUES
-  (910000001, 7, 1, 900000002, 'active', '2026-02-20 12:10:00.000'),
-  (910000001, 7, 2, 900000001, 'pending', '2026-02-20 12:20:00.000'),
-  (910000001, 7, 3, 900000003, 'pending', '2026-02-20 12:30:00.000')
-ON DUPLICATE KEY UPDATE guild_id = VALUES(guild_id), turn_state_code = VALUES(turn_state_code), scheduled_at = VALUES(scheduled_at);
+  (season_id, snapshot_version, ordinal, guild_id, player_id, user_eliminated, guild_eliminated,
+   exclusion_reason_code, turn_state_code, scheduled_at) VALUES
+  (910000001, 7, 1, 900000002, 900000003, FALSE, FALSE, NULL, 'active', '2026-02-20 12:10:00.000'),
+  (910000001, 7, 2, 900000001, 900000001, TRUE, FALSE, 'TURN_MISMATCH', 'pending', '2026-02-20 12:20:00.000'),
+  (910000001, 7, 3, 900000003, 900000002, FALSE, TRUE, 'GREAT_RIFT', 'pending', '2026-02-20 12:30:00.000')
+ON DUPLICATE KEY UPDATE guild_id = VALUES(guild_id), player_id = VALUES(player_id),
+  user_eliminated = VALUES(user_eliminated), guild_eliminated = VALUES(guild_eliminated),
+  exclusion_reason_code = VALUES(exclusion_reason_code), turn_state_code = VALUES(turn_state_code),
+  scheduled_at = VALUES(scheduled_at);
 
 INSERT INTO guild_territory_ranking_entries
   (season_id, snapshot_version, ordinal, guild_id, score, last_scored_at) VALUES

@@ -46,6 +46,13 @@ async function main(): Promise<void> {
   assert.equal(active.season.state, "active");
   assert.equal(active.pin?.snapshotVersion, 7n);
   assert.deepEqual(active.turnOrder.map((entry) => entry.ordinal), [1, 2, 3]);
+  assert.deepEqual(active.turnOrder.map((entry) => entry.player?.playerId), ["900000003", "900000001", "900000002"]);
+  assert.deepEqual(active.turnOrder.map((entry) => entry.visibility.visible), [true, false, false]);
+  assert.equal(active.turnOrder[1]?.visibility.userEliminated, true);
+  assert.equal(active.turnOrder[1]?.visibility.exclusionReasonCode, "TURN_MISMATCH");
+  assert.equal(active.turnOrder[2]?.visibility.guildEliminated, true);
+  assert.equal(active.turnOrder[2]?.visibility.exclusionReasonCode, "GREAT_RIFT");
+  assert.equal(active.turnOrder[2]?.visibility.projectionIssue, "missing-guild");
   assert.deepEqual(active.rankingSnapshot?.entries.slice(0, 2).map((entry) => entry.guild?.guildId), ["900000001", "900000002"]);
   assert.equal(active.rankingSnapshot?.entries[2]?.guild, null);
   assert.equal(active.rankingSnapshot?.rulePin.ruleVersion, 2n);

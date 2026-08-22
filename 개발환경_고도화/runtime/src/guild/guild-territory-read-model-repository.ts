@@ -16,6 +16,19 @@ export interface GuildTerritoryGuildProjection {
   mark: string | null;
 }
 
+export interface GuildTerritoryPlayerProjection {
+  playerId: string;
+  displayName: string;
+}
+
+export interface GuildTerritoryTurnVisibility {
+  visible: boolean;
+  userEliminated: boolean;
+  guildEliminated: boolean;
+  exclusionReasonCode: string | null;
+  projectionIssue: "missing-player" | "missing-guild" | null;
+}
+
 export interface GuildTerritorySeasonProjection {
   state: GuildTerritoryProjectionState;
   season: null | {
@@ -30,6 +43,8 @@ export interface GuildTerritorySeasonProjection {
 export interface GuildTerritoryTurnOrderEntry {
   ordinal: number;
   guild: GuildTerritoryGuildProjection | null;
+  player: GuildTerritoryPlayerProjection | null;
+  visibility: GuildTerritoryTurnVisibility;
   turnState: "active" | "pending" | "completed" | "skipped";
   scheduledAt: string | null;
 }
