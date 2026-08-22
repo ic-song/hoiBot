@@ -81,6 +81,10 @@ import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
 import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
 import { registerGuildTerritoryRoutes } from "./guild/guild-territory-routes.js";
+import {
+  GuildTerritoryStatusProjectionService,
+  isGuildTerritoryStatusCommand
+} from "./guild/guild-territory-status-projection-service.js";
 
 interface TokenQuery {
   token?: string;
@@ -755,6 +759,20 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildTerritoryStatusCommand(normalizedEvent.message)
+        && normalizedEvent.channelId !== undefined && guildTerritoryReadModel !== undefined) {
+        const result = await new GuildTerritoryStatusProjectionService(guildTerritoryReadModel)
+          .execute(normalizedEvent.message as "/길드영지" | "/길드영지확인");
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          result.status === "projected" ? "guild_territory_status" : "guild_territory_status_repair_required",
+          result.status === "projected"
+            ? result.data
+            : "⚠️ 길드 영지 상태 보정이 필요합니다.\n운영자 확인 후 다시 시도해 주세요."
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
