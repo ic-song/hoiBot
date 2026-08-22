@@ -81,6 +81,10 @@ import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
 import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
 import { registerGuildTerritoryRoutes } from "./guild/guild-territory-routes.js";
+import {
+  GuildTerritoryRankingCommandService,
+  isGuildTerritoryRankingCommand
+} from "./guild/guild-territory-ranking-command-service.js";
 
 interface TokenQuery {
   token?: string;
@@ -801,6 +805,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         if (result.outboxId !== undefined && result.data !== undefined) {
           processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildTerritoryRankingCommand(normalizedEvent.message)
+        && normalizedEvent.channelId !== undefined && guildTerritoryReadModel !== undefined) {
+        const data = await new GuildTerritoryRankingCommandService(guildTerritoryReadModel).execute();
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent, "guild_territory_ranking", data
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message?.startsWith("/서버이동 ")
