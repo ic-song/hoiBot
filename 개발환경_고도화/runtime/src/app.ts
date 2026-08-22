@@ -81,6 +81,10 @@ import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
 import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
 import { registerGuildTerritoryRoutes } from "./guild/guild-territory-routes.js";
+import {
+  GuildTerritoryRankRewardGuideService,
+  isGuildTerritoryRankRewardGuideCommand
+} from "./guild/guild-territory-rank-reward-guide-service.js";
 
 interface TokenQuery {
   token?: string;
@@ -755,6 +759,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildTerritoryRankRewardGuideCommand(normalizedEvent.message)
+        && normalizedEvent.channelId !== undefined && guildTerritoryReadModel !== undefined) {
+        const guide = await new GuildTerritoryRankRewardGuideService(guildTerritoryReadModel).execute();
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "guild_territory_rank_reward_guide",
+          guide
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
