@@ -4,6 +4,11 @@ import { buildApp as buildRuntimeApp, type AppDependencies } from "../src/app.js
 import type { AppConfig } from "../src/config.js";
 import type { DatabaseClient } from "../src/database.js";
 import type { IrisKakaoDatabaseSnapshot } from "../src/integration/iris-kakao-database-inspector.js";
+import type {
+  GuildTerritoryReadModel,
+  GuildTerritoryReadRequest,
+  SetGuildTerritoryRememberPreference
+} from "../src/guild/guild-territory-read-model-repository.js";
 
 const TEST_TOKEN = "test-shared-token-1234";
 
@@ -95,6 +100,94 @@ function buildApp(config: AppConfig, dependencies: AppDependencies = {}) {
 }
 
 describe("hoiBot Lite server", () => {
+  it("dispatches the exact territory read route with explicit version pins", async () => {
+    const reads: GuildTerritoryReadRequest[] = [];
+    const model: GuildTerritoryReadModel = {
+      season: { state: "active", season: { seasonId: "77", seasonKey: "s1", snapshotVersion: 4n, startsAt: null, endsAt: null } },
+      pin: { seasonId: "77", snapshotVersion: 4n }, turnOrder: [],
+      rankingSnapshot: { pin: { seasonId: "77", snapshotVersion: 4n }, rulePin: { territoryScope: "world", ruleVersion: 9n }, capturedAt: "2026-02-20", entries: [] },
+      rewardGuide: null, rememberPreference: null
+    };
+    const app = buildApp(createConfig(), {
+      guildTerritoryReadModel: {
+        read: async (request) => { reads.push(request); return model; },
+        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); }
+      }
+    });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/v1/providers/guild-territory/read-model?territoryScope=world&seasonId=77&snapshotVersion=4&ruleScope=world&ruleVersion=9",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` }
+    });
+    const suffix = await app.inject({
+      method: "GET", url: "/api/v1/providers/guild-territory/read-model/extra?territoryScope=world",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` }
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().data.pin.snapshotVersion, "4");
+    assert.equal(response.json().data.rankingSnapshot.rulePin.ruleVersion, "9");
+    assert.deepEqual(reads, [{
+      territoryScope: "world", seasonPin: { seasonId: "77", snapshotVersion: 4n },
+      rulePin: { territoryScope: "world", ruleVersion: 9n }, remember: undefined
+    }]);
+    assert.equal(suffix.statusCode, 404);
+    await app.close();
+  });
+
+  it("rejects incomplete territory pins and unknown query fields", async () => {
+    const app = buildApp(createConfig(), {
+      guildTerritoryReadModel: {
+        read: async () => { throw new Error("Unexpected read."); },
+        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); }
+      }
+    });
+    const incomplete = await app.inject({
+      method: "GET", url: "/api/v1/providers/guild-territory/read-model?territoryScope=world&seasonId=77",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` }
+    });
+    const unknown = await app.inject({
+      method: "GET", url: "/api/v1/providers/guild-territory/read-model?territoryScope=world&guide=free-form",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` }
+    });
+    assert.equal(incomplete.statusCode, 400);
+    assert.equal(incomplete.json().error.code, "TERRITORY_SEASON_PIN_INCOMPLETE");
+    assert.equal(unknown.statusCode, 400);
+    assert.equal(unknown.json().error.code, "TERRITORY_QUERY_FIELD_INVALID");
+    await app.close();
+  });
+
+  it("requires an exact PUT route and boolean desired state for territory remember preference", async () => {
+    const writes: SetGuildTerritoryRememberPreference[] = [];
+    const app = buildApp(createConfig(), {
+      guildTerritoryReadModel: {
+        read: async () => { throw new Error("Unexpected read."); },
+        setRememberPreference: async (command) => { writes.push(command); return { ...command, version: 3n }; }
+      }
+    });
+    const invalid = await app.inject({
+      method: "PUT", url: "/api/v1/providers/guild-territory/remember-preference",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: { territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: "false" }
+    });
+    const valid = await app.inject({
+      method: "PUT", url: "/api/v1/providers/guild-territory/remember-preference",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: { territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: false }
+    });
+    const wrongMethod = await app.inject({
+      method: "POST", url: "/api/v1/providers/guild-territory/remember-preference",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: { territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: true }
+    });
+    assert.equal(invalid.statusCode, 400);
+    assert.equal(invalid.json().error.code, "TERRITORY_DESIRED_STATE_REQUIRED");
+    assert.equal(valid.statusCode, 200);
+    assert.deepEqual(valid.json().data, { territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: false, version: "3" });
+    assert.deepEqual(writes, [{ territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: false }]);
+    assert.equal(wrongMethod.statusCode, 404);
+    await app.close();
+  });
+
   it("returns health and request id", async () => {
     const app = buildApp(createConfig());
     const response = await app.inject({ method: "GET", url: "/health/live" });

@@ -141,7 +141,7 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
     const rows = await transaction.query<Array<GuildRow & { ordinal: number; turn_state_code: "active" | "pending" | "completed" | "skipped"; scheduled_at: string | null }>>(
       `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark, entry.turn_state_code, entry.scheduled_at
        FROM guild_territory_turn_order_entries entry
-       LEFT JOIN guilds guild ON guild.id = entry.guild_id
+       LEFT JOIN guilds guild ON guild.id = entry.guild_id AND guild.status = 'active'
        WHERE entry.season_id = ? AND entry.snapshot_version = ?
        ORDER BY entry.ordinal ASC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
     return rows.map((row) => ({ ordinal: row.ordinal, guild: projectGuild(row), turnState: row.turn_state_code, scheduledAt: row.scheduled_at }));
@@ -151,7 +151,7 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
     const rows = await transaction.query<Array<GuildRow & { ordinal: number; score: bigint; last_scored_at: string }>>(
       `SELECT entry.ordinal, entry.guild_id, guild.display_name, guild.mark, entry.score, entry.last_scored_at
        FROM guild_territory_ranking_entries entry
-       LEFT JOIN guilds guild ON guild.id = entry.guild_id
+       LEFT JOIN guilds guild ON guild.id = entry.guild_id AND guild.status = 'active'
        WHERE entry.season_id = ? AND entry.snapshot_version = ?
        ORDER BY entry.score DESC, entry.last_scored_at DESC, entry.guild_id ASC`, [seasonId, snapshotVersion]);
     return rows.map((row) => ({ ordinal: row.ordinal, guild: projectGuild(row), score: row.score, lastScoredAt: row.last_scored_at }));

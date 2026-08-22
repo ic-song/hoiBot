@@ -78,6 +78,9 @@ import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
+import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
+import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
+import { registerGuildTerritoryRoutes } from "./guild/guild-territory-routes.js";
 
 interface TokenQuery {
   token?: string;
@@ -100,6 +103,7 @@ export interface AppDependencies {
   inspectIrisChannel?: (event: NormalizedIrisEvent) => Promise<IrisChannelAccessDecision>;
   retainIrisEventContent?: (payload: IrisPayload, event: NormalizedIrisEvent) => Promise<number>;
   database?: DatabaseClient;
+  guildTerritoryReadModel?: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -336,6 +340,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((event: NormalizedIrisEvent) => new IrisChannelPolicyInspector(config.irisBaseUrl)
       .inspect(event, designatedChannelIds, diagnosticChannelIds, config.irisOpenChatObservationMode));
   const database = dependencies.database;
+  const guildTerritoryReadModel = dependencies.guildTerritoryReadModel
+    ?? (database === undefined ? undefined
+      : new GuildTerritoryReadModelService(new MariaGuildTerritoryReadModelRepository(database)));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -351,6 +358,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   let retainedContentCleanupTimer: NodeJS.Timeout | undefined;
 
   void app.register(cookie);
+  if (guildTerritoryReadModel !== undefined) {
+    registerGuildTerritoryRoutes(app, { service: guildTerritoryReadModel, tokenGuard });
+  }
   if (database !== undefined) {
     const profiles = new MariaProfileRepository(database);
     void registerAdminRoutes(app, {

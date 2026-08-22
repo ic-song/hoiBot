@@ -31,6 +31,7 @@
     "db:restart-probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database-restart.ts",
     "db:probe:bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-bag-read-synthetic.ts",
     "db:probe:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/probe-construction-edit-synthetic.ts",
+    "db:probe:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-read-model-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts"
   },

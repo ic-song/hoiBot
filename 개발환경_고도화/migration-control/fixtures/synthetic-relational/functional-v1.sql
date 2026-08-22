@@ -248,7 +248,8 @@ ON DUPLICATE KEY UPDATE created_at = VALUES(created_at);
 
 INSERT INTO guilds (id, code, display_name, mark, server_code, level, join_requirement_experience, member_join_closed, max_members, recruitment_bonus, status, version) VALUES
   (900000001, 'synthetic-guild-alpha', '합성 알파 길드', 'A', 'synthetic-server', 8, 100, FALSE, 5, 0, 'active', 1),
-  (900000002, 'synthetic-guild-beta', '합성 베타 길드', 'B', 'synthetic-server-two', 5, 0, FALSE, 5, 0, 'active', 1)
+  (900000002, 'synthetic-guild-beta', '합성 베타 길드', 'B', 'synthetic-server-two', 5, 0, FALSE, 5, 0, 'active', 1),
+  (900000003, 'synthetic-guild-missing-projection', '합성 비활성 길드', 'X', 'synthetic-server', 1, 0, TRUE, 5, 0, 'deleted', 1)
 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), mark = VALUES(mark), server_code = VALUES(server_code), level = VALUES(level),
   join_requirement_experience = VALUES(join_requirement_experience), member_join_closed = VALUES(member_join_closed),
   max_members = VALUES(max_members), recruitment_bonus = VALUES(recruitment_bonus), status = VALUES(status), version = VALUES(version);
@@ -258,6 +259,53 @@ INSERT INTO guild_members (guild_id, player_id, role_code, joined_at) VALUES
   (900000001, 900000002, 'member', '2026-01-02 00:00:00.000'),
   (900000002, 900000003, 'leader', '2026-01-03 00:00:00.000')
 ON DUPLICATE KEY UPDATE role_code = VALUES(role_code), joined_at = VALUES(joined_at);
+
+INSERT INTO guild_territory_reward_rule_versions
+  (territory_scope_code, rule_version, status, effective_from, published_at) VALUES
+  ('world', 1, 'retired', '2026-01-01 00:00:00.000', '2026-01-01 00:00:00.000'),
+  ('world', 2, 'published', '2026-02-01 00:00:00.000', '2026-02-01 00:00:00.000')
+ON DUPLICATE KEY UPDATE status = VALUES(status), effective_from = VALUES(effective_from), published_at = VALUES(published_at);
+
+INSERT INTO guild_territory_reward_rule_tiers
+  (territory_scope_code, rule_version, rank_from, rank_to, reward_json, guide_text) VALUES
+  ('world', 1, 1, 1, JSON_OBJECT('point', 100, 'synthetic', TRUE), '이전 1위 보상'),
+  ('world', 2, 1, 1, JSON_OBJECT('point', 200, 'synthetic', TRUE), '현재 1위 보상'),
+  ('world', 2, 2, 3, JSON_OBJECT('point', 100, 'synthetic', TRUE), '현재 2~3위 보상')
+ON DUPLICATE KEY UPDATE rank_to = VALUES(rank_to), reward_json = VALUES(reward_json), guide_text = VALUES(guide_text);
+
+INSERT INTO guild_territory_seasons
+  (id, territory_scope_code, season_key, state_code, published_snapshot_version, starts_at, ends_at, version) VALUES
+  (910000001, 'world-active', 'synthetic-active', 'active', NULL, '2026-02-01 00:00:00.000', '2026-02-28 23:59:59.000', 1),
+  (910000002, 'world-pending', 'synthetic-pending', 'pending', NULL, '2026-03-01 00:00:00.000', '2026-03-31 23:59:59.000', 1)
+ON DUPLICATE KEY UPDATE state_code = VALUES(state_code), published_snapshot_version = NULL,
+  starts_at = VALUES(starts_at), ends_at = VALUES(ends_at), version = VALUES(version);
+
+INSERT INTO guild_territory_ranking_snapshots
+  (season_id, snapshot_version, rule_scope_code, rule_version, captured_at)
+VALUES (910000001, 7, 'world', 2, '2026-02-20 12:00:00.000')
+ON DUPLICATE KEY UPDATE rule_scope_code = VALUES(rule_scope_code), rule_version = VALUES(rule_version), captured_at = VALUES(captured_at);
+
+UPDATE guild_territory_seasons SET published_snapshot_version = 7, updated_at = UTC_TIMESTAMP(3) WHERE id = 910000001;
+
+INSERT INTO guild_territory_turn_order_entries
+  (season_id, snapshot_version, ordinal, guild_id, turn_state_code, scheduled_at) VALUES
+  (910000001, 7, 1, 900000002, 'active', '2026-02-20 12:10:00.000'),
+  (910000001, 7, 2, 900000001, 'pending', '2026-02-20 12:20:00.000'),
+  (910000001, 7, 3, 900000003, 'pending', '2026-02-20 12:30:00.000')
+ON DUPLICATE KEY UPDATE guild_id = VALUES(guild_id), turn_state_code = VALUES(turn_state_code), scheduled_at = VALUES(scheduled_at);
+
+INSERT INTO guild_territory_ranking_entries
+  (season_id, snapshot_version, ordinal, guild_id, score, last_scored_at) VALUES
+  (910000001, 7, 1, 900000001, 5000, '2026-02-20 11:00:00.000'),
+  (910000001, 7, 2, 900000002, 5000, '2026-02-20 11:00:00.000'),
+  (910000001, 7, 3, 900000003, 1000, '2026-02-20 10:00:00.000')
+ON DUPLICATE KEY UPDATE ordinal = VALUES(ordinal), score = VALUES(score), last_scored_at = VALUES(last_scored_at);
+
+INSERT INTO guild_territory_remember_preferences
+  (territory_scope_code, operator_player_id, player_id, desired_state, version, updated_at) VALUES
+  ('world-active', 900000001, 900000002, TRUE, 1, '2026-02-20 12:00:00.000'),
+  ('world-active', 900000001, 900000003, FALSE, 1, '2026-02-20 12:00:00.000')
+ON DUPLICATE KEY UPDATE desired_state = VALUES(desired_state), version = VALUES(version), updated_at = VALUES(updated_at);
 
 INSERT INTO guild_resource_accounts (guild_id, currency_code, balance, version)
 VALUES (900000001, 'point', 5000.000, 1)
