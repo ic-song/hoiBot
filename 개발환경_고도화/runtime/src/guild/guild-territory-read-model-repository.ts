@@ -78,6 +78,49 @@ export interface GuildTerritoryReadyEntry {
   preparedAt: string | null;
 }
 
+export interface GuildTerritoryStatusSlot {
+  slotNo: number;
+  ownerGuild: GuildTerritoryGuildProjection | null;
+  storedOwnerGuildName: string | null;
+}
+
+export interface GuildTerritoryStatusProjection {
+  territoryScope: string;
+  seasonId: string | null;
+  eventActive: boolean;
+  seasonActive: boolean;
+  dimensionGateEnabled: boolean;
+  rememberMeEnabled: boolean;
+  version: bigint;
+  slots: GuildTerritoryStatusSlot[];
+}
+
+export interface GuildTerritoryStatusRepairDelta {
+  seasonId?: string | null;
+  eventActive?: boolean;
+  seasonActive?: boolean;
+  dimensionGateEnabled?: boolean;
+  rememberMeEnabled?: boolean;
+  slots?: Array<{
+    slotNo: number;
+    ownerGuildId: string | null;
+    storedOwnerGuildName: string | null;
+  }>;
+}
+
+export interface RepairGuildTerritoryStatus {
+  territoryScope: string;
+  expectedVersion: bigint;
+  idempotencyKey: string;
+  repairDelta: GuildTerritoryStatusRepairDelta;
+}
+
+export interface GuildTerritoryStatusRepairResult {
+  territoryScope: string;
+  version: bigint;
+  delta: GuildTerritoryStatusRepairDelta;
+}
+
 export interface GuildTerritoryRewardTier {
   rankFrom: number;
   rankTo: number;
@@ -115,6 +158,7 @@ export interface GuildTerritoryReadModel {
     startSnapshotVersion: bigint;
     entries: GuildTerritoryReadyEntry[];
   };
+  statusProjection: GuildTerritoryStatusProjection | null;
   rankingSnapshot: null | {
     pin: GuildTerritorySeasonPin;
     rulePin: GuildTerritoryRulePin;
@@ -136,4 +180,5 @@ export interface SetGuildTerritoryRememberPreference {
 export interface GuildTerritoryReadModelRepository {
   readConsistent(request: GuildTerritoryReadRequest): Promise<GuildTerritoryReadModel>;
   setRememberPreference(command: SetGuildTerritoryRememberPreference): Promise<GuildTerritoryRememberPreference>;
+  repairStatus(command: RepairGuildTerritoryStatus): Promise<GuildTerritoryStatusRepairResult>;
 }

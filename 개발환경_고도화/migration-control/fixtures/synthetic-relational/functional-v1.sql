@@ -322,6 +322,31 @@ ON DUPLICATE KEY UPDATE stored_guild_name = VALUES(stored_guild_name), eligible 
   ready = VALUES(ready), prepared_by_player_id = VALUES(prepared_by_player_id),
   prepared_by_display_name = VALUES(prepared_by_display_name), prepared_at = VALUES(prepared_at);
 
+DELETE FROM guild_territory_status_repairs
+WHERE territory_scope_code = 'world-active' AND idempotency_key = 'synthetic-status-repair-move';
+
+INSERT INTO guild_territory_status_aggregates
+  (territory_scope_code, season_id, event_active, season_active, dimension_gate_enabled,
+   remember_me_enabled, version, updated_at) VALUES
+  ('world-active', 910000001, TRUE, TRUE, TRUE, TRUE, 4, '2026-02-20 12:00:00.000'),
+  ('world-pending', 910000002, FALSE, FALSE, FALSE, FALSE, 1, '2026-02-28 23:50:00.000'),
+  ('world-empty', NULL, FALSE, FALSE, FALSE, FALSE, 1, '2026-02-20 12:00:00.000')
+ON DUPLICATE KEY UPDATE season_id = VALUES(season_id), event_active = VALUES(event_active),
+  season_active = VALUES(season_active), dimension_gate_enabled = VALUES(dimension_gate_enabled),
+  remember_me_enabled = VALUES(remember_me_enabled), version = VALUES(version), updated_at = VALUES(updated_at);
+
+INSERT INTO guild_territory_status_slots
+  (territory_scope_code, slot_no, owner_guild_id, stored_owner_guild_name, updated_at) VALUES
+  ('world-active', 1, 900000001, '합성 알파 길드', '2026-02-20 12:00:00.000'),
+  ('world-active', 2, NULL, NULL, '2026-02-20 12:00:00.000'),
+  ('world-active', 3, NULL, NULL, '2026-02-20 12:00:00.000'),
+  ('world-active', 4, NULL, NULL, '2026-02-20 12:00:00.000'),
+  ('world-active', 5, NULL, NULL, '2026-02-20 12:00:00.000'),
+  ('world-active', 6, NULL, NULL, '2026-02-20 12:00:00.000'),
+  ('world-active', 7, 900000003, '합성 보관 길드명', '2026-02-20 12:00:00.000')
+ON DUPLICATE KEY UPDATE owner_guild_id = VALUES(owner_guild_id),
+  stored_owner_guild_name = VALUES(stored_owner_guild_name), updated_at = VALUES(updated_at);
+
 INSERT INTO guild_territory_turn_order_entries
   (season_id, snapshot_version, ordinal, guild_id, player_id, user_eliminated, guild_eliminated,
    exclusion_reason_code, turn_state_code, scheduled_at) VALUES

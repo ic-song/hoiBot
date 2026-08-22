@@ -4,16 +4,20 @@ import type { GuildTerritoryReadModelService } from "./guild-territory-read-mode
 import type {
   GuildTerritoryPlayerProjection,
   GuildTerritoryReadModel,
-  GuildTerritoryRememberPreference
+  GuildTerritoryRememberPreference,
+  GuildTerritoryStatusRepairDelta
 } from "./guild-territory-read-model-repository.js";
 
 const READ_QUERY_KEYS = new Set([
   "territoryScope", "seasonId", "snapshotVersion", "ruleScope", "ruleVersion", "operatorPlayerId", "playerId"
 ]);
 const REMEMBER_BODY_KEYS = new Set(["territoryScope", "operatorPlayerId", "playerId", "desiredState"]);
+const REPAIR_BODY_KEYS = new Set(["territoryScope", "expectedVersion", "idempotencyKey", "repairDelta"]);
+const REPAIR_DELTA_KEYS = new Set(["seasonId", "eventActive", "seasonActive", "dimensionGateEnabled", "rememberMeEnabled", "slots"]);
+const REPAIR_SLOT_KEYS = new Set(["slotNo", "ownerGuildId", "storedOwnerGuildName"]);
 
 interface GuildTerritoryRouteDependencies {
-  service: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference">;
+  service: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference" | "repairStatus">;
   tokenGuard: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
 }
 
@@ -65,6 +69,53 @@ function readOptionalVersion(record: Record<string, unknown>, key: string, code:
   return BigInt(value);
 }
 
+// Repair expectedVersion accepts canonical non-negative decimal strings.
+function requireRepairVersion(record: Record<string, unknown>): bigint {
+  const value = requireString(record, "expectedVersion", "TERRITORY_STATUS_VERSION_INVALID");
+  if (!/^\d+$/.test(value)) throw new ApplicationError("TERRITORY_STATUS_VERSION_INVALID", "expectedVersion 값은 0 이상의 정수여야 합니다.", 400);
+  return BigInt(value);
+}
+
+// Nullable string fields preserve explicit clears while rejecting other value types.
+function readNullableString(record: Record<string, unknown>, key: string, code: string): string | null {
+  return record[key] === null ? null : requireString(record, key, code);
+}
+
+// Repair delta fields are exact and typed before entering the service boundary.
+function requireRepairDelta(value: unknown): GuildTerritoryStatusRepairDelta {
+  const delta = requireRecord(value, "TERRITORY_STATUS_REPAIR_DELTA_REQUIRED");
+  requireExactKeys(delta, REPAIR_DELTA_KEYS, "TERRITORY_STATUS_REPAIR_FIELD_INVALID");
+  for (const key of ["eventActive", "seasonActive", "dimensionGateEnabled", "rememberMeEnabled"] as const) {
+    if (delta[key] !== undefined && typeof delta[key] !== "boolean") {
+      throw new ApplicationError("TERRITORY_STATUS_REPAIR_FIELD_INVALID", `${key} 값은 boolean이어야 합니다.`, 400);
+    }
+  }
+  if (delta.seasonId !== undefined && delta.seasonId !== null && typeof delta.seasonId !== "string") {
+    throw new ApplicationError("TERRITORY_STATUS_REPAIR_FIELD_INVALID", "seasonId 값이 올바르지 않습니다.", 400);
+  }
+  if (delta.slots !== undefined && !Array.isArray(delta.slots)) {
+    throw new ApplicationError("TERRITORY_STATUS_REPAIR_FIELD_INVALID", "slots 값은 배열이어야 합니다.", 400);
+  }
+  const slots = delta.slots?.map((value) => {
+    const slot = requireRecord(value, "TERRITORY_STATUS_SLOT_REQUIRED");
+    requireExactKeys(slot, REPAIR_SLOT_KEYS, "TERRITORY_STATUS_SLOT_FIELD_INVALID");
+    if (typeof slot.slotNo !== "number") throw new ApplicationError("TERRITORY_STATUS_SLOT_INVALID", "slotNo 값이 필요합니다.", 400);
+    return {
+      slotNo: slot.slotNo,
+      ownerGuildId: readNullableString(slot, "ownerGuildId", "TERRITORY_STATUS_OWNER_INVALID"),
+      storedOwnerGuildName: readNullableString(slot, "storedOwnerGuildName", "TERRITORY_STATUS_OWNER_NAME_INVALID")
+    };
+  });
+  const result: GuildTerritoryStatusRepairDelta = {};
+  if (delta.seasonId !== undefined) result.seasonId = delta.seasonId as string | null;
+  if (delta.eventActive !== undefined) result.eventActive = delta.eventActive as boolean;
+  if (delta.seasonActive !== undefined) result.seasonActive = delta.seasonActive as boolean;
+  if (delta.dimensionGateEnabled !== undefined) result.dimensionGateEnabled = delta.dimensionGateEnabled as boolean;
+  if (delta.rememberMeEnabled !== undefined) result.rememberMeEnabled = delta.rememberMeEnabled as boolean;
+  if (slots !== undefined) result.slots = slots;
+  return result;
+}
+
 // A two-field pin must be wholly present or wholly absent.
 function requirePair(left: unknown, right: unknown, code: string): void {
   if ((left === undefined) !== (right === undefined)) {
@@ -88,6 +139,10 @@ function serializeReadModel(model: GuildTerritoryReadModel) {
     readyRegistry: model.readyRegistry === null ? null : {
       ...model.readyRegistry,
       startSnapshotVersion: model.readyRegistry.startSnapshotVersion.toString()
+    },
+    statusProjection: model.statusProjection === null ? null : {
+      ...model.statusProjection,
+      version: model.statusProjection.version.toString()
     },
     rankingSnapshot: model.rankingSnapshot === null ? null : {
       ...model.rankingSnapshot,
@@ -149,5 +204,17 @@ export function registerGuildTerritoryRoutes(app: FastifyInstance, dependencies:
       desiredState: body.desiredState
     });
     return { ok: true, data: serializeRemember(data), requestId: request.id };
+  });
+
+  app.put("/api/v1/providers/guild-territory/status/repair", { preHandler: dependencies.tokenGuard }, async (request) => {
+    const body = requireRecord(request.body, "TERRITORY_STATUS_REPAIR_BODY_REQUIRED");
+    requireExactKeys(body, REPAIR_BODY_KEYS, "TERRITORY_STATUS_REPAIR_BODY_FIELD_INVALID");
+    const data = await dependencies.service.repairStatus({
+      territoryScope: requireString(body, "territoryScope", "TERRITORY_SCOPE_REQUIRED"),
+      expectedVersion: requireRepairVersion(body),
+      idempotencyKey: requireString(body, "idempotencyKey", "TERRITORY_STATUS_IDEMPOTENCY_REQUIRED"),
+      repairDelta: requireRepairDelta(body.repairDelta)
+    });
+    return { ok: true, data: { ...data, version: data.version.toString() }, requestId: request.id };
   });
 }

@@ -12,6 +12,7 @@ async function readMutationCounts() {
   const rows = await database.query<Array<{
     seasons: bigint; snapshots: bigint; turns: bigint; rankings: bigint; rules: bigint;
     ready_snapshots: bigint; ready_entries: bigint;
+    status_aggregates: bigint; status_slots: bigint; status_repairs: bigint;
     operations: bigint; audits: bigint; outboxes: bigint;
   }>>(
     `SELECT
@@ -22,6 +23,9 @@ async function readMutationCounts() {
       (SELECT COUNT(*) FROM guild_territory_reward_rule_versions) AS rules,
       (SELECT COUNT(*) FROM guild_territory_ready_snapshots) AS ready_snapshots,
       (SELECT COUNT(*) FROM guild_territory_ready_entries) AS ready_entries,
+      (SELECT COUNT(*) FROM guild_territory_status_aggregates) AS status_aggregates,
+      (SELECT COUNT(*) FROM guild_territory_status_slots) AS status_slots,
+      (SELECT COUNT(*) FROM guild_territory_status_repairs) AS status_repairs,
       (SELECT COUNT(*) FROM operations) AS operations,
       (SELECT COUNT(*) FROM command_audit) AS audits,
       (SELECT COUNT(*) FROM outbox_messages) AS outboxes`
@@ -80,6 +84,15 @@ async function main(): Promise<void> {
   assert.equal(active.readyRegistry?.entries[2]?.guild, null);
   assert.equal(active.readyRegistry?.entries[2]?.storedGuildName, "합성 보관 길드명");
   assert.equal(active.readyRegistry?.entries[2]?.preparedBy?.displayName, "테스트베타");
+  assert.equal(active.statusProjection?.version, 4n);
+  assert.deepEqual(active.statusProjection?.slots.map((slot) => slot.slotNo), [1, 2, 3, 4, 5, 6, 7]);
+  assert.equal(active.statusProjection?.slots[0]?.ownerGuild?.displayName, "합성 알파 길드");
+  assert.equal(active.statusProjection?.slots[6]?.ownerGuild, null);
+  assert.equal(active.statusProjection?.slots[6]?.storedOwnerGuildName, "합성 보관 길드명");
+  assert.equal(active.statusProjection?.eventActive, true);
+  assert.equal(active.statusProjection?.seasonActive, true);
+  assert.equal(active.statusProjection?.dimensionGateEnabled, true);
+  assert.equal(active.statusProjection?.rememberMeEnabled, true);
   assert.equal(active.rankingSnapshot?.rulePin.ruleVersion, 2n);
   assert.equal(active.rewardGuide?.pin.ruleVersion, 2n);
   assert.equal(active.rememberPreference?.desiredState, true);
@@ -88,8 +101,11 @@ async function main(): Promise<void> {
   assert.deepEqual(pending.turnOrder, []);
   assert.equal(pending.readyRegistry?.startSnapshotVersion, 1n);
   assert.deepEqual(pending.readyRegistry?.entries, []);
+  assert.equal(pending.statusProjection?.version, 1n);
   assert.deepEqual(noWar.season, { state: "no-war", season: null });
   assert.equal(noWar.readyRegistry, null);
+  assert.equal(noWar.statusProjection?.seasonId, null);
+  assert.deepEqual(noWar.statusProjection?.slots.map((slot) => slot.ownerGuild), [null, null, null, null, null, null, null]);
   assert.equal(missingSnapshot.rankingSnapshot, null);
   assert.deepEqual(missingSnapshot.turnOrder, []);
   assert.equal(missingRule.rewardGuide, null);
@@ -112,11 +128,43 @@ async function main(): Promise<void> {
   assert.equal(afterRemember.rules, beforeRead.rules);
   assert.equal(afterRemember.ready_snapshots, beforeRead.ready_snapshots);
   assert.equal(afterRemember.ready_entries, beforeRead.ready_entries);
+
+  const beforeRepair = await readMutationCounts();
+  const repaired = await service.repairStatus({
+    territoryScope: "world-active",
+    expectedVersion: 4n,
+    idempotencyKey: "synthetic-status-repair-move",
+    repairDelta: {
+      dimensionGateEnabled: true,
+      rememberMeEnabled: false,
+      slots: [
+        { slotNo: 6, ownerGuildId: "900000003", storedOwnerGuildName: "합성 보관 길드명" },
+        { slotNo: 7, ownerGuildId: null, storedOwnerGuildName: null }
+      ]
+    }
+  });
+  const afterRepair = await readMutationCounts();
+  const replayed = await service.repairStatus({
+    territoryScope: "world-active",
+    expectedVersion: 4n,
+    idempotencyKey: "synthetic-status-repair-move",
+    repairDelta: { eventActive: false }
+  });
+  const afterReplay = await readMutationCounts();
+  const repairedProjection = await service.read({ territoryScope: "world-active" });
+  assert.equal(repaired.version, 5n);
+  assert.deepEqual(replayed, repaired);
+  assert.equal(afterRepair.status_repairs, beforeRepair.status_repairs + 1n);
+  assert.deepEqual(afterReplay, afterRepair);
+  assert.equal(repairedProjection.statusProjection?.version, 5n);
+  assert.equal(repairedProjection.statusProjection?.rememberMeEnabled, false);
+  assert.equal(repairedProjection.statusProjection?.slots[5]?.storedOwnerGuildName, "합성 보관 길드명");
+  assert.equal(repairedProjection.statusProjection?.slots[6]?.ownerGuild, null);
   assert.equal(afterRemember.operations, beforeRead.operations);
   assert.equal(afterRemember.audits, beforeRead.audits);
   assert.equal(afterRemember.outboxes, beforeRead.outboxes);
 
-  console.log(JSON.stringify({ active, pending, noWar, missingSnapshot, missingRule, rememberedTrue, rememberedFalse },
+  console.log(JSON.stringify({ active, pending, noWar, missingSnapshot, missingRule, rememberedTrue, rememberedFalse, repaired, replayed },
     (_key, value) => typeof value === "bigint" ? value.toString() : value));
 }
 

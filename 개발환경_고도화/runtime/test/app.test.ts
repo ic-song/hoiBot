@@ -7,6 +7,7 @@ import type { IrisKakaoDatabaseSnapshot } from "../src/integration/iris-kakao-da
 import type {
   GuildTerritoryReadModel,
   GuildTerritoryReadRequest,
+  RepairGuildTerritoryStatus,
   SetGuildTerritoryRememberPreference
 } from "../src/guild/guild-territory-read-model-repository.js";
 
@@ -104,14 +105,15 @@ describe("hoiBot Lite server", () => {
     const reads: GuildTerritoryReadRequest[] = [];
     const model: GuildTerritoryReadModel = {
       season: { state: "active", season: { seasonId: "77", seasonKey: "s1", snapshotVersion: 4n, startsAt: null, endsAt: null } },
-      pin: { seasonId: "77", snapshotVersion: 4n }, turnOrder: [], readyRegistry: null,
+      pin: { seasonId: "77", snapshotVersion: 4n }, turnOrder: [], readyRegistry: null, statusProjection: null,
       rankingSnapshot: { pin: { seasonId: "77", snapshotVersion: 4n }, rulePin: { territoryScope: "world", ruleVersion: 9n }, capturedAt: "2026-02-20", entries: [] },
       rewardGuide: null, rememberPreference: null
     };
     const app = buildApp(createConfig(), {
       guildTerritoryReadModel: {
         read: async (request) => { reads.push(request); return model; },
-        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); }
+        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); },
+        repairStatus: async () => { throw new Error("Unexpected status repair."); }
       }
     });
     const response = await app.inject({
@@ -138,7 +140,8 @@ describe("hoiBot Lite server", () => {
     const app = buildApp(createConfig(), {
       guildTerritoryReadModel: {
         read: async () => { throw new Error("Unexpected read."); },
-        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); }
+        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); },
+        repairStatus: async () => { throw new Error("Unexpected status repair."); }
       }
     });
     const incomplete = await app.inject({
@@ -161,7 +164,8 @@ describe("hoiBot Lite server", () => {
     const app = buildApp(createConfig(), {
       guildTerritoryReadModel: {
         read: async () => { throw new Error("Unexpected read."); },
-        setRememberPreference: async (command) => { writes.push(command); return { ...command, version: 3n }; }
+        setRememberPreference: async (command) => { writes.push(command); return { ...command, version: 3n }; },
+        repairStatus: async () => { throw new Error("Unexpected status repair."); }
       }
     });
     const invalid = await app.inject({
@@ -185,6 +189,39 @@ describe("hoiBot Lite server", () => {
     assert.deepEqual(valid.json().data, { territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: false, version: "3" });
     assert.deepEqual(writes, [{ territoryScope: "world", operatorPlayerId: "10", playerId: "20", desiredState: false }]);
     assert.equal(wrongMethod.statusCode, 404);
+    await app.close();
+  });
+
+  it("keeps territory status repair on an exact explicit versioned route", async () => {
+    const repairs: RepairGuildTerritoryStatus[] = [];
+    const app = buildApp(createConfig(), {
+      guildTerritoryReadModel: {
+        read: async () => { throw new Error("Unexpected read."); },
+        setRememberPreference: async () => { throw new Error("Unexpected remember mutation."); },
+        repairStatus: async (command) => {
+          repairs.push(command);
+          return { territoryScope: command.territoryScope, version: 5n, delta: command.repairDelta };
+        }
+      }
+    });
+    const invalid = await app.inject({
+      method: "PUT", url: "/api/v1/providers/guild-territory/status/repair",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: { territoryScope: "world", expectedVersion: "-1", idempotencyKey: "repair-1", repairDelta: { eventActive: false } }
+    });
+    const valid = await app.inject({
+      method: "PUT", url: "/api/v1/providers/guild-territory/status/repair",
+      headers: { authorization: `Bearer ${TEST_TOKEN}` },
+      payload: {
+        territoryScope: "world", expectedVersion: "4", idempotencyKey: "repair-1",
+        repairDelta: { rememberMeEnabled: false, slots: [{ slotNo: 7, ownerGuildId: null, storedOwnerGuildName: null }] }
+      }
+    });
+    assert.equal(invalid.statusCode, 400);
+    assert.equal(valid.statusCode, 200);
+    assert.equal(valid.json().data.version, "5");
+    assert.equal(repairs[0]?.expectedVersion, 4n);
+    assert.equal(repairs[0]?.idempotencyKey, "repair-1");
     await app.close();
   });
 

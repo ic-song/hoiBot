@@ -103,7 +103,7 @@ export interface AppDependencies {
   inspectIrisChannel?: (event: NormalizedIrisEvent) => Promise<IrisChannelAccessDecision>;
   retainIrisEventContent?: (payload: IrisPayload, event: NormalizedIrisEvent) => Promise<number>;
   database?: DatabaseClient;
-  guildTerritoryReadModel?: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference">;
+  guildTerritoryReadModel?: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference" | "repairStatus">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.

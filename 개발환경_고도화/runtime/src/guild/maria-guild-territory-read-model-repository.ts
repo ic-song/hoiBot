@@ -1,4 +1,5 @@
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
+import { ApplicationError } from "../shared/application-error.js";
 import type {
   GuildTerritoryGuildProjection,
   GuildTerritoryPlayerProjection,
@@ -8,6 +9,10 @@ import type {
   GuildTerritoryReadRequest,
   GuildTerritoryRememberPreference,
   GuildTerritoryRewardGuide,
+  GuildTerritoryStatusProjection,
+  GuildTerritoryStatusRepairDelta,
+  GuildTerritoryStatusRepairResult,
+  RepairGuildTerritoryStatus,
   SetGuildTerritoryRememberPreference
 } from "./guild-territory-read-model-repository.js";
 
@@ -72,6 +77,14 @@ interface ReadyEntryRow extends GuildRow {
   prepared_by_display_name: string | null;
   prepared_by_profile_name: string | null;
   prepared_at: string | null;
+}
+
+interface StatusSlotRow {
+  slot_no: number;
+  owner_guild_id: bigint | null;
+  display_name: string | null;
+  mark: string | null;
+  stored_owner_guild_name: string | null;
 }
 
 // A nullable joined guild is represented explicitly instead of dropping its projection row.
@@ -161,10 +174,11 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
     return this.database.withTransaction(async (transaction) => {
       const season = await this.readSeason(transaction, request);
       const rememberPreference = await this.readRememberPreference(transaction, request);
+      const statusProjection = await this.readStatusProjection(transaction, request.territoryScope);
       if (season === null) {
         const rewardGuide = request.rulePin === undefined ? null : await this.readRewardGuide(transaction, request.rulePin.territoryScope, request.rulePin.ruleVersion);
         return {
-          season: { state: "no-war", season: null }, pin: null, turnOrder: [], readyRegistry: null, rankingSnapshot: null,
+          season: { state: "no-war", season: null }, pin: null, turnOrder: [], readyRegistry: null, statusProjection, rankingSnapshot: null,
           rewardGuide, rememberPreference
         };
       }
@@ -180,14 +194,14 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
       const readyRegistry = await this.readReadyRegistry(transaction, season.id.toString());
       if (snapshotVersion === null) {
         const rewardGuide = request.rulePin === undefined ? null : await this.readRewardGuide(transaction, request.rulePin.territoryScope, request.rulePin.ruleVersion);
-        return { season: seasonProjection, pin: null, turnOrder: [], readyRegistry, rankingSnapshot: null, rewardGuide, rememberPreference };
+        return { season: seasonProjection, pin: null, turnOrder: [], readyRegistry, statusProjection, rankingSnapshot: null, rewardGuide, rememberPreference };
       }
 
       const pin = { seasonId: season.id.toString(), snapshotVersion };
       const snapshot = await this.readSnapshot(transaction, pin.seasonId, pin.snapshotVersion);
       if (snapshot === null) {
         const rewardGuide = request.rulePin === undefined ? null : await this.readRewardGuide(transaction, request.rulePin.territoryScope, request.rulePin.ruleVersion);
-        return { season: seasonProjection, pin, turnOrder: [], readyRegistry, rankingSnapshot: null, rewardGuide, rememberPreference };
+        return { season: seasonProjection, pin, turnOrder: [], readyRegistry, statusProjection, rankingSnapshot: null, rewardGuide, rememberPreference };
       }
 
       const [turnOrder, entries] = await Promise.all([
@@ -202,6 +216,7 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
         pin,
         turnOrder,
         readyRegistry,
+        statusProjection,
         rankingSnapshot: {
           pin,
           rulePin: { territoryScope: snapshot.rule_scope_code, ruleVersion: snapshot.rule_version },
@@ -226,6 +241,64 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
       const preference = await this.queryRememberPreference(transaction, command.territoryScope, command.operatorPlayerId, command.playerId);
       if (preference === null) throw new Error("Guild territory remember preference was not persisted.");
       return preference;
+    });
+  }
+
+  async repairStatus(command: RepairGuildTerritoryStatus): Promise<GuildTerritoryStatusRepairResult> {
+    return this.database.withTransaction(async (transaction) => {
+      await transaction.execute(
+        `INSERT IGNORE INTO guild_territory_status_aggregates
+          (territory_scope_code, event_active, season_active, dimension_gate_enabled, remember_me_enabled, version)
+         VALUES (?, FALSE, FALSE, FALSE, FALSE, 0)`, [command.territoryScope]);
+      const aggregates = await transaction.query<Array<{
+        season_id: bigint | null; event_active: number; season_active: number;
+        dimension_gate_enabled: number; remember_me_enabled: number; version: bigint;
+      }>>(
+        `SELECT season_id, event_active, season_active, dimension_gate_enabled, remember_me_enabled, version
+         FROM guild_territory_status_aggregates WHERE territory_scope_code = ? FOR UPDATE`, [command.territoryScope]);
+      const aggregate = aggregates[0]!;
+      const replays = await transaction.query<Array<{ result_version: bigint; result_delta_json: string | GuildTerritoryStatusRepairDelta }>>(
+        `SELECT result_version, result_delta_json FROM guild_territory_status_repairs
+         WHERE territory_scope_code = ? AND idempotency_key = ?`, [command.territoryScope, command.idempotencyKey]);
+      if (replays[0] !== undefined) {
+        return {
+          territoryScope: command.territoryScope,
+          version: replays[0].result_version,
+          delta: parseJson(replays[0].result_delta_json) as GuildTerritoryStatusRepairDelta
+        };
+      }
+      if (aggregate.version !== command.expectedVersion) {
+        throw new ApplicationError("TERRITORY_STATUS_VERSION_CONFLICT", "길드 영지 상태가 먼저 변경되었습니다.", 409);
+      }
+      const delta = command.repairDelta;
+      const nextVersion = aggregate.version + 1n;
+      const seasonId = delta.seasonId === undefined ? aggregate.season_id : delta.seasonId;
+      const eventActive = delta.eventActive ?? Boolean(aggregate.event_active);
+      const seasonActive = delta.seasonActive ?? Boolean(aggregate.season_active);
+      const dimensionGateEnabled = delta.dimensionGateEnabled ?? Boolean(aggregate.dimension_gate_enabled);
+      const rememberMeEnabled = delta.rememberMeEnabled ?? Boolean(aggregate.remember_me_enabled);
+      await transaction.execute(
+        `UPDATE guild_territory_status_aggregates SET season_id = ?, event_active = ?, season_active = ?,
+          dimension_gate_enabled = ?, remember_me_enabled = ?, version = ?, updated_at = UTC_TIMESTAMP(3)
+         WHERE territory_scope_code = ? AND version = ?`,
+        [seasonId, eventActive, seasonActive, dimensionGateEnabled, rememberMeEnabled,
+          nextVersion, command.territoryScope, aggregate.version]);
+      for (const slot of delta.slots ?? []) {
+        await transaction.execute(
+          `INSERT INTO guild_territory_status_slots
+            (territory_scope_code, slot_no, owner_guild_id, stored_owner_guild_name, updated_at)
+           VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))
+           ON DUPLICATE KEY UPDATE owner_guild_id = VALUES(owner_guild_id),
+             stored_owner_guild_name = VALUES(stored_owner_guild_name), updated_at = UTC_TIMESTAMP(3)`,
+          [command.territoryScope, slot.slotNo, slot.ownerGuildId, slot.storedOwnerGuildName]);
+      }
+      await transaction.execute(
+        `INSERT INTO guild_territory_status_repairs
+          (territory_scope_code, idempotency_key, expected_version, result_version, repair_delta_json, result_delta_json)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [command.territoryScope, command.idempotencyKey, command.expectedVersion, nextVersion,
+          JSON.stringify(delta), JSON.stringify(delta)]);
+      return { territoryScope: command.territoryScope, version: nextVersion, delta };
     });
   }
 
@@ -309,6 +382,43 @@ export class MariaGuildTerritoryReadModelRepository implements GuildTerritoryRea
       seasonId,
       startSnapshotVersion: snapshot.start_snapshot_version,
       entries: rows.map(projectReadyEntry)
+    };
+  }
+
+  private async readStatusProjection(transaction: DatabaseTransaction, territoryScope: string): Promise<GuildTerritoryStatusProjection | null> {
+    const aggregates = await transaction.query<Array<{
+      season_id: bigint | null; event_active: number; season_active: number;
+      dimension_gate_enabled: number; remember_me_enabled: number; version: bigint;
+    }>>(
+      `SELECT season_id, event_active, season_active, dimension_gate_enabled, remember_me_enabled, version
+       FROM guild_territory_status_aggregates WHERE territory_scope_code = ?`, [territoryScope]);
+    const aggregate = aggregates[0];
+    if (aggregate === undefined) return null;
+    const rows = await transaction.query<StatusSlotRow[]>(
+      `SELECT slot.slot_no, slot.owner_guild_id, guild.display_name, guild.mark, slot.stored_owner_guild_name
+       FROM guild_territory_status_slots slot
+       LEFT JOIN guilds guild ON guild.id = slot.owner_guild_id AND guild.status = 'active'
+       WHERE slot.territory_scope_code = ? ORDER BY slot.slot_no ASC`, [territoryScope]);
+    const bySlot = new Map(rows.map((row) => [row.slot_no, row]));
+    return {
+      territoryScope,
+      seasonId: aggregate.season_id?.toString() ?? null,
+      eventActive: Boolean(aggregate.event_active),
+      seasonActive: Boolean(aggregate.season_active),
+      dimensionGateEnabled: Boolean(aggregate.dimension_gate_enabled),
+      rememberMeEnabled: Boolean(aggregate.remember_me_enabled),
+      version: aggregate.version,
+      slots: Array.from({ length: 7 }, (_value, index) => {
+        const slotNo = index + 1;
+        const row = bySlot.get(slotNo);
+        return {
+          slotNo,
+          ownerGuild: row === undefined || row.owner_guild_id === null || row.display_name === null ? null : {
+            guildId: row.owner_guild_id.toString(), displayName: row.display_name, mark: row.mark
+          },
+          storedOwnerGuildName: row?.stored_owner_guild_name ?? null
+        };
+      })
     };
   }
 
