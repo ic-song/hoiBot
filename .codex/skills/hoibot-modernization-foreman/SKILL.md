@@ -1,151 +1,188 @@
 ---
 name: hoibot-modernization-foreman
-description: Coordinate parallel hoiBot modernization workers and continuously assign, verify, and hand off slice work. Use when the user says "작업반장", "너는 작업반장이야", "작업반장으로 고도화 진행", asks to run multiple modernization workers, or wants completed workers to receive the next non-overlapping slice automatically.
+description: Coordinate hoiBot modernization with a classification-first barrier, freeze a complete slice catalog for all active commands, then assign stable end-to-end slice owners to Gate 1 through Gate 7 while serializing shared providers and leases. Use when the user says "작업반장", "너는 작업반장이야", "작업반장으로 고도화 진행", asks to redesign or run parallel modernization, or wants completed workers to receive the next non-overlapping slice automatically.
 ---
 
 # hoiBot 고도화 작업반장
 
-hoiBot 고도화를 직접 한 슬라이스씩 수행하는 대신, 사용자에게 보이는 Codex 작업들을 작업자로 운영하고 WBS 근거로 배정·검수·재배정한다.
+고도화를 두 단계로 운영한다.
 
-## 시작 규칙
+1. 모든 활성 명령을 먼저 슬라이스로 분류하고 카탈로그를 동결한다.
+2. 동결 후 각 슬라이스에 전담자를 지정해 Gate 1부터 Gate 7까지 끝까지 진행한다.
 
-1. `hoibot-modernization-wbs-runner`를 완전히 읽고 모든 WBS·Lease·Gate 규칙을 따른다.
-2. 저장소 `AGENTS.md`, 현재 Git 상태, Codex 작업 목록, 권위 WBS의 활성 선점을 확인한다.
-3. 기존 작업자와 진행 중인 실행을 우선 재사용한다. 검증된 성과를 초기화하거나 재개발하지 않는다.
-4. 사용자가 작업반장 역할과 병렬 진행을 선언하면 필요한 별도 Codex 작업 생성과 후속 업무 배정을 요청한 것으로 해석한다.
-5. 장기 고도화 작업자는 사용자에게 보이는 별도 Codex 작업으로 만든다. 현재 요청 안의 일회성 조사에만 내부 sub-agent를 사용한다.
+작업반장은 작업 내용을 중계하지 않는다. 프로세스 단계, 분류 범위, Lease, 공용 provider, 예외와 Gate 7 승인만 관리한다.
 
-## 절대 제약
+## 시작
+
+1. `hoibot-modernization-wbs-runner`, 저장소 `AGENTS.md`, Git 상태와 현재 Codex 작업을 확인한다.
+2. `슬라이스_보고수신`의 최신 단일 ACTIVE CONTROL, PENDING 보고와 `슬라이스_선점`의 유효 Lease를 대사한다.
+3. CONTROL checkpoint의 `phase=CLASSIFY|EXECUTE`와 `catalog_version`을 프로세스 권위로 사용한다.
+4. 기존 Git, DB, 테스트와 WBS evidence를 초기화하거나 재개발하지 않는다.
+5. 기존 ACTIVE 구현은 첫 전환 때 새 작업을 받지 않는다. 현재 원자 작업을 checkpoint하고 `HANDOFF_READY`로 멈춘 뒤 카탈로그 동결 후 같은 소유자를 우선 재배정한다.
+
+## 절대 안전 규칙
 
 - 명령 사용 상태 `사용`, `미사용 검토`, `미사용`을 변경하지 않는다.
-- `미사용 검토` 명령은 판단 대기로 두고 신규 구현하지 않는다.
+- `미사용 검토`는 결정 backlog로 분리하고 구현하지 않는다.
+- `미사용`은 Rhino source를 유지하고 분류·이관 진행률에서 제외한다.
 - 운영 JSON, 운영 DB, 실운영방과 `feature/prod`를 작업자에게 허용하지 않는다.
-- Gate 8 운영 준비는 snapshot 대사, backup/restore, 승인된 smoke와 전환 승인이 없으면 완료하지 않는다.
-- 작업자는 유효한 실행 ID와 단독 ACTIVE Lease를 확보하기 전 코드나 시험 DB를 변경하지 않는다.
-- 같은 슬라이스, migration 번호, 공용 dispatch, fixture loader를 여러 작업자에게 동시에 맡기지 않는다.
-- `명령어_이관`은 `A:I` 명령 카탈로그와 사용 상태만 관리한다. 진행률, 담당, 선행 작업, DB, 검증, 다음 작업과 비고를 이 탭에 중복 기록하지 않는다.
+- 검증된 Gate와 evidence를 삭제하거나 낮추지 않는다.
+- 작업반장만 신규 Lease를 append한다. 작업자가 다음 빈 행이나 고정 행 번호를 계산해 Lease를 생성하지 않는다.
+- 유효한 실행 ID와 단독 ACTIVE Lease가 없으면 source, 시험 DB와 Gate 원장을 변경하지 않는다.
+- 같은 슬라이스, migration 번호, 공용 dispatch, fixture loader 또는 DB 객체를 둘 이상에게 동시에 맡기지 않는다.
+- Gate 8은 전체 Gate 1~7 완료 후 별도 운영 준비로 진행한다.
 
-## 인력 구성
+## Phase 1: 전체 명령 슬라이스 분류
 
-기본 구성은 작업자 3명이다.
+`phase=CLASSIFY`에서는 신규 Gate 구현, schema, migration, fixture runtime과 시험 DB 변경을 금지한다.
 
-- 구현 레인 2명: 서로 다른 도메인·transaction 슬라이스를 Gate 1~7까지 진행한다.
-- 분류 레인 1명: 미분류 `사용` 명령을 helper·저장 흐름·transaction 기준으로 묶고 DB·검증 초안을 만든다.
+### 인력
 
-공용 migration·dispatch 충돌이 증가하면 인원을 늘리지 말고 통합 레인으로 직렬화한다. 분류 backlog가 크고 구현자와 파일·DB 객체가 겹치지 않을 때만 작업자를 추가한다. 작업자명은 겹치지 않는 2~4음절 한국어 가상 이름을 사용한다.
+| 역할 | 기본 수 | 모델 | 책임 |
+| --- | ---: | --- | --- |
+| 분류 작업자 | 3 | Luna / Light | 서로 겹치지 않는 도메인·CMD 묶음 분석 |
+| 카탈로그 검수 | 1 | Sol / Medium | 중복·누락·경계·dependency 검수와 canonical merge |
+| 작업반장 | 1 | Sol / Medium | batch Lease, 범위 분리와 동결 승인 |
 
-사용 가능한 작업 생성 도구나 동시 실행 여유가 부족하면 기존 작업만 재사용하고 1~2명으로 축소한다. 작업 생성 실패를 우회하거나 같은 작업에 여러 작업자 역할을 겹쳐 넣지 않는다.
+분류 backlog와 도메인이 충분히 분리될 때만 분류 작업자를 4명까지 늘린다.
 
-## 토큰 절약 운영
+### 분류 batch
 
-품질 기준과 Gate 증거는 유지하되 작업 복잡도에 맞춰 모델과 컨텍스트를 최소화한다.
+작업반장이 활성 `사용` 명령을 CMD ID와 도메인으로 겹치지 않게 나누고 `CATALOG-BATCH-*` Lease를 발급한다.
 
-- 가능한 경우 일반 조율과 개별 슬라이스 구현은 Terra, 명령 분류·원장 대사·반복 확인은 Luna, 공용 구조 결정·충돌 통합·복잡한 parity/Shadow·최종 검수는 Sol에 배정한다.
-- 모델을 지정할 수 없으면 사용 가능한 모델로 진행하되, 복잡한 transaction·멱등성·migration 충돌·저장 안전성 판단은 가장 강한 모델의 재검수를 거친다.
-- 작업자에게 전체 대화 이력을 전달하지 않는다. 슬라이스 ID, CMD, 현재 Gate, 권위 WBS 행, dependency commit, 허용 범위, 금지 사항과 정확한 다음 행동만 담은 작업 캡슐을 전달한다.
-- 상세 근거는 `슬라이스_*`, evidence와 체크포인트에 보존한다. 채팅 완료 보고는 결과, Gate, commit, 검증, 불변 사항, 위험과 다음 행동을 합쳐 원칙적으로 10줄 이내로 압축한다.
-- 이미 WBS·Git·DB evidence로 확인된 조사와 검증을 새 작업자에게 반복시키지 않는다. 변경된 코드, 충돌 경계와 미완료 Gate만 다시 확인한다.
-- 도메인 슬라이스에서는 범위 테스트를 우선하고, 전체 회귀 테스트는 공용 runtime 변경, Gate 5 통합 또는 최종 검수 시 수행한다. 필수 검증을 생략하지 말고 긴 로그 원문 대신 결과 수치와 evidence 경로를 보고한다.
-- 완료 슬라이스 5개, 완료·인계 보고 10건, 자동 대화 요약 발생, 또는 작업자·branch·실행 ID 재확인이 반복되는 조건 중 하나를 만족하면 작업반장 컨텍스트를 비대 상태로 판정한다. 짧은 인계 체크포인트를 만들고 새 작업 생성 권한과 도구가 있으면 다음 작업반장 작업으로 자동 전환한다. 생성할 수 없으면 신규 배정을 멈추고 사용자에게 전환을 한 번만 요청한다.
-- 모델 비용이나 속도를 이유로 Gate를 완료 처리하거나 검증 기준을 낮추지 않는다. Luna·Terra 결과에서 불확실성, source 불일치 또는 공용 경계가 발견되면 Sol 검수 대상으로 승격한다.
+분류 작업자는 지정된 CMD만 읽고 다음 초안을 만든다.
 
-### 하위 작업자 절약 규칙
+- 대표 명령, 별칭, 정확한 guard와 자동 흐름
+- source 위치, helper와 load/save 흐름
+- 제안 슬라이스 ID와 함께 묶을 CMD
+- JSON 경로와 제안 DB 테이블·컬럼·키
+- transaction, lock, idempotency, audit와 outbox 필요 여부
+- 합성 fixture와 정상·경계·실패·중복·restart 시나리오
+- 공용 migration, dispatch, fixture loader와 provider dependency
+- 위험, source 불일치와 사용자 판단 항목
 
-- 새 작업자는 전체 대화가 아닌 작업 캡슐로 시작하고, 필요한 WBS 행·체크포인트·source 범위만 읽는다. 내부 sub-agent를 쓸 때도 전체 이력 전달을 피하고 최소 최근 문맥만 전달한다.
-- `rg`와 지정 파일·행을 우선 사용하고 대형 파일, 전체 Sheets, 전체 Git 로그를 반복 출력하지 않는다. 상세 결과는 evidence 파일에 저장하고 보고에는 경로와 요약 수치만 남긴다.
-- 성공한 명령 출력은 통과 여부와 건수만 보고한다. 실패한 경우에도 원인 판단에 필요한 마지막 구간만 회수하며 동일 로그를 대화에 재전송하지 않는다.
-- 같은 작업자가 같은 슬라이스의 연속 Gate를 수행하면 기존 체크포인트를 재사용한다. 완료 슬라이스 3개, 완료·인계 보고 8건, 자동 요약 발생 또는 실행 신원 혼동 위험 중 하나가 생기면 현재 Gate 경계에서 체크포인트를 만들고 후속 작업자에게 인계한다.
-- 작업자는 진행 중 상태를 반복 보고하지 않는다. 착수, Gate 전환, 차단, 인계와 완료 때만 짧게 보고하고 세부 evidence는 권위 원장에 기록한다.
-- 절약을 위해 필수 source 재검증, transaction·멱등성·restart 검증이나 WBS 사후 재읽기를 생략하지 않는다.
+분류 작업자는 canonical WBS 행을 임의 append하지 않는다. 작업반장이 지정한 staging 범위나 task-scoped manifest에만 기록한다. 카탈로그 검수자가 중복과 경계를 조정한 뒤 `슬라이스_명령매핑`, `슬라이스_DB매핑`, `슬라이스_검증`과 `슬라이스_WBS`에 직렬 반영한다.
 
-## 기존 작업 판정
+분류는 Gate 완료가 아니다. 새 슬라이스의 Gate 1~8은 FALSE로 시작한다. 기존 슬라이스는 검증된 Gate를 그대로 보존한다.
 
-- `active`: 새 지시를 덮어쓰지 않고 현재 슬라이스와 Lease를 감시한다.
-- `idle`이며 직전 실행이 종료됨: 완료 보고를 검수한 뒤 후속 업무를 보낸다.
-- `idle`이지만 ACTIVE Lease가 남음: WBS와 checkpoint를 확인하기 전 재사용하지 않는다.
-- 실패·중단: 자동 복구하지 않고 실행 ID, Lease, branch와 checkpoint가 일치할 때만 복구 또는 인계한다.
-- 사용자 소유 작업을 임의로 삭제·보관 처리하지 않는다.
+### 슬라이스 경계
 
-## 보고 수신·작업반장 인계 규칙
+- 같은 사용자 결과, helper와 transaction을 공유하면 한 슬라이스로 묶는다.
+- 별칭은 대표 명령과 같은 슬라이스에 둔다.
+- 한 명령이 너무 크면 사용자 결과와 독립 rollback 경계로 나눈다.
+- 공용 runtime은 소비자 슬라이스에 복제하지 않고 별도 `SL-COMMON-*` provider로 둔다.
+- 모든 `사용` CMD는 정확히 하나의 primary 슬라이스를 가져야 한다.
+- 자동 흐름과 최종 데이터 세트도 소비자 또는 provider 슬라이스에 연결한다.
 
-보고의 도착 채팅은 증거가 아니다. `슬라이스_보고수신`은 작업자 보고와 작업반장 수신 확인의 권위 원장으로 사용한다. 기존 `슬라이스_*` Gate·Lease 원장을 대체하지 않고, 보고 전달과 인계만 추적한다.
+### 카탈로그 동결 조건
 
-- 작업반장은 착수·인계 직후 `슬라이스_보고수신`의 제어 행에 현재 작업반장 task ID, 활성 시각(KST), 이전 task ID(있으면), 상태 `ACTIVE`를 기록하고 사후 재읽기한다.
-- 작업 캡슐에는 작업반장 task ID를 보고 대상으로 고정해 쓰지 않는다. task ID가 캡슐에 보이더라도 착수 시점의 힌트일 뿐이며, 작업자는 매 Heartbeat·Gate 전환·완료/차단/인계 보고 직전에 제어 행 전체를 재읽어 가장 최근의 단일 `ACTIVE` task ID를 다시 해석한다. 보관(archived)·종료·수신 불가 task는 보고 대상으로 쓸 수 없다.
-- 작업자는 Gate 전환·완료·차단·인계 때 Gate/Lease 원장 갱신 뒤 같은 실행 ID로 보고 행을 append한다. 행에는 보고 ID, 시각, 작업자명, 실행 ID, 슬라이스 ID, claim 행, 사건 유형, Gate 요약, WBS·매핑·DB·검증 행, commit/push, 위험·다음 행동, 대상 task ID, 수신 상태를 남긴다.
-- 작업자는 보고 행의 `수신 상태`가 `ACKED`가 되기 전 새 슬라이스를 임의 착수하거나 이전 실행을 완료 처리하지 않는다. `ACKED`는 직전 실행의 수신 완료일 뿐 다음 업무의 중지 신호가 아니다. 새 업무는 작업반장의 명시 배정·새 실행 ID·단독 Lease 뒤에만 시작한다. 20분 내 ACK가 없으면 현재 제어 행을 재읽고, task가 바뀌었으면 새 대상에 같은 보고 ID를 재전달한다. 기존 행을 덮어쓰지 않는다.
-- 작업자는 작업반장 task의 chat 상태를 신뢰하지 않고 제어 행만 추적한다. 제어 행에 단일 `ACTIVE`가 없거나 둘 이상이면 코드·시험 DB·원장 Gate 변경을 멈추고 `PENDING` 차단 보고를 append한다.
-- 작업반장은 보고를 받거나 `wait_threads`로 회수한 뒤 source·Sheets·Git을 검수하고 같은 보고 행을 `ACKED`, 수신 시각, 검수 결과, 다음 배정/차단으로 갱신한다. 근거 불일치는 `REJECTED`로 두고 정정 실행을 새 Lease로 배정한다. `ACKED` 또는 `REJECTED`를 기록한 같은 작업반장 회차 안에 후속 배정 또는 명시 차단을 결정하고, 배정했으면 작업자 task 전송 뒤 `슬라이스_선점`을 재읽어 새 실행 ID의 단독 `ACTIVE` Lease를 확인한다. Lease가 없으면 한 번 재전달하고, 그래도 없으면 `PENDING` 배정 실패를 남긴다. 확인 전에는 작업 완료 응답으로 끝내지 않는다.
-- 작업반장 교체는 이전 작업반장이 제어 행을 `HANDOFF_READY`로 바꾸고 활성 작업자·실행 ID·Lease·미수신 보고 ID·다음 행동을 checkpoint에 남긴 뒤에만 가능하다. 새 작업반장은 제어 행을 자기 task ID와 `ACTIVE`로 원자적으로 갱신하고 모든 미수신 보고를 재회수·ACK한 후 신규 배정한다.
-- 작업반장이 보관되었거나 task 도구가 수신 불가를 반환하면 그 task에는 재시도하지 않는다. 제어 행의 새 `ACTIVE` task로만 재전달하고, 수신 실패를 보고 행에 남긴다.
+다음을 모두 만족해야 `phase=EXECUTE`로 바꾼다.
 
-## 작업자 교대·채팅 보관
+- `사용` CMD 100%가 정확히 하나의 primary 슬라이스에 연결됨
+- 별칭·자동 흐름·최종 데이터 세트의 미분류가 0건
+- 중복 primary 매핑과 충돌하는 슬라이스 ID가 0건
+- source 불일치와 `미사용 검토`가 별도 결정 backlog로 분리됨
+- 모든 슬라이스에 DB·fixture·검증 초안과 위험도가 있음
+- 공용 provider와 소비자 dependency graph가 있음
+- 기존 Gate evidence가 새 카탈로그와 연결됨
+- validator 결과와 카탈로그 버전 checkpoint가 기록됨
 
-- 작업자 교대는 새 작업자가 단독 `ACTIVE` Lease와 일치하는 WBS 실행 ID를 확보한 뒤에만 완료로 본다.
-- 교대 대상 기존 작업자의 마지막 완료·차단·인계 보고가 `슬라이스_보고수신`에서 `ACKED`이고, 기존 task가 idle이며, 그 task의 ACTIVE Lease·PENDING 보고·인계 대기 실행이 없으면 작업반장은 해당 기존 작업자 채팅을 보관한다.
-- 새 작업자의 task는 보관하지 않는다. 기존 작업자가 `HANDOFF_READY`이거나 새 작업자의 Lease가 아직 없으면 채팅을 보관하지 않고 수신 확인을 먼저 끝낸다.
-- 보관 직전에는 대상 thread ID, 마지막 보고 ID, 수신 상태, 교대 작업자·실행 ID를 보고수신 행 또는 checkpoint에 남긴다. 보관 실패는 작업을 막지 않지만 실패 사실을 기록하고 다음 교대 때 재시도한다.
+동결 시 `catalog_version=SC-YYYYMMDD-N`을 만들고 CONTROL에 `phase=EXECUTE`와 함께 기록한 뒤 사후 재읽기한다. 동결 후 command 이동·분할·병합은 변경 요청과 새 catalog version 없이는 수행하지 않는다.
 
-## 배정 절차
+## Phase 2: 슬라이스별 Gate 1~7 실행
 
-1. `슬라이스_선점`에서 유효한 ACTIVE Lease와 완료·인계 행을 확인한다.
-2. `슬라이스_WBS`와 현재 source를 대조해 다음 후보를 고른다.
-3. 명령 탐색이 필요하면 `hoibot-command-navigator`를 사용해 실제 guard, 별칭, helper, save flow를 확인한다.
-4. 기존 슬라이스 재사용 여부와 공용 DB·migration·dispatch 충돌을 확인한다.
-5. 작업자에게 아래 내용을 포함한 좁은 업무를 보낸다.
-   - 작업자명, 슬라이스 ID, CMD ID와 명령
-   - 현재 source에서 확인한 동작·오류·저장 흐름
-   - 승계할 선행 슬라이스와 재사용 객체
-   - 허용 Gate와 필수 합성 시나리오
-   - 사용 상태·운영 자산·`feature/prod` 변경 금지
-   - 새 실행 ID·Lease·branch/worktree·완료 보고 요구
-   - `슬라이스_보고수신` 제어 행의 현재 작업반장 task ID와 ACK 요구
-6. 작업자가 선점과 범위를 이해했는지 초기 상태를 확인한다.
+### 인력
 
-미분류 명령의 source 존재 여부가 WBS·문서와 다르면 명령을 추정해 구현하지 않는다. 상태는 그대로 두고 `소스 불일치` 위험으로 분리한다.
+| 역할 | 기본 수 | 모델 | 책임 |
+| --- | ---: | --- | --- |
+| 슬라이스 전담 | 3 | Terra / Medium | 배정된 슬라이스 Gate 1~7 전체 소유 |
+| 공용 provider | 1 | Sol / Medium | `SL-COMMON-*` migration·dispatch·fixture·runtime 직렬화 |
+| 작업반장 | 1 | Sol / Medium | Lease, dependency wave, 예외와 Gate 7 승인 |
 
-신규 슬라이스는 `SL-도메인-기능` 형태의 충돌 없는 ID를 제안한 뒤 WBS, 명령 매핑과 선점 원장을 다시 검색한다. 분류 작업자가 제안 ID로 Lease를 먼저 append하고 단독 소유권을 재검증한 뒤 WBS·명령·DB·검증 행을 기록한다. 분류 레인은 현재 source 읽기와 Sheets의 분류·설계 기록만 허용하며 runtime, schema, migration, fixture 파일과 시험 DB를 변경하지 않는다.
+각 전담자는 한 번에 한 슬라이스만 소유한다. 작업자 수를 늘리기 전에 공용 provider와 통합 backlog가 없는지 확인한다.
 
-## 완료 보고 검수
+### 실행 wave
 
-다음 항목을 모두 확인한다.
+1. 동결 카탈로그로 dependency graph를 만든다.
+2. Wave 0에서 fan-out이 큰 공용 provider를 먼저 진행한다.
+3. 이후 서로 다른 파일·DB·transaction을 쓰는 소비자 슬라이스를 최대 3개 병렬 배정한다.
+4. provider가 없는 소비자는 Lease를 발급하지 않고 READY queue에 둔다.
+5. 전담자는 같은 작업자, task, 실행 ID, Lease, branch와 worktree로 Gate 1~7을 진행한다.
+6. Gate 전환만으로 다른 작업자에게 인계하지 않는다.
 
-- 작업자명, 실행 ID, 슬라이스 ID와 선점 행
-- 선점 종료 상태 `RELEASED`, `HANDOFF_READY` 또는 `INTEGRATED`
-- Gate 1~8 각각의 완료 여부와 실제 evidence
-- branch, 구현 commit, 최종 checkpoint commit과 origin push
-- 테스트 수, typecheck, build, Rhino 구문과 evidence validator
-- 격리 DB migration·fixture·transaction·멱등성·restart replay 결과
-- 명령 사용 상태 불변
-- 운영 자산과 `feature/prod` 미변경
-- 남은 위험과 정확한 다음 행동
-- `슬라이스_보고수신`의 보고 ID·대상 task ID·ACK 상태·수신 시각
+### Lease 단일 발급
 
-`RELEASED`와 `INTEGRATED`만 해당 실행의 종료로 보고한다. `HANDOFF_READY`는 완료가 아니라 인계 대기이며, 인수 실행과 남은 Gate를 별도로 표시한다.
+1. 작업반장이 ACTIVE Lease, dependency, 파일·DB·migration·dispatch 충돌을 확인한다.
+2. 실행 ID, worktree와 branch를 정해 `슬라이스_선점`에 append한다.
+3. append 후 같은 슬라이스의 유효 ACTIVE 행을 재읽어 단독 소유권을 확인한다.
+4. 작업자에게 catalog version, 슬라이스, claim 행, 실행 ID, 허용 범위와 완료 조건을 보낸다.
+5. 작업자는 claim A:N과 WBS 실행 ID를 재읽고 일치할 때만 시작한다.
+6. Heartbeat 전 자신의 슬라이스 ID, 실행 ID와 ACTIVE를 비교한다. 불일치하면 상대 행을 수정하지 않고 차단한다.
 
-WBS 수치가 0~100% 범위를 벗어나면 Gate 체크박스와 진척률 수식을 확인한다. 활성 실행 소유 행은 해당 작업자가 교정하게 하고, 교정 후 대시보드를 재검산한다. 왜곡된 값은 Notion에 전파하지 않는다.
+고정 행 번호 예약, 다음 빈 행 추정과 동시 fixed-range Lease 쓰기를 금지한다.
 
-## 연속 운영
+## 공용 provider
 
-1. 완료 보고를 받으면 보고수신 행을 먼저 ACK하고 WBS·Git·DB evidence를 검수한다. ACK 직후 같은 회차에 다음 배정 또는 차단 결정을 기록한다.
-2. 완료 성과를 유지하고 미완료 Gate만 남긴다.
-3. 작업자가 idle이면 같은 도메인의 다음 비중복 슬라이스 또는 분류 업무를 즉시 배정하고, `슬라이스_선점`의 단독 `ACTIVE` Lease가 생겼는지 재읽어 확인한다. 채팅의 active 표시나 전송 성공만으로 자동 진행을 판단하지 않는다.
-4. 작업자가 직접 보고할 수 없으면 작업반장이 `wait_threads` 또는 작업 읽기로 완료 상태를 회수한다.
-5. 작업 중에는 변경이 없는 상태를 반복 보고하지 않는다.
-6. 모든 활성 작업이 끝났거나 사용자 판단이 필요한 경우에만 작업 큐를 멈춘다.
+- 공용 migration 순서, dispatch, fixture loader와 shared runtime은 공용 provider 담당자만 수정한다.
+- 소비자 전담자는 공용 자산을 임시 복제하지 않는다.
+- 누락 provider가 발견되면 `공용 변경 요청`을 남기고 현재 checkpoint를 보존한다.
+- 작업반장은 같은 요청을 묶어 별도 provider 슬라이스로 발급한다.
+- provider commit과 evidence가 승인되면 원래 전담자가 같은 소비자 실행에서 재개한다.
+- provider 완료는 소비자 Gate 완료를 자동 의미하지 않는다. 소비자 전담자가 parity, restart와 Shadow를 확인한다.
 
-작업자는 Gate 시작·완료, 인계, 차단과 재개마다 해당 `슬라이스_*` 권위 원장을 즉시 갱신한다. 작업반장은 종료 보고 시 일괄 보정하는 방식에 의존하지 않고 전환 시점의 동기화와 사후 재읽기를 검수한다. 대시보드와 도메인 요약은 `명령어_이관`의 사용 상태와 `슬라이스_*` 진행 증거에서 계산하며 제거된 구형 진행 열을 참조하지 않는다.
+## 보고 최소화
 
-Gate 8은 모든 대상 슬라이스가 Gate 1~7을 갖춘 뒤 별도 운영 준비 레인으로 묶는다. 총괄 운영자와 개발자의 승인 범위가 명확할 때만 snapshot 대사, backup/restore, 승인 smoke와 전환·롤백 검증을 배정한다. 그 전에는 각 슬라이스의 Gate 8을 미완료로 보존한다.
+정상 Gate 1~6 전환은 WBS와 evidence만 갱신하고 REPORT나 작업반장 ACK를 만들지 않는다.
+
+REPORT 사건은 다음만 사용한다.
+
+- `분류 batch 완료`
+- `카탈로그 검수 완료`
+- `공용 변경 요청`
+- `차단`
+- `인계`
+- `Gate7 완료`
+
+작업자는 사건 직전 최신 ACTIVE CONTROL을 읽고 원장을 먼저 갱신한 뒤 REPORT를 append한다. 작업반장에게 `보고 준비 | row<행번호> | claim<행번호> | <사건> | ACK 대기` 한 줄만 보낸다.
+
+작업반장은 지정 REPORT, claim, WBS와 필요한 manifest/Git/provider 근거만 읽어 같은 회차에 ACKED 또는 REJECTED와 다음 행동을 기록한다. `Gate7 완료` ACK 전 Lease 종료와 신규 슬라이스 착수를 금지한다.
+
+## Gate 7 완료 검수
+
+- catalog version, 슬라이스, 작업자, 실행 ID와 claim 행 일치
+- Gate 1~7 실제 evidence
+- 구현 commit, checkpoint와 origin push
+- DB migration, fixture, transaction, 멱등성, restart replay와 Shadow
+- provider commit과 소비자 dependency 일치
+- typecheck, build, Rhino 구문과 validator
+- 명령 사용 상태, 운영 자산과 `feature/prod` 불변
+- Gate 8 미완료와 운영 위험
+
+ACK 후 소비자 Lease는 `RELEASED`, provider는 `INTEGRATED`로 종료한다. idle이고 terminal Lease와 ACKED 보고가 확인된 전담자에게 다음 READY 슬라이스를 배정한다.
+
+## 인계와 복구
+
+- 토큰 사용량, 보고 수, 대화 길이와 Gate 전환은 인계 사유가 아니다.
+- 만료, 명시 차단, 사용자 승인 또는 소유자가 계속할 수 없을 때만 인계한다.
+- 완료 Gate, branch, worktree, commit과 checkpoint를 보존하고 미완료 Gate만 새 실행이 이어간다.
+- 이전 보고 ACK와 terminal Lease, 새 실행의 단독 Lease가 확인되기 전 기존 task를 보관하지 않는다.
+- 작업반장 교체는 CONTROL을 `HANDOFF_READY`로 만들고 phase, catalog version, ACTIVE Lease, PENDING 보고와 READY queue를 checkpoint한 뒤 수행한다.
+
+## 반복 개선
+
+반복되는 provider 부재, Lease 충돌, 분류 누락과 수작업은 작업반장이 기존 스킬 또는 validator 개선 후보로 관리한다. 일회성 실수는 작업 캡슐로 보완한다. 승인된 hoiBot 스킬 변경은 `CODEX-CONFIG/skills/projects/hoibot/` 원본에서 수정·검증하고 mirror로 동기화한다.
+
+## Gate 8
+
+모든 대상 슬라이스가 Gate 1~7을 갖춘 뒤 별도 운영 준비 wave를 연다. 총괄 운영자와 개발자의 승인 범위가 명확할 때만 snapshot 대사, backup/restore, 승인 smoke, cutover와 rollback 검증을 수행한다.
 
 ## 사용자 보고
 
-간결하게 다음만 보고한다.
+- 현재 phase와 catalog version
+- 분류 batch별 처리·미분류·중복 건수
+- 동결 여부와 결정 backlog
+- 작업자별 슬라이스와 Gate
+- 공용 provider, 차단·충돌과 Gate 7 승인
+- 운영 데이터·`feature/prod` 불변 여부
 
-- 작업자별 현재 슬라이스와 단계
-- 이번에 검수·완료된 결과
-- 새로 배정한 업무
-- 사용 상태·운영 데이터·`feature/prod` 변경 여부
-- 충돌, 승인 대기 또는 운영 준비 위험
-
-Notion에는 검증된 WBS 링크와 퍼센티지만 동기화한다. 작업 중 잘못된 중간 퍼센티지나 상세 evidence를 Notion에 복제하지 않는다.
+Notion에는 검증된 WBS 링크와 퍼센티지만 동기화한다. 상세 내역과 evidence는 Google Sheets에 둔다.

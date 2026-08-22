@@ -171,7 +171,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- 미니펫 가방 8칸을 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
+- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
 - 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
 
 ## AI Notes
@@ -468,6 +468,7 @@ Status: VERIFIED
 - Canonical entry point for mini-pet bag rendering
 - For bag format and viewer-target split, inspect `buildMiniPetBagMessage` in `main.js`
 - Nearby branches contain most mini-pet bag mutation logic
+- 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한하며 프리미엄 종료 후 초과 보유 데이터는 삭제하지 않는다.
 
 ---
 
@@ -519,6 +520,8 @@ Status: VERIFIED
 
 - Canonical read path for sweet-home furniture bag
 - This branch normalizes home user data before output
+- 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 최근 배치한 초과 가구를 가방으로 회수한다.
+- `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 
@@ -680,11 +683,11 @@ Status: VERIFIED
 - `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count + 망므📙 5회` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling. 스킬 해제 후에는 이미 사용한 횟수는 유지하고 추가 한도만 즉시 사라진다.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
 - `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. `/내마음`은 `망므📙` 장착 시 `+5회`를 별도 표시한다. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
-- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, 20 MBTI gacha badges, and 50 relationship-type gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path. These view/equip/unequip/delete commands are available without a hoi/newbie/premium pass. The owned list and every equip/delete/cube command use the fixed `getAllPetHomeBadges()` order, so cube option changes never renumber badges. Representative badge text appends the same stable number as `[N번]`. Each owned badge and cube-result card shows its type/grade, the four numbered cube options in two compact rows, then the achievement or gacha text.
+- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, 20 MBTI gacha badges, and 50 relationship-type gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path. These view/equip/unequip/delete commands are available without a hoi/newbie/premium pass. The owned list and every equip/delete/cube command use the fixed `getAllPetHomeBadges()` order, so cube option changes never renumber badges. Representative badge text appends the same stable number as `[N번]`. Each owned badge and cube-result card shows its type/grade, the four numbered cube options one per line, then the achievement or gacha text. The equipped premium badge shows each base value, the `+3%p` premium bonus, and the actual final applied value together.
 - `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지오픈3 [숫자]` opens 1 badge when the count is omitted or accepts a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[3](/홈뱃지오픈3)"]`, runs under the response data write lock, uniformly draws one of 50 `LOVE01`–`LOVE50` relationship-type badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
-- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. It allows 1–1,000 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Rates from 10.1% through 49.9% are configured as separate 1% bands before selecting a uniform 0.1% value inside the chosen band. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room a before/after comparison for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows every configured 1% range rate to six decimal places with blank lines between high-value groups.
+- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. It allows 1–1,000 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Rates from 10.1% through 49.9% are configured as separate 1% bands before selecting a uniform 0.1% value inside the chosen band. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room the four actual applied option percentages plus before/after comparisons for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows every configured 1% range rate to six decimal places with blank lines between high-value groups.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -720,7 +723,7 @@ Status: VERIFIED
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
-- `/홈뱃지` shows general guides first, keeps the cube guide behind `allsee`, then shows the representative badge, collection summary, and two cube-option lines for every owned badge.
+- `/홈뱃지` shows general guides first, keeps the cube guide behind `allsee`, then shows the representative badge, collection summary, and four one-option lines for every owned badge.
 - Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
 - `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
 - `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.
@@ -1374,6 +1377,7 @@ Status: VERIFIED
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
+- `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함)과 길드공헌 큐브를 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
 - 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
@@ -2328,7 +2332,7 @@ Status: VERIFIED
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
 - `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
-- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸이다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬을 효과 없는 잠금 상태로 보존한다. 재가입 시 잠금 스킬을 다시 활성화하고 관련 세 파일을 저장한다.
+- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 최근 배치한 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
 
@@ -2615,6 +2619,7 @@ Status: VERIFIED
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
+- `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용하므로 장착 홈뱃지 프리미엄 +3%p와 길드공헌 큐브가 동일하게 반영된다.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 
@@ -3707,6 +3712,40 @@ Status: VERIFIED
 
 ---
 
+# /미니펫조합마스터
+Status: VERIFIED
+## Command Anchors
+- Search in `main.js`: `/미니펫조합마스터`
+## Files
+- `main.js`
+- `Info.js`
+## Related Helpers
+- `isMasterMiniPetCombinationMaterial`
+- `pickMasterMiniPetCombinationReward`
+- `createMasterMiniPetFromCombination`
+- `buildMasterMiniPetGuideMessage`
+- `buildMasterMiniPetCombinationConditionFailMessage`
+- `buildMasterMiniPetCombinationFailMessage`
+- `buildMasterMiniPetCombinationSuccessMessage`
+## Data Usage
+- `data.member["호이 남"].point`
+- `petData["호이 남"].miniPetBag`
+## Save Flow
+- Failure consumes only 350억 points and saves `filePath`
+- Success consumes 350억 points, removes the selected five 엘리트 300강 mini-pets, adds one 마스터 mini-pet, saves `filePath` and `memberPetPath`
+## Related Commands
+- `/미니펫조합마스터 [미니펫가방번호] [미니펫가방번호] [미니펫가방번호] [미니펫가방번호] [미니펫가방번호]`
+- `/미니펫가방`
+- `/미니펫강화`
+- `/미니펫판매`
+## AI Notes
+- The command and its guide are available only to `호이 남` in `팻 테스트방`; other senders and rooms receive no response.
+- The command accepts exactly five numeric, non-duplicate bag indexes; suffix guide text does not execute.
+- Master reward pool contains 영겁의 템푸스, 무한의 인피니타, 천상의 엠피레온 with equal selection probability after the 5% combination succeeds.
+- Master mini-pets gain 15,000 charm per successful upgrade, support up to 300 upgrades, and sell for 5000억 points.
+
+---
+
 # /관리자명단|관리자추가|관리자삭제|관리자일당|부방상여
 Status: VERIFIED
 ## Command Anchors
@@ -3920,23 +3959,23 @@ Status: VERIFIED
 - `checkRank`
 - `hasItem`
 - `removeItem`
-- `hasPetSkill`
-- `buildPetSkillMsg`
+- `isHoiPassPremiumActive`
+- `getHoiPassPremiumHeader`
 - `noticeMsg`
 ## Data Usage
 - `guildData.territoryWar.active`
-- `data.member[sender].noticeYahoCount`
+- `data.member[sender].noticePremiumCount`
 - `data.member[sender].noticeItemCount`
 - `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
-- `petSkillData[sender]`
 ## Save Flow
-- The execution block is commented out. `/알림` does not reply, consume `확성기📢(/알림 내용 30자)`, mutate counters, or save member data.
+- 호이패스 프리미엄 이용자가 최대 40글자의 알림을 전체방에 전송한 뒤 무료 횟수 또는 확성기 아이템 사용 횟수를 반영하고 `member.json`을 저장한다.
 ## Related Commands
 - `/길드영지시작`
 - `/길드영지종료`
 - `/영지공격`
 ## AI Notes
-- `/알림` and the `야호📙` effect are intentionally disabled while existing item and skill ownership data remain intact.
+- 호이패스 프리미엄 이용자는 하루 3회까지 아이템 없이 사용하고 이후에는 기존 확성기 아이템 흐름을 사용한다. 일반 이용자는 명령 실행 전 프리미엄 전용 안내를 받는다.
+- 무료 횟수는 메시지가 정상 전송된 뒤 증가하며 일일 초기화에서 삭제된다. 재가입해도 같은 날 사용 기록은 유지한다.
 
 ---
 
@@ -5170,7 +5209,7 @@ Status: VERIFIED
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
-- A participant's battle charm is fixed at entry/re-entry time through `totalExp`; the participation UI tells users the battle uses entry-time total charm
+- A participant's base battle charm is fixed at entry/re-entry time through `totalExp`, while critical chance and multiplier use the current effective pet-upgrade level at battle time; the participation UI tells users the base battle charm uses entry-time total charm.
 - `/휴식` sends start/end notices through `noticeMsg`, includes the siege-room link in both notices, allows general commands during the 3-minute break, and stores a rest end time so `/맞짱` and `ㅁㅁ` resume even if the delayed notice/save timing is late; `/맞짱` shows the remaining break time and tells users to prepare with `/참여` or `ㅊㅇ`, while `ㅊㅇ` shows the remaining break time before the participation card
 - A user who reaches 10 event matches is marked field-out and receives the `[✅완료]` message instead of the participation guide
 - Each `/맞짱` or `ㅁㅁ` run grants the acting user 50,000,000 points on a win or 25,000,000 points on a loss. `/맞짱종료` still pays event PT rank rewards in diamonds to 1~100: 1st~10th receive 20 down to 11, 11th~20th receive 10, 21st~30th receive 5, and 31st~100th receive 3.
@@ -5879,9 +5918,11 @@ Status: VERIFIED
 
 ## Related Helpers
 
+- `cleanAllPendantBags`
 - `cleanAllMiniPetBags`
 - `cleanAllFurnitureBags`
-- `cleanAllPendantBags`
+- `countAllMiniPetBagItems`
+- `countAllFurnitureBagItems`
 - `buildTextLengthCleanupMessage`
 
 ## Data Usage
@@ -5892,10 +5933,9 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Master 전용 통합 정리 명령이다.
-- 미니펫 정리 결과가 있으면 `member_pet.json`을 저장한다.
-- 가구 정리 결과가 있으면 `homeDataFile`을 저장한다.
-- 펜던트 정리 결과가 있으면 `member_pet.json`을 저장한다.
+- Master 또는 `호이월드 GM 관리자방`의 Admin이 실행하는 통합 정리 명령이다.
+- 미니펫·가구 가방은 일반 10개, 호이패스 프리미엄 15개 한도만 남기고 초과분을 삭제한다.
+- 미니펫 또는 펜던트 정리 결과가 있으면 `member_pet.json`을, 가구 정리 결과가 있으면 `homeData.json`을 저장한다.
 
 ## Related Commands
 
@@ -5905,8 +5945,48 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/미니펫전체정리`, `/가구전체정리`, `/펜던트전체정리`의 공용 정리 헬퍼를 순차 실행한다.
-- 초과 데이터가 없으면 저장하지 않고 0개 삭제 결과를 출력한다.
+- 정리 전후 실제 감소량과 각 정리 함수가 보고한 삭제량이 다르면 저장을 중단하고 오류 로그를 남긴다.
+
+---
+
+# /매력버프체크 [닉네임]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `buildCharmBuffDebugMessage`
+- `getHomeBadgeCubeOptionDebugDetail`
+- `formatHomeBadgeCubeDebugOptionFormula`
+- `calculateCastleExp`
+- `calculateRaidExp`
+- `calculateTotalExp`
+- `calculateEffectivePetUpgradeLevel`
+- `getGuildContributionCubeMemberPercent`
+
+## Data Usage
+
+- `member.json -> member[user].pass.premium`
+- `member.json -> member[user].homeBadgeCube`
+- `member.json -> matzangField.participants[user].totalExp`
+- `member_pet.json -> [user]`
+- `homeData.json -> [user]`
+- `guildData.json -> guilds[*].cubeOptions`
+- `guildData.json -> territoryWar.castleExpSnapshots[user]`
+
+## Save Flow
+
+- 읽기 전용이며 홈 데이터만 명령 분기에서 한 번 추가 로드한다.
+
+## AI Notes
+
+- `/디버깅모드`가 ON일 때 지정한 닉네임 또는 명령 실행자의 기본 펫·미니펫·가구·펫강화 수치와 홈뱃지 기본 옵션, 기본합계 100% 버프, 프리미엄 +3%p, 길드공헌 큐브, 최종 캐슬·레이드·종합매력 계산 일치 여부를 테스트방에 출력한다.
+- `/펫정보`, `/종합순위`, `/캐슬대전`, `/시련의탑`은 현재 공용 계산값을 사용한다. 맞짱필드는 참여 시점 종합매력 스냅샷과 전투 시점의 현재 유효 펫강화 치명타를 함께 사용하고, 길드영지전은 시작 시점 캐슬매력·치명타 스냅샷을 사용하므로 현재값과 차이가 날 수 있다.
+- 맞짱필드 또는 길드영지전 진행 중에도 권한이 있는 운영자가 진단할 수 있다.
 
 ---
 
