@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "admin-minipet-package-grant",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-ADMIN-MINIPET-PACKAGE-GRANT",
+    "worker": "개발자",
+    "executionId": "개발자-SL-ADMIN-MINIPET-PACKAGE-GRANT-20260824-REVALIDATION",
+    "claimRow": 1211,
+    "branch": "codex/modernization-admin-minipet-package-grant-revalidation-20260824",
+    "baseHead": "f5be5fa0e54f9b616f6d8244aad5c4af87283466",
+    "featureProdObservedHead": "0f1e761af7a93f534df1b7e30485fa0d43ad7ebe"
+  },
+  "commands": {
+    "ids": ["CMD-06-0084", "CMD-06-0085"],
+    "names": ["/창세패키지", "/창조패키지"],
+    "sourceFiles": ["main.js"],
+    "guards": ["수량 생략 또는 양의 정수 뒤 comma", "선행 공백·음수·중간 공백·접미 변형 미진입"],
+    "helpers": ["MinipetPackageGrantPolicy", "MinipetPackageGrantService", "MariaMinipetPackageGrantRepository"],
+    "automaticFlows": ["Iris app.ts candidate dispatch", "operations result_json replay", "durable outbox restart delivery"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json"],
+    "readPaths": ["isMaster and allowed room", "member[target].bag fixed collection package key"],
+    "writePaths": ["운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 직접 reply 뒤 outer petData/member save", "신규 DB는 inventory·ledger·execution·audit·outbox 단일 transaction"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 37,
+    "tables": ["players", "external_identities", "player_profiles", "admin_operators", "admin_operator_external_identities", "admin_operator_roles", "admin_role_permissions", "item_definitions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"],
+    "itemCodes": ["bag_b2fd551a03f6fe6e", "bag_11319869697c3c00"],
+    "constraints": ["effective game.inventory.change permission", "exactly one target current_display_name", "fixed item display_name and metadata legacyName", "active stackable item", "signed BIGINT quantity range", "same event result replay"],
+    "newColumns": [],
+    "transactionBoundary": "operator permission, stored result, target and fixed item definition, inventory stack lock, quantity update, inventory ledger, command execution, audit, outbox and operation completion commit atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_minipet_package_grant_20260824",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~037 fresh/reapply, fixture apply/verify-only 35 tables, prepare, process restart, pending outbox and committed replay",
+    "fixtureChecksum": "4fe8a4fa93b6d19c6db939beee6d16f35f0e0c04eab7cad52a24beda2b64e3ef",
+    "checks": ["default and multiple quantity", "forbidden and outside room silent", "missing and existing stack", "same-event no effect", "concurrent exact sum", "two definition policies", "eight post-write rollback points", "restart delivery exactly once"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["MinipetPackageGrantService"],
+    "repositories": ["MariaMinipetPackageGrantRepository", "shared DatabaseClient transaction", "shared OutboxWorker"],
+    "tests": ["typecheck", "runtime 240/240", "migration fresh/reapply 37", "fixture apply/verify-only 35", "MariaDB prepare/restart probe", "evidence validator"],
+    "resultJson": ["commandCode", "itemCode", "targetName", "quantityDelta", "quantityBefore", "quantityAfter", "outboxId", "auditId"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "minipet-package-grant.test.ts", "probe-minipet-package-grant-synthetic.ts"],
+    "comparisonMode": "Rhino raw guard, permission and room silence, target resolution, fixed legacy item names, quantity and reply snapshots compared with isolated MariaDB effects",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "DB rollback and durable outbox make mid-write and restart behavior atomic compared with historical direct reply followed by outer JSON saves"
+  },
+  "shadow": {
+    "mode": "isolated synthetic MariaDB prepare/restart/replay",
+    "result": "passed",
+    "effects": {"operations": 7, "executions": 7, "audits": 7, "outboxes": 7, "ledgers": 7, "restartDeliveryAttempts": 1},
+    "failpointRollbackCount": 8,
+    "definitionPolicyCount": 2,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 item and identity snapshot freeze 필요",
+    "finalImportPlan": "운영 admin identity, target profile, fixed item metadata reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 두 명령의 default and multiple quantity smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "DB rollback and outbox atomicity is safer than the legacy reply-before-save flow and requires parity approval",
+    "target display name must resolve to exactly one active profile",
+    "fixed item code, display name and legacyName metadata require operational reconciliation",
+    "운영 snapshot, backup/restore and approved live-room smoke evidence is absent, so Gate 8 remains incomplete"
+  ]
+}
