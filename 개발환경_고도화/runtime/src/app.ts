@@ -88,6 +88,11 @@ import {
   normalizePackageDispatchMessage,
 } from "./package/package-command.js";
 import { PackageIrisCommandHandler } from "./package/package-iris-command-handler.js";
+import {
+  isPackageCatalogAdminCommandCandidate,
+  normalizePackageCatalogAdminDispatchMessage,
+} from "./package/package-catalog-admin-command.js";
+import { PackageCatalogAdminIrisHandler } from "./package/package-catalog-admin-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -610,9 +615,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || normalizedEvent.eventCode === "member.departed";
       const packageDispatchCandidate = process.env.PACKAGE_COMMAND_ENABLED === "true"
         && isPackageCommandCandidate(normalizedEvent.message ?? "");
+      const packageCatalogAdminDispatchCandidate = process.env.PACKAGE_CATALOG_ADMIN_COMMAND_ENABLED === "true"
+        && isPackageCatalogAdminCommandCandidate(normalizedEvent.message ?? "");
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
         || isSignupCommand(normalizedEvent.message ?? "")
-        || packageDispatchCandidate;
+        || packageDispatchCandidate
+        || packageCatalogAdminDispatchCandidate;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
         || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
       const partialDispatchDecision = database !== undefined
@@ -626,6 +634,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           eventId: normalizedEvent.eventId,
           message: packageDispatchCandidate
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
+            : packageCatalogAdminDispatchCandidate
+              ? normalizePackageCatalogAdminDispatchMessage(normalizedEvent.message ?? "")
             : normalizedEvent.message ?? "",
           userId: normalizedEvent.userId,
           hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
@@ -667,6 +677,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           packageResponse.commandCode,
           packageResponse.message,
         ));
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && (partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_ADD"
+          || partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_EDIT"
+          || partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_REMOVE"
+          || partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_ENABLE")) {
+        const catalogResponse = await new PackageCatalogAdminIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({
+          outboxId: catalogResponse.outboxId,
+          room: normalizedEvent.channelId!,
+          data: catalogResponse.message,
+        });
       }
       const isRetainedContentChannel = commandEvent.channelId !== undefined
         && (isOperationalChannel || isObservationChannel);
