@@ -89,6 +89,8 @@ import { HomeBadgeReferenceService, parseHomeBadgeReferenceCommand } from "./hom
 import { MariaHomeBadgeReferenceRepository } from "./home/maria-home-badge-reference-repository.js";
 import { HomeSocialRankingService, parseHomeSocialRankingCommand } from "./home/home-social-ranking.js";
 import { MariaHomeSocialRankingRepository } from "./home/maria-home-social-ranking-repository.js";
+import { HomeSocialFollowService, isHomeSocialFollowCommandCandidate } from "./home/home-social-follow.js";
+import { MariaHomeSocialFollowRepository } from "./home/maria-home-social-follow-repository.js";
 
 interface TokenQuery {
   token?: string;
@@ -114,6 +116,7 @@ export interface AppDependencies {
   guildTerritoryReadModel?: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference">;
   homeBadgeReference?: Pick<HomeBadgeReferenceService, "execute">;
   homeSocialRanking?: Pick<HomeSocialRankingService, "execute">;
+  homeSocialFollow?: Pick<HomeSocialFollowService, "handle">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -359,6 +362,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const homeSocialRanking = dependencies.homeSocialRanking
     ?? (database === undefined ? undefined
       : new HomeSocialRankingService(new MariaHomeSocialRankingRepository(database), "\u200b".repeat(500)));
+  const homeSocialFollow = dependencies.homeSocialFollow
+    ?? (database === undefined ? undefined
+      : new HomeSocialFollowService(new MariaHomeSocialFollowRepository(database), "\u200b".repeat(500)));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -781,6 +787,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             `home_social_ranking_${homeSocialRankingCommand}`,
             data
           ));
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeSocialFollowCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && homeSocialFollow !== undefined) {
+        const result = await homeSocialFollow.handle({
+          providerCode: "kakao",
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.data !== undefined && result.outboxId !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
       }
 
