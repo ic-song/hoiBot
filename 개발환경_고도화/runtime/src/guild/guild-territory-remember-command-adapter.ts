@@ -7,6 +7,11 @@ import type {
 export const TERRITORY_REMEMBER_ON_COMMAND = "/날기억해줘온";
 export const TERRITORY_REMEMBER_OFF_COMMAND = "/날기억해줘오프";
 
+// 날 기억해줘 ON/OFF exact 명령만 실행 후보로 판별합니다.
+export function isGuildTerritoryRememberCommand(message: string | undefined): boolean {
+  return message === TERRITORY_REMEMBER_ON_COMMAND || message === TERRITORY_REMEMBER_OFF_COMMAND;
+}
+
 // Gate 5에서 preference 변경과 command audit/outbox를 하나의 통합 경계로 묶어야 합니다.
 export const TERRITORY_REMEMBER_AUDIT_OUTBOX_BOUNDARY = "gate5-integration-transaction";
 

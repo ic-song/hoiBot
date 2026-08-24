@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-remember-control",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-REMEMBER-ME-CONTROL-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-REMEMBER-ME-CONTROL-20260825-INTEGRATION",
+    "claimRow": 1217,
+    "branch": "codex/modernization-territory-remember-control-integration-20260825",
+    "baseHead": "9b540c7bba67616e6568f036823b72cd76ab6ca7"
+  },
+  "commands": {
+    "ids": ["CMD-04-0080", "CMD-04-0081"],
+    "names": ["/날기억해줘온", "/날기억해줘오프"],
+    "sourceFiles": ["main.js"],
+    "guards": ["two exact commands only", "whitespace, argument and suffix rejected"],
+    "helpers": ["handleGuildTerritoryRememberCommand", "MariaGuildTerritoryRememberCommandService"],
+    "automaticFlows": ["Iris operational-channel dispatch", "Kakao linked identity and active admin-role projection", "event idempotency", "outbox delivery"]
+  },
+  "legacyData": {
+    "files": ["data/guildTerritoryWar.json"],
+    "readPaths": ["legacy Master/admin/open-chat-bot authority", "remember ON/OFF state"],
+    "writePaths": ["new-system guild_territory_remember_preferences only"],
+    "saveOrder": ["preference, operation, execution, audit and outbox commit atomically", "legacy JSON and save flow unchanged"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 34,
+    "tables": ["external_identities", "admin_operator_external_identities", "admin_operators", "admin_operator_roles", "admin_roles", "guild_territory_remember_preferences", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": ["linked Kakao player identity", "active admin role or open-chat-bot authority", "world-active scope", "event idempotency", "atomic preference/execution/audit/outbox"],
+    "newColumns": [],
+    "transactionBoundary": "authorization projection, preference upsert, operation, command execution, audit and outbox are committed in one MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "sourceSnapshotSha256": "54a256b8dfb1d2aabd9be3a09e3492fa6eda660848ab0d8ffe809813709f65be",
+    "targetDatabase": "hoibot_rehearsal_territory_remember_20260825",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~034 fresh/reapply, fixture apply/verify-only, ON duplicate, OFF, suffix, forbidden and rollback checks",
+    "checks": ["two exact guards", "admin authority", "linked identity", "ON/OFF state", "same-event replay", "suffix rejection", "atomic effects", "state mismatch failure"],
+    "isolatedCounts": {"schemaMigrations": 34, "preferenceRows": 3, "operations": 7, "commandExecutions": 3, "commandAudits": 3, "outboxes": 3},
+    "commandPreference": {"scope": "world-active", "operatorPlayerId": "900000001", "playerId": "900000001", "desiredState": 0, "version": 2},
+    "sourceSafety": {"schemaMigrations": 28, "rememberTables": 0, "unchanged": true},
+    "cleanup": "isolated database dropped after evidence collection",
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["handleGuildTerritoryRememberCommand", "MariaGuildTerritoryRememberCommandService", "app Iris dispatch"],
+    "repositories": ["transaction-bound preference upsert", "operation/execution/audit/outbox"],
+    "tests": ["typecheck", "focused adapter tests", "runtime full regression", "Maria/Iris integration", "evidence validator"],
+    "resultJson": ["desired state", "preference version", "operation/execution/audit/outbox ids"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "guild-territory-remember-command.test.ts", "guild-territory-remember-command-mariadb.integration.test.ts"],
+    "comparisonMode": "exact ON/OFF, authority, success/forbidden replies and final state are compared with legacy behavior",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "new-system updates are idempotent, audited and atomically queued instead of direct JSON save and reply"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB and Iris duplicate/suffix replay",
+    "result": "passed",
+    "effects": {"preferenceRows": 1, "preferenceVersion": 2, "operations": 2, "executions": 2, "audits": 2, "outboxes": 2},
+    "validation": {"typecheck": "passed", "focused": "4/4", "runtimeFull": "183/183", "mariaIris": "3/3", "providerProbe": "passed", "providerShadow": "13 passed", "evidenceValidator": "passed"},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 remember state and authorized identity freeze 필요",
+    "finalImportPlan": "운영 ON/OFF state and Master/admin identity reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 ON/OFF, forbidden and duplicate smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "운영 Master/admin/open-chat-bot identity mapping은 Gate 8 reconciliation이 필요하다",
+    "운영 remember state와 feature flag 결합은 별도 cutover 승인 대상이다",
+    "운영 snapshot, backup/restore와 승인된 live-room smoke가 없어 Gate 8은 미완료다"
+  ]
+}

@@ -81,6 +81,8 @@ import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
 import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
 import { registerGuildTerritoryRoutes } from "./guild/guild-territory-routes.js";
+import { isGuildTerritoryRememberCommand } from "./guild/guild-territory-remember-command-adapter.js";
+import { MariaGuildTerritoryRememberCommandService } from "./guild/maria-guild-territory-remember-command-service.js";
 
 interface TokenQuery {
   token?: string;
@@ -755,6 +757,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildTerritoryRememberCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new MariaGuildTerritoryRememberCommandService(database!).handle({
+          eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          sender: commandEvent.displayName ?? "",
+          message: normalizedEvent.message!
+        });
+        processing.replies.push({
+          outboxId: result.outboxId,
+          room: result.room,
+          data: result.data
+        });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
