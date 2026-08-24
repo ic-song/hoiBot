@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.399"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.400"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -5663,7 +5663,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     stopAllIntervals(data);
                     delete data.previnterval;
                 }
-                if (msg === "/주기리셋" && (isMaster(sender) || (room === room90 && isAdmin(sender)))) {
+                if (msg === "/주기리셋" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                     try {
                         stopAllIntervals(data);
                         replier.reply("주기리셋완");
@@ -6335,7 +6335,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         defenseCount: 0
                     };
                 }
-                if (msg == "/자동탐험시작" && (isMaster(sender) || (room === room90 && isAdmin(sender)))) {
+                if (msg == "/자동탐험시작" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                     exploreInterval = true;
                     replier.reply("/자동탐험시작");
                     startInterval(data, replier, setint);
