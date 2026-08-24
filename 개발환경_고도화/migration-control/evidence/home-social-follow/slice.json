@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "home-social-follow",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-HOME-SOCIAL-FOLLOW",
+    "worker": "개발자",
+    "executionId": "개발자-SL-HOME-SOCIAL-FOLLOW-20260825-INTEGRATION",
+    "claimRow": 1222,
+    "branch": "codex/modernization-home-social-follow-integration-20260825",
+    "baseHead": "81eb5c7d701b6cc1a3a776b1ae73a8a0319646cc",
+    "baseline": "HOIBOT-2.400-0f1e761a"
+  },
+  "commands": {
+    "ids": ["CMD-15-0037", "CMD-15-0024", "CMD-15-0038", "CMD-15-0040"],
+    "names": ["/팔로우", "/언팔로우", "/팔로워", "/팔로잉"],
+    "sourceFiles": ["main.js"],
+    "guards": ["mutation full regex plus longest target parser and suffix rejection", "list exact equality", "/팔로워순위 excluded"],
+    "helpers": ["findTargetAtStart", "buildPetHomeFollowListMessage", "isPetHomeMutualFollow", "awardPetHomeAchievementBadges", "addPetHomeActivityAlert"]
+  },
+  "legacyData": {
+    "files": ["petHomeActivityData.json", "member.json"],
+    "readPaths": ["petHomeSocial.<user>.followers", "petHomeSocial.<user>.following", "petHomeSocial.<user>.badges", "petHomeSocial.<user>.deletedBadgeIds", "alerts.<user>", "member.<user>.passes"],
+    "writePaths": ["양쪽 follow 관계", "대상 활동 알림", "양쪽 업적 뱃지"],
+    "saveOrder": ["legacy petHomeActivityFile one save with snapshot rollback", "target DB one transaction before outbox delivery"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["038_home_social_ranking.sql", "039_home_social_follow.sql"],
+    "tables": ["home_follow_relationships", "home_activity_alerts", "home_badge_definitions", "player_badge_assignments", "home_activity_events", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "constraints": ["directed relationship primary key", "min player id lock order", "active pass recheck", "event-command uniqueness", "alert read index", "deleted badge assignment blocks re-award"],
+    "transactionBoundary": "두 player lock부터 relationship, alert, badge, activity, execution, audit, outbox, stored result까지 한 MariaDB transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql + home-social-follow-v1.sql",
+    "targetDatabase": "hoibot_home_social_follow_g7_20260825",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~039 fresh/reapply, fixture 2회, probe, MariaDB 재기동 replay, Shadow 순으로 검증",
+    "checks": [
+      "migration 39/39 fresh 적용 및 재적용 통과",
+      "fixture 2회 적용 후 동일 상태 유지",
+      "활성 관계 1건, 알림 7건, 뱃지 4건 확인",
+      "MariaDB 재기동 후 동일 event replay 결과 유지",
+      "격리 서버 종료 및 운영 데이터 미접근"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": [
+      "runtime/src/home/home-social-follow.ts",
+      "runtime/src/home/maria-home-social-follow-repository.ts",
+      "runtime/src/app.ts"
+    ],
+    "tests": [
+      "typecheck 통과",
+      "focused test 10/10 통과",
+      "full test 210/210 통과",
+      "build 통과",
+      "isolated MariaDB probe 통과",
+      "synthetic Shadow 6/6 통과"
+    ],
+    "result": "passed"
+  },
+  "parity": {
+    "result": "passed",
+    "normal": "팔로우, 언팔로우, 팔로워, 팔로잉 정상 흐름 일치",
+    "boundary": "상호 팔로우, 중복, 자기 자신, 대상 없음, 접미문, 패스 조건 검증",
+    "failure": "실패 입력에서 관계·알림·뱃지·outbox 변경 없음",
+    "transaction": "관계, 알림, 뱃지, 활동, 실행, 감사, outbox를 단일 transaction으로 처리",
+    "idempotency": "동일 event 재실행 시 저장된 결과를 재사용하고 중복 지급 없음",
+    "restart": "MariaDB 재기동 뒤 replay 결과와 집계가 동일",
+    "shadow": "합성 Shadow 6/6, liveTraffic=false, productionData=false"
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "productionDataChanged": false,
+    "featureProdChanged": false,
+    "remaining": [
+      "전체 스냅샷 import 및 reconciliation",
+      "backup/restore 리허설",
+      "승인된 테스트방 live smoke",
+      "cutover 및 rollback 승인"
+    ]
+  },
+  "risks": [
+    "운영 스냅샷 전체 import와 reconciliation은 Gate 8에서 별도 수행",
+    "실제 테스트방 트래픽 검증은 운영 승인 후 수행",
+    "cutover 전 backup/restore 및 rollback 리허설 필요"
+  ],
+  "syntheticValidation": {
+    "fixture": "home-social-follow-v1.sql",
+    "scenarios": ["normal", "mutual", "duplicate", "self", "not-found", "suffix", "sender-pass", "target-pass", "unfollow", "unfollow-none", "expired-pass-cleanup", "rollback", "cross-follow", "duplicate-event", "restart", "list-empty", "list-normal", "stable-sort", "list-pass", "allsee"],
+    "sourceReadOnly": true,
+    "liveTraffic": false
+  },
+  "safety": {
+    "mainJsChanged": false,
+    "productionJsonChanged": false,
+    "productionDatabaseUsed": false,
+    "featureProdChanged": false,
+    "gate8Started": false
+  }
+}
