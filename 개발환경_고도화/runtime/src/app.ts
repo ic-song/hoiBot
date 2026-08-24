@@ -83,6 +83,11 @@ import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
+import {
+  isPackageCommandCandidate,
+  normalizePackageDispatchMessage,
+} from "./package/package-command.js";
+import { PackageIrisCommandHandler } from "./package/package-iris-command-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -603,8 +608,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           || normalizedEvent.eventCode === "message.hidden_by_host");
       const isMembershipEvent = normalizedEvent.eventCode === "member.joined"
         || normalizedEvent.eventCode === "member.departed";
+      const packageDispatchCandidate = process.env.PACKAGE_COMMAND_ENABLED === "true"
+        && isPackageCommandCandidate(normalizedEvent.message ?? "");
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
-        || isSignupCommand(normalizedEvent.message ?? "");
+        || isSignupCommand(normalizedEvent.message ?? "")
+        || packageDispatchCandidate;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
         || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
       const partialDispatchDecision = database !== undefined
@@ -616,7 +624,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: normalizedEvent.message ?? "",
+          message: packageDispatchCandidate
+            ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
+            : normalizedEvent.message ?? "",
           userId: normalizedEvent.userId,
           hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
         })
@@ -644,6 +654,20 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   }
             })
           : await eventProcessor.executeDiagnosticModeration(normalizedEvent);
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && (partialDispatchDecision.handlerKey === "PACKAGE_BAG"
+          || partialDispatchDecision.handlerKey === "PACKAGE_USE")) {
+        const packageResponse = await new PackageIrisCommandHandler(database).execute(normalizedEvent);
+        processing.replies.push(await eventProcessor.queueCommandReply(
+          normalizedEvent,
+          packageResponse.commandCode,
+          packageResponse.message,
+        ));
+      }
       const isRetainedContentChannel = commandEvent.channelId !== undefined
         && (isOperationalChannel || isObservationChannel);
       const isWithinRetainedContentScope = isRetainedContentChannel
