@@ -5,7 +5,7 @@ const ALLSEE = "​".repeat(500);
 const HEADER = `📜 길드 영지전 공격 순서표 📜\n${ALLSEE}`;
 
 // `/길드영지순서`만 exact command로 허용합니다.
-export function isGuildTerritoryTurnOrderCommand(message: string | null): boolean {
+export function isGuildTerritoryTurnOrderCommand(message: string | null | undefined): boolean {
   return message === "/길드영지순서";
 }
 

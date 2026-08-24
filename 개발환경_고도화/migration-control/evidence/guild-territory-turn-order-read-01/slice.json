@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-turn-order-read-01",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-TURN-ORDER-READ-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-TURN-ORDER-READ-20260825-INTEGRATION",
+    "claimRow": 1219,
+    "branch": "codex/modernization-territory-turn-order-integration-20260825",
+    "baseHead": "3599fad87b56aa6895bb0870a7c121bd72d5f3be"
+  },
+  "commands": {
+    "ids": [],
+    "names": ["/길드영지순서"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact standalone /길드영지순서"],
+    "helpers": ["buildGuildTerritoryOrderMessage", "GuildTerritoryTurnOrderCommand", "GuildTerritoryReadModelService"],
+    "automaticFlows": ["검증된 운영 채널의 exact command만 공용 dispatch에서 1회 조회·reply"]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/member_pet.json", "data/guild.json"],
+    "readPaths": ["guildData.territoryWar.turnOrder", "guildData.territoryWar.eliminatedGuilds", "guildData.territoryWar.eliminatedUsers", "guildData.guilds", "member rank projection"],
+    "writePaths": ["조회 명령으로 인한 운영 JSON 쓰기 없음"],
+    "saveOrder": ["현행 buildGuildTerritoryOrderMessage 조회 경계 보존; Rhino source 변경 없음"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["034_guild_territory_read_model.sql", "035_guild_territory_turn_order_visibility.sql", "036_player_rank_projection.sql"],
+    "tables": ["guild_territory_seasons", "guild_territory_ranking_snapshots", "guild_territory_turn_order_entries", "guilds", "players", "player_profiles", "player_rank_projections"],
+    "constraints": ["season/snapshot version pin", "ordinal 정렬", "active player/guild projection", "누락 projection 명시적 비가시", "read transaction mutation 0"],
+    "newColumns": ["guild_territory_turn_order_entries.player_id", "guild_territory_turn_order_entries.user_eliminated", "guild_territory_turn_order_entries.guild_eliminated", "guild_territory_turn_order_entries.exclusion_reason_code"],
+    "transactionBoundary": "season, snapshot, turn order와 projection을 하나의 consistent read transaction으로 조회"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 synthetic fixture",
+    "targetDatabase": "hoibot_guild_turn_order_g7_20260825",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~036 신규 적용 후 전체 재적용, fixture apply, provider probe와 Shadow 완료 후 격리 DB 삭제",
+    "checks": ["migration 36/36", "재적용 신규 0/36", "fixture SHA-256 2464916e3c3ec8c4580de65220f6322ed19160df29fa89ef0297686a65d988fc", "active/pending/no-war/missing snapshot/missing rule", "ordinal 및 projection visibility", "원본 DB 전후 동일", "격리 DB 잔존 0"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["guild-territory-turn-order-command.ts", "guild-territory-read-model-service.ts", "app.ts"],
+    "repositories": ["maria-guild-territory-read-model-repository.ts", "공용 database.ts transaction client"],
+    "tests": ["focused 5/5", "runtime 전체 184/184", "typecheck", "MariaDB fresh 36/36", "MariaDB reapply 0/36", "provider probe", "Shadow 13/13", "source DB unchanged", "isolated DB rollback"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "probe-guild-territory-read-model-synthetic.ts", "shadow-guild-territory-read-model-synthetic.ts"],
+    "comparisonMode": "legacy 순서표 제목·allsee·길드명(마크)·등급 표시를 보존하고 제거·누락 projection을 제외한 뒤 compact 번호를 부여",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "전용 비식별 MariaDB isolated database",
+    "result": "passed",
+    "passCount": 13,
+    "snapshotVersion": "7",
+    "ruleVersion": "2",
+    "visibleTurns": ["900000002", "900000001"],
+    "readMutationZero": true,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "승인된 운영 snapshot freeze 필요",
+    "finalImportPlan": "운영 guild/member/pet projection reconciliation 필요",
+    "smokePlan": "승인된 비운영 identity와 실운영방 exact command smoke 필요",
+    "rollbackPlan": "운영 승인 전 Rhino routing 유지; 불일치 시 DB route 비활성화"
+  },
+  "integration": {
+    "sourceHead": "3599fad87b56aa6895bb0870a7c121bd72d5f3be",
+    "sourceLineage": ["25a157a", "c534a6e", "3599fad"],
+    "sharedFoundationSource": "c534a6e",
+    "selectedCommits": ["c534a6e", "3599fad"],
+    "conflictsResolved": ["정규화 message undefined를 exact guard 입력으로 안전하게 허용", "projectionIssue를 missing-player/missing-guild/null 계약으로 고정"]
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "누락 player/guild/rank projection은 legacy의 암묵적 접근 대신 안전하게 표시에서 제외되며 운영 승인 대상이다",
+    "실운영 snapshot reconciliation과 승인된 실운영방 smoke 증거가 없어 Gate 8은 미완료다",
+    "공용 고도화 런타임 전체가 feature/prod에 없으므로 검수 후 별도 승인된 반영 절차가 필요하다"
+  ]
+}
