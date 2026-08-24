@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-rank-reward-guide",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-RANK-REWARD-GUIDE-READ-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-RANK-REWARD-GUIDE-20260824-INTEGRATION",
+    "claimRow": 1212,
+    "branch": "codex/modernization-territory-rank-reward-guide-integration-20260824",
+    "baseHead": "51ed5a4c198083f72596e6ddb264720c2104bbe5",
+    "featureProdObservedHead": "0f1e761af7a93f534df1b7e30485fa0d43ad7ebe"
+  },
+  "commands": {
+    "ids": ["CMD-04-0069", "CMD-04-0070"],
+    "names": ["/영지순위보상", "/영지보상순위"],
+    "sourceFiles": ["main.js"],
+    "guards": ["두 exact alias만 허용", "공백·숫자·안내 접미 입력 미진입"],
+    "helpers": ["GuildTerritoryRankRewardGuideService", "GuildTerritoryReadModelService", "MariaGuildTerritoryReadModelRepository"],
+    "automaticFlows": ["Iris app.ts operational-channel dispatch", "standard command reply outbox", "duplicate event suppression"]
+  },
+  "legacyData": {
+    "files": ["data/guild.json"],
+    "readPaths": ["GLOBAL_CONFIG.guildTerritory.rankRewards", "GLOBAL_CONFIG.guildTerritory.scores.pointMine"],
+    "writePaths": ["없음"],
+    "saveOrder": ["조회 명령은 legacy 저장 없음", "신규도 reward projection은 read-only이고 reply outbox만 기록"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 36,
+    "tables": ["guild_territory_seasons", "guild_territory_ranking_snapshots", "guild_territory_ranking_entries", "guild_territory_reward_rule_versions", "guild_territory_reward_rule_tiers", "operations", "command_executions", "outbox_messages"],
+    "rulePin": {"territoryScope": "world", "ruleVersion": 2},
+    "constraints": ["published or retired exact rule version", "exact tiers 1,2,3,4,5,6~10", "nonnegative safe integer fund", "payout mutation provider is not called"],
+    "newColumns": [],
+    "transactionBoundary": "one consistent read-model transaction loads the pinned reward rule; event processing queues one standard reply outbox without changing territory or payout projections"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_territory_reward_guide_20260824",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~036 fresh migration, fixture apply/verify-only 35 tables, read-model probe, provider Shadow, Iris duplicate replay",
+    "fixtureChecksum": "2464916e3c3ec8c4580de65220f6322ed19160df29fa89ef0297686a65d988fc",
+    "checks": ["two exact aliases", "exact legacy output", "missing pin", "malformed tier range", "invalid fund", "same event replay", "suffix rejection", "territory projection non-mutation"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["GuildTerritoryRankRewardGuideService", "GuildTerritoryReadModelService"],
+    "repositories": ["MariaGuildTerritoryReadModelRepository", "standard event reply outbox"],
+    "tests": ["typecheck", "focused 3/3", "runtime 182/182", "Maria/Iris 1/1", "provider probe", "provider Shadow pass13", "evidence validator"],
+    "resultJson": ["world@2 rewardGuide tiers", "legacy guide text", "reply outbox"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "guild-territory-rank-reward-guide.test.ts", "guild-territory-rank-reward-guide-mariadb.integration.test.ts"],
+    "comparisonMode": "both exact aliases, six rank ranges, six fund amounts, time and point-mine guidance are compared with the current Rhino helper output",
+    "result": "passed",
+    "safeDifference": "reward values are pinned to versioned world@2 rows instead of mutable process literals"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB provider Shadow plus Iris duplicate/suffix non-mutation",
+    "result": "passed",
+    "effects": {"providerPassCount": 13, "commandReplies": 2, "commandOutboxes": 2, "domainMutations": 0},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 world@2 reward rule snapshot freeze 필요",
+    "finalImportPlan": "운영 literal과 DB tier amount reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 두 alias 동일 응답 smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "world@2 운영 tier 값이 current Rhino literals와 일치하는지 Gate 8 reconciliation이 필요하다",
+    "보상 지급 mutation은 별도 슬라이스 소유이며 이 조회 consumer에 연결하지 않는다",
+    "운영 snapshot, backup/restore and approved live-room smoke evidence is absent, so Gate 8 remains incomplete"
+  ]
+}

@@ -7,6 +7,7 @@ import type {
   GuildTerritoryReadRequest,
   GuildTerritoryRememberPreference,
   GuildTerritoryRewardGuide,
+  GuildTerritoryTurnVisibility,
   SetGuildTerritoryRememberPreference
 } from "./guild-territory-read-model-repository.js";
 
@@ -72,7 +73,7 @@ function projectTurnOrder(row: TurnOrderRow) {
   const player = projectPlayer(row);
   const userEliminated = Boolean(row.user_eliminated);
   const guildEliminated = Boolean(row.guild_eliminated);
-  const projectionIssue = player === null ? "missing-player" : guild === null ? "missing-guild" : null;
+  const projectionIssue: GuildTerritoryTurnVisibility["projectionIssue"] = player === null ? "missing-player" : guild === null ? "missing-guild" : null;
   return {
     ordinal: row.ordinal,
     guild,
