@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "home-badge-reference-queries",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-HOME-BADGE-REFERENCE-QUERIES",
+    "worker": "개발자",
+    "executionId": "개발자-SL-HOME-BADGE-REFERENCE-QUERIES-20260825-INTEGRATION",
+    "claimRow": 1220,
+    "branch": "codex/modernization-home-badge-reference-integration-20260825",
+    "baseHead": "92fb29f8a300d94566639177df4095a70bc76204"
+  },
+  "commands": {
+    "ids": ["CMD-15-0034", "CMD-15-0067", "CMD-15-0036", "CMD-03-0179"],
+    "names": ["/큐브확률", "/홈뽑기확률", "/특별뱃지목록", "/특별뱃지목록 [코드]"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact /큐브확률", "exact /홈뽑기확률", "exact /특별뱃지목록", "full-pattern /특별뱃지목록 + one token"],
+    "helpers": ["buildHomeBadgeCubeRateMessage", "buildPetHomeGachaRateMessage", "buildSpecialPetHomeBadgesMessage", "getPetHomeBadgeById"],
+    "automaticFlows": ["검증된 운영 오픈채팅 exact dispatch", "active external identity와 published reference version을 한 read transaction에서 pin"]
+  },
+  "legacyData": {
+    "files": ["main.js GLOBAL_CONFIG.petHomeActivity"],
+    "readPaths": ["cube.options", "cube.rates", "gachaGradeRates", "gachaBadges grade counts", "specialBadges", "checkRank display"],
+    "writePaths": ["기준정보 명령 직접 쓰기 없음", "legacy checkRank stale guild repair는 신규 provider에서 분리"],
+    "saveOrder": ["modern provider는 JSON save 없음; Rhino source 변경 없음"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["037_home_badge_reference.sql"],
+    "tables": ["home_badge_reference_versions", "home_badge_cube_options", "home_badge_cube_rate_bands", "home_badge_gacha_grade_rates", "home_badge_special_definitions", "external_identities", "players", "player_profiles", "player_rank_projections"],
+    "constraints": ["published version/hash pin", "자식 row version FK", "sequence와 code unique", "cube range/rate check", "grade rate 0~100", "active linked identity"],
+    "newColumns": [],
+    "transactionBoundary": "active identity, rank projection, published version과 모든 기준정보를 동일 consistent read transaction으로 조회"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql + home-badge-reference-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_home_badge_reference_g7_20260825",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~037 fresh/reapply, 공용+슬라이스 fixture, provider probe, Shadow 후 격리 DB 삭제",
+    "checks": ["migration 37/37", "재적용 신규 0/37", "공용 fixture SHA-256 2464916e3c3ec8c4580de65220f6322ed19160df29fa89ef0297686a65d988fc", "슬라이스 fixture SHA-256 c651ba6d78a05af0476aed9a078d6da6cec74ff6579935c5021e6c7fe0834ad3", "option4/band51/grade4/special13", "원본 DB 전후 동일", "격리 DB 잔존 0"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["home-badge-reference.ts", "app.ts"],
+    "repositories": ["maria-home-badge-reference-repository.ts", "공용 database.ts transaction client"],
+    "tests": ["typecheck", "focused 7/7", "runtime 전체 191/191", "MariaDB fresh 37/37", "MariaDB reapply 0/37", "provider probe", "Shadow 12/12", "source DB unchanged", "isolated DB rollback", "slice evidence validator"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "home-badge-reference-v1.sql", "probe-home-badge-reference-synthetic.ts", "shadow-home-badge-reference-synthetic.ts"],
+    "comparisonMode": "legacy 51 cube bands/precision/blank groups/max guide, C/B/A/S rate·count·individual rate, S01~S13 order/list/detail/invalid guide, exact guards와 group/pass access를 비교",
+    "result": "passed_with_approval_required_safe_difference"
+  },
+  "shadow": {
+    "mode": "전용 비식별 MariaDB isolated database",
+    "result": "passed",
+    "passCount": 12,
+    "cubeBands": 51,
+    "gradeCounts": [23, 17, 11, 6],
+    "specialCount": 13,
+    "readMutationZero": true,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "published 기준정보 version/hash 운영 freeze 필요",
+    "finalImportPlan": "운영 GLOBAL_CONFIG와 DB published snapshot 최종 checksum 대사 필요",
+    "smokePlan": "승인된 비운영 identity로 4개 명령 실운영방 smoke 필요",
+    "rollbackPlan": "운영 승인 전 Rhino routing 유지; 불일치 시 DB reference dispatch 비활성화"
+  },
+  "integration": {
+    "sourceHead": "92fb29f8a300d94566639177df4095a70bc76204",
+    "sourceLineage": ["92fb29f"],
+    "sharedFoundationSource": "92fb29f",
+    "selectedCommits": [],
+    "conflictsResolved": ["legacy checkRank의 stale guild 저장 부수효과를 active rank projection read로 분리", "뽑기 57개 상세 중복 저장 대신 현재 조회가 소유하는 versioned 등급별 종수 snapshot으로 경계 분리", "fixture effective_at을 UTC 기준 과거 시각으로 고정"]
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "legacy checkRank가 수행하던 stale guild 자동 정리는 조회 provider에서 제거되어 별도 repair 슬라이스가 필요하다",
+    "개인톡 adapter는 아직 운영 오픈채팅 dispatch 범위 밖이지만 service access 계약과 focused 검증은 보존한다",
+    "운영 config freeze/checksum 및 승인된 실운영방 smoke 증거가 없어 Gate 8은 미완료다",
+    "공용 고도화 런타임 전체가 feature/prod에 없으므로 검수 후 별도 승인된 반영 절차가 필요하다"
+  ]
+}

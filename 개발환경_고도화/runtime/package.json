@@ -34,7 +34,9 @@
     "db:probe:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-read-model-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts"
-    ,"db:shadow:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/shadow-guild-territory-read-model-synthetic.ts"
+    ,"db:shadow:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/shadow-guild-territory-read-model-synthetic.ts",
+    "db:probe:home-badge-reference": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-reference-synthetic.ts",
+    "db:shadow:home-badge-reference": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-badge-reference-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
