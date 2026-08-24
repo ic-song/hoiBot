@@ -395,3 +395,8 @@ ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = VALUES(s
 INSERT INTO configuration_values (configuration_set_id, config_key, value_type, string_value)
 VALUES (900000001, 'legacy.bag.advertisement', 'string', '합성 가방 광고')
 ON DUPLICATE KEY UPDATE value_type = VALUES(value_type), string_value = VALUES(string_value), decimal_value = NULL, integer_value = NULL, boolean_value = NULL, json_value = NULL;
+
+-- 부분 전환 대상은 migration seed를 사용하며 합성 환경에서만 canary 상태를 고정한다.
+UPDATE command_registry
+   SET rollout_state = 'CANARY', enabled = 1
+ WHERE command_code IN ('USER_PROFILE_MY_INFO', 'USER_SIGNUP_FLOW');

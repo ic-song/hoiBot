@@ -34,6 +34,11 @@ import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
+import {
+  CommandDispatcher,
+  MariaCommandDispatchRepository,
+  parseCanaryUserIds
+} from "./dispatch/command-dispatcher.js";
 import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
@@ -598,6 +603,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           || normalizedEvent.eventCode === "message.hidden_by_host");
       const isMembershipEvent = normalizedEvent.eventCode === "member.joined"
         || normalizedEvent.eventCode === "member.departed";
+      const partialDispatchCandidate = normalizedEvent.message === "/내정보"
+        || isSignupCommand(normalizedEvent.message ?? "");
+      const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
+        || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
+      const partialDispatchDecision = database !== undefined
+        && normalizedEvent.direction === "incoming"
+        && partialDispatchCandidate
+        ? await new CommandDispatcher(new MariaCommandDispatchRepository(database), {
+          enabled: partialDispatchEnabled,
+          allowAllCanaries: config.nodeEnv !== "production",
+          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
+        }).resolve({
+          eventId: normalizedEvent.eventId,
+          message: normalizedEvent.message ?? "",
+          userId: normalizedEvent.userId,
+          hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
+        })
+        : undefined;
       const isDiagnosticMembership = channelAccess.mode === "diagnostic" && isMembershipEvent;
       const eventProcessor = database === undefined
         || (!isOperationalChannel && !isObservationChannel && !isDiagnosticModeration && !isDiagnosticMembership)
@@ -710,6 +733,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.message === "/내정보"
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "USER_PROFILE"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const profile = await new GetMyProfileService(new MariaProfileRepository(database!))
@@ -1117,7 +1141,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
-        && isSignupCommand(normalizedEvent.message) && normalizedEvent.userId !== undefined
+        && isSignupCommand(normalizedEvent.message) && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "USER_SIGNUP" && normalizedEvent.userId !== undefined
         && normalizedEvent.channelId !== undefined && commandEvent.displayNameTrust === "trusted"
         && commandEvent.displayName !== undefined) {
         try {

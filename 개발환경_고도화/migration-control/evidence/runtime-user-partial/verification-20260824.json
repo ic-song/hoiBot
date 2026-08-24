@@ -1,0 +1,51 @@
+{
+  "executionId": "작업반장-SL-COMMON-RUNTIME-USER-PARTIAL-20260824",
+  "verifiedAtKst": "2026-08-24",
+  "scope": {
+    "runtimeDispatch": true,
+    "representativeHandlers": ["USER_PROFILE", "USER_SIGNUP"],
+    "commands": ["/내정보", "/가입", "시작한다", "/시작한다", "거절한다", "/거절한다"],
+    "legacyMainJsChanged": false,
+    "productionDatabaseChanged": false,
+    "featureProdChanged": false
+  },
+  "database": {
+    "engine": "MariaDB 11.8.8",
+    "host": "127.0.0.1",
+    "port": 13307,
+    "database": "hoibot_rehearsal_runtime_user",
+    "syntheticOnly": true,
+    "migrationCount": 34,
+    "fixtureVerifiedTables": 35
+  },
+  "verification": {
+    "typecheck": "passed",
+    "unitTests": { "passed": 178, "failed": 0 },
+    "exactRouting": "passed",
+    "suffixLegacyFallback": "passed",
+    "authenticationAndAuthorization": "passed",
+    "profileRepository": "passed",
+    "signupTransaction": "passed",
+    "idempotency": "passed",
+    "restartPersistence": "passed",
+    "transactionRollbackNoResidue": "passed",
+    "schemaRollbackAndReapply": "passed",
+    "shadowNoModernMutation": "passed"
+  },
+  "rollbackAudit": {
+    "playersBefore": 4,
+    "routingTablesAfterRollback": 0,
+    "migrationRowsAfterRollback": 0,
+    "playersAfterReapply": 4,
+    "routingTablesAfterReapply": 3
+  },
+  "gates": {
+    "gate1ScopeContract": true,
+    "gate2SourceAndHandlerMapping": true,
+    "gate3MigrationAndSyntheticFixture": true,
+    "gate4UnitAndExactGuard": true,
+    "gate5MariaDbProviderIntegration": true,
+    "gate6ShadowRestartRollback": true,
+    "gate7BranchEvidenceHandoff": "pending_push"
+  }
+}
