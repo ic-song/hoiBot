@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "free-market-history-read",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-MARKET-FREE-MARKET-HISTORY-READ",
+    "worker": "개발자",
+    "executionId": "개발자-SL-MARKET-FREE-MARKET-HISTORY-READ-20260825-INTEGRATION",
+    "claimRow": 1218,
+    "branch": "codex/modernization-free-market-history-integration-20260825",
+    "baseHead": "fb33a438a8179222f1191cacb78af85f9c137d1c",
+    "providerHead": "c4f4cca971c2f0bf723059b5605ba328f04db69b"
+  },
+  "commands": {
+    "ids": ["CMD-02-0023"],
+    "names": ["/자유시장거래현황", "ㅅㅅ"],
+    "sourceFiles": ["main.js"],
+    "guards": ["two exact commands only; whitespace, argument and suffix rejected"],
+    "helpers": ["handleFreeMarketHistoryCommand", "MariaFreeMarketHistoryRepository", "formatFreeMarketHistory"],
+    "automaticFlows": ["operational Iris event processing", "event replay", "outbox delivery"]
+  },
+  "legacyData": {
+    "files": ["data/freeMarket.json", "data/member.json", "data/pet.json", "data/guildData.json"],
+    "readPaths": ["completedLogs newest-first", "seller/buyer rank projection", "member fee marker"],
+    "writePaths": [],
+    "saveOrder": ["read only; no legacy or relational mutation"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 34,
+    "tables": ["market_listings", "market_settlements", "market_events", "item_definitions", "player_profiles", "player_badge_assignments"],
+    "constraints": ["sold settlements only", "latest settled_at then listing id", "limit 100", "mutation zero"],
+    "newColumns": [],
+    "transactionBoundary": "consistent read plus event-processing outbox; market domain rows remain unchanged"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture plus test-local sold settlement",
+    "sourceSnapshotSha256": "55b7ba8a0a67196dc37a9fb0ef2adda804e4e6b5c301640301bf5ae9a09df185",
+    "targetDatabase": "hoibot_rehearsal_free_market_history_20260825",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~034 fresh/reapply, fixture apply/verify-only, exact/alias/suffix/empty/latest/member-fee checks",
+    "checks": ["exact aliases", "newest first", "legacy amount/unit/time", "rank", "member fee marker", "empty", "mutation zero"],
+    "isolatedCounts": {"schemaMigrations": 34, "verifiedFixtureTables": 35, "marketListingsAfterCleanup": 1, "marketSettlementsAfterCleanup": 0},
+    "sourceSafety": {"schemaMigrations": 28, "marketSettlements": 0, "unchanged": true},
+    "cleanup": "isolated database dropped after verification",
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["handleFreeMarketHistoryCommand", "MariaFreeMarketHistoryRepository", "operational Iris dispatch"],
+    "repositories": ["parameterized read-only market settlement projection"],
+    "tests": ["typecheck", "focused 5/5", "runtime full regression", "MariaDB integration 1/1", "evidence validator"],
+    "resultJson": ["legacy KakaoTalk text reply"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "free-market-history.test.ts", "free-market-history-mariadb.integration.test.ts"],
+    "comparisonMode": "exact command/alias, newest-first, amount, unit price, rank, member fee, KST time and empty output",
+    "result": "passed_with_approval_required_safe_difference",
+    "safeDifference": "new-system reads normalized sold settlements and queues an idempotent outbox reply instead of reading live JSON directly"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB read and duplicate/suffix route comparison",
+    "result": "passed",
+    "effects": {"marketMutations": 0, "requestedLimit": 100, "repliesPerEvent": 1},
+    "validation": {"typecheck": "passed", "focused": "5/5", "runtimeFull": "183/183", "mariaDb": "1/1", "shadowRoutes": "3/3", "evidenceValidator": "passed"},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 completedLogs와 relational settlements 최종 대사 필요",
+    "finalImportPlan": "미이관 완료 거래와 rank projection reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 exact/alias/empty smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "과거 JSON memberFeeApplied와 DB feeBasisPoints의 최종 운영 대사가 필요하다",
+    "운영 completedLogs 100건과 settlement import completeness는 Gate 8 대상이다",
+    "운영 snapshot, backup/restore와 승인된 live-room smoke가 없어 Gate 8은 미완료다"
+  ]
+}

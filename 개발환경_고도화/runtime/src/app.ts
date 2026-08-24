@@ -83,6 +83,11 @@ import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
+import {
+  handleFreeMarketHistoryCommand,
+  isFreeMarketHistoryCommand,
+  MariaFreeMarketHistoryRepository
+} from "./market/free-market-history-service.js";
 
 interface TokenQuery {
   token?: string;
@@ -769,6 +774,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isFreeMarketHistoryCommand(normalizedEvent.message) && normalizedEvent.channelId !== undefined) {
+        const historyReply = await handleFreeMarketHistoryCommand(
+          normalizedEvent.message,
+          new MariaFreeMarketHistoryRepository(database!)
+        );
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent,
+          "free_market_history_read",
+          historyReply!
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
