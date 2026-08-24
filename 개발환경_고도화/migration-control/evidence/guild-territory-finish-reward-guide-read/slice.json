@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-finish-reward-guide-read",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-FINISH-REWARD-GUIDE-READ-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-FINISH-REWARD-GUIDE-20260824-INTEGRATION",
+    "claimRow": 1216,
+    "branch": "codex/modernization-territory-finish-reward-guide-integration-20260824",
+    "baseHead": "97f72cb6bd73c5b2dfa95f7abc9accfdaa8409a4"
+  },
+  "commands": {
+    "ids": ["CMD-04-0071"],
+    "names": ["/영지종료보상", "영지종료보상"],
+    "sourceFiles": ["main.js"],
+    "guards": ["slash and plain exact aliases only", "whitespace, argument and suffix rejected"],
+    "helpers": ["GuildTerritoryFinishRewardGuideService", "GuildTerritoryReadModelService", "MariaGuildTerritoryReadModelRepository"],
+    "automaticFlows": ["Iris operational-channel dispatch", "standard command reply outbox", "duplicate event suppression"]
+  },
+  "legacyData": {
+    "files": ["data/guildTerritoryWar.json"],
+    "readPaths": ["seven territory finish reward guide lines"],
+    "writePaths": ["없음"],
+    "saveOrder": ["finish, payout, remember and JSON save are not called", "only standard command reply outbox is persisted"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 34,
+    "tables": ["guild_territory_reward_rule_versions", "guild_territory_reward_rule_tiers", "operations", "command_audit", "outbox_messages"],
+    "constraints": ["world-finish scope", "rule version 1", "published or retired rule", "exact seven single-rank tiers", "guide text provider order", "payout mutation excluded"],
+    "newColumns": [],
+    "transactionBoundary": "one consistent provider read loads immutable rule tiers; event processing queues one standard reply outbox without reward or payout mutation"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_territory_finish_guide_20260825",
+    "sourceReadOnly": true,
+    "originalDatabaseEvidence": "migration 28, reward rule tables 0, no writes",
+    "replayPolicy": "001~034 fresh/reapply, fixture apply/verify-only, provider probe, provider Shadow and Iris duplicate replay",
+    "fixtureChecksum": "54a256b8dfb1d2aabd9be3a09e3492fa6eda660848ab0d8ffe809813709f65be",
+    "isolatedCounts": {"migrations": 34, "ruleVersions": 3, "ruleTiers": 14, "commandOutboxesAcrossTwoRuns": 4, "commandAudits": 0},
+    "checks": ["two exact aliases", "world-finish/v1 pin", "seven ordered lines", "missing/pin/shape 503", "same event replay", "suffix rejection", "reward and payout non-mutation"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["GuildTerritoryFinishRewardGuideService", "GuildTerritoryReadModelService"],
+    "repositories": ["MariaGuildTerritoryReadModelRepository", "standard event reply outbox"],
+    "tests": ["typecheck", "focused 3/3", "runtime 182/182", "Maria/Iris 1/1", "provider probe", "provider Shadow pass13", "evidence validator"],
+    "resultJson": ["world-finish/v1 rule pin", "seven guide lines", "reply outbox"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "guild-territory-finish-reward-guide.test.ts", "guild-territory-finish-reward-guide-mariadb.integration.test.ts"],
+    "comparisonMode": "exact aliases and seven current legacy guide lines are compared in provider order",
+    "result": "passed",
+    "safeDifference": "version pin prevents mixed reward guide revisions"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB provider Shadow plus Iris duplicate/suffix non-mutation",
+    "result": "passed",
+    "effects": {"commandReplies": 2, "commandOutboxes": 2, "rewardMutations": 0, "payoutMutations": 0},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 world-finish/v1 rule freeze 필요",
+    "finalImportPlan": "운영 7단계 guide text and reward JSON reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 두 alias와 503 정책 smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "운영 world-finish/v1 guide text와 reward JSON은 Gate 8 reconciliation이 필요하다",
+    "실제 finish and payout mutation은 별도 슬라이스이며 연결하지 않았다",
+    "운영 snapshot, backup/restore와 승인된 live-room smoke가 없어 Gate 8은 미완료다"
+  ]
+}
