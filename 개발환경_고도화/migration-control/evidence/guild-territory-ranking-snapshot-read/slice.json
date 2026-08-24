@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-ranking-snapshot-read",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-RANKING-SNAPSHOT-READ-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-RANKING-SNAPSHOT-20260824-INTEGRATION",
+    "claimRow": 1213,
+    "branch": "codex/modernization-territory-ranking-snapshot-integration-20260824",
+    "baseHead": "3b1bcfc169876f058b56240df4e961649e936930",
+    "featureProdObservedHead": "0f1e761af7a93f534df1b7e30485fa0d43ad7ebe"
+  },
+  "commands": {
+    "ids": ["CMD-04-0033"],
+    "names": ["/길드영지순위"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact command only", "leading/trailing space, argument and suffix rejected"],
+    "helpers": ["GuildTerritoryRankingCommandService", "GuildTerritoryReadModelService", "MariaGuildTerritoryReadModelRepository"],
+    "automaticFlows": ["Iris operational-channel dispatch", "standard command reply outbox", "duplicate event suppression"]
+  },
+  "legacyData": {
+    "files": ["data/guild.json", "data/member.json"],
+    "readPaths": ["guild territory score, level, name, server, master and rank projection"],
+    "writePaths": ["없음"],
+    "saveOrder": ["legacy query has no direct save", "new projection is read-only and only command reply outbox is persisted"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": [],
+    "inheritedMigrationCount": 36,
+    "tables": ["guild_territory_seasons", "guild_territory_ranking_snapshots", "guild_territory_ranking_entries", "guilds", "guild_members", "players", "player_profiles", "player_rank_projections", "outbox_messages"],
+    "constraints": ["published snapshot pin", "score greater than zero", "complete guild, server, level, master and rank projection", "provider order preserved", "display rank compacted after filtering", "payout mutation excluded"],
+    "newColumns": [],
+    "transactionBoundary": "one consistent read-model transaction loads the ranking snapshot; event processing queues one standard reply outbox without changing ranking or payout state"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_territory_ranking_20260824",
+    "sourceReadOnly": true,
+    "replayPolicy": "001~036 fresh migration, fixture apply/verify-only 35 tables, provider probe, provider Shadow, Iris duplicate replay",
+    "fixtureChecksum": "2464916e3c3ec8c4580de65220f6322ed19160df29fa89ef0297686a65d988fc",
+    "checks": ["exact guard", "provider order", "incomplete projection filtering", "compact rank", "BigInt score format", "empty result", "same event replay", "suffix rejection", "domain non-mutation"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["GuildTerritoryRankingCommandService", "GuildTerritoryReadModelService"],
+    "repositories": ["MariaGuildTerritoryReadModelRepository", "standard event reply outbox"],
+    "tests": ["typecheck", "focused 3/3", "runtime 182/182", "Maria/Iris 1/1", "provider probe", "provider Shadow pass13", "evidence validator"],
+    "resultJson": ["snapshot pin", "ordered ranking entries", "legacy ranking text", "reply outbox"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "guild-territory-ranking-command.test.ts", "guild-territory-ranking-command-mariadb.integration.test.ts"],
+    "comparisonMode": "exact command, score-positive filter, provider order, compact rank, guild/server/master/level/score and allsee placement are compared with current Rhino output",
+    "result": "passed",
+    "safeDifference": "the version-pinned DB snapshot prevents a ranking from mixing concurrent guild changes"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB provider Shadow plus Iris duplicate/suffix non-mutation",
+    "result": "passed",
+    "effects": {"providerPassCount": 13, "commandReplies": 1, "commandOutboxes": 1, "domainMutations": 0},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 ranking snapshot and guild projection freeze 필요",
+    "finalImportPlan": "운영 score, guild master and rank projection reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 ranking output and allsee smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "운영 guild master and rank projection completeness can filter rows and requires Gate 8 reconciliation",
+    "ranking payout mutation is owned by a separate slice and is not connected here",
+    "operational snapshot, backup/restore and approved live-room smoke evidence is absent, so Gate 8 remains incomplete"
+  ]
+}
