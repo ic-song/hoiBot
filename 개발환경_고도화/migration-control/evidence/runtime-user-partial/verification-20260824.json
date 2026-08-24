@@ -1,6 +1,7 @@
 {
   "executionId": "작업반장-SL-COMMON-RUNTIME-USER-PARTIAL-20260824",
   "verifiedAtKst": "2026-08-24",
+  "implementationCommit": "2ce7459",
   "scope": {
     "runtimeDispatch": true,
     "representativeHandlers": ["USER_PROFILE", "USER_SIGNUP"],
@@ -46,6 +47,6 @@
     "gate4UnitAndExactGuard": true,
     "gate5MariaDbProviderIntegration": true,
     "gate6ShadowRestartRollback": true,
-    "gate7BranchEvidenceHandoff": "pending_push"
+    "gate7BranchEvidenceHandoff": true
   }
 }
