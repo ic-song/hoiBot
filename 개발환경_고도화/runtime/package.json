@@ -40,7 +40,9 @@
     "db:probe:home-social-ranking": "node --env-file-if-exists=.env --import tsx scripts/probe-home-social-ranking-synthetic.ts",
     "db:shadow:home-social-ranking": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-social-ranking-synthetic.ts",
     "db:probe:home-social-follow": "node --env-file-if-exists=.env --import tsx scripts/probe-home-social-follow-synthetic.ts",
-    "db:shadow:home-social-follow": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-social-follow-synthetic.ts"
+    "db:shadow:home-social-follow": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-social-follow-synthetic.ts",
+    "db:probe:home-upgrade": "node --env-file-if-exists=.env --import tsx scripts/probe-home-upgrade-synthetic.ts",
+    "db:shadow:home-upgrade": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-upgrade-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

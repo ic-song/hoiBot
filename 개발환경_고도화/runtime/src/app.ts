@@ -91,6 +91,7 @@ import { HomeSocialRankingService, parseHomeSocialRankingCommand } from "./home/
 import { MariaHomeSocialRankingRepository } from "./home/maria-home-social-ranking-repository.js";
 import { HomeSocialFollowService, isHomeSocialFollowCommandCandidate } from "./home/home-social-follow.js";
 import { MariaHomeSocialFollowRepository } from "./home/maria-home-social-follow-repository.js";
+import { HomeUpgradeService, isHomeUpgradeCommandCandidate } from "./home/home-upgrade-service.js";
 
 interface TokenQuery {
   token?: string;
@@ -117,6 +118,7 @@ export interface AppDependencies {
   homeBadgeReference?: Pick<HomeBadgeReferenceService, "execute">;
   homeSocialRanking?: Pick<HomeSocialRankingService, "execute">;
   homeSocialFollow?: Pick<HomeSocialFollowService, "handle">;
+  homeUpgrade?: Pick<HomeUpgradeService, "handle">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -365,6 +367,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const homeSocialFollow = dependencies.homeSocialFollow
     ?? (database === undefined ? undefined
       : new HomeSocialFollowService(new MariaHomeSocialFollowRepository(database), "\u200b".repeat(500)));
+  const homeUpgrade = dependencies.homeUpgrade
+    ?? (database === undefined ? undefined : new HomeUpgradeService(database));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -796,6 +800,21 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && homeSocialFollow !== undefined) {
         const result = await homeSocialFollow.handle({
           providerCode: "kakao",
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.data !== undefined && result.outboxId !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeUpgradeCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && homeUpgrade !== undefined) {
+        const result = await homeUpgrade.handle({
           externalUserId: normalizedEvent.userId,
           channelId: normalizedEvent.channelId,
           message: normalizedEvent.message!,

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "home-upgrade-confirm",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-HOME-UPGRADE-CONFIRM",
+    "worker": "개발자",
+    "executionId": "개발자-SL-HOME-UPGRADE-CONFIRM-20260825-INTEGRATION",
+    "claimRow": 1223,
+    "branch": "codex/modernization-home-upgrade-confirm-integration-20260825",
+    "baseHead": "0ccbe36",
+    "baseline": "HOIBOT-2.400-0f1e761a"
+  },
+  "commands": {
+    "names": ["/집짓기", "/집뚝딱", "집뚝딱", "/생각해본다", "생각해본다"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact equality only"]
+  },
+  "legacyData": {
+    "files": ["petSweetHomeInfo.json", "petSweetHomeData.json", "member.json", "member_pet.json"],
+    "readPaths": ["homeInfo.homeInfo", "home", "member.bag", "pet.petexp", "userState.homeUpgrade"],
+    "writePaths": ["home", "member.bag", "pet.petexp", "pending confirmation"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["040_home_upgrade_confirm.sql"],
+    "tables": ["home_upgrade_definitions", "home_upgrade_requirements", "home_upgrade_confirmations", "player_homes", "player_pets", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages"],
+    "transactionBoundary": "pending lock부터 재료 차감, home/pet 갱신, ledger, audit, outbox, stored result까지 한 transaction"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql + home-upgrade-v1.sql",
+    "targetDatabase": "hoibot_home_upgrade_g7_20260825",
+    "sourceReadOnly": true,
+    "checks": [
+      "migration 001~040 fresh 적용 및 재적용 통과",
+      "home-upgrade fixture 2회 적용 통과",
+      "preview, execute, identical-event replay 통과",
+      "pet write fault에서 home/pet/inventory/ledger 전체 rollback 통과",
+      "MariaDB 프로세스 재기동 후 replay와 집1, petExp100, ledger2 유지"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["runtime/src/home/home-upgrade-service.ts", "runtime/src/app.ts"],
+    "tests": ["typecheck", "focused 3/3", "full 213/213", "build", "isolated MariaDB probe", "rollback fault", "restart replay", "Shadow 6/6"],
+    "result": "passed"
+  },
+  "parity": {
+    "result": "passed_with_approval_required_safe_difference",
+    "normal": "preview, execute, cancel exact aliases preserved",
+    "approvedDifferences": ["pending 15 minute TTL", "stale definition/home/pet invalidation", "pet experience durable atomic write"]
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "productionDataChanged": false,
+    "featureProdChanged": false
+  },
+  "syntheticValidation": {
+    "fixture": "home-upgrade-v1.sql",
+    "sourceReadOnly": true,
+    "liveTraffic": false,
+    "productionData": false,
+    "shadowPassCount": 6
+  },
+  "risks": ["full snapshot reconciliation, backup/restore and approved live smoke remain Gate8"]
+}
