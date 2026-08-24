@@ -1,6 +1,7 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
+import { EmptyPackageCatalogRepository, RepositoryPackageCatalogProvider } from "./package-provider.js";
 import { RecentEventStore } from "./recent-events.js";
 
 interface TokenQuery {
@@ -74,6 +75,7 @@ export function buildApp(config: AppConfig) {
     }
   });
   const recentEvents = new RecentEventStore(config.recentEventLimit);
+  const packageCatalog = new RepositoryPackageCatalogProvider(new EmptyPackageCatalogRepository());
   const tokenGuard = createTokenGuard(config);
 
   app.addHook("onRequest", async (request, reply) => {
@@ -162,6 +164,42 @@ export function buildApp(config: AppConfig) {
       }
 
       return { ok: true, events: recentEvents.list(), requestId: request.id };
+    }
+  );
+
+  app.get<{ Querystring: TokenQuery }>(
+    "/api/v1/packages/catalog",
+    { preHandler: tokenGuard },
+    async (request) => {
+      const snapshot = await packageCatalog.getSnapshot();
+      return {
+        ok: true,
+        catalogVersion: snapshot.version,
+        packages: snapshot.packages,
+        requestId: request.id
+      };
+    }
+  );
+
+  app.get<{ Params: { packageId: string }; Querystring: TokenQuery }>(
+    "/api/v1/packages/catalog/:packageId",
+    { preHandler: tokenGuard },
+    async (request, reply) => {
+      const packageEntry = await packageCatalog.findById(request.params.packageId);
+      if (!packageEntry) {
+        return reply.code(404).send({
+          ok: false,
+          error: { code: "PACKAGE_NOT_FOUND", message: "패키지 카탈로그 항목을 찾을 수 없습니다." },
+          requestId: request.id
+        });
+      }
+
+      return {
+        ok: true,
+        catalogVersion: (await packageCatalog.getSnapshot()).version,
+        package: packageEntry,
+        requestId: request.id
+      };
     }
   );
 

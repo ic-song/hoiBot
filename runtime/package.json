@@ -16,7 +16,8 @@
     "fake:event": "node --env-file-if-exists=.env scripts/send-fake-iris-event.mjs"
   },
   "dependencies": {
-    "fastify": "^5.10.0"
+    "fastify": "^5.10.0",
+    "mariadb": "^3.4.5"
   },
   "devDependencies": {
     "@types/node": "^26.1.2",

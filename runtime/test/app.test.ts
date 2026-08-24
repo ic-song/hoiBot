@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { buildApp } from "../src/app.js";
 import type { AppConfig } from "../src/config.js";
+import { ItemProvider, type ItemDefinition, type ItemMutationContext, type ItemTypeHandler } from "../src/item-provider.js";
+import { PackageProvider, type PackageCatalogRepository } from "../src/package-provider.js";
 
 const TEST_TOKEN = "test-shared-token-1234";
 
@@ -103,5 +105,73 @@ describe("hoiBot Lite server", () => {
     assert.equal(response.statusCode, 413);
     assert.equal(response.json().error.code, "PAYLOAD_TOO_LARGE");
     await app.close();
+  });
+});
+
+describe("package provider", () => {
+  it("checks every mutation before consuming and granting items", async () => {
+    const definitions = new Map<string, ItemDefinition>([
+      ["package-item", { id: "package-item", type: "STACK", name: "패키지", stackable: true, metadata: {}, enabled: true }],
+      ["reward-item", { id: "reward-item", type: "STACK", name: "보상", stackable: true, metadata: {}, enabled: true }]
+    ]);
+    const calls: string[] = [];
+    const handler: ItemTypeHandler = {
+      checkAdd: async (definition, quantity) => { calls.push(`checkAdd:${definition.id}:${quantity}`); },
+      checkRemove: async (definition, quantity) => { calls.push(`checkRemove:${definition.id}:${quantity}`); },
+      add: async (definition, quantity) => { calls.push(`add:${definition.id}:${quantity}`); },
+      remove: async (definition, quantity) => { calls.push(`remove:${definition.id}:${quantity}`); }
+    };
+    const items = new ItemProvider({ findById: async (id) => definitions.get(id) });
+    items.register("STACK", handler);
+    const repository: PackageCatalogRepository = {
+      getSnapshot: async () => ({ version: "test", packages: [] }),
+      findByLegacyCommand: async () => undefined,
+      findById: async () => ({
+        id: "package-1",
+        catalogVersion: "test",
+        displayName: "테스트 패키지",
+        legacyCommand: null,
+        consumeItemId: "package-item",
+        definitionStatus: "READY",
+        enabled: true,
+        maxOpenCount: 10
+      }),
+      listRewards: async () => [{
+        packageId: "package-1",
+        rewardOrder: 1,
+        itemId: "reward-item",
+        quantity: 3n,
+        probability: null,
+        targetSelector: null,
+        metadataOverride: null
+      }]
+    };
+    const provider = new PackageProvider(repository, items, {
+      run: async (work) => work({ id: "transaction-1" })
+    });
+
+    const result = await provider.use({ requestKey: "request-1", userId: "user-1", packageId: "package-1", openCount: 2 });
+
+    assert.deepEqual(result, { packageId: "package-1", openCount: 2, rewardCount: 1 });
+    assert.deepEqual(calls, [
+      "checkRemove:package-item:2",
+      "checkAdd:reward-item:6",
+      "remove:package-item:2",
+      "add:reward-item:6"
+    ]);
+  });
+
+  it("rejects an item type without a registered handler", async () => {
+    const items = new ItemProvider({
+      findById: async () => ({ id: "pet-title", type: "PET_TITLE", name: "펫타이틀", stackable: false, metadata: {}, enabled: true })
+    });
+    const context: ItemMutationContext = {
+      ownerType: "PET",
+      ownerId: "pet-1",
+      transactionId: "transaction-1",
+      requestKey: "request-1"
+    };
+
+    await assert.rejects(() => items.checkAdd("pet-title", 1n, context), /ITEM_HANDLER_NOT_REGISTERED:PET_TITLE/);
   });
 });
