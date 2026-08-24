@@ -13,6 +13,7 @@ const GLOBAL_CONFIG = {
 	supportPass: { // 호이패스 프리미엄 표시·혜택 설정
 		premium: {
 			skillSlotBonus: 7,
+			cubeOptionBonusPercent: 3,
 			questDiamondBoxCount: 5
 		}
 	},
@@ -165,7 +166,7 @@ function hasInfoBasePass(data, user) {
 
 // Info 명령에서 호이패스 프리미엄 공통 헤더를 반환하는 함수
 function getInfoHoiPassPremiumHeader(data, user) {
-	return isInfoSupportPassActive(data, user, "premium") ? "[🐺호이패스 프리미엄🐺]\n" : "";
+	return isInfoSupportPassActive(data, user, "premium") ? "[👑호이패스 프리미엄👑]\n" : "";
 }
 
 // Info 명령에서 아직 읽지 않은 펫홈 활동 알림 개수를 반환하는 함수
@@ -558,7 +559,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				resultMsg += "• " + activeTitle + "\n";
 			}
 			if (isInfoSupportPassActive(data, sender, "premium")) {
-				resultMsg += "• [🐺호이패스 프리미엄🐺]\n";
+				resultMsg += "• 👑호이패스 프리미엄👑\n";
 			}
 
 			resultMsg += memberInfo.server ? "• " + memberInfo.server + "\n" : "";
@@ -1768,18 +1769,17 @@ function generateElementalRanking(petData, members) {
 function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
 	var member = data && data.member ? data.member[user] : null;
 	var store = member && member.homeBadgeCube && typeof member.homeBadgeCube === "object" ? member.homeBadgeCube : null;
-	if (!store || !store.equippedBadgeId || !store.badges || !store.badges[store.equippedBadgeId]) return 0;
-	var record = store.badges[store.equippedBadgeId];
+	if (!store || !store.equippedBadgeId) return 0;
+	var record = store.badges && store.badges[store.equippedBadgeId] ? store.badges[store.equippedBadgeId] : null;
 	var optionKeys = ["castle", "raid", "petUpgrade", "explore"];
-	var allMax = true;
+	var total = 0;
 	for (var i = 0; i < optionKeys.length; i++) {
-		if ((parseFloat(record[optionKeys[i]]) || 0) !== 10) {
-			allMax = false;
-			break;
-		}
+		total += record ? (parseFloat(record[optionKeys[i]]) || 0) : 0;
 	}
-	var value = parseFloat(record[optionKey]) || 0;
-	return allMax && value === 10 ? 11 : value;
+	var value = record ? (parseFloat(record[optionKey]) || 0) : 0;
+	var appliedValue = total >= 100 ? Math.round(value * 11) / 10 : value;
+	if (isInfoSupportPassActive(data, user, "premium")) appliedValue += GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent;
+	return appliedValue;
 }
 
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
@@ -2393,7 +2393,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 			if (status.passDailyRewardDone) lines.push("[✅ 금일 호패,초패 일퀘 보상 지급 완료]");
 		}
 		if (status.hasPremiumDailyQuest) {
-			lines.push("《🐺 호이패스 프리미엄 추가 보상》");
+			lines.push("《👑 호이패스 프리미엄 추가 보상》");
 			lines.push("다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
 			if (status.premiumDailyRewardDone) lines.push("[✅ 금일 프리미엄 일퀘 보상 지급 완료]");
 		}
@@ -3241,10 +3241,12 @@ function getMiniPetGradeStats(petData, gradeTable) {
 
 		for (let pet of bag) {
 			let grade = pet.grade || "기타";
-			if (isElite(pet)) {
+			if (isMasterMiniPet(pet)) {
+				grade = "마스터";
+			} else if (isElite(pet)) {
 				grade = "엘리트";
 			}
-			if (grade !== "엘리트" && !definedGrades.includes(grade)) {
+			if (grade !== "마스터" && grade !== "엘리트" && !definedGrades.includes(grade)) {
 				grade = "기타";
 			}
 			if (!gradeStats[grade]) gradeStats[grade] = 0;
@@ -3261,8 +3263,9 @@ function getMiniPetGradeStats(petData, gradeTable) {
 
 		let creationIndex = definedGrades.indexOf("창조");
 		let eliteIndex = creationIndex === -1 ? definedGrades.length : creationIndex + 0.5;
-		let indexA = a === "엘리트" ? eliteIndex : definedGrades.indexOf(a);
-		let indexB = b === "엘리트" ? eliteIndex : definedGrades.indexOf(b);
+		let masterIndex = creationIndex === -1 ? definedGrades.length + 1 : creationIndex + 1;
+		let indexA = a === "마스터" ? masterIndex : a === "엘리트" ? eliteIndex : definedGrades.indexOf(a);
+		let indexB = b === "마스터" ? masterIndex : b === "엘리트" ? eliteIndex : definedGrades.indexOf(b);
 
 		if (indexA !== -1 && indexB !== -1) {
 			return indexA - indexB;
@@ -3300,6 +3303,11 @@ function getMiniPetUpgradeDisplay(miniPetObj) {
 
 function isElite(mini) {
 	return mini && (mini.grade === "엘리트" || mini.grade === "엘리트급" || mini.grade === "ELITE");
+}
+
+// 마스터 등급 판정
+function isMasterMiniPet(mini) {
+	return mini && mini.grade === "마스터";
 }
 
 // 장착 가구 요약값을 정수 기준으로 정규화
