@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "home-social-ranking",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-HOME-SOCIAL-RANKING",
+    "worker": "개발자",
+    "executionId": "개발자-SL-HOME-SOCIAL-RANKING-20260825-INTEGRATION",
+    "claimRow": 1221,
+    "branch": "codex/modernization-home-social-ranking-integration-20260825",
+    "baseHead": "cb732c1fe3d5579295776f2a3b6e261eada900ba"
+  },
+  "commands": {
+    "ids": ["CMD-15-0039", "CMD-15-0023", "CMD-06-0040"],
+    "names": ["/팔로워순위", "/마음순위", "/뱃지순위"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact shared OR guard; 세 명령 외 suffix·공백 입력 거부"],
+    "helpers": ["buildPetHomeSocialRankingMessage", "getPetSkillFollowerBonus", "ensurePetHomeHeartExpressions", "getPetHomeBadgeById"],
+    "automaticFlows": ["검증된 운영 오픈채팅 exact Iris dispatch", "active external identity와 전체 순위 집계를 동일 read transaction에서 조회"]
+  },
+  "legacyData": {
+    "files": ["main.js", "petHomeActivityFile", "homeDataFile", "petSkillData"],
+    "readPaths": ["data.member", "petHomeSocial.followers", "petHomeSocial.badges", "petHomeSocial.deletedBadgeIds", "heartExpressions.cute/cheer/cool/love", "equipped pet skill followerBonus", "checkRank display"],
+    "writePaths": ["직접 쓰기 없음", "legacy ensure 함수의 메모리 정규화만 존재하며 save 없음"],
+    "saveOrder": ["modern provider는 JSON save 없음; Rhino source 변경 없음"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["038_home_social_ranking.sql"],
+    "tables": ["home_follow_relationships", "home_heart_expression_totals", "home_badge_definitions", "player_badge_assignments", "player_pets", "pet_skills", "skill_definitions", "players", "player_profiles", "player_rank_projections", "external_identities"],
+    "constraints": ["followed/follower PK 중복 방지", "active follower player만 집계", "마음 4종 UNSIGNED와 version check", "활성 뱃지 정의와 effective assignment만 집계", "장착 스킬별 distinct skill_id followerBonus 합", "active linked identity"],
+    "newColumns": [],
+    "transactionBoundary": "viewer identity, rank projection과 선택 순위의 전체 후보 집계를 동일 consistent read transaction에서 조회"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql + home-social-ranking-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_home_social_ranking_g7_20260825",
+    "sourceReadOnly": true,
+    "replayPolicy": "migration 001~038 fresh/reapply, 공용 fixture, 슬라이스 fixture 2회, provider probe, Shadow 후 격리 DB 삭제",
+    "checks": ["migration 38/38", "재적용 신규 0/38", "공용 fixture SHA-256 2464916e3c3ec8c4580de65220f6322ed19160df29fa89ef0297686a65d988fc", "슬라이스 fixture SHA-256 79af67825cbcd21c8d6341899359435e9b1739cd829a658309be1b67d241e89d", "follow4/heart3/badge definition4/assignment4", "원본 DB 전후 동일", "격리 DB 잔존 0"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["home-social-ranking.ts", "app.ts"],
+    "repositories": ["maria-home-social-ranking-repository.ts", "공용 database.ts transaction client"],
+    "tests": ["typecheck", "focused 6/6", "runtime 전체 200/200", "MariaDB fresh 38/38", "MariaDB reapply 0/38", "fixture replay", "provider probe", "Shadow 10/10", "source DB unchanged", "isolated DB rollback"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "home-social-ranking-v1.sql", "home-social-ranking.test.ts", "probe-home-social-ranking-synthetic.ts", "shadow-home-social-ranking-synthetic.ts"],
+    "comparisonMode": "legacy 고유 active follower+distinct equipped followerBonus, 마음 4종 합·상세, 유효·미삭제 고유 뱃지, score>0, raw user 한국어 동률, TOP100, checkRank 표시, allsee와 empty 문구를 비교",
+    "scenarios": ["RANK-001~RANK-020"],
+    "result": "passed"
+  },
+  "shadow": {
+    "mode": "전용 비식별 MariaDB isolated database",
+    "result": "passed",
+    "passCount": 10,
+    "followerTop": 3002,
+    "heartTop": 10,
+    "badgeTop": 2,
+    "readMutationZero": true,
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "legacy petHomeActivity/homeData/petSkillData 최종 snapshot과 normalized rows checksum freeze 필요",
+    "finalImportPlan": "followers, heart expressions, badge assignments/deletions, equipped skill bonus를 운영 DB에 최종 대사 후 import",
+    "smokePlan": "승인된 비운영 identity와 실운영방에서 세 exact 명령의 TOP100·동률·빈 순위 smoke 필요",
+    "rollbackPlan": "운영 승인 전 Rhino routing 유지; 불일치 시 신규 social ranking dispatch 비활성화"
+  },
+  "integration": {
+    "sourceHead": "cb732c1fe3d5579295776f2a3b6e261eada900ba",
+    "sourceLineage": ["cb732c1"],
+    "sharedFoundationSource": "cb732c1",
+    "selectedCommits": [],
+    "conflictsResolved": ["legacy deletedBadgeIds를 assignment ends_at과 active definition으로 정규화", "checkRank 표시값과 raw current_display_name 동률키 분리", "조회 transport 기록과 도메인 mutation 0 근거 분리"]
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "운영 snapshot의 follower·heart·badge 삭제 이력을 normalized 테이블로 최종 import하는 Gate 8 대사가 남아 있다",
+    "player_rank_projections가 stale하면 표시 문자열이 legacy checkRank와 다를 수 있어 cutover 전 freshness 검증이 필요하다",
+    "운영 승인 identity와 실운영방 smoke 증거가 없어 Gate 8은 미완료다",
+    "공용 고도화 런타임 전체가 feature/prod에 없으므로 검수 후 별도 승인된 반영 절차가 필요하다"
+  ]
+}

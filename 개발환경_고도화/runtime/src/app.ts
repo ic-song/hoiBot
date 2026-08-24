@@ -87,6 +87,8 @@ import {
 } from "./guild/guild-territory-turn-order-command.js";
 import { HomeBadgeReferenceService, parseHomeBadgeReferenceCommand } from "./home/home-badge-reference.js";
 import { MariaHomeBadgeReferenceRepository } from "./home/maria-home-badge-reference-repository.js";
+import { HomeSocialRankingService, parseHomeSocialRankingCommand } from "./home/home-social-ranking.js";
+import { MariaHomeSocialRankingRepository } from "./home/maria-home-social-ranking-repository.js";
 
 interface TokenQuery {
   token?: string;
@@ -111,6 +113,7 @@ export interface AppDependencies {
   database?: DatabaseClient;
   guildTerritoryReadModel?: Pick<GuildTerritoryReadModelService, "read" | "setRememberPreference">;
   homeBadgeReference?: Pick<HomeBadgeReferenceService, "execute">;
+  homeSocialRanking?: Pick<HomeSocialRankingService, "execute">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -353,6 +356,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const homeBadgeReference = dependencies.homeBadgeReference
     ?? (database === undefined ? undefined
       : new HomeBadgeReferenceService(new MariaHomeBadgeReferenceRepository(database)));
+  const homeSocialRanking = dependencies.homeSocialRanking
+    ?? (database === undefined ? undefined
+      : new HomeSocialRankingService(new MariaHomeSocialRankingRepository(database), "\u200b".repeat(500)));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -755,6 +761,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           processing.replies.push(await eventProcessor!.queueCommandReply(
             normalizedEvent,
             `home_badge_reference_${homeBadgeReferenceCommand.kind.replaceAll("-", "_")}`,
+            data
+          ));
+        }
+      }
+
+      const homeSocialRankingCommand = parseHomeSocialRankingCommand(normalizedEvent.message);
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && homeSocialRankingCommand !== null && normalizedEvent.userId !== undefined
+        && normalizedEvent.channelId !== undefined && homeSocialRanking !== undefined) {
+        const data = await homeSocialRanking.execute({
+          providerCode: "kakao",
+          externalUserId: normalizedEvent.userId,
+          kind: homeSocialRankingCommand
+        });
+        if (data !== null) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            `home_social_ranking_${homeSocialRankingCommand}`,
             data
           ));
         }
