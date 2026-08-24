@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-war-ready-status-read",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-WAR-READY-STATUS-READ-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-WAR-READY-STATUS-20260824-INTEGRATION",
+    "claimRow": 1214,
+    "branch": "codex/modernization-territory-ready-status-integration-20260824",
+    "baseHead": "135f91f9eac5b37c2faba5d7158988efd3f02625"
+  },
+  "commands": {
+    "ids": ["CMD-04-0038"],
+    "names": ["/길드영지준비확인"],
+    "sourceFiles": ["main.js"],
+    "guards": ["exact command only", "leading/trailing space, argument and suffix rejected"],
+    "helpers": ["GuildTerritoryReadyStatusService", "GuildTerritoryReadModelService", "MariaGuildTerritoryReadModelRepository"],
+    "automaticFlows": ["Iris operational-channel dispatch", "standard command reply outbox", "duplicate event suppression"]
+  },
+  "legacyData": {
+    "files": ["data/guildTerritoryWar.json", "data/guild.json", "data/member.json"],
+    "readPaths": ["eligible and ready registry entries", "stable insertion ordinal", "live guild name/mark", "stored guild name fallback", "prepared by and prepared at"],
+    "writePaths": ["없음"],
+    "saveOrder": ["legacy query has no direct save", "new projection is read-only and only command reply outbox is persisted"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["037_guild_territory_ready_registry.sql"],
+    "inheritedMigrationCount": 37,
+    "tables": ["guild_territory_seasons", "guild_territory_ready_snapshots", "guild_territory_ready_entries", "guilds", "players", "player_profiles", "outbox_messages"],
+    "constraints": ["season id match", "start snapshot version", "eligible and ready only", "stable unique ordinal", "prepared projection required", "stored guild fallback", "domain read-only"],
+    "newColumns": [],
+    "transactionBoundary": "one consistent read-model transaction loads the ready registry; event processing queues one standard reply outbox without changing territory state"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_territory_ready_20260824",
+    "sourceReadOnly": true,
+    "originalDatabaseEvidence": "migration 28, ready registry tables 0, no writes",
+    "replayPolicy": "001~037 fresh migration, fixture apply/verify-only 35 tables, provider probe, provider Shadow, Iris duplicate replay",
+    "fixtureChecksum": "b7278825031cfc336727227ce95339f0141d809fe7bb387f1a356f5300f502b5",
+    "checks": ["exact guard", "stable ordinal", "ready filtering", "stored guild fallback", "missing projection rejection", "same event replay", "suffix rejection", "domain non-mutation"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["GuildTerritoryReadyStatusService", "GuildTerritoryReadModelService"],
+    "repositories": ["MariaGuildTerritoryReadModelRepository", "standard event reply outbox"],
+    "tests": ["typecheck", "focused 3/3", "runtime 182/182", "Maria/Iris 1/1 including restart-safe accumulated outbox", "provider probe", "provider Shadow pass13", "evidence validator"],
+    "resultJson": ["season pin", "ready registry entries", "legacy ready-status text", "reply outbox"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "guild-territory-ready-status-command.test.ts", "guild-territory-ready-status-mariadb.integration.test.ts"],
+    "comparisonMode": "exact command, ready filter, stable ordinal, live guild display, stored-name fallback, prepared identity/time and allsee placement are compared with current Rhino output",
+    "result": "passed",
+    "safeDifference": "the season-pinned DB snapshot prevents a ready list from mixing concurrent start-state changes"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB provider Shadow plus Iris duplicate/suffix non-mutation",
+    "result": "passed",
+    "effects": {"providerPassCount": 13, "commandReplies": 1, "commandOutboxes": 1, "domainMutations": 0},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 season and ready registry freeze 필요",
+    "finalImportPlan": "운영 eligible/ready, guild display and prepared identity reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 ready-status output and allsee smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "운영 ready registry의 prepared identity completeness는 Gate 8 reconciliation이 필요하다",
+    "전쟁 시작과 준비 mutation은 별도 슬라이스이며 이 조회 경로와 연결하지 않았다",
+    "운영 snapshot, backup/restore and approved live-room smoke evidence가 없어 Gate 8은 미완료다"
+  ]
+}
