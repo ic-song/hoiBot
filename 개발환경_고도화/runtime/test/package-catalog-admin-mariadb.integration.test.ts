@@ -12,6 +12,7 @@ const operatorId = "900000010";
 const deniedOperatorId = "900000011";
 let database: DatabaseClient;
 let service: PackageCatalogAdminService;
+let addedCatalogVersion: bigint;
 
 async function execute(message: string, requestKey: string, expectedCatalogVersion?: bigint) {
   await database.execute(
@@ -69,8 +70,11 @@ async function execute(message: string, requestKey: string, expectedCatalogVersi
   });
 
   it("commits add with catalog, reward, audit and outbox in one operation", async () => {
+    const before = await new MariaPackageCatalogAdminRepository(database).readSnapshot();
+    const beforeAudit = await database.query<Array<{ count: bigint }>>("SELECT COUNT(*) AS count FROM command_audit WHERE action_code='PACKAGE_CATALOG_ADD'");
     const result = await execute("/패키지추가 합성 관리자 패키지 | 합성 설명 | item:합성보상:2", "catalog-admin-add");
-    assert.equal(result.catalogVersion, 2n);
+    addedCatalogVersion = before.catalogVersion + 1n;
+    assert.equal(result.catalogVersion, addedCatalogVersion);
     assert.match(result.packageId, /^PKG-CUSTOM-/);
     const rows = await database.query<Array<{ package_count: bigint; reward_count: bigint; audit_count: bigint; outbox_count: bigint }>>(
       `SELECT
@@ -80,13 +84,13 @@ async function execute(message: string, requestKey: string, expectedCatalogVersi
        (SELECT COUNT(*) FROM outbox_messages WHERE destination_id='990000000000090') AS outbox_count`,
       [result.packageId, result.packageId],
     );
-    assert.deepEqual(rows[0], { package_count: 1n, reward_count: 1n, audit_count: 1n, outbox_count: 1n });
+    assert.deepEqual(rows[0], { package_count: 1n, reward_count: 1n, audit_count: beforeAudit[0]!.count + 1n, outbox_count: 1n });
   });
 
   it("replays the same request without another version, audit or outbox", async () => {
     const replay = await execute("/패키지추가 합성 관리자 패키지 | 합성 설명 | item:합성보상:2", "catalog-admin-add");
     assert.equal(replay.replayed, true);
-    assert.equal(replay.catalogVersion, 2n);
+    assert.equal(replay.catalogVersion, addedCatalogVersion);
     const counts = await database.query<Array<{ mutations: bigint; outbox: bigint }>>(
       `SELECT
        (SELECT COUNT(*) FROM package_catalog_mutations WHERE request_key='catalog-admin-add') AS mutations,
@@ -100,9 +104,9 @@ async function execute(message: string, requestKey: string, expectedCatalogVersi
     const listNumber = snapshot.entries.findIndex((entry) => entry.displayName === "합성 관리자 패키지") + 1;
     assert.ok(listNumber > 0);
     const edited = await execute(`/패키지수정 ${listNumber} | item:합성보상:3`, "catalog-admin-edit");
-    assert.equal(edited.catalogVersion, 3n);
+    assert.equal(edited.catalogVersion, addedCatalogVersion + 1n);
     const removed = await execute(`/패키지리스트제거 ${listNumber}`, "catalog-admin-remove");
-    assert.equal(removed.catalogVersion, 4n);
+    assert.equal(removed.catalogVersion, addedCatalogVersion + 2n);
     const rows = await database.query<Array<{ enabled: number; deleted: number; reward_quantity: bigint }>>(
       `SELECT catalog.enabled,catalog.deleted_at IS NOT NULL AS deleted,
               (SELECT quantity FROM package_reward_rules WHERE package_id=catalog.package_id LIMIT 1) AS reward_quantity
@@ -120,7 +124,7 @@ async function execute(message: string, requestKey: string, expectedCatalogVersi
     const disabledIndex = snapshot.entries.findIndex((entry) => !entry.active);
     assert.ok(disabledIndex >= 0);
     const result = await execute(`/패키지활성 ${disabledIndex + 1}`, "catalog-admin-enable");
-    assert.equal(result.catalogVersion, 5n);
+    assert.equal(result.catalogVersion, addedCatalogVersion + 3n);
     const rows = await database.query<Array<{ enabled: number }>>("SELECT enabled FROM package_catalog WHERE package_id=?", [result.packageId]);
     assert.equal(rows[0]?.enabled, 1);
   });
@@ -129,7 +133,7 @@ async function execute(message: string, requestKey: string, expectedCatalogVersi
     const before = await database.query<Array<{ version: bigint; operations: bigint }>>(
       "SELECT version,(SELECT COUNT(*) FROM operations) AS operations FROM package_catalog_heads WHERE catalog_key='PACKAGE_CATALOG'",
     );
-    await assert.rejects(() => execute("/패키지활성 1", "catalog-admin-stale", 4n), /먼저 변경/);
+    await assert.rejects(() => execute("/패키지활성 1", "catalog-admin-stale", before[0]!.version - 1n), /먼저 변경/);
     const command = parsePackageCatalogAdminCommand("/패키지활성 1");
     assert.ok(command);
     await assert.rejects(() => service.execute({ command, requestKey: "catalog-admin-denied", actorOperatorId: deniedOperatorId }), /권한/);

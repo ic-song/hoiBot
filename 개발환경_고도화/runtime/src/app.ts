@@ -93,6 +93,8 @@ import {
   normalizePackageCatalogAdminDispatchMessage,
 } from "./package/package-catalog-admin-command.js";
 import { PackageCatalogAdminIrisHandler } from "./package/package-catalog-admin-iris-handler.js";
+import { isPackageCatalogWizardControl } from "./package/package-catalog-add-wizard.js";
+import { PackageCatalogAddWizardIrisHandler } from "./package/package-catalog-add-wizard-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -617,10 +619,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isPackageCommandCandidate(normalizedEvent.message ?? "");
       const packageCatalogAdminDispatchCandidate = process.env.PACKAGE_CATALOG_ADMIN_COMMAND_ENABLED === "true"
         && isPackageCatalogAdminCommandCandidate(normalizedEvent.message ?? "");
+      const packageCatalogWizardHandler = database !== undefined
+        && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
+        ? new PackageCatalogAddWizardIrisHandler(database)
+        : undefined;
+      const packageCatalogWizardControlCandidate = packageCatalogWizardHandler !== undefined
+        && isPackageCatalogWizardControl(normalizedEvent.message ?? "");
+      const packageCatalogWizardActiveInput = packageCatalogWizardHandler !== undefined
+        && normalizedEvent.direction === "incoming"
+        && normalizedEvent.message !== undefined
+        && !normalizedEvent.message.startsWith("/")
+        && await packageCatalogWizardHandler.hasActiveSession(normalizedEvent);
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
         || isSignupCommand(normalizedEvent.message ?? "")
         || packageDispatchCandidate
-        || packageCatalogAdminDispatchCandidate;
+        || packageCatalogAdminDispatchCandidate
+        || packageCatalogWizardControlCandidate
+        || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
         || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
       const partialDispatchDecision = database !== undefined
@@ -693,6 +708,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           room: normalizedEvent.channelId!,
           data: catalogResponse.message,
         });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && packageCatalogWizardHandler !== undefined
+        && (packageCatalogWizardActiveInput
+          || (partialDispatchDecision?.route === "MODERN"
+            && (partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_WIZARD_GUIDE"
+              || partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_WIZARD_START"
+              || partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_WIZARD_CANCEL"
+              || partialDispatchDecision.handlerKey === "PACKAGE_CATALOG_WIZARD_STATUS")))) {
+        const wizardResponse = await packageCatalogWizardHandler.execute(normalizedEvent);
+        if (wizardResponse.outboxId) {
+          processing.replies.push({ outboxId: wizardResponse.outboxId, room: normalizedEvent.channelId!, data: wizardResponse.message });
+        } else {
+          processing.replies.push(await eventProcessor.queueCommandReply(normalizedEvent, wizardResponse.commandCode, wizardResponse.message));
+        }
       }
       const isRetainedContentChannel = commandEvent.channelId !== undefined
         && (isOperationalChannel || isObservationChannel);
