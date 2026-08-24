@@ -43,7 +43,7 @@
   "logicPort": {
     "services": ["home-badge-reference.ts", "app.ts"],
     "repositories": ["maria-home-badge-reference-repository.ts", "공용 database.ts transaction client"],
-    "tests": ["typecheck", "focused 7/7", "runtime 전체 191/191", "MariaDB fresh 37/37", "MariaDB reapply 0/37", "provider probe", "Shadow 12/12", "source DB unchanged", "isolated DB rollback", "slice evidence validator"]
+    "tests": ["typecheck", "focused 10/10", "runtime 전체 194/194", "MariaDB fresh 37/37", "MariaDB reapply 0/37", "provider probe", "Shadow 12/12", "source DB unchanged", "isolated DB rollback", "slice evidence validator"]
   },
   "parity": {
     "fixtures": ["functional-v1.sql", "home-badge-reference-v1.sql", "probe-home-badge-reference-synthetic.ts", "shadow-home-badge-reference-synthetic.ts"],

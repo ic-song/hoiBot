@@ -70,6 +70,20 @@ describe("home badge reference commands", () => {
     assert.match(output, /\[S\] 3% \| 6종 \| 각 0\.50%/);
   });
 
+  it("keeps legacy guide text when the cube snapshot has no bands", () => {
+    const output = formatHomeBadgeCubeRates({ ...snapshot, cubeRateBands: [] });
+    assert.match(output, /^\[🧪테스트알파\] 님\n💟 홈뱃지 큐브 확률\n━━━━━━━━━━━━━━━\n━━━━━━━━━━━━━━━/);
+    assert.match(output, /옵션별 최대 수치: 캐슬 50%/);
+  });
+
+  it("prints a zero individual rate for an empty gacha grade", () => {
+    const output = formatHomeBadgeGachaRates({
+      ...snapshot,
+      gachaGradeRates: [{ sequence: 1, grade: "X", ratePercent: "1.0000", badgeCount: 0 }]
+    });
+    assert.match(output, /\[X\] 1% \| 0종 \| 각 0\.00%/);
+  });
+
   it("formats the special list and normalized detail without allsee", () => {
     const list = formatSpecialHomeBadges(snapshot);
     assert.match(list, /\[S01\] 🎂 펫홈 1주년\n\[S13\] 🐺 호패 프리미엄/);
@@ -95,6 +109,17 @@ describe("home badge reference commands", () => {
     const service = new HomeBadgeReferenceService({ readActiveForIdentity: async () => { reads++; return snapshot; } });
     const result = await service.execute({ command: { kind: "special-detail", badgeCode: null }, providerCode: "kakao", externalUserId: "u1", isGroupChat: true, hasActivePass: false });
     assert.match(result!, /^❌ 존재하지 않는 특별 뱃지 코드/);
+    assert.equal(reads, 0);
+  });
+
+  it("blocks private pass-required commands before repository access", async () => {
+    let reads = 0;
+    const service = new HomeBadgeReferenceService({ readActiveForIdentity: async () => { reads++; return snapshot; } });
+    const result = await service.execute({
+      command: { kind: "gacha-rate" }, providerCode: "kakao", externalUserId: "u1",
+      isGroupChat: false, hasActivePass: false
+    });
+    assert.equal(result, null);
     assert.equal(reads, 0);
   });
 });
