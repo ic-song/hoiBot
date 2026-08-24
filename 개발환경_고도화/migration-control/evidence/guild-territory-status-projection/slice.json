@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "guild-territory-status-projection",
+  "status": "verified",
+  "execution": {
+    "wbsId": "SL-GUILD-TERRITORY-STATUS-PROJECTION-01",
+    "worker": "개발자",
+    "executionId": "개발자-SL-GUILD-TERRITORY-STATUS-PROJECTION-20260824-INTEGRATION",
+    "claimRow": 1215,
+    "branch": "codex/modernization-territory-status-projection-integration-20260824",
+    "baseHead": "ffd16e2f899fba08ab723ce20a96c4c55f14f0fa"
+  },
+  "commands": {
+    "ids": ["CMD-04-0032", "CMD-04-0051"],
+    "names": ["/길드영지", "/길드영지확인"],
+    "sourceFiles": ["main.js"],
+    "guards": ["two exact commands only", "arguments, whitespace and suffix rejected"],
+    "helpers": ["GuildTerritoryStatusProjectionService", "GuildTerritoryReadModelService", "MariaGuildTerritoryReadModelRepository"],
+    "automaticFlows": ["Iris operational-channel dispatch", "standard command reply outbox", "duplicate event suppression", "repair-required reply without repair invocation"]
+  },
+  "legacyData": {
+    "files": ["data/guildTerritoryWar.json", "data/guild.json"],
+    "readPaths": ["seven territory owners", "stored owner fallback", "event and season flags", "dimension gate and remember-me switches"],
+    "writePaths": ["없음"],
+    "saveOrder": ["legacy status commands are query-only", "new command path never invokes repair and only queues command reply outbox"],
+    "devProdRoutingVerified": true
+  },
+  "database": {
+    "migrations": ["038_guild_territory_status_projection.sql"],
+    "inheritedMigrationCount": 38,
+    "tables": ["guild_territory_status_aggregates", "guild_territory_status_slots", "guild_territory_status_repairs", "guilds", "outbox_messages"],
+    "constraints": ["scope and version pin", "exactly seven unique slots", "live guild display then stored fallback", "repair-required boundary", "repair endpoint excluded from command path"],
+    "newColumns": [],
+    "transactionBoundary": "one consistent read-model transaction loads status projection; event processing queues a reply without invoking repair or changing status tables"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "functional-v1.sql 비식별 fixture",
+    "targetDatabase": "hoibot_rehearsal_territory_status_20260824",
+    "sourceReadOnly": true,
+    "originalDatabaseEvidence": "migration 28, status projection tables 0, no writes",
+    "replayPolicy": "001~038 fresh migration, fixture apply/verify-only, provider probe, provider Shadow and Iris duplicate replay",
+    "fixtureChecksum": "87772c0551e8d8d1c52167c0099f69d926a9b9615afcd495a18577a3ebddae53",
+    "isolatedCounts": {"migrations": 38, "aggregates": 3, "storedSlots": 7, "providerRepairRows": 1, "commandOutboxes": 2},
+    "checks": ["two exact guards", "seven slots", "stored fallback", "feature switches", "event confirmation", "repair-required boundary", "same event replay", "suffix rejection", "status non-mutation"],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["GuildTerritoryStatusProjectionService", "GuildTerritoryReadModelService"],
+    "repositories": ["MariaGuildTerritoryReadModelRepository", "standard event reply outbox"],
+    "tests": ["typecheck", "focused 4/4", "runtime 185/185", "Maria/Iris 1/1", "provider probe", "provider Shadow pass13", "evidence validator"],
+    "resultJson": ["status projection version", "seven slots", "legacy status text", "repair-required state", "reply outbox"]
+  },
+  "parity": {
+    "fixtures": ["functional-v1.sql", "guild-territory-status-projection-command.test.ts", "guild-territory-status-projection-mariadb.integration.test.ts"],
+    "comparisonMode": "exact aliases, slot order/names, owner fallback, feature-switch text, event confirmation and repair-required operator reply are compared with current Rhino behavior",
+    "result": "passed",
+    "safeDifference": "incomplete projections return an explicit operator warning instead of guessing or mutating state"
+  },
+  "shadow": {
+    "mode": "isolated MariaDB provider Shadow plus Iris duplicate/suffix non-mutation",
+    "result": "passed",
+    "effects": {"commandReplies": 2, "commandOutboxes": 2, "repairCalls": 0, "statusMutations": 0},
+    "liveTraffic": false,
+    "operationalSnapshotTouched": false
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "freezePlan": "운영 status projection version freeze 필요",
+    "finalImportPlan": "운영 seven slots, owner fallbacks and feature flags reconciliation 필요",
+    "smokePlan": "승인된 실운영방에서 두 exact command와 repair-required 경계 smoke 필요",
+    "rollbackPlan": "승인 전 Rhino routing 유지"
+  },
+  "gates": {"gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false},
+  "risks": [
+    "운영 slot completeness와 stored owner fallback은 Gate 8 reconciliation이 필요하다",
+    "read-repair mutation provider는 별도 운영 승인 대상이며 command dispatch에서 호출하지 않는다",
+    "운영 snapshot, backup/restore와 승인된 live-room smoke가 없어 Gate 8은 미완료다"
+  ]
+}
