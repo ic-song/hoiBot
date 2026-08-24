@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "baselineId": "HOIBOT-2.400-0f1e761a",
+  "status": "frozen",
+  "frozenAtKst": "2026-08-25T07:00:00+09:00",
+  "legacySource": {
+    "version": "2.400",
+    "remoteRef": "origin/feature/prod",
+    "commit": "0f1e761af7a93f534df1b7e30485fa0d43ad7ebe",
+    "mainJsBlob": "451730e955e1ed47fc2ec6ce24845ea511bc0f21",
+    "changeLogBlob": "28a8f338a536472ea538317fcd83fff2c82f4878",
+    "trackedDataTree": "a2539d793ba15a4b32072c33127ff3eca193d6a7"
+  },
+  "modernizationPolicy": {
+    "gateScope": "All active slices complete Gate 1 through Gate 7 against this frozen legacy source.",
+    "midSliceLegacyMerge": false,
+    "postFreezeChanges": "Record source changes as DELTA entries without rewriting completed Gate evidence.",
+    "integrationWave": "Apply accumulated DELTA entries once after the frozen-scope Gate 1 through Gate 7 wave.",
+    "affectedSliceRule": "Re-run Gate 1 and the affected Gate 4 through Gate 7 evidence only for slices touched by a DELTA.",
+    "unaffectedSliceRule": "Carry forward verified Gate evidence when source, DB contract, fixture, provider dependency and output contract are unchanged.",
+    "migrationRule": "Never edit an applied migration; append a new migration for a DELTA.",
+    "versionRule": "Increase HoiBotVersion and add a developer-note entry only after the integration wave passes.",
+    "rollbackRule": "Restore by the frozen Git commit, schema migration boundary and recorded data checksums."
+  },
+  "requiredDeltaFields": [
+    "deltaId",
+    "sourceCommit",
+    "changedCommands",
+    "changedHelpers",
+    "changedDataPaths",
+    "changedDatabaseContracts",
+    "affectedSlices",
+    "requiredGateRechecks",
+    "integrationResult"
+  ],
+  "gate8": {
+    "complete": false,
+    "requirements": [
+      "Reconcile all DELTA entries.",
+      "Verify final JSON and database checksums.",
+      "Run affected-slice parity and Shadow again.",
+      "Run the approved full integration smoke.",
+      "Approve cutover and rollback."
+    ]
+  }
+}
