@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.401"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.402"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2896,6 +2896,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             saveJsonFile(data, filePath);
             noticeMsg(petMusouFinishResult.message);
+            return;
+        }
+        if (msg === "/펫무쌍전체초기화") {
+            if (!isPetMusouOperator(sender)) {
+                replier.reply("❌ /펫무쌍전체초기화 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var petMusouResetResult = resetAllPetMusouData(data);
+            saveJsonFile(data, filePath);
+            replier.reply(
+                "✅ 펫무쌍 전체 초기화 완료\n" +
+                "━━━━━━━━━━━━━━━━\n" +
+                "참가·진행·회차·현재 칭호 초기화 완료\n" +
+                "유저 참가일 초기화: " + numberWithCommas(petMusouResetResult.signupUserCount) + "명\n" +
+                "유저 누적 전적 초기화: " + numberWithCommas(petMusouResetResult.rankingUserCount) + "명\n\n" +
+                "※ 기존 지급 포인트와 아이템은 회수하지 않습니다."
+            );
             return;
         }
         if (msg === "/무쌍순위") {
@@ -33546,6 +33563,29 @@ function finishPetMusou(data, petData, guildData, reason) {
     };
 }
 
+// 펫무쌍 진행 상태와 전 유저의 참가·누적 전적을 초기화하는 함수
+function resetAllPetMusouData(data) {
+    clearPetMusouTurnTimer();
+    var signupUserCount = 0; // 당일 참가 표시가 제거된 유저 수
+    var rankingUserCount = 0; // 누적 무쌍 기록이 제거된 유저 수
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        if (member.petMusouLastSignupDate !== undefined) {
+            delete member.petMusouLastSignupDate;
+            signupUserCount++;
+        }
+        if (member.musouWinCount !== undefined || member.musouLastWinAt !== undefined) {
+            delete member.musouWinCount;
+            delete member.musouLastWinAt;
+            rankingUserCount++;
+        }
+    }
+    data.petMusou = {};
+    ensurePetMusouData(data);
+    return { signupUserCount: signupUserCount, rankingUserCount: rankingUserCount };
+}
+
 // 펫무쌍 생존자에게 누적 확률로 벼락을 판정하는 함수
 function processPetMusouLightning(musou, data, petData, guildData) {
     var currentRate = Math.max(0, Math.min(1, musou.lightningRate));
@@ -33616,6 +33656,18 @@ function buildPetMusouBattleMessage(data, petData, guildData, result) {
     return lines.join("\n");
 }
 
+// 양자 결투 상세가 없는 펫무쌍 공격의 시작 시점 능력치를 출력하는 함수
+function buildPetMusouAttackDetailMessage(data, petData, guildData, musou, attackerName) {
+    var player = musou.players[attackerName];
+    var snapshot = player && player.totalCharmSnapshot ? player.totalCharmSnapshot : null;
+    if (!snapshot) return "";
+    return "펫무쌍 공격 상세정보📋" + allsee + "\n" +
+        "⚔️ 공격\n" +
+        "유저: " + checkRank(data, petData, guildData, attackerName) + "\n" +
+        "펫: [" + snapshot.petName + "]\n" +
+        "종합매력(시작 기준): " + numberWithCommas(snapshot.baseExp) + "💕";
+}
+
 // 펫무쌍 깃발 현황과 다음 공격자를 출력하는 함수
 function buildPetMusouStatusMessage(data, petData, guildData, musou) {
     var attacker = getPetMusouCurrentAttacker(musou);
@@ -33652,6 +33704,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     musou.turnDeadlineAt = 0;
     var lines = ["🗡️펫 무쌍 대회 결과🗡️", "━━━━━━━━━━━━", "공격자: [" + checkRank(data, petData, guildData, sender) + "]", "공격 깃발: [" + flagNo + "] " + getPetMusouFlagName(flagNo)];
     var rewardGranted = false;
+    var hasBattleDetail = false; // 공격자·점령자 양쪽의 종합매력 상세 출력 여부
 
     if (!musou.realFlagFound && musou.fakeFlags[String(flagNo)]) {
         musou.players[sender].alive = false;
@@ -33688,6 +33741,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         var previousHolder = musou.currentHolder;
         var battleResult = resolvePetMusouBattle(data, petData, musou, sender, previousHolder);
         lines.push("공격 보상🤑: 🅟2억", "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
+        hasBattleDetail = !!(battleResult.attacker && battleResult.defender);
         if (battleResult.attackerWin) {
             musou.currentHolder = sender;
             if (musou.players[previousHolder] && musou.players[previousHolder].alive && musou.players[previousHolder].attacksLeft > 0 && musou.turnQueue.indexOf(previousHolder) === -1) {
@@ -33697,6 +33751,10 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     }
     var lightningResult = processPetMusouLightning(musou, data, petData, guildData);
     lines.push("━━━━━━━━━━━━", lightningResult.message);
+    if (!hasBattleDetail) {
+        var attackDetailMessage = buildPetMusouAttackDetailMessage(data, petData, guildData, musou, sender);
+        if (attackDetailMessage) lines.push("━━━━━━━━━━━━", attackDetailMessage);
+    }
     musou.lastActionRewardGranted = rewardGranted;
 
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
@@ -33717,8 +33775,7 @@ function processPetMusouTimeout(data, petData, guildData) {
     musou.players[attacker].attacksLeft = 0;
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
-    var message = "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.\n" +
-        "🗡️펫 무쌍 대회 결과🗡️[시간 초과⚠️]\n" +
+    var message = "🗡️펫 무쌍 대회 결과🗡️[시간 초과⚠️]\n" +
         "━━━━━━━━━━━━━━━━\n" +
         "공격 보상🤑: 미지급\n" +
         "벼락 판정⚡: 판정 없음\n\n" +
