@@ -55,6 +55,14 @@ If the task branch contains unrelated commits, cherry-pick only the validated ta
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.
 
+After verifying the pushed `origin/feature/prod`, update every corresponding Notion READY/HOTFIX item as one operation:
+
+- set `상태` to `🧪 DEV`
+- set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`)
+- set `운영반영버전` to the exact `ver_<HoiBotVersion>` verified in production
+
+Verify all three properties after updating. Do not write the date or version before remote production verification. If one production change implements multiple linked Notion items, apply the same verified production version to each corresponding item. Report any partial failure rather than claiming the Notion update completed.
+
 After verifying the pushed `origin/feature/prod`, when the PlayMCP KakaoTalk
 `나에게 보내기` tool is available, use the `hoibot-playmcp-version-notifier`
 skill when available and send exactly `ver_<HoiBotVersion>`. Do not

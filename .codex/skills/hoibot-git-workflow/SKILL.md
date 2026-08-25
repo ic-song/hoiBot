@@ -43,10 +43,10 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - If the user provides a screenshot or visible board card title, search that exact title within the confirmed data source, fetch the matching page, and verify its `상태` property.
 - If multiple Notion READY/HOTFIX items are found and the user did not specify one, ask which item to implement before editing.
 - Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only; leave the Notion property blank and preserve explicit values.
-- Keep `운영 반영예정일` separate from the date-type `운영반영일`; never store `즉시 반영 필요` in `운영반영일`.
-- After a Notion READY/HOTFIX development item is implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update that Notion item status from READY/HOTFIX to DEV and set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
-- Treat the Notion `상태` change and `운영반영일` update as one operation, verify both values, and report any partial failure.
-- Do not move the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` before production reflection is complete.
+- Keep `운영 반영예정일` separate from the date-type `운영반영일` and text-type `운영반영버전`; never store `즉시 반영 필요` in either actual-reflection property.
+- After a Notion READY/HOTFIX development item is implemented, validated, pushed on the source branch, reflected into `feature/prod`, and verified on `origin/feature/prod`, update that Notion item status from READY/HOTFIX to DEV, set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`), and set `운영반영버전` to `ver_<HoiBotVersion>` from the verified production commit.
+- Treat the Notion `상태`, `운영반영일`, and `운영반영버전` updates as one operation, verify all three values, and report any partial failure.
+- Do not move the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` or `운영반영버전` before remote production reflection is verified.
 
 ## Starting Work On A Branch
 
@@ -83,9 +83,10 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 11. Reflect only the validated work into `feature/prod` by merge, cherry-pick, or approved PR-style merge flow.
 12. Push `feature/prod`.
 13. Re-check `origin/feature/prod` and confirm the reflected production-facing commit includes the developer-note/version update; report the reflected `/개발자노트` version.
-14. After the remote `feature/prod` verification succeeds, use the `hoibot-playmcp-version-notifier` skill when available. When the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` and no other text. Do not send when production was not updated or verification failed. If the tool is unavailable, skip the notification without failing production reflection and report that it was skipped; if the available tool fails, retry once when safe and report the failure.
-15. If `.codex/skills/` changed, verify it matches `CODEX-CONFIG` and confirm the installed personal skill is a junction to the same canonical folder.
-16. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, which `/개발자노트` version is current, whether the KakaoTalk version notification succeeded, and whether local skills were updated.
+14. For every corresponding Notion READY/HOTFIX development item, update `상태 = 🧪 DEV`, `운영반영일` to the KST reflection date, and `운영반영버전 = ver_<HoiBotVersion>` only after step 13 succeeds. Treat and verify the three properties as one operation; when one production change implements multiple linked items, apply the same verified version to each.
+15. After the remote `feature/prod` verification succeeds, use the `hoibot-playmcp-version-notifier` skill when available. When the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` and no other text. Do not send when production was not updated or verification failed. If the tool is unavailable, skip the notification without failing production reflection and report that it was skipped; if the available tool fails, retry once when safe and report the failure.
+16. If `.codex/skills/` changed, verify it matches `CODEX-CONFIG` and confirm the installed personal skill is a junction to the same canonical folder.
+17. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, which `/개발자노트` version is current, which Notion items received the production date/version, whether the KakaoTalk version notification succeeded, and whether local skills were updated.
 
 ## Merge Versus Cherry-Pick
 
