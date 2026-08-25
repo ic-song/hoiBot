@@ -44,6 +44,7 @@ import { isMiniPetInventoryViewCommand, MiniPetInventoryViewNormalizeService } f
 import { formatMiniPetEquippedRank, isMiniPetEquippedRankReadCommand } from "./mini-pet/equipped-rank-read-command.js";
 import { formatMiniPetAdminInfo, readMiniPetAdminInfoTarget } from "./mini-pet/admin-info-read-command.js";
 import { formatMiniPetCollection, isMiniPetCollectionReadCommand } from "./mini-pet/collection-read-command.js";
+import { formatMiniPetCollectionRanking, isMiniPetCollectionRankingReadCommand, MiniPetCollectionRankingReadService } from "./mini-pet/collection-ranking-read-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1274,6 +1275,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             }
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetCollectionRankingReadCommand(normalizedEvent.message)
+        && database !== undefined) {
+        const result = await new MiniPetCollectionRankingReadService(database).refresh();
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent, "mini_pet_collection_ranking_read", formatMiniPetCollectionRanking(result)
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
