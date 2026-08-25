@@ -6122,3 +6122,56 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+# /마스터명단
+
+Status: VERIFIED
+
+## Files
+
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/admin/master-roster-service.ts`
+- `개발환경_고도화/runtime/migrations/072_admin_master_roster.sql`
+
+## Data Usage
+
+- `admin_operators`
+- `admin_operator_roles`
+- `admin_roles`
+- `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Exact operational-room command; requires `admin.master.roster.read` and stores the ordered reply and audit in one transaction.
+
+## AI Notes
+
+- Active `super_admin` operators are listed in stable `operator_id` order.
+- Suffix text does not execute.
+
+# /마스터제거, [아이디]
+
+Status: VERIFIED
+
+## Files
+
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/admin/master-roster-service.ts`
+- `개발환경_고도화/runtime/migrations/072_admin_master_roster.sql`
+
+## Data Usage
+
+- `player_profiles`, `external_identities`
+- `admin_operators`, `admin_operator_external_identities`
+- `admin_operator_roles`, `admin_roles`, `admin_sessions`
+- `admin_role_assignment_history`
+- `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+
+- Requires `admin.master.roster.revoke`; removes only the stable `super_admin` assignment and commits role history, session revocation when needed, audit, and outbox atomically.
+
+## AI Notes
+
+- A comma and one complete target name are required; appended guide text and trailing whitespace do not execute.
+- Self-removal and last-master removal remain allowed for legacy parity.
