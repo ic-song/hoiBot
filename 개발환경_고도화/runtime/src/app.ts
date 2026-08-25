@@ -51,6 +51,7 @@ import { isMiniPetForceUnequipCommand, MiniPetForceUnequipService } from "./mini
 import { isMiniPetCreationTicketCraftCommand, MiniPetCreationTicketCraftService } from "./mini-pet/creation-ticket-craft-service.js";
 import { isMiniPetTitleSelectCommand, MiniPetTitleSelectService } from "./mini-pet/title-select-service.js";
 import { isMiniPetTitleLifecycleCommand, MiniPetTitleLifecycleService } from "./mini-pet/title-lifecycle-service.js";
+import { isMiniPetTitleSaleCommand, MiniPetTitleSaleService } from "./mini-pet/title-sale-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1273,6 +1274,32 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             // 레거시와 동일하게 권한 또는 허용방 밖의 관리자 명령에는 응답하지 않습니다.
           } else if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_title_lifecycle_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetTitleSaleCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new MiniPetTitleSaleService(database).execute({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId,
+            message: normalizedEvent.message ?? "",
+            environmentCode: miniPetProjectionEnvironment
+          });
+          if (result.status === "sold") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          } else if ((result.status === "snapshot_required" || result.status === "sale_blocked") && result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_title_sale", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_title_sale_error", error.message));
           } else {
             throw error;
           }
