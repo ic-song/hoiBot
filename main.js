@@ -788,6 +788,7 @@ const GLOBAL_CONFIG = {
     },
     supportPass: { // 후원 패스 지급 설정
         diamondBoxCount: 20,
+        territoryPayoutLogMax: 500,
         territoryDailyRewards: [
             { name: "영지기습공격권🔥(40%)", count: 2 },
             { name: "영지절대방어권🛡(50%)", count: 2 }
@@ -881,8 +882,7 @@ const GLOBAL_CONFIG = {
         winnerRewardPoint: 2000000000,
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
-        lightningStepRate: 0.01,
-        payoutLogMax: 500
+        lightningStepRate: 0.01
     },
     petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
         gradeOrder: ["SS", "S", "A", "B", "C", "D"],
@@ -2904,6 +2904,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (msg === "/맞짱시작") {
             if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇" || isCastleSiegeRoomOperatorCommand(sender, msg))) return;
+            if (ensurePetMusouData(data).active) {
+                replier.reply("❌ 펫무쌍 진행 중에는 맞짱필드를 시작할 수 없습니다.");
+                return;
+            }
             if (room !== room8) {
                 replier.reply("맞짱필드👊는 공성전 방에서만 시작할 수 있습니다.");
                 return;
@@ -13987,6 +13991,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
+                    if (ensurePetMusouData(data).active) {
+                        replier.reply("❌ 펫무쌍 진행 중에는 길드 영지전을 시작할 수 없습니다.");
+                        return;
+                    }
                     var startWar = ensureGuildTerritoryWar(data, guildData);
                     if (startWar.active) {
                         replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
@@ -33309,11 +33317,6 @@ function isPetMusouOperator(sender) {
     return isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇";
 }
 
-// 펫무쌍 운영 명령어 형식인지 확인하는 함수
-function isPetMusouOperatorCommandMessage(msg) {
-    return msg === "/펫무쌍시작" || msg === "/펫무쌍종료";
-}
-
 // 펫무쌍 진행 중 일반 유저에게 허용할 명령어인지 확인하는 함수
 function isPetMusouAllowedDuringTournamentCommand(msg) {
     return msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
@@ -34156,7 +34159,7 @@ function appendTerritoryPassPayoutLogs(data, result, operator) {
             duplicateKey: today + ":" + result.skippedUsers[skippedIndex]
         });
     }
-    var logMax = GLOBAL_CONFIG.petMusou.payoutLogMax;
+    var logMax = GLOBAL_CONFIG.supportPass.territoryPayoutLogMax;
     if (data.supportPassPayoutLogs.length > logMax) {
         data.supportPassPayoutLogs.splice(0, data.supportPassPayoutLogs.length - logMax);
     }
@@ -34717,12 +34720,13 @@ function processUserIDCommand(msg, data, operator) {
         var passStore = ensureSupportPassStore(data, userIDText);
         var previousPass = passStore[passConfig.key] || {};
         var beforeActive = previousPass.enabled === true;
-        passStore[passConfig.key] = {
+        var nextPass = {
             enabled: true,
             endDate: option === "영구권" ? "" : option,
-            permanent: option === "영구권",
-            dailyRewardLastDate: previousPass.dailyRewardLastDate || ""
+            permanent: option === "영구권"
         };
+        if (passConfig.key === "territory") nextPass.dailyRewardLastDate = previousPass.dailyRewardLastDate || "";
+        passStore[passConfig.key] = nextPass;
         if (passConfig.key === "territory") {
             passStore[passConfig.key].createdAt = previousPass.createdAt || formatDateTime(new Date());
             passStore[passConfig.key].updatedAt = formatDateTime(new Date());
