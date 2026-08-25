@@ -1,0 +1,118 @@
+import assert from "node:assert/strict";
+import { after, before, describe, it } from "node:test";
+import { createDatabaseClient, type DatabaseClient } from "../src/database.js";
+
+const configured = ["DATABASE_HOST", "DATABASE_PORT", "DATABASE_USER", "DATABASE_PASSWORD", "DATABASE_NAME"]
+  .every((name) => Boolean(process.env[name]));
+const required = (name: string): string => process.env[name] ?? "integration-test-not-configured";
+let database: DatabaseClient;
+
+const EXPECTED_SOURCE_COMMANDS = [
+  { packageId: "PKG-078", command: "/고생하셨습니다" },
+  { packageId: "PKG-088", command: "/길드창고패키지오픈" },
+  { packageId: "PKG-093", command: "/낚시오픈" },
+  { packageId: "PKG-097", command: "/도파민오픈1" },
+  { packageId: "PKG-098", command: "/도파민오픈2" },
+  { packageId: "PKG-100", command: "/로열오픈" },
+  { packageId: "PKG-103", command: "/미강오픈" },
+  { packageId: "PKG-105", command: "/미니펫오픈" },
+  { packageId: "PKG-156", command: "/창조오픈" },
+  { packageId: "PKG-157", command: "/초보오픈1" },
+  { packageId: "PKG-158", command: "/초보오픈2" },
+  { packageId: "PKG-159", command: "/초보오픈3" },
+  { packageId: "PKG-160", command: "/초보오픈4" },
+  { packageId: "PKG-161", command: "/초보오픈5" },
+  { packageId: "PKG-162", command: "/초보오픈6" },
+  { packageId: "PKG-165", command: "/컬렉션창세오픈" },
+  { packageId: "PKG-166", command: "/컬렉션창조오픈" },
+  { packageId: "PKG-186", command: "/펫탐험오픈1" },
+  { packageId: "PKG-188", command: "/해피할로윈오픈시펫외형이바뀝니다안에는어마어마한상품이있습니다" },
+  { packageId: "PKG-201", command: "/홈패키지오픈2" },
+  { packageId: "PKG-203", command: "/홈패키지오픈테스트" },
+  { packageId: "PKG-204", command: "/황제패키지오픈3" },
+  { packageId: "PKG-206", command: "/이랏싸이마쎄" },
+  { packageId: "PKG-207", command: "/극락오픈" },
+  { packageId: "PKG-208", command: "/나락오픈" },
+  { packageId: "PKG-209", command: "/루비오픈" },
+  { packageId: "PKG-210", command: "/루키오픈" },
+  { packageId: "PKG-211", command: "/마스터오픈" },
+  { packageId: "PKG-212", command: "/미니오픈테스트" },
+  { packageId: "PKG-213", command: "/다이아오픈" },
+  { packageId: "PKG-214", command: "/랜덤오픈" },
+  { packageId: "PKG-215", command: "/상자오픈" },
+  { packageId: "PKG-CHICKEN-BOX", command: "/치킨오픈" },
+  { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
+] as const;
+
+(configured ? describe : describe.skip)("package catalog source command seed", () => {
+  before(() => {
+    database = createDatabaseClient({
+      enabled: true,
+      host: required("DATABASE_HOST"),
+      port: Number(required("DATABASE_PORT")),
+      user: required("DATABASE_USER"),
+      password: required("DATABASE_PASSWORD"),
+      name: required("DATABASE_NAME"),
+      connectionLimit: 2,
+      connectTimeoutMs: 5_000,
+    });
+  });
+
+  after(async () => database.close());
+
+  it("stores all 34 legacy commands on catalog rows without executable aliases", async () => {
+    const rows = await database.query<Array<{
+      package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
+    }>>(
+      `SELECT catalog.package_id,catalog.source_legacy_command,catalog.enabled,
+              COUNT(alias_row.command_text) AS alias_count
+       FROM package_catalog catalog
+       LEFT JOIN package_command_aliases alias_row ON alias_row.package_id=catalog.package_id
+       WHERE catalog.source_legacy_command IS NOT NULL
+       GROUP BY catalog.package_id,catalog.source_legacy_command,catalog.enabled
+       ORDER BY catalog.package_id`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      packageId: row.package_id,
+      command: row.source_legacy_command,
+    })), [...EXPECTED_SOURCE_COMMANDS].sort((left, right) => left.packageId.localeCompare(right.packageId)));
+    assert.ok(rows.every((row) => Number(row.enabled) === 0));
+    assert.ok(rows.every((row) => Number(row.alias_count) === 0));
+  });
+
+  it("keeps only the package bag and package use commands executable", async () => {
+    const rows = await database.query<Array<{ command_text: string }>>(
+      `SELECT alias_row.command_text
+       FROM command_aliases alias_row
+       JOIN command_registry registry ON registry.command_code=alias_row.command_code
+       WHERE registry.command_code IN ('PACKAGE_BAG','PACKAGE_USE') AND alias_row.active=1
+       ORDER BY alias_row.command_text`,
+    );
+    assert.deepEqual(rows.map((row) => row.command_text), ["/패키지가방", "/패키지사용"]);
+  });
+
+  it("seeds the three newly cataloged packages and their exact reward shapes", async () => {
+    const rows = await database.query<Array<{
+      package_id: string; rule_mode: string; reward_count: bigint; weight_total: string | null;
+    }>>(
+      `SELECT catalog.package_id,rule.rule_mode,COUNT(*) AS reward_count,
+              CAST(SUM(rule.weight) AS CHAR) AS weight_total
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id IN ('PKG-213','PKG-214','PKG-215')
+       GROUP BY catalog.package_id,rule.rule_mode
+       ORDER BY catalog.package_id`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      packageId: row.package_id,
+      mode: row.rule_mode,
+      count: Number(row.reward_count),
+      weight: row.weight_total === null ? null : Number(row.weight_total),
+    })), [
+      { packageId: "PKG-213", mode: "ALL", count: 3, weight: null },
+      { packageId: "PKG-214", mode: "WEIGHTED_ONE", count: 6, weight: 1.0000000002 },
+      { packageId: "PKG-215", mode: "WEIGHTED_ONE", count: 4, weight: 1 },
+    ]);
+  });
+});
+
