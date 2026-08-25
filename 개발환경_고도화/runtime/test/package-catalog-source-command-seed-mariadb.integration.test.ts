@@ -52,6 +52,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-ENHANCE-DUNGEON-BOX", command: "/강화박스오픈" },
   { packageId: "PKG-GUILD-RAID-DUNGEON-BOX", command: "/레이드박스오픈" },
   { packageId: "PKG-JEONDOR-DUNGEON-BOX", command: "/전도르박스오픈" },
+  { packageId: "PKG-JUNK-BOX", command: "/잡템오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
   { packageId: "PKG-LUCKY-BOX", command: "/행운의박스오픈" },
   { packageId: "PKG-PET-FOOD-DUNGEON-BOX", command: "/펫먹이박스오픈" },
@@ -74,7 +75,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 48 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 49 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -472,6 +473,32 @@ const EXPECTED_SOURCE_COMMANDS = [
 
     const executableRows = await database.query<Array<{ command_text: string }>>(
       `SELECT command_text FROM command_aliases WHERE command_text='/선물오픈'`,
+    );
+    assert.deepEqual(executableRows, []);
+  });
+
+  it("stores junk boxes as siege-blocked inclusive 5 to 10 rewards", async () => {
+    const rows = await database.query<Array<{
+      consume_item_id: string; item_id: string; rule_mode: string; range_min: bigint;
+      range_max: bigint; range_step: bigint; block_castle: number; alias_count: bigint;
+    }>>(
+      `SELECT catalog.consume_item_id,rule.item_id,rule.rule_mode,rule.range_min,
+              rule.range_max,rule.range_step,catalog.block_castle,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id='PKG-JUNK-BOX'`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      consumeItemId: row.consume_item_id, rewardItemId: row.item_id, mode: row.rule_mode,
+      range: [Number(row.range_min), Number(row.range_max), Number(row.range_step)],
+      blockCastle: Number(row.block_castle), aliases: Number(row.alias_count),
+    })), [{ consumeItemId: "junk_box", rewardItemId: "junk", mode: "UNIFORM_RANGE",
+      range: [5, 10, 1], blockCastle: 1, aliases: 0 }]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases WHERE command_text='/잡템오픈'`,
     );
     assert.deepEqual(executableRows, []);
   });
