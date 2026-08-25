@@ -36,18 +36,24 @@
       "home-upgrade fixture 2회 적용 통과",
       "preview, execute, identical-event replay 통과",
       "pet write fault에서 home/pet/inventory/ledger 전체 rollback 통과",
-      "MariaDB 프로세스 재기동 후 replay와 집1, petExp100, ledger2 유지"
+      "MariaDB 프로세스 재기동 후 replay와 집1, petExp100, ledger2 유지",
+      "preview pending 저장 후 MariaDB 실제 재기동, execute 완료와 pending consumed 확인",
+      "경계·취소·동시성·TTL·home/pet/outbox fault parity 18/18 통과"
     ],
     "result": "passed"
   },
   "logicPort": {
     "services": ["runtime/src/home/home-upgrade-service.ts", "runtime/src/app.ts"],
-    "tests": ["typecheck", "focused 3/3", "full 213/213", "build", "isolated MariaDB probe", "rollback fault", "restart replay", "Shadow 6/6"],
+    "tests": ["typecheck", "focused 3/3", "full 213/213", "build", "isolated MariaDB probe", "parity 18/18", "rollback faults", "restart replay", "pending restart", "Shadow 6/6"],
     "result": "passed"
   },
   "parity": {
     "result": "passed_with_approval_required_safe_difference",
     "normal": "preview, execute, cancel exact aliases preserved",
+    "boundary": "max, lack, new home, no pending, material recheck, stale home/pet/definition, expiry 검증",
+    "transaction": "home, pet, inventory, ledger, pending, audit, outbox fault에서 atomic rollback 검증",
+    "idempotency": "preview와 execute 동일 event 결과 재사용 및 동시 execute 단일 consume 검증",
+    "restart": "pending과 committed result 모두 MariaDB 실제 재기동 뒤 복구 검증",
     "approvedDifferences": ["pending 15 minute TTL", "stale definition/home/pet invalidation", "pet experience durable atomic write"]
   },
   "cutover": {
@@ -61,7 +67,9 @@
     "sourceReadOnly": true,
     "liveTraffic": false,
     "productionData": false,
-    "shadowPassCount": 6
+    "shadowPassCount": 6,
+    "parityPassCount": 18,
+    "pendingRestart": "passed"
   },
   "risks": ["full snapshot reconciliation, backup/restore and approved live smoke remain Gate8"]
 }
