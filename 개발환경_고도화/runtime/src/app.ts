@@ -48,6 +48,7 @@ import { formatMiniPetCollectionRanking, isMiniPetCollectionRankingReadCommand, 
 import { isMiniPetOwnedSaleCommand, MiniPetOwnedSaleService } from "./mini-pet/owned-sale-service.js";
 import { isMiniPetBulkSaleCommand, MiniPetBulkSaleService } from "./mini-pet/bulk-sale-service.js";
 import { isMiniPetForceUnequipCommand, MiniPetForceUnequipService } from "./mini-pet/force-unequip-service.js";
+import { isMiniPetCreationTicketCraftCommand, MiniPetCreationTicketCraftService } from "./mini-pet/creation-ticket-craft-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1218,6 +1219,32 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_rename_ticket_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetCreationTicketCraftCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new MiniPetCreationTicketCraftService(database).execute({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId,
+            message: normalizedEvent.message ?? "",
+            environmentCode: miniPetProjectionEnvironment
+          });
+          if (result.status === "crafted") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          } else if (result.status === "snapshot_required" && result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_creation_ticket_craft", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_creation_ticket_craft_error", error.message));
           } else {
             throw error;
           }
