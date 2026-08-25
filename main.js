@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.404"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.405"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -879,12 +879,15 @@ const GLOBAL_CONFIG = {
         flagCount: 10,
         attackLimit: 3,
         startGraceMs: 30000,
-        turnTimeoutMs: 10000,
+        turnTimeoutMs: 15000,
         attackRewardPoint: 200000000,
         winnerRewardPoint: 2000000000,
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
-        lightningStepRate: 0.01
+        lightningStepRate: 0.01,
+        items: {
+            lightningRod: "피뢰침⚡(자동 벼락 방지)"
+        }
     },
     petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
         gradeOrder: ["SS", "S", "A", "B", "C", "D"],
@@ -2801,10 +2804,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat);
         petMusou = ensurePetMusouData(data);
         if (isPetMusouBlockedDuringTournamentCommand(petMusou, msg, sender)) {
-            replier.reply(
-                "🗡️ 펫무쌍 대회 진행 중에는 펫무쌍 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /펫무쌍공격 [1-10], /무쌍순위"
-            );
             return;
         }
         commonStepStart = Date.now();
@@ -2826,14 +2825,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
-        if (msg === "/펫무쌍참가") {
+        if (msg === "/펫무쌍준비") {
             var petMusouJoinResult = joinPetMusou(data, petData, guildData, sender);
             if (petMusouJoinResult.ok) saveJsonFile(data, filePath);
             replier.reply(petMusouJoinResult.message);
             return;
         }
         if (msg === "/펫무쌍시작") {
-            if (!isPetMusouOperator(sender)) {
+            if (!isPetMusouStartOperator(sender)) {
                 replier.reply("❌ /펫무쌍시작 명령어를 사용할 권한이 없습니다.");
                 return;
             }
@@ -2873,6 +2872,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             saveJsonFile(data, filePath);
             castleMsg(petMusouAttackResult.message, replier, isGroupChat);
+            if (petMusouAttackResult.lightningMessage) castleMsg(petMusouAttackResult.lightningMessage, replier, isGroupChat);
             if (petMusouAttackResult.ended) {
                 noticeMsg(petMusouAttackResult.finishMessage);
                 return;
@@ -33338,6 +33338,12 @@ function isPetMusouOperator(sender) {
     return isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇";
 }
 
+// 펫무쌍 시작 명령에 오픈채팅봇과 명령어방 MASTER 권한을 허용하는 함수
+function isPetMusouStartOperator(sender) {
+    var permissionRoom = getCurrentContext().permissionRoom;
+    return sender === "오픈채팅봇" || isMaster(sender) || (permissionRoom === room8 && Master.includes(sender));
+}
+
 // 펫무쌍 진행 중 일반 유저에게 허용할 명령어인지 확인하는 함수
 function isPetMusouAllowedDuringTournamentCommand(msg) {
     return msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
@@ -33347,6 +33353,7 @@ function isPetMusouAllowedDuringTournamentCommand(msg) {
 function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
     if (!musou || !musou.active || typeof msg !== "string" || msg.indexOf("/") !== 0) return false;
     if (isPetMusouOperator(sender)) return false;
+    if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
     return !isPetMusouAllowedDuringTournamentCommand(msg);
 }
 
@@ -33414,10 +33421,11 @@ function joinPetMusou(data, petData, guildData, sender) {
             "펫무쌍 규칙 상세보기\n" + allsee +
             "1. 대회 시작: 운영자 수동 시작\n" +
             "2. 개인 공격: 최대 3회\n" +
-            "3. 공격 제한시간: 10초\n" +
-            "4. 가짜 깃발·시간 초과·벼락 시 탈락\n" +
-            "5. 종합매력은 대회 시작 시점 기준\n" +
-            "6. 최종 점령자 우승"
+            "3. 공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n" +
+            "4. 처음 발견한 가짜 깃발은 공격권만 1회 차감\n" +
+            "5. 공개된 가짜 재공격·시간 초과·벼락 시 탈락\n" +
+            "6. 종합매력은 대회 시작 시점 기준\n" +
+            "7. 최종 점령자 우승"
     };
 }
 
@@ -33479,7 +33487,8 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
             "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
             "10개의 깃발 중 진짜 깃발은 단 1개!\n" +
-            "가짜 깃발을 공격하면 즉시 탈락합니다.\n\n" +
+            "처음 발견한 가짜 깃발은 공격권만 차감됩니다.\n" +
+            "공개된 가짜를 다시 공격하면 즉시 탈락합니다.\n\n" +
             "⚡ 최초 누적 벼락발생확률: 1.0%\n" +
             "━━━━━━━━━━━━━━━━\n" +
             "펫무쌍 공격은 공성전 방에서만 가능합니다.\n" +
@@ -33614,13 +33623,31 @@ function processPetMusouLightning(musou, data, petData, guildData) {
     }
     var targetCount = Math.floor(Math.random() * 3) + 1;
     var targets = shufflePetMusouUsers(aliveUsers).slice(0, Math.min(targetCount, aliveUsers.length));
-    var lines = ["🗡️펫 무쌍 대회 결과🗡️[벼락 발생⚡]", "우루루⚡ 캉캉캉⚡ 뿌라찌랴쨖쨖⚡", "━━━━━━━━━━━━", "벼락 판정⚡: [⚡]벼락 발생!", "━━━━━━━━━━━━", "└ 벼락 탈락 인원: " + targets.length + "명"];
+    var eliminatedTargets = []; // 피뢰침 방어 후 실제 벼락으로 탈락한 유저
+    var protectedTargets = []; // 피뢰침 1개를 자동 소모하고 생존한 유저
     for (var targetIndex = 0; targetIndex < targets.length; targetIndex++) {
         var target = targets[targetIndex];
+        var targetBag = data.member[target] && data.member[target].bag ? data.member[target].bag : null;
+        var lightningRodName = GLOBAL_CONFIG.petMusou.items.lightningRod;
+        if (targetBag && Number(targetBag[lightningRodName]) > 0) {
+            decreaseGuildTerritoryItem(data, target, lightningRodName);
+            protectedTargets.push(target);
+            continue;
+        }
         musou.players[target].alive = false;
         musou.players[target].attacksLeft = 0;
         if (musou.currentHolder === target) musou.currentHolder = "";
-        lines.push("  └[" + checkRank(data, petData, guildData, target) + "] 님이 객사(탈락)");
+        eliminatedTargets.push(target);
+    }
+    var lines = ["🗡️펫 무쌍 대회 결과🗡️[벼락 발생⚡]", "우루루⚡ 캉캉캉⚡ 뿌라찌랴쨖쨖⚡", "━━━━━━━━━━━━", "벼락 판정⚡: [⚡]벼락 발생!", "━━━━━━━━━━━━", "└ 벼락 탈락 인원: " + eliminatedTargets.length + "명"];
+    for (var eliminatedIndex = 0; eliminatedIndex < eliminatedTargets.length; eliminatedIndex++) {
+        lines.push("  └[" + checkRank(data, petData, guildData, eliminatedTargets[eliminatedIndex]) + "] 님이 객사(탈락)");
+    }
+    if (protectedTargets.length > 0) {
+        lines.push("━━━━━━━━━━━━", "└ 피뢰침 방어 인원: " + protectedTargets.length + "명");
+        for (var protectedIndex = 0; protectedIndex < protectedTargets.length; protectedIndex++) {
+            lines.push("  └[" + checkRank(data, petData, guildData, protectedTargets[protectedIndex]) + "] 피뢰침 1개 소모 · 생존");
+        }
     }
     musou.turnQueue = musou.turnQueue.filter(function (queuedUser) {
         return musou.players[queuedUser] && musou.players[queuedUser].alive && musou.players[queuedUser].attacksLeft > 0 && queuedUser !== musou.currentHolder;
@@ -33628,7 +33655,7 @@ function processPetMusouLightning(musou, data, petData, guildData) {
     musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
     lines.push("━━━━━━━━━━━━");
     lines.push("누적 벼락발생확률이 1.0%로 초기화됩니다.");
-    return { triggered: true, targets: targets, message: lines.join("\n") };
+    return { triggered: true, targets: targets, eliminatedTargets: eliminatedTargets, protectedTargets: protectedTargets, message: lines.join("\n") };
 }
 
 // 펫무쌍 방어권→공격권→종합매력 순서로 점령 결투를 판정하는 함수
@@ -33688,7 +33715,7 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
     var attacker = getPetMusouCurrentAttacker(musou);
     if (!attacker) return "";
     var player = musou.players[attacker];
-    var lines = ["[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", "[⏳ 제한시간: 10초]", "[남은 공격(" + player.attacksLeft + "/" + GLOBAL_CONFIG.petMusou.attackLimit + "⚔)]", "[⚡ 누적 벼락발생확률: " + (musou.lightningRate * 100).toFixed(1) + "%]", "━━━━━━━━━━━━━━━━", "🗡️현재 펫 무쌍 대회 상황🗡️", "━━━━━━━━━━━━"];
+    var lines = ["[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", "[⏳ 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초]", "[남은 공격(" + player.attacksLeft + "/" + GLOBAL_CONFIG.petMusou.attackLimit + "⚔)]", "[⚡ 누적 벼락발생확률: " + (musou.lightningRate * 100).toFixed(1) + "%]", "━━━━━━━━━━━━━━━━", "🗡️현재 펫 무쌍 대회 상황🗡️", "━━━━━━━━━━━━"];
     for (var flagNo = 1; flagNo <= GLOBAL_CONFIG.petMusou.flagCount; flagNo++) {
         var stateText = "미확인(❓)";
         if (musou.realFlagFound && flagNo === musou.realFlagNo) {
@@ -33743,9 +33770,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
             lines.push("공격 보상🤑: 🅟2억", "", "[진짜 깃발 발견🚩]", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
         } else {
             musou.fakeFlags[String(flagNo)] = true;
-            musou.players[sender].alive = false;
-            musou.players[sender].attacksLeft = 0;
-            lines.push("공격 보상🤑: 🅟2억", "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님은 즉시 탈락합니다.");
+            lines.push("공격 보상🤑: 🅟2억", "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 공격권 1회가 차감되었습니다.");
         }
     } else if (flagNo !== musou.realFlagNo) {
         musou.players[sender].alive = false;
@@ -33774,7 +33799,8 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     }
     lines[0] += attackSucceeded ? "[성공✅]" : "[실패❌]";
     var lightningResult = processPetMusouLightning(musou, data, petData, guildData);
-    lines.push("━━━━━━━━━━━━", lightningResult.message);
+    var lightningMessage = lightningResult.triggered ? lightningResult.message : ""; // 실제 벼락 발생 문구는 공격 결과와 분리해 전송
+    if (!lightningResult.triggered) lines.push("━━━━━━━━━━━━", lightningResult.message);
     if (!hasBattleDetail) {
         var attackDetailMessage = buildPetMusouAttackDetailMessage(data, petData, guildData, musou, sender);
         if (attackDetailMessage) lines.push("━━━━━━━━━━━━", attackDetailMessage);
@@ -33784,9 +33810,9 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
     if (shouldFinishPetMusou(musou)) {
         var finishResult = finishPetMusou(data, petData, guildData, "공격 가능 횟수 소진");
-        return { ok: true, ended: true, message: lines.join("\n"), finishMessage: finishResult.message };
+        return { ok: true, ended: true, message: lines.join("\n"), lightningMessage: lightningMessage, finishMessage: finishResult.message };
     }
-    return { ok: true, ended: false, message: lines.join("\n"), statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou) };
+    return { ok: true, ended: false, message: lines.join("\n"), lightningMessage: lightningMessage, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou) };
 }
 
 // 펫무쌍 현재 공격자의 제한시간 초과를 처리하는 함수
@@ -33803,7 +33829,7 @@ function processPetMusouTimeout(data, petData, guildData) {
         "━━━━━━━━━━━━━━━━\n" +
         "공격 보상🤑: 미지급\n" +
         "벼락 판정⚡: 판정 없음\n\n" +
-        "10초 이내에 공격하지 않아 즉시 탈락합니다.\n" +
+        Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초 이내에 공격하지 않아 즉시 탈락합니다.\n" +
         "남은 공격권이 모두 소멸했습니다.";
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
     if (shouldFinishPetMusou(musou)) {
@@ -33831,7 +33857,6 @@ function openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat) 
     musou.startGraceToken = "";
     musou.startGraceDeadlineAt = 0;
     startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
-    noticeMsg("🗡️ 펫 무쌍 대회 공격 시작! 🗡️\n━━━━━━━━━━━━━━━━\n" + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 준비 시간이 끝났습니다.\n첫 공격자의 차례를 시작합니다.");
     castleMsg(buildPetMusouStatusMessage(data, petData, guildData, musou), replier, isGroupChat);
     return true;
 }
