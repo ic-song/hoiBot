@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-MINIPET-EQUIPPED-RANK-READ",
+  "status": "shadow_verified",
+  "execution": {
+    "executionId": "개발자-SL-MINIPET-EQUIPPED-RANK-READ-20260825-G3G7",
+    "claimRow": 1228,
+    "branch": "codex/modernization-minipet-equipped-rank-read-20260825",
+    "baseCommit": "b597eab39c00bc7f3a084a37c6c0bd499f5fbb57"
+  },
+  "commands": {
+    "names": ["/미니펫순위"],
+    "guard": "exact equality",
+    "wbsRow": 361,
+    "dbRow": 1429,
+    "validationRows": ["4073:4078", "8027:8032"]
+  },
+  "legacyData": {
+    "inputs": ["member_pet.json equipped miniPet", "member.json and guild display projection"],
+    "preservedBehavior": ["equipped only", "battle EXP descending", "sequential rank", "title-only empty result", "allsee before row 11"]
+  },
+  "database": {
+    "migration": "053_minipet_catalog_projection.sql",
+    "tables": ["mini_pet_owned_snapshot_versions", "mini_pet_owned_read_snapshots", "mini_pet_owner_read_snapshots", "mini_pet_catalog_snapshots", "mini_pet_catalog_entries", "mini_pet_read_executions", "operations", "command_executions", "command_audit"],
+    "stableIdentity": "immutable owned snapshot version plus owned_mini_pet_id"
+  },
+  "trialMigration": {
+    "fresh": 45,
+    "reapply": 45,
+    "fixture": "mini-pet-equipped-rank-v1 twice",
+    "port": 33313
+  },
+  "logicPort": {
+    "files": ["runtime/src/mini-pet/catalog-projection-service.ts", "runtime/src/mini-pet/maria-catalog-projection-repository.ts", "runtime/src/mini-pet/equipped-rank-read-command.ts", "runtime/src/app.ts"],
+    "tests": ["focused", "full", "typecheck", "build", "MariaDB probe", "forced rollback", "restart Shadow"]
+  },
+  "parity": {
+    "result": "passed",
+    "snapshotPinned": true,
+    "stableTie": true,
+    "idempotentReplay": true,
+    "rollbackVerified": true,
+    "restartVerified": true
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "legacyMainChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate 8 requires separate operational approval.",
+    "Other mini-pet projections consume the shared catalog provider in separate WBS slices."
+  ]
+}

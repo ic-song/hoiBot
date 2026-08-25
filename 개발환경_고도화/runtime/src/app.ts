@@ -1,6 +1,9 @@
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import cookie from "@fastify/cookie";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
+import { MiniPetCatalogProjectionService } from "./mini-pet/catalog-projection-service.js";
+import { MariaMiniPetCatalogProjectionRepository } from "./mini-pet/maria-catalog-projection-repository.js";
+import { registerMiniPetCatalogProjectionRoutes } from "./mini-pet/catalog-projection-routes.js";
 import type { AppConfig } from "./config.js";
 import type { DatabaseClient } from "./database.js";
 import { RecentEventStore } from "./recent-events.js";
@@ -38,6 +41,7 @@ import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-cre
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isYakitoriPackageUseCommand, YakitoriPackageUseService } from "./mini-pet/yakitori-package-use-service.js";
 import { isMiniPetInventoryViewCommand, MiniPetInventoryViewNormalizeService } from "./mini-pet/inventory-view-normalize-service.js";
+import { formatMiniPetEquippedRank, isMiniPetEquippedRankReadCommand } from "./mini-pet/equipped-rank-read-command.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -360,6 +364,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((event: NormalizedIrisEvent) => new IrisChannelPolicyInspector(config.irisBaseUrl)
       .inspect(event, designatedChannelIds, diagnosticChannelIds, config.irisOpenChatObservationMode));
   const database = dependencies.database;
+  const miniPetProjectionEnvironment = config.nodeEnv === "production" ? "prod" : "dev";
+  const miniPetCatalogProjection = database === undefined ? undefined
+    : new MiniPetCatalogProjectionService(
+      new MariaMiniPetCatalogProjectionRepository(database), miniPetProjectionEnvironment
+    );
   const guildTerritoryReadModel = dependencies.guildTerritoryReadModel
     ?? (database === undefined ? undefined
       : new GuildTerritoryReadModelService(new MariaGuildTerritoryReadModelRepository(database)));
@@ -393,6 +402,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     registerGuildTerritoryRoutes(app, { service: guildTerritoryReadModel, tokenGuard });
   }
   if (database !== undefined) {
+    registerMiniPetCatalogProjectionRoutes(app, { service: miniPetCatalogProjection!, tokenGuard });
     const profiles = new MariaProfileRepository(database);
     void registerAdminRoutes(app, {
       auth: new AdminAuthService(database),
@@ -1202,6 +1212,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_rename_ticket_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetEquippedRankReadCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await miniPetCatalogProjection!.readLatestEquippedRank({
+            environmentCode: miniPetProjectionEnvironment,
+            providerEventId: normalizedEvent.eventId
+          });
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent, "mini_pet_equipped_rank_read", formatMiniPetEquippedRank(result.owned)
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "mini_pet_equipped_rank_read", error.message
+            ));
           } else {
             throw error;
           }
