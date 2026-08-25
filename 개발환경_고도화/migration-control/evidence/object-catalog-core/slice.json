@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-COMMON-OBJECT-CATALOG-CORE",
+  "status": "shadow_validated",
+  "execution": {
+    "executionId": "개발자-SL-COMMON-OBJECT-CATALOG-CORE-20260825-INTEGRATION",
+    "claimRow": 1224,
+    "branch": "codex/modernization-object-catalog-core-20260825",
+    "claim": "슬라이스_선점!1224"
+  },
+  "commands": {
+    "names": ["PROVIDER:object-catalog-core"],
+    "dispatch": "internal provider only"
+  },
+  "legacyData": {
+    "sources": [
+      "itemInfo", "itemList", "member_pet", "member_title",
+      "miniPet*", "packageInfo", "pet_title", "petSweetHomeInfo"
+    ],
+    "productionMutation": false
+  },
+  "database": {
+    "migration": "049_object_catalog_core.sql",
+    "tables": [
+      "object_registry", "object_aliases",
+      "object_source_bindings", "object_catalog_change_log"
+    ],
+    "objectTypes": [
+      "ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY"
+    ]
+  },
+  "trialMigration": {
+    "fixture": "object-catalog-v1.sql",
+    "fresh": "passed",
+    "reapply": "passed",
+    "rollback": "passed",
+    "restart": "passed"
+  },
+  "logicPort": {
+    "service": "src/catalog/object-catalog.ts",
+    "repository": "src/catalog/maria-object-catalog-repository.ts",
+    "identityRule": "definition object_key is immutable; owned instance ID is separate; seq is display-only",
+    "tests": [
+      "object-catalog.test.ts 8/8",
+      "MariaDB probe 8/8 before and after restart",
+      "Shadow 6/6"
+    ]
+  },
+  "parity": {
+    "result": "passed",
+    "scenarios": 12,
+    "fixtureObjects": 8,
+    "activeObjectTypes": 7
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "featureProdChanged": false,
+    "mainJsChanged": false
+  },
+  "risks": [
+    "운영 legacy JSON backfill은 Gate 8 이전 별도 manifest 승인이 필요합니다.",
+    "owned item, pet, furniture instance 식별자는 후속 도메인 provider에서 definition key와 연결해야 합니다."
+  ]
+}
