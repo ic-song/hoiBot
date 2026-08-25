@@ -23,8 +23,8 @@ try {
       (SELECT stack.quantity FROM inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id WHERE stack.player_id = 960000384 AND item.code = 'pet_food') food,
       (SELECT balance FROM currency_accounts WHERE player_id = 960000384 AND currency_code = 'point') point`
   );
-  assert.deepEqual([rows[0]!.registrations.toString(), rows[0]!.pets.toString(), rows[0]!.food.toString(), rows[0]!.point], ["1", "1", "52100", "98000.000"]);
-  console.log(JSON.stringify({ shadow: "PASS", restartReplay: true, registrations: "1", rewardNotDuplicated: true }));
+  assert.deepEqual([rows[0]!.registrations.toString(), rows[0]!.pets.toString(), rows[0]!.food.toString(), rows[0]!.point], ["2", "2", "119100", "98000.000"]);
+  console.log(JSON.stringify({ shadow: "PASS", restartReplay: true, registrations: "2", rewardNotDuplicated: true }));
 } finally {
   await database.close();
 }

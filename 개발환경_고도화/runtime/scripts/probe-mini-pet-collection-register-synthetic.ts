@@ -69,6 +69,18 @@ try {
   assert.equal(confirmed.completedStage, 1);
   assert.deepEqual(confirmed.rewards, [{ itemCode: "pet_food", quantity: "52100" }]);
 
+  await addPet("collection-probe-concurrent", "합성창세", "genesis", "40000000-0000-4000-8000-000000000384", 1);
+  await event("collection-preview-concurrent-384");
+  const concurrentPreview = await service.handle({ ...base, eventId: "collection-preview-concurrent-384", message: "/컬렉션등록 1" });
+  await event("collection-confirm-concurrent-384");
+  const concurrentMessage = `/컬렉션등록 확인 ${concurrentPreview.confirmationToken}`;
+  const concurrent = await Promise.all([
+    service.handle({ ...base, eventId: "collection-confirm-concurrent-384", message: concurrentMessage }),
+    service.handle({ ...base, eventId: "collection-confirm-concurrent-384", message: concurrentMessage })
+  ]);
+  assert.deepEqual(concurrent[1], concurrent[0]);
+  assert.equal(concurrent[0].completedStage, 2);
+
   const state = await database.query<Array<{ pets: bigint; food: bigint; point: string; entries: bigint; titles: bigint; ledger: bigint }>>(
     `SELECT
       (SELECT COUNT(*) FROM owned_mini_pets WHERE player_id = ?) pets,
@@ -81,7 +93,7 @@ try {
   );
   assert.deepEqual({ pets: state[0]!.pets.toString(), food: state[0]!.food.toString(), point: state[0]!.point,
     entries: state[0]!.entries.toString(), titles: state[0]!.titles.toString(), ledger: state[0]!.ledger.toString() },
-  { pets: "0", food: "52100", point: "98000.000", entries: "2", titles: "1", ledger: "1" });
+  { pets: "0", food: "119100", point: "98000.000", entries: "3", titles: "2", ledger: "2" });
 
   await addPet("collection-probe-stale", "합성태초", "primordial", "30000000-0000-4000-8000-000000000384", 1);
   await event("collection-preview-stale-384");
@@ -93,16 +105,35 @@ try {
     "SELECT (SELECT COUNT(*) FROM owned_mini_pets WHERE player_id = ?) pets, (SELECT COUNT(*) FROM mini_pet_collection_registration_ledger WHERE player_id = ?) ledger",
     [playerId, playerId]
   );
-  assert.deepEqual([staleCount[0]!.pets.toString(), staleCount[0]!.ledger.toString()], ["1", "1"]);
+  assert.deepEqual([staleCount[0]!.pets.toString(), staleCount[0]!.ledger.toString()], ["1", "2"]);
 
   await event("collection-preview-cancel-384");
   const cancelPreview = await service.handle({ ...base, eventId: "collection-preview-cancel-384", message: "/컬렉션등록 1" });
   await event("collection-cancel-384");
   const cancelled = await service.handle({ ...base, eventId: "collection-cancel-384", message: `/컬렉션등록 취소 ${cancelPreview.confirmationToken}` });
   assert.equal(cancelled.status, "cancelled");
+  await addPet("collection-probe-late-rollback", "합성창조", "creation", "50000000-0000-4000-8000-000000000384", 2);
+  await event("collection-preview-late-rollback-384");
+  const latePreview = await service.handle({ ...base, eventId: "collection-preview-late-rollback-384", message: "/컬렉션등록 2" });
+  await assert.rejects(service.handle({ ...base, eventId: "collection-confirm-late-rollback-384",
+    message: `/컬렉션등록 확인 ${latePreview.confirmationToken}` }));
+  const lateState = await database.query<Array<{ registrations: bigint; pets: bigint; food: bigint; titles: bigint }>>(
+    `SELECT
+      (SELECT COUNT(*) FROM mini_pet_collection_registration_ledger WHERE player_id = ?) registrations,
+      (SELECT COUNT(*) FROM owned_mini_pets WHERE player_id = ?) pets,
+      (SELECT stack.quantity FROM inventory_stacks stack JOIN item_definitions item ON item.id = stack.item_id WHERE stack.player_id = ? AND item.code = 'pet_food') food,
+      (SELECT COUNT(*) FROM player_titles WHERE player_id = ?) titles`,
+    [playerId, playerId, playerId, playerId]
+  );
+  assert.deepEqual([lateState[0]!.registrations.toString(), lateState[0]!.pets.toString(),
+    lateState[0]!.food.toString(), lateState[0]!.titles.toString()], ["2", "2", "119100", "2"]);
+  const ignored = await service.handle({ externalUserId: "unlinked-collection-user", channelId: base.channelId,
+    eventId: "collection-unlinked-384", message: "/컬렉션등록 1" });
+  assert.equal(ignored.status, "ignored");
   console.log(JSON.stringify({ token: preview.confirmationToken, confirmEventId: "collection-confirm-384",
-    registered: true, stableIdentity: true, versionCas: true, replay: true, rollback: true,
-    cancelled: true, pointCost: confirmed.pointCost, rewards: confirmed.rewards }));
+    registered: true, stableIdentity: true, versionCas: true, replay: true, concurrent: true,
+    staleRollback: true, lateRollback: true, unlinkedIgnored: true, cancelled: true,
+    pointCost: confirmed.pointCost, rewards: confirmed.rewards }));
 } finally {
   await database.close();
 }
