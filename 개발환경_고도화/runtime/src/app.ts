@@ -46,6 +46,8 @@ import { formatMiniPetAdminInfo, readMiniPetAdminInfoTarget } from "./mini-pet/a
 import { formatMiniPetCollection, isMiniPetCollectionReadCommand } from "./mini-pet/collection-read-command.js";
 import { formatMiniPetGradeStats, isMiniPetGradeStatsReadCommand } from "./mini-pet/grade-stats-read-command.js";
 import { formatMiniPetDrawRates, isMiniPetDrawRateReadCommand } from "./mini-pet/draw-rate-read-command.js";
+import { AdminDrawGrantService, isAdminDrawGrantCommand } from "./mini-pet/admin-draw-grant-service.js";
+import { MariaAdminDrawGrantRepository } from "./mini-pet/maria-admin-draw-grant-repository.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1343,6 +1345,21 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isAdminDrawGrantCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new AdminDrawGrantService(new MariaAdminDrawGrantRepository(database!)).handle({
+          externalUserId: normalizedEvent.userId,
+          actorDisplayName: commandEvent.displayNameTrust === "trusted" ? commandEvent.displayName : undefined,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.outboxId !== undefined && result.data !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
       }
 
