@@ -40,6 +40,8 @@
     ,"db:shadow:enhance-rate-draw": "node --env-file-if-exists=.env --import tsx scripts/shadow-enhance-rate-draw-synthetic.ts"
     ,"db:probe:advanced-tier-ticket": "node --env-file-if-exists=.env --import tsx scripts/probe-advanced-tier-ticket-synthetic.ts"
     ,"db:shadow:advanced-tier-ticket": "node --env-file-if-exists=.env --import tsx scripts/shadow-advanced-tier-ticket-synthetic.ts"
+    ,"db:probe:admin-daily-payout": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-daily-payout-synthetic.ts"
+    ,"db:shadow:admin-daily-payout": "node --env-file-if-exists=.env --import tsx scripts/shadow-admin-daily-payout-synthetic.ts"
     ,"db:shadow:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/shadow-guild-territory-read-model-synthetic.ts",
     "db:probe:home-badge-reference": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-reference-synthetic.ts",
     "db:shadow:home-badge-reference": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-badge-reference-synthetic.ts",
