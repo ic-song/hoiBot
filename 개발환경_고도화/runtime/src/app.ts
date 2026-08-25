@@ -40,6 +40,7 @@ import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
+import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import {
@@ -647,6 +648,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isDiamondMineBoxOpenCommand(normalizedEvent.message)
         || isDiamondBoxCraftCommand(normalizedEvent.message)
         || isAdminDiamondEditCommand(normalizedEvent.message)
+        || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
@@ -679,6 +681,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeDiamondBoxCraftDispatchMessage(normalizedEvent.message ?? "")
               : isAdminDiamondEditCommand(normalizedEvent.message)
                 ? normalizeAdminDiamondEditDispatchMessage(normalizedEvent.message ?? "")
+              : isAdminDiamondResetAllCommand(normalizedEvent.message)
+                ? normalizeAdminDiamondResetAllDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
@@ -986,6 +990,25 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "admin_diamond_edit_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isAdminDiamondResetAllCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "admin_diamond_reset_all"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new AdminDiamondResetAllService(database!).handle({
+            externalUserId: normalizedEvent.userId, channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!, eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "admin_diamond_reset_all_error", error.message));
           } else {
             throw error;
           }
