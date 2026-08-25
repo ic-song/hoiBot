@@ -14,9 +14,10 @@
     ],
     "guard": "exact equality",
     "wbsRow": 282,
+    "dbRow": 1310,
     "validationRows": [
-      "3209:3214",
-      "7163:7168"
+      "3353:3358",
+      "7307:7312"
     ]
   },
   "legacyData": {
