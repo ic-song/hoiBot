@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-INVENTORY-YAKITORI-PACKAGE-OPEN",
+  "status": "shadow_verified",
+  "execution": {
+    "executionId": "개발자-SL-INVENTORY-YAKITORI-PACKAGE-OPEN-20260825-G3G7",
+    "claimRow": 1226,
+    "branch": "codex/modernization-yakitori-package-open-20260825",
+    "baseCommit": "fb67b5bc0e09dd53e5e33a26e2bc251c79494bcb"
+  },
+  "commands": {
+    "names": [
+      "/이랏싸이마쎄"
+    ],
+    "guard": "exact equality",
+    "wbsRow": 282,
+    "validationRows": [
+      "3209:3214",
+      "7163:7168"
+    ]
+  },
+  "legacyData": {
+    "inputs": [
+      "member.json bag",
+      "member_pet.json miniPetBag"
+    ],
+    "preservedBehavior": [
+      "package -1",
+      "mini-pet ticket +1500",
+      "ten primordial mini-pets in fixed order",
+      "castle siege silent block",
+      "capacity 100 boundary"
+    ]
+  },
+  "database": {
+    "migration": "051_yakitori_package_open.sql",
+    "tables": [
+      "mini_pet_projection_environment_identity",
+      "mini_pet_catalog_snapshots",
+      "mini_pet_catalog_entries",
+      "yakitori_package_use_executions",
+      "yakitori_package_owned_rewards",
+      "inventory_stacks",
+      "inventory_ledger",
+      "owned_mini_pets",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "rewardVersion": "yakitori-eccd437-v1",
+    "stableIdentity": "owned_mini_pets.id plus unique stable_owned_id UUID"
+  },
+  "trialMigration": {
+    "fresh": "43/43 passed",
+    "reapply": "43/43 passed",
+    "fixture": "functional-v1 apply plus yakitori-package-open-v1 twice",
+    "port": 33311
+  },
+  "logicPort": {
+    "files": [
+      "runtime/src/mini-pet/yakitori-package-use-service.ts",
+      "runtime/src/app.ts"
+    ],
+    "tests": [
+      "focused 6/6",
+      "full 233/233",
+      "typecheck",
+      "build",
+      "MariaDB functional probe",
+      "forced rollback",
+      "restart Shadow"
+    ]
+  },
+  "parity": {
+    "result": "passed",
+    "effects": {
+      "rewardRows": 10,
+      "ownedRows": 10,
+      "stableIds": 10,
+      "inventoryLedgerRows": 2,
+      "operationRows": 1,
+      "executionRows": 1,
+      "auditRows": 1,
+      "outboxRows": 1
+    },
+    "idempotentReplay": true,
+    "rollbackVerified": true,
+    "restartVerified": true
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "legacyMainChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate 8 requires a separate operational approval and live traffic evidence.",
+    "The shared mini-pet projection schema is introduced, but unrelated mini-pet consumers remain in their own WBS slices."
+  ]
+}
