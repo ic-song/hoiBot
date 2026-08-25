@@ -384,6 +384,11 @@ export const INDEPENDENT_PACKAGE_FIXTURES: readonly IndependentPackageFixture[] 
     add("ITEM-RWD-036", "혼자레이드리셋권😝", "STACK", 50n),
     point(100_000_000n),
     miniPet("ITEM-RWD-067", "샤넬 햄스터", "🐹", "전설", 30_000_000n, 999n)
+  ]),
+  pkg("213", "/다이아오픈", "💎다이아 상자(/다이아오픈)", [
+    add("ITEM-RWD-042", "캐슬코인🥇", "STACK", 200n),
+    add("ITEM-RWD-065", "펫강화확률UP🌟(30%)", "STACK", 6n),
+    add("ITEM-RWD-026", "펫 강화석⭐", "STACK", 2_200n)
   ])
 ];
 

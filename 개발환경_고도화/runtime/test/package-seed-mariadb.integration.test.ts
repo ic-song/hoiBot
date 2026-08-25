@@ -13,7 +13,7 @@ function jsonObject(value: unknown): Record<string, unknown> {
   return typeof value === "string" ? JSON.parse(value) as Record<string, unknown> : value as Record<string, unknown>;
 }
 
-(configured ? describe : describe.skip)("29 package MariaDB seed parity", () => {
+(configured ? describe : describe.skip)("30 package MariaDB seed parity", () => {
   before(() => {
     database = createDatabaseClient({
       enabled: true,
@@ -30,7 +30,7 @@ function jsonObject(value: unknown): Record<string, unknown> {
   after(async () => database.close());
 
   it("keeps every package seed without creating direct legacy command aliases", async () => {
-    assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 29);
+    assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 30);
     for (const fixture of INDEPENDENT_PACKAGE_FIXTURES) {
       const rows = await database.query<Array<Record<string, unknown>>>(
         `SELECT catalog.consume_item_id,catalog.max_open_count,

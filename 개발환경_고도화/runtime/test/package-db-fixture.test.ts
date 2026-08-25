@@ -123,12 +123,12 @@ function makeStackHarness(
 }
 
 describe("independent package DB parity fixture", () => {
-  it("contains exactly 29 unique command, package, command-id and consumer mappings", () => {
-    assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 29);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.legacyCommand)).size, 29);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.packageId)).size, 29);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.commandId)).size, 29);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.consumeItemId)).size, 29);
+  it("contains exactly 30 unique command, package, command-id and consumer mappings", () => {
+    assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 30);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.legacyCommand)).size, 30);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.packageId)).size, 30);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.commandId)).size, 30);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.consumeItemId)).size, 30);
     for (const entry of INDEPENDENT_PACKAGE_FIXTURES) {
       assert.match(entry.legacyCommand, /^\//);
       assert.match(entry.packageId, /^PKG-\d{3}$/);
@@ -139,7 +139,7 @@ describe("independent package DB parity fixture", () => {
   });
 
   it("preserves the extracted fixed-reward row count for every legacy command", () => {
-    assert.equal(Object.keys(LEGACY_FIXED_REWARD_COUNTS).length, 29);
+    assert.equal(Object.keys(LEGACY_FIXED_REWARD_COUNTS).length, 30);
     for (const entry of INDEPENDENT_PACKAGE_FIXTURES) {
       assert.equal(entry.fixedRewards.length, LEGACY_FIXED_REWARD_COUNTS[entry.legacyCommand], entry.legacyCommand);
       for (const reward of entry.fixedRewards) {
