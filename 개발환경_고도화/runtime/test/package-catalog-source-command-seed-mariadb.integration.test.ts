@@ -45,6 +45,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
   { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈" },
   { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈" },
+  { packageId: "PKG-JEONDOR-DUNGEON-BOX", command: "/전도르박스오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
   { packageId: "PKG-SHOP-OPEN-DUNGEON-BOX", command: "/샵오픈박스오픈" },
 ] as const;
@@ -65,7 +66,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 39 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 40 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -248,6 +249,30 @@ const EXPECTED_SOURCE_COMMANDS = [
     const executableRows = await database.query<Array<{ command_text: string }>>(
       `SELECT command_text FROM command_aliases
        WHERE command_text IN ('/이벤박스오픈','/이벤트박스오픈✡️')`,
+    );
+    assert.deepEqual(executableRows, []);
+  });
+
+  it("stores the Jeondor dungeon box as one legendary stone per open", async () => {
+    const rows = await database.query<Array<{
+      source_legacy_command: string; item_id: string; quantity: bigint; alias_count: bigint;
+    }>>(
+      `SELECT catalog.source_legacy_command,rule.item_id,rule.quantity,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id='PKG-JEONDOR-DUNGEON-BOX'`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      command: row.source_legacy_command,
+      itemId: row.item_id,
+      quantity: Number(row.quantity),
+      aliases: Number(row.alias_count),
+    })), [{ command: "/전도르박스오픈", itemId: "ITEM-RWD-052", quantity: 1, aliases: 0 }]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases WHERE command_text='/전도르박스오픈'`,
     );
     assert.deepEqual(executableRows, []);
   });
