@@ -62,6 +62,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-SPECIAL-PET-FOOD", command: "/특식오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
   { packageId: "PKG-LUCKY-BOX", command: "/행운의박스오픈" },
+  { packageId: "PKG-LUCKY-REWARD-BOX", command: "/럭키오픈" },
   { packageId: "PKG-PET-FOOD-DUNGEON-BOX", command: "/펫먹이박스오픈" },
   { packageId: "PKG-SHOP-OPEN-DUNGEON-BOX", command: "/샵오픈박스오픈" },
 ] as const;
@@ -82,7 +83,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 56 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 57 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
