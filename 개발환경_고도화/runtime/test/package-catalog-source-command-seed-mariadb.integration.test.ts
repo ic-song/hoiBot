@@ -45,6 +45,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
   { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈" },
   { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈" },
+  { packageId: "PKG-ENHANCE-DUNGEON-BOX", command: "/강화박스오픈" },
   { packageId: "PKG-JEONDOR-DUNGEON-BOX", command: "/전도르박스오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
   { packageId: "PKG-LUCKY-BOX", command: "/행운의박스오픈" },
@@ -68,7 +69,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 42 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 43 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -336,6 +337,35 @@ const EXPECTED_SOURCE_COMMANDS = [
 
     const executableRows = await database.query<Array<{ command_text: string }>>(
       `SELECT command_text FROM command_aliases WHERE command_text='/펫먹이박스오픈'`,
+    );
+    assert.deepEqual(executableRows, []);
+  });
+
+  it("stores enhancement dungeon boxes as an inclusive uniform 70 to 100 reward", async () => {
+    const rows = await database.query<Array<{
+      consume_item_id: string; item_id: string; rule_mode: string; range_min: bigint;
+      range_max: bigint; range_step: bigint; max_open_count: bigint; alias_count: bigint;
+    }>>(
+      `SELECT catalog.consume_item_id,rule.item_id,rule.rule_mode,rule.range_min,
+              rule.range_max,rule.range_step,catalog.max_open_count,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id='PKG-ENHANCE-DUNGEON-BOX'`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      consumeItemId: row.consume_item_id,
+      rewardItemId: row.item_id,
+      mode: row.rule_mode,
+      range: [Number(row.range_min), Number(row.range_max), Number(row.range_step)],
+      maxOpenCount: Number(row.max_open_count),
+      aliases: Number(row.alias_count),
+    })), [{ consumeItemId: "enhance_dungeon_box", rewardItemId: "pet_enhance_stone",
+      mode: "UNIFORM_RANGE", range: [70, 100, 1], maxOpenCount: 1000, aliases: 0 }]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases WHERE command_text='/강화박스오픈'`,
     );
     assert.deepEqual(executableRows, []);
   });
