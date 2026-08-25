@@ -2632,6 +2632,11 @@ function checkRank(data, petData, guildData, user) {
 			}
 		}
 
+		var musouChampion = data.petMusou && data.petMusou.currentChampion ? data.petMusou.currentChampion : null;
+		if (musouChampion && musouChampion.user === user && musouChampion.expiresAt > new Date().getTime()) {
+			userwithrank = "[무쌍⚔️]" + userwithrank;
+		}
+
 		return userwithrank;
 	} else {
 		return userwithrank;

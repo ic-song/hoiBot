@@ -2220,6 +2220,63 @@ Status: VERIFIED
 
 ---
 
+# /펫무쌍참가|/펫무쌍시작|/펫무쌍공격 [1-10]|/펫무쌍종료|/무쌍순위
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+- `ensurePetMusouData`
+- `joinPetMusou`
+- `beginPetMusou`
+- `processPetMusouAttack`
+- `processPetMusouTimeout`
+- `resolvePetMusouBattle`
+- `processPetMusouLightning`
+- `finishPetMusou`
+- `startPetMusouTurnTimer`
+- `recoverPetMusouTurnIfNeeded`
+- `buildPetMusouRankingMessage`
+- `checkRank`
+
+## Data Usage
+- `data.petMusou`
+- `data.member[user].petMusouLastSignupDate`
+- `data.accountSuspensions.users`
+- `data.member[user].musouWinCount`
+- `data.member[user].musouLastWinAt`
+- `data.member[user].point`
+- `data.member[user].bag["영지기습공격권🔥(40%)"]`
+- `data.member[user].bag["영지절대방어권🛡(50%)"]`
+- `petData`, `homeData`, `petSkillData`, `guildData` (대회 시작 시 종합매력 스냅샷)
+
+## Save Flow
+- 참가, 시작, 공격, 시간 초과, 강제 종료 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
+- 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
+- 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
+- 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
+- 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
+- 전투는 영지절대방어권→영지기습공격권→종합매력 순서이며, 아이템은 기존 영지전과 동일하게 발동 성공 시 1개 소모한다.
+- 현재 데이터 키가 닉네임 문자열이므로 대회 진행 중 닉네임 변경 및 변경 후 기록 연결은 지원하지 않는다.
+
+## Command Guards
+- 인자 없는 명령은 exact equality로만 실행한다.
+- 공격은 `/^\/펫무쌍공격\s+(?:10|[1-9])$/` 전체 패턴만 허용한다.
+- 공격은 공성전 방 또는 DEV 컨텍스트에서만 처리한다.
+- 대회 진행 중 일반 유저의 다른 슬래시 명령을 차단하며 운영자는 관리 명령을 계속 사용할 수 있다. 단, 펫무쌍·맞짱필드·길드 영지전은 어느 시작 경로에서도 동시에 활성화되지 않도록 상호 차단한다.
+
+## Related Commands
+- `/영지공격 [숫자]`
+- `/길드영지시작`
+- `/맞짱시작`
+- `/영지패스추가, [아이디] [YY.MM.DD|영구권]`
+- `/영지패스삭제, [아이디]`
+
+---
+
 # /패스목록
 
 Status: VERIFIED
@@ -2245,6 +2302,7 @@ Status: VERIFIED
 
 ## Data Usage
 - `data.member[user].pass`
+- `data.member[user].pass.territory`
 - `data.member[user].bag["자동탐험권🌄"]`
 - `data.member[user].bag["호이응원패키지(무료)🐹[1]" ... "호이응원패키지(무료)🐹[10]"]`
 - `data.rewardPayoutStatus`
@@ -2276,6 +2334,8 @@ Status: VERIFIED
 - `/호프구독`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
+- `/영지패스추가, [아이디] [YY.MM.DD|영구권]`
+- `/영지패스삭제, [아이디]`
 - `/패키지가방`
 - `/보상지급`
 - `/연금지급`
@@ -5402,14 +5462,17 @@ Status: VERIFIED
 - `grantHoiPassPremiumDailyRewards`
 - `buildSupportPassPayoutResultMessage`
 - `getActiveSupportPassUsers`
+- `appendTerritoryPassPayoutLogs`
 
 ## Data Usage
-- `member.json -> member[user].pass[premium|hoi|newbie|contribution|diamond]`
+- `member.json -> member[user].pass[premium|hoi|newbie|contribution|diamond|territory]`
 - `member.json -> member[user].bag`
+- `member.json -> supportPassPayoutLogs`
 - 각 패스의 `dailyRewardLastDate`로 당일 중복 지급을 방지한다.
 
 ## Save Flow
-- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 실제 지급 건수가 있을 때 `member.json`을 한 번 저장한다.
+- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 6종 패스의 실제 지급 건수 또는 영지패스 중복 제외 로그가 있을 때 `member.json`을 한 번 저장한다.
+- 영지패스는 `영지기습공격권🔥(40%)` 2개와 `영지절대방어권🛡(50%)` 2개를 지급하며, 성공·당일 중복 제외 내역을 최근 500건까지 기록한다.
 
 ## Related Commands
 - `/호프구독`
