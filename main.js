@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.406"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.407"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -84,7 +84,8 @@ const PET_SKILL_SELL_PRICE = 1000000000;
 const PET_SKILL_COMPAT_GROUPS = [
     ["십원", "구원"],
     ["헌터", "만렙헌터"],
-    ["건물주", "하느님 위에 갓물주"]
+    ["건물주", "하느님 위에 갓물주"],
+    ["무쌍신화", "무쌍귀신"]
 ];
 const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
     S: 10.5,
@@ -124,6 +125,7 @@ const PET_SKILL_LIST = [
     { name: "징집명령", grade: "A", rate: 1.7, effect: "길드마스터 전용 스킬입니다.\n길드에 가입할 수 있는 최대 인원이 1명 증가합니다." },
     { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
     { name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
+    { name: "무쌍귀신", grade: "A", rate: 1.7, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n펫무쌍 공격 보상 지급 시 포인트 1억을 추가로 획득합니다.\n※ 무쌍신화📙와 중복되지 않습니다." },
     // { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
     { name: "대머리 대장장이", grade: "A", rate: 1.7, effect: "/펫강화 성공 확률 5% 증가" },
     { name: "꽃집 대장장이", grade: "A", rate: 1.7, effect: "/정령강화 성공 확률 5% 증가" },
@@ -879,11 +881,13 @@ const GLOBAL_CONFIG = {
     petMusou: { // 펫무쌍 대회 진행 설정
         flagCount: 10,
         attackLimit: 3,
-        bonusAttackSkillName: "무쌍신화",
+        bonusAttackSkillNames: ["무쌍신화", "무쌍귀신"],
         bonusAttackCount: 1,
         startGraceMs: 30000,
         turnTimeoutMs: 15000,
         attackRewardPoint: 300000000,
+        attackRewardBonusSkillName: "무쌍귀신",
+        attackRewardBonusPoint: 100000000,
         winnerRewardPoint: 3000000000,
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
@@ -33420,7 +33424,7 @@ function joinPetMusou(data, petData, petSkillData, guildData, sender) {
             "소속길드: " + formatGuildDisplay(guildInfo.guild) + "\n\n" +
             "펫무쌍 규칙 상세보기\n" + allsee +
             "1. 대회 시작: 운영자 수동 시작\n" +
-            "2. 개인 공격: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillName + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
+            "2. 개인 공격: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
             "3. 공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n" +
             "4. 처음 발견한 가짜 깃발은 공격권만 1회 차감\n" +
             "5. 공개된 가짜 재공격·시간 초과·벼락 시 탈락\n" +
@@ -33445,11 +33449,20 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             continue;
         }
         var totalCharm = calculateTotalExp(user, data, petData, homeData, petSkillData, guildData);
-        var maxAttacks = GLOBAL_CONFIG.petMusou.attackLimit + (hasPetSkill(petSkillData, user, GLOBAL_CONFIG.petMusou.bonusAttackSkillName) ? GLOBAL_CONFIG.petMusou.bonusAttackCount : 0); // 대회 시작 시 장착 스킬을 반영한 개인 공격 한도
+        var bonusAttackSkillName = ""; // 대회 시작 시 장착 중인 펫무쌍 공격 보너스 스킬 스냅샷
+        for (var skillIndex = 0; skillIndex < GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.length; skillIndex++) {
+            var candidateSkillName = GLOBAL_CONFIG.petMusou.bonusAttackSkillNames[skillIndex];
+            if (hasPetSkill(petSkillData, user, candidateSkillName)) {
+                bonusAttackSkillName = candidateSkillName;
+                break;
+            }
+        }
+        var maxAttacks = GLOBAL_CONFIG.petMusou.attackLimit + (bonusAttackSkillName ? GLOBAL_CONFIG.petMusou.bonusAttackCount : 0); // 대회 시작 시 장착 스킬을 반영한 개인 공격 한도
         players[user] = {
             alive: true,
             attacksLeft: maxAttacks,
             maxAttacks: maxAttacks,
+            bonusAttackSkillName: bonusAttackSkillName,
             guildId: guildInfo.guildId,
             totalCharmSnapshot: createPetMusouBattleSnapshot(user, totalCharm, petData, data)
         };
@@ -33484,7 +33497,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
         message: "🗡️ 펫 무쌍 대회 시작 준비! 🗡️\n" +
             "━━━━━━━━━━━━━━━━\n" +
             "참가자: " + validUsers.length + "명\n" +
-            "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillName + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
+            "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
             "준비 유예시간: " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초\n" +
             "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
             "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
@@ -33720,7 +33733,12 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
     var maxAttacks = parseInt(player.maxAttacks, 10) || GLOBAL_CONFIG.petMusou.attackLimit; // 구버전 진행 데이터는 기본 공격 한도로 표시
     var lines = ["[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", "[⏳ 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초]", "[남은 공격(" + player.attacksLeft + "/" + maxAttacks + "⚔)]"];
     if (maxAttacks > GLOBAL_CONFIG.petMusou.attackLimit) {
-        lines.push("무쌍신화📙[B]: 어이 원코(공격횟수+1)");
+        var bonusAttackSkillName = player.bonusAttackSkillName || "무쌍신화"; // 구버전 진행 데이터는 기존 무쌍신화 스냅샷으로 표시
+        if (bonusAttackSkillName === GLOBAL_CONFIG.petMusou.attackRewardBonusSkillName) {
+            lines.push("무쌍귀신📙[A]: 공격횟수+1 · 공격 보상+1억");
+        } else {
+            lines.push("무쌍신화📙[B]: 어이 원코(공격횟수+1)");
+        }
     }
     lines.push("[⚡ 누적 벼락발생확률: " + (musou.lightningRate * 100).toFixed(1) + "%]", "━━━━━━━━━━━━━━━━", "🗡️현재 펫 무쌍 대회 상황🗡️", "━━━━━━━━━━━━");
     for (var flagNo = 1; flagNo <= GLOBAL_CONFIG.petMusou.flagCount; flagNo++) {
@@ -33762,6 +33780,9 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     var rewardGranted = false;
     var attackSucceeded = false; // 깃발 발견·점령·전투 승리 여부에 따른 공격 성공 판정
     var hasBattleDetail = false; // 공격자·점령자 양쪽의 종합매력 상세 출력 여부
+    var rewardBonusActive = musou.players[sender].bonusAttackSkillName === GLOBAL_CONFIG.petMusou.attackRewardBonusSkillName; // 시작 시 저장한 무쌍귀신 공격 보상 적용 여부
+    var attackRewardPoint = GLOBAL_CONFIG.petMusou.attackRewardPoint + (rewardBonusActive ? GLOBAL_CONFIG.petMusou.attackRewardBonusPoint : 0); // 이번 공격의 최종 포인트 보상
+    var attackRewardText = "🅟" + (attackRewardPoint / 100000000) + "억";
 
     if (!musou.realFlagFound && musou.fakeFlags[String(flagNo)]) {
         musou.players[sender].alive = false;
@@ -33769,7 +33790,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         lines.push("공격 보상🤑: 미지급", "", "이미 가짜로 밝혀진 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님은 즉시 탈락합니다.");
     } else if (!musou.realFlagFound) {
         rewardGranted = true;
-        data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
+        data.member[sender].point = (data.member[sender].point || 0) + attackRewardPoint;
         if (flagNo === musou.realFlagNo) {
             attackSucceeded = true;
             musou.realFlagFound = true;
@@ -33777,10 +33798,10 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
             for (var fakeNo = 1; fakeNo <= GLOBAL_CONFIG.petMusou.flagCount; fakeNo++) {
                 if (fakeNo !== musou.realFlagNo) musou.fakeFlags[String(fakeNo)] = true;
             }
-            lines.push("공격 보상🤑: 🅟3억", "", "[진짜 깃발 발견🚩]", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
+            lines.push("공격 보상🤑: " + attackRewardText, "", "[진짜 깃발 발견🚩]", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
         } else {
             musou.fakeFlags[String(flagNo)] = true;
-            lines.push("공격 보상🤑: 🅟3억", "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 공격권 1회가 차감되었습니다.");
+            lines.push("공격 보상🤑: " + attackRewardText, "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 공격권 1회가 차감되었습니다.");
         }
     } else if (flagNo !== musou.realFlagNo) {
         musou.players[sender].alive = false;
@@ -33789,15 +33810,15 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     } else if (!musou.currentHolder) {
         attackSucceeded = true;
         rewardGranted = true;
-        data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
+        data.member[sender].point = (data.member[sender].point || 0) + attackRewardPoint;
         musou.currentHolder = sender;
-        lines.push("공격 보상🤑: 🅟3억", "", "주인 없는 진짜 깃발을 즉시 점령했습니다!");
+        lines.push("공격 보상🤑: " + attackRewardText, "", "주인 없는 진짜 깃발을 즉시 점령했습니다!");
     } else {
         rewardGranted = true;
-        data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
+        data.member[sender].point = (data.member[sender].point || 0) + attackRewardPoint;
         var previousHolder = musou.currentHolder;
         var battleResult = resolvePetMusouBattle(data, petData, musou, sender, previousHolder);
-        lines.push("공격 보상🤑: 🅟3억", "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
+        lines.push("공격 보상🤑: " + attackRewardText, "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
         hasBattleDetail = !!(battleResult.attacker && battleResult.defender);
         if (battleResult.attackerWin) {
             attackSucceeded = true;
