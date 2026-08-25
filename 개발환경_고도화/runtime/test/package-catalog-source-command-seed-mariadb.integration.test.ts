@@ -40,6 +40,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-213", command: "/다이아오픈" },
   { packageId: "PKG-214", command: "/랜덤오픈" },
   { packageId: "PKG-215", command: "/상자오픈" },
+  { packageId: "PKG-ARCHMAGE-RUINS-BOX", command: "/대마법박스오픈" },
   { packageId: "PKG-CHICKEN-BOX", command: "/치킨오픈" },
   { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
 ] as const;
@@ -60,7 +61,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 34 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 35 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -112,6 +113,36 @@ const EXPECTED_SOURCE_COMMANDS = [
       { packageId: "PKG-213", mode: "ALL", count: 3, weight: null },
       { packageId: "PKG-214", mode: "WEIGHTED_ONE", count: 6, weight: 1.0000000002 },
       { packageId: "PKG-215", mode: "WEIGHTED_ONE", count: 4, weight: 1 },
+    ]);
+  });
+
+  it("stores the archmage ruins box as range plus independent one-percent bonus rules", async () => {
+    const rows = await database.query<Array<{
+      rule_id: string; rule_mode: string; operation: string; item_id: string | null;
+      quantity: bigint; weight: string | null; range_min: bigint | null;
+      range_max: bigint | null; range_step: bigint | null;
+    }>>(
+      `SELECT rule_id,rule_mode,operation,item_id,quantity,CAST(weight AS CHAR) weight,
+              range_min,range_max,range_step
+       FROM package_reward_rules
+       WHERE package_id='PKG-ARCHMAGE-RUINS-BOX' AND enabled=1
+       ORDER BY reward_order`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      id: row.rule_id,
+      mode: row.rule_mode,
+      operation: row.operation,
+      itemId: row.item_id,
+      quantity: Number(row.quantity),
+      weight: row.weight === null ? null : Number(row.weight),
+      range: row.range_min === null ? null : [Number(row.range_min), Number(row.range_max), Number(row.range_step)],
+    })), [
+      { id: "RULE-PKG-ARCHMAGE-FRAGMENT", mode: "UNIFORM_RANGE", operation: "ADD",
+        itemId: "ITEM-RWD-PET-SKILL-BOOK-FRAGMENT", quantity: 1, weight: null, range: [3, 5, 1] },
+      { id: "RULE-PKG-ARCHMAGE-BOOK", mode: "WEIGHTED_ONE", operation: "ADD",
+        itemId: "ITEM-RWD-007", quantity: 1, weight: 0.01, range: null },
+      { id: "RULE-PKG-ARCHMAGE-NO-BOOK", mode: "WEIGHTED_ONE", operation: "NONE",
+        itemId: null, quantity: 0, weight: 0.99, range: null },
     ]);
   });
 });
