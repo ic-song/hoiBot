@@ -104,6 +104,28 @@ const EXPECTED_SOURCE_COMMANDS = [
     assert.ok(rows.every((row) => Number(row.alias_count) === 0));
   });
 
+  it("normalizes every catalog source command as non-executable package seed data", async () => {
+    const rows = await database.query<Array<{
+      package_id: string; source_command: string; source_kind: string;
+      canonical_route: string; executable: number;
+    }>>(
+      `SELECT source.package_id,source.source_command,source.source_kind,
+              source.canonical_route,source.executable
+       FROM package_catalog_source_commands source
+       JOIN package_catalog catalog
+         ON catalog.package_id=source.package_id
+        AND catalog.source_legacy_command=source.source_command
+       ORDER BY source.package_id`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      packageId: row.package_id,
+      command: row.source_command,
+    })), [...EXPECTED_SOURCE_COMMANDS].sort((left, right) => left.packageId.localeCompare(right.packageId)));
+    assert.ok(rows.every((row) => row.source_kind === "LEGACY_OPEN"));
+    assert.ok(rows.every((row) => row.canonical_route === "/패키지사용"));
+    assert.ok(rows.every((row) => Number(row.executable) === 0));
+  });
+
   it("keeps only the package bag and package use commands executable", async () => {
     const rows = await database.query<Array<{ command_text: string }>>(
       `SELECT alias_row.command_text
