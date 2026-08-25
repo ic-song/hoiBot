@@ -31,6 +31,7 @@ import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/da
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { DiamondBoxOpenService, isDiamondBoxOpenCommand, normalizeDiamondBoxOpenDispatchMessage } from "./inventory/diamond-box-open-service.js";
 import { DiamondMineBoxOpenService, isDiamondMineBoxOpenCommand, normalizeDiamondMineBoxOpenDispatchMessage } from "./inventory/diamond-mine-box-open-service.js";
+import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
 import { HappyFoundationCaptainService, isHappyFoundationCaptainCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-captain-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
@@ -643,6 +644,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxOpenCommand(normalizedEvent.message)
         || isDiamondMineBoxOpenCommand(normalizedEvent.message)
+        || isDiamondBoxCraftCommand(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
@@ -671,6 +673,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeDiamondBoxOpenDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondMineBoxOpenCommand(normalizedEvent.message)
                 ? normalizeDiamondMineBoxOpenDispatchMessage(normalizedEvent.message ?? "")
+              : isDiamondBoxCraftCommand(normalizedEvent.message)
+                ? normalizeDiamondBoxCraftDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
@@ -1115,6 +1119,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.direction === "incoming" && isDiamondBoxCraftCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "diamond_box_craft"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new DiamondBoxCraftService(database!).handle({ externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId, message: normalizedEvent.message!, eventId: normalizedEvent.eventId });
+          if (result.status !== "ignored_unregistered" && result.outboxId !== undefined && result.data !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"diamond_box_craft_error",error.message));
+          } else throw error;
         }
       }
 
