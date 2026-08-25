@@ -53,6 +53,7 @@ import { isMiniPetTitleSelectCommand, MiniPetTitleSelectService } from "./mini-p
 import { isMiniPetTitleLifecycleCommand, MiniPetTitleLifecycleService } from "./mini-pet/title-lifecycle-service.js";
 import { isMiniPetTitleSaleCommand, MiniPetTitleSaleService } from "./mini-pet/title-sale-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
+import { isPetTitleSaleCommand, PetTitleSaleService } from "./pet/title-sale-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
@@ -1300,6 +1301,32 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_title_sale_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetTitleSaleCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new PetTitleSaleService(database).execute({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId,
+            message: normalizedEvent.message ?? "",
+            environmentCode: miniPetProjectionEnvironment
+          });
+          if (result.status === "sold") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          } else if (result.status === "snapshot_required" && result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_title_sale", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_title_sale_error", error.message));
           } else {
             throw error;
           }
