@@ -44,6 +44,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-CHICKEN-BOX", command: "/치킨오픈" },
   { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
   { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈" },
+  { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
   { packageId: "PKG-SHOP-OPEN-DUNGEON-BOX", command: "/샵오픈박스오픈" },
 ] as const;
@@ -64,7 +65,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 38 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 39 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -211,6 +212,42 @@ const EXPECTED_SOURCE_COMMANDS = [
     const executableRows = await database.query<Array<{ command_text: string }>>(
       `SELECT command_text FROM command_aliases
        WHERE command_text IN ('/양계장박스오픈','/샵오픈박스오픈')`,
+    );
+    assert.deepEqual(executableRows, []);
+  });
+
+  it("stores both event box source names as metadata and grants both fixed rewards", async () => {
+    const rows = await database.query<Array<{
+      source_legacy_command: string; metadata_json: string | { sourceCommands: string[] }; item_id: string;
+      quantity: bigint; alias_count: bigint;
+    }>>(
+      `SELECT catalog.source_legacy_command,item.metadata_json,rule.item_id,rule.quantity,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_item_definitions item ON item.item_id=catalog.consume_item_id
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id='PKG-EVENT-DUNGEON-BOX'
+       ORDER BY rule.reward_order`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      command: row.source_legacy_command,
+      sourceCommands: (typeof row.metadata_json === "string"
+        ? JSON.parse(row.metadata_json)
+        : row.metadata_json).sourceCommands,
+      itemId: row.item_id,
+      quantity: Number(row.quantity),
+      aliases: Number(row.alias_count),
+    })), [
+      { command: "/이벤박스오픈", sourceCommands: ["/이벤박스오픈", "/이벤트박스오픈✡️"],
+        itemId: "ITEM-RWD-001", quantity: 100, aliases: 0 },
+      { command: "/이벤박스오픈", sourceCommands: ["/이벤박스오픈", "/이벤트박스오픈✡️"],
+        itemId: "ITEM-RWD-033", quantity: 1, aliases: 0 },
+    ]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases
+       WHERE command_text IN ('/이벤박스오픈','/이벤트박스오픈✡️')`,
     );
     assert.deepEqual(executableRows, []);
   });
