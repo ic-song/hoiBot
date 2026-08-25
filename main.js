@@ -33745,7 +33745,8 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         return { ok: false, message: "⏳ 펫무쌍 시작 준비 중입니다.\n첫 공격은 " + remainingGraceSeconds + "초 뒤 시작됩니다." };
     }
     if (!musou.players[sender]) return { ok: false, message: "❌ 펫무쌍 참가자만 공격할 수 있습니다." };
-    if (!musou.players[sender].alive || musou.players[sender].attacksLeft < 1) return { ok: false, message: "❌ 이미 펫무쌍에서 탈락하여 공격할 수 없습니다." };
+    if (!musou.players[sender].alive) return { ok: false, message: "❌ 이미 펫무쌍에서 탈락했습니다." };
+    if (musou.players[sender].attacksLeft < 1) return { ok: false, message: "❌ 남은 펫무쌍 공격권이 없습니다." };
     var currentAttacker = getPetMusouCurrentAttacker(musou);
     if (currentAttacker !== sender) return { ok: false, message: "❌ 현재 공격 차례가 아닙니다.\n현재 공격자: " + currentAttacker };
     if (!getPetMusouGuildInfo(data, guildData, sender)) return { ok: false, message: "❌ 길드 가입 상태가 확인되지 않아 공격할 수 없습니다." };
