@@ -29,6 +29,7 @@ import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
+import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
@@ -636,6 +637,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
         || isSignupCommand(normalizedEvent.message ?? "")
         || isInventoryBulkSellCommand(normalizedEvent.message)
+        || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || packageCatalogWizardControlCandidate
@@ -655,7 +657,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
             : packageCatalogAdminDispatchCandidate
               ? normalizePackageCatalogAdminDispatchMessage(normalizedEvent.message ?? "")
-            : normalizedEvent.message ?? "",
+              : isFirstSponsorCommandCandidate(normalizedEvent.message)
+                ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
+                : normalizedEvent.message ?? "",
           userId: normalizedEvent.userId,
           hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
         })
@@ -964,6 +968,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(
               normalizedEvent, "daily_prayer_error", error.message
+            ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.direction === "incoming" && isFirstSponsorCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "admin_first_sponsor_registry"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new FirstSponsorRegistryService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "admin_first_sponsor_registry_error", error.message
             ));
           } else {
             throw error;
