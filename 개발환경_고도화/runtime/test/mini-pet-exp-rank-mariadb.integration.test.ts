@@ -19,7 +19,6 @@ describe("mini pet experience rank MariaDB integration", { skip: !enabled }, () 
     database = createDatabaseClient({ enabled: true, host: required("DATABASE_HOST"), port: Number(required("DATABASE_PORT")),
       user: required("DATABASE_USER"), password: required("DATABASE_PASSWORD"), name: required("DATABASE_NAME"),
       connectionLimit: 5, connectTimeoutMs: 5_000 });
-    await database.execute("UPDATE command_registry SET rollout_state='ACTIVE',enabled=1 WHERE command_code='MINIPET_EXP_RANK_READ'");
     await database.execute("INSERT INTO mini_pet_definitions(code,display_name,active) VALUES ('rank-fixture','순위 미니펫',TRUE) ON DUPLICATE KEY UPDATE active=TRUE");
     const definition = (await database.query<Array<{ id: bigint }>>("SELECT id FROM mini_pet_definitions WHERE code='rank-fixture'"))[0]!;
     for (const [index, name] of ["가람", "나래", "다온"].entries()) {
@@ -64,7 +63,24 @@ describe("mini pet experience rank MariaDB integration", { skip: !enabled }, () 
         evidence: { roomType: "OM", openLinkActive: true, openLinkExpired: false } }),
       sendIrisTextReply: async (reply) => { replies.push(reply); }
     });
-    const providerEventId = `mini-pet-rank-${Date.now()}`;
+    const shadowProviderEventId = `mini-pet-rank-shadow-${Date.now()}`;
+    const shadowPayload = { msg: "/미니펫종합순위", room: "고도화팻테스트방", sender: "가람",
+      json: { _id: shadowProviderEventId, chat_id: roomId, user_id: externalUserId } };
+    const shadowResponse = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${token}`, payload: shadowPayload });
+    assert.equal(shadowResponse.statusCode, 202, shadowResponse.body);
+    assert.equal(replies.length, 0);
+    const shadowRoute = (await database.query<Array<{ route: string }>>(
+      "SELECT route FROM command_routing_decisions WHERE event_id=?", [`iris:${shadowProviderEventId}`]
+    ))[0]!;
+    assert.equal(shadowRoute.route, "SHADOW");
+    const shadowEntries = await database.query<Array<{ count: bigint }>>(
+      `SELECT COUNT(*) AS count FROM leaderboard_entries entry
+       JOIN leaderboards board ON board.id=entry.leaderboard_id WHERE board.code='minipet_exp_total'`
+    );
+    assert.equal(Number(shadowEntries[0]?.count ?? 0n), 0);
+
+    await database.execute("UPDATE command_registry SET rollout_state='ACTIVE',enabled=1 WHERE command_code='MINIPET_EXP_RANK_READ'");
+    const providerEventId = `mini-pet-rank-active-${Date.now()}`;
     const payload = { msg: "/미니펫종합순위", room: "고도화팻테스트방", sender: "가람",
       json: { _id: providerEventId, chat_id: roomId, user_id: externalUserId } };
     const response = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${token}`, payload });
