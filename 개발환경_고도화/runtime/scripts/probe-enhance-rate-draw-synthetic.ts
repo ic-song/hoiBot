@@ -61,6 +61,23 @@ try {
   assert.equal(outbox[0]?.count, 2n);
   assert.equal(BigInt(outbox[0]?.delayed_count ?? 0), 1n);
 
+  await setStacks(0n); await seedEvent("enhance-rate-probe-shortage");
+  await assert.rejects(
+    () => new EnhanceRateDrawService(new MariaEnhanceRateDrawRepository(database), { next: () => 0 }).handle(command("enhance-rate-probe-shortage", "/강화뽑기 1")),
+    (error: unknown) => error instanceof Error && "code" in error && error.code === "ENHANCE_RATE_DRAW_TICKET_SHORTAGE"
+  );
+  await seedEvent("enhance-rate-probe-unlinked");
+  await assert.rejects(
+    () => new EnhanceRateDrawService(new MariaEnhanceRateDrawRepository(database), { next: () => 0 }).handle({
+      ...command("enhance-rate-probe-unlinked", "/강화뽑기 1"), externalUserId: "synthetic-unlinked"
+    }),
+    (error: unknown) => error instanceof Error && "code" in error && error.code === "ENHANCE_RATE_DRAW_ACTOR_REQUIRED"
+  );
+  const rejectedOperations = await database.query<Array<{ count: bigint }>>(
+    "SELECT COUNT(*) AS count FROM operations WHERE idempotency_key IN ('enhance-rate-probe-shortage', 'enhance-rate-probe-unlinked')"
+  );
+  assert.equal(rejectedOperations[0]?.count, 0n);
+
   await setStacks(3n); await seedEvent("enhance-rate-probe-failure");
   await assert.rejects(
     () => new EnhanceRateDrawService(new MariaEnhanceRateDrawRepository(failAtDraw(database)), { next: () => 0 }).handle(command("enhance-rate-probe-failure", "/강화뽑기 1")),
@@ -82,7 +99,7 @@ try {
   ));
   assert.equal(settled.filter((entry) => entry.status === "fulfilled").length, 1);
   assert.equal(settled.filter((entry) => entry.status === "rejected" && entry.reason?.code === "ENHANCE_RATE_DRAW_TICKET_SHORTAGE").length, 1);
-  process.stdout.write(`${JSON.stringify({ scenarios: ["80-10-10-boundary", "duplicate-replay", "durable-delayed-outbox", "mid-write-rollback", "concurrent-first-commit"], first, rollback: true, concurrent: true })}\n`);
+  process.stdout.write(`${JSON.stringify({ scenarios: ["80-10-10-boundary", "duplicate-replay", "durable-delayed-outbox", "unlinked-and-ticket-shortage-no-mutation", "mid-write-rollback", "concurrent-first-commit"], first, rollback: true, concurrent: true })}\n`);
 } finally {
   await database.close();
 }
