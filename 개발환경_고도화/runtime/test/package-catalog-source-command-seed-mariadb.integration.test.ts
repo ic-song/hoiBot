@@ -43,6 +43,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-ARCHMAGE-RUINS-BOX", command: "/대마법박스오픈" },
   { packageId: "PKG-CHICKEN-BOX", command: "/치킨오픈" },
   { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
+  { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
 ] as const;
 
 (configured ? describe : describe.skip)("package catalog source command seed", () => {
@@ -61,7 +62,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 35 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 36 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -144,6 +145,35 @@ const EXPECTED_SOURCE_COMMANDS = [
       { id: "RULE-PKG-ARCHMAGE-NO-BOOK", mode: "WEIGHTED_ONE", operation: "NONE",
         itemId: null, quantity: 0, weight: 0.99, range: null },
     ]);
+  });
+
+  it("stores the land document dungeon box as one deterministic document per open", async () => {
+    const rows = await database.query<Array<{
+      source_legacy_command: string; alias_count: bigint; rule_mode: string;
+      operation: string; item_id: string; quantity: bigint;
+    }>>(
+      `SELECT catalog.source_legacy_command,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row WHERE alias_row.package_id=catalog.package_id) alias_count,
+              rule.rule_mode,rule.operation,rule.item_id,rule.quantity
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id='PKG-LAND-DOCUMENT-DUNGEON-BOX'`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      command: row.source_legacy_command,
+      aliases: Number(row.alias_count),
+      mode: row.rule_mode,
+      operation: row.operation,
+      itemId: row.item_id,
+      quantity: Number(row.quantity),
+    })), [{
+      command: "/땅문서박스오픈",
+      aliases: 0,
+      mode: "ALL",
+      operation: "ADD",
+      itemId: "ITEM-RWD-039",
+      quantity: 1,
+    }]);
   });
 });
 
