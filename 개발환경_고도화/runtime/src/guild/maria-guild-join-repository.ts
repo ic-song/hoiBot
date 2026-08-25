@@ -85,9 +85,10 @@ export class MariaGuildJoinRepository implements GuildJoinRepository {
   private async listGuilds(transaction: DatabaseTransaction, lock: boolean, guildId?: string): Promise<GuildJoinCandidate[]> {
     const rows = await transaction.query<Array<{ id: bigint; display_name: string; mark: string | null; server_code: string | null; level: number; join_requirement_experience: bigint; member_join_closed: number; max_members: number; recruitment_bonus: number; member_count: bigint }>>(
       `SELECT guild.id, guild.display_name, guild.mark, guild.server_code, guild.level,
-        guild.join_requirement_experience, guild.member_join_closed, guild.max_members, guild.recruitment_bonus,
+        guild.join_requirement_experience, policy.member_join_closed, guild.max_members, guild.recruitment_bonus,
         (SELECT COUNT(*) FROM guild_members member WHERE member.guild_id = guild.id) AS member_count
        FROM guilds guild
+       JOIN guild_join_policies policy ON policy.guild_id = guild.id
        WHERE guild.status = 'active'${guildId === undefined ? "" : " AND guild.id = ?"}
        ${lock ? "FOR UPDATE" : ""}`,
       guildId === undefined ? [] : [guildId]

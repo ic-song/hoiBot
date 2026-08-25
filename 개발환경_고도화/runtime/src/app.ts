@@ -60,6 +60,7 @@ import { MariaGuildJoinConditionRepository } from "./guild/maria-guild-join-cond
 import { GuildForceExpelService } from "./guild/guild-force-expel-service.js";
 import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-policy.js";
 import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
+import { GuildRecruitmentToggleService, isGuildRecruitmentToggleCommand } from "./guild/guild-recruitment-toggle-service.js";
 import { ConstructionEditService } from "./home/construction-edit-service.js";
 import { isConstructionEditCommandCandidate } from "./home/construction-edit-policy.js";
 import { MariaConstructionEditRepository } from "./home/maria-construction-edit-repository.js";
@@ -640,6 +641,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
+        || isGuildRecruitmentToggleCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || packageCatalogWizardControlCandidate
@@ -1094,6 +1096,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && error.code === "PET_NOT_FOUND") {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_info", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildRecruitmentToggleCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "guild_recruitment_toggle"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuildRecruitmentToggleService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "guild_recruitment_toggle_error", error.message
+            ));
           } else {
             throw error;
           }
