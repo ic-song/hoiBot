@@ -52,6 +52,8 @@ import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-cre
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
+import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
+import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
@@ -652,6 +654,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
+        || isCastleBattleRankingCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || packageCatalogWizardControlCandidate
@@ -1227,6 +1230,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && error.code === "PET_NOT_FOUND") {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_info", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleBattleRankingCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "castle_battle_ranking_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new CastleBattleRankingService(new MariaCastleBattleRankingRepository(database!)).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "IDENTITY_MAPPING_REQUIRED") {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "castle_battle_ranking_read", error.message));
           } else {
             throw error;
           }
