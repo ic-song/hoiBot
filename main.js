@@ -2859,6 +2859,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             saveJsonFile(data, filePath);
+            noticeMsg(petMusouStartResult.message);
             startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
             return;
         }
@@ -2879,7 +2880,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(data, filePath);
             castleMsg(petMusouAttackResult.message, replier, isGroupChat);
             if (petMusouAttackResult.lightningMessage) castleMsg(petMusouAttackResult.lightningMessage, replier, isGroupChat);
-            if (petMusouAttackResult.ended) return;
+            if (petMusouAttackResult.ended) {
+                if (petMusouAttackResult.finishMessage) castleMsg(petMusouAttackResult.finishMessage, replier, isGroupChat);
+                return;
+            }
             castleMsg(petMusouAttackResult.statusMessage, replier, isGroupChat);
             startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
             return;
@@ -2899,7 +2903,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             saveJsonFile(data, filePath);
-            replier.reply("✅ 펫무쌍 대회를 종료했습니다.");
+            replier.reply(petMusouFinishResult.message);
             return;
         }
         if (msg === "/펫무쌍전체초기화") {
@@ -33493,7 +33497,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
     return {
         ok: true,
         excludedUsers: excludedUsers,
-        message: "🗡️ 펫 무쌍 대회 시작 준비! 🗡️\n" +
+        message: "🗡️ 펫 무쌍 대회 시작 🗡️\n" +
             "━━━━━━━━━━━━━━━━\n" +
             "참가자: " + validUsers.length + "명\n" +
             "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
@@ -33975,7 +33979,10 @@ function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, 
             if (!timeoutResult.ok) return;
             saveJsonFile(latestData, filePath);
             castleMsg(timeoutResult.message, replier, isGroupChat);
-            if (timeoutResult.ended) return;
+            if (timeoutResult.ended) {
+                if (timeoutResult.finishMessage) castleMsg(timeoutResult.finishMessage, replier, isGroupChat);
+                return;
+            }
             castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
             startPetMusouTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat, false);
         } finally {
@@ -34006,7 +34013,10 @@ function recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupC
         if (!timeoutResult.ok) return;
         saveJsonFile(data, filePath);
         castleMsg(timeoutResult.message, replier, isGroupChat);
-        if (timeoutResult.ended) return;
+        if (timeoutResult.ended) {
+            if (timeoutResult.finishMessage) castleMsg(timeoutResult.finishMessage, replier, isGroupChat);
+            return;
+        }
         castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
         startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
         return;
