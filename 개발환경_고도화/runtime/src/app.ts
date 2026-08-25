@@ -57,6 +57,7 @@ import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
 import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
+import { isMiniPetExpRankCommand, MiniPetExpRankService } from "./pet/mini-pet-exp-rank-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
@@ -644,6 +645,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && await packageCatalogWizardHandler.hasActiveSession(normalizedEvent);
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
         || isSignupCommand(normalizedEvent.message ?? "")
+        || isMiniPetExpRankCommand(normalizedEvent.message)
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxOpenCommand(normalizedEvent.message)
         || isFixedRewardBoxOpenCommand(normalizedEvent.message)
@@ -1252,6 +1254,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             throw error;
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetExpRankCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "minipet_exp_rank_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new MiniPetExpRankService(database!).execute();
+        processing.replies.push(await eventProcessor!.queueCommandReply(
+          normalizedEvent, result.commandCode, result.data
+        ));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
