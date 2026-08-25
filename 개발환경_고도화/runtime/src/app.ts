@@ -28,6 +28,7 @@ import { registerAdminRoutes } from "./admin/routes.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
+import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
@@ -634,6 +635,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && await packageCatalogWizardHandler.hasActiveSession(normalizedEvent);
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
         || isSignupCommand(normalizedEvent.message ?? "")
+        || isInventoryBulkSellCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || packageCatalogWizardControlCandidate
@@ -962,6 +964,33 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(
               normalizedEvent, "daily_prayer_error", error.message
+            ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.direction === "incoming" && isInventoryBulkSellCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "inventory_bulk_sell"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new InventoryBulkSellService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if ((result.status === "sold" || result.status === "nothing_to_sell")
+            && result.outboxId !== undefined && result.data !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "inventory_bulk_sell_error", error.message
             ));
           } else {
             throw error;
