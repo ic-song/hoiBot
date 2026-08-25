@@ -2220,7 +2220,7 @@ Status: VERIFIED
 
 ---
 
-# /펫무쌍참가|/펫무쌍시작|/펫무쌍공격 [1-10]|/펫무쌍종료|/무쌍순위
+# /펫무쌍참가|/펫무쌍시작|/펫무쌍공격 [1-10]|/펫무쌍종료|/펫무쌍전체초기화|/무쌍순위
 
 Status: VERIFIED
 
@@ -2237,6 +2237,8 @@ Status: VERIFIED
 - `resolvePetMusouBattle`
 - `processPetMusouLightning`
 - `finishPetMusou`
+- `resetAllPetMusouData`
+- `buildPetMusouAttackDetailMessage`
 - `startPetMusouTurnTimer`
 - `recoverPetMusouTurnIfNeeded`
 - `buildPetMusouRankingMessage`
@@ -2254,16 +2256,18 @@ Status: VERIFIED
 - `petData`, `homeData`, `petSkillData`, `guildData` (대회 시작 시 종합매력 스냅샷)
 
 ## Save Flow
-- 참가, 시작, 공격, 시간 초과, 강제 종료 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
+- 참가, 시작, 공격, 시간 초과, 강제 종료, 전체 초기화 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
 - 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
 - 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
 - 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
 - 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
 - 전투는 영지절대방어권→영지기습공격권→종합매력 순서이며, 아이템은 기존 영지전과 동일하게 발동 성공 시 1개 소모한다.
 - 현재 데이터 키가 닉네임 문자열이므로 대회 진행 중 닉네임 변경 및 변경 후 기록 연결은 지원하지 않는다.
+- `/펫무쌍전체초기화`는 참가·진행·회차·현재 칭호·당일 참가 표시·누적 전적을 초기화하고, 이미 지급된 포인트와 아이템은 회수하지 않는다.
 
 ## Command Guards
 - 인자 없는 명령은 exact equality로만 실행한다.
+- `/펫무쌍전체초기화`는 운영자만 exact equality로 실행한다.
 - 공격은 `/^\/펫무쌍공격\s+(?:10|[1-9])$/` 전체 패턴만 허용한다.
 - 공격은 공성전 방 또는 DEV 컨텍스트에서만 처리한다.
 - 대회 진행 중 일반 유저의 다른 슬래시 명령을 차단하며 운영자는 관리 명령을 계속 사용할 수 있다. 단, 펫무쌍·맞짱필드·길드 영지전은 어느 시작 경로에서도 동시에 활성화되지 않도록 상호 차단한다.
@@ -5139,9 +5143,10 @@ Status: VERIFIED
 - `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
-- `calcExploreSuccessPercent` is used for the reservation/status success-rate display
+- `calcExploreSuccessPercent` is used for the reservation/status display and the actual settlement success roll
 - `/탐 [숫자]` 예약 안내와 `/지도`의 상단 성공확률·상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
-- `doPetExploreInterval` recalculates the same success-rate components during settlement
+- `doPetExploreInterval` uses the shared success-rate calculation immediately before consuming the selected probability-UP item and rolling the result, so premium, pendant, home-badge, and penalty values match the displayed formula and the final rate remains capped at 100%
+- 일반 광산 1~3에서 이벤트 던전 `E` 보상으로 전환되어도 성공률은 입장권 재확인까지 끝난 원래 광산 기준으로 계산하므로 `광산탐험가📙` 효과가 사라지지 않는다.
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
