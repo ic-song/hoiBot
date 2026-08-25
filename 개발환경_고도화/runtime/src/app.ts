@@ -48,6 +48,8 @@ import { formatMiniPetGradeStats, isMiniPetGradeStatsReadCommand } from "./mini-
 import { formatMiniPetDrawRates, isMiniPetDrawRateReadCommand } from "./mini-pet/draw-rate-read-command.js";
 import { AdminDrawGrantService, isAdminDrawGrantCommand } from "./mini-pet/admin-draw-grant-service.js";
 import { MariaAdminDrawGrantRepository } from "./mini-pet/maria-admin-draw-grant-repository.js";
+import { isMiniPetCollectionRegisterCommand, MiniPetCollectionRegisterService } from "./mini-pet/collection-register-service.js";
+import { MariaMiniPetCollectionRegisterRepository } from "./mini-pet/maria-collection-register-repository.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -134,6 +136,7 @@ export interface AppDependencies {
   homeSocialRanking?: Pick<HomeSocialRankingService, "execute">;
   homeSocialFollow?: Pick<HomeSocialFollowService, "handle">;
   homeUpgrade?: Pick<HomeUpgradeService, "handle">;
+  miniPetCollectionRegister?: Pick<MiniPetCollectionRegisterService, "handle">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -389,6 +392,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       : new HomeSocialFollowService(new MariaHomeSocialFollowRepository(database), "\u200b".repeat(500)));
   const homeUpgrade = dependencies.homeUpgrade
     ?? (database === undefined ? undefined : new HomeUpgradeService(database));
+  const miniPetCollectionRegister = dependencies.miniPetCollectionRegister
+    ?? (database === undefined ? undefined
+      : new MiniPetCollectionRegisterService(new MariaMiniPetCollectionRegisterRepository(database)));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -1276,6 +1282,35 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             } else {
               throw error;
             }
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetCollectionRegisterCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && miniPetCollectionRegister !== undefined) {
+        try {
+          const result = await miniPetCollectionRegister.handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.outboxId !== undefined && result.data !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "mini_pet_collection_register", result.data
+            ));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 410, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "mini_pet_collection_register", error.message
+            ));
+          } else {
+            throw error;
           }
         }
       }

@@ -1,0 +1,13 @@
+{
+  "sliceId": "SL-MINIPET-COLLECTION-REGISTER",
+  "wbsRow": 384,
+  "commands": ["/컬렉션등록", "/컬렉션등록 [가방번호 1~8개]", "/컬렉션등록 확인 [확인번호]", "/컬렉션등록 취소 [확인번호]"],
+  "contract": {
+    "selection": "stable_owned_id + inventory version snapshot",
+    "confirmation": "SHA-256 token, version, 10 minute expiry, single-use status",
+    "transaction": ["point auto-enhance", "grade reward", "stage reward", "title", "collection", "owned mini-pet removal", "audit", "outbox", "idempotency"],
+    "safetyDifference": "legacy partial-number parsing is replaced by exact full-pattern parsing"
+  },
+  "productionActivation": false,
+  "legacyFilesChanged": false
+}
