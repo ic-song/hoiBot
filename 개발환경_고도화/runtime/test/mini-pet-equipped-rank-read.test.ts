@@ -26,6 +26,7 @@ function result(count = 2): MiniPetReadResult {
 class FakeRepository implements MiniPetCatalogProjectionRepository {
   lastRead: MiniPetReadInput | undefined;
   async resolveLatestSnapshotPin() { return { poolVersion: "pool-v1", snapshotAt: "2026-08-25T02:00:00.000Z" }; }
+  async resolveLatestCollectionSnapshotPin() { return { poolVersion: "pool-v1", snapshotAt: "2026-08-25T02:00:00.000Z" }; }
   async resolveTargetPlayer(_environmentCode: "prod" | "dev", _poolVersion: string, _snapshotAt: string, targetName: string) {
     return { playerId: "1", displayName: targetName };
   }

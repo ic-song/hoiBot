@@ -51,8 +51,8 @@ export class MiniPetCatalogProjectionService {
     if (request.poolVersion.trim().length === 0 || Number.isNaN(new Date(request.snapshotAt).getTime())) {
       throw new ApplicationError("MINIPET_SNAPSHOT_PIN_INVALID", "poolVersion과 snapshotAt이 필요합니다.", 422);
     }
-    if ((request.projectionCode === "inventory" || request.projectionCode === "admin_info"
-      || request.projectionCode === "collection") && request.targetPlayerId === undefined) {
+    if ((request.projectionCode === "inventory" || request.projectionCode === "admin_info")
+      && request.targetPlayerId === undefined) {
       throw new ApplicationError("MINIPET_TARGET_REQUIRED", "대상 player ID가 필요합니다.", 422);
     }
     if ((request.projectionCode === "inventory" || request.projectionCode === "admin_info"
@@ -111,6 +111,30 @@ export class MiniPetCatalogProjectionService {
       requestChannelId: request.requestChannelId
     });
     return { ...result, targetDisplayName: target.displayName };
+  }
+
+  // 정확한 8등급 collection snapshot을 pin해 현재 viewer의 컬렉션을 무변이로 읽습니다.
+  async readLatestCollection(request: {
+    environmentCode: MiniPetEnvironmentCode;
+    providerEventId: string;
+    viewerExternalUserId: string;
+  }): Promise<MiniPetReadResult> {
+    if (request.environmentCode !== this.expectedEnvironmentCode) {
+      throw new ApplicationError("MINIPET_ENVIRONMENT_MISMATCH", "요청과 provider DB 환경이 일치하지 않습니다.", 409);
+    }
+    const pin = await this.repository.resolveLatestCollectionSnapshotPin(request.environmentCode);
+    const result = await this.read({
+      projectionCode: "collection",
+      environmentCode: request.environmentCode,
+      poolVersion: pin.poolVersion,
+      snapshotAt: pin.snapshotAt,
+      providerEventId: request.providerEventId,
+      viewerExternalUserId: request.viewerExternalUserId
+    });
+    if (!hasExactGradeOrder(result.collectionGrades.map((row) => row.grade), COLLECTION_ALLOWED_GRADES)) {
+      throw new ApplicationError("MINIPET_COLLECTION_GRADES_INVALID", "컬렉션 8등급 snapshot 순서가 올바르지 않습니다.", 409);
+    }
+    return result;
   }
 
   // current gradeTable과 allowedGrades를 immutable published snapshot으로 발행합니다.

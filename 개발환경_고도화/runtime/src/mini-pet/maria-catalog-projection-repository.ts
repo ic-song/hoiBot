@@ -8,6 +8,7 @@ import type {
 
 interface ViewerRow { identity_id: bigint | null; player_id: bigint | null; operator_id: bigint | null; trusted_admin: number; }
 interface OperationRow { id: bigint; status: string; result_json: string | MiniPetReadResult | null; request_hash: string | null; stale_processing: number; }
+const COLLECTION_GRADES = ["창조", "창세", "태초+", "태초", "초월+", "초월", "신화+", "신화"] as const;
 
 // 긴 event ID를 기존 operations key 제한 안에서 안정적으로 표현합니다.
 function eventKey(value: string): string {
@@ -50,6 +51,27 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
       );
       const row = rows[0];
       if (row === undefined) throw new ApplicationError("MINIPET_SNAPSHOT_NOT_FOUND", "발행된 미니펫 snapshot이 없습니다.", 404);
+      return { poolVersion: row.pool_version, snapshotAt: row.snapshot_at.toISOString() };
+    });
+  }
+
+  // published fixed-reward snapshot 중 legacy 8등급 순서가 정확한 최신 pin만 선택합니다.
+  async resolveLatestCollectionSnapshotPin(environmentCode: "prod" | "dev"): Promise<{ poolVersion: string; snapshotAt: string }> {
+    return this.database.withTransaction(async (tx) => {
+      await this.requireDatabaseEnvironment(tx, environmentCode);
+      const rows = await tx.query<Array<{ pool_version: string; snapshot_at: Date; allowed_grades_json: string | string[] }>>(
+        `SELECT pool_version, snapshot_at, allowed_grades_json
+         FROM mini_pet_catalog_snapshots
+         WHERE environment_code = ? AND status = 'published' AND catalog_kind = 'fixed_reward'
+         ORDER BY snapshot_at DESC, pool_version DESC LIMIT 20`, [environmentCode]
+      );
+      const row = rows.find((candidate) => {
+        const grades = typeof candidate.allowed_grades_json === "string"
+          ? JSON.parse(candidate.allowed_grades_json) as string[] : candidate.allowed_grades_json;
+        return grades.length === COLLECTION_GRADES.length
+          && grades.every((grade, index) => grade === COLLECTION_GRADES[index]);
+      });
+      if (row === undefined) throw new ApplicationError("MINIPET_COLLECTION_SNAPSHOT_NOT_FOUND", "발행된 8등급 미니펫 컬렉션 snapshot이 없습니다.", 404);
       return { poolVersion: row.pool_version, snapshotAt: row.snapshot_at.toISOString() };
     });
   }
@@ -167,8 +189,17 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
       }
       return;
     }
+    if (input.projectionCode === "collection") {
+      const activeSiege = await tx.query<Array<{ active: number }>>(
+        "SELECT 1 AS active FROM castle_battle_seasons WHERE status = 'active' LIMIT 1"
+      );
+      if (activeSiege[0] !== undefined) {
+        throw new ApplicationError("MINIPET_COLLECTION_SIEGE_SILENT", "공성전 중에는 미니펫 컬렉션을 조회할 수 없습니다.", 409);
+      }
+    }
+    const protectedTarget = input.targetPlayerId ?? viewer.player_id?.toString();
     if ((input.projectionCode === "inventory" || input.projectionCode === "collection")
-      && (viewer.player_id === null || viewer.player_id.toString() !== input.targetPlayerId)) {
+      && (viewer.player_id === null || viewer.player_id.toString() !== protectedTarget)) {
       throw new ApplicationError("FORBIDDEN", "본인의 미니펫 projection만 조회할 수 있습니다.", 403);
     }
   }
@@ -348,7 +379,7 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
     );
     return rows.map((row) => ({ definitionId: row.definition_id.toString(), definitionCode: row.definition_code,
       name: row.display_name, grade: row.grade_display_name, registered: Boolean(row.registered),
-      stage: row.stage, completedStage: row.completed_stage, repairRequired: Boolean(row.repair_required) }));
+      stage: Number(row.stage), completedStage: Number(row.completed_stage), repairRequired: Boolean(row.repair_required) }));
   }
 
   // allowlist에 등록된 full legacy snapshot field만 관리자 projection에 노출합니다.

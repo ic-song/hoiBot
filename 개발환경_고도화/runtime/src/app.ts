@@ -43,6 +43,7 @@ import { isYakitoriPackageUseCommand, YakitoriPackageUseService } from "./mini-p
 import { isMiniPetInventoryViewCommand, MiniPetInventoryViewNormalizeService } from "./mini-pet/inventory-view-normalize-service.js";
 import { formatMiniPetEquippedRank, isMiniPetEquippedRankReadCommand } from "./mini-pet/equipped-rank-read-command.js";
 import { formatMiniPetAdminInfo, readMiniPetAdminInfoTarget } from "./mini-pet/admin-info-read-command.js";
+import { formatMiniPetCollection, isMiniPetCollectionReadCommand } from "./mini-pet/collection-read-command.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1271,6 +1272,31 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             } else {
               throw error;
             }
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetCollectionReadCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await miniPetCatalogProjection!.readLatestCollection({
+            environmentCode: miniPetProjectionEnvironment,
+            providerEventId: normalizedEvent.eventId,
+            viewerExternalUserId: normalizedEvent.userId
+          });
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent, "mini_pet_collection_read", formatMiniPetCollection(result)
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError && error.code === "MINIPET_COLLECTION_SIEGE_SILENT") {
+            // 레거시와 동일하게 공성전 중 조회는 응답하지 않습니다.
+          } else if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "mini_pet_collection_read", error.message
+            ));
+          } else {
+            throw error;
           }
         }
       }

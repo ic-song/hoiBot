@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-MINIPET-COLLECTION-READ",
+  "status": "shadow_verified",
+  "execution": {
+    "executionId": "개발자-SL-MINIPET-COLLECTION-READ-20260825-G3G7",
+    "claimRow": 1230,
+    "branch": "codex/modernization-minipet-collection-read-20260825",
+    "baseCommit": "8354d7f86d57ad67b976c962cd71a502bf46d371"
+  },
+  "commands": {
+    "names": ["/미니펫컬렉션"],
+    "guard": "exact equality",
+    "wbsRow": 374,
+    "dbRow": 1447,
+    "validationRows": ["4187:4192", "8141:8146"]
+  },
+  "legacyData": {
+    "inputs": ["miniPet_collection.json member collection", "8 fixed collection grades", "stage rewards"],
+    "preservedBehavior": ["exact no-argument command", "registered self only", "castle siege silent", "stage defaults to one", "missing collection remains unsaved", "fixed eight-grade order"]
+  },
+  "database": {
+    "migration": "existing 051/053 collection projection schema reused",
+    "tables": ["mini_pet_collection_projections", "mini_pet_catalog_snapshots", "mini_pet_catalog_entries", "mini_pet_read_executions", "operations", "command_executions", "command_audit"],
+    "stableIdentity": "immutable pool version plus player_id and mini_pet_definition_id"
+  },
+  "trialMigration": {
+    "fresh": 46,
+    "reapply": 46,
+    "fixture": "functional-v1 plus equipped-rank-v1 plus collection-read-v1 twice",
+    "port": 33315
+  },
+  "logicPort": {
+    "files": ["runtime/src/mini-pet/catalog-projection-service.ts", "runtime/src/mini-pet/maria-catalog-projection-repository.ts", "runtime/src/mini-pet/collection-read-command.ts", "runtime/src/app.ts"],
+    "tests": ["focused", "full", "typecheck", "build", "MariaDB eight-grade/missing/repair probe", "forced rollback", "restart Shadow"]
+  },
+  "parity": {
+    "result": "passed",
+    "snapshotPinned": true,
+    "exactEightGradeOrder": true,
+    "missingCollectionUnsaved": true,
+    "repairReadOnly": true,
+    "castleSiegeSilent": true,
+    "idempotentReplay": true,
+    "rollbackVerified": true,
+    "restartVerified": true
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "legacyMainChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate 8 requires separate operational approval.",
+    "Legacy repair mutation remains separated from this read-only slice."
+  ]
+}
