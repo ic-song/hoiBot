@@ -30,6 +30,7 @@ import { ChangePlayerServerService } from "./player/change-player-server-service
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { DiamondBoxOpenService, isDiamondBoxOpenCommand, normalizeDiamondBoxOpenDispatchMessage } from "./inventory/diamond-box-open-service.js";
+import { DiamondMineBoxOpenService, isDiamondMineBoxOpenCommand, normalizeDiamondMineBoxOpenDispatchMessage } from "./inventory/diamond-mine-box-open-service.js";
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
 import { HappyFoundationCaptainService, isHappyFoundationCaptainCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-captain-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
@@ -641,6 +642,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isSignupCommand(normalizedEvent.message ?? "")
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxOpenCommand(normalizedEvent.message)
+        || isDiamondMineBoxOpenCommand(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
@@ -667,6 +669,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxOpenCommand(normalizedEvent.message)
                 ? normalizeDiamondBoxOpenDispatchMessage(normalizedEvent.message ?? "")
+              : isDiamondMineBoxOpenCommand(normalizedEvent.message)
+                ? normalizeDiamondMineBoxOpenDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
@@ -1080,6 +1084,33 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(
               normalizedEvent, "inventory_diamond_box_open_error", error.message
+            ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.direction === "incoming" && isDiamondMineBoxOpenCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "inventory_diamond_mine_box_open"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new DiamondMineBoxOpenService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if ((result.status === "opened" || result.status === "no_box")
+            && result.outboxId !== undefined && result.data !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "inventory_diamond_mine_box_open_error", error.message
             ));
           } else {
             throw error;
