@@ -47,6 +47,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈" },
   { packageId: "PKG-JEONDOR-DUNGEON-BOX", command: "/전도르박스오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
+  { packageId: "PKG-LUCKY-BOX", command: "/행운의박스오픈" },
   { packageId: "PKG-SHOP-OPEN-DUNGEON-BOX", command: "/샵오픈박스오픈" },
 ] as const;
 
@@ -66,7 +67,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 40 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 41 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -273,6 +274,38 @@ const EXPECTED_SOURCE_COMMANDS = [
 
     const executableRows = await database.query<Array<{ command_text: string }>>(
       `SELECT command_text FROM command_aliases WHERE command_text='/전도르박스오픈'`,
+    );
+    assert.deepEqual(executableRows, []);
+  });
+
+  it("stores the lucky box conversion on the existing stable item keys", async () => {
+    const rows = await database.query<Array<{
+      consume_item_id: string; item_id: string; quantity: bigint; catalog_enabled: number;
+      consume_enabled: number; reward_enabled: number; alias_count: bigint;
+    }>>(
+      `SELECT catalog.consume_item_id,rule.item_id,rule.quantity,catalog.enabled catalog_enabled,
+              consume_item.enabled consume_enabled,reward_item.enabled reward_enabled,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_item_definitions consume_item ON consume_item.item_id=catalog.consume_item_id
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       JOIN package_item_definitions reward_item ON reward_item.item_id=rule.item_id
+       WHERE catalog.package_id='PKG-LUCKY-BOX'`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      consumeItemId: row.consume_item_id,
+      rewardItemId: row.item_id,
+      quantity: Number(row.quantity),
+      catalogEnabled: Number(row.catalog_enabled),
+      consumeEnabled: Number(row.consume_enabled),
+      rewardEnabled: Number(row.reward_enabled),
+      aliases: Number(row.alias_count),
+    })), [{ consumeItemId: "lucky_box", rewardItemId: "reward_lucky_box", quantity: 5,
+      catalogEnabled: 0, consumeEnabled: 0, rewardEnabled: 1, aliases: 0 }]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases WHERE command_text='/행운의박스오픈'`,
     );
     assert.deepEqual(executableRows, []);
   });
