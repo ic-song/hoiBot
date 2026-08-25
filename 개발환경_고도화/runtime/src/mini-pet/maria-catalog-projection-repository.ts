@@ -9,6 +9,7 @@ import type {
 interface ViewerRow { identity_id: bigint | null; player_id: bigint | null; operator_id: bigint | null; trusted_admin: number; }
 interface OperationRow { id: bigint; status: string; result_json: string | MiniPetReadResult | null; request_hash: string | null; stale_processing: number; }
 const COLLECTION_GRADES = ["창조", "창세", "태초+", "태초", "초월+", "초월", "신화+", "신화"] as const;
+const DRAW_RATE_GRADES = ["일반", "고급", "희귀", "영웅", "전설", "전설+", "신화", "신화+", "초월", "초월+", "태초", "태초+", "창세", "창조"] as const;
 
 // 긴 event ID를 기존 operations key 제한 안에서 안정적으로 표현합니다.
 function eventKey(value: string): string {
@@ -72,6 +73,27 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
           && grades.every((grade, index) => grade === COLLECTION_GRADES[index]);
       });
       if (row === undefined) throw new ApplicationError("MINIPET_COLLECTION_SNAPSHOT_NOT_FOUND", "발행된 8등급 미니펫 컬렉션 snapshot이 없습니다.", 404);
+      return { poolVersion: row.pool_version, snapshotAt: row.snapshot_at.toISOString() };
+    });
+  }
+
+  // published draw-rate snapshot 중 legacy 14등급 필터 순서가 정확한 최신 pin만 선택합니다.
+  async resolveLatestDrawRateSnapshotPin(environmentCode: "prod" | "dev"): Promise<{ poolVersion: string; snapshotAt: string }> {
+    return this.database.withTransaction(async (tx) => {
+      await this.requireDatabaseEnvironment(tx, environmentCode);
+      const rows = await tx.query<Array<{ pool_version: string; snapshot_at: Date; allowed_grades_json: string | string[] }>>(
+        `SELECT pool_version, snapshot_at, allowed_grades_json
+         FROM mini_pet_catalog_snapshots
+         WHERE environment_code = ? AND status = 'published' AND catalog_kind = 'draw_rate'
+         ORDER BY snapshot_at DESC, pool_version DESC LIMIT 20`, [environmentCode]
+      );
+      const row = rows.find((candidate) => {
+        const grades = typeof candidate.allowed_grades_json === "string"
+          ? JSON.parse(candidate.allowed_grades_json) as string[] : candidate.allowed_grades_json;
+        return grades.length === DRAW_RATE_GRADES.length
+          && grades.every((grade, index) => grade === DRAW_RATE_GRADES[index]);
+      });
+      if (row === undefined) throw new ApplicationError("MINIPET_DRAW_RATE_SNAPSHOT_NOT_FOUND", "발행된 미니펫 뽑기 확률 snapshot이 없습니다.", 404);
       return { poolVersion: row.pool_version, snapshotAt: row.snapshot_at.toISOString() };
     });
   }
@@ -247,8 +269,9 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
       rawProbability: row.raw_probability, normalizedRate: row.normalized_rate, allowed: Boolean(row.allowed)
     }));
     const targetPlayerId = input.targetPlayerId ?? viewer.player_id?.toString();
-    const owned = targetPlayerId === undefined ? await this.readAllOwned(tx, catalog, input.projectionCode === "equipped_rank", input.environmentCode, snapshot.owned_snapshot_version)
-      : await this.readPlayerOwned(tx, targetPlayerId, catalog, input.environmentCode, snapshot.owned_snapshot_version);
+    const owned = input.projectionCode === "draw_rates" ? []
+      : targetPlayerId === undefined ? await this.readAllOwned(tx, catalog, input.projectionCode === "equipped_rank", input.environmentCode, snapshot.owned_snapshot_version)
+        : await this.readPlayerOwned(tx, targetPlayerId, catalog, input.environmentCode, snapshot.owned_snapshot_version);
     const gradeAggregate = this.aggregateGrades(owned, catalog);
     const allowedGrades = typeof snapshot.allowed_grades_json === "string" ? JSON.parse(snapshot.allowed_grades_json) as string[] : snapshot.allowed_grades_json;
     const gradeTable = typeof snapshot.grade_table_json === "string" ? JSON.parse(snapshot.grade_table_json) as Record<string, string> : snapshot.grade_table_json;
@@ -405,6 +428,9 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
          WHERE operator_role.operator_id = ? AND permission.permission_code = 'minipet.catalog.publish' LIMIT 1`, [publisher.operator_id]
       );
       if (publisher.trusted_admin !== 1 || allowed[0] === undefined) throw new ApplicationError("FORBIDDEN", "신뢰된 snapshot 발행 권한이 없습니다.", 403);
+      const allowedEntries = input.entries.filter((entry) => entry.allowed);
+      const totalRawProbability = allowedEntries.reduce((sum, entry) => sum + Number(entry.rawProbability ?? 0), 0);
+      const totalNormalizedRate = allowedEntries.reduce((sum, entry) => sum + Number(entry.normalizedRate ?? 0), 0);
       await tx.execute(
         "INSERT INTO mini_pet_owned_snapshot_versions (environment_code, snapshot_version, captured_at) VALUES (?, ?, ?)",
         [input.environmentCode, input.ownedSnapshotVersion, input.snapshotAt]
@@ -436,9 +462,7 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'published')`,
         [input.poolVersion, input.environmentCode, input.catalogKind, input.definitionVersion, input.ownedSnapshotVersion,
           input.snapshotAt, JSON.stringify(input.gradeTable), JSON.stringify(input.allowedGrades), JSON.stringify(input.stageRewards),
-          input.entries.reduce((sum, entry) => sum + Number(entry.rawProbability ?? 0), 0),
-          input.entries.filter((entry) => entry.allowed).reduce((sum, entry) => sum + Number(entry.normalizedRate ?? 0), 0),
-          input.entries.filter((entry) => entry.allowed).length === 0]
+          totalRawProbability, totalNormalizedRate, totalRawProbability === 0]
       );
       for (const entry of input.entries) {
         await tx.execute(

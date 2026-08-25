@@ -155,6 +155,29 @@ export class MiniPetCatalogProjectionService {
     });
   }
 
+  // 최신 draw-rate snapshot을 pin해 공개 확률표를 draw 실행과 공유 가능한 버전으로 읽습니다.
+  async readLatestDrawRates(request: {
+    environmentCode: MiniPetEnvironmentCode;
+    providerEventId: string;
+  }): Promise<MiniPetReadResult> {
+    if (request.environmentCode !== this.expectedEnvironmentCode) {
+      throw new ApplicationError("MINIPET_ENVIRONMENT_MISMATCH", "요청과 provider DB 환경이 일치하지 않습니다.", 409);
+    }
+    const pin = await this.repository.resolveLatestDrawRateSnapshotPin(request.environmentCode);
+    const result = await this.read({
+      projectionCode: "draw_rates",
+      environmentCode: request.environmentCode,
+      poolVersion: pin.poolVersion,
+      snapshotAt: pin.snapshotAt,
+      providerEventId: request.providerEventId
+    });
+    if (!hasExactGradeOrder(result.catalog.map((entry) => entry.filterKey), DRAW_RATE_ALLOWED_GRADES)
+      || result.catalog.some((entry) => !entry.allowed || entry.filterKey !== (entry.name || entry.grade))) {
+      throw new ApplicationError("MINIPET_DRAW_RATE_ENTRIES_INVALID", "미니펫 뽑기 확률 snapshot 순서가 올바르지 않습니다.", 409);
+    }
+    return result;
+  }
+
   // current gradeTable과 allowedGrades를 immutable published snapshot으로 발행합니다.
   async publishSnapshot(request: MiniPetPublishedSnapshotInput) {
     if (request.environmentCode !== this.expectedEnvironmentCode) {
@@ -164,8 +187,13 @@ export class MiniPetCatalogProjectionService {
     if (!hasExactGradeOrder(request.allowedGrades, expectedGrades)) {
       throw new ApplicationError("MINIPET_ALLOWED_GRADES_INVALID", `${request.catalogKind} snapshot의 allowedGrades 목록과 순서가 원본 계약과 일치해야 합니다.`, 422);
     }
-    if (request.entries.some((entry) => !request.allowedGrades.includes(entry.grade))) {
-      throw new ApplicationError("MINIPET_ENTRY_GRADE_INVALID", "catalog entry grade가 allowedGrades에 없습니다.", 422);
+    if (request.entries.some((entry) => entry.filterKey !== (entry.name || entry.grade)
+      || entry.allowed !== request.allowedGrades.includes(entry.filterKey))) {
+      throw new ApplicationError("MINIPET_ENTRY_FILTER_INVALID", "catalog entry의 filterKey 또는 allowed 값이 원본 필터 계약과 다릅니다.", 422);
+    }
+    if (request.entries.some((entry) => entry.rawProbability !== null
+      && (!Number.isFinite(Number(entry.rawProbability)) || Number(entry.rawProbability) < 0))) {
+      throw new ApplicationError("MINIPET_ENTRY_PROBABILITY_INVALID", "catalog entry 확률은 0 이상의 숫자여야 합니다.", 422);
     }
     if (new Set(request.entries.map((entry) => entry.definitionCode)).size !== request.entries.length
       || new Set(request.entries.map((entry) => entry.sourceOrder)).size !== request.entries.length) {

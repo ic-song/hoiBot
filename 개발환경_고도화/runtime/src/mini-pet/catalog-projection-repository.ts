@@ -106,6 +106,7 @@ export interface MiniPetTargetPlayer {
 export interface MiniPetCatalogProjectionRepository {
   resolveLatestSnapshotPin(environmentCode: MiniPetEnvironmentCode): Promise<MiniPetSnapshotPin>;
   resolveLatestCollectionSnapshotPin(environmentCode: MiniPetEnvironmentCode): Promise<MiniPetSnapshotPin>;
+  resolveLatestDrawRateSnapshotPin(environmentCode: MiniPetEnvironmentCode): Promise<MiniPetSnapshotPin>;
   resolveTargetPlayer(environmentCode: MiniPetEnvironmentCode, poolVersion: string, snapshotAt: string, targetName: string): Promise<MiniPetTargetPlayer>;
   read(input: MiniPetReadInput): Promise<MiniPetReadResult>;
   publishSnapshot(input: MiniPetPublishedSnapshotInput): Promise<{ poolVersion: string; definitionVersion: string; snapshotAt: string }>;

@@ -25,6 +25,7 @@ class FakeRepository implements MiniPetCatalogProjectionRepository {
   lastRead: MiniPetReadInput | undefined;
   async resolveLatestSnapshotPin() { return { poolVersion: "other-v1", snapshotAt: "2026-08-25T02:00:00.000Z" }; }
   async resolveLatestCollectionSnapshotPin() { return { poolVersion: "collection-v1", snapshotAt: "2026-08-25T03:00:00.000Z" }; }
+  async resolveLatestDrawRateSnapshotPin() { return { poolVersion: "draw-v1", snapshotAt: "2026-08-25T03:00:00.000Z" }; }
   async resolveTargetPlayer(_environmentCode: "prod" | "dev", _poolVersion: string, _snapshotAt: string, targetName: string) { return { playerId: "1", displayName: targetName }; }
   async read(input: MiniPetReadInput) { this.lastRead = input; return result(); }
   async publishSnapshot(_input: MiniPetPublishedSnapshotInput) { return { poolVersion: "collection-v1", definitionVersion: "definition-v1", snapshotAt: "2026-08-25T03:00:00.000Z" }; }
