@@ -2859,7 +2859,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             saveJsonFile(data, filePath);
-            noticeMsg(petMusouStartResult.message);
             startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
             return;
         }
