@@ -137,6 +137,24 @@ export class MiniPetCatalogProjectionService {
     return result;
   }
 
+  // 최신 8등급 snapshot에서 전체 bag-only 등급 통계를 replay 가능한 read로 집계합니다.
+  async readLatestGradeStats(request: {
+    environmentCode: MiniPetEnvironmentCode;
+    providerEventId: string;
+  }): Promise<MiniPetReadResult> {
+    if (request.environmentCode !== this.expectedEnvironmentCode) {
+      throw new ApplicationError("MINIPET_ENVIRONMENT_MISMATCH", "요청과 provider DB 환경이 일치하지 않습니다.", 409);
+    }
+    const pin = await this.repository.resolveLatestCollectionSnapshotPin(request.environmentCode);
+    return this.read({
+      projectionCode: "grade_stats",
+      environmentCode: request.environmentCode,
+      poolVersion: pin.poolVersion,
+      snapshotAt: pin.snapshotAt,
+      providerEventId: request.providerEventId
+    });
+  }
+
   // current gradeTable과 allowedGrades를 immutable published snapshot으로 발행합니다.
   async publishSnapshot(request: MiniPetPublishedSnapshotInput) {
     if (request.environmentCode !== this.expectedEnvironmentCode) {

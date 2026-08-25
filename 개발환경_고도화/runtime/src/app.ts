@@ -44,6 +44,7 @@ import { isMiniPetInventoryViewCommand, MiniPetInventoryViewNormalizeService } f
 import { formatMiniPetEquippedRank, isMiniPetEquippedRankReadCommand } from "./mini-pet/equipped-rank-read-command.js";
 import { formatMiniPetAdminInfo, readMiniPetAdminInfoTarget } from "./mini-pet/admin-info-read-command.js";
 import { formatMiniPetCollection, isMiniPetCollectionReadCommand } from "./mini-pet/collection-read-command.js";
+import { formatMiniPetGradeStats, isMiniPetGradeStatsReadCommand } from "./mini-pet/grade-stats-read-command.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1294,6 +1295,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(
               normalizedEvent, "mini_pet_collection_read", error.message
+            ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetGradeStatsReadCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await miniPetCatalogProjection!.readLatestGradeStats({
+            environmentCode: miniPetProjectionEnvironment,
+            providerEventId: normalizedEvent.eventId
+          });
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent, "mini_pet_grade_stats_read", formatMiniPetGradeStats(result)
+          ));
+        } catch (error) {
+          if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "mini_pet_grade_stats_read", error.message
             ));
           } else {
             throw error;

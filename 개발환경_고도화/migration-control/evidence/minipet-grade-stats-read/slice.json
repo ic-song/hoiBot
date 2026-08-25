@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-MINIPET-GRADE-STATS-READ",
+  "status": "shadow_verified",
+  "execution": {
+    "executionId": "개발자-SL-MINIPET-GRADE-STATS-READ-20260825-G3G7",
+    "claimRow": 1231,
+    "branch": "codex/modernization-minipet-grade-stats-read-20260825",
+    "baseCommit": "758c3f34ea91c6df4baee7fe5a4dffb307d58c33"
+  },
+  "commands": {
+    "names": ["/미니펫통계"],
+    "guard": "exact equality",
+    "wbsRow": 379,
+    "dbRow": 1454,
+    "validationRows": ["4229:4234", "8183:8188"]
+  },
+  "legacyData": {
+    "inputs": ["Info.js member_pet miniPetBag grades", "mini-pet grade definitions"],
+    "preservedBehavior": ["bag-only aggregate", "equipped excluded", "ELITE aliases", "unknown to 기타", "event first", "elite after 창조", "one-decimal percentage"]
+  },
+  "database": {
+    "migration": "existing 051/053 snapshot schema reused",
+    "tables": ["mini_pet_owned_read_snapshots", "mini_pet_catalog_snapshots", "mini_pet_catalog_entries", "mini_pet_read_executions", "operations", "command_executions", "command_audit"],
+    "stableIdentity": "immutable owned snapshot version plus owned_mini_pet_id"
+  },
+  "trialMigration": {
+    "fresh": 46,
+    "reapply": 46,
+    "fixture": "functional-v1 plus equipped-rank-v1 plus collection-read-v1 plus grade-stats-v1 twice",
+    "port": 33316
+  },
+  "logicPort": {
+    "files": ["runtime/src/mini-pet/catalog-projection-service.ts", "runtime/src/mini-pet/maria-catalog-projection-repository.ts", "runtime/src/mini-pet/grade-stats-read-command.ts", "runtime/src/app.ts"],
+    "tests": ["focused", "full", "typecheck", "build", "MariaDB bag-only/alias/order probe", "forced rollback", "restart Shadow"]
+  },
+  "parity": {
+    "result": "passed",
+    "snapshotPinned": true,
+    "bagOnly": true,
+    "gradeAliases": true,
+    "unknownNormalized": true,
+    "legacyOrder": true,
+    "emptyAggregate": true,
+    "idempotentReplay": true,
+    "rollbackVerified": true,
+    "restartVerified": true
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "legacyMainChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate 8 requires separate operational approval.",
+    "Private-chat pass routing remains owned by the common runtime access layer."
+  ]
+}
