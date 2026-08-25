@@ -59,6 +59,7 @@ import { FixedItemGrantService, isFixedItemGrantCommand } from "./admin/fixed-it
 import { BoosterDualGrantService, isBoosterDualGrantCommand } from "./admin/booster-dual-grant-service.js";
 import { GlobalGiftDistributeService, isGlobalGiftCommand } from "./admin/global-gift-distribute-service.js";
 import { isPlayerAttributeAdjustCommand, PlayerAttributeAdjustService } from "./admin/player-attribute-adjust-service.js";
+import { CarrotTemperatureTransferService, isCarrotTemperatureTransferCommand } from "./market/carrot-temperature-transfer-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
@@ -1396,6 +1397,20 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCarrotTemperatureTransferCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new CarrotTemperatureTransferService(database).execute({ externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId, eventId: normalizedEvent.eventId, message: normalizedEvent.message ?? "" });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          const commandError = error instanceof Error ? error : new Error("온도기 전달에 실패했습니다.");
+          processing.replies.push({ outboxId: `error:${normalizedEvent.eventId}:carrot-temperature-transfer`, room: normalizedEvent.channelId, data: commandError.message });
         }
       }
 
