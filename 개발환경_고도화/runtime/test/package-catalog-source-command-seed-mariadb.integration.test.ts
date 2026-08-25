@@ -43,7 +43,9 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-ARCHMAGE-RUINS-BOX", command: "/대마법박스오픈" },
   { packageId: "PKG-CHICKEN-BOX", command: "/치킨오픈" },
   { packageId: "PKG-CASTLE-CARD", command: "/카드오픈" },
+  { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈" },
   { packageId: "PKG-LAND-DOCUMENT-DUNGEON-BOX", command: "/땅문서박스오픈" },
+  { packageId: "PKG-SHOP-OPEN-DUNGEON-BOX", command: "/샵오픈박스오픈" },
 ] as const;
 
 (configured ? describe : describe.skip)("package catalog source command seed", () => {
@@ -62,7 +64,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 36 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 38 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -174,6 +176,43 @@ const EXPECTED_SOURCE_COMMANDS = [
       itemId: "ITEM-RWD-039",
       quantity: 1,
     }]);
+  });
+
+  it("supersedes fixed box command handlers with deterministic catalog rewards", async () => {
+    const rows = await database.query<Array<{
+      package_id: string; source_legacy_command: string; consume_item_id: string;
+      item_id: string; quantity: bigint; alias_count: bigint;
+    }>>(
+      `SELECT catalog.package_id,catalog.source_legacy_command,catalog.consume_item_id,
+              rule.item_id,rule.quantity,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       WHERE catalog.package_id IN ('PKG-CHICKEN-DUNGEON-BOX','PKG-SHOP-OPEN-DUNGEON-BOX')
+       ORDER BY catalog.package_id`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      packageId: row.package_id,
+      command: row.source_legacy_command,
+      consumeItemId: row.consume_item_id,
+      rewardItemId: row.item_id,
+      quantity: Number(row.quantity),
+      aliases: Number(row.alias_count),
+    })), [
+      { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈",
+        consumeItemId: "ITEM-DUNGEON-CHICKEN-BOX", rewardItemId: "ITEM-PACKAGE-CHICKEN-BOX",
+        quantity: 10, aliases: 0 },
+      { packageId: "PKG-SHOP-OPEN-DUNGEON-BOX", command: "/샵오픈박스오픈",
+        consumeItemId: "ITEM-DUNGEON-SHOP-OPEN-BOX", rewardItemId: "ITEM-RWD-001",
+        quantity: 70, aliases: 0 },
+    ]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases
+       WHERE command_text IN ('/양계장박스오픈','/샵오픈박스오픈')`,
+    );
+    assert.deepEqual(executableRows, []);
   });
 });
 
