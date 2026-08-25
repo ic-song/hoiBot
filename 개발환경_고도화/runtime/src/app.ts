@@ -30,6 +30,7 @@ import { ChangePlayerServerService } from "./player/change-player-server-service
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { DiamondBoxOpenService, isDiamondBoxOpenCommand, normalizeDiamondBoxOpenDispatchMessage } from "./inventory/diamond-box-open-service.js";
+import { FixedRewardBoxOpenService, isFixedRewardBoxOpenCommand, normalizeFixedRewardBoxOpenDispatchMessage } from "./inventory/fixed-reward-box-open-service.js";
 import { DiamondMineBoxOpenService, isDiamondMineBoxOpenCommand, normalizeDiamondMineBoxOpenDispatchMessage } from "./inventory/diamond-mine-box-open-service.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
@@ -645,6 +646,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isSignupCommand(normalizedEvent.message ?? "")
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxOpenCommand(normalizedEvent.message)
+        || isFixedRewardBoxOpenCommand(normalizedEvent.message)
         || isDiamondMineBoxOpenCommand(normalizedEvent.message)
         || isDiamondBoxCraftCommand(normalizedEvent.message)
         || isAdminDiamondEditCommand(normalizedEvent.message)
@@ -675,6 +677,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxOpenCommand(normalizedEvent.message)
                 ? normalizeDiamondBoxOpenDispatchMessage(normalizedEvent.message ?? "")
+              : isFixedRewardBoxOpenCommand(normalizedEvent.message)
+                ? normalizeFixedRewardBoxOpenDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondMineBoxOpenCommand(normalizedEvent.message)
                 ? normalizeDiamondMineBoxOpenDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1113,6 +1117,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.direction === "incoming" && isFixedRewardBoxOpenCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "inventory_fixed_reward_box_open"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new FixedRewardBoxOpenService(database!).handle({
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if ((result.status === "opened" || result.status === "no_box")
+          && result.outboxId !== undefined && result.data !== undefined) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
       }
 
