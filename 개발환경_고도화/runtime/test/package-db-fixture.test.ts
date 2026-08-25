@@ -123,12 +123,12 @@ function makeStackHarness(
 }
 
 describe("independent package DB parity fixture", () => {
-  it("contains exactly 30 unique command, package, command-id and consumer mappings", () => {
-    assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 30);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.legacyCommand)).size, 30);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.packageId)).size, 30);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.commandId)).size, 30);
-    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.consumeItemId)).size, 30);
+  it("contains exactly 31 unique command, package, command-id and consumer mappings", () => {
+    assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 31);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.legacyCommand)).size, 31);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.packageId)).size, 31);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.commandId)).size, 31);
+    assert.equal(new Set(INDEPENDENT_PACKAGE_FIXTURES.map((entry) => entry.consumeItemId)).size, 31);
     for (const entry of INDEPENDENT_PACKAGE_FIXTURES) {
       assert.match(entry.legacyCommand, /^\//);
       assert.match(entry.packageId, /^PKG-\d{3}$/);
@@ -139,7 +139,7 @@ describe("independent package DB parity fixture", () => {
   });
 
   it("preserves the extracted fixed-reward row count for every legacy command", () => {
-    assert.equal(Object.keys(LEGACY_FIXED_REWARD_COUNTS).length, 30);
+    assert.equal(Object.keys(LEGACY_FIXED_REWARD_COUNTS).length, 31);
     for (const entry of INDEPENDENT_PACKAGE_FIXTURES) {
       assert.equal(entry.fixedRewards.length, LEGACY_FIXED_REWARD_COUNTS[entry.legacyCommand], entry.legacyCommand);
       for (const reward of entry.fixedRewards) {
@@ -166,8 +166,8 @@ describe("independent package DB parity fixture", () => {
     assert.equal(legacyTypo?.name, "길드창고패키지🧳(/길드창고패키지오픈");
   });
 
-  it("preserves all five dynamic rule families without flattening them into fixed grants", () => {
-    assert.equal(Object.keys(LEGACY_DYNAMIC_RULE_KINDS).length, 5);
+  it("preserves all six dynamic packages without flattening them into fixed grants", () => {
+    assert.equal(Object.keys(LEGACY_DYNAMIC_RULE_KINDS).length, 6);
     for (const [command, expectedKinds] of Object.entries(LEGACY_DYNAMIC_RULE_KINDS)) {
       const fixture = findFixture(command);
       assert.deepEqual(fixture.dynamicRules.map((rule) => rule.kind), expectedKinds);

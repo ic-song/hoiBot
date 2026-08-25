@@ -389,7 +389,20 @@ export const INDEPENDENT_PACKAGE_FIXTURES: readonly IndependentPackageFixture[] 
     add("ITEM-RWD-042", "캐슬코인🥇", "STACK", 200n),
     add("ITEM-RWD-065", "펫강화확률UP🌟(30%)", "STACK", 6n),
     add("ITEM-RWD-026", "펫 강화석⭐", "STACK", 2_200n)
-  ])
+  ]),
+  pkg("214", "/랜덤오픈", "랜덤박스💝", [], [{
+    kind: "WEIGHTED_ONE", ruleId: "random-box-uniform-draw", outputType: "STACK",
+    failureWeight: 0, successWeight: 1, legacySuccessWeightTotal: 1,
+    normalizeSuccessWeights: true,
+    choices: [
+      { itemId: "ITEM-RWD-TRASH-BOX", name: "잡템상자☠", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n },
+      { itemId: "ITEM-RWD-RANDOM-SPIRIT-BOX", name: "정령상자🥀", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n },
+      { itemId: "ITEM-PACKAGE-CHICKEN-BOX", name: "치킨상자🐔", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n },
+      { itemId: "ITEM-RWD-025", name: "펫먹이🍼", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n },
+      { itemId: "ITEM-RWD-RANDOM-TERRITORY-DEFENSE-20", name: "영지절대방어권🛡(20%)", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n },
+      { itemId: "ITEM-RWD-RANDOM-TERRITORY-ATTACK-10", name: "영지기습공격권🔥(10%)", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n }
+    ]
+  }], 10_000)
 ];
 
 export const LEGACY_FIXED_REWARD_COUNTS: Readonly<Record<string, number>> = Object.fromEntries(
