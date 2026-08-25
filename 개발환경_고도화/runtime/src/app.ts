@@ -62,6 +62,7 @@ import { isPlayerAttributeAdjustCommand, PlayerAttributeAdjustService } from "./
 import { CarrotTemperatureTransferService, isCarrotTemperatureTransferCommand } from "./market/carrot-temperature-transfer-service.js";
 import { CastleTaxRateMutateService, isCastleTaxRateCommand } from "./castle/tax-rate-mutate-service.js";
 import { AdminRoleAddService, isAdminRoleAddCommand } from "./admin/role-add-service.js";
+import { AdminRoleDeleteService, isAdminRoleDeleteCommand } from "./admin/role-delete-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
@@ -1398,6 +1399,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "booster_dual_grant_error", error.message));
           } else {
             throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isAdminRoleDeleteCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new AdminRoleDeleteService(database).execute({ externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId, eventId: normalizedEvent.eventId, message: normalizedEvent.message ?? "" });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && error.statusCode === 403) {
+            // 레거시 총괄 운영자 전용 관리자 삭제는 권한이 없으면 응답하지 않습니다.
+          } else {
+            const commandError = error instanceof Error ? error : new Error("관리자 삭제에 실패했습니다.");
+            processing.replies.push({ outboxId: `error:${normalizedEvent.eventId}:admin-role-delete`, room: normalizedEvent.channelId, data: commandError.message });
           }
         }
       }
