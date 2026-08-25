@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.403"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.404"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -767,6 +767,7 @@ let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 
 var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리 객체 (guildId: timerId)
+var petMusouOpeningTimers = {}; // 펫무쌍 30초 시작 유예 타이머 관리 객체 (실행 컨텍스트별 timerId)
 var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
@@ -877,6 +878,7 @@ const GLOBAL_CONFIG = {
     petMusou: { // 펫무쌍 대회 진행 설정
         flagCount: 10,
         attackLimit: 3,
+        startGraceMs: 30000,
         turnTimeoutMs: 10000,
         attackRewardPoint: 200000000,
         winnerRewardPoint: 2000000000,
@@ -2852,8 +2854,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             saveJsonFile(data, filePath);
             noticeMsg(petMusouStartResult.message);
-            castleMsg(buildPetMusouStatusMessage(data, petData, guildData, ensurePetMusouData(data)), replier, isGroupChat);
-            startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+            startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
             return;
         }
         if (/^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg)) {
@@ -33326,6 +33327,9 @@ function ensurePetMusouData(data) {
     if (typeof musou.actionSeq !== "number") musou.actionSeq = 0;
     if (typeof musou.turnDeadlineAt !== "number") musou.turnDeadlineAt = 0;
     if (typeof musou.turnToken !== "string") musou.turnToken = "";
+    if (typeof musou.startReady !== "boolean") musou.startReady = musou.active;
+    if (typeof musou.startGraceDeadlineAt !== "number") musou.startGraceDeadlineAt = 0;
+    if (typeof musou.startGraceToken !== "string") musou.startGraceToken = "";
     return musou;
 }
 
@@ -33459,15 +33463,21 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
     musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
+    var startGraceNow = new Date().getTime(); // 30초 시작 유예 토큰과 마감시각의 공통 기준시각
+    musou.startReady = false;
+    musou.startGraceToken = String(startGraceNow) + "_" + String(Math.random());
+    musou.startGraceDeadlineAt = startGraceNow + GLOBAL_CONFIG.petMusou.startGraceMs;
     musou.lastActionId = "";
     return {
         ok: true,
         excludedUsers: excludedUsers,
-        message: "🗡️ 펫 무쌍 대회 시작! 🗡️\n" +
+        message: "🗡️ 펫 무쌍 대회 시작 준비! 🗡️\n" +
             "━━━━━━━━━━━━━━━━\n" +
             "참가자: " + validUsers.length + "명\n" +
             "개인 공격권: " + GLOBAL_CONFIG.petMusou.attackLimit + "회\n" +
+            "준비 유예시간: " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초\n" +
             "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
+            "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
             "10개의 깃발 중 진짜 깃발은 단 1개!\n" +
             "가짜 깃발을 공격하면 즉시 탈락합니다.\n\n" +
             "⚡ 최초 누적 벼락발생확률: 1.0%\n" +
@@ -33514,12 +33524,16 @@ function finishPetMusou(data, petData, guildData, reason) {
     var roundId = musou.roundId;
     var winner = musou.currentHolder && musou.players[musou.currentHolder] && musou.players[musou.currentHolder].alive ? musou.currentHolder : "";
     var alreadyProcessed = !!musou.processedRounds[roundId];
+    clearPetMusouOpeningTimer();
     clearPetMusouTurnTimer();
     musou.active = false;
     musou.signupOpen = true;
     musou.endedAt = formatDateTime(new Date());
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
+    musou.startReady = false;
+    musou.startGraceToken = "";
+    musou.startGraceDeadlineAt = 0;
     musou.turnQueue = [];
     musou.participants = {};
     if (!alreadyProcessed) {
@@ -33565,6 +33579,7 @@ function finishPetMusou(data, petData, guildData, reason) {
 
 // 펫무쌍 진행 상태와 전 유저의 참가·누적 전적을 초기화하는 함수
 function resetAllPetMusouData(data) {
+    clearPetMusouOpeningTimer();
     clearPetMusouTurnTimer();
     var signupUserCount = 0; // 당일 참가 표시가 제거된 유저 수
     var rankingUserCount = 0; // 누적 무쌍 기록이 제거된 유저 수
@@ -33690,6 +33705,10 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
 function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     var musou = ensurePetMusouData(data);
     if (!musou.active) return { ok: false, message: "❌ 현재 진행 중인 펫무쌍 대회가 없습니다." };
+    if (!musou.startReady) {
+        var remainingGraceSeconds = Math.max(1, Math.ceil((musou.startGraceDeadlineAt - new Date().getTime()) / 1000));
+        return { ok: false, message: "⏳ 펫무쌍 시작 준비 중입니다.\n첫 공격은 " + remainingGraceSeconds + "초 뒤 시작됩니다." };
+    }
     var currentAttacker = getPetMusouCurrentAttacker(musou);
     if (currentAttacker !== sender) return { ok: false, message: "❌ 현재 공격 차례가 아닙니다.\n현재 공격자: " + currentAttacker };
     if (!musou.players[sender] || !musou.players[sender].alive || musou.players[sender].attacksLeft < 1) return { ok: false, message: "❌ 펫무쌍 공격이 가능한 상태가 아닙니다." };
@@ -33704,6 +33723,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     musou.turnDeadlineAt = 0;
     var lines = ["🗡️펫 무쌍 대회 결과🗡️", "━━━━━━━━━━━━", "공격자: [" + checkRank(data, petData, guildData, sender) + "]", "공격 깃발: [" + flagNo + "] " + getPetMusouFlagName(flagNo)];
     var rewardGranted = false;
+    var attackSucceeded = false; // 깃발 발견·점령·전투 승리 여부에 따른 공격 성공 판정
     var hasBattleDetail = false; // 공격자·점령자 양쪽의 종합매력 상세 출력 여부
 
     if (!musou.realFlagFound && musou.fakeFlags[String(flagNo)]) {
@@ -33714,6 +33734,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         rewardGranted = true;
         data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
         if (flagNo === musou.realFlagNo) {
+            attackSucceeded = true;
             musou.realFlagFound = true;
             musou.currentHolder = sender;
             for (var fakeNo = 1; fakeNo <= GLOBAL_CONFIG.petMusou.flagCount; fakeNo++) {
@@ -33731,6 +33752,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         musou.players[sender].attacksLeft = 0;
         lines.push("공격 보상🤑: 미지급", "", "이미 가짜로 밝혀진 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님은 즉시 탈락합니다.");
     } else if (!musou.currentHolder) {
+        attackSucceeded = true;
         rewardGranted = true;
         data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
         musou.currentHolder = sender;
@@ -33743,12 +33765,14 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         lines.push("공격 보상🤑: 🅟2억", "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
         hasBattleDetail = !!(battleResult.attacker && battleResult.defender);
         if (battleResult.attackerWin) {
+            attackSucceeded = true;
             musou.currentHolder = sender;
             if (musou.players[previousHolder] && musou.players[previousHolder].alive && musou.players[previousHolder].attacksLeft > 0 && musou.turnQueue.indexOf(previousHolder) === -1) {
                 musou.turnQueue.push(previousHolder);
             }
         }
     }
+    lines[0] += attackSucceeded ? "[성공✅]" : "[실패❌]";
     var lightningResult = processPetMusouLightning(musou, data, petData, guildData);
     lines.push("━━━━━━━━━━━━", lightningResult.message);
     if (!hasBattleDetail) {
@@ -33769,7 +33793,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
 function processPetMusouTimeout(data, petData, guildData) {
     var musou = ensurePetMusouData(data);
     var attacker = getPetMusouCurrentAttacker(musou);
-    if (!musou.active || !attacker || !musou.players[attacker]) return { ok: false };
+    if (!musou.active || !musou.startReady || !attacker || !musou.players[attacker]) return { ok: false };
     musou.turnQueue.shift();
     musou.players[attacker].alive = false;
     musou.players[attacker].attacksLeft = 0;
@@ -33789,6 +33813,68 @@ function processPetMusouTimeout(data, petData, guildData) {
     return { ok: true, ended: false, message: message, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou) };
 }
 
+// 펫무쌍 실행 컨텍스트의 시작 유예 타이머를 해제하는 함수
+function clearPetMusouOpeningTimer(ctx) {
+    var targetCtx = ctx || getCurrentContext();
+    var ctxKey = targetCtx.key();
+    if (petMusouOpeningTimers[ctxKey]) {
+        clearTimeout(petMusouOpeningTimers[ctxKey]);
+        delete petMusouOpeningTimers[ctxKey];
+    }
+}
+
+// 펫무쌍 30초 준비 종료 후 첫 공격과 턴 타이머를 시작하는 함수
+function openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return false;
+    musou.startReady = true;
+    musou.startGraceToken = "";
+    musou.startGraceDeadlineAt = 0;
+    startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+    noticeMsg("🗡️ 펫 무쌍 대회 공격 시작! 🗡️\n━━━━━━━━━━━━━━━━\n" + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 준비 시간이 끝났습니다.\n첫 공격자의 차례를 시작합니다.");
+    castleMsg(buildPetMusouStatusMessage(data, petData, guildData, musou), replier, isGroupChat);
+    return true;
+}
+
+// 펫무쌍 저장 마감시각을 기준으로 30초 시작 유예 타이머를 예약하거나 복구하는 함수
+function startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, preserveDeadline) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return;
+    var timerCtx = getCurrentContext();
+    var timerCtxKey = timerCtx.key();
+    clearPetMusouOpeningTimer(timerCtx);
+    var now = new Date().getTime();
+    if (!preserveDeadline || !musou.startGraceToken || musou.startGraceDeadlineAt <= 0) {
+        musou.startGraceToken = String(now) + "_" + String(Math.random());
+        musou.startGraceDeadlineAt = now + GLOBAL_CONFIG.petMusou.startGraceMs;
+        saveJsonFile(data, filePath);
+    }
+    var token = musou.startGraceToken;
+    var delayMs = Math.max(1, musou.startGraceDeadlineAt - now);
+    petMusouOpeningTimers[timerCtxKey] = setTimeout(function () {
+        var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
+        try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
+            delete petMusouOpeningTimers[timerCtxKey];
+            var latestData = loadJsonFile(filePath);
+            var latestPetData = loadJsonFile(memberPetPath);
+            var latestGuildData = loadJsonFile(guildPath);
+            var latestMusou = ensurePetMusouData(latestData);
+            if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
+            openPetMusouForAttacks(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+        } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
+            exitCommandContext(prevCtx);
+        }
+    }, delayMs);
+}
+
 // 펫무쌍 실행 컨텍스트의 턴 타이머를 해제하는 함수
 function clearPetMusouTurnTimer(ctx) {
     var targetCtx = ctx || getCurrentContext();
@@ -33803,7 +33889,7 @@ function clearPetMusouTurnTimer(ctx) {
 function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, preserveDeadline) {
     var musou = ensurePetMusouData(data);
     var attacker = getPetMusouCurrentAttacker(musou);
-    if (!musou.active || !attacker) return;
+    if (!musou.active || !musou.startReady || !attacker) return;
     var timerCtx = getCurrentContext();
     var timerCtxKey = timerCtx.key();
     clearPetMusouTurnTimer(timerCtx);
@@ -33853,6 +33939,15 @@ function recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupC
     var musou = ensurePetMusouData(data);
     if (!musou.active || !getPetMusouCurrentAttacker(musou)) return;
     var ctx = getCurrentContext();
+    if (!musou.startReady) {
+        if (petMusouOpeningTimers[ctx.key()]) return;
+        if (musou.startGraceDeadlineAt > 0 && musou.startGraceDeadlineAt <= new Date().getTime()) {
+            openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat);
+            return;
+        }
+        startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
+        return;
+    }
     if (petMusouTurnTimers[ctx.key()]) return;
     if (musou.turnDeadlineAt > 0 && musou.turnDeadlineAt <= new Date().getTime()) {
         var timeoutResult = processPetMusouTimeout(data, petData, guildData);
