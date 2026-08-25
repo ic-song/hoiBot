@@ -46,6 +46,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-CASTLE-ACE-BOX", command: "/에이스오픈" },
   { packageId: "PKG-CASTLE-ALMIGHTY-BOX", command: "/올마이티오픈" },
   { packageId: "PKG-CASTLE-EMPEROR-BOX", command: "/엠퍼러오픈" },
+  { packageId: "PKG-DIAMOND-MINE-BOX", command: "/다이아박스오픈" },
   { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈" },
   { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈" },
   { packageId: "PKG-GIFT-POINT-BOX", command: "/선물오픈" },
@@ -78,7 +79,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 52 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 53 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
