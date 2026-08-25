@@ -48,6 +48,7 @@ const EXPECTED_SOURCE_COMMANDS = [
   { packageId: "PKG-CASTLE-EMPEROR-BOX", command: "/엠퍼러오픈" },
   { packageId: "PKG-CHICKEN-DUNGEON-BOX", command: "/양계장박스오픈" },
   { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈" },
+  { packageId: "PKG-GIFT-POINT-BOX", command: "/선물오픈" },
   { packageId: "PKG-ENHANCE-DUNGEON-BOX", command: "/강화박스오픈" },
   { packageId: "PKG-GUILD-RAID-DUNGEON-BOX", command: "/레이드박스오픈" },
   { packageId: "PKG-JEONDOR-DUNGEON-BOX", command: "/전도르박스오픈" },
@@ -73,7 +74,7 @@ const EXPECTED_SOURCE_COMMANDS = [
 
   after(async () => database.close());
 
-  it("stores all 47 legacy commands on catalog rows without executable aliases", async () => {
+  it("stores all 48 legacy commands on catalog rows without executable aliases", async () => {
     const rows = await database.query<Array<{
       package_id: string; source_legacy_command: string; enabled: number; alias_count: bigint;
     }>>(
@@ -444,6 +445,33 @@ const EXPECTED_SOURCE_COMMANDS = [
     const executableRows = await database.query<Array<{ command_text: string }>>(
       `SELECT command_text FROM command_aliases
        WHERE command_text IN ('/에이스오픈','/엠퍼러오픈','/올마이티오픈')`,
+    );
+    assert.deepEqual(executableRows, []);
+  });
+
+  it("stores gift boxes as siege-blocked point range rewards", async () => {
+    const rows = await database.query<Array<{
+      consume_item_id: string; item_id: string; item_type: string; rule_mode: string;
+      range_min: bigint; range_max: bigint; range_step: bigint; block_castle: number; alias_count: bigint;
+    }>>(
+      `SELECT catalog.consume_item_id,rule.item_id,item.item_type,rule.rule_mode,
+              rule.range_min,rule.range_max,rule.range_step,catalog.block_castle,
+              (SELECT COUNT(*) FROM package_command_aliases alias_row
+               WHERE alias_row.package_id=catalog.package_id) alias_count
+       FROM package_catalog catalog
+       JOIN package_reward_rules rule ON rule.package_id=catalog.package_id AND rule.enabled=1
+       JOIN package_item_definitions item ON item.item_id=rule.item_id
+       WHERE catalog.package_id='PKG-GIFT-POINT-BOX'`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      consumeItemId: row.consume_item_id, rewardItemId: row.item_id, itemType: row.item_type,
+      mode: row.rule_mode, range: [Number(row.range_min), Number(row.range_max), Number(row.range_step)],
+      blockCastle: Number(row.block_castle), aliases: Number(row.alias_count),
+    })), [{ consumeItemId: "gift_point_box", rewardItemId: "point", itemType: "POINT",
+      mode: "UNIFORM_RANGE", range: [500000, 3000000, 500000], blockCastle: 1, aliases: 0 }]);
+
+    const executableRows = await database.query<Array<{ command_text: string }>>(
+      `SELECT command_text FROM command_aliases WHERE command_text='/선물오픈'`,
     );
     assert.deepEqual(executableRows, []);
   });
