@@ -29,19 +29,22 @@ function jsonObject(value: unknown): Record<string, unknown> {
 
   after(async () => database.close());
 
-  it("matches every command alias, consumer and maximum open count", async () => {
+  it("keeps every package seed without creating direct legacy command aliases", async () => {
     assert.equal(INDEPENDENT_PACKAGE_FIXTURES.length, 29);
     for (const fixture of INDEPENDENT_PACKAGE_FIXTURES) {
       const rows = await database.query<Array<Record<string, unknown>>>(
-        `SELECT catalog.consume_item_id,catalog.max_open_count,alias_row.command_text
+        `SELECT catalog.consume_item_id,catalog.max_open_count,
+                COUNT(alias_row.command_text) AS active_alias_count
          FROM package_catalog catalog
-         JOIN package_command_aliases alias_row ON alias_row.package_id=catalog.package_id AND alias_row.active=1
-         WHERE catalog.package_id=?`,
+         LEFT JOIN package_command_aliases alias_row
+           ON alias_row.package_id=catalog.package_id AND alias_row.active=1
+         WHERE catalog.package_id=?
+         GROUP BY catalog.package_id,catalog.consume_item_id,catalog.max_open_count`,
         [fixture.packageId],
       );
       assert.equal(String(rows[0]?.consume_item_id), fixture.consumeItemId, fixture.packageId);
       assert.equal(Number(rows[0]?.max_open_count), fixture.maxOpenCount, fixture.packageId);
-      assert.equal(String(rows[0]?.command_text), fixture.legacyCommand, fixture.packageId);
+      assert.equal(Number(rows[0]?.active_alias_count), 0, fixture.legacyCommand);
     }
   });
 
