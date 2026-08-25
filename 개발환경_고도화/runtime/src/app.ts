@@ -49,6 +49,7 @@ import { isMiniPetOwnedSaleCommand, MiniPetOwnedSaleService } from "./mini-pet/o
 import { isMiniPetBulkSaleCommand, MiniPetBulkSaleService } from "./mini-pet/bulk-sale-service.js";
 import { isMiniPetForceUnequipCommand, MiniPetForceUnequipService } from "./mini-pet/force-unequip-service.js";
 import { isMiniPetCreationTicketCraftCommand, MiniPetCreationTicketCraftService } from "./mini-pet/creation-ticket-craft-service.js";
+import { isMiniPetTitleSelectCommand, MiniPetTitleSelectService } from "./mini-pet/title-select-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1219,6 +1220,32 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_rename_ticket_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetTitleSelectCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new MiniPetTitleSelectService(database).execute({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId,
+            message: normalizedEvent.message ?? "",
+            environmentCode: miniPetProjectionEnvironment
+          });
+          if (result.status === "selected") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          } else if (result.status === "snapshot_required" && result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_title_select", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_title_select_error", error.message));
           } else {
             throw error;
           }
