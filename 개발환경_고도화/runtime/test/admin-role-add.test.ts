@@ -1,0 +1,18 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
+import { ApplicationError } from "../src/shared/application-error.js";
+import { AdminRoleAddService, isAdminRoleAddCommand } from "../src/admin/role-add-service.js";
+
+// 관리자 역할 추가 SQL과 mutation을 기록하는 테스트 DB를 만듭니다.
+function scripted(queryResults: unknown[]){const left=[...queryResults],sql:string[]=[];let id=1200n;const tx:DatabaseTransaction={query:async<T>(s:string):Promise<T>=>{sql.push(s);if(left.length===0)throw new Error(`Unexpected query: ${s}`);return left.shift()as T;},execute:async(s:string):Promise<DatabaseWriteResult>=>{sql.push(s);id+=1n;return{affectedRows:1n,insertId:id};}};const database:DatabaseClient={ping:async()=>undefined,verifyRollback:async()=>true,query:async()=>{throw new Error("non-tx query");},execute:async()=>{throw new Error("non-tx execute");},withTransaction:async<T>(work:(v:DatabaseTransaction)=>Promise<T>)=>work(tx),close:async()=>undefined};return{database,sql};}
+const command=(message:string,eventId="e")=>({externalUserId:"master",channelId:"room",eventId,message});
+
+describe("admin role add command",()=>{it("accepts only a complete target name",()=>{assert.equal(isAdminRoleAddCommand("/관리자추가 대상 회원"),true);for(const m of["/관리자추가","/관리자추가  대상 ","관리자추가 대상"])assert.equal(isAdminRoleAddCommand(m),false);});});
+describe("admin role add service",()=>{
+ it("creates an Iris operator, mapping, manager role and history atomically",async()=>{const s=scripted([[{operator_id:7n}],[],[{player_id:2n,external_identity_id:92n}],[{id:3n}],[],[],[]]);const r=await new AdminRoleAddService(s.database).execute(command("/관리자추가 대상"));assert.equal(r.status,"assigned");for(const f of["INSERT INTO admin_operators","INSERT INTO admin_operator_external_identities","INSERT INTO admin_operator_roles","INSERT INTO admin_role_assignment_history","INSERT INTO command_audit","INSERT INTO outbox_messages"])assert.ok(s.sql.some(x=>x.includes(f)),f);});
+ it("reaffirms an existing manager without duplicate role insertion",async()=>{const s=scripted([[{operator_id:7n}],[],[{player_id:2n,external_identity_id:92n}],[{id:3n}],[{operator_id:8n}],[{operator_id:8n}]]);const r=await new AdminRoleAddService(s.database).execute(command("/관리자추가 대상"));assert.equal(r.status,"reaffirmed");assert.equal(s.sql.filter(x=>x.includes("INSERT INTO admin_operator_roles")).length,0);});
+ it("rejects unauthorized actors before target lookup",async()=>{const s=scripted([[]]);await assert.rejects(()=>new AdminRoleAddService(s.database).execute(command("/관리자추가 대상")),(e:unknown)=>e instanceof ApplicationError&&e.statusCode===403);assert.equal(s.sql.some(x=>x.includes("player_profiles")),false);});
+ it("rejects a member without one linked Kakao identity",async()=>{const s=scripted([[{operator_id:7n}],[],[]]);await assert.rejects(()=>new AdminRoleAddService(s.database).execute(command("/관리자추가 대상")),(e:unknown)=>e instanceof ApplicationError&&e.code==="ADMIN_TARGET_NOT_FOUND");});
+ it("replays the same target and rejects changed content",async()=>{const stored={status:"assigned",targetPlayerId:"2",targetOperatorId:"8",targetName:"대상",roleCode:"manager",outboxId:"9",auditId:"10",data:"완료"};let s=scripted([[{operator_id:7n}],[{result_json:JSON.stringify(stored)}]]);const r=await new AdminRoleAddService(s.database).execute(command("/관리자추가 대상"));assert.equal(r.replayed,true);s=scripted([[{operator_id:7n}],[{result_json:JSON.stringify(stored)}]]);await assert.rejects(()=>new AdminRoleAddService(s.database).execute(command("/관리자추가 다른대상")),(e:unknown)=>e instanceof ApplicationError&&e.code==="ADMIN_ROLE_ADD_REPLAY_MISMATCH");});
+});
