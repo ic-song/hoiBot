@@ -47,6 +47,7 @@ import { formatMiniPetCollection, isMiniPetCollectionReadCommand } from "./mini-
 import { formatMiniPetCollectionRanking, isMiniPetCollectionRankingReadCommand, MiniPetCollectionRankingReadService } from "./mini-pet/collection-ranking-read-service.js";
 import { isMiniPetOwnedSaleCommand, MiniPetOwnedSaleService } from "./mini-pet/owned-sale-service.js";
 import { isMiniPetBulkSaleCommand, MiniPetBulkSaleService } from "./mini-pet/bulk-sale-service.js";
+import { isMiniPetForceUnequipCommand, MiniPetForceUnequipService } from "./mini-pet/force-unequip-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1275,6 +1276,34 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             } else {
               throw error;
             }
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetForceUnequipCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new MiniPetForceUnequipService(database).execute({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId,
+            message: normalizedEvent.message ?? "",
+            environmentCode: miniPetProjectionEnvironment
+          });
+          if (result.outboxId !== undefined && result.data !== undefined) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } else if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_force_unequip", result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && error.statusCode === 403) {
+            // 레거시와 동일하게 권한 없는 강제 해제 요청은 응답하지 않습니다.
+          } else if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "mini_pet_force_unequip_error", error.message));
+          } else {
+            throw error;
           }
         }
       }
