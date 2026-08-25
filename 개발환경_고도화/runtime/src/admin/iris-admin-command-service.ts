@@ -1,4 +1,6 @@
 import type { DatabaseClient } from "../database.js";
+import { CurrencyService } from "../currency/currency-service.js";
+import { MariaCommandDispatchRepository, type RolloutState } from "../dispatch/command-dispatcher.js";
 import { ChangePlayerServerService } from "../player/change-player-server-service.js";
 import { ApplicationError } from "../shared/application-error.js";
 
@@ -47,4 +49,60 @@ export class IrisAdminCommandService {
     if (result.replyOutboxId === undefined) throw new Error("Iris server-change reply outbox was not created.");
     return { data: responseText, outboxId: result.replyOutboxId };
   }
+
+  // rollout 상태와 관리자 권한을 확인한 뒤 회원 포인트를 절대값으로 설정합니다.
+  async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+  > {
+    const match = /^\/포인트수정\s+(.+?)\s+(\d{1,27})$/.exec(input.message);
+    if (match === null) throw new ApplicationError("INVALID_POINT_EDIT_COMMAND", "포인트수정 명령 형식이 올바르지 않습니다.", 422);
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state, enabled FROM command_registry WHERE command_code = 'ADMIN_POINT_EDIT' LIMIT 1"
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode: "ADMIN_POINT_EDIT", handlerKey: "ADMIN_POINT_EDIT" });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode: "ADMIN_POINT_EDIT", handlerKey: "ADMIN_POINT_EDIT" });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode: "ADMIN_POINT_EDIT", handlerKey: "ADMIN_POINT_EDIT" });
+    const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+      `SELECT mapping.operator_id
+       FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id = identity.id
+       JOIN admin_operators operator ON operator.id = mapping.operator_id
+       JOIN admin_operator_roles operator_role ON operator_role.operator_id = operator.id
+       JOIN admin_role_permissions permission ON permission.role_id = operator_role.role_id
+       WHERE identity.provider_code = 'kakao' AND identity.external_user_id = ?
+         AND identity.status = 'linked' AND operator.status = 'active'
+         AND permission.permission_code = 'game.currency.change' LIMIT 1`,
+      [input.externalUserId]
+    );
+    if (operators[0] === undefined) throw new ApplicationError("FORBIDDEN", "포인트수정 권한이 없습니다.", 403);
+    const targetName = match[1]!.trim();
+    const targets = await this.database.query<Array<{ player_id: bigint }>>(
+      "SELECT player_id FROM player_profiles WHERE current_display_name = ? ORDER BY player_id LIMIT 2", [targetName]
+    );
+    if (targets.length === 0) throw new ApplicationError("PLAYER_NOT_FOUND", `❌ [${targetName}] 님은 존재하지 않습니다.`, 404);
+    if (targets.length > 1) throw new ApplicationError("PLAYER_NAME_AMBIGUOUS", "동일 표시명의 회원이 여러 명이므로 player ID 기반 관리가 필요합니다.", 409);
+    const result = await new CurrencyService(this.database).setAbsolute({
+      playerId: targets[0]!.player_id.toString(), targetDisplayName: targetName, currencyCode: "point", balance: match[2]!,
+      reasonCode: "admin_point_edit", reason: "Iris 총괄 운영자 /포인트수정", idempotencyKey: input.eventId,
+      actor: { type: "admin_operator", id: operators[0]!.operator_id.toString() }, sourceCode: "iris",
+      sourceEventId: input.eventId, irisReplyDestinationId: input.channelId
+    });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
+}
+
+// 포인트수정 후보를 전체 형식으로 제한해 접미 문구 실행을 막습니다.
+export function isPointEditCommandCandidate(message: string | undefined): boolean {
+  return message !== undefined && /^\/포인트수정\s+.+?\s+\d{1,27}$/.test(message);
 }

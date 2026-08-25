@@ -31,7 +31,7 @@ import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
-import { IrisAdminCommandService } from "./admin/iris-admin-command-service.js";
+import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import {
@@ -913,6 +913,28 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "change_player_server", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPointEditCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new IrisAdminCommandService(database!).changePlayerPoint({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "changed") {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "admin_point_edit_error", error.message));
           } else {
             throw error;
           }
