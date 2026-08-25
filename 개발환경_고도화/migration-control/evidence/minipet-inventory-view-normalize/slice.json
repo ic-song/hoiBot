@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-MINIPET-INVENTORY-VIEW-NORMALIZE",
+  "status": "shadow_verified",
+  "execution": {
+    "executionId": "개발자-SL-MINIPET-INVENTORY-VIEW-NORMALIZE-20260825-G3G7",
+    "claimRow": 1227,
+    "branch": "codex/modernization-minipet-inventory-normalize-20260825",
+    "baseCommit": "31a4c0251b4446bd6f13a04fa3b70dc950c1b2af"
+  },
+  "commands": {
+    "names": ["/미니펫가방"],
+    "guard": "exact equality",
+    "wbsRow": 350,
+    "dbRow": 1417,
+    "validationRows": ["4001:4006", "7955:7960"]
+  },
+  "legacyData": {
+    "inputs": ["member_pet.json miniPetBag", "miniPet", "miniPetBattle"],
+    "preservedBehavior": ["capacity 100", "battle EXP descending", "grade order", "Korean name order", "equipped item separated"]
+  },
+  "database": {
+    "migration": "052_mini_pet_inventory_view_normalize.sql",
+    "tables": [
+      "mini_pet_inventory_player_states",
+      "mini_pet_inventory_owned_states",
+      "mini_pet_inventory_repair_executions",
+      "mini_pet_inventory_repair_entries",
+      "owned_mini_pets",
+      "operations",
+      "command_executions",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "stableIdentity": "owned_mini_pets.id plus stable_owned_id UUID"
+  },
+  "trialMigration": {
+    "fresh": 44,
+    "reapply": 44,
+    "fixture": "mini-pet-inventory-normalize-v1 twice",
+    "port": 33312
+  },
+  "logicPort": {
+    "files": ["runtime/src/mini-pet/inventory-view-normalize-service.ts", "runtime/src/app.ts"],
+    "tests": ["focused", "full", "typecheck", "build", "MariaDB probe", "forced rollback", "restart Shadow"]
+  },
+  "parity": {
+    "result": "passed",
+    "readMutationZero": true,
+    "conditionalRepair": true,
+    "idempotentReplay": true,
+    "rollbackVerified": true,
+    "restartVerified": true
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "legacyMainChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate 8 requires separate operational approval.",
+    "Upgrade, cleanup and ranking consumers remain separate WBS slices."
+  ]
+}
