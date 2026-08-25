@@ -126,6 +126,30 @@ const EXPECTED_SOURCE_COMMANDS = [
     assert.ok(rows.every((row) => Number(row.executable) === 0));
   });
 
+  it("stores the event package metadata alias as non-executable source seed data", async () => {
+    const rows = await database.query<Array<{
+      package_id: string; source_command: string; source_kind: string;
+      canonical_route: string; executable: number;
+    }>>(
+      `SELECT package_id,source_command,source_kind,canonical_route,executable
+       FROM package_catalog_source_commands
+       WHERE package_id='PKG-EVENT-DUNGEON-BOX'
+       ORDER BY source_command`,
+    );
+    assert.deepEqual(rows.map((row) => ({
+      packageId: row.package_id,
+      command: row.source_command,
+      kind: row.source_kind,
+      route: row.canonical_route,
+      executable: Number(row.executable),
+    })), [
+      { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤박스오픈",
+        kind: "LEGACY_OPEN", route: "/패키지사용", executable: 0 },
+      { packageId: "PKG-EVENT-DUNGEON-BOX", command: "/이벤트박스오픈✡️",
+        kind: "LEGACY_OPEN_ALIAS", route: "/패키지사용", executable: 0 },
+    ]);
+  });
+
   it("keeps only the package bag and package use commands executable", async () => {
     const rows = await database.query<Array<{ command_text: string }>>(
       `SELECT alias_row.command_text
