@@ -2245,6 +2245,7 @@ Status: VERIFIED
 ## Data Usage
 - `data.petMusou`
 - `data.member[user].petMusouLastSignupDate`
+- `data.accountSuspensions.users`
 - `data.member[user].musouWinCount`
 - `data.member[user].musouLastWinAt`
 - `data.member[user].point`
@@ -2255,6 +2256,7 @@ Status: VERIFIED
 ## Save Flow
 - 참가, 시작, 공격, 시간 초과, 강제 종료 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
 - 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
+- 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
 - 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
 - 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
 - 전투는 영지절대방어권→영지기습공격권→종합매력 순서이며, 아이템은 기존 영지전과 동일하게 발동 성공 시 1개 소모한다.

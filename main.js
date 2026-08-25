@@ -33370,6 +33370,7 @@ function createPetMusouBattleSnapshot(user, totalCharm, petData, data) {
 function joinPetMusou(data, petData, guildData, sender) {
     var musou = ensurePetMusouData(data);
     if (musou.active || !musou.signupOpen) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
+    if (isAccountSuspended(data, sender)) return { ok: false, message: "❌ 계정정지 상태에서는 펫무쌍에 참가할 수 없습니다." };
     var guildInfo = getPetMusouGuildInfo(data, guildData, sender);
     if (!guildInfo) return { ok: false, message: "❌ 길드에 가입된 유저만 펫무쌍에 참가할 수 있습니다." };
     if (!petData[sender]) return { ok: false, message: "❌ 펫 정보가 없어 펫무쌍에 참가할 수 없습니다." };
@@ -33410,7 +33411,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
     for (var i = 0; i < participantNames.length; i++) {
         var user = participantNames[i];
         var guildInfo = getPetMusouGuildInfo(data, guildData, user);
-        if (!data.member[user] || !petData[user] || !guildInfo) {
+        if (!data.member[user] || !petData[user] || !guildInfo || isAccountSuspended(data, user)) {
             excludedUsers.push(user);
             continue;
         }
