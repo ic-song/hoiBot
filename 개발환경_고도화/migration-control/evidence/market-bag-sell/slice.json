@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-MARKET-BAG-SELL",
+  "status": "shadow_validated",
+  "execution": {
+    "executionId": "개발자-SL-MARKET-BAG-SELL-20260825-INTEGRATION",
+    "claimRow": 1225,
+    "branch": "codex/modernization-market-bag-sell-integration-20260825"
+  },
+  "commands": {
+    "names": ["/판매"],
+    "guard": "exact bare usage or full numeric sequence and optional quantity"
+  },
+  "legacyData": {
+    "sources": ["itemList.json", "member.json bag/point"],
+    "productionMutation": false
+  },
+  "database": {
+    "migration": "050_bag_selection_snapshot.sql",
+    "tables": [
+      "bag_selection_snapshots", "bag_selection_snapshot_entries",
+      "inventory_stacks", "inventory_ledger", "currency_accounts", "currency_ledger",
+      "operations", "command_executions", "command_audit", "outbox_messages"
+    ]
+  },
+  "trialMigration": {
+    "fixture": "bag-sell-v1.sql",
+    "fresh": "passed",
+    "reapply": "passed",
+    "rollback": "passed",
+    "restart": "passed"
+  },
+  "logicPort": {
+    "service": "src/inventory/bag-sell-service.ts",
+    "repository": "src/inventory/maria-bag-sell-repository.ts",
+    "tests": [
+      "bag-sell.test.ts",
+      "probe-bag-sell-synthetic.ts",
+      "shadow-bag-sell-synthetic.ts"
+    ],
+    "identityRule": "display seq resolves only through a latest pinned snapshot; mutation uses definition ID and stack version"
+  },
+  "parity": {
+    "result": "passed_with_approval_required_safe_difference",
+    "scenarios": 12,
+    "safeDifference": "suffix and malformed broad-prefix inputs no longer execute; legacy zero quantity remains a zero-point success"
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "mainJsChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate8에서 운영 item_definitions와 object_registry source binding backfill을 대사해야 합니다.",
+    "기존 /판매 UI는 유지하지만 snapshot 만료 또는 version 변경 시 /가방 재조회 안내가 추가됩니다."
+  ]
+}

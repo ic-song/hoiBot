@@ -72,6 +72,9 @@ import { BagAddService, isBagAddCommandCandidate } from "./inventory/bag-add-ser
 import { MariaBagAddRepository } from "./inventory/maria-bag-add-repository.js";
 import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
 import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
+import { BagSellService } from "./inventory/bag-sell-service.js";
+import { isBagSellCommand } from "./inventory/bag-sell.js";
+import { MariaBagSellRepository } from "./inventory/maria-bag-sell-repository.js";
 import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
 import { isOpenAllCommand } from "./inventory/open-all-policy.js";
@@ -860,6 +863,31 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isBagSellCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new BagSellService(new MariaBagSellRepository(database!)).execute({
+          providerCode: "kakao",
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          eventId: normalizedEvent.eventId
+        });
+        if (result.outboxId !== undefined) {
+          processing.replies.push({
+            outboxId: result.outboxId,
+            room: normalizedEvent.channelId,
+            data: result.data
+          });
+        } else {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            "bag_sell_validation",
+            result.data
+          ));
         }
       }
 

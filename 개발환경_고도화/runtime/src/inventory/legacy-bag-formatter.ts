@@ -4,7 +4,7 @@ const ALLSEE = "​".repeat(500);
 const INTIMACY_ITEM = /^펫 친밀도🐾\s*\[Lv\.\d+\]\(\d+\/1000\)\+\d+💕$/;
 const KOREAN = /[ㄱ-ㅎ|ㅏ-ㅣ|가-힣]/;
 
-function compareLegacyItems(left: BagItemView, right: BagItemView): number {
+export function compareLegacyItems(left: BagItemView, right: BagItemView): number {
   const leftIntimacy = INTIMACY_ITEM.test(left.displayName);
   const rightIntimacy = INTIMACY_ITEM.test(right.displayName);
   if (leftIntimacy !== rightIntimacy) return leftIntimacy ? -1 : 1;
@@ -20,9 +20,14 @@ function compareLegacyItems(left: BagItemView, right: BagItemView): number {
   return left.displayName < right.displayName ? -1 : left.displayName > right.displayName ? 1 : 0;
 }
 
+// 표시와 mutation이 같은 순서를 사용하도록 레거시 가방 정렬 복사본을 반환합니다.
+export function sortLegacyBagItems(items: BagItemView[]): BagItemView[] {
+  return items.filter((item) => BigInt(item.quantity) > 0n).sort(compareLegacyItems);
+}
+
 // 레거시 `/가방`의 순서, 줄바꿈, 광고와 접기 문자를 재현합니다.
 export function formatLegacyBag(bag: BagView): string {
-  const items = bag.items.filter((item) => BigInt(item.quantity) > 0n).sort(compareLegacyItems);
+  const items = sortLegacyBagItems(bag.items);
   if (items.length === 0) return "가방이 비어 있습니다.";
 
   let output = `[${bag.ownerLabel}]의 가방🧳\n`;

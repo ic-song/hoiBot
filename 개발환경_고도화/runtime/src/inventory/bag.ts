@@ -1,4 +1,8 @@
 export interface BagItemView {
+  definitionId?: string;
+  itemCode?: string;
+  stackVersion?: string;
+  catalogObjectKey?: string | null;
   displayName: string;
   quantity: string;
   legacyBagOrder: number | null;
@@ -6,6 +10,7 @@ export interface BagItemView {
 
 export interface BagView {
   playerId: string;
+  snapshotId?: string;
   ownerLabel: string;
   advertisement: string;
   items: BagItemView[];
