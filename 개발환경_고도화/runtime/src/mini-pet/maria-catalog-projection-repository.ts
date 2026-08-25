@@ -19,6 +19,16 @@ function stored(value: string | MiniPetReadResult): MiniPetReadResult {
   return typeof value === "string" ? JSON.parse(value) as MiniPetReadResult : value;
 }
 
+// connector가 JSON scalar를 일반 문자열로 반환하는 경우에도 원문을 보존합니다.
+function jsonValue(value: string | unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
 // MariaDB unique 충돌만 기존 execution 재조회 경로로 전환합니다.
 function isDuplicateKeyError(error: unknown): boolean {
   return typeof error === "object" && error !== null && "code" in error
@@ -41,6 +51,28 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
       const row = rows[0];
       if (row === undefined) throw new ApplicationError("MINIPET_SNAPSHOT_NOT_FOUND", "발행된 미니펫 snapshot이 없습니다.", 404);
       return { poolVersion: row.pool_version, snapshotAt: row.snapshot_at.toISOString() };
+    });
+  }
+
+  // pin된 owner snapshot에서 표시 이름이 정확히 일치하는 단일 player를 해석합니다.
+  async resolveTargetPlayer(environmentCode: "prod" | "dev", poolVersion: string, snapshotAt: string, targetName: string): Promise<{ playerId: string; displayName: string }> {
+    return this.database.withTransaction(async (tx) => {
+      await this.requireDatabaseEnvironment(tx, environmentCode);
+      const rows = await tx.query<Array<{ player_id: bigint; owner_display_name: string }>>(
+        `SELECT owner.player_id, owner.owner_display_name
+         FROM mini_pet_catalog_snapshots snapshot
+         JOIN mini_pet_owner_read_snapshots owner
+           ON owner.environment_code = snapshot.environment_code
+          AND owner.snapshot_version = snapshot.owned_snapshot_version
+         WHERE snapshot.environment_code = ? AND snapshot.pool_version = ?
+           AND snapshot.snapshot_at = ? AND snapshot.status = 'published'
+           AND owner.owner_display_name = ?
+         ORDER BY owner.player_id LIMIT 2 FOR UPDATE`,
+        [environmentCode, poolVersion, new Date(snapshotAt), targetName]
+      );
+      if (rows.length === 0) throw new ApplicationError("MINIPET_ADMIN_TARGET_NOT_FOUND", "대상 미니펫 데이터가 없습니다.", 404);
+      if (rows.length > 1) throw new ApplicationError("MINIPET_ADMIN_TARGET_AMBIGUOUS", "같은 이름의 대상이 여러 명입니다.", 409);
+      return { playerId: rows[0]!.player_id.toString(), displayName: rows[0]!.owner_display_name };
     });
   }
 
@@ -122,7 +154,17 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
          WHERE operator_role.operator_id = ? AND permission.permission_code = 'minipet.admin_info.read' LIMIT 1`,
         [viewer.operator_id]
       );
-      if (viewer.operator_id === null || viewer.trusted_admin !== 1 || permissions[0] === undefined) throw new ApplicationError("FORBIDDEN", "신뢰된 미니펫 관리자 조회 권한이 없습니다.", 403);
+      const channels = await tx.query<Array<{ allowed: number }>>(
+        `SELECT 1 AS allowed FROM mini_pet_admin_read_channel_scopes
+         WHERE environment_code = ? AND external_channel_id = ? AND status = 'active' LIMIT 1`,
+        [input.environmentCode, input.requestChannelId]
+      );
+      if (viewer.operator_id === null || viewer.trusted_admin !== 1 || permissions[0] === undefined || channels[0] === undefined) {
+        throw new ApplicationError("FORBIDDEN", "신뢰된 미니펫 관리자 조회 권한 또는 허용 채널이 없습니다.", 403);
+      }
+      if (viewer.player_id?.toString() === input.targetPlayerId) {
+        throw new ApplicationError("MINIPET_ADMIN_SELF_TARGET", "본인 정보는 /미니펫가방을 이용해 주세요.", 409);
+      }
       return;
     }
     if ((input.projectionCode === "inventory" || input.projectionCode === "collection")
@@ -318,7 +360,7 @@ export class MariaMiniPetCatalogProjectionRepository implements MiniPetCatalogPr
        WHERE snapshot.environment_code = ? AND snapshot.snapshot_version = ? AND snapshot.player_id = ?
        ORDER BY snapshot.field_code`, [environmentCode, snapshotVersion, playerId]
     );
-    return Object.fromEntries(rows.map((row) => [row.field_code, typeof row.field_value_json === "string" ? JSON.parse(row.field_value_json) : row.field_value_json]));
+    return Object.fromEntries(rows.map((row) => [row.field_code, jsonValue(row.field_value_json)]));
   }
 
   // gradeTable/allowedGrades와 draw entries를 immutable published version으로 적재합니다.

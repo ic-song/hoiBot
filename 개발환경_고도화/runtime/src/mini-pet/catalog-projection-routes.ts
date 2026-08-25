@@ -3,7 +3,7 @@ import { ApplicationError } from "../shared/application-error.js";
 import type { MiniPetCatalogProjectionService } from "./catalog-projection-service.js";
 import type { MiniPetCatalogEntry, MiniPetEnvironmentCode, MiniPetProjectionCode } from "./catalog-projection-repository.js";
 
-const BODY_KEYS = new Set(["projectionCode", "environmentCode", "poolVersion", "snapshotAt", "providerEventId", "viewerExternalUserId", "targetPlayerId", "replyDestinationId"]);
+const BODY_KEYS = new Set(["projectionCode", "environmentCode", "poolVersion", "snapshotAt", "providerEventId", "viewerExternalUserId", "targetPlayerId", "replyDestinationId", "requestChannelId"]);
 const PROJECTIONS = new Set(["catalog", "inventory", "equipped_rank", "admin_info", "collection", "grade_stats", "draw_rates"]);
 const PUBLISH_KEYS = new Set(["environmentCode", "poolVersion", "catalogKind", "definitionVersion", "ownedSnapshotVersion", "snapshotAt", "gradeTable", "allowedGrades", "stageRewards", "entries", "publisherExternalUserId"]);
 const ENTRY_KEYS = new Set(["definitionId", "definitionCode", "name", "gradeCode", "grade", "emoji", "sourceOrder", "filterKey", "rawProbability", "normalizedRate", "allowed"]);
@@ -65,6 +65,7 @@ export function registerMiniPetCatalogProjectionRoutes(app: FastifyInstance, dep
     const targetPlayerId = body.targetPlayerId === undefined ? undefined : requireString(body, "targetPlayerId");
     const replyDestinationId = body.replyDestinationId === undefined ? undefined : requireString(body, "replyDestinationId");
     const viewerExternalUserId = body.viewerExternalUserId === undefined ? undefined : requireString(body, "viewerExternalUserId");
+    const requestChannelId = body.requestChannelId === undefined ? undefined : requireString(body, "requestChannelId");
     const data = await dependencies.service.read({
       projectionCode: projectionCode as MiniPetProjectionCode,
       environmentCode: environmentCode as MiniPetEnvironmentCode,
@@ -72,7 +73,8 @@ export function registerMiniPetCatalogProjectionRoutes(app: FastifyInstance, dep
       providerEventId: requireString(body, "providerEventId"),
       ...(viewerExternalUserId === undefined ? {} : { viewerExternalUserId }),
       ...(targetPlayerId === undefined ? {} : { targetPlayerId }),
-      ...(replyDestinationId === undefined ? {} : { replyDestinationId })
+      ...(replyDestinationId === undefined ? {} : { replyDestinationId }),
+      ...(requestChannelId === undefined ? {} : { requestChannelId })
     });
     return { ok: true, data, requestId: request.id };
   });

@@ -75,6 +75,7 @@ export interface MiniPetReadResult {
   collectionGrades: Array<{ grade: string; registered: boolean }>;
   collectionRepairRequired: boolean;
   adminLegacySnapshot?: Record<string, unknown>;
+  targetDisplayName?: string;
   outboxId?: string;
   auditId: string;
 }
@@ -89,6 +90,7 @@ export interface MiniPetReadInput {
   viewerExternalUserId?: string;
   targetPlayerId?: string;
   replyDestinationId?: string;
+  requestChannelId?: string;
 }
 
 export interface MiniPetSnapshotPin {
@@ -96,8 +98,14 @@ export interface MiniPetSnapshotPin {
   snapshotAt: string;
 }
 
+export interface MiniPetTargetPlayer {
+  playerId: string;
+  displayName: string;
+}
+
 export interface MiniPetCatalogProjectionRepository {
   resolveLatestSnapshotPin(environmentCode: MiniPetEnvironmentCode): Promise<MiniPetSnapshotPin>;
+  resolveTargetPlayer(environmentCode: MiniPetEnvironmentCode, poolVersion: string, snapshotAt: string, targetName: string): Promise<MiniPetTargetPlayer>;
   read(input: MiniPetReadInput): Promise<MiniPetReadResult>;
   publishSnapshot(input: MiniPetPublishedSnapshotInput): Promise<{ poolVersion: string; definitionVersion: string; snapshotAt: string }>;
 }

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-MINIPET-ADMIN-INFO-READ",
+  "status": "shadow_verified",
+  "execution": {
+    "executionId": "개발자-SL-MINIPET-ADMIN-INFO-READ-20260825-G3G7",
+    "claimRow": 1229,
+    "branch": "codex/modernization-minipet-admin-info-read-20260825",
+    "baseCommit": "a2f2b74caa5ae62be8c39a9f4860366ac921fb8a"
+  },
+  "commands": {
+    "names": ["/미니펫정보 [대상]"],
+    "guard": "exact command or full-pattern target",
+    "wbsRow": 368,
+    "dbRow": 1437,
+    "validationRows": ["4121:4126", "8075:8080"]
+  },
+  "legacyData": {
+    "inputs": ["member_pet.json full target snapshot", "Admin/Master allowed-room policy"],
+    "preservedBehavior": ["trusted admin only", "allowed room only", "unauthorized silent", "self target redirects to /미니펫가방", "missing target usage", "missing player response"]
+  },
+  "database": {
+    "migration": "054_minipet_admin_info_read.sql",
+    "tables": ["mini_pet_admin_read_channel_scopes", "mini_pet_trusted_admin_identities", "mini_pet_admin_snapshot_field_allowlist", "mini_pet_admin_legacy_snapshot_fields", "mini_pet_owner_read_snapshots", "mini_pet_read_executions", "operations", "command_executions", "command_audit"],
+    "stableIdentity": "immutable owned snapshot version plus player_id"
+  },
+  "trialMigration": {
+    "fresh": 46,
+    "reapply": 46,
+    "fixture": "functional-v1 plus mini-pet-equipped-rank-v1 plus mini-pet-admin-info-read-v1 twice",
+    "port": 33314
+  },
+  "logicPort": {
+    "files": ["runtime/src/mini-pet/catalog-projection-service.ts", "runtime/src/mini-pet/maria-catalog-projection-repository.ts", "runtime/src/mini-pet/admin-info-read-command.ts", "runtime/src/app.ts"],
+    "tests": ["focused", "full", "typecheck", "build", "MariaDB RBAC/allowlist probe", "forced rollback", "restart Shadow"]
+  },
+  "parity": {
+    "result": "passed",
+    "snapshotPinned": true,
+    "rbacAndTrustedIdentity": true,
+    "allowedChannel": true,
+    "sensitiveFieldAllowlist": true,
+    "idempotentReplay": true,
+    "rollbackVerified": true,
+    "restartVerified": true
+  },
+  "cutover": {
+    "gate8Complete": false,
+    "productionEvidence": [],
+    "legacyMainChanged": false,
+    "featureProdChanged": false
+  },
+  "risks": [
+    "Gate 8 requires separate operational approval.",
+    "Production channel scope and trusted identity rows require separate approved seed data."
+  ]
+}

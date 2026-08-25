@@ -22,6 +22,7 @@ export interface MiniPetProjectionRequest {
   viewerExternalUserId?: string;
   targetPlayerId?: string;
   replyDestinationId?: string;
+  requestChannelId?: string;
 }
 
 // 재시작 replay에서 요청 의미가 바뀌지 않았는지 확인할 hash를 생성합니다.
@@ -31,7 +32,8 @@ function requestHash(request: MiniPetProjectionRequest): string {
     poolVersion: request.poolVersion, snapshotAt: request.snapshotAt,
     viewerExternalUserId: request.viewerExternalUserId,
     targetPlayerId: request.targetPlayerId ?? null,
-    replyDestinationId: request.replyDestinationId ?? null
+    replyDestinationId: request.replyDestinationId ?? null,
+    requestChannelId: request.requestChannelId ?? null
   })).digest("hex");
 }
 
@@ -57,6 +59,9 @@ export class MiniPetCatalogProjectionService {
       || request.projectionCode === "collection") && request.viewerExternalUserId === undefined) {
       throw new ApplicationError("MINIPET_VIEWER_REQUIRED", "보호된 projection은 조회 identity가 필요합니다.", 422);
     }
+    if (request.projectionCode === "admin_info" && request.requestChannelId === undefined) {
+      throw new ApplicationError("MINIPET_ADMIN_CHANNEL_REQUIRED", "관리자 조회 채널 ID가 필요합니다.", 422);
+    }
     return this.repository.read({ ...request, requestHash: requestHash(request) });
   }
 
@@ -76,6 +81,36 @@ export class MiniPetCatalogProjectionService {
       snapshotAt: pin.snapshotAt,
       providerEventId: request.providerEventId
     });
+  }
+
+  // 최신 immutable snapshot에서 대상 이름을 해석한 뒤 관리자 전용 projection을 읽습니다.
+  async readLatestAdminInfo(request: {
+    environmentCode: MiniPetEnvironmentCode;
+    providerEventId: string;
+    viewerExternalUserId: string;
+    requestChannelId: string;
+    targetName: string;
+  }): Promise<MiniPetReadResult> {
+    if (request.environmentCode !== this.expectedEnvironmentCode) {
+      throw new ApplicationError("MINIPET_ENVIRONMENT_MISMATCH", "요청과 provider DB 환경이 일치하지 않습니다.", 409);
+    }
+    const targetName = request.targetName.trim();
+    if (targetName.length === 0) throw new ApplicationError("MINIPET_ADMIN_TARGET_REQUIRED", "사용법: /미니펫정보 [대상]", 422);
+    const pin = await this.repository.resolveLatestSnapshotPin(request.environmentCode);
+    const target = await this.repository.resolveTargetPlayer(
+      request.environmentCode, pin.poolVersion, pin.snapshotAt, targetName
+    );
+    const result = await this.read({
+      projectionCode: "admin_info",
+      environmentCode: request.environmentCode,
+      poolVersion: pin.poolVersion,
+      snapshotAt: pin.snapshotAt,
+      providerEventId: request.providerEventId,
+      viewerExternalUserId: request.viewerExternalUserId,
+      targetPlayerId: target.playerId,
+      requestChannelId: request.requestChannelId
+    });
+    return { ...result, targetDisplayName: target.displayName };
   }
 
   // current gradeTable과 allowedGrades를 immutable published snapshot으로 발행합니다.

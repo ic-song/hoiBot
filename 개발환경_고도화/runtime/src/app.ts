@@ -42,6 +42,7 @@ import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-
 import { isYakitoriPackageUseCommand, YakitoriPackageUseService } from "./mini-pet/yakitori-package-use-service.js";
 import { isMiniPetInventoryViewCommand, MiniPetInventoryViewNormalizeService } from "./mini-pet/inventory-view-normalize-service.js";
 import { formatMiniPetEquippedRank, isMiniPetEquippedRankReadCommand } from "./mini-pet/equipped-rank-read-command.js";
+import { formatMiniPetAdminInfo, readMiniPetAdminInfoTarget } from "./mini-pet/admin-info-read-command.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1236,6 +1237,40 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ));
           } else {
             throw error;
+          }
+        }
+      }
+
+      const miniPetAdminInfoTarget = readMiniPetAdminInfoTarget(normalizedEvent.message);
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && miniPetAdminInfoTarget !== undefined
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        if (miniPetAdminInfoTarget.length === 0) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent, "mini_pet_admin_info_read", "사용법: /미니펫정보 [대상]"
+          ));
+        } else {
+          try {
+            const result = await miniPetCatalogProjection!.readLatestAdminInfo({
+              environmentCode: miniPetProjectionEnvironment,
+              providerEventId: normalizedEvent.eventId,
+              viewerExternalUserId: normalizedEvent.userId,
+              requestChannelId: normalizedEvent.channelId,
+              targetName: miniPetAdminInfoTarget
+            });
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "mini_pet_admin_info_read", formatMiniPetAdminInfo(result)
+            ));
+          } catch (error) {
+            if (error instanceof ApplicationError && error.statusCode === 403) {
+              // 레거시와 동일하게 권한 또는 허용방 밖 요청은 응답하지 않습니다.
+            } else if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
+              processing.replies.push(await eventProcessor!.queueCommandReply(
+                normalizedEvent, "mini_pet_admin_info_read", error.message
+              ));
+            } else {
+              throw error;
+            }
           }
         }
       }
