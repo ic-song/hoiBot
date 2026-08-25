@@ -116,7 +116,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When the user says "노션 확인", "노션 확인(핫픽스, ready)", or asks to check Notion HOTFIX/READY without explicitly requesting implementation, treat it as a request to count and list development-needed items in the Notion planning DB where `상태 = 🔥 HOTFIX` or `상태 = 🛠 READY`.
 - For Notion status checks, report counts by status and list matching page titles/links only after verifying the page properties; do not treat title text such as `(READY / date)` as the status source of truth.
 - Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only; leave the Notion property blank and preserve any explicit planned date or text entered by the user.
-- Keep `운영 반영예정일` separate from `운영반영일`: the former is a planned schedule/urgency value, while the latter is the actual `feature/prod` reflection date.
+- Keep `운영 반영예정일` separate from `운영반영일` and `운영반영버전`: the first is a planned schedule/urgency value, the second is the actual `feature/prod` reflection date, and the third is the verified bot version reflected to production.
 - When the user says "노션확인 후 개발", treat it as a request to check Notion READY items from the Notion planning DB first and then develop according to the selected Notion document.
 - When the user says "노션 핫픽스 수정", "핫픽스", or otherwise asks to implement a Notion hotfix, treat it as a request to check Notion HOTFIX items from the Notion planning DB first and then develop according to the selected Notion document.
 - The required order is:
@@ -137,9 +137,9 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - If multiple READY/HOTFIX items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
 - If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
 - Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
-- When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, and reflected into `feature/prod`, update the corresponding Notion item status from READY/HOTFIX to DEV and set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
-- Treat the Notion `상태` change and `운영반영일` update as one operation; if either update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
-- Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` before production reflection is complete.
+- When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, reflected into `feature/prod`, and verified on `origin/feature/prod`, update the corresponding Notion item status from READY/HOTFIX to DEV, set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`), and set `운영반영버전` to `ver_<HoiBotVersion>` from the verified production commit.
+- Treat the Notion `상태`, `운영반영일`, and `운영반영버전` updates as one operation; verify all three values after updating. If any update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
+- Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` or `운영반영버전` before remote production reflection is verified.
 
 ## Modernization WBS Short Commands
 
@@ -215,6 +215,7 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When multiple entries share the same date, `/개발자노트` should present them under one date section while each production-facing change still receives its own `0.001` version increase.
 - Before production reflection, keep `HoiBotVersion` in `main.js` synchronized with the latest `data/hoiBotChangeLog.json` entry so `/호이봇버전` and `/개발자노트` show the same current version.
 - After production reflection, re-check `origin/feature/prod` and confirm the reflected commit includes the developer-note/version update; report the reflected version in the final response.
+- After remote production verification, update every corresponding Notion READY/HOTFIX item with `상태 = 🧪 DEV`, the KST `운영반영일`, and `운영반영버전 = ver_<HoiBotVersion>` as one verified operation. If one production change implements multiple linked Notion items, record the same reflected version on each corresponding item.
 - After any successful `feature/prod` reflection and remote verification, when the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` with no additional text.
 - Use the `hoibot-playmcp-version-notifier` skill for this post-reflection notification whenever the skill is available.
 - Do not send the KakaoTalk version message when `feature/prod` was not updated or remote verification failed. If the PlayMCP tool is unavailable, skip the notification without failing production reflection and report that it was skipped. If the available tool fails to send, retry once when safe and report the notification failure without misreporting it as sent.
@@ -673,7 +674,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 
 ## Modification Permission
 
-- May update the selected Notion item's `상태`, `운영 반영예정일`, and `운영반영일` properties when the workflow rules authorize the change.
+- May update the selected Notion item's `상태`, `운영 반영예정일`, `운영반영일`, and `운영반영버전` properties when the workflow rules authorize the change.
 - May rename a specifically requested Notion property or backfill that property across matching planning DB items only when the user explicitly requests the schema or bulk-data change.
 - MUST NOT modify repository files, Git branches, commits, or production state.
 - MUST NOT change Notion page content or unrelated properties unless the user explicitly requests it.
@@ -685,9 +686,9 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - Treat `운영 반영예정일` as text; when it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only, and do not write or backfill that phrase into Notion.
 - Never store `즉시 반영 필요` in the date-type `운영반영일` property.
 - Do not change READY/HOTFIX items to DEV until implementation, validation, source-branch push, and `feature/prod` reflection are all complete.
-- When changing `상태` from READY/HOTFIX to DEV, set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`).
-- Treat the `상태` and `운영반영일` updates as one operation and verify both values after updating.
-- Report the Notion page title/link, previous and new status, the raw `운영 반영예정일` value and its blank-value interpretation, recorded `운영반영일`, reflected branch/commit, and any failed or unverified update.
+- When changing `상태` from READY/HOTFIX to DEV after `origin/feature/prod` verification, set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`) and set `운영반영버전` to the exact `ver_<HoiBotVersion>` verified in production.
+- Treat the `상태`, `운영반영일`, and `운영반영버전` updates as one operation and verify all three values after updating.
+- Report the Notion page title/link, previous and new status, the raw `운영 반영예정일` value and its blank-value interpretation, recorded `운영반영일`, recorded `운영반영버전`, reflected branch/commit, and any failed or unverified update.
 
 ---
 
