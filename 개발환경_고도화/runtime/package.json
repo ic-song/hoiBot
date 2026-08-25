@@ -33,7 +33,9 @@
     "db:probe:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/probe-construction-edit-synthetic.ts",
     "db:probe:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-read-model-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
-    "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts"
+    "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
+    "db:probe:enhance-box-open": "node --env-file-if-exists=.env --import tsx scripts/probe-enhance-box-open-synthetic.ts",
+    "db:shadow:enhance-box-open": "node --env-file-if-exists=.env --import tsx scripts/shadow-enhance-box-open-synthetic.ts"
     ,"db:shadow:guild-territory": "node --env-file-if-exists=.env --import tsx scripts/shadow-guild-territory-read-model-synthetic.ts",
     "db:probe:home-badge-reference": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-reference-synthetic.ts",
     "db:shadow:home-badge-reference": "node --env-file-if-exists=.env --import tsx scripts/shadow-home-badge-reference-synthetic.ts",

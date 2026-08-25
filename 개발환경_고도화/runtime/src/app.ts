@@ -94,6 +94,8 @@ import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-sn
 import { isOpenAllCommand } from "./inventory/open-all-policy.js";
 import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
+import { EnhanceBoxOpenService, isEnhanceBoxOpenCommandCandidate } from "./inventory/enhance-box-open-service.js";
+import { MariaEnhanceBoxOpenRepository } from "./inventory/maria-enhance-box-open-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
 import { GuildTerritoryReadModelService } from "./guild/guild-territory-read-model-service.js";
 import { MariaGuildTerritoryReadModelRepository } from "./guild/maria-guild-territory-read-model-repository.js";
@@ -137,6 +139,7 @@ export interface AppDependencies {
   homeSocialFollow?: Pick<HomeSocialFollowService, "handle">;
   homeUpgrade?: Pick<HomeUpgradeService, "handle">;
   miniPetCollectionRegister?: Pick<MiniPetCollectionRegisterService, "handle">;
+  enhanceBoxOpen?: Pick<EnhanceBoxOpenService, "handle">;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -395,6 +398,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const miniPetCollectionRegister = dependencies.miniPetCollectionRegister
     ?? (database === undefined ? undefined
       : new MiniPetCollectionRegisterService(new MariaMiniPetCollectionRegisterRepository(database)));
+  const enhanceBoxOpen = dependencies.enhanceBoxOpen
+    ?? (database === undefined ? undefined
+      : new EnhanceBoxOpenService(new MariaEnhanceBoxOpenRepository(database)));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -1136,6 +1142,29 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_food_box_craft", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isEnhanceBoxOpenCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && enhanceBoxOpen !== undefined) {
+        try {
+          const result = await enhanceBoxOpen.handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "opened" && !result.duplicate) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "enhance_box_open", error.message));
           } else {
             throw error;
           }
