@@ -116,12 +116,13 @@ const pkg = (
   consumeItemName: string,
   fixedRewards: readonly FixedRewardFixture[],
   dynamicRules: readonly DynamicRewardRuleFixture[] = [],
-  maxOpenCount = 1
+  maxOpenCount = 1,
+  consumeItemId?: string
 ): IndependentPackageFixture => ({
   packageId: "PKG-" + commandId,
   commandId,
   legacyCommand,
-  consumeItemId: "ITEM-PACKAGE-" + commandId,
+  consumeItemId: consumeItemId ?? "ITEM-PACKAGE-" + commandId,
   consumeItemName,
   consumeQuantity: 1n,
   maxOpenCount,
@@ -402,7 +403,18 @@ export const INDEPENDENT_PACKAGE_FIXTURES: readonly IndependentPackageFixture[] 
       { itemId: "ITEM-RWD-RANDOM-TERRITORY-DEFENSE-20", name: "영지절대방어권🛡(20%)", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n },
       { itemId: "ITEM-RWD-RANDOM-TERRITORY-ATTACK-10", name: "영지기습공격권🔥(10%)", itemType: "STACK", legacyWeight: 1 / 6, quantity: 1n }
     ]
-  }], 10_000)
+  }], 10_000),
+  pkg("215", "/상자오픈", "펫먹이상자📦(/상자오픈)", [], [{
+    kind: "WEIGHTED_ONE", ruleId: "pet-food-box-draw", outputType: "STACK",
+    failureWeight: 0, successWeight: 1, legacySuccessWeightTotal: 1,
+    normalizeSuccessWeights: true,
+    choices: [
+      { itemId: "ITEM-RWD-025", name: "펫먹이🍼", itemType: "STACK", legacyWeight: 0.9815, quantity: 50n },
+      { itemId: "ITEM-RWD-025", name: "펫먹이🍼", itemType: "STACK", legacyWeight: 0.015, quantity: 100n },
+      { itemId: "ITEM-RWD-025", name: "펫먹이🍼", itemType: "STACK", legacyWeight: 0.003, quantity: 250n },
+      { itemId: "ITEM-RWD-025", name: "펫먹이🍼", itemType: "STACK", legacyWeight: 0.0005, quantity: 500n }
+    ]
+  }], 10_000, "ITEM-RWD-PET-FOOD-BOX")
 ];
 
 export const LEGACY_FIXED_REWARD_COUNTS: Readonly<Record<string, number>> = Object.fromEntries(
