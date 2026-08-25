@@ -287,7 +287,9 @@ export class MiniPetInventoryViewNormalizeService {
        JOIN mini_pet_definitions definition ON definition.id = owned.mini_pet_definition_id
        LEFT JOIN mini_pet_inventory_owned_states state ON state.owned_mini_pet_id = owned.id
        LEFT JOIN yakitori_package_owned_rewards reward ON reward.owned_mini_pet_id = owned.id
-       WHERE owned.player_id = ? ORDER BY owned.id${suffix}`,
+       LEFT JOIN mini_pet_owned_lifecycle lifecycle ON lifecycle.owned_mini_pet_id = owned.id
+       WHERE owned.player_id = ? AND COALESCE(lifecycle.state_code, 'active') = 'active'
+       ORDER BY owned.id${suffix}`,
       [owner.player_id]
     );
     if (rows.length > INVENTORY_CAPACITY) {

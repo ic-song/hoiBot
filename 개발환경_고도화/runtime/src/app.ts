@@ -45,6 +45,7 @@ import { formatMiniPetEquippedRank, isMiniPetEquippedRankReadCommand } from "./m
 import { formatMiniPetAdminInfo, readMiniPetAdminInfoTarget } from "./mini-pet/admin-info-read-command.js";
 import { formatMiniPetCollection, isMiniPetCollectionReadCommand } from "./mini-pet/collection-read-command.js";
 import { formatMiniPetCollectionRanking, isMiniPetCollectionRankingReadCommand, MiniPetCollectionRankingReadService } from "./mini-pet/collection-ranking-read-service.js";
+import { isMiniPetOwnedSaleCommand, MiniPetOwnedSaleService } from "./mini-pet/owned-sale-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1275,6 +1276,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             }
           }
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetOwnedSaleCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        await new MiniPetOwnedSaleService(database).execute({
+          externalUserId: normalizedEvent.userId,
+          channelId: normalizedEvent.channelId,
+          eventId: normalizedEvent.eventId,
+          message: normalizedEvent.message ?? "",
+          environmentCode: miniPetProjectionEnvironment
+        });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
