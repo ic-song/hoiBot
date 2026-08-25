@@ -965,7 +965,7 @@ Status: VERIFIED
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
 - Non-final attack results prepend the next attacker's turn line before the result body
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
-- Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
+- Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
 - 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
@@ -2116,6 +2116,7 @@ Status: VERIFIED
 - `packageLog.json`
 - `data.member[user].bag`
 - `data.member[user].point`
+- `data.petMusou.players[user].maxAttacks`
 
 ## Save Flow
 
@@ -2269,6 +2270,9 @@ Status: VERIFIED
 - 벼락 대상자가 `피뢰침⚡(자동 벼락 방지)`을 보유하면 1개를 자동 소모하고 해당 유저의 탈락을 막는다. 벼락 메시지는 실제 탈락 인원과 피뢰침 방어 인원을 구분한다.
 - 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
 - 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
+- 보상 대상 공격 1회당 3억, 최종 점령자 우승 상금 30억을 지급한다. 우승 확정 메시지는 `NoticeMsg`로 방송하지 않는다.
+- `무쌍신화📙[B]` 장착 여부는 대회 시작 시 스냅샷으로 확정하며, 장착자는 개인 공격권이 3회에서 4회로 증가한다. 상태 UI는 개인별 `maxAttacks`를 분모로 사용한다.
+- 상태 UI 하단에도 현재 공격자를 다시 표시한다. 이미 탈락한 참가자의 공격 시도는 현재 공격자 안내보다 탈락 상태 안내를 우선한다.
 - 전투는 영지절대방어권→영지기습공격권→종합매력 순서이며, 아이템은 기존 영지전과 동일하게 발동 성공 시 1개 소모한다.
 - 현재 데이터 키가 닉네임 문자열이므로 대회 진행 중 닉네임 변경 및 변경 후 기록 연결은 지원하지 않는다.
 - `/펫무쌍전체초기화`는 참가·진행·회차·현재 칭호·당일 참가 표시·누적 전적을 초기화하고, 이미 지급된 포인트와 아이템은 회수하지 않는다.
@@ -2277,6 +2281,7 @@ Status: VERIFIED
 - 인자 없는 명령은 exact equality로만 실행한다.
 - `/펫무쌍전체초기화`는 운영자만 exact equality로 실행한다.
 - 공격은 `/^\/펫무쌍공격\s+(?:10|[1-9])$/` 전체 패턴만 허용한다.
+- 슬래시가 없는 `펫무쌍준비`, `펫무쌍시작`, `펫무쌍공격 [번호]` 입력은 실행하지 않는다.
 - 공격은 공성전 방 또는 DEV 컨텍스트에서만 처리한다.
 - 대회 진행 중 일반 유저의 다른 슬래시 명령을 차단하며 운영자는 관리 명령을 계속 사용할 수 있다. 단, 펫무쌍·맞짱필드·길드 영지전은 어느 시작 경로에서도 동시에 활성화되지 않도록 상호 차단한다.
 
@@ -6000,7 +6005,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Master 또는 `호이월드 GM 관리자방`의 Admin이 실행하는 통합 정리 명령이다.
+- Master 또는 `호이월드 GM 관리자방`의 Admin·`오픈채팅봇`이 실행하는 통합 정리 명령이다.
 - 미니펫·가구 가방은 일반 10개, 호이패스 프리미엄 15개 한도만 남기고 초과분을 삭제한다.
 - 미니펫 또는 펜던트 정리 결과가 있으면 `member_pet.json`을, 가구 정리 결과가 있으면 `homeData.json`을 저장한다.
 

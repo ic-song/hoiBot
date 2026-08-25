@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.405"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.406"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -137,6 +137,7 @@ const PET_SKILL_LIST = [
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
+    { name: "무쌍신화", grade: "B", rate: 2.0, equipComment: "슈슉..슈슈슉..챙..챙..챙!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다." },
     { name: "인플루언서", grade: "B", rate: 2.0, fixedRate: true, followerBonus: 1000, equipComment: "여러분 안녕 이건 뒷광고 ㄴㄴ 내돈내산이야루~", equipCommentNoColon: true, effect: "팔로워가 1,000명 증가합니다.\n셀럽 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 1,000명은 회수됩니다." },
     { name: "큐피드의 활", grade: "B", rate: 1.5, fixedRate: true, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
@@ -878,10 +879,12 @@ const GLOBAL_CONFIG = {
     petMusou: { // 펫무쌍 대회 진행 설정
         flagCount: 10,
         attackLimit: 3,
+        bonusAttackSkillName: "무쌍신화",
+        bonusAttackCount: 1,
         startGraceMs: 30000,
         turnTimeoutMs: 15000,
-        attackRewardPoint: 200000000,
-        winnerRewardPoint: 2000000000,
+        attackRewardPoint: 300000000,
+        winnerRewardPoint: 3000000000,
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
         lightningStepRate: 0.01,
@@ -1568,7 +1571,7 @@ blockedNicknameTerms: [
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
             personalAttackLimit: 10, // 개인별 영지공격 최대 횟수
             maxOwnedTerritories: 3, // 길드별 동시 점령 가능 영지 수
-            wrongTurnPenalty: 5, // 영지공격 오입력 패널티 턴
+            wrongTurnPenalty: 7, // 영지공격 오입력 패널티 턴
             timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준
             riftMaxTurn: 120, // 영지전 균열 최대 턴
             riftMaxEventCount: 2, // 영지전 균열/대균열 최대 발생 횟수
@@ -2826,7 +2829,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg === "/펫무쌍준비") {
-            var petMusouJoinResult = joinPetMusou(data, petData, guildData, sender);
+            var petMusouJoinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
             if (petMusouJoinResult.ok) saveJsonFile(data, filePath);
             replier.reply(petMusouJoinResult.message);
             return;
@@ -2873,10 +2876,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(data, filePath);
             castleMsg(petMusouAttackResult.message, replier, isGroupChat);
             if (petMusouAttackResult.lightningMessage) castleMsg(petMusouAttackResult.lightningMessage, replier, isGroupChat);
-            if (petMusouAttackResult.ended) {
-                noticeMsg(petMusouAttackResult.finishMessage);
-                return;
-            }
+            if (petMusouAttackResult.ended) return;
             castleMsg(petMusouAttackResult.statusMessage, replier, isGroupChat);
             startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
             return;
@@ -2896,7 +2896,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             saveJsonFile(data, filePath);
-            noticeMsg(petMusouFinishResult.message);
+            replier.reply("✅ 펫무쌍 대회를 종료했습니다.");
             return;
         }
         if (msg === "/펫무쌍전체초기화") {
@@ -14267,7 +14267,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 "⚔)(턴 -" +
                                 GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty +
                                 ")\n" +
-                                "→ -5회 차감 불가\n" +
+                                "→ -" + GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty + "회 차감 불가\n" +
                                 "→ [" +
                                 formatGuildDisplay(attackInfo.guild) +
                                 "] 길드 탈락";
@@ -19297,7 +19297,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/글자수전체정리") {
-                    if (!(isMaster(sender) || (room === room90 && isAdmin(sender)))) {
+                    if (!(isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                         replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
@@ -30795,7 +30795,7 @@ function buildGuildTerritoryStartMessage(data, guildData) {
         "━━━━━━━━━━━━━━━\n" +
         "⚠️ 오입력 패널티\n" +
         "공격 명령 오입력 시\n" +
-        "공격 횟수 -5회 차감\n" +
+        "공격 횟수 -" + GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty + "회 차감\n" +
         "━━━━━━━━━━━━━━━\n" +
         "😵 길드 탈락 조건\n" +
         "남은 공격 턴이 오입력 패널티 \n" +
@@ -30803,8 +30803,8 @@ function buildGuildTerritoryStartMessage(data, guildData) {
         "공격 횟수 차감이 불가능하므로 \n" +
         "길드 탈락 처리\n" +
         "예시)\n" +
-        "남은 턴 4회 상태에서 오입력 발생\n" +
-        "→ -5회 차감 불가\n" +
+        "남은 턴 " + (GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty - 1) + "회 상태에서 오입력 발생\n" +
+        "→ -" + GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty + "회 차감 불가\n" +
         "→ 길드 탈락"
     );
 }
@@ -33395,7 +33395,7 @@ function createPetMusouBattleSnapshot(user, totalCharm, petData, data) {
 }
 
 // 펫무쌍 참가 신청을 저장하는 함수
-function joinPetMusou(data, petData, guildData, sender) {
+function joinPetMusou(data, petData, petSkillData, guildData, sender) {
     var musou = ensurePetMusouData(data);
     if (musou.active || !musou.signupOpen) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
     if (isAccountSuspended(data, sender)) return { ok: false, message: "❌ 계정정지 상태에서는 펫무쌍에 참가할 수 없습니다." };
@@ -33420,7 +33420,7 @@ function joinPetMusou(data, petData, guildData, sender) {
             "소속길드: " + formatGuildDisplay(guildInfo.guild) + "\n\n" +
             "펫무쌍 규칙 상세보기\n" + allsee +
             "1. 대회 시작: 운영자 수동 시작\n" +
-            "2. 개인 공격: 최대 3회\n" +
+            "2. 개인 공격: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillName + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
             "3. 공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n" +
             "4. 처음 발견한 가짜 깃발은 공격권만 1회 차감\n" +
             "5. 공개된 가짜 재공격·시간 초과·벼락 시 탈락\n" +
@@ -33445,9 +33445,11 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             continue;
         }
         var totalCharm = calculateTotalExp(user, data, petData, homeData, petSkillData, guildData);
+        var maxAttacks = GLOBAL_CONFIG.petMusou.attackLimit + (hasPetSkill(petSkillData, user, GLOBAL_CONFIG.petMusou.bonusAttackSkillName) ? GLOBAL_CONFIG.petMusou.bonusAttackCount : 0); // 대회 시작 시 장착 스킬을 반영한 개인 공격 한도
         players[user] = {
             alive: true,
-            attacksLeft: GLOBAL_CONFIG.petMusou.attackLimit,
+            attacksLeft: maxAttacks,
+            maxAttacks: maxAttacks,
             guildId: guildInfo.guildId,
             totalCharmSnapshot: createPetMusouBattleSnapshot(user, totalCharm, petData, data)
         };
@@ -33482,7 +33484,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
         message: "🗡️ 펫 무쌍 대회 시작 준비! 🗡️\n" +
             "━━━━━━━━━━━━━━━━\n" +
             "참가자: " + validUsers.length + "명\n" +
-            "개인 공격권: " + GLOBAL_CONFIG.petMusou.attackLimit + "회\n" +
+            "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillName + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
             "준비 유예시간: " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초\n" +
             "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
             "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
@@ -33577,7 +33579,7 @@ function finishPetMusou(data, petData, guildData, reason) {
             "━━━━━━━━━━━━━━━━\n" +
             "🚩 최종 점령자: [" + checkRank(data, petData, guildData, winner).replace(/^\[무쌍⚔️\]/, "") + "]\n" +
             "🏳️ 소속길드: " + (guildInfo ? formatGuildDisplay(guildInfo.guild) : "길드 정보 없음") + "\n\n" +
-            "우승 상금🤑: 🅟20억\n" +
+            "우승 상금🤑: 🅟30억\n" +
             "전용 칭호⚔️: [무쌍⚔️]\n" +
             "적용 기간⏰: 24시간\n" +
             "누적 무쌍⚔️: " + (data.member[winner].musouWinCount || 0) + "회\n\n" +
@@ -33715,7 +33717,12 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
     var attacker = getPetMusouCurrentAttacker(musou);
     if (!attacker) return "";
     var player = musou.players[attacker];
-    var lines = ["[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", "[⏳ 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초]", "[남은 공격(" + player.attacksLeft + "/" + GLOBAL_CONFIG.petMusou.attackLimit + "⚔)]", "[⚡ 누적 벼락발생확률: " + (musou.lightningRate * 100).toFixed(1) + "%]", "━━━━━━━━━━━━━━━━", "🗡️현재 펫 무쌍 대회 상황🗡️", "━━━━━━━━━━━━"];
+    var maxAttacks = parseInt(player.maxAttacks, 10) || GLOBAL_CONFIG.petMusou.attackLimit; // 구버전 진행 데이터는 기본 공격 한도로 표시
+    var lines = ["[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", "[⏳ 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초]", "[남은 공격(" + player.attacksLeft + "/" + maxAttacks + "⚔)]"];
+    if (maxAttacks > GLOBAL_CONFIG.petMusou.attackLimit) {
+        lines.push("무쌍신화📙[B]: 어이 원코(공격횟수+1)");
+    }
+    lines.push("[⚡ 누적 벼락발생확률: " + (musou.lightningRate * 100).toFixed(1) + "%]", "━━━━━━━━━━━━━━━━", "🗡️현재 펫 무쌍 대회 상황🗡️", "━━━━━━━━━━━━");
     for (var flagNo = 1; flagNo <= GLOBAL_CONFIG.petMusou.flagCount; flagNo++) {
         var stateText = "미확인(❓)";
         if (musou.realFlagFound && flagNo === musou.realFlagNo) {
@@ -33725,6 +33732,7 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
         }
         lines.push("[" + flagNo + "] " + getPetMusouFlagName(flagNo) + ": " + stateText);
     }
+    lines.push("━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.");
     return lines.join("\n");
 }
 
@@ -33736,9 +33744,10 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         var remainingGraceSeconds = Math.max(1, Math.ceil((musou.startGraceDeadlineAt - new Date().getTime()) / 1000));
         return { ok: false, message: "⏳ 펫무쌍 시작 준비 중입니다.\n첫 공격은 " + remainingGraceSeconds + "초 뒤 시작됩니다." };
     }
+    if (!musou.players[sender]) return { ok: false, message: "❌ 펫무쌍 참가자만 공격할 수 있습니다." };
+    if (!musou.players[sender].alive || musou.players[sender].attacksLeft < 1) return { ok: false, message: "❌ 이미 펫무쌍에서 탈락하여 공격할 수 없습니다." };
     var currentAttacker = getPetMusouCurrentAttacker(musou);
     if (currentAttacker !== sender) return { ok: false, message: "❌ 현재 공격 차례가 아닙니다.\n현재 공격자: " + currentAttacker };
-    if (!musou.players[sender] || !musou.players[sender].alive || musou.players[sender].attacksLeft < 1) return { ok: false, message: "❌ 펫무쌍 공격이 가능한 상태가 아닙니다." };
     if (!getPetMusouGuildInfo(data, guildData, sender)) return { ok: false, message: "❌ 길드 가입 상태가 확인되지 않아 공격할 수 없습니다." };
     if (new Date().getTime() > musou.turnDeadlineAt) return { ok: false, expired: true, message: "❌ 공격 제한시간이 지났습니다." };
     clearPetMusouTurnTimer();
@@ -33767,10 +33776,10 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
             for (var fakeNo = 1; fakeNo <= GLOBAL_CONFIG.petMusou.flagCount; fakeNo++) {
                 if (fakeNo !== musou.realFlagNo) musou.fakeFlags[String(fakeNo)] = true;
             }
-            lines.push("공격 보상🤑: 🅟2억", "", "[진짜 깃발 발견🚩]", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
+            lines.push("공격 보상🤑: 🅟3억", "", "[진짜 깃발 발견🚩]", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
         } else {
             musou.fakeFlags[String(flagNo)] = true;
-            lines.push("공격 보상🤑: 🅟2억", "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 공격권 1회가 차감되었습니다.");
+            lines.push("공격 보상🤑: 🅟3억", "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 공격권 1회가 차감되었습니다.");
         }
     } else if (flagNo !== musou.realFlagNo) {
         musou.players[sender].alive = false;
@@ -33781,13 +33790,13 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         rewardGranted = true;
         data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
         musou.currentHolder = sender;
-        lines.push("공격 보상🤑: 🅟2억", "", "주인 없는 진짜 깃발을 즉시 점령했습니다!");
+        lines.push("공격 보상🤑: 🅟3억", "", "주인 없는 진짜 깃발을 즉시 점령했습니다!");
     } else {
         rewardGranted = true;
         data.member[sender].point = (data.member[sender].point || 0) + GLOBAL_CONFIG.petMusou.attackRewardPoint;
         var previousHolder = musou.currentHolder;
         var battleResult = resolvePetMusouBattle(data, petData, musou, sender, previousHolder);
-        lines.push("공격 보상🤑: 🅟2억", "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
+        lines.push("공격 보상🤑: 🅟3억", "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
         hasBattleDetail = !!(battleResult.attacker && battleResult.defender);
         if (battleResult.attackerWin) {
             attackSucceeded = true;
@@ -33945,10 +33954,7 @@ function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, 
             if (!timeoutResult.ok) return;
             saveJsonFile(latestData, filePath);
             castleMsg(timeoutResult.message, replier, isGroupChat);
-            if (timeoutResult.ended) {
-                noticeMsg(timeoutResult.finishMessage);
-                return;
-            }
+            if (timeoutResult.ended) return;
             castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
             startPetMusouTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat, false);
         } finally {
@@ -33979,10 +33985,7 @@ function recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupC
         if (!timeoutResult.ok) return;
         saveJsonFile(data, filePath);
         castleMsg(timeoutResult.message, replier, isGroupChat);
-        if (timeoutResult.ended) {
-            noticeMsg(timeoutResult.finishMessage);
-            return;
-        }
+        if (timeoutResult.ended) return;
         castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
         startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
         return;
