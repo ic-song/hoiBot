@@ -56,6 +56,7 @@ import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pe
 import { isPetTitleSaleCommand, PetTitleSaleService } from "./pet/title-sale-service.js";
 import { isTerritoryProtectionGrantCommand, TerritoryProtectionGrantService } from "./admin/territory-protection-grant-service.js";
 import { FixedItemGrantService, isFixedItemGrantCommand } from "./admin/fixed-item-grant-service.js";
+import { BoosterDualGrantService, isBoosterDualGrantCommand } from "./admin/booster-dual-grant-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
@@ -1371,6 +1372,25 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             // 레거시 총괄 운영자 전용 지급 명령은 권한이 없으면 응답하지 않습니다.
           } else if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "fixed_item_grant_error", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isBoosterDualGrantCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new BoosterDualGrantService(database).execute({ externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId, eventId: normalizedEvent.eventId, message: normalizedEvent.message ?? "" });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && error.statusCode === 403) {
+            // 레거시 총괄 운영자 전용 부스터 지급은 권한이 없으면 응답하지 않습니다.
+          } else if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "booster_dual_grant_error", error.message));
           } else {
             throw error;
           }
