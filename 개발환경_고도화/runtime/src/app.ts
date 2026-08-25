@@ -30,6 +30,7 @@ import { ChangePlayerServerService } from "./player/change-player-server-service
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
+import { HappyFoundationCaptainService, isHappyFoundationCaptainCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-captain-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
@@ -638,6 +639,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isSignupCommand(normalizedEvent.message ?? "")
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
+        || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || packageCatalogWizardControlCandidate
@@ -657,6 +659,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
             : packageCatalogAdminDispatchCandidate
               ? normalizePackageCatalogAdminDispatchMessage(normalizedEvent.message ?? "")
+              : isHappyFoundationCaptainCommand(normalizedEvent.message)
+                ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
@@ -968,6 +972,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(
               normalizedEvent, "daily_prayer_error", error.message
+            ));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && normalizedEvent.direction === "incoming" && isHappyFoundationCaptainCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "happy_foundation_captain"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new HappyFoundationCaptainService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(
+              normalizedEvent, "happy_foundation_captain_error", error.message
             ));
           } else {
             throw error;
