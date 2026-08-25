@@ -58,6 +58,7 @@ import { isTerritoryProtectionGrantCommand, TerritoryProtectionGrantService } fr
 import { FixedItemGrantService, isFixedItemGrantCommand } from "./admin/fixed-item-grant-service.js";
 import { BoosterDualGrantService, isBoosterDualGrantCommand } from "./admin/booster-dual-grant-service.js";
 import { GlobalGiftDistributeService, isGlobalGiftCommand } from "./admin/global-gift-distribute-service.js";
+import { isPlayerAttributeAdjustCommand, PlayerAttributeAdjustService } from "./admin/player-attribute-adjust-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
@@ -1394,6 +1395,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "booster_dual_grant_error", error.message));
           } else {
             throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPlayerAttributeAdjustCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && database !== undefined) {
+        try {
+          const result = await new PlayerAttributeAdjustService(database).execute({ externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId, eventId: normalizedEvent.eventId, message: normalizedEvent.message ?? "" });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && error.statusCode === 403) {
+            // 레거시 총괄 운영자 전용 속성 조정은 권한이 없으면 응답하지 않습니다.
+          } else {
+            const commandError = error instanceof Error ? error : new Error("회원 속성 조정에 실패했습니다.");
+            processing.replies.push({ outboxId: `error:${normalizedEvent.eventId}:player-attribute-adjust`, room: normalizedEvent.channelId, data: commandError.message });
           }
         }
       }
