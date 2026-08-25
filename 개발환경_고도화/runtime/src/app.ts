@@ -98,6 +98,8 @@ import { OpenAllService } from "./inventory/open-all-service.js";
 import { MariaOpenAllRepository } from "./inventory/maria-open-all-repository.js";
 import { EnhanceBoxOpenService, isEnhanceBoxOpenCommandCandidate } from "./inventory/enhance-box-open-service.js";
 import { MariaEnhanceBoxOpenRepository } from "./inventory/maria-enhance-box-open-repository.js";
+import { ParadiseBoxOpenService, isParadiseBoxOpenCommandCandidate } from "./inventory/paradise-box-open-service.js";
+import { MariaParadiseBoxOpenRepository } from "./inventory/maria-paradise-box-open-repository.js";
 import { EnhanceRateDrawService, isEnhanceRateDrawCommandCandidate } from "./inventory/enhance-rate-draw-service.js";
 import { MariaEnhanceRateDrawRepository } from "./inventory/maria-enhance-rate-draw-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
@@ -144,6 +146,7 @@ export interface AppDependencies {
   homeUpgrade?: Pick<HomeUpgradeService, "handle">;
   miniPetCollectionRegister?: Pick<MiniPetCollectionRegisterService, "handle">;
   enhanceBoxOpen?: Pick<EnhanceBoxOpenService, "handle">;
+  paradiseBoxOpen?: Pick<ParadiseBoxOpenService, "handle">;
   enhanceRateDraw?: Pick<EnhanceRateDrawService, "handle">;
 }
 
@@ -406,6 +409,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const enhanceBoxOpen = dependencies.enhanceBoxOpen
     ?? (database === undefined ? undefined
       : new EnhanceBoxOpenService(new MariaEnhanceBoxOpenRepository(database)));
+  const paradiseBoxOpen = dependencies.paradiseBoxOpen
+    ?? (database === undefined ? undefined
+      : new ParadiseBoxOpenService(new MariaParadiseBoxOpenRepository(database)));
   const enhanceRateDraw = dependencies.enhanceRateDraw
     ?? (database === undefined ? undefined
       : new EnhanceRateDrawService(new MariaEnhanceRateDrawRepository(database)));
@@ -1207,6 +1213,29 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "enhance_rate_draw", error.message));
+          } else {
+            throw error;
+          }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isParadiseBoxOpenCommandCandidate(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined
+        && paradiseBoxOpen !== undefined) {
+        try {
+          const result = await paradiseBoxOpen.handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "opened" && !result.duplicate) {
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "paradise_box_open", error.message));
           } else {
             throw error;
           }
