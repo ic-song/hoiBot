@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.402"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.403"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -44628,8 +44628,6 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
     cleanupInvalidPetExploreUsers(petExploreData, data);
     if (!petExploreData.bet) return null;
 
-    var baseP = 5;
-
     var successLines = [];
     var failLines = [];
     var any = false;
@@ -44709,6 +44707,8 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 }
             }
 
+            var successDungeon = finalDungeon; // 입장권 재확인까지 끝난 실제 성공률 기준 탐험지
+
             // 이벤트 던전 5% 진입(일반 광산만)
             if (isRegularMineExploreSlot(finalDungeon)) {
                 if (Math.random() < 0.05) finalDungeon = "E";
@@ -44729,23 +44729,14 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 }
             }
 
-            // 티어/매력/영주 가산
-            var tierP = getExploreTierBonusPercent(data, user);
-            var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData, guildData);
-            var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
-            var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
-            var pendantP = getPendantExploreBonusPercent(petData, user);
-            var homeBadgeP = getHomeBadgeCubeActiveOptionPercent(data, user, "explore");
-            var penaltyP = getExploreSuccessPenaltyPercent(finalDungeon); // 던전/미궁 성공률 디버프 계산
-
+            var successPercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, successDungeon, guildData); // 실제 정산 시점의 공용 성공률 계산
             var usedUpItem = pickAndConsumeExploreUpItem(data, user);
-            var upP = usedUpItem ? parseExploreUpPercent(usedUpItem) : 0;
 
             entry.usedTicket = usedTicket;
             entry.usedTreasure = usedTreasure;
             entry.usedUpItem = usedUpItem;
 
-            var totalP = Math.max(0, baseP + tierP + expP + lordP + traitP + pendantP + homeBadgeP + upP - penaltyP);
+            var totalP = successPercent.totalP;
 
             var success = Math.random() * 100 < totalP;
 
