@@ -80,6 +80,7 @@ import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
 import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { isPetStatusCommand, PetStatusService } from "./pet/pet-status-service.js";
+import { isPetIntimacyRankCommand, PetIntimacyRankReadService } from "./pet/pet-intimacy-rank-read-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
@@ -712,6 +713,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
+        || isPetIntimacyRankCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || pointShopCatalogDispatchCandidate
@@ -1305,6 +1307,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         if (result.status === "displayed" && result.data !== null && result.outboxId !== null) {
           processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetIntimacyRankCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pet_intimacy_rank_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PetIntimacyRankReadService(database!).read({
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId,
+          eventId: normalizedEvent.eventId,
+        });
+        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate

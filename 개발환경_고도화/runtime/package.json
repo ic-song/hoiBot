@@ -38,6 +38,7 @@
     "db:probe:spirit-attribute": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-attribute-synthetic.ts",
     "db:probe:pet-enhancement-level-set": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-enhancement-level-set-synthetic.ts",
     "db:probe:pet-charm-rank-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-charm-rank-read-synthetic.ts",
+    "db:probe:pet-intimacy-rank-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-intimacy-rank-read-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
     "db:probe:pet-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-reset-synthetic.ts",

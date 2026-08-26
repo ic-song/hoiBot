@@ -6576,3 +6576,29 @@ Status: VERIFIED
 - 펫·미니펫 객체는 변경하지 않고 `mini_pet_draw` stack만 증가
 
 ---
+# /펫친밀도순위
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: frozen legacy behavior
+- `개발환경_고도화/runtime/src/pet/pet-intimacy-rank-read-service.ts`: modern DB provider
+- `개발환경_고도화/runtime/migrations/179_pet_intimacy_rank_read.sql`: normalized intimacy projection and command registration
+
+## Data Usage
+
+- Legacy: `member[*].bag["펫 친밀도🐾 [Lv.n](progress/1000)+exp💕"]`, `data.intimacyTop`
+- Modern: `player_pet_intimacy`, `pet_intimacy_ranking_state`, `player_profiles`, `player_legacy_rank_profiles`
+
+## Save Flow
+
+- Legacy command saves `member.json` after updating the current intimacy leader.
+- Modern provider updates the leader state and writes operation, execution, audit, and outbox rows in one MariaDB transaction.
+
+## AI Notes
+
+- Exact command guard: `/펫친밀도순위`.
+- Order is intimacy level descending, fullness experience descending, then user name ascending; output is limited to 100 users and folds after rank 10.
+
+---

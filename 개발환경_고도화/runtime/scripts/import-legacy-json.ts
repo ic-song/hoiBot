@@ -89,6 +89,13 @@ function supportPassEndDate(value: unknown): Date | undefined {
   return match === null ? undefined : new Date(`20${match[1]}-${match[2]}-${match[3]}T23:59:59+09:00`);
 }
 
+// 가방 키에 인코딩된 레거시 펫 친밀도 상태를 정규화된 DB 값으로 분리합니다.
+function parseLegacyPetIntimacy(itemName: string): { level: string; progress: string; fullnessExp: string } | undefined {
+  const match = /^펫 친밀도🐾\s*\[Lv\.(\d+)\]\((\d+)\/1000\)\+(\d+)💕$/.exec(itemName);
+  if (match === null || BigInt(match[2]!) > 999n) return undefined;
+  return { level: match[1]!, progress: match[2]!, fullnessExp: match[3]! };
+}
+
 // 기존 checkRank의 길드 순위 이모지를 동일하게 반환합니다.
 function guildRankEmoji(rank: unknown): string {
   const emojis = ["☬", "♔", "♛", "♕", "⚝", "❁", "⌺", "⍌", "⍫", "⚔︎", "⚚", "✥", "❖", "◈", "◉", "◍", "◌", "△", "◇", "◻︎"];
@@ -301,9 +308,15 @@ async function importMembers(
       if (point !== undefined) await transaction.execute("INSERT INTO currency_accounts (player_id, currency_code, balance) VALUES (?, 'point', ?)", [player.insertId, point]);
       if (diamond !== undefined) await transaction.execute("INSERT INTO currency_accounts (player_id, currency_code, balance) VALUES (?, 'diamond', ?)", [player.insertId, diamond]);
       const bag = asRecord(member.bag) ?? {};
+      let importedIntimacy: { level: string; progress: string; fullnessExp: string } | undefined;
       for (const [itemName, rawQuantity] of Object.entries(bag)) {
         const quantity = integerString(rawQuantity);
         if (quantity === undefined || BigInt(quantity) < 0n) continue;
+        const intimacy = parseLegacyPetIntimacy(itemName);
+        if (intimacy !== undefined) {
+          if (importedIntimacy === undefined) importedIntimacy = intimacy;
+          continue;
+        }
         const itemCode = stableLegacyCode("bag", itemName);
         await transaction.execute(
           `INSERT INTO item_definitions (code, display_name, asset_type_code, stackable, metadata_json, active, version)
@@ -363,6 +376,12 @@ async function importMembers(
             integerString(pet.petexp) ?? 0, integerString(pet.upgrade) ?? 0]
         );
         playerPetId = insertedPet.insertId;
+        if (importedIntimacy !== undefined) {
+          await transaction.execute(
+            "INSERT INTO player_pet_intimacy(player_pet_id,intimacy_level,progress,charm,version,updated_at) VALUES (?,?,?,?,1,UTC_TIMESTAMP(3))",
+            [playerPetId, importedIntimacy.level, importedIntimacy.progress, importedIntimacy.fullnessExp]
+          );
+        }
         const miniPet = asRecord(pet.miniPet);
         if (miniPet !== undefined && typeof miniPet.name === "string" && miniPet.name.trim() !== "") {
           const definitionCode = stableLegacyCode("mini_pet", `${miniPet.name}|${String(miniPet.grade ?? "")}|${String(miniPet.emoji ?? "")}`);
@@ -460,6 +479,12 @@ async function importMembers(
         "INSERT INTO player_legacy_rank_profiles(player_id,rank_emoji,source_order) VALUES (?,?,?)",
         [player.insertId, typeof rankEmoji === "string" ? rankEmoji : "", player.insertId]
       );
+      if (legacyKey === sources.memberRoot.intimacyTop) {
+        await transaction.execute(
+          "INSERT INTO pet_intimacy_ranking_state(state_key,top_player_id,version,updated_at) VALUES ('current',?,1,UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE top_player_id=VALUES(top_player_id),version=version+1,updated_at=VALUES(updated_at)",
+          [player.insertId]
+        );
+      }
     });
   }
   return playerIds;
