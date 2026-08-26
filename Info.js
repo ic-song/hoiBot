@@ -302,6 +302,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (!isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
 			return;
 		}
+		var isPetMusouInfoOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 펫무쌍 중 관리 정보 명령 사용 가능 대상
+		if (data && data.petMusou && data.petMusou.active === true && !isPetMusouInfoOperator) {
+			return;
+		}
 		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 관리 정보 명령 사용 가능 대상
 		var isMatzangInfoOperatorCommand = isMatzangOperator && isMatzangInfoOperatorCommandMessage(msg); // Info.js 관리 명령 여부
 		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangInfoOperatorCommand) {
