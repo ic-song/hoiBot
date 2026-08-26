@@ -27,6 +27,7 @@ import { isSpecialBadgeRevokeCommandCandidate, SpecialBadgeRevokeService } from 
 import { isWeeklyQuestCountCommandCandidate, parseWeeklyQuestCountCommand, WeeklyQuestCountService } from "./weekly-quest-count-service.js";
 import { isMiniPetDuelResetGrantCommandCandidate, MiniPetDuelResetGrantService } from "./mini-pet-duel-reset-grant-service.js";
 import { isPetDungeonEntryGrantCommandCandidate, PetDungeonEntryGrantService } from "./pet-dungeon-entry-grant-service.js";
+import { isMiniPetDrawGrantCommandCandidate, MiniPetDrawGrantService } from "./mini-pet-draw-grant-service.js";
 import { isMatzangTimeCheckCommandCandidate, MatzangTimeCheckService } from "./matzang-time-check-service.js";
 import { isMatzangSessionCommand, MatzangSessionCommandService } from "../battle/matzang-session-command-service.js";
 import { isTrialTowerSyncCommand, TrialTowerSyncService } from "../trial/trial-tower-sync-service.js";
@@ -90,6 +91,7 @@ export class IrisAdminCommandService {
     if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database).handleIris(input);
     if (isMiniPetDuelResetGrantCommandCandidate(input.message)) return this.handleMiniPetDuelResetGrant(input);
     if (isPetDungeonEntryGrantCommandCandidate(input.message)) return this.handlePetDungeonEntryGrant(input);
+    if (isMiniPetDrawGrantCommandCandidate(input.message)) return this.handleMiniPetDrawGrant(input);
     if (isPetEnhancementLevelSetCommandCandidate(input.message)) return new PetEnhancementLevelSetService(this.database).handleIris(input);
     if (isSpiritAttributeCommandCandidate(input.message)) return new SpiritAttributeService(this.database).handleIris(input);
     if (isSpiritEnhanceCommand(input.message)) return new SpiritEnhanceService(this.database).handleIris(input);
@@ -204,6 +206,17 @@ export class IrisAdminCommandService {
     if(operators[0]===undefined)return{status:"handled_no_reply"};
     await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"MODERN",reasonCode:"MODERN_ROUTE_ALLOWED",commandCode,handlerKey:commandCode});
     const result=await new PetDungeonEntryGrantService(this.database).grant({eventId:input.eventId,destinationId:input.channelId,operatorId:operators[0]!.operator_id.toString(),message:input.message});return{status:"changed",data:result.data,outboxId:result.outboxId};
+  }
+
+  // 총괄 운영자의 `/펫미니` 미니펫뽑기 지급을 공용 stack provider로 처리합니다.
+  async handleMiniPetDrawGrant(input:{externalUserId:string;channelId:string;message:string;eventId:string}):Promise<{status:"changed";data:string;outboxId:string}|{status:"shadow"|"legacy_fallback"|"handled_no_reply"}>{
+    const commandCode="ADMIN_MINI_PET_DRAW_GRANT",rollout=await this.database.query<Array<{rollout_state:RolloutState;enabled:number}>>("SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1",[commandCode]),definition=rollout[0],dispatch=new MariaCommandDispatchRepository(this.database);
+    if(definition===undefined||definition.enabled!==1||definition.rollout_state==="LEGACY_ONLY"){await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"LEGACY_FALLBACK",reasonCode:"ROLLOUT_LEGACY_ONLY",commandCode,handlerKey:commandCode});return{status:"legacy_fallback"};}
+    if(definition.rollout_state==="SHADOW"||definition.rollout_state==="CANARY"){await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"SHADOW",reasonCode:"ROLLOUT_SHADOW",commandCode,handlerKey:commandCode});return{status:"shadow"};}
+    const operators=await this.database.query<Array<{operator_id:bigint}>>(`SELECT mapping.operator_id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id AND operator.status='active' JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id JOIN admin_roles role ON role.id=operator_role.role_id AND role.code='super_admin' AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='inventory.mini_pet_draw.grant' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1`,[input.externalUserId]);
+    if(operators[0]===undefined)return{status:"handled_no_reply"};
+    await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"MODERN",reasonCode:"MODERN_ROUTE_ALLOWED",commandCode,handlerKey:commandCode});
+    const result=await new MiniPetDrawGrantService(this.database).grant({eventId:input.eventId,destinationId:input.channelId,operatorId:operators[0]!.operator_id.toString(),message:input.message});return{status:"changed",data:result.data,outboxId:result.outboxId};
   }
 
   // rollout과 레거시 Master 권한을 확인한 뒤 종료된 반지 명령 안내를 원자 기록합니다.
@@ -963,7 +976,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
-    || isPetDungeonEntryGrantCommandCandidate(message));
+    || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.

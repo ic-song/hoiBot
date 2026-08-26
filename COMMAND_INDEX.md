@@ -6448,3 +6448,47 @@ Status: VERIFIED
 ## Save Flow
 - MariaDB transaction with optimistic version update and idempotent operation result
 - Does not change `enhancement_updated_at`, inventory, skills, or currency
+# /펫미니
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/펫미니`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/mini-pet-draw-grant-service.ts`
+- `개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts`
+- `개발환경_고도화/runtime/migrations/175_admin_mini_pet_draw_grant.sql`
+
+## Related Helpers
+
+- `isMaster`
+- `AdminStackGrantService`
+
+## Data Usage
+
+- `data.member[target].bag["미니펫뽑기🐹(/미니펫오픈)"]`
+- `item_definitions.code = mini_pet_draw`
+- `inventory_stacks`
+- `inventory_ledger`
+
+## Save Flow
+
+- 레거시는 응답 뒤 `saveJsonFile(data, filePath)` 공통 저장
+- 현대화 경로는 stack·ledger·감사·outbox를 한 transaction으로 기록
+
+## Related Commands
+
+- `/미니펫오픈`
+- `/펫미니강`
+
+## AI Notes
+
+- `/펫미니, 대상`은 기본 1개, `/펫미니[수량], 대상`은 양의 정수 수량을 지급
+- 총괄 운영자 전용이며 권한이 없으면 레거시처럼 응답하지 않음
+- 펫·미니펫 객체는 변경하지 않고 `mini_pet_draw` stack만 증가
+
+---
