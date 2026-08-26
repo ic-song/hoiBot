@@ -65,6 +65,7 @@ import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispat
 import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
 import { isPendantDeleteCommandCandidate,normalizePendantDeleteDispatchMessage,PendantDeleteService } from "./pet/pendant-delete-service.js";
 import { isPendantRankCommand,PendantRankService } from "./pet/pendant-rank-service.js";
+import { isPendantDrawOpenCommandCandidate,normalizePendantDrawOpenDispatchMessage,PendantDrawOpenService } from "./pet/pendant-draw-open-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -691,7 +692,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPendantCarrotTradeCommandCandidate(normalizedEvent.message)
         || isPendantRestoreCommandCandidate(normalizedEvent.message)
         || isPendantDeleteCommandCandidate(normalizedEvent.message)
-        || isPendantRankCommand(normalizedEvent.message)
+         || isPendantRankCommand(normalizedEvent.message)
+         || isPendantDrawOpenCommandCandidate(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -712,7 +714,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPendantDeleteCommandCandidate(normalizedEvent.message)
+           message: isPendantDeleteCommandCandidate(normalizedEvent.message)
             ? normalizePendantDeleteDispatchMessage(normalizedEvent.message ?? "")
             : isPendantRestoreCommandCandidate(normalizedEvent.message)
             ? normalizePendantRestoreDispatchMessage(normalizedEvent.message ?? "")
@@ -728,8 +730,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizePendantEnhanceCorrectionDispatchMessage(normalizedEvent.message ?? "")
             : isPendantEnhanceCommandCandidate(normalizedEvent.message)
             ? normalizePendantEnhanceDispatchMessage(normalizedEvent.message ?? "")
-            : isPendantBagCleanupCommandCandidate(normalizedEvent.message)
-            ? normalizePendantBagCleanupDispatchMessage(normalizedEvent.message ?? "")
+             : isPendantBagCleanupCommandCandidate(normalizedEvent.message)
+             ? normalizePendantBagCleanupDispatchMessage(normalizedEvent.message ?? "")
+             : isPendantDrawOpenCommandCandidate(normalizedEvent.message)
+             ? normalizePendantDrawOpenDispatchMessage(normalizedEvent.message ?? "")
             : packageDispatchCandidate
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
             : packageCatalogAdminDispatchCandidate
@@ -1397,6 +1401,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantDeleteCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_delete"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantDeleteService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantRankCommand(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_rank_read"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantRankService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
+
+      if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantDrawOpenCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_draw_open"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantDrawOpenService(database!,Math.random,config.irisAllowedOpenChatIds).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});for(const reply of result.replies??[])processing.replies.push({outboxId:reply.outboxId,room:reply.room,data:reply.data});}
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isSpiritNameCommandCandidate(normalizedEvent.message)
