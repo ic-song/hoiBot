@@ -30,6 +30,18 @@ export function isPendantBagCommandCandidate(message: string | undefined): boole
   return parsePendantBagCommand(message) !== null;
 }
 
+// 레거시 등급·이름 순서에 stable instance ID를 최종 동률 기준으로 적용합니다.
+export function sortPendantBagEntries(source: PendantBagEntry[]): PendantBagEntry[] {
+  const rank = (grade: string) => { const index = GRADE_ORDER.indexOf(grade); return index < 0 ? GRADE_ORDER.length : index; };
+  return source.slice().sort((a, b) => {
+    const gradeDiff = rank(a.grade) - rank(b.grade);
+    if (gradeDiff !== 0) return gradeDiff;
+    if (a.name < b.name) return -1;
+    if (a.name > b.name) return 1;
+    return BigInt(a.instanceId) < BigInt(b.instanceId) ? -1 : BigInt(a.instanceId) > BigInt(b.instanceId) ? 1 : 0;
+  });
+}
+
 // 펜던트 이름과 아이콘을 중복 없이 결합합니다.
 function displayName(entry: PendantBagEntry): string {
   return entry.icon !== "" && entry.name.endsWith(entry.icon) ? entry.name : `${entry.name}${entry.icon}`;
@@ -37,14 +49,7 @@ function displayName(entry: PendantBagEntry): string {
 
 // 레거시 등급·이름 정렬과 6번째 행 앞 allsee 경계를 안정 instance ID로 재현합니다.
 export function formatPendantBagMessage(rankDisplay: string, source: PendantBagEntry[]): string {
-  const rank = (grade: string) => { const index = GRADE_ORDER.indexOf(grade); return index < 0 ? GRADE_ORDER.length : index; };
-  const rows = source.slice().sort((a, b) => {
-    const gradeDiff = rank(a.grade) - rank(b.grade);
-    if (gradeDiff !== 0) return gradeDiff;
-    if (a.name < b.name) return -1;
-    if (a.name > b.name) return 1;
-    return BigInt(a.instanceId) < BigInt(b.instanceId) ? -1 : BigInt(a.instanceId) > BigInt(b.instanceId) ? 1 : 0;
-  });
+  const rows = sortPendantBagEntries(source);
   let out = `[${rankDisplay}] 보유 펜던트가방💎[${rows.length}/${BAG_LIMIT}]\n`;
   out += "━━━━━━━━━━━━━\n";
   out += "※ 펜던트 장착: /펜던트장착 [펜던트가방번호]\n";
