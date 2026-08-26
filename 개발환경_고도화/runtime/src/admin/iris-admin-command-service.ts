@@ -27,6 +27,7 @@ import { isWeeklyQuestCountCommandCandidate, parseWeeklyQuestCountCommand, Weekl
 import { isMiniPetDuelResetGrantCommandCandidate, MiniPetDuelResetGrantService } from "./mini-pet-duel-reset-grant-service.js";
 import { isPetDungeonEntryGrantCommandCandidate, PetDungeonEntryGrantService } from "./pet-dungeon-entry-grant-service.js";
 import { isMatzangTimeCheckCommandCandidate, MatzangTimeCheckService } from "./matzang-time-check-service.js";
+import { isMatzangSessionCommand, MatzangSessionCommandService } from "../battle/matzang-session-command-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
@@ -79,6 +80,7 @@ export class IrisAdminCommandService {
     { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
+    if (isMatzangSessionCommand(input.message)) return new MatzangSessionCommandService(this.database).handleIris(input);
     if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database).handleIris(input);
     if (isMiniPetDuelResetGrantCommandCandidate(input.message)) return this.handleMiniPetDuelResetGrant(input);
     if (isPetDungeonEntryGrantCommandCandidate(input.message)) return this.handlePetDungeonEntryGrant(input);

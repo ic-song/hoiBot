@@ -67,7 +67,8 @@
     "db:probe:partial-dispatch": "node --env-file-if-exists=.env --import tsx scripts/probe-partial-dispatch-synthetic.ts",
     "db:probe:matzang-command": "tsx scripts/probe-matzang-command-synthetic.ts",
     "db:probe:matzang-time-check": "tsx scripts/probe-matzang-time-check-synthetic.ts",
-    "db:probe:matzang-session": "tsx scripts/probe-matzang-session-synthetic.ts"
+    "db:probe:matzang-session": "tsx scripts/probe-matzang-session-synthetic.ts",
+    "db:probe:matzang-session-command": "tsx scripts/probe-matzang-session-command-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
