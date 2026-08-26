@@ -6291,3 +6291,37 @@ Status: VERIFIED
 - 여러 칸과 끝 공백은 허용하지만 명령 직후에는 일반 공백이 하나 이상 있어야 한다.
 - `YYYYMMDD - (일수 - 1)` 숫자 비교와 등록 순서를 보존하며 응답을 두 번 보낸다.
 - 미출석자가 없어도 `미출첵 명단 \n\n` 빈 두 번째 응답을 보낸다.
+# /퀘스트|ㄹㄹㄹ|/ㅋ
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+- `개발환경_고도화/runtime/src/quest/quest-status-read-service.ts`
+- `개발환경_고도화/runtime/migrations/169_quest_status_read.sql`
+
+## Related Helpers
+
+- `buildDailyQuestInfoMessage`
+- `getDailyQuestStatus`
+- `formatQuestStatusReply`
+- `QuestStatusReadService.read`
+
+## Data Usage
+
+- Legacy: member, pet battle, pet exploration, pass, daily and weekly quest counters
+- Modern: `legacy_quest_status_projection` over `player_pet_daily_records`, `player_passes`, identities and profiles
+
+## Save Flow
+
+- Read-only; no command-specific mutation or save
+
+## AI Notes
+
+- Exact trimmed aliases only: `/퀘스트`, `ㄹㄹㄹ`, `/ㅋ`
+- Preserves pass-only guidance, daily and weekly progress, completion marks, reward text and `allsee`
+- Gate 8 production import and room smoke remain pending
+
+---
