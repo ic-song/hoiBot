@@ -6325,3 +6325,36 @@ Status: VERIFIED
 - Gate 8 production import and room smoke remain pending
 
 ---
+# /매력 [유저명] [숫자]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/pet-charm-set-service.ts`
+- `개발환경_고도화/runtime/migrations/170_admin_pet_charm_set.sql`
+
+## Related Helpers
+
+- `parsePetCharmSetCommand`
+- `resolvePetCharmAppearance`
+- `PetCharmSetService.set`
+
+## Data Usage
+
+- Legacy: `member_pet.json -> [유저명].petexp/pettype/petimg`
+- Modern: `player_pets.experience/pet_type_code/image_value/version` and coded `pet_definitions.metadata_json`
+
+## Save Flow
+
+- Stable player/pet lookup, optimistic version update, operation, execution, audit and outbox are committed atomically.
+- Experience 10 evolution persists experience, type and image together; the legacy pre-evolution save ordering bug is not retained.
+
+## AI Notes
+
+- Full command only: `/매력 [유저명] [숫자]`; `/매력박스오픈` is not a candidate.
+- Legacy hard-coded sender is replaced by the `pet.charm.set` super-admin permission.
+- WBS slice ID remains stable although the audited feature is a mutation rather than a read.
+
+---
