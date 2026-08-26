@@ -47,6 +47,7 @@
     "db:probe:pendant-market-info": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-market-info-synthetic.ts",
     "db:probe:pendant-carrot-trade": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-carrot-trade-synthetic.ts",
     "db:probe:pendant-restore": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-restore-synthetic.ts",
+    "db:probe:pendant-delete": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-delete-synthetic.ts",
     "db:probe:spirit-name": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-synthetic.ts",
     "db:probe:spirit-name-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-combine-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
