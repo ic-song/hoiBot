@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.408"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.409"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -139,7 +139,7 @@ const PET_SKILL_LIST = [
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
-    { name: "무쌍신화", grade: "B", rate: 2.0, equipComment: "슈슉..슈슈슉..챙..챙..챙!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다." },
+    { name: "무쌍신화", grade: "B", rate: 0.9195, fixedRate: true, equipComment: "슈슉..슈슈슉..챙..챙..챙!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n※ 무쌍귀신📙과 중복되지 않습니다." }, // 전체 스킬 풀 환산 확률 0.5%
     { name: "인플루언서", grade: "B", rate: 2.0, fixedRate: true, followerBonus: 1000, equipComment: "여러분 안녕 이건 뒷광고 ㄴㄴ 내돈내산이야루~", equipCommentNoColon: true, effect: "팔로워가 1,000명 증가합니다.\n셀럽 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 1,000명은 회수됩니다." },
     { name: "큐피드의 활", grade: "B", rate: 1.5, fixedRate: true, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
@@ -795,7 +795,9 @@ const GLOBAL_CONFIG = {
         territoryPayoutLogMax: 500,
         territoryDailyRewards: [
             { name: "영지기습공격권🔥(40%)", count: 2 },
-            { name: "영지절대방어권🛡(50%)", count: 2 }
+            { name: "영지절대방어권🛡(50%)", count: 2 },
+            { name: "🌪️ 전쟁불안정 증폭권(/불안정)", count: 1 },
+            { name: "다이아상자💎(/다이아상자오픈)", count: 1 }
         ],
         hoiDailyRewards: [
             { name: "자동탐험권🌄", count: 1 },
@@ -33356,9 +33358,9 @@ function isPetMusouAllowedDuringTournamentCommand(msg) {
     return msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
 }
 
-// 펫무쌍 진행 중 일반 명령어 차단 여부를 확인하는 함수
+// 펫무쌍 진행 중 일반 유저의 펫무쌍 외 입력 차단 여부를 확인하는 함수
 function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
-    if (!musou || !musou.active || typeof msg !== "string" || msg.indexOf("/") !== 0) return false;
+    if (!musou || !musou.active || typeof msg !== "string") return false;
     if (isPetMusouOperator(sender)) return false;
     if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
     return !isPetMusouAllowedDuringTournamentCommand(msg);
@@ -34954,6 +34956,8 @@ function processUserIDCommand(msg, data, operator) {
                 "일일 지급 구성\n" +
                 "└ 영지기습공격권🔥(40%) x2\n" +
                 "└ 영지절대방어권🛡(50%) x2\n" +
+                "└ 🌪️ 전쟁불안정 증폭권(/불안정) x1\n" +
+                "└ 다이아상자💎(/다이아상자오픈) x1\n" +
                 "━━━━━━━━━━━━━━━━" +
                 (beforeActive ? "\n기존 패스의 만료일을 갱신했습니다." : "");
         }
