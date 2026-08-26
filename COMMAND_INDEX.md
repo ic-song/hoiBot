@@ -2132,6 +2132,42 @@ Status: VERIFIED
 
 ---
 
+# /탐험횟수수정
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/explore-count-admin-service.ts`
+- `개발환경_고도화/runtime/migrations/164_admin_explore_count.sql`
+
+## Related Helpers
+
+- `isExploreCountAdminCommandCandidate`
+- `parseExploreCountAdminCommand`
+- `formatExploreCountAdminReply`
+- `ExploreCountAdminService.update`
+
+## Data Usage
+
+- Legacy: `data.member[targetExploreUser].exploreCnt`
+- Modern: `player_pet_daily_records.explore_attempts` for the KST record date
+- Audit: `admin_explore_count_mutations`, `command_audit`, `command_executions`, `operations`, `outbox_messages`
+
+## Save Flow
+
+- Legacy loads `member.json`, mutates `exploreCnt`, then calls `saveJsonFile(data, filePath)`
+- Modern locks the stable player daily row and commits the counter, mutation evidence, audit, execution, and reply outbox in one MariaDB transaction
+
+## AI Notes
+
+- Master-only usage: `/탐험횟수수정 유저명 숫자`
+- The last whitespace token is the unsigned count; every preceding token is the display name
+- The modern command remains `SHADOW` until shared dispatch and operational cutover are approved
+
+---
+
 # /패키지리스트
 
 Status: VERIFIED
