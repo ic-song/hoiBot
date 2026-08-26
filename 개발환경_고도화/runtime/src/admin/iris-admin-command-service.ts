@@ -8,6 +8,7 @@ import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
 import { isOperationIntervalResetCommand, OperationIntervalResetService } from "./operation-interval-reset-service.js";
+import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compare-service.js";
 import { isPetDataSyncCommand, PetDataSyncService } from "./pet-data-sync-service.js";
 import { isRequestMonitorConfigCommandCandidate, parseRequestMonitorConfigCommand, RequestMonitorConfigService } from "./request-monitor-config-service.js";
 import { isRequestMonitorExceptionCommandCandidate, parseRequestMonitorExceptionCommand, RequestMonitorExceptionService } from "./request-monitor-exception-service.js";
@@ -62,8 +63,10 @@ export class IrisAdminCommandService {
 
   // rollout 상태와 관리자 권한을 확인한 뒤 회원 포인트를 절대값으로 설정합니다.
   async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
-    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+    { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
+    | { status: "shadow" | "legacy_fallback" }
   > {
+    if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
     if (isGuildTerritoryDimensionGateCommand(input.message)) return this.handleGuildTerritoryDimensionGate(input);
@@ -119,6 +122,50 @@ export class IrisAdminCommandService {
       sourceEventId: input.eventId, irisReplyDestinationId: input.channelId
     });
     return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
+
+  // 총괄 운영자는 회원·펫 데이터의 안정 PK 개수를 같은 snapshot에서 비교합니다.
+  async handlePetDataCompare(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
+    | { status: "shadow" | "legacy_fallback" }
+  > {
+    const commandCode = "ADMIN_PET_DATA_COMPARE";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: commandCode });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: commandCode });
+    const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+      `SELECT mapping.operator_id FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+       JOIN admin_operators operator ON operator.id=mapping.operator_id
+       JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id
+       JOIN admin_roles role ON role.id=operator_role.role_id AND role.code='super_admin' AND role.active=TRUE
+       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+         AND operator.status='active' LIMIT 1`, [input.externalUserId]
+    );
+    const operator = operators[0];
+    if (operator === undefined) throw new ApplicationError("FORBIDDEN", "펫데이터 비교 권한이 없습니다.", 403);
+    const result = await new PetDataCompareService(this.database).compare({
+      idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, operatorId: operator.operator_id.toString(),
+    });
+    return {
+      status: "changed", data: result.replies[0]!.data, outboxId: result.replies[0]!.outboxId,
+      replies: result.replies,
+    };
   }
 
   // 총괄 운영자는 비활성·프로필 소실 회원의 펫 집합을 원자적으로 정리합니다.
@@ -546,7 +593,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
-    || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message));
+    || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.

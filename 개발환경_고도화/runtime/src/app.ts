@@ -1003,7 +1003,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             eventId: normalizedEvent.eventId
           });
           if (result.status === "changed") {
-            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+            const replies = result.replies ?? [{ outboxId: result.outboxId, data: result.data }];
+            for (const reply of replies) {
+              processing.replies.push({ outboxId: reply.outboxId, room: normalizedEvent.channelId, data: reply.data });
+            }
           }
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
