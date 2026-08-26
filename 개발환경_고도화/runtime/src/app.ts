@@ -67,6 +67,7 @@ import { isPendantDeleteCommandCandidate,normalizePendantDeleteDispatchMessage,P
 import { isPendantRankCommand,PendantRankService } from "./pet/pendant-rank-service.js";
 import { isPendantDrawOpenCommandCandidate,normalizePendantDrawOpenDispatchMessage,PendantDrawOpenService } from "./pet/pendant-draw-open-service.js";
 import { isPendantEquipCommandCandidate,normalizePendantEquipDispatchMessage,PendantEquipService } from "./pet/pendant-equip-service.js";
+import { isPendantEquipResetCommandCandidate,normalizePendantEquipResetDispatchMessage,PendantEquipResetService } from "./pet/pendant-equip-reset-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -696,6 +697,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPendantRankCommand(normalizedEvent.message)
          || isPendantDrawOpenCommandCandidate(normalizedEvent.message)
          || isPendantEquipCommandCandidate(normalizedEvent.message)
+         || isPendantEquipResetCommandCandidate(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -738,6 +740,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizePendantDrawOpenDispatchMessage(normalizedEvent.message ?? "")
              : isPendantEquipCommandCandidate(normalizedEvent.message)
              ? normalizePendantEquipDispatchMessage(normalizedEvent.message ?? "")
+             : isPendantEquipResetCommandCandidate(normalizedEvent.message)
+             ? normalizePendantEquipResetDispatchMessage(normalizedEvent.message ?? "")
             : packageDispatchCandidate
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
             : packageCatalogAdminDispatchCandidate
@@ -1409,6 +1413,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantDrawOpenCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_draw_open"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantDrawOpenService(database!,Math.random,config.irisAllowedOpenChatIds).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});for(const reply of result.replies??[])processing.replies.push({outboxId:reply.outboxId,room:reply.room,data:reply.data});}
 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantEquipCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&(partialDispatchDecision.handlerKey==="pendant_equip"||partialDispatchDecision.handlerKey==="pendant_unequip")&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantEquipService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
+
+      if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantEquipResetCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_equip_reset"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantEquipResetService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isSpiritNameCommandCandidate(normalizedEvent.message)

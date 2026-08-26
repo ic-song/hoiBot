@@ -51,6 +51,7 @@
     "db:probe:pendant-rank": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-rank-synthetic.ts",
     "db:probe:pendant-draw-open": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-draw-open-synthetic.ts",
     "db:probe:pendant-equip": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-equip-synthetic.ts",
+    "db:probe:pendant-equip-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-equip-reset-synthetic.ts",
     "db:probe:spirit-name": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-synthetic.ts",
     "db:probe:spirit-name-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-combine-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
