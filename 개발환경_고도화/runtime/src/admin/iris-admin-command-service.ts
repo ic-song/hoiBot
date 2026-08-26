@@ -30,10 +30,11 @@ import { isMatzangTimeCheckCommandCandidate, MatzangTimeCheckService } from "./m
 import { isMatzangSessionCommand, MatzangSessionCommandService } from "../battle/matzang-session-command-service.js";
 import { isTrialTowerSyncCommand, TrialTowerSyncService } from "../trial/trial-tower-sync-service.js";
 import { isTrialTowerAdminModifyCommandCandidate, TrialTowerAdminModifyService } from "../trial/trial-tower-admin-modify-service.js";
+import { isTrialTowerSeasonLifecycleCommand, TrialTowerSeasonLifecycleService } from "../trial/trial-tower-season-lifecycle-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: DatabaseClient, private readonly broadcastIds: string[] = []) {}
 
   async changePlayerServer(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<{ data: string; outboxId: string }> {
     if (!/^\/서버이동\s+\S.+$/.test(input.message)) {
@@ -79,7 +80,7 @@ export class IrisAdminCommandService {
 
   // rollout 상태와 관리자 권한을 확인한 뒤 회원 포인트를 절대값으로 설정합니다.
   async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
-    { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
+    { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string; room?: string }> }
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
     if (isMatzangSessionCommand(input.message)) return new MatzangSessionCommandService(this.database).handleIris(input);
@@ -100,6 +101,7 @@ export class IrisAdminCommandService {
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
     if (isTrialTowerSyncCommand(input.message)) return this.handleTrialTowerSync(input);
     if (isTrialTowerAdminModifyCommandCandidate(input.message)) return this.handleTrialTowerAdminModify(input);
+    if (isTrialTowerSeasonLifecycleCommand(input.message)) return this.handleTrialTowerSeasonLifecycle(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
     if (isGuildTerritoryDimensionGateCommand(input.message)) return this.handleGuildTerritoryDimensionGate(input);
     if (isOperationIntervalResetCommand(input.message)) return this.handleOperationIntervalReset(input);
@@ -425,6 +427,16 @@ export class IrisAdminCommandService {
     if(operator===undefined)throw new ApplicationError("FORBIDDEN","시련의탑 수정 권한이 없습니다.",403);
     const result=await new TrialTowerAdminModifyService(this.database).modify({message:input.message,idempotencyKey:input.eventId,sourceEventId:input.eventId,destinationId:input.channelId,operatorId:operator.operator_id.toString()});
     return{status:"changed",data:result.data,outboxId:result.outboxId};
+  }
+
+  // 레거시 `호이 남` 운영자만 현재 시련의 탑 시즌 flag를 바꾸고 운영방에 공지합니다.
+  async handleTrialTowerSeasonLifecycle(input:{externalUserId:string;channelId:string;message:string;eventId:string}):Promise<{status:"changed";data:string;outboxId:string;replies:Array<{data:string;outboxId:string;room?:string}>}|{status:"shadow"|"legacy_fallback"}>{
+    const commandCode=input.message==="/시련의탑시즌시작"?"ADMIN_TRIAL_TOWER_SEASON_START":"ADMIN_TRIAL_TOWER_SEASON_END",dispatch=new MariaCommandDispatchRepository(this.database),definition=(await this.database.query<Array<{rollout_state:RolloutState;enabled:number}>>("SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1",[commandCode]))[0];
+    if(definition===undefined||definition.enabled!==1||definition.rollout_state==="LEGACY_ONLY"){await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"LEGACY_FALLBACK",reasonCode:"ROLLOUT_LEGACY_ONLY",commandCode,handlerKey:"trial_tower_season_lifecycle"});return{status:"legacy_fallback"};}
+    if(definition.rollout_state!=="ACTIVE"){await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"SHADOW",reasonCode:"ROLLOUT_SHADOW",commandCode,handlerKey:"trial_tower_season_lifecycle"});return{status:"shadow"};}
+    await dispatch.record({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true},{route:"MODERN",reasonCode:"MODERN_ROUTE_ALLOWED",commandCode,handlerKey:"trial_tower_season_lifecycle"});
+    const op=(await this.database.query<Array<{operator_id:bigint}>>(`SELECT mapping.operator_id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND operator.display_name='호이 남' LIMIT 1`,[input.externalUserId]))[0];if(op===undefined)throw new ApplicationError("FORBIDDEN","시련의탑 시즌 관리 권한이 없습니다.",403);
+    const r=await new TrialTowerSeasonLifecycleService(this.database,this.broadcastIds).change({message:input.message,idempotencyKey:input.eventId,sourceEventId:input.eventId,operatorId:op.operator_id.toString()});return{status:"changed",data:r.data,outboxId:r.outboxId,replies:r.replies};
   }
 
   // 총괄 운영자는 비활성·프로필 소실 회원의 펫 타이틀 할당만 원자적으로 정리합니다.
@@ -938,6 +950,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isTrialTowerSyncCommand(message)
     || isTrialTowerAdminModifyCommandCandidate(message)
+    || isTrialTowerSeasonLifecycleCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)

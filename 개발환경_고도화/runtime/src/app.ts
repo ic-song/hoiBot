@@ -1072,7 +1072,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isPointEditCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
-          const result = await new IrisAdminCommandService(database!).changePlayerPoint({
+          const result = await new IrisAdminCommandService(database!, config.irisAllowedOpenChatIds).changePlayerPoint({
             externalUserId: normalizedEvent.userId,
             channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!,
@@ -1081,7 +1081,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           if (result.status === "changed") {
             const replies = result.replies ?? [{ outboxId: result.outboxId, data: result.data }];
             for (const reply of replies) {
-              processing.replies.push({ outboxId: reply.outboxId, room: normalizedEvent.channelId, data: reply.data });
+              processing.replies.push({ outboxId: reply.outboxId, room: reply.room ?? normalizedEvent.channelId, data: reply.data });
             }
           }
         } catch (error) {
