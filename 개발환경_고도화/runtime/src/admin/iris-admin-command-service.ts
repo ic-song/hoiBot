@@ -31,6 +31,7 @@ import { isMatzangSessionCommand, MatzangSessionCommandService } from "../battle
 import { isTrialTowerSyncCommand, TrialTowerSyncService } from "../trial/trial-tower-sync-service.js";
 import { isTrialTowerAdminModifyCommandCandidate, TrialTowerAdminModifyService } from "../trial/trial-tower-admin-modify-service.js";
 import { isTrialTowerSeasonLifecycleCommand, TrialTowerSeasonLifecycleService } from "../trial/trial-tower-season-lifecycle-service.js";
+import { isTrialTowerSeasonResetCommand, TrialTowerSeasonResetService } from "../trial/trial-tower-season-reset-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
@@ -102,6 +103,7 @@ export class IrisAdminCommandService {
     if (isTrialTowerSyncCommand(input.message)) return this.handleTrialTowerSync(input);
     if (isTrialTowerAdminModifyCommandCandidate(input.message)) return this.handleTrialTowerAdminModify(input);
     if (isTrialTowerSeasonLifecycleCommand(input.message)) return this.handleTrialTowerSeasonLifecycle(input);
+    if (isTrialTowerSeasonResetCommand(input.message)) return new TrialTowerSeasonResetService(this.database).handleIris(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
     if (isGuildTerritoryDimensionGateCommand(input.message)) return this.handleGuildTerritoryDimensionGate(input);
     if (isOperationIntervalResetCommand(input.message)) return this.handleOperationIntervalReset(input);
@@ -951,6 +953,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isTrialTowerSyncCommand(message)
     || isTrialTowerAdminModifyCommandCandidate(message)
     || isTrialTowerSeasonLifecycleCommand(message)
+    || isTrialTowerSeasonResetCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
