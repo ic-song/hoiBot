@@ -7,6 +7,7 @@ import { GuildTerritoryDimensionGateService, isGuildTerritoryDimensionGateComman
 import { isRingRewardClaimCommand, RingRewardClaimService } from "../ring/ring-reward-claim-service.js";
 import { isRingReadCommandCandidate, RingReadService } from "../ring/ring-read-service.js";
 import { isRingRewardUseCommand, RingRewardUseService } from "../ring/ring-reward-use-service.js";
+import { isSpiritEnhanceCommand, SpiritEnhanceService } from "../pet/spirit-enhance-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -74,6 +75,7 @@ export class IrisAdminCommandService {
     { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
+    if (isSpiritEnhanceCommand(input.message)) return new SpiritEnhanceService(this.database).handleIris(input);
     if (isRingRewardUseCommand(input.message)) return new RingRewardUseService(this.database).handleIris(input);
     if (isRingReadCommandCandidate(input.message)) return new RingReadService(this.database).handleIris(input);
     if (isRingRewardClaimCommand(input.message)) return new RingRewardClaimService(this.database).handleIris(input);
@@ -828,7 +830,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
-    || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message));
+    || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
