@@ -38,6 +38,7 @@
     "db:probe:spirit-attribute": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-attribute-synthetic.ts",
     "db:probe:spirit-rank": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-rank-synthetic.ts",
     "db:probe:spirit-name": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-synthetic.ts",
+    "db:probe:spirit-name-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-combine-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
     "db:probe:partial-dispatch": "node --env-file-if-exists=.env --import tsx scripts/probe-partial-dispatch-synthetic.ts"
