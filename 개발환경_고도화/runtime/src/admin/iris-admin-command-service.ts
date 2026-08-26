@@ -12,6 +12,7 @@ import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compa
 import { isPetMemberCharacterCountCommand, PetMemberCharacterCountService } from "./pet-member-character-count-service.js";
 import { isPetDataSyncCommand, PetDataSyncService } from "./pet-data-sync-service.js";
 import { isPetTitleAddCommandCandidate, parsePetTitleAddCommand, PetTitleAddService } from "./pet-title-add-service.js";
+import { isPetTitleStoreResetCommand, PetTitleStoreResetService } from "./pet-title-store-reset-service.js";
 import { isPetTitleSyncCommand, PetTitleSyncService } from "./pet-title-sync-service.js";
 import { isRequestMonitorConfigCommandCandidate, parseRequestMonitorConfigCommand, RequestMonitorConfigService } from "./request-monitor-config-service.js";
 import { isRequestMonitorExceptionCommandCandidate, parseRequestMonitorExceptionCommand, RequestMonitorExceptionService } from "./request-monitor-exception-service.js";
@@ -72,6 +73,7 @@ export class IrisAdminCommandService {
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
     if (isPetTitleAddCommandCandidate(input.message)) return this.handlePetTitleAdd(input);
+    if (isPetTitleStoreResetCommand(input.message)) return this.handlePetTitleStoreReset(input);
     if (isPetTitleSyncCommand(input.message)) return this.handlePetTitleSync(input);
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
@@ -333,6 +335,46 @@ export class IrisAdminCommandService {
     if (operator === undefined) throw new ApplicationError("FORBIDDEN", "펫타이틀 추가 권한이 없습니다.", 403);
     const result = await new PetTitleAddService(this.database).add({
       ...command, idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, operatorId: operator.operator_id.toString(),
+    });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
+
+  // 운영자는 레거시 펫 타이틀 전체 저장소를 감사 가능한 단일 transaction으로 초기화합니다.
+  async handlePetTitleStoreReset(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+  > {
+    const commandCode = "ADMIN_PET_TITLE_STORE_RESET";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: commandCode });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: commandCode });
+    const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+      `SELECT mapping.operator_id FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+       JOIN admin_operators operator ON operator.id=mapping.operator_id
+       JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id
+       JOIN admin_roles role ON role.id=operator_role.role_id AND role.code IN ('super_admin','manager') AND role.active=TRUE
+       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+         AND operator.status='active' LIMIT 1`, [input.externalUserId]
+    );
+    const operator = operators[0];
+    if (operator === undefined) throw new ApplicationError("FORBIDDEN", "펫타이틀 파일 초기화 권한이 없습니다.", 403);
+    const result = await new PetTitleStoreResetService(this.database).reset({
+      idempotencyKey: input.eventId, sourceEventId: input.eventId,
       destinationId: input.channelId, operatorId: operator.operator_id.toString(),
     });
     return { status: "changed", data: result.data, outboxId: result.outboxId };
@@ -724,7 +766,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
     || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
-    || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message));
+    || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
+    || isPetTitleStoreResetCommand(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
