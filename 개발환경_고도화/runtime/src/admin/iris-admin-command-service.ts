@@ -9,6 +9,7 @@ import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
 import { isOperationIntervalResetCommand, OperationIntervalResetService } from "./operation-interval-reset-service.js";
 import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compare-service.js";
+import { isPetMemberCharacterCountCommand, PetMemberCharacterCountService } from "./pet-member-character-count-service.js";
 import { isPetDataSyncCommand, PetDataSyncService } from "./pet-data-sync-service.js";
 import { isRequestMonitorConfigCommandCandidate, parseRequestMonitorConfigCommand, RequestMonitorConfigService } from "./request-monitor-config-service.js";
 import { isRequestMonitorExceptionCommandCandidate, parseRequestMonitorExceptionCommand, RequestMonitorExceptionService } from "./request-monitor-exception-service.js";
@@ -64,8 +65,9 @@ export class IrisAdminCommandService {
   // rollout 상태와 관리자 권한을 확인한 뒤 회원 포인트를 절대값으로 설정합니다.
   async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
     { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
-    | { status: "shadow" | "legacy_fallback" }
+    | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
+    if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
@@ -121,6 +123,47 @@ export class IrisAdminCommandService {
       actor: { type: "admin_operator", id: operators[0]!.operator_id.toString() }, sourceCode: "iris",
       sourceEventId: input.eventId, irisReplyDestinationId: input.channelId
     });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
+
+  // 확인된 사용자는 member_pet 원문 snapshot의 Rhino UTF-16 글자 수를 조회합니다.
+  async handlePetMemberCharacterCount(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
+  > {
+    const commandCode = "ADMIN_PET_MEMBER_CHARACTER_COUNT";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: commandCode });
+      return { status: "shadow" };
+    }
+    const identities = await this.database.query<Array<{ identity_id: bigint }>>(
+      `SELECT id AS identity_id FROM external_identities
+       WHERE provider_code='kakao' AND external_user_id=? AND status='linked' AND player_id IS NOT NULL LIMIT 1`,
+      [input.externalUserId]
+    );
+    const identity = identities[0];
+    if (identity === undefined) {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "IDENTITY_NOT_VERIFIED", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: commandCode });
+    const result = await new PetMemberCharacterCountService(this.database).count({
+      idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, identityId: identity.identity_id.toString(),
+    });
+    if (result.data === null || result.outboxId === null) return { status: "handled_no_reply" };
     return { status: "changed", data: result.data, outboxId: result.outboxId };
   }
 
@@ -593,7 +636,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
-    || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message));
+    || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
+    || isPetMemberCharacterCountCommand(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
