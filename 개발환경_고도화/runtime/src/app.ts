@@ -69,6 +69,7 @@ import { isPendantDrawOpenCommandCandidate,normalizePendantDrawOpenDispatchMessa
 import { isPendantEquipCommandCandidate,normalizePendantEquipDispatchMessage,PendantEquipService } from "./pet/pendant-equip-service.js";
 import { isPendantEquipResetCommandCandidate,normalizePendantEquipResetDispatchMessage,PendantEquipResetService } from "./pet/pendant-equip-reset-service.js";
 import { isPendantInfoCommandCandidate,normalizePendantInfoDispatchMessage,PendantInfoService } from "./pet/pendant-info-service.js";
+import { isPendantGrantCommandCandidate,normalizePendantGrantDispatchMessage,PendantGrantService } from "./pet/pendant-grant-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -700,6 +701,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPendantEquipCommandCandidate(normalizedEvent.message)
          || isPendantEquipResetCommandCandidate(normalizedEvent.message)
          || isPendantInfoCommandCandidate(normalizedEvent.message)
+         || isPendantGrantCommandCandidate(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -746,6 +748,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizePendantEquipResetDispatchMessage(normalizedEvent.message ?? "")
              : isPendantInfoCommandCandidate(normalizedEvent.message)
              ? normalizePendantInfoDispatchMessage(normalizedEvent.message ?? "")
+             : isPendantGrantCommandCandidate(normalizedEvent.message)
+             ? normalizePendantGrantDispatchMessage(normalizedEvent.message ?? "")
             : packageDispatchCandidate
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
             : packageCatalogAdminDispatchCandidate
@@ -1421,6 +1425,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantEquipResetCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_equip_reset"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantEquipResetService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantInfoCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_info_read"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantInfoService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
+
+      if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantGrantCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_grant"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantGrantService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isSpiritNameCommandCandidate(normalizedEvent.message)
