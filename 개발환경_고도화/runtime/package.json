@@ -72,7 +72,8 @@
     "db:probe:matzang-field-read": "tsx scripts/probe-matzang-field-read-synthetic.ts",
     "db:probe:trial-tower": "tsx scripts/probe-trial-tower-synthetic.ts",
     "db:probe:trial-tower-command": "tsx scripts/probe-trial-tower-command-synthetic.ts",
-    "db:probe:trial-tower-sync": "tsx scripts/probe-trial-tower-sync-synthetic.ts"
+    "db:probe:trial-tower-sync": "tsx scripts/probe-trial-tower-sync-synthetic.ts",
+    "db:probe:trial-tower-admin-modify": "tsx scripts/probe-trial-tower-admin-modify-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
