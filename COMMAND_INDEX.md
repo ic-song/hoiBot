@@ -6371,3 +6371,47 @@ Status: VERIFIED
 - WBS slice ID remains stable although the audited feature is a mutation rather than a read.
 
 ---
+# /펫강화
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/펫강화`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/pet/pet-upgrade-action-service.ts`
+- `개발환경_고도화/runtime/migrations/172_pet_upgrade_action.sql`
+
+## Related Helpers
+
+- `runPetUpgradeOnce`
+- `runRepeatPetUpgrade`
+- `isPetUpgradeActionCommand`
+- `resolvePetUpgradeAttempt`
+- `PetUpgradeActionService.enhance`
+
+## Data Usage
+
+- `data.member[sender].point`
+- `data.member[sender].bag`
+- `petData[sender].upgrade`
+- `petData[sender].upgradeDateTime`
+- `player_pets`
+- `currency_accounts`
+- `inventory_stacks`
+- `pet_upgrade_attempts`
+
+## Save Flow
+
+- 레거시는 응답 뒤 member와 pet JSON을 순차 저장
+- 현대화 경로는 펫·포인트·강화석·부스터·RNG 증적·감사·outbox를 한 transaction으로 저장
+
+## AI Notes
+
+- 기본 1회, 0은 사용법, 101 이상은 100회로 제한
+- 회당 포인트 비용은 현재 강화 0~99/100~199/200+ 구간이며 강화석은 현재 강화+1개
+- 성공 RNG 뒤 실패하고 장인의 숨결 장착 시에만 7% 보존 RNG를 추가 소비
+- Gate8 전까지 SHADOW이며 레거시 `main.js`는 동결
