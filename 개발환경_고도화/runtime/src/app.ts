@@ -71,6 +71,7 @@ import { isPendantEquipResetCommandCandidate,normalizePendantEquipResetDispatchM
 import { isPendantInfoCommandCandidate,normalizePendantInfoDispatchMessage,PendantInfoService } from "./pet/pendant-info-service.js";
 import { isPendantGrantCommandCandidate,normalizePendantGrantDispatchMessage,PendantGrantService } from "./pet/pendant-grant-service.js";
 import { isPendantSellCommandCandidate,normalizePendantSellDispatchMessage,PendantSellService } from "./pet/pendant-sell-service.js";
+import { isPendantProbabilityCommand,PendantProbabilityService } from "./pet/pendant-probability-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -704,6 +705,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPendantInfoCommandCandidate(normalizedEvent.message)
          || isPendantGrantCommandCandidate(normalizedEvent.message)
          || isPendantSellCommandCandidate(normalizedEvent.message)
+         || isPendantProbabilityCommand(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -1433,6 +1435,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantGrantCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_grant"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantGrantService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantSellCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_sell"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantSellService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
+
+      if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantProbabilityCommand(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_probability_read"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantProbabilityService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isSpiritNameCommandCandidate(normalizedEvent.message)
