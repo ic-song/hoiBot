@@ -3,6 +3,7 @@ import { CurrencyService } from "../currency/currency-service.js";
 import { MariaCommandDispatchRepository, type RolloutState } from "../dispatch/command-dispatcher.js";
 import { ChangePlayerServerService } from "../player/change-player-server-service.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { GuildTerritoryDimensionGateService, isGuildTerritoryDimensionGateCommand, parseGuildTerritoryDimensionGateCommand } from "../guild/guild-territory-dimension-gate-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -61,6 +62,7 @@ export class IrisAdminCommandService {
   async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
     { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
   > {
+    if (isGuildTerritoryDimensionGateCommand(input.message)) return this.handleGuildTerritoryDimensionGate(input);
     if (isOperationIntervalResetCommand(input.message)) return this.handleOperationIntervalReset(input);
     if (isWeeklyQuestCountCommandCandidate(input.message)) return this.handleWeeklyQuestCount(input);
     if (isRequestMonitorExceptionCommandCandidate(input.message)) return this.handleRequestMonitorException(input);
@@ -411,6 +413,46 @@ export class IrisAdminCommandService {
     });
     return { status: "changed", data: result.data, outboxId: result.outboxId };
   }
+
+  // rollout과 운영자 권한을 확인한 뒤 차원의 문 전역 설정을 변경합니다.
+  async handleGuildTerritoryDimensionGate(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+  > {
+    const commandCode = "GUILD_TERRITORY_DIMENSION_GATE_TOGGLE";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: commandCode });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: commandCode });
+    const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+      `SELECT mapping.operator_id FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+       JOIN admin_operators operator ON operator.id=mapping.operator_id
+       JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id
+       JOIN admin_roles role ON role.id=operator_role.role_id AND role.code IN ('super_admin','manager') AND role.active=TRUE
+       JOIN admin_role_permissions permission ON permission.role_id=role.id
+       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+         AND operator.status='active' AND permission.permission_code='guild.territory.dimension_gate.configure' LIMIT 1`, [input.externalUserId]
+    );
+    if (operators[0] === undefined) throw new ApplicationError("FORBIDDEN", "❌ 차원의 문 설정은 관리자만 변경할 수 있습니다.", 403);
+    const result = await new GuildTerritoryDimensionGateService(this.database).setEnabled({
+      command: parseGuildTerritoryDimensionGateCommand(input.message), idempotencyKey: input.eventId,
+      sourceEventId: input.eventId, destinationId: input.channelId, operatorId: operators[0]!.operator_id.toString()
+    });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
 }
 
 // 포인트수정 후보를 전체 형식으로 제한해 접미 문구 실행을 막습니다.
@@ -418,7 +460,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
   return message !== undefined && (/^\/포인트수정\s+.+?\s+\d{1,27}$/.test(message) || isHoiLandEditCommandCandidate(message)
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
-    || isOperationIntervalResetCommand(message));
+    || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
