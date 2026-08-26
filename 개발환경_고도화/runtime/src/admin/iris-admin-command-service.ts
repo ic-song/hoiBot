@@ -29,6 +29,7 @@ import { isMiniPetDuelResetGrantCommandCandidate, MiniPetDuelResetGrantService }
 import { isPetDungeonEntryGrantCommandCandidate, PetDungeonEntryGrantService } from "./pet-dungeon-entry-grant-service.js";
 import { isMiniPetDrawGrantCommandCandidate, MiniPetDrawGrantService } from "./mini-pet-draw-grant-service.js";
 import { isPetSkillBookGrantCommandCandidate, PetSkillBookGrantService } from "./pet-skill-book-grant-service.js";
+import { isPetResetCommandCandidate, PetResetService } from "./pet-reset-service.js";
 import { isMatzangTimeCheckCommandCandidate, MatzangTimeCheckService } from "./matzang-time-check-service.js";
 import { isMatzangSessionCommand, MatzangSessionCommandService } from "../battle/matzang-session-command-service.js";
 import { isTrialTowerSyncCommand, TrialTowerSyncService } from "../trial/trial-tower-sync-service.js";
@@ -94,6 +95,7 @@ export class IrisAdminCommandService {
     if (isPetDungeonEntryGrantCommandCandidate(input.message)) return this.handlePetDungeonEntryGrant(input);
     if (isMiniPetDrawGrantCommandCandidate(input.message)) return this.handleMiniPetDrawGrant(input);
     if (isPetSkillBookGrantCommandCandidate(input.message)) return this.handlePetSkillBookGrant(input);
+    if (isPetResetCommandCandidate(input.message)) return new PetResetService(this.database).handleIris(input);
     if (isPetEnhancementLevelSetCommandCandidate(input.message)) return new PetEnhancementLevelSetService(this.database).handleIris(input);
     if (isSpiritAttributeCommandCandidate(input.message)) return new SpiritAttributeService(this.database).handleIris(input);
     if (isSpiritEnhanceCommand(input.message)) return new SpiritEnhanceService(this.database).handleIris(input);
@@ -990,7 +992,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
     || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message)
-    || isPetSkillBookGrantCommandCandidate(message));
+    || isPetSkillBookGrantCommandCandidate(message) || isPetResetCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.

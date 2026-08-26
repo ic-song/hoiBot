@@ -40,6 +40,7 @@
     "db:probe:pet-charm-rank-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-charm-rank-read-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
+    "db:probe:pet-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-reset-synthetic.ts",
     "db:probe:spirit-rank": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-rank-synthetic.ts",
     "db:probe:spirit-info": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-info-synthetic.ts",
     "db:probe:pendant-bag": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-bag-synthetic.ts",

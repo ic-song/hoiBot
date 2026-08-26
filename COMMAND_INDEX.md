@@ -6448,6 +6448,34 @@ Status: VERIFIED
 ## Save Flow
 - MariaDB transaction with optimistic version update and idempotent operation result
 - Does not change `enhancement_updated_at`, inventory, skills, or currency
+# /펫제거
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/pet-reset-service.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/migrations/177_admin_pet_reset.sql`
+
+## Related Helpers
+- `initializePet`
+- `isPetResetCommandCandidate`
+- `parsePetResetCommand`
+- `PetResetService`
+
+## Data Usage
+- Legacy: `petData[target]` 객체 전체를 기본 펫 필드로 교체
+- Modern: stable `player_pets.id` 유지, 현재 펫 관계만 transaction 초기화
+
+## Save Flow
+- Legacy: `initializePet` 내부와 명령 흐름에서 `memberPetPath` 저장
+- Modern: operation, current-state reset, audit, execution, outbox를 한 MariaDB transaction으로 처리
+
+## Related Commands
+- `/펫제거 [대상]`
+- `/펫생성`
+
 # /펫북
 
 Status: VERIFIED

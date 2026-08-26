@@ -1,0 +1,19 @@
+START TRANSACTION;
+
+INSERT INTO admin_permissions(code,display_name)
+VALUES('pet.reset','펫 정보 초기화')
+ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
+
+INSERT INTO admin_role_permissions(role_id,permission_code)
+SELECT id,'pet.reset' FROM admin_roles WHERE code='super_admin'
+ON DUPLICATE KEY UPDATE permission_code=VALUES(permission_code);
+
+INSERT INTO command_registry(command_code,handler_key,auth_scope,rollout_state,enabled,version)
+VALUES('ADMIN_PET_RESET','admin_pet_reset','VERIFIED_USER','SHADOW',1,1)
+ON DUPLICATE KEY UPDATE handler_key=VALUES(handler_key),auth_scope=VALUES(auth_scope),rollout_state=VALUES(rollout_state),enabled=1,version=version+1;
+
+INSERT INTO command_aliases(command_text,command_code,active)
+VALUES('/펫제거','ADMIN_PET_RESET',1)
+ON DUPLICATE KEY UPDATE command_code=VALUES(command_code),active=1;
+
+COMMIT;
