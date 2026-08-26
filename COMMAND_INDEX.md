@@ -272,6 +272,12 @@ Status: VERIFIED
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
 
+## Related Admin Grant Command
+
+- `/캐대전, [회원키]` and `/캐대전[수량], [회원키]` are Master-only `캐슬대전리셋권🐶` grants, not aliases of `/캐슬대전`.
+- The modernization route uses `CastleBattleResetGrantService` and the shared `AdminStackGrantService` with item key `legacy-castle-battle-reset-ticket`.
+- Default quantity is 1; zero receives the legacy validation reply; missing users do not mutate inventory.
+
 ## Shared Search Anchors
 
 - `function response`
