@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.410"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.411"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -882,12 +882,12 @@ const GLOBAL_CONFIG = {
     },
     petMusou: { // 펫무쌍 대회 진행 설정
         flagCount: 10,
-        attackLimit: 3,
+        attackLimit: 4,
         bonusAttackSkillNames: ["무쌍신화", "무쌍귀신"],
         bonusAttackCount: 1,
         startGraceMs: 30000,
         turnTimeoutMs: 15000,
-        attackRewardPoint: 300000000,
+        attackRewardPoint: 200000000,
         attackRewardBonusSkillName: "무쌍귀신",
         attackRewardBonusPoint: 100000000,
         winnerRewardPoint: 3000000000,
@@ -33807,7 +33807,8 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
         } else {
             musou.fakeFlags[String(flagNo)] = true;
             var attackerMaxAttacks = parseInt(musou.players[sender].maxAttacks, 10) || GLOBAL_CONFIG.petMusou.attackLimit; // 대회 시작 시 확정된 개인 공격 한도
-            lines.push("공격 보상🤑: " + attackRewardText, "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 남은 공격(" + musou.players[sender].attacksLeft + "/" + attackerMaxAttacks + "⚔)");
+            lines.splice(1, 0, "[" + checkRank(data, petData, guildData, sender) + "] 님의 남은 공격(" + musou.players[sender].attacksLeft + "/" + attackerMaxAttacks + "⚔)");
+            lines.push("공격 보상🤑: " + attackRewardText, "", "가짜 깃발입니다!");
         }
     } else if (flagNo !== musou.realFlagNo) {
         musou.players[sender].alive = false;
