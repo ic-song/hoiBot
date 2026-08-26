@@ -6415,3 +6415,25 @@ Status: VERIFIED
 - 회당 포인트 비용은 현재 강화 0~99/100~199/200+ 구간이며 강화석은 현재 강화+1개
 - 성공 RNG 뒤 실패하고 장인의 숨결 장착 시에만 7% 보존 RNG를 추가 소비
 - Gate8 전까지 SHADOW이며 레거시 `main.js`는 동결
+# /펫강화속성
+
+Status: VERIFIED
+
+## Files
+- `main.js` (legacy source preserved)
+- `개발환경_고도화/runtime/src/admin/pet-enhancement-level-set-service.ts`
+- `개발환경_고도화/runtime/migrations/173_pet_upgrade_attribute.sql`
+
+## Guard and Authorization
+- Candidate: `msg.startsWith("/펫강화속성")`
+- Execution: `/^\/펫강화속성\s+([^\d]+?)\s+(\d+)$/`
+- Linked active Kakao administrator with active `super_admin` role and `pet.enhancement.set` permission
+
+## Data Usage
+- `player_pets.enhancement_level`
+- `player_pets.version`
+- `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+- MariaDB transaction with optimistic version update and idempotent operation result
+- Does not change `enhancement_updated_at`, inventory, skills, or currency

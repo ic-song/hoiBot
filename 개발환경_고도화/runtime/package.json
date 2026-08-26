@@ -36,6 +36,7 @@
     "db:probe:ring-reward-use": "node --env-file-if-exists=.env --import tsx scripts/probe-ring-reward-use-synthetic.ts",
     "db:probe:spirit-enhance": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-enhance-synthetic.ts",
     "db:probe:spirit-attribute": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-attribute-synthetic.ts",
+    "db:probe:pet-enhancement-level-set": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-enhancement-level-set-synthetic.ts",
     "db:probe:spirit-rank": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-rank-synthetic.ts",
     "db:probe:spirit-info": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-info-synthetic.ts",
     "db:probe:pendant-bag": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-bag-synthetic.ts",

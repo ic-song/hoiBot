@@ -9,6 +9,7 @@ import { isRingReadCommandCandidate, RingReadService } from "../ring/ring-read-s
 import { isRingRewardUseCommand, RingRewardUseService } from "../ring/ring-reward-use-service.js";
 import { isSpiritEnhanceCommand, SpiritEnhanceService } from "../pet/spirit-enhance-service.js";
 import { isSpiritAttributeCommandCandidate, SpiritAttributeService } from "./spirit-attribute-service.js";
+import { isPetEnhancementLevelSetCommandCandidate, PetEnhancementLevelSetService } from "./pet-enhancement-level-set-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -89,6 +90,7 @@ export class IrisAdminCommandService {
     if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database).handleIris(input);
     if (isMiniPetDuelResetGrantCommandCandidate(input.message)) return this.handleMiniPetDuelResetGrant(input);
     if (isPetDungeonEntryGrantCommandCandidate(input.message)) return this.handlePetDungeonEntryGrant(input);
+    if (isPetEnhancementLevelSetCommandCandidate(input.message)) return new PetEnhancementLevelSetService(this.database).handleIris(input);
     if (isSpiritAttributeCommandCandidate(input.message)) return new SpiritAttributeService(this.database).handleIris(input);
     if (isSpiritEnhanceCommand(input.message)) return new SpiritEnhanceService(this.database).handleIris(input);
     if (isRingRewardUseCommand(input.message)) return new RingRewardUseService(this.database).handleIris(input);
