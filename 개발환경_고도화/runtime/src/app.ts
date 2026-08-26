@@ -53,6 +53,7 @@ import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "
 import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { isSpiritRankCommand, SpiritRankService } from "./pet/spirit-rank-service.js";
+import { isSpiritInfoCommand, SpiritInfoService } from "./pet/spirit-info-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1253,6 +1254,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         const result = await new SpiritRankService(database!).read({ eventId:normalizedEvent.eventId,
           externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId });
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isSpiritInfoCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "spirit_info_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new SpiritInfoService(database!).read({ eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+        for (const reply of result.replies) processing.replies.push({ outboxId: reply.outboxId, room: normalizedEvent.channelId, data: reply.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
