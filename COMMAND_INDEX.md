@@ -5200,6 +5200,7 @@ Status: VERIFIED
 - `petData[*]`
 - `homeDataFile`
 - `petSkillData`
+- 고도화 DB `matzang_fields`, `matzang_participants`, `matzang_participant_join_events`
 
 ## Save Flow
 
@@ -5211,6 +5212,7 @@ Status: VERIFIED
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
 - `/맞짱시간체크 [닉네임]` loads `homeDataFile` and measures the named user's 종합매력 runtime with detailed component timings
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
+- 고도화 `/참여` provider는 `/참여`·`ㅊㅇ` 정확 일치 별칭, rollout, 참여 시점 종합매력·펫 타입·강화 수치 스냅샷, 멱등 replay, outbox·감사 원장을 하나의 MariaDB transaction으로 처리한다.
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
 - `/맞짱시간체크 [닉네임]` is an anytime read-only Admin/Master diagnostic path and does not run battle, select an opponent, or save match count, PT, diamond, or field data
 - Active 맞짱필드 blocks non-matzang command flows in `main.js` and `Info.js` outside rest time; Admin/Master/오픈채팅봇 bypass only the confirmed field-operation and management command roots rather than every slash command, and the shared known plain-command list makes aliases and state inputs such as `ㅊㅊ`, `ㅈㅈ`, and `ㅈㅈㅈ` receive the same allowed-command guide as slash commands
