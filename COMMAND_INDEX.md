@@ -4233,6 +4233,8 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/attendance/attendance-list-read-service.ts`
+- `개발환경_고도화/runtime/migrations/168_attendance_list_read.sql`
 
 ## Related Helpers
 
