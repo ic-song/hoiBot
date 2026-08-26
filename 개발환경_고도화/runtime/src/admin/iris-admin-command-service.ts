@@ -28,6 +28,7 @@ import { isMiniPetDuelResetGrantCommandCandidate, MiniPetDuelResetGrantService }
 import { isPetDungeonEntryGrantCommandCandidate, PetDungeonEntryGrantService } from "./pet-dungeon-entry-grant-service.js";
 import { isMatzangTimeCheckCommandCandidate, MatzangTimeCheckService } from "./matzang-time-check-service.js";
 import { isMatzangSessionCommand, MatzangSessionCommandService } from "../battle/matzang-session-command-service.js";
+import { isTrialTowerSyncCommand, TrialTowerSyncService } from "../trial/trial-tower-sync-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
@@ -96,6 +97,7 @@ export class IrisAdminCommandService {
     if (isPetTitleStoreResetCommand(input.message)) return this.handlePetTitleStoreReset(input);
     if (isPetTitleSyncCommand(input.message)) return this.handlePetTitleSync(input);
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
+    if (isTrialTowerSyncCommand(input.message)) return this.handleTrialTowerSync(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
     if (isGuildTerritoryDimensionGateCommand(input.message)) return this.handleGuildTerritoryDimensionGate(input);
     if (isOperationIntervalResetCommand(input.message)) return this.handleOperationIntervalReset(input);
@@ -365,6 +367,43 @@ export class IrisAdminCommandService {
     const operator = operators[0];
     if (operator === undefined) throw new ApplicationError("FORBIDDEN", "펫데이터 동기화 권한이 없습니다.", 403);
     const result = await new PetDataSyncService(this.database).sync({
+      idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, operatorId: operator.operator_id.toString(),
+    });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
+
+  // 레거시 `호이 남` 운영자만 활성 회원 원본에 없는 시련의 탑 진행을 정리합니다.
+  async handleTrialTowerSync(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+  > {
+    const commandCode = "ADMIN_TRIAL_TOWER_SYNC";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0], dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: "trial_tower_sync" });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state !== "ACTIVE") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: "trial_tower_sync" });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: "trial_tower_sync" });
+    const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+      `SELECT mapping.operator_id FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+       JOIN admin_operators operator ON operator.id=mapping.operator_id
+       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+         AND operator.status='active' AND operator.display_name='호이 남' LIMIT 1`, [input.externalUserId]
+    );
+    const operator = operators[0];
+    if (operator === undefined) throw new ApplicationError("FORBIDDEN", "시련의탑 동기화 권한이 없습니다.", 403);
+    const result = await new TrialTowerSyncService(this.database).sync({
       idempotencyKey: input.eventId, sourceEventId: input.eventId,
       destinationId: input.channelId, operatorId: operator.operator_id.toString(),
     });
@@ -880,6 +919,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
     || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
+    || isTrialTowerSyncCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
