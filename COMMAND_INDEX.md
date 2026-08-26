@@ -6448,6 +6448,36 @@ Status: VERIFIED
 ## Save Flow
 - MariaDB transaction with optimistic version update and idempotent operation result
 - Does not change `enhancement_updated_at`, inventory, skills, or currency
+# /펫북
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/pet-skill-book-grant-service.ts`
+- `개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/migrations/176_admin_pet_skill_book_grant.sql`
+
+## Related Helpers
+- `isPetSkillBookGrantCommandCandidate`
+- `parsePetSkillBookGrantCommand`
+- `PetSkillBookGrantService`
+- `AdminStackGrantService`
+
+## Data Usage
+- Legacy: `data.member[target].bag[GLOBAL_CONFIG.petSkill.bookItemName]`
+- Modern: `item_definitions(code=pet_skill_book)` / `inventory_stacks` / `inventory_ledger`
+
+## Save Flow
+- Legacy: command flow mutation followed by the common final `saveJsonFile`
+- Modern: one MariaDB transaction with idempotent operation, inventory stack/ledger, audit, and outbox
+
+## Related Commands
+- `/펫북, [대상]`
+- `/펫북[수량], [대상]`
+- `/펫스킬오픈`
+
 # /펫미니
 
 Status: VERIFIED
