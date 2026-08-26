@@ -68,7 +68,8 @@
     "db:probe:matzang-command": "tsx scripts/probe-matzang-command-synthetic.ts",
     "db:probe:matzang-time-check": "tsx scripts/probe-matzang-time-check-synthetic.ts",
     "db:probe:matzang-session": "tsx scripts/probe-matzang-session-synthetic.ts",
-    "db:probe:matzang-session-command": "tsx scripts/probe-matzang-session-command-synthetic.ts"
+    "db:probe:matzang-session-command": "tsx scripts/probe-matzang-session-command-synthetic.ts",
+    "db:probe:matzang-field-read": "tsx scripts/probe-matzang-field-read-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
