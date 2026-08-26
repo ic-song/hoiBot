@@ -53,6 +53,7 @@ import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "
 import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { isSpiritRankCommand, SpiritRankService } from "./pet/spirit-rank-service.js";
+import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
@@ -668,6 +669,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
+        || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
@@ -1249,6 +1251,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         const result = await new SpiritRankService(database!).read({ eventId:normalizedEvent.eventId,
           externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId });
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isSpiritNameCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "spirit_name_mutate"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new SpiritNameService(database!).handle({
+            externalUserId: normalizedEvent.userId,
+            channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!,
+            eventId: normalizedEvent.eventId
+          });
+          if (result.status === "renamed") {
+            processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "spirit_name_mutate", error.message));
+          } else {
+            throw error;
+          }
+        }
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
