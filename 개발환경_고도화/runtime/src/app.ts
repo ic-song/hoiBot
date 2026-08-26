@@ -62,6 +62,7 @@ import { isPendantDurabilityCorrectionCommandCandidate, normalizePendantDurabili
 import { isPendantMarketRegisterCommandCandidate, normalizePendantMarketRegisterDispatchMessage, PendantMarketRegisterService } from "./market/pendant-market-register-service.js";
 import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatchMessage, PendantMarketInfoService } from "./market/pendant-market-info-service.js";
 import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispatchMessage, PendantCarrotTradeService } from "./market/pendant-carrot-trade-service.js";
+import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -686,6 +687,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPendantMarketRegisterCommandCandidate(normalizedEvent.message)
         || isPendantMarketInfoCommandCandidate(normalizedEvent.message)
         || isPendantCarrotTradeCommandCandidate(normalizedEvent.message)
+        || isPendantRestoreCommandCandidate(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -706,7 +708,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPendantCarrotTradeCommandCandidate(normalizedEvent.message)
+          message: isPendantRestoreCommandCandidate(normalizedEvent.message)
+            ? normalizePendantRestoreDispatchMessage(normalizedEvent.message ?? "")
+            : isPendantCarrotTradeCommandCandidate(normalizedEvent.message)
             ? normalizePendantCarrotTradeDispatchMessage(normalizedEvent.message ?? "")
             : isPendantDurabilityCorrectionCommandCandidate(normalizedEvent.message)
             ? normalizePendantDurabilityCorrectionDispatchMessage(normalizedEvent.message ?? "")
@@ -1373,6 +1377,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         const result = await new PendantCarrotTradeService(database!).handle({ eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPendantRestoreCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pendant_restore"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result=await new PendantRestoreService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
