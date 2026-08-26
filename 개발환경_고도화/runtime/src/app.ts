@@ -89,6 +89,7 @@ import { GuildForceExpelService } from "./guild/guild-force-expel-service.js";
 import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-policy.js";
 import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
 import { GuildRecruitmentToggleService, isGuildRecruitmentToggleCommand } from "./guild/guild-recruitment-toggle-service.js";
+import { isRiftForceAdminCommand, RiftForceAdminService } from "./guild/rift-force-admin-service.js";
 import { ConstructionEditService } from "./home/construction-edit-service.js";
 import { isConstructionEditCommandCandidate } from "./home/construction-edit-policy.js";
 import { MariaConstructionEditRepository } from "./home/maria-construction-edit-repository.js";
@@ -687,6 +688,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
+        || isRiftForceAdminCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
         || isPendantBagCleanupCommandCandidate(normalizedEvent.message)
@@ -1505,6 +1507,20 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isRiftForceAdminCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "rift_force_admin"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new RiftForceAdminService(database!).handle({
+          externalUserId: normalizedEvent.userId, channelId: normalizedEvent.channelId,
+          message: normalizedEvent.message!, eventId: normalizedEvent.eventId, nodeEnv: config.nodeEnv
+        });
+        if (result.status !== "handled_no_reply") {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
       }
 
