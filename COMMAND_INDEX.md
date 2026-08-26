@@ -5025,6 +5025,33 @@ Status: VERIFIED
 
 ---
 
+# /환생
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `main.js`: 총괄 운영자 `/환생 [유저명]`
+- `main.js`: 사용자 exact `/환생`
+
+## Data Usage
+
+- `data.member[user].lv`, `lv0`, `rebirthcnt`
+- `data.member[user].bag["환생버섯🍄"]`
+- Modern: `player_profiles`, `inventory_stacks`, `player_rebirth_events`
+
+## Save Flow
+
+- Legacy source mutates memory without an immediate `saveJsonFile(data, filePath)` call.
+- `SL-PET-REBIRTH` persists profile, optional mushroom consumption, snapshot ledger, audit and outbox atomically.
+
+## Related Commands
+
+- `/환생`
+- `/환생 [유저명]` (총괄 운영자)
+
+---
+
 # Registry Expansion Queue
 
 Status: PARTIAL

@@ -82,6 +82,7 @@ import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { isPetStatusCommand, PetStatusService } from "./pet/pet-status-service.js";
 import { isPetIntimacyRankCommand, PetIntimacyRankReadService } from "./pet/pet-intimacy-rank-read-service.js";
 import { isPetTitleCommandCandidate, normalizePetTitleDispatchMessage, PetTitleLifecycleService } from "./pet/pet-title-lifecycle-service.js";
+import { isPetRebirthCommandCandidate, normalizePetRebirthDispatchMessage, PetRebirthService } from "./pet/pet-rebirth-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
@@ -716,6 +717,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
+        || isPetRebirthCommandCandidate(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || pointShopCatalogDispatchCandidate
@@ -733,7 +735,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-           message: isPetTitleCommandCandidate(normalizedEvent.message)
+           message: isPetRebirthCommandCandidate(normalizedEvent.message)
+            ? normalizePetRebirthDispatchMessage(normalizedEvent.message ?? "")
+            : isPetTitleCommandCandidate(normalizedEvent.message)
             ? normalizePetTitleDispatchMessage(normalizedEvent.message ?? "")
             : isPendantDeleteCommandCandidate(normalizedEvent.message)
             ? normalizePendantDeleteDispatchMessage(normalizedEvent.message ?? "")
@@ -1342,6 +1346,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "pet_title_lifecycle_error", error.message));
+          } else throw error;
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetRebirthCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_rebirth"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetRebirthService(database!).handle({
+            externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId, message: normalizedEvent.message!,
+            broadcastDestinationIds: config.irisAllowedOpenChatIds,
+          });
+          for (const commandReply of result.replies) processing.replies.push(commandReply);
+        } catch (error) {
+          if (error instanceof ApplicationError && [403,404,409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_rebirth_error",error.message));
           } else throw error;
         }
       }

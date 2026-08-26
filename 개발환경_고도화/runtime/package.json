@@ -40,6 +40,7 @@
     "db:probe:pet-charm-rank-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-charm-rank-read-synthetic.ts",
     "db:probe:pet-intimacy-rank-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-intimacy-rank-read-synthetic.ts",
     "db:probe:pet-title-lifecycle": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-title-lifecycle-synthetic.ts",
+    "db:probe:pet-rebirth": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-rebirth-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
     "db:probe:pet-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-reset-synthetic.ts",
