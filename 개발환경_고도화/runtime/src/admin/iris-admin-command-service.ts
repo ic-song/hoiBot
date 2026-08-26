@@ -16,6 +16,7 @@ import { isPetTitleStoreResetCommand, PetTitleStoreResetService } from "./pet-ti
 import { isPetTitleSyncCommand, PetTitleSyncService } from "./pet-title-sync-service.js";
 import { isRequestMonitorConfigCommandCandidate, parseRequestMonitorConfigCommand, RequestMonitorConfigService } from "./request-monitor-config-service.js";
 import { isRequestMonitorExceptionCommandCandidate, parseRequestMonitorExceptionCommand, RequestMonitorExceptionService } from "./request-monitor-exception-service.js";
+import { isRetiredRingCommandCandidate, parseRetiredRingCommand, RetiredRingCommandService } from "./retired-ring-command-service.js";
 import { isSpecialBadgeRevokeCommandCandidate, SpecialBadgeRevokeService } from "./special-badge-revoke-service.js";
 import { isWeeklyQuestCountCommandCandidate, parseWeeklyQuestCountCommand, WeeklyQuestCountService } from "./weekly-quest-count-service.js";
 
@@ -70,6 +71,7 @@ export class IrisAdminCommandService {
     { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
+    if (isRetiredRingCommandCandidate(input.message)) return this.handleRetiredRingCommand(input);
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
     if (isPetTitleAddCommandCandidate(input.message)) return this.handlePetTitleAdd(input);
@@ -128,6 +130,58 @@ export class IrisAdminCommandService {
       reasonCode: "admin_point_edit", reason: "Iris 총괄 운영자 /포인트수정", idempotencyKey: input.eventId,
       actor: { type: "admin_operator", id: operators[0]!.operator_id.toString() }, sourceCode: "iris",
       sourceEventId: input.eventId, irisReplyDestinationId: input.channelId
+    });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
+
+  // rollout과 레거시 Master 권한을 확인한 뒤 종료된 반지 명령 안내를 원자 기록합니다.
+  async handleRetiredRingCommand(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
+  > {
+    const command = parseRetiredRingCommand(input.message);
+    if (command === null) return { status: "handled_no_reply" };
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [command.commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode: command.commandCode, handlerKey: command.handlerKey });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode: command.commandCode, handlerKey: command.handlerKey });
+      return { status: "shadow" };
+    }
+    const identities = await this.database.query<Array<{ id: bigint }>>(
+      "SELECT id FROM external_identities WHERE provider_code='kakao' AND external_user_id=? AND status='linked' LIMIT 1",
+      [input.externalUserId]
+    );
+    const identity = identities[0];
+    if (identity === undefined) {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "IDENTITY_NOT_VERIFIED", commandCode: command.commandCode, handlerKey: command.handlerKey });
+      return { status: "legacy_fallback" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode: command.commandCode, handlerKey: command.handlerKey });
+    if (command.requiresMaster) {
+      const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+        `SELECT mapping.operator_id FROM external_identities identity
+         JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+         JOIN admin_operators operator ON operator.id=mapping.operator_id
+         JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id
+         JOIN admin_roles role ON role.id=operator_role.role_id AND role.code='super_admin' AND role.active=TRUE
+         WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+           AND operator.status='active' LIMIT 1`, [input.externalUserId]
+      );
+      if (operators[0] === undefined) return { status: "handled_no_reply" };
+    }
+    const result = await new RetiredRingCommandService(this.database).reply({
+      command, idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, actorId: identity.id.toString(),
     });
     return { status: "changed", data: result.data, outboxId: result.outboxId };
   }
@@ -767,7 +821,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
     || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
-    || isPetTitleStoreResetCommand(message));
+    || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
