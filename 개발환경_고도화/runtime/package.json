@@ -33,6 +33,7 @@
     "db:probe:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/probe-construction-edit-synthetic.ts",
     "db:probe:ring-reward": "node --env-file-if-exists=.env --import tsx scripts/probe-ring-reward-claim-synthetic.ts",
     "db:probe:ring-read": "node --env-file-if-exists=.env --import tsx scripts/probe-ring-read-synthetic.ts",
+    "db:probe:ring-reward-use": "node --env-file-if-exists=.env --import tsx scripts/probe-ring-reward-use-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
     "db:probe:partial-dispatch": "node --env-file-if-exists=.env --import tsx scripts/probe-partial-dispatch-synthetic.ts"
