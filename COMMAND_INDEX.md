@@ -1285,6 +1285,8 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/pet/pet-upgrade-rank-read-service.ts`
+- `개발환경_고도화/runtime/migrations/171_pet_upgrade_rank_read.sql`
 
 ## Related Helpers
 
@@ -4316,15 +4318,24 @@ Status: VERIFIED
 ## Related Helpers
 
 - `generatePetUpgradeRanking`
+- `isPetUpgradeRankCommand`
+- `formatPetUpgradeRanking`
+- `PetUpgradeRankReadService.read`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
+- `players`
+- `player_profiles`
+- `player_pets.enhancement_level`
+- `player_pets.enhancement_updated_at`
+- `player_legacy_rank_profiles`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 현대화 경로는 순위 원본을 변경하지 않고 감사·실행·outbox만 transaction으로 기록
 
 ## Related Commands
 
@@ -4335,6 +4346,8 @@ Status: VERIFIED
 
 - Ranking output focused on pet upgrade values
 - Best first anchor when upgrade-based ordering and displayed ranking diverge
+- 현대화 경로는 강화값 DESC, 강화시각 ASC, 레거시 원본순서 ASC, player ID ASC로 결정적 정렬
+- 10위 뒤 500자 `allsee`와 강화 `BIGINT` 정밀도를 보존
 
 ---
 
