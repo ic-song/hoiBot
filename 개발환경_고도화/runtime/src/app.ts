@@ -56,6 +56,7 @@ import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid
 import { isPetFoodBoxCraftCommand, PetFoodBoxCraftService } from "./crafting/pet-food-box-craft-service.js";
 import { MariaPetInfoRepository } from "./pet/maria-pet-info-repository.js";
 import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
+import { isPetStatusCommand, PetStatusService } from "./pet/pet-status-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
@@ -665,6 +666,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
+        || isPetStatusCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || pointShopCatalogDispatchCandidate
@@ -1198,6 +1200,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetStatusCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pet_status_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PetStatusService(database!).read({
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId,
+          idempotencyKey: normalizedEvent.eventId,
+          sourceEventId: normalizedEvent.eventId,
+        });
+        if (result.status === "displayed" && result.data !== null && result.outboxId !== null) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         }
       }
 
