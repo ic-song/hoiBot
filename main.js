@@ -797,7 +797,8 @@ const GLOBAL_CONFIG = {
             { name: "영지기습공격권🔥(40%)", count: 2 },
             { name: "영지절대방어권🛡(50%)", count: 2 },
             { name: "🌪️ 전쟁불안정 증폭권(/불안정)", count: 1 },
-            { name: "다이아상자💎(/다이아상자오픈)", count: 1 }
+            { name: "다이아상자💎(/다이아상자오픈)", count: 1 },
+            { name: "피뢰침⚡(자동 벼락 방지)", count: 1 }
         ],
         hoiDailyRewards: [
             { name: "자동탐험권🌄", count: 1 },
@@ -34960,6 +34961,7 @@ function processUserIDCommand(msg, data, operator) {
                 "└ 영지절대방어권🛡(50%) x2\n" +
                 "└ 🌪️ 전쟁불안정 증폭권(/불안정) x1\n" +
                 "└ 다이아상자💎(/다이아상자오픈) x1\n" +
+                "└ 피뢰침⚡(자동 벼락 방지) 1개\n" +
                 "━━━━━━━━━━━━━━━━" +
                 (beforeActive ? "\n기존 패스의 만료일을 갱신했습니다." : "");
         }
