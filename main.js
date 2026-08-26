@@ -14166,7 +14166,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.indexOf("/불안정") === 0 || msg.indexOf("/안정") === 0 || msg.indexOf("/균열") === 0 || msg.indexOf("/대균열") === 0) {
+                if (isGuildTerritoryRiftControlCommandMessage(msg)) {
                     var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg);
                     if (riftControlResult) {
                         replier.reply(riftControlResult.message);
@@ -28640,6 +28640,12 @@ function createContextReplier(replier, ctx) {
     };
 }
 
+// 영지전 균열 조정 명령어의 정확한 입력 형식을 확인하는 함수
+function isGuildTerritoryRiftControlCommandMessage(msg) {
+    if (typeof msg !== "string") return false;
+    return /^\/(?:불안정|안정|균열|대균열)(?:\s+\d+)?$/.test(msg);
+}
+
 // 길드 영지전 데이터를 변경하는 명령어인지 확인하는 함수
 function isMutableGuildTerritoryCommand(msg) {
     if (typeof msg !== "string") return false;
@@ -28657,10 +28663,7 @@ function isMutableGuildTerritoryCommand(msg) {
         msg === "/차원의문오프" ||
         msg === "/날기억해줘온" ||
         msg === "/날기억해줘오프" ||
-        msg.indexOf("/불안정") === 0 ||
-        msg.indexOf("/안정") === 0 ||
-        msg.indexOf("/균열") === 0 ||
-        msg.indexOf("/대균열") === 0
+        isGuildTerritoryRiftControlCommandMessage(msg)
     );
 }
 
@@ -28684,10 +28687,7 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/매력버프체크" ||
         /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg) ||
         /^\/영지공격(?:\s+[1-9])?$/.test(msg) ||
-        /^\/안정(?:\s+\d+)?$/.test(msg) ||
-        /^\/불안정(?:\s+\d+)?$/.test(msg) ||
-        /^\/균열(?:\s+\d+)?$/.test(msg) ||
-        /^\/대균열(?:\s+\d+)?$/.test(msg)
+        isGuildTerritoryRiftControlCommandMessage(msg)
     );
 }
 
@@ -31208,7 +31208,10 @@ function buildGuildTerritoryCommandReuseBlockedMessage(guild, command) {
 
 // 영지전 균열 아이템 사용 명령 처리
 function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg) {
-    var command = msg.split(" ")[0];
+    if (!isGuildTerritoryRiftControlCommandMessage(msg)) return null;
+
+    var parts = msg.trim().split(/\s+/);
+    var command = parts[0];
 
     var config = null;
     if (command === "/불안정") {
@@ -31224,8 +31227,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSki
     }
     var bagItemName = config.item;
 
-    var parts = msg.trim().split(/\s+/);
-    var count = parts.length >= 2 ? parseInt(parts[1], 10) : 1;
+    var count = parts.length === 2 ? parseInt(parts[1], 10) : 1;
     if (isNaN(count) || count <= 0) {
         return { message: "사용법: " + command + " 숫자\n예) " + command + " 1" };
     }
