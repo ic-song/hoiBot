@@ -137,7 +137,7 @@ export class RingRewardClaimService {
           [operation.insertId, input.playerId, item.id, rewardQuantity]
         );
         await transaction.execute(
-          `UPDATE player_legacy_ring_reward_snapshots SET claim_status='claimed',reward_item_id=?,reward_quantity=?,claimed_operation_id=?,claimed_at=UTC_TIMESTAMP(3),version=version+1
+          `UPDATE player_legacy_ring_reward_snapshots SET claim_status='claimed',legacy_ring_present=FALSE,reward_item_id=?,reward_quantity=?,claimed_operation_id=?,claimed_at=UTC_TIMESTAMP(3),version=version+1
            WHERE player_id=? AND claim_status='pending'`,
           [item.id, rewardQuantity, operation.insertId, input.playerId]
         );

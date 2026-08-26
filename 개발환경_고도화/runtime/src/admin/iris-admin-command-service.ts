@@ -5,6 +5,7 @@ import { ChangePlayerServerService } from "../player/change-player-server-servic
 import { ApplicationError } from "../shared/application-error.js";
 import { GuildTerritoryDimensionGateService, isGuildTerritoryDimensionGateCommand, parseGuildTerritoryDimensionGateCommand } from "../guild/guild-territory-dimension-gate-service.js";
 import { isRingRewardClaimCommand, RingRewardClaimService } from "../ring/ring-reward-claim-service.js";
+import { isRingReadCommandCandidate, RingReadService } from "../ring/ring-read-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -72,6 +73,7 @@ export class IrisAdminCommandService {
     { status: "changed"; data: string; outboxId: string; replies?: Array<{ data: string; outboxId: string }> }
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
+    if (isRingReadCommandCandidate(input.message)) return new RingReadService(this.database).handleIris(input);
     if (isRingRewardClaimCommand(input.message)) return new RingRewardClaimService(this.database).handleIris(input);
     if (isRetiredRingCommandCandidate(input.message)) return this.handleRetiredRingCommand(input);
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
@@ -823,7 +825,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
     || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
-    || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message));
+    || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
+    || isRingReadCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
