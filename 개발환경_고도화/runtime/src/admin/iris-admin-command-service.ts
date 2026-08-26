@@ -10,6 +10,7 @@ import { LordIncomeService } from "./lord-income-service.js";
 import { isOperationIntervalResetCommand, OperationIntervalResetService } from "./operation-interval-reset-service.js";
 import { isRequestMonitorConfigCommandCandidate, parseRequestMonitorConfigCommand, RequestMonitorConfigService } from "./request-monitor-config-service.js";
 import { isRequestMonitorExceptionCommandCandidate, parseRequestMonitorExceptionCommand, RequestMonitorExceptionService } from "./request-monitor-exception-service.js";
+import { isSpecialBadgeRevokeCommandCandidate, SpecialBadgeRevokeService } from "./special-badge-revoke-service.js";
 import { isWeeklyQuestCountCommandCandidate, parseWeeklyQuestCountCommand, WeeklyQuestCountService } from "./weekly-quest-count-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
@@ -62,6 +63,7 @@ export class IrisAdminCommandService {
   async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
     { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
   > {
+    if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
     if (isGuildTerritoryDimensionGateCommand(input.message)) return this.handleGuildTerritoryDimensionGate(input);
     if (isOperationIntervalResetCommand(input.message)) return this.handleOperationIntervalReset(input);
     if (isWeeklyQuestCountCommandCandidate(input.message)) return this.handleWeeklyQuestCount(input);
@@ -453,6 +455,47 @@ export class IrisAdminCommandService {
     });
     return { status: "changed", data: result.data, outboxId: result.outboxId };
   }
+
+  // rollout과 운영자 권한을 확인한 뒤 특별 펫홈 뱃지를 원자 회수합니다.
+  async handleSpecialBadgeRevoke(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+  > {
+    const commandCode = "ADMIN_SPECIAL_BADGE_REVOKE";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: commandCode });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: commandCode });
+    const operators = await this.database.query<Array<{ operator_id: bigint; display_name: string }>>(
+      `SELECT mapping.operator_id,operator.display_name FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+       JOIN admin_operators operator ON operator.id=mapping.operator_id
+       JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id
+       JOIN admin_roles role ON role.id=operator_role.role_id AND role.code IN ('super_admin','manager') AND role.active=TRUE
+       JOIN admin_role_permissions permission ON permission.role_id=role.id
+       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+         AND operator.status='active' AND permission.permission_code='pet_home.special_badge.revoke' LIMIT 1`, [input.externalUserId]
+    );
+    const operator = operators[0];
+    if (operator === undefined) throw new ApplicationError("FORBIDDEN", "❌ 특별 뱃지 관리 권한이 없습니다.", 403);
+    const result = await new SpecialBadgeRevokeService(this.database).revoke({
+      message: input.message, idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, operatorId: operator.operator_id.toString(), operatorDisplayName: operator.display_name
+    });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
 }
 
 // 포인트수정 후보를 전체 형식으로 제한해 접미 문구 실행을 막습니다.
@@ -460,7 +503,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
   return message !== undefined && (/^\/포인트수정\s+.+?\s+\d{1,27}$/.test(message) || isHoiLandEditCommandCandidate(message)
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
-    || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message));
+    || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
+    || isSpecialBadgeRevokeCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
