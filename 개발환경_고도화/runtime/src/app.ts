@@ -59,6 +59,7 @@ import { isPendantBagCleanupCommandCandidate, normalizePendantBagCleanupDispatch
 import { isPendantEnhanceCommandCandidate, normalizePendantEnhanceDispatchMessage, PendantEnhanceService } from "./pet/pendant-enhance-service.js";
 import { isPendantEnhanceCorrectionCommandCandidate, normalizePendantEnhanceCorrectionDispatchMessage, PendantEnhanceCorrectionService } from "./pet/pendant-enhance-correction-service.js";
 import { isPendantMarketRegisterCommandCandidate, normalizePendantMarketRegisterDispatchMessage, PendantMarketRegisterService } from "./market/pendant-market-register-service.js";
+import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatchMessage, PendantMarketInfoService } from "./market/pendant-market-info-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -680,6 +681,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPendantEnhanceCommandCandidate(normalizedEvent.message)
         || isPendantEnhanceCorrectionCommandCandidate(normalizedEvent.message)
         || isPendantMarketRegisterCommandCandidate(normalizedEvent.message)
+        || isPendantMarketInfoCommandCandidate(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -700,7 +702,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPendantMarketRegisterCommandCandidate(normalizedEvent.message)
+          message: isPendantMarketInfoCommandCandidate(normalizedEvent.message)
+            ? normalizePendantMarketInfoDispatchMessage(normalizedEvent.message ?? "")
+            : isPendantMarketRegisterCommandCandidate(normalizedEvent.message)
             ? normalizePendantMarketRegisterDispatchMessage(normalizedEvent.message ?? "")
             : isPendantEnhanceCorrectionCommandCandidate(normalizedEvent.message)
             ? normalizePendantEnhanceCorrectionDispatchMessage(normalizedEvent.message ?? "")
@@ -1329,6 +1333,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "pendant_market_register"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PendantMarketRegisterService(database!).handle({ eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPendantMarketInfoCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pendant_market_info"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PendantMarketInfoService(database!).handle({ eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
       }
