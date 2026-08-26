@@ -6248,3 +6248,44 @@ Status: VERIFIED
 - `/펫탐험순위`는 인자 없는 정확한 명령만 실행한다.
 - 30승 이상을 승리 내림차순, 패배 오름차순, 사용자명 오름차순으로 정렬해 최대 50명까지 표시한다.
 - 5위 뒤에 `allsee`를 넣고 마지막에 60분 기준 다음 갱신 문구를 붙인다.
+
+---
+
+# /미출석
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `Info.js`: `/미출석`
+
+## Files
+
+- `Info.js`
+- `개발환경_고도화/runtime/src/attendance/absence-attendance-read-service.ts`
+- `개발환경_고도화/runtime/migrations/167_absence_attendance_read.sql`
+
+## Related Helpers
+
+- `isAdmin`
+- `getCurrentDate`
+
+## Data Usage
+
+- `data.member[*].recent`
+- `attendance_programs`
+- `player_attendance`
+- `legacy_absence_attendance_projection`
+
+## Save Flow
+
+- 명령 본문은 `member.json`을 읽기만 하며 저장하지 않는다.
+- 공용 메시지 전처리의 만료 정리 저장은 이 조회 슬라이스와 분리한다.
+- 현대화 조회는 기존 출석 테이블의 읽기 전용 projection만 사용한다.
+
+## AI Notes
+
+- `/미출석 [숫자]`는 `isAdmin`과 허용 방 조건을 모두 통과해야 한다.
+- 여러 칸과 끝 공백은 허용하지만 명령 직후에는 일반 공백이 하나 이상 있어야 한다.
+- `YYYYMMDD - (일수 - 1)` 숫자 비교와 등록 순서를 보존하며 응답을 두 번 보낸다.
+- 미출석자가 없어도 `미출첵 명단 \n\n` 빈 두 번째 응답을 보낸다.
