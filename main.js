@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.409"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.410"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -33751,7 +33751,7 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
         if (musou.realFlagFound && flagNo === musou.realFlagNo) {
             stateText = musou.currentHolder ? checkRank(data, petData, guildData, musou.currentHolder) + "(🚩)" : "주인 없음(🚩)";
         } else if (musou.fakeFlags[String(flagNo)] || musou.realFlagFound) {
-            stateText = "가짜(❌)";
+            stateText = "가짜(✖️)";
         }
         lines.push("[" + flagNo + "] " + getPetMusouFlagName(flagNo) + ": " + stateText);
     }
@@ -33806,7 +33806,8 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
             lines.push("공격 보상🤑: " + attackRewardText, "", "[진짜 깃발 발견🚩]", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
         } else {
             musou.fakeFlags[String(flagNo)] = true;
-            lines.push("공격 보상🤑: " + attackRewardText, "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 공격권 1회가 차감되었습니다.");
+            var attackerMaxAttacks = parseInt(musou.players[sender].maxAttacks, 10) || GLOBAL_CONFIG.petMusou.attackLimit; // 대회 시작 시 확정된 개인 공격 한도
+            lines.push("공격 보상🤑: " + attackRewardText, "", "가짜 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님의 남은 공격(" + musou.players[sender].attacksLeft + "/" + attackerMaxAttacks + "⚔)");
         }
     } else if (flagNo !== musou.realFlagNo) {
         musou.players[sender].alive = false;
