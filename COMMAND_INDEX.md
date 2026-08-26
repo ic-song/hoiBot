@@ -6448,6 +6448,32 @@ Status: VERIFIED
 ## Save Flow
 - MariaDB transaction with optimistic version update and idempotent operation result
 - Does not change `enhancement_updated_at`, inventory, skills, or currency
+# /펫주인
+
+Status: VERIFIED
+
+## Files
+- `Info.js`
+- `개발환경_고도화/runtime/src/pet/pet-owner-read-service.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/migrations/178_pet_owner_read.sql`
+
+## Related Helpers
+- `isPetOwnerReadCommand`
+- `formatPetOwnerRead`
+- `PetOwnerReadService`
+
+## Data Usage
+- Legacy: `data.member` source order와 `petData[user]` named pet projection
+- Modern: `player_profiles` / `player_pets` / `player_legacy_rank_profiles`
+
+## Save Flow
+- Legacy: `newimg`를 응답용 `petimg`에만 대입하며 저장 호출 없음
+- Modern: 원본 상태 mutation 없이 operation, audit, execution, outbox만 기록
+
+## Related Commands
+- `/펫주인`
+
 # /펫제거
 
 Status: VERIFIED
