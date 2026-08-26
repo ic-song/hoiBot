@@ -54,6 +54,7 @@ import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./cast
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { isSpiritRankCommand, SpiritRankService } from "./pet/spirit-rank-service.js";
 import { isSpiritInfoCommand, SpiritInfoService } from "./pet/spirit-info-service.js";
+import { isPendantBagCommandCandidate, PendantBagService } from "./pet/pendant-bag-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -1264,6 +1265,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         const result = await new SpiritInfoService(database!).read({ eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
         for (const reply of result.replies) processing.replies.push({ outboxId: reply.outboxId, room: normalizedEvent.channelId, data: reply.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPendantBagCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pendant_bag_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PendantBagService(database!).read({ eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result.status === "replied") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
