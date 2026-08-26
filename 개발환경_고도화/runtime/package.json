@@ -70,7 +70,8 @@
     "db:probe:matzang-session": "tsx scripts/probe-matzang-session-synthetic.ts",
     "db:probe:matzang-session-command": "tsx scripts/probe-matzang-session-command-synthetic.ts",
     "db:probe:matzang-field-read": "tsx scripts/probe-matzang-field-read-synthetic.ts",
-    "db:probe:trial-tower": "tsx scripts/probe-trial-tower-synthetic.ts"
+    "db:probe:trial-tower": "tsx scripts/probe-trial-tower-synthetic.ts",
+    "db:probe:trial-tower-command": "tsx scripts/probe-trial-tower-command-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
