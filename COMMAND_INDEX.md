@@ -1285,6 +1285,8 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/pet/pet-charm-rank-read-service.ts`
+- `개발환경_고도화/runtime/migrations/174_pet_charm_rank_read.sql`
 - `개발환경_고도화/runtime/src/pet/pet-upgrade-rank-read-service.ts`
 - `개발환경_고도화/runtime/migrations/171_pet_upgrade_rank_read.sql`
 
@@ -2843,11 +2845,18 @@ Status: VERIFIED
 ## Data Usage
 
 - `petData`
+- `player_pets.experience`
+- `player_pets.image_value`
+- `player_pets.display_name`
+- `pet_titles`
+- `title_definitions`
+- `player_legacy_rank_profiles.source_order`
 - `miniPetData.gradeTable`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 현대화 경로는 순위 원본을 변경하지 않고 operation·감사·outbox만 transaction으로 기록
 
 ## Related Commands
 
@@ -4712,6 +4721,8 @@ Status: VERIFIED
 
 - Pure pet-charm leaderboard
 - Good anchor when pet-only charm should be isolated from castle/raid/home bonuses
+- `experience > 5`인 활성 펫만 매력 내림차순, 레거시 원본순서, player ID 순으로 결정적 정렬
+- 펫 이미지·장착 펫타이틀·펫이름·BIGINT 매력 표시와 10위 뒤 500자 `allsee`를 보존
 
 ---
 
