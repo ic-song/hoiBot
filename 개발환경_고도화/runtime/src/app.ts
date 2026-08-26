@@ -64,6 +64,7 @@ import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatch
 import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispatchMessage, PendantCarrotTradeService } from "./market/pendant-carrot-trade-service.js";
 import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
 import { isPendantDeleteCommandCandidate,normalizePendantDeleteDispatchMessage,PendantDeleteService } from "./pet/pendant-delete-service.js";
+import { isPendantRankCommand,PendantRankService } from "./pet/pendant-rank-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -690,6 +691,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPendantCarrotTradeCommandCandidate(normalizedEvent.message)
         || isPendantRestoreCommandCandidate(normalizedEvent.message)
         || isPendantDeleteCommandCandidate(normalizedEvent.message)
+        || isPendantRankCommand(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -1393,6 +1395,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantDeleteCommandCandidate(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_delete"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantDeleteService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
+
+      if(isOperationalChannel&&processing!==undefined&&!processing.duplicate&&isPendantRankCommand(normalizedEvent.message)&&partialDispatchDecision?.route==="MODERN"&&partialDispatchDecision.handlerKey==="pendant_rank_read"&&normalizedEvent.userId!==undefined&&normalizedEvent.channelId!==undefined){const result=await new PendantRankService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:normalizedEvent.channelId,data:result.data!});}
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isSpiritNameCommandCandidate(normalizedEvent.message)
