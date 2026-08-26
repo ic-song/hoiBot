@@ -105,6 +105,11 @@ import {
 import { PackageCatalogAdminIrisHandler } from "./package/package-catalog-admin-iris-handler.js";
 import { isPackageCatalogWizardControl } from "./package/package-catalog-add-wizard.js";
 import { PackageCatalogAddWizardIrisHandler } from "./package/package-catalog-add-wizard-iris-handler.js";
+import {
+  isPointShopCatalogCommandCandidate,
+  normalizePointShopCatalogDispatchMessage,
+} from "./shop/point-shop-catalog-command.js";
+import { PointShopCatalogIrisHandler } from "./shop/point-shop-catalog-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -630,6 +635,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isPackageCommandCandidate(normalizedEvent.message ?? "");
       const packageCatalogAdminDispatchCandidate = process.env.PACKAGE_CATALOG_ADMIN_COMMAND_ENABLED === "true"
         && isPackageCatalogAdminCommandCandidate(normalizedEvent.message ?? "");
+      const pointShopCatalogDispatchCandidate = process.env.POINT_SHOP_CATALOG_COMMAND_ENABLED === "true"
+        && isPointShopCatalogCommandCandidate(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -653,6 +660,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
+        || pointShopCatalogDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -670,6 +678,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizePackageDispatchMessage(normalizedEvent.message ?? "")
             : packageCatalogAdminDispatchCandidate
               ? normalizePackageCatalogAdminDispatchMessage(normalizedEvent.message ?? "")
+              : pointShopCatalogDispatchCandidate
+                ? normalizePointShopCatalogDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -737,6 +747,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           room: normalizedEvent.channelId!,
           data: catalogResponse.message,
         });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && (partialDispatchDecision.handlerKey === "POINT_SHOP_CATALOG_READ"
+          || partialDispatchDecision.handlerKey === "POINT_SHOP_CATALOG_UPSERT"
+          || partialDispatchDecision.handlerKey === "POINT_SHOP_CATALOG_REMOVE")) {
+        const shopResponse = await new PointShopCatalogIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push(shopResponse.outboxId
+          ? { outboxId: shopResponse.outboxId, room: normalizedEvent.channelId!, data: shopResponse.message }
+          : await eventProcessor.queueCommandReply(normalizedEvent, shopResponse.commandCode, shopResponse.message));
       }
       if (database !== undefined
         && eventProcessor !== undefined
