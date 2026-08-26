@@ -41,6 +41,7 @@
     "db:probe:pendant-bag": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-bag-synthetic.ts",
     "db:probe:pendant-bag-cleanup": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-bag-cleanup-synthetic.ts",
     "db:probe:pendant-enhance": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-enhance-synthetic.ts",
+    "db:probe:pendant-enhance-correction": "node --env-file-if-exists=.env --import tsx scripts/probe-pendant-enhance-correction-synthetic.ts",
     "db:probe:spirit-name": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-synthetic.ts",
     "db:probe:spirit-name-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-name-combine-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",

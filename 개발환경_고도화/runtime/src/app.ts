@@ -57,6 +57,7 @@ import { isSpiritInfoCommand, SpiritInfoService } from "./pet/spirit-info-servic
 import { isPendantBagCommandCandidate, PendantBagService } from "./pet/pendant-bag-service.js";
 import { isPendantBagCleanupCommandCandidate, normalizePendantBagCleanupDispatchMessage, PendantBagCleanupService } from "./pet/pendant-bag-cleanup-service.js";
 import { isPendantEnhanceCommandCandidate, normalizePendantEnhanceDispatchMessage, PendantEnhanceService } from "./pet/pendant-enhance-service.js";
+import { isPendantEnhanceCorrectionCommandCandidate, normalizePendantEnhanceCorrectionDispatchMessage, PendantEnhanceCorrectionService } from "./pet/pendant-enhance-correction-service.js";
 import { isSpiritNameCommandCandidate, SpiritNameService } from "./pet/spirit-name-service.js";
 import { isSpiritNameCombineCommand, SpiritNameCombineService } from "./pet/spirit-name-combine-service.js";
 import { isRaidStrikeSealCraftCommand, RaidStrikeSealCraftService } from "./raid/raid-strike-seal-craft-service.js";
@@ -676,6 +677,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isSpiritRankCommand(normalizedEvent.message)
         || isPendantBagCleanupCommandCandidate(normalizedEvent.message)
         || isPendantEnhanceCommandCandidate(normalizedEvent.message)
+        || isPendantEnhanceCorrectionCommandCandidate(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
@@ -696,7 +698,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPendantEnhanceCommandCandidate(normalizedEvent.message)
+          message: isPendantEnhanceCorrectionCommandCandidate(normalizedEvent.message)
+            ? normalizePendantEnhanceCorrectionDispatchMessage(normalizedEvent.message ?? "")
+            : isPendantEnhanceCommandCandidate(normalizedEvent.message)
             ? normalizePendantEnhanceDispatchMessage(normalizedEvent.message ?? "")
             : isPendantBagCleanupCommandCandidate(normalizedEvent.message)
             ? normalizePendantBagCleanupDispatchMessage(normalizedEvent.message ?? "")
@@ -1301,6 +1305,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "pendant_enhance"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PendantEnhanceService(database!).handle({ eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPendantEnhanceCorrectionCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pendant_enhance_correction"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PendantEnhanceCorrectionService(database!).handle({ eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
       }
