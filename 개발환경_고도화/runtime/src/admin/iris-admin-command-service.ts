@@ -4,6 +4,7 @@ import { MariaCommandDispatchRepository, type RolloutState } from "../dispatch/c
 import { ChangePlayerServerService } from "../player/change-player-server-service.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
+import { LordIncomeService } from "./lord-income-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
@@ -55,6 +56,7 @@ export class IrisAdminCommandService {
   async changePlayerPoint(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
     { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
   > {
+    if (isLordIncomeCommandCandidate(input.message)) return this.handleLordIncomeCommand(input);
     if (isHoiLandEditCommandCandidate(input.message)) return this.changeHoiLandAmount(input);
     const match = /^\/포인트수정\s+(.+?)\s+(\d{1,27})$/.exec(input.message);
     if (match === null) throw new ApplicationError("INVALID_POINT_EDIT_COMMAND", "포인트수정 명령 형식이 올바르지 않습니다.", 422);
@@ -155,14 +157,63 @@ export class IrisAdminCommandService {
     }
     return { status: "changed", data: result.data, outboxId: result.outboxIds[0] };
   }
+
+  // 영주 수익 순위 조회와 총괄 운영자 전역 초기화를 같은 rollout 경계에서 처리합니다.
+  async handleLordIncomeCommand(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<
+    { status: "changed"; data: string; outboxId: string } | { status: "shadow" | "legacy_fallback" }
+  > {
+    const reset = input.message === "/영주수익순위초기화";
+    const commandCode = reset ? "ADMIN_LORD_INCOME_RESET" : "LORD_INCOME_RANK_READ";
+    const rollout = await this.database.query<Array<{ rollout_state: RolloutState; enabled: number }>>(
+      "SELECT rollout_state,enabled FROM command_registry WHERE command_code=? LIMIT 1", [commandCode]
+    );
+    const definition = rollout[0];
+    const dispatch = new MariaCommandDispatchRepository(this.database);
+    if (definition === undefined || definition.enabled !== 1 || definition.rollout_state === "LEGACY_ONLY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "LEGACY_FALLBACK", reasonCode: "ROLLOUT_LEGACY_ONLY", commandCode, handlerKey: commandCode });
+      return { status: "legacy_fallback" };
+    }
+    if (definition.rollout_state === "SHADOW" || definition.rollout_state === "CANARY") {
+      await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+        { route: "SHADOW", reasonCode: "ROLLOUT_SHADOW", commandCode, handlerKey: commandCode });
+      return { status: "shadow" };
+    }
+    await dispatch.record({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true },
+      { route: "MODERN", reasonCode: "MODERN_ROUTE_ALLOWED", commandCode, handlerKey: commandCode });
+    const service = new LordIncomeService(this.database);
+    if (!reset) {
+      const result = await service.readRanking({ idempotencyKey: input.eventId, sourceEventId: input.eventId,
+        destinationId: input.channelId, externalUserId: input.externalUserId });
+      return { status: "changed", data: result.data, outboxId: result.outboxId };
+    }
+    const operators = await this.database.query<Array<{ operator_id: bigint }>>(
+      `SELECT mapping.operator_id FROM external_identities identity
+       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
+       JOIN admin_operators operator ON operator.id=mapping.operator_id
+       JOIN admin_operator_roles operator_role ON operator_role.operator_id=operator.id
+       JOIN admin_role_permissions permission ON permission.role_id=operator_role.role_id
+       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked'
+         AND operator.status='active' AND permission.permission_code='game.currency.change' LIMIT 1`, [input.externalUserId]
+    );
+    if (operators[0] === undefined) throw new ApplicationError("FORBIDDEN", "영주수익순위 초기화 권한이 없습니다.", 403);
+    const result = await service.reset({ idempotencyKey: input.eventId, sourceEventId: input.eventId,
+      destinationId: input.channelId, operatorId: operators[0]!.operator_id.toString() });
+    return { status: "changed", data: result.data, outboxId: result.outboxId };
+  }
 }
 
 // 포인트수정 후보를 전체 형식으로 제한해 접미 문구 실행을 막습니다.
 export function isPointEditCommandCandidate(message: string | undefined): boolean {
-  return message !== undefined && (/^\/포인트수정\s+.+?\s+\d{1,27}$/.test(message) || isHoiLandEditCommandCandidate(message));
+  return message !== undefined && (/^\/포인트수정\s+.+?\s+\d{1,27}$/.test(message) || isHoiLandEditCommandCandidate(message) || isLordIncomeCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
 export function isHoiLandEditCommandCandidate(message: string | undefined): boolean {
   return message !== undefined && /^\/수정\s+.+?\s+\d{1,27}$/.test(message);
+}
+
+// 영주 수익 순위 조회와 초기화는 두 정확 일치 명령만 후보로 허용합니다.
+export function isLordIncomeCommandCandidate(message: string | undefined): boolean {
+  return message === "/영주수익순위" || message === "/영주수익순위초기화";
 }
