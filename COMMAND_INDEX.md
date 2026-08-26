@@ -4196,6 +4196,10 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+Modernization: `SL-PET-TITLE-SELECT` Gate 1~7 implementation uses `player_pet_title_instances` for stable KEY/order/equipped state while preserving current list sequence.
+
+Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
+
 ## Command Anchors
 
 - Search in `Info.js`: `/펫타이틀목록`

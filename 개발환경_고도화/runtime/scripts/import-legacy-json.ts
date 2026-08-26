@@ -525,6 +525,15 @@ async function importTitles(
            equipped = equipped OR VALUES(equipped)`,
         [playerPetId, definitions[0].id, legacyDate(item.inDate) ?? null, index === equippedIndex]
       );
+      await transaction.execute(
+        `INSERT INTO player_pet_title_instances
+          (instance_key, player_id, title_key, display_name, price_digits, display_order, acquired_at, equipped, status, version)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'owned', 1)
+         ON DUPLICATE KEY UPDATE display_name = VALUES(display_name), price_digits = VALUES(price_digits),
+           acquired_at = VALUES(acquired_at), equipped = VALUES(equipped), status = 'owned'`,
+        [randomUUID(), playerId, code, item.name, integerString(item.price) ?? "0", index + 1,
+          legacyDate(item.inDate) ?? new Date(0), index === equippedIndex]
+      );
     }
   }
 }
