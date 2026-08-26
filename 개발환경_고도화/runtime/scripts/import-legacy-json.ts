@@ -455,6 +455,11 @@ async function importMembers(
         "INSERT INTO player_badge_assignments (player_id, badge_code, display_value, priority) VALUES (?, ?, ?, 100)",
         [player.insertId, stableLegacyCode("badge", rankDisplay), rankDisplay]
       );
+      const rankEmoji = asRecord(member.rank)?.emoji;
+      await transaction.execute(
+        "INSERT INTO player_legacy_rank_profiles(player_id,rank_emoji,source_order) VALUES (?,?,?)",
+        [player.insertId, typeof rankEmoji === "string" ? rankEmoji : "", player.insertId]
+      );
     });
   }
   return playerIds;

@@ -36,6 +36,7 @@
     "db:probe:ring-reward-use": "node --env-file-if-exists=.env --import tsx scripts/probe-ring-reward-use-synthetic.ts",
     "db:probe:spirit-enhance": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-enhance-synthetic.ts",
     "db:probe:spirit-attribute": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-attribute-synthetic.ts",
+    "db:probe:spirit-rank": "node --env-file-if-exists=.env --import tsx scripts/probe-spirit-rank-synthetic.ts",
     "db:shadow:construction-edit": "node --env-file-if-exists=.env --import tsx scripts/shadow-construction-edit-synthetic.ts",
     "db:shadow:open-all": "node --env-file-if-exists=.env --import tsx scripts/shadow-open-all-synthetic.ts",
     "db:probe:partial-dispatch": "node --env-file-if-exists=.env --import tsx scripts/probe-partial-dispatch-synthetic.ts"
