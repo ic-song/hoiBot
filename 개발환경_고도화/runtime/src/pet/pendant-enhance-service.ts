@@ -86,9 +86,14 @@ function stored(value: string | PendantEnhanceResult): PendantEnhanceResult {
 }
 
 // 펜던트 기본·누적 강화 능력치를 계산합니다.
-function stats(target: Target, level: number): { charm: bigint; explore: number } {
-  let charm = target.baseCharm;
+export function calculatePendantEnhancedCharm(baseCharm: bigint, level: number): bigint {
+  let charm = baseCharm;
   for (let index = 1; index <= level; index++) charm += TABLE[index]![1];
+  return charm;
+}
+
+function stats(target: Target, level: number): { charm: bigint; explore: number } {
+  const charm = calculatePendantEnhancedCharm(target.baseCharm, level);
   return { charm, explore: target.baseExplore + (level === 0 ? 0 : TABLE[level]![2]) };
 }
 
