@@ -6206,3 +6206,45 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+---
+
+# /펫탐험순위
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/펫탐험순위`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/pet/pet-explore-rank-service.ts`
+- `개발환경_고도화/runtime/migrations/166_pet_explore_rank_read.sql`
+
+## Related Helpers
+
+- `initPetExploreData`
+- `cleanupInvalidPetExploreUsers`
+- `savePetExploreMigrationIfNeeded`
+- `checkRank`
+- `getNextIntervalTime`
+
+## Data Usage
+
+- `petExploreData.record[*].win`
+- `petExploreData.record[*].lose`
+- `player_pet_explore_rank_stats`
+
+## Save Flow
+
+- 레거시는 조회 전에 잘못된 유저를 정리하고 필요할 때 `petExplorePath`를 저장한다.
+- 현대화는 유효 사용자 목록으로 전체 snapshot projection을 교체하며 operation/audit/outbox 경계 안에서 처리한다.
+- 순위 명령 자체는 projection을 읽기만 하며 운영 전환 전까지 `SHADOW`로 유지한다.
+
+## AI Notes
+
+- `/펫탐험순위`는 인자 없는 정확한 명령만 실행한다.
+- 30승 이상을 승리 내림차순, 패배 오름차순, 사용자명 오름차순으로 정렬해 최대 50명까지 표시한다.
+- 5위 뒤에 `allsee`를 넣고 마지막에 60분 기준 다음 갱신 문구를 붙인다.
