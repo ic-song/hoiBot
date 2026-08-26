@@ -2520,6 +2520,7 @@ Status: VERIFIED
 - `/펀치` consumes `핵꿀밤🥊(/펀치)`, subtracts points, grants `미니펫뽑기🐹(/미니펫오픈)`, updates title data on first legend hit, and saves `filePath`, `memberTitlePath`, and `punchRankPath`
 - `/펀치순위` reads `punchRankPath` and does not mutate data
 - `/펀치순위초기화` is admin-only, resets `punchRankPath`, and does not mutate member or title data
+- Modern `/펀치순위` reads `player_punch_rank_stats` and records only operation, audit, execution, and reply outbox rows
 
 ## Related Commands
 
@@ -2533,6 +2534,8 @@ Status: VERIFIED
 - `/펀치` uses exact/full-pattern guards, so suffix text after a valid count should not execute
 - `GLOBAL_CONFIG.punchMachine.maxOpen` caps one batch, and available item count can reduce the actual open count
 - Missing or invalid JSON files should follow the existing `loadJsonFile` error flow; helper functions do not perform file IO
+- Modern files: `src/battle/punch-rank-service.ts`, `migrations/165_punch_rank_read.sql`
+- Ranking order is best score, legend count only for 1000-point ties, total reward, total play, then imported source order
 
 ---
 
