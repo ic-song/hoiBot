@@ -5268,6 +5268,49 @@ Status: VERIFIED
 
 ---
 
+# /가구해제
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/가구해제`
+- Exact usage form: `/가구해제`
+- Numeric execution form: `/가구해제 [번호]`
+
+## Files
+
+- `main.js`
+- `data/petSweetHome.json`
+- `data/petHomePlacedFurniture.json`
+
+## Related Helpers
+
+- `hasItem`
+- `removeItem`
+- `sortFurnitureList`
+- `refreshPlacedFurnitureSummary`
+- `getFurnitureBagLimit`
+- `saveJsonFile`
+
+## Data Usage
+
+- `placedFurnitureData[sender]`
+- `homeData[sender].furnitureBag`
+- `data.member[sender].bag["가구귀속해제권🛋️(/가구해제 숫자)"]`
+
+## Save Flow
+
+- 귀속해제권을 먼저 확인하고 배치 가구 번호와 가방 용량을 검증한다.
+- 선택한 배치 가구를 가방으로 복귀시키고 귀속해제권 1개를 차감한 뒤 홈·배치 가구 데이터를 저장한다.
+
+## Modernization Notes
+
+- 현대화 handler는 `home_furniture_unequip`이며 정확한 사용법 또는 숫자 한 개 형식만 실행한다.
+- stable 가구 인스턴스를 `placed`에서 `bag`으로 전환하고 귀속해제권·가구 원장·감사·outbox를 한 transaction에 기록한다.
+
+---
+
 # /자유시장
 
 Status: VERIFIED
