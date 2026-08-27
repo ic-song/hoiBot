@@ -1368,6 +1368,8 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/player/admin-player-info-read-service.ts`
+- `개발환경_고도화/runtime/src/player/maria-profile-repository.ts`
 - `개발환경_고도화/runtime/src/pet/pet-charm-rank-read-service.ts`
 - `개발환경_고도화/runtime/migrations/174_pet_charm_rank_read.sql`
 - `개발환경_고도화/runtime/src/pet/pet-upgrade-rank-read-service.ts`
@@ -1429,10 +1431,12 @@ Status: VERIFIED
 - `data.member[targetUser]`
 - `titleData.member[targetUser]`
 - `data.member[targetUser].bag`
+- Modern DB: `players`, `player_profiles`, `inventory_stacks`, `item_definitions`, `player_titles`, `title_definitions`, `player_attendance`, `player_check_counts`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- Modern runtime writes only idempotency, command execution, audit, and outbox evidence; player-domain data stays read-only
 
 ## Related Commands
 
@@ -1442,6 +1446,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin inspection path for another user's summary
+- Modern dispatch accepts `/정보` or `/정보 [유저명]`, requires manager/super-admin permission, and records the queried target without legacy read-time guild or pet repair
 - Useful when debugging user-specific bag/title visibility without impersonating sender
 
 ---

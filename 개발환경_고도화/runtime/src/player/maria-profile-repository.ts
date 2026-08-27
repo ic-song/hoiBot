@@ -74,7 +74,7 @@ function toIso(value: Date | null): string | null {
 }
 
 // 여러 read-model 행을 ProfileView 하나로 조립합니다.
-async function hydrateProfile(database: DatabaseClient, row: ProfileRow): Promise<ProfileView> {
+async function hydrateProfile(database: Pick<DatabaseClient, "query">, row: ProfileRow): Promise<ProfileView> {
   const [currencies, counters, passes, ranks, badges] = await Promise.all([
     database.query<Array<{ code: string; balance: string }>>(
       "SELECT currency_code AS code, CAST(balance AS CHAR) AS balance FROM currency_accounts WHERE player_id = ?",
@@ -137,7 +137,7 @@ async function hydrateProfile(database: DatabaseClient, row: ProfileRow): Promis
 }
 
 export class MariaProfileRepository implements ProfileRepository {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: Pick<DatabaseClient, "query">) {}
 
   async findByPlayerId(playerId: string): Promise<ProfileView | null> {
     const rows = await this.database.query<ProfileRow[]>(`${PROFILE_SELECT} WHERE p.id = ? AND p.status = 'active'`, [playerId]);

@@ -40,6 +40,7 @@ import { isPlayerDiamondRankReadCommand, PlayerDiamondRankReadService } from "./
 import { isPlayerLevelResetCommand, PlayerLevelResetService } from "./player/player-level-reset-service.js";
 import { isPlayerLevelRankReadCommand, PlayerLevelRankReadService } from "./player/player-level-rank-read-service.js";
 import { isPlayerVerificationRankReadCommand, PlayerVerificationRankReadService } from "./player/player-verification-rank-read-service.js";
+import { AdminPlayerInfoReadService, isAdminPlayerInfoReadCandidate, normalizeAdminPlayerInfoReadDispatchMessage } from "./player/admin-player-info-read-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
@@ -815,6 +816,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPlayerLevelResetCommand(normalizedEvent.message)
          || isPlayerLevelRankReadCommand(normalizedEvent.message)
          || isPlayerVerificationRankReadCommand(normalizedEvent.message)
+         || isAdminPlayerInfoReadCandidate(normalizedEvent.message)
          || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
@@ -886,6 +888,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isPlayerVerificationRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
+             : isAdminPlayerInfoReadCandidate(normalizedEvent.message)
+             ? normalizeAdminPlayerInfoReadDispatchMessage(normalizedEvent.message ?? "")
              : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
@@ -1924,6 +1928,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_verification_rank_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PlayerVerificationRankReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isAdminPlayerInfoReadCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "admin_player_info_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new AdminPlayerInfoReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
