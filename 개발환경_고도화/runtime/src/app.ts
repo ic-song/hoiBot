@@ -204,6 +204,8 @@ import { isContributionPassCommandCandidate, normalizeContributionPassDispatchMe
 import { ContributionPassIrisHandler } from "./pass/contribution-pass-iris-handler.js";
 import { isDiamondPassCommandCandidate, normalizeDiamondPassDispatchMessage } from "./pass/diamond-pass-command.js";
 import { DiamondPassIrisHandler } from "./pass/diamond-pass-iris-handler.js";
+import { isPassSubscriptionRetiredCommandCandidate, normalizePassSubscriptionRetiredDispatchMessage } from "./pass/pass-subscription-retired-command-service.js";
+import { PassSubscriptionRetiredIrisHandler } from "./pass/pass-subscription-retired-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
@@ -767,6 +769,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isContributionPassCommandCandidate(normalizedEvent.message);
       const diamondPassDispatchCandidate = process.env.DIAMOND_PASS_COMMAND_ENABLED === "true"
         && isDiamondPassCommandCandidate(normalizedEvent.message);
+      const passSubscriptionRetiredDispatchCandidate = process.env.PASS_SUBSCRIPTION_RETIRED_COMMAND_ENABLED === "true"
+        && isPassSubscriptionRetiredCommandCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -875,6 +879,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || petExploreRecordsResetDispatchCandidate
         || contributionPassDispatchCandidate
         || diamondPassDispatchCandidate
+        || passSubscriptionRetiredDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1033,6 +1038,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeContributionPassDispatchMessage(normalizedEvent.message ?? "")
                 : diamondPassDispatchCandidate
                   ? normalizeDiamondPassDispatchMessage(normalizedEvent.message ?? "")
+                : passSubscriptionRetiredDispatchCandidate
+                  ? normalizePassSubscriptionRetiredDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1231,6 +1238,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "diamond_pass_registry") {
         const passResponse = await new DiamondPassIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pass_subscription_retired") {
+        const passResponse = await new PassSubscriptionRetiredIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
       }
       if (database !== undefined
