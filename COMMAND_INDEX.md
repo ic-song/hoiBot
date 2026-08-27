@@ -647,7 +647,7 @@ Status: VERIFIED
 - `/댓글핀 [번호]`
 - `/댓글핀삭제 [번호]`
 - `/댓글확인`
-- `/댓글삭제`
+- `/댓글삭제 [번호]`
 - `/좋아홈 [닉네임]`
 - `/마음 [닉네임]`
 - `/귀여워 [닉네임]`
@@ -792,6 +792,7 @@ Status: VERIFIED
 - `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. `/내마음`은 `망므📙` 장착 시 `+5회`를 별도 표시한다. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
 - `/내마음`의 현대화 handler는 `social_own_heart`이며, 기본 1회·활성 맞팔·프리미엄·장착 펫스킬 보너스와 KST 오늘 사용량을 정규화 DB에서 계산한다.
 - 날짜 변경 시 레거시 `lastHeartExpressionDate`가 오늘이면 1회를 보존하고, 사용량 초기화·조회 증적·감사·outbox를 한 transaction에 기록한다.
+- `/댓글삭제 [번호]`의 현대화 handler는 `HOME_COMMENT_DELETE`이며, 최신순 번호를 stable comment ID로 변환한 뒤 활성 패스·핀 상태·홈 version을 재확인하고 댓글 soft-delete·감사·outbox·재실행 결과를 한 transaction에 기록한다.
 - `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, 20 MBTI gacha badges, and 50 relationship-type gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path. These view/equip/unequip/delete commands are available without a hoi/newbie/premium pass. The owned list and every equip/delete/cube command use the fixed `getAllPetHomeBadges()` order, so cube option changes never renumber badges. Representative badge text appends the same stable number as `[N번]`. Each owned badge and cube-result card shows its type/grade, the four numbered cube options one per line, then the achievement or gacha text. The equipped premium badge shows each base value, the `+3%p` premium bonus, and the actual final applied value together.
 - `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
