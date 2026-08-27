@@ -1368,6 +1368,7 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/player/player-overall-rank-read-service.ts`
 - `개발환경_고도화/runtime/src/player/admin-player-info-read-service.ts`
 - `개발환경_고도화/runtime/src/player/maria-profile-repository.ts`
 - `개발환경_고도화/runtime/src/pet/pet-charm-rank-read-service.ts`
@@ -2811,10 +2812,12 @@ Status: VERIFIED
 - `petData`
 - `homeData`
 - `petSkillData`
+- Modern DB: player/pet/mini-pet/home/furniture/intimacy/elemental/pendant/skill/cube relations and DB-backed overall charm rules
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- Modern runtime keeps gameplay data read-only and writes only operation, execution, audit, and outbox evidence
 
 ## Related Commands
 
@@ -2829,6 +2832,7 @@ Status: VERIFIED
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용하므로 장착 홈뱃지 프리미엄 +3%p와 길드공헌 큐브가 동일하게 반영된다.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
+- Modern ranking uses deterministic legacy source order for score ties, while both `/종합순위` and `ㅈㅈㅈ` resolve to the same handler.
 
 ---
 
