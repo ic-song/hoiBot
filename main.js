@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.414"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.415"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -13932,10 +13932,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (!territoryAutoGuildInfo || territoryAutoGuildInfo.error || !territoryAutoGuildInfo.guild) {
                         replier.reply("⚠️ 영지 자동 공격을 사용할 수 없습니다.\n필요 조건: 소드마스터 또는 전투형지휘관을 소지한 길드마스터");
                         return;
-                    }
-                    if (autoAttackEntitlementGrantedUsers.length > 0) {
-                        pickedMsg.push("");
-                        pickedMsg.push("영지자동공격권⚔️ 지급: " + autoAttackEntitlementGrantedUsers.length + "명");
                     }
                     if (isGuildSwordMaster(territoryAutoGuildInfo.guild, sender, petSkillData)) {
                         grantGuildTerritoryAutoAttackEntitlementForSwordMaster(data, sender);
