@@ -172,6 +172,8 @@ import {
 import { CommentPinDeleteIrisHandler } from "./home/comment-pin-delete-iris-handler.js";
 import { isCommentDeleteCommandCandidate, normalizeCommentDeleteDispatchMessage } from "./home/comment-delete-command.js";
 import { CommentDeleteIrisHandler } from "./home/comment-delete-iris-handler.js";
+import { isCommentPinCommandCandidate, normalizeCommentPinDispatchMessage } from "./home/comment-pin-command.js";
+import { CommentPinIrisHandler } from "./home/comment-pin-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -703,6 +705,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isCommentPinDeleteCommandCandidate(normalizedEvent.message);
       const commentDeleteDispatchCandidate = process.env.COMMENT_DELETE_COMMAND_ENABLED === "true"
         && isCommentDeleteCommandCandidate(normalizedEvent.message);
+      const commentPinDispatchCandidate = process.env.COMMENT_PIN_COMMAND_ENABLED === "true"
+        && isCommentPinCommandCandidate(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -773,6 +777,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || pointShopCatalogDispatchCandidate
         || commentPinDeleteDispatchCandidate
         || commentDeleteDispatchCandidate
+        || commentPinDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -876,6 +881,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeCommentPinDeleteDispatchMessage(normalizedEvent.message ?? "")
                 : commentDeleteDispatchCandidate
                   ? normalizeCommentDeleteDispatchMessage(normalizedEvent.message ?? "")
+                : commentPinDispatchCandidate
+                  ? normalizeCommentPinDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -978,6 +985,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         processing.replies.push(commentResponse.outboxId
           ? { outboxId: commentResponse.outboxId, room: normalizedEvent.channelId!, data: commentResponse.message }
           : await eventProcessor.queueCommandReply(normalizedEvent, "HOME_COMMENT_DELETE", commentResponse.message));
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "HOME_COMMENT_PIN") {
+        const pinAddResponse = await new CommentPinIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push(pinAddResponse.outboxId
+          ? { outboxId: pinAddResponse.outboxId, room: normalizedEvent.channelId!, data: pinAddResponse.message }
+          : await eventProcessor.queueCommandReply(normalizedEvent, "HOME_COMMENT_PIN", pinAddResponse.message));
       }
       if (database !== undefined
         && eventProcessor !== undefined
