@@ -2,12 +2,12 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 
-export type OperationNoticeKey = "notice.cleanup" | "notice.package_bag";
+export type OperationNoticeKey = "notice.cleanup" | "notice.package_bag" | "notice.advertisement";
 
 export interface OperationNoticeCommand {
-  commandCode: "OPERATION_NOTICE_CLEANUP_MUTATE" | "OPERATION_NOTICE_PACKAGE_MUTATE";
+  commandCode: "OPERATION_NOTICE_CLEANUP_MUTATE" | "OPERATION_NOTICE_PACKAGE_MUTATE" | "OPERATION_ADVERTISEMENT_MUTATE";
   key: OperationNoticeKey;
-  label: "정리" | "패키지 가방";
+  label: "정리" | "패키지 가방" | "광고";
   value: string;
 }
 
@@ -26,11 +26,12 @@ export interface OperationNoticeSnapshot {
   version: string;
   cleanup: string;
   packageBag: string;
+  advertisement: string;
 }
 
 const maximumNoticeLength = 16_384;
 
-// 인자가 있는 두 운영 공지 명령만 후보로 인정하며 단일 구분 공백뿐인 입력은 실행하지 않습니다.
+// 인자가 있는 운영 공지 명령만 후보로 인정하며 단일 구분 공백뿐인 입력은 실행하지 않습니다.
 export function isOperationNoticeCommandCandidate(message: string | undefined): boolean {
   return message !== undefined && parseOperationNoticeCommand(message) !== undefined;
 }
@@ -38,19 +39,22 @@ export function isOperationNoticeCommandCandidate(message: string | undefined): 
 // DB alias 조회용으로 인자형 공지 명령을 정확한 기본 명령어로 줄입니다.
 export function normalizeOperationNoticeDispatchMessage(message: string): string {
   const parsed = parseOperationNoticeCommand(message);
-  return parsed === undefined ? message : parsed.commandCode === "OPERATION_NOTICE_CLEANUP_MUTATE" ? "/정리알림" : "/패키지알림";
+  if (parsed === undefined) return message;
+  if (parsed.commandCode === "OPERATION_NOTICE_CLEANUP_MUTATE") return "/정리알림";
+  if (parsed.commandCode === "OPERATION_NOTICE_PACKAGE_MUTATE") return "/패키지알림";
+  return "/광고";
 }
 
 // 레거시의 literal \n 및 /n 치환과 trim 규칙을 적용해 공지 값을 파싱합니다.
 export function parseOperationNoticeCommand(message: string): OperationNoticeCommand | undefined {
-  const match = /^\/(정리알림|패키지알림)\s+([\s\S]+)$/.exec(message);
+  const match = /^\/(정리알림|패키지알림|광고)\s+([\s\S]+)$/.exec(message);
   if (match === null) return undefined;
   const value = match[2]!.replace(/\\n|\/n/g, "\n").trim();
   if (value.includes("\0")) throw new ApplicationError("INVALID_OPERATION_NOTICE_CONTROL", "공지에는 NUL 제어문자를 넣을 수 없습니다.", 422);
   if (value.length > maximumNoticeLength) throw new ApplicationError("OPERATION_NOTICE_TOO_LONG", `공지는 ${maximumNoticeLength.toString()}자 이내로 입력해주세요.`, 422);
-  return match[1] === "정리알림"
-    ? { commandCode: "OPERATION_NOTICE_CLEANUP_MUTATE", key: "notice.cleanup", label: "정리", value }
-    : { commandCode: "OPERATION_NOTICE_PACKAGE_MUTATE", key: "notice.package_bag", label: "패키지 가방", value };
+  if (match[1] === "정리알림") return { commandCode: "OPERATION_NOTICE_CLEANUP_MUTATE", key: "notice.cleanup", label: "정리", value };
+  if (match[1] === "패키지알림") return { commandCode: "OPERATION_NOTICE_PACKAGE_MUTATE", key: "notice.package_bag", label: "패키지 가방", value };
+  return { commandCode: "OPERATION_ADVERTISEMENT_MUTATE", key: "notice.advertisement", label: "광고", value };
 }
 
 // 한 요청에서 활성 head와 두 공지 값을 함께 읽어 소비자에게 고정된 버전 스냅샷을 제공합니다.
@@ -58,17 +62,18 @@ export class OperationNoticeReader {
   constructor(private readonly database: DatabaseClient) {}
 
   async readActiveSnapshot(): Promise<OperationNoticeSnapshot> {
-    const rows = await this.database.query<Array<{ version: bigint; cleanup: string | null; package_bag: string | null }>>(
+    const rows = await this.database.query<Array<{ version: bigint; cleanup: string | null; package_bag: string | null; advertisement: string | null }>>(
       `SELECT head.version,
               MAX(CASE WHEN value.config_key='notice.cleanup' THEN value.string_value END) cleanup,
-              MAX(CASE WHEN value.config_key='notice.package_bag' THEN value.string_value END) package_bag
+              MAX(CASE WHEN value.config_key='notice.package_bag' THEN value.string_value END) package_bag,
+              MAX(CASE WHEN value.config_key='notice.advertisement' THEN value.string_value END) advertisement
        FROM operation_notice_heads head
        JOIN configuration_values value ON value.configuration_set_id=head.active_configuration_set_id
        WHERE head.set_code='operation_notices' GROUP BY head.version`
     );
     const row = rows[0];
     if (row === undefined) throw new ApplicationError("OPERATION_NOTICE_CONFIG_MISSING", "운영 공지 설정이 준비되지 않았습니다.", 503);
-    return { version: row.version.toString(), cleanup: row.cleanup ?? "", packageBag: row.package_bag ?? "" };
+    return { version: row.version.toString(), cleanup: row.cleanup ?? "", packageBag: row.package_bag ?? "", advertisement: row.advertisement ?? "" };
   }
 }
 
@@ -78,7 +83,7 @@ export class OperationNoticeService {
 
   async handle(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<OperationNoticeMutationResult> {
     const command = parseOperationNoticeCommand(input.message);
-    if (command === undefined) throw new ApplicationError("INVALID_OPERATION_NOTICE_COMMAND", "사용법: /정리알림 [내용] 또는 /패키지알림 [내용]", 422);
+    if (command === undefined) throw new ApplicationError("INVALID_OPERATION_NOTICE_COMMAND", "사용법: /정리알림 [내용], /패키지알림 [내용] 또는 /광고 [내용]", 422);
     const operatorId = await resolveAuthorizedOperator(this.database, input.externalUserId);
     return withDeadlockRetry(() => this.database.withTransaction(async (transaction) => {
       const prior = await transaction.query<Array<{ result_json: string | OperationNoticeMutationResult | null }>>(
@@ -165,7 +170,7 @@ async function resolveAuthorizedOperator(database: DatabaseClient, externalUserI
   return rows[0].operator_id;
 }
 
-// 기존 두 key 스냅샷을 복제하고 대상 key만 바꾼 새 버전을 활성 head로 교체합니다.
+// 기존 공지 key 스냅샷을 복제하고 대상 key만 바꾼 새 버전을 활성 head로 교체합니다.
 async function replaceActiveVersion(
   transaction: DatabaseTransaction,
   head: { active_configuration_set_id: bigint; version: bigint },

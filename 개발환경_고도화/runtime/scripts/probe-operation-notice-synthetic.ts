@@ -72,6 +72,15 @@ try {
     const clearResult = await service.handle({ externalUserId, channelId: room, message: "/패키지알림  ", eventId: packageClear });
     assert.deepEqual([setResult.version, clearResult.version, clearResult.action], ["3", "4", "CLEAR"]);
 
+    const advertisementSet = `${eventPrefix}-advertisement-set`;
+    const advertisementNoOp = `${eventPrefix}-advertisement-noop`;
+    await event(advertisementSet); await event(advertisementNoOp);
+    const advertisement = await service.handle({ externalUserId, channelId: room, message: "/광고 첫째\\n둘째", eventId: advertisementSet });
+    const advertisementReplay = await service.handle({ externalUserId, channelId: room, message: "/광고 다른 광고", eventId: advertisementSet });
+    const advertisementNoChange = await service.handle({ externalUserId, channelId: room, message: "/광고 첫째/n둘째", eventId: advertisementNoOp });
+    assert.deepEqual(advertisementReplay, advertisement);
+    assert.deepEqual([advertisement.version, advertisement.action, advertisementNoChange.version, advertisementNoChange.action], ["5", "SET", "5", "NOOP"]);
+
     const concurrentA = `${eventPrefix}-concurrent-a`;
     const concurrentB = `${eventPrefix}-concurrent-b`;
     await event(concurrentA); await event(concurrentB);
@@ -80,14 +89,14 @@ try {
       service.handle({ externalUserId, channelId: room, message: "/패키지알림 동시 패키지", eventId: concurrentB })
     ]);
     const pinned = await reader.readActiveSnapshot();
-    assert.deepEqual(pinned, { version: "6", cleanup: "동시 정리", packageBag: "동시 패키지" });
+    assert.deepEqual(pinned, { version: "7", cleanup: "동시 정리", packageBag: "동시 패키지", advertisement: "첫째\n둘째" });
 
     const rollbackEvent = `${eventPrefix}-rollback`;
     await event(rollbackEvent);
     await assert.rejects(() => new OperationNoticeService(failAudit(database)).handle({ externalUserId, channelId: room, message: "/정리알림 롤백 본문", eventId: rollbackEvent }), /synthetic operation notice audit failure/);
     assert.deepEqual(await reader.readActiveSnapshot(), pinned);
     assert.equal(await count("SELECT COUNT(*) value FROM operations WHERE idempotency_key=?", [rollbackEvent]), 0n);
-    const exposed = await count("SELECT COUNT(*) value FROM command_audit WHERE CAST(change_summary_json AS CHAR) LIKE '%동시 정리%' OR CAST(change_summary_json AS CHAR) LIKE '%동시 패키지%'");
+    const exposed = await count("SELECT COUNT(*) value FROM command_audit WHERE CAST(change_summary_json AS CHAR) LIKE '%동시 정리%' OR CAST(change_summary_json AS CHAR) LIKE '%동시 패키지%' OR CAST(change_summary_json AS CHAR) LIKE '%첫째%'");
     assert.equal(exposed, 0n);
     const effects = {
       operations: await count("SELECT COUNT(*) value FROM operations WHERE idempotency_scope='operation.notice.mutate'"),
@@ -95,8 +104,8 @@ try {
       outboxes: await count("SELECT COUNT(*) value FROM outbox_messages outbox JOIN operations operation_row ON operation_row.id=outbox.operation_id WHERE operation_row.idempotency_scope='operation.notice.mutate'"),
       audits: await count("SELECT COUNT(*) value FROM command_audit audit JOIN operations operation_row ON operation_row.id=audit.operation_id WHERE operation_row.idempotency_scope='operation.notice.mutate'")
     };
-    assert.deepEqual(effects, { operations: 6n, versions: 6n, outboxes: 6n, audits: 6n });
-    console.log(JSON.stringify({ mode: "probe", migrationCount: 242, scenarios: ["shadow", "normalize", "empty-clear", "same-value-noop", "concurrent-head-lock", "redacted-audit", "replay", "rollback", "pinned-reader"], effects, pinned, operationalDataTouched: false }, (_key, value) => typeof value === "bigint" ? Number(value) : value));
+    assert.deepEqual(effects, { operations: 8n, versions: 7n, outboxes: 8n, audits: 8n });
+    console.log(JSON.stringify({ mode: "probe", migrationCount: 243, scenarios: ["shadow", "normalize", "empty-clear", "same-value-noop", "advertisement", "concurrent-head-lock", "redacted-audit", "replay", "rollback", "pinned-reader"], effects, pinned, operationalDataTouched: false }, (_key, value) => typeof value === "bigint" ? Number(value) : value));
   } else {
     const before = await reader.readActiveSnapshot();
     const operations = await count("SELECT COUNT(*) value FROM operations WHERE idempotency_scope='operation.notice.mutate'");
