@@ -7212,3 +7212,24 @@ Status: VERIFIED
 ## Related Commands
 - /누렙순위
 - /레벨리셋
+# /인증순위
+
+Status: VERIFIED
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/app.ts
+- 개발환경_고도화/runtime/src/player/player-verification-rank-read-service.ts
+- 개발환경_고도화/runtime/migrations/229_player_verification_rank_read.sql
+
+## Data Usage
+- legacy: data.member[*].checkCnt
+- modern: player_check_counts.check_count
+- authorization: manager or super_admin permission
+
+## Save Flow
+- authentication counters are read-only
+- operation, audit, execution, and outbox are one MariaDB transaction
+
+## Related Commands
+- /인증초기화

@@ -39,6 +39,7 @@ import { isPlayerCumulativeLikeRankReadCommand, PlayerCumulativeLikeRankReadServ
 import { isPlayerDiamondRankReadCommand, PlayerDiamondRankReadService } from "./player/player-diamond-rank-read-service.js";
 import { isPlayerLevelResetCommand, PlayerLevelResetService } from "./player/player-level-reset-service.js";
 import { isPlayerLevelRankReadCommand, PlayerLevelRankReadService } from "./player/player-level-rank-read-service.js";
+import { isPlayerVerificationRankReadCommand, PlayerVerificationRankReadService } from "./player/player-verification-rank-read-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
@@ -813,6 +814,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPlayerDiamondRankReadCommand(normalizedEvent.message)
          || isPlayerLevelResetCommand(normalizedEvent.message)
          || isPlayerLevelRankReadCommand(normalizedEvent.message)
+         || isPlayerVerificationRankReadCommand(normalizedEvent.message)
          || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
@@ -881,6 +883,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              : isPlayerLevelResetCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isPlayerLevelRankReadCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isPlayerVerificationRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
@@ -1913,6 +1917,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PlayerLevelRankReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPlayerVerificationRankReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_verification_rank_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PlayerVerificationRankReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
