@@ -621,6 +621,8 @@ Status: VERIFIED
 - This branch normalizes home user data before output
 - 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 최근 배치한 초과 가구를 가방으로 회수한다.
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
+- `/가구장착 [번호]`의 현대화 handler는 `home_furniture_equip`이며, 매력·이름·인스턴스 ID의 안정 순서로 선택한 가구를 한 트랜잭션에서 `bag`에서 `placed`로 전환한다.
+- 장착 한도는 평수 구간, 장착 펫스킬 `건물주`/`하느님 위에 갓물주`, 활성 프리미엄 보너스를 DB에서 계산하며 실패·재생 시 가구 상태를 중복 변경하지 않는다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 
