@@ -3649,6 +3649,12 @@ Status: VERIFIED
 
 # /펫스킬오픈 [개수]
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-OPEN`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-open-service.ts`
+- DB: `skill_definitions`, `pet_skill_inventory`, `inventory_stacks`, `inventory_ledger`, `pet_skill_open_operations`, `pet_skill_open_draws`
+- Stable key: `pet_skill_book`
+- Save flow: catalog snapshot·RNG draw 증적·책 차감·스킬 지급·감사·outbox를 한 transaction으로 처리
 ## Command Anchors
 - Search in main.js: `/펫스킬오픈`
 ## Files

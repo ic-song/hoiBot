@@ -49,6 +49,7 @@
     "db:probe:pet-skill-book-combine": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-combine-synthetic.ts",
     "db:probe:pet-skill-carrot-trade": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-carrot-trade-synthetic.ts",
     "db:probe:pet-skill-market-listing": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-market-listing-synthetic.ts",
+    "db:probe:pet-skill-open": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-open-synthetic.ts",
     "db:probe:guild-pet-skill-stock-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-pet-skill-stock-grant-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
