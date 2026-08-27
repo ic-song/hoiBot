@@ -206,6 +206,8 @@ import { isDiamondPassCommandCandidate, normalizeDiamondPassDispatchMessage } fr
 import { DiamondPassIrisHandler } from "./pass/diamond-pass-iris-handler.js";
 import { isPassSubscriptionRetiredCommandCandidate, normalizePassSubscriptionRetiredDispatchMessage } from "./pass/pass-subscription-retired-command-service.js";
 import { PassSubscriptionRetiredIrisHandler } from "./pass/pass-subscription-retired-iris-handler.js";
+import { isOneDayPassSubscriptionCommand, normalizeOneDayPassSubscriptionDispatchMessage } from "./pass/one-day-pass-subscription-command.js";
+import { OneDayPassSubscriptionIrisHandler } from "./pass/one-day-pass-subscription-iris-handler.js";
 import { isDailyCommentCommandCandidate, normalizeDailyCommentDispatchMessage } from "./home/daily-comment-command.js";
 import { DailyCommentIrisHandler } from "./home/daily-comment-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
@@ -773,6 +775,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isDiamondPassCommandCandidate(normalizedEvent.message);
       const passSubscriptionRetiredDispatchCandidate = process.env.PASS_SUBSCRIPTION_RETIRED_COMMAND_ENABLED === "true"
         && isPassSubscriptionRetiredCommandCandidate(normalizedEvent.message);
+      const oneDayPassSubscriptionDispatchCandidate = process.env.ONE_DAY_PASS_SUBSCRIPTION_COMMAND_ENABLED === "true"
+        && isOneDayPassSubscriptionCommand(normalizedEvent.message);
       const dailyCommentDispatchCandidate = process.env.DAILY_COMMENT_COMMAND_ENABLED === "true"
         && isDailyCommentCommandCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
@@ -884,6 +888,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || contributionPassDispatchCandidate
         || diamondPassDispatchCandidate
         || passSubscriptionRetiredDispatchCandidate
+        || oneDayPassSubscriptionDispatchCandidate
         || dailyCommentDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
@@ -1045,6 +1050,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeDiamondPassDispatchMessage(normalizedEvent.message ?? "")
                 : passSubscriptionRetiredDispatchCandidate
                   ? normalizePassSubscriptionRetiredDispatchMessage(normalizedEvent.message ?? "")
+                : oneDayPassSubscriptionDispatchCandidate
+                  ? normalizeOneDayPassSubscriptionDispatchMessage(normalizedEvent.message ?? "")
                 : dailyCommentDispatchCandidate
                   ? normalizeDailyCommentDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
@@ -1254,6 +1261,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "pass_subscription_retired") {
         const passResponse = await new PassSubscriptionRetiredIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "one_day_pass_subscription") {
+        const passResponse = await new OneDayPassSubscriptionIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
       }
       if (database !== undefined
