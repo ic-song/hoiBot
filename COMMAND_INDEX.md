@@ -1807,6 +1807,8 @@ Status: VERIFIED
 ## AI Notes
 
 - Ranking is based on placed furniture items, not bag contents
+- `/가구정보 [아이디]`의 현대화 handler는 `home_furniture_info_read`이며, 활성 관리자만 stable 가구 가방·배치 집계·집·프리미엄·펫스킬 슬롯을 읽기 전용으로 조회한다.
+- 조회 순서는 매력·한글 이름·instance ID이며 레거시 정렬 후 JSON 저장 부작용 없이 operation·감사·outbox 증거만 기록한다.
 - Before initial separation, the command falls back to legacy `homeData[*].placedFurniture`.
 - This branch reloads member and pet data locally before formatting names
 

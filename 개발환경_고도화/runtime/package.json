@@ -60,6 +60,7 @@
     "db:probe:home-furniture-rank-read": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-rank-read-synthetic.ts",
     "db:probe:home-furniture-equip": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-equip-synthetic.ts",
     "db:probe:home-furniture-full-cleanup": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-full-cleanup-synthetic.ts",
+    "db:probe:home-furniture-info-read": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-info-read-synthetic.ts",
     "db:probe:guild-pet-skill-stock-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-pet-skill-stock-grant-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
