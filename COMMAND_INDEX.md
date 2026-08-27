@@ -7077,3 +7077,29 @@ Status: VERIFIED (modern SHADOW)
 ## AI Notes
 - 활성 핀이 가리키는 댓글과 핀 행은 변경하지 않는다.
 - 강제 실패 시 backup, 댓글 상태, 좋아홈, marker와 모든 증거가 함께 rollback된다.
+# /누렙순위
+
+Status: VERIFIED
+
+## Files
+- Info.js
+- 개발환경_고도화/runtime/src/app.ts
+- 개발환경_고도화/runtime/src/player/player-cumulative-level-rank-read-service.ts
+
+## Related Helpers
+- generate2Ranking
+- formatPlayerCumulativeLevelRanking
+- PlayerCumulativeLevelRankReadService.read
+
+## Data Usage
+- 레거시: data.member[*].lv + data.member[*].lv0
+- 현대화: player_profiles.level + player_profiles.accumulated_level_offset
+- 등급 표시: player_legacy_rank_profiles.rank_emoji
+
+## Save Flow
+- 회원 레벨 데이터는 읽기 전용
+- 현대화 operation, command_audit, command_executions, outbox_messages만 원자 기록
+
+## Related Commands
+- /레벨순위
+- /내정보
