@@ -3676,6 +3676,12 @@ Status: VERIFIED
 
 # /펫스킬북조합
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-BOOK-COMBINE`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-book-combine-service.ts`
+- DB: `item_definitions`, `inventory_stacks`, `inventory_ledger`
+- Stable keys: `pet_skill_book_fragment`, `pet_skill_book`
+- Save flow: 조각 차감·책 지급·원장·감사·outbox를 한 transaction으로 처리
 ## Files
 - main.js
 ## Related Helpers
