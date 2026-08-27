@@ -105,6 +105,7 @@ import { HomeFurnitureInfoReadService, isHomeFurnitureInfoReadCandidate, normali
 import { HomeFurnitureRemoveService, isHomeFurnitureRemoveCandidate, normalizeHomeFurnitureRemoveDispatchMessage } from "./home/home-furniture-remove-service.js";
 import { HomeFurnitureAddService, isHomeFurnitureAddCandidate, normalizeHomeFurnitureAddDispatchMessage } from "./home/home-furniture-add-service.js";
 import { HomeFurnitureStatsReadService, isHomeFurnitureStatsReadCommand } from "./home/home-furniture-stats-read-service.js";
+import { HomeFurnitureSellService, isHomeFurnitureSellCandidate, normalizeHomeFurnitureSellDispatchMessage } from "./home/home-furniture-sell-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -752,6 +753,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHomeFurnitureRemoveCandidate(normalizedEvent.message)
         || isHomeFurnitureAddCandidate(normalizedEvent.message)
         || isHomeFurnitureStatsReadCommand(normalizedEvent.message)
+        || isHomeFurnitureSellCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -775,7 +777,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isHomeFurnitureAddCandidate(normalizedEvent.message)
+          message: isHomeFurnitureSellCandidate(normalizedEvent.message)
+            ? normalizeHomeFurnitureSellDispatchMessage(normalizedEvent.message ?? "")
+            : isHomeFurnitureAddCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureAddDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureRemoveCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureRemoveDispatchMessage(normalizedEvent.message ?? "")
@@ -1609,6 +1613,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result=await new HomeFurnitureStatsReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeFurnitureSellCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_sell"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result=await new HomeFurnitureSellService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate

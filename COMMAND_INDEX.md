@@ -5220,13 +5220,51 @@ Status: PARTIAL
 - `/출석`
 - `/캐슬대전`
 - `/가구장착 [번호]`
-- `/가구판매 [번호]`
 
 ## Known Gaps
 
 - Most mutation-heavy commands are not indexed yet
 - Admin-only maintenance commands are not indexed yet
 - Save-flow cross-file interactions are only documented for representative commands
+
+---
+
+# /가구판매
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/가구판매`
+- Exact usage form: `/가구판매`
+- Numeric execution form: `/가구판매 [번호]`
+
+## Files
+
+- `main.js`
+- `data/petSweetHome.json`
+
+## Related Helpers
+
+- `initSweetHomeUser`
+- `sortFurnitureList`
+- `addPoint`
+- `saveJsonFile`
+
+## Data Usage
+
+- `homeData[sender].furnitureBag`
+- `data.member[sender].point`
+
+## Save Flow
+
+- 매력 내림차순으로 정렬한 가구 가방 번호에서 한 개를 제거한다.
+- 제거 성공 시 포인트 100,000을 지급하고 `homeDataFile`을 저장한다.
+
+## Modernization Notes
+
+- 현대화 handler는 `home_furniture_sell`이며 정확한 사용법 또는 숫자 한 개 형식만 실행한다.
+- stable 가구 인스턴스를 `bag`에서 `sold`로 전환하고 포인트·가구 원장·감사·outbox를 한 transaction에 기록한다.
 
 ---
 
