@@ -2787,6 +2787,29 @@ Status: VERIFIED
 
 ---
 
+# /채팅순위
+
+Status: VERIFIED
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/player/player-chat-rank-read-service.ts
+- 개발환경_고도화/runtime/migrations/232_player_chat_rank_read.sql
+
+## Related Helpers
+- generatechatRanking
+- getTopchatUser
+- formatPlayerChatRanking
+
+## Data Usage
+- data.member[*].chatcnt0 -> player_counters(counter_code=chatcnt0, period_key=current)
+- data.checkcnt -> player_chat_rank_settings
+- data.mc -> player_chat_rank_snapshots
+
+## Save Flow
+- legacy saveJsonFile(data, filePath)
+- modern transaction + operations + command_audit + outbox_messages
+
 # /종합순위
 
 Status: VERIFIED
