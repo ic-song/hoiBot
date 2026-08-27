@@ -3625,6 +3625,13 @@ Status: VERIFIED
 
 # /펫스킬중복
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-DUPLICATE-AUDIT`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-duplicate-read-service.ts`
+- DB: `pet_skill_compatibility_groups`, `pet_skill_compatibility_members`, `skill_definitions`
+- Guard: `msg === "/펫스킬중복"`
+- Save flow: 도메인 읽기 전용이며 실행·감사·outbox만 원자 기록
+- Legacy parity: `십원 ↔ 구원`, `헌터 ↔ 만렙헌터`, `건물주 ↔ 하느님 위에 갓물주`
 ## Command Anchors
 - Search in main.js: `/펫스킬중복`
 ## Files

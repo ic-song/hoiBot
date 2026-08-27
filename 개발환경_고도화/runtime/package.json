@@ -44,6 +44,7 @@
     "db:probe:pet-duel-emote": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-duel-emote-synthetic.ts",
     "db:probe:pet-skill-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-read-synthetic.ts",
     "db:probe:pet-skill-bag-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-bag-read-synthetic.ts",
+    "db:probe:pet-skill-duplicate-read": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-duplicate-read-synthetic.ts",
     "db:probe:guild-pet-skill-stock-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-pet-skill-stock-grant-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
