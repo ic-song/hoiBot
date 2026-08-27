@@ -7050,3 +7050,26 @@ Status: VERIFIED (modern SHADOW)
 ## AI Notes
 - 평수 내림차순, 동률 시 한글 사용자명과 stable player ID 순으로 정렬한다.
 - 전체 펫홈을 출력하고 11위 바로 앞에 500자 접힘 문자를 넣는다.
+
+# /펫홈패스개편정리
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-pass-reform-cleanup-command.ts
+- 개발환경_고도화/runtime/src/home/home-pass-reform-cleanup-service.ts
+- 개발환경_고도화/runtime/src/home/home-pass-reform-cleanup-iris-handler.ts
+- 개발환경_고도화/runtime/migrations/220_home_pass_reform_cleanup.sql
+
+## Data Usage
+- home_comments / home_comment_pins: 일반 댓글 정리와 활성 핀 보존
+- player_homes.like_count: 좋아홈 집계 초기화
+- home_pass_reform_*: 1회 marker·실행·댓글/홈 사전 백업
+
+## Save Flow
+- MariaDB transaction: 운영자 권한 확인 + 전체 관계형 backup + 미고정 댓글 soft-delete + 좋아홈 초기화 + marker/audit/execution/outbox
+
+## AI Notes
+- 활성 핀이 가리키는 댓글과 핀 행은 변경하지 않는다.
+- 강제 실패 시 backup, 댓글 상태, 좋아홈, marker와 모든 증거가 함께 rollback된다.

@@ -189,6 +189,8 @@ import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from 
 import { HomeVisitResetIrisHandler } from "./home/home-visit-reset-iris-handler.js";
 import { isHomeSocialBadgeMigrationCommand, normalizeHomeSocialBadgeMigrationDispatchMessage } from "./home/home-social-badge-migration-command.js";
 import { HomeSocialBadgeMigrationIrisHandler } from "./home/home-social-badge-migration-iris-handler.js";
+import { isHomePassReformCleanupCommand, normalizeHomePassReformCleanupDispatchMessage } from "./home/home-pass-reform-cleanup-command.js";
+import { HomePassReformCleanupIrisHandler } from "./home/home-pass-reform-cleanup-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -736,6 +738,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeVisitResetCommand(normalizedEvent.message);
       const homeSocialBadgeMigrationDispatchCandidate = process.env.HOME_SOCIAL_BADGE_MIGRATION_COMMAND_ENABLED === "true"
         && isHomeSocialBadgeMigrationCommand(normalizedEvent.message);
+      const homePassReformCleanupDispatchCandidate = process.env.HOME_PASS_REFORM_CLEANUP_COMMAND_ENABLED === "true"
+        && isHomePassReformCleanupCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -813,9 +817,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeFurnitureEquipSyncDispatchCandidate
         || homeBaseballPitchDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
-        || homeVisitResetDispatchCandidate
-        || homeSocialBadgeMigrationDispatchCandidate
-        || packageCatalogWizardControlCandidate
+         || homeVisitResetDispatchCandidate
+         || homeSocialBadgeMigrationDispatchCandidate
+         || homePassReformCleanupDispatchCandidate
+         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
         || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
@@ -936,7 +941,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeVisitResetDispatchMessage(normalizedEvent.message ?? "")
                 : homeSocialBadgeMigrationDispatchCandidate
                   ? normalizeHomeSocialBadgeMigrationDispatchMessage(normalizedEvent.message ?? "")
-              : isHappyFoundationCaptainCommand(normalizedEvent.message)
+                : homePassReformCleanupDispatchCandidate
+                  ? normalizeHomePassReformCleanupDispatchMessage(normalizedEvent.message ?? "")
+               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
                 ? normalizeDiamondBoxCraftDispatchMessage(normalizedEvent.message ?? "")
@@ -1112,6 +1119,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_social_badge_migration") {
         const migrationResponse = await new HomeSocialBadgeMigrationIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: migrationResponse.outboxId, room: normalizedEvent.channelId!, data: migrationResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_pass_reform_cleanup") {
+        const cleanupResponse = await new HomePassReformCleanupIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: cleanupResponse.outboxId, room: normalizedEvent.channelId!, data: cleanupResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
