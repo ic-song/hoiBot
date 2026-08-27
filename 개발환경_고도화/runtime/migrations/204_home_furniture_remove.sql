@@ -1,0 +1,33 @@
+START TRANSACTION;
+
+CREATE TABLE home_furniture_remove_operations (
+  operation_id BIGINT UNSIGNED NOT NULL,
+  operator_id BIGINT UNSIGNED NOT NULL,
+  target_player_id BIGINT UNSIGNED NOT NULL,
+  furniture_instance_id BIGINT UNSIGNED NOT NULL,
+  requested_index BIGINT UNSIGNED NOT NULL,
+  bag_count_before BIGINT UNSIGNED NOT NULL,
+  bag_count_after BIGINT UNSIGNED NOT NULL,
+  furniture_name_snapshot VARCHAR(255) NOT NULL,
+  charm_snapshot BIGINT UNSIGNED NOT NULL,
+  grade_display_name_snapshot VARCHAR(128) NOT NULL,
+  instance_version_before BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT UTC_TIMESTAMP(3),
+  PRIMARY KEY(operation_id),
+  KEY idx_home_furniture_remove_target_created(target_player_id,created_at),
+  KEY idx_home_furniture_remove_instance(furniture_instance_id),
+  CONSTRAINT fk_home_furniture_remove_operation FOREIGN KEY(operation_id) REFERENCES operations(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_home_furniture_remove_operator FOREIGN KEY(operator_id) REFERENCES admin_operators(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_home_furniture_remove_target FOREIGN KEY(target_player_id) REFERENCES players(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_home_furniture_remove_instance FOREIGN KEY(furniture_instance_id) REFERENCES furniture_inventory_instances(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO command_registry(command_code,handler_key,auth_scope,rollout_state,enabled,version)
+VALUES('HOME_FURNITURE_REMOVE','home_furniture_remove','VERIFIED_USER','SHADOW',TRUE,1)
+ON DUPLICATE KEY UPDATE handler_key=VALUES(handler_key),auth_scope=VALUES(auth_scope),rollout_state=VALUES(rollout_state),enabled=TRUE,version=version+1;
+
+INSERT INTO command_aliases(command_text,command_code,active)
+VALUES('/가구제거','HOME_FURNITURE_REMOVE',TRUE)
+ON DUPLICATE KEY UPDATE command_code=VALUES(command_code),active=TRUE;
+
+COMMIT;
