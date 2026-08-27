@@ -68,6 +68,8 @@ import { isCastleBattleExecuteCommand } from "./castle/castle-battle-execute-ser
 import { CastleBattleExecuteIrisHandler } from "./castle/castle-battle-execute-iris-handler.js";
 import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
+import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
+import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
 import { isSpiritRankCommand, SpiritRankService } from "./pet/spirit-rank-service.js";
 import { isSpiritInfoCommand, SpiritInfoService } from "./pet/spirit-info-service.js";
 import { isPendantBagCommandCandidate, PendantBagService } from "./pet/pendant-bag-service.js";
@@ -822,6 +824,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isRiftForceAdminCommand(normalizedEvent.message)
         || isCastleBattleExecuteCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
+        || isMiniPetBattleCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
         || isPendantBagCleanupCommandCandidate(normalizedEvent.message)
         || isPendantEnhanceCommandCandidate(normalizedEvent.message)
@@ -2491,6 +2494,21 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetBattleCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_battle_execute"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const responses = await new MiniPetBattleExecuteIrisHandler(database!).execute(normalizedEvent);
+          for (const response of responses) processing.replies.push({ outboxId:response.outboxId,room:response.room,data:response.message });
+        } catch (error) {
+          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"mini_pet_battle_execute",error.message));
+          } else throw error;
         }
       }
 
