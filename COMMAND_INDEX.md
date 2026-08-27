@@ -86,6 +86,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-command.ts`
+- `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-service.ts`
+- `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-iris-handler.ts`
 - `개발환경_고도화/runtime/src/app.ts`
 - `개발환경_고도화/runtime/src/inventory/open-all-policy.ts`
 - `개발환경_고도화/runtime/src/inventory/open-all-service.ts`
@@ -6108,6 +6111,8 @@ Status: VERIFIED
 - `petData[*].ringRewardMigration`
 - `petSkillData[*]`
 - `guildData.guilds[*].warehouse.ring`
+- Modern DB: `inventory_stacks`, `currency_accounts(point)`, `player_legacy_ring_reward_snapshots`
+- Modern DB: `guild_warehouse_stacks`, `legacy_data_cleanup_*`, shared ledger/audit/outbox tables
 
 ## Save Flow
 
@@ -6117,6 +6122,7 @@ Status: VERIFIED
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
 - Saves guild data through `saveJsonFile(guildData, guildPath)`
+- Modern runtime commits item merge, point floor, ring removal evidence, audit, and Iris outbox in one MariaDB transaction
 
 ## AI Notes
 
