@@ -2639,6 +2639,15 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+## Modernization
+- Slice: `SL-PET-SKILL-READ`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-read-service.ts`
+- DB: `player_pets`, `player_pet_intimacy`, `pet_skills`, `pet_skill_inventory`, `skill_definitions`
+- Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
+- Guard: `msg === "/펫스킬"`
+
+Status: VERIFIED
+
 ## Command Anchors
 
 - Search in `main.js`: `/펫스킬`
