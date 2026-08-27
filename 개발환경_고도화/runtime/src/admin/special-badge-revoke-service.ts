@@ -11,7 +11,7 @@ export interface SpecialBadgeRevokeResult {
   equippedCleared: boolean;
 }
 
-interface BadgeDefinition { badge_code: string; emoji: string; display_name: string; }
+export interface BadgeDefinition { badge_code: string; emoji: string; display_name: string; }
 
 // 특별 뱃지 회수 후보는 대상과 뱃지 표현이 있는 전체 명령으로 제한합니다.
 export function isSpecialBadgeRevokeCommandCandidate(message: string | undefined): boolean {
@@ -40,12 +40,12 @@ export class SpecialBadgeRevokeService {
       );
       if (prior[0]?.result_json != null) return typeof prior[0].result_json === "string" ? JSON.parse(prior[0].result_json) : prior[0].result_json;
       const content = input.message.replace(/^\/특별뱃지회수\s+/, "");
-      const target = await resolveTarget(transaction, content);
+      const target = await resolveSpecialBadgeTarget(transaction, content);
       const badges = await transaction.query<BadgeDefinition[]>(
         "SELECT badge_code,emoji,display_name FROM pet_home_badge_definitions WHERE badge_category='special' AND active=TRUE ORDER BY badge_code"
       );
       const badge = resolveSpecialBadgeDefinition(target.rest, badges);
-      if (badge === undefined) throw invalidTargetOrBadge();
+      if (badge === undefined) throw invalidSpecialBadgeTargetOrBadge();
       const assignments = await transaction.query<Array<{ priority: number; display_value: string }>>(
         "SELECT priority,display_value FROM player_badge_assignments WHERE player_id=? AND badge_code=? FOR UPDATE", [target.playerId, badge.badge_code]
       );
@@ -108,7 +108,7 @@ export class SpecialBadgeRevokeService {
 }
 
 // 긴 표시명을 우선해 대상과 뒤따르는 뱃지 표현을 분리합니다.
-async function resolveTarget(transaction: DatabaseTransaction, content: string): Promise<{ playerId: bigint; displayName: string; rest: string }> {
+export async function resolveSpecialBadgeTarget(transaction: DatabaseTransaction, content: string): Promise<{ playerId: bigint; displayName: string; rest: string }> {
   const players = await transaction.query<Array<{ player_id: bigint; current_display_name: string }>>(
     "SELECT profile.player_id,profile.current_display_name FROM player_profiles profile JOIN players player ON player.id=profile.player_id AND player.status='active' ORDER BY CHAR_LENGTH(profile.current_display_name) DESC,profile.player_id"
   );
@@ -121,10 +121,10 @@ async function resolveTarget(transaction: DatabaseTransaction, content: string):
     if (rest.length === 0) break;
     return { playerId: player.player_id, displayName: player.current_display_name, rest };
   }
-  throw invalidTargetOrBadge();
+  throw invalidSpecialBadgeTargetOrBadge();
 }
 
 // 레거시 대상·뱃지 확인 오류를 동일 문구로 생성합니다.
-function invalidTargetOrBadge(): ApplicationError {
+export function invalidSpecialBadgeTargetOrBadge(): ApplicationError {
   return new ApplicationError("INVALID_SPECIAL_BADGE_TARGET", "❌ 대상 유저 또는 특별 뱃지 이름·코드를 확인해 주세요.\n/특별뱃지목록에서 정확한 이름 또는 코드를 확인할 수 있습니다.", 422);
 }
