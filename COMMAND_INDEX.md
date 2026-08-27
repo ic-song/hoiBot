@@ -840,9 +840,10 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `guildData` when start reservation is created
-- Reloads latest `member/pet/guild` data inside delayed start callback
+- Reloads latest `member/pet/petSkill/guild` data inside delayed start and opening callbacks
 - Saves `guildData` after turn order is created
 - Saves `guildData` again when 5-second opening grace ends and attacks become available
+- Delayed start, opening grace, and turn timer callbacks use the shared data transaction lock so command saves and timer saves do not overlap.
 
 ## Related Commands
 
@@ -5520,7 +5521,7 @@ Status: VERIFIED
 
 ## Save Flow
 - MASTER 또는 `오픈채팅봇`만 실행 가능하며, 6종 패스의 실제 지급 건수 또는 영지패스 중복 제외 로그가 있을 때 `member.json`을 한 번 저장한다.
-- 영지패스는 `영지기습공격권🔥(40%)` 2개, `영지절대방어권🛡(50%)` 2개, `🌪️ 전쟁불안정 증폭권(/불안정)` 1개, `다이아상자💎(/다이아상자오픈)` 1개를 지급하며, 성공·당일 중복 제외 내역을 최근 500건까지 기록한다.
+- 영지패스는 `영지기습공격권🔥(40%)` 2개, `영지절대방어권🛡(50%)` 2개, `🌪️ 전쟁불안정 증폭권(/불안정)` 1개, `다이아상자💎(/다이아상자오픈)` 1개, `피뢰침⚡(자동 벼락 방지)` 1개를 지급하며, 성공·당일 중복 제외 내역을 최근 500건까지 기록한다.
 
 ## Related Commands
 - `/호프구독`

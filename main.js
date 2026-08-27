@@ -30228,7 +30228,13 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
 
     guildTerritoryPendingStartTimers[timerCtxKey] = setTimeout(function () {
         var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
         try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
             delete guildTerritoryPendingStartTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
@@ -30247,6 +30253,8 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
                 saveJsonFile(latestGuildData, guildPath);
             }
         } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
     }, GLOBAL_CONFIG.guildTerritory.timers.startDelayMs);
@@ -30261,10 +30269,17 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 
     guildTerritoryOpeningTimers[timerCtxKey] = setTimeout(function () {
         var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
         try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
             delete guildTerritoryOpeningTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
+            var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
             var latestWar = ensureGuildTerritoryWar(latestData, latestGuildData);
 
@@ -30285,6 +30300,8 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 
             startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
         } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
     }, GLOBAL_CONFIG.guildTerritory.timers.orderGraceMs);
@@ -31406,7 +31423,13 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
 
     guildTerritoryWarTimers[timerCtxKey] = setTimeout(function () {
         var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
         try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
             delete guildTerritoryWarTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
@@ -31514,6 +31537,8 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
             // 다음 공격자부터 새로운 타이머 시작
             startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
         } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
     }, autoAttackScheduled ? GLOBAL_CONFIG.guildTerritory.timers.autoAttackDelayMs : GLOBAL_CONFIG.guildTerritory.timers.turnTimeoutMs);
