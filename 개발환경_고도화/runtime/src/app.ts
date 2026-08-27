@@ -48,6 +48,7 @@ import { CarrotBoardReadService, isCarrotBoardReadCommand } from "./market/carro
 import { CarrotBoardDeleteService, isCarrotBoardDeleteCommand } from "./market/carrot-board-delete-service.js";
 import { CarrotBoardCompleteService, isCarrotBoardCompleteCommand } from "./market/carrot-board-complete-service.js";
 import { CarrotBoardAddService, isCarrotBoardAddCandidate } from "./market/carrot-board-add-service.js";
+import { CarrotRankReadService, isCarrotRankReadCommand } from "./market/carrot-rank-read-service.js";
 import { CarrotTemperatureRankReadService, isCarrotTemperatureRankReadCommand } from "./market/carrot-temperature-rank-read-service.js";
 import { CarrotBanListReadService, isCarrotBanListReadCommand } from "./market/carrot-ban-list-read-service.js";
 import { CarrotBanListAddService, isCarrotBanListAddCommand, normalizeCarrotBanListAddDispatchMessage } from "./market/carrot-ban-list-add-service.js";
@@ -2215,6 +2216,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new CarrotBoardDeleteService(database!).clear({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCarrotRankReadCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new CarrotRankReadService(database!).read({
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId,
+          eventId: normalizedEvent.eventId
+        });
+        if (result !== null) {
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        }
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
