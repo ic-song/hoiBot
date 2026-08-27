@@ -7030,3 +7030,23 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - MariaDB transaction: 운영자 권한 확인 + 실데이터 집계 + 기존 수치 하향 방지 + 신규 업적 지급 + 백업/audit/execution/outbox
+
+# /펫홈순위
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-ranking-read-service.ts
+- 개발환경_고도화/runtime/migrations/219_home_ranking_read.sql
+
+## Data Usage
+- player_homes: 집 이름·경험치·평수
+- player_profiles / player_legacy_rank_profiles: 사용자명·레거시 등급 표시
+
+## Save Flow
+- read-only MariaDB transaction with operation, audit, execution and outbox evidence
+
+## AI Notes
+- 평수 내림차순, 동률 시 한글 사용자명과 stable player ID 순으로 정렬한다.
+- 전체 펫홈을 출력하고 11위 바로 앞에 500자 접힘 문자를 넣는다.

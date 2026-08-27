@@ -99,6 +99,7 @@ import { HopePremiumDeleteService, isHopePremiumDeleteCandidate, normalizeHopePr
 import { HomeFurnitureBagLifecycleService, isHomeFurnitureBagCandidate, normalizeHomeFurnitureBagDispatchMessage } from "./home/home-furniture-bag-lifecycle-service.js";
 import { HomeFurnitureCarrotTransferService, isHomeFurnitureCarrotTransferCandidate, normalizeHomeFurnitureCarrotTransferDispatchMessage } from "./home/home-furniture-carrot-transfer-service.js";
 import { HomeFurnitureRankReadService, isHomeFurnitureRankCommand } from "./home/home-furniture-rank-read-service.js";
+import { HomeRankingReadService, isHomeRankingReadCommand } from "./home/home-ranking-read-service.js";
 import { HomeFurnitureEquipService, isHomeFurnitureEquipCandidate, normalizeHomeFurnitureEquipDispatchMessage } from "./home/home-furniture-equip-service.js";
 import { HomeFurnitureFullCleanupService, isHomeFurnitureFullCleanupCommand } from "./home/home-furniture-full-cleanup-service.js";
 import { HomeFurnitureInfoReadService, isHomeFurnitureInfoReadCandidate, normalizeHomeFurnitureInfoReadDispatchMessage } from "./home/home-furniture-info-read-service.js";
@@ -783,9 +784,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHopePremiumDeleteCandidate(normalizedEvent.message)
         || isHomeFurnitureBagCandidate(normalizedEvent.message)
         || isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
-        || isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
-        || isHomeFurnitureRankCommand(normalizedEvent.message)
-        || isHomeFurnitureEquipCandidate(normalizedEvent.message)
+         || isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
+         || isHomeFurnitureRankCommand(normalizedEvent.message)
+         || isHomeRankingReadCommand(normalizedEvent.message)
+         || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
         || isHomeFurnitureRemoveCandidate(normalizedEvent.message)
@@ -836,9 +838,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizeHomeFurnitureAddDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureRemoveCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureRemoveDispatchMessage(normalizedEvent.message ?? "")
-            : isHomeFurnitureRankCommand(normalizedEvent.message)
-            ? normalizedEvent.message ?? ""
-            : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
+             : isHomeFurnitureRankCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isHomeRankingReadCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
             ? normalizedEvent.message ?? ""
@@ -1756,11 +1760,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isHomeFurnitureRankCommand(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_rank_read"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result=await new HomeFurnitureRankReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
-        processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+         && isHomeFurnitureRankCommand(normalizedEvent.message)
+         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_rank_read"
+         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+         const result=await new HomeFurnitureRankReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
+         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+         && isHomeRankingReadCommand(normalizedEvent.message)
+         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_ranking_read"
+         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+         const result=await new HomeRankingReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
+         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
