@@ -623,6 +623,8 @@ Status: VERIFIED
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - `/가구장착 [번호]`의 현대화 handler는 `home_furniture_equip`이며, 매력·이름·인스턴스 ID의 안정 순서로 선택한 가구를 한 트랜잭션에서 `bag`에서 `placed`로 전환한다.
 - 장착 한도는 평수 구간, 장착 펫스킬 `건물주`/`하느님 위에 갓물주`, 활성 프리미엄 보너스를 DB에서 계산하며 실패·재생 시 가구 상태를 중복 변경하지 않는다.
+- `/가구전체정리`의 현대화 handler는 `home_furniture_full_cleanup`이며, 활성 관리자만 일반 10개·프리미엄 15개를 남기고 stable 정렬 밖의 가방 초과분을 `removed`로 원자 전환한다.
+- 전체 정리는 배치·시장 등록 가구와 포인트를 변경하지 않고 사용자별 결과, 가구 원장, 감사와 outbox를 같은 operation에 기록한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 

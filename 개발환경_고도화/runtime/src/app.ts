@@ -100,6 +100,7 @@ import { HomeFurnitureBagLifecycleService, isHomeFurnitureBagCandidate, normaliz
 import { HomeFurnitureCarrotTransferService, isHomeFurnitureCarrotTransferCandidate, normalizeHomeFurnitureCarrotTransferDispatchMessage } from "./home/home-furniture-carrot-transfer-service.js";
 import { HomeFurnitureRankReadService, isHomeFurnitureRankCommand } from "./home/home-furniture-rank-read-service.js";
 import { HomeFurnitureEquipService, isHomeFurnitureEquipCandidate, normalizeHomeFurnitureEquipDispatchMessage } from "./home/home-furniture-equip-service.js";
+import { HomeFurnitureFullCleanupService, isHomeFurnitureFullCleanupCommand } from "./home/home-furniture-full-cleanup-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -742,6 +743,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
         || isHomeFurnitureRankCommand(normalizedEvent.message)
         || isHomeFurnitureEquipCandidate(normalizedEvent.message)
+        || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -766,6 +768,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }).resolve({
           eventId: normalizedEvent.eventId,
           message: isHomeFurnitureRankCommand(normalizedEvent.message)
+            ? normalizedEvent.message ?? ""
+            : isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
             ? normalizedEvent.message ?? ""
             : isHomeFurnitureEquipCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureEquipDispatchMessage(normalizedEvent.message ?? "")
@@ -1535,6 +1539,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new HomeFurnitureBagLifecycleService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_full_cleanup"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result=await new HomeFurnitureFullCleanupService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
+        if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
