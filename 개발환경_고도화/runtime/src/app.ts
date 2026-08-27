@@ -176,6 +176,8 @@ import { isCommentPinCommandCandidate, normalizeCommentPinDispatchMessage } from
 import { CommentPinIrisHandler } from "./home/comment-pin-iris-handler.js";
 import { isLegacyDataCleanupCommand, normalizeLegacyDataCleanupDispatchMessage } from "./admin/legacy-data-cleanup-command.js";
 import { LegacyDataCleanupIrisHandler } from "./admin/legacy-data-cleanup-iris-handler.js";
+import { isDebugModeCommand, normalizeDebugModeDispatchMessage } from "./admin/debug-mode-command.js";
+import { DebugModeIrisHandler } from "./admin/debug-mode-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -711,6 +713,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isCommentPinCommandCandidate(normalizedEvent.message);
       const legacyDataCleanupDispatchCandidate = process.env.LEGACY_DATA_CLEANUP_COMMAND_ENABLED === "true"
         && isLegacyDataCleanupCommand(normalizedEvent.message);
+      const debugModeDispatchCandidate = process.env.DEBUG_MODE_COMMAND_ENABLED === "true"
+        && isDebugModeCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -783,6 +787,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || commentDeleteDispatchCandidate
         || commentPinDispatchCandidate
         || legacyDataCleanupDispatchCandidate
+        || debugModeDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -890,6 +895,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeCommentPinDispatchMessage(normalizedEvent.message ?? "")
                 : legacyDataCleanupDispatchCandidate
                   ? normalizeLegacyDataCleanupDispatchMessage(normalizedEvent.message ?? "")
+                : debugModeDispatchCandidate
+                  ? normalizeDebugModeDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1012,6 +1019,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "ADMIN_LEGACY_DATA_CLEANUP") {
         const cleanupResponse = await new LegacyDataCleanupIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: cleanupResponse.outboxId, room: normalizedEvent.channelId!, data: cleanupResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "ADMIN_DEBUG_MODE") {
+        const debugResponse = await new DebugModeIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: debugResponse.outboxId, room: normalizedEvent.channelId!, data: debugResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
