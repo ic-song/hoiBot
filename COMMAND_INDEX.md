@@ -6990,3 +6990,22 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - MariaDB transaction: 운영자 권한 확인 + 멱등 bootstrap + audit/execution/outbox
+
+# /펫홈방문초기화
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-visit-reset-command.ts
+- 개발환경_고도화/runtime/src/home/home-visit-reset-service.ts
+- 개발환경_고도화/runtime/src/home/home-visit-reset-iris-handler.ts
+- 개발환경_고도화/runtime/migrations/217_home_visit_reset.sql
+
+## Data Usage
+- player_homes.visit_count: 초기화 대상 방문 집계 projection
+- home_visits: 보존되는 원본 방문 이력
+- home_visit_reset_runs: 초기화 대상·이전 합계·보존 이력 수 증거
+
+## Save Flow
+- MariaDB transaction: 운영자 권한 확인 + 전체 counter reset + audit/execution/outbox

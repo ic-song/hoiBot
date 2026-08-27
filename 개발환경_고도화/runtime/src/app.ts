@@ -184,6 +184,8 @@ import { isHomeBaseballPitchCommandCandidate, normalizeHomeBaseballPitchDispatch
 import { HomeBaseballPitchIrisHandler } from "./home/home-baseball-pitch-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
+import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
+import { HomeVisitResetIrisHandler } from "./home/home-visit-reset-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -727,6 +729,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeBaseballPitchCommandCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
+      const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
+        && isHomeVisitResetCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -803,6 +807,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeFurnitureEquipSyncDispatchCandidate
         || homeBaseballPitchDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
+        || homeVisitResetDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -918,6 +923,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeBaseballPitchDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
+                : homeVisitResetDispatchCandidate
+                  ? normalizeHomeVisitResetDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1076,6 +1083,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_comment_file_bootstrap") {
         const bootstrapResponse = await new HomeCommentFileBootstrapIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: bootstrapResponse.outboxId, room: normalizedEvent.channelId!, data: bootstrapResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_visit_reset") {
+        const visitResetResponse = await new HomeVisitResetIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: visitResetResponse.outboxId, room: normalizedEvent.channelId!, data: visitResetResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined

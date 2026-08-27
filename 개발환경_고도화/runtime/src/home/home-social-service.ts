@@ -15,6 +15,7 @@ export class HomeSocialService {
       reason: command.reason, outboxType: "home.visited" }, async (transaction, operationId) => {
       await this.requireHome(transaction, command.homePlayerId);
       const visit = await transaction.execute("INSERT INTO home_visits (home_player_id, visitor_player_id) VALUES (?, ?)", [command.homePlayerId, command.actorPlayerId]);
+      await transaction.execute("UPDATE player_homes SET visit_count=visit_count+1,version=version+1 WHERE player_id=?", [command.homePlayerId]);
       await transaction.execute("INSERT INTO home_activity_events (operation_id, home_player_id, actor_player_id, activity_code, reference_id) VALUES (?, ?, ?, 'visit', ?)", [operationId, command.homePlayerId, command.actorPlayerId, visit.insertId]);
       return { result: { visitId: visit.insertId.toString() }, changeSummary: { visitorPlayerId: command.actorPlayerId } };
     });
