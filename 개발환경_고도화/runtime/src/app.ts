@@ -43,6 +43,7 @@ import { isPlayerVerificationRankReadCommand, PlayerVerificationRankReadService 
 import { AdminPlayerInfoReadService, isAdminPlayerInfoReadCandidate, normalizeAdminPlayerInfoReadDispatchMessage } from "./player/admin-player-info-read-service.js";
 import { DeveloperNoteReadService, isDeveloperNoteReadCommand } from "./admin/developer-note-read-service.js";
 import { isSocialBoardReadCommand, SocialBoardReadService } from "./social/social-board-read-service.js";
+import { FreeMarketReadService, isFreeMarketReadCommand } from "./market/free-market-read-service.js";
 import { isPlayerOverallRankReadCommand, PlayerOverallRankReadService } from "./player/player-overall-rank-read-service.js";
 import { isPlayerChatRankReadCommand, PlayerChatRankReadService } from "./player/player-chat-rank-read-service.js";
 import { isPlayerTitleSelectCandidate, normalizePlayerTitleSelectDispatchMessage, PlayerTitleSelectService } from "./player/player-title-select-service.js";
@@ -870,6 +871,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isAdminPlayerInfoReadCandidate(normalizedEvent.message)
          || isDeveloperNoteReadCommand(normalizedEvent.message)
          || isSocialBoardReadCommand(normalizedEvent.message)
+         || isFreeMarketReadCommand(normalizedEvent.message)
          || isPlayerOverallRankReadCommand(normalizedEvent.message)
          || isPlayerChatRankReadCommand(normalizedEvent.message)
          || isPlayerTitleSelectCandidate(normalizedEvent.message)
@@ -961,6 +963,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              : isDeveloperNoteReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isSocialBoardReadCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isFreeMarketReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isPlayerOverallRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
@@ -2149,6 +2153,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "social_board_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new SocialBoardReadService(database!).read({
+          eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId
+        });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isFreeMarketReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "free_market_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new FreeMarketReadService(database!).read({
           eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId,
           destinationId: normalizedEvent.channelId
