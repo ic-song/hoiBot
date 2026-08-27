@@ -62,6 +62,7 @@ import { isPendantEnhanceCorrectionCommandCandidate, normalizePendantEnhanceCorr
 import { isPendantDurabilityCorrectionCommandCandidate, normalizePendantDurabilityCorrectionDispatchMessage, PendantDurabilityCorrectionService } from "./pet/pendant-durability-correction-service.js";
 import { isPendantMarketRegisterCommandCandidate, normalizePendantMarketRegisterDispatchMessage, PendantMarketRegisterService } from "./market/pendant-market-register-service.js";
 import { isPetSkillMarketListingCandidate, normalizePetSkillMarketListingDispatchMessage, PetSkillMarketListingService } from "./market/pet-skill-market-listing-service.js";
+import { HomeFurnitureMarketListingService, isHomeFurnitureMarketListingCandidate, normalizeHomeFurnitureMarketListingDispatchMessage } from "./market/home-furniture-market-listing-service.js";
 import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatchMessage, PendantMarketInfoService } from "./market/pendant-market-info-service.js";
 import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispatchMessage, PendantCarrotTradeService } from "./market/pendant-carrot-trade-service.js";
 import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
@@ -734,6 +735,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPetSkillSaleCandidate(normalizedEvent.message)
         || isHopePremiumDeleteCandidate(normalizedEvent.message)
         || isHomeFurnitureBagCandidate(normalizedEvent.message)
+        || isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -757,7 +759,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isHomeFurnitureBagCandidate(normalizedEvent.message)
+          message: isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
+            ? normalizeHomeFurnitureMarketListingDispatchMessage(normalizedEvent.message ?? "")
+            : isHomeFurnitureBagCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureBagDispatchMessage(normalizedEvent.message ?? "")
             : isHopePremiumDeleteCandidate(normalizedEvent.message)
             ? normalizeHopePremiumDeleteDispatchMessage(normalizedEvent.message ?? "")
@@ -1519,6 +1523,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new HomeFurnitureBagLifecycleService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_market_listing"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new HomeFurnitureMarketListingService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        const replyData = result.data;
+        if (replyData !== undefined) processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: replyData });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate

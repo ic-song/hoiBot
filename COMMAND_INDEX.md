@@ -6788,3 +6788,23 @@ Status: VERIFIED
 - DB: `pet_skills`, `inventory_stacks`, `inventory_ledger`, `item_definitions`
 - Guard: full positive-integer pattern only
 - Save flow: 장착 스킬 삭제, 후속 슬롯 재정렬, 소멸권 차감, 재고 원장을 한 transaction으로 처리
+# /가구거래등록 [가구가방번호] [수량] [판매금액]
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/market/home-furniture-market-listing-service.ts
+- 개발환경_고도화/runtime/migrations/198_home_furniture_market_listing.sql
+
+## Related Helpers
+- parseHomeFurnitureMarketListingCommand
+- HomeFurnitureMarketListingService
+
+## Data Usage
+- furniture_inventory_instances / furniture_definitions
+- market_listings / market_furniture_registration_*
+- inventory_stacks / furniture_inventory_ledger / inventory_ledger
+
+## Save Flow
+- MariaDB transaction: confirmation or bag-to-listed + carrot fee + listing + ledgers + audit/execution/outbox
