@@ -191,6 +191,8 @@ import { isHomeSocialBadgeMigrationCommand, normalizeHomeSocialBadgeMigrationDis
 import { HomeSocialBadgeMigrationIrisHandler } from "./home/home-social-badge-migration-iris-handler.js";
 import { isHomePassReformCleanupCommand, normalizeHomePassReformCleanupDispatchMessage } from "./home/home-pass-reform-cleanup-command.js";
 import { HomePassReformCleanupIrisHandler } from "./home/home-pass-reform-cleanup-iris-handler.js";
+import { isHomeFeedMigrationCommand, normalizeHomeFeedMigrationDispatchMessage } from "./home/home-feed-migration-command.js";
+import { HomeFeedMigrationIrisHandler } from "./home/home-feed-migration-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -740,6 +742,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeSocialBadgeMigrationCommand(normalizedEvent.message);
       const homePassReformCleanupDispatchCandidate = process.env.HOME_PASS_REFORM_CLEANUP_COMMAND_ENABLED === "true"
         && isHomePassReformCleanupCommand(normalizedEvent.message);
+      const homeFeedMigrationDispatchCandidate = process.env.HOME_FEED_MIGRATION_COMMAND_ENABLED === "true"
+        && isHomeFeedMigrationCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -820,6 +824,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
          || homePassReformCleanupDispatchCandidate
+         || homeFeedMigrationDispatchCandidate
          || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -943,6 +948,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeSocialBadgeMigrationDispatchMessage(normalizedEvent.message ?? "")
                 : homePassReformCleanupDispatchCandidate
                   ? normalizeHomePassReformCleanupDispatchMessage(normalizedEvent.message ?? "")
+                : homeFeedMigrationDispatchCandidate
+                  ? normalizeHomeFeedMigrationDispatchMessage(normalizedEvent.message ?? "")
                : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1128,6 +1135,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_pass_reform_cleanup") {
         const cleanupResponse = await new HomePassReformCleanupIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: cleanupResponse.outboxId, room: normalizedEvent.channelId!, data: cleanupResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_feed_migration") {
+        const migrationResponse = await new HomeFeedMigrationIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: migrationResponse.outboxId, room: normalizedEvent.channelId!, data: migrationResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined

@@ -699,6 +699,10 @@ Status: VERIFIED
 - runtime `petHomePlacedFurniture.json`
 - `data/petHomeComments.json`
 - runtime `petHomeActivityData.json`
+- `개발환경_고도화/runtime/src/home/home-feed-migration-command.ts`
+- `개발환경_고도화/runtime/src/home/home-feed-migration-iris-handler.ts`
+- `개발환경_고도화/runtime/src/home/home-feed-migration-service.ts`
+- `개발환경_고도화/runtime/migrations/221_home_feed_migration.sql`
 
 ## Related Helpers
 
@@ -805,7 +809,7 @@ Status: VERIFIED
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
-- `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
+- `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker. The modern runtime keeps the imported `comment/commentTime` projection in `home_feed_legacy_sources`, backs up both source rows and existing feeds, creates per-home migration markers, caps active feeds at 10, and records the command operation, audit, outbox, and one-time state in the same MariaDB transaction.
 - `/홈알림` and `ㅎㄹ`: run under the response data write lock, read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, mark alerts read, and complete the pass `홈알림 열기` daily condition only after activity/member saves succeed; both files roll back together on failure.
 - `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
