@@ -2645,6 +2645,8 @@ Status: VERIFIED
 - DB: `player_pets`, `player_pet_intimacy`, `pet_skills`, `pet_skill_inventory`, `skill_definitions`
 - Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
 - Guard: `msg === "/펫스킬"`
+- Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
+- Catalog flow: `skill_definitions.rules_json`의 `grade`, `rate`, `effect`, `tierInfo`를 조회하며 타인 가방은 `manager` 또는 `super_admin`만 허용
 
 Status: VERIFIED
 

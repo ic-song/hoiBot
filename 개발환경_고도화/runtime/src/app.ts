@@ -1384,7 +1384,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         try {
           const result = await new PetSkillReadService(database!).read({
             eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-            destinationId: normalizedEvent.channelId,
+            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
           });
           processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_read",result.reply));
         } catch (error) {
