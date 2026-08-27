@@ -1170,7 +1170,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var feedPostUsed = parseInt(data.member[sender].feedPostCnt, 10) || 0;
 			var homeAlertOpenUsed = parseInt(data.member[sender].homeAlertOpenCnt, 10) || 0;
 			var passDailyIconMsg = hasPassDailyQuest
-				? (hasPremiumPass ? "[🐺호프 전용]" : "[🐶호패 전용]") + "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][✍️" + getC(feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax) + "][🔔" + getC(homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax) + "]\n"
+				? (hasPremiumPass ? "[👑호프 전용]" : "[🐶호패 전용]") + "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][✍️" + getC(feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax) + "][🔔" + getC(homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax) + "]\n"
 				: ""; // 패스 회원에게만 전용 3종 완료 아이콘 표시
 			var weeklyQuestMax = 7;
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));

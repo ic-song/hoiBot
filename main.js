@@ -1010,7 +1010,7 @@ const GLOBAL_CONFIG = {
             { id: "S10", emoji: "🪽", name: "전설의 홈" },
             { id: "S11", emoji: "👑", name: "황제" },
             { id: "S12", emoji: "🎮", name: "GM" },
-            { id: "S13", emoji: "🐺", name: "호패 프리미엄" }
+            { id: "S13", emoji: "👑", name: "호패 프리미엄" }
         ],
         gachaItemName: "홈뱃지뽑기🛡️(/홈뱃지오픈)",
         gachaMaxOpenCount: 100,
@@ -17560,7 +17560,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         formatPointValue(transferAmount) +
                         "를 이체했습니다.\n\n" +
                         "이체 수수료🤫: " +
-                        ((isDiscounted || isPremiumDiscounted) ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%" + (isDiscounted ? "(호행권📙)" : "") + (isPremiumDiscounted ? "(호프🐺)" : "") : formatTransferFeeRate(transferFeeRate) + "%") +
+                        ((isDiscounted || isPremiumDiscounted) ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%" + (isDiscounted ? "(호행권📙)" : "") + (isPremiumDiscounted ? "(호프👑)" : "") : formatTransferFeeRate(transferFeeRate) + "%") +
                         "\n(-🅟" +
                         formatPointValue(transferFee) +
                         ")\n" +
@@ -20262,7 +20262,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     let hasPremiumNotice = isHoiPassPremiumActive(data, sender);
                     if (!hasPremiumNotice) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 🐺호패프리미엄🐺 유저가 아닙니다.");
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 👑호패프리미엄 유저가 아닙니다.");
                         return;
                     }
                     if (typeof data.member[sender].noticePremiumCount !== "number") {
@@ -23098,7 +23098,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "/" +
                         maxSlots +
                         "\n" +
-                        (isHoiPassPremiumActive(data, sender) ? "호패프리미엄🐺: +" + GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount + "\n" : "") +
+                        (isHoiPassPremiumActive(data, sender) ? "호패프리미엄👑: +" + GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount + "\n" : "") +
                         "적용 매력: " +
                         numberWithCommas(placedExp) +
                         "💕";
@@ -34898,7 +34898,7 @@ function processHoiPassPremiumCommand(msg, data, petSkillData, activityData, ope
             changed: true,
             action: "추가",
             requiresPetSkillSave: addResult.restoredSkillCount > 0,
-            message: "✅ [" + meta.user + "] 님에게 호이패스 프리미엄을 적용했습니다.\n종료 예정일: " + meta.endDate + "\n전용 홈뱃지: 🐺 호패 프리미엄" + (addResult.autoExploreTicketGranted ? "\n자동탐험권🌄 1개를 지급했습니다." : "\n기존 호이패스가 활성 상태여서 자동탐험권🌄을 추가 지급하지 않았습니다.") + (addResult.restoredSkillCount > 0 ? "\n잠금 펫스킬 " + addResult.restoredSkillCount + "개를 다시 활성화했습니다." : "")
+            message: "✅ [" + meta.user + "] 님에게 호이패스 프리미엄을 적용했습니다.\n종료 예정일: " + meta.endDate + "\n전용 홈뱃지:  호패 프리미엄" + (addResult.autoExploreTicketGranted ? "\n자동탐험권🌄 1개를 지급했습니다." : "\n기존 호이패스가 활성 상태여서 자동탐험권🌄을 추가 지급하지 않았습니다.") + (addResult.restoredSkillCount > 0 ? "\n잠금 펫스킬 " + addResult.restoredSkillCount + "개를 다시 활성화했습니다." : "")
         };
     }
 
@@ -37426,7 +37426,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
             if (status.passDailyRewardDone) lines.push("[✅ 금일 호패,초패 일퀘 보상 지급 완료]");
         }
         if (status.hasPremiumDailyQuest) {
-            lines.push("《🐺 호이패스 프리미엄 추가 보상》");
+            lines.push("《👑 호이패스 프리미엄 추가 보상》");
             lines.push("다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
             if (status.premiumDailyRewardDone) lines.push("[✅ 금일 프리미엄 일퀘 보상 지급 완료]");
         }
@@ -41458,7 +41458,7 @@ function getHomeBadgeCubeOptionDebugDetail(data, user, optionKey) {
 function formatHomeBadgeCubeDebugOptionFormula(detail) {
     var text = "+" + formatHomeBadgeCubeCardPercent(detail.basePercent);
     if (detail.totalBuffActive) text += " → +" + formatHomeBadgeCubeCardPercent(detail.totalBuffAppliedPercent) + "(기본합계 100% ×1.1)";
-    if (detail.premiumBonusPercent > 0) text += " +" + formatHomeBadgeCubeCardPercent(detail.premiumBonusPercent) + "🐺";
+    if (detail.premiumBonusPercent > 0) text += " +" + formatHomeBadgeCubeCardPercent(detail.premiumBonusPercent) + "👑";
     return text + " = +" + formatHomeBadgeCubeCardPercent(detail.appliedPercent);
 }
 
@@ -41599,7 +41599,7 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var explore = record ? record.explore : 0;
     var store = getHomeBadgeCubeStore(data, user, false);
     var showPremiumAppliedValue = isHoiPassPremiumActive(data, user) && store && store.equippedBadgeId === badge.id;
-    var premiumSuffix = showPremiumAppliedValue ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%🐺)" : "";
+    var premiumSuffix = showPremiumAppliedValue ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%👑)" : "";
     var castleFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "castle")) : "";
     var raidFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "raid")) : "";
     var petUpgradeFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade")) : "";
