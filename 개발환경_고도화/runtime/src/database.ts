@@ -20,6 +20,31 @@ export interface DatabaseTransaction {
   execute(sql: string, values?: readonly unknown[]): Promise<DatabaseWriteResult>;
 }
 
+// 상위 트랜잭션 안에서 기존 provider의 중첩 transaction을 savepoint로 재사용합니다.
+export function createScopedDatabaseClient(transaction: DatabaseTransaction): DatabaseClient {
+  let savepointSequence = 0;
+  return {
+    ping: async () => { await transaction.query("SELECT 1"); },
+    verifyRollback: async () => true,
+    query: <T>(sql: string, values: readonly unknown[] = []) => transaction.query<T>(sql, values),
+    execute: (sql: string, values: readonly unknown[] = []) => transaction.execute(sql, values),
+    withTransaction: async <T>(work: (nested: DatabaseTransaction) => Promise<T>): Promise<T> => {
+      const savepoint = `scoped_provider_${++savepointSequence}`;
+      await transaction.execute(`SAVEPOINT ${savepoint}`);
+      try {
+        const result = await work(transaction);
+        await transaction.execute(`RELEASE SAVEPOINT ${savepoint}`);
+        return result;
+      } catch (error) {
+        await transaction.execute(`ROLLBACK TO SAVEPOINT ${savepoint}`);
+        await transaction.execute(`RELEASE SAVEPOINT ${savepoint}`);
+        throw error;
+      }
+    },
+    close: async () => undefined
+  };
+}
+
 // Connector 결과를 서버 내부의 안정적인 쓰기 결과로 변환합니다.
 function toWriteResult(result: UpsertResult): DatabaseWriteResult {
   return {

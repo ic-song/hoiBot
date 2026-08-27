@@ -300,7 +300,7 @@ function toCombatant(row: CombatantRow): CastleBattleCombatant {
 export class CastleBattleExecuteService {
   constructor(private readonly database: DatabaseClient) {}
 
-  async handle(command: { externalUserId: string; channelId: string; message: string; eventId: string; mode?: "direct" | "auto" }): Promise<CastleBattleExecuteResult> {
+  async handle(command: { externalUserId: string; channelId: string; message: string; eventId: string; mode?: "direct" | "auto"; suppressOutbox?: boolean }): Promise<CastleBattleExecuteResult> {
     if (!isCastleBattleExecuteCommand(command.message)) throw new ApplicationError("CASTLE_BATTLE_COMMAND_INVALID", "정확한 /캐슬대전을 입력해 주세요.", 422);
     return this.database.withTransaction(async (transaction) => {
       const identities = await transaction.query<Array<{ identity_id: Numeric; player_id: Numeric }>>(
@@ -461,7 +461,7 @@ export class CastleBattleExecuteService {
           stringifyEvidence(settlementResult)]
       );
       const outboxIds: string[] = [];
-      for (const message of resolution.messages) {
+      for (const message of command.suppressOutbox ? [] : resolution.messages) {
         const outbox = await transaction.execute(
           `INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at)
            VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))`,

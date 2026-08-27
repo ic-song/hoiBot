@@ -37,7 +37,7 @@ type Item = { id: bigint; code: string; quantity: bigint };
 export class TrialTowerProvider {
   constructor(private readonly db: DatabaseClient, private readonly random: () => number = Math.random) {}
 
-  async attempt(input: { eventId: string; destinationId: string; playerId: string; profile: TrialTowerProfile; recordDate: string; autoBonus?: boolean; masterBypass?: boolean; format?: (result: TrialTowerResult) => string }): Promise<TrialTowerResult> {
+  async attempt(input: { eventId: string; destinationId: string; playerId: string; profile: TrialTowerProfile; recordDate: string; autoBonus?: boolean; masterBypass?: boolean; suppressOutbox?: boolean; format?: (result: TrialTowerResult) => string }): Promise<TrialTowerResult> {
     return this.db.withTransaction(async tx => {
       const prior = await tx.query<Array<{ result_json: string | TrialTowerResult | null }>>("SELECT result_json FROM operations WHERE idempotency_scope='trial.tower.attempt' AND idempotency_key=? FOR UPDATE", [input.eventId]);
       if (prior[0]?.result_json != null) return parse<TrialTowerResult>(prior[0].result_json);
@@ -97,10 +97,12 @@ export class TrialTowerProvider {
     });
   }
 
-  private async finish(tx: DatabaseTransaction, operationId: bigint, input: { eventId: string; destinationId: string; playerId: string; format?: (result: TrialTowerResult) => string }, result: TrialTowerResult): Promise<TrialTowerResult> {
+  private async finish(tx: DatabaseTransaction, operationId: bigint, input: { eventId: string; destinationId: string; playerId: string; suppressOutbox?: boolean; format?: (result: TrialTowerResult) => string }, result: TrialTowerResult): Promise<TrialTowerResult> {
     result.data = input.format ? input.format(result) : result.data;
-    const outbox = await tx.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status) VALUES (?,'iris',?,'text',?,'pending')", [operationId, input.destinationId, JSON.stringify({ data: result.data })]);
-    result.outboxId = outbox.insertId.toString();
+    if (!input.suppressOutbox) {
+      const outbox = await tx.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status) VALUES (?,'iris',?,'text',?,'pending')", [operationId, input.destinationId, JSON.stringify({ data: result.data })]);
+      result.outboxId = outbox.insertId.toString();
+    }
     await tx.execute("INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json) VALUES (?,'player',?,'trial_tower',NULL,'trial.tower.attempt',?,'Iris /시련의탑',?)", [operationId, input.playerId, result.status, json({ status: result.status, floor: result.floor ?? null })]);
     await tx.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'TRIAL_TOWER_PROVIDER',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [input.eventId, operationId, result.status]);
     await tx.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?", [json(result), operationId]);
