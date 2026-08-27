@@ -3722,6 +3722,11 @@ Status: VERIFIED
 
 # /펫스킬장착 [번호]
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-EQUIP`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-equip-service.ts`
+- DB: `pet_skill_inventory`, `pet_skills`, `pet_skill_equip_policy`, `pet_skill_equip_operations`
+- Save flow: stable skill ID 가방 차감·slot 장착·ledger·audit·outbox를 하나의 DB transaction으로 기록
 ## Command Anchors
 - Search in main.js: `/펫스킬장착`
 ## Files
