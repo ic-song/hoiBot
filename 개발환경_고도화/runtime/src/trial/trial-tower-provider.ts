@@ -86,7 +86,7 @@ export class TrialTowerProvider {
         }
         await mutate(booster, -boosterUsed, "TRIAL_TOWER_BOOSTER");
         await tx.execute("UPDATE trial_tower_progress SET floor=?,last_win_at=UTC_TIMESTAMP(3),version=version+1 WHERE season_key=? AND player_id=?", [floor, season.season_key, input.playerId]);
-        if (floor % 10000n === 0n) await tx.execute("INSERT IGNORE INTO player_titles(player_id,title_id,acquired_at) SELECT ?,id,UTC_TIMESTAMP(3) FROM title_definitions WHERE code='trial_floor_10000'", [input.playerId]);
+        if (floor % 10000n === 0n) await tx.execute("INSERT IGNORE INTO player_titles(player_id,title_id,acquired_at,display_order) SELECT ?,definition.id,UTC_TIMESTAMP(3),COALESCE(MAX(owned.display_order),0)+1 FROM title_definitions definition LEFT JOIN player_titles owned ON owned.player_id=? WHERE definition.code='trial_floor_10000' GROUP BY definition.id", [input.playerId, input.playerId]);
       }
       if (policy.worship) await tx.execute("UPDATE player_pets SET experience=experience+1,version=version+1 WHERE player_id=?", [input.playerId]);
       await tx.execute("UPDATE player_pet_daily_records SET tower_attempts=tower_attempts+1,tower_floor=?,updated_at=UTC_TIMESTAMP(3) WHERE player_id=? AND record_date=?", [floor, input.playerId, input.recordDate]);

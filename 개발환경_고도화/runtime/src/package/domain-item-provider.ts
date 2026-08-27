@@ -251,9 +251,10 @@ export class PackageDomainItemProvider {
     }
     if (delta > 0) {
       await transaction.execute(
-        `INSERT IGNORE INTO player_titles (player_id, title_id, acquired_at, equipped)
-         VALUES (?, ?, CURRENT_TIMESTAMP(3), 0)`,
-        [mutation.playerId, titleId],
+        `INSERT IGNORE INTO player_titles (player_id, title_id, acquired_at, equipped, display_order)
+         SELECT ?, ?, CURRENT_TIMESTAMP(3), 0, COALESCE(MAX(display_order), 0) + 1
+           FROM player_titles WHERE player_id = ?`,
+        [mutation.playerId, titleId, mutation.playerId],
       );
     } else {
       await transaction.execute("DELETE FROM player_titles WHERE player_id = ? AND title_id = ?", [mutation.playerId, titleId]);
