@@ -7103,3 +7103,30 @@ Status: VERIFIED
 ## Related Commands
 - /레벨순위
 - /내정보
+# /누좋순위
+
+Status: VERIFIED
+
+## Files
+- Info.js
+- 개발환경_고도화/runtime/src/app.ts
+- 개발환경_고도화/runtime/src/player/player-cumulative-like-rank-read-service.ts
+
+## Related Helpers
+- generatelike2Ranking
+- formatPlayerCumulativeLikeRanking
+- PlayerCumulativeLikeRankReadService.read
+
+## Data Usage
+- 레거시: data.member[*].like + data.member[*].like0
+- 현대화 canonical: player_counters(like:lifetime)
+- 현대화 fallback: player_counters(like:current + like0:lifetime)
+- 등급 표시: player_legacy_rank_profiles.rank_emoji
+
+## Save Flow
+- 회원 좋아요 counter는 읽기 전용
+- 현대화 operation, command_audit, command_executions, outbox_messages만 원자 기록
+
+## Related Commands
+- /누렙순위
+- /내정보
