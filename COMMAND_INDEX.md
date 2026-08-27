@@ -2648,6 +2648,18 @@ Status: VERIFIED
 - Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
 - Catalog flow: `skill_definitions.rules_json`의 `grade`, `rate`, `effect`, `tierInfo`를 조회하며 타인 가방은 `manager` 또는 `super_admin`만 허용
 
+# /펫스킬가방
+
+Status: VERIFIED
+
+## Modernization
+- Slice: `SL-PET-SKILL-BAG-LIFECYCLE`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-bag-read-service.ts`
+- DB: `player_pets`, `pet_skill_inventory`, `skill_definitions`
+- Guard: `msg === "/펫스킬가방"`
+- Save flow: 고도화 Runtime은 도메인 읽기 전용이며 실행·감사·outbox만 원자 기록
+- `/펫스킬가방추가`: 현행 `main.js`·`Info.js` guard 없음으로 미사용 제외
+
 Status: VERIFIED
 
 ## Command Anchors
