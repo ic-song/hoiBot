@@ -627,6 +627,8 @@ Status: VERIFIED
 - 전체 정리는 배치·시장 등록 가구와 포인트를 변경하지 않고 사용자별 결과, 가구 원장, 감사와 outbox를 같은 operation에 기록한다.
 - `/가구제거 [닉네임] [가구가방번호]`의 현대화 handler는 `home_furniture_remove`이며, 활성 관리자만 대상의 가구 가방을 매력·이름·stable ID 순으로 해석해 선택한 인스턴스를 `removed`로 원자 전환한다.
 - 가구 제거는 배치·시장 등록 가구를 변경하지 않고 제거 요약, 가구 원장, 감사와 outbox를 같은 operation에 기록한다.
+- `/가구추가 [닉네임] [가구명] [매력] [등급]`의 현대화 handler는 `home_furniture_add`이며, 활성 관리자만 가장 긴 회원명과 첫 숫자 매력 토큰을 기준으로 입력을 해석한다.
+- 가구 추가는 이름·매력 기반 stable definition KEY를 재사용하고 새 가구 인스턴스, 지급 요약, 가구 원장, 감사와 outbox를 같은 operation에 원자 기록한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 

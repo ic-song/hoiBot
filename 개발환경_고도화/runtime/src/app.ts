@@ -103,6 +103,7 @@ import { HomeFurnitureEquipService, isHomeFurnitureEquipCandidate, normalizeHome
 import { HomeFurnitureFullCleanupService, isHomeFurnitureFullCleanupCommand } from "./home/home-furniture-full-cleanup-service.js";
 import { HomeFurnitureInfoReadService, isHomeFurnitureInfoReadCandidate, normalizeHomeFurnitureInfoReadDispatchMessage } from "./home/home-furniture-info-read-service.js";
 import { HomeFurnitureRemoveService, isHomeFurnitureRemoveCandidate, normalizeHomeFurnitureRemoveDispatchMessage } from "./home/home-furniture-remove-service.js";
+import { HomeFurnitureAddService, isHomeFurnitureAddCandidate, normalizeHomeFurnitureAddDispatchMessage } from "./home/home-furniture-add-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -748,6 +749,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
         || isHomeFurnitureRemoveCandidate(normalizedEvent.message)
+        || isHomeFurnitureAddCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -771,7 +773,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isHomeFurnitureRemoveCandidate(normalizedEvent.message)
+          message: isHomeFurnitureAddCandidate(normalizedEvent.message)
+            ? normalizeHomeFurnitureAddDispatchMessage(normalizedEvent.message ?? "")
+            : isHomeFurnitureRemoveCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureRemoveDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureRankCommand(normalizedEvent.message)
             ? normalizedEvent.message ?? ""
@@ -1562,6 +1566,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_remove"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result=await new HomeFurnitureRemoveService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeFurnitureAddCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_add"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result=await new HomeFurnitureAddService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
         if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
