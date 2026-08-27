@@ -5242,6 +5242,11 @@ Status: VERIFIED
 
 ## AI Notes
 
+- `/스킬거래등록 [스킬가방번호] [수량] [판매금액]` modernization slice is `SL-PET-SKILL-MARKET-LISTING`.
+- Modern runtime: `개발환경_고도화/runtime/src/market/pet-skill-market-listing-service.ts`.
+- Shared DB: `market_listings`; skill-specific confirmation and escrow evidence use `market_skill_registration_confirmations` and `market_skill_registration_ledger`.
+- Registration confirmation, skill quantity, carrot fee, listing, ledgers, audit, and outbox are committed through one transaction after revalidation.
+
 - Free-market storage is isolated in `freeMarket.json`; item ownership still mutates the original owner/buyer storage files
 - Active listing numbers are display-order numbers from recent-first `/자유시장`; purchase confirmation stores the immutable listing id to avoid buying a shifted listing
 - Registration and purchase commands show a confirmation UI first; `/자유시장확인` re-runs validation before mutation, and `/자유시장확인취소` clears the pending request

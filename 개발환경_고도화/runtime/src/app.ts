@@ -61,6 +61,7 @@ import { isPendantEnhanceCommandCandidate, normalizePendantEnhanceDispatchMessag
 import { isPendantEnhanceCorrectionCommandCandidate, normalizePendantEnhanceCorrectionDispatchMessage, PendantEnhanceCorrectionService } from "./pet/pendant-enhance-correction-service.js";
 import { isPendantDurabilityCorrectionCommandCandidate, normalizePendantDurabilityCorrectionDispatchMessage, PendantDurabilityCorrectionService } from "./pet/pendant-durability-correction-service.js";
 import { isPendantMarketRegisterCommandCandidate, normalizePendantMarketRegisterDispatchMessage, PendantMarketRegisterService } from "./market/pendant-market-register-service.js";
+import { isPetSkillMarketListingCandidate, normalizePetSkillMarketListingDispatchMessage, PetSkillMarketListingService } from "./market/pet-skill-market-listing-service.js";
 import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatchMessage, PendantMarketInfoService } from "./market/pendant-market-info-service.js";
 import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispatchMessage, PendantCarrotTradeService } from "./market/pendant-carrot-trade-service.js";
 import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
@@ -745,7 +746,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPetSkillCarrotTradeCandidate(normalizedEvent.message)
+          message: isPetSkillMarketListingCandidate(normalizedEvent.message)
+            ? normalizePetSkillMarketListingDispatchMessage(normalizedEvent.message ?? "")
+            : isPetSkillCarrotTradeCandidate(normalizedEvent.message)
             ? normalizePetSkillCarrotTradeDispatchMessage(normalizedEvent.message ?? "")
             : isPetSkillBookCombineCandidate(normalizedEvent.message)
             ? normalizePetSkillBookCombineDispatchMessage(normalizedEvent.message ?? "")
@@ -1431,6 +1434,25 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
         });
         processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_extinction",result.reply));
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetSkillMarketListingCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_market_listing"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetSkillMarketListingService(database!).handle({
+            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
+            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
+          });
+          if (result.data !== undefined) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_market_listing",result.data));
+          }
+        } catch (error) {
+          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_market_listing_error",error.message));
+          } else throw error;
+        }
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
