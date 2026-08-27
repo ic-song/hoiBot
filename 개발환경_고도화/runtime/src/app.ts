@@ -87,6 +87,7 @@ import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, P
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
+import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
@@ -742,7 +743,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-           message: isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
+          message: isPetSkillExtinctionCandidate(normalizedEvent.message)
+            ? normalizePetSkillExtinctionDispatchMessage(normalizedEvent.message ?? "")
+            : isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
             ? normalizeGuildPetSkillStockGrantDispatchMessage(normalizedEvent.message ?? "")
             : isPetDuelEmoteCommandCandidate(normalizedEvent.message)
             ? normalizePetDuelEmoteDispatchMessage(normalizedEvent.message ?? "")
@@ -1411,6 +1414,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_duplicate_read_error",error.message));
           } else throw error;
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetSkillExtinctionCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_extinction"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PetSkillExtinctionService(database!).handle({
+          eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
+        });
+        processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_extinction",result.reply));
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate

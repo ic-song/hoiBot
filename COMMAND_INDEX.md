@@ -6715,3 +6715,16 @@ Status: VERIFIED
 - Order is intimacy level descending, fullness experience descending, then user name ascending; output is limited to 100 users and folds after rank 10.
 
 ---
+
+---
+
+# /펫스킬소멸 [장착스킬번호]
+
+Status: VERIFIED
+
+## Modernization
+- Slice: `SL-PET-SKILL-EXTINCTION`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-extinction-service.ts`
+- DB: `pet_skills`, `inventory_stacks`, `inventory_ledger`, `item_definitions`
+- Guard: full positive-integer pattern only
+- Save flow: 장착 스킬 삭제, 후속 슬롯 재정렬, 소멸권 차감, 재고 원장을 한 transaction으로 처리
