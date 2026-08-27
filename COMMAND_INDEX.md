@@ -2470,6 +2470,10 @@ Status: VERIFIED
 - 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 최근 배치한 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
+## Modernization
+- `/호패프리미엄삭제, [아이디]` handler: `hope_premium_delete`
+- Atomic flow: pass disable, S13 badge revoke, premium skill lock, conditional auto-explore ticket removal, excess furniture release, ledgers, audit, execution, outbox
+- Stable identities: admin external identity, target player ID, player pet ID, skill ID, furniture placement ID
 
 ## Related Commands
 - `/패스목록`

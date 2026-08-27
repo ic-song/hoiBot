@@ -94,6 +94,7 @@ import { isPetSkillOpenCandidate, normalizePetSkillOpenDispatchMessage, PetSkill
 import { isPetSkillBulkGrantCandidate, normalizePetSkillBulkGrantDispatchMessage, PetSkillBulkGrantService } from "./pet/pet-skill-bulk-grant-service.js";
 import { isPetSkillEquipCandidate, normalizePetSkillEquipDispatchMessage, PetSkillEquipService } from "./pet/pet-skill-equip-service.js";
 import { isPetSkillSaleCandidate, normalizePetSkillSaleDispatchMessage, PetSkillSaleLifecycleService } from "./pet/pet-skill-sale-lifecycle-service.js";
+import { HopePremiumDeleteService, isHopePremiumDeleteCandidate, normalizeHopePremiumDeleteDispatchMessage } from "./pet/hope-premium-delete-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -730,6 +731,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPetSkillBulkGrantCandidate(normalizedEvent.message)
         || isPetSkillEquipCandidate(normalizedEvent.message)
         || isPetSkillSaleCandidate(normalizedEvent.message)
+        || isHopePremiumDeleteCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -753,7 +755,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPetSkillSaleCandidate(normalizedEvent.message)
+          message: isHopePremiumDeleteCandidate(normalizedEvent.message)
+            ? normalizeHopePremiumDeleteDispatchMessage(normalizedEvent.message ?? "")
+            : isPetSkillSaleCandidate(normalizedEvent.message)
             ? normalizePetSkillSaleDispatchMessage(normalizedEvent.message ?? "")
             : isPetSkillEquipCandidate(normalizedEvent.message)
             ? normalizePetSkillEquipDispatchMessage(normalizedEvent.message ?? "")
@@ -1494,6 +1498,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_sale_lifecycle"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PetSkillSaleLifecycleService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHopePremiumDeleteCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "hope_premium_delete"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new HopePremiumDeleteService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
       }
 
