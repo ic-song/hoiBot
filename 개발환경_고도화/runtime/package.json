@@ -52,6 +52,7 @@
     "db:probe:pet-skill-open": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-open-synthetic.ts",
     "db:probe:pet-skill-bulk-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-bulk-grant-synthetic.ts",
     "db:probe:pet-skill-equip": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-equip-synthetic.ts",
+    "db:probe:pet-skill-sale-lifecycle": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-sale-lifecycle-synthetic.ts",
     "db:probe:guild-pet-skill-stock-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-pet-skill-stock-grant-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",

@@ -3560,6 +3560,10 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬판매`
 - `/펫스킬가방`
+## Modernization
+- Handler: `pet_skill_sale_lifecycle`
+- DB policy: `pet_skill_sale_policy`
+- Atomic flow: bag depletion, point credit, inventory/currency ledgers, audit, execution, outbox
 
 ---
 
@@ -3580,6 +3584,11 @@ Status: VERIFIED
 - Removes selected skill count, adds points, saves member data and `petSkillData`
 ## Related Commands
 - `/펫스킬전체판매`
+## Modernization
+- Handler: `pet_skill_sale_lifecycle`
+- DB policy: `pet_skill_sale_policy`
+- Stable bag order: active `skill_definitions.id`
+- Atomic flow: selected quantity decrement, point credit, inventory/currency ledgers, audit, execution, outbox
 
 ---
 
