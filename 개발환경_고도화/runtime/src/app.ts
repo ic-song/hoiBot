@@ -196,6 +196,8 @@ import { isHomeFurnitureEquipSyncCommand, normalizeHomeFurnitureEquipSyncDispatc
 import { HomeFurnitureEquipSyncIrisHandler } from "./home/home-furniture-equip-sync-iris-handler.js";
 import { isHomeBaseballPitchCommandCandidate, normalizeHomeBaseballPitchDispatchMessage } from "./home/home-baseball-pitch-command.js";
 import { HomeBaseballPitchIrisHandler } from "./home/home-baseball-pitch-iris-handler.js";
+import { isLegendaryStoneDrawCommandCandidate, normalizeLegendaryStoneDrawDispatchMessage } from "./shop/legendary-stone-draw-command.js";
+import { LegendaryStoneDrawIrisHandler } from "./shop/legendary-stone-draw-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
@@ -751,6 +753,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureEquipSyncCommand(normalizedEvent.message);
       const homeBaseballPitchDispatchCandidate = process.env.HOME_BASEBALL_PITCH_COMMAND_ENABLED === "true"
         && isHomeBaseballPitchCommandCandidate(normalizedEvent.message);
+      const legendaryStoneDrawDispatchCandidate = process.env.LEGENDARY_STONE_DRAW_COMMAND_ENABLED === "true"
+        && isLegendaryStoneDrawCommandCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -855,6 +859,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || debugModeDispatchCandidate
         || homeFurnitureEquipSyncDispatchCandidate
         || homeBaseballPitchDispatchCandidate
+        || legendaryStoneDrawDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1005,6 +1010,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeFurnitureEquipSyncDispatchMessage(normalizedEvent.message ?? "")
                 : homeBaseballPitchDispatchCandidate
                   ? normalizeHomeBaseballPitchDispatchMessage(normalizedEvent.message ?? "")
+                : legendaryStoneDrawDispatchCandidate
+                  ? normalizeLegendaryStoneDrawDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1168,6 +1175,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_baseball_pitch") {
         const baseballResponses = await new HomeBaseballPitchIrisHandler(database).execute(normalizedEvent);
         for (const response of baseballResponses) processing.replies.push({ outboxId: response.outboxId, room: normalizedEvent.channelId!, data: response.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "legendary_stone_draw") {
+        const drawResponses = await new LegendaryStoneDrawIrisHandler(database, config.irisAllowedOpenChatIds).execute(normalizedEvent);
+        for (const response of drawResponses) processing.replies.push({ outboxId: response.outboxId, room: response.room, data: response.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
