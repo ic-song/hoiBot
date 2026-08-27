@@ -45,6 +45,7 @@ import { isPlayerOverallRankReadCommand, PlayerOverallRankReadService } from "./
 import { isPlayerChatRankReadCommand, PlayerChatRankReadService } from "./player/player-chat-rank-read-service.js";
 import { isPlayerTitleSelectCandidate, normalizePlayerTitleSelectDispatchMessage, PlayerTitleSelectService } from "./player/player-title-select-service.js";
 import { isPlayerTitleInfoReadCandidate, isPlayerTitleListReadCandidate, normalizePlayerTitleInfoReadDispatchMessage, normalizePlayerTitleListReadDispatchMessage, PlayerTitleReadService } from "./player/player-title-read-service.js";
+import { isPlayerTitleGiftCandidate, normalizePlayerTitleGiftDispatchMessage, PlayerTitleGiftService } from "./player/player-title-gift-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
@@ -826,6 +827,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPlayerTitleSelectCandidate(normalizedEvent.message)
          || isPlayerTitleListReadCandidate(normalizedEvent.message)
          || isPlayerTitleInfoReadCandidate(normalizedEvent.message)
+         || isPlayerTitleGiftCandidate(normalizedEvent.message)
          || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
@@ -909,6 +911,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizePlayerTitleListReadDispatchMessage(normalizedEvent.message ?? "")
              : isPlayerTitleInfoReadCandidate(normalizedEvent.message)
              ? normalizePlayerTitleInfoReadDispatchMessage(normalizedEvent.message ?? "")
+             : isPlayerTitleGiftCandidate(normalizedEvent.message)
+             ? normalizePlayerTitleGiftDispatchMessage(normalizedEvent.message ?? "")
              : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
@@ -1988,6 +1992,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && (partialDispatchDecision.handlerKey === "player_title_list_read" || partialDispatchDecision.handlerKey === "player_title_info_read")
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PlayerTitleReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPlayerTitleGiftCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_title_gift"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PlayerTitleGiftService(database!).gift({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
