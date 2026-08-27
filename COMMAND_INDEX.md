@@ -21,6 +21,32 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
 
 ---
+# /결투
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: frozen legacy behavior
+- `개발환경_고도화/runtime/src/pet/pet-duel-emote-service.ts`: modern DB provider
+- `개발환경_고도화/runtime/migrations/182_pet_duel_emote.sql`: event evidence and command registration
+
+## Data Usage
+
+- Legacy: `petSkillData`, `data.member`, `checkRank`, `buildPetSkillMsg`
+- Modern: `player_pets`, `pet_skills`, `skill_definitions`, `player_profiles`, `pet_duel_emote_events`
+
+## Save Flow
+
+- Legacy command changes no gameplay value and returns one random emote reply.
+- Modern provider records the two random draws, execution, audit, and outbox atomically without changing gameplay state.
+
+## AI Notes
+
+- Exact `/결투` returns usage; `/결투 [유저명]` requires the equipped `품행제로` skill.
+- The first draw preserves the 70% success and 30% failure split; the second chooses one of ten matching phrases.
+
+---
 
 # /전체오픈
 

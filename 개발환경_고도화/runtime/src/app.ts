@@ -83,6 +83,7 @@ import { isPetStatusCommand, PetStatusService } from "./pet/pet-status-service.j
 import { isPetIntimacyRankCommand, PetIntimacyRankReadService } from "./pet/pet-intimacy-rank-read-service.js";
 import { isPetTitleCommandCandidate, normalizePetTitleDispatchMessage, PetTitleLifecycleService } from "./pet/pet-title-lifecycle-service.js";
 import { isPetRebirthCommandCandidate, normalizePetRebirthDispatchMessage, PetRebirthService } from "./pet/pet-rebirth-service.js";
+import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, PetDuelEmoteService } from "./pet/pet-duel-emote-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
@@ -718,6 +719,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
         || isPetRebirthCommandCandidate(normalizedEvent.message)
+        || isPetDuelEmoteCommandCandidate(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || pointShopCatalogDispatchCandidate
@@ -735,7 +737,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-           message: isPetRebirthCommandCandidate(normalizedEvent.message)
+           message: isPetDuelEmoteCommandCandidate(normalizedEvent.message)
+            ? normalizePetDuelEmoteDispatchMessage(normalizedEvent.message ?? "")
+            : isPetRebirthCommandCandidate(normalizedEvent.message)
             ? normalizePetRebirthDispatchMessage(normalizedEvent.message ?? "")
             : isPetTitleCommandCandidate(normalizedEvent.message)
             ? normalizePetTitleDispatchMessage(normalizedEvent.message ?? "")
@@ -1364,6 +1368,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [403,404,409,422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_rebirth_error",error.message));
+          } else throw error;
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetDuelEmoteCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_duel_emote"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new PetDuelEmoteService(database!).handle({
+            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
+            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
+          });
+          processing.replies.push(result.reply);
+        } catch (error) {
+          if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_duel_emote_error",error.message));
           } else throw error;
         }
       }
