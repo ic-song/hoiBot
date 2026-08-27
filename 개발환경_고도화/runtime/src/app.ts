@@ -97,6 +97,7 @@ import { isPetSkillEquipCandidate, normalizePetSkillEquipDispatchMessage, PetSki
 import { isPetSkillSaleCandidate, normalizePetSkillSaleDispatchMessage, PetSkillSaleLifecycleService } from "./pet/pet-skill-sale-lifecycle-service.js";
 import { HopePremiumDeleteService, isHopePremiumDeleteCandidate, normalizeHopePremiumDeleteDispatchMessage } from "./pet/hope-premium-delete-service.js";
 import { HomeFurnitureBagLifecycleService, isHomeFurnitureBagCandidate, normalizeHomeFurnitureBagDispatchMessage } from "./home/home-furniture-bag-lifecycle-service.js";
+import { HomeFurnitureCarrotTransferService, isHomeFurnitureCarrotTransferCandidate, normalizeHomeFurnitureCarrotTransferDispatchMessage } from "./home/home-furniture-carrot-transfer-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -736,6 +737,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHopePremiumDeleteCandidate(normalizedEvent.message)
         || isHomeFurnitureBagCandidate(normalizedEvent.message)
         || isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
+        || isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -759,7 +761,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
+          message: isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
+            ? normalizeHomeFurnitureCarrotTransferDispatchMessage(normalizedEvent.message ?? "")
+            : isHomeFurnitureMarketListingCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureMarketListingDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureBagCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureBagDispatchMessage(normalizedEvent.message ?? "")
@@ -1523,6 +1527,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new HomeFurnitureBagLifecycleService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_carrot_transfer"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try { const result = await new HomeFurnitureCarrotTransferService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!}); processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"home_furniture_carrot_transfer",result.reply)); }
+        catch(error){ if(error instanceof ApplicationError) processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"home_furniture_carrot_transfer",error.message)); else throw error; }
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate

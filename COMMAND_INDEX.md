@@ -6808,3 +6808,18 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - MariaDB transaction: confirmation or bag-to-listed + carrot fee + listing + ledgers + audit/execution/outbox
+# /가구당근 [받는닉네임] [가구번호]
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-furniture-carrot-transfer-service.ts
+- 개발환경_고도화/runtime/migrations/199_home_furniture_carrot_transfer.sql
+
+## Data Usage
+- furniture_inventory_instances / furniture_carrot_trades
+- inventory_stacks / furniture_inventory_ledger / inventory_ledger / player_counters
+
+## Save Flow
+- MariaDB transaction: stable owner transfer + carrot fee + thermometer reward + ledgers + audit/execution/outbox
