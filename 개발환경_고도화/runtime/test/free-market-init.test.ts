@@ -1,0 +1,2 @@
+import assert from"node:assert/strict";import{describe,it}from"node:test";import{isFreeMarketInitCommand}from"../src/market/free-market-init-service.js";
+describe("free market init",()=>{it("accepts only exact legacy command",()=>assert.equal(isFreeMarketInitCommand("/자유시장생성"),true));it("rejects suffix and arguments",()=>{for(const v of[undefined,"자유시장생성","/자유시장생성 ","/자유시장생성 안내","/자유시장생성2"])assert.equal(isFreeMarketInitCommand(v),false);});});

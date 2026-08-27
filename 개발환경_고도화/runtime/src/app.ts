@@ -44,6 +44,7 @@ import { AdminPlayerInfoReadService, isAdminPlayerInfoReadCandidate, normalizeAd
 import { DeveloperNoteReadService, isDeveloperNoteReadCommand } from "./admin/developer-note-read-service.js";
 import { isSocialBoardReadCommand, SocialBoardReadService } from "./social/social-board-read-service.js";
 import { FreeMarketReadService, isFreeMarketReadCommand } from "./market/free-market-read-service.js";
+import { FreeMarketInitService, isFreeMarketInitCommand } from "./market/free-market-init-service.js";
 import { CarrotBoardReadService, isCarrotBoardReadCommand } from "./market/carrot-board-read-service.js";
 import { CarrotBoardDeleteService, isCarrotBoardDeleteCommand } from "./market/carrot-board-delete-service.js";
 import { CarrotBoardCompleteService, isCarrotBoardCompleteCommand } from "./market/carrot-board-complete-service.js";
@@ -2216,6 +2217,25 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new CarrotBoardDeleteService(database!).clear({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isFreeMarketInitCommand(normalizedEvent.message)
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new FreeMarketInitService(database!).execute({
+            externalUserId: normalizedEvent.userId,
+            destinationId: normalizedEvent.channelId,
+            eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 409].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "free_market_init_error", error.message));
+          } else {
+            throw error;
+          }
+        }
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
