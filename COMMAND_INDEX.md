@@ -7184,3 +7184,31 @@ Status: VERIFIED
 ## Related Commands
 - /누렙순위
 - /좋아리셋
+# /레벨순위
+
+Status: VERIFIED
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/app.ts
+- 개발환경_고도화/runtime/src/player/player-level-rank-read-service.ts
+- 개발환경_고도화/runtime/migrations/228_player_level_rank_read.sql
+
+## Related Helpers
+- generateRanking
+- getToplvUser
+- formatPlayerLevelRanking
+- PlayerLevelRankReadService.read
+
+## Data Usage
+- legacy: data.member[*].lv and data.toplv
+- modern: player_profiles.level and player_level_rank_snapshots.top_player_id
+- stable tie order: player_legacy_rank_profiles.source_order
+
+## Save Flow
+- ranking source rows are read-only
+- stable top-player snapshot, operation, audit, execution, and outbox are one MariaDB transaction
+
+## Related Commands
+- /누렙순위
+- /레벨리셋

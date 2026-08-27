@@ -38,6 +38,7 @@ import { isPlayerCumulativeLevelRankReadCommand, PlayerCumulativeLevelRankReadSe
 import { isPlayerCumulativeLikeRankReadCommand, PlayerCumulativeLikeRankReadService } from "./player/player-cumulative-like-rank-read-service.js";
 import { isPlayerDiamondRankReadCommand, PlayerDiamondRankReadService } from "./player/player-diamond-rank-read-service.js";
 import { isPlayerLevelResetCommand, PlayerLevelResetService } from "./player/player-level-reset-service.js";
+import { isPlayerLevelRankReadCommand, PlayerLevelRankReadService } from "./player/player-level-rank-read-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
@@ -811,6 +812,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPlayerCumulativeLikeRankReadCommand(normalizedEvent.message)
          || isPlayerDiamondRankReadCommand(normalizedEvent.message)
          || isPlayerLevelResetCommand(normalizedEvent.message)
+         || isPlayerLevelRankReadCommand(normalizedEvent.message)
          || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
@@ -877,6 +879,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              : isPlayerDiamondRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isPlayerLevelResetCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isPlayerLevelRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
@@ -1901,6 +1905,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           destinationId: normalizedEvent.channelId
         });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPlayerLevelRankReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_level_rank_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PlayerLevelRankReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
