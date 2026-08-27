@@ -53,6 +53,7 @@ import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
+import { isOperationNoticeCommandCandidate, normalizeOperationNoticeDispatchMessage, OperationNoticeService } from "./admin/operation-notice-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import {
@@ -820,6 +821,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isDiamondBoxCraftCommand(normalizedEvent.message)
         || isAdminDiamondEditCommand(normalizedEvent.message)
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
+        || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
@@ -1092,6 +1094,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeAdminDiamondEditDispatchMessage(normalizedEvent.message ?? "")
               : isAdminDiamondResetAllCommand(normalizedEvent.message)
                 ? normalizeAdminDiamondResetAllDispatchMessage(normalizedEvent.message ?? "")
+              : isOperationNoticeCommandCandidate(normalizedEvent.message)
+                ? normalizeOperationNoticeDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
@@ -1622,6 +1626,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isOperationNoticeCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "operation_notice_mutate"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new OperationNoticeService(database!).handle({
+            externalUserId: normalizedEvent.userId, channelId: normalizedEvent.channelId,
+            message: normalizedEvent.message!, eventId: normalizedEvent.eventId
+          });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && [403, 409, 422, 503].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "operation_notice_mutate_error", error.message));
+          } else throw error;
         }
       }
 
