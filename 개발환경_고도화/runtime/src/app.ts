@@ -45,6 +45,7 @@ import { DeveloperNoteReadService, isDeveloperNoteReadCommand } from "./admin/de
 import { isSocialBoardReadCommand, SocialBoardReadService } from "./social/social-board-read-service.js";
 import { FreeMarketReadService, isFreeMarketReadCommand } from "./market/free-market-read-service.js";
 import { FreeMarketInitService, isFreeMarketInitCommand } from "./market/free-market-init-service.js";
+import { FreeMarketCancelService, isFreeMarketCancelCandidate, normalizeFreeMarketCancelDispatchMessage } from "./market/free-market-cancel-service.js";
 import { CarrotBoardReadService, isCarrotBoardReadCommand } from "./market/carrot-board-read-service.js";
 import { CarrotBoardDeleteService, isCarrotBoardDeleteCommand } from "./market/carrot-board-delete-service.js";
 import { CarrotBoardCompleteService, isCarrotBoardCompleteCommand } from "./market/carrot-board-complete-service.js";
@@ -882,6 +883,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isDeveloperNoteReadCommand(normalizedEvent.message)
          || isSocialBoardReadCommand(normalizedEvent.message)
          || isFreeMarketReadCommand(normalizedEvent.message)
+         || isFreeMarketCancelCandidate(normalizedEvent.message)
          || isCarrotBoardReadCommand(normalizedEvent.message)
          || isCarrotBoardDeleteCommand(normalizedEvent.message)
          || isCarrotBoardCompleteCommand(normalizedEvent.message)
@@ -983,6 +985,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isFreeMarketReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
+             : isFreeMarketCancelCandidate(normalizedEvent.message)
+             ? normalizeFreeMarketCancelDispatchMessage(normalizedEvent.message ?? "")
              : isCarrotBoardReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isCarrotBoardDeleteCommand(normalizedEvent.message)
@@ -2201,6 +2205,19 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           destinationId: normalizedEvent.channelId
         });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isFreeMarketCancelCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "free_market_cancel"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new FreeMarketCancelService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+          if (result?.data !== undefined && result.outboxId !== undefined) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        } catch (error) {
+          if (error instanceof ApplicationError && error.statusCode === 409) processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "free_market_cancel_error", error.message));
+          else throw error;
+        }
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
