@@ -6971,3 +6971,22 @@ Status: VERIFIED
 
 ## Save Flow
 - 하나의 MariaDB transaction에서 소비·보상·타이틀·audit·outbox 처리
+
+# /펫홈댓글파일생성
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-comment-file-bootstrap-command.ts
+- 개발환경_고도화/runtime/src/home/home-comment-file-bootstrap-service.ts
+- 개발환경_고도화/runtime/src/home/home-comment-file-bootstrap-iris-handler.ts
+- 개발환경_고도화/runtime/migrations/216_home_comment_file_bootstrap.sql
+
+## Data Usage
+- home_comments / home_comment_pins: 기존 댓글·핀 수량 확인(변경 없음)
+- home_comment_bootstrap_state: 최초 1회 준비 상태
+- home_comment_bootstrap_runs: 실행 결과와 당시 수량 증거
+
+## Save Flow
+- MariaDB transaction: 운영자 권한 확인 + 멱등 bootstrap + audit/execution/outbox
