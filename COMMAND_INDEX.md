@@ -7130,3 +7130,30 @@ Status: VERIFIED
 ## Related Commands
 - /누렙순위
 - /내정보
+# /다이아순위
+
+Status: VERIFIED
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/app.ts
+- 개발환경_고도화/runtime/src/player/player-diamond-rank-read-service.ts
+
+## Related Helpers
+- addDiamond
+- formatPlayerDiamondRanking
+- PlayerDiamondRankReadService.read
+
+## Data Usage
+- 레거시: currencyLogData.user[*].diamond 양수 지급 누적
+- 현대화: currency_ledger의 currency_code=diamond, delta>0 누적합
+- 현재 보유량 currency_accounts.balance와 분리
+
+## Save Flow
+- 다이아 계정·ledger는 읽기 전용
+- 현대화 operation, command_audit, command_executions, outbox_messages만 원자 기록
+
+## Related Commands
+- /다이아상점
+- /누렙순위
+- /누좋순위

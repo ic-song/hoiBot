@@ -36,6 +36,7 @@ import { HappyFoundationCaptainService, isHappyFoundationCaptainCommand, normali
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { isPlayerCumulativeLevelRankReadCommand, PlayerCumulativeLevelRankReadService } from "./player/player-cumulative-level-rank-read-service.js";
 import { isPlayerCumulativeLikeRankReadCommand, PlayerCumulativeLikeRankReadService } from "./player/player-cumulative-like-rank-read-service.js";
+import { isPlayerDiamondRankReadCommand, PlayerDiamondRankReadService } from "./player/player-diamond-rank-read-service.js";
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
@@ -807,6 +808,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isHomeRankingReadCommand(normalizedEvent.message)
          || isPlayerCumulativeLevelRankReadCommand(normalizedEvent.message)
          || isPlayerCumulativeLikeRankReadCommand(normalizedEvent.message)
+         || isPlayerDiamondRankReadCommand(normalizedEvent.message)
          || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
@@ -869,6 +871,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              : isPlayerCumulativeLevelRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isPlayerCumulativeLikeRankReadCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isPlayerDiamondRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
@@ -1864,6 +1868,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_cumulative_like_rank_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PlayerCumulativeLikeRankReadService(database!).read({
+          eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId
+        });
+        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPlayerDiamondRankReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_diamond_rank_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PlayerDiamondRankReadService(database!).read({
           eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId,
           destinationId: normalizedEvent.channelId
