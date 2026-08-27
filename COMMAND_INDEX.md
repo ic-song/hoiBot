@@ -7157,3 +7157,30 @@ Status: VERIFIED
 - /다이아상점
 - /누렙순위
 - /누좋순위
+# /레벨리셋
+
+Status: VERIFIED
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/app.ts
+- 개발환경_고도화/runtime/src/player/player-level-reset-service.ts
+- 개발환경_고도화/runtime/migrations/227_player_level_reset.sql
+
+## Related Helpers
+- isPlayerLevelResetCommand
+- PlayerLevelResetService.reset
+
+## Data Usage
+- legacy: data.member[user].lv
+- legacy: data.member[user].lv0
+- modern: player_profiles.level
+- modern: player_profiles.accumulated_level_offset
+
+## Save Flow
+- legacy outer command save flow
+- modern MariaDB transaction with operations, command_executions, command_audit, and outbox_messages
+
+## Related Commands
+- /누렙순위
+- /좋아리셋
