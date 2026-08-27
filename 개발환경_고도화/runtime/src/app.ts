@@ -48,6 +48,7 @@ import { CarrotBoardReadService, isCarrotBoardReadCommand } from "./market/carro
 import { CarrotTemperatureRankReadService, isCarrotTemperatureRankReadCommand } from "./market/carrot-temperature-rank-read-service.js";
 import { CarrotBanListReadService, isCarrotBanListReadCommand } from "./market/carrot-ban-list-read-service.js";
 import { CarrotBanListAddService, isCarrotBanListAddCommand, normalizeCarrotBanListAddDispatchMessage } from "./market/carrot-ban-list-add-service.js";
+import { CarrotBanListRemoveService, isCarrotBanListRemoveCommand, normalizeCarrotBanListRemoveDispatchMessage } from "./market/carrot-ban-list-remove-service.js";
 import { isPlayerOverallRankReadCommand, PlayerOverallRankReadService } from "./player/player-overall-rank-read-service.js";
 import { isPlayerChatRankReadCommand, PlayerChatRankReadService } from "./player/player-chat-rank-read-service.js";
 import { isPlayerTitleSelectCandidate, normalizePlayerTitleSelectDispatchMessage, PlayerTitleSelectService } from "./player/player-title-select-service.js";
@@ -880,6 +881,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isCarrotTemperatureRankReadCommand(normalizedEvent.message)
          || isCarrotBanListReadCommand(normalizedEvent.message)
          || isCarrotBanListAddCommand(normalizedEvent.message)
+         || isCarrotBanListRemoveCommand(normalizedEvent.message)
          || isPlayerOverallRankReadCommand(normalizedEvent.message)
          || isPlayerChatRankReadCommand(normalizedEvent.message)
          || isPlayerTitleSelectCandidate(normalizedEvent.message)
@@ -982,6 +984,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isCarrotBanListAddCommand(normalizedEvent.message)
              ? normalizeCarrotBanListAddDispatchMessage(normalizedEvent.message) ?? ""
+             : isCarrotBanListRemoveCommand(normalizedEvent.message)
+             ? normalizeCarrotBanListRemoveDispatchMessage(normalizedEvent.message) ?? ""
              : isPlayerOverallRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isPlayerChatRankReadCommand(normalizedEvent.message)
@@ -2211,6 +2215,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && isCarrotBanListAddCommand(normalizedEvent.message) && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "carrot_ban_list_add" && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result=await new CarrotBanListAddService(database!).add({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        if(result!==null)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate && isCarrotBanListRemoveCommand(normalizedEvent.message) && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "carrot_ban_list_remove" && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result=await new CarrotBanListRemoveService(database!).remove({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
         if(result!==null)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
 
