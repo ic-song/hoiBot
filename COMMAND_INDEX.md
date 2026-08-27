@@ -3795,6 +3795,13 @@ Status: VERIFIED
 
 # /펫스킬당근 [닉] [번호] [개수]
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-CARROT`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-carrot-trade-service.ts`
+- DB: `player_pet_skill_inventory`, `inventory_stacks`, `inventory_ledger`, `player_counters`, `pet_skill_carrot_trades`
+- Stable keys: carrot `ITEM-RWD-044`, thermometer `pet_skill_carrot_thermometer`
+- Guard: recipient nickname plus two positive-integer arguments only
+- Save flow: 양측 스킬·당근·온도기·누적 카운터·감사·outbox를 한 transaction으로 처리
 ## Command Anchors
 - Search in main.js: `/펫스킬당근`
 ## Files
