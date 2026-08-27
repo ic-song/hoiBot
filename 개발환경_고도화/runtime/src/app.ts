@@ -46,6 +46,7 @@ import { isSocialBoardReadCommand, SocialBoardReadService } from "./social/socia
 import { FreeMarketReadService, isFreeMarketReadCommand } from "./market/free-market-read-service.js";
 import { CarrotBoardReadService, isCarrotBoardReadCommand } from "./market/carrot-board-read-service.js";
 import { CarrotBoardDeleteService, isCarrotBoardDeleteCommand } from "./market/carrot-board-delete-service.js";
+import { CarrotBoardCompleteService, isCarrotBoardCompleteCommand } from "./market/carrot-board-complete-service.js";
 import { CarrotTemperatureRankReadService, isCarrotTemperatureRankReadCommand } from "./market/carrot-temperature-rank-read-service.js";
 import { CarrotBanListReadService, isCarrotBanListReadCommand } from "./market/carrot-ban-list-read-service.js";
 import { CarrotBanListAddService, isCarrotBanListAddCommand, normalizeCarrotBanListAddDispatchMessage } from "./market/carrot-ban-list-add-service.js";
@@ -880,6 +881,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isFreeMarketReadCommand(normalizedEvent.message)
          || isCarrotBoardReadCommand(normalizedEvent.message)
          || isCarrotBoardDeleteCommand(normalizedEvent.message)
+         || isCarrotBoardCompleteCommand(normalizedEvent.message)
          || isCarrotTemperatureRankReadCommand(normalizedEvent.message)
          || isCarrotBanListReadCommand(normalizedEvent.message)
          || isCarrotBanListAddCommand(normalizedEvent.message)
@@ -981,6 +983,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              : isCarrotBoardReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isCarrotBoardDeleteCommand(normalizedEvent.message)
+             ? normalizedEvent.message ?? ""
+             : isCarrotBoardCompleteCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isCarrotTemperatureRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
@@ -2209,6 +2213,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "carrot_board_delete"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new CarrotBoardDeleteService(database!).clear({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCarrotBoardCompleteCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "carrot_board_complete"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new CarrotBoardCompleteService(database!).complete({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
