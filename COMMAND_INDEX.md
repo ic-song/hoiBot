@@ -807,6 +807,9 @@ Status: VERIFIED
 - `buildGuildTerritoryRankingMessage`
 - `buildGuildTerritoryStartMessage`
 - `finishGuildTerritoryWar`
+- `prepareNextGuildTerritoryWarAutomatically`
+- `validateGuildTerritoryAutoAttack`
+- `executeGuildTerritoryNormalAttack`
 - `addGuildWarehouseReward`
 - `ensureGuildTerritoryBoosterCount`
 - `getGuildTerritoryByNo`
@@ -823,6 +826,11 @@ Status: VERIFIED
 - `guildData.territoryWar.startReady`
 - `guildData.territoryWar.openingToken`
 - `guildData.territoryWar.turnOrder`
+- `guildData.territoryWar.roundId`
+- `guildData.territoryWar.autoAttackProcessedKeys`
+- `guildData.territoryWar.automationLogs`
+- `data.member[user].guildTerritoryAutoAttackEnabled`
+- `data.guildTerritoryAutomationLogs`
 - `guildData.castleSiegeFlag`
 - `guildData.guilds[*].warehouse.petSkillBook`
 - `guildData.guilds[*].warehouse.fund`
@@ -846,6 +854,8 @@ Status: VERIFIED
 - `/영지순위보상`
 - `/영지보상순위`
 - `/영지공격 [숫자]`
+- `/영지온`
+- `/영지오프`
 
 ## AI Notes
 
@@ -862,7 +872,10 @@ Status: VERIFIED
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
 - `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
-- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
+- 영지전 종료 시 참가 길드의 현재 길드마스터·부길드마스터 중 `길드영지자동준비권` 또는 유효한 영지패스 보유자를 다시 확인해 다음 회차 준비를 길드당 1회 생성한다.
+- `/영지온`은 독립 `영지자동공격권⚔️`·영구 권한·유효한 영지패스 중 하나와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 실제 턴에도 재검증하며 실패하면 OFF 처리한다.
+- 자동 공격은 1~7번을 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지한다.
+- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 - `/길드영지시작` and `/길드영지종료` can also be entered from the dedicated siege room by their existing named operators; this room allowance does not bypass the active territory-war command lock.
 
 ---
@@ -896,6 +909,9 @@ Status: VERIFIED
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryRememberMe`
 - `resolveGuildTerritoryAttack`
+- `executeGuildTerritoryNormalAttack`
+- `getGuildTerritoryAttackActionKey`
+- `validateGuildTerritoryAutoAttack`
 - `getGuildTerritoryDefenderName`
 - `createGuildTerritoryCastleBattleSnapshot`
 - `buildGuildTerritoryCastleExpSnapshots`
@@ -925,6 +941,8 @@ Status: VERIFIED
 - `guildData.territoryWar.userAttackCounts`
 - `guildData.territoryWar.castleExpSnapshots`
 - `guildData.territoryWar.castleBattleSnapshots`
+- `guildData.territoryWar.autoAttackProcessedKeys`
+- `data.member[user].guildTerritoryAutoAttackEnabled`
 - `GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier`
 - `guildData.territoryWar.dimensionGateEnabled`
 - `guildData.territoryWar.rememberMeEnabled`
@@ -947,6 +965,8 @@ Status: VERIFIED
 - `/길드영지준비`
 - `/길드영지순서`
 - `/길드영지종료`
+- `/영지온`
+- `/영지오프`
 - `/차원의문on`
 - `/차원의문off`
 - `/차원의문온`
@@ -2247,7 +2267,9 @@ Status: VERIFIED
 
 ## Data Usage
 - `data.petMusou`
-- `data.member[user].petMusouLastSignupDate`
+- `data.petMusou.nextParticipants`
+- `data.petMusou.nextRoundId`
+- `data.petMusou.realFlagDiscoveryBonusPaid`
 - `data.accountSuspensions.users`
 - `data.member[user].musouWinCount`
 - `data.member[user].musouLastWinAt`
@@ -2260,7 +2282,7 @@ Status: VERIFIED
 ## Save Flow
 - 참가, 시작, 공격, 시간 초과, 강제 종료, 전체 초기화 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
 - 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
-- 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
+- 다음 회차 준비자와 현재 회차 참가자를 별도 객체로 저장한다. 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
 - 참가 신청 명령은 `/펫무쌍준비`이며 `/펫무쌍참가` 별칭은 사용하지 않는다. `/펫무쌍시작`은 `오픈채팅봇`과 명령어방의 MASTER가 실행할 수 있다.
 - `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 15초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
 - 시작 유예 마감시각과 토큰을 `member.json`에 저장하며, 봇 재시작 뒤 첫 수신 메시지에서 남은 유예 타이머를 복구하거나 마감된 준비를 완료한다.
@@ -2268,7 +2290,8 @@ Status: VERIFIED
 - 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 2억이다. 최종 우승 상금은 기존 값을 유지한다.
 - 진짜 깃발 발견 전 처음 찾은 가짜 깃발은 공격권만 1회 차감하고 생존하며, 결과 제목 바로 아래에 차감 후 남은 공격 횟수를 `[현재/최대⚔]` 형식으로 표시한다. 이미 공개된 가짜를 다시 공격하거나 진짜 깃발 발견 후 가짜를 공격하면 즉시 탈락한다.
 - 벼락이 실제 발생하면 벼락 결과만 별도 `castleMsg`로 전송하고 공격 결과·공격 상세에는 합치지 않는다. 미발생 문구는 기존처럼 공격 결과에 포함한다.
-- 벼락 대상자가 `피뢰침⚡(자동 벼락 방지)`을 보유하면 1개를 자동 소모하고 해당 유저의 탈락을 막는다. 벼락 메시지는 실제 탈락 인원과 피뢰침 방어 인원을 구분한다.
+- 진짜 깃발 최초 발견 시 기본 공격 보상과 별도로 2억을 한 번 지급하며 `realFlagDiscoveryBonusPaid`와 발견 기록으로 중복 지급을 막는다.
+- 벼락 대상자가 `피뢰침⚡(자동 벼락 방지)`을 보유하면 80% 확률로 1개를 소모하고 생존한다. 실패 시 미소모로 탈락하며, 현재 진짜 깃발 점령자는 피뢰침을 적용·소모하지 않고 탈락한다.
 - 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
 - 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
 - 보상 대상 공격 1회당 기본 2억, 최종 점령자 우승 상금 30억을 지급한다. 우승 확정 메시지는 `NoticeMsg`로 방송하지 않고 공격·시간 초과·재시작 복구로 종료된 펫무쌍 방에 `castleMsg`로 출력한다. `/펫무쌍종료`는 명령 실행 방에 전체 종료 결과를 회신한다.
@@ -2321,6 +2344,8 @@ Status: VERIFIED
 ## Data Usage
 - `data.member[user].pass`
 - `data.member[user].pass.territory`
+- `data.territoryPassAuditLogs`
+- `data.member[user].guildTerritoryAutoAttackEnabled`
 - `data.member[user].bag["자동탐험권🌄"]`
 - `data.member[user].bag["호이응원패키지(무료)🐹[1]" ... "호이응원패키지(무료)🐹[10]"]`
 - `data.rewardPayoutStatus`
@@ -2333,6 +2358,8 @@ Status: VERIFIED
 - `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi/premium pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
 - `/패스목록` sums `호이응원패키지(무료)🐹[1]` through `[10]` for each user and lists users holding at least 3 in total; this scan is read-only and does not mutate bag data
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
+- 영지패스 추가·연장·삭제는 운영자·대상·처리시각·만료일·변경 전후 값을 `territoryPassAuditLogs`에 남긴다. 유효한 영지패스는 자동 준비·자동 공격의 구독형 권한으로 판정하며 물리 자동화권을 반복 지급하지 않는다.
+- 영지패스가 만료·삭제되고 독립 자동공격권이 없으면 `guildTerritoryAutoAttackEnabled`를 OFF로 저장하며, 패스를 다시 추가해도 자동으로 ON 복구하지 않는다.
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
 - `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when no other newbie/hoi/premium automatic-explore pass is active
 - Past end dates are rejected before pass mutation and automatic ticket grant
@@ -5170,11 +5197,11 @@ Status: VERIFIED
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
-- Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket or success penalty.
-- Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-10%` success penalty and check `펫던전 입장권🌋` at settlement.
+- Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket and applies a `-5%` success penalty.
+- Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-15%` success penalty and check `펫던전 입장권🌋` at settlement.
 - `/탐 6` rewards `땅문서던전박스📜(/땅문서박스오픈)` 1개, and `/탐 7` rewards `샵오픈던전박스🏡(/샵오픈박스오픈)` 1개 on success.
 - `/땅문서박스오픈` grants `땅문서📜` 1개 per box, and `/샵오픈박스오픈` grants `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 per box; both boxes are auto-opened by `/정리`.
-- Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-40%` success penalty.
+- Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-45%` success penalty.
 - `/탐 8` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
 - `/탐 1` 강화박스는 `펫 강화석⭐` 70~100개, `/탐 2` 펫먹이박스는 `펫먹이🍼` 40~50개, `/탐 3` 행운의박스는 `럭키박스🍀(/럭키오픈)` 5개를 지급한다.
 - `/탐 8` 펜던트미궁박스는 `펜던트 강화석📿` 3~4개와 독립 1% 확률의 `펜던트 복원석🔷` 1개를 지급한다.
