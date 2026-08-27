@@ -64,6 +64,8 @@ import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-cre
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
 import { CastleBattleResetCraftService, isCastleBattleResetCraftCommand } from "./castle/castle-battle-reset-craft-service.js";
+import { isCastleBattleExecuteCommand } from "./castle/castle-battle-execute-service.js";
+import { CastleBattleExecuteIrisHandler } from "./castle/castle-battle-execute-iris-handler.js";
 import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { isSpiritRankCommand, SpiritRankService } from "./pet/spirit-rank-service.js";
@@ -818,6 +820,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHappyFoundationCaptainCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
         || isRiftForceAdminCommand(normalizedEvent.message)
+        || isCastleBattleExecuteCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
         || isPendantBagCleanupCommandCandidate(normalizedEvent.message)
@@ -2488,6 +2491,21 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else {
             throw error;
           }
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleBattleExecuteCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "castle_battle_execute"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const responses = await new CastleBattleExecuteIrisHandler(database!).execute(normalizedEvent);
+          for (const response of responses) processing.replies.push({ outboxId:response.outboxId,room:response.room,data:response.message });
+        } catch (error) {
+          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"castle_battle_execute",error.message));
+          } else throw error;
         }
       }
 
