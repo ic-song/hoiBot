@@ -3493,6 +3493,11 @@ Status: VERIFIED
 
 # /펫스킬가방추가 [유저], [스킬명] [개수]
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-BULK-GRANT`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-bulk-grant-service.ts`
+- DB: `pet_skill_inventory`, `pet_skill_bulk_grant_operations`, `pet_skill_bulk_grant_lines`
+- Guard: 운영자 권한과 전체 입력 패턴을 확인한 뒤 성공 행만 하나의 DB 트랜잭션으로 지급
 ## Command Anchors
 - Search in `main.js`: `/펫스킬가방추가`
 ## Files
@@ -3514,6 +3519,11 @@ Status: VERIFIED
 
 # /펫스킬일괄지급
 Status: VERIFIED
+## Modernization
+- Slice: `SL-PET-SKILL-BULK-GRANT`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-bulk-grant-service.ts`
+- DB: `pet_skill_inventory`, `pet_skill_bulk_grant_operations`, `pet_skill_bulk_grant_lines`
+- Save flow: 행별 성공·실패 결과와 성공 지급, ledger, audit, outbox를 하나의 DB 트랜잭션으로 기록
 ## Command Anchors
 - Search in main.js: `/펫스킬일괄지급`
 ## Files

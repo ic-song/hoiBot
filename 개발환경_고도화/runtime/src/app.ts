@@ -91,6 +91,7 @@ import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
 import { isPetSkillBookCombineCandidate, normalizePetSkillBookCombineDispatchMessage, PetSkillBookCombineService } from "./pet/pet-skill-book-combine-service.js";
 import { isPetSkillOpenCandidate, normalizePetSkillOpenDispatchMessage, PetSkillOpenService } from "./pet/pet-skill-open-service.js";
+import { isPetSkillBulkGrantCandidate, normalizePetSkillBulkGrantDispatchMessage, PetSkillBulkGrantService } from "./pet/pet-skill-bulk-grant-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -724,6 +725,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPendantProbabilityCommand(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
+        || isPetSkillBulkGrantCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -747,7 +749,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-          message: isPetSkillOpenCandidate(normalizedEvent.message)
+          message: isPetSkillBulkGrantCandidate(normalizedEvent.message)
+            ? normalizePetSkillBulkGrantDispatchMessage(normalizedEvent.message ?? "")
+            : isPetSkillOpenCandidate(normalizedEvent.message)
             ? normalizePetSkillOpenDispatchMessage(normalizedEvent.message ?? "")
             : isPetSkillMarketListingCandidate(normalizedEvent.message)
             ? normalizePetSkillMarketListingDispatchMessage(normalizedEvent.message ?? "")
@@ -1456,6 +1460,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_open_error",error.message));
           } else throw error;
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPetSkillBulkGrantCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_bulk_grant"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PetSkillBulkGrantService(database!).handle({
+          eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
+        });
+        if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.reply! });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
