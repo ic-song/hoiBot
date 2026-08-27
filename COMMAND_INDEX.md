@@ -596,6 +596,10 @@ Status: VERIFIED
 - `homeData[sender].floor`
 - `homeData[sender].houseName`
 - `petSkillData`
+## Modernization
+- Handler: `home_furniture_bag_lifecycle`
+- Stable order: charm snapshot descending, Korean display name, furniture instance ID
+- Read flow removes the legacy sort-and-save side effect while preserving the projected order.
 - `petData`
 
 ## Save Flow
@@ -1831,6 +1835,10 @@ Status: VERIFIED
 - Mutates `homeData`
 - Mutates member point state
 - Saves `homeData` and member data in branch
+## Modernization
+- Handler: `home_furniture_bag_lifecycle`
+- Stable instance cleanup: charm snapshot threshold → `sold` state → point credit → furniture/currency ledgers
+- Cleanup, audit, execution, and outbox are committed in one transaction.
 
 ## Related Commands
 
