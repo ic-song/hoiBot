@@ -7009,3 +7009,24 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - MariaDB transaction: 운영자 권한 확인 + 전체 counter reset + audit/execution/outbox
+
+# /펫홈소셜뱃지마이그레이션
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-social-badge-migration-command.ts
+- 개발환경_고도화/runtime/src/home/home-social-badge-migration-service.ts
+- 개발환경_고도화/runtime/src/home/home-social-badge-migration-iris-handler.ts
+- 개발환경_고도화/runtime/migrations/218_home_social_badge_migration.sql
+
+## Data Usage
+- pet_home_badge_definitions: 업적 뱃지 64종의 코드·표시값·조건
+- pet_home_badge_stats: 팔로워·맞팔·댓글·좋아요·마음·방문·피드 활동일 집계
+- player_badge_assignments / player_home_badges / player_badge_equipment: 보유·호환 projection·대표 장착
+- player_home_badge_exclusions: 영구 삭제되어 다시 지급하지 않을 뱃지
+- pet_home_social_badge_migration_*: 관계형 백업·지급·실행·완료 마커 증거
+
+## Save Flow
+- MariaDB transaction: 운영자 권한 확인 + 실데이터 집계 + 기존 수치 하향 방지 + 신규 업적 지급 + 백업/audit/execution/outbox

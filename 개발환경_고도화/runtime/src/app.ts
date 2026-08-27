@@ -186,6 +186,8 @@ import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDis
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
 import { HomeVisitResetIrisHandler } from "./home/home-visit-reset-iris-handler.js";
+import { isHomeSocialBadgeMigrationCommand, normalizeHomeSocialBadgeMigrationDispatchMessage } from "./home/home-social-badge-migration-command.js";
+import { HomeSocialBadgeMigrationIrisHandler } from "./home/home-social-badge-migration-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -731,6 +733,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
         && isHomeVisitResetCommand(normalizedEvent.message);
+      const homeSocialBadgeMigrationDispatchCandidate = process.env.HOME_SOCIAL_BADGE_MIGRATION_COMMAND_ENABLED === "true"
+        && isHomeSocialBadgeMigrationCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -808,6 +812,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeBaseballPitchDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
         || homeVisitResetDispatchCandidate
+        || homeSocialBadgeMigrationDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -925,6 +930,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
                   ? normalizeHomeVisitResetDispatchMessage(normalizedEvent.message ?? "")
+                : homeSocialBadgeMigrationDispatchCandidate
+                  ? normalizeHomeSocialBadgeMigrationDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1092,6 +1099,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_visit_reset") {
         const visitResetResponse = await new HomeVisitResetIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: visitResetResponse.outboxId, room: normalizedEvent.channelId!, data: visitResetResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_social_badge_migration") {
+        const migrationResponse = await new HomeSocialBadgeMigrationIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: migrationResponse.outboxId, room: normalizedEvent.channelId!, data: migrationResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
