@@ -6953,3 +6953,21 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - read-only MariaDB transaction with operation, audit, execution and outbox evidence
+# /투수던집니다
+
+Status: VERIFIED
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-baseball-pitch-command.ts
+- 개발환경_고도화/runtime/src/home/home-baseball-pitch-service.ts
+- 개발환경_고도화/runtime/src/home/home-baseball-pitch-iris-handler.ts
+
+## Data Usage
+- inventory_stacks / inventory_ledger: 야구공 소비와 기본 아이템 3종 지급
+- currency_accounts / currency_ledger: 타석 결과 포인트 지급
+- player_title_instances / player_titles: 그랜드슬램 타이틀 인스턴스와 호환 projection
+- baseball_pitch_operations / baseball_pitch_rng_samples: 결과·확률 증거
+
+## Save Flow
+- 하나의 MariaDB transaction에서 소비·보상·타이틀·audit·outbox 처리

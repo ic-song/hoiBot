@@ -180,6 +180,8 @@ import { isDebugModeCommand, normalizeDebugModeDispatchMessage } from "./admin/d
 import { DebugModeIrisHandler } from "./admin/debug-mode-iris-handler.js";
 import { isHomeFurnitureEquipSyncCommand, normalizeHomeFurnitureEquipSyncDispatchMessage } from "./home/home-furniture-equip-sync-command.js";
 import { HomeFurnitureEquipSyncIrisHandler } from "./home/home-furniture-equip-sync-iris-handler.js";
+import { isHomeBaseballPitchCommandCandidate, normalizeHomeBaseballPitchDispatchMessage } from "./home/home-baseball-pitch-command.js";
+import { HomeBaseballPitchIrisHandler } from "./home/home-baseball-pitch-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -719,6 +721,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isDebugModeCommand(normalizedEvent.message);
       const homeFurnitureEquipSyncDispatchCandidate = process.env.HOME_FURNITURE_EQUIP_SYNC_COMMAND_ENABLED === "true"
         && isHomeFurnitureEquipSyncCommand(normalizedEvent.message);
+      const homeBaseballPitchDispatchCandidate = process.env.HOME_BASEBALL_PITCH_COMMAND_ENABLED === "true"
+        && isHomeBaseballPitchCommandCandidate(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -793,6 +797,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || legacyDataCleanupDispatchCandidate
         || debugModeDispatchCandidate
         || homeFurnitureEquipSyncDispatchCandidate
+        || homeBaseballPitchDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -904,6 +909,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeDebugModeDispatchMessage(normalizedEvent.message ?? "")
                 : homeFurnitureEquipSyncDispatchCandidate
                   ? normalizeHomeFurnitureEquipSyncDispatchMessage(normalizedEvent.message ?? "")
+                : homeBaseballPitchDispatchCandidate
+                  ? normalizeHomeBaseballPitchDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1044,6 +1051,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_furniture_equip_sync") {
         const syncResponse = await new HomeFurnitureEquipSyncIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: syncResponse.outboxId, room: normalizedEvent.channelId!, data: syncResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_baseball_pitch") {
+        const baseballResponses = await new HomeBaseballPitchIrisHandler(database).execute(normalizedEvent);
+        for (const response of baseballResponses) processing.replies.push({ outboxId: response.outboxId, room: normalizedEvent.channelId!, data: response.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
