@@ -868,6 +868,14 @@ Status: VERIFIED
 - runtime `petSweetHomeData.json`
 - runtime `petHomePlacedFurniture.json`
 - runtime `petSweetHomeData_beforePlacedFurnitureSplit.json`
+- modern runtime `src/home/home-furniture-equip-sync-*.ts`
+- modern migration `214_home_furniture_equip_sync.sql`
+
+## Modernized DB Flow
+
+- `owned_furniture` 수량과 `furniture_placements`는 최초·증분 입력으로만 읽고, `furniture_inventory_instances`의 stable instance를 최종 원장으로 사용한다.
+- 최초 실행은 `home_furniture_sync_backup_rows`에 DB snapshot을 1회 보존하고, source ordinal 링크·배치 승격·요약 projection·감사·outbox를 한 transaction으로 반영한다.
+- source 수량 감소나 배치 수 초과는 파괴적으로 추정하지 않고 전체 rollback한다.
 
 ## Related Helpers
 

@@ -178,6 +178,8 @@ import { isLegacyDataCleanupCommand, normalizeLegacyDataCleanupDispatchMessage }
 import { LegacyDataCleanupIrisHandler } from "./admin/legacy-data-cleanup-iris-handler.js";
 import { isDebugModeCommand, normalizeDebugModeDispatchMessage } from "./admin/debug-mode-command.js";
 import { DebugModeIrisHandler } from "./admin/debug-mode-iris-handler.js";
+import { isHomeFurnitureEquipSyncCommand, normalizeHomeFurnitureEquipSyncDispatchMessage } from "./home/home-furniture-equip-sync-command.js";
+import { HomeFurnitureEquipSyncIrisHandler } from "./home/home-furniture-equip-sync-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -715,6 +717,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isLegacyDataCleanupCommand(normalizedEvent.message);
       const debugModeDispatchCandidate = process.env.DEBUG_MODE_COMMAND_ENABLED === "true"
         && isDebugModeCommand(normalizedEvent.message);
+      const homeFurnitureEquipSyncDispatchCandidate = process.env.HOME_FURNITURE_EQUIP_SYNC_COMMAND_ENABLED === "true"
+        && isHomeFurnitureEquipSyncCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -788,6 +792,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || commentPinDispatchCandidate
         || legacyDataCleanupDispatchCandidate
         || debugModeDispatchCandidate
+        || homeFurnitureEquipSyncDispatchCandidate
         || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -897,6 +902,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeLegacyDataCleanupDispatchMessage(normalizedEvent.message ?? "")
                 : debugModeDispatchCandidate
                   ? normalizeDebugModeDispatchMessage(normalizedEvent.message ?? "")
+                : homeFurnitureEquipSyncDispatchCandidate
+                  ? normalizeHomeFurnitureEquipSyncDispatchMessage(normalizedEvent.message ?? "")
               : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1028,6 +1035,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "ADMIN_DEBUG_MODE") {
         const debugResponse = await new DebugModeIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: debugResponse.outboxId, room: normalizedEvent.channelId!, data: debugResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_furniture_equip_sync") {
+        const syncResponse = await new HomeFurnitureEquipSyncIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: syncResponse.outboxId, room: normalizedEvent.channelId!, data: syncResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
