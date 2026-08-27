@@ -104,6 +104,7 @@ import { HomeFurnitureFullCleanupService, isHomeFurnitureFullCleanupCommand } fr
 import { HomeFurnitureInfoReadService, isHomeFurnitureInfoReadCandidate, normalizeHomeFurnitureInfoReadDispatchMessage } from "./home/home-furniture-info-read-service.js";
 import { HomeFurnitureRemoveService, isHomeFurnitureRemoveCandidate, normalizeHomeFurnitureRemoveDispatchMessage } from "./home/home-furniture-remove-service.js";
 import { HomeFurnitureAddService, isHomeFurnitureAddCandidate, normalizeHomeFurnitureAddDispatchMessage } from "./home/home-furniture-add-service.js";
+import { HomeFurnitureStatsReadService, isHomeFurnitureStatsReadCommand } from "./home/home-furniture-stats-read-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
@@ -750,6 +751,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
         || isHomeFurnitureRemoveCandidate(normalizedEvent.message)
         || isHomeFurnitureAddCandidate(normalizedEvent.message)
+        || isHomeFurnitureStatsReadCommand(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
         || isPetTitleCommandCandidate(normalizedEvent.message)
@@ -1598,6 +1600,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_rank_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result=await new HomeFurnitureRankReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
+        processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isHomeFurnitureStatsReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_stats_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result=await new HomeFurnitureStatsReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
 

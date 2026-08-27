@@ -4986,6 +4986,11 @@ Status: VERIFIED
 
 - `homeData[*].furnitureBag[*].grade`
 
+## Modernization Notes
+
+- 현대화 handler는 `home_furniture_stats_read`이며 정확한 `/가구통계`만 실행한다.
+- `bag` 상태 가구만 등급별로 집계하고 개수 내림차순·최초 stable 인스턴스 순으로 동률을 고정하며, 빈 결과·비율·500자 접힘을 보존한다.
+
 ## Save Flow
 
 - Read-only in the confirmed branch
