@@ -6823,3 +6823,18 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - MariaDB transaction: stable owner transfer + carrot fee + thermometer reward + ledgers + audit/execution/outbox
+# /가구순위
+
+Status: VERIFIED (modern SHADOW)
+
+## Files
+- main.js
+- 개발환경_고도화/runtime/src/home/home-furniture-rank-read-service.ts
+- 개발환경_고도화/runtime/migrations/200_home_furniture_rank_read.sql
+
+## Data Usage
+- furniture_placements / owned_furniture / furniture_definitions
+- player_profiles / player_legacy_rank_profiles
+
+## Save Flow
+- read-only MariaDB transaction with operation, audit, execution and outbox evidence
