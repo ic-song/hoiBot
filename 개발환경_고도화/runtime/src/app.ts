@@ -200,6 +200,8 @@ import { isLegendaryStoneDrawCommandCandidate, normalizeLegendaryStoneDrawDispat
 import { LegendaryStoneDrawIrisHandler } from "./shop/legendary-stone-draw-iris-handler.js";
 import { isPetExploreRecordsResetCommand, normalizePetExploreRecordsResetDispatchMessage } from "./pet/pet-explore-records-reset-command.js";
 import { PetExploreRecordsResetIrisHandler } from "./pet/pet-explore-records-reset-iris-handler.js";
+import { isContributionPassCommandCandidate, normalizeContributionPassDispatchMessage } from "./pass/contribution-pass-command.js";
+import { ContributionPassIrisHandler } from "./pass/contribution-pass-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
@@ -759,6 +761,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isLegendaryStoneDrawCommandCandidate(normalizedEvent.message);
       const petExploreRecordsResetDispatchCandidate = process.env.PET_EXPLORE_RECORDS_RESET_COMMAND_ENABLED === "true"
         && isPetExploreRecordsResetCommand(normalizedEvent.message);
+      const contributionPassDispatchCandidate = process.env.CONTRIBUTION_PASS_COMMAND_ENABLED === "true"
+        && isContributionPassCommandCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -865,6 +869,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeBaseballPitchDispatchCandidate
         || legendaryStoneDrawDispatchCandidate
         || petExploreRecordsResetDispatchCandidate
+        || contributionPassDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1019,6 +1024,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeLegendaryStoneDrawDispatchMessage(normalizedEvent.message ?? "")
                 : petExploreRecordsResetDispatchCandidate
                   ? normalizePetExploreRecordsResetDispatchMessage(normalizedEvent.message ?? "")
+                : contributionPassDispatchCandidate
+                  ? normalizeContributionPassDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1200,6 +1207,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "pet_explore_records_reset") {
         const resetResponse = await new PetExploreRecordsResetIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: resetResponse.outboxId, room: resetResponse.room, data: resetResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "contribution_pass_registry") {
+        const passResponse = await new ContributionPassIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
