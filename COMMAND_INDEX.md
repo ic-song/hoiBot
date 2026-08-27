@@ -21,6 +21,32 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
 
 ---
+# /길드펫스킬창고
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: frozen legacy behavior
+- `개발환경_고도화/runtime/src/guild/guild-pet-skill-stock-grant-service.ts`: modern DB provider
+- `개발환경_고도화/runtime/migrations/183_guild_pet_skill_stock_grant.sql`: item, permission, and command registration
+
+## Data Usage
+
+- Legacy: `guildData.guilds[*].warehouse.petSkillBook`
+- Modern: `guilds`, `item_definitions.code = pet_skill_book_fragment`, `guild_warehouse_stacks`, `guild_warehouse_ledger`
+
+## Save Flow
+
+- Legacy Admin/Master flow increases the guild warehouse value and saves `guildData`.
+- Modern operator flow locks the stable guild/item stack and records stack, ledger, execution, audit, and outbox atomically.
+
+## AI Notes
+
+- Despite the old WBS read label, this is a mutating operator grant command.
+- Exact `/길드펫스킬창고` returns usage; the execution form is `/길드펫스킬창고 [길드명] [양의 정수]`.
+
+---
 # /결투
 
 Status: VERIFIED

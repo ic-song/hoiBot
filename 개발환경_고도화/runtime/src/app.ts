@@ -95,6 +95,7 @@ import { isGuildForceExpelCommandCandidate } from "./guild/guild-force-expel-pol
 import { MariaGuildForceExpelRepository } from "./guild/maria-guild-force-expel-repository.js";
 import { GuildRecruitmentToggleService, isGuildRecruitmentToggleCommand } from "./guild/guild-recruitment-toggle-service.js";
 import { isRiftForceAdminCommand, RiftForceAdminService } from "./guild/rift-force-admin-service.js";
+import { GuildPetSkillStockGrantService, isGuildPetSkillStockGrantCandidate, normalizeGuildPetSkillStockGrantDispatchMessage } from "./guild/guild-pet-skill-stock-grant-service.js";
 import { ConstructionEditService } from "./home/construction-edit-service.js";
 import { isConstructionEditCommandCandidate } from "./home/construction-edit-policy.js";
 import { MariaConstructionEditRepository } from "./home/maria-construction-edit-repository.js";
@@ -720,6 +721,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isPetTitleCommandCandidate(normalizedEvent.message)
         || isPetRebirthCommandCandidate(normalizedEvent.message)
         || isPetDuelEmoteCommandCandidate(normalizedEvent.message)
+        || isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
         || packageDispatchCandidate
         || packageCatalogAdminDispatchCandidate
         || pointShopCatalogDispatchCandidate
@@ -737,7 +739,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
         }).resolve({
           eventId: normalizedEvent.eventId,
-           message: isPetDuelEmoteCommandCandidate(normalizedEvent.message)
+           message: isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
+            ? normalizeGuildPetSkillStockGrantDispatchMessage(normalizedEvent.message ?? "")
+            : isPetDuelEmoteCommandCandidate(normalizedEvent.message)
             ? normalizePetDuelEmoteDispatchMessage(normalizedEvent.message ?? "")
             : isPetRebirthCommandCandidate(normalizedEvent.message)
             ? normalizePetRebirthDispatchMessage(normalizedEvent.message ?? "")
@@ -1385,6 +1389,23 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_duel_emote_error",error.message));
+          } else throw error;
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "guild_pet_skill_stock_grant"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new GuildPetSkillStockGrantService(database!).handle({
+            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
+            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
+          });
+          if (result.reply !== null) processing.replies.push(result.reply);
+        } catch (error) {
+          if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"guild_pet_skill_stock_grant_error",error.message));
           } else throw error;
         }
       }
