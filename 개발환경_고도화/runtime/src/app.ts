@@ -195,6 +195,8 @@ import { isHomeFeedMigrationCommand, normalizeHomeFeedMigrationDispatchMessage }
 import { HomeFeedMigrationIrisHandler } from "./home/home-feed-migration-iris-handler.js";
 import { isHomeActivityRestoreCommand, normalizeHomeActivityRestoreDispatchMessage } from "./home/home-activity-restore-command.js";
 import { HomeActivityRestoreIrisHandler } from "./home/home-activity-restore-iris-handler.js";
+import { isHomeActivityFileBootstrapCommand, normalizeHomeActivityFileBootstrapDispatchMessage } from "./home/home-activity-file-bootstrap-command.js";
+import { HomeActivityFileBootstrapIrisHandler } from "./home/home-activity-file-bootstrap-iris-handler.js";
 
 interface TokenQuery {
   token?: string;
@@ -748,6 +750,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFeedMigrationCommand(normalizedEvent.message);
       const homeActivityRestoreDispatchCandidate = process.env.HOME_ACTIVITY_RESTORE_COMMAND_ENABLED === "true"
         && isHomeActivityRestoreCommand(normalizedEvent.message);
+      const homeActivityFileBootstrapDispatchCandidate = process.env.HOME_ACTIVITY_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
+        && isHomeActivityFileBootstrapCommand(normalizedEvent.message);
       const packageCatalogWizardHandler = database !== undefined
         && process.env.PACKAGE_CATALOG_WIZARD_COMMAND_ENABLED === "true"
         ? new PackageCatalogAddWizardIrisHandler(database)
@@ -830,6 +834,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || homePassReformCleanupDispatchCandidate
          || homeFeedMigrationDispatchCandidate
          || homeActivityRestoreDispatchCandidate
+         || homeActivityFileBootstrapDispatchCandidate
          || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
@@ -957,6 +962,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeFeedMigrationDispatchMessage(normalizedEvent.message ?? "")
                 : homeActivityRestoreDispatchCandidate
                   ? normalizeHomeActivityRestoreDispatchMessage(normalizedEvent.message ?? "")
+                : homeActivityFileBootstrapDispatchCandidate
+                  ? normalizeHomeActivityFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                : isHappyFoundationCaptainCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1160,6 +1167,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "home_activity_restore") {
         const restoreResponse = await new HomeActivityRestoreIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: restoreResponse.outboxId, room: normalizedEvent.channelId!, data: restoreResponse.message });
+      }
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "home_activity_file_bootstrap") {
+        const bootstrapResponse = await new HomeActivityFileBootstrapIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: bootstrapResponse.outboxId, room: normalizedEvent.channelId!, data: bootstrapResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined
