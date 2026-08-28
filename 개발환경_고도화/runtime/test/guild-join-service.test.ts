@@ -70,7 +70,7 @@ describe("guild join service request", () => {
     assert.equal(result.status, "pending");
     assert.equal(result.guildId, "91");
     assert.match(result.data ?? "", /알파길드\(A\) 길드에 가입하실껀가요/);
-    assert.deepEqual(scripted.calls, ["lockPlayer", "prior:guild_join_request", "start:guild_join_request", "listGuilds", "savePending", "complete:guild_join_request"]);
+    assert.deepEqual(scripted.calls, ["lockPlayer", "prior:guild_join_request", "start:guild_join_request", "listGuilds", "lockGuild", "savePending", "complete:guild_join_request"]);
   });
 
   it("does not enter a transaction for suffix text", async () => {

@@ -149,6 +149,7 @@ import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMes
 import { GuildJoinService } from "./guild/guild-join-service.js";
 import { MariaGuildJoinRepository } from "./guild/maria-guild-join-repository.js";
 import { isGuildJoinCommandCandidate } from "./guild/guild-join-policy.js";
+import { GuildJoinableListReadService, isGuildJoinableListReadCommand } from "./guild/guild-joinable-list-read-service.js";
 import { GuildJoinConditionService } from "./guild/guild-join-condition-service.js";
 import { isGuildJoinConditionCommandCandidate } from "./guild/guild-join-condition-policy.js";
 import { MariaGuildJoinConditionRepository } from "./guild/maria-guild-join-condition-repository.js";
@@ -890,6 +891,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isRecordBoardCommandCandidate(normalizedEvent.message)
          || parseGuildAdminDetailCommand(normalizedEvent.message) !== null
          || isGuildProfileReadCommand(normalizedEvent.message)
+         || isGuildJoinableListReadCommand(normalizedEvent.message)
          || isSocialPunchReactionCommandCandidate(normalizedEvent.message)
          || isPetSkillBoastReadCommand(normalizedEvent.message)
          || isPetAppearanceCommandCandidate(normalizedEvent.message)
@@ -1903,6 +1905,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "guild_profile_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new GuildProfileReadService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isGuildJoinableListReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "guild_joinable_list_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new GuildJoinableListReadService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 

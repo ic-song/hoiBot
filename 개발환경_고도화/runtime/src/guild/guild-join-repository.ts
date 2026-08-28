@@ -36,7 +36,7 @@ export interface GuildJoinTransaction {
   lockPlayer(externalUserId: string): Promise<GuildJoinPlayer | null>;
   readPriorResult(eventId: string, commandCode: GuildJoinCommandRecord["commandCode"], playerId: string): Promise<GuildJoinResult | null>;
   startCommand(eventId: string, commandCode: GuildJoinCommandRecord["commandCode"], playerId: string): Promise<string>;
-  listJoinableGuilds(): Promise<GuildJoinCandidate[]>;
+  listJoinableGuilds(playerId?: string): Promise<GuildJoinCandidate[]>;
   lockGuild(guildId: string): Promise<GuildJoinCandidate | null>;
   lockPendingJoin(playerId: string): Promise<PendingGuildJoin | null>;
   savePendingJoin(playerId: string, guildId: string, guildNo: number, eventId: string): Promise<void>;

@@ -108,23 +108,25 @@ export class GuildJoinService {
       const player = requireJoinablePlayer(lockedPlayer);
       const operationId = await transaction.startCommand(command.eventId, "guild_join_request", player.playerId);
 
-      const rows = sortJoinableGuilds(await transaction.listJoinableGuilds());
+      const rows = sortJoinableGuilds(await transaction.listJoinableGuilds(player.playerId));
       const candidate = rows[guildNo - 1];
       if (candidate === undefined) throw new ApplicationError("GUILD_NOT_FOUND_BY_NUMBER", "❌ 해당 번호의 길드가 없습니다.", 404);
-      requireEligibleGuild(candidate, player.experience);
+      const lockedCandidate = await transaction.lockGuild(candidate.guildId);
+      if (lockedCandidate === null) throw new ApplicationError("GUILD_NOT_FOUND_BY_NUMBER", "❌ 해당 번호의 길드가 없습니다.", 404);
+      requireEligibleGuild(lockedCandidate, player.experience);
 
-      await transaction.savePendingJoin(player.playerId, candidate.guildId, guildNo, command.eventId);
-      const data = buildGuildJoinConfirmationMessage(player.rankLabel, candidate);
+      await transaction.savePendingJoin(player.playerId, lockedCandidate.guildId, guildNo, command.eventId);
+      const data = buildGuildJoinConfirmationMessage(player.rankLabel, lockedCandidate);
       return complete(transaction, operationId, {
         eventId: command.eventId,
         commandCode: "guild_join_request",
         playerId: player.playerId,
-        guildId: candidate.guildId,
+        guildId: lockedCandidate.guildId,
         actionCode: "guild.join.requested",
         channelId: command.channelId,
         data,
-        changeSummary: { guildId: candidate.guildId, guildNo, ticketName: GUILD_JOIN_TICKET_NAME }
-      }, { status: "pending", data, guildId: candidate.guildId });
+        changeSummary: { guildId: lockedCandidate.guildId, guildNo, ticketName: GUILD_JOIN_TICKET_NAME }
+      }, { status: "pending", data, guildId: lockedCandidate.guildId });
     });
   }
 

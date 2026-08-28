@@ -32,7 +32,7 @@ export class MariaGuildJoinRepository implements GuildJoinRepository {
       lockPlayer: async (externalUserId) => this.lockPlayer(transaction, externalUserId),
       readPriorResult: async (eventId, commandCode, playerId) => this.readPriorResult(transaction, eventId, commandCode, playerId),
       startCommand: async (eventId, commandCode, playerId) => this.startCommand(transaction, eventId, commandCode, playerId),
-      listJoinableGuilds: async () => this.listGuilds(transaction, false),
+      listJoinableGuilds: async (playerId) => this.listGuildsForPlayer(transaction, playerId),
       lockGuild: async (guildId) => (await this.listGuilds(transaction, true, guildId))[0] ?? null,
       lockPendingJoin: async (playerId) => this.lockPending(transaction, playerId),
       savePendingJoin: async (playerId, guildId, guildNo, eventId) => this.savePending(transaction, playerId, guildId, guildNo, eventId),
@@ -97,6 +97,32 @@ export class MariaGuildJoinRepository implements GuildJoinRepository {
       guildId: row.id.toString(), displayName: row.display_name, mark: row.mark ?? "", serverCode: row.server_code ?? "",
       level: row.level, joinRequirementExperience: row.join_requirement_experience, memberJoinClosed: Boolean(row.member_join_closed),
       maxMembers: row.max_members, recruitmentBonus: row.recruitment_bonus, memberCount: Number(row.member_count)
+    }));
+  }
+
+  // 최근 길드목록 스냅샷이 있으면 번호를 고정하고, 없으면 현재 목록을 계산합니다.
+  private async listGuildsForPlayer(transaction: DatabaseTransaction, playerId?: string): Promise<GuildJoinCandidate[]> {
+    if (playerId === undefined) return this.listGuilds(transaction, false);
+    const snapshotRows = await transaction.query<Array<{ guild_id: bigint; position_no: number; display_name: string; mark: string | null; server_code: string | null; level: number; join_requirement_experience: bigint; member_join_closed: number; max_members: number; recruitment_bonus: number; member_count: bigint }>>(
+      `SELECT entry.guild_id, entry.position_no, guild.display_name, guild.mark, guild.server_code, guild.level,
+        guild.join_requirement_experience, policy.member_join_closed, guild.max_members, guild.recruitment_bonus,
+        (SELECT COUNT(*) FROM guild_members member WHERE member.guild_id = guild.id) AS member_count
+       FROM guild_joinable_list_snapshots snapshot
+       JOIN guild_joinable_list_entries entry ON entry.snapshot_id = snapshot.id
+       JOIN guilds guild ON guild.id = entry.guild_id
+       JOIN guild_join_policies policy ON policy.guild_id = guild.id
+       WHERE snapshot.id = (
+         SELECT latest.id FROM guild_joinable_list_snapshots latest
+         WHERE latest.player_id = ? AND latest.expires_at > UTC_TIMESTAMP(3)
+         ORDER BY latest.snapshot_version DESC, latest.id DESC LIMIT 1
+       )
+       ORDER BY entry.position_no ASC`, [playerId]
+    );
+    if (snapshotRows.length === 0) return this.listGuilds(transaction, false);
+    return snapshotRows.map((row) => ({
+      guildId: row.guild_id.toString(), displayName: row.display_name, mark: row.mark ?? "", serverCode: row.server_code ?? "",
+      level: row.level, joinRequirementExperience: row.join_requirement_experience, memberJoinClosed: Boolean(row.member_join_closed),
+      maxMembers: row.max_members, recruitmentBonus: row.recruitment_bonus, memberCount: Number(row.member_count), snapshotPosition: row.position_no
     }));
   }
 

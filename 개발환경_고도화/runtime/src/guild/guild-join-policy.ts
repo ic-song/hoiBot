@@ -11,6 +11,7 @@ export interface GuildJoinCandidate {
   maxMembers: number;
   recruitmentBonus: number;
   memberJoinClosed: boolean;
+  snapshotPosition?: number;
 }
 
 export interface GuildJoinEligibility {
@@ -57,16 +58,20 @@ export function evaluateGuildJoin(candidate: GuildJoinCandidate, playerExperienc
 
 // 가입 가능한 길드를 레거시 목록 번호와 같은 순서로 정렬합니다.
 export function sortJoinableGuilds(candidates: readonly GuildJoinCandidate[]): GuildJoinCandidate[] {
+  const pinned = candidates.some((candidate) => candidate.snapshotPosition !== undefined);
   return candidates
-    .filter((candidate) => evaluateGuildJoin(candidate, candidate.joinRequirementExperience).reason === "joinable")
+    .filter((candidate) => pinned || evaluateGuildJoin(candidate, candidate.joinRequirementExperience).reason === "joinable")
     .sort((left, right) => {
+      if (pinned) return (left.snapshotPosition ?? Number.MAX_SAFE_INTEGER) - (right.snapshotPosition ?? Number.MAX_SAFE_INTEGER);
       if (left.level !== right.level) return right.level - left.level;
       if (left.joinRequirementExperience !== right.joinRequirementExperience) {
         return left.joinRequirementExperience > right.joinRequirementExperience ? -1 : 1;
       }
       if (left.displayName < right.displayName) return -1;
       if (left.displayName > right.displayName) return 1;
-      return 0;
+      const leftId = BigInt(left.guildId);
+      const rightId = BigInt(right.guildId);
+      return leftId < rightId ? -1 : leftId > rightId ? 1 : 0;
     });
 }
 
