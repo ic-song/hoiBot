@@ -1581,7 +1581,7 @@ blockedNicknameTerms: [
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
-            personalAttackLimit: 25, // 개인별 영지공격 최대 횟수
+            personalAttackLimit: 10, // 본인·대리 공격을 합산한 개인별 영지공격 최대 횟수
             maxOwnedTerritories: 3, // 길드별 동시 점령 가능 영지 수
             wrongTurnPenalty: 7, // 영지공격 오입력 패널티 턴
             timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준
@@ -1598,7 +1598,6 @@ blockedNicknameTerms: [
         },
         automation: { // 길드 영토전 자동화 권한 아이템
             autoReadyItemName: "길드영지자동준비권",
-            autoAttackItemName: "영지자동공격권⚔️",
             logMax: 500
         },
         rewards: { // 길드 영토전 보상 설정
@@ -5020,16 +5019,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     swordGuild.swordMasters = pickedMembers;
                     saveJsonFile(guildData, guildPath);
                     var pickedMsg = [];
-                    var autoAttackEntitlementGrantedUsers = []; // 최초 소드마스터 자동 공격권 지급 대상
                     var addedSwordMaster = pickedMembers[3];
                     var showKnightOrderSwordMasterMsg = hasGuildTerritoryKnightOrderLeader(swordGuild, petSkillData) && swordArgs.length === 4 && !!addedSwordMaster;
                     for (var smp = 0; smp < pickedMembers.length; smp++) {
                         pickedMsg.push((smp + 1) + ". " + checkRank(data, petData, guildData, pickedMembers[smp]));
-                        if (grantGuildTerritoryAutoAttackEntitlementForSwordMaster(data, pickedMembers[smp])) {
-                            autoAttackEntitlementGrantedUsers.push(pickedMembers[smp]);
-                        }
                     }
-                    if (autoAttackEntitlementGrantedUsers.length > 0) saveJsonFile(data, filePath);
                     if (showKnightOrderSwordMasterMsg) {
                         pickedMsg.push("");
                         pickedMsg.push("기사단 증원📙 [" + checkRank(data, petData, guildData, addedSwordMaster) + "] 소드마스터가 길드를 위하여 헌신합니다");
@@ -7430,7 +7424,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (/^\/영지패스(추가|삭제),\s*.+$/.test(msg)) {
                     if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) {
-                        replier.reply("❌ 영지패스 관리 명령어를 사용할 권한이 없습니다.");
+                        replier.reply("❌ 영지기습패스 관리 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
                     var territoryPassCommandResult = processUserIDCommand(msg, data, sender);
@@ -13962,17 +13956,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/영지온") {
                     var territoryAutoPassActive = isSupportPassActive(data, sender, "territory");
                     var territoryAutoFailureMessage = "⚠️ 영지 자동 공격을 사용할 수 없습니다.\n" +
-                        "사용 권한: 영지패스 소유 소드마스터 또는 전투형지휘관을 소지한 길드마스터";
+                        "사용 권한: 영지기습패스 소유 소드마스터 또는 전투형지휘관을 소지한 길드마스터";
                     if (!territoryAutoPassActive) {
-                        territoryAutoFailureMessage = "[" + checkRank(data, petData, guildData, sender) + "]님 영지패스를 구독중이지 않습니다.\n" + territoryAutoFailureMessage;
+                        territoryAutoFailureMessage = "[" + checkRank(data, petData, guildData, sender) + "]님 영지기습패스를 구독중이지 않습니다.\n" + territoryAutoFailureMessage;
                     }
                     var territoryAutoGuildInfo = getMyGuildInfo(data, guildData, sender);
                     if (!territoryAutoGuildInfo || territoryAutoGuildInfo.error || !territoryAutoGuildInfo.guild) {
                         replier.reply(territoryAutoFailureMessage);
                         return;
-                    }
-                    if (isGuildSwordMaster(territoryAutoGuildInfo.guild, sender, petSkillData)) {
-                        grantGuildTerritoryAutoAttackEntitlementForSwordMaster(data, sender);
                     }
                     var territoryAutoValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, sender);
                     if (!territoryAutoValidation.ok) {
@@ -14010,7 +14001,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     });
                     saveJsonFile(data, filePath);
                     if (!territoryAutoOffPassActive) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 영지패스를 구독중이지 않습니다.");
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 영지기습패스를 구독중이지 않습니다.");
                     } else {
                         replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🛑 영지 자동 공격이 비활성화되었습니다.");
                     }
@@ -31946,7 +31937,7 @@ function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, p
         return { ok: false, message: "❌ 영지공격 실행 조건이 유효하지 않습니다." };
     }
     var currentTurn = getGuildTerritoryTurnRow(data, guildData);
-    if (!currentTurn || currentTurn.guildId !== attackInfo.guildId || currentTurn.user !== sender) {
+    if (!currentTurn || currentTurn.guildId !== attackInfo.guildId || (isAutoAttack && currentTurn.user !== sender)) {
         return { ok: false, message: "❌ 현재 공격 차례가 아닙니다." };
     }
     var missingCastleExpUsers = getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo);
@@ -33657,10 +33648,7 @@ function hasGuildTerritoryAutoReadyEntitlement(data, user) {
 
 // 영지 자동 공격 권한 보유 여부를 확인하는 함수
 function hasGuildTerritoryAutoAttackEntitlement(data, user) {
-    var member = data && data.member ? data.member[user] : null;
-    return hasGuildTerritoryAutomationItem(data, user, GLOBAL_CONFIG.guildTerritory.automation.autoAttackItemName) ||
-        !!(member && member.guildTerritoryAutoAttackPermanent === true) ||
-        isSupportPassActive(data, user, "territory");
+    return isSupportPassActive(data, user, "territory");
 }
 
 // 현재 직책과 펫스킬을 기준으로 영지 자동 공격 자격을 확인하는 함수
@@ -33703,18 +33691,7 @@ function appendGuildTerritoryAutomationDataLog(data, log) {
     }
 }
 
-// 소드마스터 최초 획득 시 영지 자동 공격권을 한 번 지급하는 함수
-function grantGuildTerritoryAutoAttackEntitlementForSwordMaster(data, user) {
-    var member = data && data.member ? data.member[user] : null;
-    if (!member || member.guildTerritoryAutoAttackGranted === true) return false;
-    member.guildTerritoryAutoAttackGranted = true;
-    if (!hasGuildTerritoryAutomationItem(data, user, GLOBAL_CONFIG.guildTerritory.automation.autoAttackItemName)) {
-        addItem(data, user, GLOBAL_CONFIG.guildTerritory.automation.autoAttackItemName, 1);
-    }
-    return true;
-}
-
-// 만료·삭제된 영지패스만으로 켜 둔 자동 공격을 OFF 처리하는 함수
+// 만료·삭제된 영지기습패스로 켜 둔 자동 공격을 OFF 처리하는 함수
 function disableInvalidGuildTerritoryAutoAttacks(data) {
     var changedUsers = [];
     if (!data || !data.member) return changedUsers;
@@ -33727,7 +33704,7 @@ function disableInvalidGuildTerritoryAutoAttacks(data) {
         appendGuildTerritoryAutomationDataLog(data, {
             type: "AUTO_ATTACK_OFF",
             user: user,
-            reason: "영지패스 만료·삭제 및 독립 권한 없음",
+            reason: "영지기습패스 만료·삭제",
             processedAt: formatDateTime(new Date())
         });
         changedUsers.push(user);
@@ -34553,7 +34530,7 @@ function getSupportPassConfigs() {
         { key: "premium", label: "호이패스 프리미엄👑", commandNames: ["호패프리미엄"] },
         { key: "contribution", label: "길드공헌패스🎖️", commandNames: ["공헌패스"] },
         { key: "diamond", label: "다이아패스💎", commandNames: ["다이아패스"] },
-        { key: "territory", label: "영지기습방어패스⚔️🛡", commandNames: ["영지패스"] }
+        { key: "territory", label: "영지기습패스", commandNames: ["영지패스"] }
     ];
 }
 
@@ -34576,7 +34553,7 @@ function ensureSupportPassStore(data, user) {
     return member.pass;
 }
 
-// 영지패스 변경 전후 값을 로그용 단순 객체로 복사하는 함수
+// 영지기습패스 변경 전후 값을 로그용 단순 객체로 복사하는 함수
 function copyTerritoryPassAuditValue(pass) {
     if (!pass || typeof pass !== "object") return null;
     return {
@@ -34588,7 +34565,7 @@ function copyTerritoryPassAuditValue(pass) {
     };
 }
 
-// 영지패스 추가·연장·삭제 이력을 저장하는 함수
+// 영지기습패스 추가·연장·삭제 이력을 저장하는 함수
 function appendTerritoryPassAuditLog(data, operator, user, action, beforeValue, afterValue) {
     if (!(data.territoryPassAuditLogs instanceof Array)) data.territoryPassAuditLogs = [];
     data.territoryPassAuditLogs.push({
@@ -34853,7 +34830,7 @@ function grantSupportPassDailyRewards(data, passKey, rewards) {
     return result;
 }
 
-// 영지패스 일일 지급 결과를 최근 운영 로그에 기록하는 함수
+// 영지기습패스 일일 지급 결과를 최근 운영 로그에 기록하는 함수
 function appendTerritoryPassPayoutLogs(data, result, operator) {
     if (!(data.supportPassPayoutLogs instanceof Array)) data.supportPassPayoutLogs = [];
     var nowText = formatDateTime(new Date());
@@ -34903,7 +34880,7 @@ function grantAllSupportPassDailyRewards(data, operator) {
         result: grantSupportPassDailyRewards(data, "diamond", [{ name: GLOBAL_CONFIG.items.diamondBoxName, count: config.diamondBoxCount }])
     });
     var territoryResult = grantSupportPassDailyRewards(data, "territory", config.territoryDailyRewards);
-    rows.push({ label: "영지패스", result: territoryResult });
+    rows.push({ label: "영지기습패스", result: territoryResult });
     appendTerritoryPassPayoutLogs(data, territoryResult, operator);
     var totalGrantedCount = 0; // 패스별 실제 지급 건수 합계
     var totalSkippedCount = 0; // 당일 중복으로 제외된 패스 건수 합계
@@ -35182,7 +35159,7 @@ function buildDailyRewardPayoutStatusLines(data, guildData) {
 // 전체 후원패스 목록 메시지를 만드는 함수
 function buildSupportPassListMessage(data, petData, guildData) {
     var configs = getSupportPassConfigs();
-    var lines = ["호월패스 전체목록 안내:", "[원데이패스, 초보패스, 호이패스, 호이패스 프리미엄, 길드공헌패스, 다이아패스, 영지기습방어패스] / " + allsee, ""];
+    var lines = ["호월패스 전체목록 안내:", "[원데이패스, 초보패스, 호이패스, 호이패스 프리미엄, 길드공헌패스, 다이아패스, 영지기습패스] / " + allsee, ""];
     for (var i = 0; i < configs.length; i++) {
         var config = configs[i];
         var activeUsers = [];
@@ -35462,7 +35439,7 @@ function processUserIDCommand(msg, data, operator) {
         }
         var passEndText = option === "영구권" ? "영구권" : option + "까지";
         if (passConfig.key === "territory") {
-            return "✅ 영지기습방어패스 추가 완료\n" +
+            return "✅ 영지기습패스 추가 완료\n" +
                 "━━━━━━━━━━━━━━━━\n" +
                 "대상: " + userIDText + "\n" +
                 "만료일: " + passEndText + "\n\n" +
@@ -35504,15 +35481,15 @@ function processUserIDCommand(msg, data, operator) {
             appendGuildTerritoryAutomationDataLog(data, {
                 type: "AUTO_ATTACK_OFF",
                 user: userIDText,
-                reason: "영지패스 관리자 삭제",
+                reason: "영지기습패스 관리자 삭제",
                 processedAt: formatDateTime(new Date())
             });
         }
         appendTerritoryPassAuditLog(data, operator, userIDText, "삭제", deletedTerritoryPassBeforeValue, copyTerritoryPassAuditValue(userPassStore[passConfig.key]));
-        return "✅ 영지기습방어패스 삭제 완료\n" +
+        return "✅ 영지기습패스 삭제 완료\n" +
             "━━━━━━━━━━━━━━━━\n" +
             "대상: " + userIDText + "\n\n" +
-            "영지기습방어패스 명단에서 삭제되었습니다.\n" +
+            "영지기습패스 명단에서 삭제되었습니다.\n" +
             "패스로 이용하던 길드영지 자동화 권한도 종료됩니다.\n" +
             "다른 패스 가입 정보는 유지됩니다.\n" +
             "━━━━━━━━━━━━━━━━";

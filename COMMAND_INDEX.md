@@ -873,8 +873,8 @@ Status: VERIFIED
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
 - `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
-- 영지전 종료 시 참가 길드의 현재 길드마스터·부길드마스터 중 `길드영지자동준비권` 또는 유효한 영지패스 보유자를 다시 확인해 다음 회차 준비를 길드당 1회 생성한다.
-- `/영지온`은 독립 `영지자동공격권⚔️`·영구 권한·유효한 영지패스 중 하나와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 미구독 상태에서 활성화에 실패하면 체크랭크와 영지패스 미구독 안내를 함께 표시한다. 실제 턴에도 권한과 자격을 재검증하며 실패하면 OFF 처리한다. `/영지오프`는 기존 설정·로그·저장을 유지하고 미구독 상태일 때 응답 문구만 구독 안내로 변경한다.
+- 영지전 종료 시 참가 길드의 현재 길드마스터·부길드마스터 중 `길드영지자동준비권` 또는 유효한 영지기습패스 보유자를 다시 확인해 다음 회차 준비를 길드당 1회 생성한다.
+- `/영지온`은 유효한 영지기습패스와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 미구독 상태에서 활성화에 실패하면 체크랭크와 영지기습패스 미구독 안내를 함께 표시한다. 실제 턴에도 패스와 자격을 재검증하며 실패하면 OFF 처리한다. `/영지오프`는 기존 설정·로그·저장을 유지하고 미구독 상태일 때 응답 문구만 구독 안내로 변경한다.
 - 자동 공격은 1~7번을 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지하며, 예약 당시 길드와 실행 시점의 실제 길드가 다르면 실행하지 않는다.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 - `/길드영지시작` and `/길드영지종료` can also be entered from the dedicated siege room by their existing named operators; this room allowance does not bypass the active territory-war command lock.
@@ -978,7 +978,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Rejects attacks while the war is active but not yet start-ready
-- `전투형 지휘관📙` 보유 길드마스터는 영지전에서 소드마스터로 취급되며, 같은 길드 턴에는 현재 차례 유저가 아니어도 같은 길드의 다른 소드마스터 또는 길드마스터가 대신 공격할 수 있다. 해당 스킬 보유 상태로 직접 공격하면 랜덤 발동 멘트가 prepend한다
+- `전투형 지휘관📙` 보유 길드마스터는 영지전에서 소드마스터로 취급된다. 수동 공격은 같은 길드 턴이면 현재 차례 유저가 아니어도 같은 길드의 다른 소드마스터 또는 전투형 지휘관 길드마스터가 대신 공격할 수 있고, 자동 공격은 현재 차례 유저 본인만 실행한다. 해당 스킬 보유 상태로 직접 공격하면 랜덤 발동 멘트가 prepend한다
 - `/불안정`, `/안정`, `/균열`, `/대균열`도 `isGuildTerritoryAttacker` 기준을 따라 `전투형 지휘관📙` 길드마스터가 사용할 수 있다. 명령어 단독 또는 순수 숫자 인자 1개만 허용하며, 숫자 뒤 접미문이나 추가 설명이 붙은 입력은 실행하지 않는다
 - DEV 컨텍스트에서는 테스트용으로 `dev/강제균열`, `dev/강제대균열` 명령으로 확률 없이 이벤트를 즉시 발생시킬 수 있다
 - `🌌균열` 또는 `🌋대균열`이 실제 발생하면 누적 전쟁불안정도는 즉시 0으로 초기화된다
@@ -989,7 +989,7 @@ Status: VERIFIED
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
+- 개인별 영지공격은 본인 차례와 같은 길드 대리 공격을 실제 공격자 기준으로 합산하며, `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회까지 가능하다. 초과 시 공격 처리 전에 차단한다.
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
@@ -2364,8 +2364,8 @@ Status: VERIFIED
 - `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi/premium pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
 - `/패스목록` sums `호이응원패키지(무료)🐹[1]` through `[10]` for each user and lists users holding at least 3 in total; this scan is read-only and does not mutate bag data
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
-- 영지패스 추가·연장·삭제는 운영자·대상·처리시각·만료일·변경 전후 값을 `territoryPassAuditLogs`에 남긴다. 유효한 영지패스는 자동 준비·자동 공격의 구독형 권한으로 판정하며 물리 자동화권을 반복 지급하지 않는다.
-- 영지패스가 만료·삭제되고 독립 자동공격권이 없으면 `guildTerritoryAutoAttackEnabled`를 OFF로 저장하며, 패스를 다시 추가해도 자동으로 ON 복구하지 않는다.
+- 영지기습패스 추가·연장·삭제는 운영자·대상·처리시각·만료일·변경 전후 값을 `territoryPassAuditLogs`에 남긴다. 유효한 영지기습패스는 자동 준비·자동 공격의 구독형 권한으로 판정하며 물리 자동화권을 반복 지급하지 않는다.
+- 영지기습패스가 만료·삭제되면 `guildTerritoryAutoAttackEnabled`를 OFF로 저장하며, 패스를 다시 추가해도 자동으로 ON 복구하지 않는다.
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
 - `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when no other newbie/hoi/premium automatic-explore pass is active
 - Past end dates are rejected before pass mutation and automatic ticket grant
@@ -5525,8 +5525,8 @@ Status: VERIFIED
 - 각 패스의 `dailyRewardLastDate`로 당일 중복 지급을 방지한다.
 
 ## Save Flow
-- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 6종 패스의 실제 지급 건수 또는 영지패스 중복 제외 로그가 있을 때 `member.json`을 한 번 저장한다.
-- 영지패스는 `영지기습공격권🔥(40%)` 2개, `영지절대방어권🛡(50%)` 2개, `🌪️ 전쟁불안정 증폭권(/불안정)` 1개, `다이아상자💎(/다이아상자오픈)` 1개, `피뢰침⚡(자동 벼락 방지)` 1개를 지급하며, 성공·당일 중복 제외 내역을 최근 500건까지 기록한다.
+- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 6종 패스의 실제 지급 건수 또는 영지기습패스 중복 제외 로그가 있을 때 `member.json`을 한 번 저장한다.
+- 영지기습패스는 `영지기습공격권🔥(40%)` 2개, `영지절대방어권🛡(50%)` 2개, `🌪️ 전쟁불안정 증폭권(/불안정)` 1개, `다이아상자💎(/다이아상자오픈)` 1개, `피뢰침⚡(자동 벼락 방지)` 1개를 지급하며, 성공·당일 중복 제외 내역을 최근 500건까지 기록한다.
 
 ## Related Commands
 - `/호프구독`
