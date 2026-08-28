@@ -68,6 +68,7 @@
     "db:probe:home-furniture-unequip": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-unequip-synthetic.ts",
     "db:probe:social-own-heart": "node --env-file-if-exists=.env --import tsx scripts/probe-social-own-heart-synthetic.ts",
     "db:probe:home-like-action": "node --env-file-if-exists=.env --import tsx scripts/probe-home-like-action-synthetic.ts",
+    "db:probe:legacy-like": "node --env-file-if-exists=.env --import tsx scripts/probe-legacy-like-synthetic.ts",
     "db:probe:home-profile-view": "node --env-file-if-exists=.env --import tsx scripts/probe-home-profile-view-synthetic.ts",
     "db:probe:home-activity-alert-read": "node --env-file-if-exists=.env --import tsx scripts/probe-home-activity-alert-read-synthetic.ts",
     "db:probe:home-feed-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-home-feed-mutate-synthetic.ts",

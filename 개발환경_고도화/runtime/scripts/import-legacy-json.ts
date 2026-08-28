@@ -336,6 +336,7 @@ async function importMembers(
         ["attendance", "lifetime", integerString(member.cnt)],
         ["like", "current", integerString(member.like)],
         ["like", "lifetime", sumIntegers(member.like, member.like0)],
+        ["cntlike", new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date()), integerString(member.cntlike)],
         ["carrot", "lifetime", integerString(member.carrotGiven)],
         ["thermo", "lifetime", integerString(member.thermoPoints)],
         ["home_like", "lifetime", integerString(member.homeLikeCnt)]

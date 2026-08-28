@@ -254,6 +254,8 @@ import { isDailyCommentCommandCandidate, normalizeDailyCommentDispatchMessage } 
 import { DailyCommentIrisHandler } from "./home/daily-comment-iris-handler.js";
 import { isHomeLikeCommandCandidate, normalizeHomeLikeDispatchMessage } from "./home/home-like-command.js";
 import { HomeLikeIrisHandler } from "./home/home-like-iris-handler.js";
+import { isLegacyLikeCommandCandidate, normalizeLegacyLikeDispatchMessage } from "./social/legacy-like-command.js";
+import { LegacyLikeIrisHandler } from "./social/legacy-like-iris-handler.js";
 import { isHomeProfileViewCandidate, normalizeHomeProfileViewDispatchMessage } from "./home/home-profile-view-command.js";
 import { HomeProfileViewIrisHandler } from "./home/home-profile-view-iris-handler.js";
 import { isHomeActivityAlertReadCommand, normalizeHomeActivityAlertReadDispatchMessage } from "./home/home-activity-alert-read-command.js";
@@ -961,6 +963,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isDailyCommentCommandCandidate(normalizedEvent.message);
       const homeLikeDispatchCandidate = process.env.HOME_LIKE_COMMAND_ENABLED === "true"
         && isHomeLikeCommandCandidate(normalizedEvent.message);
+      const legacyLikeDispatchCandidate = process.env.LEGACY_LIKE_COMMAND_ENABLED === "true"
+        && isLegacyLikeCommandCandidate(normalizedEvent.message);
       const homeProfileViewDispatchCandidate = process.env.HOME_PROFILE_VIEW_COMMAND_ENABLED === "true"
         && isHomeProfileViewCandidate(normalizedEvent.message);
       const homeActivityAlertReadDispatchCandidate = process.env.HOME_ACTIVITY_ALERT_READ_COMMAND_ENABLED === "true"
@@ -1119,6 +1123,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || oneDayPassDispatchCandidate
         || dailyCommentDispatchCandidate
         || homeLikeDispatchCandidate
+        || legacyLikeDispatchCandidate
         || homeProfileViewDispatchCandidate
         || homeActivityAlertReadDispatchCandidate
         || homeFeedMutationDispatchCandidate
@@ -1325,6 +1330,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeDailyCommentDispatchMessage(normalizedEvent.message ?? "")
                 : homeLikeDispatchCandidate
                   ? normalizeHomeLikeDispatchMessage(normalizedEvent.message ?? "")
+                : legacyLikeDispatchCandidate
+                  ? normalizeLegacyLikeDispatchMessage(normalizedEvent.message ?? "")
                 : homeProfileViewDispatchCandidate
                   ? normalizeHomeProfileViewDispatchMessage(normalizedEvent.message ?? "")
                 : homeActivityAlertReadDispatchCandidate
@@ -1573,9 +1580,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && processing !== undefined
         && !processing.duplicate
         && partialDispatchDecision?.route === "MODERN"
-        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate")) {
+        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "legacy_social_like" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate")) {
         const homeResponse = partialDispatchDecision.handlerKey === "home_like_action"
           ? await new HomeLikeIrisHandler(database).execute(normalizedEvent)
+          : partialDispatchDecision.handlerKey === "legacy_social_like"
+            ? await new LegacyLikeIrisHandler(database).execute(normalizedEvent)
           : partialDispatchDecision.handlerKey === "home_profile_view"
             ? await new HomeProfileViewIrisHandler(database).execute(normalizedEvent)
             : partialDispatchDecision.handlerKey === "home_activity_alert_read"
