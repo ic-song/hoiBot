@@ -158,6 +158,7 @@ import { HomeFurnitureRemoveService, isHomeFurnitureRemoveCandidate, normalizeHo
 import { HomeFurnitureAddService, isHomeFurnitureAddCandidate, normalizeHomeFurnitureAddDispatchMessage } from "./home/home-furniture-add-service.js";
 import { HomeFurnitureStatsReadService, isHomeFurnitureStatsReadCommand } from "./home/home-furniture-stats-read-service.js";
 import { HomeFurnitureSellService, isHomeFurnitureSellCandidate, normalizeHomeFurnitureSellDispatchMessage } from "./home/home-furniture-sell-service.js";
+import { HomeFurnitureDrawService, isHomeFurnitureDrawCandidate, normalizeHomeFurnitureDrawDispatchMessage } from "./home/home-furniture-draw-service.js";
 import { HomeFurnitureCleanService, isHomeFurnitureCleanCandidate, normalizeHomeFurnitureCleanDispatchMessage } from "./home/home-furniture-clean-service.js";
 import { HomeFurnitureUnequipService, isHomeFurnitureUnequipCandidate, normalizeHomeFurnitureUnequipDispatchMessage } from "./home/home-furniture-unequip-service.js";
 import { SocialOwnHeartService, isSocialOwnHeartCandidate, normalizeSocialOwnHeartDispatchMessage } from "./social/social-own-heart-service.js";
@@ -348,7 +349,8 @@ function readSharedToken(request: FastifyRequest): string {
 // 보호된 Iris 및 디버그 API에서 공유 토큰을 검증합니다.
 // 가구 변경 명령의 공용 dispatch 후보 판정과 DB 별칭 정규화를 한곳에서 처리합니다.
 function isHomeFurnitureMutationCandidate(message: string | undefined): boolean {
-  return isHomeFurnitureUnequipCandidate(message)
+  return isHomeFurnitureDrawCandidate(message)
+    || isHomeFurnitureUnequipCandidate(message)
     || isHomeFurnitureSellCandidate(message)
     || isHomeFurnitureCleanCandidate(message)
     || isHomeFurnitureAddCandidate(message)
@@ -356,6 +358,7 @@ function isHomeFurnitureMutationCandidate(message: string | undefined): boolean 
 }
 
 function normalizeHomeFurnitureMutationDispatchMessage(message: string): string {
+  if (isHomeFurnitureDrawCandidate(message)) return normalizeHomeFurnitureDrawDispatchMessage(message);
   if (isHomeFurnitureUnequipCandidate(message)) return normalizeHomeFurnitureUnequipDispatchMessage(message);
   if (isHomeFurnitureSellCandidate(message)) return normalizeHomeFurnitureSellDispatchMessage(message);
   if (isHomeFurnitureCleanCandidate(message)) return normalizeHomeFurnitureCleanDispatchMessage(message);
@@ -2711,12 +2714,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && (isHomeFurnitureSellCandidate(normalizedEvent.message) || isHomeFurnitureCleanCandidate(normalizedEvent.message))
+        && (isHomeFurnitureDrawCandidate(normalizedEvent.message) || isHomeFurnitureSellCandidate(normalizedEvent.message) || isHomeFurnitureCleanCandidate(normalizedEvent.message))
         && partialDispatchDecision?.route === "MODERN"
-        && partialDispatchDecision.handlerKey === (isHomeFurnitureCleanCandidate(normalizedEvent.message) ? "home_furniture_clean" : "home_furniture_sell")
+        && partialDispatchDecision.handlerKey === (isHomeFurnitureDrawCandidate(normalizedEvent.message) ? "home_furniture_draw" : isHomeFurnitureCleanCandidate(normalizedEvent.message) ? "home_furniture_clean" : "home_furniture_sell")
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const input={eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!};
-        const result=isHomeFurnitureCleanCandidate(normalizedEvent.message)
+        const result=isHomeFurnitureDrawCandidate(normalizedEvent.message)
+          ? await new HomeFurnitureDrawService(database!).handle(input)
+          : isHomeFurnitureCleanCandidate(normalizedEvent.message)
           ? await new HomeFurnitureCleanService(database!).handle(input)
           : await new HomeFurnitureSellService(database!).handle(input);
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
