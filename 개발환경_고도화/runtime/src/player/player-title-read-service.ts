@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
+import { lockPlayerTitleOwnedProjection } from "./player-title-owned-projection.js";
 
 const ALLSEE = "\u200b".repeat(500);
 
@@ -156,16 +157,8 @@ export class PlayerTitleReadService {
         status = "player_not_found";
         data = `${parsed.kind === "target_list" ? parsed.targetKey : actor.display_name}는(은) 존재하지 않는 사용자입니다.`;
       } else {
-        const rows = await transaction.query<Array<{ title_id: bigint; display_name: string; acquired_display: string | null; acquisition_price: string; equipped: number }>>(
-          `SELECT owned.title_id,definition.display_name,
-                  DATE_FORMAT(CONVERT_TZ(owned.acquired_at,'+00:00','+09:00'),'%Y-%m-%d %H:%i') acquired_display,
-                  CAST(owned.acquisition_price AS CHAR) acquisition_price,owned.equipped
-             FROM player_titles owned JOIN title_definitions definition ON definition.id=owned.title_id
-            WHERE owned.player_id=? AND definition.active=TRUE
-            ORDER BY owned.display_order IS NULL,owned.display_order,owned.acquired_at IS NULL,owned.acquired_at,owned.title_id FOR UPDATE`,
-          [target.player_id]
-        );
-        titles = rows.map((row) => ({ titleId: row.title_id.toString(), displayName: row.display_name, acquiredDisplay: row.acquired_display ?? "-", acquisitionPrice: row.acquisition_price, equipped: Boolean(row.equipped) }));
+        const rows = await lockPlayerTitleOwnedProjection(transaction,target.player_id);
+        titles = rows.map((row) => ({ titleId: (row.instanceId ?? row.titleId).toString(), displayName: row.displayName, acquiredDisplay: row.acquiredDisplay ?? "-", acquisitionPrice: row.acquisitionPrice, equipped: row.equipped }));
         const ownerLabel = `${target.rank_emoji ?? ""}${target.display_name}`;
         if (parsed.kind === "info") {
           if (parsed.index === null) {

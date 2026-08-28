@@ -1,13 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { compactPlayerTitleOwnedProjection, lockPlayerTitleOwnedProjection } from "./player-title-owned-projection.js";
 
 type ParsedTitleSale =
   | { mode: "single"; start: bigint; end: bigint }
   | { mode: "range"; start: bigint; end: bigint };
 
 interface ActorRow { identity_id: bigint; player_id: bigint; display_name: string; rank_emoji: string | null; }
-interface TitleRow { title_id: bigint; display_name: string; display_order: bigint; equipped: number; acquisition_price: string; }
+interface TitleRow { instance_id: bigint | null; title_id: bigint; display_name: string; display_order: bigint; equipped: number; acquisition_price: string; }
 
 export interface PlayerTitleSellResult {
   status: "sold" | "not_found" | "blocked_by_castle_siege" | "ignored_unregistered";
@@ -92,15 +93,7 @@ export class PlayerTitleSellService {
       if (operation === undefined) throw new Error("Player title sell operation claim failed.");
       if (operation.result_json !== null) return { ...stored(operation.result_json), replayed: true };
 
-      const titles = await transaction.query<TitleRow[]>(
-        `SELECT owned.title_id,definition.display_name,COALESCE(owned.display_order,0) display_order,
-                owned.equipped,CAST(owned.acquisition_price AS CHAR) acquisition_price
-           FROM player_titles owned JOIN title_definitions definition ON definition.id=owned.title_id
-          WHERE owned.player_id=? AND definition.active=TRUE
-          ORDER BY owned.display_order IS NULL,owned.display_order,owned.acquired_at IS NULL,owned.acquired_at,owned.title_id
-          FOR UPDATE`,
-        [actor.player_id]
-      );
+      const titles: TitleRow[] = (await lockPlayerTitleOwnedProjection(transaction,actor.player_id)).map((row)=>({instance_id:row.instanceId,title_id:row.titleId,display_name:row.displayName,display_order:row.displayOrder,equipped:row.equipped?1:0,acquisition_price:row.acquisitionPrice}));
       const startIndex = parsed.start - 1n;
       const selected = startIndex >= BigInt(titles.length)
         ? []
@@ -134,16 +127,17 @@ export class PlayerTitleSellService {
           "INSERT INTO player_title_sale_lines(operation_id,sequence_no,title_id,source_display_order,was_equipped,acquisition_price,sale_price) VALUES (?,?,?,?,?,?,?)",
           [operation.id, index + 1, title.title_id, title.display_order, Boolean(title.equipped), title.acquisition_price, prices[index]!.toString()]
         );
-        const removed = await transaction.execute("DELETE FROM player_titles WHERE player_id=? AND title_id=?", [actor.player_id, title.title_id]);
-        if (removed.affectedRows !== 1n) throw new ApplicationError("PLAYER_TITLE_SELL_CONFLICT", "타이틀 정보가 먼저 변경되었습니다.", 409);
+        if(title.instance_id!==null){
+          const removed=await transaction.execute("UPDATE player_title_instances SET status='sold',equipped=FALSE,version=version+1 WHERE id=? AND status='owned'",[title.instance_id]);
+          if(removed.affectedRows!==1n)throw new ApplicationError("PLAYER_TITLE_SELL_CONFLICT","타이틀 정보가 먼저 변경되었습니다.",409);
+          const same=(await transaction.query<Array<{count_value:bigint}>>("SELECT COUNT(*) count_value FROM player_title_instances WHERE player_id=? AND title_id=? AND status='owned'",[actor.player_id,title.title_id]))[0]?.count_value??0n;
+          if(same===0n)await transaction.execute("DELETE FROM player_titles WHERE player_id=? AND title_id=?",[actor.player_id,title.title_id]);
+        }else{
+          const removed=await transaction.execute("DELETE FROM player_titles WHERE player_id=? AND title_id=?",[actor.player_id,title.title_id]);
+          if(removed.affectedRows!==1n)throw new ApplicationError("PLAYER_TITLE_SELL_CONFLICT","타이틀 정보가 먼저 변경되었습니다.",409);
+        }
       }
-      const remaining = await transaction.query<Array<{ title_id: bigint }>>(
-        "SELECT title_id FROM player_titles WHERE player_id=? ORDER BY display_order IS NULL,display_order,acquired_at IS NULL,acquired_at,title_id FOR UPDATE",
-        [actor.player_id]
-      );
-      for (let index = 0; index < remaining.length; index += 1) {
-        await transaction.execute("UPDATE player_titles SET display_order=? WHERE player_id=? AND title_id=?", [index + 1, actor.player_id, remaining[index]!.title_id]);
-      }
+      await compactPlayerTitleOwnedProjection(transaction,actor.player_id);
       const pointWrite = await transaction.execute(
         "UPDATE currency_accounts SET balance=?,version=version+1,updated_at=UTC_TIMESTAMP(3) WHERE player_id=? AND currency_code='point' AND version=?",
         [pointAfter.toString(), actor.player_id, account.version]

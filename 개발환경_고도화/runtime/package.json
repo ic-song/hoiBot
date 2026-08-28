@@ -117,7 +117,8 @@
     "db:probe:guild-shop-catalog": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-shop-catalog-synthetic.ts",
     "db:probe:diamond-shop-catalog-admin": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-catalog-admin-synthetic.ts",
     "db:probe:diamond-shop-buy": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-buy-synthetic.ts",
-    "db:probe:diamond-shop-read": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-read-synthetic.ts"
+    "db:probe:diamond-shop-read": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-read-synthetic.ts",
+    "db:probe:admin-member-title-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-member-title-mutate-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

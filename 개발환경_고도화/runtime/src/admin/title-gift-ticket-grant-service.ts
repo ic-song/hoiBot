@@ -1,11 +1,13 @@
 import type { DatabaseClient } from "../database.js";
 import { AdminStackGrantService, type AdminStackGrantCommand, type AdminStackGrantResult } from "./admin-stack-grant-service.js";
+import { AdminMemberTitleMutateService, isAdminMemberTitleMutateCandidate, normalizeAdminMemberTitleMutateDispatchMessage, type AdminMemberTitleMutateResult } from "./admin-member-title-mutate-service.js";
 
 const MAX_UINT64 = 18_446_744_073_709_551_615n;
 const ITEM_NAME = "타이틀선물권💝(/타이틀선물 닉네임 내용)";
 
 // trim된 레거시 outer guard만 재현하고 공백형 타이틀 선택 명령은 제외합니다.
 export function isTitleGiftTicketGrantCandidate(message: string | undefined): boolean {
+  if (isAdminMemberTitleMutateCandidate(message)) return true;
   if (message === undefined) return false;
   const trimmed = message.trim();
   return trimmed.startsWith("/타이틀,") || /^\/타이틀\d*,/.test(trimmed);
@@ -22,6 +24,7 @@ export function parseTitleGiftTicketGrantCommand(message: string): AdminStackGra
 
 // 인자형 명령을 DB의 대표 command alias로 정규화합니다.
 export function normalizeTitleGiftTicketGrantDispatchMessage(message: string): string {
+  if (isAdminMemberTitleMutateCandidate(message)) return normalizeAdminMemberTitleMutateDispatchMessage(message);
   return isTitleGiftTicketGrantCandidate(message) ? "/타이틀," : message;
 }
 
@@ -29,7 +32,8 @@ export function normalizeTitleGiftTicketGrantDispatchMessage(message: string): s
 export class TitleGiftTicketGrantService {
   constructor(private readonly database: DatabaseClient) {}
 
-  async grant(input: { eventId: string; destinationId: string; externalUserId: string; message: string }): Promise<AdminStackGrantResult | null> {
+  async grant(input: { eventId: string; destinationId: string; externalUserId: string; message: string }): Promise<AdminStackGrantResult | AdminMemberTitleMutateResult | null> {
+    if (isAdminMemberTitleMutateCandidate(input.message)) return new AdminMemberTitleMutateService(this.database).handle(input);
     const operators = await this.database.query<Array<{ operator_id: bigint }>>(`SELECT mapping.operator_id
       FROM external_identities identity
       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id

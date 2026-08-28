@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
+import { lockPlayerTitleOwnedProjection, type PlayerTitleOwnedProjection } from "./player-title-owned-projection.js";
 
 interface PlayerTitleOwnerRow {
   externalIdentityId: bigint;
@@ -8,12 +9,7 @@ interface PlayerTitleOwnerRow {
   rankEmoji: string | null;
 }
 
-interface OwnedTitleRow {
-  titleId: bigint;
-  displayName: string;
-  equipped: number;
-  displayOrder: bigint | null;
-}
+type OwnedTitleRow = PlayerTitleOwnedProjection;
 
 export interface PlayerTitleSelectResult {
   status: "selected" | "invalid_format" | "player_not_found" | "title_not_found";
@@ -102,26 +98,13 @@ export class PlayerTitleSelectService {
         status = "invalid_format";
         data = "올바른 타이틀 설정 명령어 형식을 사용해주세요. 예: /타이틀 [번호]";
       } else {
-        const rows = await transaction.query<Array<{
-          title_id: bigint;
-          display_name: string;
-          equipped: number;
-          display_order: bigint | null;
-        }>>(
-          `SELECT owned.title_id,definition.display_name,owned.equipped,owned.display_order
-             FROM player_titles owned
-             JOIN title_definitions definition ON definition.id=owned.title_id
-            WHERE owned.player_id=? AND definition.active=TRUE
-            ORDER BY owned.display_order IS NULL,owned.display_order,owned.acquired_at IS NULL,owned.acquired_at,owned.title_id
-            FOR UPDATE`,
-          [mappedOwner.playerId]
-        );
-        titles = rows.map((row) => ({ titleId: row.title_id, displayName: row.display_name, equipped: row.equipped, displayOrder: row.display_order }));
+        titles = await lockPlayerTitleOwnedProjection(transaction,mappedOwner.playerId);
         selected = titles[requestedIndex - 1];
         if (selected === undefined) {
           status = "title_not_found";
           data = "해당 번호의 타이틀이 존재하지 않습니다.";
         } else {
+          await transaction.execute("UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'", [selected.instanceId, mappedOwner.playerId]);
           await transaction.execute("UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?", [selected.titleId, mappedOwner.playerId]);
           status = "selected";
           const rankAndName = `${mappedOwner.rankEmoji ?? ""}${mappedOwner.displayName}`;
@@ -139,7 +122,7 @@ export class PlayerTitleSelectService {
       );
       await transaction.execute(
         "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player_title',?,'player.title.select',?,'Iris /타이틀',?,UTC_TIMESTAMP(3))",
-        [operation.id, mappedOwner?.externalIdentityId ?? null, selected?.titleId ?? null, status, JSON.stringify({ playerId: mappedOwner?.playerId.toString() ?? null, requestedIndex, selectedTitleId: selected?.titleId.toString() ?? null, selectedTitleName: selected?.displayName ?? null, ownedTitleCount: titles.length, fixedDisplayOrder: selected?.displayOrder?.toString() ?? null })]
+        [operation.id, mappedOwner?.externalIdentityId ?? null, selected?.titleId ?? null, status, JSON.stringify({ playerId: mappedOwner?.playerId.toString() ?? null, requestedIndex, selectedTitleId: selected?.titleId.toString() ?? null, selectedInstanceId: selected?.instanceId?.toString() ?? null, selectedTitleName: selected?.displayName ?? null, ownedTitleCount: titles.length, fixedDisplayOrder: selected?.displayOrder?.toString() ?? null })]
       );
       const result: PlayerTitleSelectResult = {
         status,
