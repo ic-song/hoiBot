@@ -279,7 +279,7 @@ Status: VERIFIED
 - `main.js` creates a command context with `createCommandContext(isDevCommandMessage(msg))` near the top of `response(...)`
 - DEV-prefixed messages are normalized through `stripDevCommandPrefix(msg)` before regular command branching continues
 - Both `loadJsonFile(...)` and `saveJsonFile(...)` pass through `resolveActiveDataPath(...)`, so save-flow verification should check path resolution rather than only literal file constants
-- `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing
+- `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing; transient `.tmp` files are excluded from backup and required-file checks
 - `/데이터상태` and `/데이터복구` follow `resolveActiveDataPath(...)`; normal commands target production and `dev/` commands target DEV data.
 - If a command looks read-only but still writes, inspect whether it sanitizes or normalizes data before display
 

@@ -1589,7 +1589,7 @@ function getMissingDevDataFiles() {
 		var sourceFile = sourceFiles[i];
 		if (!sourceFile || !sourceFile.isFile()) continue;
 		var fileName = String(sourceFile.getName());
-		if (COMMON_DATA_FILE_MAP[fileName]) continue;
+		if (COMMON_DATA_FILE_MAP[fileName] || /\.tmp$/.test(fileName)) continue;
 		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
 		if (!devFile.exists()) missing.push(fileName);
 	}
