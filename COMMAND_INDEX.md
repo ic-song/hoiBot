@@ -985,7 +985,7 @@ Status: VERIFIED
 - `기사단 증원📙` 길드마스터가 있으면 소드마스터 슬롯이 1명 추가되며, 공격 결과에 발동 멘트가 prepend된다
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
 - Non-final attack results prepend the next attacker's turn line before the result body
-- 자동 공격 사용자의 턴 안내에는 `(자동공격)`을 표시하고, 자동 공격 결과에는 실제 공격자·공격 영지·개인 누적 공격 횟수를 함께 표시해 다음 공격자 안내와 구분한다.
+- 자동·수동 공격의 턴 안내는 공통 형식을 사용하며 개인 누적 공격 횟수를 항상 표시한다. 자동 공격은 예약 시 선택한 공격 영지를 턴 안내에 추가하고 같은 영지를 실제 자동공격에 사용한다. 기존 자동 공격 결과 문구는 그대로 유지한다.
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`

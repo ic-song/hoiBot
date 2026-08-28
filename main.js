@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.424"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.425"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -14479,11 +14479,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(guildData, guildPath);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - dimensionSaveStartMs });
                         var dimensionTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
-                        var dimensionTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+                        var dimensionAutoTerritoryNo = startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+                        var dimensionTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData, dimensionAutoTerritoryNo);
                         dimensionTurnMsgs.forEach(function (m) {
                             castleMsg(m, replier, isGroupChat);
                         });
-                        startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - dimensionTurnGuideStartMs });
                         if (ctx.isDev) {
                             replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
@@ -14531,11 +14531,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(data, filePath);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - rememberMeSaveStartMs });
                         var rememberMeTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
-                        var rememberMeTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+                        var rememberMeAutoTerritoryNo = startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+                        var rememberMeTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData, rememberMeAutoTerritoryNo);
                         rememberMeTurnMsgs.forEach(function (m) {
                             castleMsg(m, replier, isGroupChat);
                         });
-                        startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - rememberMeTurnGuideStartMs });
                         if (ctx.isDev) {
                             replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
@@ -30377,12 +30377,11 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 
             castleMsg(buildGuildTerritoryStartMessage(latestData, latestGuildData), replier, isGroupChat);
 
-            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
+            var openingAutoTerritoryNo = startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
+            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData, openingAutoTerritoryNo);
             turnMsgs.forEach(function (m) {
                 castleMsg(m, replier, isGroupChat);
             });
-
-            startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
         } finally {
             if (timerTransactionEntered) endDataSaveTransaction();
             if (timerTransactionAcquired) dataTransactionLock.unlock();
@@ -31015,7 +31014,7 @@ function buildGuildTerritoryCurrentTurnLine(data, petData, guildData) {
 }
 
 // 영지전 턴 메시지 빌드
-function buildGuildTerritoryTurnMessage(data, petData, guildData) {
+function buildGuildTerritoryTurnMessage(data, petData, guildData, autoTerritoryNo) {
     var war = guildData.territoryWar;
     var row = getGuildTerritoryTurnRow(data, guildData);
     if (!row) return ["⚠️ 다음 공격 가능한 소드마스터가 없습니다."];
@@ -31026,9 +31025,17 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
     var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
     var turnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+    var turnDetail = "";
+    if (autoTerritoryNo >= 1 && autoTerritoryNo <= 7) {
+        var autoTerritory = getGuildTerritoryByNo(autoTerritoryNo);
+        turnDetail += "공격 영지: [" + autoTerritoryNo + "] " + (autoTerritory ? autoTerritory.name : "") + "\n";
+    }
+    var personalAttackCount = getGuildTerritoryUserAttackCount(war, row.user); // 현재 공격자의 개인 누적 공격 횟수
+    turnDetail += "개인 공격 횟수: " + personalAttackCount + "/" + GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit + "회\n";
 
     var msg =
         turnLine + "\n" +
+        turnDetail +
         "[" +
         formatGuildDisplay(g) +
         "] 남은 턴(" +
@@ -31480,10 +31487,12 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
     var turnGuildId = row.guildId;
     var turnUser = row.user;
     var autoAttackScheduled = false; // 현재 턴 사용자의 자동 공격 예약 여부
+    var scheduledAutoTerritoryNo = 0; // 턴 안내와 실제 자동공격에 함께 사용할 영지 번호
     if (data.member[turnUser] && data.member[turnUser].guildTerritoryAutoAttackEnabled === true) {
         var scheduleValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, turnUser);
         if (scheduleValidation.ok) {
             autoAttackScheduled = true;
+            scheduledAutoTerritoryNo = Math.floor(Math.random() * 7) + 1;
         } else {
             data.member[turnUser].guildTerritoryAutoAttackEnabled = false;
             appendGuildTerritoryAutomationLog(war, {
@@ -31558,12 +31567,11 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
                     startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
                     return;
                 }
-                var autoTerritoryNo = Math.floor(Math.random() * 7) + 1;
                 var autoHomeData = null;
-                if (getGuildTerritoryMissingCastleExpUsers(latestData, latestPetData, latestGuildData, turnUser, autoTerritoryNo).length > 0) {
+                if (getGuildTerritoryMissingCastleExpUsers(latestData, latestPetData, latestGuildData, turnUser, scheduledAutoTerritoryNo).length > 0) {
                     autoHomeData = loadJsonFile(homeDataFile);
                 }
-                var autoExecutionResult = executeGuildTerritoryNormalAttack(latestData, latestPetData, autoHomeData, latestGuildData, latestPetSkillData, turnUser, autoTerritoryNo, replier, isGroupChat, true, null);
+                var autoExecutionResult = executeGuildTerritoryNormalAttack(latestData, latestPetData, autoHomeData, latestGuildData, latestPetSkillData, turnUser, scheduledAutoTerritoryNo, replier, isGroupChat, true, null);
                 if (!autoExecutionResult.ok && latestGuildData.territoryWar && latestGuildData.territoryWar.active) {
                     latestData.member[turnUser].guildTerritoryAutoAttackEnabled = false;
                     appendGuildTerritoryAutomationDataLog(latestData, {
@@ -31614,19 +31622,18 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
             });
 
             // 다음 공격자 정보로 턴 메시지 빌드 및 발송
-            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
+            var timeoutAutoTerritoryNo = startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
+            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData, timeoutAutoTerritoryNo);
             turnMsgs.forEach(function (m) {
                 castleMsg(m, replier, isGroupChat);
             });
-
-            // 다음 공격자부터 새로운 타이머 시작
-            startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
         } finally {
             if (timerTransactionEntered) endDataSaveTransaction();
             if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
     }, autoAttackScheduled ? GLOBAL_CONFIG.guildTerritory.timers.autoAttackDelayMs : GLOBAL_CONFIG.guildTerritory.timers.turnTimeoutMs);
+    return scheduledAutoTerritoryNo;
 }
 
 // 영지전 공격 시 특수 아이템 체크
@@ -32070,11 +32077,11 @@ function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, p
     if (riftMessage) castleMsg(riftMessage, replier, isGroupChat);
     saveJsonFile(guildData, guildPath);
     saveJsonFile(data, filePath);
-    var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+    var nextAutoTerritoryNo = startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+    var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData, nextAutoTerritoryNo);
     turnMsgs.forEach(function (turnMessage) {
         castleMsg(turnMessage, replier, isGroupChat);
     });
-    startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
     return { ok: true, ended: false, actionKey: actionKey };
 }
 
