@@ -88,6 +88,7 @@ import { CastleKingdomStatusReadService, isCastleKingdomStatusReadCommand } from
 import { CastleCharmRankingReadService, isCastleCharmRankingReadCommand } from "./castle/castle-charm-ranking-read-service.js";
 import { CastleStateResetService, isCastleStateResetCommand } from "./castle/castle-state-reset-service.js";
 import { MiniPetBagThresholdCleanService, isMiniPetBagThresholdCleanCommand } from "./mini-pet/mini-pet-bag-threshold-clean-service.js";
+import { MiniPetGradeCleanupService, isMiniPetGradeCleanupCommand } from "./mini-pet/mini-pet-grade-cleanup-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -855,6 +856,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleCharmRankingReadCommand(normalizedEvent.message)
         || isCastleStateResetCommand(normalizedEvent.message)
         || isMiniPetBagThresholdCleanCommand(normalizedEvent.message)
+        || isMiniPetGradeCleanupCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -2907,6 +2909,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "mini_pet_bag_threshold_clean"
         && normalizedEvent.userId !== undefined) {
         const result=await new MiniPetBagThresholdCleanService(database!).handle({
+          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+        });
+        processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetGradeCleanupCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_grade_cleanup"
+        && normalizedEvent.userId !== undefined) {
+        const result=await new MiniPetGradeCleanupService(database!).handle({
           externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId
         });
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});

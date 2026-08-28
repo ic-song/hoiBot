@@ -1,0 +1,8 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { isMiniPetGradeCleanupCommand,parseMiniPetGradeCleanup,planMiniPetGradeCleanup,type MiniPetGradeCleanupCandidate } from "../src/mini-pet/mini-pet-grade-cleanup-service.js";
+function pet(overrides:Partial<MiniPetGradeCleanupCandidate>={}):MiniPetGradeCleanupCandidate{return{id:"1",definitionId:"10",displayName:"테스트",gradeCode:"normal",gradeDisplayName:"일반",gradeOrder:1,salePrice:500n,equipped:false,reserved:false,bagSequence:1n,...overrides};}
+test("mini pet grade cleanup command boundary",()=>{assert.equal(isMiniPetGradeCleanupCommand("/미니펫등급정리"),true);assert.equal(isMiniPetGradeCleanupCommand("/미니펫등급정리 레어"),true);assert.equal(isMiniPetGradeCleanupCommand("/미니펫등급정리abc 레어"),false);assert.equal(isMiniPetGradeCleanupCommand("/미니펫등급정리 레어 추가"),false);});
+test("mini pet grade cleanup parser keeps one exact grade token",()=>{assert.equal(parseMiniPetGradeCleanup("/미니펫등급정리 태초+"),"태초+");assert.equal(parseMiniPetGradeCleanup("/미니펫등급정리"),null);assert.equal(parseMiniPetGradeCleanup("/미니펫등급정리 레어 추가"),null);});
+test("grade cleanup removes recognized lower grades and preserves boundaries",()=>{const plan=planMiniPetGradeCleanup([pet({id:"1",gradeOrder:1}),pet({id:"2",gradeOrder:3}),pet({id:"3",gradeOrder:4}),pet({id:"4",gradeOrder:null}),pet({id:"5",equipped:true}),pet({id:"6",reserved:true})],3);assert.deepEqual(plan.removed.map(row=>row.id),["1","2"]);assert.deepEqual(plan.preserved.map(row=>row.id),["3","4","5","6"]);});
+test("grade cleanup keeps fallback and signed sale price parity",()=>{const plan=planMiniPetGradeCleanup([pet({salePrice:null}),pet({id:"2",salePrice:0n}),pet({id:"3",salePrice:-50n})],1);assert.equal(plan.pointDelta,199_950n);});
