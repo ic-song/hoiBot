@@ -53,6 +53,13 @@ async function probe(): Promise<void> {
   assert.equal(listed?.rowCount, 2);
   assert.ok(listed!.data.indexOf("1. 동률길드(A)") < listed!.data.indexOf("2. 동률길드(B)"));
   assert.deepEqual(await service.handle({ eventId: listEvent, externalUserId: viewer, destinationId: room, message: "/길드목록" }), listed);
+  const concurrentEvent = `${base}-concurrent`;
+  await event(concurrentEvent);
+  const concurrent = await Promise.all([
+    service.handle({ eventId: concurrentEvent, externalUserId: viewer, destinationId: room, message: "/길드목록" }),
+    service.handle({ eventId: concurrentEvent, externalUserId: viewer, destinationId: room, message: "/길드목록" })
+  ]);
+  assert.deepEqual(concurrent[0], concurrent[1]);
   await database.execute("UPDATE guilds SET level=99,version=version+1 WHERE id=990400002");
   const joinEvent = `${base}-join`;
   await event(joinEvent);
@@ -72,8 +79,8 @@ async function probe(): Promise<void> {
   await assert.rejects(() => new GuildJoinableListReadService(failAudit(database)).handle({ eventId: rollbackEvent, externalUserId: viewer, destinationId: room, message: "/길드목록" }), /synthetic guild list audit failure/);
   assert.deepEqual(await effects(), before);
   assert.equal(await database.verifyRollback(), true);
-  assert.deepEqual((await effects())[0], { snapshots: 1n, entries: 2n, operations: 2n, outboxes: 2n, audits: 2n });
-  process.stdout.write(JSON.stringify({ mode: "probe", migrationCount: 275, scenarios: ["shadow","exact","closed-full-filter","stable-gid-tie","master-projection","snapshot-version","list-to-join-pin","live-recheck","replay","rollback"], effects: { snapshots: 1, entries: 2, operations: 2, outboxes: 2, audits: 2 }, operationalDataTouched: false }) + "\n");
+  assert.deepEqual((await effects())[0], { snapshots: 2n, entries: 4n, operations: 3n, outboxes: 3n, audits: 3n });
+  process.stdout.write(JSON.stringify({ mode: "probe", migrationCount: 275, scenarios: ["shadow","exact","closed-full-filter","stable-gid-tie","master-projection","snapshot-version","list-to-join-pin","live-recheck","replay","concurrent-read","rollback"], effects: { snapshots: 2, entries: 4, operations: 3, outboxes: 3, audits: 3 }, operationalDataTouched: false }) + "\n");
 }
 
 async function restart(): Promise<void> {
