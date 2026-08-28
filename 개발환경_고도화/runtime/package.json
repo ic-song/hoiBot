@@ -115,7 +115,8 @@
     "db:probe:auto-explore-fixed-config": "tsx scripts/probe-auto-explore-fixed-config-synthetic.ts",
     "db:probe:auto-explore-scheduler": "tsx scripts/probe-auto-explore-scheduler-synthetic.ts",
     "db:probe:guild-shop-catalog": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-shop-catalog-synthetic.ts",
-    "db:probe:diamond-shop-catalog-admin": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-catalog-admin-synthetic.ts"
+    "db:probe:diamond-shop-catalog-admin": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-catalog-admin-synthetic.ts",
+    "db:probe:diamond-shop-buy": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-buy-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

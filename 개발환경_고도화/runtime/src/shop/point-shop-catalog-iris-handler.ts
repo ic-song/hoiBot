@@ -3,6 +3,7 @@ import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { parsePointShopCatalogCommand, PointShopCatalogError } from "./point-shop-catalog-command.js";
 import { MariaPointShopCatalogRepository } from "./maria-point-shop-catalog-repository.js";
 import { PointShopCatalogService } from "./point-shop-catalog-service.js";
+import { DiamondShopBuyService, isDiamondShopBuyCommandCandidate } from "./diamond-shop-buy-service.js";
 
 // Iris identity를 조회 사용자 또는 권한 있는 운영자로 해석해 상점 명령을 실행합니다.
 export class PointShopCatalogIrisHandler {
@@ -11,6 +12,11 @@ export class PointShopCatalogIrisHandler {
   public async execute(event: NormalizedIrisEvent): Promise<{ commandCode: string; message: string; replayed: boolean; outboxId?: string }> {
     if (!event.userId || !event.channelId || !event.message) {
       throw new PointShopCatalogError("POINT_SHOP_IDENTITY_REQUIRED", "사용자 식별 정보를 확인할 수 없습니다.");
+    }
+    if (isDiamondShopBuyCommandCandidate(event.message)) {
+      const result = await new DiamondShopBuyService(this.database).handle({ eventId: event.eventId, externalUserId: event.userId,
+        destinationId: event.channelId, message: event.message });
+      return { commandCode: "DIAMOND_SHOP_BUY", message: result.data ?? "", replayed: false, ...(result.outboxId ? { outboxId: result.outboxId } : {}) };
     }
     const command = parsePointShopCatalogCommand(event.message);
     if (!command) throw new PointShopCatalogError("POINT_SHOP_COMMAND_INVALID", "상점 명령 형식을 확인해 주세요.");
