@@ -18,6 +18,7 @@ import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compa
 import { isMemberCharacterCountCommand, MemberCharacterCountService } from "./member-character-count-service.js";
 import { isStatusAllCommand, StatusAllService } from "./status-all-service.js";
 import { isDataStatusCommand, DataStatusService } from "./data-status-service.js";
+import { isDataBackupCommand, DataBackupService } from "./data-backup-service.js";
 import { isPetMemberCharacterCountCommand, PetMemberCharacterCountService } from "./pet-member-character-count-service.js";
 import { isPetDataSyncCommand, PetDataSyncService } from "./pet-data-sync-service.js";
 import { isPetTitleAddCommandCandidate, parsePetTitleAddCommand, PetTitleAddService } from "./pet-title-add-service.js";
@@ -109,6 +110,7 @@ export class IrisAdminCommandService {
     if (isRingReadCommandCandidate(input.message)) return new RingReadService(this.database).handleIris(input);
     if (isRingRewardClaimCommand(input.message)) return new RingRewardClaimService(this.database).handleIris(input);
     if (isRetiredRingCommandCandidate(input.message)) return this.handleRetiredRingCommand(input);
+    if (isDataBackupCommand(input.message)) return new DataBackupService(this.database).handleIris(input);
     if (isDataStatusCommand(input.message)) return new DataStatusService(this.database).handleIris(input);
     if (isStatusAllCommand(input.message)) return new StatusAllService(this.database).handleIris(input);
     if (isMemberCharacterCountCommand(input.message)) return this.handleMemberCharacterCount(input);
@@ -1079,6 +1081,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isTrialTowerSeasonLifecycleCommand(message)
     || isTrialTowerSeasonResetCommand(message)
     || isAutoExploreSchedulerStartCommand(message)
+    || isDataBackupCommand(message)
     || isDataStatusCommand(message)
     || isStatusAllCommand(message)
     || isMemberCharacterCountCommand(message)
