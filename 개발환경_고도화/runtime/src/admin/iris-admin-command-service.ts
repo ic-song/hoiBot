@@ -15,6 +15,7 @@ import { isMiniPetDirectGrantCommandCandidate, MiniPetDirectGrantService } from 
 import { isMiniPetBattleCountAdminCommandCandidate, MiniPetBattleCountAdminService } from "./mini-pet-battle-count-admin-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { AdminAuctionResetService, isAdminAuctionResetCommand } from "./admin-auction-reset-service.js";
+import { AuctionRegisterService, isAuctionRegisterCandidate } from "./auction-register-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
 import { isOperationIntervalResetCommand, OperationIntervalResetService } from "./operation-interval-reset-service.js";
@@ -146,6 +147,10 @@ export class IrisAdminCommandService {
     if (isAuthCheckCountResetCommand(input.message)) return this.handleAuthCheckCountReset(input);
     if (isAdminAuctionResetCommand(input.message)) {
       const result = await new AdminAuctionResetService(this.database).handle(input);
+      return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
+    }
+    if (isAuctionRegisterCandidate(input.message)) {
+      const result = await new AuctionRegisterService(this.database).handle(input);
       return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
     }
     if (isLordIncomeCommandCandidate(input.message)) return this.handleLordIncomeCommand(input);
@@ -1110,7 +1115,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isPetSkillBookGrantCommandCandidate(message) || isPetResetCommandCandidate(message)
     || isPetOwnerReadCommand(message) || isMiniPetBattleCountAdminCommandCandidate(message)
     || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message)
-    || isAdminAuctionResetCommand(message));
+    || isAdminAuctionResetCommand(message) || isAuctionRegisterCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
