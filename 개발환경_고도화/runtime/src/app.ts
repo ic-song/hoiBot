@@ -45,7 +45,7 @@ import { DeveloperNoteReadService, isDeveloperNoteReadCommand } from "./admin/de
 import { isSocialBoardReadCommand, SocialBoardReadService } from "./social/social-board-read-service.js";
 import { FreeMarketReadService, isFreeMarketReadCommand } from "./market/free-market-read-service.js";
 import { FreeMarketInitService, isFreeMarketInitCommand } from "./market/free-market-init-service.js";
-import { FreeMarketCancelService, isFreeMarketCancelCandidate, normalizeFreeMarketCancelDispatchMessage } from "./market/free-market-cancel-service.js";
+import { handleFreeMarketMutation, isFreeMarketLifecycleCandidate, isFreeMarketMutationDispatch, normalizeFreeMarketLifecycleDispatchMessage } from "./market/free-market-buy-service.js";
 import { CarrotBoardReadService, isCarrotBoardReadCommand } from "./market/carrot-board-read-service.js";
 import { CarrotBoardDeleteService, isCarrotBoardDeleteCommand } from "./market/carrot-board-delete-service.js";
 import { CarrotBoardCompleteService, isCarrotBoardCompleteCommand } from "./market/carrot-board-complete-service.js";
@@ -1023,8 +1023,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPetSkillBoastReadCommand(normalizedEvent.message)
          || isPetAppearanceCommandCandidate(normalizedEvent.message)
          || isPetFeedIntimacyCandidate(normalizedEvent.message)
-         || isFreeMarketReadCommand(normalizedEvent.message)
-         || isFreeMarketCancelCandidate(normalizedEvent.message)
+         || isFreeMarketLifecycleCandidate(normalizedEvent.message)
          || isPlayerTitleSellCandidate(normalizedEvent.message)
          || isCarrotBoardReadCommand(normalizedEvent.message)
          || isCarrotBoardDeleteCommand(normalizedEvent.message)
@@ -1137,10 +1136,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizePetAppearanceDispatchMessage(normalizedEvent.message ?? "")
              : isPetFeedIntimacyCandidate(normalizedEvent.message)
              ? normalizePetFeedIntimacyCommand(normalizedEvent.message)!
-             : isFreeMarketReadCommand(normalizedEvent.message)
-             ? normalizedEvent.message ?? ""
-             : isFreeMarketCancelCandidate(normalizedEvent.message)
-             ? normalizeFreeMarketCancelDispatchMessage(normalizedEvent.message ?? "")
+             : isFreeMarketLifecycleCandidate(normalizedEvent.message)
+             ? normalizeFreeMarketLifecycleDispatchMessage(normalizedEvent.message ?? "")
              : isPlayerTitleSellCandidate(normalizedEvent.message)
              ? normalizePlayerTitleSellDispatchMessage(normalizedEvent.message ?? "")
              : isCarrotBoardReadCommand(normalizedEvent.message)
@@ -2465,16 +2462,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isFreeMarketCancelCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "free_market_cancel"
+        && isFreeMarketMutationDispatch(normalizedEvent.message, partialDispatchDecision?.route, partialDispatchDecision?.handlerKey)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        try {
-          const result = await new FreeMarketCancelService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
-          if (result?.data !== undefined && result.outboxId !== undefined) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
-        } catch (error) {
-          if (error instanceof ApplicationError && error.statusCode === 409) processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "free_market_cancel_error", error.message));
-          else throw error;
-        }
+        const result = await handleFreeMarketMutation(database!, {
+          eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId,
+          message: normalizedEvent.message!,
+          handlerKey: partialDispatchDecision!.handlerKey!
+        }, (errorCode, message) => eventProcessor!.queueCommandReply(normalizedEvent, errorCode, message));
+        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
