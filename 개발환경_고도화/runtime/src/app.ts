@@ -114,6 +114,7 @@ import { isPetSkillMarketListingCandidate, normalizePetSkillMarketListingDispatc
 import { HomeFurnitureMarketListingService, isHomeFurnitureMarketListingCandidate, normalizeHomeFurnitureMarketListingDispatchMessage } from "./market/home-furniture-market-listing-service.js";
 import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatchMessage, PendantMarketInfoService } from "./market/pendant-market-info-service.js";
 import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispatchMessage, PendantCarrotTradeService } from "./market/pendant-carrot-trade-service.js";
+import { isMiniPetCarrotTradeCandidate, MiniPetCarrotTradeService, normalizeMiniPetCarrotTradeDispatchMessage } from "./mini-pet/mini-pet-carrot-trade-service.js";
 import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
 import { isPendantDeleteCommandCandidate,normalizePendantDeleteDispatchMessage,PendantDeleteService } from "./pet/pendant-delete-service.js";
 import { isPendantRankCommand,PendantRankService } from "./pet/pendant-rank-service.js";
@@ -505,7 +506,7 @@ function normalizeMiniPetEquipOrBulkCleanupDispatchMessage(message: string): str
   return message;
 }
 
-// 미니펫 장착과 전체정리 명령을 실행하고 생성된 답변을 기존 처리 큐에 추가합니다.
+// 미니펫 공용 명령을 실행하고 생성된 답변을 기존 처리 큐에 추가합니다.
 async function dispatchMiniPetEquipOrBulkCleanup(input: {
   database: DatabaseClient | undefined;
   isOperationalChannel: boolean;
@@ -559,6 +560,18 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
       eventId: event.eventId
     });
     if (result.outboxId !== undefined && result.data !== undefined) {
+      input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
+    }
+    return;
+  }
+  if (input.handlerKey === "mini_pet_carrot_trade" && isMiniPetCarrotTradeCandidate(event.message)) {
+    const result = await new MiniPetCarrotTradeService(input.database).handle({
+      eventId: event.eventId,
+      externalUserId: event.userId,
+      destinationId: event.channelId!,
+      message: event.message!
+    });
+    if (result.status !== "silent" && result.outboxId !== undefined && result.data !== undefined) {
       input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
     }
     return;
@@ -954,6 +967,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
+        || isMiniPetCarrotTradeCandidate(normalizedEvent.message)
         || isAutoDailyQuestCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
         || isPendantBagCleanupCommandCandidate(normalizedEvent.message)
@@ -1194,6 +1208,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizePendantRestoreDispatchMessage(normalizedEvent.message ?? "")
             : isPendantCarrotTradeCommandCandidate(normalizedEvent.message)
             ? normalizePendantCarrotTradeDispatchMessage(normalizedEvent.message ?? "")
+            : isMiniPetCarrotTradeCandidate(normalizedEvent.message)
+            ? normalizeMiniPetCarrotTradeDispatchMessage(normalizedEvent.message ?? "")
             : isPendantDurabilityCorrectionCommandCandidate(normalizedEvent.message)
             ? normalizePendantDurabilityCorrectionDispatchMessage(normalizedEvent.message ?? "")
             : isPendantMarketInfoCommandCandidate(normalizedEvent.message)
