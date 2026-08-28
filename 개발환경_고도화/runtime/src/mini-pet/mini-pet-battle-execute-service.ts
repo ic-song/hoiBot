@@ -134,7 +134,7 @@ export class MiniPetBattleExecuteService{
         COALESCE((SELECT value FROM player_counters c WHERE c.player_id=player.id AND c.counter_code=? AND c.period_key='lifetime'),0) booster_count,
         (SELECT COUNT(*) FROM player_passes pass WHERE pass.player_id=player.id AND pass.pass_code='premium' AND pass.enabled=TRUE AND (pass.permanent=TRUE OR pass.ends_at>=UTC_TIMESTAMP(3))) premium_count,
         reset_item.id reset_ticket_item_id,COALESCE(reset_stack.quantity,0) reset_ticket_count,
-        equipped.id equipped_id,COALESCE(equipped.custom_name,mini_definition.display_name) mini_name,mini_definition.emoji_value mini_emoji,mini_definition.grade_display_name mini_grade,
+        equipped.id equipped_id,COALESCE(equipped.custom_name,mini_definition.display_name) mini_name,COALESCE(equipped.custom_emoji,mini_definition.emoji_value) mini_emoji,mini_definition.grade_display_name mini_grade,
         equipped.enhancement_level mini_upgrade,equipped.battle_experience equipped_charm,main_pet.enhancement_level main_pet_upgrade,COALESCE(cube.pet_upgrade_percent,0) upgrade_percent,
         EXISTS(SELECT 1 FROM pet_skills a JOIN skill_definitions d ON d.id=a.skill_id WHERE a.player_pet_id=main_pet.id AND a.equipped=TRUE AND d.display_name='헌터') hunter,
         EXISTS(SELECT 1 FROM pet_skills a JOIN skill_definitions d ON d.id=a.skill_id WHERE a.player_pet_id=main_pet.id AND a.equipped=TRUE AND d.display_name='만렙헌터') max_hunter,

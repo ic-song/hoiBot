@@ -90,6 +90,7 @@ import { CastleStateResetService, isCastleStateResetCommand } from "./castle/cas
 import { MiniPetBagThresholdCleanService, isMiniPetBagThresholdCleanCommand } from "./mini-pet/mini-pet-bag-threshold-clean-service.js";
 import { MiniPetGradeCleanupService, isMiniPetGradeCleanupCommand } from "./mini-pet/mini-pet-grade-cleanup-service.js";
 import { MiniPetAdminOwnedDeleteService, isMiniPetAdminOwnedDeleteCommand } from "./mini-pet/mini-pet-admin-owned-delete-service.js";
+import { MiniPetEquippedCustomizeService, isMiniPetEquippedCustomizeCommand } from "./mini-pet/mini-pet-equipped-customize-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -859,6 +860,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isMiniPetBagThresholdCleanCommand(normalizedEvent.message)
         || isMiniPetGradeCleanupCommand(normalizedEvent.message)
         || isMiniPetAdminOwnedDeleteCommand(normalizedEvent.message)
+        || isMiniPetEquippedCustomizeCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -2934,6 +2936,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined) {
         const result=await new MiniPetAdminOwnedDeleteService(database!).handle({
           externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId,destinationId:normalizedEvent.channelId!
+        });
+        if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetEquippedCustomizeCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_equipped_customize"
+        && normalizedEvent.userId !== undefined) {
+        const result=await new MiniPetEquippedCustomizeService(database!).handle({
+          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId,channelId:normalizedEvent.channelId!
         });
         if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
       }
