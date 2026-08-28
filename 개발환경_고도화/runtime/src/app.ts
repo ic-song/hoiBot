@@ -86,6 +86,7 @@ import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle
 import { CastleBattleSelfRecordReadService, isCastleBattleSelfRecordCommand } from "./castle/castle-battle-self-record-read-service.js";
 import { CastleKingdomStatusReadService, isCastleKingdomStatusReadCommand } from "./castle/castle-kingdom-status-read-service.js";
 import { CastleCharmRankingReadService, isCastleCharmRankingReadCommand } from "./castle/castle-charm-ranking-read-service.js";
+import { CastleStateResetService, isCastleStateResetCommand } from "./castle/castle-state-reset-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -851,6 +852,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleBattleSelfRecordCommand(normalizedEvent.message)
         || isCastleKingdomStatusReadCommand(normalizedEvent.message)
         || isCastleCharmRankingReadCommand(normalizedEvent.message)
+        || isCastleStateResetCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -2885,6 +2887,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           message:normalizedEvent.message!,eventId:normalizedEvent.eventId
         });
         if (result !== null) processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleStateResetCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "castle_state_reset"
+        && normalizedEvent.userId !== undefined) {
+        await new CastleStateResetService(database!).handle({
+          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+        });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
