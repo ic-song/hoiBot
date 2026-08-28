@@ -79,8 +79,13 @@ describe("legendary stone ticket grant MariaDB integration", { skip: !enabled },
     assert.equal(replies.length, beforeUnauthorized);
     assert.equal(await quantity(), 2n);
 
-    await send(`legendary-ticket-zero-${suffix}`, operatorExternalId, `/전돌0, ${targetName}`);
+    await send(`legendary-ticket-missing-${suffix}`, operatorExternalId, `/전돌3, 존재하지 않는 회원 ${suffix}`);
     await waitForReplies(replies, beforeUnauthorized + 1);
+    assert.match(replies.at(-1)!.data, /유저 아이디를 확인/);
+    assert.equal(await quantity(), 2n);
+
+    await send(`legendary-ticket-zero-${suffix}`, operatorExternalId, `/전돌0, ${targetName}`);
+    await waitForReplies(replies, beforeUnauthorized + 2);
     assert.match(replies.at(-1)!.data, /1개 이상/);
     assert.equal(await quantity(), 2n);
 
@@ -98,11 +103,19 @@ describe("legendary stone ticket grant MariaDB integration", { skip: !enabled },
     await database.execute("DROP TRIGGER synthetic_legendary_ticket_audit_failure");
     assert.equal(await quantity(), 2n);
 
+    const concurrentEvent = `iris:legendary-ticket-concurrent-${suffix}`;
+    await database.execute("INSERT INTO event_inbox(event_id,event_kind,processing_status,received_at) VALUES (?,'command','processed',UTC_TIMESTAMP(3))", [concurrentEvent]);
+    const concurrentService = new LegendaryStoneTicketGrantService(database);
+    const concurrentInput = { eventId: concurrentEvent, destinationId: roomId, externalUserId: operatorExternalId, message: `/전돌6, ${targetName}` };
+    const [concurrentFirst, concurrentSecond] = await Promise.all([concurrentService.grant(concurrentInput), concurrentService.grant(concurrentInput)]);
+    assert.deepEqual(concurrentSecond, concurrentFirst);
+    assert.equal(await quantity(), 8n);
+
     const evidence = (await database.query<Array<{ ledger_count: bigint; audit_count: bigint; execution_count: bigint; outbox_count: bigint }>>(`SELECT
-      (SELECT COUNT(*) FROM inventory_ledger WHERE reason_code='ADMIN_LEGENDARY_STONE_TICKET_GRANT') ledger_count,
-      (SELECT COUNT(*) FROM command_audit WHERE action_code='inventory.legendary_stone_ticket.grant' AND result_code='granted') audit_count,
+      (SELECT COUNT(*) FROM inventory_ledger ledger JOIN operations operation ON operation.id=ledger.operation_id WHERE operation.idempotency_scope='admin.legendary_stone_ticket.grant' AND operation.idempotency_key=?) ledger_count,
+      (SELECT COUNT(*) FROM command_audit audit JOIN operations operation ON operation.id=audit.operation_id WHERE operation.idempotency_scope='admin.legendary_stone_ticket.grant' AND operation.idempotency_key=?) audit_count,
       (SELECT COUNT(*) FROM command_executions WHERE event_id=? AND command_code='ADMIN_LEGENDARY_STONE_TICKET_GRANT') execution_count,
-      (SELECT COUNT(*) FROM outbox_messages outbox JOIN operations operation ON operation.id=outbox.operation_id WHERE operation.idempotency_scope='admin.legendary_stone_ticket.grant' AND operation.idempotency_key=?) outbox_count`, [canonicalSuccessEvent, canonicalSuccessEvent]))[0]!;
+      (SELECT COUNT(*) FROM outbox_messages outbox JOIN operations operation ON operation.id=outbox.operation_id WHERE operation.idempotency_scope='admin.legendary_stone_ticket.grant' AND operation.idempotency_key=?) outbox_count`, [canonicalSuccessEvent, canonicalSuccessEvent, canonicalSuccessEvent, canonicalSuccessEvent]))[0]!;
     assert.deepEqual([Number(evidence.ledger_count), Number(evidence.audit_count), Number(evidence.execution_count), Number(evidence.outbox_count)], [1, 1, 1, 1]);
     await app.close();
   });

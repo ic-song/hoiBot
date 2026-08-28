@@ -5,6 +5,13 @@ const MAX_UINT64 = 18_446_744_073_709_551_615n;
 const ITEM_CODE = "ITEM-LEGENDARY-STONE-DRAW-TICKET";
 const ITEM_NAME = "전설의돌 뽑기🩶[2](/전돌뽑기 숫자)";
 
+// 동일 이벤트의 동시 insert 충돌만 짧게 재시도해 저장된 완료 결과로 수렴시킵니다.
+function isRetryableIdempotencyConflict(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) return false;
+  const code = (error as { code?: unknown }).code;
+  return code === "ER_LOCK_DEADLOCK" || code === "ER_DUP_ENTRY" || code === "ER_LOCK_WAIT_TIMEOUT";
+}
+
 // trim된 `/전돌[수량], 대상키` 전체 형식만 관리자 지급 후보로 허용합니다.
 export function isLegendaryStoneTicketGrantCandidate(message: string | undefined): boolean {
   if (message === undefined) return false;
@@ -47,26 +54,34 @@ export class LegendaryStoneTicketGrantService {
   }
 
   async grantAuthorized(input: { eventId: string; destinationId: string; operatorId: string; message: string }): Promise<AdminStackGrantResult> {
-    return new AdminStackGrantService(this.database).grant(
-      {
-        eventId: input.eventId,
-        destinationId: input.destinationId,
-        operatorId: input.operatorId,
-        command: parseLegendaryStoneTicketGrantCommand(input.message)
-      },
-      {
-        commandCode: "ADMIN_LEGENDARY_STONE_TICKET_GRANT",
-        itemCode: ITEM_CODE,
-        itemName: ITEM_NAME,
-        idempotencyScope: "admin.legendary_stone_ticket.grant",
-        actionCode: "inventory.legendary_stone_ticket.grant",
-        reasonCode: "ADMIN_LEGENDARY_STONE_TICKET_GRANT",
-        auditReason: "Iris 총괄 운영자 /전돌,",
-        usageMessage: "올바른 형식으로 입력해 주세요. 예: /전돌10, 유저아이디",
-        invalidAmountMessage: "지급 개수는 1개 이상이어야 합니다.",
-        noTargetMessage: "유저 아이디를 확인해 주세요.",
-        formatGranted: (target, amount) => `${target}님에게 ${ITEM_NAME} ${amount.toString()}개를 지급했습니다.`
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await new AdminStackGrantService(this.database).grant(
+          {
+            eventId: input.eventId,
+            destinationId: input.destinationId,
+            operatorId: input.operatorId,
+            command: parseLegendaryStoneTicketGrantCommand(input.message)
+          },
+          {
+            commandCode: "ADMIN_LEGENDARY_STONE_TICKET_GRANT",
+            itemCode: ITEM_CODE,
+            itemName: ITEM_NAME,
+            idempotencyScope: "admin.legendary_stone_ticket.grant",
+            actionCode: "inventory.legendary_stone_ticket.grant",
+            reasonCode: "ADMIN_LEGENDARY_STONE_TICKET_GRANT",
+            auditReason: "Iris 총괄 운영자 /전돌,",
+            usageMessage: "올바른 형식으로 입력해 주세요. 예: /전돌10, 유저아이디",
+            invalidAmountMessage: "지급 개수는 1개 이상이어야 합니다.",
+            noTargetMessage: "유저 아이디를 확인해 주세요.",
+            formatGranted: (target, amount) => `${target}님에게 ${ITEM_NAME} ${amount.toString()}개를 지급했습니다.`
+          }
+        );
+      } catch (error) {
+        if (!isRetryableIdempotencyConflict(error) || attempt === 2) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 10 * (attempt + 1)));
       }
-    );
+    }
+    throw new Error("전설의돌 티켓 지급 재시도 한도를 초과했습니다.");
   }
 }
