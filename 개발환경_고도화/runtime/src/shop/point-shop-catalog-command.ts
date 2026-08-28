@@ -3,6 +3,9 @@ export type PointShopCatalogCommand =
   | { kind: "UPSERT"; displayName: string; price: bigint }
   | { kind: "REMOVE"; listNumber: number };
 
+import { isDiamondShopReadCommandCandidate, normalizeDiamondShopReadDispatchMessage } from "./diamond-shop-read-service.js";
+import { isDiamondShopBuyCommandCandidate, normalizeDiamondShopBuyDispatchMessage } from "./diamond-shop-buy-service.js";
+
 export class PointShopCatalogError extends Error {
   public constructor(public readonly code: string, message: string) {
     super(message);
@@ -28,6 +31,7 @@ export function parsePointShopCatalogCommand(message: string): PointShopCatalogC
 
 // 공용 dispatcher가 인자형 명령을 command_aliases 기본 명령어로 찾도록 정규화합니다.
 export function normalizePointShopCatalogDispatchMessage(message: string): string {
+  if (isDiamondShopReadCommandCandidate(message)) return normalizeDiamondShopReadDispatchMessage(message);
   if (isDiamondShopBuyCommandCandidate(message)) return normalizeDiamondShopBuyDispatchMessage(message);
   const command = parsePointShopCatalogCommand(message);
   if (command?.kind === "UPSERT") return "/상점추가";
@@ -37,6 +41,6 @@ export function normalizePointShopCatalogDispatchMessage(message: string): strin
 
 // 상점 명령 후보를 정확한 전체 입력 패턴으로 제한합니다.
 export function isPointShopCatalogCommandCandidate(message: string | undefined): boolean {
-  return message !== undefined && (parsePointShopCatalogCommand(message) !== undefined || isDiamondShopBuyCommandCandidate(message));
+  return message !== undefined && (parsePointShopCatalogCommand(message) !== undefined
+    || isDiamondShopReadCommandCandidate(message) || isDiamondShopBuyCommandCandidate(message));
 }
-import { isDiamondShopBuyCommandCandidate, normalizeDiamondShopBuyDispatchMessage } from "./diamond-shop-buy-service.js";

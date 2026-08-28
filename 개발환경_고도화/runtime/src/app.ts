@@ -893,7 +893,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const packageCatalogAdminDispatchCandidate = process.env.PACKAGE_CATALOG_ADMIN_COMMAND_ENABLED === "true"
         && isPackageCatalogAdminCommandCandidate(normalizedEvent.message ?? "");
       const pointShopCatalogDispatchCandidate = (process.env.POINT_SHOP_CATALOG_COMMAND_ENABLED === "true"
-          || process.env.DIAMOND_SHOP_BUY_COMMAND_ENABLED === "true")
+          || process.env.DIAMOND_SHOP_BUY_COMMAND_ENABLED === "true"
+          || process.env.DIAMOND_SHOP_CATALOG_READ_COMMAND_ENABLED === "true")
         && isPointShopCatalogCommandCandidate(normalizedEvent.message);
       const commentPinDeleteDispatchCandidate = process.env.COMMENT_PIN_DELETE_COMMAND_ENABLED === "true"
         && isCommentPinDeleteCommandCandidate(normalizedEvent.message);
@@ -1369,6 +1370,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && (partialDispatchDecision.handlerKey === "POINT_SHOP_CATALOG_READ"
           || partialDispatchDecision.handlerKey === "POINT_SHOP_CATALOG_UPSERT"
           || partialDispatchDecision.handlerKey === "POINT_SHOP_CATALOG_REMOVE"
+          || partialDispatchDecision.handlerKey === "DIAMOND_SHOP_CATALOG_READ"
           || partialDispatchDecision.handlerKey === "DIAMOND_SHOP_BUY")) {
         const shopResponse = await new PointShopCatalogIrisHandler(database).execute(normalizedEvent);
         processing.replies.push(shopResponse.outboxId
