@@ -22,6 +22,7 @@ import { isOperationIntervalResetCommand, OperationIntervalResetService } from "
 import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compare-service.js";
 import { isMemberCharacterCountCommand, MemberCharacterCountService } from "./member-character-count-service.js";
 import { CharacterCountStatsService, isCharacterCountStatsCommand } from "./character-count-stats-service.js";
+import { isServerStatsCommand, ServerStatsService } from "./server-stats-service.js";
 import { isStatusAllCommand, StatusAllService } from "./status-all-service.js";
 import { isDataStatusCommand, DataStatusService } from "./data-status-service.js";
 import { isDataBackupCommand, DataBackupService } from "./data-backup-service.js";
@@ -131,6 +132,7 @@ export class IrisAdminCommandService {
     if (isStatusAllCommand(input.message)) return new StatusAllService(this.database).handleIris(input);
     if (isMemberCharacterCountCommand(input.message)) return this.handleMemberCharacterCount(input);
     if (isCharacterCountStatsCommand(input.message)) return new CharacterCountStatsService(this.database).handleIris(input);
+    if (isServerStatsCommand(input.message)) return new ServerStatsService(this.database).handleIris(input);
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
     if (isPetTitleAddCommandCandidate(input.message)) return this.handlePetTitleAdd(input);

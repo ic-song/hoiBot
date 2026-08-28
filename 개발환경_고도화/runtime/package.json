@@ -119,7 +119,8 @@
     "db:probe:diamond-shop-buy": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-buy-synthetic.ts",
     "db:probe:diamond-shop-read": "node --env-file-if-exists=.env --import tsx scripts/probe-diamond-shop-read-synthetic.ts",
     "db:probe:admin-member-title-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-member-title-mutate-synthetic.ts",
-    "db:probe:character-count-stats": "node --env-file-if-exists=.env --import tsx scripts/probe-character-count-stats-synthetic.ts"
+    "db:probe:character-count-stats": "node --env-file-if-exists=.env --import tsx scripts/probe-character-count-stats-synthetic.ts",
+    "db:probe:server-stats": "node --env-file-if-exists=.env --import tsx scripts/probe-server-stats-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
