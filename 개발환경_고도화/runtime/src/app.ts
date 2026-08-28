@@ -158,6 +158,7 @@ import { HomeFurnitureRemoveService, isHomeFurnitureRemoveCandidate, normalizeHo
 import { HomeFurnitureAddService, isHomeFurnitureAddCandidate, normalizeHomeFurnitureAddDispatchMessage } from "./home/home-furniture-add-service.js";
 import { HomeFurnitureStatsReadService, isHomeFurnitureStatsReadCommand } from "./home/home-furniture-stats-read-service.js";
 import { HomeFurnitureSellService, isHomeFurnitureSellCandidate, normalizeHomeFurnitureSellDispatchMessage } from "./home/home-furniture-sell-service.js";
+import { HomeFurnitureCleanService, isHomeFurnitureCleanCandidate, normalizeHomeFurnitureCleanDispatchMessage } from "./home/home-furniture-clean-service.js";
 import { HomeFurnitureUnequipService, isHomeFurnitureUnequipCandidate, normalizeHomeFurnitureUnequipDispatchMessage } from "./home/home-furniture-unequip-service.js";
 import { SocialOwnHeartService, isSocialOwnHeartCandidate, normalizeSocialOwnHeartDispatchMessage } from "./social/social-own-heart-service.js";
 import { isPetSkillCarrotTradeCandidate, normalizePetSkillCarrotTradeDispatchMessage, PetSkillCarrotTradeService } from "./pet/pet-skill-carrot-trade-service.js";
@@ -329,6 +330,24 @@ function readSharedToken(request: FastifyRequest): string {
 }
 
 // 보호된 Iris 및 디버그 API에서 공유 토큰을 검증합니다.
+// 가구 변경 명령의 공용 dispatch 후보 판정과 DB 별칭 정규화를 한곳에서 처리합니다.
+function isHomeFurnitureMutationCandidate(message: string | undefined): boolean {
+  return isHomeFurnitureUnequipCandidate(message)
+    || isHomeFurnitureSellCandidate(message)
+    || isHomeFurnitureCleanCandidate(message)
+    || isHomeFurnitureAddCandidate(message)
+    || isHomeFurnitureRemoveCandidate(message);
+}
+
+function normalizeHomeFurnitureMutationDispatchMessage(message: string): string {
+  if (isHomeFurnitureUnequipCandidate(message)) return normalizeHomeFurnitureUnequipDispatchMessage(message);
+  if (isHomeFurnitureSellCandidate(message)) return normalizeHomeFurnitureSellDispatchMessage(message);
+  if (isHomeFurnitureCleanCandidate(message)) return normalizeHomeFurnitureCleanDispatchMessage(message);
+  if (isHomeFurnitureAddCandidate(message)) return normalizeHomeFurnitureAddDispatchMessage(message);
+  if (isHomeFurnitureRemoveCandidate(message)) return normalizeHomeFurnitureRemoveDispatchMessage(message);
+  return message;
+}
+
 function createTokenGuard(config: AppConfig) {
   return async function tokenGuard(
     request: FastifyRequest,
@@ -1044,11 +1063,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isHomeFurnitureEquipCandidate(normalizedEvent.message)
         || isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
         || isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
-        || isHomeFurnitureRemoveCandidate(normalizedEvent.message)
-        || isHomeFurnitureAddCandidate(normalizedEvent.message)
+        || isHomeFurnitureMutationCandidate(normalizedEvent.message)
         || isHomeFurnitureStatsReadCommand(normalizedEvent.message)
-        || isHomeFurnitureSellCandidate(normalizedEvent.message)
-        || isHomeFurnitureUnequipCandidate(normalizedEvent.message)
         || isSocialOwnHeartCandidate(normalizedEvent.message)
         || isPetStatusCommand(normalizedEvent.message)
         || isPetIntimacyRankCommand(normalizedEvent.message)
@@ -1096,14 +1112,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           eventId: normalizedEvent.eventId,
           message: isSocialOwnHeartCandidate(normalizedEvent.message)
             ? normalizeSocialOwnHeartDispatchMessage(normalizedEvent.message ?? "")
-            : isHomeFurnitureUnequipCandidate(normalizedEvent.message)
-            ? normalizeHomeFurnitureUnequipDispatchMessage(normalizedEvent.message ?? "")
-            : isHomeFurnitureSellCandidate(normalizedEvent.message)
-            ? normalizeHomeFurnitureSellDispatchMessage(normalizedEvent.message ?? "")
-            : isHomeFurnitureAddCandidate(normalizedEvent.message)
-            ? normalizeHomeFurnitureAddDispatchMessage(normalizedEvent.message ?? "")
-            : isHomeFurnitureRemoveCandidate(normalizedEvent.message)
-            ? normalizeHomeFurnitureRemoveDispatchMessage(normalizedEvent.message ?? "")
+            : isHomeFurnitureMutationCandidate(normalizedEvent.message)
+            ? normalizeHomeFurnitureMutationDispatchMessage(normalizedEvent.message ?? "")
              : isHomeFurnitureRankCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isHomeRankingReadCommand(normalizedEvent.message)
@@ -2629,10 +2639,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isHomeFurnitureSellCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_sell"
+        && (isHomeFurnitureSellCandidate(normalizedEvent.message) || isHomeFurnitureCleanCandidate(normalizedEvent.message))
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === (isHomeFurnitureCleanCandidate(normalizedEvent.message) ? "home_furniture_clean" : "home_furniture_sell")
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result=await new HomeFurnitureSellService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        const input={eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!};
+        const result=isHomeFurnitureCleanCandidate(normalizedEvent.message)
+          ? await new HomeFurnitureCleanService(database!).handle(input)
+          : await new HomeFurnitureSellService(database!).handle(input);
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
