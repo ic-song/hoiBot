@@ -52,6 +52,7 @@ import { isTrialTowerSeasonLifecycleCommand, TrialTowerSeasonLifecycleService } 
 import { isTrialTowerSeasonResetCommand, TrialTowerSeasonResetService } from "../trial/trial-tower-season-reset-service.js";
 import { AutoExploreSchedulerService, isAutoExploreSchedulerStartCommand } from "../pet/auto-explore-scheduler-service.js";
 import { GuildShopCatalogService, isGuildShopCatalogCommandCandidate } from "../guild/guild-shop-catalog-service.js";
+import { DiamondShopCatalogAdminService, isDiamondShopCatalogAdminCommandCandidate } from "../shop/diamond-shop-catalog-admin-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
@@ -141,6 +142,10 @@ export class IrisAdminCommandService {
     if (isAutoExploreSchedulerStartCommand(input.message)) return new AutoExploreSchedulerService(this.database).handleIris(input);
     if (isGuildShopCatalogCommandCandidate(input.message)) {
       const result = await new GuildShopCatalogService(this.database).handle(input);
+      return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
+    }
+    if (isDiamondShopCatalogAdminCommandCandidate(input.message)) {
+      const result = await new DiamondShopCatalogAdminService(this.database).handle(input);
       return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
     }
     if (isMemberVoiceAuthRewardCommandCandidate(input.message)) return this.handleMemberVoiceAuthReward(input);
@@ -1150,7 +1155,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
-    || isGuildShopCatalogCommandCandidate(message) || isMemberVoiceAuthRewardCommandCandidate(message) || isSpecialBadgeGrantCommandCandidate(message) || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
+    || isGuildShopCatalogCommandCandidate(message) || isDiamondShopCatalogAdminCommandCandidate(message) || isMemberVoiceAuthRewardCommandCandidate(message) || isSpecialBadgeGrantCommandCandidate(message) || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isTrialTowerSyncCommand(message)
     || isTrialTowerAdminModifyCommandCandidate(message)
     || isTrialTowerSeasonLifecycleCommand(message)
