@@ -258,6 +258,8 @@ import { isHomeProfileViewCandidate, normalizeHomeProfileViewDispatchMessage } f
 import { HomeProfileViewIrisHandler } from "./home/home-profile-view-iris-handler.js";
 import { isHomeActivityAlertReadCommand, normalizeHomeActivityAlertReadDispatchMessage } from "./home/home-activity-alert-read-command.js";
 import { HomeActivityAlertReadIrisHandler } from "./home/home-activity-alert-read-iris-handler.js";
+import { isHomeFeedMutationCommandCandidate, normalizeHomeFeedMutationDispatchMessage } from "./home/home-feed-mutate-command.js";
+import { HomeFeedMutationIrisHandler } from "./home/home-feed-mutate-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
@@ -957,6 +959,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeProfileViewCandidate(normalizedEvent.message);
       const homeActivityAlertReadDispatchCandidate = process.env.HOME_ACTIVITY_ALERT_READ_COMMAND_ENABLED === "true"
         && isHomeActivityAlertReadCommand(normalizedEvent.message);
+      const homeFeedMutationDispatchCandidate = process.env.HOME_FEED_MUTATE_COMMAND_ENABLED === "true"
+        && isHomeFeedMutationCommandCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -1105,6 +1109,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeLikeDispatchCandidate
         || homeProfileViewDispatchCandidate
         || homeActivityAlertReadDispatchCandidate
+        || homeFeedMutationDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1309,6 +1314,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeProfileViewDispatchMessage(normalizedEvent.message ?? "")
                 : homeActivityAlertReadDispatchCandidate
                   ? normalizeHomeActivityAlertReadDispatchMessage(normalizedEvent.message ?? "")
+                : homeFeedMutationDispatchCandidate
+                  ? normalizeHomeFeedMutationDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1545,13 +1552,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && processing !== undefined
         && !processing.duplicate
         && partialDispatchDecision?.route === "MODERN"
-        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read")) {
+        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate")) {
         const homeResponse = partialDispatchDecision.handlerKey === "home_like_action"
           ? await new HomeLikeIrisHandler(database).execute(normalizedEvent)
           : partialDispatchDecision.handlerKey === "home_profile_view"
             ? await new HomeProfileViewIrisHandler(database).execute(normalizedEvent)
             : partialDispatchDecision.handlerKey === "home_activity_alert_read"
               ? await new HomeActivityAlertReadIrisHandler(database).execute(normalizedEvent)
+            : partialDispatchDecision.handlerKey === "home_feed_mutate"
+              ? await new HomeFeedMutationIrisHandler(database).execute(normalizedEvent)
             : await new DailyCommentIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: homeResponse.outboxId, room: homeResponse.room, data: homeResponse.message });
       }

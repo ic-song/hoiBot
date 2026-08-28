@@ -70,6 +70,7 @@
     "db:probe:home-like-action": "node --env-file-if-exists=.env --import tsx scripts/probe-home-like-action-synthetic.ts",
     "db:probe:home-profile-view": "node --env-file-if-exists=.env --import tsx scripts/probe-home-profile-view-synthetic.ts",
     "db:probe:home-activity-alert-read": "node --env-file-if-exists=.env --import tsx scripts/probe-home-activity-alert-read-synthetic.ts",
+    "db:probe:home-feed-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-home-feed-mutate-synthetic.ts",
     "db:probe:guild-pet-skill-stock-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-pet-skill-stock-grant-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
