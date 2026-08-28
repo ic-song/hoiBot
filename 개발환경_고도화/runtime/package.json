@@ -128,7 +128,8 @@
     "db:probe:server-stats": "node --env-file-if-exists=.env --import tsx scripts/probe-server-stats-synthetic.ts",
     "db:probe:home-furniture-clean": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-clean-synthetic.ts",
     "db:probe:home-badge-equip": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-equip-synthetic.ts",
-    "db:probe:home-badge-permanent-delete": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-permanent-delete-synthetic.ts"
+    "db:probe:home-badge-permanent-delete": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-permanent-delete-synthetic.ts",
+    "db:probe:legendary-stone-ticket-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-legendary-stone-ticket-grant-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
