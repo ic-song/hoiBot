@@ -84,6 +84,7 @@ import { CastleBattleExecuteIrisHandler } from "./castle/castle-battle-execute-i
 import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { CastleBattleSelfRecordReadService, isCastleBattleSelfRecordCommand } from "./castle/castle-battle-self-record-read-service.js";
+import { CastleKingdomStatusReadService, isCastleKingdomStatusReadCommand } from "./castle/castle-kingdom-status-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
 import { isMiniPetBattleLeaderboardCommand, MiniPetBattleLeaderboardReadService } from "./mini-pet/mini-pet-battle-leaderboard-read-service.js";
@@ -846,6 +847,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleBattleExecuteCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || isCastleBattleSelfRecordCommand(normalizedEvent.message)
+        || isCastleKingdomStatusReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
         || isAutoDailyQuestCommand(normalizedEvent.message)
@@ -2867,6 +2869,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"castle_battle_self_record_read",error.message));
           } else throw error;
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleKingdomStatusReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "castle_kingdom_status_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new CastleKingdomStatusReadService(database!).handle({
+          externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,
+          message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+        });
+        if (result !== null) processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
