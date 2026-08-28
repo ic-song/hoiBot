@@ -897,6 +897,7 @@ const GLOBAL_CONFIG = {
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
         lightningStepRate: 0.01,
+        timeoutLightningStepRate: 0.005,
         lightningRodSuccessRate: 0.8,
         items: {
             lightningRod: "피뢰침⚡(자동 벼락 방지)"
@@ -34291,10 +34292,12 @@ function processPetMusouTimeout(data, petData, guildData) {
     musou.players[attacker].attacksLeft = 0;
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
+    musou.lightningRate = Math.min(1, Math.max(0, musou.lightningRate) + GLOBAL_CONFIG.petMusou.timeoutLightningStepRate);
     var message = "🗡️펫 무쌍 대회 결과🗡️[시간 초과⚠️]\n" +
         "━━━━━━━━━━━━━━━━\n" +
         "공격 보상🤑: 미지급\n" +
-        "벼락 판정⚡: 판정 없음\n\n" +
+        "벼락 판정⚡: 판정 없음\n" +
+        "누적 벼락발생확률⚡: +" + (GLOBAL_CONFIG.petMusou.timeoutLightningStepRate * 100).toFixed(1) + "% (현재 " + (musou.lightningRate * 100).toFixed(1) + "%)\n\n" +
         Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초 이내에 공격하지 않아 즉시 탈락합니다.\n" +
         "남은 공격권이 모두 소멸했습니다.";
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
