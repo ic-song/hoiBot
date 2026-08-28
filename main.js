@@ -34054,13 +34054,13 @@ function processPetMusouLightning(musou, data, petData, guildData) {
         lines.push("  └[" + checkRank(data, petData, guildData, eliminatedTargets[eliminatedIndex]) + "] 님이 객사(탈락)");
     }
     if (protectedTargets.length > 0) {
-        lines.push("━━━━━━━━━━━━", "└ 피뢰침 방어 인원: " + protectedTargets.length + "명");
+        lines.push("━━━━━━━━━━━━", "└ 피뢰침⚡(" + (GLOBAL_CONFIG.petMusou.lightningRodSuccessRate * 100).toFixed(0) + "%) 발동: " + protectedTargets.length + "명");
         for (var protectedIndex = 0; protectedIndex < protectedTargets.length; protectedIndex++) {
             lines.push("  └[" + checkRank(data, petData, guildData, protectedTargets[protectedIndex]) + "] 피뢰침 1개 소모 · 생존");
         }
     }
     if (failedRodTargets.length > 0) {
-        lines.push("━━━━━━━━━━━━", "└ 피뢰침 방어 실패: " + failedRodTargets.length + "명");
+        lines.push("━━━━━━━━━━━━", "└ 피뢰침⚡(" + (GLOBAL_CONFIG.petMusou.lightningRodSuccessRate * 100).toFixed(0) + "%) 미발동: " + failedRodTargets.length + "명");
         for (var failedRodIndex = 0; failedRodIndex < failedRodTargets.length; failedRodIndex++) {
             lines.push("  └[" + checkRank(data, petData, guildData, failedRodTargets[failedRodIndex]) + "] 피뢰침 미소모 · 탈락");
         }
