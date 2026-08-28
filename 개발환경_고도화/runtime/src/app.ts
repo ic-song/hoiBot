@@ -87,6 +87,7 @@ import { CastleBattleSelfRecordReadService, isCastleBattleSelfRecordCommand } fr
 import { CastleKingdomStatusReadService, isCastleKingdomStatusReadCommand } from "./castle/castle-kingdom-status-read-service.js";
 import { CastleCharmRankingReadService, isCastleCharmRankingReadCommand } from "./castle/castle-charm-ranking-read-service.js";
 import { CastleStateResetService, isCastleStateResetCommand } from "./castle/castle-state-reset-service.js";
+import { MiniPetBagThresholdCleanService, isMiniPetBagThresholdCleanCommand } from "./mini-pet/mini-pet-bag-threshold-clean-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -853,6 +854,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleKingdomStatusReadCommand(normalizedEvent.message)
         || isCastleCharmRankingReadCommand(normalizedEvent.message)
         || isCastleStateResetCommand(normalizedEvent.message)
+        || isMiniPetBagThresholdCleanCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -2897,6 +2899,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         await new CastleStateResetService(database!).handle({
           externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId
         });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetBagThresholdCleanCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_bag_threshold_clean"
+        && normalizedEvent.userId !== undefined) {
+        const result=await new MiniPetBagThresholdCleanService(database!).handle({
+          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+        });
+        processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
