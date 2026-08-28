@@ -883,6 +883,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isDeveloperNoteReadCommand(normalizedEvent.message)
          || isSocialBoardReadCommand(normalizedEvent.message)
          || isLetterBoardCandidate(normalizedEvent.message)
+         || isRecordBoardCommandCandidate(normalizedEvent.message)
          || isFreeMarketReadCommand(normalizedEvent.message)
          || isFreeMarketCancelCandidate(normalizedEvent.message)
          || isPlayerTitleSellCandidate(normalizedEvent.message)
@@ -987,6 +988,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isLetterBoardCandidate(normalizedEvent.message)
              ? normalizeLetterBoardDispatchMessage(normalizedEvent.message ?? "")
+             : isRecordBoardCommandCandidate(normalizedEvent.message)
+             ? normalizeRecordBoardCommand(normalizedEvent.message)!
              : isFreeMarketReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isFreeMarketCancelCandidate(normalizedEvent.message)
@@ -1856,6 +1859,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new LetterBoardService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isRecordBoardCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "record_board"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new RecordBoardService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxIds[result.outboxIds.length - 1]!, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
@@ -3232,3 +3244,4 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
 }
 import { isPlayerTitleSellCandidate, normalizePlayerTitleSellDispatchMessage, PlayerTitleSellService } from "./player/player-title-sell-service.js";
 import { isLetterBoardCandidate, LetterBoardService, normalizeLetterBoardDispatchMessage } from "./social/letter-board-service.js";
+import { isRecordBoardCommandCandidate, normalizeRecordBoardCommand, RecordBoardService } from "./social/record-board-service.js";
