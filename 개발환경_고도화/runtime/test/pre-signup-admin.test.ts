@@ -1,0 +1,9 @@
+import assert from "node:assert/strict";
+import {describe,it} from "node:test";
+import {formatPreSignupCleanup,formatPreSignupIdentityLookup,formatPreSignupServerReset,isPreSignupAdminCommandCandidate,parsePreSignupAdminCommand} from "../src/admin/pre-signup-admin-service.js";
+describe("pre-signup attendance admin commands",()=>{
+ it("keeps cleanup exact and server reset on the fixed allowlist",()=>{assert.deepEqual(parsePreSignupAdminCommand("/미가입출첵"),{kind:"cleanup"});assert.deepEqual(parsePreSignupAdminCommand("/미가입출첵서버초기화 호7"),{kind:"server-reset",server:"호7"});assert.equal(isPreSignupAdminCommandCandidate("/미가입출첵서버초기화 호8"),false);assert.equal(isPreSignupAdminCommandCandidate("/미가입출첵 추가"),false);});
+ it("accepts lookup usage and one nonblank single-line base name",()=>{assert.deepEqual(parsePreSignupAdminCommand("/미정"),{kind:"identity-lookup",name:null});assert.deepEqual(parsePreSignupAdminCommand("/미정 홍 길동"),{kind:"identity-lookup",name:"홍 길동"});assert.equal(parsePreSignupAdminCommand("/미정 "+String.fromCharCode(10)+"홍길동"),null);});
+ it("formats cleanup and reset with unknown server preservation",()=>{const rows=[{displayName:"가나다 남",serverName:null,attendanceCount:"2",lastAttendedOn:"2026-08-28"}];assert.match(formatPreSignupCleanup({removedCount:3,rows}),/자동 삭제: 3명[\s\S]*미확인 \/ 가나다 남/);assert.match(formatPreSignupServerReset({server:"호1",resetCount:1,rows}),/서버 초기화: 호1[\s\S]*초기화: 1명/);});
+ it("shows joined and pre-signup identity states without mutation",()=>{const text=formatPreSignupIdentityLookup({name:"가나다",matches:[{state:"joined",displayName:"가나다 남",serverName:"호1",lastAttendedOn:null},{state:"pre-signup",displayName:"가나다 여",serverName:null,lastAttendedOn:"2026-08-28"}]});assert.match(text,/가입: 가나다 남 \/ 호1/);assert.match(text,/미가입: 가나다 여 \/ \(서버정보 없음\)/);});
+});
