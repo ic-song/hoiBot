@@ -85,6 +85,7 @@ import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./cast
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
 import { CastleBattleSelfRecordReadService, isCastleBattleSelfRecordCommand } from "./castle/castle-battle-self-record-read-service.js";
 import { CastleKingdomStatusReadService, isCastleKingdomStatusReadCommand } from "./castle/castle-kingdom-status-read-service.js";
+import { CastleCharmRankingReadService, isCastleCharmRankingReadCommand } from "./castle/castle-charm-ranking-read-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -849,6 +850,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || isCastleBattleSelfRecordCommand(normalizedEvent.message)
         || isCastleKingdomStatusReadCommand(normalizedEvent.message)
+        || isCastleCharmRankingReadCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -2891,6 +2893,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "raid_charm_ranking_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new RaidCharmRankingReadService(database!).handle({
+          externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,
+          message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+        });
+        if (result !== null) processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleCharmRankingReadCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "castle_charm_ranking_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new CastleCharmRankingReadService(database!).handle({
           externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,
           message:normalizedEvent.message!,eventId:normalizedEvent.eventId
         });
