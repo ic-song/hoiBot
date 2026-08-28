@@ -889,6 +889,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isLetterBoardCandidate(normalizedEvent.message)
          || isRecordBoardCommandCandidate(normalizedEvent.message)
          || parseGuildAdminDetailCommand(normalizedEvent.message) !== null
+         || isSocialPunchReactionCommandCandidate(normalizedEvent.message)
          || isPetSkillBoastReadCommand(normalizedEvent.message)
          || isPetAppearanceCommandCandidate(normalizedEvent.message)
          || isPetFeedIntimacyCandidate(normalizedEvent.message)
@@ -1000,6 +1001,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizeRecordBoardCommand(normalizedEvent.message)!
              : parseGuildAdminDetailCommand(normalizedEvent.message) !== null
              ? normalizeGuildAdminDetailDispatchMessage(normalizedEvent.message ?? "")
+             : isSocialPunchReactionCommandCandidate(normalizedEvent.message)
+             ? normalizeSocialPunchReactionDispatchMessage(normalizedEvent.message ?? "")
              : isPetAppearanceCommandCandidate(normalizedEvent.message)
              ? normalizePetAppearanceDispatchMessage(normalizedEvent.message ?? "")
              : isPetFeedIntimacyCandidate(normalizedEvent.message)
@@ -1891,6 +1894,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new GuildAdminDetailReadService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isSocialPunchReactionCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "social_punch_reaction"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new SocialPunchReactionService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
@@ -3332,6 +3344,7 @@ import { isPlayerTitleSellCandidate, normalizePlayerTitleSellDispatchMessage, Pl
 import { isLetterBoardCandidate, LetterBoardService, normalizeLetterBoardDispatchMessage } from "./social/letter-board-service.js";
 import { isRecordBoardCommandCandidate, normalizeRecordBoardCommand, RecordBoardService } from "./social/record-board-service.js";
 import { GuildAdminDetailReadService, normalizeGuildAdminDetailDispatchMessage, parseGuildAdminDetailCommand } from "./guild/guild-admin-detail-read-service.js";
+import { isSocialPunchReactionCommandCandidate, normalizeSocialPunchReactionDispatchMessage, SocialPunchReactionService } from "./social/social-punch-reaction-service.js";
 import { isPetSkillBoastReadCommand, PetSkillBoastReadService } from "./pet/pet-skill-boast-read-service.js";
 import { AdminPetAppearanceService, isPetAppearanceCommandCandidate, normalizePetAppearanceDispatchMessage } from "./pet/admin-pet-appearance-service.js";
 import { isPetFeedIntimacyCandidate, normalizePetFeedIntimacyCommand, PetFeedIntimacyService } from "./pet/pet-feed-intimacy-service.js";
