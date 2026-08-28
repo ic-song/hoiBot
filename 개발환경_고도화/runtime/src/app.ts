@@ -32,7 +32,7 @@ import { AutoExploreFixedConfigService, isAutoExploreFixedConfigCommand } from "
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
-import { HappyFoundationCaptainService, isHappyFoundationCaptainCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-captain-service.js";
+import { HappyFoundationCommandService, isHappyFoundationCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-command-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 import { isPlayerCumulativeLevelRankReadCommand, PlayerCumulativeLevelRankReadService } from "./player/player-cumulative-level-rank-read-service.js";
 import { isPlayerCumulativeLikeRankReadCommand, PlayerCumulativeLikeRankReadService } from "./player/player-cumulative-like-rank-read-service.js";
@@ -957,7 +957,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
-        || isHappyFoundationCaptainCommand(normalizedEvent.message)
+        || isHappyFoundationCommand(normalizedEvent.message)
         || isGuildRecruitmentToggleCommand(normalizedEvent.message)
         || isRiftForceAdminCommand(normalizedEvent.message)
         || isCastleBattleExecuteCommand(normalizedEvent.message)
@@ -1290,7 +1290,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeActivityRestoreDispatchMessage(normalizedEvent.message ?? "")
                 : homeActivityFileBootstrapDispatchCandidate
                   ? normalizeHomeActivityFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
-               : isHappyFoundationCaptainCommand(normalizedEvent.message)
+               : isHappyFoundationCommand(normalizedEvent.message)
                 ? normalizeHappyFoundationDispatchMessage(normalizedEvent.message ?? "")
               : isDiamondBoxCraftCommand(normalizedEvent.message)
                 ? normalizeDiamondBoxCraftDispatchMessage(normalizedEvent.message ?? "")
@@ -1909,22 +1909,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && normalizedEvent.direction === "incoming" && isHappyFoundationCaptainCommand(normalizedEvent.message)
+        && normalizedEvent.direction === "incoming" && isHappyFoundationCommand(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN"
-        && partialDispatchDecision.handlerKey === "happy_foundation_captain"
+        && partialDispatchDecision.handlerKey === "happy_foundation"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
-          const result = await new HappyFoundationCaptainService(database!).handle({
+          const result = await new HappyFoundationCommandService(database!).handle({
             externalUserId: normalizedEvent.userId,
             channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!,
             eventId: normalizedEvent.eventId
           });
-          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          if (result.outboxId !== undefined && result.data !== undefined) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
         } catch (error) {
           if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(
-              normalizedEvent, "happy_foundation_captain_error", error.message
+              normalizedEvent, "happy_foundation_error", error.message
             ));
           } else {
             throw error;
