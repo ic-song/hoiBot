@@ -260,6 +260,8 @@ import { isHomeActivityAlertReadCommand, normalizeHomeActivityAlertReadDispatchM
 import { HomeActivityAlertReadIrisHandler } from "./home/home-activity-alert-read-iris-handler.js";
 import { isHomeFeedMutationCommandCandidate, normalizeHomeFeedMutationDispatchMessage } from "./home/home-feed-mutate-command.js";
 import { HomeFeedMutationIrisHandler } from "./home/home-feed-mutate-iris-handler.js";
+import { isHomeBadgeInventoryCommand, normalizeHomeBadgeInventoryDispatchMessage } from "./home/home-badge-inventory-command.js";
+import { HomeBadgeInventoryIrisHandler } from "./home/home-badge-inventory-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
@@ -961,6 +963,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeActivityAlertReadCommand(normalizedEvent.message);
       const homeFeedMutationDispatchCandidate = process.env.HOME_FEED_MUTATE_COMMAND_ENABLED === "true"
         && isHomeFeedMutationCommandCandidate(normalizedEvent.message);
+      const homeBadgeInventoryDispatchCandidate = process.env.HOME_BADGE_INVENTORY_COMMAND_ENABLED === "true"
+        && isHomeBadgeInventoryCommand(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -1110,6 +1114,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeProfileViewDispatchCandidate
         || homeActivityAlertReadDispatchCandidate
         || homeFeedMutationDispatchCandidate
+        || homeBadgeInventoryDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1316,6 +1321,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeActivityAlertReadDispatchMessage(normalizedEvent.message ?? "")
                 : homeFeedMutationDispatchCandidate
                   ? normalizeHomeFeedMutationDispatchMessage(normalizedEvent.message ?? "")
+                : homeBadgeInventoryDispatchCandidate
+                  ? normalizeHomeBadgeInventoryDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1561,6 +1568,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ? await new HomeActivityAlertReadIrisHandler(database).execute(normalizedEvent)
             : partialDispatchDecision.handlerKey === "home_feed_mutate"
               ? await new HomeFeedMutationIrisHandler(database).execute(normalizedEvent)
+            : (partialDispatchDecision.handlerKey as string) === "home_badge_inventory_read"
+              ? await new HomeBadgeInventoryIrisHandler(database).execute(normalizedEvent)
             : await new DailyCommentIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: homeResponse.outboxId, room: homeResponse.room, data: homeResponse.message });
       }
