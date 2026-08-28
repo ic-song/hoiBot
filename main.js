@@ -33752,6 +33752,16 @@ function createPetMusouBattleSnapshot(user, totalCharm, petData, data) {
     };
 }
 
+// 다음 펫무쌍 대회 준비자 목록을 표시용 문자열로 생성하는 함수
+function buildPetMusouPreparedParticipantList(data, petData, guildData, musou) {
+    var preparedUsers = Object.keys(musou.nextParticipants || {});
+    var preparedLines = [];
+    for (var preparedIndex = 0; preparedIndex < preparedUsers.length; preparedIndex++) {
+        preparedLines.push("[" + checkRank(data, petData, guildData, preparedUsers[preparedIndex]) + "] 준비 완료");
+    }
+    return preparedLines.join("\n");
+}
+
 // 펫무쌍 참가 신청을 저장하는 함수
 function joinPetMusou(data, petData, petSkillData, guildData, sender) {
     var musou = ensurePetMusouData(data);
@@ -33761,15 +33771,10 @@ function joinPetMusou(data, petData, petSkillData, guildData, sender) {
     if (!guildInfo) return { ok: false, message: "❌ 길드에 가입된 유저만 펫무쌍에 참가할 수 있습니다." };
     if (!petData[sender]) return { ok: false, message: "❌ 펫 정보가 없어 펫무쌍에 참가할 수 없습니다." };
     if (musou.nextParticipants[sender]) {
-        var preparedUsers = Object.keys(musou.nextParticipants);
-        var preparedLines = [];
-        for (var preparedIndex = 0; preparedIndex < preparedUsers.length; preparedIndex++) {
-            preparedLines.push("[" + checkRank(data, petData, guildData, preparedUsers[preparedIndex]) + "] 준비 완료");
-        }
         return {
             ok: false,
             message: "⚠️ 이미 다음 펫무쌍 대회 준비를 완료했습니다.\n" +
-                "현재 펫무쌍 참여자 목록" + allsee + "\n" + preparedLines.join("\n")
+                "현재 펫무쌍 참여자 목록" + allsee + "\n" + buildPetMusouPreparedParticipantList(data, petData, guildData, musou)
         };
     }
     musou.nextParticipants[sender] = {
@@ -33779,19 +33784,22 @@ function joinPetMusou(data, petData, petSkillData, guildData, sender) {
         joinedAt: formatDateTime(new Date()),
         roundId: musou.nextRoundId
     };
+    var preparedParticipantList = buildPetMusouPreparedParticipantList(data, petData, guildData, musou); // 방금 준비한 사용자를 포함한 다음 회차 준비자 목록
     return {
         ok: true,
         message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
             "✅ 다음 펫무쌍 대회 준비가 완료되었습니다.\n" +
             "대회 시작 시 자동으로 참가 처리됩니다.\n\n" +
-            "펫무쌍 규칙 상세보기\n" + allsee +
+            "펫무쌍 규칙 상세보기 및 참여자 준비 목록\n" + allsee +
             "1. 대회 시작: 운영자 수동 시작\n" +
             "2. 개인 공격: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
             "3. 공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n" +
             "4. 처음 발견한 가짜 깃발은 공격권만 1회 차감\n" +
             "5. 공개된 가짜 재공격·시간 초과·벼락 시 탈락\n" +
             "6. 종합매력은 대회 시작 시점 기준\n" +
-            "7. 최종 점령자 우승"
+            "7. 최종 점령자 우승\n" +
+            "━━━━━━━━━━━━\n" +
+            preparedParticipantList
     };
 }
 
