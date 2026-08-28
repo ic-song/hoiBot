@@ -26,6 +26,7 @@ import { isServerStatsCommand, ServerStatsService } from "./server-stats-service
 import { isStatusAllCommand, StatusAllService } from "./status-all-service.js";
 import { isDataStatusCommand, DataStatusService } from "./data-status-service.js";
 import { isDataBackupCommand, DataBackupService } from "./data-backup-service.js";
+import { isManagedBackupCommand, ManagedBackupCommandService } from "./managed-backup-command-service.js";
 import { isDataRestoreCommandCandidate, DataRestoreService } from "./data-restore-service.js";
 import { isPreSignupAdminCommandCandidate, PreSignupAdminService } from "./pre-signup-admin-service.js";
 import { isPetMemberCharacterCountCommand, PetMemberCharacterCountService } from "./pet-member-character-count-service.js";
@@ -130,6 +131,7 @@ export class IrisAdminCommandService {
     if (isRetiredRingCommandCandidate(input.message)) return this.handleRetiredRingCommand(input);
     if (isPreSignupAdminCommandCandidate(input.message)) return new PreSignupAdminService(this.database).handleIris(input);
     if (isDataRestoreCommandCandidate(input.message)) return new DataRestoreService(this.database).handleIris(input);
+    if (isManagedBackupCommand(input.message)) return new ManagedBackupCommandService(this.database).handleIris(input);
     if (isDataBackupCommand(input.message)) return new DataBackupService(this.database).handleIris(input);
     if (isDataStatusCommand(input.message)) return new DataStatusService(this.database).handleIris(input);
     if (isStatusAllCommand(input.message)) return new StatusAllService(this.database).handleIris(input);
@@ -1223,6 +1225,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isAutoExploreSchedulerStartCommand(message)
     || isPreSignupAdminCommandCandidate(message)
     || isDataRestoreCommandCandidate(message)
+    || isManagedBackupCommand(message)
     || isDataBackupCommand(message)
     || isDataStatusCommand(message)
     || isStatusAllCommand(message)
