@@ -882,6 +882,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isAdminPlayerInfoReadCandidate(normalizedEvent.message)
          || isDeveloperNoteReadCommand(normalizedEvent.message)
          || isSocialBoardReadCommand(normalizedEvent.message)
+         || isLetterBoardCandidate(normalizedEvent.message)
          || isFreeMarketReadCommand(normalizedEvent.message)
          || isFreeMarketCancelCandidate(normalizedEvent.message)
          || isPlayerTitleSellCandidate(normalizedEvent.message)
@@ -984,6 +985,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isSocialBoardReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
+             : isLetterBoardCandidate(normalizedEvent.message)
+             ? normalizeLetterBoardDispatchMessage(normalizedEvent.message ?? "")
              : isFreeMarketReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isFreeMarketCancelCandidate(normalizedEvent.message)
@@ -1844,6 +1847,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"diamond_box_craft_error",error.message));
           } else throw error;
         }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isLetterBoardCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "letter_board"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new LetterBoardService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
@@ -3219,3 +3231,4 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   return app;
 }
 import { isPlayerTitleSellCandidate, normalizePlayerTitleSellDispatchMessage, PlayerTitleSellService } from "./player/player-title-sell-service.js";
+import { isLetterBoardCandidate, LetterBoardService, normalizeLetterBoardDispatchMessage } from "./social/letter-board-service.js";
