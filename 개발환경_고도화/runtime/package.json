@@ -113,7 +113,8 @@
     "db:probe:trial-tower-season-lifecycle": "tsx scripts/probe-trial-tower-season-lifecycle-synthetic.ts",
     "db:probe:trial-tower-season-reset": "tsx scripts/probe-trial-tower-season-reset-synthetic.ts",
     "db:probe:auto-explore-fixed-config": "tsx scripts/probe-auto-explore-fixed-config-synthetic.ts",
-    "db:probe:auto-explore-scheduler": "tsx scripts/probe-auto-explore-scheduler-synthetic.ts"
+    "db:probe:auto-explore-scheduler": "tsx scripts/probe-auto-explore-scheduler-synthetic.ts",
+    "db:probe:guild-shop-catalog": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-shop-catalog-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

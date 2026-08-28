@@ -51,6 +51,7 @@ import { isTrialTowerAdminModifyCommandCandidate, TrialTowerAdminModifyService }
 import { isTrialTowerSeasonLifecycleCommand, TrialTowerSeasonLifecycleService } from "../trial/trial-tower-season-lifecycle-service.js";
 import { isTrialTowerSeasonResetCommand, TrialTowerSeasonResetService } from "../trial/trial-tower-season-reset-service.js";
 import { AutoExploreSchedulerService, isAutoExploreSchedulerStartCommand } from "../pet/auto-explore-scheduler-service.js";
+import { GuildShopCatalogService, isGuildShopCatalogCommandCandidate } from "../guild/guild-shop-catalog-service.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
@@ -138,6 +139,10 @@ export class IrisAdminCommandService {
     if (isTrialTowerSeasonLifecycleCommand(input.message)) return this.handleTrialTowerSeasonLifecycle(input);
     if (isTrialTowerSeasonResetCommand(input.message)) return new TrialTowerSeasonResetService(this.database).handleIris(input);
     if (isAutoExploreSchedulerStartCommand(input.message)) return new AutoExploreSchedulerService(this.database).handleIris(input);
+    if (isGuildShopCatalogCommandCandidate(input.message)) {
+      const result = await new GuildShopCatalogService(this.database).handle(input);
+      return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
+    }
     if (isMemberVoiceAuthRewardCommandCandidate(input.message)) return this.handleMemberVoiceAuthReward(input);
     if (isSpecialBadgeGrantCommandCandidate(input.message)) return this.handleSpecialBadgeGrant(input);
     if (isSpecialBadgeRevokeCommandCandidate(input.message)) return this.handleSpecialBadgeRevoke(input);
@@ -1145,7 +1150,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
     || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
-    || isMemberVoiceAuthRewardCommandCandidate(message) || isSpecialBadgeGrantCommandCandidate(message) || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
+    || isGuildShopCatalogCommandCandidate(message) || isMemberVoiceAuthRewardCommandCandidate(message) || isSpecialBadgeGrantCommandCandidate(message) || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isTrialTowerSyncCommand(message)
     || isTrialTowerAdminModifyCommandCandidate(message)
     || isTrialTowerSeasonLifecycleCommand(message)
