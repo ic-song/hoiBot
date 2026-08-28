@@ -132,7 +132,8 @@
     "db:probe:legendary-stone-ticket-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-legendary-stone-ticket-grant-synthetic.ts",
     "db:probe:managed-backup-command": "node --env-file-if-exists=.env --import tsx scripts/probe-managed-backup-command-synthetic.ts",
     "db:probe:guild-territory-rift-control": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-rift-control-synthetic.ts",
-    "db:probe:guild-profile-notice-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-profile-notice-mutate-synthetic.ts"
+    "db:probe:guild-profile-notice-mutate": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-profile-notice-mutate-synthetic.ts",
+    "db:probe:guild-leadership-transfer": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-leadership-transfer-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
