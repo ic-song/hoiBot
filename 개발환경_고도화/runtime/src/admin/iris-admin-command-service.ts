@@ -10,6 +10,7 @@ import { isRingRewardUseCommand, RingRewardUseService } from "../ring/ring-rewar
 import { isSpiritEnhanceCommand, SpiritEnhanceService } from "../pet/spirit-enhance-service.js";
 import { isSpiritAttributeCommandCandidate, SpiritAttributeService } from "./spirit-attribute-service.js";
 import { isPetEnhancementLevelSetCommandCandidate, PetEnhancementLevelSetService } from "./pet-enhancement-level-set-service.js";
+import { isMiniPetUpgradeOverrideCommandCandidate, MiniPetUpgradeOverrideService } from "./mini-pet-upgrade-override-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -105,6 +106,7 @@ export class IrisAdminCommandService {
     if (isPetSkillBookGrantCommandCandidate(input.message)) return this.handlePetSkillBookGrant(input);
     if (isPetResetCommandCandidate(input.message)) return new PetResetService(this.database).handleIris(input);
     if (isPetOwnerReadCommand(input.message)) return new PetOwnerReadService(this.database).handleIris(input);
+    if (isMiniPetUpgradeOverrideCommandCandidate(input.message)) return new MiniPetUpgradeOverrideService(this.database).handleIris(input);
     if (isPetEnhancementLevelSetCommandCandidate(input.message)) return new PetEnhancementLevelSetService(this.database).handleIris(input);
     if (isSpiritAttributeCommandCandidate(input.message)) return new SpiritAttributeService(this.database).handleIris(input);
     if (isSpiritEnhanceCommand(input.message)) return new SpiritEnhanceService(this.database).handleIris(input);
@@ -1097,7 +1099,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
     || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message)
     || isPetSkillBookGrantCommandCandidate(message) || isPetResetCommandCandidate(message)
-    || isPetOwnerReadCommand(message));
+    || isPetOwnerReadCommand(message) || isMiniPetUpgradeOverrideCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
