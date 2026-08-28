@@ -254,6 +254,8 @@ import { isDailyCommentCommandCandidate, normalizeDailyCommentDispatchMessage } 
 import { DailyCommentIrisHandler } from "./home/daily-comment-iris-handler.js";
 import { isHomeLikeCommandCandidate, normalizeHomeLikeDispatchMessage } from "./home/home-like-command.js";
 import { HomeLikeIrisHandler } from "./home/home-like-iris-handler.js";
+import { isHomeProfileViewCandidate, normalizeHomeProfileViewDispatchMessage } from "./home/home-profile-view-command.js";
+import { HomeProfileViewIrisHandler } from "./home/home-profile-view-iris-handler.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
 import { isHomeVisitResetCommand, normalizeHomeVisitResetDispatchMessage } from "./home/home-visit-reset-command.js";
@@ -949,6 +951,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isDailyCommentCommandCandidate(normalizedEvent.message);
       const homeLikeDispatchCandidate = process.env.HOME_LIKE_COMMAND_ENABLED === "true"
         && isHomeLikeCommandCandidate(normalizedEvent.message);
+      const homeProfileViewDispatchCandidate = process.env.HOME_PROFILE_VIEW_COMMAND_ENABLED === "true"
+        && isHomeProfileViewCandidate(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -1095,6 +1099,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || oneDayPassDispatchCandidate
         || dailyCommentDispatchCandidate
         || homeLikeDispatchCandidate
+        || homeProfileViewDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1295,6 +1300,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeDailyCommentDispatchMessage(normalizedEvent.message ?? "")
                 : homeLikeDispatchCandidate
                   ? normalizeHomeLikeDispatchMessage(normalizedEvent.message ?? "")
+                : homeProfileViewDispatchCandidate
+                  ? normalizeHomeProfileViewDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1531,10 +1538,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && processing !== undefined
         && !processing.duplicate
         && partialDispatchDecision?.route === "MODERN"
-        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action")) {
+        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "home_profile_view")) {
         const homeResponse = partialDispatchDecision.handlerKey === "home_like_action"
           ? await new HomeLikeIrisHandler(database).execute(normalizedEvent)
-          : await new DailyCommentIrisHandler(database).execute(normalizedEvent);
+          : partialDispatchDecision.handlerKey === "home_profile_view"
+            ? await new HomeProfileViewIrisHandler(database).execute(normalizedEvent)
+            : await new DailyCommentIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: homeResponse.outboxId, room: homeResponse.room, data: homeResponse.message });
       }
       if (database !== undefined
