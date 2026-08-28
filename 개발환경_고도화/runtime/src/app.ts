@@ -263,6 +263,8 @@ import { HomeFeedMutationIrisHandler } from "./home/home-feed-mutate-iris-handle
 import { isHomeBadgeInventoryCommand, normalizeHomeBadgeInventoryDispatchMessage } from "./home/home-badge-inventory-command.js";
 import { HomeBadgeInventoryIrisHandler } from "./home/home-badge-inventory-iris-handler.js";
 import { HomeBadgeEquipIrisHandler } from "./home/home-badge-equip-iris-handler.js";
+import { HomeBadgePermanentDeleteIrisHandler } from "./home/home-badge-permanent-delete-iris-handler.js";
+import { isHomeBadgePermanentDeleteCommand, normalizeHomeBadgePermanentDeleteDispatchMessage } from "./home/home-badge-permanent-delete-command.js";
 import { isHomeBadgeEquipCommand, normalizeHomeBadgeEquipDispatchMessage } from "./home/home-badge-equip-command.js";
 import { isHomeCommentFileBootstrapCommand, normalizeHomeCommentFileBootstrapDispatchMessage } from "./home/home-comment-file-bootstrap-command.js";
 import { HomeCommentFileBootstrapIrisHandler } from "./home/home-comment-file-bootstrap-iris-handler.js";
@@ -969,6 +971,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeBadgeInventoryCommand(normalizedEvent.message);
       const homeBadgeEquipDispatchCandidate = process.env.HOME_BADGE_EQUIP_COMMAND_ENABLED === "true"
         && isHomeBadgeEquipCommand(normalizedEvent.message);
+      const homeBadgePermanentDeleteDispatchCandidate = process.env.HOME_BADGE_PERMANENT_DELETE_COMMAND_ENABLED === "true"
+        && isHomeBadgePermanentDeleteCommand(normalizedEvent.message);
       const homeCommentFileBootstrapDispatchCandidate = process.env.HOME_COMMENT_FILE_BOOTSTRAP_COMMAND_ENABLED === "true"
         && isHomeCommentFileBootstrapCommand(normalizedEvent.message);
       const homeVisitResetDispatchCandidate = process.env.HOME_VISIT_RESET_COMMAND_ENABLED === "true"
@@ -1120,6 +1124,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeFeedMutationDispatchCandidate
         || homeBadgeInventoryDispatchCandidate
         || homeBadgeEquipDispatchCandidate
+        || homeBadgePermanentDeleteDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
          || homeVisitResetDispatchCandidate
          || homeSocialBadgeMigrationDispatchCandidate
@@ -1330,6 +1335,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeBadgeInventoryDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeEquipDispatchCandidate
                   ? normalizeHomeBadgeEquipDispatchMessage(normalizedEvent.message ?? "")
+                : homeBadgePermanentDeleteDispatchCandidate
+                  ? normalizeHomeBadgePermanentDeleteDispatchMessage(normalizedEvent.message ?? "")
                 : homeCommentFileBootstrapDispatchCandidate
                   ? normalizeHomeCommentFileBootstrapDispatchMessage(normalizedEvent.message ?? "")
                 : homeVisitResetDispatchCandidate
@@ -1579,6 +1586,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ? await new HomeBadgeInventoryIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_equip"
               ? await new HomeBadgeEquipIrisHandler(database).execute(normalizedEvent)
+            : (partialDispatchDecision.handlerKey as string) === "home_badge_permanent_delete"
+              ? await new HomeBadgePermanentDeleteIrisHandler(database).execute(normalizedEvent)
             : await new DailyCommentIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: homeResponse.outboxId, room: homeResponse.room, data: homeResponse.message });
       }
