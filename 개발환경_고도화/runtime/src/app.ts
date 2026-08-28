@@ -91,6 +91,7 @@ import { MiniPetBagThresholdCleanService, isMiniPetBagThresholdCleanCommand } fr
 import { MiniPetGradeCleanupService, isMiniPetGradeCleanupCommand } from "./mini-pet/mini-pet-grade-cleanup-service.js";
 import { MiniPetAdminOwnedDeleteService, isMiniPetAdminOwnedDeleteCommand } from "./mini-pet/mini-pet-admin-owned-delete-service.js";
 import { MiniPetEquippedCustomizeService, isMiniPetEquippedCustomizeCommand } from "./mini-pet/mini-pet-equipped-customize-service.js";
+import { MiniPetEquipService, isMiniPetEquipCommandCandidate, normalizeMiniPetEquipDispatchMessage } from "./mini-pet/mini-pet-equip-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -861,6 +862,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isMiniPetGradeCleanupCommand(normalizedEvent.message)
         || isMiniPetAdminOwnedDeleteCommand(normalizedEvent.message)
         || isMiniPetEquippedCustomizeCommand(normalizedEvent.message)
+        || isMiniPetEquipCommandCandidate(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -1120,6 +1122,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizePendantDrawOpenDispatchMessage(normalizedEvent.message ?? "")
              : isPendantEquipCommandCandidate(normalizedEvent.message)
              ? normalizePendantEquipDispatchMessage(normalizedEvent.message ?? "")
+             : isMiniPetEquipCommandCandidate(normalizedEvent.message)
+             ? normalizeMiniPetEquipDispatchMessage(normalizedEvent.message ?? "")
              : isPendantEquipResetCommandCandidate(normalizedEvent.message)
              ? normalizePendantEquipResetDispatchMessage(normalizedEvent.message ?? "")
              : isPendantInfoCommandCandidate(normalizedEvent.message)
@@ -2947,6 +2951,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && normalizedEvent.userId !== undefined) {
         const result=await new MiniPetEquippedCustomizeService(database!).handle({
           externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId,channelId:normalizedEvent.channelId!
+        });
+        if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetEquipCommandCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_equip"
+        && normalizedEvent.userId !== undefined) {
+        const result=await new MiniPetEquipService(database!).handle({
+          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId,destinationId:normalizedEvent.channelId!
         });
         if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
       }
