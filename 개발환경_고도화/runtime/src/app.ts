@@ -70,6 +70,7 @@ import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAd
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
 import { TierRewardPayoutService, isTierRewardPayoutCommand, normalizeTierRewardPayoutDispatchMessage } from "./player/tier-reward-payout-service.js";
+import { MiniPetBindingReleaseService, isMiniPetBindingReleaseCommand, normalizeMiniPetBindingReleaseDispatchMessage } from "./mini-pet/mini-pet-binding-release-service.js";
 import { isOperationNoticeCommandCandidate, normalizeOperationNoticeDispatchMessage, OperationNoticeService } from "./admin/operation-notice-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
@@ -1017,6 +1018,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminPackageDeleteCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
         || isTierRewardPayoutCommand(normalizedEvent.message)
+        || isMiniPetBindingReleaseCommand(normalizedEvent.message)
         || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCommand(normalizedEvent.message)
@@ -1381,6 +1383,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeMiniPetRankRewardPayoutDispatchMessage(normalizedEvent.message ?? "")
               : isTierRewardPayoutCommand(normalizedEvent.message)
                 ? normalizeTierRewardPayoutDispatchMessage(normalizedEvent.message ?? "")
+              : isMiniPetBindingReleaseCommand(normalizedEvent.message)
+                ? normalizeMiniPetBindingReleaseDispatchMessage(normalizedEvent.message ?? "")
               : isOperationNoticeCommandCandidate(normalizedEvent.message)
                 ? normalizeOperationNoticeDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
@@ -1955,7 +1959,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && ((isAdminDiamondResetAllCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_diamond_reset_all")
           || (isAdminPackageDeleteCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_package_delete")
           || (isMiniPetRankRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "mini_pet_rank_reward_payout")
-          || (isTierRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "tier_reward_payout"))
+          || (isTierRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "tier_reward_payout")
+          || (isMiniPetBindingReleaseCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "mini_pet_binding_release"))
         && partialDispatchDecision?.route === "MODERN"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
@@ -1964,12 +1969,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             : partialDispatchDecision.handlerKey === "admin_package_delete"
               ? new AdminPackageDeleteService(database!)
               : partialDispatchDecision.handlerKey === "mini_pet_rank_reward_payout"
-                ? new MiniPetRankRewardPayoutService(database!) : new TierRewardPayoutService(database!);
+                ? new MiniPetRankRewardPayoutService(database!)
+                : partialDispatchDecision.handlerKey === "tier_reward_payout"
+                  ? new TierRewardPayoutService(database!) : new MiniPetBindingReleaseService(database!);
           const result = await service.handle({
             externalUserId: normalizedEvent.userId, channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!, eventId: normalizedEvent.eventId
           });
-          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: String("data" in result ? result.data : result.reply) });
         } catch (error) {
           if (error instanceof ApplicationError && [403, 409, 422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, `${partialDispatchDecision.handlerKey}_error`, error.message));
