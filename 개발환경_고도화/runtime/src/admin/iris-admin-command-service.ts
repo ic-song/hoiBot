@@ -12,6 +12,7 @@ import { isSpiritAttributeCommandCandidate, SpiritAttributeService } from "./spi
 import { isPetEnhancementLevelSetCommandCandidate, PetEnhancementLevelSetService } from "./pet-enhancement-level-set-service.js";
 import { isMiniPetUpgradeOverrideCommandCandidate, MiniPetUpgradeOverrideService } from "./mini-pet-upgrade-override-service.js";
 import { isMiniPetDirectGrantCommandCandidate, MiniPetDirectGrantService } from "./mini-pet-direct-grant-service.js";
+import { isMiniPetBattleCountAdminCommandCandidate, MiniPetBattleCountAdminService } from "./mini-pet-battle-count-admin-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -107,6 +108,7 @@ export class IrisAdminCommandService {
     if (isPetSkillBookGrantCommandCandidate(input.message)) return this.handlePetSkillBookGrant(input);
     if (isPetResetCommandCandidate(input.message)) return new PetResetService(this.database).handleIris(input);
     if (isPetOwnerReadCommand(input.message)) return new PetOwnerReadService(this.database).handleIris(input);
+    if (isMiniPetBattleCountAdminCommandCandidate(input.message)) return new MiniPetBattleCountAdminService(this.database).handleIris(input);
     if (isMiniPetDirectGrantCommandCandidate(input.message)) return new MiniPetDirectGrantService(this.database).handleIris(input);
     if (isMiniPetUpgradeOverrideCommandCandidate(input.message)) return new MiniPetUpgradeOverrideService(this.database).handleIris(input);
     if (isPetEnhancementLevelSetCommandCandidate(input.message)) return new PetEnhancementLevelSetService(this.database).handleIris(input);
@@ -1101,7 +1103,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
     || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message)
     || isPetSkillBookGrantCommandCandidate(message) || isPetResetCommandCandidate(message)
-    || isPetOwnerReadCommand(message) || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message));
+    || isPetOwnerReadCommand(message) || isMiniPetBattleCountAdminCommandCandidate(message)
+    || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
