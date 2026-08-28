@@ -69,6 +69,7 @@ import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamo
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
+import { TierRewardPayoutService, isTierRewardPayoutCommand, normalizeTierRewardPayoutDispatchMessage } from "./player/tier-reward-payout-service.js";
 import { isOperationNoticeCommandCandidate, normalizeOperationNoticeDispatchMessage, OperationNoticeService } from "./admin/operation-notice-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
@@ -1015,6 +1016,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isAdminPackageDeleteCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
+        || isTierRewardPayoutCommand(normalizedEvent.message)
         || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCommand(normalizedEvent.message)
@@ -1377,6 +1379,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeAdminPackageDeleteDispatchMessage(normalizedEvent.message ?? "")
               : isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
                 ? normalizeMiniPetRankRewardPayoutDispatchMessage(normalizedEvent.message ?? "")
+              : isTierRewardPayoutCommand(normalizedEvent.message)
+                ? normalizeTierRewardPayoutDispatchMessage(normalizedEvent.message ?? "")
               : isOperationNoticeCommandCandidate(normalizedEvent.message)
                 ? normalizeOperationNoticeDispatchMessage(normalizedEvent.message ?? "")
               : isFirstSponsorCommandCandidate(normalizedEvent.message)
@@ -1950,14 +1954,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && ((isAdminDiamondResetAllCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_diamond_reset_all")
           || (isAdminPackageDeleteCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_package_delete")
-          || (isMiniPetRankRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "mini_pet_rank_reward_payout"))
+          || (isMiniPetRankRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "mini_pet_rank_reward_payout")
+          || (isTierRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "tier_reward_payout"))
         && partialDispatchDecision?.route === "MODERN"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const service = partialDispatchDecision.handlerKey === "admin_diamond_reset_all"
             ? new AdminDiamondResetAllService(database!)
             : partialDispatchDecision.handlerKey === "admin_package_delete"
-              ? new AdminPackageDeleteService(database!) : new MiniPetRankRewardPayoutService(database!);
+              ? new AdminPackageDeleteService(database!)
+              : partialDispatchDecision.handlerKey === "mini_pet_rank_reward_payout"
+                ? new MiniPetRankRewardPayoutService(database!) : new TierRewardPayoutService(database!);
           const result = await service.handle({
             externalUserId: normalizedEvent.userId, channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!, eventId: normalizedEvent.eventId
