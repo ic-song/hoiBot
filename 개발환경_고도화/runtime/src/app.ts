@@ -884,6 +884,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isSocialBoardReadCommand(normalizedEvent.message)
          || isFreeMarketReadCommand(normalizedEvent.message)
          || isFreeMarketCancelCandidate(normalizedEvent.message)
+         || isPlayerTitleSellCandidate(normalizedEvent.message)
          || isCarrotBoardReadCommand(normalizedEvent.message)
          || isCarrotBoardDeleteCommand(normalizedEvent.message)
          || isCarrotBoardCompleteCommand(normalizedEvent.message)
@@ -987,6 +988,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isFreeMarketCancelCandidate(normalizedEvent.message)
              ? normalizeFreeMarketCancelDispatchMessage(normalizedEvent.message ?? "")
+             : isPlayerTitleSellCandidate(normalizedEvent.message)
+             ? normalizePlayerTitleSellDispatchMessage(normalizedEvent.message ?? "")
              : isCarrotBoardReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isCarrotBoardDeleteCommand(normalizedEvent.message)
@@ -1840,6 +1843,22 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"diamond_box_craft_error",error.message));
           } else throw error;
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isPlayerTitleSellCandidate(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "player_title_sell"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        const result = await new PlayerTitleSellService(database!).handle({
+          eventId: normalizedEvent.eventId,
+          externalUserId: normalizedEvent.userId,
+          destinationId: normalizedEvent.channelId,
+          message: normalizedEvent.message!
+        });
+        if (result !== null && result.status !== "blocked_by_castle_siege" && result.status !== "ignored_unregistered") {
+          processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
         }
       }
 
@@ -3199,3 +3218,4 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
 
   return app;
 }
+import { isPlayerTitleSellCandidate, normalizePlayerTitleSellDispatchMessage, PlayerTitleSellService } from "./player/player-title-sell-service.js";
