@@ -89,6 +89,7 @@ import { CastleCharmRankingReadService, isCastleCharmRankingReadCommand } from "
 import { CastleStateResetService, isCastleStateResetCommand } from "./castle/castle-state-reset-service.js";
 import { MiniPetBagThresholdCleanService, isMiniPetBagThresholdCleanCommand } from "./mini-pet/mini-pet-bag-threshold-clean-service.js";
 import { MiniPetGradeCleanupService, isMiniPetGradeCleanupCommand } from "./mini-pet/mini-pet-grade-cleanup-service.js";
+import { MiniPetAdminOwnedDeleteService, isMiniPetAdminOwnedDeleteCommand } from "./mini-pet/mini-pet-admin-owned-delete-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -857,6 +858,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleStateResetCommand(normalizedEvent.message)
         || isMiniPetBagThresholdCleanCommand(normalizedEvent.message)
         || isMiniPetGradeCleanupCommand(normalizedEvent.message)
+        || isMiniPetAdminOwnedDeleteCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -2923,6 +2925,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId
         });
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetAdminOwnedDeleteCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_admin_owned_delete"
+        && normalizedEvent.userId !== undefined) {
+        const result=await new MiniPetAdminOwnedDeleteService(database!).handle({
+          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId,destinationId:normalizedEvent.channelId!
+        });
+        if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
