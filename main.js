@@ -1581,7 +1581,7 @@ blockedNicknameTerms: [
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
-            personalAttackLimit: 10, // 개인별 영지공격 최대 횟수
+            personalAttackLimit: 25, // 개인별 영지공격 최대 횟수
             maxOwnedTerritories: 3, // 길드별 동시 점령 가능 영지 수
             wrongTurnPenalty: 7, // 영지공격 오입력 패널티 턴
             timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준
