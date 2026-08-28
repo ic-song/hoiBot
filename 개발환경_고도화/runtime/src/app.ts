@@ -6,7 +6,7 @@ import type { DatabaseClient } from "./database.js";
 import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
 import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
-import { ProcessIrisEventService, recordOutboxDelivery } from "./integration/event-processing-service.js";
+import { ProcessIrisEventService, recordOutboxDelivery, type PendingReply } from "./integration/event-processing-service.js";
 import {
   formatIrisKakaoDiagnostic,
   IrisKakaoDatabaseInspector,
@@ -92,6 +92,7 @@ import { MiniPetGradeCleanupService, isMiniPetGradeCleanupCommand } from "./mini
 import { MiniPetAdminOwnedDeleteService, isMiniPetAdminOwnedDeleteCommand } from "./mini-pet/mini-pet-admin-owned-delete-service.js";
 import { MiniPetEquippedCustomizeService, isMiniPetEquippedCustomizeCommand } from "./mini-pet/mini-pet-equipped-customize-service.js";
 import { MiniPetEquipService, isMiniPetEquipCommandCandidate, normalizeMiniPetEquipDispatchMessage } from "./mini-pet/mini-pet-equip-service.js";
+import { MiniPetBulkCleanupService, isMiniPetBulkCleanupCommand, normalizeMiniPetBulkCleanupDispatchMessage } from "./mini-pet/mini-pet-bulk-cleanup-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -486,6 +487,54 @@ async function sendIrisImageReply(config: AppConfig, reply: IrisImageReply): Pro
   }
 }
 
+// 미니펫 장착과 전체정리 명령의 공용 디스패치 후보 여부를 확인합니다.
+function isMiniPetEquipOrBulkCleanupCommand(message: string | undefined): boolean {
+  return isMiniPetEquipCommandCandidate(message) || isMiniPetBulkCleanupCommand(message);
+}
+
+// 미니펫 장착과 전체정리 명령을 공용 레지스트리 조회 형식으로 정규화합니다.
+function normalizeMiniPetEquipOrBulkCleanupDispatchMessage(message: string): string {
+  if (isMiniPetEquipCommandCandidate(message)) return normalizeMiniPetEquipDispatchMessage(message);
+  return normalizeMiniPetBulkCleanupDispatchMessage(message) ?? message;
+}
+
+// 미니펫 장착과 전체정리 명령을 실행하고 생성된 답변을 기존 처리 큐에 추가합니다.
+async function dispatchMiniPetEquipOrBulkCleanup(input: {
+  database: DatabaseClient | undefined;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+  route: string | undefined;
+  handlerKey: string | undefined;
+  normalizedEvent: NormalizedIrisEvent;
+  replies: PendingReply[] | undefined;
+}): Promise<void> {
+  const event = input.normalizedEvent;
+  if (!input.isOperationalChannel || input.duplicate !== false
+    || input.route !== "MODERN"
+    || event.userId === undefined || input.database === undefined) return;
+  if (input.handlerKey === "mini_pet_equip" && isMiniPetEquipCommandCandidate(event.message)) {
+    const result = await new MiniPetEquipService(input.database).handle({
+      externalUserId: event.userId,
+      message: event.message!,
+      eventId: event.eventId,
+      destinationId: event.channelId!
+    });
+    if (result.outboxId !== undefined && result.data !== undefined) {
+      input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
+    }
+    return;
+  }
+  if (input.handlerKey !== "mini_pet_bulk_cleanup" || !isMiniPetBulkCleanupCommand(event.message)) return;
+  const result = await new MiniPetBulkCleanupService(input.database).handle({
+    eventId: event.eventId,
+    externalUserId: event.userId,
+    message: event.message!
+  });
+  if (result.outboxId !== undefined && result.data !== undefined) {
+    input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
+  }
+}
+
 // 테스트와 실제 실행에서 공통으로 사용할 Fastify 앱을 생성합니다.
 export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) {
   const app = Fastify({
@@ -862,7 +911,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isMiniPetGradeCleanupCommand(normalizedEvent.message)
         || isMiniPetAdminOwnedDeleteCommand(normalizedEvent.message)
         || isMiniPetEquippedCustomizeCommand(normalizedEvent.message)
-        || isMiniPetEquipCommandCandidate(normalizedEvent.message)
+        || isMiniPetEquipOrBulkCleanupCommand(normalizedEvent.message)
         || isRaidCharmRankingReadCommand(normalizedEvent.message)
         || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
@@ -1122,8 +1171,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizePendantDrawOpenDispatchMessage(normalizedEvent.message ?? "")
              : isPendantEquipCommandCandidate(normalizedEvent.message)
              ? normalizePendantEquipDispatchMessage(normalizedEvent.message ?? "")
-             : isMiniPetEquipCommandCandidate(normalizedEvent.message)
-             ? normalizeMiniPetEquipDispatchMessage(normalizedEvent.message ?? "")
+             : isMiniPetEquipOrBulkCleanupCommand(normalizedEvent.message)
+             ? normalizeMiniPetEquipOrBulkCleanupDispatchMessage(normalizedEvent.message ?? "")
              : isPendantEquipResetCommandCandidate(normalizedEvent.message)
              ? normalizePendantEquipResetDispatchMessage(normalizedEvent.message ?? "")
              : isPendantInfoCommandCandidate(normalizedEvent.message)
@@ -2955,16 +3004,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isMiniPetEquipCommandCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN"
-        && partialDispatchDecision.handlerKey === "mini_pet_equip"
-        && normalizedEvent.userId !== undefined) {
-        const result=await new MiniPetEquipService(database!).handle({
-          externalUserId:normalizedEvent.userId,message:normalizedEvent.message!,eventId:normalizedEvent.eventId,destinationId:normalizedEvent.channelId!
-        });
-        if(result.outboxId!==undefined&&result.data!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId!,data:result.data});
-      }
+      await dispatchMiniPetEquipOrBulkCleanup({
+        database,
+        isOperationalChannel,
+        duplicate: processing?.duplicate,
+        route: partialDispatchDecision?.route,
+        handlerKey: partialDispatchDecision?.handlerKey,
+        normalizedEvent,
+        replies: processing?.replies
+      });
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isRaidCharmRankingReadCommand(normalizedEvent.message)
