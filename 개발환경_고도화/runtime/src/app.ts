@@ -115,6 +115,7 @@ import { HomeFurnitureMarketListingService, isHomeFurnitureMarketListingCandidat
 import { isPendantMarketInfoCommandCandidate, normalizePendantMarketInfoDispatchMessage, PendantMarketInfoService } from "./market/pendant-market-info-service.js";
 import { isPendantCarrotTradeCommandCandidate, normalizePendantCarrotTradeDispatchMessage, PendantCarrotTradeService } from "./market/pendant-carrot-trade-service.js";
 import { isMiniPetCarrotTradeCandidate, MiniPetCarrotTradeService, normalizeMiniPetCarrotTradeDispatchMessage } from "./mini-pet/mini-pet-carrot-trade-service.js";
+import { isMiniPetEliteCombineCandidate, MiniPetEliteCombineService, normalizeMiniPetEliteCombineDispatchMessage } from "./mini-pet/mini-pet-elite-combine-service.js";
 import { isPendantRestoreCommandCandidate, normalizePendantRestoreDispatchMessage, PendantRestoreService } from "./pet/pendant-restore-service.js";
 import { isPendantDeleteCommandCandidate,normalizePendantDeleteDispatchMessage,PendantDeleteService } from "./pet/pendant-delete-service.js";
 import { isPendantRankCommand,PendantRankService } from "./pet/pendant-rank-service.js";
@@ -495,7 +496,7 @@ async function sendIrisImageReply(config: AppConfig, reply: IrisImageReply): Pro
 function isMiniPetEquipOrBulkCleanupCommand(message: string | undefined): boolean {
   return isMiniPetEquipCommandCandidate(message) || isMiniPetBulkCleanupCommand(message)
     || isMiniPetBattleResetTicketCraftCommand(message) || isMiniPetBattleRecordResetCommand(message)
-    || isMiniPetUpgradeCommand(message);
+    || isMiniPetUpgradeCommand(message) || isMiniPetEliteCombineCandidate(message);
 }
 
 // 미니펫 장착과 전체정리 명령을 공용 레지스트리 조회 형식으로 정규화합니다.
@@ -503,6 +504,7 @@ function normalizeMiniPetEquipOrBulkCleanupDispatchMessage(message: string): str
   if (isMiniPetEquipCommandCandidate(message)) return normalizeMiniPetEquipDispatchMessage(message);
   if (isMiniPetBulkCleanupCommand(message)) return normalizeMiniPetBulkCleanupDispatchMessage(message) ?? message;
   if (isMiniPetUpgradeCommand(message)) return "/미니펫강화";
+  if (isMiniPetEliteCombineCandidate(message)) return normalizeMiniPetEliteCombineDispatchMessage(message);
   return message;
 }
 
@@ -574,6 +576,11 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
     if (result.status !== "silent" && result.outboxId !== undefined && result.data !== undefined) {
       input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
     }
+    return;
+  }
+  if (input.handlerKey === "mini_pet_elite_combine" && isMiniPetEliteCombineCandidate(event.message)) {
+    const result = await new MiniPetEliteCombineService(input.database).handle({ eventId:event.eventId, externalUserId:event.userId, destinationId:event.channelId!, message:event.message! });
+    if (result.status !== "silent" && result.outboxId !== undefined && result.data !== undefined) input.replies?.push({ outboxId:result.outboxId, room:event.channelId!, data:result.data });
     return;
   }
   if (input.handlerKey !== "mini_pet_bulk_cleanup" || !isMiniPetBulkCleanupCommand(event.message)) return;
