@@ -31019,11 +31019,13 @@ function advanceGuildTerritoryTurn(data, guildData) {
 }
 
 // 영지전 현재 공격 차례 한 줄 빌드
-function buildGuildTerritoryCurrentTurnLine(data, petData, guildData) {
+function buildGuildTerritoryCurrentTurnLine(data, petData, guildData, isAutoAttackScheduled) {
     var row = getGuildTerritoryTurnRow(data, guildData);
     if (!row) return "";
-    var autoAttackLabel = data && data.member && data.member[row.user] && data.member[row.user].guildTerritoryAutoAttackEnabled === true ? " (자동공격)" : "";
-    return "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다." + autoAttackLabel;
+    if (isAutoAttackScheduled) {
+        return "[" + checkRank(data, petData, guildData, row.user) + "] 님이 자동공격을 진행합니다.";
+    }
+    return "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
 }
 
 // 영지전 턴 메시지 빌드
@@ -31037,17 +31039,17 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData, autoTerritoryN
     var remain = Math.max(0, attackLimit - used);
     var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
-    var turnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+    var isAutoAttackScheduled = autoTerritoryNo >= 1 && autoTerritoryNo <= 7; // 예약된 자동공격 영지가 있는 턴인지 여부
+    var turnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData, isAutoAttackScheduled);
     var turnDetail = "";
-    if (autoTerritoryNo >= 1 && autoTerritoryNo <= 7) {
+    if (isAutoAttackScheduled) {
         var autoTerritory = getGuildTerritoryByNo(autoTerritoryNo);
-        turnDetail += "공격 영지: [" + autoTerritoryNo + "] " + (autoTerritory ? autoTerritory.name : "") + "\n";
+        turnDetail += "자동공격 영지: [" + autoTerritoryNo + "] " + (autoTerritory ? autoTerritory.name : "") + "\n";
     }
-    var personalAttackCount = getGuildTerritoryUserAttackCount(war, row.user); // 현재 공격자의 개인 누적 공격 횟수
-    turnDetail += "개인 공격 횟수: " + personalAttackCount + "/" + GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit + "회\n";
 
     var msg =
         turnLine + "\n" +
+        "━━━━━━━━━━━━\n" +
         turnDetail +
         "[" +
         formatGuildDisplay(g) +
@@ -31058,10 +31060,8 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData, autoTerritoryN
         "⚔)\n" +
         buildGuildTerritoryRiftUi(war) +
         "\n" +
-        "━━━━━━━━━━━━━━━━\n" +
-        status +
-        "━━━━━━━━━━━━━━━━\n" +
-        turnLine;
+        "━━━━━━━━━━━━\n" +
+        status;
 
     return [msg];
 }
@@ -31114,18 +31114,6 @@ function formatGuildTerritoryRewardAmount(amount) {
     if (amount % 100000000 === 0) return numberWithCommas(amount / 100000000) + "억";
     if (amount % 10000 === 0) return numberWithCommas(amount / 10000) + "만";
     return numberWithCommas(amount);
-}
-
-// 영지전 균열 이벤트 보상 메시지를 결과 메시지에 추가하여 반환
-function addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage) {
-    if (!rewardMessage) return resultMessage;
-
-    var headerEnd = resultMessage.indexOf("\n");
-    if (headerEnd === -1) return resultMessage + "\n" + rewardMessage;
-
-    return resultMessage.slice(0, headerEnd + 1) +
-        rewardMessage + "\n\n" +
-        resultMessage.slice(headerEnd + 1);
 }
 
 // 영지전 균열 이벤트 가이드 메시지 빌드
@@ -32015,6 +32003,31 @@ function getGuildTerritoryAttackActionKey(war, user) {
     return (war.roundId || war.startedAt || "ROUND") + "_" + turnId + "_" + user;
 }
 
+// 영지전 수동·자동 공격 결과의 상단 요약과 접힌 상세 내용을 생성
+function buildGuildTerritoryAttackResultMessage(data, petData, guildData, sender, territoryNo, isAutoAttack, resultMessage, rewardMessage, triggerMessages) {
+    var territory = getGuildTerritoryByNo(territoryNo); // 요약에 표시할 실제 공격 영지
+    var headerEnd = resultMessage.indexOf("\n");
+    var header = headerEnd === -1 ? resultMessage : resultMessage.slice(0, headerEnd); // 공격 성공·실패 결과 제목
+    var detailBody = headerEnd === -1 ? "" : resultMessage.slice(headerEnd + 1); // 접힌 상세보기로 이동할 기존 결과 본문
+    var detailMarker = "공격/방어/보상 상세보기" + allsee;
+    var detailMarkerIndex = detailBody.indexOf(detailMarker); // 기존 상세보기 표기의 시작 위치
+    if (detailMarkerIndex !== -1) {
+        detailBody = detailBody.slice(0, detailMarkerIndex) + detailBody.slice(detailMarkerIndex + detailMarker.length);
+    }
+    detailBody = detailBody.replace(/^\n+|\n+$/g, "");
+    if (triggerMessages && triggerMessages.length > 0) {
+        detailBody = triggerMessages.join("\n") + (detailBody ? "\n" + detailBody : "");
+    }
+
+    var out = header + "\n";
+    out += "⚔️ [" + checkRank(data, petData, guildData, sender) + "] 님의 상세 결과" + (isAutoAttack ? "(자동)" : "") + "\n\n";
+    out += (isAutoAttack ? "자동공격 영지: " : "공격 영지: ") + "[" + territoryNo + "] " + (territory ? territory.name : "") + "\n";
+    if (rewardMessage) out += rewardMessage + "\n";
+    out += "\n공격/방어/보상 상세보기" + allsee;
+    if (detailBody) out += "\n" + detailBody;
+    return out;
+}
+
 // 1~7번 길드영지의 공통 공격·보상·저장·다음 턴 처리를 실행하는 함수
 function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, petSkillData, sender, territoryNo, replier, isGroupChat, isAutoAttack, timingRows) {
     var war = ensureGuildTerritoryWar(data, guildData);
@@ -32045,7 +32058,7 @@ function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, p
     clearGuildTerritoryWarTimer();
     war.turnToken = null;
     war.guildAttackCounts[attackInfo.guildId] = (war.guildAttackCounts[attackInfo.guildId] || 0) + 1;
-    var userAttackCount = increaseGuildTerritoryUserAttackCount(war, sender); // 이번 공격을 포함한 개인 누적 공격 횟수
+    increaseGuildTerritoryUserAttackCount(war, sender); // 본인·대리 공격을 실제 실행자 기준으로 1회 누적
     var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
     if (timingRows) timingRows.push({ label: "공격 준비/턴 보상", ms: Date.now() - attackPrepareStartMs });
 
@@ -32065,17 +32078,7 @@ function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, p
     if (shouldShowGuildTerritoryCommanderTrigger(attackInfo.guild, petSkillData, sender)) {
         triggerMessages.push(buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관"));
     }
-    var rewardBlock = rewardMessage;
-    if (triggerMessages.length > 0) rewardBlock += "\n" + triggerMessages.join("\n");
-    resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardBlock);
-    if (isAutoAttack) {
-        var autoTerritory = getGuildTerritoryByNo(territoryNo);
-        resultMessage =
-            "⚔️ [" + checkRank(data, petData, guildData, sender) + "] 님 (자동공격)\n" +
-            "공격 영지: [" + territoryNo + "] " + (autoTerritory ? autoTerritory.name : "") + "\n" +
-            "개인 공격 횟수: " + userAttackCount + "/" + GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit + "회\n" +
-            resultMessage;
-    }
+    resultMessage = buildGuildTerritoryAttackResultMessage(data, petData, guildData, sender, territoryNo, isAutoAttack, resultMessage, rewardMessage, triggerMessages);
     appendGuildTerritoryAutomationLog(war, {
         type: isAutoAttack ? "AUTO_ATTACK" : "MANUAL_ATTACK",
         roundId: war.roundId,
@@ -32102,7 +32105,7 @@ function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, p
 
     advanceGuildTerritoryTurn(data, guildData);
     var nextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
-    if (nextTurnLine) resultMessage = nextTurnLine + "\n" + resultMessage;
+    if (nextTurnLine) resultMessage = nextTurnLine + "\n━━━━━━━━━━━━\n" + resultMessage;
     castleMsg(resultMessage, replier, isGroupChat);
     if (riftMessage) castleMsg(riftMessage, replier, isGroupChat);
     saveJsonFile(guildData, guildPath);
