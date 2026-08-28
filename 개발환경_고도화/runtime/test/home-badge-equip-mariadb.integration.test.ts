@@ -52,6 +52,7 @@ test("홈뱃지 장착·해제 MariaDB 원자성·멱등성·재시작", { skip:
       service().execute({ eventId: event, externalUserId, destinationId: room, message: "/홈뱃지장착 01" })
     ]);
     assert.equal(a.badgeCode, first);
+    assert.equal(a.ordinal, 1);
     assert.equal(b.badgeCode, first);
     assert.deepEqual([a.replayed, b.replayed].sort(), [false, true]);
     const equipped = await database.query<Array<{ badge_code: string }>>("SELECT badge_code FROM player_home_badges WHERE player_id=? AND equipped=TRUE", [playerId]);

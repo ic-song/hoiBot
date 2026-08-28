@@ -56,12 +56,8 @@ async function loadOwnedState(tx: DatabaseTransaction, playerId: bigint): Promis
     "SELECT badge_code FROM player_home_badge_exclusions WHERE player_id=? ORDER BY badge_code FOR UPDATE",
     [playerId]
   );
-  await tx.execute(
-    "INSERT IGNORE INTO player_badge_equipment(player_id,equipped_badge_code,version,updated_at) VALUES (?,NULL,0,UTC_TIMESTAMP(3))",
-    [playerId]
-  );
   const equipment = (await tx.query<Array<{ equipped_badge_code: string | null; version: bigint }>>(
-    "SELECT equipped_badge_code,version FROM player_badge_equipment WHERE player_id=? FOR UPDATE",
+    "SELECT equipped_badge_code,version FROM player_badge_equipment WHERE player_id=?",
     [playerId]
   ))[0];
   const ownedCodes = new Set(assignments.map((row) => row.badge_code));
@@ -150,6 +146,9 @@ export class HomeBadgeEquipService {
       const state = await loadOwnedState(tx, actor.player_id);
       const selected = command.kind === "equip"
         ? resolveOwnedHomeBadge(command.selection, definitions, state.ownedCodes) : null;
+      const ownedOrdinal = selected === null ? null
+        : definitions.filter((definition) => state.ownedCodes.has(definition.badge_code))
+          .findIndex((definition) => definition.badge_code === selected.badge_code) + 1;
       let resultCode = "success";
       let afterCode = state.equippedCode;
       let message: string;
@@ -162,7 +161,7 @@ export class HomeBadgeEquipService {
       } else if (command.kind === "equip") {
         afterCode = selected!.badge_code;
         await persistEquipment(tx, actor.player_id, afterCode);
-        message = `✅ [${selected!.ordinal}번] [${selected!.badge_code}] ${selected!.emoji_value} ${selected!.display_name}\n대표뱃지로 장착했습니다.`;
+        message = `✅ [${ownedOrdinal}번] 홈뱃지를 대표뱃지로 장착했습니다.`;
       } else {
         afterCode = null;
         await persistEquipment(tx, actor.player_id, null);
@@ -190,7 +189,7 @@ export class HomeBadgeEquipService {
         replayed: false,
         definitionVersionId: version.id.toString(),
         badgeCode: selected?.badge_code ?? null,
-        ordinal: selected?.ordinal ?? null,
+        ordinal: ownedOrdinal,
         resultCode,
         stateVersion: nextVersion.toString()
       };
