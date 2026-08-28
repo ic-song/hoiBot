@@ -2826,6 +2826,37 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var petMusou = ensurePetMusouData(data);
         recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat);
         petMusou = ensurePetMusouData(data);
+        if (isPetMusouLightningRateCommand(msg)) {
+            if (sender !== "호이 남") {
+                replier.reply("❌ /벼락확률 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            if (msg === "/벼락확률") {
+                replier.reply("사용법: /벼락확률 [0~100]\n예시: /벼락확률 2.5");
+                return;
+            }
+            if (!petMusou.active) {
+                replier.reply("❌ 진행 중인 펫무쌍 대회가 없습니다.");
+                return;
+            }
+            var lightningRateMatch = msg.match(/^\/벼락확률\s+(\d{1,3}(?:\.\d)?)$/);
+            var lightningPercent = Number(lightningRateMatch[1]);
+            if (lightningPercent < 0 || lightningPercent > 100) {
+                replier.reply("❌ 벼락확률은 0~100 사이로 입력해 주세요.\n예시: /벼락확률 2.5");
+                return;
+            }
+            var previousLightningPercent = petMusou.lightningRate * 100; // 변경 전 현재 대회의 누적 벼락 발생확률
+            petMusou.lightningRate = lightningPercent / 100;
+            saveJsonFile(data, filePath);
+            replier.reply(
+                "⚡ 펫무쌍 벼락발생확률 변경\n" +
+                "━━━━━━━━━━━━\n" +
+                "변경 전: " + previousLightningPercent.toFixed(1) + "%\n" +
+                "변경 후: " + (petMusou.lightningRate * 100).toFixed(1) + "%\n" +
+                "다음 벼락 판정부터 적용됩니다."
+            );
+            return;
+        }
         if (isPetMusouBlockedDuringTournamentCommand(petMusou, msg, sender)) {
             return;
         }
@@ -33706,6 +33737,11 @@ function isPetMusouStartOperator(sender) {
 // 펫무쌍 진행 중 일반 유저에게 허용할 명령어인지 확인하는 함수
 function isPetMusouAllowedDuringTournamentCommand(msg) {
     return msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
+}
+
+// 펫무쌍 누적 벼락 발생확률 운영 명령의 정확한 입력 형식을 확인하는 함수
+function isPetMusouLightningRateCommand(msg) {
+    return msg === "/벼락확률" || /^\/벼락확률\s+\d{1,3}(?:\.\d)?$/.test(msg);
 }
 
 // 펫무쌍 진행 중 일반 유저의 펫무쌍 외 입력 차단 여부를 확인하는 함수
