@@ -83,6 +83,7 @@ import { isCastleBattleExecuteCommand } from "./castle/castle-battle-execute-ser
 import { CastleBattleExecuteIrisHandler } from "./castle/castle-battle-execute-iris-handler.js";
 import { CastleBattleRankingService, isCastleBattleRankingCommand } from "./castle/castle-battle-ranking-service.js";
 import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle-ranking-repository.js";
+import { CastleBattleSelfRecordReadService, isCastleBattleSelfRecordCommand } from "./castle/castle-battle-self-record-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
 import { isAutoDailyQuestCommand } from "./quest/auto-daily-quest-orchestration-service.js";
@@ -842,6 +843,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isRiftForceAdminCommand(normalizedEvent.message)
         || isCastleBattleExecuteCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
+        || isCastleBattleSelfRecordCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
         || isAutoDailyQuestCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
@@ -2811,6 +2813,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"auto_daily_quest_orchestration",error.message));
           else throw error;
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isCastleBattleSelfRecordCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "castle_battle_self_record_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new CastleBattleSelfRecordReadService(database!).handle({
+            externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,
+            message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+          });
+          processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+        } catch (error) {
+          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"castle_battle_self_record_read",error.message));
+          } else throw error;
         }
       }
 
