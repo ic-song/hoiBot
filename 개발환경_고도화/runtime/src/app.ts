@@ -86,6 +86,7 @@ import { MariaCastleBattleRankingRepository } from "./castle/maria-castle-battle
 import { CastleBattleSelfRecordReadService, isCastleBattleSelfRecordCommand } from "./castle/castle-battle-self-record-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
+import { isMiniPetBattleLeaderboardCommand, MiniPetBattleLeaderboardReadService } from "./mini-pet/mini-pet-battle-leaderboard-read-service.js";
 import { isAutoDailyQuestCommand } from "./quest/auto-daily-quest-orchestration-service.js";
 import { AutoDailyQuestOrchestrationIrisHandler } from "./quest/auto-daily-quest-orchestration-iris-handler.js";
 import { isSpiritRankCommand, SpiritRankService } from "./pet/spirit-rank-service.js";
@@ -844,6 +845,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isCastleBattleExecuteCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
         || isCastleBattleSelfRecordCommand(normalizedEvent.message)
+        || isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
         || isMiniPetBattleCommand(normalizedEvent.message)
         || isAutoDailyQuestCommand(normalizedEvent.message)
         || isSpiritRankCommand(normalizedEvent.message)
@@ -2830,6 +2832,24 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         } catch (error) {
           if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
             processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"castle_battle_self_record_read",error.message));
+          } else throw error;
+        }
+      }
+
+      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && isMiniPetBattleLeaderboardCommand(normalizedEvent.message)
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "mini_pet_battle_leaderboard_read"
+        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        try {
+          const result = await new MiniPetBattleLeaderboardReadService(database!).handle({
+            externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,
+            message:normalizedEvent.message!,eventId:normalizedEvent.eventId
+          });
+          processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
+        } catch (error) {
+          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
+            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"mini_pet_battle_leaderboard_read",error.message));
           } else throw error;
         }
       }
