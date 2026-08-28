@@ -4,6 +4,7 @@ import { ApplicationError } from "../shared/application-error.js";
 import { isFreeMarketReadCommand } from "./free-market-read-service.js";
 import { FreeMarketCancelService, isFreeMarketCancelCandidate, normalizeFreeMarketCancelDispatchMessage } from "./free-market-cancel-service.js";
 import { HoiShopService, isHoiShopCommand } from "./hoi-shop-service.js";
+import { AuctionBidService, isAuctionBidCandidate, normalizeAuctionBidDispatchMessage } from "./auction-bid-service.js";
 
 const BUY_ALIAS = "/자유시장구매 [번호]";
 const CONFIRM = "자유시장거래";
@@ -49,13 +50,14 @@ export function normalizeFreeMarketBuyDispatchMessage(message: string): string {
 
 // 자유시장 읽기·취소·구매 명령의 공용 진입 여부를 판정합니다.
 export function isFreeMarketLifecycleCandidate(message: string | undefined): boolean {
-  return isFreeMarketReadCommand(message) || isFreeMarketCancelCandidate(message) || isFreeMarketBuyCandidate(message) || isHoiShopCommand(message);
+  return isFreeMarketReadCommand(message) || isFreeMarketCancelCandidate(message) || isFreeMarketBuyCandidate(message) || isHoiShopCommand(message) || isAuctionBidCandidate(message);
 }
 
 // 자유시장 생명주기 명령을 공용 dispatch 형식으로 정규화합니다.
 export function normalizeFreeMarketLifecycleDispatchMessage(message: string): string {
   if (isFreeMarketReadCommand(message)) return message;
   if (isHoiShopCommand(message)) return message;
+  if (isAuctionBidCandidate(message)) return normalizeAuctionBidDispatchMessage(message);
   if (isFreeMarketCancelCandidate(message)) return normalizeFreeMarketCancelDispatchMessage(message);
   if (isFreeMarketBuyCandidate(message)) return normalizeFreeMarketBuyDispatchMessage(message);
   return message;
@@ -66,7 +68,8 @@ export function isFreeMarketMutationDispatch(message: string | undefined, route:
   if (route !== "MODERN") return false;
   return (handlerKey === "free_market_cancel" && isFreeMarketCancelCandidate(message))
     || (handlerKey === "free_market_buy" && isFreeMarketBuyCandidate(message))
-    || (handlerKey === "store_hoi_shop" && isHoiShopCommand(message));
+    || (handlerKey === "store_hoi_shop" && isHoiShopCommand(message))
+    || (handlerKey === "store_auction_bid" && isAuctionBidCandidate(message));
 }
 
 // 자유시장 취소·구매 실행과 예상 가능한 사용자 오류 응답을 공용 경계에서 처리합니다.
@@ -76,7 +79,10 @@ export async function handleFreeMarketMutation(
   expectedErrorReply: (errorCode: string, message: string) => Promise<{ outboxId: string; data: string }>
 ): Promise<{ outboxId: string; data: string }> {
   try {
-    if (input.handlerKey === "store_hoi_shop") {
+    if (input.handlerKey === "store_auction_bid") {
+      const result = await new AuctionBidService(database).handle(input);
+      if (result !== null) return { outboxId: result.outboxId, data: result.data };
+    } else if (input.handlerKey === "store_hoi_shop") {
       const result = await new HoiShopService(database).read({ eventId: input.eventId, externalUserId: input.externalUserId, destinationId: input.destinationId, message: input.message });
       if (result !== null) return { outboxId: result.outboxId, data: result.data };
     } else if (input.handlerKey === "free_market_cancel") {
@@ -89,7 +95,8 @@ export async function handleFreeMarketMutation(
   } catch (error) {
     const isExpectedCancel = input.handlerKey === "free_market_cancel" && error instanceof ApplicationError && error.statusCode === 409;
     const isExpectedBuy = input.handlerKey === "free_market_buy" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
-    if (isExpectedCancel || isExpectedBuy) return expectedErrorReply(`${input.handlerKey}_error`, (error as ApplicationError).message);
+    const isExpectedBid = input.handlerKey === "store_auction_bid" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
+    if (isExpectedCancel || isExpectedBuy || isExpectedBid) return expectedErrorReply(`${input.handlerKey}_error`, (error as ApplicationError).message);
     throw error;
   }
   throw new ApplicationError("FREE_MARKET_MUTATION_NOT_HANDLED", "자유시장 요청을 처리할 수 없습니다.", 422);
