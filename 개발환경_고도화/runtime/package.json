@@ -136,7 +136,8 @@
     "db:probe:guild-leadership-transfer": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-leadership-transfer-synthetic.ts",
     "db:probe:guild-sub-master-assign": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-sub-master-assign-synthetic.ts",
     "db:probe:guild-legacy-fund-cleanup": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-legacy-fund-cleanup-synthetic.ts",
-    "db:probe:castle-battle-season-start": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-start-synthetic.ts"
+    "db:probe:castle-battle-season-start": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-start-synthetic.ts",
+    "db:probe:castle-battle-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-reset-all-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
