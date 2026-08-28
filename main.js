@@ -28198,6 +28198,44 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
 
+                    var invalidAutoAttackItemName = "영지자동공격권⚔️"; // 잘못 지급된 독립 자동공격권 명칭
+                    var invalidAutoAttackItemRemovedUserCount = 0; // 가방에서 잘못 지급된 아이템 키를 삭제한 유저 수
+                    var invalidAutoAttackItemRemovedCount = 0; // 실제 수거한 잘못 지급 아이템 총수량
+                    var invalidAutoAttackFlagRemovedUserCount = 0; // 잘못 생성된 권한 플래그를 삭제한 유저 수
+                    var invalidAutoAttackFlagRemovedCount = 0; // 삭제한 잘못된 권한 플래그 총개수
+                    var invalidAutoAttackCleanupLogs = [];
+                    for (var invalidAutoAttackUser in data.member) {
+                        if (!data.member.hasOwnProperty(invalidAutoAttackUser)) continue;
+                        var invalidAutoAttackMember = data.member[invalidAutoAttackUser];
+                        if (!invalidAutoAttackMember || typeof invalidAutoAttackMember !== "object") continue;
+
+                        var removedAutoAttackItemCount = 0; // 해당 유저에게서 수거한 아이템 수량
+                        var removedAutoAttackFlags = [];
+                        if (invalidAutoAttackMember.bag && invalidAutoAttackMember.bag.hasOwnProperty(invalidAutoAttackItemName)) {
+                            removedAutoAttackItemCount = Math.max(0, Math.floor(Number(invalidAutoAttackMember.bag[invalidAutoAttackItemName]) || 0));
+                            delete invalidAutoAttackMember.bag[invalidAutoAttackItemName];
+                            invalidAutoAttackItemRemovedUserCount++;
+                            invalidAutoAttackItemRemovedCount += removedAutoAttackItemCount;
+                        }
+                        if (invalidAutoAttackMember.guildTerritoryAutoAttackGranted !== undefined) {
+                            delete invalidAutoAttackMember.guildTerritoryAutoAttackGranted;
+                            removedAutoAttackFlags.push("최초지급");
+                            invalidAutoAttackFlagRemovedCount++;
+                        }
+                        if (invalidAutoAttackMember.guildTerritoryAutoAttackPermanent !== undefined) {
+                            delete invalidAutoAttackMember.guildTerritoryAutoAttackPermanent;
+                            removedAutoAttackFlags.push("영구권한");
+                            invalidAutoAttackFlagRemovedCount++;
+                        }
+                        if (removedAutoAttackFlags.length > 0) invalidAutoAttackFlagRemovedUserCount++;
+                        if (removedAutoAttackItemCount > 0 || removedAutoAttackFlags.length > 0) {
+                            var invalidAutoAttackCleanupParts = [];
+                            if (removedAutoAttackItemCount > 0) invalidAutoAttackCleanupParts.push("아이템 " + numberWithCommas(removedAutoAttackItemCount) + "개");
+                            if (removedAutoAttackFlags.length > 0) invalidAutoAttackCleanupParts.push("권한플래그 " + removedAutoAttackFlags.join(", "));
+                            invalidAutoAttackCleanupLogs.push(invalidAutoAttackUser + " : " + invalidAutoAttackCleanupParts.join(" / "));
+                        }
+                    }
+
                     var petSkillMoveCount = 0;
                     var petSkillDeleteCount = 0;
                     var petCharDeleteCount = 0;
@@ -28400,6 +28438,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n[삭제된 길드창고 반지 데이터]\n" + guildRingDeleteLogs.join("\n");
                     } else {
                         out += "\n삭제할 길드창고 반지 데이터 없음";
+                    }
+
+                    out += "\n\n[8] 잘못 지급된 영지자동공격 데이터 정리\n";
+                    out += invalidAutoAttackItemName + " 수거 유저 : " + numberWithCommas(invalidAutoAttackItemRemovedUserCount) + "명\n";
+                    out += "수거 수량 : " + numberWithCommas(invalidAutoAttackItemRemovedCount) + "개\n";
+                    out += "권한 플래그 삭제 유저 : " + numberWithCommas(invalidAutoAttackFlagRemovedUserCount) + "명\n";
+                    out += "권한 플래그 삭제 건수 : " + numberWithCommas(invalidAutoAttackFlagRemovedCount) + "건";
+                    if (invalidAutoAttackCleanupLogs.length > 0) {
+                        out += "\n[영지자동공격 데이터 정리 유저]\n" + invalidAutoAttackCleanupLogs.join("\n");
+                    } else {
+                        out += "\n수거할 영지자동공격 데이터 없음";
                     }
 
                     replier.reply(out);

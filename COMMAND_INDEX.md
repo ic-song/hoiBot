@@ -5821,6 +5821,8 @@ Status: VERIFIED
 - `homeData[*].furnitureBag`
 - `placedFurnitureData[*]` after separation, with legacy home fallback before separation
 - `data.member[*].bag`
+- `data.member[*].guildTerritoryAutoAttackGranted`
+- `data.member[*].guildTerritoryAutoAttackPermanent`
 - `data.member[*].point`
 - `data.allowedUsers2`
 - `data.allowedUsers4`
@@ -5851,6 +5853,7 @@ Status: VERIFIED
 - Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
 - Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
 - Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
+- Step 8 removes every mistakenly issued `영지자동공격권⚔️` from member bags and deletes the obsolete first-grant/permanent-entitlement flags. Re-running the cleanup is idempotent and does not disable a valid `영지기습패스` user's current auto-attack setting.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
