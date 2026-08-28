@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.425"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.426"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -13986,7 +13986,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
                         "⚔️ 영지 자동 공격이 활성화되었습니다.\n" +
                         "내 공격 차례에 1~7번 영지 중 한 곳을 무작위로 공격합니다.\n" +
-                        "※ 같은 길드원이 점령한 영지를 공격할 수도 있습니다."
+                        "※ 우리 길드가 점령한 영지는 자동공격 대상에서 제외됩니다."
                     );
                     return;
                 }
@@ -29783,6 +29783,19 @@ function getGuildTerritoryOwnedCount(war, guildId) {
     return count;
 }
 
+// 자동공격 후보에서 현재 길드 점령지를 제외하고 영지 번호를 선택하는 함수
+function getGuildTerritoryAutoAttackTargetNo(war, guildId) {
+    if (!war || !war.territories || !guildId) return 0;
+    var candidates = [];
+    for (var territoryNo = 1; territoryNo <= 7; territoryNo++) {
+        var territory = war.territories[String(territoryNo)];
+        if (territory && territory.ownerGuildId === guildId) continue;
+        candidates.push(territoryNo);
+    }
+    if (candidates.length === 0) return 0;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 // 길드 정보 표시 함수
 function formatGuildDisplay(g) {
     if (!g) return "미점령";
@@ -31491,8 +31504,25 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, re
     if (data.member[turnUser] && data.member[turnUser].guildTerritoryAutoAttackEnabled === true) {
         var scheduleValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, turnUser);
         if (scheduleValidation.ok) {
-            autoAttackScheduled = true;
-            scheduledAutoTerritoryNo = Math.floor(Math.random() * 7) + 1;
+            scheduledAutoTerritoryNo = getGuildTerritoryAutoAttackTargetNo(war, turnGuildId);
+            autoAttackScheduled = scheduledAutoTerritoryNo > 0;
+            if (!autoAttackScheduled) {
+                data.member[turnUser].guildTerritoryAutoAttackEnabled = false;
+                appendGuildTerritoryAutomationLog(war, {
+                    type: "AUTO_ATTACK_OFF",
+                    roundId: war.roundId,
+                    user: turnUser,
+                    reason: "공격 가능한 타 길드 영지가 없음",
+                    processedAt: formatDateTime(new Date())
+                });
+                appendGuildTerritoryAutomationDataLog(data, {
+                    type: "AUTO_ATTACK_OFF",
+                    user: turnUser,
+                    reason: "공격 가능한 타 길드 영지가 없음",
+                    processedAt: formatDateTime(new Date())
+                });
+                saveJsonFile(data, filePath);
+            }
         } else {
             data.member[turnUser].guildTerritoryAutoAttackEnabled = false;
             appendGuildTerritoryAutomationLog(war, {
