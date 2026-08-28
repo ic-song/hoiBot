@@ -141,7 +141,8 @@
     "db:probe:castle-battle-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-reset-all-synthetic.ts",
     "db:probe:castle-battle-season-close": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-close-synthetic.ts",
     "db:probe:castle-battle-member-edit": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-member-edit-synthetic.ts",
-    "db:probe:home-furniture-draw": "tsx scripts/probe-home-furniture-draw-synthetic.ts"
+    "db:probe:home-furniture-draw": "tsx scripts/probe-home-furniture-draw-synthetic.ts",
+    "db:probe:admin-package-delete": "tsx scripts/probe-admin-package-delete-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
