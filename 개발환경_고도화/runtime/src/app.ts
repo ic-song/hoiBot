@@ -95,6 +95,7 @@ import { MiniPetEquipService, isMiniPetEquipCommandCandidate, normalizeMiniPetEq
 import { MiniPetBulkCleanupService, isMiniPetBulkCleanupCommand, normalizeMiniPetBulkCleanupDispatchMessage } from "./mini-pet/mini-pet-bulk-cleanup-service.js";
 import { MiniPetBattleResetTicketCraftService, isMiniPetBattleResetTicketCraftCommand } from "./mini-pet/mini-pet-battle-reset-ticket-craft-service.js";
 import { MiniPetBattleRecordResetService, isMiniPetBattleRecordResetCommand } from "./mini-pet/mini-pet-battle-record-reset-service.js";
+import { MiniPetUpgradeService, isMiniPetUpgradeCommand } from "./mini-pet/mini-pet-upgrade-service.js";
 import { isRaidCharmRankingReadCommand, RaidCharmRankingReadService } from "./raid/raid-charm-ranking-read-service.js";
 import { isMiniPetBattleCommand } from "./mini-pet/mini-pet-battle-execute-service.js";
 import { MiniPetBattleExecuteIrisHandler } from "./mini-pet/mini-pet-battle-execute-iris-handler.js";
@@ -492,13 +493,15 @@ async function sendIrisImageReply(config: AppConfig, reply: IrisImageReply): Pro
 // 미니펫 장착과 전체정리 명령의 공용 디스패치 후보 여부를 확인합니다.
 function isMiniPetEquipOrBulkCleanupCommand(message: string | undefined): boolean {
   return isMiniPetEquipCommandCandidate(message) || isMiniPetBulkCleanupCommand(message)
-    || isMiniPetBattleResetTicketCraftCommand(message) || isMiniPetBattleRecordResetCommand(message);
+    || isMiniPetBattleResetTicketCraftCommand(message) || isMiniPetBattleRecordResetCommand(message)
+    || isMiniPetUpgradeCommand(message);
 }
 
 // 미니펫 장착과 전체정리 명령을 공용 레지스트리 조회 형식으로 정규화합니다.
 function normalizeMiniPetEquipOrBulkCleanupDispatchMessage(message: string): string {
   if (isMiniPetEquipCommandCandidate(message)) return normalizeMiniPetEquipDispatchMessage(message);
   if (isMiniPetBulkCleanupCommand(message)) return normalizeMiniPetBulkCleanupDispatchMessage(message) ?? message;
+  if (isMiniPetUpgradeCommand(message)) return "/미니펫강화";
   return message;
 }
 
@@ -546,6 +549,18 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
       eventId: event.eventId
     });
     input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
+    return;
+  }
+  if (input.handlerKey === "mini_pet_upgrade" && isMiniPetUpgradeCommand(event.message)) {
+    const result = await new MiniPetUpgradeService(input.database).handle({
+      externalUserId: event.userId,
+      destinationId: event.channelId!,
+      message: event.message!,
+      eventId: event.eventId
+    });
+    if (result.outboxId !== undefined && result.data !== undefined) {
+      input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
+    }
     return;
   }
   if (input.handlerKey !== "mini_pet_bulk_cleanup" || !isMiniPetBulkCleanupCommand(event.message)) return;
