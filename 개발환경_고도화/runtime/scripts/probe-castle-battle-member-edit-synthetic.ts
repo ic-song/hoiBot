@@ -29,23 +29,24 @@ async function state() {
 }
 
 try {
-  const expected = { attempts: "7", score: "125", runs: 2n, operations: 2n, outboxes: 2n, audits: 2n, invalidations: 1n, snapshotStatus: "invalidated" };
+  const expected = { attempts: "7", score: "150", runs: 3n, operations: 3n, outboxes: 3n, audits: 3n, invalidations: 1n, snapshotStatus: "invalidated" };
   if (restart) {
     const before = await state();
-    const replay = await run("member-edit-score", "/캐슬스코어 합성 회원 125");
+    const replay = await run("member-edit-concurrent", "/캐슬스코어 합성 회원 150");
     assert.equal(replay.replayed, true);
     assert.deepEqual(await state(), before);
     assert.equal(before.attempts, expected.attempts);
     assert.equal(before.score, expected.score);
     assert.equal(before.runs, expected.runs);
     assert.equal(before.invalidations, expected.invalidations);
-    process.stdout.write(`${JSON.stringify({ mode: "verify-restart", attempts: 7, score: 125, runs: 2, replayed: true, additionalMutation: false, operationalDataTouched: false })}\n`);
+    process.stdout.write(`${JSON.stringify({ mode: "verify-restart", attempts: 7, score: 150, runs: 3, replayed: true, additionalMutation: false, operationalDataTouched: false })}\n`);
   } else {
     assert.equal((await database.query<Array<{ count: bigint }>>("SELECT COUNT(*) count FROM command_registry WHERE command_code IN ('CASTLE_BATTLE_ATTEMPT_SET','CASTLE_BATTLE_SCORE_SET') AND rollout_state='SHADOW'"))[0]!.count, 2n);
     await run("member-edit-count", "/캐슬대전횟수리셋 합성 회원 7");
     const score = await run("member-edit-score", "/캐슬스코어 합성 회원 125");
     assert.equal(score.invalidatedSnapshotCount, "1");
     assert.equal((await run("member-edit-score", "/캐슬스코어 합성 회원 125")).replayed, true);
+    assert.equal((await run("member-edit-concurrent", "/캐슬스코어 합성 회원 150")).replayed, true);
     const current = await state();
     assert.equal(current.attempts, expected.attempts);
     assert.equal(current.score, expected.score);
@@ -55,6 +56,6 @@ try {
     assert.equal(current.audits, expected.audits);
     assert.equal(current.invalidations, expected.invalidations);
     assert.equal(current.snapshotStatus, expected.snapshotStatus);
-    process.stdout.write(`${JSON.stringify({ mode: "probe", scenarios: ["strict-parser", "fixed-authority", "attempt-absolute-set", "score-tier-time-set", "snapshot-invalidate", "event-replay"], effects: { attempts: 7, score: 125, runs: 2, outboxes: 2, audits: 2, invalidations: 1 }, operationalDataTouched: false })}\n`);
+    process.stdout.write(`${JSON.stringify({ mode: "probe", scenarios: ["strict-parser", "fixed-authority", "attempt-absolute-set", "score-tier-time-set", "snapshot-invalidate", "concurrent-event-dedup", "event-replay"], effects: { attempts: 7, score: 150, runs: 3, outboxes: 3, audits: 3, invalidations: 1 }, operationalDataTouched: false })}\n`);
   }
 } finally { await database.close(); }

@@ -26,6 +26,17 @@ describe("castle battle member edit MariaDB", { skip: !enabled }, () => {
       assert.equal((await snapshot(database)).snapshotStatus, "invalidated");
       assert.deepEqual(await service.update(input("member-edit-score", "/캐슬스코어 합성 회원 125")), { ...score, replayed: true });
 
+      await event(database, "member-edit-concurrent");
+      const concurrent = await Promise.all([
+        service.update(input("member-edit-concurrent", "/캐슬스코어 합성 회원 150")),
+        service.update(input("member-edit-concurrent", "/캐슬스코어 합성 회원 150"))
+      ]);
+      assert.deepEqual(concurrent.map((result) => result.replayed).sort(), [false, true]);
+      const serialized = await snapshot(database);
+      assert.equal(serialized.score, "150");
+      assert.equal(serialized.runs, 3n);
+      assert.equal(serialized.operations, 3n);
+
       await assert.rejects(
         () => service.update({ ...input("member-edit-unauthorized", "/캐슬스코어 합성 회원 1"), externalUserId: "not-master" }),
         /권한이 없습니다/
