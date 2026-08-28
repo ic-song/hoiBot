@@ -13960,9 +13960,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 
                 if (msg === "/영지온") {
+                    var territoryAutoPassActive = isSupportPassActive(data, sender, "territory");
+                    var territoryAutoFailureMessage = "⚠️ 영지 자동 공격을 사용할 수 없습니다.\n" +
+                        "사용 권한: 영지패스 소유 소드마스터 또는 전투형지휘관을 소지한 길드마스터";
+                    if (!territoryAutoPassActive) {
+                        territoryAutoFailureMessage = "[" + checkRank(data, petData, guildData, sender) + "]님 영지패스를 구독중이지 않습니다.\n" + territoryAutoFailureMessage;
+                    }
                     var territoryAutoGuildInfo = getMyGuildInfo(data, guildData, sender);
                     if (!territoryAutoGuildInfo || territoryAutoGuildInfo.error || !territoryAutoGuildInfo.guild) {
-                        replier.reply("⚠️ 영지 자동 공격을 사용할 수 없습니다.\n필요 조건: 소드마스터 또는 전투형지휘관을 소지한 길드마스터");
+                        replier.reply(territoryAutoFailureMessage);
                         return;
                     }
                     if (isGuildSwordMaster(territoryAutoGuildInfo.guild, sender, petSkillData)) {
@@ -13970,7 +13976,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var territoryAutoValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, sender);
                     if (!territoryAutoValidation.ok) {
-                        replier.reply("⚠️ 영지 자동 공격을 사용할 수 없습니다.\n필요 조건: 소드마스터 또는 전투형지휘관을 소지한 길드마스터");
+                        replier.reply(territoryAutoFailureMessage);
                         return;
                     }
                     data.member[sender].guildTerritoryAutoAttackEnabled = true;
@@ -13994,6 +14000,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/영지오프") {
+                    var territoryAutoOffPassActive = isSupportPassActive(data, sender, "territory");
                     data.member[sender].guildTerritoryAutoAttackEnabled = false;
                     appendGuildTerritoryAutomationDataLog(data, {
                         type: "AUTO_ATTACK_OFF",
@@ -14002,7 +14009,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         processedAt: formatDateTime(new Date())
                     });
                     saveJsonFile(data, filePath);
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🛑 영지 자동 공격이 비활성화되었습니다.");
+                    if (!territoryAutoOffPassActive) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 영지패스를 구독중이지 않습니다.");
+                    } else {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🛑 영지 자동 공격이 비활성화되었습니다.");
+                    }
                     return;
                 }
 

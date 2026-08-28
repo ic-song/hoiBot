@@ -874,7 +874,7 @@ Status: VERIFIED
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
 - `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
 - 영지전 종료 시 참가 길드의 현재 길드마스터·부길드마스터 중 `길드영지자동준비권` 또는 유효한 영지패스 보유자를 다시 확인해 다음 회차 준비를 길드당 1회 생성한다.
-- `/영지온`은 독립 `영지자동공격권⚔️`·영구 권한·유효한 영지패스 중 하나와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 실제 턴에도 재검증하며 실패하면 OFF 처리한다.
+- `/영지온`은 독립 `영지자동공격권⚔️`·영구 권한·유효한 영지패스 중 하나와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 미구독 상태에서 활성화에 실패하면 체크랭크와 영지패스 미구독 안내를 함께 표시한다. 실제 턴에도 권한과 자격을 재검증하며 실패하면 OFF 처리한다. `/영지오프`는 기존 설정·로그·저장을 유지하고 미구독 상태일 때 응답 문구만 구독 안내로 변경한다.
 - 자동 공격은 1~7번을 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지하며, 예약 당시 길드와 실행 시점의 실제 길드가 다르면 실행하지 않는다.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 - `/길드영지시작` and `/길드영지종료` can also be entered from the dedicated siege room by their existing named operators; this room allowance does not bypass the active territory-war command lock.
