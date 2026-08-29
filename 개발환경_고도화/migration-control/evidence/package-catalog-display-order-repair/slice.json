@@ -1,0 +1,18 @@
+{
+  "sliceId": "SL-PACKAGE-CATALOG-DISPLAY-ORDER-REPAIR-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "79d3b18e",
+  "scope": "PACKAGE_CATALOG_DISPLAY_ORDER_CONTRACT_REPAIR",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "sourceConflict": {
+    "migration": "153_package_trial_box_seed.sql",
+    "packageId": "PKG-TRIAL-BOX",
+    "duplicateOrder": 39,
+    "missingOrder": 59
+  },
+  "repairMigration": "383_package_catalog_display_order_repair.sql",
+  "schemaMutation": false,
+  "ownershipMutation": false,
+  "legacyMigrationModified": false
+}
