@@ -8,8 +8,8 @@ export type GuildBoardCommand =
   | { kind: "NOTICE"; body: string }
   | { kind: "CLEAR" };
 
-interface OwnerRow { identity_id: bigint; player_id: bigint; }
-interface GuildMemberRow { guild_id: bigint; guild_name: string; guild_version: bigint; role_code: string; display_name: string; }
+interface OwnerRow { identity_id: bigint; player_id: bigint; display_name: string; ranked_name: string; }
+interface GuildMemberRow { guild_id: bigint; guild_name: string; guild_version: bigint; role_code: string; }
 export interface GuildBoardNotice { body: string; writer: string; date: string; }
 export interface GuildBoardPost { postId: string; body: string; writer: string; date: string; }
 export interface GuildBoardResult {
@@ -41,8 +41,8 @@ export function parseGuildBoardCommand(message: string): GuildBoardCommand {
   if (message === "/길드게시판초기화") return { kind: "CLEAR" };
   const post = /^(?:\/길메|\/길드게시판) (.*)$/.exec(message);
   const notice = /^\/길드게시판공지 (.*)$/.exec(message);
-  if (post !== null) return { kind: "POST", body: validateBody(post[1] ?? "") };
-  if (notice !== null) return { kind: "NOTICE", body: validateBody(notice[1] ?? "") };
+  if (post !== null) return { kind: "POST", body: parseBody(post[1] ?? "", "사용법: /길메 내용 또는 /길드게시판 내용") };
+  if (notice !== null) return { kind: "NOTICE", body: parseBody(notice[1] ?? "", "사용법: /길드게시판공지 내용") };
   throw new ApplicationError("GUILD_BOARD_COMMAND_INVALID", "길드 게시판 명령 형식을 확인해 주세요.", 422);
 }
 
@@ -56,33 +56,45 @@ export function normalizeGuildBoardDispatchMessage(message: string): string {
 
 // 공지 우선, 게시글 최신순의 길드 게시판 표시 문자열을 만듭니다.
 export function formatGuildBoard(input: { guildName: string; notice?: GuildBoardNotice; posts: readonly GuildBoardPost[] }): string {
-  const notice = input.notice === undefined ? "📌 공지: 없음" : `📌 공지: ${input.notice.body}\n- ${input.notice.writer} · ${input.notice.date}`;
-  const posts = input.posts.length === 0 ? "등록된 글이 없습니다." : input.posts.map((post, index) => `${index + 1}. ${post.body}\n- ${post.writer} · ${post.date}`).join("\n");
-  return `📋 [${input.guildName} 길드 게시판]\n${notice}\n\n${posts}`;
+  let output = `🎖️ ${input.guildName} 길드 게시판 🎖️\n\n`;
+  if (input.notice !== undefined) output += `길드게시판 공지📢:\n${input.notice.body} (${input.notice.date})\n\n`;
+  if (input.posts.length === 0) return `${output}등록된 게시글이 없습니다.`;
+  for (const post of input.posts) output += `[${post.writer}] : ${post.body} (${post.date})\n`;
+  return output.trim();
 }
 
-function validateBody(value: string): string {
+function parseBody(value: string, usage: string): string {
   const body = value.trim();
-  if (body.length === 0) throw new ApplicationError("GUILD_BOARD_BODY_REQUIRED", "게시판 내용을 입력해 주세요.", 422);
-  if (body.length > 30) throw new ApplicationError("GUILD_BOARD_BODY_TOO_LONG", "게시판 내용은 30자 이하로 입력해 주세요.", 422);
+  if (body.length === 0) throw new ApplicationError("GUILD_BOARD_BODY_REQUIRED", usage, 422);
   return body;
+}
+
+// 레거시 랭크 표기를 포함한 게시글·공지 30자 초과 응답을 보존합니다.
+export function requireGuildBoardBodyLimit(command: GuildBoardCommand, rankedName: string): void {
+  if ((command.kind === "POST" || command.kind === "NOTICE") && command.body.length > 30) {
+    const target = command.kind === "POST" ? "게시글" : "공지";
+    throw new ApplicationError("GUILD_BOARD_BODY_TOO_LONG", `❌ [${rankedName}] 님 ${target}은 30자 이내로 입력해주세요.`, 422);
+  }
 }
 
 function eventKey(value: string): string { return value.length <= 191 ? value : `sha256:${createHash("sha256").update(value).digest("hex")}`; }
 function stored(value: string | GuildBoardResult): GuildBoardResult { return typeof value === "string" ? JSON.parse(value) as GuildBoardResult : value; }
-function requireLeader(roleCode: string): void {
-  if (!LEADER_ROLES.includes(roleCode.toLowerCase())) throw new ApplicationError("GUILD_BOARD_LEADER_REQUIRED", "길드마스터만 사용할 수 있습니다.", 403);
+function requireLeader(roleCode: string, rankedName: string, command: "NOTICE" | "CLEAR"): void {
+  if (!LEADER_ROLES.includes(roleCode.toLowerCase())) {
+    const action = command === "NOTICE" ? "공지를 설정" : "게시판을 초기화";
+    throw new ApplicationError("GUILD_BOARD_LEADER_REQUIRED", `❌ [${rankedName}] 님 길드마스터만 ${action}할 수 있습니다.`, 403);
+  }
 }
 
 // 공지와 최신 20개 게시글을 동일 transaction snapshot으로 조회합니다.
 async function readBoard(transaction: DatabaseTransaction, guild: GuildMemberRow): Promise<{ notice?: GuildBoardNotice; posts: GuildBoardPost[]; data: string }> {
   const notices = await transaction.query<Array<{ body: string; writer: string; written_on: string }>>(
     `SELECT notice.body,notice.author_display_name_snapshot writer,
-      DATE_FORMAT(DATE_ADD(notice.updated_at,INTERVAL 9 HOUR),'%Y-%m-%d') written_on
+      DATE_FORMAT(DATE_ADD(notice.updated_at,INTERVAL 9 HOUR),'%m/%d %H:%i') written_on
      FROM guild_board_notices notice WHERE notice.guild_id=?`, [guild.guild_id]);
   const rows = await transaction.query<Array<{ id: bigint; body: string; writer: string; written_on: string }>>(
     `SELECT post.id,post.body,COALESCE(post.author_display_name_snapshot,profile.current_display_name) writer,
-      DATE_FORMAT(DATE_ADD(post.created_at,INTERVAL 9 HOUR),'%Y-%m-%d') written_on
+      DATE_FORMAT(DATE_ADD(post.created_at,INTERVAL 9 HOUR),'%m/%d %H:%i') written_on
      FROM guild_board_posts post JOIN player_profiles profile ON profile.player_id=post.author_player_id
      WHERE post.guild_id=? AND post.status='published' AND post.deleted_at IS NULL
      ORDER BY post.created_at DESC,post.id DESC LIMIT 20`, [guild.guild_id]);
@@ -99,15 +111,19 @@ export class GuildBoardService {
     const command = parseGuildBoardCommand(input.message);
     return this.database.withTransaction(async transaction => {
       const owner = (await transaction.query<OwnerRow[]>(
-        "SELECT id identity_id,player_id FROM external_identities WHERE provider_code='kakao' AND external_user_id=? AND status='linked' AND player_id IS NOT NULL FOR UPDATE",
+        `SELECT identity.id identity_id,identity.player_id,profile.current_display_name display_name,
+          CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) ranked_name
+         FROM external_identities identity JOIN player_profiles profile ON profile.player_id=identity.player_id
+         LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=identity.player_id
+         WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND identity.player_id IS NOT NULL FOR UPDATE`,
         [input.externalUserId]))[0];
       if (owner === undefined) throw new ApplicationError("GUILD_BOARD_VERIFIED_USER_REQUIRED", "가입 정보를 확인해 주세요.", 403);
+      requireGuildBoardBodyLimit(command, owner.ranked_name);
       const guild = (await transaction.query<GuildMemberRow[]>(
-        `SELECT member.guild_id,guild.display_name guild_name,guild.version guild_version,member.role_code,profile.current_display_name display_name
+        `SELECT member.guild_id,guild.display_name guild_name,guild.version guild_version,member.role_code
          FROM guild_members member JOIN guilds guild ON guild.id=member.guild_id AND guild.status='active'
-         JOIN player_profiles profile ON profile.player_id=member.player_id
          WHERE member.player_id=? FOR UPDATE`, [owner.player_id]))[0];
-      if (guild === undefined) throw new ApplicationError("GUILD_MEMBERSHIP_REQUIRED", "가입된 길드가 없습니다.", 404);
+      if (guild === undefined) throw new ApplicationError("GUILD_MEMBERSHIP_REQUIRED", `❌ [${owner.ranked_name}] 님 길드에 가입되어 있지 않습니다.`, 404);
 
       const scope = `guild.board:${guild.guild_id.toString()}`;
       const key = eventKey(input.eventId);
@@ -131,7 +147,7 @@ export class GuildBoardService {
         status = "posted"; resultCode = "posted"; actionCode = "guild.board.post";
         const post = await transaction.execute(
           "INSERT INTO guild_board_posts(guild_id,author_player_id,author_display_name_snapshot,body,status,version) VALUES (?,?,?,?,'published',1)",
-          [guild.guild_id, owner.player_id, guild.display_name, command.body]);
+          [guild.guild_id, owner.player_id, owner.ranked_name, command.body]);
         postId = post.insertId.toString();
         const posts = await transaction.query<Array<{ id: bigint }>>(
           "SELECT id FROM guild_board_posts WHERE guild_id=? AND status='published' AND deleted_at IS NULL ORDER BY created_at DESC,id DESC FOR UPDATE", [guild.guild_id]);
@@ -142,13 +158,13 @@ export class GuildBoardService {
           trimmedCount = Number(trimmed.affectedRows);
         }
       } else if (command.kind === "NOTICE") {
-        requireLeader(guild.role_code); status = "notice_changed"; resultCode = "notice_changed"; actionCode = "guild.board.notice";
+        requireLeader(guild.role_code, owner.ranked_name, "NOTICE"); status = "notice_changed"; resultCode = "notice_changed"; actionCode = "guild.board.notice";
         await transaction.execute(
           `INSERT INTO guild_board_notices(guild_id,author_player_id,author_display_name_snapshot,body,version,updated_at)
            VALUES (?,?,?,?,1,UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE author_player_id=VALUES(author_player_id),author_display_name_snapshot=VALUES(author_display_name_snapshot),body=VALUES(body),version=version+1,updated_at=UTC_TIMESTAMP(3)`,
-          [guild.guild_id, owner.player_id, guild.display_name, command.body]);
+          [guild.guild_id, owner.player_id, owner.display_name, command.body]);
       } else if (command.kind === "CLEAR") {
-        requireLeader(guild.role_code); status = "cleared"; resultCode = "cleared"; actionCode = "guild.board.clear";
+        requireLeader(guild.role_code, owner.ranked_name, "CLEAR"); status = "cleared"; resultCode = "cleared"; actionCode = "guild.board.clear";
         const cleared = await transaction.execute(
           "UPDATE guild_board_posts SET status='cleared',deleted_at=UTC_TIMESTAMP(3),version=version+1 WHERE guild_id=? AND status='published' AND deleted_at IS NULL", [guild.guild_id]);
         clearedCount = Number(cleared.affectedRows);
@@ -161,9 +177,9 @@ export class GuildBoardService {
       }
 
       const board = await readBoard(transaction, { ...guild, guild_version: guildVersion });
-      const data = command.kind === "POST" ? "길드 게시판에 글을 등록했습니다."
-        : command.kind === "NOTICE" ? "길드 게시판 공지를 등록했습니다."
-        : command.kind === "CLEAR" ? "길드 게시판을 초기화했습니다."
+      const data = command.kind === "POST" ? `✅ [${owner.ranked_name}] 님 길드 게시글이 등록되었습니다.`
+        : command.kind === "NOTICE" ? "📢 길드게시판 공지가 설정되었습니다."
+        : command.kind === "CLEAR" ? `🧹 [${owner.ranked_name}] 님 길드게시판 게시글이 초기화되었습니다.`
         : board.data;
       const outbox = await transaction.execute(
         "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
