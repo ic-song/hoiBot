@@ -66,6 +66,8 @@ import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
+
+import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand, normalizeAdminAccountSuspensionDispatchMessage } from "./admin/admin-account-suspension-service.js";
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
@@ -1014,6 +1016,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxCraftCommand(normalizedEvent.message)
         || isAdminDiamondEditCommand(normalizedEvent.message)
+        || isAdminAccountSuspensionCommand(normalizedEvent.message)
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isAdminPackageDeleteCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
@@ -1375,6 +1378,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeDiamondBoxCraftDispatchMessage(normalizedEvent.message ?? "")
               : isAdminDiamondEditCommand(normalizedEvent.message)
                 ? normalizeAdminDiamondEditDispatchMessage(normalizedEvent.message ?? "")
+              : isAdminAccountSuspensionCommand(normalizedEvent.message)
+                ? normalizeAdminAccountSuspensionDispatchMessage(normalizedEvent.message ?? "")
               : isAdminDiamondResetAllCommand(normalizedEvent.message)
                 ? normalizeAdminDiamondResetAllDispatchMessage(normalizedEvent.message ?? "")
               : isAdminPackageDeleteCommand(normalizedEvent.message)
@@ -1937,6 +1942,18 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           }
         }
       }
+      processing?.replies.push(...await dispatchAdminAccountSuspensionCommand({
+        database: database!,
+        isOperationalChannel,
+        duplicate: processing?.duplicate,
+        route: partialDispatchDecision?.route,
+        handlerKey: partialDispatchDecision?.handlerKey,
+        externalUserId: normalizedEvent.userId,
+        channelId: normalizedEvent.channelId,
+        message: normalizedEvent.message,
+        eventId: normalizedEvent.eventId,
+        queueError: (code, message) => eventProcessor!.queueCommandReply(normalizedEvent, code, message)
+      }));
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isOperationNoticeCommandCandidate(normalizedEvent.message)
@@ -3721,3 +3738,31 @@ import { isSocialPunchReactionCommandCandidate, normalizeSocialPunchReactionDisp
 import { isPetSkillBoastReadCommand, PetSkillBoastReadService } from "./pet/pet-skill-boast-read-service.js";
 import { AdminPetAppearanceService, isPetAppearanceCommandCandidate, normalizePetAppearanceDispatchMessage } from "./pet/admin-pet-appearance-service.js";
 import { isPetFeedIntimacyCandidate, normalizePetFeedIntimacyCommand, PetFeedIntimacyService } from "./pet/pet-feed-intimacy-service.js";
+// 계정 정지 세 명령을 큰 Iris 이벤트 함수 밖에서 판별·실행해 TypeScript 제어흐름 크기를 제한합니다.
+async function dispatchAdminAccountSuspensionCommand(input: {
+  database: ConstructorParameters<typeof AdminAccountSuspensionService>[0];
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+  route: string | undefined;
+  handlerKey: string | undefined;
+  externalUserId: string | undefined;
+  channelId: string | undefined;
+  message: string | undefined;
+  eventId: string;
+  queueError: (code: string, message: string) => Promise<{ outboxId: string; room: string; data: string }>;
+}): Promise<Array<{ outboxId: string; room: string; data: string }>> {
+  if (!input.isOperationalChannel || input.duplicate === true || !isAdminAccountSuspensionCommand(input.message)
+    || input.route !== "MODERN" || input.handlerKey !== "admin_account_suspension"
+    || input.externalUserId === undefined || input.channelId === undefined || input.message === undefined) return [];
+  try {
+    const result = await new AdminAccountSuspensionService(input.database).handle({
+      externalUserId: input.externalUserId, channelId: input.channelId, message: input.message, eventId: input.eventId
+    });
+    return result.status === "changed" ? [{ outboxId: result.outboxId, room: input.channelId, data: result.data }] : [];
+  } catch (error) {
+    if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+      return [await input.queueError("admin_account_suspension_error", error.message)];
+    }
+    throw error;
+  }
+}
