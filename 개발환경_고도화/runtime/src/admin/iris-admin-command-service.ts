@@ -51,6 +51,7 @@ import { GuildProfileNoticeMutateService, isGuildProfileNoticeMutateCandidate } 
 import { GuildLeadershipTransferService, isGuildLeadershipTransferCandidate } from "../guild/guild-leadership-transfer-service.js";
 import { GuildNameRenameService, isGuildNameRenameCandidate } from "../guild/guild-name-rename-service.js";
 import { GuildMarkMutateService, isGuildMarkMutateCandidate } from "../guild/guild-mark-mutate-service.js";
+import { GuildCreateService, isGuildCreateCandidate } from "../guild/guild-create-service.js";
 import { GuildSubMasterAssignService, isGuildSubMasterAssignCandidate } from "../guild/guild-sub-master-assign-service.js";
 import { GuildSwordMasterAssignService, isGuildSwordMasterAssignCandidate } from "../guild/guild-sword-master-assign-service.js";
 import { GuildLegacyFundCleanupService, isGuildLegacyFundCleanupCommand } from "../guild/guild-legacy-fund-cleanup-service.js";
@@ -148,6 +149,7 @@ export class IrisAdminCommandService {
     if (isGuildLeadershipTransferCandidate(input.message)) return new GuildLeadershipTransferService(this.database).handleIris(input);
     if (isGuildNameRenameCandidate(input.message)) return new GuildNameRenameService(this.database).handleIris(input);
     if (isGuildMarkMutateCandidate(input.message)) return new GuildMarkMutateService(this.database).handleIris(input);
+    if (isGuildCreateCandidate(input.message)) return new GuildCreateService(this.database).handleIris(input);
     if (isGuildSubMasterAssignCandidate(input.message)) return new GuildSubMasterAssignService(this.database).handleIris(input);
     if (isGuildSwordMasterAssignCandidate(input.message)) return new GuildSwordMasterAssignService(this.database).handleIris(input);
     if (isGuildLegacyFundCleanupCommand(input.message)) return new GuildLegacyFundCleanupService(this.database).handleIris(input);
