@@ -53,6 +53,7 @@ import { GuildNameRenameService, isGuildNameRenameCandidate } from "../guild/gui
 import { GuildSubMasterAssignService, isGuildSubMasterAssignCandidate } from "../guild/guild-sub-master-assign-service.js";
 import { GuildLegacyFundCleanupService, isGuildLegacyFundCleanupCommand } from "../guild/guild-legacy-fund-cleanup-service.js";
 import { GuildTerritoryWarStateStartService, isGuildTerritoryWarStateStartCommand } from "../guild/guild-territory-war-state-start-service.js";
+import { GuildTerritoryWarReadyService, isGuildTerritoryWarReadyCommand } from "../guild/guild-territory-war-ready-service.js";
 import { CastleBattleSeasonStartService, isCastleBattleSeasonStartCommand } from "../castle/castle-battle-season-start-service.js";
 import { CastleBattleSeasonCloseService, isCastleBattleSeasonCloseCommand } from "../castle/castle-battle-season-close-service.js";
 import { CastleBattleResetAllService, isCastleBattleResetAllCommand } from "../castle/castle-battle-reset-all-service.js";
@@ -135,6 +136,7 @@ export class IrisAdminCommandService {
     if (isGuildSubMasterAssignCandidate(input.message)) return new GuildSubMasterAssignService(this.database).handleIris(input);
     if (isGuildLegacyFundCleanupCommand(input.message)) return new GuildLegacyFundCleanupService(this.database).handleIris(input);
     if (isGuildTerritoryWarStateStartCommand(input.message)) return new GuildTerritoryWarStateStartService(this.database).handleIris(input);
+    if (isGuildTerritoryWarReadyCommand(input.message)) return new GuildTerritoryWarReadyService(this.database).handleIris(input);
     if (isCastleBattleSeasonStartCommand(input.message)) return new CastleBattleSeasonStartService(this.database).handleIris(input);
     if (isCastleBattleSeasonCloseCommand(input.message)) return new CastleBattleSeasonCloseService(this.database).handleIris(input);
     if (isCastleBattleResetAllCommand(input.message)) return new CastleBattleResetAllService(this.database).handleIris(input);
