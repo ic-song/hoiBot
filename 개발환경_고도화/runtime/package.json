@@ -158,6 +158,7 @@
     "db:probe:punch-rank-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-punch-rank-reset-synthetic.ts",
     "db:probe:punch-action": "node --env-file-if-exists=.env --import tsx scripts/probe-punch-action-synthetic.ts",
     "db:probe:guild-contribution-count-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-contribution-count-reset-synthetic.ts",
+    "db:probe:guild-contribution-apply": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-contribution-apply-synthetic.ts",
     "db:probe:castle-battle-season-start": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-start-synthetic.ts",
     "db:probe:castle-battle-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-reset-all-synthetic.ts",
     "db:probe:castle-battle-season-close": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-close-synthetic.ts",
