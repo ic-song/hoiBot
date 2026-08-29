@@ -7422,3 +7422,24 @@ Status: VERIFIED
 - Gate8 전까지 legacy `main.js`, `Info.js`, 운영 DB 및 운영 데이터는 변경하지 않는다.
 
 ---
+# /복주머니
+
+Status: VERIFIED
+
+## Files
+- `main.js` (v2.400 source contract only)
+- `개발환경_고도화/runtime/src/inventory/inventory-fortune-pouch-command.ts`
+- `개발환경_고도화/runtime/src/inventory/inventory-fortune-pouch-service.ts`
+- `개발환경_고도화/runtime/src/inventory/inventory-fortune-pouch-iris-handler.ts`
+- `개발환경_고도화/runtime/migrations/379_inventory_fortune_pouch_open.sql`
+
+## Data Usage
+- `item_definitions`
+- `inventory_stacks`
+- `inventory_ledger`
+- `inventory_fortune_pouch_*`
+- `operations`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+- 신규 Runtime의 단일 MariaDB transaction과 동일 event 결과 replay
+- 레거시 `main.js`와 운영 JSON은 변경하지 않음

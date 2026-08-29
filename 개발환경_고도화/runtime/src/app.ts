@@ -275,6 +275,8 @@ import { isHomeBadgeCubeCommandCandidate, normalizeHomeBadgeCubeDispatchMessage 
 import { HomeBadgeCubeIrisHandler } from "./home/home-badge-cube-iris-handler.js";
 import { isInventoryWalletRngOpenCommandCandidate, normalizeInventoryWalletRngOpenDispatchMessage } from "./inventory/inventory-wallet-rng-open-command.js";
 import { InventoryWalletRngOpenIrisHandler } from "./inventory/inventory-wallet-rng-open-iris-handler.js";
+import { isInventoryFortunePouchCommandCandidate, normalizeInventoryFortunePouchDispatchMessage } from "./inventory/inventory-fortune-pouch-command.js";
+import { InventoryFortunePouchIrisHandler } from "./inventory/inventory-fortune-pouch-iris-handler.js";
 import { isGuildBoardCommandCandidate, normalizeGuildBoardDispatchMessage } from "./guild/guild-board-service.js";
 import { GuildBoardIrisHandler } from "./guild/guild-board-iris-handler.js";
 import { HomeBadgeEquipIrisHandler } from "./home/home-badge-equip-iris-handler.js";
@@ -994,6 +996,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeBadgeCubeCommandCandidate(normalizedEvent.message);
       const inventoryWalletRngOpenDispatchCandidate = process.env.INVENTORY_WALLET_RNG_OPEN_COMMAND_ENABLED === "true"
         && isInventoryWalletRngOpenCommandCandidate(normalizedEvent.message);
+      const inventoryFortunePouchDispatchCandidate = process.env.INVENTORY_FORTUNE_POUCH_COMMAND_ENABLED === "true"
+        && isInventoryFortunePouchCommandCandidate(normalizedEvent.message);
       const guildBoardDispatchCandidate = process.env.GUILD_BOARD_COMMAND_ENABLED === "true"
         && isGuildBoardCommandCandidate(normalizedEvent.message);
       const homeBadgeEquipDispatchCandidate = process.env.HOME_BADGE_EQUIP_COMMAND_ENABLED === "true"
@@ -1159,6 +1163,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeBadgeGachaDispatchCandidate
         || homeBadgeCubeDispatchCandidate
         || inventoryWalletRngOpenDispatchCandidate
+        || inventoryFortunePouchDispatchCandidate
         || guildBoardDispatchCandidate
         || homeBadgeEquipDispatchCandidate
         || homeBadgePermanentDeleteDispatchCandidate
@@ -1378,6 +1383,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeBadgeCubeDispatchMessage(normalizedEvent.message ?? "")
                 : inventoryWalletRngOpenDispatchCandidate
                   ? normalizeInventoryWalletRngOpenDispatchMessage(normalizedEvent.message ?? "")
+                : inventoryFortunePouchDispatchCandidate
+                  ? normalizeInventoryFortunePouchDispatchMessage(normalizedEvent.message ?? "")
                 : guildBoardDispatchCandidate
                   ? normalizeGuildBoardDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeEquipDispatchCandidate
@@ -1649,6 +1656,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ? await new HomeBadgeCubeIrisHandler(database, (process.env.HOME_BADGE_CUBE_BROADCAST_IDS ?? "").split(",").map(value => value.trim()).filter(value => value !== "")).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "inventory_wallet_rng_open"
               ? await new InventoryWalletRngOpenIrisHandler(database).execute(normalizedEvent)
+            : (partialDispatchDecision.handlerKey as string) === "inventory_fortune_pouch_open"
+              ? await new InventoryFortunePouchIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "guild_board"
               ? await new GuildBoardIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_equip"
