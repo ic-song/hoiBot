@@ -153,6 +153,7 @@
     "db:probe:overall-rank-reward-payout": "node --env-file-if-exists=.env --import tsx scripts/probe-overall-rank-reward-payout-synthetic.ts",
     "db:probe:admin-guild-warehouse-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-guild-warehouse-grant-synthetic.ts",
     "db:probe:admin-guild-membership-sync": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-guild-membership-sync-synthetic.ts",
+    "db:probe:admin-full-sync": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-full-sync-synthetic.ts",
     "db:probe:admin-guild-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-guild-reset-all-synthetic.ts",
     "db:probe:punch-rank-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-punch-rank-reset-synthetic.ts",
     "db:probe:punch-action": "node --env-file-if-exists=.env --import tsx scripts/probe-punch-action-synthetic.ts",
