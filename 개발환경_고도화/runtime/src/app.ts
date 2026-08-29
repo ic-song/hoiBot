@@ -269,6 +269,8 @@ import { isHomeFeedMutationCommandCandidate, normalizeHomeFeedMutationDispatchMe
 import { HomeFeedMutationIrisHandler } from "./home/home-feed-mutate-iris-handler.js";
 import { isHomeBadgeInventoryCommand, normalizeHomeBadgeInventoryDispatchMessage } from "./home/home-badge-inventory-command.js";
 import { HomeBadgeInventoryIrisHandler } from "./home/home-badge-inventory-iris-handler.js";
+import { isHomeBadgeGachaCommandCandidate, normalizeHomeBadgeGachaDispatchMessage } from "./home/home-badge-gacha-command.js";
+import { HomeBadgeGachaIrisHandler } from "./home/home-badge-gacha-iris-handler.js";
 import { HomeBadgeEquipIrisHandler } from "./home/home-badge-equip-iris-handler.js";
 import { HomeBadgePermanentDeleteIrisHandler } from "./home/home-badge-permanent-delete-iris-handler.js";
 import { isHomeBadgePermanentDeleteCommand, normalizeHomeBadgePermanentDeleteDispatchMessage } from "./home/home-badge-permanent-delete-command.js";
@@ -980,6 +982,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFeedMutationCommandCandidate(normalizedEvent.message);
       const homeBadgeInventoryDispatchCandidate = process.env.HOME_BADGE_INVENTORY_COMMAND_ENABLED === "true"
         && isHomeBadgeInventoryCommand(normalizedEvent.message);
+      const homeBadgeGachaDispatchCandidate = process.env.HOME_BADGE_GACHA_COMMAND_ENABLED === "true"
+        && isHomeBadgeGachaCommandCandidate(normalizedEvent.message);
       const homeBadgeEquipDispatchCandidate = process.env.HOME_BADGE_EQUIP_COMMAND_ENABLED === "true"
         && isHomeBadgeEquipCommand(normalizedEvent.message);
       const homeBadgePermanentDeleteDispatchCandidate = process.env.HOME_BADGE_PERMANENT_DELETE_COMMAND_ENABLED === "true"
@@ -1140,6 +1144,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeActivityAlertReadDispatchCandidate
         || homeFeedMutationDispatchCandidate
         || homeBadgeInventoryDispatchCandidate
+        || homeBadgeGachaDispatchCandidate
         || homeBadgeEquipDispatchCandidate
         || homeBadgePermanentDeleteDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
@@ -1352,6 +1357,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeFeedMutationDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeInventoryDispatchCandidate
                   ? normalizeHomeBadgeInventoryDispatchMessage(normalizedEvent.message ?? "")
+                : homeBadgeGachaDispatchCandidate
+                  ? normalizeHomeBadgeGachaDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeEquipDispatchCandidate
                   ? normalizeHomeBadgeEquipDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgePermanentDeleteDispatchCandidate
@@ -1602,7 +1609,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && processing !== undefined
         && !processing.duplicate
         && partialDispatchDecision?.route === "MODERN"
-        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "legacy_social_like" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate")) {
+        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "legacy_social_like" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate" || (partialDispatchDecision.handlerKey as string) === "home_badge_gacha_open")) {
         const homeResponse = partialDispatchDecision.handlerKey === "home_like_action"
           ? await new HomeLikeIrisHandler(database).execute(normalizedEvent)
           : partialDispatchDecision.handlerKey === "legacy_social_like"
@@ -1615,6 +1622,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ? await new HomeFeedMutationIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_inventory_read"
               ? await new HomeBadgeInventoryIrisHandler(database).execute(normalizedEvent)
+            : (partialDispatchDecision.handlerKey as string) === "home_badge_gacha_open"
+              ? await new HomeBadgeGachaIrisHandler(database, (process.env.HOME_BADGE_GACHA_BROADCAST_IDS ?? "").split(",").map(value => value.trim()).filter(value => value !== "")).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_equip"
               ? await new HomeBadgeEquipIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_permanent_delete"
