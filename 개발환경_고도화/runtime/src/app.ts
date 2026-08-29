@@ -25,6 +25,7 @@ import {
 } from "./integration/iris-channel-policy.js";
 import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
+import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
@@ -697,6 +698,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   let retainedContentCleanupTimer: NodeJS.Timeout | undefined;
 
   void app.register(cookie);
+  void registerAdminWebShellRoutes(app);
   if (database !== undefined) {
     const profiles = new MariaProfileRepository(database);
     void registerAdminRoutes(app, {

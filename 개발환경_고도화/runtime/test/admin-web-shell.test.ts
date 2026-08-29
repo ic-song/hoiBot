@@ -1,0 +1,114 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import Fastify from "fastify";
+import { registerAdminWebShellRoutes } from "../src/admin/web-shell.js";
+import { ADMIN_WEB_CLIENT, ADMIN_WEB_HTML, ADMIN_WEB_STYLES } from "../src/admin/web-shell-assets.js";
+import {
+  syntheticAdminAudit,
+  syntheticAdminOverview,
+  syntheticAdminPlayer,
+  syntheticAdminSession,
+  syntheticMonitoringEvent
+} from "./fixtures/admin-web-shell.js";
+import { buildSyntheticAdminWebShellApp } from "./support/admin-web-shell-preview.js";
+
+// 운영 API 없이 정적 웹 셸 경로만 검증할 Fastify 인스턴스를 구성합니다.
+async function webShellApp() {
+  const app = Fastify({ logger: false });
+  await registerAdminWebShellRoutes(app);
+  return app;
+}
+
+describe("admin web shell", () => {
+  it("serves the shell and assets with no-store browser security headers", async () => {
+    const app = await webShellApp();
+    try {
+      const [page, styles, client] = await Promise.all([
+        app.inject({ method: "GET", url: "/admin" }),
+        app.inject({ method: "GET", url: "/admin/assets/admin.css" }),
+        app.inject({ method: "GET", url: "/admin/assets/admin.js" })
+      ]);
+      assert.equal(page.statusCode, 200);
+      assert.match(page.headers["content-type"] ?? "", /^text\/html/);
+      assert.equal(page.headers["cache-control"], "no-store");
+      assert.match(page.headers["content-security-policy"] ?? "", /frame-ancestors 'none'/);
+      assert.equal(page.headers["x-frame-options"], "DENY");
+      assert.match(page.body, /hoiBot Operations/);
+      assert.equal(styles.body, ADMIN_WEB_STYLES);
+      assert.equal(client.body, ADMIN_WEB_CLIENT);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("provides accessible login, navigation, and status regions", () => {
+    assert.match(ADMIN_WEB_HTML, /<html lang="ko">/);
+    assert.match(ADMIN_WEB_HTML, /class="skip-link" href="#main-content"/);
+    assert.match(ADMIN_WEB_HTML, /aria-label="관리자 로그인"/);
+    assert.match(ADMIN_WEB_HTML, /aria-live="polite"/);
+    assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
+  });
+
+  it("connects only the approved read APIs plus session lifecycle", () => {
+    for (const path of [
+      "/api/v1/admin/sessions",
+      "/api/v1/admin/sessions/current",
+      "/api/v1/admin/overview",
+      "/api/v1/admin/players",
+      "/api/v1/admin/audit-entries",
+      "/api/v1/admin/channel-activity",
+      "/api/v1/admin/moderation-incidents",
+      "/api/v1/admin/monitoring-events",
+      "/api/v1/admin/delivery-failures"
+    ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
+
+    for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
+      assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
+    }
+    assert.equal((ADMIN_WEB_CLIENT.match(/method: "POST"/g) ?? []).length, 1);
+    assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"|method: "PATCH"/);
+  });
+
+  it("freezes synthetic Gate 3 session and read-response fixtures", () => {
+    assert.deepEqual(syntheticAdminSession.permissions, [
+      "overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read"
+    ]);
+    assert.equal(syntheticAdminOverview.activePlayers, "1280");
+    assert.equal(syntheticAdminPlayer.playerId, "40001");
+    assert.equal(syntheticAdminPlayer.currencies.diamond, "350");
+    assert.equal(syntheticAdminAudit.resultCode, "success");
+    assert.equal(syntheticMonitoringEvent.monitoringGroup, "media");
+  });
+
+  it("serves every approved view from synthetic APIs without a database", async () => {
+    const app = await buildSyntheticAdminWebShellApp();
+    try {
+      const responses = await Promise.all([
+        app.inject({ method: "GET", url: "/api/v1/admin/sessions/current" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/overview" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/players?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/players/40001" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/audit-entries?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/channel-activity?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/moderation-incidents?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/monitoring-events?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" })
+      ]);
+      assert.ok(responses.every((response) => response.statusCode === 200));
+      assert.equal(responses[2]?.json().total, 1);
+      assert.equal(responses[3]?.json().player.displayName, "합성회원");
+      assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("keeps permission-aware navigation and failure states in the client contract", () => {
+    for (const permission of syntheticAdminSession.permissions) assert.match(ADMIN_WEB_CLIENT, new RegExp(permission.replace(".", "\\.")));
+    assert.match(ADMIN_WEB_CLIENT, /조회 권한이 없습니다/);
+    assert.match(ADMIN_WEB_CLIENT, /세션이 만료됐습니다/);
+    assert.match(ADMIN_WEB_CLIENT, /검색 결과가 없습니다/);
+    assert.match(ADMIN_WEB_CLIENT, /다시 시도/);
+  });
+});
