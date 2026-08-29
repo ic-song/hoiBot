@@ -52,11 +52,14 @@ export function parseAdminAccountSuspensionCommand(message: string): ParsedAccou
 
 // 계정 정지 후보를 완전한 명령 형식으로 제한해 접미 문구와 유사 명령 충돌을 차단합니다.
 export function isAdminAccountSuspensionCommand(message: string | undefined): boolean {
+  if (message === "/계삭진행" || /^\/계삭진행\s+\S(?:[^\r\n]*\S)?$/.test(message ?? "")) return true;
   return message !== undefined && parseAdminAccountSuspensionCommand(message) !== undefined;
 }
 
 // 인자형 명령을 DB command_aliases 기본 명령어로 정규화합니다.
 export function normalizeAdminAccountSuspensionDispatchMessage(message: string): string {
+  // ADMIN_ACCOUNT_DELETE_PROGRESS_BRIDGE: 공용 관리자 dispatch 후보를 재사용합니다.
+  if (message === "/계삭진행" || /^\/계삭진행\s+\S(?:[^\r\n]*\S)?$/.test(message)) return "/계삭진행";
   return parseAdminAccountSuspensionCommand(message)?.alias ?? message;
 }
 

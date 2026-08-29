@@ -150,7 +150,8 @@
     "db:probe:mini-pet-rank-reward-payout": "tsx scripts/probe-mini-pet-rank-reward-payout-synthetic.ts",
     "db:probe:tier-reward-payout": "tsx scripts/probe-tier-reward-payout-synthetic.ts",
     "db:probe:mini-pet-binding-release": "tsx scripts/probe-mini-pet-binding-release-synthetic.ts",
-    "probe:admin-account-suspension:synthetic": "tsx scripts/probe-admin-account-suspension-synthetic.ts"
+    "probe:admin-account-suspension:synthetic": "tsx scripts/probe-admin-account-suspension-synthetic.ts",
+    "probe:admin-account-delete-progress:synthetic": "tsx scripts/probe-admin-account-delete-progress-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
