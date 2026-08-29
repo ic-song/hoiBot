@@ -137,6 +137,7 @@
     "db:probe:guild-leadership-transfer": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-leadership-transfer-synthetic.ts",
     "db:probe:guild-name-rename": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-name-rename-synthetic.ts",
     "db:probe:guild-sub-master-assign": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-sub-master-assign-synthetic.ts",
+    "db:probe:guild-sword-master-assign": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-sword-master-assign-synthetic.ts",
     "db:probe:guild-legacy-fund-cleanup": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-legacy-fund-cleanup-synthetic.ts",
     "db:probe:guild-territory-war-state-start": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-war-state-start-synthetic.ts",
     "db:probe:guild-territory-war-ready": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-war-ready-synthetic.ts",
