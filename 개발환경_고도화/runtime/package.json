@@ -164,6 +164,7 @@
     "db:probe:mini-pet-rank-reward-payout": "tsx scripts/probe-mini-pet-rank-reward-payout-synthetic.ts",
     "db:probe:tier-reward-payout": "tsx scripts/probe-tier-reward-payout-synthetic.ts",
     "db:probe:mini-pet-binding-release": "tsx scripts/probe-mini-pet-binding-release-synthetic.ts",
+    "db:probe:market-bag-trade-register": "node --env-file-if-exists=.env --import tsx scripts/probe-free-market-bag-register-synthetic.ts",
     "probe:admin-account-suspension:synthetic": "tsx scripts/probe-admin-account-suspension-synthetic.ts",
     "probe:admin-account-delete-progress:synthetic": "tsx scripts/probe-admin-account-delete-progress-synthetic.ts",
     "probe:admin-dormant-account-delete:synthetic": "tsx scripts/probe-admin-dormant-account-delete-synthetic.ts",
