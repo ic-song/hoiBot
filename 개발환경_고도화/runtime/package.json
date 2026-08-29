@@ -155,6 +155,7 @@
     "db:probe:admin-guild-membership-sync": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-guild-membership-sync-synthetic.ts",
     "db:probe:admin-guild-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-guild-reset-all-synthetic.ts",
     "db:probe:punch-rank-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-punch-rank-reset-synthetic.ts",
+    "db:probe:punch-action": "node --env-file-if-exists=.env --import tsx scripts/probe-punch-action-synthetic.ts",
     "db:probe:guild-contribution-count-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-contribution-count-reset-synthetic.ts",
     "db:probe:castle-battle-season-start": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-start-synthetic.ts",
     "db:probe:castle-battle-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-reset-all-synthetic.ts",

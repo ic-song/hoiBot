@@ -1086,7 +1086,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || parseGuildAdminDetailCommand(normalizedEvent.message) !== null
          || isGuildProfileReadCommand(normalizedEvent.message)
          || isGuildJoinableListReadCommand(normalizedEvent.message)
-         || isSocialPunchReactionCommandCandidate(normalizedEvent.message)
+         || isPunchFamilyDispatchCandidate(normalizedEvent.message)
          || isPetSkillBoastReadCommand(normalizedEvent.message)
          || isPetAppearanceCommandCandidate(normalizedEvent.message)
          || isPetFeedIntimacyCandidate(normalizedEvent.message)
@@ -1196,8 +1196,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizeRecordBoardCommand(normalizedEvent.message)!
              : parseGuildAdminDetailCommand(normalizedEvent.message) !== null
              ? normalizeGuildAdminDetailDispatchMessage(normalizedEvent.message ?? "")
-             : isSocialPunchReactionCommandCandidate(normalizedEvent.message)
-             ? normalizeSocialPunchReactionDispatchMessage(normalizedEvent.message ?? "")
+             : isPunchFamilyDispatchCandidate(normalizedEvent.message)
+             ? normalizePunchFamilyDispatchMessage(normalizedEvent.message ?? "")
              : isPetAppearanceCommandCandidate(normalizedEvent.message)
              ? normalizePetAppearanceDispatchMessage(normalizedEvent.message ?? "")
              : isPetFeedIntimacyCandidate(normalizedEvent.message)
@@ -3735,6 +3735,13 @@ import { isRecordBoardCommandCandidate, normalizeRecordBoardCommand, RecordBoard
 import { GuildAdminDetailReadService, normalizeGuildAdminDetailDispatchMessage, parseGuildAdminDetailCommand } from "./guild/guild-admin-detail-read-service.js";
 import { GuildProfileReadService, isGuildProfileReadCommand } from "./guild/guild-profile-read-service.js";
 import { isSocialPunchReactionCommandCandidate, normalizeSocialPunchReactionDispatchMessage, SocialPunchReactionService } from "./social/social-punch-reaction-service.js";
+import { isPunchActionCommandCandidate, normalizePunchActionDispatchMessage } from "./battle/punch-action-service.js";
+
+// 명치 반응과 펀치 action을 기존 단일 partial-dispatch 슬롯에서 구분합니다.
+function isPunchFamilyDispatchCandidate(message: string | undefined): boolean { return isSocialPunchReactionCommandCandidate(message) || isPunchActionCommandCandidate(message); }
+
+// 펀치 family 인자 명령을 각 command registry 대표 alias로 정규화합니다.
+function normalizePunchFamilyDispatchMessage(message: string): string { return isPunchActionCommandCandidate(message) ? normalizePunchActionDispatchMessage(message)! : normalizeSocialPunchReactionDispatchMessage(message); }
 import { isPetSkillBoastReadCommand, PetSkillBoastReadService } from "./pet/pet-skill-boast-read-service.js";
 import { AdminPetAppearanceService, isPetAppearanceCommandCandidate, normalizePetAppearanceDispatchMessage } from "./pet/admin-pet-appearance-service.js";
 import { isPetFeedIntimacyCandidate, normalizePetFeedIntimacyCommand, PetFeedIntimacyService } from "./pet/pet-feed-intimacy-service.js";
