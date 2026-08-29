@@ -48,8 +48,8 @@ interface QuantityRow {
   quantity: string;
 }
 
-// 패키지 보상을 현재 도메인 테이블에 직접 지급·회수·확인하는 Provider
-export class PackageDomainItemProvider {
+// 공용 ItemProvider가 위임한 현재 도메인 변경을 저장합니다.
+export class PackageDomainItemMutationStore {
   public async add(
     transaction: PackageDomainTransaction,
     definition: PackageDomainItemDefinition,

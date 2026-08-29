@@ -25,12 +25,13 @@ import type {
   PackageRewardRuleRepository,
 } from "./package-reward-rules.js";
 import {
-  PackageDomainItemProvider,
+  PackageDomainItemMutationStore,
   type PackageDomainItemDefinition,
   type PackageDomainMutation,
   type PackageDomainTransaction,
   type PackageDomainSqlResult,
 } from "./domain-item-provider.js";
+import { PackageRewardTargetRegistry } from "./reward-target-registry.js";
 
 interface CatalogRow {
   package_id: string;
@@ -357,7 +358,7 @@ class CurrentPackageTransactionManager implements PackageTransactionManager {
 
 // PackageProvider의 ItemTypeHandler를 실제 도메인 테이블 변경으로 연결
 class CurrentDomainItemTypeHandler implements ItemTypeHandler {
-  public constructor(private readonly domainItems: PackageDomainItemProvider) {}
+  public constructor(private readonly domainItems: PackageDomainItemMutationStore) {}
 
   public async checkAdd(definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void> {
     this.assertQuantity(quantity);
@@ -482,8 +483,11 @@ export interface CurrentDomainPackageRuntime {
 // 검증된 패키지 규칙 엔진과 현재 도메인 Provider를 조립
 export function createCurrentDomainPackageRuntime(database: DatabaseClient): CurrentDomainPackageRuntime {
   const catalog = new CurrentPackageCatalogRepository(database);
-  const items = new ItemProvider(new CurrentPackageItemDefinitionRepository(database));
-  const handler = new CurrentDomainItemTypeHandler(new PackageDomainItemProvider());
+  const items = new ItemProvider(
+    new CurrentPackageItemDefinitionRepository(database),
+    new PackageRewardTargetRegistry(),
+  );
+  const handler = new CurrentDomainItemTypeHandler(new PackageDomainItemMutationStore());
   const itemTypes: ItemType[] = [
     "STACK", "POINT", "PET", "MINI_PET", "FURNITURE", "MEMBER_TITLE",
     "PET_TITLE", "PET_APPEARANCE", "GUILD_RESOURCE",

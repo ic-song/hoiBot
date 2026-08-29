@@ -34,6 +34,10 @@ export interface ItemDefinitionRepository {
   findById(itemId: string, transactionHandle?: unknown): Promise<ItemDefinition | undefined>;
 }
 
+export interface ItemMutationTargetRegistry {
+  assertTarget(definition: ItemDefinition, context: ItemMutationContext): void;
+}
+
 export interface ItemTypeHandler {
   checkAdd(definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void>;
   checkRemove(definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void>;
@@ -49,7 +53,10 @@ export class ItemProvider {
     items: Map<string, [ItemDefinition, ItemTypeHandler]>;
   }>();
 
-  constructor(private readonly definitions: ItemDefinitionRepository) {}
+  constructor(
+    private readonly definitions: ItemDefinitionRepository,
+    private readonly targets?: ItemMutationTargetRegistry,
+  ) {}
 
   register(type: ItemType, handler: ItemTypeHandler): void {
     if (this.handlers.has(type)) throw new Error(`ITEM_HANDLER_DUPLICATED:${type}`);
@@ -93,6 +100,7 @@ export class ItemProvider {
     if (cached) return cached;
     const definition = await this.definitions.findById(itemId, transactionHandle);
     if (!definition?.enabled) throw new Error(`ITEM_NOT_AVAILABLE:${itemId}`);
+    this.targets?.assertTarget(definition, context);
     const handler = this.handlers.get(definition.type);
     if (!handler) throw new Error(`ITEM_HANDLER_NOT_REGISTERED:${definition.type}`);
     const resolved: [ItemDefinition, ItemTypeHandler] = [definition, handler];

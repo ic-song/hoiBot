@@ -13,6 +13,7 @@ import type {
   PackageRewardRuleRepository
 } from "./package-reward-rules.js";
 import type { PackageTransaction } from "./package-provider.js";
+import { PackageRewardTargetRegistry } from "./reward-target-registry.js";
 
 export interface MariaDbPackageConfig {
   host: string;
@@ -467,7 +468,10 @@ export class MariaDbInstanceItemHandler implements ItemTypeHandler {
 export function createMariaDbPackageRuntime(config: MariaDbPackageConfig) {
   const pool = mariadb.createPool({ ...config, connectionLimit: config.connectionLimit ?? 5, bigIntAsNumber: false });
   const repository = new MariaDbPackageCatalogRepository(pool);
-  const items = new ItemProvider(new MariaDbItemDefinitionRepository(pool));
+  const items = new ItemProvider(
+    new MariaDbItemDefinitionRepository(pool),
+    new PackageRewardTargetRegistry(),
+  );
   const stack = new MariaDbStackItemHandler();
   const instance = new MariaDbInstanceItemHandler();
   for (const type of ["STACK", "POINT", "GUILD_RESOURCE"] as const) items.register(type, stack);
