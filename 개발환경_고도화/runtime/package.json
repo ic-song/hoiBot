@@ -75,6 +75,7 @@
     "db:probe:home-badge-inventory": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-inventory-synthetic.ts",
     "db:probe:home-badge-definition-v2400": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-definition-v2400.ts",
     "db:probe:home-badge-gacha-open": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-gacha-open-synthetic.ts",
+    "db:probe:home-badge-cube": "node --env-file-if-exists=.env --import tsx scripts/probe-home-badge-cube-synthetic.ts",
     "db:probe:guild-pet-skill-stock-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-pet-skill-stock-grant-synthetic.ts",
     "db:probe:mini-pet-draw-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-mini-pet-draw-grant-synthetic.ts",
     "db:probe:pet-skill-book-grant": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-book-grant-synthetic.ts",
