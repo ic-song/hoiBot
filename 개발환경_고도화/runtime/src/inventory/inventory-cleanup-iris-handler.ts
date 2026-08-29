@@ -1,5 +1,6 @@
 import type { DatabaseClient } from "../database.js";
 import { CombineAllService, readCombineAllVariant } from "../crafting/combine-all-service.js";
+import { CommandDispatcher, MariaCommandDispatchRepository } from "../dispatch/command-dispatcher.js";
 import { isQuestRewardClaimCommand, QuestRewardClaimService } from "../quest/quest-reward-claim-service.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { isOpenAllCommand } from "./open-all-policy.js";
@@ -35,13 +36,21 @@ export class InventoryCleanupIrisHandler {
       }
     }
     if (isQuestRewardClaimCommand(event.message)) {
+      if (!await this.isModern(event)) return null;
       const result = await new QuestRewardClaimService(this.database).handle({ externalUserId: event.userId, channelId: event.channelId, message: event.message!, eventId: event.eventId });
       return result?.outboxId !== undefined && result.data ? { outboxId: result.outboxId, room: event.channelId, data: result.data } : null;
     }
     if (isInventoryCleanupCommand(event.message)) {
+      if (!await this.isModern(event)) return null;
       const result = await new InventoryCleanupOrchestrationService(this.database).handle({ externalUserId: event.userId, channelId: event.channelId, message: event.message!, eventId: event.eventId });
       return result.outboxId !== undefined && result.data ? { outboxId: result.outboxId, room: event.channelId, data: result.data } : null;
     }
     return null;
+  }
+
+  private async isModern(event: { userId?: string; message?: string; eventId: string }): Promise<boolean> {
+    if (event.userId === undefined || event.message === undefined) return false;
+    const decision = await new CommandDispatcher(new MariaCommandDispatchRepository(this.database), { enabled: true, allowAllCanaries: false, canaryUserIds: new Set() }).resolve({ eventId: event.eventId, message: event.message, userId: event.userId, hasTrustedDisplayName: true });
+    return decision.route === "MODERN";
   }
 }

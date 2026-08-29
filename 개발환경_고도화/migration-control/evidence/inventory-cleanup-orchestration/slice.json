@@ -19,9 +19,10 @@
     "build": "PASS",
     "migrationCount": 363,
     "migrationReapply": "PASS",
-    "database": "hoibot_inventory_cleanup_v2400_20260830_007",
+    "database": "hoibot_inventory_cleanup_v2400_20260830_008",
     "port": 33457,
     "probe": "PASS",
+    "shadowNoMutation": "PASS",
     "forcedRollback": "PASS",
     "restartReplay": "PASS"
   },

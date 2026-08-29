@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../src/database.js";
 import { InventoryCleanupOrchestrationService } from "../src/inventory/inventory-cleanup-orchestration-service.js";
+import { InventoryCleanupIrisHandler } from "../src/inventory/inventory-cleanup-iris-handler.js";
 import { OPEN_ALL_ITEMS } from "../src/inventory/open-all-policy.js";
 
 const config = loadConfig();
@@ -14,8 +15,8 @@ try {
   const service = new InventoryCleanupOrchestrationService(db), input = { externalUserId, channelId: room, message: "/정리", eventId: base };
   if (!restart) {
     await db.execute("UPDATE castle_battle_seasons SET status='closed',ends_at=UTC_TIMESTAMP(3),version=version+1 WHERE status='active'");
-    const rollbackBase = `${base}-rollback`;
-    for (const eventId of [base, `${base}:cleanup:open`, `${base}:cleanup:combine`, `${base}:cleanup:sell`, `${base}:cleanup:booster`, `${base}:cleanup:medal`, `${base}:cleanup:quest`, rollbackBase, `${rollbackBase}:cleanup:open`, `${rollbackBase}:cleanup:combine`, `${rollbackBase}:cleanup:sell`, `${rollbackBase}:cleanup:booster`, `${rollbackBase}:cleanup:medal`, `${rollbackBase}:cleanup:quest`]) {
+    const rollbackBase = `${base}-rollback`, shadowBase = `${base}-shadow`;
+    for (const eventId of [shadowBase, base, `${base}:cleanup:open`, `${base}:cleanup:combine`, `${base}:cleanup:sell`, `${base}:cleanup:booster`, `${base}:cleanup:medal`, `${base}:cleanup:quest`, rollbackBase, `${rollbackBase}:cleanup:open`, `${rollbackBase}:cleanup:combine`, `${rollbackBase}:cleanup:sell`, `${rollbackBase}:cleanup:booster`, `${rollbackBase}:cleanup:medal`, `${rollbackBase}:cleanup:quest`]) {
       await db.execute("INSERT INTO event_inbox(event_id,provider_event_id,external_channel_id,external_user_id,event_kind,direction,payload_hash,processing_status,received_at) VALUES (?,?,?,?,'message','incoming',REPEAT('8',64),'processed',UTC_TIMESTAMP(3))", [eventId, eventId, room, externalUserId]);
     }
     await db.execute("INSERT INTO players(id,status) VALUES (?,'active')", [playerId]);
@@ -28,9 +29,14 @@ try {
     await db.execute("INSERT INTO guild_shop_items(product_id,item_id,display_name,price,daily_limit,display_order,enabled,version) VALUES ('98992000-0000-4000-8000-000000000001',?,'길드공헌훈장🌟(/길드공헌 숫자)',1000,1,98992,TRUE,1)", [medal.id]);
     const date = (await db.query<Array<{ value: string }>>("SELECT DATE_FORMAT(DATE_ADD(UTC_TIMESTAMP(),INTERVAL 9 HOUR),'%Y-%m-%d') value"))[0]!.value;
     await db.execute("INSERT INTO player_pet_daily_records(player_id,record_date,tower_attempts,castle_battle_attempts,mini_battle_attempts,explore_attempts,weekly_quest_count) VALUES (?,?,15,15,15,10,0)", [playerId, date]);
+    const handler = new InventoryCleanupIrisHandler(db);
+    assert.equal(await handler.execute({ ...input, userId: externalUserId, message: "/정리", eventId: shadowBase }, async () => { throw new Error("unexpected shadow error reply"); }), null);
+    await db.execute("UPDATE command_registry SET rollout_state='ACTIVE' WHERE command_code='INVENTORY_CLEANUP_ORCHESTRATION'");
+    const reply = await handler.execute({ ...input, userId: externalUserId }, async () => { throw new Error("unexpected active error reply"); });
+    assert.ok(reply); assert.match(reply.data, /가방정리 완료/); assert.match(reply.data, /자동 구매 완료/); assert.match(reply.data, /일일퀘스트 보상 지급 완료/);
     const result = await service.handle(input);
-    assert.equal(result.status, "completed"); assert.match(result.data!, /가방정리 완료/); assert.match(result.data!, /자동 구매 완료/); assert.match(result.data!, /일일퀘스트 보상 지급 완료/);
-    assert.deepEqual(await service.handle(input), { ...result, replayed: true });
+    assert.equal(result.status, "completed"); assert.equal(result.replayed, true); assert.equal(result.data, reply.data);
+    assert.deepEqual(await service.handle(input), result);
     const state = await snapshot(); assert.equal(state.parent_runs, 1n); assert.equal(state.parent_outboxes, 1n); assert.equal(state.medal, 1n); assert.equal(state.quest_runs, 1n); assert.equal(BigInt(state.point.split(".")[0]!), 999000n);
     await assert.rejects(() => new InventoryCleanupOrchestrationService(failParentAudit(db)).handle({ ...input, eventId: rollbackBase }), /synthetic cleanup parent audit failure/);
     assert.deepEqual(await snapshot(), state);

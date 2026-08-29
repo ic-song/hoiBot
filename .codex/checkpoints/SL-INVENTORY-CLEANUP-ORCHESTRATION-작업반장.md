@@ -25,11 +25,11 @@
 - Gate4: migration `373_inventory_cleanup_orchestration.sql`; DB-driven guild product, tax, limits and quest rewards
 - Gate5: focused contract tests plus full Runtime `1116`, pass `1109`, fail `0`, skip `7`
 - Gate6: typecheck/build pass; fresh MariaDB migration count `363`; probe/forced rollback/reapply pass
-- Gate7: restart replay pass with parent runs/outboxes `1/1`, operations/executions/audits `5/5/5`, inventory/currency ledgers `4/1`
+- Gate7: dispatch Shadow mutation `0`; ACTIVE, forced rollback and restart replay pass with parent runs/outboxes `1/1`, operations/executions/audits `5/5/5`, inventory/currency ledgers `4/1`
 - Gate8: false; production cutover forbidden
 
 ## Synthetic database
 
 - host/port: `127.0.0.1:33457`
-- database: `hoibot_inventory_cleanup_v2400_20260830_007`
+- database: `hoibot_inventory_cleanup_v2400_20260830_008`
 - operationalDataTouched: `false`
