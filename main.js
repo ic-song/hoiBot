@@ -95,7 +95,7 @@ const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
 };
 const PET_SKILL_LIST = [
 
-    { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantTarget: "호이 남", directGrantCommand: "/펫스킬가방추가 호이 남, 전설의 몽둥이", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
@@ -3682,7 +3682,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 var addSkillRequest = parsePetSkillBagGrantRequest(msg);
-                if (addSkillRequest && (isAdmin(sender) || isMaster(sender))) {
+                var canUseAddSkillRequest = addSkillRequest && (addSkillRequest.directGrantSkillData ? sender === addSkillRequest.directGrantSkillData.directGrantOperator : (isAdmin(sender) || isMaster(sender)));
+                if (canUseAddSkillRequest) {
                     var directGrantSkillData = addSkillRequest.directGrantSkillData;
                     var addSkillUser = addSkillRequest.user;
                     var addSkillName = addSkillRequest.skillName;
@@ -3700,7 +3701,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     if (addSkillData.directGrantOnly === true && !directGrantSkillData) {
-                        replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantCommand + " [숫자]\n명령어로만 지급할 수 있습니다.");
+                        replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantUsage + "\n명령어로만 지급할 수 있습니다.");
                         return;
                     }
 
@@ -40462,17 +40463,15 @@ function buildPetSkillInfoMessage(skillInfo) {
 
 // 단독 지급 전용 펫스킬 명령과 선택 수량을 검증해 지급 요청을 반환
 function parseDirectGrantPetSkillRequest(command) {
-    command = String(command || "");
-    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
-        var skillData = PET_SKILL_LIST[i];
-        if (skillData.directGrantOnly !== true) continue;
-        if (skillData.directGrantCommand === command) return { skillData: skillData, count: 1 };
-        var countPrefix = skillData.directGrantCommand + " ";
-        if (command.substring(0, countPrefix.length) !== countPrefix) continue;
-        var countText = command.substring(countPrefix.length);
-        if (/^\d+$/.test(countText)) return { skillData: skillData, count: parseInt(countText, 10) };
-    }
-    return null;
+    var match = String(command || "").match(/^\/펫스킬가방추가\s+([^,\r\n]+),\s+(.+?)(?:\s+(\d+))?\s*$/);
+    if (!match) return null;
+    var skillData = getPetSkillData(match[2].trim());
+    if (!skillData || skillData.directGrantOnly !== true) return null;
+    return {
+        user: match[1].trim(),
+        skillData: skillData,
+        count: match[3] ? parseInt(match[3], 10) : 1
+    };
 }
 
 // 펫스킬가방 단독·일반 지급 명령을 검증하고 지급 요청 정보로 변환
@@ -40481,7 +40480,7 @@ function parsePetSkillBagGrantRequest(command) {
     if (directGrantRequest) {
         var directGrantSkillData = directGrantRequest.skillData;
         return {
-            user: directGrantSkillData.directGrantTarget,
+            user: directGrantRequest.user,
             skillName: directGrantSkillData.name,
             count: directGrantRequest.count,
             directGrantSkillData: directGrantSkillData
