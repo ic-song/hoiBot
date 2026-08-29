@@ -54,6 +54,7 @@ const GLOBAL_CONFIG = {
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
 		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
 		charmSkills: {
+			"전설의 몽둥이": { raidExp: 500000, castleExp: 500000 },
 			"청룡언월도": { raidExp: 1000000, castleExp: 1000000 },
 			"엘리트 박사": { raidExp: 1500000, castleExp: 1500000, condition: "eliteMiniPet" },
 			"오딘의 뿅망치": { raidExp: 2000000, castleExp: 2000000 },

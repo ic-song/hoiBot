@@ -95,6 +95,7 @@ const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
 };
 const PET_SKILL_LIST = [
 
+    { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantTarget: "호이 남", directGrantCommand: "/펫스킬가방추가 호이 남, 전설의 몽둥이", raidExp: 500000, castleExp: 500000, effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
@@ -3680,16 +3681,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.startsWith("/펫스킬가방추가 ") && (isAdmin(sender) || isMaster(sender))) {
-                    var addSkillMatch = msg.match(/^\/펫스킬가방추가\s+([^,]+),\s+(.+)\s+(\d+)\s*$/);
-                    if (!addSkillMatch) {
-                        replier.reply("사용법: /펫스킬가방추가 [아이디], [펫스킬이름] [갯수]\n예: /펫스킬가방추가 호이 남, 장미칼 1");
-                        return;
-                    }
-
-                    var addSkillUser = addSkillMatch[1].trim();
-                    var addSkillName = normalizePetSkillName(addSkillMatch[2].trim());
-                    var addSkillCount = parseInt(addSkillMatch[3], 10);
+                var addSkillRequest = parsePetSkillBagGrantRequest(msg);
+                if (addSkillRequest && (isAdmin(sender) || isMaster(sender))) {
+                    var directGrantSkillData = addSkillRequest.directGrantSkillData;
+                    var addSkillUser = addSkillRequest.user;
+                    var addSkillName = addSkillRequest.skillName;
+                    var addSkillCount = addSkillRequest.count;
 
                     if (!data.member[addSkillUser]) {
                         replier.reply("❌ 해당 유저가 없습니다: " + addSkillUser);
@@ -3699,6 +3696,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var addSkillData = getPetSkillData(addSkillName);
                     if (!addSkillData) {
                         replier.reply("❌ 등록되지 않은 펫스킬입니다: " + addSkillName + "\n/펫스킬확률에서 목록을 확인해주세요.");
+                        return;
+                    }
+
+                    if (addSkillData.directGrantOnly === true && !directGrantSkillData) {
+                        replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantCommand + "\n명령어로만 지급할 수 있습니다.");
                         return;
                     }
 
@@ -3794,6 +3796,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (!bSkillData) {
                             bulkResults.fail++;
                             bulkResults.failDetail.push((bIdx + 1) + "줄: 펫스킬 없음 — " + bSkillRaw);
+                            continue;
+                        }
+
+                        if (bSkillData.directGrantOnly === true) {
+                            bulkResults.fail++;
+                            bulkResults.failDetail.push((bIdx + 1) + "줄: 단독 지급 명령어 전용 — " + formatPetSkillName(bSkillData.name));
                             continue;
                         }
 
@@ -4051,9 +4059,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("등록되지 않은 펫스킬입니다.\n또는 존재하지 않는 유저입니다.");
                         return;
                     }
-                    var skillRateLine = "확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
-                    var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
-                    replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n" + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine);
+                    replier.reply(buildPetSkillInfoMessage(skillInfo));
                     return;
                 }
 
@@ -40446,6 +40452,44 @@ function getPetSkillData(skillName) {
     return null;
 }
 
+// 펫스킬 등급·확률·효과 조회 메시지를 생성
+function buildPetSkillInfoMessage(skillInfo) {
+    var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
+    var skillRateLine = skillInfo.openable === false ? "" : "\n확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
+    var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
+    return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
+}
+
+// 입력 명령어와 정확히 일치하는 단독 지급 전용 펫스킬 데이터를 반환
+function getDirectGrantPetSkillDataByCommand(command) {
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        var skillData = PET_SKILL_LIST[i];
+        if (skillData.directGrantOnly === true && skillData.directGrantCommand === command) return skillData;
+    }
+    return null;
+}
+
+// 펫스킬가방 단독·일반 지급 명령을 검증하고 지급 요청 정보로 변환
+function parsePetSkillBagGrantRequest(command) {
+    var directGrantSkillData = getDirectGrantPetSkillDataByCommand(command);
+    if (directGrantSkillData) {
+        return {
+            user: directGrantSkillData.directGrantTarget,
+            skillName: directGrantSkillData.name,
+            count: 1,
+            directGrantSkillData: directGrantSkillData
+        };
+    }
+    var match = String(command || "").match(/^\/펫스킬가방추가\s+([^,\r\n]+),\s+(.+)\s+(\d+)\s*$/);
+    if (!match) return null;
+    return {
+        user: match[1].trim(),
+        skillName: normalizePetSkillName(match[2].trim()),
+        count: parseInt(match[3], 10),
+        directGrantSkillData: null
+    };
+}
+
 // 티어 전용 펫스킬 이름에서 선행 이모지를 제외한 조회용 이름 반환
 function getTierPetSkillSearchName(skillData) {
     if (!skillData || !skillData.tierExclusive) return "";
@@ -40770,6 +40814,7 @@ function getPetSkillTotalRate() {
 // 명시 확률을 우선하고 남은 등급 확률을 나머지 스킬에 균등 분배한 추첨 가중치 반환
 function getPetSkillRandomWeight(skillData) {
     if (!skillData) return 0;
+    if (skillData.openable === false) return 0;
     var gradeWeightTotal = PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS[skillData.grade];
     if (typeof gradeWeightTotal !== "number") return skillData.rate || 0;
     if (skillData.fixedRate === true) return skillData.rate || 0;

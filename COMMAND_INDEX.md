@@ -1393,7 +1393,7 @@ Status: VERIFIED
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
 - `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함)과 길드공헌 큐브를 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
-- 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
+- 일반 종합매력 무기 펫스킬 11종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 - `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
@@ -2655,6 +2655,7 @@ Status: VERIFIED
 
 - `formatSkillBagMessage`
 - `getPetSkillData`
+- `buildPetSkillInfoMessage`
 - `getTierPetSkillSearchName`
 - `buildTierPetSkillInfoLine`
 - `normalizePetSkillName`
@@ -2677,6 +2678,7 @@ Status: VERIFIED
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
 - `무쌍신화📙[B]`는 고정 확률 0.5%이며, 효과 안내에 `무쌍귀신📙`과 중복되지 않는다는 문구를 표시한다.
+- `전설의 몽둥이📙[한정판]` 조회는 확률 줄 없이 한정판 등급과 레이드·캐슬 매력 50만 효과를 표시한다.
 - 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
 - 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬끼리는 중복 불가, 일반 종합매력 무기 펫스킬과는 중복 가능하다는 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
@@ -3437,6 +3439,8 @@ Status: VERIFIED
 ## Related Helpers
 - `normalizePetSkillName`
 - `getPetSkillData`
+- `getDirectGrantPetSkillDataByCommand`
+- `parsePetSkillBagGrantRequest`
 - `getPetSkillBagRemainCount`
 - `addPetSkillToBag`
 ## Data Usage
@@ -3446,6 +3450,9 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬가방`
 - `/펫스킬일괄지급`
+
+## AI Notes
+- `전설의 몽둥이📙[한정판]`는 정확히 `/펫스킬가방추가 호이 남, 전설의 몽둥이`를 입력했을 때 `호이 남`에게 1개만 지급한다. 일반 개수형 입력과 다른 대상 지급은 차단한다.
 
 ---
 
@@ -3465,6 +3472,9 @@ Status: VERIFIED
 - Bulk mutates skill bags and saves `petSkillData`
 ## Related Commands
 - `/펫스킬가방추가`
+
+## AI Notes
+- 단독 지급 전용인 `전설의 몽둥이📙[한정판]`는 일괄 지급 대상에서 제외한다.
 
 ---
 
@@ -3556,6 +3566,7 @@ Status: VERIFIED
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
+- `전설의 몽둥이📙[한정판]`는 `/펫스킬확률`과 일반 오픈 풀에 포함되지 않는다.
 - S/A/B/C의 기존 등급별 총확률은 유지한다. 노션에 개별 확률이 명시된 신규·조정 스킬은 그 값을 우선하고, 남은 등급 확률은 나머지 스킬과 티어책에 균등 분배한다. SS/D는 개별 확률을 사용한다.
 
 ---
@@ -3601,6 +3612,7 @@ Status: VERIFIED
 
 - `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C의 명시 확률을 먼저 배정하고 남은 등급 확률을 균등 분배하며 티어 전용 펫스킬북도 추첨한다.
 - `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
+- `openable === false`인 `전설의 몽둥이📙[한정판]`의 추첨 가중치는 항상 0이라 단건·다건 오픈 모두에서 획득할 수 없다.
 
 ---
 
@@ -3664,6 +3676,7 @@ Status: VERIFIED
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
+- `전설의 몽둥이📙[한정판]`는 장착 목록에 있을 때 레이드·캐슬 매력 50만씩을 동적으로 적용하고 `/펫스킬소멸`로 제거되면 즉시 회수한다.
 - `인플루언서📙`과 `셀럽📙`은 중복 장착 시 `/펫홈`, `/홈알림`, `/팔로워순위` 표시 팔로워에 합계 3,000명을 더하며 실제 팔로워 관계와 뱃지 누적값은 바꾸지 않는다.
 - `망므📙` 장착 멘트는 `이건 내 망므야!`이며 일일 마음 한도를 5회 늘린다.
 - 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 장착 미니펫이 엘리트 등급일 때, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
