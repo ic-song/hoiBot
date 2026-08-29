@@ -165,7 +165,7 @@ export class PlayerOverallRankReadService {
     });
   }
 
-  private async loadRankingRows(transaction: DatabaseTransaction): Promise<PlayerOverallRankRow[]> {
+  public async loadRankingRows(transaction: DatabaseTransaction): Promise<PlayerOverallRankRow[]> {
     const bases = await transaction.query<OverallBaseRow[]>(
       `SELECT player.id player_id,profile.current_display_name,rank_profile.rank_emoji,rank_profile.source_order,
               pet.id pet_id,pet.experience pet_experience,pet.enhancement_level pet_enhancement,
