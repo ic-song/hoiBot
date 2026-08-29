@@ -55,6 +55,7 @@ import { GuildSwordMasterAssignService, isGuildSwordMasterAssignCandidate } from
 import { GuildLegacyFundCleanupService, isGuildLegacyFundCleanupCommand } from "../guild/guild-legacy-fund-cleanup-service.js";
 import { GuildTerritoryWarStateStartService, isGuildTerritoryWarStateStartCommand } from "../guild/guild-territory-war-state-start-service.js";
 import { GuildTerritoryWarReadyService, isGuildTerritoryWarReadyCommand } from "../guild/guild-territory-war-ready-service.js";
+import { GuildTerritoryOccupationResetService, isGuildTerritoryOccupationResetCommand } from "../guild/guild-territory-occupation-reset-service.js";
 import { GuildContributionCountResetService, isGuildContributionCountResetCommand } from "../guild/guild-contribution-count-reset-service.js";
 
 import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand } from "./admin-account-suspension-service.js";
@@ -145,6 +146,7 @@ export class IrisAdminCommandService {
     if (isGuildLegacyFundCleanupCommand(input.message)) return new GuildLegacyFundCleanupService(this.database).handleIris(input);
     if (isGuildTerritoryWarStateStartCommand(input.message)) return new GuildTerritoryWarStateStartService(this.database).handleIris(input);
     if (isGuildTerritoryWarReadyCommand(input.message)) return new GuildTerritoryWarReadyService(this.database).handleIris(input);
+    if (isGuildTerritoryOccupationResetCommand(input.message)) return new GuildTerritoryOccupationResetService(this.database).handleIris(input);
     if (isGuildContributionCountResetCommand(input.message)) return new GuildContributionCountResetService(this.database).handleIris(input);
     if (isAdminAccountDeleteProgressCommand(input.message)) return new AdminAccountDeleteProgressService(this.database).handleIris(input);
     if (isAdminDormantRegistryCommand(input.message)) return new AdminDormantAccountRegistryService(this.database).handleIris(input);
