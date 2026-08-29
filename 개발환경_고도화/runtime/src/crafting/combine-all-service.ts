@@ -7,7 +7,7 @@ const STONE_CODE = "bag_55b34cbde0088b29";
 const FRAGMENTS_PER_STONE = 10n;
 
 export type CombineAllVariant = "primary" | "secondary";
-export interface CombineAllCommand { externalUserId: string; channelId: string; message: string; eventId: string; }
+export interface CombineAllCommand { externalUserId: string; channelId: string; message: string; eventId: string; suppressOutbox?: boolean; }
 export interface CombineAllResult {
   status: "crafted" | "blocked_by_castle_siege" | "ignored_unregistered";
   variant: CombineAllVariant;
@@ -127,7 +127,7 @@ export class CombineAllService {
         [operation.insertId, owner.player_id, fragment.item_id, (-requiredFragments).toString(), operation.insertId, owner.player_id, stone.item_id, craftQuantity.toString()]
       );
       const data = `🛠️ 전체 조합 결과\n- 정령 강화석🥀 x ${craftQuantity}`;
-      const outbox = await tx.execute(
+      const outbox = command.suppressOutbox ? undefined : await tx.execute(
         "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
         [operation.insertId, command.channelId, JSON.stringify({ data })]
       );
@@ -144,7 +144,7 @@ export class CombineAllService {
       const result: CombineAllResult = {
         status: "crafted", variant, playerId: owner.player_id.toString(), craftQuantity: craftQuantity.toString(),
         fragmentQuantity: fragmentAfter.toString(), stoneQuantity: stoneAfter.toString(),
-        outboxId: outbox.insertId.toString(), data, auditId: audit.insertId.toString()
+        ...(outbox === undefined ? {} : { outboxId: outbox.insertId.toString() }), data, auditId: audit.insertId.toString()
       };
       await tx.execute(
         "UPDATE operations SET status = 'completed', result_json = ?, completed_at = UTC_TIMESTAMP(3) WHERE id = ?",

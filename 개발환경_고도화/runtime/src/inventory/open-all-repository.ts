@@ -5,7 +5,7 @@ export interface OpenAllStoredResult {
   status: "opened";
   playerId: string;
   data: string;
-  outboxId: string;
+  outboxId?: string;
   auditId: string;
   pointDelta: string;
   randomTrace: number[];
@@ -13,7 +13,7 @@ export interface OpenAllStoredResult {
   deferredGuildItems: string[];
   duplicate?: boolean;
 }
-export interface OpenAllCommandRecord { eventId: string; channelId: string; externalUserId: string; }
+export interface OpenAllCommandRecord { eventId: string; channelId: string; externalUserId: string; suppressOutbox?: boolean; }
 
 export interface OpenAllRepositoryTransaction {
   isCastleSiegeActive(): Promise<boolean>;

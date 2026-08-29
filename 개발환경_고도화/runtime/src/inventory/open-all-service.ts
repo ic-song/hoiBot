@@ -3,7 +3,7 @@ import { isOpenAllCommand, planOpenAll, type RandomSource } from "./open-all-pol
 import type { OpenAllRepository, OpenAllStoredResult } from "./open-all-repository.js";
 import { ApplicationError } from "../shared/application-error.js";
 
-export interface OpenAllCommand { externalUserId: string; channelId: string; message: string; eventId: string; }
+export interface OpenAllCommand { externalUserId: string; channelId: string; message: string; eventId: string; suppressOutbox?: boolean; }
 export type OpenAllResult = OpenAllStoredResult | { status: "blocked_by_castle_siege" | "ignored_unregistered" };
 
 function eventKey(value: string): string { return value.length <= 191 ? value : `sha256:${createHash("sha256").update(value).digest("hex")}`; }

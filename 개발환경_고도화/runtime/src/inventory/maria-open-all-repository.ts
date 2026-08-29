@@ -95,7 +95,7 @@ class MariaOpenAllTransaction implements OpenAllRepositoryTransaction {
         [operation.insertId, actor.playerId, plan.pointDelta, balance]);
     }
 
-    const outbox = await this.transaction.execute(
+    const outbox = command.suppressOutbox ? undefined : await this.transaction.execute(
       "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
       [operation.insertId, command.channelId, JSON.stringify({ data: plan.reply, sequence: 1 })]
     );
@@ -108,7 +108,7 @@ class MariaOpenAllTransaction implements OpenAllRepositoryTransaction {
       [operation.insertId, actor.identityId, actor.playerId, JSON.stringify({ deltas: Object.fromEntries(Object.entries(plan.deltas).map(([code, value]) => [code, value.toString()])), pointDelta: plan.pointDelta.toString(), randomTrace: plan.randomTrace, openedBoxes: plan.openedBoxes, deferredGuildItems: plan.deferredGuildItems })]
     );
     const result: OpenAllStoredResult = { status: "opened", playerId: actor.playerId, data: plan.reply,
-      outboxId: outbox.insertId.toString(), auditId: audit.insertId.toString(), pointDelta: plan.pointDelta.toString(),
+      ...(outbox === undefined ? {} : { outboxId: outbox.insertId.toString() }), auditId: audit.insertId.toString(), pointDelta: plan.pointDelta.toString(),
       randomTrace: plan.randomTrace, openedBoxes: plan.openedBoxes, deferredGuildItems: plan.deferredGuildItems };
     await this.transaction.execute("UPDATE operations SET status = 'completed', result_json = ?, completed_at = UTC_TIMESTAMP(3) WHERE id = ?", [JSON.stringify(result), operation.insertId]);
     return result;

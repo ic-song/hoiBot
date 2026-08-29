@@ -25,7 +25,7 @@ export interface GuildTerritoryBoosterContributeResult {
   dailyCountBefore: string;
   dailyCountAfter: string;
   data: string;
-  outboxId: string;
+  outboxId?: string;
 }
 
 interface ActorRow {
@@ -109,7 +109,7 @@ export class GuildTerritoryBoosterContributeService {
     if (decision.route === "SHADOW") return { status: "shadow" };
     if (decision.route !== "MODERN") return { status: "legacy_fallback" };
     const result = await this.handleIris(input);
-    return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
+    return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId! };
   }
 
   async handleIris(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<GuildTerritoryBoosterContributeResult | null> {
@@ -118,7 +118,7 @@ export class GuildTerritoryBoosterContributeService {
     return this.contribute({ ...input, command });
   }
 
-  async contribute(input: { externalUserId: string; channelId: string; eventId: string; command: GuildTerritoryBoosterContributeCommand }): Promise<GuildTerritoryBoosterContributeResult | null> {
+  async contribute(input: { externalUserId: string; channelId: string; eventId: string; command: GuildTerritoryBoosterContributeCommand; suppressOutbox?: boolean }): Promise<GuildTerritoryBoosterContributeResult | null> {
     const key = eventKey(input.eventId);
     return withContributionRetry(() => this.database.withTransaction(async (transaction) => {
       const previous = (await transaction.query<Array<{ result_json: string | GuildTerritoryBoosterContributeResult | null }>>(
@@ -197,11 +197,11 @@ export class GuildTerritoryBoosterContributeService {
 }
 
 async function complete(transaction: DatabaseTransaction, operationId: bigint, input: { eventId: string; channelId: string }, actor: ActorRow, status: GuildTerritoryBoosterContributeResult["status"], data: string, requestedCount: bigint, state: { inventoryBefore: bigint; inventoryAfter: bigint; guildBoosterBefore: bigint; guildBoosterAfter: bigint; memberContributionBefore: bigint; memberContributionAfter: bigint; dailyCountBefore: bigint; dailyCountAfter: bigint }): Promise<GuildTerritoryBoosterContributeResult> {
-  const outbox = await transaction.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [operationId, input.channelId, JSON.stringify({ data })]);
+  const outbox = "suppressOutbox" in input && input.suppressOutbox ? undefined : await transaction.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [operationId, input.channelId, JSON.stringify({ data })]);
   await transaction.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [input.eventId, COMMAND_CODE, operationId, status]);
   const summary = { requestedCount: requestedCount.toString(), inventoryBefore: state.inventoryBefore.toString(), inventoryAfter: state.inventoryAfter.toString(), guildBoosterBefore: state.guildBoosterBefore.toString(), guildBoosterAfter: state.guildBoosterAfter.toString(), memberContributionBefore: state.memberContributionBefore.toString(), memberContributionAfter: state.memberContributionAfter.toString(), dailyCountBefore: state.dailyCountBefore.toString(), dailyCountAfter: state.dailyCountAfter.toString() };
   await transaction.execute("INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'guild',?,'guild.territory.booster_contribute',?,'Iris /길드부스터공헌',?,UTC_TIMESTAMP(3))", [operationId, actor.identity_id, actor.guild_id ?? actor.player_id, status, JSON.stringify(summary)]);
-  const result: GuildTerritoryBoosterContributeResult = { status, ...summary, data, outboxId: outbox.insertId.toString() };
+  const result: GuildTerritoryBoosterContributeResult = { status, ...summary, data, ...(outbox === undefined ? {} : { outboxId: outbox.insertId.toString() }) };
   await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?", [JSON.stringify(result), operationId]);
   return result;
 }

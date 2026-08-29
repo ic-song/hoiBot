@@ -7350,3 +7350,36 @@ Status: VERIFIED
 
 ## Related Commands
 - /인증초기화
+# /정리, ㅇㅇㅇ
+
+Status: VERIFIED
+
+## Files
+
+- `main.js` (고정 기준 `v2.400`, 변경 없음)
+- `개발환경_고도화/runtime/src/inventory/inventory-cleanup-orchestration-service.ts`
+- `개발환경_고도화/runtime/src/guild/guild-medal-auto-purchase-service.ts`
+- `개발환경_고도화/runtime/src/quest/quest-reward-claim-service.ts`
+
+## Related Helpers
+
+- `OpenAllService`
+- `CombineAllService`
+- `InventoryBulkSellService`
+- `GuildTerritoryBoosterContributeService`
+- `GuildMedalAutoPurchaseService`
+- `QuestRewardClaimService`
+
+## Save Flow
+
+- 검증된 child provider를 savepoint로 호출하고 parent MariaDB transaction 하나에서 commit 또는 rollback한다.
+- child outbox는 parent 호출에서만 억제하고 원장·감사·실행 증거는 유지한다.
+- parent outbox 한 건이 `open → combine → sell → booster → medal purchase → quest` 결과를 순서대로 응답한다.
+
+## AI Notes
+
+- exact `/정리`와 bare `ㅇㅇㅇ`만 실행하며 `/ㅇㅇㅇ`은 퀘스트 보상 별칭이다.
+- 길드공헌훈장 가격·일일 제한·캐슬 세율은 DB 카탈로그에서 읽으며 코드에 가격을 고정하지 않는다.
+- Gate8 전까지 legacy `main.js`, `Info.js`, 운영 DB 및 운영 데이터는 변경하지 않는다.
+
+---

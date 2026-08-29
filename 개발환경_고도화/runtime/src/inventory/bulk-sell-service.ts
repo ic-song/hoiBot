@@ -9,6 +9,7 @@ export interface InventoryBulkSellCommand {
   channelId: string;
   message: string;
   eventId: string;
+  suppressOutbox?: boolean;
 }
 
 export interface InventoryBulkSellResult {
@@ -160,7 +161,7 @@ export class InventoryBulkSellService {
         const data = status === "sold"
           ? `가방 전체 판매가 완료되었습니다.\n판매 수량: ${soldQuantity}개\n획득 포인트: 🅟${commas(pointDelta)}`
           : "판매할 수 있는 아이템이 없습니다.";
-        const outbox = await tx.execute(
+        const outbox = command.suppressOutbox ? undefined : await tx.execute(
           "INSERT INTO outbox_messages (operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
           [operation.insertId, command.channelId, JSON.stringify({ data })]
         );
@@ -174,8 +175,8 @@ export class InventoryBulkSellService {
         );
         const result: InventoryBulkSellResult = {
           status, playerId: owner.player_id.toString(), soldQuantity: soldQuantity.toString(),
-          pointDelta: pointDelta.toString(), pointBalance: pointBalance?.toString(),
-          outboxId: outbox.insertId.toString(), data, auditId: audit.insertId.toString()
+          pointDelta: pointDelta.toString(), ...(pointBalance === undefined ? {} : { pointBalance: pointBalance.toString() }),
+          ...(outbox === undefined ? {} : { outboxId: outbox.insertId.toString() }), data, auditId: audit.insertId.toString()
         };
         await tx.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?", [JSON.stringify(result), operation.insertId]);
         return result;

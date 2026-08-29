@@ -1,0 +1,38 @@
+{
+  "sliceId": "SL-INVENTORY-CLEANUP-ORCHESTRATION",
+  "sourceContract": "v2.400",
+  "sourceCommit": "a286279b",
+  "sourceBranch": "codex/modernization-inventory-cleanup-orchestration-20260830",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "validation": {
+    "runtimeTests": { "tests": 1116, "passed": 1109, "failed": 0, "skipped": 7 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "migrationCount": 363,
+    "migrationReapply": "PASS",
+    "database": "hoibot_inventory_cleanup_v2400_20260830_007",
+    "port": 33457,
+    "probe": "PASS",
+    "forcedRollback": "PASS",
+    "restartReplay": "PASS"
+  },
+  "effects": {
+    "parentRuns": 1,
+    "parentOutboxes": 1,
+    "operations": 5,
+    "executions": 5,
+    "audits": 5,
+    "inventoryLedgers": 4,
+    "currencyLedgers": 1,
+    "operationalDataTouched": false
+  }
+}
