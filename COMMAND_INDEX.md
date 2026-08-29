@@ -1752,6 +1752,10 @@ Status: VERIFIED
 
 ## AI Notes
 
+- Modernization runtime: `GuildBoardService`, `GuildBoardIrisHandler`
+- DB flow: `guilds` row lock -> membership/role validation -> read/post/notice/clear -> `command_executions`/`command_audit`/`outbox_messages`
+- Post policy: 30 UTF-16 units, newest-first projection, maximum 20 published posts, clear preserves notice
+
 - Use this as the main board structure anchor
 - Posting and notice behavior is implemented in nearby branches
 

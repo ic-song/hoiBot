@@ -1,0 +1,22 @@
+{
+  "sliceId": "SL-GUILD-BOARD-READ-WRITE",
+  "baseline": "v2.400",
+  "catalogVersion": "FROZEN-20260820",
+  "commands": ["/길메", "/길드게시판", "/길드게시판공지", "/길드게시판초기화"],
+  "contract": {
+    "bodyMaxUtf16Length": 30,
+    "publishedPostLimit": 20,
+    "readOrder": "newest_first",
+    "postRoles": ["member", "sub_master", "master"],
+    "noticeAndClearRoles": ["sub_master", "master"],
+    "clearPreservesNotice": true
+  },
+  "database": {
+    "migration": "378_guild_board_read_write.sql",
+    "lock": "guilds.version",
+    "tables": ["guilds", "guild_members", "guild_board_posts", "guild_board_notices", "operations", "command_executions", "command_audit", "outbox_messages"]
+  },
+  "gate8": false,
+  "legacyFilesChanged": false,
+  "operationalDataTouched": false
+}
