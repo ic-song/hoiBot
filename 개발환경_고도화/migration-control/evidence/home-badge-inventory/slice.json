@@ -1,0 +1,36 @@
+{
+  "sliceId": "SL-HOME-BADGE-INVENTORY-QUERIES",
+  "sourceContract": "v2.400",
+  "sourceCommit": "a286279b",
+  "definitionVersionId": "930000002",
+  "definitionVersionKey": "legacy-v2.400-exact-display-v1",
+  "contentHash": "70d6731d0c5e2f72832fe70042ab1e0a7ba16d38af106b71617a31c33ed7932b",
+  "definitionCounts": {
+    "achievement": 64,
+    "special": 13,
+    "gacha": 57,
+    "mbti": 20,
+    "love": 50,
+    "total": 204
+  },
+  "immutableLegacyFiles": [
+    "main.js",
+    "Info.js"
+  ],
+  "migration": "374_home_badge_definition_v2400.sql",
+  "gateTarget": "Gate7",
+  "validation": {
+    "focused": "4/4 PASS",
+    "full": "1110 PASS / 0 FAIL / 7 SKIP",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "migrationCount": 364,
+    "firstApply": "PASS",
+    "reapply": "PASS",
+    "definitionParity": "204/204",
+    "exactDisplayParity": "127/127",
+    "restart": "PASS",
+    "replay": "PASS",
+    "operationalDataTouched": false
+  }
+}
