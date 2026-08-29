@@ -12,8 +12,8 @@ export type AdminAccountDeleteProgressResult = {
   failures: Array<{ name: string; code: string }>;
 };
 
-type Operator = { operator_id: bigint; actor_player_id: bigint | null };
-type Target = { player_id: bigint; display_name: string };
+export type AccountDeleteOperator = { operator_id: bigint; actor_player_id: bigint | null };
+export type AccountDeleteTarget = { player_id: bigint; display_name: string };
 
 const SCOPE = "admin.account_delete_progress";
 const COMMAND = "ADMIN_ACCOUNT_DELETE_PROGRESS";
@@ -47,8 +47,8 @@ export function normalizeAdminAccountDeleteProgressDispatchMessage(message: stri
   return isAdminAccountDeleteProgressCommand(message) ? "/계삭진행" : message;
 }
 
-async function resolveOperator(database: DatabaseClient, externalUserId: string): Promise<Operator | null> {
-  const rows = await database.query<Operator[]>(
+export async function resolveAccountDeleteOperator(database: DatabaseClient, externalUserId: string): Promise<AccountDeleteOperator | null> {
+  const rows = await database.query<AccountDeleteOperator[]>(
     `SELECT operator_row.id operator_id,identity.player_id actor_player_id
        FROM external_identities identity
        JOIN admin_operator_external_identities operator_identity ON operator_identity.external_identity_id=identity.id
@@ -97,8 +97,8 @@ async function removeGuildMemberships(tx: DatabaseTransaction, playerId: bigint)
   return memberships.length;
 }
 
-async function logicallyDeleteTarget(
-  tx: DatabaseTransaction, operationId: bigint, operatorId: bigint, sequence: number, target: Target
+export async function logicallyDeletePlayerAccount(
+  tx: DatabaseTransaction, operationId: bigint, operatorId: bigint, sequence: number, target: AccountDeleteTarget
 ): Promise<{ accountId: bigint | null; anonymizedName: string; guildCount: number }> {
   const suffix = hashText(`${operationId}:${target.player_id}:${randomUUID()}`);
   const anonymizedName = `삭제 ${suffix.slice(0, 12)}`;
@@ -169,7 +169,7 @@ export class AdminAccountDeleteProgressService {
   async execute(input: { eventId: string; externalUserId: string; destinationId: string; message: string }): Promise<AdminAccountDeleteProgressResult> {
     const command = parseAdminAccountDeleteProgressCommand(input.message);
     if (command === null) throw new ApplicationError("ADMIN_ACCOUNT_DELETE_COMMAND_INVALID", "계정 삭제 명령 형식을 확인해 주세요.", 422);
-    const operator = await resolveOperator(this.database, input.externalUserId);
+    const operator = await resolveAccountDeleteOperator(this.database, input.externalUserId);
     if (operator === null) throw new ApplicationError("ADMIN_ACCOUNT_DELETE_FORBIDDEN", "계정 삭제 권한이 없습니다.", 403);
     const requested = command.kind === "usage" ? [] : command.targetNames;
     const requestHash = hashText(JSON.stringify({ command: COMMAND, targets: requested }));
@@ -189,9 +189,9 @@ export class AdminAccountDeleteProgressService {
         [randomUUID(), SCOPE, eventKey, operator.operator_id]
       )).insertId;
       const failures: Array<{ name: string; code: string }> = [];
-      const resolved: Target[] = [];
+      const resolved: AccountDeleteTarget[] = [];
       for (const name of requested) {
-        const matches = await tx.query<Target[]>(
+        const matches = await tx.query<AccountDeleteTarget[]>(
           `SELECT player.id player_id,profile.current_display_name display_name
              FROM player_profiles profile JOIN players player ON player.id=profile.player_id
             WHERE player.status='active' AND player.deleted_at IS NULL AND BINARY profile.current_display_name=BINARY ?
@@ -208,7 +208,7 @@ export class AdminAccountDeleteProgressService {
       const deletedPlayerIds: string[] = [];
       let sequence = 1;
       for (const target of uniqueTargets) {
-        await logicallyDeleteTarget(tx, operationId, operator.operator_id, sequence++, target);
+        await logicallyDeletePlayerAccount(tx, operationId, operator.operator_id, sequence++, target);
         deletedPlayerIds.push(target.player_id.toString());
       }
       for (const failure of failures) {
