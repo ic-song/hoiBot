@@ -66,6 +66,7 @@ import { GuildTerritoryRankRewardPayoutService, isGuildTerritoryRankRewardPayout
 import { GuildRankRewardPayoutService, isGuildRankRewardPayoutCommand } from "../guild/guild-rank-reward-payout-service.js";
 import { OverallRankRewardPayoutService, isOverallRankRewardPayoutCommand } from "./overall-rank-reward-payout-service.js";
 import { AdminGuildWarehouseGrantService, isAdminGuildWarehouseGrantCommandCandidate } from "./admin-guild-warehouse-grant-service.js";
+import { AdminGuildMembershipSyncService, isAdminGuildMembershipSyncCommand } from "./admin-guild-membership-sync-service.js";
 import { GuildContributionCountResetService, isGuildContributionCountResetCommand } from "../guild/guild-contribution-count-reset-service.js";
 
 import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand } from "./admin-account-suspension-service.js";
@@ -177,6 +178,7 @@ export class IrisAdminCommandService {
     if (isGuildRankRewardPayoutCommand(input.message)) return new GuildRankRewardPayoutService(this.database).handleIris(input);
     if (isOverallRankRewardPayoutCommand(input.message)) return new OverallRankRewardPayoutService(this.database).handleIris(input);
     if (isAdminGuildWarehouseGrantCommandCandidate(input.message)) return new AdminGuildWarehouseGrantService(this.database).handleIris(input);
+    if (isAdminGuildMembershipSyncCommand(input.message)) return new AdminGuildMembershipSyncService(this.database).handleIris(input);
     if (isGuildTerritoryWarFinishCommand(input.message)) {
       const finish = await new GuildTerritoryWarFinishService(this.database).handleIris(input);
       if (finish === null) return { status: "legacy_fallback" };
@@ -1312,7 +1314,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
     || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message)
-    || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildTerritoryBoosterContributeCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isGuildRankRewardPayoutCommand(message) || isOverallRankRewardPayoutCommand(message) || isAdminGuildWarehouseGrantCommandCandidate(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isAdminGuildResetAllCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
+    || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildTerritoryBoosterContributeCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isGuildRankRewardPayoutCommand(message) || isOverallRankRewardPayoutCommand(message) || isAdminGuildWarehouseGrantCommandCandidate(message) || isAdminGuildMembershipSyncCommand(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isAdminGuildResetAllCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
     || isPetOwnerReadCommand(message) || isMiniPetBattleCountAdminCommandCandidate(message)
     || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message)
     || isAdminAuctionResetCommand(message) || isAuctionRegisterCandidate(message));
