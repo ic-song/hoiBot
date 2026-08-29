@@ -47,6 +47,7 @@ import { isMiniPetDrawGrantCommandCandidate, MiniPetDrawGrantService } from "./m
 import { isPetSkillBookGrantCommandCandidate, PetSkillBookGrantService } from "./pet-skill-book-grant-service.js";
 import { isLegendaryStoneTicketGrantCandidate, LegendaryStoneTicketGrantService } from "./legendary-stone-ticket-grant-service.js";
 import { GuildTerritoryRiftControlService, isGuildTerritoryRiftControlCandidate } from "../guild/guild-territory-rift-control-service.js";
+import { GuildTerritoryBoosterContributeService, isGuildTerritoryBoosterContributeCandidate } from "../guild/guild-territory-booster-contribute-service.js";
 import { GuildProfileNoticeMutateService, isGuildProfileNoticeMutateCandidate } from "../guild/guild-profile-notice-mutate-service.js";
 import { GuildLeadershipTransferService, isGuildLeadershipTransferCandidate } from "../guild/guild-leadership-transfer-service.js";
 import { GuildNameRenameService, isGuildNameRenameCandidate } from "../guild/guild-name-rename-service.js";
@@ -145,6 +146,7 @@ export class IrisAdminCommandService {
     if (isPetSkillBookGrantCommandCandidate(input.message)) return this.handlePetSkillBookGrant(input);
     if (isLegendaryStoneTicketGrantCandidate(input.message)) return this.handleLegendaryStoneTicketGrant(input);
     if (isGuildTerritoryRiftControlCandidate(input.message)) return new GuildTerritoryRiftControlService(this.database).handleDispatchedIris(input);
+    if (isGuildTerritoryBoosterContributeCandidate(input.message)) return new GuildTerritoryBoosterContributeService(this.database).handleDispatchedIris(input);
     if (isGuildProfileNoticeMutateCandidate(input.message)) return new GuildProfileNoticeMutateService(this.database).handleIris(input);
     if (isGuildLeadershipTransferCandidate(input.message)) return new GuildLeadershipTransferService(this.database).handleIris(input);
     if (isGuildNameRenameCandidate(input.message)) return new GuildNameRenameService(this.database).handleIris(input);
@@ -1304,7 +1306,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
     || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message)
-    || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isAdminGuildResetAllCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
+    || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildTerritoryBoosterContributeCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isAdminGuildResetAllCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
     || isPetOwnerReadCommand(message) || isMiniPetBattleCountAdminCommandCandidate(message)
     || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message)
     || isAdminAuctionResetCommand(message) || isAuctionRegisterCandidate(message));
