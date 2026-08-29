@@ -279,6 +279,8 @@ import { isInventoryFortunePouchCommandCandidate, normalizeInventoryFortunePouch
 import { InventoryFortunePouchIrisHandler } from "./inventory/inventory-fortune-pouch-iris-handler.js";
 import { isHomeHeartExpressionCommandCandidate, normalizeHomeHeartExpressionDispatchMessage } from "./home/home-heart-expression-command.js";
 import { HomeHeartExpressionIrisHandler } from "./home/home-heart-expression-iris-handler.js";
+import { isSupportPremiumNoticeCommandCandidate, normalizeSupportPremiumNoticeDispatchMessage } from "./support/support-premium-notice-command.js";
+import { SupportPremiumNoticeIrisHandler } from "./support/support-premium-notice-iris-handler.js";
 import { isGuildBoardCommandCandidate, normalizeGuildBoardDispatchMessage } from "./guild/guild-board-service.js";
 import { GuildBoardIrisHandler } from "./guild/guild-board-iris-handler.js";
 import { HomeBadgeEquipIrisHandler } from "./home/home-badge-equip-iris-handler.js";
@@ -1002,6 +1004,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isInventoryFortunePouchCommandCandidate(normalizedEvent.message);
       const homeHeartExpressionDispatchCandidate = process.env.HOME_HEART_EXPRESSION_COMMAND_ENABLED === "true"
         && isHomeHeartExpressionCommandCandidate(normalizedEvent.message);
+      const supportPremiumNoticeDispatchCandidate = process.env.SUPPORT_PREMIUM_NOTICE_COMMAND_ENABLED === "true"
+        && isSupportPremiumNoticeCommandCandidate(normalizedEvent.message);
       const guildBoardDispatchCandidate = process.env.GUILD_BOARD_COMMAND_ENABLED === "true"
         && isGuildBoardCommandCandidate(normalizedEvent.message);
       const homeBadgeEquipDispatchCandidate = process.env.HOME_BADGE_EQUIP_COMMAND_ENABLED === "true"
@@ -1169,6 +1173,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || inventoryWalletRngOpenDispatchCandidate
         || inventoryFortunePouchDispatchCandidate
         || homeHeartExpressionDispatchCandidate
+        || supportPremiumNoticeDispatchCandidate
         || guildBoardDispatchCandidate
         || homeBadgeEquipDispatchCandidate
         || homeBadgePermanentDeleteDispatchCandidate
@@ -1392,6 +1397,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeInventoryFortunePouchDispatchMessage(normalizedEvent.message ?? "")
                 : homeHeartExpressionDispatchCandidate
                   ? normalizeHomeHeartExpressionDispatchMessage(normalizedEvent.message ?? "")
+                : supportPremiumNoticeDispatchCandidate
+                  ? normalizeSupportPremiumNoticeDispatchMessage(normalizedEvent.message ?? "")
                 : guildBoardDispatchCandidate
                   ? normalizeGuildBoardDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeEquipDispatchCandidate
@@ -1667,6 +1674,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ? await new InventoryFortunePouchIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_heart_expression"
               ? await new HomeHeartExpressionIrisHandler(database).execute(normalizedEvent)
+            : (partialDispatchDecision.handlerKey as string) === "support_premium_notice_send"
+              ? await new SupportPremiumNoticeIrisHandler(database, process.env.SUPPORT_PREMIUM_NOTICE_BROADCAST_DESTINATION_ID ?? "broadcast:all").execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "guild_board"
               ? await new GuildBoardIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_equip"

@@ -1,0 +1,10 @@
+{
+  "sliceId": "SL-SUPPORT-PREMIUM-NOTICE-SEND",
+  "sourceContract": "a286279b (v2.400)",
+  "command": "/알림 [내용]",
+  "legacyGuard": "^/알림(?:\\s|$)",
+  "legacyFlow": ["territory war block", "message required", "40 UTF-16 code-unit limit", "premium required", "3 daily free", "speaker item up to 2 daily", "broadcast", "persist"],
+  "database": ["support_premium_notice_policies", "support_premium_notice_daily_usage", "support_premium_notice_executions", "inventory_stacks", "inventory_ledger", "operations", "command_executions", "command_audit", "outbox_messages"],
+  "rollout": "SHADOW",
+  "gate8": false
+}

@@ -4307,6 +4307,10 @@ Status: VERIFIED
 - 호이패스 프리미엄 이용자는 하루 3회까지 아이템 없이 사용하고 이후에는 기존 확성기 아이템 흐름을 사용한다. 일반 이용자는 명령 실행 전 프리미엄 전용 안내를 받는다.
 - 무료 횟수는 메시지가 정상 전송된 뒤 증가하며 일일 초기화에서 삭제된다. 재가입해도 같은 날 사용 기록은 유지한다.
 
+## Modernization
+- `SL-SUPPORT-PREMIUM-NOTICE-SEND`는 v2.400의 영지전 차단, 최대 40글자, 프리미엄 전용, KST 일일 무료 3회와 확성기 최대 2회 소비를 MariaDB transaction으로 보존한다.
+- 신규 runtime은 무료·아이템 횟수, 확성기 재고, inventory ledger, 실행·감사·broadcast outbox를 원자 반영하며 `SUPPORT_PREMIUM_NOTICE_COMMAND_ENABLED`와 command registry `SHADOW`를 모두 통과해야 한다.
+
 ---
 
 # /포인트
