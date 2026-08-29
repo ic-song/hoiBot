@@ -3,6 +3,7 @@ import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { isFreeMarketReadCommand } from "./free-market-read-service.js";
 import { FreeMarketCancelService, isFreeMarketCancelCandidate, normalizeFreeMarketCancelDispatchMessage } from "./free-market-cancel-service.js";
+import { FreeMarketForceCancelService, isFreeMarketForceCancelCandidate, normalizeFreeMarketForceCancelDispatchMessage } from "./free-market-force-cancel-service.js";
 import { HoiShopService, isHoiShopCommand } from "./hoi-shop-service.js";
 import { AuctionBidService, isAuctionBidCandidate, normalizeAuctionBidDispatchMessage } from "./auction-bid-service.js";
 import {
@@ -55,7 +56,7 @@ export function normalizeFreeMarketBuyDispatchMessage(message: string): string {
 
 // 자유시장 읽기·취소·구매 명령의 공용 진입 여부를 판정합니다.
 export function isFreeMarketLifecycleCandidate(message: string | undefined): boolean {
-  return isFreeMarketReadCommand(message) || isFreeMarketCancelCandidate(message) || isFreeMarketBuyCandidate(message)
+  return isFreeMarketReadCommand(message) || isFreeMarketCancelCandidate(message) || isFreeMarketForceCancelCandidate(message) || isFreeMarketBuyCandidate(message)
     || isFreeMarketBagRegisterCandidate(message) || isHoiShopCommand(message) || isAuctionBidCandidate(message);
 }
 
@@ -65,6 +66,7 @@ export function normalizeFreeMarketLifecycleDispatchMessage(message: string): st
   if (isFreeMarketReadCommand(message)) return message;
   if (isHoiShopCommand(message)) return message;
   if (isAuctionBidCandidate(message)) return normalizeAuctionBidDispatchMessage(message);
+  if (isFreeMarketForceCancelCandidate(message)) return normalizeFreeMarketForceCancelDispatchMessage(message);
   if (isFreeMarketCancelCandidate(message)) return normalizeFreeMarketCancelDispatchMessage(message);
   if (isFreeMarketBuyCandidate(message)) return normalizeFreeMarketBuyDispatchMessage(message);
   return message;
@@ -74,6 +76,7 @@ export function normalizeFreeMarketLifecycleDispatchMessage(message: string): st
 export function isFreeMarketMutationDispatch(message: string | undefined, route: string | undefined, handlerKey: string | undefined): boolean {
   if (route !== "MODERN") return false;
   return (handlerKey === "free_market_cancel" && isFreeMarketCancelCandidate(message))
+    || (handlerKey === "free_market_force_cancel" && isFreeMarketForceCancelCandidate(message))
     || (handlerKey === "free_market_buy" && isFreeMarketBuyCandidate(message))
     || (handlerKey === "free_market_bag_register" && isFreeMarketBagRegisterCandidate(message))
     || (handlerKey === "store_hoi_shop" && isHoiShopCommand(message))
@@ -99,16 +102,20 @@ export async function handleFreeMarketMutation(
     } else if (input.handlerKey === "free_market_cancel") {
       const result = await new FreeMarketCancelService(database).handle(input);
       if (result !== null && result.outboxId !== undefined && result.data !== undefined) return { outboxId: result.outboxId, data: result.data };
+    } else if (input.handlerKey === "free_market_force_cancel") {
+      const result = await new FreeMarketForceCancelService(database).handle(input);
+      if (result !== null) return { outboxId: result.outboxId, data: result.data };
     } else {
       const result = await new FreeMarketBuyService(database).handle(input);
       if (result !== null) return { outboxId: result.outboxId, data: result.data };
     }
   } catch (error) {
     const isExpectedCancel = input.handlerKey === "free_market_cancel" && error instanceof ApplicationError && error.statusCode === 409;
+    const isExpectedForceCancel = input.handlerKey === "free_market_force_cancel" && error instanceof ApplicationError && error.statusCode === 409;
     const isExpectedBuy = input.handlerKey === "free_market_buy" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
     const isExpectedRegister = input.handlerKey === "free_market_bag_register" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
     const isExpectedBid = input.handlerKey === "store_auction_bid" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
-    if (isExpectedCancel || isExpectedBuy || isExpectedRegister || isExpectedBid) return expectedErrorReply(`${input.handlerKey}_error`, (error as ApplicationError).message);
+    if (isExpectedCancel || isExpectedForceCancel || isExpectedBuy || isExpectedRegister || isExpectedBid) return expectedErrorReply(`${input.handlerKey}_error`, (error as ApplicationError).message);
     throw error;
   }
   throw new ApplicationError("FREE_MARKET_MUTATION_NOT_HANDLED", "자유시장 요청을 처리할 수 없습니다.", 422);

@@ -6,7 +6,7 @@ const ALIAS = "/자유시장취소 [번호]";
 const MAX_UINT64 = 18_446_744_073_709_551_615n;
 
 interface Actor { identity_id: bigint; player_id: bigint; display_name: string; rank_emoji: string | null }
-interface Listing { id: bigint; seller_player_id: bigint; asset_type_code: string; item_id: bigint | null; inventory_instance_id: bigint | null; quantity: bigint; status: string; version: bigint }
+export interface FreeMarketCancellationListing { id: bigint; seller_player_id: bigint; asset_type_code: string; item_id: bigint | null; inventory_instance_id: bigint | null; quantity: bigint; status: string; version: bigint }
 interface Fee { carrot_item_id: bigint; carrot_fee: bigint }
 export interface FreeMarketCancelResult { status: "cancelled" | "not_found" | "not_owner" | "silent"; data?: string; listingId?: string; listingVersion?: string; refundedCarrot?: string; outboxId?: string; replayed?: boolean }
 
@@ -60,7 +60,7 @@ export class FreeMarketCancelService {
       const ids = await t.query<Array<{ id: bigint }>>("SELECT id FROM market_listings WHERE status='open' AND (expires_at IS NULL OR expires_at>UTC_TIMESTAMP(3)) ORDER BY created_at DESC,id DESC");
       if (displayNo > BigInt(ids.length)) return reject("not_found", "❌ 취소할 자유시장 매물을 찾을 수 없습니다.");
       const listingId = ids[Number(displayNo - 1n)]!.id;
-      const listing = (await t.query<Listing[]>("SELECT id,seller_player_id,asset_type_code,item_id,inventory_instance_id,quantity,status,version FROM market_listings WHERE id=? FOR UPDATE", [listingId]))[0];
+      const listing = (await t.query<FreeMarketCancellationListing[]>("SELECT id,seller_player_id,asset_type_code,item_id,inventory_instance_id,quantity,status,version FROM market_listings WHERE id=? FOR UPDATE", [listingId]))[0];
       if (listing === undefined || listing.status !== "open") return reject("not_found", "❌ 취소할 자유시장 매물을 찾을 수 없습니다.", listingId);
       if (listing.seller_player_id !== actor.player_id) return reject("not_owner", "❌ 본인이 등록한 자유시장 매물만 취소할 수 있습니다.", listingId);
       await this.restoreAsset(t, operation.insertId, listing);
@@ -85,7 +85,7 @@ export class FreeMarketCancelService {
     });
   }
 
-  private async restoreAsset(t: DatabaseTransaction, operationId: bigint, listing: Listing): Promise<void> {
+  async restoreAsset(t: DatabaseTransaction, operationId: bigint, listing: FreeMarketCancellationListing): Promise<void> {
     if (listing.asset_type_code === "stack" || listing.asset_type_code === "bag") {
       if (listing.item_id === null) throw new ApplicationError("FREE_MARKET_ASSET_MISSING", "반환할 가방 아이템 정보가 없습니다.", 409);
       await t.execute("INSERT IGNORE INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,0,0)", [listing.seller_player_id, listing.item_id]);
