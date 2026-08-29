@@ -7443,3 +7443,30 @@ Status: VERIFIED
 ## Save Flow
 - 신규 Runtime의 단일 MariaDB transaction과 동일 event 결과 replay
 - 레거시 `main.js`와 운영 JSON은 변경하지 않음
+
+# /마음 · /사랑해 · /귀여워 · /멋져요 · /응원해
+
+Status: VERIFIED
+
+## Files
+- `main.js` (v2.400 source contract only)
+- `개발환경_고도화/runtime/src/home/home-heart-expression-command.ts`
+- `개발환경_고도화/runtime/src/home/home-heart-expression-service.ts`
+- `개발환경_고도화/runtime/src/home/home-heart-expression-iris-handler.ts`
+- `개발환경_고도화/runtime/migrations/380_home_heart_expression.sql`
+
+## Related Helpers
+- `allocateHomeHeartExpressions`
+- `formatHomeHeartAllocation`
+- `awardHomeActivityBadges`
+
+## Data Usage
+- `player_passes`, `pet_home_follows`, `player_pet_home_heart_usage`
+- `home_reactions`, `home_heart_expression_totals`, `home_heart_expression_executions`, `home_heart_expression_rolls`
+- `pet_home_badge_stats`, `player_home_badges`, `pet_home_activity_alerts`
+- `operations`, `home_activity_events`, `command_executions`, `command_audit`, `outbox_messages`
+
+## Save Flow
+- 신규 Runtime의 단일 MariaDB transaction과 동일 event·동시 전달·재시작 결과 replay
+- outbox 실패 시 quota·반응·배지·알림·원장 전체 rollback
+- 레거시 `main.js`와 운영 JSON은 변경하지 않음
