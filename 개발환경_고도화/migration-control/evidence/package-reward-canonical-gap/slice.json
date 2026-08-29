@@ -1,0 +1,25 @@
+{
+  "sliceId": "SL-COMMON-ASSET-CATALOG-PACKAGE-REWARD-GAP-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "44b4b8d3",
+  "migration": "382_package_reward_canonical_gap.sql",
+  "scope": {
+    "activeUniqueCarryForward": 9,
+    "inactiveResolved": 2,
+    "doubleActiveConflictResolved": 1,
+    "missingDefinitionAdded": 1
+  },
+  "canonicalTargets": [
+    "pet_enhance_stone",
+    "police_thief_ticket",
+    "free_market_membership",
+    "legacy-seasoned-chicken"
+  ],
+  "constraints": [
+    "legacy tables are retained",
+    "ownership balances and ledgers are not deleted or rewritten",
+    "itemInfo typed definitions and main.js bag bulk catalog are excluded",
+    "existing Gate 1 through Gate 7 evidence is carried forward",
+    "Gate 8 remains false"
+  ]
+}
