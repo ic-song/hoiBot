@@ -152,7 +152,8 @@
     "db:probe:mini-pet-binding-release": "tsx scripts/probe-mini-pet-binding-release-synthetic.ts",
     "probe:admin-account-suspension:synthetic": "tsx scripts/probe-admin-account-suspension-synthetic.ts",
     "probe:admin-account-delete-progress:synthetic": "tsx scripts/probe-admin-account-delete-progress-synthetic.ts",
-    "probe:admin-dormant-account-delete:synthetic": "tsx scripts/probe-admin-dormant-account-delete-synthetic.ts"
+    "probe:admin-dormant-account-delete:synthetic": "tsx scripts/probe-admin-dormant-account-delete-synthetic.ts",
+    "probe:admin-dormant-account-registry:synthetic": "tsx scripts/probe-admin-dormant-account-registry-synthetic.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
