@@ -145,6 +145,7 @@
     "db:probe:guild-territory-war-finish": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-war-finish-synthetic.ts",
     "db:probe:guild-territory-attack": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-attack-synthetic.ts",
     "db:probe:guild-rank-snapshot-refresh": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-rank-snapshot-refresh-synthetic.ts",
+    "db:probe:guild-territory-rank-reward-payout": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-rank-reward-payout-synthetic.ts",
     "db:probe:guild-contribution-count-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-contribution-count-reset-synthetic.ts",
     "db:probe:castle-battle-season-start": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-start-synthetic.ts",
     "db:probe:castle-battle-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-reset-all-synthetic.ts",
