@@ -4,6 +4,7 @@ import { ApplicationError } from "../shared/application-error.js";
 import { isFreeMarketReadCommand } from "./free-market-read-service.js";
 import { FreeMarketCancelService, isFreeMarketCancelCandidate, normalizeFreeMarketCancelDispatchMessage } from "./free-market-cancel-service.js";
 import { FreeMarketForceCancelService, isFreeMarketForceCancelCandidate, normalizeFreeMarketForceCancelDispatchMessage } from "./free-market-force-cancel-service.js";
+import { CarrotTradeService, isCarrotTradeCandidate, normalizeCarrotTradeDispatchMessage } from "./carrot-trade-service.js";
 import { HoiShopService, isHoiShopCommand } from "./hoi-shop-service.js";
 import { AuctionBidService, isAuctionBidCandidate, normalizeAuctionBidDispatchMessage } from "./auction-bid-service.js";
 import {
@@ -56,7 +57,7 @@ export function normalizeFreeMarketBuyDispatchMessage(message: string): string {
 
 // 자유시장 읽기·취소·구매 명령의 공용 진입 여부를 판정합니다.
 export function isFreeMarketLifecycleCandidate(message: string | undefined): boolean {
-  return isFreeMarketReadCommand(message) || isFreeMarketCancelCandidate(message) || isFreeMarketForceCancelCandidate(message) || isFreeMarketBuyCandidate(message)
+  return isFreeMarketReadCommand(message) || isFreeMarketCancelCandidate(message) || isFreeMarketForceCancelCandidate(message) || isCarrotTradeCandidate(message) || isFreeMarketBuyCandidate(message)
     || isFreeMarketBagRegisterCandidate(message) || isHoiShopCommand(message) || isAuctionBidCandidate(message);
 }
 
@@ -67,6 +68,7 @@ export function normalizeFreeMarketLifecycleDispatchMessage(message: string): st
   if (isHoiShopCommand(message)) return message;
   if (isAuctionBidCandidate(message)) return normalizeAuctionBidDispatchMessage(message);
   if (isFreeMarketForceCancelCandidate(message)) return normalizeFreeMarketForceCancelDispatchMessage(message);
+  if (isCarrotTradeCandidate(message)) return normalizeCarrotTradeDispatchMessage(message);
   if (isFreeMarketCancelCandidate(message)) return normalizeFreeMarketCancelDispatchMessage(message);
   if (isFreeMarketBuyCandidate(message)) return normalizeFreeMarketBuyDispatchMessage(message);
   return message;
@@ -77,6 +79,7 @@ export function isFreeMarketMutationDispatch(message: string | undefined, route:
   if (route !== "MODERN") return false;
   return (handlerKey === "free_market_cancel" && isFreeMarketCancelCandidate(message))
     || (handlerKey === "free_market_force_cancel" && isFreeMarketForceCancelCandidate(message))
+    || (handlerKey === "market_carrot_trade" && isCarrotTradeCandidate(message))
     || (handlerKey === "free_market_buy" && isFreeMarketBuyCandidate(message))
     || (handlerKey === "free_market_bag_register" && isFreeMarketBagRegisterCandidate(message))
     || (handlerKey === "store_hoi_shop" && isHoiShopCommand(message))
@@ -105,6 +108,9 @@ export async function handleFreeMarketMutation(
     } else if (input.handlerKey === "free_market_force_cancel") {
       const result = await new FreeMarketForceCancelService(database).handle(input);
       if (result !== null) return { outboxId: result.outboxId, data: result.data };
+    } else if (input.handlerKey === "market_carrot_trade") {
+      const result = await new CarrotTradeService(database).handle(input);
+      if (result !== null) return { outboxId: result.outboxId, data: result.data };
     } else {
       const result = await new FreeMarketBuyService(database).handle(input);
       if (result !== null) return { outboxId: result.outboxId, data: result.data };
@@ -112,10 +118,11 @@ export async function handleFreeMarketMutation(
   } catch (error) {
     const isExpectedCancel = input.handlerKey === "free_market_cancel" && error instanceof ApplicationError && error.statusCode === 409;
     const isExpectedForceCancel = input.handlerKey === "free_market_force_cancel" && error instanceof ApplicationError && error.statusCode === 409;
+    const isExpectedCarrotTrade = input.handlerKey === "market_carrot_trade" && error instanceof ApplicationError && [409,422].includes(error.statusCode);
     const isExpectedBuy = input.handlerKey === "free_market_buy" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
     const isExpectedRegister = input.handlerKey === "free_market_bag_register" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
     const isExpectedBid = input.handlerKey === "store_auction_bid" && error instanceof ApplicationError && [409, 422].includes(error.statusCode);
-    if (isExpectedCancel || isExpectedForceCancel || isExpectedBuy || isExpectedRegister || isExpectedBid) return expectedErrorReply(`${input.handlerKey}_error`, (error as ApplicationError).message);
+    if (isExpectedCancel || isExpectedForceCancel || isExpectedCarrotTrade || isExpectedBuy || isExpectedRegister || isExpectedBid) return expectedErrorReply(`${input.handlerKey}_error`, (error as ApplicationError).message);
     throw error;
   }
   throw new ApplicationError("FREE_MARKET_MUTATION_NOT_HANDLED", "자유시장 요청을 처리할 수 없습니다.", 422);
