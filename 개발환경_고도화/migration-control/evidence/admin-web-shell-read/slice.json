@@ -77,6 +77,8 @@
   },
   "gate7": {
     "status": "shadow_complete",
+    "sourceCommit": "7e607975",
+    "sourcePushVerified": true,
     "browserTarget": "synthetic Fastify fixture server",
     "operationalDataTouched": false,
     "productionBranchTouched": false,
