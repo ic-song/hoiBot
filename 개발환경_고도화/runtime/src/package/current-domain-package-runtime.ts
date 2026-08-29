@@ -31,6 +31,7 @@ import {
   type PackageDomainTransaction,
   type PackageDomainSqlResult,
 } from "./domain-item-provider.js";
+import { CANONICAL_PACKAGE_ITEM_DEFINITION_SELECT } from "./canonical-item-definition-adapter.js";
 import { PackageRewardTargetRegistry } from "./reward-target-registry.js";
 
 interface CatalogRow {
@@ -301,8 +302,8 @@ class CurrentPackageItemDefinitionRepository {
 
   public async findById(id: string): Promise<ItemDefinition | undefined> {
     const rows = await this.database.query<DefinitionRow[]>(
-      `SELECT item_id,item_type,item_name,stackable,metadata_json,enabled
-       FROM package_item_definitions WHERE item_id = ?`,
+      `${CANONICAL_PACKAGE_ITEM_DEFINITION_SELECT}
+       WHERE compatibility.item_id = ?`,
       [id],
     );
     const row = rows[0];

@@ -1,0 +1,21 @@
+{
+  "sliceId": "SL-COMMON-ASSET-CATALOG-PACKAGE-ADAPTER-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "cff46992",
+  "scope": "W2_PACKAGE_CANONICAL_COMPATIBILITY",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "canonicalRules": {
+    "STACK": "item_definitions identity, stackable and active",
+    "NON_STACK": "package_item_definitions compatibility metadata until W3"
+  },
+  "retirementOnly": [
+    "package_item_balances",
+    "package_item_instances",
+    "package_item_ledger",
+    "package_definitions",
+    "package_contents",
+    "package_purchases"
+  ],
+  "schemaMutation": false
+}

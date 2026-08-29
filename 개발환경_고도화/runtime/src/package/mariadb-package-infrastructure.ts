@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import mariadb, { type Pool, type PoolConnection } from "mariadb";
+import { CANONICAL_PACKAGE_ITEM_DEFINITION_SELECT } from "./canonical-item-definition-adapter.js";
 import { ItemProvider, type ItemDefinition, type ItemDefinitionRepository, type ItemMutationContext, type ItemTypeHandler } from "./item-provider.js";
 import type { PackageCatalogEntry, PackageCatalogSnapshot, PackageRewardEntry } from "./package-catalog.js";
 import { PackageProvider, RepositoryPackageCatalogProvider, type PackageCatalogRepository, type PackageTransactionManager, type PackageUseOperationRepository, type PackageUseRequest, type PackageUseResult } from "./package-provider.js";
@@ -277,7 +278,9 @@ export class MariaDbItemDefinitionRepository implements ItemDefinitionRepository
   async findById(itemId: string, transactionHandle?: unknown): Promise<ItemDefinition | undefined> {
     const db = transactionHandle ? transactionHandle as PoolConnection : this.pool;
     const rows = await db.query<SqlRow[]>(
-      "SELECT item_id, item_type, item_name, stackable, metadata_json, enabled FROM package_item_definitions WHERE item_id = ?" + (transactionHandle ? " FOR UPDATE" : ""),
+      CANONICAL_PACKAGE_ITEM_DEFINITION_SELECT
+        + " WHERE compatibility.item_id = ?"
+        + (transactionHandle ? " FOR UPDATE" : ""),
       [itemId]
     );
     const row = rows[0];

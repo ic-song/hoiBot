@@ -136,7 +136,7 @@ async function scalar(sql: string, values: readonly unknown[] = []): Promise<big
           packageId: "PKG-209",
           openCount: 1,
         }),
-        /PACKAGE_DOMAIN_DEFINITION_NOT_FOUND/,
+        /ITEM_NOT_AVAILABLE:ITEM-RWD-065/,
       );
     } finally {
       await database.execute("UPDATE item_definitions SET active=1 WHERE code='ITEM-RWD-065'");
