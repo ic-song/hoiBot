@@ -69,6 +69,7 @@ import { AdminDormantAccountRegistryService, isAdminDormantRegistryCommand } fro
 import { CastleBattleSeasonStartService, isCastleBattleSeasonStartCommand } from "../castle/castle-battle-season-start-service.js";
 import { CastleBattleSeasonCloseService, isCastleBattleSeasonCloseCommand } from "../castle/castle-battle-season-close-service.js";
 import { CastleBattleResetAllService, isCastleBattleResetAllCommand } from "../castle/castle-battle-reset-all-service.js";
+import { AdminGuildResetAllService, isAdminGuildResetAllCommand } from "./admin-guild-reset-all-service.js";
 import { CastleBattleMemberEditService, isCastleBattleMemberEditCommandCandidate } from "../castle/castle-battle-member-edit-service.js";
 import { isPetResetCommandCandidate, PetResetService } from "./pet-reset-service.js";
 import { isPetOwnerReadCommand, PetOwnerReadService } from "../pet/pet-owner-read-service.js";
@@ -178,6 +179,7 @@ export class IrisAdminCommandService {
     if (isCastleBattleSeasonStartCommand(input.message)) return new CastleBattleSeasonStartService(this.database).handleIris(input);
     if (isCastleBattleSeasonCloseCommand(input.message)) return new CastleBattleSeasonCloseService(this.database).handleIris(input);
     if (isCastleBattleResetAllCommand(input.message)) return new CastleBattleResetAllService(this.database).handleIris(input);
+    if (isAdminGuildResetAllCommand(input.message)) return new AdminGuildResetAllService(this.database).handleIris(input);
     if (isCastleBattleMemberEditCommandCandidate(input.message)) return new CastleBattleMemberEditService(this.database).handleIris(input);
     if (isPetResetCommandCandidate(input.message)) return new PetResetService(this.database).handleIris(input);
     if (isPetOwnerReadCommand(input.message)) return new PetOwnerReadService(this.database).handleIris(input);
@@ -1298,7 +1300,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isRingReadCommandCandidate(message) || isRingRewardUseCommand(message) || isSpiritEnhanceCommand(message)
     || isSpiritAttributeCommandCandidate(message) || isMiniPetDuelResetGrantCommandCandidate(message)
     || isPetDungeonEntryGrantCommandCandidate(message) || isMiniPetDrawGrantCommandCandidate(message)
-    || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
+    || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isAdminGuildResetAllCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
     || isPetOwnerReadCommand(message) || isMiniPetBattleCountAdminCommandCandidate(message)
     || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message)
     || isAdminAuctionResetCommand(message) || isAuctionRegisterCandidate(message));
