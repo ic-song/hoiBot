@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ASSET-ITEMINFO-RING-DEFINITIONS-01",
+  "executionId": "작업반장-SL-ASSET-ITEMINFO-RING-DEFINITIONS-01-202608300638",
+  "claimRow": 2340,
+  "branch": "codex/modernization-iteminfo-ring-definitions-v2400-20260830",
+  "baseline": "8a58e90f",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "sourcePath": "data/itemInfo.json#ring",
+  "sourceFileHash": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+  "sourceHash": "b114073a714edc62236e95b4ab2a64ac27085e442dad979a0e023e0c8140abb7",
+  "priorClassificationHash": "a27b804d684272b97307b007abc27ece7007b2547eaa6557b65857a4fb96f963",
+  "priorHashDisposition": "algorithm-unverified; replaced by current file-byte and ring-canonical SHA-256",
+  "migration": "385_iteminfo_ring_definitions.sql",
+  "scope": {
+    "definitions": 45,
+    "uniqueDisplayNames": 27,
+    "repeatedDisplayGroups": 2,
+    "repeatedDisplayRows": 20,
+    "ownership": "existing inventory_stacks/inventory_instances/inventory_ledger",
+    "legacyMutation": false,
+    "featureProdMutation": false,
+    "gate8": false
+  },
+  "status": "shadow_validated",
+  "currentValidation": {
+    "focused": "5/5 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "full": "1166 total / 1159 pass / 0 fail / 7 skip",
+    "migrationCount": 375,
+    "mariaParity": "45/45 definitions; items45; objects45; bindings45",
+    "rollback": "PASS",
+    "migrationReplay": "PASS (0 newly applied)",
+    "shadow": "6/6 PASS",
+    "gate8": false
+  }
+}
