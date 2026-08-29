@@ -3700,7 +3700,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     if (addSkillData.directGrantOnly === true && !directGrantSkillData) {
-                        replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantCommand + "\n명령어로만 지급할 수 있습니다.");
+                        replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantCommand + " [숫자]\n명령어로만 지급할 수 있습니다.");
                         return;
                     }
 
@@ -40460,23 +40460,30 @@ function buildPetSkillInfoMessage(skillInfo) {
     return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
 }
 
-// 입력 명령어와 정확히 일치하는 단독 지급 전용 펫스킬 데이터를 반환
-function getDirectGrantPetSkillDataByCommand(command) {
+// 단독 지급 전용 펫스킬 명령과 선택 수량을 검증해 지급 요청을 반환
+function parseDirectGrantPetSkillRequest(command) {
+    command = String(command || "");
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
         var skillData = PET_SKILL_LIST[i];
-        if (skillData.directGrantOnly === true && skillData.directGrantCommand === command) return skillData;
+        if (skillData.directGrantOnly !== true) continue;
+        if (skillData.directGrantCommand === command) return { skillData: skillData, count: 1 };
+        var countPrefix = skillData.directGrantCommand + " ";
+        if (command.substring(0, countPrefix.length) !== countPrefix) continue;
+        var countText = command.substring(countPrefix.length);
+        if (/^\d+$/.test(countText)) return { skillData: skillData, count: parseInt(countText, 10) };
     }
     return null;
 }
 
 // 펫스킬가방 단독·일반 지급 명령을 검증하고 지급 요청 정보로 변환
 function parsePetSkillBagGrantRequest(command) {
-    var directGrantSkillData = getDirectGrantPetSkillDataByCommand(command);
-    if (directGrantSkillData) {
+    var directGrantRequest = parseDirectGrantPetSkillRequest(command);
+    if (directGrantRequest) {
+        var directGrantSkillData = directGrantRequest.skillData;
         return {
             user: directGrantSkillData.directGrantTarget,
             skillName: directGrantSkillData.name,
-            count: 1,
+            count: directGrantRequest.count,
             directGrantSkillData: directGrantSkillData
         };
     }

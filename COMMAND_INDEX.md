@@ -3439,7 +3439,7 @@ Status: VERIFIED
 ## Related Helpers
 - `normalizePetSkillName`
 - `getPetSkillData`
-- `getDirectGrantPetSkillDataByCommand`
+- `parseDirectGrantPetSkillRequest`
 - `parsePetSkillBagGrantRequest`
 - `getPetSkillBagRemainCount`
 - `addPetSkillToBag`
@@ -3452,7 +3452,7 @@ Status: VERIFIED
 - `/펫스킬일괄지급`
 
 ## AI Notes
-- `전설의 몽둥이📙[한정판]`는 정확히 `/펫스킬가방추가 호이 남, 전설의 몽둥이`를 입력했을 때 `호이 남`에게 1개만 지급한다. 일반 개수형 입력과 다른 대상 지급은 차단한다.
+- `전설의 몽둥이📙[한정판]`는 `/펫스킬가방추가 호이 남, 전설의 몽둥이` 입력 시 1개, 뒤에 숫자를 입력하면 해당 수량만큼 `호이 남`에게 지급한다. 다른 대상 지급과 숫자 뒤 추가 문구는 차단한다.
 
 ---
 
