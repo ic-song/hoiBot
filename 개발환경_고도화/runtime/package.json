@@ -54,6 +54,7 @@
     "db:probe:pet-skill-equip": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-equip-synthetic.ts",
     "db:probe:pet-skill-sale-lifecycle": "node --env-file-if-exists=.env --import tsx scripts/probe-pet-skill-sale-lifecycle-synthetic.ts",
     "db:probe:hope-premium-delete": "node --env-file-if-exists=.env --import tsx scripts/probe-hope-premium-delete-synthetic.ts",
+    "db:probe:beginner-pass-registry": "node --env-file-if-exists=.env scripts/probe-beginner-pass-registry-synthetic.mjs",
     "db:probe:home-furniture-bag-lifecycle": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-bag-lifecycle-synthetic.ts",
     "db:probe:home-furniture-market-listing": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-market-listing-synthetic.ts",
     "db:probe:home-furniture-carrot-transfer": "node --env-file-if-exists=.env --import tsx scripts/probe-home-furniture-carrot-transfer-synthetic.ts",
