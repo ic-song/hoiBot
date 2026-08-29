@@ -140,6 +140,7 @@
     "db:probe:guild-legacy-fund-cleanup": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-legacy-fund-cleanup-synthetic.ts",
     "db:probe:guild-territory-war-state-start": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-war-state-start-synthetic.ts",
     "db:probe:guild-territory-war-ready": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-territory-war-ready-synthetic.ts",
+    "db:probe:guild-contribution-count-reset": "node --env-file-if-exists=.env --import tsx scripts/probe-guild-contribution-count-reset-synthetic.ts",
     "db:probe:castle-battle-season-start": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-start-synthetic.ts",
     "db:probe:castle-battle-reset-all": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-reset-all-synthetic.ts",
     "db:probe:castle-battle-season-close": "node --env-file-if-exists=.env --import tsx scripts/probe-castle-battle-season-close-synthetic.ts",
