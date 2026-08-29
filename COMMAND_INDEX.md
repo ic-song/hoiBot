@@ -21,6 +21,38 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 - When a command mutates game state, check both `loadJsonFile` and `saveJsonFile` calls in the same branch.
 
 ---
+
+# /지갑털기
+
+Status: VERIFIED
+
+## Files
+
+- `main.js` (고정 기준 `v2.400`, 변경 없음)
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/inventory/inventory-wallet-rng-open-command.ts`
+- `개발환경_고도화/runtime/src/inventory/inventory-wallet-rng-open-service.ts`
+- `개발환경_고도화/runtime/migrations/377_inventory_wallet_rng_open.sql`
+
+## Data Usage
+
+- legacy: `data.member[sender].bag["호이지갑👛(/지갑털기)"]`, `data.member[sender].point`
+- modern: `inventory_stacks`, `inventory_ledger`, `currency_accounts`, `currency_ledger`
+- RNG evidence: `inventory_wallet_rng_config_versions`, `inventory_wallet_rng_payout_tiers`, `inventory_wallet_rng_rolls`
+
+## Save Flow
+
+- 호이지갑 차감, 2단계 RNG 기록, 포인트 지급, 실행·감사·outbox를 하나의 MariaDB transaction으로 commit 또는 rollback한다.
+- 동일 event는 저장된 결과만 재생하며 추가 재고 차감·포인트 지급을 하지 않는다.
+
+## AI Notes
+
+- 1차 빈 지갑 70%, 성공 30%를 적용한다.
+- 성공 내부 확률은 82%·14%·3.5%·0.4%·0.09%·0.01%이며 지급액은 1천만·3천만·5천만·1억·3억·10억 포인트다.
+- exact `/지갑털기` 또는 anchored `/지갑털기 [숫자]`만 실행하며 0은 1회, 요청량은 보유량까지 처리한다.
+- Gate8 전까지 legacy `main.js`, `Info.js`, 운영 DB 및 운영 데이터는 변경하지 않는다.
+
+---
 # /길드펫스킬창고
 
 Status: VERIFIED

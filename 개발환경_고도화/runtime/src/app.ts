@@ -273,6 +273,8 @@ import { isHomeBadgeGachaCommandCandidate, normalizeHomeBadgeGachaDispatchMessag
 import { HomeBadgeGachaIrisHandler } from "./home/home-badge-gacha-iris-handler.js";
 import { isHomeBadgeCubeCommandCandidate, normalizeHomeBadgeCubeDispatchMessage } from "./home/home-badge-cube-command.js";
 import { HomeBadgeCubeIrisHandler } from "./home/home-badge-cube-iris-handler.js";
+import { isInventoryWalletRngOpenCommandCandidate, normalizeInventoryWalletRngOpenDispatchMessage } from "./inventory/inventory-wallet-rng-open-command.js";
+import { InventoryWalletRngOpenIrisHandler } from "./inventory/inventory-wallet-rng-open-iris-handler.js";
 import { HomeBadgeEquipIrisHandler } from "./home/home-badge-equip-iris-handler.js";
 import { HomeBadgePermanentDeleteIrisHandler } from "./home/home-badge-permanent-delete-iris-handler.js";
 import { isHomeBadgePermanentDeleteCommand, normalizeHomeBadgePermanentDeleteDispatchMessage } from "./home/home-badge-permanent-delete-command.js";
@@ -988,6 +990,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeBadgeGachaCommandCandidate(normalizedEvent.message);
       const homeBadgeCubeDispatchCandidate = process.env.HOME_BADGE_CUBE_COMMAND_ENABLED === "true"
         && isHomeBadgeCubeCommandCandidate(normalizedEvent.message);
+      const inventoryWalletRngOpenDispatchCandidate = process.env.INVENTORY_WALLET_RNG_OPEN_COMMAND_ENABLED === "true"
+        && isInventoryWalletRngOpenCommandCandidate(normalizedEvent.message);
       const homeBadgeEquipDispatchCandidate = process.env.HOME_BADGE_EQUIP_COMMAND_ENABLED === "true"
         && isHomeBadgeEquipCommand(normalizedEvent.message);
       const homeBadgePermanentDeleteDispatchCandidate = process.env.HOME_BADGE_PERMANENT_DELETE_COMMAND_ENABLED === "true"
@@ -1150,6 +1154,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeBadgeInventoryDispatchCandidate
         || homeBadgeGachaDispatchCandidate
         || homeBadgeCubeDispatchCandidate
+        || inventoryWalletRngOpenDispatchCandidate
         || homeBadgeEquipDispatchCandidate
         || homeBadgePermanentDeleteDispatchCandidate
         || homeCommentFileBootstrapDispatchCandidate
@@ -1366,6 +1371,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeHomeBadgeGachaDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeCubeDispatchCandidate
                   ? normalizeHomeBadgeCubeDispatchMessage(normalizedEvent.message ?? "")
+                : inventoryWalletRngOpenDispatchCandidate
+                  ? normalizeInventoryWalletRngOpenDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgeEquipDispatchCandidate
                   ? normalizeHomeBadgeEquipDispatchMessage(normalizedEvent.message ?? "")
                 : homeBadgePermanentDeleteDispatchCandidate
@@ -1616,7 +1623,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && processing !== undefined
         && !processing.duplicate
         && partialDispatchDecision?.route === "MODERN"
-        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "legacy_social_like" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate" || (partialDispatchDecision.handlerKey as string) === "home_badge_gacha_open" || (partialDispatchDecision.handlerKey as string) === "home_badge_cube")) {
+        && (partialDispatchDecision.handlerKey === "home_comment_action" || partialDispatchDecision.handlerKey === "home_like_action" || partialDispatchDecision.handlerKey === "legacy_social_like" || partialDispatchDecision.handlerKey === "home_profile_view" || partialDispatchDecision.handlerKey === "home_activity_alert_read" || partialDispatchDecision.handlerKey === "home_feed_mutate" || (partialDispatchDecision.handlerKey as string) === "home_badge_gacha_open" || (partialDispatchDecision.handlerKey as string) === "home_badge_cube" || (partialDispatchDecision.handlerKey as string) === "inventory_wallet_rng_open")) {
         const homeResponse = partialDispatchDecision.handlerKey === "home_like_action"
           ? await new HomeLikeIrisHandler(database).execute(normalizedEvent)
           : partialDispatchDecision.handlerKey === "legacy_social_like"
@@ -1633,12 +1640,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ? await new HomeBadgeGachaIrisHandler(database, (process.env.HOME_BADGE_GACHA_BROADCAST_IDS ?? "").split(",").map(value => value.trim()).filter(value => value !== "")).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_cube"
               ? await new HomeBadgeCubeIrisHandler(database, (process.env.HOME_BADGE_CUBE_BROADCAST_IDS ?? "").split(",").map(value => value.trim()).filter(value => value !== "")).execute(normalizedEvent)
+            : (partialDispatchDecision.handlerKey as string) === "inventory_wallet_rng_open"
+              ? await new InventoryWalletRngOpenIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_equip"
               ? await new HomeBadgeEquipIrisHandler(database).execute(normalizedEvent)
             : (partialDispatchDecision.handlerKey as string) === "home_badge_permanent_delete"
               ? await new HomeBadgePermanentDeleteIrisHandler(database).execute(normalizedEvent)
             : await new DailyCommentIrisHandler(database).execute(normalizedEvent);
-        processing.replies.push({ outboxId: homeResponse.outboxId, room: homeResponse.room, data: homeResponse.message });
+        if (homeResponse !== null) processing.replies.push({ outboxId: homeResponse.outboxId, room: homeResponse.room, data: homeResponse.message });
       }
       if (database !== undefined
         && eventProcessor !== undefined

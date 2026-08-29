@@ -1,0 +1,39 @@
+{
+  "sliceId": "SL-INVENTORY-WALLET-RNG-OPEN",
+  "executionId": "작업반장-SL-INVENTORY-WALLET-RNG-OPEN-20260830T030141",
+  "sourceContract": {
+    "version": "v2.400",
+    "commit": "a286279b",
+    "command": ["/지갑털기", "/지갑털기 [숫자]"],
+    "emptyWeight": 70000000,
+    "totalWeight": 100000000,
+    "payoutTiers": [
+      { "weight": 82000000, "amount": 10000000 },
+      { "weight": 14000000, "amount": 30000000 },
+      { "weight": 3500000, "amount": 50000000 },
+      { "weight": 400000, "amount": 100000000 },
+      { "weight": 90000, "amount": 300000000 },
+      { "weight": 10000, "amount": 1000000000 }
+    ]
+  },
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "validation": {
+    "focused": { "tests": 4, "passed": 4, "failed": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "fullRegression": { "tests": 1129, "passed": 1122, "failed": 0, "skipped": 7 },
+    "migration": { "count": 367, "firstApply": "PASS", "reapply": "PASS", "latest": "377_inventory_wallet_rng_open.sql" },
+    "mariaDb": {
+      "database": "hoibot_wallet_rng_001",
+      "port": 33457,
+      "scenarios": ["v2.400-config", "shadow-registry", "rollback", "deterministic-two-stage-rng", "inventory-currency-atomic", "same-event-concurrency", "ordered-batch-output", "restart-replay"],
+      "restartAdditionalMutation": false
+    }
+  },
+  "safety": {
+    "legacyFilesChanged": false,
+    "featureProdChanged": false,
+    "operationalDataTouched": false,
+    "rolloutState": "SHADOW"
+  }
+}
