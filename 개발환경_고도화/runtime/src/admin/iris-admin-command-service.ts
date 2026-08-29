@@ -56,6 +56,7 @@ import { GuildLegacyFundCleanupService, isGuildLegacyFundCleanupCommand } from "
 import { GuildTerritoryWarStateStartService, isGuildTerritoryWarStateStartCommand } from "../guild/guild-territory-war-state-start-service.js";
 import { GuildTerritoryWarReadyService, isGuildTerritoryWarReadyCommand } from "../guild/guild-territory-war-ready-service.js";
 import { GuildTerritoryOccupationResetService, isGuildTerritoryOccupationResetCommand } from "../guild/guild-territory-occupation-reset-service.js";
+import { GuildTerritoryWarFinishService, isGuildTerritoryWarFinishCommand } from "../guild/guild-territory-war-finish-service.js";
 import { GuildContributionCountResetService, isGuildContributionCountResetCommand } from "../guild/guild-contribution-count-reset-service.js";
 
 import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand } from "./admin-account-suspension-service.js";
@@ -147,6 +148,12 @@ export class IrisAdminCommandService {
     if (isGuildTerritoryWarStateStartCommand(input.message)) return new GuildTerritoryWarStateStartService(this.database).handleIris(input);
     if (isGuildTerritoryWarReadyCommand(input.message)) return new GuildTerritoryWarReadyService(this.database).handleIris(input);
     if (isGuildTerritoryOccupationResetCommand(input.message)) return new GuildTerritoryOccupationResetService(this.database).handleIris(input);
+    if (isGuildTerritoryWarFinishCommand(input.message)) {
+      const finish = await new GuildTerritoryWarFinishService(this.database).handleIris(input);
+      if (finish === null) return { status: "legacy_fallback" };
+      if (finish.status === "changed") return { status: "changed", data: finish.result.data, outboxId: finish.result.outboxId };
+      return finish;
+    }
     if (isGuildContributionCountResetCommand(input.message)) return new GuildContributionCountResetService(this.database).handleIris(input);
     if (isAdminAccountDeleteProgressCommand(input.message)) return new AdminAccountDeleteProgressService(this.database).handleIris(input);
     if (isAdminDormantRegistryCommand(input.message)) return new AdminDormantAccountRegistryService(this.database).handleIris(input);
