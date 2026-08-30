@@ -2,11 +2,11 @@
 
 - 작업 키: iteminfo-raid-definitions
 - 작업 이름: itemInfo 레이드 특수 아이템 9개 typed 정의
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 정리 후보 기준 커밋:
-- 체크포인트 버전: 3
-- 마지막 갱신: 2026-08-30 15:50 KST
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: `1c5889a3ef949b739609a8e64785c8eaf182981a`
+- 체크포인트 버전: 4
+- 마지막 갱신: 2026-08-30 15:58 KST
 - 대화 식별명: 펫무쌍 명령어 및 패스 수정
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -28,11 +28,11 @@
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\iteminfo-raid-definitions-v2400-20260830`
 - 브랜치: `codex/modernization-iteminfo-raid-definitions-v2400-20260830`
 - 원격 저장소: `https://github.com/ic-song/hoiBot.git`
-- 업스트림 브랜치: 미설정
-- 마지막 푸시 커밋: 없음
-- 원격 동기화 상태: baseline `bd2ee30458a122397894dbd66eaf7204fc243956`, 신규 파일 미커밋
-- 체크포인트 Git 추적: 아니요
-- 체크포인트 포함 푸시 커밋:
+- 업스트림 브랜치: `origin/codex/modernization-iteminfo-raid-definitions-v2400-20260830`
+- 마지막 푸시 커밋: `1c5889a3ef949b739609a8e64785c8eaf182981a`
+- 원격 동기화 상태: local/remote `1c5889a3ef949b739609a8e64785c8eaf182981a` 일치
+- 체크포인트 Git 추적: 예
+- 체크포인트 포함 푸시 커밋: `1c5889a3ef949b739609a8e64785c8eaf182981a`
 
 ## 완료된 작업
 
@@ -46,9 +46,7 @@
 
 ## 진행 중인 작업
 
-- 기존 Lease 2341은 `EXPIRED` 이력으로 보존됐다.
-- 복구 실행 ID `작업반장-SL-ASSET-ITEMINFO-RAID-DEFINITIONS-01-복구-202608301545`, Lease 2342가 2026-08-30 16:45:19 KST까지 단독 ACTIVE로 발급됐다.
-- 구현·검증은 완료됐으며 source branch 커밋·푸시와 WBS Gate 1~7 마감만 남았다.
+- 없음. 기존 Lease 2341은 `EXPIRED` 이력으로 보존됐고 복구 Lease 2342는 `RELEASED`다.
 
 ## 변경 파일
 
@@ -76,7 +74,7 @@
 
 ## 다음 행동
 
-1. 변경 파일과 체크포인트를 커밋·푸시한 뒤 WBS 604, DB 매핑, 검증, Lease 2342와 Gate7 보고를 마감한다.
+1. 없음. 후속 자산은 별도 WBS 605 Lease에서 진행한다.
 
 ## 보안
 
