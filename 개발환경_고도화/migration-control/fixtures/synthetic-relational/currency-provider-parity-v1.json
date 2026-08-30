@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-CURRENCY-PROVIDER-PARITY-01",
+  "executionId": "개발자-SL-CURRENCY-PROVIDER-PARITY-01-20260831T0515",
+  "baseline": "4b2b8687dcf3a2cb9bca6b5c8818045969ad967e",
+  "canonicalDefinitions": ["diamond", "guild_fund", "point"],
+  "providers": [
+    {
+      "providerId": "admin_generic_adjust",
+      "ownerScope": "PLAYER",
+      "canonicalCode": "point",
+      "accountTable": "currency_accounts",
+      "ledgerTable": "currency_ledger",
+      "unit": "integer",
+      "sourcePaths": ["currency/currency-service.ts", "admin/iris-admin-command-service.ts"],
+      "sourceTokens": ["currencyCode: \"point\"", "CURRENCY_VERSION_CONFLICT", "currency_ledger"],
+      "line": "admin_generic_adjust|PLAYER|point|currency_accounts|currency_ledger|integer"
+    },
+    {
+      "providerId": "admin_diamond_adjust",
+      "ownerScope": "PLAYER",
+      "canonicalCode": "diamond",
+      "accountTable": "currency_accounts",
+      "ledgerTable": "currency_ledger",
+      "unit": "integer",
+      "sourcePaths": ["admin/admin-diamond-edit-service.ts", "currency/currency-service.ts"],
+      "sourceTokens": ["currencyCode: \"diamond\"", "currency.admin_adjust", "currency_ledger"],
+      "line": "admin_diamond_adjust|PLAYER|diamond|currency_accounts|currency_ledger|integer"
+    },
+    {
+      "providerId": "admin_diamond_reset",
+      "ownerScope": "PLAYER",
+      "canonicalCode": "diamond",
+      "accountTable": "currency_accounts",
+      "ledgerTable": "currency_ledger",
+      "unit": "integer",
+      "sourcePaths": ["admin/admin-diamond-reset-all-service.ts"],
+      "sourceTokens": ["currency_code='diamond'", "ledgerPolicy: \"append_only\"", "CURRENCY_VERSION_CONFLICT"],
+      "line": "admin_diamond_reset|PLAYER|diamond|currency_accounts|currency_ledger|integer"
+    },
+    {
+      "providerId": "package_point",
+      "ownerScope": "PLAYER",
+      "canonicalCode": "point",
+      "accountTable": "currency_accounts",
+      "ledgerTable": "currency_ledger",
+      "unit": "integer",
+      "sourcePaths": ["package/domain-item-provider.ts"],
+      "sourceTokens": ["providerContext: \"PACKAGE_POINT\"", "packagePointCurrencyCode", "currency_ledger"],
+      "line": "package_point|PLAYER|point|currency_accounts|currency_ledger|integer"
+    },
+    {
+      "providerId": "wallet_rng_point_reward",
+      "ownerScope": "PLAYER",
+      "canonicalCode": "point",
+      "accountTable": "currency_accounts",
+      "ledgerTable": "currency_ledger",
+      "unit": "integer",
+      "sourcePaths": ["inventory/inventory-wallet-rng-open-service.ts"],
+      "sourceTokens": ["currency_code='point'", "INVENTORY_WALLET_RNG_OPEN_REWARD", "version=version+1"],
+      "line": "wallet_rng_point_reward|PLAYER|point|currency_accounts|currency_ledger|integer"
+    },
+    {
+      "providerId": "guild_warehouse_diamond",
+      "ownerScope": "GUILD",
+      "canonicalCode": "diamond",
+      "accountTable": "guild_resource_accounts",
+      "ledgerTable": "guild_resource_ledger",
+      "unit": "integer",
+      "sourcePaths": ["admin/admin-guild-warehouse-grant-service.ts"],
+      "sourceTokens": ["code: \"diamond\"", "GUILD_RESOURCE_VERSION_CONFLICT", "guild_resource_ledger"],
+      "line": "guild_warehouse_diamond|GUILD|diamond|guild_resource_accounts|guild_resource_ledger|integer"
+    },
+    {
+      "providerId": "guild_warehouse_fund",
+      "ownerScope": "GUILD",
+      "canonicalCode": "guild_fund",
+      "accountTable": "guild_resource_accounts",
+      "ledgerTable": "guild_resource_ledger",
+      "unit": "integer",
+      "sourcePaths": ["admin/admin-guild-warehouse-grant-service.ts"],
+      "sourceTokens": ["code: \"guild_fund\"", "GUILD_RESOURCE_VERSION_CONFLICT", "guild_resource_ledger"],
+      "line": "guild_warehouse_fund|GUILD|guild_fund|guild_resource_accounts|guild_resource_ledger|integer"
+    },
+    {
+      "providerId": "guild_territory_attack",
+      "ownerScope": "GUILD",
+      "canonicalCode": "guild_fund",
+      "accountTable": "guild_resource_accounts",
+      "ledgerTable": "guild_resource_ledger",
+      "unit": "integer",
+      "sourcePaths": ["guild/guild-territory-attack-service.ts"],
+      "sourceTokens": ["providerContext: \"GUILD_REWARD\"", "fundCurrencyCode", "guild_resource_ledger"],
+      "line": "guild_territory_attack|GUILD|guild_fund|guild_resource_accounts|guild_resource_ledger|integer"
+    },
+    {
+      "providerId": "guild_territory_finish",
+      "ownerScope": "GUILD",
+      "canonicalCode": "guild_fund",
+      "accountTable": "guild_resource_accounts",
+      "ledgerTable": "guild_resource_ledger",
+      "unit": "integer",
+      "sourcePaths": ["guild/guild-territory-war-finish-service.ts"],
+      "sourceTokens": ["providerContext:\"GUILD_REWARD\"", "canonicalCurrencyCode", "guild_resource_ledger"],
+      "line": "guild_territory_finish|GUILD|guild_fund|guild_resource_accounts|guild_resource_ledger|integer"
+    }
+  ],
+  "providerMatrixSha256": "56281e2674f678f1475aea5a8104ae700d8f1318459b637577fdfaa7edb0f518",
+  "requiredScenarios": ["normal", "not_found", "version_conflict", "replay", "idempotency", "transaction_rollback", "reconnect"],
+  "carryForwardTests": [
+    "admin-point-edit.test.ts",
+    "admin-diamond-edit.test.ts",
+    "admin-diamond-reset-all.test.ts",
+    "package-db-fixture.test.ts",
+    "inventory-wallet-rng-open.test.ts",
+    "admin-guild-warehouse-grant.test.ts",
+    "guild-territory-attack.test.ts",
+    "guild-territory-war-finish.test.ts"
+  ],
+  "invariants": {
+    "accountVersionRequired": true,
+    "ledgerAppendOnly": true,
+    "ledgerOperationSequenceRequired": true,
+    "effectiveUnit": "integer",
+    "rawUppercaseAccountWrites": 0,
+    "globalPointAlias": false,
+    "wrongAccountLedgerWrites": 0,
+    "providerChanges": 0,
+    "objectChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0
+  }
+}
