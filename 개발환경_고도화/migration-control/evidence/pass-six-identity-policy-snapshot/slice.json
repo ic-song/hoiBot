@@ -1,0 +1,59 @@
+{
+  "sliceId": "SL-PASS-SIX-IDENTITY-POLICY-SNAPSHOT-01",
+  "executionId": "개발자-SL-PASS-SIX-IDENTITY-POLICY-SNAPSHOT-01-20260831T0740",
+  "wbs": 663,
+  "dbRow": 1941,
+  "lease": 2409,
+  "baseline": "283207277f464a7c0788e29857755d14770b6ed9",
+  "policyVersion": "PASS-SIX-v1-cdfd62d5a8f38662",
+  "policySha256": "cdfd62d5a8f38662132a63dfa9dc90d6c43f9928500e604079e255e92cd4f8c9",
+  "scope": {
+    "semanticIdentities6": true,
+    "commandNames7": true,
+    "newbieAliases2": true,
+    "currentDefinitions3": true,
+    "rewardCardinalities": "contribution3/diamond1/hoi16/newbie13/oneday2/premium18",
+    "unified51PlusOneDay2": true,
+    "exactDuplicateOneDaySeed1": true,
+    "codeContracts": "hoi-support/newbie-beginner/premium-premium",
+    "oneDayExactlyOnceBoundary": "operation",
+    "calendarDaily": false,
+    "gaps0": true,
+    "duplicates1": true,
+    "conflicts0": true,
+    "providerChanges": 0,
+    "resolverChanges": 0,
+    "ownershipChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "runtimeChanges": 0,
+    "retirementChanges": 0,
+    "mainChanges": 0,
+    "uiChanges": 0,
+    "databaseWrites": 0
+  },
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "deterministicReplay": "PASS",
+    "sourceShadow": "PASS",
+    "fullRegression": "PASS",
+    "mariaRequired": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "carryForward": {
+    "wbs656Freeze": true
+  },
+  "valRangeReserved": "10544:10551",
+  "sheetsEdited": false
+}
