@@ -1,0 +1,49 @@
+{
+  "sliceId": "SL-ASSET-HOME-BUILDING-DEFINITION-CATALOG-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-home-building-01",
+  "baseline": "8b4d33bb0ac3004cce628d462b61151229c88112",
+  "wbs": 620,
+  "dbMapping": 1898,
+  "lease": 2369,
+  "execution": "개발자-SL-ASSET-HOME-BUILDING-DEFINITION-CATALOG-01-20260831T0017",
+  "source": {
+    "file": "data/petSweetHomeInfo.json#homeInfo",
+    "rows": 300,
+    "rawHash": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+    "canonicalDefinitions": 299,
+    "progressionRows": 300,
+    "sourceBindings": 300,
+    "floor190": "2 rows / 2 definitions",
+    "floor263": "2 exact duplicate rows / 1 shared definition"
+  },
+  "migration": {
+    "candidate": "395_home_building_definition_catalog.sql",
+    "rollback": "migration-control/rollback/395_home_building_definition_catalog.sql",
+    "idempotent": true,
+    "carryForward": [
+      "393_object_catalog_home_building_type_extension.sql",
+      "394_home_building_recipe_item_gap.sql"
+    ],
+    "newRecipeItemDefinitions": 0
+  },
+  "preserved": {
+    "playerHomes": true,
+    "furniture": true,
+    "placement": true,
+    "inventoryAndLedger": true,
+    "legacyMainJsAndData": true,
+    "featureProd": true,
+    "operationalDatabase": true
+  },
+  "validation": {
+    "focusedScenarios": 7,
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration395ParityRollbackReapplyReconnect": "required",
+    "shadow": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}
