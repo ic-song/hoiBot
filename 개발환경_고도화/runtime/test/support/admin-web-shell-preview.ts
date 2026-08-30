@@ -5,6 +5,7 @@ import {
   syntheticAdminAudit,
   syntheticAdminOverview,
   syntheticAdminPlayer,
+  syntheticAdminRestrictions,
   syntheticAdminSession,
   syntheticMonitoringEvent
 } from "../fixtures/admin-web-shell.js";
@@ -12,15 +13,85 @@ import {
 // 운영 데이터 없이 관리자 웹 셸을 검수할 합성 API 서버를 구성합니다.
 export async function buildSyntheticAdminWebShellApp() {
   const app = Fastify({ logger: false });
+  let loggedIn = false;
+  let nextRestrictionId = 62000;
+  let nextAuditId = 82000;
+  const restrictions: Array<Record<string, unknown>> = syntheticAdminRestrictions.map((restriction) => ({ ...restriction }));
+  const replays = new Map<string, Record<string, unknown>>();
+
+  // 합성 변경 요청의 인증·권한·CSRF 공통 계약을 검증합니다.
+  function authorizeMutation(request: { headers: Record<string, string | string[] | undefined> }, reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }) {
+    if (!loggedIn) return reply.code(401).send({ ok: false, error: { code: "AUTH_REQUIRED", message: "로그인이 필요합니다." } });
+    if (request.headers["x-synthetic-permission"] === "deny") return reply.code(403).send({ ok: false, error: { code: "PERMISSION_DENIED", message: "account.restrict 권한이 필요합니다." } });
+    if (request.headers["x-csrf-token"] !== "synthetic-csrf-token") return reply.code(403).send({ ok: false, error: { code: "CSRF_INVALID", message: "CSRF 토큰이 올바르지 않습니다." } });
+    if (typeof request.headers["idempotency-key"] !== "string" || request.headers["idempotency-key"].trim() === "") return reply.code(422).send({ ok: false, error: { code: "IDEMPOTENCY_KEY_REQUIRED", message: "Idempotency-Key가 필요합니다." } });
+    return undefined;
+  }
+
+  // 합성 변경 본문에 공통 사유와 확인 값이 있는지 검증합니다.
+  function validateMutationBody(body: { reason?: unknown; confirmed?: unknown }, reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }) {
+    if (typeof body.reason !== "string" || body.reason.trim() === "") return reply.code(422).send({ ok: false, error: { code: "REASON_REQUIRED", message: "조치 사유가 필요합니다." } });
+    if (body.confirmed !== true) return reply.code(422).send({ ok: false, error: { code: "CONFIRMATION_REQUIRED", message: "명시적 확인이 필요합니다." } });
+    return undefined;
+  }
+
   await registerAdminWebShellRoutes(app);
-  app.post("/api/v1/admin/sessions", async () => ({ ok: true, session: syntheticAdminSession, csrfToken: "synthetic-csrf-token" }));
-  app.get("/api/v1/admin/sessions/current", async () => ({ ok: true, session: syntheticAdminSession, requestId: "synthetic-session" }));
-  app.delete("/api/v1/admin/sessions/current", async (_request, reply) => reply.code(204).send());
+  app.post("/api/v1/admin/sessions", async () => {
+    loggedIn = true;
+    return { ok: true, session: syntheticAdminSession, csrfToken: "synthetic-csrf-token" };
+  });
+  app.get("/api/v1/admin/sessions/current", async (_request, reply) => loggedIn
+    ? { ok: true, session: syntheticAdminSession, requestId: "synthetic-session" }
+    : reply.code(401).send({ ok: false, error: { code: "AUTH_REQUIRED", message: "로그인이 필요합니다." }, requestId: "synthetic-session" }));
+  app.delete("/api/v1/admin/sessions/current", async (request, reply) => {
+    if (request.headers["x-csrf-token"] !== "synthetic-csrf-token") return reply.code(403).send({ ok: false, error: { code: "CSRF_INVALID", message: "CSRF 토큰이 올바르지 않습니다." } });
+    loggedIn = false;
+    return reply.code(204).send();
+  });
   app.get("/api/v1/admin/overview", async () => ({ ok: true, overview: syntheticAdminOverview, requestId: "synthetic-overview" }));
   app.get("/api/v1/admin/players", async () => ({ ok: true, items: [syntheticAdminPlayer], page: 1, limit: 25, total: 1, requestId: "synthetic-players" }));
   app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId", async (request, reply) => request.params.playerId === syntheticAdminPlayer.playerId
-    ? { ok: true, player: syntheticAdminPlayer, requestId: "synthetic-player" }
+    ? { ok: true, player: { ...syntheticAdminPlayer, restrictions }, requestId: "synthetic-player" }
     : reply.code(404).send({ ok: false, error: { code: "PLAYER_NOT_FOUND", message: "합성 회원을 찾을 수 없습니다." }, requestId: "synthetic-player" }));
+  app.post<{ Params: { playerId: string }; Body: { restrictionType?: unknown; endsAt?: unknown; reason?: unknown; confirmed?: unknown } }>("/api/v1/admin/players/:playerId/restrictions", async (request, reply) => {
+    const authorization = authorizeMutation(request, reply);
+    if (authorization !== undefined) return authorization;
+    const invalidBody = validateMutationBody(request.body ?? {}, reply);
+    if (invalidBody !== undefined) return invalidBody;
+    if (request.params.playerId !== syntheticAdminPlayer.playerId) return reply.code(404).send({ ok: false, error: { code: "PLAYER_NOT_FOUND", message: "합성 회원을 찾을 수 없습니다." } });
+    if (request.body.restrictionType !== "temporary_suspension" && request.body.restrictionType !== "permanent_suspension") return reply.code(422).send({ ok: false, error: { code: "INVALID_RESTRICTION_TYPE", message: "제재 유형이 올바르지 않습니다." } });
+    if (request.body.restrictionType === "temporary_suspension" && typeof request.body.endsAt !== "string") return reply.code(422).send({ ok: false, error: { code: "RESTRICTION_END_REQUIRED", message: "기간 정지는 종료 시각이 필요합니다." } });
+    const replayKey = "create:" + request.headers["idempotency-key"];
+    const replay = replays.get(replayKey);
+    if (replay !== undefined) return { ok: true, ...replay, requestId: "synthetic-replay" };
+    if (request.headers["x-synthetic-audit-failure"] === "true") return reply.code(500).send({ ok: false, error: { code: "SYNTHETIC_AUDIT_FAILURE", message: "command_audit 합성 실패" } });
+    const restriction = {
+      id: String(nextRestrictionId++), restrictionType: request.body.restrictionType, status: "active",
+      reason: request.body.reason as string, startsAt: new Date().toISOString(),
+      endsAt: request.body.restrictionType === "temporary_suspension" ? request.body.endsAt as string : null
+    };
+    restrictions.unshift(restriction);
+    const result = { restrictionId: restriction.id, playerId: request.params.playerId, restrictionType: restriction.restrictionType, endsAt: restriction.endsAt, auditId: String(nextAuditId++) };
+    replays.set(replayKey, result);
+    return reply.code(201).send({ ok: true, ...result, requestId: "synthetic-create" });
+  });
+  app.patch<{ Params: { restrictionId: string }; Body: { status?: unknown; reason?: unknown; confirmed?: unknown } }>("/api/v1/admin/restrictions/:restrictionId", async (request, reply) => {
+    const authorization = authorizeMutation(request, reply);
+    if (authorization !== undefined) return authorization;
+    const invalidBody = validateMutationBody(request.body ?? {}, reply);
+    if (invalidBody !== undefined) return invalidBody;
+    if (request.body.status !== "revoked") return reply.code(422).send({ ok: false, error: { code: "INVALID_RESTRICTION_STATUS", message: "제재 상태가 올바르지 않습니다." } });
+    const replayKey = "revoke:" + request.headers["idempotency-key"];
+    const replay = replays.get(replayKey);
+    if (replay !== undefined) return { ok: true, ...replay, requestId: "synthetic-replay" };
+    const restriction = restrictions.find((candidate) => candidate.id === request.params.restrictionId && candidate.status === "active");
+    if (restriction === undefined) return reply.code(404).send({ ok: false, error: { code: "RESTRICTION_NOT_FOUND", message: "활성 제재를 찾을 수 없습니다." } });
+    if (request.headers["x-synthetic-audit-failure"] === "true") return reply.code(500).send({ ok: false, error: { code: "SYNTHETIC_AUDIT_FAILURE", message: "command_audit 합성 실패" } });
+    restriction.status = "revoked";
+    const result = { restrictionId: request.params.restrictionId, playerId: syntheticAdminPlayer.playerId, status: "revoked", auditId: String(nextAuditId++) };
+    replays.set(replayKey, result);
+    return { ok: true, ...result, requestId: "synthetic-revoke" };
+  });
   app.get("/api/v1/admin/audit-entries", async () => ({ ok: true, items: [syntheticAdminAudit], page: 1, limit: 25, total: 1, requestId: "synthetic-audit" }));
   app.get("/api/v1/admin/channel-activity", async () => ({ ok: true, items: [{
     channelId: "3001", externalChannelId: "synthetic-channel", externalIdentityId: "2001",

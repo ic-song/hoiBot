@@ -7,6 +7,7 @@ import {
   syntheticAdminAudit,
   syntheticAdminOverview,
   syntheticAdminPlayer,
+  syntheticAdminRestrictions,
   syntheticAdminSession,
   syntheticMonitoringEvent
 } from "./fixtures/admin-web-shell.js";
@@ -49,12 +50,13 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
   });
 
-  it("connects only the approved read APIs plus session lifecycle", () => {
+  it("connects the approved read APIs, session lifecycle, and account restriction mutations", () => {
     for (const path of [
       "/api/v1/admin/sessions",
       "/api/v1/admin/sessions/current",
       "/api/v1/admin/overview",
       "/api/v1/admin/players",
+      "/api/v1/admin/restrictions",
       "/api/v1/admin/audit-entries",
       "/api/v1/admin/channel-activity",
       "/api/v1/admin/moderation-incidents",
@@ -62,28 +64,32 @@ describe("admin web shell", () => {
       "/api/v1/admin/delivery-failures"
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
-    for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
+    for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
       assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
     }
-    assert.equal((ADMIN_WEB_CLIENT.match(/method: "POST"/g) ?? []).length, 1);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length, 2);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
-    assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"|method: "PATCH"/);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 1);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
   });
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read"
+      "overview.read", "player.read", "account.restrict", "audit.read", "activity.read", "incident.read", "monitoring.read"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");
     assert.equal(syntheticAdminPlayer.currencies.diamond, "350");
     assert.equal(syntheticAdminAudit.resultCode, "success");
     assert.equal(syntheticMonitoringEvent.monitoringGroup, "media");
+    assert.equal(syntheticAdminRestrictions[0].status, "active");
   });
 
   it("serves every approved view from synthetic APIs without a database", async () => {
     const app = await buildSyntheticAdminWebShellApp();
     try {
+      const login = await app.inject({ method: "POST", url: "/api/v1/admin/sessions", payload: { loginId: "shadow.manager", password: "synthetic" } });
+      assert.equal(login.statusCode, 200);
       const responses = await Promise.all([
         app.inject({ method: "GET", url: "/api/v1/admin/sessions/current" }),
         app.inject({ method: "GET", url: "/api/v1/admin/overview" }),
@@ -98,6 +104,7 @@ describe("admin web shell", () => {
       assert.ok(responses.every((response) => response.statusCode === 200));
       assert.equal(responses[2]?.json().total, 1);
       assert.equal(responses[3]?.json().player.displayName, "합성회원");
+      assert.equal(responses[3]?.json().player.restrictions.length, 2);
       assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
     } finally {
       await app.close();

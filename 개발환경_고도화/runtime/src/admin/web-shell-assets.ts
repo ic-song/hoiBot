@@ -20,13 +20,13 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
         <span class="brand-mark" aria-hidden="true">H</span>
         <span>hoiBot Operations</span>
       </div>
-      <p class="eyebrow">READ-ONLY CONTROL SURFACE</p>
-      <h1 id="login-title">운영 판단에 필요한 정보만<br>한 화면에서 확인하세요.</h1>
-      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 권한 범위 안에서 조회합니다. 이 화면에서는 데이터 변경 작업을 제공하지 않습니다.</p>
+      <p class="eyebrow">PERMISSIONED CONTROL SURFACE</p>
+      <h1 id="login-title">운영 판단과 계정 조치를<br>한 흐름에서 처리하세요.</h1>
+      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 조회하고, 허용된 운영자는 사유와 확인 절차를 거쳐 계정 정지·해제를 처리합니다.</p>
       <dl class="login-principles">
         <div><dt>권한 우선</dt><dd>허용된 메뉴만 표시</dd></div>
-        <div><dt>조회 전용</dt><dd>조치 기능은 별도 승인</dd></div>
-        <div><dt>기록 기반</dt><dd>요청 ID와 오류를 보존</dd></div>
+        <div><dt>변경 통제</dt><dd>사유·재확인·멱등 처리</dd></div>
+        <div><dt>감사 기반</dt><dd>조치와 요청 ID를 보존</dd></div>
       </dl>
     </section>
     <section class="login-panel" aria-label="관리자 로그인">
@@ -56,7 +56,7 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
       <div id="operator-summary" class="operator-summary"></div>
       <nav id="primary-nav" class="primary-nav"></nav>
       <div class="sidebar-foot">
-        <span class="read-only-indicator"><i aria-hidden="true"></i> 조회 전용 모드</span>
+        <span class="read-only-indicator"><i aria-hidden="true"></i> 권한 통제 모드</span>
         <span>Gate 8 전환 전</span>
       </div>
     </aside>
@@ -108,7 +108,7 @@ export const ADMIN_WEB_STYLES = String.raw`
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
 body { margin: 0; background: var(--canvas); color: var(--ink); }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 
@@ -150,11 +150,12 @@ button { cursor: pointer; }
 .login-panel-heading > p:last-child { color: var(--muted); margin: 10px 0 34px; }
 .login-panel form { display: grid; gap: 10px; }
 .login-panel label { margin-top: 10px; font-size: 13px; font-weight: 700; }
-input, select {
+input, select, textarea {
   width: 100%; min-height: 46px; padding: 11px 13px; color: var(--ink); background: #fff;
   border: 1px solid #cbd3dc; border-radius: 7px; outline: none;
 }
-input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,118,109,.14); }
+textarea { min-height: 76px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,118,109,.14); }
 .form-error { margin: 7px 0 0; padding: 10px 12px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 13px; }
 .primary-button, .secondary-button, .text-button, .icon-button {
   min-height: 40px; border-radius: 7px; border: 1px solid transparent; font-weight: 700;
@@ -260,6 +261,30 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 .key-value-list div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 9px; background: #f7f9fa; font-size: 11px; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
 .tag { padding: 4px 7px; background: var(--accent-soft); color: var(--accent-dark); border-radius: 4px; font-size: 10px; font-weight: 700; }
+.account-actions { margin: 20px -16px -16px; padding: 18px 16px; border-top: 1px solid var(--line); background: #fbfcfd; }
+.account-actions > h4 { margin: 0; font-size: 13px; }
+.account-actions > p { margin: 6px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.restriction-list { display: grid; gap: 8px; margin-bottom: 16px; }
+.restriction-card { padding: 11px; background: #fff; border: 1px solid var(--line); border-left: 3px solid #9aa6b2; }
+.restriction-card.active { border-left-color: var(--danger); }
+.restriction-heading { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.restriction-heading > div { display: flex; align-items: center; gap: 5px; }
+.restriction-heading strong { font-size: 11px; }
+.restriction-heading span { font-size: 10px; }
+.restriction-meta { display: flex; flex-wrap: wrap; gap: 3px 10px; margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.account-action-form { display: grid; gap: 9px; padding: 12px; background: #fff; border: 1px solid var(--line); }
+.account-action-form + .account-action-form { margin-top: 8px; }
+.account-action-form h5 { margin: 0 0 3px; font-size: 11px; }
+.account-action-form label:not(.confirm-row) { color: var(--muted); font-size: 10px; font-weight: 700; }
+.account-action-form input, .account-action-form select, .account-action-form textarea { min-height: 40px; font-size: 11px; }
+.account-action-form textarea { min-height: 64px; }
+.confirm-row { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 10px; line-height: 1.45; }
+.confirm-row input { width: 16px; min-height: 16px; margin: 0; accent-color: var(--danger); }
+.danger-button { min-height: 40px; padding: 0 14px; color: #fff; background: var(--danger); border: 1px solid var(--danger); border-radius: 7px; font-weight: 800; }
+.danger-button:hover { background: #922f28; }
+.danger-button:disabled { opacity: .58; cursor: wait; }
+.inline-error { margin: 0; padding: 8px 10px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 10px; }
+.action-gap-note { margin: 10px 0 0; padding: 9px 10px; color: var(--warning); background: #fff8e8; border-left: 3px solid #d49a25; font-size: 10px; line-height: 1.5; }
 
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
@@ -322,7 +347,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     activeView: "dashboard",
     refresh: null,
     playerSearch: "",
-    monitoringTab: "events"
+    monitoringTab: "events",
+    mutationKeys: {}
   };
 
   var NAV_ITEMS = [
@@ -400,6 +426,33 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       if (response.status === 401 && path !== "/api/v1/admin/sessions") showLogin("세션이 만료됐습니다. 다시 로그인해 주세요.");
       throw error;
     }
+    return payload;
+  }
+
+  // 같은 조치 입력을 재시도할 때 재사용할 idempotency key를 반환합니다.
+  function mutationKey(scope) {
+    if (!state.mutationKeys[scope]) {
+      state.mutationKeys[scope] = window.crypto && typeof window.crypto.randomUUID === "function"
+        ? window.crypto.randomUUID()
+        : "admin-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+    }
+    return state.mutationKeys[scope];
+  }
+
+  // 성공한 조치 입력의 idempotency key를 폐기합니다.
+  function clearMutationKey(scope) {
+    delete state.mutationKeys[scope];
+  }
+
+  // CSRF와 idempotency 계약을 포함해 계정 조치 API를 호출합니다.
+  async function mutateAccount(path, method, body, scope) {
+    if (!state.csrfToken) throw new Error("CSRF 토큰이 없습니다. 다시 로그인해 주세요.");
+    var payload = await api(path, {
+      method: method,
+      headers: { "x-csrf-token": state.csrfToken, "idempotency-key": mutationKey(scope) },
+      body: JSON.stringify(body)
+    });
+    clearMutationKey(scope);
     return payload;
   }
 
@@ -624,7 +677,114 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     }).join("") + "</div>";
   }
 
-  // 선택한 회원의 프로필을 편집 기능 없이 표시합니다.
+  // 제재 유형을 운영자용 한국어 문구로 표시합니다.
+  function restrictionTypeLabel(type) {
+    return type === "temporary_suspension" ? "기간 정지" : "영구 정지";
+  }
+
+  // 제재 상태를 운영자용 한국어 문구로 표시합니다.
+  function restrictionStatusLabel(status) {
+    if (status === "active") return "적용 중";
+    if (status === "revoked") return "해제됨";
+    return status === "expired" ? "만료됨" : status;
+  }
+
+  // 회원 상세에 현재와 과거 계정 제재를 표시합니다.
+  function renderRestrictions(restrictions) {
+    if (!restrictions || !restrictions.length) return emptyState("계정 제재 이력이 없습니다.", "필요한 경우 아래에서 새 조치를 등록할 수 있습니다.");
+    return "<div class=\"restriction-list\">" + restrictions.map(function (restriction) {
+      return "<article class=\"restriction-card " + escapeHtml(restriction.status) + "\"><div class=\"restriction-heading\"><div><strong>" + escapeHtml(restrictionTypeLabel(restriction.restrictionType)) + "</strong><span class=\"mono\">#" + escapeHtml(restriction.id) + "</span></div>" +
+        "<span class=\"status-pill\">" + escapeHtml(restrictionStatusLabel(restriction.status)) + "</span></div>" +
+        "<p>" + escapeHtml(restriction.reason) + "</p><div class=\"restriction-meta\"><span>시작 " + escapeHtml(formatDate(restriction.startsAt)) + "</span><span>종료 " + escapeHtml(formatDate(restriction.endsAt)) + "</span></div>" +
+        (restriction.status === "active" && hasPermission("account.restrict")
+          ? "<form class=\"account-action-form\" data-revoke-id=\"" + escapeHtml(restriction.id) + "\"><label>해제 사유<textarea name=\"reason\" rows=\"2\" required placeholder=\"해제가 필요한 운영 근거를 입력하세요.\"></textarea></label><label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 이 계정 제재를 해제합니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"danger-button\" type=\"submit\">제재 해제</button></form>"
+          : "") + "</article>";
+    }).join("") + "</div>";
+  }
+
+  // account.restrict 권한이 있는 운영자에게 새 계정 조치 폼을 표시합니다.
+  function renderAccountActions(player) {
+    if (!hasPermission("account.restrict")) return "";
+    return "<section class=\"detail-section account-actions\"><h4>계정 조치</h4><p class=\"action-gap-note\">이 조치는 감사 기록에 남지만 별도 알림은 발송하지 않습니다.</p>" +
+      "<form id=\"restriction-create-form\" class=\"account-action-form\"><label>조치 유형<select name=\"restrictionType\"><option value=\"temporary_suspension\">기간 정지</option><option value=\"permanent_suspension\">영구 정지</option></select></label>" +
+      "<label data-ends-at-field>종료 시각<input type=\"datetime-local\" name=\"endsAt\" required></label><label>조치 사유<textarea name=\"reason\" rows=\"3\" required placeholder=\"정지가 필요한 운영 근거를 입력하세요.\"></textarea></label>" +
+      "<label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 회원 계정 상태와 세션에 영향을 주는 조치임을 확인했습니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"danger-button\" type=\"submit\">계정 정지 적용</button></form></section>" +
+      "<section class=\"detail-section\"><h4>계정 제재 이력</h4>" + renderRestrictions(player.restrictions) + "</section>";
+  }
+
+  // 계정 조치 폼의 오류 문구와 제출 상태를 갱신합니다.
+  function setActionState(form, error, submitting) {
+    var errorNode = form.querySelector("[data-action-error]");
+    var button = form.querySelector("button[type=submit]");
+    errorNode.hidden = !error;
+    errorNode.textContent = error || "";
+    button.disabled = submitting;
+    button.textContent = submitting ? "처리 중..." : button.dataset.label;
+  }
+
+  // 회원 상세의 신규 정지와 기존 제재 해제 폼을 API에 연결합니다.
+  function attachAccountActions(player) {
+    var createForm = byId("restriction-create-form");
+    if (createForm) {
+      var type = createForm.elements.restrictionType;
+      var endsAtField = createForm.querySelector("[data-ends-at-field]");
+      var endsAt = createForm.elements.endsAt;
+      var syncEndsAt = function () {
+        var temporary = type.value === "temporary_suspension";
+        endsAtField.hidden = !temporary;
+        endsAt.required = temporary;
+      };
+      type.addEventListener("change", syncEndsAt);
+      syncEndsAt();
+      createForm.querySelector("button[type=submit]").dataset.label = "계정 정지 적용";
+      createForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(createForm);
+        var restrictionType = data.get("restrictionType").toString();
+        var reason = data.get("reason").toString().trim();
+        var rawEndsAt = data.get("endsAt").toString();
+        if (!reason || !data.get("confirmed") || (restrictionType === "temporary_suspension" && !rawEndsAt)) {
+          setActionState(createForm, "조치 유형, 사유, 확인 항목을 모두 입력해 주세요.", false);
+          return;
+        }
+        var body = { restrictionType: restrictionType, reason: reason, confirmed: true };
+        if (restrictionType === "temporary_suspension") body.endsAt = new Date(rawEndsAt).toISOString();
+        var scope = "restriction.create:" + player.playerId + ":" + restrictionType + ":" + (body.endsAt || "permanent") + ":" + reason;
+        setActionState(createForm, "", true);
+        try {
+          await mutateAccount("/api/v1/admin/players/" + encodeURIComponent(player.playerId) + "/restrictions", "POST", body, scope);
+          showToast(restrictionTypeLabel(restrictionType) + " 조치를 적용했습니다.");
+          await loadPlayerDetail(player.playerId);
+        } catch (error) {
+          setActionState(createForm, errorMessage(error), false);
+        }
+      });
+    }
+    document.querySelectorAll("[data-revoke-id]").forEach(function (form) {
+      form.querySelector("button[type=submit]").dataset.label = "제재 해제";
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        var reason = data.get("reason").toString().trim();
+        if (!reason || !data.get("confirmed")) {
+          setActionState(form, "해제 사유와 확인 항목을 입력해 주세요.", false);
+          return;
+        }
+        var restrictionId = form.dataset.revokeId;
+        var scope = "restriction.revoke:" + restrictionId + ":" + reason;
+        setActionState(form, "", true);
+        try {
+          await mutateAccount("/api/v1/admin/restrictions/" + encodeURIComponent(restrictionId), "PATCH", { status: "revoked", reason: reason, confirmed: true }, scope);
+          showToast("계정 제재를 해제했습니다.");
+          await loadPlayerDetail(player.playerId);
+        } catch (error) {
+          setActionState(form, errorMessage(error), false);
+        }
+      });
+    });
+  }
+
+  // 선택한 회원의 프로필과 권한별 계정 조치 화면을 표시합니다.
   async function loadPlayerDetail(playerId) {
     var detail = byId("player-detail");
     detail.innerHTML = loadingState("회원 상세를 불러오는 중");
@@ -638,7 +798,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         "<div><dt>펫</dt><dd>" + escapeHtml(player.pet && player.pet.name ? player.pet.name : "-") + "</dd></div><div><dt>홈</dt><dd>" + escapeHtml(player.home && player.home.name ? player.home.name : "-") + "</dd></div></dl>" +
         "<section class=\"detail-section\"><h4>재화 현황</h4>" + keyValueRows(player.currencies) + "</section>" +
         "<section class=\"detail-section\"><h4>주요 카운터</h4>" + keyValueRows(player.counters) + "</section>" +
-        "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section></div>";
+        "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section>" + renderAccountActions(player) + "</div>";
+      attachAccountActions(player);
     } catch (error) {
       detail.innerHTML = errorState(error, "players");
       attachRetry(detail);
