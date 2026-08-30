@@ -1,0 +1,32 @@
+{
+  "sliceId": "SL-COMMON-OBJECT-CATALOG-MINI-PET-TYPE-EXTENSION-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-mini-pet-type-01",
+  "baseline": "28e8ae320704e24a5ff8a285388a89f114b8f67c",
+  "wbs": 623,
+  "dbMapping": 1901,
+  "lease": 2371,
+  "execution": "개발자-SL-COMMON-OBJECT-CATALOG-MINI-PET-TYPE-EXTENSION-01-20260831T0049",
+  "migration": "396_object_catalog_mini_pet_type_extension.sql",
+  "scope": {
+    "addedObjectType": "MINI_PET",
+    "existingTypesPreserved": 9,
+    "runtimeObjectTypeCount": 10,
+    "definitionBackfillIncluded": false,
+    "registryLinkIncluded": false,
+    "providerOrAdminUiIncluded": false,
+    "ownershipOrLedgerIncluded": false,
+    "packageIncluded": false,
+    "legacyIncluded": false
+  },
+  "validation": {
+    "focusedObjectCatalog": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration396ParityRollbackReapplyReconnect": "required",
+    "shadow": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}

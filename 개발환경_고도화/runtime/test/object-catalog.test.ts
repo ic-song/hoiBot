@@ -74,9 +74,9 @@ function scriptedDatabase(queryResults: unknown[], insertIds: bigint[] = [1n]) {
 }
 
 describe("common object catalog", () => {
-  it("accepts all nine definition types behind immutable object keys", async () => {
+  it("accepts all ten definition types behind immutable object keys", async () => {
     const service = new ObjectCatalogService(memoryRepository());
-    for (const objectType of ["ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING"] as const) {
+    for (const objectType of ["ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING", "MINI_PET"] as const) {
       const result = await service.register({
         operationId: "register:" + objectType,
         objectKey: objectType.toLowerCase() + ".test",

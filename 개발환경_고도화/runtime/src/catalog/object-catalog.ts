@@ -1,5 +1,5 @@
 export const OBJECT_TYPES = [
-  "ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING"
+  "ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING", "MINI_PET"
 ] as const;
 
 export type ObjectType = typeof OBJECT_TYPES[number];
