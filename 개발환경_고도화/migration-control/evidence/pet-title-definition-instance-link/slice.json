@@ -1,0 +1,18 @@
+{
+  "lease": 2396,
+  "wbs": 650,
+  "dbRow": 1928,
+  "sliceId": "SL-PET-TITLE-DEFINITION-INSTANCE-LINK-01",
+  "executionId": "개발자-SL-PET-TITLE-DEFINITION-INSTANCE-LINK-01-20260831T0525",
+  "baseline": "7005e4da1354caef7c0ffc2cc8699c8ad978f0fa",
+  "migration": 404,
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "scope": {
+    "staticPetDefinitionsSeeded": 0,
+    "sourceScopes": ["PET_ADMIN_CUSTOM", "PET_USER_CUSTOM"],
+    "legacyTitleKeyChanged": false,
+    "sameDisplayMerge": 0,
+    "miniGuildObjectLinks": 0
+  },
+  "validation": ["focused", "typecheck", "build", "fresh-mariadb-full", "rollback", "reapply", "reconnect", "full-regression", "shadow"]
+}

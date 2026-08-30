@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import type { PetTitleDefinitionLinkProvider } from "./pet-title-definition-link.js";
 
 const ALL_SEE = "\u200b".repeat(500);
 const TITLE_TICKET_NAME = "펫타이틀권🦊(/펫타이틀이름)";
@@ -26,6 +27,8 @@ export interface PetTitleListRow {
   priceDigits: string;
   acquiredAt: Date | string;
   equipped: boolean | number;
+  legacyTitleDefinitionId?: bigint | null;
+  version?: bigint;
 }
 
 interface ActorRow {
@@ -103,7 +106,7 @@ function commandCode(command: PetTitleCommand): string {
 
 // 사용자·운영자 펫 타이틀 조회와 생성·선택·제거를 하나의 원자 생명주기로 처리합니다.
 export class PetTitleLifecycleService {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: DatabaseClient, private readonly titleDefinitions?: PetTitleDefinitionLinkProvider) {}
 
   async handle(input: { eventId: string; externalUserId: string; destinationId: string; message: string }): Promise<PetTitleLifecycleResult> {
     const command = parsePetTitleCommand(input.message);
@@ -195,11 +198,19 @@ export class PetTitleLifecycleService {
         const order = await transaction.query<Array<{ last_order: bigint }>>(
           "SELECT COALESCE(MAX(display_order),0) AS last_order FROM player_pet_title_instances WHERE player_id=? FOR UPDATE", [actor.player_id],
         );
-        const inserted = await transaction.execute(
-          `INSERT INTO player_pet_title_instances(instance_key,player_id,title_key,display_name,price_digits,display_order,acquired_at,equipped,status,version)
-           VALUES (?,?,?,?,?,?,UTC_TIMESTAMP(3),FALSE,'owned',1)`,
-          [randomUUID(), actor.player_id, `PET_TITLE_${createHash("sha256").update(command.titleName).digest("hex")}`, command.titleName, "100000000", (order[0]?.last_order ?? 0n) + 1n],
-        );
+        const legacyTitleKey = `PET_TITLE_${createHash("sha256").update(command.titleName).digest("hex")}`;
+        const definition = await this.titleDefinitions?.ensureUserCustom(transaction, command.titleName);
+        const inserted = definition === undefined
+          ? await transaction.execute(
+            `INSERT INTO player_pet_title_instances(instance_key,player_id,title_key,display_name,price_digits,display_order,acquired_at,equipped,status,version)
+             VALUES (?,?,?,?,?,?,UTC_TIMESTAMP(3),FALSE,'owned',1)`,
+            [randomUUID(), actor.player_id, legacyTitleKey, command.titleName, "100000000", (order[0]?.last_order ?? 0n) + 1n],
+          )
+          : await transaction.execute(
+            `INSERT INTO player_pet_title_instances(instance_key,player_id,title_key,legacy_title_definition_id,title_catalog_entry_id,display_name,price_digits,display_order,acquired_at,equipped,status,version)
+             VALUES (?,?,?,?,?,?,?,?,UTC_TIMESTAMP(3),FALSE,'owned',1)`,
+            [randomUUID(), actor.player_id, legacyTitleKey, definition.titleId, definition.catalogEntryId, command.titleName, "100000000", (order[0]?.last_order ?? 0n) + 1n],
+          );
         instanceId = inserted.insertId;
         const updated = await transaction.execute(
           "UPDATE inventory_stacks SET quantity=quantity-1,version=version+1 WHERE player_id=? AND item_id=? AND version=? AND quantity>0",
@@ -219,11 +230,29 @@ export class PetTitleLifecycleService {
         instanceId = selected.instanceId;
         if (command.kind === "select") {
           await transaction.execute("UPDATE player_pet_title_instances SET equipped=FALSE,version=version+1 WHERE player_id=? AND status='owned' AND equipped=TRUE", [actor.player_id]);
-          await transaction.execute("UPDATE player_pet_title_instances SET equipped=TRUE,version=version+1 WHERE id=? AND player_id=? AND status='owned'", [selected.instanceId, actor.player_id]);
+          const selectedUpdate = await transaction.execute("UPDATE player_pet_title_instances SET equipped=TRUE,version=version+1 WHERE id=? AND player_id=? AND status='owned' AND version=?", [selected.instanceId, actor.player_id, selected.version]);
+          if (selectedUpdate.affectedRows !== 1n) throw new ApplicationError("PET_TITLE_VERSION_CONFLICT", "펫 타이틀이 먼저 변경되었습니다.", 409);
+          if (selected.legacyTitleDefinitionId != null) {
+            const pets = await transaction.query<Array<{ id: bigint }>>("SELECT id FROM player_pets WHERE player_id=? FOR UPDATE", [actor.player_id]);
+            if (pets[0] !== undefined) {
+              await transaction.execute("UPDATE pet_titles SET equipped=FALSE WHERE player_pet_id=? AND equipped=TRUE", [pets[0].id]);
+              await transaction.execute(
+                "INSERT INTO pet_titles(player_pet_id,title_id,acquired_at,equipped) VALUES (?,?,UTC_TIMESTAMP(3),TRUE) ON DUPLICATE KEY UPDATE equipped=TRUE",
+                [pets[0].id, selected.legacyTitleDefinitionId],
+              );
+            }
+          }
           status = "selected";
           data = `[${actor.rank_emoji ?? ""}${actor.current_display_name}] 님의 **펫 타이틀**이\n[${selected.displayName}] (으)로 적용되었습니다.`;
         } else {
-          await transaction.execute("UPDATE player_pet_title_instances SET status='removed',equipped=FALSE,version=version+1 WHERE id=? AND player_id=? AND status='owned'", [selected.instanceId, target.player_id]);
+          const removed = await transaction.execute("UPDATE player_pet_title_instances SET status='removed',equipped=FALSE,version=version+1 WHERE id=? AND player_id=? AND status='owned' AND version=?", [selected.instanceId, target.player_id, selected.version]);
+          if (removed.affectedRows !== 1n) throw new ApplicationError("PET_TITLE_VERSION_CONFLICT", "펫 타이틀이 먼저 변경되었습니다.", 409);
+          if (selected.legacyTitleDefinitionId != null) {
+            await transaction.execute(
+              "UPDATE pet_titles projection JOIN player_pets pet ON pet.id=projection.player_pet_id SET projection.equipped=FALSE WHERE pet.player_id=? AND projection.title_id=?",
+              [target.player_id, selected.legacyTitleDefinitionId],
+            );
+          }
           status = "removed";
           data = `[${target.rank_emoji ?? ""}${target.current_display_name}] 님의\n[${selected.displayName}] 펫 타이틀이 제거되었습니다.`;
         }
@@ -250,7 +279,8 @@ export class PetTitleLifecycleService {
 
   private async titleRows(transaction: DatabaseTransaction, playerId: bigint): Promise<PetTitleListRow[]> {
     return transaction.query<PetTitleListRow[]>(
-      `SELECT id AS instanceId,display_name AS displayName,price_digits AS priceDigits,acquired_at AS acquiredAt,equipped
+      `SELECT id AS instanceId,display_name AS displayName,price_digits AS priceDigits,acquired_at AS acquiredAt,equipped,
+              legacy_title_definition_id AS legacyTitleDefinitionId,version
          FROM player_pet_title_instances WHERE player_id=? AND status='owned' ORDER BY display_order,id FOR UPDATE`, [playerId],
     );
   }
