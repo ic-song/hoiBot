@@ -4,11 +4,30 @@ import type { ProfileView } from "../../src/player/profile.js";
 export const syntheticAdminSession: AdminSession = {
   sessionId: "9001",
   operatorId: "7001",
-  loginId: "shadow.reader",
-  displayName: "합성 조회 운영자",
-  roleCodes: ["manager"],
-  permissions: ["overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage"]
+  loginId: "shadow.manager",
+  displayName: "합성 운영자",
+  roleCodes: ["operations_manager"],
+  permissions: ["overview.read", "player.read", "account.restrict", "audit.read", "activity.read", "incident.read", "monitoring.read"]
 };
+
+export const syntheticAdminRestrictions = [
+  {
+    id: "61001",
+    restrictionType: "permanent_suspension",
+    status: "active",
+    reason: "합성 운영 정책 위반",
+    startsAt: "2026-08-29T04:10:00.000Z",
+    endsAt: null
+  },
+  {
+    id: "61000",
+    restrictionType: "temporary_suspension",
+    status: "revoked",
+    reason: "합성 기간 정지 해제",
+    startsAt: "2026-08-28T01:00:00.000Z",
+    endsAt: "2026-09-04T01:00:00.000Z"
+  }
+] as const;
 
 export const syntheticAdminOverview = {
   activePlayers: "1280",

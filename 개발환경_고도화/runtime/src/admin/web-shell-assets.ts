@@ -20,13 +20,13 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
         <span class="brand-mark" aria-hidden="true">H</span>
         <span>hoiBot Operations</span>
       </div>
-      <p class="eyebrow">CONTROLLED OPERATIONS SURFACE</p>
-      <h1 id="login-title">운영 판단과 승인된 변경을<br>한 화면에서 관리하세요.</h1>
-      <p class="login-description">회원, 감사 기록과 모니터링 이벤트를 조회하고, 허용된 역할은 명시적인 확인 절차로 다이아상점 카탈로그를 관리합니다.</p>
+      <p class="eyebrow">PERMISSIONED CONTROL SURFACE</p>
+      <h1 id="login-title">운영 판단과 계정 조치를<br>한 흐름에서 처리하세요.</h1>
+      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 조회하고, 허용된 운영자는 사유와 확인 절차를 거쳐 계정 정지·해제를 처리합니다.</p>
       <dl class="login-principles">
         <div><dt>권한 우선</dt><dd>허용된 메뉴만 표시</dd></div>
-        <div><dt>명시적 확인</dt><dd>사유와 버전 기반 변경</dd></div>
-        <div><dt>기록 기반</dt><dd>요청 ID와 오류를 보존</dd></div>
+        <div><dt>변경 통제</dt><dd>사유·재확인·멱등 처리</dd></div>
+        <div><dt>감사 기반</dt><dd>조치와 요청 ID를 보존</dd></div>
       </dl>
     </section>
     <section class="login-panel" aria-label="관리자 로그인">
@@ -56,7 +56,7 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
       <div id="operator-summary" class="operator-summary"></div>
       <nav id="primary-nav" class="primary-nav"></nav>
       <div class="sidebar-foot">
-        <span class="read-only-indicator"><i aria-hidden="true"></i> 승인된 변경 모드</span>
+        <span class="read-only-indicator"><i aria-hidden="true"></i> 권한 통제 모드</span>
         <span>Gate 8 전환 전</span>
       </div>
     </aside>
@@ -154,7 +154,7 @@ input, select, textarea {
   width: 100%; min-height: 46px; padding: 11px 13px; color: var(--ink); background: #fff;
   border: 1px solid #cbd3dc; border-radius: 7px; outline: none;
 }
-textarea { min-height: 86px; resize: vertical; }
+textarea { min-height: 76px; resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,118,109,.14); }
 .form-error { margin: 7px 0 0; padding: 10px 12px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 13px; }
 .primary-button, .secondary-button, .text-button, .icon-button {
@@ -261,37 +261,30 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .key-value-list div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 9px; background: #f7f9fa; font-size: 11px; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
 .tag { padding: 4px 7px; background: var(--accent-soft); color: var(--accent-dark); border-radius: 4px; font-size: 10px; font-weight: 700; }
-
-.catalog-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .7fr); gap: 18px; align-items: start; }
-.catalog-layout > * { min-width: 0; }
-.catalog-summary { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 11px; }
-.catalog-summary strong { color: var(--ink); }
-.catalog-form { display: grid; gap: 13px; padding: 16px; }
-.catalog-form label { display: grid; gap: 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
-.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.checkbox-field { display: flex !important; align-items: flex-start; gap: 9px !important; padding: 11px; background: #f7f9fa; border: 1px solid var(--line); border-radius: 7px; font-weight: 600 !important; line-height: 1.45; }
-.checkbox-field input { width: 17px; min-height: 17px; margin: 1px 0 0; accent-color: var(--accent); }
-.catalog-form .primary-button { margin-top: 0; }
-.danger-button { min-height: 34px; padding: 0 10px; color: var(--danger); background: #fff; border: 1px solid #e2b8b4; border-radius: 6px; font-size: 11px; font-weight: 800; }
-.danger-button:hover { background: #fff3f1; border-color: var(--danger); }
-.catalog-notice { margin-bottom: 14px; padding: 13px 15px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 12px; }
-.catalog-notice.replay { border-left-color: var(--warning); background: #fff7e8; }
-.catalog-notice.error { border-left-color: var(--danger); background: #fff2f0; }
-.catalog-notice strong { display: block; margin-bottom: 4px; }
-.catalog-notice .secondary-button { display: block; margin-top: 10px; }
-.catalog-confirm { margin-top: 18px; border: 1px solid #e2b8b4; background: #fffafa; box-shadow: var(--shadow); }
-.catalog-confirm .panel-heading { border-bottom-color: #efd3d0; }
-.catalog-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
-.catalog-confirm-actions .primary-button { background: var(--danger); }
-.catalog-confirm-actions .primary-button:hover { background: #8d2e28; }
-.catalog-actions { display: flex; flex-wrap: wrap; gap: 6px; }
-.catalog-status { display: inline-flex; align-items: center; padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); font-size: 10px; font-weight: 800; }
-.catalog-status.inactive { background: #f1f3f5; color: var(--muted); }
-.package-reward-guide { margin: 0; padding: 10px 12px; background: #f7f9fa; border-left: 3px solid var(--accent); color: var(--muted); font-size: 11px; line-height: 1.6; }
-.object-lookup-form { display: flex; align-items: center; gap: 8px; width: 100%; }
-.object-lookup-form input { min-width: 0; }
-.object-lookup-form .primary-button { flex: 0 0 auto; min-height: 40px; margin: 0; padding: 0 18px; }
-.object-json { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; line-height: 1.6; }
+.account-actions { margin: 20px -16px -16px; padding: 18px 16px; border-top: 1px solid var(--line); background: #fbfcfd; }
+.account-actions > h4 { margin: 0; font-size: 13px; }
+.account-actions > p { margin: 6px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.restriction-list { display: grid; gap: 8px; margin-bottom: 16px; }
+.restriction-card { padding: 11px; background: #fff; border: 1px solid var(--line); border-left: 3px solid #9aa6b2; }
+.restriction-card.active { border-left-color: var(--danger); }
+.restriction-heading { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.restriction-heading > div { display: flex; align-items: center; gap: 5px; }
+.restriction-heading strong { font-size: 11px; }
+.restriction-heading span { font-size: 10px; }
+.restriction-meta { display: flex; flex-wrap: wrap; gap: 3px 10px; margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.account-action-form { display: grid; gap: 9px; padding: 12px; background: #fff; border: 1px solid var(--line); }
+.account-action-form + .account-action-form { margin-top: 8px; }
+.account-action-form h5 { margin: 0 0 3px; font-size: 11px; }
+.account-action-form label:not(.confirm-row) { color: var(--muted); font-size: 10px; font-weight: 700; }
+.account-action-form input, .account-action-form select, .account-action-form textarea { min-height: 40px; font-size: 11px; }
+.account-action-form textarea { min-height: 64px; }
+.confirm-row { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 10px; line-height: 1.45; }
+.confirm-row input { width: 16px; min-height: 16px; margin: 0; accent-color: var(--danger); }
+.danger-button { min-height: 40px; padding: 0 14px; color: #fff; background: var(--danger); border: 1px solid var(--danger); border-radius: 7px; font-weight: 800; }
+.danger-button:hover { background: #922f28; }
+.danger-button:disabled { opacity: .58; cursor: wait; }
+.inline-error { margin: 0; padding: 8px 10px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 10px; }
+.action-gap-note { margin: 10px 0 0; padding: 9px 10px; color: var(--warning); background: #fff8e8; border-left: 3px solid #d49a25; font-size: 10px; line-height: 1.5; }
 
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
@@ -322,12 +315,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .metric:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
   .metric:nth-last-child(-n+2) { border-bottom: 0; }
   .content-grid { grid-template-columns: 1fr; }
-  .catalog-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
-  .object-lookup-form { align-items: stretch; flex-direction: column; }
-  .object-lookup-form .primary-button { width: 100%; }
   .login-copy { min-height: 44vh; padding: 32px 24px; }
   .login-copy h1 { font-size: 34px; }
   .login-description { margin: 20px 0 0; font-size: 14px; }
@@ -344,9 +334,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .toolbar, .search-form { width: 100%; }
   .toolbar input, .search-form input { width: 100%; }
   .detail-list { grid-template-columns: 1fr; }
-  .field-grid { grid-template-columns: 1fr; }
-  .catalog-confirm-actions { flex-direction: column-reverse; }
-  .catalog-confirm-actions button { width: 100%; }
 }`;
 
 export const ADMIN_WEB_CLIENT = String.raw`(function () {
@@ -361,13 +348,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     refresh: null,
     playerSearch: "",
     monitoringTab: "events",
-    catalogNotice: null,
-    catalogRetry: null,
-    packageCatalogNotice: null,
-    packageCatalogRetry: null,
-    objectCatalogNotice: null,
-    objectCatalogRetry: null,
-    objectCatalogKey: ""
+    mutationKeys: {}
   };
 
   var NAV_ITEMS = [
@@ -376,10 +357,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "audit", label: "감사 기록", icon: "≡", permission: "audit.read", group: "감사·모니터링", kicker: "AUDIT TRAIL" },
     { id: "activity", label: "채널 활동", icon: "⌁", permission: "activity.read", group: "감사·모니터링", kicker: "CHANNEL ACTIVITY" },
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
-    { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" },
-    { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
-    { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" },
-    { id: "object-catalog", label: "오브젝트 카탈로그", icon: "◎", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "OBJECT CATALOG" }
+    { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" }
   ];
 
   var METRICS = [
@@ -432,16 +410,6 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     return Boolean(state.session && state.session.permissions.includes(permission));
   }
 
-  // 현재 세션 역할이 메뉴가 요구하는 역할 중 하나인지 확인합니다.
-  function hasAnyRole(roles) {
-    return Boolean(state.session && roles && roles.some(function (role) { return state.session.roleCodes.includes(role); }));
-  }
-
-  // permission 또는 명시된 관리자 역할에 따라 메뉴 접근을 결정합니다.
-  function canAccess(item) {
-    return item.permission ? hasPermission(item.permission) : hasAnyRole(item.roles);
-  }
-
   // 동일 출처 관리자 API를 호출하고 공통 오류 계약을 적용합니다.
   async function api(path, options) {
     var settings = Object.assign({ method: "GET", credentials: "same-origin" }, options || {});
@@ -458,6 +426,33 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       if (response.status === 401 && path !== "/api/v1/admin/sessions") showLogin("세션이 만료됐습니다. 다시 로그인해 주세요.");
       throw error;
     }
+    return payload;
+  }
+
+  // 같은 조치 입력을 재시도할 때 재사용할 idempotency key를 반환합니다.
+  function mutationKey(scope) {
+    if (!state.mutationKeys[scope]) {
+      state.mutationKeys[scope] = window.crypto && typeof window.crypto.randomUUID === "function"
+        ? window.crypto.randomUUID()
+        : "admin-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+    }
+    return state.mutationKeys[scope];
+  }
+
+  // 성공한 조치 입력의 idempotency key를 폐기합니다.
+  function clearMutationKey(scope) {
+    delete state.mutationKeys[scope];
+  }
+
+  // CSRF와 idempotency 계약을 포함해 계정 조치 API를 호출합니다.
+  async function mutateAccount(path, method, body, scope) {
+    if (!state.csrfToken) throw new Error("CSRF 토큰이 없습니다. 다시 로그인해 주세요.");
+    var payload = await api(path, {
+      method: method,
+      headers: { "x-csrf-token": state.csrfToken, "idempotency-key": mutationKey(scope) },
+      body: JSON.stringify(body)
+    });
+    clearMutationKey(scope);
     return payload;
   }
 
@@ -496,7 +491,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         return "<span class=\"role-tag\">" + escapeHtml(role) + "</span>";
       }).join("") + "</div>";
     renderNavigation();
-    var allowed = NAV_ITEMS.filter(canAccess);
+    var allowed = NAV_ITEMS.filter(function (item) { return hasPermission(item.permission); });
     if (!allowed.some(function (item) { return item.id === state.activeView; })) {
       state.activeView = allowed.length ? allowed[0].id : "none";
     }
@@ -505,7 +500,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
 
   // 현재 권한으로 접근 가능한 관리 메뉴만 구성합니다.
   function renderNavigation() {
-    var allowed = NAV_ITEMS.filter(canAccess);
+    var allowed = NAV_ITEMS.filter(function (item) { return hasPermission(item.permission); });
     var lastGroup = "";
     var html = "";
     allowed.forEach(function (item) {
@@ -588,10 +583,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "audit") loadAudit(1);
     else if (item.id === "activity") loadActivity(1);
     else if (item.id === "incidents") loadIncidents(1);
-    else if (item.id === "monitoring") loadMonitoring(1);
-    else if (item.id === "diamond-catalog") loadDiamondCatalog();
-    else if (item.id === "package-catalog") loadPackageCatalog();
-    else loadObjectCatalog(state.objectCatalogKey);
+    else loadMonitoring(1);
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
 
@@ -685,7 +677,114 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     }).join("") + "</div>";
   }
 
-  // 선택한 회원의 프로필을 편집 기능 없이 표시합니다.
+  // 제재 유형을 운영자용 한국어 문구로 표시합니다.
+  function restrictionTypeLabel(type) {
+    return type === "temporary_suspension" ? "기간 정지" : "영구 정지";
+  }
+
+  // 제재 상태를 운영자용 한국어 문구로 표시합니다.
+  function restrictionStatusLabel(status) {
+    if (status === "active") return "적용 중";
+    if (status === "revoked") return "해제됨";
+    return status === "expired" ? "만료됨" : status;
+  }
+
+  // 회원 상세에 현재와 과거 계정 제재를 표시합니다.
+  function renderRestrictions(restrictions) {
+    if (!restrictions || !restrictions.length) return emptyState("계정 제재 이력이 없습니다.", "필요한 경우 아래에서 새 조치를 등록할 수 있습니다.");
+    return "<div class=\"restriction-list\">" + restrictions.map(function (restriction) {
+      return "<article class=\"restriction-card " + escapeHtml(restriction.status) + "\"><div class=\"restriction-heading\"><div><strong>" + escapeHtml(restrictionTypeLabel(restriction.restrictionType)) + "</strong><span class=\"mono\">#" + escapeHtml(restriction.id) + "</span></div>" +
+        "<span class=\"status-pill\">" + escapeHtml(restrictionStatusLabel(restriction.status)) + "</span></div>" +
+        "<p>" + escapeHtml(restriction.reason) + "</p><div class=\"restriction-meta\"><span>시작 " + escapeHtml(formatDate(restriction.startsAt)) + "</span><span>종료 " + escapeHtml(formatDate(restriction.endsAt)) + "</span></div>" +
+        (restriction.status === "active" && hasPermission("account.restrict")
+          ? "<form class=\"account-action-form\" data-revoke-id=\"" + escapeHtml(restriction.id) + "\"><label>해제 사유<textarea name=\"reason\" rows=\"2\" required placeholder=\"해제가 필요한 운영 근거를 입력하세요.\"></textarea></label><label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 이 계정 제재를 해제합니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"danger-button\" type=\"submit\">제재 해제</button></form>"
+          : "") + "</article>";
+    }).join("") + "</div>";
+  }
+
+  // account.restrict 권한이 있는 운영자에게 새 계정 조치 폼을 표시합니다.
+  function renderAccountActions(player) {
+    if (!hasPermission("account.restrict")) return "";
+    return "<section class=\"detail-section account-actions\"><h4>계정 조치</h4><p class=\"action-gap-note\">이 조치는 감사 기록에 남지만 별도 알림은 발송하지 않습니다.</p>" +
+      "<form id=\"restriction-create-form\" class=\"account-action-form\"><label>조치 유형<select name=\"restrictionType\"><option value=\"temporary_suspension\">기간 정지</option><option value=\"permanent_suspension\">영구 정지</option></select></label>" +
+      "<label data-ends-at-field>종료 시각<input type=\"datetime-local\" name=\"endsAt\" required></label><label>조치 사유<textarea name=\"reason\" rows=\"3\" required placeholder=\"정지가 필요한 운영 근거를 입력하세요.\"></textarea></label>" +
+      "<label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 회원 계정 상태와 세션에 영향을 주는 조치임을 확인했습니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"danger-button\" type=\"submit\">계정 정지 적용</button></form></section>" +
+      "<section class=\"detail-section\"><h4>계정 제재 이력</h4>" + renderRestrictions(player.restrictions) + "</section>";
+  }
+
+  // 계정 조치 폼의 오류 문구와 제출 상태를 갱신합니다.
+  function setActionState(form, error, submitting) {
+    var errorNode = form.querySelector("[data-action-error]");
+    var button = form.querySelector("button[type=submit]");
+    errorNode.hidden = !error;
+    errorNode.textContent = error || "";
+    button.disabled = submitting;
+    button.textContent = submitting ? "처리 중..." : button.dataset.label;
+  }
+
+  // 회원 상세의 신규 정지와 기존 제재 해제 폼을 API에 연결합니다.
+  function attachAccountActions(player) {
+    var createForm = byId("restriction-create-form");
+    if (createForm) {
+      var type = createForm.elements.restrictionType;
+      var endsAtField = createForm.querySelector("[data-ends-at-field]");
+      var endsAt = createForm.elements.endsAt;
+      var syncEndsAt = function () {
+        var temporary = type.value === "temporary_suspension";
+        endsAtField.hidden = !temporary;
+        endsAt.required = temporary;
+      };
+      type.addEventListener("change", syncEndsAt);
+      syncEndsAt();
+      createForm.querySelector("button[type=submit]").dataset.label = "계정 정지 적용";
+      createForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(createForm);
+        var restrictionType = data.get("restrictionType").toString();
+        var reason = data.get("reason").toString().trim();
+        var rawEndsAt = data.get("endsAt").toString();
+        if (!reason || !data.get("confirmed") || (restrictionType === "temporary_suspension" && !rawEndsAt)) {
+          setActionState(createForm, "조치 유형, 사유, 확인 항목을 모두 입력해 주세요.", false);
+          return;
+        }
+        var body = { restrictionType: restrictionType, reason: reason, confirmed: true };
+        if (restrictionType === "temporary_suspension") body.endsAt = new Date(rawEndsAt).toISOString();
+        var scope = "restriction.create:" + player.playerId + ":" + restrictionType + ":" + (body.endsAt || "permanent") + ":" + reason;
+        setActionState(createForm, "", true);
+        try {
+          await mutateAccount("/api/v1/admin/players/" + encodeURIComponent(player.playerId) + "/restrictions", "POST", body, scope);
+          showToast(restrictionTypeLabel(restrictionType) + " 조치를 적용했습니다.");
+          await loadPlayerDetail(player.playerId);
+        } catch (error) {
+          setActionState(createForm, errorMessage(error), false);
+        }
+      });
+    }
+    document.querySelectorAll("[data-revoke-id]").forEach(function (form) {
+      form.querySelector("button[type=submit]").dataset.label = "제재 해제";
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        var reason = data.get("reason").toString().trim();
+        if (!reason || !data.get("confirmed")) {
+          setActionState(form, "해제 사유와 확인 항목을 입력해 주세요.", false);
+          return;
+        }
+        var restrictionId = form.dataset.revokeId;
+        var scope = "restriction.revoke:" + restrictionId + ":" + reason;
+        setActionState(form, "", true);
+        try {
+          await mutateAccount("/api/v1/admin/restrictions/" + encodeURIComponent(restrictionId), "PATCH", { status: "revoked", reason: reason, confirmed: true }, scope);
+          showToast("계정 제재를 해제했습니다.");
+          await loadPlayerDetail(player.playerId);
+        } catch (error) {
+          setActionState(form, errorMessage(error), false);
+        }
+      });
+    });
+  }
+
+  // 선택한 회원의 프로필과 권한별 계정 조치 화면을 표시합니다.
   async function loadPlayerDetail(playerId) {
     var detail = byId("player-detail");
     detail.innerHTML = loadingState("회원 상세를 불러오는 중");
@@ -699,7 +798,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         "<div><dt>펫</dt><dd>" + escapeHtml(player.pet && player.pet.name ? player.pet.name : "-") + "</dd></div><div><dt>홈</dt><dd>" + escapeHtml(player.home && player.home.name ? player.home.name : "-") + "</dd></div></dl>" +
         "<section class=\"detail-section\"><h4>재화 현황</h4>" + keyValueRows(player.currencies) + "</section>" +
         "<section class=\"detail-section\"><h4>주요 카운터</h4>" + keyValueRows(player.counters) + "</section>" +
-        "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section></div>";
+        "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section>" + renderAccountActions(player) + "</div>";
+      attachAccountActions(player);
     } catch (error) {
       detail.innerHTML = errorState(error, "players");
       attachRetry(detail);
@@ -815,354 +915,6 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       results.innerHTML = errorState(error, "monitoring");
       attachRetry(results);
     }
-  }
-
-  // 큰 decimal string을 Number 변환 없이 천 단위로 표시합니다.
-  function formatDecimal(value) {
-    var text = String(value == null ? "" : value);
-    return /^\d+$/.test(text) ? text.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : text;
-  }
-
-  // 브라우저 재시도에도 재사용할 수 있는 요청 멱등성 키를 생성합니다.
-  function catalogIdempotencyKey() {
-    return "diamond-catalog:" + (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
-      ? globalThis.crypto.randomUUID() : Date.now() + ":" + Math.random().toString(16).slice(2));
-  }
-
-  // 현재 카탈로그 안내·replay 결과를 화면 상단 배너로 생성합니다.
-  function catalogNotice() {
-    if (!state.catalogNotice) return "<div id=\"catalog-message\"></div>";
-    var notice = state.catalogNotice;
-    return "<div id=\"catalog-message\" class=\"catalog-notice " + escapeHtml(notice.kind || "") + "\"><strong>" +
-      escapeHtml(notice.title) + "</strong><span>" + escapeHtml(notice.message) + "</span></div>";
-  }
-
-  // 활성 상품 목록과 stable productId 기반 soft-disable 진입점을 생성합니다.
-  function catalogTable(catalog) {
-    if (!catalog.items.length) return emptyState("활성 상품이 없습니다.", "오른쪽 입력 폼에서 첫 상품을 추가할 수 있습니다.");
-    return "<div class=\"table-wrap\"><table class=\"data-table\"><thead><tr><th>순서</th><th>상품</th><th>지급 수량</th><th>가격</th><th>버전</th><th>관리</th></tr></thead><tbody>" +
-      catalog.items.map(function (item) {
-        return "<tr><td>" + escapeHtml(item.displayOrder) + "</td><td><strong>" + escapeHtml(item.displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(item.productId) + "</span></td>" +
-          "<td>" + escapeHtml(formatDecimal(item.quantity)) + "개</td><td>" + escapeHtml(formatDecimal(item.price)) + " 다이아</td><td class=\"mono\">v" + escapeHtml(item.version) + "</td>" +
-          "<td><button class=\"danger-button\" type=\"button\" data-disable-product=\"" + escapeHtml(item.productId) + "\" data-product-name=\"" + escapeHtml(item.displayName) + "\">비활성화</button></td></tr>";
-      }).join("") + "</tbody></table></div>";
-  }
-
-  // mutation 실패 시 같은 Idempotency-Key로 재시도 가능한 상태를 표시합니다.
-  function showCatalogMutationFailure(error, retry) {
-    state.catalogRetry = retry;
-    var target = byId("catalog-message");
-    if (!target) return;
-    target.className = "catalog-notice error";
-    target.innerHTML = "<strong>변경 요청을 완료하지 못했습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span>" +
-      "<button class=\"secondary-button\" type=\"button\" id=\"catalog-mutation-retry\">같은 요청 다시 보내기</button>";
-    byId("catalog-mutation-retry").addEventListener("click", function () { if (state.catalogRetry) state.catalogRetry(); });
-  }
-
-  // catalog version 충돌을 자동 덮어쓰기 없이 명시적인 새로고침 상태로 표시합니다.
-  function showCatalogConflict(error) {
-    state.refresh = loadDiamondCatalog;
-    byId("main-content").innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.") +
-      "<div class=\"error-state\"><div><strong>목록이 먼저 변경되었습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span>" +
-      "<p>최신 버전을 다시 확인한 뒤 변경 내용을 검토해 주세요.</p><button class=\"secondary-button\" type=\"button\" data-retry=\"catalog\">최신 목록 불러오기</button></div></div>";
-    attachRetry(byId("main-content"));
-  }
-
-  // CSRF와 caller version을 포함한 카탈로그 변경 요청을 실행합니다.
-  async function mutateCatalog(path, method, body, idempotencyKey) {
-    if (!state.csrfToken) {
-      showCatalogMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {});
-      return;
-    }
-    var retry = function () { return mutateCatalog(path, method, body, idempotencyKey); };
-    try {
-      var payload = await api(path, {
-        method: method,
-        headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey },
-        body: JSON.stringify(body)
-      });
-      state.catalogRetry = null;
-      state.catalogNotice = payload.result.replayed
-        ? { kind: "replay", title: "이미 완료된 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
-        : { kind: "", title: "카탈로그를 반영했습니다.", message: "새 catalog version은 " + payload.result.catalogVersion + "입니다." };
-      showToast(payload.result.replayed ? "완료된 요청 결과를 다시 불러왔습니다." : "다이아상점 카탈로그를 변경했습니다.", false);
-      await loadDiamondCatalog();
-    } catch (error) {
-      if (error.status === 409) showCatalogConflict(error);
-      else showCatalogMutationFailure(error, retry);
-    }
-  }
-
-  // 선택 상품의 stable productId soft-disable 확인 폼을 표시합니다.
-  function showCatalogDisableConfirmation(productId, displayName, catalogVersion) {
-    var target = byId("catalog-confirm-region");
-    target.innerHTML = "<section class=\"catalog-confirm\" aria-labelledby=\"disable-title\"><div class=\"panel-heading\"><div><h3 id=\"disable-title\">상품 비활성화 확인</h3><p>구매 목록에서만 숨기며 기록은 삭제하지 않습니다.</p></div></div>" +
-      "<form id=\"catalog-disable-form\" class=\"catalog-form\"><p><strong>" + escapeHtml(displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(productId) + "</span></p>" +
-      "<label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"비활성화 사유를 입력하세요.\"></textarea></label>" +
-      "<label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>이 상품이 즉시 활성 구매 목록에서 제외되는 것을 확인했습니다.</span></label>" +
-      "<div class=\"catalog-confirm-actions\"><button class=\"secondary-button\" id=\"cancel-disable\" type=\"button\">취소</button><button class=\"primary-button\" type=\"submit\">비활성화 실행</button></div></form></section>";
-    byId("cancel-disable").addEventListener("click", function () { target.innerHTML = ""; });
-    byId("catalog-disable-form").addEventListener("submit", function (event) {
-      event.preventDefault();
-      var data = new FormData(event.currentTarget);
-      mutateCatalog("/api/v1/admin/diamond-shop/catalog/items/" + encodeURIComponent(productId), "DELETE", {
-        expectedVersion: catalogVersion,
-        reason: data.get("reason").toString().trim(),
-        confirmed: data.get("confirmed") === "on"
-      }, catalogIdempotencyKey());
-    });
-    target.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-
-  // 활성 다이아상점 목록과 추가·soft-disable 화면을 불러옵니다.
-  async function loadDiamondCatalog() {
-    state.refresh = loadDiamondCatalog;
-    var main = byId("main-content");
-    main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.", "manager · super_admin") + loadingState("다이아상점 목록을 불러오는 중");
-    try {
-      var payload = await api("/api/v1/admin/diamond-shop/catalog");
-      var catalog = payload.catalog;
-      main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.", "manager · super_admin") + catalogNotice() +
-        "<div class=\"catalog-layout\"><section class=\"panel\"><div class=\"panel-heading\"><div><h3>활성 상품</h3><p>현재 구매 가능한 상품만 표시합니다.</p></div><div class=\"catalog-summary\"><span>Catalog <strong>v" + escapeHtml(catalog.catalogVersion) + "</strong></span><span>" + escapeHtml(catalog.bootstrapStatus) + "</span></div></div>" + catalogTable(catalog) + "</section>" +
-        "<aside class=\"panel\"><div class=\"panel-heading\"><div><h3>상품 추가</h3><p>수량과 가격은 decimal string으로 전송합니다.</p></div></div><form id=\"catalog-add-form\" class=\"catalog-form\">" +
-        "<label>상품 이름<input name=\"displayName\" required maxlength=\"191\" placeholder=\"예: 봄맞이 다이아 묶음\"></label><div class=\"field-grid\"><label>지급 수량<input name=\"quantity\" required inputmode=\"numeric\" pattern=\"[0-9]+\" placeholder=\"100\"></label><label>가격<input name=\"price\" required inputmode=\"numeric\" pattern=\"[0-9]+\" placeholder=\"50\"></label></div>" +
-        "<label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"추가 사유를 입력하세요.\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>상품 이름, 지급 수량과 가격을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">상품 추가</button></form></aside></div><div id=\"catalog-confirm-region\"></div>";
-      byId("catalog-add-form").addEventListener("submit", function (event) {
-        event.preventDefault();
-        var data = new FormData(event.currentTarget);
-        mutateCatalog("/api/v1/admin/diamond-shop/catalog/items", "POST", {
-          displayName: data.get("displayName").toString().trim(),
-          quantity: data.get("quantity").toString(),
-          price: data.get("price").toString(),
-          expectedVersion: catalog.catalogVersion,
-          reason: data.get("reason").toString().trim(),
-          confirmed: data.get("confirmed") === "on"
-        }, catalogIdempotencyKey());
-      });
-      main.querySelectorAll("[data-disable-product]").forEach(function (button) {
-        button.addEventListener("click", function () { showCatalogDisableConfirmation(button.dataset.disableProduct, button.dataset.productName, catalog.catalogVersion); });
-      });
-      state.catalogNotice = null;
-      markUpdated();
-    } catch (error) {
-      main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.") + errorState(error, "catalog");
-      attachRetry(main);
-    }
-  }
-
-  // 패키지 보상 입력을 TYPE|assetCode|decimal quantity 배열로 변환합니다.
-  function parsePackageRewards(value) {
-    var lines = value.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
-    if (!lines.length) throw new Error("보상을 한 개 이상 입력해 주세요.");
-    return lines.map(function (line) {
-      var parts = line.split("|").map(function (part) { return part.trim(); });
-      if (parts.length !== 3 || (parts[0] !== "POINT" && parts[0] !== "ITEM") || !parts[1] || !/^[1-9][0-9]*$/.test(parts[2])) {
-        throw new Error("보상은 TYPE|assetCode|양의 decimal quantity 형식으로 입력해 주세요.");
-      }
-      return { rewardType: parts[0], assetCode: parts[1], quantity: parts[2] };
-    });
-  }
-
-  // 패키지 catalog mutation 결과 또는 replay 상태를 표시합니다.
-  function packageCatalogNotice() {
-    if (!state.packageCatalogNotice) return "<div id=\"package-catalog-message\"></div>";
-    return "<div id=\"package-catalog-message\" class=\"catalog-notice " + escapeHtml(state.packageCatalogNotice.kind) + "\"><strong>" + escapeHtml(state.packageCatalogNotice.title) + "</strong><span>" + escapeHtml(state.packageCatalogNotice.message) + "</span></div>";
-  }
-
-  // 패키지 mutation 실패와 같은 Idempotency-Key replay 버튼을 표시합니다.
-  function showPackageMutationFailure(error, retry) {
-    state.packageCatalogRetry = retry;
-    var target = byId("package-catalog-message");
-    if (!target) return;
-    target.className = "catalog-notice error";
-    target.innerHTML = "<strong>패키지 변경 요청을 완료하지 못했습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"package-mutation-retry\">같은 요청 다시 보내기</button>";
-    byId("package-mutation-retry").addEventListener("click", function () { if (state.packageCatalogRetry) state.packageCatalogRetry(); });
-  }
-
-  // 패키지 catalog version 충돌을 자동 덮어쓰기 없이 표시합니다.
-  function showPackageConflict(error) {
-    state.refresh = loadPackageCatalog;
-    byId("main-content").innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.") +
-      "<div class=\"error-state\"><div><strong>패키지 목록이 먼저 변경되었습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span><p>최신 catalog version을 불러온 뒤 변경 내용을 다시 검토해 주세요.</p><button class=\"secondary-button\" type=\"button\" id=\"package-conflict-refresh\">최신 목록 불러오기</button></div></div>";
-    byId("package-conflict-refresh").addEventListener("click", loadPackageCatalog);
-  }
-
-  // 기존 package web adapter에 CSRF와 caller catalog version을 전달합니다.
-  async function mutatePackageCatalog(path, method, body, idempotencyKey) {
-    if (!state.csrfToken) {
-      showPackageMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {});
-      return;
-    }
-    var retry = function () { return mutatePackageCatalog(path, method, body, idempotencyKey); };
-    try {
-      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
-      state.packageCatalogRetry = null;
-      state.packageCatalogNotice = payload.result.replayed
-        ? { kind: "replay", title: "이미 완료된 패키지 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
-        : { kind: "", title: "패키지 카탈로그를 반영했습니다.", message: payload.result.message + " 새 catalog version은 " + payload.result.catalogVersion + "입니다." };
-      showToast(payload.result.replayed ? "완료된 패키지 요청 결과를 다시 불러왔습니다." : "패키지 카탈로그를 변경했습니다.", false);
-      await loadPackageCatalog();
-    } catch (error) {
-      if (error.status === 409) showPackageConflict(error);
-      else showPackageMutationFailure(error, retry);
-    }
-  }
-
-  // stable packageId와 현재 상태를 보존하는 패키지 projection 표를 생성합니다.
-  function packageCatalogTable(catalog) {
-    if (!catalog.entries.length) return emptyState("등록된 패키지가 없습니다.", "오른쪽 양식에서 첫 패키지를 추가할 수 있습니다.");
-    return "<div class=\"table-wrap\"><table class=\"data-table\"><thead><tr><th>순서</th><th>패키지</th><th>상태</th><th>행 버전</th><th>지원 동작</th></tr></thead><tbody>" + catalog.entries.map(function (entry) {
-      var stateAction = entry.active
-        ? "<button class=\"danger-button\" type=\"button\" data-package-action=\"REMOVE\" data-package-id=\"" + escapeHtml(entry.packageId) + "\" data-package-name=\"" + escapeHtml(entry.displayName) + "\">목록 제거</button>"
-        : "<button class=\"secondary-button\" type=\"button\" data-package-action=\"ENABLE\" data-package-id=\"" + escapeHtml(entry.packageId) + "\" data-package-name=\"" + escapeHtml(entry.displayName) + "\">활성화</button>";
-      return "<tr><td>" + escapeHtml(entry.displayOrder) + "</td><td><strong>" + escapeHtml(entry.displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(entry.packageId) + "</span></td><td><span class=\"catalog-status " + (entry.active ? "" : "inactive") + "\">" + (entry.active ? "활성" : "비활성") + "</span></td><td class=\"mono\">v" + escapeHtml(entry.expectedVersion) + "</td><td><div class=\"catalog-actions\"><button class=\"secondary-button\" type=\"button\" data-package-action=\"EDIT\" data-package-id=\"" + escapeHtml(entry.packageId) + "\" data-package-name=\"" + escapeHtml(entry.displayName) + "\">보상 수정</button>" + stateAction + "</div></td></tr>";
-    }).join("") + "</tbody></table></div>";
-  }
-
-  // EDIT·REMOVE·ENABLE의 실제 adapter 계약을 명시적으로 확인하는 폼을 표시합니다.
-  function showPackageActionConfirmation(action, packageId, displayName, catalogVersion) {
-    var target = byId("package-confirm-region");
-    var title = action === "EDIT" ? "패키지 보상 전체 수정" : action === "REMOVE" ? "패키지 목록 제거 확인" : "패키지 활성화 확인";
-    var description = action === "EDIT" ? "입력한 보상 목록으로 기존 보상 전체를 교체합니다." : action === "REMOVE" ? "목록에서 제거하며 이 화면의 ENABLE 동작으로는 제거된 행을 복구할 수 없습니다." : "조회에 남아 있는 비활성 패키지만 다시 활성화합니다.";
-    var rewards = action === "EDIT" ? "<label>교체할 보상<textarea name=\"rewards\" required placeholder=\"ITEM|ITEM-CODE|2&#10;POINT|POINT|100\"></textarea></label><p class=\"package-reward-guide\">한 줄에 TYPE|assetCode|decimal quantity 형식으로 입력하세요.</p>" : "";
-    target.innerHTML = "<section class=\"catalog-confirm\" aria-labelledby=\"package-action-title\"><div class=\"panel-heading\"><div><h3 id=\"package-action-title\">" + escapeHtml(title) + "</h3><p>" + escapeHtml(description) + "</p></div></div><form id=\"package-action-form\" class=\"catalog-form\"><p><strong>" + escapeHtml(displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(packageId) + "</span></p>" + rewards + "<label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"변경 사유를 입력하세요.\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable packageId와 catalog version을 확인했습니다.</span></label><div class=\"catalog-confirm-actions\"><button class=\"secondary-button\" id=\"cancel-package-action\" type=\"button\">취소</button><button class=\"primary-button\" type=\"submit\">" + escapeHtml(title) + " 실행</button></div></form></section>";
-    byId("cancel-package-action").addEventListener("click", function () { target.innerHTML = ""; });
-    byId("package-action-form").addEventListener("submit", function (event) {
-      event.preventDefault();
-      var data = new FormData(event.currentTarget);
-      var body = { expectedCatalogVersion: catalogVersion, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" };
-      if (action === "EDIT") {
-        try { body.rewards = parsePackageRewards(data.get("rewards").toString()); }
-        catch (error) { showPackageMutationFailure(error, function () {}); return; }
-      }
-      var path = "/api/v1/admin/package-catalog/packages/" + encodeURIComponent(packageId) + (action === "ENABLE" ? "/enable" : "");
-      mutatePackageCatalog(path, action === "EDIT" ? "PATCH" : action === "REMOVE" ? "DELETE" : "POST", body, catalogIdempotencyKey());
-    });
-    target.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-
-  // package permission 보유자에게 projection과 ADD·EDIT·REMOVE·ENABLE 화면을 제공합니다.
-  async function loadPackageCatalog() {
-    state.refresh = loadPackageCatalog;
-    var main = byId("main-content");
-    main.innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.", "package.catalog.manage") + loadingState("패키지 목록을 불러오는 중");
-    try {
-      var payload = await api("/api/v1/admin/package-catalog");
-      var catalog = payload.catalog;
-      main.innerHTML = renderViewIntro("패키지 카탈로그", "추가, 보상 전체 수정, 목록 제거와 기존 비활성 행 활성화만 지원합니다.", "package.catalog.manage") + packageCatalogNotice() + "<div class=\"catalog-layout\"><section class=\"panel\"><div class=\"panel-heading\"><div><h3>패키지 projection</h3><p>stable packageId와 행 버전을 그대로 표시합니다.</p></div><div class=\"catalog-summary\"><span>Catalog <strong>v" + escapeHtml(catalog.catalogVersion) + "</strong></span><span>" + escapeHtml(catalog.catalogKey) + "</span></div></div>" + packageCatalogTable(catalog) + "</section><aside class=\"panel\"><div class=\"panel-heading\"><div><h3>패키지 추가</h3><p>보상 수량은 decimal string으로 전송합니다.</p></div></div><form id=\"package-add-form\" class=\"catalog-form\"><label>패키지 이름<input name=\"displayName\" required maxlength=\"191\" placeholder=\"예: 여름 이벤트 패키지\"></label><label>설명<textarea name=\"description\" required placeholder=\"패키지 설명을 입력하세요.\"></textarea></label><label>보상<textarea name=\"rewards\" required placeholder=\"ITEM|ITEM-CODE|2&#10;POINT|POINT|100\"></textarea></label><p class=\"package-reward-guide\">한 줄에 TYPE|assetCode|decimal quantity 형식으로 입력하세요.</p><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"추가 사유를 입력하세요.\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>패키지 이름, 설명과 전체 보상 목록을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">패키지 추가</button></form></aside></div><div id=\"package-confirm-region\"></div>";
-      byId("package-add-form").addEventListener("submit", function (event) {
-        event.preventDefault();
-        var data = new FormData(event.currentTarget);
-        var rewards;
-        try { rewards = parsePackageRewards(data.get("rewards").toString()); }
-        catch (error) { showPackageMutationFailure(error, function () {}); return; }
-        mutatePackageCatalog("/api/v1/admin/package-catalog/packages", "POST", { displayName: data.get("displayName").toString().trim(), description: data.get("description").toString().trim(), rewards: rewards, expectedCatalogVersion: catalog.catalogVersion, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, catalogIdempotencyKey());
-      });
-      main.querySelectorAll("[data-package-action]").forEach(function (button) {
-        button.addEventListener("click", function () { showPackageActionConfirmation(button.dataset.packageAction, button.dataset.packageId, button.dataset.packageName, catalog.catalogVersion); });
-      });
-      state.packageCatalogNotice = null;
-      markUpdated();
-    } catch (error) {
-      main.innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.") + errorState(error, "package-catalog");
-      attachRetry(main);
-    }
-  }
-
-  // object mutation retry까지 동일하게 유지할 namespaced 멱등성 키를 생성합니다.
-  function objectCatalogIdempotencyKey() {
-    return "object-catalog:" + catalogIdempotencyKey();
-  }
-
-  // object catalog mutation 결과와 replay 상태를 공통 배너로 표시합니다.
-  function objectCatalogNotice() {
-    if (!state.objectCatalogNotice) return "<div id=\"object-catalog-message\"></div>";
-    return "<div id=\"object-catalog-message\" class=\"catalog-notice " + escapeHtml(state.objectCatalogNotice.kind || "") + "\"><strong>" + escapeHtml(state.objectCatalogNotice.title) + "</strong><span>" + escapeHtml(state.objectCatalogNotice.message) + "</span></div>";
-  }
-
-  // metadata 입력을 JSON object로만 제한합니다.
-  function parseObjectMetadata(value) {
-    var parsed;
-    try { parsed = JSON.parse(value || "{}"); }
-    catch (_) { throw new Error("metadata JSON 형식을 확인해 주세요."); }
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("metadata는 JSON object여야 합니다.");
-    return parsed;
-  }
-
-  // 한 줄 SYSTEM|table|key 형식을 canonical source binding 배열로 변환합니다.
-  function parseObjectSources(value) {
-    var lines = value.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
-    if (!lines.length) throw new Error("canonical source binding을 한 개 이상 입력해 주세요.");
-    return lines.map(function (line) {
-      var parts = line.split("|");
-      if (parts.length !== 3 || ["LEGACY_JSON", "LEGACY_DB", "RUNTIME_DB"].indexOf(parts[0]) < 0 || !parts[1].trim() || !parts[2].trim()) {
-        throw new Error("source binding은 SYSTEM|table|key 형식이어야 합니다.");
-      }
-      return { system: parts[0], table: parts[1].trim(), key: parts[2].trim() };
-    });
-  }
-
-  // exact object projection과 UPDATE·SET_ACTIVE 진입점을 생성합니다.
-  function objectCatalogDetail(object) {
-    var nextActive = !object.active;
-    return "<div class=\"detail-body\"><div class=\"detail-title\"><div><h3>" + escapeHtml(object.displayName) + "</h3><span class=\"mono\">" + escapeHtml(object.objectKey) + "</span></div><span class=\"catalog-status " + (object.active ? "" : "inactive") + "\">" + (object.active ? "활성" : "비활성") + "</span></div>" +
-      "<dl class=\"detail-list\"><div><dt>Definition ID</dt><dd class=\"mono\">" + escapeHtml(object.definitionId) + "</dd></div><div><dt>Object Type</dt><dd>" + escapeHtml(object.objectType) + "</dd></div><div><dt>Expected Version</dt><dd class=\"mono\">" + escapeHtml(object.version) + "</dd></div><div><dt>Stable Key</dt><dd class=\"mono\">" + escapeHtml(object.objectKey) + "</dd></div></dl>" +
-      "<form id=\"object-update-form\" class=\"catalog-form\"><h4>표시 정보 수정</h4><label>표시 이름<input name=\"displayName\" required maxlength=\"191\" value=\"" + escapeHtml(object.displayName) + "\"></label><label>Metadata JSON<textarea class=\"object-json\" name=\"metadata\" required>" + escapeHtml(JSON.stringify(object.metadata || {}, null, 2)) + "</textarea></label><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable objectKey와 expectedVersion을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">오브젝트 수정</button></form>" +
-      "<form id=\"object-active-form\" class=\"catalog-form catalog-confirm\"><div><strong>" + (nextActive ? "오브젝트 활성화 확인" : "오브젝트 비활성화 확인") + "</strong><p class=\"muted\">삭제하지 않고 active 상태만 변경합니다.</p></div><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>" + (nextActive ? "활성화" : "비활성화") + " 후 영향과 현재 버전을 확인했습니다.</span></label><button class=\"" + (nextActive ? "primary-button" : "danger-button") + "\" type=\"submit\">" + (nextActive ? "활성화" : "비활성화") + "</button></form></div>";
-  }
-
-  // object provider 오류를 conflict·not-found·failure와 same-key retry 상태로 표시합니다.
-  function showObjectMutationFailure(error, retry) {
-    state.objectCatalogRetry = retry;
-    var target = byId("object-catalog-message");
-    if (!target) return;
-    var conflict = error && error.status === 409;
-    target.className = "catalog-notice error";
-    target.innerHTML = "<strong>" + (conflict ? "오브젝트가 먼저 변경되었습니다." : "오브젝트 요청을 완료하지 못했습니다.") + "</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"object-mutation-retry\">" + (conflict ? "최신 오브젝트 다시 조회" : "같은 요청 다시 보내기") + "</button>";
-    byId("object-mutation-retry").addEventListener("click", function () { if (conflict) loadObjectCatalog(state.objectCatalogKey); else if (state.objectCatalogRetry) state.objectCatalogRetry(); });
-  }
-
-  // CSRF, Idempotency-Key와 caller expectedVersion을 object REST mutation에 전달합니다.
-  async function mutateObjectCatalog(path, method, body, idempotencyKey) {
-    if (!state.csrfToken) { showObjectMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {}); return; }
-    var retry = function () { return mutateObjectCatalog(path, method, body, idempotencyKey); };
-    try {
-      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
-      state.objectCatalogKey = payload.result.object.objectKey;
-      state.objectCatalogRetry = null;
-      state.objectCatalogNotice = payload.result.replayed
-        ? { kind: "replay", title: "이미 완료된 오브젝트 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
-        : { kind: "", title: "오브젝트 카탈로그를 반영했습니다.", message: payload.result.status + " · version " + payload.result.object.version };
-      showToast(payload.result.replayed ? "완료된 오브젝트 요청을 다시 불러왔습니다." : "오브젝트 카탈로그를 변경했습니다.", false);
-      await loadObjectCatalog(state.objectCatalogKey);
-    } catch (error) { showObjectMutationFailure(error, retry); }
-  }
-
-  // manager/super_admin에게 exact lookup과 REGISTER·UPDATE·SET_ACTIVE만 제공합니다.
-  async function loadObjectCatalog(objectKey) {
-    state.objectCatalogKey = objectKey || "";
-    state.refresh = function () { return loadObjectCatalog(state.objectCatalogKey); };
-    var main = byId("main-content");
-    var lookup = "<section class=\"panel\"><div class=\"panel-heading\"><form id=\"object-lookup-form\" class=\"object-lookup-form\"><label class=\"skip-link\" for=\"object-key-search\">Object key</label><input id=\"object-key-search\" name=\"objectKey\" required value=\"" + escapeHtml(state.objectCatalogKey) + "\" placeholder=\"예: currency.gold\"><button class=\"primary-button\" type=\"submit\">정확히 조회</button></form></div><div id=\"object-detail\">" + (state.objectCatalogKey ? loadingState("오브젝트를 불러오는 중") : emptyState("Object key를 입력하세요.", "목록 전체 조회 없이 stable key 한 건만 조회합니다.")) + "</div></section>";
-    var register = "<aside class=\"panel\"><div class=\"panel-heading\"><div><h3>오브젝트 등록</h3><p>canonical source가 존재하는 정의만 등록합니다.</p></div></div><form id=\"object-register-form\" class=\"catalog-form\"><label>Object key<input name=\"objectKey\" required placeholder=\"currency.lease2374_credit\"></label><label>Object type<select name=\"objectType\">" + ["ITEM","PET","FURNITURE","TITLE","PET_TITLE","PACKAGE","CURRENCY","SKILL","HOME_BUILDING","MINI_PET"].map(function (type) { return "<option value=\"" + type + "\">" + type + "</option>"; }).join("") + "</select></label><label>표시 이름<input name=\"displayName\" required maxlength=\"191\"></label><label>Metadata JSON<textarea class=\"object-json\" name=\"metadata\" required>{}</textarea></label><label>Canonical source<textarea class=\"object-json\" name=\"sourceBindings\" required placeholder=\"RUNTIME_DB|currency_definitions|lease2374_credit\"></textarea></label><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"active\" type=\"checkbox\" checked><span>등록 즉시 active 상태로 시작합니다.</span></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable objectKey, objectType과 canonical source를 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">오브젝트 등록</button></form></aside>";
-    main.innerHTML = renderViewIntro("오브젝트 카탈로그", "stable objectKey 단건 조회와 provider 지원 변경만 수행합니다.", "manager / super_admin") + objectCatalogNotice() + "<div class=\"catalog-layout\">" + lookup + register + "</div>";
-    byId("object-lookup-form").addEventListener("submit", function (event) { event.preventDefault(); loadObjectCatalog(new FormData(event.currentTarget).get("objectKey").toString().trim()); });
-    byId("object-register-form").addEventListener("submit", function (event) {
-      event.preventDefault(); var data = new FormData(event.currentTarget);
-      try { mutateObjectCatalog("/api/v1/admin/object-catalog/objects", "POST", { objectKey: data.get("objectKey").toString().trim(), objectType: data.get("objectType").toString(), displayName: data.get("displayName").toString().trim(), active: data.get("active") === "on", metadata: parseObjectMetadata(data.get("metadata").toString()), sourceBindings: parseObjectSources(data.get("sourceBindings").toString()), reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); }
-      catch (error) { showObjectMutationFailure(error, function () {}); }
-    });
-    if (state.objectCatalogKey) {
-      try {
-        var payload = await api("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(state.objectCatalogKey));
-        var object = payload.object;
-        byId("object-detail").innerHTML = objectCatalogDetail(object);
-        byId("object-update-form").addEventListener("submit", function (event) { event.preventDefault(); var data = new FormData(event.currentTarget); try { mutateObjectCatalog("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(object.objectKey), "PATCH", { objectType: object.objectType, expectedVersion: object.version, displayName: data.get("displayName").toString().trim(), metadata: parseObjectMetadata(data.get("metadata").toString()), reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); } catch (error) { showObjectMutationFailure(error, function () {}); } });
-        byId("object-active-form").addEventListener("submit", function (event) { event.preventDefault(); var data = new FormData(event.currentTarget); mutateObjectCatalog("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(object.objectKey) + "/active", "POST", { objectType: object.objectType, expectedVersion: object.version, active: !object.active, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); });
-        markUpdated();
-      } catch (error) { byId("object-detail").innerHTML = errorState(error, "object-catalog"); attachRetry(byId("object-detail")); }
-    }
-    state.objectCatalogNotice = null;
   }
 
   byId("login-form").addEventListener("submit", async function (event) {

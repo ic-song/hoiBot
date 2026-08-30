@@ -1,0 +1,74 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-ACCOUNT-ACTIONS-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-WEB-ACCOUNT-ACTIONS-01-202608300637",
+  "baseline": "65f84c6e",
+  "scope": "ADMIN_WEB_EXISTING_ACCOUNT_RESTRICTION_APIS",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "constraints": [
+    "No MariaDB schema, migration, provider, or outbox implementation",
+    "No operational data access",
+    "No account deletion, operator, pass, currency, reward, catalog, backup, or restore actions",
+    "No legacy Rhino source changes",
+    "No feature/prod reflection"
+  ],
+  "gate1": {
+    "status": "complete",
+    "reference": "개발환경_고도화/references/admin-web-account-actions.md",
+    "existingRoutes": "개발환경_고도화/runtime/src/admin/routes.ts",
+    "existingProvider": "개발환경_고도화/runtime/src/admin/management-service.ts",
+    "outboxGap": true
+  },
+  "gate2": {
+    "status": "complete",
+    "databaseMappingRows": [1878, 1879, 1880],
+    "contractReference": "개발환경_고도화/references/admin-web-account-actions.md"
+  },
+  "gate3": {
+    "status": "complete",
+    "fixtures": [
+      "개발환경_고도화/runtime/test/fixtures/admin-web-shell.ts",
+      "개발환경_고도화/runtime/test/support/admin-web-shell-preview.ts"
+    ],
+    "scenarios": ["temporary", "permanent", "revoke", "not-found", "permission", "csrf", "replay", "audit rollback"],
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "implementation": ["개발환경_고도화/runtime/src/admin/web-shell-assets.ts"],
+    "permission": "account.restrict",
+    "notificationGapVisible": true
+  },
+  "gate5": {
+    "status": "complete",
+    "integrationTest": "개발환경_고도화/runtime/test/admin-web-account-actions.integration.test.ts",
+    "focusedTests": { "total": 10, "passed": 10, "failed": 0 },
+    "typecheck": "pass",
+    "build": "pass",
+    "transactionRollback": "pass",
+    "commandAudit": "pass",
+    "outboxCount": 0
+  },
+  "gate6": {
+    "status": "complete",
+    "parityFocusedTests": { "total": 14, "passed": 14, "failed": 0 },
+    "fullRegression": { "total": 1163, "passed": 1156, "failed": 0, "skipped": 7 },
+    "parity": [
+      "existing REST paths and request validation preserved",
+      "existing AdminManagementService transaction and audit behavior exercised",
+      "same-key replay returns the original restriction and audit identifiers",
+      "temporary, permanent, and revoke projections remain distinct"
+    ]
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "sourceCommit": "PENDING",
+    "sourcePushVerified": false,
+    "browserTarget": "synthetic Fastify fixture server",
+    "desktop": { "width": 1440, "height": 1000, "status": "pass" },
+    "mobile": { "width": 390, "height": 844, "horizontalOverflow": false, "status": "pass" },
+    "consoleWarningsOrErrors": 0,
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  }
+}

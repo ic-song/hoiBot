@@ -7,6 +7,7 @@ import {
   syntheticAdminAudit,
   syntheticAdminOverview,
   syntheticAdminPlayer,
+  syntheticAdminRestrictions,
   syntheticAdminSession,
   syntheticMonitoringEvent
 } from "./fixtures/admin-web-shell.js";
@@ -49,44 +50,46 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
   });
 
-  it("connects only the approved read APIs, catalog consumers, and session lifecycle", () => {
+  it("connects the approved read APIs, session lifecycle, and account restriction mutations", () => {
     for (const path of [
       "/api/v1/admin/sessions",
       "/api/v1/admin/sessions/current",
       "/api/v1/admin/overview",
       "/api/v1/admin/players",
+      "/api/v1/admin/restrictions",
       "/api/v1/admin/audit-entries",
       "/api/v1/admin/channel-activity",
       "/api/v1/admin/moderation-incidents",
       "/api/v1/admin/monitoring-events",
-      "/api/v1/admin/delivery-failures",
-      "/api/v1/admin/diamond-shop/catalog",
-      "/api/v1/admin/package-catalog",
-      "/api/v1/admin/object-catalog/objects/"
+      "/api/v1/admin/delivery-failures"
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
-    for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore"]) {
+    for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
       assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
     }
-    assert.equal((ADMIN_WEB_CLIENT.match(/method: "POST"/g) ?? []).length, 1);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length, 2);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 1);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
   });
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage"
+      "overview.read", "player.read", "account.restrict", "audit.read", "activity.read", "incident.read", "monitoring.read"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");
     assert.equal(syntheticAdminPlayer.currencies.diamond, "350");
     assert.equal(syntheticAdminAudit.resultCode, "success");
     assert.equal(syntheticMonitoringEvent.monitoringGroup, "media");
+    assert.equal(syntheticAdminRestrictions[0].status, "active");
   });
 
   it("serves every approved view from synthetic APIs without a database", async () => {
     const app = await buildSyntheticAdminWebShellApp();
     try {
+      const login = await app.inject({ method: "POST", url: "/api/v1/admin/sessions", payload: { loginId: "shadow.manager", password: "synthetic" } });
+      assert.equal(login.statusCode, 200);
       const responses = await Promise.all([
         app.inject({ method: "GET", url: "/api/v1/admin/sessions/current" }),
         app.inject({ method: "GET", url: "/api/v1/admin/overview" }),
@@ -96,16 +99,13 @@ describe("admin web shell", () => {
         app.inject({ method: "GET", url: "/api/v1/admin/channel-activity?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/moderation-incidents?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/monitoring-events?page=1&limit=25" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/diamond-shop/catalog" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/package-catalog" })
+        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" })
       ]);
       assert.ok(responses.every((response) => response.statusCode === 200));
       assert.equal(responses[2]?.json().total, 1);
       assert.equal(responses[3]?.json().player.displayName, "합성회원");
+      assert.equal(responses[3]?.json().player.restrictions.length, 2);
       assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
-      assert.equal(responses[9]?.json().catalog.catalogVersion, "14");
-      assert.equal(responses[10]?.json().catalog.catalogKey, "PACKAGE_CATALOG");
     } finally {
       await app.close();
     }
@@ -117,40 +117,5 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /세션이 만료됐습니다/);
     assert.match(ADMIN_WEB_CLIENT, /검색 결과가 없습니다/);
     assert.match(ADMIN_WEB_CLIENT, /다시 시도/);
-    assert.match(ADMIN_WEB_CLIENT, /manager/);
-    assert.match(ADMIN_WEB_CLIENT, /super_admin/);
-  });
-
-  it("provides responsive add, explicit soft-disable, conflict, failure, and replay states", () => {
-    assert.match(ADMIN_WEB_CLIENT, /상품 추가/);
-    assert.match(ADMIN_WEB_CLIENT, /상품 비활성화 확인/);
-    assert.match(ADMIN_WEB_CLIENT, /목록이 먼저 변경되었습니다/);
-    assert.match(ADMIN_WEB_CLIENT, /같은 요청 다시 보내기/);
-    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 요청입니다/);
-    assert.match(ADMIN_WEB_CLIENT, /"x-csrf-token"/);
-    assert.match(ADMIN_WEB_CLIENT, /"idempotency-key"/);
-    assert.match(ADMIN_WEB_STYLES, /@media \(max-width: 640px\)/);
-    assert.match(ADMIN_WEB_STYLES, /\.catalog-layout/);
-  });
-
-  it("exposes only package adapter ADD, EDIT, REMOVE and ENABLE states", () => {
-    assert.match(ADMIN_WEB_CLIENT, /패키지 추가/);
-    assert.match(ADMIN_WEB_CLIENT, /패키지 보상 전체 수정/);
-    assert.match(ADMIN_WEB_CLIENT, /패키지 목록 제거 확인/);
-    assert.match(ADMIN_WEB_CLIENT, /패키지 활성화 확인/);
-    assert.match(ADMIN_WEB_CLIENT, /package\.catalog\.manage/);
-    assert.match(ADMIN_WEB_CLIENT, /expectedCatalogVersion/);
-    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 패키지 요청입니다/);
-    assert.doesNotMatch(ADMIN_WEB_CLIENT, /패키지 카탈로그 발행|package-catalog\/publish/);
-  });
-
-  it("exposes exact object lookup and only REGISTER, UPDATE and SET_ACTIVE states", () => {
-    assert.match(ADMIN_WEB_CLIENT, /오브젝트 등록/);
-    assert.match(ADMIN_WEB_CLIENT, /오브젝트 수정/);
-    assert.match(ADMIN_WEB_CLIENT, /오브젝트 비활성화 확인/);
-    assert.match(ADMIN_WEB_CLIENT, /object-catalog\/objects/);
-    assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
-    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
-    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
   });
 });
