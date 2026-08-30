@@ -1,0 +1,32 @@
+{
+  "sliceId": "SL-PLAYER-TITLE-DEFINITION-INSTANCE-LINK-01",
+  "executionId": "개발자-SL-PLAYER-TITLE-DEFINITION-INSTANCE-LINK-01-20260831T0505",
+  "baseline": "044a6c6b7992da37840a45c08943b79e73b48dac",
+  "wbs": 648,
+  "dbRow": 1926,
+  "lease": 2394,
+  "migration": "403_player_title_definition_instance_link.sql",
+  "scope": {
+    "staticDefinitions": 5,
+    "adminSourceScope": "PLAYER_ADMIN_CUSTOM",
+    "giftSourceScope": "PLAYER_GIFT",
+    "sameDisplayMerges": 0,
+    "repeatedGrantInstancesPreserved": true,
+    "sourceOperationSequencePreserved": true,
+    "ownedRemovedEquippedVersionPreserved": true,
+    "aggregateProjectionByDefinition": true,
+    "petMiniGuildObjectLinks": 0
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration403RollbackReapplyReconnect": "required",
+    "normalRepeatEquipRemoveNotfoundConflictReplayRollback": "required",
+    "shadow": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}

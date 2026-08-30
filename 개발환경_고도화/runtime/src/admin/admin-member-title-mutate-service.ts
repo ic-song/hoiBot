@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { MariaPlayerTitleDefinitionLinkRepository } from "../player/maria-player-title-definition-link-repository.js";
+import { PlayerTitleDefinitionLinkProvider } from "../player/player-title-definition-link.js";
 
 type ParsedCommand =
   | { kind: "usage"; commandCode: string }
@@ -66,7 +68,10 @@ export function parseAdminMemberTitleMutateCommand(message: string): ParsedComma
 
 // 관리자 권한·stable title instance·감사·응답을 한 transaction으로 변경합니다.
 export class AdminMemberTitleMutateService {
-  public constructor(private readonly database: DatabaseClient) {}
+  public constructor(
+    private readonly database: DatabaseClient,
+    private readonly titleDefinitions = new PlayerTitleDefinitionLinkProvider(new MariaPlayerTitleDefinitionLinkRepository()),
+  ) {}
 
   public async handle(input: { eventId: string; externalUserId: string; destinationId: string; message: string }): Promise<AdminMemberTitleMutateResult | null> {
     const parsed = parseAdminMemberTitleMutateCommand(input.message);
@@ -111,17 +116,14 @@ export class AdminMemberTitleMutateService {
           }
         }
       } else {
-        const code = `admin-custom-title:${createHash("sha256").update(parsed.titleName).digest("hex").slice(0, 32)}`;
-        await transaction.execute("INSERT INTO title_definitions(code,display_name,scope_code,active) VALUES (?,?,'player_custom',TRUE) ON DUPLICATE KEY UPDATE active=TRUE", [code, parsed.titleName]);
-        const definition = (await transaction.query<Array<{ id: bigint; display_name: string }>>("SELECT id,display_name FROM title_definitions WHERE code=? FOR UPDATE", [code]))[0]!;
-        if (definition.display_name !== parsed.titleName) throw new ApplicationError("TITLE_CODE_COLLISION", "타이틀 정의 충돌을 확인해 주세요.", 409);
+        const definition = await this.titleDefinitions.ensureAdminCustom(transaction, parsed.titleName);
         let sequence = 0;
         for (const targetName of parsed.targetNames) {
           const target = byName.get(targetName); if (target === undefined) continue;
           const maxOrder = (await transaction.query<Array<{ max_order: bigint | null }>>("SELECT MAX(display_order) max_order FROM player_title_instances WHERE player_id=? AND status='owned' FOR UPDATE", [target.player_id]))[0]?.max_order ?? 0n;
           sequence += 1;
-          const inserted = await transaction.execute("INSERT INTO player_title_instances(instance_key,player_id,title_id,snapshot_name,source_operation_id,source_sequence_no,price_value,legacy_price_json,display_order,status,equipped,acquired_at,version) VALUES (UUID(),?,?,?,?,?,?,?,?,'owned',FALSE,UTC_TIMESTAMP(3),1)", [target.player_id, definition.id, parsed.titleName, operation.id, sequence, parsed.priceRaw, parsed.priceJson, maxOrder + 1n]);
-          await transaction.execute("INSERT IGNORE INTO player_titles(player_id,title_id,acquired_at,equipped,display_order,acquisition_price) VALUES (?,?,UTC_TIMESTAMP(3),FALSE,?,?)", [target.player_id, definition.id, maxOrder + 1n, parsed.priceRaw]);
+          const inserted = await transaction.execute("INSERT INTO player_title_instances(instance_key,player_id,title_id,title_catalog_entry_id,snapshot_name,source_operation_id,source_sequence_no,price_value,legacy_price_json,display_order,status,equipped,acquired_at,version) VALUES (UUID(),?,?,?,?,?,?,?,?,?,'owned',FALSE,UTC_TIMESTAMP(3),1)", [target.player_id, definition.titleId, definition.catalogEntryId, parsed.titleName, operation.id, sequence, parsed.priceRaw, parsed.priceJson, maxOrder + 1n]);
+          await transaction.execute("INSERT IGNORE INTO player_titles(player_id,title_id,acquired_at,equipped,display_order,acquisition_price) VALUES (?,?,UTC_TIMESTAMP(3),FALSE,?,?)", [target.player_id, definition.titleId, maxOrder + 1n, parsed.priceRaw]);
           instanceIds.push(inserted.insertId.toString());
         }
       }
