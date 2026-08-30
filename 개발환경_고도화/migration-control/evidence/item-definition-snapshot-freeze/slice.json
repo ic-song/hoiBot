@@ -1,0 +1,56 @@
+{
+  "sliceId": "SL-ASSET-ITEM-DEFINITION-SNAPSHOT-FREEZE-01",
+  "executionId": "개발자-SL-ASSET-ITEM-DEFINITION-SNAPSHOT-FREEZE-01-20260831T0320",
+  "catalogVersion": "ASSET-FREEZE-v2.400-item-definition-snapshot-01",
+  "baseline": "472ad5f7146fbd083b7c3193aad8f5307cbfcbea",
+  "wbs": 635,
+  "dbRow": 1913,
+  "lease": 2384,
+  "scope": {
+    "sourceCandidates": 415,
+    "authoritativeMembership": 413,
+    "previousControl": 408,
+    "correctedDelta": 5,
+    "currencyBoundaryExclusions": 2,
+    "boundaries": {
+      "COMMON_ITEM": 249,
+      "PACKAGE_COMPATIBILITY": 151,
+      "PENDANT_INSTANCE": 13
+    },
+    "pendantDefinitions": 13,
+    "pendantObjectsCarryForward": 13,
+    "schemaChanges": 0,
+    "providerChanges": 0,
+    "migrationChanges": 0,
+    "uiChanges": 0,
+    "mainJsChanges": 0,
+    "operationalDbTouched": false
+  },
+  "correction": {
+    "source": "212_admin_legacy_data_cleanup.sql",
+    "codes": [
+      "ITEM-TERRITORY-AMBUSH-10",
+      "ITEM-TERRITORY-AMBUSH-40",
+      "ITEM-TERRITORY-ATTACK",
+      "ITEM-TERRITORY-DEFENSE-20",
+      "ITEM-TERRITORY-DEFENSE-50"
+    ],
+    "conclusion": "authoritative source evidence supports 413; previous 408 control is corrected"
+  },
+  "hashes": {
+    "sourceFilesSha256": "f0ee1eef767fd61b928418b4645fedfd806e51c66271a6ff3c23510acb90f983",
+    "membershipSha256": "cbf8ce772ac8b0f00ca3c35b8a85306a443e693efc3971aec9bb38da363ab816",
+    "exclusionsSha256": "58361726b844e9fe21149bb402d5cbc05111928547b53119540e4f06ace6f6cc",
+    "correctionsSha256": "0de9a9089213184b57fb0c41cab0ec79150328966767178e3c67d5f49f4e4130"
+  },
+  "fixture": "item-definition-snapshot-v1.json",
+  "focusedTest": "item-definition-snapshot-freeze.test.ts",
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "defaultFullRegression": "PASS"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}
