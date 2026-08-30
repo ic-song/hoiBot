@@ -49,7 +49,7 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
   });
 
-  it("connects only the approved read APIs plus session lifecycle", () => {
+  it("connects only the approved read APIs, diamond catalog consumer, and session lifecycle", () => {
     for (const path of [
       "/api/v1/admin/sessions",
       "/api/v1/admin/sessions/current",
@@ -59,10 +59,11 @@ describe("admin web shell", () => {
       "/api/v1/admin/channel-activity",
       "/api/v1/admin/moderation-incidents",
       "/api/v1/admin/monitoring-events",
-      "/api/v1/admin/delivery-failures"
+      "/api/v1/admin/delivery-failures",
+      "/api/v1/admin/diamond-shop/catalog"
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
-    for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
+    for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore"]) {
       assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
     }
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "POST"/g) ?? []).length, 1);
@@ -93,12 +94,14 @@ describe("admin web shell", () => {
         app.inject({ method: "GET", url: "/api/v1/admin/channel-activity?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/moderation-incidents?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/monitoring-events?page=1&limit=25" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" })
+        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/diamond-shop/catalog" })
       ]);
       assert.ok(responses.every((response) => response.statusCode === 200));
       assert.equal(responses[2]?.json().total, 1);
       assert.equal(responses[3]?.json().player.displayName, "합성회원");
       assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
+      assert.equal(responses[9]?.json().catalog.catalogVersion, "14");
     } finally {
       await app.close();
     }
@@ -110,5 +113,19 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /세션이 만료됐습니다/);
     assert.match(ADMIN_WEB_CLIENT, /검색 결과가 없습니다/);
     assert.match(ADMIN_WEB_CLIENT, /다시 시도/);
+    assert.match(ADMIN_WEB_CLIENT, /manager/);
+    assert.match(ADMIN_WEB_CLIENT, /super_admin/);
+  });
+
+  it("provides responsive add, explicit soft-disable, conflict, failure, and replay states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /상품 추가/);
+    assert.match(ADMIN_WEB_CLIENT, /상품 비활성화 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /목록이 먼저 변경되었습니다/);
+    assert.match(ADMIN_WEB_CLIENT, /같은 요청 다시 보내기/);
+    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 요청입니다/);
+    assert.match(ADMIN_WEB_CLIENT, /"x-csrf-token"/);
+    assert.match(ADMIN_WEB_CLIENT, /"idempotency-key"/);
+    assert.match(ADMIN_WEB_STYLES, /@media \(max-width: 640px\)/);
+    assert.match(ADMIN_WEB_STYLES, /\.catalog-layout/);
   });
 });

@@ -20,12 +20,12 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
         <span class="brand-mark" aria-hidden="true">H</span>
         <span>hoiBot Operations</span>
       </div>
-      <p class="eyebrow">READ-ONLY CONTROL SURFACE</p>
-      <h1 id="login-title">운영 판단에 필요한 정보만<br>한 화면에서 확인하세요.</h1>
-      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 권한 범위 안에서 조회합니다. 이 화면에서는 데이터 변경 작업을 제공하지 않습니다.</p>
+      <p class="eyebrow">CONTROLLED OPERATIONS SURFACE</p>
+      <h1 id="login-title">운영 판단과 승인된 변경을<br>한 화면에서 관리하세요.</h1>
+      <p class="login-description">회원, 감사 기록과 모니터링 이벤트를 조회하고, 허용된 역할은 명시적인 확인 절차로 다이아상점 카탈로그를 관리합니다.</p>
       <dl class="login-principles">
         <div><dt>권한 우선</dt><dd>허용된 메뉴만 표시</dd></div>
-        <div><dt>조회 전용</dt><dd>조치 기능은 별도 승인</dd></div>
+        <div><dt>명시적 확인</dt><dd>사유와 버전 기반 변경</dd></div>
         <div><dt>기록 기반</dt><dd>요청 ID와 오류를 보존</dd></div>
       </dl>
     </section>
@@ -56,7 +56,7 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
       <div id="operator-summary" class="operator-summary"></div>
       <nav id="primary-nav" class="primary-nav"></nav>
       <div class="sidebar-foot">
-        <span class="read-only-indicator"><i aria-hidden="true"></i> 조회 전용 모드</span>
+        <span class="read-only-indicator"><i aria-hidden="true"></i> 승인된 변경 모드</span>
         <span>Gate 8 전환 전</span>
       </div>
     </aside>
@@ -108,7 +108,7 @@ export const ADMIN_WEB_STYLES = String.raw`
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
 body { margin: 0; background: var(--canvas); color: var(--ink); }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 [hidden] { display: none !important; }
 
@@ -150,11 +150,12 @@ button { cursor: pointer; }
 .login-panel-heading > p:last-child { color: var(--muted); margin: 10px 0 34px; }
 .login-panel form { display: grid; gap: 10px; }
 .login-panel label { margin-top: 10px; font-size: 13px; font-weight: 700; }
-input, select {
+input, select, textarea {
   width: 100%; min-height: 46px; padding: 11px 13px; color: var(--ink); background: #fff;
   border: 1px solid #cbd3dc; border-radius: 7px; outline: none;
 }
-input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,118,109,.14); }
+textarea { min-height: 86px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,118,109,.14); }
 .form-error { margin: 7px 0 0; padding: 10px 12px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 13px; }
 .primary-button, .secondary-button, .text-button, .icon-button {
   min-height: 40px; border-radius: 7px; border: 1px solid transparent; font-weight: 700;
@@ -261,6 +262,29 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
 .tag { padding: 4px 7px; background: var(--accent-soft); color: var(--accent-dark); border-radius: 4px; font-size: 10px; font-weight: 700; }
 
+.catalog-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .7fr); gap: 18px; align-items: start; }
+.catalog-layout > * { min-width: 0; }
+.catalog-summary { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 11px; }
+.catalog-summary strong { color: var(--ink); }
+.catalog-form { display: grid; gap: 13px; padding: 16px; }
+.catalog-form label { display: grid; gap: 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.checkbox-field { display: flex !important; align-items: flex-start; gap: 9px !important; padding: 11px; background: #f7f9fa; border: 1px solid var(--line); border-radius: 7px; font-weight: 600 !important; line-height: 1.45; }
+.checkbox-field input { width: 17px; min-height: 17px; margin: 1px 0 0; accent-color: var(--accent); }
+.catalog-form .primary-button { margin-top: 0; }
+.danger-button { min-height: 34px; padding: 0 10px; color: var(--danger); background: #fff; border: 1px solid #e2b8b4; border-radius: 6px; font-size: 11px; font-weight: 800; }
+.danger-button:hover { background: #fff3f1; border-color: var(--danger); }
+.catalog-notice { margin-bottom: 14px; padding: 13px 15px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: 12px; }
+.catalog-notice.replay { border-left-color: var(--warning); background: #fff7e8; }
+.catalog-notice.error { border-left-color: var(--danger); background: #fff2f0; }
+.catalog-notice strong { display: block; margin-bottom: 4px; }
+.catalog-notice .secondary-button { display: block; margin-top: 10px; }
+.catalog-confirm { margin-top: 18px; border: 1px solid #e2b8b4; background: #fffafa; box-shadow: var(--shadow); }
+.catalog-confirm .panel-heading { border-bottom-color: #efd3d0; }
+.catalog-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.catalog-confirm-actions .primary-button { background: var(--danger); }
+.catalog-confirm-actions .primary-button:hover { background: #8d2e28; }
+
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
 .pagination button { min-width: 34px; min-height: 32px; padding: 0 9px; background: #fff; border: 1px solid var(--line); border-radius: 5px; }
@@ -290,6 +314,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
   .metric:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
   .metric:nth-last-child(-n+2) { border-bottom: 0; }
   .content-grid { grid-template-columns: 1fr; }
+  .catalog-layout { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -309,6 +334,9 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
   .toolbar, .search-form { width: 100%; }
   .toolbar input, .search-form input { width: 100%; }
   .detail-list { grid-template-columns: 1fr; }
+  .field-grid { grid-template-columns: 1fr; }
+  .catalog-confirm-actions { flex-direction: column-reverse; }
+  .catalog-confirm-actions button { width: 100%; }
 }`;
 
 export const ADMIN_WEB_CLIENT = String.raw`(function () {
@@ -322,7 +350,9 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     activeView: "dashboard",
     refresh: null,
     playerSearch: "",
-    monitoringTab: "events"
+    monitoringTab: "events",
+    catalogNotice: null,
+    catalogRetry: null
   };
 
   var NAV_ITEMS = [
@@ -331,7 +361,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "audit", label: "감사 기록", icon: "≡", permission: "audit.read", group: "감사·모니터링", kicker: "AUDIT TRAIL" },
     { id: "activity", label: "채널 활동", icon: "⌁", permission: "activity.read", group: "감사·모니터링", kicker: "CHANNEL ACTIVITY" },
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
-    { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" }
+    { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" },
+    { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" }
   ];
 
   var METRICS = [
@@ -382,6 +413,16 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
   // 현재 세션에 지정 조회 권한이 있는지 확인합니다.
   function hasPermission(permission) {
     return Boolean(state.session && state.session.permissions.includes(permission));
+  }
+
+  // 현재 세션 역할이 메뉴가 요구하는 역할 중 하나인지 확인합니다.
+  function hasAnyRole(roles) {
+    return Boolean(state.session && roles && roles.some(function (role) { return state.session.roleCodes.includes(role); }));
+  }
+
+  // permission 또는 명시된 관리자 역할에 따라 메뉴 접근을 결정합니다.
+  function canAccess(item) {
+    return item.permission ? hasPermission(item.permission) : hasAnyRole(item.roles);
   }
 
   // 동일 출처 관리자 API를 호출하고 공통 오류 계약을 적용합니다.
@@ -438,7 +479,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         return "<span class=\"role-tag\">" + escapeHtml(role) + "</span>";
       }).join("") + "</div>";
     renderNavigation();
-    var allowed = NAV_ITEMS.filter(function (item) { return hasPermission(item.permission); });
+    var allowed = NAV_ITEMS.filter(canAccess);
     if (!allowed.some(function (item) { return item.id === state.activeView; })) {
       state.activeView = allowed.length ? allowed[0].id : "none";
     }
@@ -447,7 +488,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
 
   // 현재 권한으로 접근 가능한 관리 메뉴만 구성합니다.
   function renderNavigation() {
-    var allowed = NAV_ITEMS.filter(function (item) { return hasPermission(item.permission); });
+    var allowed = NAV_ITEMS.filter(canAccess);
     var lastGroup = "";
     var html = "";
     allowed.forEach(function (item) {
@@ -530,7 +571,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "audit") loadAudit(1);
     else if (item.id === "activity") loadActivity(1);
     else if (item.id === "incidents") loadIncidents(1);
-    else loadMonitoring(1);
+    else if (item.id === "monitoring") loadMonitoring(1);
+    else loadDiamondCatalog();
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
 
@@ -753,6 +795,139 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     } catch (error) {
       results.innerHTML = errorState(error, "monitoring");
       attachRetry(results);
+    }
+  }
+
+  // 큰 decimal string을 Number 변환 없이 천 단위로 표시합니다.
+  function formatDecimal(value) {
+    var text = String(value == null ? "" : value);
+    return /^\d+$/.test(text) ? text.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : text;
+  }
+
+  // 브라우저 재시도에도 재사용할 수 있는 요청 멱등성 키를 생성합니다.
+  function catalogIdempotencyKey() {
+    return "diamond-catalog:" + (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+      ? globalThis.crypto.randomUUID() : Date.now() + ":" + Math.random().toString(16).slice(2));
+  }
+
+  // 현재 카탈로그 안내·replay 결과를 화면 상단 배너로 생성합니다.
+  function catalogNotice() {
+    if (!state.catalogNotice) return "<div id=\"catalog-message\"></div>";
+    var notice = state.catalogNotice;
+    return "<div id=\"catalog-message\" class=\"catalog-notice " + escapeHtml(notice.kind || "") + "\"><strong>" +
+      escapeHtml(notice.title) + "</strong><span>" + escapeHtml(notice.message) + "</span></div>";
+  }
+
+  // 활성 상품 목록과 stable productId 기반 soft-disable 진입점을 생성합니다.
+  function catalogTable(catalog) {
+    if (!catalog.items.length) return emptyState("활성 상품이 없습니다.", "오른쪽 입력 폼에서 첫 상품을 추가할 수 있습니다.");
+    return "<div class=\"table-wrap\"><table class=\"data-table\"><thead><tr><th>순서</th><th>상품</th><th>지급 수량</th><th>가격</th><th>버전</th><th>관리</th></tr></thead><tbody>" +
+      catalog.items.map(function (item) {
+        return "<tr><td>" + escapeHtml(item.displayOrder) + "</td><td><strong>" + escapeHtml(item.displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(item.productId) + "</span></td>" +
+          "<td>" + escapeHtml(formatDecimal(item.quantity)) + "개</td><td>" + escapeHtml(formatDecimal(item.price)) + " 다이아</td><td class=\"mono\">v" + escapeHtml(item.version) + "</td>" +
+          "<td><button class=\"danger-button\" type=\"button\" data-disable-product=\"" + escapeHtml(item.productId) + "\" data-product-name=\"" + escapeHtml(item.displayName) + "\">비활성화</button></td></tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+
+  // mutation 실패 시 같은 Idempotency-Key로 재시도 가능한 상태를 표시합니다.
+  function showCatalogMutationFailure(error, retry) {
+    state.catalogRetry = retry;
+    var target = byId("catalog-message");
+    if (!target) return;
+    target.className = "catalog-notice error";
+    target.innerHTML = "<strong>변경 요청을 완료하지 못했습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span>" +
+      "<button class=\"secondary-button\" type=\"button\" id=\"catalog-mutation-retry\">같은 요청 다시 보내기</button>";
+    byId("catalog-mutation-retry").addEventListener("click", function () { if (state.catalogRetry) state.catalogRetry(); });
+  }
+
+  // catalog version 충돌을 자동 덮어쓰기 없이 명시적인 새로고침 상태로 표시합니다.
+  function showCatalogConflict(error) {
+    state.refresh = loadDiamondCatalog;
+    byId("main-content").innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.") +
+      "<div class=\"error-state\"><div><strong>목록이 먼저 변경되었습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span>" +
+      "<p>최신 버전을 다시 확인한 뒤 변경 내용을 검토해 주세요.</p><button class=\"secondary-button\" type=\"button\" data-retry=\"catalog\">최신 목록 불러오기</button></div></div>";
+    attachRetry(byId("main-content"));
+  }
+
+  // CSRF와 caller version을 포함한 카탈로그 변경 요청을 실행합니다.
+  async function mutateCatalog(path, method, body, idempotencyKey) {
+    if (!state.csrfToken) {
+      showCatalogMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {});
+      return;
+    }
+    var retry = function () { return mutateCatalog(path, method, body, idempotencyKey); };
+    try {
+      var payload = await api(path, {
+        method: method,
+        headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey },
+        body: JSON.stringify(body)
+      });
+      state.catalogRetry = null;
+      state.catalogNotice = payload.result.replayed
+        ? { kind: "replay", title: "이미 완료된 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
+        : { kind: "", title: "카탈로그를 반영했습니다.", message: "새 catalog version은 " + payload.result.catalogVersion + "입니다." };
+      showToast(payload.result.replayed ? "완료된 요청 결과를 다시 불러왔습니다." : "다이아상점 카탈로그를 변경했습니다.", false);
+      await loadDiamondCatalog();
+    } catch (error) {
+      if (error.status === 409) showCatalogConflict(error);
+      else showCatalogMutationFailure(error, retry);
+    }
+  }
+
+  // 선택 상품의 stable productId soft-disable 확인 폼을 표시합니다.
+  function showCatalogDisableConfirmation(productId, displayName, catalogVersion) {
+    var target = byId("catalog-confirm-region");
+    target.innerHTML = "<section class=\"catalog-confirm\" aria-labelledby=\"disable-title\"><div class=\"panel-heading\"><div><h3 id=\"disable-title\">상품 비활성화 확인</h3><p>구매 목록에서만 숨기며 기록은 삭제하지 않습니다.</p></div></div>" +
+      "<form id=\"catalog-disable-form\" class=\"catalog-form\"><p><strong>" + escapeHtml(displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(productId) + "</span></p>" +
+      "<label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"비활성화 사유를 입력하세요.\"></textarea></label>" +
+      "<label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>이 상품이 즉시 활성 구매 목록에서 제외되는 것을 확인했습니다.</span></label>" +
+      "<div class=\"catalog-confirm-actions\"><button class=\"secondary-button\" id=\"cancel-disable\" type=\"button\">취소</button><button class=\"primary-button\" type=\"submit\">비활성화 실행</button></div></form></section>";
+    byId("cancel-disable").addEventListener("click", function () { target.innerHTML = ""; });
+    byId("catalog-disable-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      var data = new FormData(event.currentTarget);
+      mutateCatalog("/api/v1/admin/diamond-shop/catalog/items/" + encodeURIComponent(productId), "DELETE", {
+        expectedVersion: catalogVersion,
+        reason: data.get("reason").toString().trim(),
+        confirmed: data.get("confirmed") === "on"
+      }, catalogIdempotencyKey());
+    });
+    target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // 활성 다이아상점 목록과 추가·soft-disable 화면을 불러옵니다.
+  async function loadDiamondCatalog() {
+    state.refresh = loadDiamondCatalog;
+    var main = byId("main-content");
+    main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.", "manager · super_admin") + loadingState("다이아상점 목록을 불러오는 중");
+    try {
+      var payload = await api("/api/v1/admin/diamond-shop/catalog");
+      var catalog = payload.catalog;
+      main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.", "manager · super_admin") + catalogNotice() +
+        "<div class=\"catalog-layout\"><section class=\"panel\"><div class=\"panel-heading\"><div><h3>활성 상품</h3><p>현재 구매 가능한 상품만 표시합니다.</p></div><div class=\"catalog-summary\"><span>Catalog <strong>v" + escapeHtml(catalog.catalogVersion) + "</strong></span><span>" + escapeHtml(catalog.bootstrapStatus) + "</span></div></div>" + catalogTable(catalog) + "</section>" +
+        "<aside class=\"panel\"><div class=\"panel-heading\"><div><h3>상품 추가</h3><p>수량과 가격은 decimal string으로 전송합니다.</p></div></div><form id=\"catalog-add-form\" class=\"catalog-form\">" +
+        "<label>상품 이름<input name=\"displayName\" required maxlength=\"191\" placeholder=\"예: 봄맞이 다이아 묶음\"></label><div class=\"field-grid\"><label>지급 수량<input name=\"quantity\" required inputmode=\"numeric\" pattern=\"[0-9]+\" placeholder=\"100\"></label><label>가격<input name=\"price\" required inputmode=\"numeric\" pattern=\"[0-9]+\" placeholder=\"50\"></label></div>" +
+        "<label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"추가 사유를 입력하세요.\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>상품 이름, 지급 수량과 가격을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">상품 추가</button></form></aside></div><div id=\"catalog-confirm-region\"></div>";
+      byId("catalog-add-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var data = new FormData(event.currentTarget);
+        mutateCatalog("/api/v1/admin/diamond-shop/catalog/items", "POST", {
+          displayName: data.get("displayName").toString().trim(),
+          quantity: data.get("quantity").toString(),
+          price: data.get("price").toString(),
+          expectedVersion: catalog.catalogVersion,
+          reason: data.get("reason").toString().trim(),
+          confirmed: data.get("confirmed") === "on"
+        }, catalogIdempotencyKey());
+      });
+      main.querySelectorAll("[data-disable-product]").forEach(function (button) {
+        button.addEventListener("click", function () { showCatalogDisableConfirmation(button.dataset.disableProduct, button.dataset.productName, catalog.catalogVersion); });
+      });
+      state.catalogNotice = null;
+      markUpdated();
+    } catch (error) {
+      main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.") + errorState(error, "catalog");
+      attachRetry(main);
     }
   }
 

@@ -1,0 +1,77 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-DIAMOND-CATALOG-MUTATE-01",
+  "wbs": "WBS616",
+  "dbMapping": "DB1894",
+  "lease": "Lease2366",
+  "executionId": "개발자-SL-COMMON-ADMIN-WEB-DIAMOND-CATALOG-MUTATE-01-20260830T2331",
+  "baseline": "8f9839f1ee7e6ea1d2397280c34e6ecc47cb7777",
+  "scope": "ADMIN_DIAMOND_CATALOG_WEB_CONSUMER",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "constraints": [
+    "Consumer-only REST, app wiring and existing web shell UI",
+    "No permission, schema, migration, provider SQL or provider behavior changes",
+    "No publish, hard delete, re-enable, reorder, update or purchase changes",
+    "No Iris outbox, operational data, Google Sheets or feature/prod access"
+  ],
+  "gate1": {
+    "status": "complete",
+    "existingShell": "개발환경_고도화/runtime/src/admin/web-shell-assets.ts",
+    "sessionManager": "개발환경_고도화/runtime/src/admin/auth-service.ts",
+    "provider": "개발환경_고도화/runtime/src/shop/diamond-shop-catalog-web-adapter-provider.ts"
+  },
+  "gate2": {
+    "status": "complete",
+    "providerEvidence": "개발환경_고도화/migration-control/evidence/admin-diamond-catalog-web-adapter-provider/slice.json",
+    "databaseChanges": false,
+    "rest": [
+      "GET /api/v1/admin/diamond-shop/catalog",
+      "POST /api/v1/admin/diamond-shop/catalog/items",
+      "DELETE /api/v1/admin/diamond-shop/catalog/items/:productId"
+    ]
+  },
+  "gate3": {
+    "status": "complete",
+    "fixture": "개발환경_고도화/runtime/test/fixtures/admin-diamond-catalog-web-consumer.ts",
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "implementation": [
+      "개발환경_고도화/runtime/src/admin/diamond-shop-catalog-web-routes.ts",
+      "개발환경_고도화/runtime/src/admin/web-shell-assets.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "authorization": "AdminAuthService current role recheck plus provider transaction role recheck",
+    "serialization": "bigint decimal strings only"
+  },
+  "gate5": {
+    "status": "complete",
+    "focusedTests": [
+      "test/admin-diamond-catalog-web-consumer.test.ts",
+      "test/admin-web-shell.test.ts"
+    ],
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "fullRegression": "default npm test pass",
+    "parity": [
+      "caller expectedVersion conflict remains HTTP 409",
+      "same-key provider replay is surfaced without duplicate UI semantics",
+      "stable productId soft-disable only",
+      "provider Gate evidence reused; no consumer MariaDB integration needed"
+    ]
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "target": "synthetic Fastify admin web preview",
+    "desktop": "pass",
+    "mobile": "pass",
+    "consoleErrors": 0,
+    "operationalDataTouched": false,
+    "productionBranchTouched": false,
+    "sourceCommit": "recorded by final Git evidence"
+  }
+}

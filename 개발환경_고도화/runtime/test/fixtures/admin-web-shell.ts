@@ -6,7 +6,7 @@ export const syntheticAdminSession: AdminSession = {
   operatorId: "7001",
   loginId: "shadow.reader",
   displayName: "합성 조회 운영자",
-  roleCodes: ["operations_reader"],
+  roleCodes: ["manager"],
   permissions: ["overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read"]
 };
 
