@@ -1,0 +1,38 @@
+{
+  "sliceId": "SL-ASSET-PET-SKILL-DEFINITION-SEED-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "48356607bcf97702084db3cf07050fdd46314e72",
+  "source": {
+    "count": 90,
+    "hash": "595370c8495ca8901412b892b022faf7493d20eddd8dcc4f4849fea72d777a0f",
+    "uniqueNames": 90,
+    "normal": 60,
+    "tierExclusive": 30,
+    "fixedRate": 8,
+    "grades": {
+      "S": 18,
+      "SS": 3,
+      "A": 23,
+      "B": 19,
+      "C": 21,
+      "D": 6
+    },
+    "normalRateSum": 198.4
+  },
+  "mapping": {
+    "reusedExisting": 15,
+    "newDefinitions": 75,
+    "finalDefinitionTotal": 93,
+    "ambiguousPetCodes": [
+      "pet_skill_ten_won",
+      "pet_skill_salvation"
+    ],
+    "preservedTrialCodes": [
+      "trial_ten_won",
+      "trial_salvation"
+    ]
+  },
+  "migration": "390_pet_skill_definition_seed.sql",
+  "ownershipOrLedgerChange": false,
+  "gate8": false
+}
