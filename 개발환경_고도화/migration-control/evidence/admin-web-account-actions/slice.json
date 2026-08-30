@@ -62,8 +62,8 @@
   },
   "gate7": {
     "status": "shadow_complete",
-    "sourceCommit": "PENDING",
-    "sourcePushVerified": false,
+    "sourceCommit": "d98cb609",
+    "sourcePushVerified": true,
     "browserTarget": "synthetic Fastify fixture server",
     "desktop": { "width": 1440, "height": 1000, "status": "pass" },
     "mobile": { "width": 390, "height": 844, "horizontalOverflow": false, "status": "pass" },
