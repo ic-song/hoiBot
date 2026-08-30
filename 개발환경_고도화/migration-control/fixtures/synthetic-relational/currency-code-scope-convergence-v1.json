@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-COMMON-CURRENCY-CODE-SCOPE-CONVERGENCE-01",
+  "executionId": "개발자-SL-COMMON-CURRENCY-CODE-SCOPE-CONVERGENCE-01-20260831T0455",
+  "baseline": "3488e33222a97c7f2fac0840d7d0eb67ddae275d",
+  "matrix": [
+    { "providerContext": "PLAYER_REWARD", "ownerScope": "PLAYER", "sourceCode": "POINT", "canonicalCode": "point", "line": "PLAYER_REWARD|PLAYER|POINT|-|point" },
+    { "providerContext": "PLAYER_REWARD", "ownerScope": "PLAYER", "sourceCode": "point", "canonicalCode": "point", "line": "PLAYER_REWARD|PLAYER|point|-|point" },
+    { "providerContext": "PLAYER_REWARD", "ownerScope": "PLAYER", "sourceCode": "diamond", "canonicalCode": "diamond", "line": "PLAYER_REWARD|PLAYER|diamond|-|diamond" },
+    { "providerContext": "GUILD_REWARD", "ownerScope": "GUILD", "sourceCode": "POINT", "canonicalCode": "guild_fund", "line": "GUILD_REWARD|GUILD|POINT|-|guild_fund" },
+    { "providerContext": "GUILD_REWARD", "ownerScope": "GUILD", "sourceCode": "guild_fund", "canonicalCode": "guild_fund", "line": "GUILD_REWARD|GUILD|guild_fund|-|guild_fund" },
+    { "providerContext": "GUILD_REWARD", "ownerScope": "GUILD", "sourceCode": "diamond", "canonicalCode": "diamond", "line": "GUILD_REWARD|GUILD|diamond|-|diamond" },
+    { "providerContext": "PACKAGE_POINT", "ownerScope": "PLAYER", "sourceCode": "ITEM-RWD-011", "definitionCode": "ITEM-RWD-011", "canonicalCode": "point", "line": "PACKAGE_POINT|PLAYER|ITEM-RWD-011|ITEM-RWD-011|point" },
+    { "providerContext": "PACKAGE_POINT", "ownerScope": "PLAYER", "sourceCode": "point", "definitionCode": "point", "canonicalCode": "point", "line": "PACKAGE_POINT|PLAYER|point|point|point" },
+    { "providerContext": "PACKAGE_POINT", "ownerScope": "PLAYER", "sourceCode": "diamond", "definitionCode": "diamond", "canonicalCode": "diamond", "line": "PACKAGE_POINT|PLAYER|diamond|diamond|diamond" },
+    { "providerContext": "PLAYER_REWARD", "ownerScope": "PLAYER", "sourceCode": "ITEM-RWD-011", "canonicalCode": "ITEM-RWD-011", "line": "PLAYER_REWARD|PLAYER|ITEM-RWD-011|-|ITEM-RWD-011" }
+  ],
+  "matrixSha256": "6855602b5972e2abe95546673314886bd18f570dd862fcd2be1b170597aea598",
+  "providerBindings": [
+    "admin/member-voice-auth-reward-service.ts|PLAYER_REWARD|PLAYER",
+    "guild/guild-territory-attack-service.ts|GUILD_REWARD|GUILD",
+    "guild/guild-territory-war-finish-service.ts|GUILD_REWARD|GUILD",
+    "package/domain-item-provider.ts|PACKAGE_POINT|PLAYER"
+  ],
+  "invariants": {
+    "globalPointAlias": false,
+    "inactiveResiduePreserved": "ITEM-RWD-011",
+    "playerAccountLedger": "currency_accounts/currency_ledger",
+    "guildAccountLedger": "guild_resource_accounts/guild_resource_ledger",
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "objectChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0
+  }
+}
