@@ -9,6 +9,7 @@ import type {
   DataStatusEnvironment,
   DataStatusTarget,
 } from "./data-status-service.js";
+import { ApplicationError } from "../shared/application-error.js";
 
 export type DataRestoreGeneration = 1 | 2;
 
@@ -28,7 +29,18 @@ export interface DataRestoreResult {
   beforeRevision: string | null;
   afterRevision: string | null;
   data: string;
-  outboxId: string;
+  outboxId: string | null;
+}
+
+export interface DataRestorePreview {
+  environment: DataStatusEnvironment;
+  target: DataStatusTarget;
+  generation: DataRestoreGeneration;
+  available: boolean;
+  sourceRevisionKey: string | null;
+  sourceHash: string | null;
+  beforeRevision: string | null;
+  confirmationToken: string | null;
 }
 
 const TARGET_PATTERN =
@@ -101,6 +113,25 @@ export function formatDataRestoreResult(
   ].join("\n");
 }
 
+// dry-run에서 확인한 source와 현재 대상 revision을 실행 확인 토큰으로 고정합니다.
+export function buildRestoreConfirmationToken(input: {
+  environment: DataStatusEnvironment;
+  target: DataStatusTarget;
+  generation: DataRestoreGeneration;
+  sourceRevisionKey: string;
+  sourceHash: string;
+  beforeRevision: string | null;
+}): string {
+  return "sha256:" + createHash("sha256").update([
+    input.environment,
+    input.target,
+    input.generation,
+    input.sourceRevisionKey,
+    input.sourceHash,
+    input.beforeRevision ?? "missing",
+  ].join(":"), "utf8").digest("hex");
+}
+
 // immutable 백업 payload를 검증하고 현재 원본 snapshot과 복구 결과를 원자 저장합니다.
 export class DataRestoreService {
   constructor(private readonly database: DatabaseClient) {}
@@ -136,7 +167,7 @@ export class DataRestoreService {
       command,
     });
     if (result === null) return { status: "handled_no_reply" };
-    return { status: "changed", data: result.data, outboxId: result.outboxId };
+    return { status: "changed", data: result.data, outboxId: result.outboxId! };
   }
 
   async restore(input: {
@@ -204,6 +235,78 @@ export class DataRestoreService {
     );
   }
 
+  // 웹 실행 전에 immutable source와 현재 대상 revision을 변경 없이 검증합니다.
+  async previewForOperator(input: {
+    operatorId: string;
+    environment: DataStatusEnvironment;
+    target: DataStatusTarget;
+    generation: DataRestoreGeneration;
+  }): Promise<DataRestorePreview> {
+    BigInt(input.operatorId);
+    const source = await this.readRestoreSource(this.database, input.environment, input.target, input.generation, false);
+    if (!validateSource(source)) {
+      return {
+        environment: input.environment,
+        target: input.target,
+        generation: input.generation,
+        available: false,
+        sourceRevisionKey: source?.revision_key ?? null,
+        sourceHash: source?.object_hash ?? null,
+        beforeRevision: null,
+        confirmationToken: null,
+      };
+    }
+    const before = (await this.database.query<Array<{ revision_version: bigint }>>(
+      "SELECT revision_version FROM managed_data_objects WHERE environment_code=? AND file_name=? LIMIT 1",
+      [input.environment, `${input.target}.json`],
+    ))[0];
+    const beforeRevision = before?.revision_version.toString() ?? null;
+    return {
+      environment: input.environment,
+      target: input.target,
+      generation: input.generation,
+      available: true,
+      sourceRevisionKey: source.revision_key,
+      sourceHash: source.payload_hash,
+      beforeRevision,
+      confirmationToken: buildRestoreConfirmationToken({
+        ...input,
+        sourceRevisionKey: source.revision_key,
+        sourceHash: source.payload_hash,
+        beforeRevision,
+      }),
+    };
+  }
+
+  // dry-run 토큰을 재검증하고 기존 snapshot·restore transaction을 웹에서 실행합니다.
+  async restoreForOperator(input: {
+    operatorId: string;
+    idempotencyKey: string;
+    reason: string;
+    environment: DataStatusEnvironment;
+    target: DataStatusTarget;
+    generation: DataRestoreGeneration;
+    confirmationToken: string;
+  }): Promise<DataRestoreResult> {
+    const idempotencyKey = normalizeIdempotencyKey(input.idempotencyKey);
+    return withDeadlockRetry(() => this.database.withTransaction(async (transaction) => {
+      const previous = (await transaction.query<Array<{ result_json: string | DataRestoreResult | null }>>(
+        "SELECT result_json FROM operations WHERE idempotency_scope='data_restore.execute' AND idempotency_key=? FOR UPDATE",
+        [idempotencyKey],
+      ))[0];
+      if (previous?.result_json != null) return typeof previous.result_json === "string" ? JSON.parse(previous.result_json) : previous.result_json;
+      return this.restoreTarget(transaction, BigInt(input.operatorId), idempotencyKey, {
+        eventId: input.idempotencyKey,
+        destinationId: "",
+        command: { environment: input.environment, target: input.target, generation: input.generation },
+      }, {
+        sourceCode: "admin_web",
+        reason: input.reason,
+        confirmationToken: input.confirmationToken,
+      });
+    }));
+  }
+
   private async findOperator(externalUserId: string) {
     return (
       await this.database.query<Array<{ id: bigint }>>(
@@ -229,40 +332,16 @@ export class DataRestoreService {
       destinationId: string;
       command: DataRestoreCommand;
     },
+    execution: {
+      sourceCode: "iris" | "admin_web";
+      reason: string;
+      confirmationToken?: string;
+    } = { sourceCode: "iris", reason: "Iris /데이터복구" },
   ): Promise<DataRestoreResult> {
     const target = input.command.target!;
     const generation = input.command.generation!;
     const slot = `backup${generation}`;
-    const source = (
-      await transaction.query<
-        Array<{
-          generation_id: bigint;
-          revision_key: string;
-          source_object_id: bigint;
-          object_exists: number;
-          object_hash: string | null;
-          object_size: bigint | null;
-          valid_json: number | null;
-          payload_text: string | null;
-          payload_hash: string | null;
-          payload_size: bigint | null;
-        }>
-      >(
-        `SELECT generation.id generation_id,generation.revision_key,
-                object_row.id source_object_id,object_row.object_exists,
-                object_row.content_sha256 object_hash,object_row.size_bytes object_size,
-                health.valid_json,payload.payload_text,
-                payload.content_sha256 payload_hash,payload.size_bytes payload_size
-           FROM backup_generations generation
-           JOIN backup_objects object_row ON object_row.generation_id=generation.id
-           LEFT JOIN backup_health_checks health ON health.backup_object_id=object_row.id
-           LEFT JOIN backup_object_payloads payload ON payload.backup_object_id=object_row.id
-          WHERE generation.environment_code=? AND generation.generation_status='complete'
-            AND object_row.target_code=? AND object_row.slot_code=?
-          ORDER BY generation.completed_at DESC,generation.id DESC LIMIT 1 FOR UPDATE`,
-        [input.command.environment, target, slot],
-      )
-    )[0];
+    const source = await this.readRestoreSource(transaction, input.command.environment, target, generation, true);
     const valid = validateSource(source);
     if (!valid) {
       return this.persistReply(transaction, {
@@ -300,9 +379,22 @@ export class DataRestoreService {
         [input.command.environment, targetFile],
       )
     )[0];
+    if (execution.confirmationToken !== undefined) {
+      const expected = buildRestoreConfirmationToken({
+        environment: input.command.environment,
+        target,
+        generation,
+        sourceRevisionKey: source.revision_key,
+        sourceHash: source.payload_hash,
+        beforeRevision: before?.revision_version.toString() ?? null,
+      });
+      if (execution.confirmationToken !== expected) {
+        throw new ApplicationError("RESTORE_PREVIEW_STALE", "백업 또는 현재 데이터가 변경됐습니다. dry-run을 다시 실행해 주세요.", 409);
+      }
+    }
     const operation = await transaction.execute(
-      "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'data_restore.execute',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
-      [randomUUID(), idempotencyKey, operatorId],
+      "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'data_restore.execute',?,'admin_operator',?,?,'processing',UTC_TIMESTAMP(3))",
+      [randomUUID(), idempotencyKey, operatorId, execution.sourceCode],
     );
     const restore = await transaction.execute(
       "INSERT INTO restore_operations(operation_id,generation_id,source_backup_object_id,environment_code,target_code,slot_code,before_target_object_id,before_revision,restore_status) VALUES (?,?,?,?,?,?,?,?, 'processing')",
@@ -363,20 +455,25 @@ export class DataRestoreService {
       afterRevision: after.revision_version.toString(),
     };
     const data = formatDataRestoreResult(base);
-    const outbox = await transaction.execute(
-      "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
-      [operation.insertId, input.destinationId, JSON.stringify({ data })],
-    );
+    let outboxId: string | null = null;
+    if (execution.sourceCode === "iris") {
+      const outbox = await transaction.execute(
+        "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+        [operation.insertId, input.destinationId, JSON.stringify({ data })],
+      );
+      outboxId = outbox.insertId.toString();
+      await transaction.execute(
+        "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_RESTORE',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+        [input.eventId, operation.insertId],
+      );
+    }
     await transaction.execute(
-      "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_RESTORE',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
-      [input.eventId, operation.insertId],
-    );
-    await transaction.execute(
-      "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_object',?,'data_restore.execute','success','Iris /데이터복구',?,UTC_TIMESTAMP(3))",
+      "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_object',?,'data_restore.execute','success',?,?,UTC_TIMESTAMP(3))",
       [
         operation.insertId,
         operatorId,
         source.source_object_id,
+        execution.reason,
         JSON.stringify({
           environment: input.command.environment,
           target,
@@ -390,13 +487,48 @@ export class DataRestoreService {
     const result: DataRestoreResult = {
       ...base,
       data,
-      outboxId: outbox.insertId.toString(),
+      outboxId,
     };
     await transaction.execute(
       "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
       [JSON.stringify(result), operation.insertId],
     );
     return result;
+  }
+
+  private async readRestoreSource(
+    database: Pick<DatabaseClient, "query">,
+    environment: DataStatusEnvironment,
+    target: DataStatusTarget,
+    generation: DataRestoreGeneration,
+    lock: boolean,
+  ) {
+    return (await database.query<Array<{
+      generation_id: bigint;
+      revision_key: string;
+      source_object_id: bigint;
+      object_exists: number;
+      object_hash: string | null;
+      object_size: bigint | null;
+      valid_json: number | null;
+      payload_text: string | null;
+      payload_hash: string | null;
+      payload_size: bigint | null;
+    }>>(
+      `SELECT generation.id generation_id,generation.revision_key,
+              object_row.id source_object_id,object_row.object_exists,
+              object_row.content_sha256 object_hash,object_row.size_bytes object_size,
+              health.valid_json,payload.payload_text,
+              payload.content_sha256 payload_hash,payload.size_bytes payload_size
+         FROM backup_generations generation
+         JOIN backup_objects object_row ON object_row.generation_id=generation.id
+         LEFT JOIN backup_health_checks health ON health.backup_object_id=object_row.id
+         LEFT JOIN backup_object_payloads payload ON payload.backup_object_id=object_row.id
+        WHERE generation.environment_code=? AND generation.generation_status='complete'
+          AND object_row.target_code=? AND object_row.slot_code=?
+        ORDER BY generation.completed_at DESC,generation.id DESC LIMIT 1${lock ? " FOR UPDATE" : ""}`,
+      [environment, target, `backup${generation}`],
+    ))[0];
   }
 
   private async persistReply(
@@ -451,6 +583,12 @@ export class DataRestoreService {
     );
     return result;
   }
+}
+
+function normalizeIdempotencyKey(value: string): string {
+  return value.length <= 191
+    ? value
+    : `sha256:${createHash("sha256").update(value).digest("hex")}`;
 }
 
 function validateSource(

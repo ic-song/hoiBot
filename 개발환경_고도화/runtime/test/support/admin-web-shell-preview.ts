@@ -1,6 +1,7 @@
 import { pathToFileURL } from "node:url";
 import Fastify from "fastify";
 import { registerAdminWebShellRoutes } from "../../src/admin/web-shell.js";
+import { buildRestoreConfirmationToken } from "../../src/admin/data-restore-service.js";
 import {
   syntheticAdminAudit,
   syntheticAdminOverview,
@@ -19,6 +20,10 @@ export async function buildSyntheticAdminWebShellApp() {
   const restrictions: Array<Record<string, unknown>> = syntheticAdminRestrictions.map((restriction) => ({ ...restriction }));
   const currencyAccounts = syntheticAdminPlayer.currencyAccounts.map((account) => ({ ...account }));
   const replays = new Map<string, Record<string, unknown>>();
+  let nextBackupRunId = 91000;
+  let restoreRevision = 12n;
+  const restoreSourceRevision = "sha256:" + "a".repeat(64);
+  const restoreSourceHash = "b".repeat(64);
 
   // 합성 재화 문자열을 실제 decimal(30,3)과 같은 1/1000 단위 정수로 변환합니다.
   function parseDecimal3(value: string): bigint | undefined {
@@ -48,11 +53,11 @@ export async function buildSyntheticAdminWebShellApp() {
   }
 
   // 합성 변경 요청의 인증·권한·CSRF 공통 계약을 검증합니다.
-  function authorizeMutation(request: { headers: Record<string, string | string[] | undefined> }, reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }, permission = "account.restrict") {
+  function authorizeMutation(request: { headers: Record<string, string | string[] | undefined> }, reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }, permission = "account.restrict", requireIdempotency = true) {
     if (!loggedIn) return reply.code(401).send({ ok: false, error: { code: "AUTH_REQUIRED", message: "로그인이 필요합니다." } });
     if (request.headers["x-synthetic-permission"] === "deny") return reply.code(403).send({ ok: false, error: { code: "PERMISSION_DENIED", message: `${permission} 권한이 필요합니다.` } });
     if (request.headers["x-csrf-token"] !== "synthetic-csrf-token") return reply.code(403).send({ ok: false, error: { code: "CSRF_INVALID", message: "CSRF 토큰이 올바르지 않습니다." } });
-    if (typeof request.headers["idempotency-key"] !== "string" || request.headers["idempotency-key"].trim() === "") return reply.code(422).send({ ok: false, error: { code: "IDEMPOTENCY_KEY_REQUIRED", message: "Idempotency-Key가 필요합니다." } });
+    if (requireIdempotency && (typeof request.headers["idempotency-key"] !== "string" || request.headers["idempotency-key"].trim() === "")) return reply.code(422).send({ ok: false, error: { code: "IDEMPOTENCY_KEY_REQUIRED", message: "Idempotency-Key가 필요합니다." } });
     return undefined;
   }
 
@@ -143,6 +148,58 @@ export async function buildSyntheticAdminWebShellApp() {
     const result = { balance: account.balance, version: account.version, auditId: String(nextAuditId++) };
     replays.set(replayKey, result);
     return { ok: true, ...result, requestId: "synthetic-currency-adjust" };
+  });
+  for (const backup of [
+    { path: "/api/v1/admin/backups/managed", permission: "managed_backup.execute", scope: "managed", files: ["member.json", "guildData.json"] },
+    { path: "/api/v1/admin/backups/dev-sync", permission: "data_backup.execute", scope: "dev-sync", files: ["member.json", "member_pet.json"] }
+  ]) {
+    app.post<{ Body: { reason?: unknown; confirmed?: unknown } }>(backup.path, async (request, reply) => {
+      const authorization = authorizeMutation(request, reply, backup.permission);
+      if (authorization !== undefined) return authorization;
+      const invalidBody = validateMutationBody(request.body ?? {}, reply);
+      if (invalidBody !== undefined) return invalidBody;
+      const replayKey = `backup:${backup.scope}:${request.headers["idempotency-key"]}`;
+      const replay = replays.get(replayKey);
+      if (replay !== undefined) return { ok: true, ...replay, requestId: "synthetic-replay" };
+      if (request.headers["x-synthetic-audit-failure"] === "true") return reply.code(500).send({ ok: false, error: { code: "SYNTHETIC_AUDIT_FAILURE", message: "command_audit 합성 실패" } });
+      const result = backup.scope === "managed"
+        ? { runId: String(nextBackupRunId++), sourceRevisionKey: restoreSourceRevision, targetCount: backup.files.length, presentFiles: backup.files, missingFiles: [], outboxId: null, auditId: String(nextAuditId++) }
+        : { runId: String(nextBackupRunId++), sourceRevisionKey: restoreSourceRevision, copiedCount: backup.files.length, copiedFiles: backup.files, outboxId: null, auditId: String(nextAuditId++) };
+      replays.set(replayKey, result);
+      return reply.code(201).send({ ok: true, ...result, requestId: "synthetic-backup" });
+    });
+  }
+  app.post<{ Body: { environment?: unknown; target?: unknown; generation?: unknown } }>("/api/v1/admin/restores/preview", async (request, reply) => {
+    const authorization = authorizeMutation(request, reply, "data_restore.execute", false);
+    if (authorization !== undefined) return authorization;
+    const environment = request.body?.environment;
+    const target = request.body?.target;
+    const generation = request.body?.generation;
+    if ((environment !== "prod" && environment !== "dev") || (target !== "member" && target !== "member_pet" && target !== "petSkillData" && target !== "petHomeActivityData") || (generation !== 1 && generation !== 2)) return reply.code(422).send({ ok: false, error: { code: "RESTORE_SELECTION_INVALID", message: "복구 선택값이 올바르지 않습니다." } });
+    if (request.headers["x-synthetic-backup-unavailable"] === "true") return { ok: true, preview: { environment, target, generation, available: false, sourceRevisionKey: null, sourceHash: null, beforeRevision: null, confirmationToken: null } };
+    const beforeRevision = restoreRevision.toString();
+    return { ok: true, preview: { environment, target, generation, available: true, sourceRevisionKey: restoreSourceRevision, sourceHash: restoreSourceHash, beforeRevision, confirmationToken: buildRestoreConfirmationToken({ environment, target, generation, sourceRevisionKey: restoreSourceRevision, sourceHash: restoreSourceHash, beforeRevision }) }, requestId: "synthetic-restore-preview" };
+  });
+  app.post<{ Body: { environment?: unknown; target?: unknown; generation?: unknown; confirmationToken?: unknown; reason?: unknown; confirmed?: unknown } }>("/api/v1/admin/restores", async (request, reply) => {
+    const authorization = authorizeMutation(request, reply, "data_restore.execute");
+    if (authorization !== undefined) return authorization;
+    const invalidBody = validateMutationBody(request.body ?? {}, reply);
+    if (invalidBody !== undefined) return invalidBody;
+    const environment = request.body.environment;
+    const target = request.body.target;
+    const generation = request.body.generation;
+    if ((environment !== "prod" && environment !== "dev") || (target !== "member" && target !== "member_pet" && target !== "petSkillData" && target !== "petHomeActivityData") || (generation !== 1 && generation !== 2)) return reply.code(422).send({ ok: false, error: { code: "RESTORE_SELECTION_INVALID", message: "복구 선택값이 올바르지 않습니다." } });
+    const replayKey = `restore:${environment}:${target}:${generation}:${request.headers["idempotency-key"]}`;
+    const replay = replays.get(replayKey);
+    if (replay !== undefined) return { ok: true, ...replay, requestId: "synthetic-replay" };
+    const beforeRevision = restoreRevision.toString();
+    const expected = buildRestoreConfirmationToken({ environment, target, generation, sourceRevisionKey: restoreSourceRevision, sourceHash: restoreSourceHash, beforeRevision });
+    if (request.body.confirmationToken !== expected) return reply.code(409).send({ ok: false, error: { code: "RESTORE_PREVIEW_STALE", message: "dry-run 결과가 오래되었습니다." } });
+    if (request.headers["x-synthetic-audit-failure"] === "true" || request.headers["x-synthetic-snapshot-failure"] === "true") return reply.code(500).send({ ok: false, error: { code: "SYNTHETIC_TRANSACTION_FAILURE", message: "snapshot/audit 합성 실패" } });
+    restoreRevision += 1n;
+    const result = { environment, target, generation, restored: true, sourceRevisionKey: restoreSourceRevision, sourceHash: restoreSourceHash, beforeRevision, afterRevision: restoreRevision.toString(), outboxId: null, snapshotId: String(nextBackupRunId++), auditId: String(nextAuditId++) };
+    replays.set(replayKey, result);
+    return { ok: true, ...result, requestId: "synthetic-restore" };
   });
   app.get("/api/v1/admin/audit-entries", async () => ({ ok: true, items: [syntheticAdminAudit], page: 1, limit: 25, total: 1, requestId: "synthetic-audit" }));
   app.get("/api/v1/admin/channel-activity", async () => ({ ok: true, items: [{

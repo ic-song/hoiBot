@@ -7,7 +7,7 @@ export const syntheticAdminSession: AdminSession = {
   loginId: "shadow.manager",
   displayName: "합성 운영자",
   roleCodes: ["operations_manager"],
-  permissions: ["overview.read", "player.read", "account.restrict", "game.currency.change", "audit.read", "activity.read", "incident.read", "monitoring.read"]
+  permissions: ["overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read"]
 };
 
 export const syntheticAdminRestrictions = [

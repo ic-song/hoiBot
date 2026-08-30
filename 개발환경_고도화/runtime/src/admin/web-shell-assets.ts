@@ -296,6 +296,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .danger-button:disabled { opacity: .58; cursor: wait; }
 .inline-error { margin: 0; padding: 8px 10px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 10px; }
 .action-gap-note { margin: 10px 0 0; padding: 9px 10px; color: var(--warning); background: #fff8e8; border-left: 3px solid #d49a25; font-size: 10px; line-height: 1.5; }
+.risk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.risk-card { padding: 18px; }
+.risk-card h3 { margin: 0; font-size: 15px; }
+.risk-card > p { margin: 7px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.65; }
+.risk-form { display: grid; gap: 10px; }
+.risk-form label:not(.confirm-row) { color: var(--muted); font-size: 11px; font-weight: 700; }
+.risk-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.risk-form-actions button { margin-top: 0; min-height: 42px; }
+.dry-run-result { margin-top: 12px; padding: 12px; border: 1px solid var(--line); background: #f7f9fa; font-size: 11px; line-height: 1.65; }
+.dry-run-result strong { display: block; margin-bottom: 5px; }
+.dry-run-result .mono { overflow-wrap: anywhere; }
 
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
@@ -325,7 +336,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .metric:nth-child(2n) { border-right: 0; }
   .metric:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
   .metric:nth-last-child(-n+2) { border-bottom: 0; }
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid, .risk-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -360,12 +371,14 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     refresh: null,
     playerSearch: "",
     monitoringTab: "events",
-    mutationKeys: {}
+    mutationKeys: {},
+    restorePreview: null
   };
 
   var NAV_ITEMS = [
     { id: "dashboard", label: "운영 대시보드", icon: "▦", permission: "overview.read", group: "운영 현황", kicker: "OPERATIONS" },
     { id: "players", label: "회원 조회", icon: "○", permission: "player.read", group: "회원", kicker: "PLAYER DIRECTORY" },
+    { id: "backup-recovery", label: "백업·복구", icon: "↺", permissions: ["managed_backup.execute", "data_backup.execute", "data_restore.execute"], group: "위험 작업", kicker: "BACKUP & RECOVERY" },
     { id: "audit", label: "감사 기록", icon: "≡", permission: "audit.read", group: "감사·모니터링", kicker: "AUDIT TRAIL" },
     { id: "activity", label: "채널 활동", icon: "⌁", permission: "activity.read", group: "감사·모니터링", kicker: "CHANNEL ACTIVITY" },
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
@@ -420,6 +433,12 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
   // 현재 세션에 지정 조회 권한이 있는지 확인합니다.
   function hasPermission(permission) {
     return Boolean(state.session && state.session.permissions.includes(permission));
+  }
+
+  // 단일 또는 복수 권한 중 하나라도 보유한 메뉴만 표시합니다.
+  function canAccessItem(item) {
+    if (item.permissions) return item.permissions.some(hasPermission);
+    return hasPermission(item.permission);
   }
 
   // 동일 출처 관리자 API를 호출하고 공통 오류 계약을 적용합니다.
@@ -503,7 +522,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         return "<span class=\"role-tag\">" + escapeHtml(role) + "</span>";
       }).join("") + "</div>";
     renderNavigation();
-    var allowed = NAV_ITEMS.filter(function (item) { return hasPermission(item.permission); });
+    var allowed = NAV_ITEMS.filter(canAccessItem);
     if (!allowed.some(function (item) { return item.id === state.activeView; })) {
       state.activeView = allowed.length ? allowed[0].id : "none";
     }
@@ -512,7 +531,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
 
   // 현재 권한으로 접근 가능한 관리 메뉴만 구성합니다.
   function renderNavigation() {
-    var allowed = NAV_ITEMS.filter(function (item) { return hasPermission(item.permission); });
+    var allowed = NAV_ITEMS.filter(canAccessItem);
     var lastGroup = "";
     var html = "";
     allowed.forEach(function (item) {
@@ -592,6 +611,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     setPageHeading(item.label, item.kicker);
     if (item.id === "dashboard") loadDashboard();
     else if (item.id === "players") loadPlayersView(1);
+    else if (item.id === "backup-recovery") loadBackupRecovery();
     else if (item.id === "audit") loadAudit(1);
     else if (item.id === "activity") loadActivity(1);
     else if (item.id === "incidents") loadIncidents(1);
@@ -861,6 +881,97 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       detail.innerHTML = errorState(error, "players");
       attachRetry(detail);
     }
+  }
+
+  // 백업 실행과 dry-run 선행 복구를 기존 관리자 REST API에 연결합니다.
+  function loadBackupRecovery() {
+    state.refresh = loadBackupRecovery;
+    state.restorePreview = null;
+    var main = byId("main-content");
+    var cards = "";
+    if (hasPermission("managed_backup.execute")) {
+      cards += "<section class=\"panel risk-card\"><h3>운영 스냅샷 백업</h3><p>관리 대상 전체를 immutable manifest로 보존하고 payload hash를 검증합니다.</p><form class=\"risk-form backup-action-form\" data-backup-path=\"/api/v1/admin/backups/managed\" data-backup-label=\"운영 스냅샷 백업\"><label>실행 사유<textarea name=\"reason\" required placeholder=\"백업이 필요한 운영 근거를 입력하세요.\"></textarea></label><label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 대상·manifest·hash 검증 백업을 실행합니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"primary-button\" type=\"submit\">백업 실행</button></form></section>";
+    }
+    if (hasPermission("data_backup.execute")) {
+      cards += "<section class=\"panel risk-card\"><h3>운영→DEV 동기화 백업</h3><p>운영 최상위 관리 객체를 동일 source revision으로 DEV에 원자 반영합니다.</p><form class=\"risk-form backup-action-form\" data-backup-path=\"/api/v1/admin/backups/dev-sync\" data-backup-label=\"DEV 동기화 백업\"><label>실행 사유<textarea name=\"reason\" required placeholder=\"DEV 동기화가 필요한 근거를 입력하세요.\"></textarea></label><label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 운영 source와 DEV 대상 변경을 확인했습니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"primary-button\" type=\"submit\">DEV 동기화</button></form></section>";
+    }
+    if (hasPermission("data_restore.execute")) {
+      cards += "<section class=\"panel risk-card\"><h3>데이터 복구</h3><p>실행 전 dry-run으로 source hash와 현재 revision을 고정합니다. 실제 복구 직전 token을 재검증하고 기존 원본 snapshot을 남깁니다.</p><form id=\"restore-form\" class=\"risk-form\"><label>환경<select name=\"environment\"><option value=\"dev\">DEV</option><option value=\"prod\">운영</option></select></label><label>대상<select name=\"target\"><option value=\"member\">member</option><option value=\"member_pet\">member_pet</option><option value=\"petSkillData\">petSkillData</option><option value=\"petHomeActivityData\">petHomeActivityData</option></select></label><label>백업 세대<select name=\"generation\"><option value=\"1\">1차</option><option value=\"2\">2차</option></select></label><label>복구 사유<textarea name=\"reason\" required placeholder=\"복구가 필요한 장애·운영 근거를 입력하세요.\"></textarea></label><label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> dry-run 결과와 현재 revision을 확인했으며 복구를 실행합니다.</label><div id=\"restore-preview-result\" class=\"dry-run-result\"><span class=\"muted\">아직 dry-run을 실행하지 않았습니다.</span></div><p class=\"inline-error\" data-action-error hidden></p><div class=\"risk-form-actions\"><button id=\"restore-preview-button\" class=\"secondary-button\" type=\"button\">dry-run 실행</button><button id=\"restore-execute-button\" class=\"danger-button\" type=\"submit\" disabled>복구 실행</button></div></form></section>";
+    }
+    main.innerHTML = renderViewIntro("백업·복구", "권한, 사유, 재확인과 멱등 처리로 위험 작업을 통제합니다.", "Gate 8 전환 전") +
+      "<p class=\"action-gap-note\">웹 호출은 HTTP 결과와 command_audit를 사용합니다. Iris outbox는 기존 채팅 명령에서만 생성됩니다.</p><div class=\"risk-grid\">" + cards + "</div>";
+    document.querySelectorAll(".backup-action-form").forEach(function (form) {
+      form.querySelector("button[type=submit]").dataset.label = form.dataset.backupLabel;
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        var reason = data.get("reason").toString().trim();
+        if (!reason || !data.get("confirmed")) return setActionState(form, "실행 사유와 확인 항목을 입력해 주세요.", false);
+        var scope = form.dataset.backupPath + ":" + reason;
+        setActionState(form, "", true);
+        try {
+          var result = await mutateAccount(form.dataset.backupPath, "POST", { reason: reason, confirmed: true }, scope);
+          showToast(form.dataset.backupLabel + "을 완료했습니다. run #" + result.runId);
+          form.reset();
+          setActionState(form, "", false);
+        } catch (error) {
+          setActionState(form, errorMessage(error), false);
+        }
+      });
+    });
+    var restoreForm = byId("restore-form");
+    if (restoreForm) {
+      var previewButton = byId("restore-preview-button");
+      var executeButton = byId("restore-execute-button");
+      executeButton.dataset.label = "복구 실행";
+      var previewResult = byId("restore-preview-result");
+      function selection() {
+        var data = new FormData(restoreForm);
+        return { environment: data.get("environment").toString(), target: data.get("target").toString(), generation: Number(data.get("generation")) };
+      }
+      function invalidatePreview() {
+        state.restorePreview = null;
+        executeButton.disabled = true;
+        previewResult.innerHTML = "<span class=\"muted\">선택이 변경됐습니다. dry-run을 다시 실행하세요.</span>";
+      }
+      restoreForm.querySelectorAll("select").forEach(function (field) { field.addEventListener("change", invalidatePreview); });
+      previewButton.addEventListener("click", async function () {
+        previewButton.disabled = true;
+        previewResult.innerHTML = loadingState("백업과 현재 revision을 검증하는 중");
+        try {
+          var payload = await api("/api/v1/admin/restores/preview", { method: "POST", headers: { "x-csrf-token": state.csrfToken }, body: JSON.stringify(selection()) });
+          state.restorePreview = payload.preview.available ? payload.preview : null;
+          executeButton.disabled = !state.restorePreview;
+          previewResult.innerHTML = payload.preview.available
+            ? "<strong>dry-run 통과</strong><div>source <span class=\"mono\">" + escapeHtml(payload.preview.sourceRevisionKey) + "</span></div><div>hash <span class=\"mono\">" + escapeHtml(payload.preview.sourceHash) + "</span></div><div>현재 revision <span class=\"mono\">" + escapeHtml(payload.preview.beforeRevision || "없음") + "</span></div>"
+            : "<strong>복구 불가</strong><span>선택한 백업이 없거나 hash/JSON 검증에 실패했습니다.</span>";
+        } catch (error) {
+          previewResult.innerHTML = "<strong>dry-run 실패</strong><span>" + escapeHtml(errorMessage(error)) + "</span>";
+        } finally {
+          previewButton.disabled = false;
+        }
+      });
+      restoreForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(restoreForm);
+        var reason = data.get("reason").toString().trim();
+        if (!state.restorePreview || !reason || !data.get("confirmed")) return setActionState(restoreForm, "dry-run, 복구 사유, 확인 항목을 모두 완료해 주세요.", false);
+        var body = Object.assign(selection(), { reason: reason, confirmed: true, confirmationToken: state.restorePreview.confirmationToken });
+        var scope = "restore:" + body.environment + ":" + body.target + ":" + body.generation + ":" + state.restorePreview.sourceRevisionKey + ":" + reason;
+        setActionState(restoreForm, "", true);
+        try {
+          var result = await mutateAccount("/api/v1/admin/restores", "POST", body, scope);
+          showToast("데이터 복구를 완료했습니다. revision " + result.afterRevision);
+          restoreForm.reset();
+          setActionState(restoreForm, "", false);
+          invalidatePreview();
+        } catch (error) {
+          setActionState(restoreForm, errorMessage(error), false);
+          if (error.code === "RESTORE_PREVIEW_STALE") invalidatePreview();
+        }
+      });
+    }
+    markUpdated();
   }
 
   // 지정 열 정의로 공통 조회 테이블을 생성합니다.

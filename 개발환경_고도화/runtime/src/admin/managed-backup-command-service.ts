@@ -25,7 +25,16 @@ export interface ManagedBackupResult {
   presentFiles: string[];
   missingFiles: string[];
   data: string;
-  outboxId: string;
+  outboxId: string | null;
+}
+
+interface ManagedBackupExecutionContext {
+  operatorId: bigint;
+  idempotencyKey: string;
+  reason: string;
+  sourceCode: "iris" | "admin_web";
+  eventId?: string;
+  destinationId?: string;
 }
 
 // 인수가 없는 정확한 운영 백업 명령만 현대화 dispatch 후보로 허용합니다.
@@ -100,7 +109,7 @@ export class ManagedBackupCommandService {
       destinationId: input.channelId,
     });
     if (result === null) return { status: "handled_no_reply" };
-    return { status: "changed", data: result.data, outboxId: result.outboxId };
+    return { status: "changed", data: result.data, outboxId: result.outboxId! };
   }
 
   async backup(input: {
@@ -121,6 +130,33 @@ export class ManagedBackupCommandService {
         ? input.eventId
         : "sha256:" + createHash("sha256").update(input.eventId).digest("hex");
 
+    return this.executeBackup({
+      operatorId: operator.id,
+      idempotencyKey: eventKey,
+      reason: "Iris /백업",
+      sourceCode: "iris",
+      eventId: input.eventId,
+      destinationId: input.destinationId,
+    });
+  }
+
+  // 인증된 웹 운영자를 기존 immutable manifest 백업 transaction에 연결합니다.
+  async backupForOperator(input: {
+    operatorId: string;
+    idempotencyKey: string;
+    reason: string;
+  }): Promise<ManagedBackupResult> {
+    return this.executeBackup({
+      operatorId: BigInt(input.operatorId),
+      idempotencyKey: normalizeIdempotencyKey(input.idempotencyKey),
+      reason: input.reason,
+      sourceCode: "admin_web",
+    });
+  }
+
+  private async executeBackup(
+    context: ManagedBackupExecutionContext,
+  ): Promise<ManagedBackupResult> {
     return withManagedBackupRetry(() =>
       this.database.withTransaction(async (transaction) => {
         const previous = (
@@ -128,7 +164,7 @@ export class ManagedBackupCommandService {
             Array<{ result_json: string | ManagedBackupResult | null }>
           >(
             "SELECT result_json FROM operations WHERE idempotency_scope='managed_backup.execute' AND idempotency_key=? FOR UPDATE",
-            [eventKey],
+            [context.idempotencyKey],
           )
         )[0];
         if (previous?.result_json != null) {
@@ -167,10 +203,10 @@ export class ManagedBackupCommandService {
             contentSha256: source?.content_sha256 ?? null,
           };
         });
-        const sourceRevisionKey = buildManagedBackupRevisionKey(eventKey, revisionRows);
+        const sourceRevisionKey = buildManagedBackupRevisionKey(context.idempotencyKey, revisionRows);
         const operation = await transaction.execute(
-          "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'managed_backup.execute',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
-          [randomUUID(), eventKey, operator.id],
+          "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'managed_backup.execute',?,'admin_operator',?,?,'processing',UTC_TIMESTAMP(3))",
+          [randomUUID(), context.idempotencyKey, context.operatorId, context.sourceCode],
         );
         const presentFiles = targets
           .filter((target) => sourceByFile.has(target.file_name))
@@ -219,20 +255,25 @@ export class ManagedBackupCommandService {
           [run.insertId],
         );
         const data = formatManagedBackupResult(presentFiles, missingFiles);
-        const outbox = await transaction.execute(
-          "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
-          [operation.insertId, input.destinationId, JSON.stringify({ data })],
-        );
+        let outboxId: string | null = null;
+        if (context.destinationId !== undefined && context.eventId !== undefined) {
+          const outbox = await transaction.execute(
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            [operation.insertId, context.destinationId, JSON.stringify({ data })],
+          );
+          outboxId = outbox.insertId.toString();
+          await transaction.execute(
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_MANAGED_BACKUP',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            [context.eventId, operation.insertId],
+          );
+        }
         await transaction.execute(
-          "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_MANAGED_BACKUP',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
-          [input.eventId, operation.insertId],
-        );
-        await transaction.execute(
-          "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'managed_backup_run',?,'managed_backup.execute','success','Iris /백업',?,UTC_TIMESTAMP(3))",
+          "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'managed_backup_run',?,'managed_backup.execute','success',?,?,UTC_TIMESTAMP(3))",
           [
             operation.insertId,
-            operator.id,
+            context.operatorId,
             run.insertId,
+            context.reason,
             JSON.stringify({
               sourceEnvironment: "prod",
               sourceRevisionKey,
@@ -249,7 +290,7 @@ export class ManagedBackupCommandService {
           presentFiles,
           missingFiles,
           data,
-          outboxId: outbox.insertId.toString(),
+          outboxId,
         };
         await transaction.execute(
           "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
@@ -259,6 +300,12 @@ export class ManagedBackupCommandService {
       }),
     );
   }
+}
+
+function normalizeIdempotencyKey(value: string): string {
+  return value.length <= 191
+    ? value
+    : "sha256:" + createHash("sha256").update(value).digest("hex");
 }
 
 async function withManagedBackupRetry<T>(work: () => Promise<T>): Promise<T> {
