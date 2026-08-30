@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ASSET-CURRENCY-DEFINITION-SNAPSHOT-FREEZE-01",
+  "executionId": "개발자-SL-ASSET-CURRENCY-DEFINITION-SNAPSHOT-FREEZE-01-20260831T0445",
+  "catalogVersion": "ASSET-FREEZE-v2.400-currency-definition-snapshot-01",
+  "baseline": "2ca3df665b3be2f8256dde1b635d3c088d524010",
+  "counts": {
+    "canonicalDefinitions": 3,
+    "sourceOwnerScopes": 4,
+    "actualProjection": 5,
+    "accountScopeIdentities": 6,
+    "providerSources": 57,
+    "packageBoundary": 3,
+    "accountLedgerModels": 2,
+    "productionCurrencyObjects": 0
+  },
+  "hashAlgorithm": "SHA256(sorted UTF-8 canonical lines joined with LF, no trailing LF)",
+  "canonicalDefinitions": [
+    {
+      "code": "diamond",
+      "displayName": "다이아",
+      "scaleDigits": 0,
+      "effectiveUnit": "integer",
+      "active": true,
+      "scopes": ["PLAYER", "GUILD"],
+      "definitionVersion": null,
+      "line": "diamond|0|active"
+    },
+    {
+      "code": "guild_fund",
+      "displayName": "길드자금",
+      "scaleDigits": 0,
+      "effectiveUnit": "integer",
+      "active": true,
+      "scopes": ["GUILD"],
+      "definitionVersion": null,
+      "line": "guild_fund|0|active"
+    },
+    {
+      "code": "point",
+      "displayName": "포인트",
+      "scaleDigits": 3,
+      "effectiveUnit": "integer",
+      "active": true,
+      "scopes": ["PLAYER"],
+      "definitionVersion": null,
+      "line": "point|3|active"
+    }
+  ],
+  "sourceOwnerScopes": [
+    {
+      "code": "diamond",
+      "scope": "GUILD",
+      "unit": "integer",
+      "source": "data/guildData.json:guilds.*.warehouse.diamond",
+      "line": "diamond|GUILD|integer|data/guildData.json:guilds.*.warehouse.diamond"
+    },
+    {
+      "code": "diamond",
+      "scope": "PLAYER",
+      "unit": "integer",
+      "source": "data/member.json:member.*.diamond",
+      "line": "diamond|PLAYER|integer|data/member.json:member.*.diamond"
+    },
+    {
+      "code": "guild_fund",
+      "scope": "GUILD",
+      "unit": "integer",
+      "source": "data/guildData.json:guilds.*.warehouse.fund",
+      "line": "guild_fund|GUILD|integer|data/guildData.json:guilds.*.warehouse.fund"
+    },
+    {
+      "code": "point",
+      "scope": "PLAYER",
+      "unit": "integer",
+      "source": "data/member.json:member.*.point",
+      "aliases": ["points"],
+      "line": "point|PLAYER|integer|data/member.json:member.*.point|alias=points"
+    }
+  ],
+  "actualProjection": [
+    {
+      "code": "diamond",
+      "displayName": "다이아",
+      "scaleDigits": 0,
+      "active": true,
+      "disposition": "canonical",
+      "line": "diamond|다이아|0|active|canonical"
+    },
+    {
+      "code": "guild_fund",
+      "displayName": "길드자금",
+      "scaleDigits": 0,
+      "active": true,
+      "disposition": "canonical",
+      "line": "guild_fund|길드자금|0|active|canonical"
+    },
+    {
+      "code": "ITEM-RWD-011",
+      "displayName": "포인트",
+      "scaleDigits": 0,
+      "active": false,
+      "disposition": "package_projection_extra",
+      "line": "ITEM-RWD-011|포인트|0|inactive|package_projection_extra"
+    },
+    {
+      "code": "POINT",
+      "displayName": "포인트",
+      "scaleDigits": 0,
+      "active": true,
+      "disposition": "case_scope_conflict",
+      "line": "POINT|포인트|0|active|case_scope_conflict"
+    },
+    {
+      "code": "point",
+      "displayName": "포인트",
+      "scaleDigits": 3,
+      "active": true,
+      "disposition": "canonical_unit_conflict",
+      "line": "point|포인트|3|active|canonical_unit_conflict"
+    }
+  ],
+  "accountLedgerModels": [
+    {
+      "scope": "GUILD",
+      "accountTable": "guild_resource_accounts",
+      "ownerKey": "guild_id,currency_code",
+      "balanceType": "DECIMAL(30,3)",
+      "versioned": true,
+      "ledgerTable": "guild_resource_ledger",
+      "line": "GUILD|guild_resource_accounts|guild_id,currency_code|DECIMAL(30,3)|version|guild_resource_ledger"
+    },
+    {
+      "scope": "PLAYER",
+      "accountTable": "currency_accounts",
+      "ownerKey": "player_id,currency_code",
+      "balanceType": "DECIMAL(30,3)",
+      "versioned": true,
+      "ledgerTable": "currency_ledger",
+      "line": "PLAYER|currency_accounts|player_id,currency_code|DECIMAL(30,3)|version|currency_ledger"
+    }
+  ],
+  "accountScopeIdentities": [
+    { "code": "diamond", "scope": "GUILD", "accountTable": "guild_resource_accounts", "disposition": "canonical", "line": "diamond|GUILD|guild_resource_accounts|canonical" },
+    { "code": "diamond", "scope": "PLAYER", "accountTable": "currency_accounts", "disposition": "canonical", "line": "diamond|PLAYER|currency_accounts|canonical" },
+    { "code": "guild_fund", "scope": "GUILD", "accountTable": "guild_resource_accounts", "disposition": "canonical", "line": "guild_fund|GUILD|guild_resource_accounts|canonical" },
+    { "code": "POINT", "scope": "GUILD", "accountTable": "guild_resource_accounts", "disposition": "conflict:guild_fund", "line": "POINT|GUILD|guild_resource_accounts|conflict:guild_fund" },
+    { "code": "point", "scope": "PLAYER", "accountTable": "currency_accounts", "disposition": "canonical", "line": "point|PLAYER|currency_accounts|canonical" },
+    { "code": "POINT", "scope": "PLAYER", "accountTable": "currency_accounts", "disposition": "conflict:point", "line": "POINT|PLAYER|currency_accounts|conflict:point" }
+  ],
+  "packageBoundary": [
+    { "packageCode": "diamond", "itemType": "POINT", "canonicalCode": "diamond", "disposition": "package-compatibility", "line": "diamond|POINT|diamond|package-compatibility" },
+    { "packageCode": "ITEM-RWD-011", "itemType": "POINT", "canonicalCode": "point", "disposition": "legacy-independent-package", "line": "ITEM-RWD-011|POINT|point|legacy-independent-package" },
+    { "packageCode": "point", "itemType": "POINT", "canonicalCode": "point", "disposition": "package-compatibility", "line": "point|POINT|point|package-compatibility" }
+  ],
+  "providerMembership": {
+    "sourceGlob": "개발환경_고도화/runtime/src/**/*.ts",
+    "pathEncoding": "개발환경_고도화/runtime/src\\<relative Windows path>",
+    "playerAccountRefs": { "count": 47, "sha256": "7ad416601a59425d99c80a4711bebde3fd8493d022613a47a53912e41e3b5fc2", "token": "currency_accounts" },
+    "playerLedgerRefs": { "count": 46, "sha256": "a276ee1398bbce14417b4bd486d0c9395d7f0ec2fef6f3c8caf114278b111b05", "token": "currency_ledger" },
+    "guildAccountRefs": { "count": 10, "sha256": "7aecd4125522f332a78a4ae199a1627da194818afacc6d4fc3b0be46974f671b", "token": "guild_resource_accounts" },
+    "guildLedgerRefs": { "count": 7, "sha256": "e0f5f678ee2e7d4cabda4ee9679618c81e19f669e581a8c2c2d3676ecb77faaa", "token": "guild_resource_ledger" },
+    "union": { "count": 57, "sha256": "23d57a6da6a340b9940e0c6766112befd45e3962a0a0db7ccbade00eeb1e9e30" }
+  },
+  "objectBoundary": {
+    "existingType": "CURRENCY",
+    "canonicalTarget": "currency_definitions.code",
+    "productionObjects": 0,
+    "syntheticObjectsExcluded": ["currency.test_gold"],
+    "newTypeRequired": false,
+    "objectChangesInSlice": 0
+  },
+  "conflicts": {
+    "globalPointAliasAllowed": false,
+    "pointPlayerResolution": "POINT -> point",
+    "pointGuildResolution": "POINT -> guild_fund",
+    "packageResidue": "ITEM-RWD-011 -> point",
+    "pointScaleDigits": 3,
+    "pointEffectiveUnit": "integer",
+    "definitionVersionColumn": false
+  },
+  "nonCurrencyBoundaries": {
+    "walletRng": "balance calculation policy; reward writes canonical point account and ledger",
+    "memberLightningRate": "balance/config setting; not a currency definition; exact key absent at baseline"
+  },
+  "hashes": {
+    "sourceOwnerScopeSha256": "4ff1fd21316e959819ee2238727694455f3bd4b8fe7ae38169e682284b994f3e",
+    "actualProjectionSha256": "4cc16cda65af75969ac4e51fdc4bf8f8e715b9d6530929ee360cfb097f93b4bf",
+    "canonicalDefinitionsSha256": "20f4f8c54e9e9986eab67c7a6303be0267aa7f234b8570da04570c7c556a9f5d",
+    "accountLedgerModelsSha256": "35f18efbd1faeaa0f3d4dc48f4c40f6aa524949e0377ffb1bd74c37e3ee36dc7",
+    "accountScopeIdentitiesSha256": "92ca62028a4f7ea575389cd285bed5eba78a045d7113f17be8178b2a56f506d7",
+    "packageBoundarySha256": "775a8f4118dd8206640ccdf666b330d119294bce7b79cf1bbd1bf0c466856d01",
+    "providerUnionSha256": "23d57a6da6a340b9940e0c6766112befd45e3962a0a0db7ccbade00eeb1e9e30"
+  },
+  "forbiddenChanges": ["global POINT alias", "object registry data", "provider", "schema", "migration", "main.js", "UI", "Gate8"]
+}

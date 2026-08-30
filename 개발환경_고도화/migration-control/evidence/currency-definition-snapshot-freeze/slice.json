@@ -1,0 +1,66 @@
+{
+  "sliceId": "SL-ASSET-CURRENCY-DEFINITION-SNAPSHOT-FREEZE-01",
+  "executionId": "개발자-SL-ASSET-CURRENCY-DEFINITION-SNAPSHOT-FREEZE-01-20260831T0445",
+  "wbs": 646,
+  "dbRow": 1924,
+  "lease": 2392,
+  "baseline": "2ca3df665b3be2f8256dde1b635d3c088d524010",
+  "scope": {
+    "canonicalDefinitions": 3,
+    "sourceOwnerScopes": 4,
+    "actualProjection": 5,
+    "accountScopeIdentities": 6,
+    "providerSources": 57,
+    "packageBoundary": 3,
+    "accountLedgerModels": 2,
+    "productionCurrencyObjects": 0,
+    "globalPointAliasCreated": false,
+    "objectChanges": 0,
+    "providerChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "operationalDbTouched": false
+  },
+  "conflictsFrozen": [
+    "POINT player account resolves to point",
+    "POINT guild account resolves to guild_fund",
+    "ITEM-RWD-011 is a package projection residue for point",
+    "point scale_digits=3 while effective source/provider unit is integer",
+    "currency_definitions has no definition version column"
+  ],
+  "hashes": {
+    "sourceOwnerScopeSha256": "4ff1fd21316e959819ee2238727694455f3bd4b8fe7ae38169e682284b994f3e",
+    "actualProjectionSha256": "4cc16cda65af75969ac4e51fdc4bf8f8e715b9d6530929ee360cfb097f93b4bf",
+    "canonicalDefinitionsSha256": "20f4f8c54e9e9986eab67c7a6303be0267aa7f234b8570da04570c7c556a9f5d",
+    "accountLedgerModelsSha256": "35f18efbd1faeaa0f3d4dc48f4c40f6aa524949e0377ffb1bd74c37e3ee36dc7",
+    "accountScopeIdentitiesSha256": "92ca62028a4f7ea575389cd285bed5eba78a045d7113f17be8178b2a56f506d7",
+    "packageBoundarySha256": "775a8f4118dd8206640ccdf666b330d119294bce7b79cf1bbd1bf0c466856d01",
+    "providerUnionSha256": "23d57a6da6a340b9940e0c6766112befd45e3962a0a0db7ccbade00eeb1e9e30"
+  },
+  "carryForward": [
+    "CATALOG-BATCH-ASSET-CURRENCY-DEFINITION-ACCOUNT-FREEZE-01 Lease2390",
+    "SL-INVENTORY-WALLET-RNG-OPEN Gate1-7",
+    "SL-PACKAGE-CANONICAL-ITEM-DUAL-CONSUMER-PARITY-01 Gate1-7",
+    "SL-COMMON-ADMIN-OBJECT-CATALOG-WEB-ADAPTER-PROVIDER-01 CURRENCY target validation"
+  ],
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "defaultFullRegression": "PASS",
+    "sourceShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "sheetsEdited": false
+}
