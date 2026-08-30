@@ -1,0 +1,37 @@
+{
+  "sliceId": "SL-ASSET-PENDANT-OBJECT-CATALOG-LINK-01",
+  "executionId": "개발자-SL-ASSET-PENDANT-OBJECT-CATALOG-LINK-01-20260831T0302",
+  "catalogVersion": "ASSET-FREEZE-v2.400-pendant-object-link-01",
+  "baseline": "b80fe2485565a3b20789b19c72d8108ba9475ddb",
+  "wbs": 633,
+  "dbRow": 1911,
+  "lease": 2382,
+  "migration": "399_pendant_object_catalog_link.sql",
+  "scope": {
+    "typedDefinitions": 13,
+    "itemObjects": 13,
+    "runtimeDbSourceBindings": 13,
+    "aliases": 0,
+    "metadataInvariants": ["objectType", "grade", "charm", "explore", "rate", "drawOrder", "gradeOrder", "notice"],
+    "drawTicketIncluded": false,
+    "upgradePolicyIncluded": false,
+    "inventoryOwnershipIncluded": false,
+    "equipProjectionIncluded": false,
+    "providerIncluded": false,
+    "adminIncluded": false,
+    "ownedPendantsIncluded": false,
+    "wbs625AdapterReused": true,
+    "ownershipRowsMutated": 0
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration399ExactParityRollbackReapplyReconnect": "required",
+    "shadow13": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}
