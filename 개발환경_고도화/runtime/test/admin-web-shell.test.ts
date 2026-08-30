@@ -65,24 +65,27 @@ describe("admin web shell", () => {
       "/api/v1/admin/moderation-incidents",
       "/api/v1/admin/monitoring-events",
       "/api/v1/admin/delivery-failures",
+      "/api/v1/admin/diamond-shop/catalog",
+      "/api/v1/admin/package-catalog",
+      "/api/v1/admin/object-catalog/objects/",
       "/api/v1/admin/backups/managed",
       "/api/v1/admin/backups/dev-sync",
       "/api/v1/admin/restores/preview",
       "/api/v1/admin/restores",
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
-    for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes", "/catalog"]) {
+    for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes"]) {
       assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
     }
     assert.ok((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length >= 6);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
-    assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 1);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 3);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
   });
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read"
+      "overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");
@@ -107,13 +110,17 @@ describe("admin web shell", () => {
         app.inject({ method: "GET", url: "/api/v1/admin/channel-activity?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/moderation-incidents?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/monitoring-events?page=1&limit=25" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" })
+        app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/diamond-shop/catalog" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/package-catalog" })
       ]);
       assert.ok(responses.every((response) => response.statusCode === 200));
       assert.equal(responses[2]?.json().total, 1);
       assert.equal(responses[3]?.json().player.displayName, "합성회원");
       assert.equal(responses[3]?.json().player.restrictions.length, 2);
       assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
+      assert.equal(responses[9]?.json().catalog.catalogVersion, "14");
+      assert.equal(responses[10]?.json().catalog.catalogKey, "PACKAGE_CATALOG");
     } finally {
       await app.close();
     }
@@ -125,5 +132,40 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /세션이 만료됐습니다/);
     assert.match(ADMIN_WEB_CLIENT, /검색 결과가 없습니다/);
     assert.match(ADMIN_WEB_CLIENT, /다시 시도/);
+    assert.match(ADMIN_WEB_CLIENT, /manager/);
+    assert.match(ADMIN_WEB_CLIENT, /super_admin/);
+  });
+
+  it("provides responsive add, explicit soft-disable, conflict, failure, and replay states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /상품 추가/);
+    assert.match(ADMIN_WEB_CLIENT, /상품 비활성화 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /목록이 먼저 변경되었습니다/);
+    assert.match(ADMIN_WEB_CLIENT, /같은 요청 다시 보내기/);
+    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 요청입니다/);
+    assert.match(ADMIN_WEB_CLIENT, /"x-csrf-token"/);
+    assert.match(ADMIN_WEB_CLIENT, /"idempotency-key"/);
+    assert.match(ADMIN_WEB_STYLES, /@media \(max-width: 640px\)/);
+    assert.match(ADMIN_WEB_STYLES, /\.catalog-layout/);
+  });
+
+  it("exposes only package adapter ADD, EDIT, REMOVE and ENABLE states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /패키지 추가/);
+    assert.match(ADMIN_WEB_CLIENT, /패키지 보상 전체 수정/);
+    assert.match(ADMIN_WEB_CLIENT, /패키지 목록 제거 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /패키지 활성화 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /package\.catalog\.manage/);
+    assert.match(ADMIN_WEB_CLIENT, /expectedCatalogVersion/);
+    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 패키지 요청입니다/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /패키지 카탈로그 발행|package-catalog\/publish/);
+  });
+
+  it("exposes exact object lookup and only REGISTER, UPDATE and SET_ACTIVE states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /오브젝트 등록/);
+    assert.match(ADMIN_WEB_CLIENT, /오브젝트 수정/);
+    assert.match(ADMIN_WEB_CLIENT, /오브젝트 비활성화 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /object-catalog\/objects/);
+    assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
+    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
   });
 });

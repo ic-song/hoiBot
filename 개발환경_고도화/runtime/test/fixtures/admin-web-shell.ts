@@ -6,10 +6,9 @@ export const syntheticAdminSession: AdminSession = {
   operatorId: "7001",
   loginId: "shadow.manager",
   displayName: "합성 운영자",
-  roleCodes: ["operations_manager"],
-  permissions: ["overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read"]
+  roleCodes: ["manager"],
+  permissions: ["overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage"]
 };
-
 export const syntheticAdminRestrictions = [
   {
     id: "61001",
