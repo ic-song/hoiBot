@@ -1,0 +1,34 @@
+{
+  "sliceId": "SL-ASSET-MINIPET-OBJECT-CATALOG-LINK-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-mini-pet-object-link-01",
+  "baseline": "93318a59295226b03f493674caaa579b928c93ff",
+  "wbs": 624,
+  "lease": 2372,
+  "migration": "397_minipet_object_catalog_link.sql",
+  "scope": {
+    "canonicalSourceTable": "mini_pet_definition_source_bindings",
+    "sourceRows": 1078,
+    "objects": 1078,
+    "aliases": 1078,
+    "sourceBindings": 1078,
+    "collisionSurplusPreserved": 23,
+    "extraDefinitionsPreservedUnlinked": 28,
+    "drawDefinitionsPreserved": 1066,
+    "eliteDefinitionsPreserved": 12,
+    "type396CarryForward": true,
+    "providerIncluded": false,
+    "ownershipLedgerPackageIncluded": false,
+    "legacyIncluded": false
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration397ParityRollbackReapplyReconnect": "required",
+    "shadow1078": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}
