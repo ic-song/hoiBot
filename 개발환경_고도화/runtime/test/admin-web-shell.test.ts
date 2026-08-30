@@ -50,7 +50,7 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
   });
 
-  it("connects the approved read APIs, session lifecycle, and account restriction mutations", () => {
+  it("connects the approved read APIs, session lifecycle, and leased admin mutations", () => {
     for (const path of [
       "/api/v1/admin/sessions",
       "/api/v1/admin/sessions/current",
@@ -64,13 +64,17 @@ describe("admin web shell", () => {
       "/api/v1/admin/channel-activity",
       "/api/v1/admin/moderation-incidents",
       "/api/v1/admin/monitoring-events",
-      "/api/v1/admin/delivery-failures"
+      "/api/v1/admin/delivery-failures",
+      "/api/v1/admin/backups/managed",
+      "/api/v1/admin/backups/dev-sync",
+      "/api/v1/admin/restores/preview",
+      "/api/v1/admin/restores",
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
-    for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
+    for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes", "/catalog"]) {
       assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
     }
-    assert.equal((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length, 3);
+    assert.ok((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length >= 6);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
     assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 1);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
@@ -78,7 +82,7 @@ describe("admin web shell", () => {
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "account.restrict", "game.currency.change", "audit.read", "activity.read", "incident.read", "monitoring.read"
+      "overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");

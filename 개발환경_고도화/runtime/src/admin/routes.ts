@@ -10,6 +10,10 @@ import type { ModerationIncidentService } from "../integration/moderation-incide
 import type { IrisKakaoDatabaseSnapshot } from "../integration/iris-kakao-database-inspector.js";
 import type { RetainedEventContentService } from "../integration/retained-event-content-service.js";
 import type { CurrencyService } from "../currency/currency-service.js";
+import type { ManagedBackupCommandService } from "./managed-backup-command-service.js";
+import type { DataBackupService } from "./data-backup-service.js";
+import type { DataRestoreGeneration, DataRestoreService } from "./data-restore-service.js";
+import type { DataStatusEnvironment, DataStatusTarget } from "./data-status-service.js";
 
 interface AdminRouteDependencies {
   auth: AdminAuthService;
@@ -21,6 +25,9 @@ interface AdminRouteDependencies {
   inspectIrisKakaoDatabase: (event: import("../integration/iris-normalizer.js").NormalizedIrisEvent) => Promise<IrisKakaoDatabaseSnapshot>;
   retainedEventContents: RetainedEventContentService;
   currency: CurrencyService;
+  managedBackup?: ManagedBackupCommandService;
+  dataBackup?: DataBackupService;
+  dataRestore?: DataRestoreService;
   secureCookies: boolean;
 }
 
@@ -55,6 +62,23 @@ function setSessionCookie(reply: FastifyReply, token: string, secure: boolean): 
 
 function requireSuperAdmin(session: AdminSession): void {
   if (!session.roleCodes.includes("super_admin")) throw new ApplicationError("SUPER_ADMIN_REQUIRED", "최고관리자만 수행할 수 있습니다.", 403);
+}
+
+function requireBackupDependency<T>(value: T | undefined): T {
+  if (value === undefined) throw new ApplicationError("BACKUP_RECOVERY_UNAVAILABLE", "백업·복구 웹 연결이 준비되지 않았습니다.", 503);
+  return value;
+}
+
+function readRestoreSelection(body: { environment?: unknown; target?: unknown; generation?: unknown }): {
+  environment: DataStatusEnvironment;
+  target: DataStatusTarget;
+  generation: DataRestoreGeneration;
+} {
+  const environment = body.environment === "prod" || body.environment === "dev" ? body.environment : undefined;
+  const target = body.target === "member" || body.target === "member_pet" || body.target === "petSkillData" || body.target === "petHomeActivityData" ? body.target : undefined;
+  const generation = body.generation === 1 || body.generation === 2 ? body.generation : undefined;
+  if (environment === undefined || target === undefined || generation === undefined) throw new ApplicationError("RESTORE_SELECTION_INVALID", "환경, 대상, 백업 세대를 확인해 주세요.", 422);
+  return { environment, target, generation };
 }
 
 // 관리자 인증·운영·권한 관리 REST API를 등록합니다.
@@ -253,6 +277,36 @@ export async function registerAdminRoutes(app: FastifyInstance, dependencies: Ad
     const session = await authenticate(request, dependencies, false); requirePermission(session, "monitoring.read");
     const paging = readPage(request.query); const result = await dependencies.directory.listDeliveryFailures(paging.limit, paging.offset);
     return { ok: true, ...result, page: paging.page, limit: paging.limit, requestId: request.id };
+  });
+
+  app.post<{ Body: MutationBody }>("/api/v1/admin/backups/managed", async (request, reply) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "managed_backup.execute");
+    const mutation = readMutation(request, request.body);
+    const result = await requireBackupDependency(dependencies.managedBackup).backupForOperator({ operatorId: session.operatorId, ...mutation });
+    return reply.code(201).send({ ok: true, ...result, requestId: request.id });
+  });
+
+  app.post<{ Body: MutationBody }>("/api/v1/admin/backups/dev-sync", async (request, reply) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "data_backup.execute");
+    const mutation = readMutation(request, request.body);
+    const result = await requireBackupDependency(dependencies.dataBackup).backupForOperator({ operatorId: session.operatorId, ...mutation });
+    return reply.code(201).send({ ok: true, ...result, requestId: request.id });
+  });
+
+  app.post<{ Body: { environment?: unknown; target?: unknown; generation?: unknown } }>("/api/v1/admin/restores/preview", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "data_restore.execute");
+    const selection = readRestoreSelection(request.body ?? {});
+    const preview = await requireBackupDependency(dependencies.dataRestore).previewForOperator({ operatorId: session.operatorId, ...selection });
+    return { ok: true, preview, requestId: request.id };
+  });
+
+  app.post<{ Body: MutationBody & { environment?: unknown; target?: unknown; generation?: unknown; confirmationToken?: unknown } }>("/api/v1/admin/restores", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "data_restore.execute");
+    const mutation = readMutation(request, request.body);
+    const selection = readRestoreSelection(request.body ?? {});
+    if (typeof request.body?.confirmationToken !== "string" || request.body.confirmationToken === "") throw new ApplicationError("RESTORE_CONFIRMATION_TOKEN_REQUIRED", "dry-run 확인 토큰이 필요합니다.", 422);
+    const result = await requireBackupDependency(dependencies.dataRestore).restoreForOperator({ operatorId: session.operatorId, ...mutation, ...selection, confirmationToken: request.body.confirmationToken });
+    return { ok: true, ...result, requestId: request.id };
   });
 
   app.post<{ Params: { playerId: string }; Body: MutationBody & { restrictionType?: unknown; endsAt?: unknown } }>("/api/v1/admin/players/:playerId/restrictions", async (request, reply) => {

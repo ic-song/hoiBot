@@ -76,6 +76,9 @@ import { isTitleGiftTicketGrantCandidate, normalizeTitleGiftTicketGrantDispatchM
 import { formatLegacyMyProfile } from "./player/legacy-profile-formatter.js";
 import { AdminDirectoryService } from "./admin/directory-service.js";
 import { AdminManagementService } from "./admin/management-service.js";
+import { ManagedBackupCommandService } from "./admin/managed-backup-command-service.js";
+import { DataBackupService } from "./admin/data-backup-service.js";
+import { DataRestoreService } from "./admin/data-restore-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
 
@@ -720,6 +723,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       moderationIncidents: new ModerationIncidentService(database),
       retainedEventContents: retainedEventContents!,
       currency: new CurrencyService(database),
+      managedBackup: new ManagedBackupCommandService(database),
+      dataBackup: new DataBackupService(database),
+      dataRestore: new DataRestoreService(database),
       inspectIrisKakaoDatabase,
       secureCookies: config.nodeEnv === "production"
     });
