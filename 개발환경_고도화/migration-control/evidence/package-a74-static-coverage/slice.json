@@ -1,0 +1,63 @@
+{
+  "sliceId": "SL-PACKAGE-A74-STATIC-COVERAGE-SNAPSHOT-01",
+  "executionId": "개발자-SL-PACKAGE-A74-STATIC-COVERAGE-SNAPSHOT-01-20260831T0720",
+  "wbs": 661,
+  "dbRow": 1939,
+  "lease": 2407,
+  "baseline": "90bdfa97c1e535b8c1ef02428f4bb2459e1a4bb7",
+  "scope": {
+    "membership74": true,
+    "definitionCoverage74": true,
+    "catalogConsumeCoverage21": true,
+    "rewardTargetCoverage45": true,
+    "productOnly19": true,
+    "rewardOnly43": true,
+    "both2": true,
+    "unboundDbDrivenLiteral0": 10,
+    "duplicate0": true,
+    "conflict0": true,
+    "orphan0": true,
+    "gap0": true,
+    "migrationChanges": 0,
+    "runtimeChanges": 0,
+    "providerChanges": 0,
+    "ownershipChanges": 0,
+    "schemaChanges": 0,
+    "oldSchemaChanges": 0,
+    "mainChanges": 0,
+    "uiChanges": 0,
+    "databaseWrites": 0
+  },
+  "hashes": {
+    "membershipSha256": "4b7a0d117341a720d5f9ca8140c61cbee407cd85ab55790d2d092d224ee27bd2",
+    "coverageMatrixSha256": "944326b157fd25ed33332ad871f4f172c5704751e581ae42efcfa9a313f1c708",
+    "sourceMigrationSetSha256": "102f4f994be560196ea5ad875c22af57609ec05a4b3af5c4c2aecf07f0716997"
+  },
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "deterministicReplay": "PASS",
+    "sourceShadow": "PASS",
+    "fullRegression": "PASS",
+    "mariaRequired": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "carryForward": {
+    "a74": true,
+    "b76Unchanged": true,
+    "d1Unchanged": true,
+    "lease2405CrossClassTrace": true
+  },
+  "valRangeReserved": "10528:10535",
+  "sheetsEdited": false
+}
