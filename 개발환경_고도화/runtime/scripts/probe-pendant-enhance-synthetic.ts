@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../src/database.js";
 import { PendantEnhanceService } from "../src/pet/pendant-enhance-service.js";
+import { MariaPendantPolicyCatalogRepository } from "../src/pet/maria-pendant-policy-catalog-repository.js";
+import { PendantPolicyCatalogReadProvider } from "../src/pet/pendant-policy-catalog.js";
 
 const config = loadConfig();
 if (!config.database.enabled) throw new Error("DATABASE_ENABLED must be true.");
@@ -11,6 +13,7 @@ if (!/^hoibot_pendant_enhance(?:_[a-z0-9_]+)?$/i.test(config.database.name)) {
 const base = process.env.PENDANT_ENHANCE_PROBE_EVENT_ID ?? "pendant-enhance-g7-20260827-r1";
 const restart = process.argv.includes("--verify-restart");
 const db = createDatabaseClient(config.database);
+const service = (database: DatabaseClient, random: () => number) => new PendantEnhanceService(database, new PendantPolicyCatalogReadProvider(new MariaPendantPolicyCatalogRepository(database)), random);
 const user = "pendant-enhance-user";
 const room = "synthetic-pendant-enhance-room";
 const playerId = 988000001;
@@ -72,15 +75,15 @@ try {
   const failureConfirm = `${base}-failure-confirm`;
   if (restart) {
     const before = await snapshot();
-    const replay = await new PendantEnhanceService(db, () => 0).handle({
+    const replay = await service(db, () => 0).handle({
       eventId: failureConfirm, externalUserId: user, destinationId: room, message: "진행시켜"
     });
     assert.equal(replay.status, "failure");
     assert.deepEqual(await snapshot(), before);
     assert.deepEqual(before[0], {
       balance: "4000000000.000", stones: 85n, level: "7", durability: "4", version: 3n,
-      operations: 7n, confirmOperations: 2n, outboxes: 7n, confirmations: 4n,
-      consumed: 2n, cancelled: 1n, currencyLedger: 2n, inventoryLedger: 2n
+      operations: 10n, confirmOperations: 2n, outboxes: 10n, confirmations: 5n,
+      consumed: 2n, cancelled: 2n, currencyLedger: 2n, inventoryLedger: 2n
     });
     process.stdout.write(JSON.stringify({ mode: "verify-restart", ...before[0], additionalMutation: false, operationalDataTouched: false }, (_key, value) => typeof value === "bigint" ? Number(value) : value) + "\n");
   } else {
@@ -106,7 +109,7 @@ try {
     );
     assert.equal((await db.query<Array<{ rollout_state: string }>>("SELECT rollout_state FROM command_registry WHERE command_code='PENDANT_ENHANCE'"))[0]!.rollout_state, "SHADOW");
 
-    const serviceSuccess = new PendantEnhanceService(db, () => 0);
+    const serviceSuccess = service(db, () => 0);
     await event(successPreview);
     const preview = await serviceSuccess.handle({ eventId: successPreview, externalUserId: user, destinationId: room, message: "/펜던트강화 1" });
     assert.equal(preview.status, "preview");
@@ -129,7 +132,7 @@ try {
     await event(failurePreview);
     assert.equal((await serviceSuccess.handle({ eventId: failurePreview, externalUserId: user, destinationId: room, message: "/펜던트강화 1" })).status, "preview");
     await event(failureConfirm);
-    const failure = await new PendantEnhanceService(db, () => 1).handle({ eventId: failureConfirm, externalUserId: user, destinationId: room, message: "진행시켜" });
+    const failure = await service(db, () => 1).handle({ eventId: failureConfirm, externalUserId: user, destinationId: room, message: "진행시켜" });
     assert.equal(failure.status, "failure");
     assert.equal(failure.level, 7);
     assert.equal(failure.durability, "4");
@@ -141,20 +144,37 @@ try {
     const beforeRollback = await snapshot();
     await event(rollbackConfirm);
     await assert.rejects(
-      () => new PendantEnhanceService(failAudit(db), () => 0).handle({ eventId: rollbackConfirm, externalUserId: user, destinationId: room, message: "진행시켜" }),
+      () => service(failAudit(db), () => 0).handle({ eventId: rollbackConfirm, externalUserId: user, destinationId: room, message: "진행시켜" }),
       /synthetic pendant enhance audit failure/
     );
     assert.deepEqual(await snapshot(), beforeRollback);
     assert.equal(await db.verifyRollback(), true);
+    const notFoundEvent = `${base}-not-found`;
+    await event(notFoundEvent);
+    assert.equal((await serviceSuccess.handle({ eventId: notFoundEvent, externalUserId: user, destinationId: room, message: "/펜던트강화 999" })).status, "usage");
+    const targetId = preview.instanceId!;
+    await db.execute("UPDATE inventory_instances SET attributes_json=JSON_SET(attributes_json,'$.upgrade',30) WHERE id=?", [targetId]);
+    const maxEvent = `${base}-max`;
+    await event(maxEvent);
+    assert.equal((await serviceSuccess.handle({ eventId: maxEvent, externalUserId: user, destinationId: room, message: "/펜던트강화 1" })).status, "usage");
+    await db.execute("UPDATE inventory_instances SET attributes_json=JSON_SET(attributes_json,'$.upgrade',7) WHERE id=?", [targetId]);
+    const conflictPreview = `${base}-conflict-preview`;
+    const conflictConfirm = `${base}-conflict-confirm`;
+    await event(conflictPreview);
+    assert.equal((await serviceSuccess.handle({ eventId: conflictPreview, externalUserId: user, destinationId: room, message: "/펜던트강화 1" })).status, "preview");
+    await db.execute("UPDATE inventory_instances SET version=version+1 WHERE id=?", [targetId]);
+    await event(conflictConfirm);
+    await assert.rejects(() => serviceSuccess.handle({ eventId: conflictConfirm, externalUserId: user, destinationId: room, message: "진행시켜" }), (error: unknown) => (error as { code?: string }).code === "PENDANT_ENHANCE_CONFLICT");
+    await db.execute("UPDATE inventory_instances SET version=version-1 WHERE id=?", [targetId]);
     const effects = await snapshot();
     assert.deepEqual(effects[0], {
       balance: "4000000000.000", stones: 85n, level: "7", durability: "4", version: 3n,
-      operations: 7n, confirmOperations: 2n, outboxes: 7n, confirmations: 4n,
-      consumed: 2n, cancelled: 1n, currencyLedger: 2n, inventoryLedger: 2n
+      operations: 10n, confirmOperations: 2n, outboxes: 10n, confirmations: 5n,
+      consumed: 2n, cancelled: 2n, currencyLedger: 2n, inventoryLedger: 2n
     });
     process.stdout.write(JSON.stringify({
       mode: "probe", migrationCount: 119,
-      scenarios: ["shadow-registry", "preview-no-resource-mutation", "bonus-rate", "success", "cancel", "failure-durability", "replay", "rollback"],
+      scenarios: ["shadow-registry", "preview-no-resource-mutation", "bonus-rate", "success", "cancel", "failure-durability", "max", "not-found", "version-conflict", "replay", "rollback", "reconnect"],
       effects: effects[0], operationalDataTouched: false
     }, (_key, value) => typeof value === "bigint" ? Number(value) : value) + "\n");
   }
