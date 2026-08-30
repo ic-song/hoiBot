@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { hasFreeMarketMembership } from "./free-market-membership.js";
 
 const ALIAS = "/자유시장취소 [번호]";
 const MAX_UINT64 = 18_446_744_073_709_551_615n;
@@ -65,7 +66,7 @@ export class FreeMarketCancelService {
       if (listing.seller_player_id !== actor.player_id) return reject("not_owner", "❌ 본인이 등록한 자유시장 매물만 취소할 수 있습니다.", listingId);
       await this.restoreAsset(t, operation.insertId, listing);
       const fee = (await t.query<Fee[]>("SELECT carrot_item_id,carrot_fee FROM market_listing_registration_fees WHERE listing_id=?", [listing.id]))[0];
-      const hasPass = String((await t.query<Array<{ allowed: bigint | number }>>("SELECT EXISTS(SELECT 1 FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND stack.quantity>0 AND item.display_name='자유시장회원권🏪') allowed", [actor.player_id]))[0]?.allowed ?? 0) === "1";
+      const hasPass = await hasFreeMarketMembership(t, actor.player_id);
       let refunded = 0n;
       if (hasPass && fee !== undefined && fee.carrot_fee > 0n) {
         await t.execute("INSERT IGNORE INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,0,0)", [actor.player_id, fee.carrot_item_id]);

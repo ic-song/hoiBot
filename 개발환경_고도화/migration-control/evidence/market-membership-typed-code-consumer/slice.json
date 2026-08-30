@@ -1,0 +1,56 @@
+{
+  "sliceId": "SL-MARKET-MEMBERSHIP-TYPED-CODE-CONSUMER-01",
+  "executionId": "개발자-SL-MARKET-MEMBERSHIP-TYPED-CODE-CONSUMER-01-20260831T0830",
+  "wbs": 668,
+  "dbRow": 1946,
+  "lease": 2414,
+  "baseline": "51f0cd49d48a24e2e93e73bd99bf08cb90f4642e",
+  "itemCode": "free_market_membership",
+  "scope": {
+    "typedConsumers": 7,
+    "displayNameLookupConsumers": 0,
+    "registrationConsumers": 4,
+    "buyConsumers": 1,
+    "cancelConsumers": 2,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "ownershipChanges": 0,
+    "grantChanges": 0,
+    "packageChanges": 0,
+    "passChanges": 0,
+    "mainChanges": 0
+  },
+  "parity": {
+    "membershipLimitBonus": 7,
+    "standardFeeBasisPoints": 1000,
+    "membershipFeeBasisPoints": 500,
+    "cancelRefund": true,
+    "nonconsume": true,
+    "nontradeUnchanged": true,
+    "uiDisplayUnchanged": true
+  },
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "deterministicReplay": "PASS",
+    "syntheticShadow": "PASS",
+    "fullRegression": "PASS",
+    "mariaRequired": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "carryForward": {
+    "wbs666TraceSha256": "a1b97050fb705b266ee20f498b52f1b599900d648610bb6e7ddae0e0b6290bb0"
+  },
+  "valRangeReserved": "10576:10583",
+  "sheetsEdited": false
+}

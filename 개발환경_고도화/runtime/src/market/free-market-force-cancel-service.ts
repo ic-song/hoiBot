@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { FreeMarketCancelService, type FreeMarketCancellationListing } from "./free-market-cancel-service.js";
+import { hasFreeMarketMembership } from "./free-market-membership.js";
 
 const ALIAS = "/거래소강제취소";
 const COMMAND_CODE = "MARKET_TRADE_FORCE_CANCEL";
@@ -108,10 +109,7 @@ export class FreeMarketForceCancelService {
       const fee = (await t.query<Fee[]>(
         "SELECT carrot_item_id,carrot_fee FROM market_listing_registration_fees WHERE listing_id=?", [listing.id]
       ))[0];
-      const sellerHasPass = String((await t.query<Array<{ allowed: bigint | number }>>(
-        "SELECT EXISTS(SELECT 1 FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND stack.quantity>0 AND item.display_name='자유시장회원권🏪') allowed",
-        [listing.seller_player_id]
-      ))[0]?.allowed ?? 0) === "1";
+      const sellerHasPass = await hasFreeMarketMembership(t, listing.seller_player_id);
       let refunded = 0n;
       if (sellerHasPass && fee !== undefined && fee.carrot_fee > 0n) {
         await t.execute("INSERT IGNORE INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,0,0)", [listing.seller_player_id, fee.carrot_item_id]);

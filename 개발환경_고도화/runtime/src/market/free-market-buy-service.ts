@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { hasFreeMarketMembership } from "./free-market-membership.js";
 import { isFreeMarketReadCommand } from "./free-market-read-service.js";
 import { FreeMarketCancelService, isFreeMarketCancelCandidate, normalizeFreeMarketCancelDispatchMessage } from "./free-market-cancel-service.js";
 import { FreeMarketForceCancelService, isFreeMarketForceCancelCandidate, normalizeFreeMarketForceCancelDispatchMessage } from "./free-market-force-cancel-service.js";
@@ -225,7 +226,7 @@ export class FreeMarketBuyService {
     const buyerBefore = integer(buyerAccount.balance);
     const sellerBefore = integer(sellerAccount.balance);
     if (buyerBefore < gross) return this.reject(t, operationId, actor, input, listing.id, "❌ 포인트가 부족합니다.", "insufficient_point", { required: gross.toString(), balance: buyerBefore.toString() });
-    const hasPass = String((await t.query<Array<{ allowed: bigint | number }>>("SELECT EXISTS(SELECT 1 FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND stack.quantity>0 AND item.display_name='자유시장회원권🏪') allowed", [seller.player_id]))[0]?.allowed ?? 0) === "1";
+    const hasPass = await hasFreeMarketMembership(t, seller.player_id);
     const feeBasisPoints = hasPass ? policy.member_fee_basis_points : policy.standard_fee_basis_points;
     const fee = calculateFreeMarketFee(gross, feeBasisPoints);
     const net = gross - fee;
