@@ -288,6 +288,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .catalog-status { display: inline-flex; align-items: center; padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); font-size: 10px; font-weight: 800; }
 .catalog-status.inactive { background: #f1f3f5; color: var(--muted); }
 .package-reward-guide { margin: 0; padding: 10px 12px; background: #f7f9fa; border-left: 3px solid var(--accent); color: var(--muted); font-size: 11px; line-height: 1.6; }
+.object-lookup-form { display: flex; align-items: center; gap: 8px; width: 100%; }
+.object-lookup-form input { min-width: 0; }
+.object-lookup-form .primary-button { flex: 0 0 auto; min-height: 40px; margin: 0; padding: 0 18px; }
+.object-json { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; line-height: 1.6; }
 
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
@@ -322,6 +326,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 }
 
 @media (max-width: 640px) {
+  .object-lookup-form { align-items: stretch; flex-direction: column; }
+  .object-lookup-form .primary-button { width: 100%; }
   .login-copy { min-height: 44vh; padding: 32px 24px; }
   .login-copy h1 { font-size: 34px; }
   .login-description { margin: 20px 0 0; font-size: 14px; }
@@ -358,7 +364,10 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     catalogNotice: null,
     catalogRetry: null,
     packageCatalogNotice: null,
-    packageCatalogRetry: null
+    packageCatalogRetry: null,
+    objectCatalogNotice: null,
+    objectCatalogRetry: null,
+    objectCatalogKey: ""
   };
 
   var NAV_ITEMS = [
@@ -369,7 +378,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
     { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" },
     { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
-    { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" }
+    { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" },
+    { id: "object-catalog", label: "오브젝트 카탈로그", icon: "◎", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "OBJECT CATALOG" }
   ];
 
   var METRICS = [
@@ -580,7 +590,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "incidents") loadIncidents(1);
     else if (item.id === "monitoring") loadMonitoring(1);
     else if (item.id === "diamond-catalog") loadDiamondCatalog();
-    else loadPackageCatalog();
+    else if (item.id === "package-catalog") loadPackageCatalog();
+    else loadObjectCatalog(state.objectCatalogKey);
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
 
@@ -1056,6 +1067,102 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       main.innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.") + errorState(error, "package-catalog");
       attachRetry(main);
     }
+  }
+
+  // object mutation retry까지 동일하게 유지할 namespaced 멱등성 키를 생성합니다.
+  function objectCatalogIdempotencyKey() {
+    return "object-catalog:" + catalogIdempotencyKey();
+  }
+
+  // object catalog mutation 결과와 replay 상태를 공통 배너로 표시합니다.
+  function objectCatalogNotice() {
+    if (!state.objectCatalogNotice) return "<div id=\"object-catalog-message\"></div>";
+    return "<div id=\"object-catalog-message\" class=\"catalog-notice " + escapeHtml(state.objectCatalogNotice.kind || "") + "\"><strong>" + escapeHtml(state.objectCatalogNotice.title) + "</strong><span>" + escapeHtml(state.objectCatalogNotice.message) + "</span></div>";
+  }
+
+  // metadata 입력을 JSON object로만 제한합니다.
+  function parseObjectMetadata(value) {
+    var parsed;
+    try { parsed = JSON.parse(value || "{}"); }
+    catch (_) { throw new Error("metadata JSON 형식을 확인해 주세요."); }
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("metadata는 JSON object여야 합니다.");
+    return parsed;
+  }
+
+  // 한 줄 SYSTEM|table|key 형식을 canonical source binding 배열로 변환합니다.
+  function parseObjectSources(value) {
+    var lines = value.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+    if (!lines.length) throw new Error("canonical source binding을 한 개 이상 입력해 주세요.");
+    return lines.map(function (line) {
+      var parts = line.split("|");
+      if (parts.length !== 3 || ["LEGACY_JSON", "LEGACY_DB", "RUNTIME_DB"].indexOf(parts[0]) < 0 || !parts[1].trim() || !parts[2].trim()) {
+        throw new Error("source binding은 SYSTEM|table|key 형식이어야 합니다.");
+      }
+      return { system: parts[0], table: parts[1].trim(), key: parts[2].trim() };
+    });
+  }
+
+  // exact object projection과 UPDATE·SET_ACTIVE 진입점을 생성합니다.
+  function objectCatalogDetail(object) {
+    var nextActive = !object.active;
+    return "<div class=\"detail-body\"><div class=\"detail-title\"><div><h3>" + escapeHtml(object.displayName) + "</h3><span class=\"mono\">" + escapeHtml(object.objectKey) + "</span></div><span class=\"catalog-status " + (object.active ? "" : "inactive") + "\">" + (object.active ? "활성" : "비활성") + "</span></div>" +
+      "<dl class=\"detail-list\"><div><dt>Definition ID</dt><dd class=\"mono\">" + escapeHtml(object.definitionId) + "</dd></div><div><dt>Object Type</dt><dd>" + escapeHtml(object.objectType) + "</dd></div><div><dt>Expected Version</dt><dd class=\"mono\">" + escapeHtml(object.version) + "</dd></div><div><dt>Stable Key</dt><dd class=\"mono\">" + escapeHtml(object.objectKey) + "</dd></div></dl>" +
+      "<form id=\"object-update-form\" class=\"catalog-form\"><h4>표시 정보 수정</h4><label>표시 이름<input name=\"displayName\" required maxlength=\"191\" value=\"" + escapeHtml(object.displayName) + "\"></label><label>Metadata JSON<textarea class=\"object-json\" name=\"metadata\" required>" + escapeHtml(JSON.stringify(object.metadata || {}, null, 2)) + "</textarea></label><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable objectKey와 expectedVersion을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">오브젝트 수정</button></form>" +
+      "<form id=\"object-active-form\" class=\"catalog-form catalog-confirm\"><div><strong>" + (nextActive ? "오브젝트 활성화 확인" : "오브젝트 비활성화 확인") + "</strong><p class=\"muted\">삭제하지 않고 active 상태만 변경합니다.</p></div><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>" + (nextActive ? "활성화" : "비활성화") + " 후 영향과 현재 버전을 확인했습니다.</span></label><button class=\"" + (nextActive ? "primary-button" : "danger-button") + "\" type=\"submit\">" + (nextActive ? "활성화" : "비활성화") + "</button></form></div>";
+  }
+
+  // object provider 오류를 conflict·not-found·failure와 same-key retry 상태로 표시합니다.
+  function showObjectMutationFailure(error, retry) {
+    state.objectCatalogRetry = retry;
+    var target = byId("object-catalog-message");
+    if (!target) return;
+    var conflict = error && error.status === 409;
+    target.className = "catalog-notice error";
+    target.innerHTML = "<strong>" + (conflict ? "오브젝트가 먼저 변경되었습니다." : "오브젝트 요청을 완료하지 못했습니다.") + "</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"object-mutation-retry\">" + (conflict ? "최신 오브젝트 다시 조회" : "같은 요청 다시 보내기") + "</button>";
+    byId("object-mutation-retry").addEventListener("click", function () { if (conflict) loadObjectCatalog(state.objectCatalogKey); else if (state.objectCatalogRetry) state.objectCatalogRetry(); });
+  }
+
+  // CSRF, Idempotency-Key와 caller expectedVersion을 object REST mutation에 전달합니다.
+  async function mutateObjectCatalog(path, method, body, idempotencyKey) {
+    if (!state.csrfToken) { showObjectMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {}); return; }
+    var retry = function () { return mutateObjectCatalog(path, method, body, idempotencyKey); };
+    try {
+      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
+      state.objectCatalogKey = payload.result.object.objectKey;
+      state.objectCatalogRetry = null;
+      state.objectCatalogNotice = payload.result.replayed
+        ? { kind: "replay", title: "이미 완료된 오브젝트 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
+        : { kind: "", title: "오브젝트 카탈로그를 반영했습니다.", message: payload.result.status + " · version " + payload.result.object.version };
+      showToast(payload.result.replayed ? "완료된 오브젝트 요청을 다시 불러왔습니다." : "오브젝트 카탈로그를 변경했습니다.", false);
+      await loadObjectCatalog(state.objectCatalogKey);
+    } catch (error) { showObjectMutationFailure(error, retry); }
+  }
+
+  // manager/super_admin에게 exact lookup과 REGISTER·UPDATE·SET_ACTIVE만 제공합니다.
+  async function loadObjectCatalog(objectKey) {
+    state.objectCatalogKey = objectKey || "";
+    state.refresh = function () { return loadObjectCatalog(state.objectCatalogKey); };
+    var main = byId("main-content");
+    var lookup = "<section class=\"panel\"><div class=\"panel-heading\"><form id=\"object-lookup-form\" class=\"object-lookup-form\"><label class=\"skip-link\" for=\"object-key-search\">Object key</label><input id=\"object-key-search\" name=\"objectKey\" required value=\"" + escapeHtml(state.objectCatalogKey) + "\" placeholder=\"예: currency.gold\"><button class=\"primary-button\" type=\"submit\">정확히 조회</button></form></div><div id=\"object-detail\">" + (state.objectCatalogKey ? loadingState("오브젝트를 불러오는 중") : emptyState("Object key를 입력하세요.", "목록 전체 조회 없이 stable key 한 건만 조회합니다.")) + "</div></section>";
+    var register = "<aside class=\"panel\"><div class=\"panel-heading\"><div><h3>오브젝트 등록</h3><p>canonical source가 존재하는 정의만 등록합니다.</p></div></div><form id=\"object-register-form\" class=\"catalog-form\"><label>Object key<input name=\"objectKey\" required placeholder=\"currency.lease2374_credit\"></label><label>Object type<select name=\"objectType\">" + ["ITEM","PET","FURNITURE","TITLE","PET_TITLE","PACKAGE","CURRENCY","SKILL","HOME_BUILDING","MINI_PET"].map(function (type) { return "<option value=\"" + type + "\">" + type + "</option>"; }).join("") + "</select></label><label>표시 이름<input name=\"displayName\" required maxlength=\"191\"></label><label>Metadata JSON<textarea class=\"object-json\" name=\"metadata\" required>{}</textarea></label><label>Canonical source<textarea class=\"object-json\" name=\"sourceBindings\" required placeholder=\"RUNTIME_DB|currency_definitions|lease2374_credit\"></textarea></label><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"active\" type=\"checkbox\" checked><span>등록 즉시 active 상태로 시작합니다.</span></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable objectKey, objectType과 canonical source를 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">오브젝트 등록</button></form></aside>";
+    main.innerHTML = renderViewIntro("오브젝트 카탈로그", "stable objectKey 단건 조회와 provider 지원 변경만 수행합니다.", "manager / super_admin") + objectCatalogNotice() + "<div class=\"catalog-layout\">" + lookup + register + "</div>";
+    byId("object-lookup-form").addEventListener("submit", function (event) { event.preventDefault(); loadObjectCatalog(new FormData(event.currentTarget).get("objectKey").toString().trim()); });
+    byId("object-register-form").addEventListener("submit", function (event) {
+      event.preventDefault(); var data = new FormData(event.currentTarget);
+      try { mutateObjectCatalog("/api/v1/admin/object-catalog/objects", "POST", { objectKey: data.get("objectKey").toString().trim(), objectType: data.get("objectType").toString(), displayName: data.get("displayName").toString().trim(), active: data.get("active") === "on", metadata: parseObjectMetadata(data.get("metadata").toString()), sourceBindings: parseObjectSources(data.get("sourceBindings").toString()), reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); }
+      catch (error) { showObjectMutationFailure(error, function () {}); }
+    });
+    if (state.objectCatalogKey) {
+      try {
+        var payload = await api("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(state.objectCatalogKey));
+        var object = payload.object;
+        byId("object-detail").innerHTML = objectCatalogDetail(object);
+        byId("object-update-form").addEventListener("submit", function (event) { event.preventDefault(); var data = new FormData(event.currentTarget); try { mutateObjectCatalog("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(object.objectKey), "PATCH", { objectType: object.objectType, expectedVersion: object.version, displayName: data.get("displayName").toString().trim(), metadata: parseObjectMetadata(data.get("metadata").toString()), reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); } catch (error) { showObjectMutationFailure(error, function () {}); } });
+        byId("object-active-form").addEventListener("submit", function (event) { event.preventDefault(); var data = new FormData(event.currentTarget); mutateObjectCatalog("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(object.objectKey) + "/active", "POST", { objectType: object.objectType, expectedVersion: object.version, active: !object.active, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); });
+        markUpdated();
+      } catch (error) { byId("object-detail").innerHTML = errorState(error, "object-catalog"); attachRetry(byId("object-detail")); }
+    }
+    state.objectCatalogNotice = null;
   }
 
   byId("login-form").addEventListener("submit", async function (event) {

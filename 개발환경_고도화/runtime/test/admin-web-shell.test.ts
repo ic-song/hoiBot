@@ -61,7 +61,8 @@ describe("admin web shell", () => {
       "/api/v1/admin/monitoring-events",
       "/api/v1/admin/delivery-failures",
       "/api/v1/admin/diamond-shop/catalog",
-      "/api/v1/admin/package-catalog"
+      "/api/v1/admin/package-catalog",
+      "/api/v1/admin/object-catalog/objects/"
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
     for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore"]) {
@@ -141,5 +142,15 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /expectedCatalogVersion/);
     assert.match(ADMIN_WEB_CLIENT, /이미 완료된 패키지 요청입니다/);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /패키지 카탈로그 발행|package-catalog\/publish/);
+  });
+
+  it("exposes exact object lookup and only REGISTER, UPDATE and SET_ACTIVE states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /오브젝트 등록/);
+    assert.match(ADMIN_WEB_CLIENT, /오브젝트 수정/);
+    assert.match(ADMIN_WEB_CLIENT, /오브젝트 비활성화 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /object-catalog\/objects/);
+    assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
+    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
   });
 });

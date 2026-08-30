@@ -28,9 +28,13 @@ import { registerAdminRoutes } from "./admin/routes.js";
 import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
 import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-catalog-web-routes.js";
 import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-web-routes.js";
+import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-routes.js";
 import { DiamondShopCatalogWebAdapterProvider } from "./shop/diamond-shop-catalog-web-adapter-provider.js";
 import { MariaPackageCatalogAdminRepository, MariaPackageCatalogWebAdapterRepository } from "./package/mariadb-package-catalog-admin.js";
 import { PackageCatalogWebAdapter } from "./package/package-catalog-web-adapter.js";
+import { ObjectCatalogService } from "./catalog/object-catalog.js";
+import { MariaObjectCatalogRepository } from "./catalog/maria-object-catalog-repository.js";
+import { ObjectCatalogWebAdapterProvider } from "./catalog/object-catalog-web-adapter-provider.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
@@ -725,6 +729,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       auth: adminAuth,
       snapshot: new MariaPackageCatalogAdminRepository(database),
       catalog: new PackageCatalogWebAdapter(new MariaPackageCatalogWebAdapterRepository(database))
+    });
+    void registerAdminObjectCatalogWebRoutes(app, {
+      auth: adminAuth,
+      reader: new ObjectCatalogService(new MariaObjectCatalogRepository(database)),
+      catalog: new ObjectCatalogWebAdapterProvider(database)
     });
     void registerUserAuthRoutes(app, {
       auth: new UserAuthService(database, config.userVerificationPepper, config.nodeEnv),

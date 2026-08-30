@@ -10,6 +10,7 @@ import {
 } from "../fixtures/admin-web-shell.js";
 import { syntheticDiamondCatalogResponse } from "../fixtures/admin-diamond-catalog-web-consumer.js";
 import { syntheticPackageCatalogResponse } from "../fixtures/admin-package-catalog-web-consumer.js";
+import { syntheticObjectCatalogObject } from "../fixtures/admin-object-catalog-web-consumer.js";
 
 // 운영 데이터 없이 관리자 웹 셸을 검수할 합성 API 서버를 구성합니다.
 export async function buildSyntheticAdminWebShellApp() {
@@ -28,6 +29,8 @@ export async function buildSyntheticAdminWebShellApp() {
     entries: Array<{ packageId: string; displayName: string; displayOrder: number; active: boolean; expectedVersion: string }>;
   } = { ...syntheticPackageCatalogResponse, entries: syntheticPackageCatalogResponse.entries.map((entry) => ({ ...entry })) };
   const completedPackages = new Map<string, Record<string, unknown>>();
+  const objects = new Map([[syntheticObjectCatalogObject.objectKey, { ...syntheticObjectCatalogObject }]]);
+  const completedObjects = new Map<string, Record<string, unknown>>();
   await registerAdminWebShellRoutes(app);
   app.post("/api/v1/admin/sessions", async () => ({ ok: true, session: syntheticAdminSession, csrfToken: "synthetic-csrf-token" }));
   app.get("/api/v1/admin/sessions/current", async () => ({ ok: true, session: syntheticAdminSession, requestId: "synthetic-session" }));
@@ -127,6 +130,48 @@ export async function buildSyntheticAdminWebShellApp() {
     const result = { replayed: false, packageId: request.params.packageId, catalogVersion: nextVersion, message: "패키지가 활성화되었습니다." };
     completedPackages.set(key, result);
     return { ok: true, result, requestId: "synthetic-package-enable" };
+  });
+  app.get<{ Params: { objectKey: string } }>("/api/v1/admin/object-catalog/objects/:objectKey", async (request, reply) => {
+    const object = objects.get(request.params.objectKey);
+    if (object === undefined) return reply.code(404).send({ ok: false, error: { code: "OBJECT_NOT_FOUND", message: "object_key를 찾을 수 없습니다." }, requestId: "synthetic-object-not-found" });
+    return { ok: true, object, requestId: "synthetic-object-read" };
+  });
+  app.post<{ Body: { objectKey: string; objectType: string; displayName: string; active: boolean; metadata: Record<string, unknown> } }>("/api/v1/admin/object-catalog/objects", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedObjects.get(key);
+    if (prior !== undefined) return reply.code(201).send({ ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-object-register-replay" });
+    if (objects.has(request.body.objectKey)) return reply.code(409).send({ ok: false, error: { code: "OBJECT_CONFLICT", message: "object_key가 이미 존재합니다." }, requestId: "synthetic-object-conflict" });
+    const object = { definitionId: "18446744073709551614", objectKey: request.body.objectKey, objectType: request.body.objectType as Parameters<typeof objects.set>[1]["objectType"], displayName: request.body.displayName, version: "1", active: request.body.active, metadata: request.body.metadata };
+    objects.set(object.objectKey, object);
+    const result = { status: "registered", replayed: false, object, operationId: "237401", auditId: "237402" };
+    completedObjects.set(key, result);
+    return reply.code(201).send({ ok: true, result, requestId: "synthetic-object-register" });
+  });
+  app.patch<{ Params: { objectKey: string }; Body: { expectedVersion: string; displayName: string; metadata: Record<string, unknown> } }>("/api/v1/admin/object-catalog/objects/:objectKey", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedObjects.get(key);
+    if (prior !== undefined) return { ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-object-update-replay" };
+    const current = objects.get(request.params.objectKey);
+    if (current === undefined) return reply.code(404).send({ ok: false, error: { code: "OBJECT_NOT_FOUND", message: "object_key를 찾을 수 없습니다." }, requestId: "synthetic-object-not-found" });
+    if (current.version !== request.body.expectedVersion) return reply.code(409).send({ ok: false, error: { code: "OBJECT_VERSION_CONFLICT", message: "object version이 변경되었습니다." }, requestId: "synthetic-object-version-conflict" });
+    const object = { ...current, displayName: request.body.displayName, metadata: request.body.metadata, version: (BigInt(current.version) + 1n).toString() };
+    objects.set(object.objectKey, object);
+    const result = { status: "updated", replayed: false, object, operationId: "237403", auditId: "237404" };
+    completedObjects.set(key, result);
+    return { ok: true, result, requestId: "synthetic-object-update" };
+  });
+  app.post<{ Params: { objectKey: string }; Body: { expectedVersion: string; active: boolean } }>("/api/v1/admin/object-catalog/objects/:objectKey/active", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedObjects.get(key);
+    if (prior !== undefined) return { ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-object-active-replay" };
+    const current = objects.get(request.params.objectKey);
+    if (current === undefined) return reply.code(404).send({ ok: false, error: { code: "OBJECT_NOT_FOUND", message: "object_key를 찾을 수 없습니다." }, requestId: "synthetic-object-not-found" });
+    if (current.version !== request.body.expectedVersion) return reply.code(409).send({ ok: false, error: { code: "OBJECT_VERSION_CONFLICT", message: "object version이 변경되었습니다." }, requestId: "synthetic-object-version-conflict" });
+    const object = { ...current, active: request.body.active, version: (BigInt(current.version) + 1n).toString() };
+    objects.set(object.objectKey, object);
+    const result = { status: object.active ? "activated" : "deactivated", replayed: false, object, operationId: "237405", auditId: "237406" };
+    completedObjects.set(key, result);
+    return { ok: true, result, requestId: "synthetic-object-active" };
   });
   return app;
 }
