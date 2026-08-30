@@ -1,0 +1,72 @@
+{
+  "sliceId": "SL-ASSET-HOME-BUILDING-RECIPE-ITEM-GAP-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "9ee7a4c5ec73bd89f4ae9d7d5ea97dd21dfb09b0",
+  "source": {
+    "items": 4,
+    "homeRows": 300,
+    "homeRecipeReferences": 1151,
+    "hashes": {
+      "petSweetHomeInfo": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+      "trialTowerBoss": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "itemList": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "castleBattle2": "5d840ce6417f371a0b0109af13e4895942cf027438fda24e8e8520c4048171be"
+    }
+  },
+  "mapping": {
+    "reusedExisting": 3,
+    "newDefinitions": 1,
+    "objects": 4,
+    "aliases": 4,
+    "sourceBindings": 18,
+    "sellable": 0,
+    "crosswalkHash": "cf8ff7d80c11f3ad7dae69cabd7fb917c79b3cd58429f388a8c6f8953662a444",
+    "definitions": {
+      "돌멩이🪨": "ITEM-RWD-041",
+      "반지 강화석💍": "ITEM-RING-UPGRADE-STONE",
+      "캐슬코인🥇": "castle_coin",
+      "전설의 돌맹이🗿": "ITEM-RWD-052"
+    }
+  },
+  "migration": "394_home_building_recipe_item_gap.sql",
+  "validation": {
+    "focused": "5/5 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "fullRegression": "1201 total / 1194 pass / 0 fail / 7 skip",
+    "freshMigrations": 384,
+    "mariaProbe": "7/7 PASS",
+    "shadow": "4/4 PASS",
+    "replay": "applied 0 / migration-count 384",
+    "transactionRollback": "PASS",
+    "reconnectProbe": "7/7 PASS",
+    "finalCounts": {
+      "itemDefinitions": 408,
+      "objectRegistry": 346,
+      "objectAliases": 286,
+      "objectSourceBindings": 360,
+      "itemSalePolicies": 103
+    }
+  },
+  "preserved": {
+    "itemRwd042": true,
+    "itemRwd042PackageRewardReferences": 6,
+    "legendaryStoneDefinitionCreated": false,
+    "inventoryStacks": 0,
+    "inventoryInstances": 0,
+    "inventoryLedger": 0,
+    "packageCatalog": 59,
+    "packageItemDefinitions": 1260,
+    "packageContents": 0,
+    "packageRewardRules": 242
+  },
+  "dependencies": [
+    "inventory.open_all:legendary_stone->ITEM-RWD-052",
+    "SL-ASSET-HOME-BUILDING-DEFINITION-CATALOG-01"
+  ],
+  "ownershipOrLedgerChange": false,
+  "packageModelChange": false,
+  "legacyRuntimeChange": false,
+  "operationalDatabaseChange": false,
+  "gate8": false
+}
