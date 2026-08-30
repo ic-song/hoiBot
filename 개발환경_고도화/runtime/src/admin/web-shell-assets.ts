@@ -22,7 +22,7 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
       </div>
       <p class="eyebrow">PERMISSIONED CONTROL SURFACE</p>
       <h1 id="login-title">운영 판단과 계정 조치를<br>한 흐름에서 처리하세요.</h1>
-      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 조회하고, 허용된 운영자는 사유와 확인 절차를 거쳐 계정 정지·해제를 처리합니다.</p>
+      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 조회하고, 허용된 운영자는 사유와 확인 절차를 거쳐 계정과 재화 조치를 처리합니다.</p>
       <dl class="login-principles">
         <div><dt>권한 우선</dt><dd>허용된 메뉴만 표시</dd></div>
         <div><dt>변경 통제</dt><dd>사유·재확인·멱등 처리</dd></div>
@@ -272,6 +272,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .restriction-heading strong { font-size: 11px; }
 .restriction-heading span { font-size: 10px; }
 .restriction-meta { display: flex; flex-wrap: wrap; gap: 3px 10px; margin: 6px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.currency-list { display: grid; gap: 8px; margin-top: 10px; }
+.currency-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 11px; border: 1px solid var(--line); background: #fff; }
+.currency-card strong { display: block; font-size: 12px; }
+.currency-card span { color: var(--muted); font-size: 10px; }
+.currency-balance { text-align: right; }
+.currency-balance b { display: block; font-size: 14px; font-variant-numeric: tabular-nums; }
+.currency-action-form { display: grid; gap: 9px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); grid-column: 1 / -1; }
+.currency-action-form label:not(.confirm-row) { color: var(--muted); font-size: 10px; font-weight: 700; }
+.currency-action-form input, .currency-action-form select, .currency-action-form textarea { min-height: 40px; font-size: 11px; }
+.currency-action-grid { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px; }
+.currency-action-note { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
 .account-action-form { display: grid; gap: 9px; padding: 12px; background: #fff; border: 1px solid var(--line); }
 .account-action-form + .account-action-form { margin-top: 8px; }
 .account-action-form h5 { margin: 0 0 3px; font-size: 11px; }
@@ -334,6 +345,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .toolbar, .search-form { width: 100%; }
   .toolbar input, .search-form input { width: 100%; }
   .detail-list { grid-template-columns: 1fr; }
+  .currency-action-grid { grid-template-columns: 1fr; }
 }`;
 
 export const ADMIN_WEB_CLIENT = String.raw`(function () {
@@ -689,6 +701,20 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     return status === "expired" ? "만료됨" : status;
   }
 
+  // 현재 재화 잔액과 version을 권한별 조정 폼과 함께 표시합니다.
+  function renderCurrencyAccounts(player) {
+    var accounts = player.currencyAccounts || Object.keys(player.currencies || {}).map(function (code) {
+      return { code: code, balance: player.currencies[code], version: null };
+    });
+    if (!accounts.length) return emptyState("재화 계정이 없습니다.", "현재 회원에게 생성된 재화 계정이 없습니다.");
+    return "<div class=\"currency-list\">" + accounts.map(function (account) {
+      var canAdjust = hasPermission("game.currency.change") && account.version != null;
+      return "<article class=\"currency-card\"><div><strong>" + escapeHtml(account.code) + "</strong><span>version " + escapeHtml(account.version == null ? "조회 불가" : account.version) + "</span></div>" +
+        "<div class=\"currency-balance\"><b>" + escapeHtml(formatNumber(account.balance)) + "</b><span>현재 잔액</span></div>" +
+        (canAdjust ? "<form class=\"currency-action-form\" data-currency-code=\"" + escapeHtml(account.code) + "\" data-currency-version=\"" + escapeHtml(account.version) + "\"><p class=\"currency-action-note\">원장·감사·내부 outbox가 한 트랜잭션으로 기록됩니다.</p><div class=\"currency-action-grid\"><label>조정 방향<select name=\"direction\"><option value=\"add\">증가</option><option value=\"subtract\">차감</option></select></label><label>수량<input name=\"amount\" inputmode=\"decimal\" required placeholder=\"예: 1000\"></label></div><label>조정 사유<textarea name=\"reason\" rows=\"2\" required placeholder=\"재화 정정의 운영 근거를 입력하세요.\"></textarea></label><label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 현재 잔액과 version을 확인했으며 이 재화 변경을 실행합니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"primary-button\" type=\"submit\">재화 조정</button></form>" : "") + "</article>";
+    }).join("") + "</div>";
+  }
+
   // 회원 상세에 현재와 과거 계정 제재를 표시합니다.
   function renderRestrictions(restrictions) {
     if (!restrictions || !restrictions.length) return emptyState("계정 제재 이력이 없습니다.", "필요한 경우 아래에서 새 조치를 등록할 수 있습니다.");
@@ -784,6 +810,36 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     });
   }
 
+  // 재화 조정 폼을 version 기반 증감 REST API에 연결합니다.
+  function attachCurrencyActions(player) {
+    document.querySelectorAll("[data-currency-code]").forEach(function (form) {
+      form.querySelector("button[type=submit]").dataset.label = "재화 조정";
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(form);
+        var amount = data.get("amount").toString().trim();
+        var reason = data.get("reason").toString().trim();
+        var direction = data.get("direction").toString();
+        if (!/^(?:0|[1-9]\d*)(?:\.\d{1,3})?$/.test(amount) || Number(amount) <= 0 || !reason || !data.get("confirmed")) {
+          setActionState(form, "0보다 큰 수량, 사유, 확인 항목을 모두 입력해 주세요.", false);
+          return;
+        }
+        var currencyCode = form.dataset.currencyCode;
+        var expectedVersion = form.dataset.currencyVersion;
+        var delta = direction === "subtract" ? "-" + amount : amount;
+        var scope = "currency.adjust:" + player.playerId + ":" + currencyCode + ":" + expectedVersion + ":" + delta + ":" + reason;
+        setActionState(form, "", true);
+        try {
+          await mutateAccount("/api/v1/admin/players/" + encodeURIComponent(player.playerId) + "/currencies/" + encodeURIComponent(currencyCode) + "/adjustments", "POST", { delta: delta, expectedVersion: expectedVersion, reason: reason, confirmed: true }, scope);
+          showToast(currencyCode + " 재화를 조정했습니다.");
+          await loadPlayerDetail(player.playerId);
+        } catch (error) {
+          setActionState(form, errorMessage(error), false);
+        }
+      });
+    });
+  }
+
   // 선택한 회원의 프로필과 권한별 계정 조치 화면을 표시합니다.
   async function loadPlayerDetail(playerId) {
     var detail = byId("player-detail");
@@ -796,10 +852,11 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         "<div><dt>레벨</dt><dd>" + escapeHtml(formatNumber(player.level)) + "</dd></div><div><dt>누적 레벨</dt><dd>" + escapeHtml(formatNumber(player.accumulatedLevel)) + "</dd></div>" +
         "<div><dt>환생</dt><dd>" + escapeHtml(formatNumber(player.rebirthCount)) + "회</dd></div><div><dt>길드</dt><dd>" + escapeHtml(player.guild ? player.guild.name + " · " + player.guild.roleCode : "-") + "</dd></div>" +
         "<div><dt>펫</dt><dd>" + escapeHtml(player.pet && player.pet.name ? player.pet.name : "-") + "</dd></div><div><dt>홈</dt><dd>" + escapeHtml(player.home && player.home.name ? player.home.name : "-") + "</dd></div></dl>" +
-        "<section class=\"detail-section\"><h4>재화 현황</h4>" + keyValueRows(player.currencies) + "</section>" +
+        "<section class=\"detail-section\"><h4>재화 현황</h4>" + renderCurrencyAccounts(player) + "</section>" +
         "<section class=\"detail-section\"><h4>주요 카운터</h4>" + keyValueRows(player.counters) + "</section>" +
         "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section>" + renderAccountActions(player) + "</div>";
       attachAccountActions(player);
+      attachCurrencyActions(player);
     } catch (error) {
       detail.innerHTML = errorState(error, "players");
       attachRetry(detail);

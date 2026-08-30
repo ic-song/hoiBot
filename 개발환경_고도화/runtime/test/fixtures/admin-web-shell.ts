@@ -7,7 +7,7 @@ export const syntheticAdminSession: AdminSession = {
   loginId: "shadow.manager",
   displayName: "합성 운영자",
   roleCodes: ["operations_manager"],
-  permissions: ["overview.read", "player.read", "account.restrict", "audit.read", "activity.read", "incident.read", "monitoring.read"]
+  permissions: ["overview.read", "player.read", "account.restrict", "game.currency.change", "audit.read", "activity.read", "incident.read", "monitoring.read"]
 };
 
 export const syntheticAdminRestrictions = [
@@ -52,6 +52,10 @@ export const syntheticAdminPlayer: ProfileView = {
   firstSponsor: false,
   passes: [{ code: "attendance", enabled: true, permanent: false, endsAt: "2026-09-30T00:00:00.000Z" }],
   currencies: { point: "1200000", diamond: "350" },
+  currencyAccounts: [
+    { code: "diamond", balance: "350", version: "4" },
+    { code: "point", balance: "1200000", version: "9" }
+  ],
   counters: { attendance: "21", explore: "5" },
   activeTitle: "성실한 탐험가",
   titleCount: "8",

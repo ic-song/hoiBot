@@ -25,6 +25,7 @@ import {
 } from "./integration/iris-channel-policy.js";
 import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
+import { CurrencyService } from "./currency/currency-service.js";
 import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
 import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-catalog-web-routes.js";
 import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-web-routes.js";
@@ -718,6 +719,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       management: new AdminManagementService(database),
       moderationIncidents: new ModerationIncidentService(database),
       retainedEventContents: retainedEventContents!,
+      currency: new CurrencyService(database),
       inspectIrisKakaoDatabase,
       secureCookies: config.nodeEnv === "production"
     });
