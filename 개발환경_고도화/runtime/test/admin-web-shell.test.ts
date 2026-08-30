@@ -56,6 +56,9 @@ describe("admin web shell", () => {
       "/api/v1/admin/sessions/current",
       "/api/v1/admin/overview",
       "/api/v1/admin/players",
+      "/api/v1/admin/players/",
+      "/currencies/",
+      "/adjustments",
       "/api/v1/admin/restrictions",
       "/api/v1/admin/audit-entries",
       "/api/v1/admin/channel-activity",
@@ -67,7 +70,7 @@ describe("admin web shell", () => {
     for (const forbidden of ["server-assignment", "player-assignment", "/operators", "/passes", "/backup", "/restore", "/catalog"]) {
       assert.doesNotMatch(ADMIN_WEB_CLIENT, new RegExp(forbidden.replaceAll("/", "\\/")));
     }
-    assert.equal((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length, 2);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length, 3);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
     assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 1);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
@@ -75,11 +78,12 @@ describe("admin web shell", () => {
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "account.restrict", "audit.read", "activity.read", "incident.read", "monitoring.read"
+      "overview.read", "player.read", "account.restrict", "game.currency.change", "audit.read", "activity.read", "incident.read", "monitoring.read"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");
     assert.equal(syntheticAdminPlayer.currencies.diamond, "350");
+    assert.deepEqual(syntheticAdminPlayer.currencyAccounts[0], { code: "diamond", balance: "350", version: "4" });
     assert.equal(syntheticAdminAudit.resultCode, "success");
     assert.equal(syntheticMonitoringEvent.monitoringGroup, "media");
     assert.equal(syntheticAdminRestrictions[0].status, "active");

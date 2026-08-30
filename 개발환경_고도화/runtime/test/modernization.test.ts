@@ -193,6 +193,7 @@ describe("legacy profile formatter", () => {
       termsAgreed: true, firstSponsor: true,
       passes: [{ code: "premium", enabled: true, permanent: false, endsAt: null }],
       currencies: { point: "1234567890123456.1", diamond: "7.000" },
+      currencyAccounts: [{ code: "point", balance: "1234567890123456.1", version: "2" }, { code: "diamond", balance: "7.000", version: "1" }],
       counters: { "attendance:lifetime": "9", "like:current": "3", "like:lifetime": "13", "carrot:lifetime": "2", "thermo:lifetime": "4" },
       activeTitle: "칭호", titleCount: "1", petTitleCount: "0", guild: null, pet: null,
       equippedMiniPet: null, home: null, ranks: {}, badges: ["⭐"]

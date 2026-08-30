@@ -13,7 +13,7 @@ const profile: ProfileView = {
   playerId: "7", displayName: "대상회원", profileVersion: "1", server: null,
   joinedAt: null, level: "3", accumulatedLevel: "5", experience: { current: "12", next: "102" },
   rebirthCount: "2", termsAgreed: true, firstSponsor: false, passes: [],
-  currencies: { diamond: "10", point: "20" }, counters: {}, activeTitle: "용사", titleCount: "1", petTitleCount: "0",
+  currencies: { diamond: "10", point: "20" }, currencyAccounts: [{ code: "diamond", balance: "10", version: "1" }, { code: "point", balance: "20", version: "2" }], counters: {}, activeTitle: "용사", titleCount: "1", petTitleCount: "0",
   guild: null, pet: null, equippedMiniPet: null, home: null, ranks: {}, badges: []
 };
 const bag: BagView = { playerId: "7", ownerLabel: "대상회원", advertisement: "", items: [{ displayName: "테스트상자", quantity: "3", legacyBagOrder: null }] };

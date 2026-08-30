@@ -1,0 +1,109 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-REWARD-CURRENCY-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-WEB-REWARD-CURRENCY-01-20260830162101",
+  "baseline": "82dc041e",
+  "scope": "ADMIN_WEB_EXISTING_CURRENCY_ADJUST_SERVICE",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "constraints": [
+    "No MariaDB schema, migration, provider, or outbox implementation",
+    "No operational data access",
+    "No generic grant, Iris destination, account, catalog, backup, or restore actions",
+    "No legacy Rhino source changes",
+    "No feature/prod reflection"
+  ],
+  "gate1": {
+    "status": "complete",
+    "reference": "개발환경_고도화/references/admin-web-reward-currency.md",
+    "existingRoutes": "개발환경_고도화/runtime/src/admin/routes.ts",
+    "existingProvider": "개발환경_고도화/runtime/src/currency/currency-service.ts",
+    "permission": "game.currency.change"
+  },
+  "gate2": {
+    "status": "complete",
+    "databaseMappingRows": [1883, 1884],
+    "contractReference": "개발환경_고도화/references/admin-web-reward-currency.md",
+    "newSchemaOrMigration": false
+  },
+  "gate3": {
+    "status": "complete",
+    "fixtures": [
+      "개발환경_고도화/runtime/test/fixtures/admin-web-shell.ts",
+      "개발환경_고도화/runtime/test/support/admin-web-shell-preview.ts"
+    ],
+    "scenarios": [
+      "add",
+      "subtract",
+      "not-found",
+      "permission",
+      "csrf",
+      "replay",
+      "version conflict",
+      "insufficient balance",
+      "audit rollback",
+      "outbox rollback"
+    ],
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "implementation": [
+      "개발환경_고도화/runtime/src/admin/routes.ts",
+      "개발환경_고도화/runtime/src/admin/web-shell-assets.ts",
+      "개발환경_고도화/runtime/src/player/maria-profile-repository.ts"
+    ],
+    "permission": "game.currency.change",
+    "versionedWrite": true
+  },
+  "gate5": {
+    "status": "complete",
+    "integrationTest": "개발환경_고도화/runtime/test/admin-web-reward-currency.integration.test.ts",
+    "profileTest": "개발환경_고도화/runtime/test/admin-web-reward-currency-profile.test.ts",
+    "focusedTests": {
+      "total": 18,
+      "passed": 18,
+      "failed": 0
+    },
+    "typecheck": "pass",
+    "build": "pass",
+    "transactionRollback": "pass",
+    "commandAudit": "pass",
+    "internalOutbox": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "parityFocusedTests": {
+      "total": 18,
+      "passed": 18,
+      "failed": 0
+    },
+    "fullRegression": {
+      "total": 1168,
+      "passed": 1161,
+      "failed": 0,
+      "skipped": 7
+    }
+  },
+  "gate7": {
+    "status": "shadow_complete_pending_commit",
+    "sourceCommit": null,
+    "sourcePushVerified": false,
+    "browserTarget": "synthetic Fastify fixture server",
+    "desktop": {
+      "width": 1440,
+      "height": 1000,
+      "add": "pass",
+      "subtract": "pass",
+      "status": "pass"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false,
+      "status": "pass"
+    },
+    "consoleWarningsOrErrors": 0,
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  }
+}

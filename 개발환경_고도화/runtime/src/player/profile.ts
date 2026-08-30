@@ -12,6 +12,7 @@ export interface ProfileView {
   firstSponsor: boolean;
   passes: Array<{ code: string; enabled: boolean; permanent: boolean; endsAt: string | null }>;
   currencies: Record<string, string>;
+  currencyAccounts: Array<{ code: string; balance: string; version: string }>;
   counters: Record<string, string>;
   activeTitle: string | null;
   titleCount: string;

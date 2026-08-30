@@ -9,6 +9,7 @@ import type { AdminManagementService } from "./management-service.js";
 import type { ModerationIncidentService } from "../integration/moderation-incident-service.js";
 import type { IrisKakaoDatabaseSnapshot } from "../integration/iris-kakao-database-inspector.js";
 import type { RetainedEventContentService } from "../integration/retained-event-content-service.js";
+import type { CurrencyService } from "../currency/currency-service.js";
 
 interface AdminRouteDependencies {
   auth: AdminAuthService;
@@ -19,6 +20,7 @@ interface AdminRouteDependencies {
   moderationIncidents: ModerationIncidentService;
   inspectIrisKakaoDatabase: (event: import("../integration/iris-normalizer.js").NormalizedIrisEvent) => Promise<IrisKakaoDatabaseSnapshot>;
   retainedEventContents: RetainedEventContentService;
+  currency: CurrencyService;
   secureCookies: boolean;
 }
 
@@ -93,6 +95,28 @@ export async function registerAdminRoutes(app: FastifyInstance, dependencies: Ad
     if (profile === null) throw new ApplicationError("PLAYER_NOT_FOUND", "회원을 찾을 수 없습니다.", 404);
     const restrictions = await dependencies.management.listRestrictions(request.params.playerId);
     return { ok: true, player: { ...profile, restrictions }, requestId: request.id };
+  });
+
+  app.post<{ Params: { playerId: string; currencyCode: string }; Body: MutationBody & { delta?: unknown; expectedVersion?: unknown } }>("/api/v1/admin/players/:playerId/currencies/:currencyCode/adjustments", async (request) => {
+    const session = await authenticate(request, dependencies, true); requirePermission(session, "game.currency.change");
+    const mutation = readMutation(request, request.body);
+    if (typeof request.body?.delta !== "string" || (typeof request.body.expectedVersion !== "string" && typeof request.body.expectedVersion !== "number")) {
+      throw new ApplicationError("INVALID_CURRENCY_ADJUSTMENT", "delta와 expectedVersion이 필요합니다.", 422);
+    }
+    const profile = await dependencies.profiles.findByPlayerId(request.params.playerId);
+    if (profile === null) throw new ApplicationError("PLAYER_NOT_FOUND", "회원을 찾을 수 없습니다.", 404);
+    const result = await dependencies.currency.adjust({
+      playerId: request.params.playerId,
+      currencyCode: request.params.currencyCode,
+      delta: request.body.delta,
+      expectedVersion: String(request.body.expectedVersion),
+      reasonCode: "ADMIN_WEB_CURRENCY_ADJUST",
+      reason: mutation.reason,
+      idempotencyKey: mutation.idempotencyKey,
+      actor: { type: "admin_operator", id: session.operatorId },
+      sourceCode: "admin_api"
+    });
+    return { ok: true, ...result, requestId: request.id };
   });
 
   app.put<{ Params: { playerId: string }; Body: MutationBody & { serverCode?: unknown; expectedVersion?: unknown } }>("/api/v1/admin/players/:playerId/server-assignment", async (request) => {

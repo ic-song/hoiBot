@@ -76,8 +76,8 @@ function toIso(value: Date | null): string | null {
 // 여러 read-model 행을 ProfileView 하나로 조립합니다.
 async function hydrateProfile(database: Pick<DatabaseClient, "query">, row: ProfileRow): Promise<ProfileView> {
   const [currencies, counters, passes, ranks, badges] = await Promise.all([
-    database.query<Array<{ code: string; balance: string }>>(
-      "SELECT currency_code AS code, CAST(balance AS CHAR) AS balance FROM currency_accounts WHERE player_id = ?",
+    database.query<Array<{ code: string; balance: string; version: bigint }>>(
+      "SELECT currency_code AS code, CAST(balance AS CHAR) AS balance, version FROM currency_accounts WHERE player_id = ? ORDER BY currency_code",
       [row.player_id]
     ),
     database.query<Array<{ code: string; value: bigint }>>(
@@ -114,6 +114,7 @@ async function hydrateProfile(database: Pick<DatabaseClient, "query">, row: Prof
     firstSponsor: Boolean(row.first_sponsor),
     passes: passes.map((pass) => ({ code: pass.code, enabled: Boolean(pass.enabled), permanent: Boolean(pass.permanent), endsAt: toIso(pass.ends_at) })),
     currencies: Object.fromEntries(currencies.map((currency) => [currency.code, currency.balance])),
+    currencyAccounts: currencies.map((currency) => ({ code: currency.code, balance: currency.balance, version: currency.version.toString() })),
     counters: Object.fromEntries(counters.map((counter) => [counter.code, counter.value.toString()])),
     activeTitle: row.active_title,
     titleCount: row.title_count.toString(),

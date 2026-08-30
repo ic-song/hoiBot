@@ -17,12 +17,40 @@ export async function buildSyntheticAdminWebShellApp() {
   let nextRestrictionId = 62000;
   let nextAuditId = 82000;
   const restrictions: Array<Record<string, unknown>> = syntheticAdminRestrictions.map((restriction) => ({ ...restriction }));
+  const currencyAccounts = syntheticAdminPlayer.currencyAccounts.map((account) => ({ ...account }));
   const replays = new Map<string, Record<string, unknown>>();
 
+  // 합성 재화 문자열을 실제 decimal(30,3)과 같은 1/1000 단위 정수로 변환합니다.
+  function parseDecimal3(value: string): bigint | undefined {
+    const match = /^(-?)(\d+)(?:\.(\d{1,3}))?$/.exec(value);
+    if (match === null) return undefined;
+    const scale = BigInt((match[3] ?? "").padEnd(3, "0"));
+    const amount = BigInt(match[2]!) * 1000n + scale;
+    return match[1] === "-" ? -amount : amount;
+  }
+
+  // 합성 1/1000 단위 정수를 불필요한 소수 0 없이 API 문자열로 변환합니다.
+  function formatDecimal3(value: bigint): string {
+    const negative = value < 0n;
+    const absolute = negative ? -value : value;
+    const fraction = (absolute % 1000n).toString().padStart(3, "0").replace(/0+$/, "");
+    return `${negative ? "-" : ""}${absolute / 1000n}${fraction === "" ? "" : `.${fraction}`}`;
+  }
+
+  // 현재 합성 재화 상태를 기존 balance map과 version 배열로 함께 노출합니다.
+  function currentSyntheticPlayer() {
+    return {
+      ...syntheticAdminPlayer,
+      currencies: Object.fromEntries(currencyAccounts.map((account) => [account.code, account.balance])),
+      currencyAccounts: currencyAccounts.map((account) => ({ ...account })),
+      restrictions
+    };
+  }
+
   // 합성 변경 요청의 인증·권한·CSRF 공통 계약을 검증합니다.
-  function authorizeMutation(request: { headers: Record<string, string | string[] | undefined> }, reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }) {
+  function authorizeMutation(request: { headers: Record<string, string | string[] | undefined> }, reply: { code: (statusCode: number) => { send: (payload: unknown) => unknown } }, permission = "account.restrict") {
     if (!loggedIn) return reply.code(401).send({ ok: false, error: { code: "AUTH_REQUIRED", message: "로그인이 필요합니다." } });
-    if (request.headers["x-synthetic-permission"] === "deny") return reply.code(403).send({ ok: false, error: { code: "PERMISSION_DENIED", message: "account.restrict 권한이 필요합니다." } });
+    if (request.headers["x-synthetic-permission"] === "deny") return reply.code(403).send({ ok: false, error: { code: "PERMISSION_DENIED", message: `${permission} 권한이 필요합니다.` } });
     if (request.headers["x-csrf-token"] !== "synthetic-csrf-token") return reply.code(403).send({ ok: false, error: { code: "CSRF_INVALID", message: "CSRF 토큰이 올바르지 않습니다." } });
     if (typeof request.headers["idempotency-key"] !== "string" || request.headers["idempotency-key"].trim() === "") return reply.code(422).send({ ok: false, error: { code: "IDEMPOTENCY_KEY_REQUIRED", message: "Idempotency-Key가 필요합니다." } });
     return undefined;
@@ -49,9 +77,9 @@ export async function buildSyntheticAdminWebShellApp() {
     return reply.code(204).send();
   });
   app.get("/api/v1/admin/overview", async () => ({ ok: true, overview: syntheticAdminOverview, requestId: "synthetic-overview" }));
-  app.get("/api/v1/admin/players", async () => ({ ok: true, items: [syntheticAdminPlayer], page: 1, limit: 25, total: 1, requestId: "synthetic-players" }));
+  app.get("/api/v1/admin/players", async () => ({ ok: true, items: [currentSyntheticPlayer()], page: 1, limit: 25, total: 1, requestId: "synthetic-players" }));
   app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId", async (request, reply) => request.params.playerId === syntheticAdminPlayer.playerId
-    ? { ok: true, player: { ...syntheticAdminPlayer, restrictions }, requestId: "synthetic-player" }
+    ? { ok: true, player: currentSyntheticPlayer(), requestId: "synthetic-player" }
     : reply.code(404).send({ ok: false, error: { code: "PLAYER_NOT_FOUND", message: "합성 회원을 찾을 수 없습니다." }, requestId: "synthetic-player" }));
   app.post<{ Params: { playerId: string }; Body: { restrictionType?: unknown; endsAt?: unknown; reason?: unknown; confirmed?: unknown } }>("/api/v1/admin/players/:playerId/restrictions", async (request, reply) => {
     const authorization = authorizeMutation(request, reply);
@@ -91,6 +119,30 @@ export async function buildSyntheticAdminWebShellApp() {
     const result = { restrictionId: request.params.restrictionId, playerId: syntheticAdminPlayer.playerId, status: "revoked", auditId: String(nextAuditId++) };
     replays.set(replayKey, result);
     return { ok: true, ...result, requestId: "synthetic-revoke" };
+  });
+  app.post<{ Params: { playerId: string; currencyCode: string }; Body: { delta?: unknown; expectedVersion?: unknown; reason?: unknown; confirmed?: unknown } }>("/api/v1/admin/players/:playerId/currencies/:currencyCode/adjustments", async (request, reply) => {
+    const authorization = authorizeMutation(request, reply, "game.currency.change");
+    if (authorization !== undefined) return authorization;
+    const invalidBody = validateMutationBody(request.body ?? {}, reply);
+    if (invalidBody !== undefined) return invalidBody;
+    if (request.params.playerId !== syntheticAdminPlayer.playerId) return reply.code(404).send({ ok: false, error: { code: "PLAYER_NOT_FOUND", message: "합성 회원을 찾을 수 없습니다." } });
+    if (typeof request.body.delta !== "string" || (typeof request.body.expectedVersion !== "string" && typeof request.body.expectedVersion !== "number")) return reply.code(422).send({ ok: false, error: { code: "INVALID_CURRENCY_ADJUSTMENT", message: "delta와 expectedVersion이 필요합니다." } });
+    const delta = parseDecimal3(request.body.delta);
+    if (delta === undefined || delta === 0n) return reply.code(422).send({ ok: false, error: { code: "ZERO_CURRENCY_DELTA", message: "재화 변경량은 0일 수 없습니다." } });
+    const replayKey = `currency:${request.params.playerId}:${request.params.currencyCode}:${request.headers["idempotency-key"]}`;
+    const replay = replays.get(replayKey);
+    if (replay !== undefined) return { ok: true, ...replay, requestId: "synthetic-replay" };
+    const account = currencyAccounts.find((candidate) => candidate.code === request.params.currencyCode);
+    if (account === undefined) return reply.code(404).send({ ok: false, error: { code: "CURRENCY_NOT_FOUND", message: "사용 가능한 재화를 찾을 수 없습니다." } });
+    if (account.version !== String(request.body.expectedVersion)) return reply.code(409).send({ ok: false, error: { code: "CURRENCY_VERSION_CONFLICT", message: "재화 잔액이 먼저 변경되었습니다." } });
+    const nextBalance = parseDecimal3(account.balance)! + delta;
+    if (nextBalance < 0n) return reply.code(409).send({ ok: false, error: { code: "INSUFFICIENT_CURRENCY", message: "재화 잔액이 부족합니다." } });
+    if (request.headers["x-synthetic-audit-failure"] === "true" || request.headers["x-synthetic-outbox-failure"] === "true") return reply.code(500).send({ ok: false, error: { code: "SYNTHETIC_TRANSACTION_FAILURE", message: "합성 감사/outbox 실패" } });
+    account.balance = formatDecimal3(nextBalance);
+    account.version = (BigInt(account.version) + 1n).toString();
+    const result = { balance: account.balance, version: account.version, auditId: String(nextAuditId++) };
+    replays.set(replayKey, result);
+    return { ok: true, ...result, requestId: "synthetic-currency-adjust" };
   });
   app.get("/api/v1/admin/audit-entries", async () => ({ ok: true, items: [syntheticAdminAudit], page: 1, limit: 25, total: 1, requestId: "synthetic-audit" }));
   app.get("/api/v1/admin/channel-activity", async () => ({ ok: true, items: [{
