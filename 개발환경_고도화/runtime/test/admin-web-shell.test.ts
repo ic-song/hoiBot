@@ -49,7 +49,7 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
   });
 
-  it("connects only the approved read APIs, diamond catalog consumer, and session lifecycle", () => {
+  it("connects only the approved read APIs, catalog consumers, and session lifecycle", () => {
     for (const path of [
       "/api/v1/admin/sessions",
       "/api/v1/admin/sessions/current",
@@ -60,7 +60,8 @@ describe("admin web shell", () => {
       "/api/v1/admin/moderation-incidents",
       "/api/v1/admin/monitoring-events",
       "/api/v1/admin/delivery-failures",
-      "/api/v1/admin/diamond-shop/catalog"
+      "/api/v1/admin/diamond-shop/catalog",
+      "/api/v1/admin/package-catalog"
     ]) assert.match(ADMIN_WEB_CLIENT, new RegExp(path.replaceAll("/", "\\/")));
 
     for (const forbidden of ["server-assignment", "player-assignment", "/restrictions", "/operators", "/passes", "/backup", "/restore"]) {
@@ -68,12 +69,12 @@ describe("admin web shell", () => {
     }
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "POST"/g) ?? []).length, 1);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
-    assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"|method: "PATCH"/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
   });
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read"
+      "overview.read", "player.read", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");
@@ -95,13 +96,15 @@ describe("admin web shell", () => {
         app.inject({ method: "GET", url: "/api/v1/admin/moderation-incidents?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/monitoring-events?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/diamond-shop/catalog" })
+        app.inject({ method: "GET", url: "/api/v1/admin/diamond-shop/catalog" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/package-catalog" })
       ]);
       assert.ok(responses.every((response) => response.statusCode === 200));
       assert.equal(responses[2]?.json().total, 1);
       assert.equal(responses[3]?.json().player.displayName, "합성회원");
       assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
       assert.equal(responses[9]?.json().catalog.catalogVersion, "14");
+      assert.equal(responses[10]?.json().catalog.catalogKey, "PACKAGE_CATALOG");
     } finally {
       await app.close();
     }
@@ -127,5 +130,16 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /"idempotency-key"/);
     assert.match(ADMIN_WEB_STYLES, /@media \(max-width: 640px\)/);
     assert.match(ADMIN_WEB_STYLES, /\.catalog-layout/);
+  });
+
+  it("exposes only package adapter ADD, EDIT, REMOVE and ENABLE states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /패키지 추가/);
+    assert.match(ADMIN_WEB_CLIENT, /패키지 보상 전체 수정/);
+    assert.match(ADMIN_WEB_CLIENT, /패키지 목록 제거 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /패키지 활성화 확인/);
+    assert.match(ADMIN_WEB_CLIENT, /package\.catalog\.manage/);
+    assert.match(ADMIN_WEB_CLIENT, /expectedCatalogVersion/);
+    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 패키지 요청입니다/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /패키지 카탈로그 발행|package-catalog\/publish/);
   });
 });

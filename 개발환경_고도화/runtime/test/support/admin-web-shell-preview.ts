@@ -9,6 +9,7 @@ import {
   syntheticMonitoringEvent
 } from "../fixtures/admin-web-shell.js";
 import { syntheticDiamondCatalogResponse } from "../fixtures/admin-diamond-catalog-web-consumer.js";
+import { syntheticPackageCatalogResponse } from "../fixtures/admin-package-catalog-web-consumer.js";
 
 // 운영 데이터 없이 관리자 웹 셸을 검수할 합성 API 서버를 구성합니다.
 export async function buildSyntheticAdminWebShellApp() {
@@ -21,6 +22,12 @@ export async function buildSyntheticAdminWebShellApp() {
     items: Array<{ productId: string; displayName: string; quantity: string; price: string; displayOrder: number; version: string }>;
   } = { ...syntheticDiamondCatalogResponse, items: syntheticDiamondCatalogResponse.items.map((item) => ({ ...item })) };
   const completed = new Map<string, Record<string, unknown>>();
+  let packageCatalog: {
+    catalogKey: string;
+    catalogVersion: string;
+    entries: Array<{ packageId: string; displayName: string; displayOrder: number; active: boolean; expectedVersion: string }>;
+  } = { ...syntheticPackageCatalogResponse, entries: syntheticPackageCatalogResponse.entries.map((entry) => ({ ...entry })) };
+  const completedPackages = new Map<string, Record<string, unknown>>();
   await registerAdminWebShellRoutes(app);
   app.post("/api/v1/admin/sessions", async () => ({ ok: true, session: syntheticAdminSession, csrfToken: "synthetic-csrf-token" }));
   app.get("/api/v1/admin/sessions/current", async () => ({ ok: true, session: syntheticAdminSession, requestId: "synthetic-session" }));
@@ -71,6 +78,55 @@ export async function buildSyntheticAdminWebShellApp() {
     const result = { status: "disabled", replayed: false, productId: request.params.productId, catalogVersion: nextVersion, operationId: "synthetic-disable-operation", auditId: "synthetic-disable-audit" };
     completed.set(key, result);
     return { ok: true, result, requestId: "synthetic-diamond-disable" };
+  });
+  app.get("/api/v1/admin/package-catalog", async () => ({ ok: true, catalog: packageCatalog, requestId: "synthetic-package-catalog" }));
+  app.post<{ Body: { displayName: string; expectedCatalogVersion: string } }>("/api/v1/admin/package-catalog/packages", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedPackages.get(key);
+    if (prior !== undefined) return reply.code(201).send({ ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-package-add-replay" });
+    if (request.body.expectedCatalogVersion !== packageCatalog.catalogVersion) return reply.code(409).send({ ok: false, error: { code: "PACKAGE_CATALOG_VERSION_CONFLICT", message: "패키지 목록이 먼저 변경되었습니다." }, requestId: "synthetic-package-conflict" });
+    const nextVersion = (BigInt(packageCatalog.catalogVersion) + 1n).toString();
+    const packageId = "PKG-CUSTOM-" + nextVersion;
+    packageCatalog = { ...packageCatalog, catalogVersion: nextVersion, entries: [...packageCatalog.entries, { packageId, displayName: request.body.displayName, displayOrder: packageCatalog.entries.length + 1, active: true, expectedVersion: "1" }] };
+    const result = { replayed: false, packageId, catalogVersion: nextVersion, message: "패키지가 추가되었습니다." };
+    completedPackages.set(key, result);
+    return reply.code(201).send({ ok: true, result, requestId: "synthetic-package-add" });
+  });
+  app.patch<{ Params: { packageId: string }; Body: { expectedCatalogVersion: string } }>("/api/v1/admin/package-catalog/packages/:packageId", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedPackages.get(key);
+    if (prior !== undefined) return { ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-package-edit-replay" };
+    if (request.body.expectedCatalogVersion !== packageCatalog.catalogVersion) return reply.code(409).send({ ok: false, error: { code: "PACKAGE_CATALOG_VERSION_CONFLICT", message: "패키지 목록이 먼저 변경되었습니다." }, requestId: "synthetic-package-conflict" });
+    if (!packageCatalog.entries.some((entry) => entry.packageId === request.params.packageId)) return reply.code(404).send({ ok: false, error: { code: "PACKAGE_NOT_FOUND", message: "패키지를 찾을 수 없습니다." }, requestId: "synthetic-package-not-found" });
+    const nextVersion = (BigInt(packageCatalog.catalogVersion) + 1n).toString();
+    packageCatalog = { ...packageCatalog, catalogVersion: nextVersion, entries: packageCatalog.entries.map((entry) => entry.packageId === request.params.packageId ? { ...entry, expectedVersion: (BigInt(entry.expectedVersion) + 1n).toString() } : entry) };
+    const result = { replayed: false, packageId: request.params.packageId, catalogVersion: nextVersion, message: "패키지 보상이 수정되었습니다." };
+    completedPackages.set(key, result);
+    return { ok: true, result, requestId: "synthetic-package-edit" };
+  });
+  app.delete<{ Params: { packageId: string }; Body: { expectedCatalogVersion: string } }>("/api/v1/admin/package-catalog/packages/:packageId", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedPackages.get(key);
+    if (prior !== undefined) return { ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-package-remove-replay" };
+    if (request.body.expectedCatalogVersion !== packageCatalog.catalogVersion) return reply.code(409).send({ ok: false, error: { code: "PACKAGE_CATALOG_VERSION_CONFLICT", message: "패키지 목록이 먼저 변경되었습니다." }, requestId: "synthetic-package-conflict" });
+    if (!packageCatalog.entries.some((entry) => entry.packageId === request.params.packageId)) return reply.code(404).send({ ok: false, error: { code: "PACKAGE_NOT_FOUND", message: "패키지를 찾을 수 없습니다." }, requestId: "synthetic-package-not-found" });
+    const nextVersion = (BigInt(packageCatalog.catalogVersion) + 1n).toString();
+    packageCatalog = { ...packageCatalog, catalogVersion: nextVersion, entries: packageCatalog.entries.filter((entry) => entry.packageId !== request.params.packageId).map((entry, index) => ({ ...entry, displayOrder: index + 1 })) };
+    const result = { replayed: false, packageId: request.params.packageId, catalogVersion: nextVersion, message: "패키지가 목록에서 제거되었습니다." };
+    completedPackages.set(key, result);
+    return { ok: true, result, requestId: "synthetic-package-remove" };
+  });
+  app.post<{ Params: { packageId: string }; Body: { expectedCatalogVersion: string } }>("/api/v1/admin/package-catalog/packages/:packageId/enable", async (request, reply) => {
+    const key = String(request.headers["idempotency-key"] ?? "");
+    const prior = completedPackages.get(key);
+    if (prior !== undefined) return { ok: true, result: { ...prior, replayed: true }, requestId: "synthetic-package-enable-replay" };
+    if (request.body.expectedCatalogVersion !== packageCatalog.catalogVersion) return reply.code(409).send({ ok: false, error: { code: "PACKAGE_CATALOG_VERSION_CONFLICT", message: "패키지 목록이 먼저 변경되었습니다." }, requestId: "synthetic-package-conflict" });
+    if (!packageCatalog.entries.some((entry) => entry.packageId === request.params.packageId)) return reply.code(404).send({ ok: false, error: { code: "PACKAGE_NOT_FOUND", message: "패키지를 찾을 수 없습니다." }, requestId: "synthetic-package-not-found" });
+    const nextVersion = (BigInt(packageCatalog.catalogVersion) + 1n).toString();
+    packageCatalog = { ...packageCatalog, catalogVersion: nextVersion, entries: packageCatalog.entries.map((entry) => entry.packageId === request.params.packageId ? { ...entry, active: true, expectedVersion: (BigInt(entry.expectedVersion) + 1n).toString() } : entry) };
+    const result = { replayed: false, packageId: request.params.packageId, catalogVersion: nextVersion, message: "패키지가 활성화되었습니다." };
+    completedPackages.set(key, result);
+    return { ok: true, result, requestId: "synthetic-package-enable" };
   });
   return app;
 }
