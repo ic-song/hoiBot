@@ -1,0 +1,25 @@
+{
+  "catalogCode": "TITLE_DEFINITION_SCOPE_LEGACY",
+  "catalogVersion": 1,
+  "publishState": "PUBLISHED",
+  "sourceHash": "4133ec435d454768a6f29b9a7d14a2b309be27e782f86b58ac33cca088ad4fb7",
+  "headerRows": 1,
+  "definitionRows": 5,
+  "sourceScopes": { "PLAYER": 2, "player": 3 },
+  "normalizedAssetScopes": { "PLAYER": 5 },
+  "lifecycles": { "ACTIVE": 3, "RETIRED": 2 },
+  "sameDisplayMerges": 0,
+  "ownershipRowsMutated": 0,
+  "consumerTransitions": 0,
+  "miniCollectionDefinitionsSeeded": 0,
+  "guildRankDefinitionsSeeded": 0,
+  "objectLinksCreated": 0,
+  "mutationAdminChanges": 0,
+  "definitions": [
+    ["PLAYER","ITEM-RWD-054",1,"RETIRED","PLAYER","응? 뭐라 하였느냐 아아..너무 바닥에 있어 들리지가 않는구나👑",false],
+    ["PLAYER","ITEM-RWD-FISH-TITLE",1,"RETIRED","PLAYER","황금잉어👑를 낚은 전설의 낚시꾼",false],
+    ["player","TITLE-BASEBALL-GRAND-SLAM",1,"ACTIVE","PLAYER","⚾️그랜드슬램을 달성한 선수🏆",true],
+    ["player","TITLE-PUNCH-LEGEND",1,"ACTIVE","PLAYER","👑전설의 핵주먹",true],
+    ["player","trial_floor_10000",1,"ACTIVE","PLAYER","시련의 탑 10000층 정복자",true]
+  ]
+}
