@@ -2,28 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { sortPendantBagEntries, type PendantBagEntry } from "./pendant-bag-service.js";
+import { type PendantUpgradeLevelPolicy, type PendantUpgradePolicyCatalog, PendantPolicyCatalogReadProvider } from "./pendant-policy-catalog.js";
 
 const STONE_CODE = "ITEM-PENDANT-ENHANCE-STONE";
 const BONUS_SKILL_NAME = "결혼못한 대장장이";
-const TABLE = [
-  null,
-  [100, 5000n, 0.1, 1000000000n, 1n], [100, 10000n, 0.2, 1000000000n, 2n],
-  [100, 15000n, 0.3, 1000000000n, 3n], [100, 20000n, 0.4, 1000000000n, 4n],
-  [100, 25000n, 0.5, 1000000000n, 5n], [100, 30000n, 0.6, 1000000000n, 6n],
-  [33, 250000n, 0.7, 3000000000n, 7n], [33, 375000n, 0.8, 3000000000n, 8n],
-  [33, 500000n, 0.9, 3000000000n, 9n], [33, 750000n, 1.0, 3000000000n, 10n],
-  [10, 1000000n, 1.1, 10000000000n, 11n], [10, 1250000n, 1.2, 10000000000n, 12n],
-  [10, 1500000n, 1.3, 10000000000n, 13n], [10, 2000000n, 1.4, 10000000000n, 14n],
-  [5, 2500000n, 1.5, 15000000000n, 15n], [5, 3000000n, 1.6, 15000000000n, 16n],
-  [5, 3500000n, 1.7, 15000000000n, 17n], [5, 4000000n, 1.8, 15000000000n, 18n],
-  [5, 4500000n, 1.9, 15000000000n, 19n], [5, 5000000n, 2.0, 15000000000n, 20n],
-  [3, 6000000n, 2.1, 20000000000n, 21n], [3, 7000000n, 2.2, 20000000000n, 22n],
-  [3, 8000000n, 2.3, 20000000000n, 23n], [2, 9000000n, 2.4, 30000000000n, 24n],
-  [2, 10000000n, 2.5, 30000000000n, 25n], [1, 12500000n, 2.6, 100000000000n, 26n],
-  [1, 15000000n, 2.7, 100000000000n, 27n], [1, 17500000n, 2.8, 100000000000n, 28n],
-  [1, 25000000n, 2.9, 100000000000n, 29n], [1, 30000000n, 3.0, 100000000000n, 30n]
-] as const;
-
 interface Actor { identity_id: bigint; player_id: bigint; pet_id: bigint; rank_display: string; }
 interface PendantRow {
   instance_id: bigint; item_id: bigint; version: bigint; status: string; item_name: string;
@@ -86,15 +68,18 @@ function stored(value: string | PendantEnhanceResult): PendantEnhanceResult {
 }
 
 // 펜던트 기본·누적 강화 능력치를 계산합니다.
-export function calculatePendantEnhancedCharm(baseCharm: bigint, level: number): bigint {
+export function calculatePendantEnhancedCharm(baseCharm: bigint, level: number, levels: readonly PendantUpgradeLevelPolicy[]): bigint {
   let charm = baseCharm;
-  for (let index = 1; index <= level; index++) charm += TABLE[index]![1];
+  for (const policy of levels) {
+    if (policy.targetLevel > level) break;
+    charm += policy.charmIncrement;
+  }
   return charm;
 }
 
-function stats(target: Target, level: number): { charm: bigint; explore: number } {
-  const charm = calculatePendantEnhancedCharm(target.baseCharm, level);
-  return { charm, explore: target.baseExplore + (level === 0 ? 0 : TABLE[level]![2]) };
+function stats(target: Target, level: number, levels: readonly PendantUpgradeLevelPolicy[]): { charm: bigint; explore: number } {
+  const charm = calculatePendantEnhancedCharm(target.baseCharm, level, levels);
+  return { charm, explore: target.baseExplore + Number(level === 0 ? 0 : levels[level - 1]!.exploreIncrement) };
 }
 
 // 펜던트 레거시 표시 문자열을 stable instance 속성에서 생성합니다.
@@ -130,7 +115,7 @@ async function complete(transaction: DatabaseTransaction, input: {
 
 // 펜던트 강화 미리보기·확인·취소를 persistent confirmation으로 처리합니다.
 export class PendantEnhanceService {
-  constructor(private readonly database: DatabaseClient, private readonly random: () => number = Math.random) {}
+  constructor(private readonly database: DatabaseClient, private readonly policyProvider: PendantPolicyCatalogReadProvider, private readonly random: () => number = Math.random) {}
 
   async handle(input: { eventId: string; externalUserId: string; destinationId: string; message: string }): Promise<PendantEnhanceResult> {
     if (!isPendantEnhanceCommandCandidate(input.message)) return { status: "silent" };
@@ -148,13 +133,13 @@ export class PendantEnhanceService {
     );
     const actor = actors[0];
     if (actor === undefined) return { status: "silent" };
-    if (input.message === "진행시켜") return this.confirm(actor, input);
+    if (input.message === "진행시켜") return this.confirm(actor, input, await this.policyProvider.readPublished());
     if (input.message === "쫄았음") return this.cancel(actor, input);
-    return this.preview(actor, input);
+    return this.preview(actor, input, await this.policyProvider.readPublished());
   }
 
   // 펜던트 번호를 stable instance로 고정하고 30초 미리보기를 저장합니다.
-  private async preview(actor: Actor, input: { eventId: string; destinationId: string; message: string }): Promise<PendantEnhanceResult> {
+  private async preview(actor: Actor, input: { eventId: string; destinationId: string; message: string }, policy: PendantUpgradePolicyCatalog): Promise<PendantEnhanceResult> {
     return this.database.withTransaction(async (transaction) => {
       const key = eventKey(input.eventId);
       const prior = await transaction.query<Array<{ result_json: string | PendantEnhanceResult | null }>>(
@@ -185,19 +170,20 @@ export class PendantEnhanceService {
       }
       const level = Number(target.entry.upgrade);
       const durability = target.entry.durability;
-      if (level >= 30 || durability <= 0n) {
-        const data = level >= 30
+      if (level >= policy.levels.length || durability <= 0n) {
+        const data = level >= policy.levels.length
           ? "이미 펜던트 최대 강화 단계에 도달했습니다.\n━━━━━━━━━━━━━\n현재 강화수치: +30\n최대 강화수치: +30"
           : `[${actor.rank_display}] 님\n해당 펜던트는 내구도가 0이라 강화할 수 없습니다.\n━━━━━━━━━━━━━\n/펜던트복원 [번호] 명령어로 복원 후 다시 시도해주세요.`;
         return complete(transaction, {
           operationId: operation.insertId, eventId: input.eventId, destinationId: input.destinationId, actor,
-          action: "pendant.enhance.preview", resultCode: level >= 30 ? "max_level" : "zero_durability", data,
+          action: "pendant.enhance.preview", resultCode: level >= policy.levels.length ? "max_level" : "zero_durability", data,
           result: { status: "usage", instanceId: target.entry.instanceId, level, durability: durability.toString() },
           summary: { sourceIndex: index.toString(), mutation: false }
         });
       }
       const next = level + 1;
-      const spec = TABLE[next]!;
+      const levelPolicy = policy.levels[next - 1]!;
+      const spec = [Number(levelPolicy.successRate), levelPolicy.charmIncrement, Number(levelPolicy.exploreIncrement), levelPolicy.pointCost, levelPolicy.stoneCost] as const;
       const resources = await this.lockResources(transaction, actor.player_id);
       if (resources.point < spec[3] || resources.stoneQuantity < spec[4]) {
         const data = resources.point < spec[3]
@@ -221,8 +207,8 @@ export class PendantEnhanceService {
          VALUES (?,?,?,?,?,?,?,?,?,?,?,DATE_ADD(UTC_TIMESTAMP(3),INTERVAL 30 SECOND))`,
         [actor.player_id, actor.identity_id, target.row.instance_id, index, target.row.version, next, `${spec[3]}.000`, spec[4], spec[0], bonus, input.eventId]
       );
-      const before = stats(target, level);
-      const after = stats(target, next);
+      const before = stats(target, level, policy.levels);
+      const after = stats(target, next, policy.levels);
       const rateLine = bonus > 0
         ? `강화성공 확률🎲: ${percent(spec[0])}%+${percent(bonus)}% = ${percent(Math.min(100, spec[0] + bonus))}%\n결혼못한 대장장이📙 ${percent(bonus)}% 적용`
         : `강화성공 확률🎲: ${percent(spec[0])}%`;
@@ -237,7 +223,7 @@ export class PendantEnhanceService {
   }
 
   // 확인 상태의 대상·비용을 다시 잠그고 성공/실패 결과를 원자 반영합니다.
-  private async confirm(actor: Actor, input: { eventId: string; destinationId: string }): Promise<PendantEnhanceResult> {
+  private async confirm(actor: Actor, input: { eventId: string; destinationId: string }, policy: PendantUpgradePolicyCatalog): Promise<PendantEnhanceResult> {
     return this.database.withTransaction(async (transaction) => {
       const key = eventKey(input.eventId);
       const prior = await transaction.query<Array<{ result_json: string | PendantEnhanceResult | null }>>(
@@ -305,7 +291,7 @@ export class PendantEnhanceService {
         [level, durability, target.row.instance_id, actor.player_id, target.row.version]
       );
       if (instanceUpdate.affectedRows !== 1n) throw new ApplicationError("PENDANT_ENHANCE_CONFLICT", "펜던트 정보가 먼저 변경되었습니다.", 409);
-      const afterStats = stats(target, level);
+      const afterStats = stats(target, level, policy.levels);
       if (target.row.status === "equipped") {
         await transaction.execute(
           `UPDATE player_pet_pendants

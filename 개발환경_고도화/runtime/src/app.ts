@@ -128,6 +128,8 @@ import { isSpiritInfoCommand, SpiritInfoService } from "./pet/spirit-info-servic
 import { isPendantBagCommandCandidate, PendantBagService } from "./pet/pendant-bag-service.js";
 import { isPendantBagCleanupCommandCandidate, normalizePendantBagCleanupDispatchMessage, PendantBagCleanupService } from "./pet/pendant-bag-cleanup-service.js";
 import { isPendantEnhanceCommandCandidate, normalizePendantEnhanceDispatchMessage, PendantEnhanceService } from "./pet/pendant-enhance-service.js";
+import { MariaPendantPolicyCatalogRepository } from "./pet/maria-pendant-policy-catalog-repository.js";
+import { PendantPolicyCatalogReadProvider } from "./pet/pendant-policy-catalog.js";
 import { isPendantEnhanceCorrectionCommandCandidate, normalizePendantEnhanceCorrectionDispatchMessage, PendantEnhanceCorrectionService } from "./pet/pendant-enhance-correction-service.js";
 import { isPendantDurabilityCorrectionCommandCandidate, normalizePendantDurabilityCorrectionDispatchMessage, PendantDurabilityCorrectionService } from "./pet/pendant-durability-correction-service.js";
 import { isPendantMarketRegisterCommandCandidate, normalizePendantMarketRegisterDispatchMessage, PendantMarketRegisterService } from "./market/pendant-market-register-service.js";
@@ -3068,7 +3070,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "pendant_enhance"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PendantEnhanceService(database!).handle({ eventId: normalizedEvent.eventId,
+        const result = await new PendantEnhanceService(database!, new PendantPolicyCatalogReadProvider(new MariaPendantPolicyCatalogRepository(database!))).handle({ eventId: normalizedEvent.eventId,
           externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
         if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.data! });
       }
