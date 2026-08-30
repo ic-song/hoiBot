@@ -284,6 +284,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .catalog-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .catalog-confirm-actions .primary-button { background: var(--danger); }
 .catalog-confirm-actions .primary-button:hover { background: #8d2e28; }
+.catalog-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.catalog-status { display: inline-flex; align-items: center; padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); font-size: 10px; font-weight: 800; }
+.catalog-status.inactive { background: #f1f3f5; color: var(--muted); }
+.package-reward-guide { margin: 0; padding: 10px 12px; background: #f7f9fa; border-left: 3px solid var(--accent); color: var(--muted); font-size: 11px; line-height: 1.6; }
 
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
@@ -352,7 +356,9 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     playerSearch: "",
     monitoringTab: "events",
     catalogNotice: null,
-    catalogRetry: null
+    catalogRetry: null,
+    packageCatalogNotice: null,
+    packageCatalogRetry: null
   };
 
   var NAV_ITEMS = [
@@ -362,7 +368,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "activity", label: "채널 활동", icon: "⌁", permission: "activity.read", group: "감사·모니터링", kicker: "CHANNEL ACTIVITY" },
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
     { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" },
-    { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" }
+    { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
+    { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" }
   ];
 
   var METRICS = [
@@ -572,7 +579,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "activity") loadActivity(1);
     else if (item.id === "incidents") loadIncidents(1);
     else if (item.id === "monitoring") loadMonitoring(1);
-    else loadDiamondCatalog();
+    else if (item.id === "diamond-catalog") loadDiamondCatalog();
+    else loadPackageCatalog();
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
 
@@ -927,6 +935,125 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       markUpdated();
     } catch (error) {
       main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.") + errorState(error, "catalog");
+      attachRetry(main);
+    }
+  }
+
+  // 패키지 보상 입력을 TYPE|assetCode|decimal quantity 배열로 변환합니다.
+  function parsePackageRewards(value) {
+    var lines = value.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
+    if (!lines.length) throw new Error("보상을 한 개 이상 입력해 주세요.");
+    return lines.map(function (line) {
+      var parts = line.split("|").map(function (part) { return part.trim(); });
+      if (parts.length !== 3 || (parts[0] !== "POINT" && parts[0] !== "ITEM") || !parts[1] || !/^[1-9][0-9]*$/.test(parts[2])) {
+        throw new Error("보상은 TYPE|assetCode|양의 decimal quantity 형식으로 입력해 주세요.");
+      }
+      return { rewardType: parts[0], assetCode: parts[1], quantity: parts[2] };
+    });
+  }
+
+  // 패키지 catalog mutation 결과 또는 replay 상태를 표시합니다.
+  function packageCatalogNotice() {
+    if (!state.packageCatalogNotice) return "<div id=\"package-catalog-message\"></div>";
+    return "<div id=\"package-catalog-message\" class=\"catalog-notice " + escapeHtml(state.packageCatalogNotice.kind) + "\"><strong>" + escapeHtml(state.packageCatalogNotice.title) + "</strong><span>" + escapeHtml(state.packageCatalogNotice.message) + "</span></div>";
+  }
+
+  // 패키지 mutation 실패와 같은 Idempotency-Key replay 버튼을 표시합니다.
+  function showPackageMutationFailure(error, retry) {
+    state.packageCatalogRetry = retry;
+    var target = byId("package-catalog-message");
+    if (!target) return;
+    target.className = "catalog-notice error";
+    target.innerHTML = "<strong>패키지 변경 요청을 완료하지 못했습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"package-mutation-retry\">같은 요청 다시 보내기</button>";
+    byId("package-mutation-retry").addEventListener("click", function () { if (state.packageCatalogRetry) state.packageCatalogRetry(); });
+  }
+
+  // 패키지 catalog version 충돌을 자동 덮어쓰기 없이 표시합니다.
+  function showPackageConflict(error) {
+    state.refresh = loadPackageCatalog;
+    byId("main-content").innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.") +
+      "<div class=\"error-state\"><div><strong>패키지 목록이 먼저 변경되었습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span><p>최신 catalog version을 불러온 뒤 변경 내용을 다시 검토해 주세요.</p><button class=\"secondary-button\" type=\"button\" id=\"package-conflict-refresh\">최신 목록 불러오기</button></div></div>";
+    byId("package-conflict-refresh").addEventListener("click", loadPackageCatalog);
+  }
+
+  // 기존 package web adapter에 CSRF와 caller catalog version을 전달합니다.
+  async function mutatePackageCatalog(path, method, body, idempotencyKey) {
+    if (!state.csrfToken) {
+      showPackageMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {});
+      return;
+    }
+    var retry = function () { return mutatePackageCatalog(path, method, body, idempotencyKey); };
+    try {
+      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
+      state.packageCatalogRetry = null;
+      state.packageCatalogNotice = payload.result.replayed
+        ? { kind: "replay", title: "이미 완료된 패키지 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
+        : { kind: "", title: "패키지 카탈로그를 반영했습니다.", message: payload.result.message + " 새 catalog version은 " + payload.result.catalogVersion + "입니다." };
+      showToast(payload.result.replayed ? "완료된 패키지 요청 결과를 다시 불러왔습니다." : "패키지 카탈로그를 변경했습니다.", false);
+      await loadPackageCatalog();
+    } catch (error) {
+      if (error.status === 409) showPackageConflict(error);
+      else showPackageMutationFailure(error, retry);
+    }
+  }
+
+  // stable packageId와 현재 상태를 보존하는 패키지 projection 표를 생성합니다.
+  function packageCatalogTable(catalog) {
+    if (!catalog.entries.length) return emptyState("등록된 패키지가 없습니다.", "오른쪽 양식에서 첫 패키지를 추가할 수 있습니다.");
+    return "<div class=\"table-wrap\"><table class=\"data-table\"><thead><tr><th>순서</th><th>패키지</th><th>상태</th><th>행 버전</th><th>지원 동작</th></tr></thead><tbody>" + catalog.entries.map(function (entry) {
+      var stateAction = entry.active
+        ? "<button class=\"danger-button\" type=\"button\" data-package-action=\"REMOVE\" data-package-id=\"" + escapeHtml(entry.packageId) + "\" data-package-name=\"" + escapeHtml(entry.displayName) + "\">목록 제거</button>"
+        : "<button class=\"secondary-button\" type=\"button\" data-package-action=\"ENABLE\" data-package-id=\"" + escapeHtml(entry.packageId) + "\" data-package-name=\"" + escapeHtml(entry.displayName) + "\">활성화</button>";
+      return "<tr><td>" + escapeHtml(entry.displayOrder) + "</td><td><strong>" + escapeHtml(entry.displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(entry.packageId) + "</span></td><td><span class=\"catalog-status " + (entry.active ? "" : "inactive") + "\">" + (entry.active ? "활성" : "비활성") + "</span></td><td class=\"mono\">v" + escapeHtml(entry.expectedVersion) + "</td><td><div class=\"catalog-actions\"><button class=\"secondary-button\" type=\"button\" data-package-action=\"EDIT\" data-package-id=\"" + escapeHtml(entry.packageId) + "\" data-package-name=\"" + escapeHtml(entry.displayName) + "\">보상 수정</button>" + stateAction + "</div></td></tr>";
+    }).join("") + "</tbody></table></div>";
+  }
+
+  // EDIT·REMOVE·ENABLE의 실제 adapter 계약을 명시적으로 확인하는 폼을 표시합니다.
+  function showPackageActionConfirmation(action, packageId, displayName, catalogVersion) {
+    var target = byId("package-confirm-region");
+    var title = action === "EDIT" ? "패키지 보상 전체 수정" : action === "REMOVE" ? "패키지 목록 제거 확인" : "패키지 활성화 확인";
+    var description = action === "EDIT" ? "입력한 보상 목록으로 기존 보상 전체를 교체합니다." : action === "REMOVE" ? "목록에서 제거하며 이 화면의 ENABLE 동작으로는 제거된 행을 복구할 수 없습니다." : "조회에 남아 있는 비활성 패키지만 다시 활성화합니다.";
+    var rewards = action === "EDIT" ? "<label>교체할 보상<textarea name=\"rewards\" required placeholder=\"ITEM|ITEM-CODE|2&#10;POINT|POINT|100\"></textarea></label><p class=\"package-reward-guide\">한 줄에 TYPE|assetCode|decimal quantity 형식으로 입력하세요.</p>" : "";
+    target.innerHTML = "<section class=\"catalog-confirm\" aria-labelledby=\"package-action-title\"><div class=\"panel-heading\"><div><h3 id=\"package-action-title\">" + escapeHtml(title) + "</h3><p>" + escapeHtml(description) + "</p></div></div><form id=\"package-action-form\" class=\"catalog-form\"><p><strong>" + escapeHtml(displayName) + "</strong><br><span class=\"mono muted\">" + escapeHtml(packageId) + "</span></p>" + rewards + "<label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"변경 사유를 입력하세요.\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable packageId와 catalog version을 확인했습니다.</span></label><div class=\"catalog-confirm-actions\"><button class=\"secondary-button\" id=\"cancel-package-action\" type=\"button\">취소</button><button class=\"primary-button\" type=\"submit\">" + escapeHtml(title) + " 실행</button></div></form></section>";
+    byId("cancel-package-action").addEventListener("click", function () { target.innerHTML = ""; });
+    byId("package-action-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      var data = new FormData(event.currentTarget);
+      var body = { expectedCatalogVersion: catalogVersion, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" };
+      if (action === "EDIT") {
+        try { body.rewards = parsePackageRewards(data.get("rewards").toString()); }
+        catch (error) { showPackageMutationFailure(error, function () {}); return; }
+      }
+      var path = "/api/v1/admin/package-catalog/packages/" + encodeURIComponent(packageId) + (action === "ENABLE" ? "/enable" : "");
+      mutatePackageCatalog(path, action === "EDIT" ? "PATCH" : action === "REMOVE" ? "DELETE" : "POST", body, catalogIdempotencyKey());
+    });
+    target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // package permission 보유자에게 projection과 ADD·EDIT·REMOVE·ENABLE 화면을 제공합니다.
+  async function loadPackageCatalog() {
+    state.refresh = loadPackageCatalog;
+    var main = byId("main-content");
+    main.innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.", "package.catalog.manage") + loadingState("패키지 목록을 불러오는 중");
+    try {
+      var payload = await api("/api/v1/admin/package-catalog");
+      var catalog = payload.catalog;
+      main.innerHTML = renderViewIntro("패키지 카탈로그", "추가, 보상 전체 수정, 목록 제거와 기존 비활성 행 활성화만 지원합니다.", "package.catalog.manage") + packageCatalogNotice() + "<div class=\"catalog-layout\"><section class=\"panel\"><div class=\"panel-heading\"><div><h3>패키지 projection</h3><p>stable packageId와 행 버전을 그대로 표시합니다.</p></div><div class=\"catalog-summary\"><span>Catalog <strong>v" + escapeHtml(catalog.catalogVersion) + "</strong></span><span>" + escapeHtml(catalog.catalogKey) + "</span></div></div>" + packageCatalogTable(catalog) + "</section><aside class=\"panel\"><div class=\"panel-heading\"><div><h3>패키지 추가</h3><p>보상 수량은 decimal string으로 전송합니다.</p></div></div><form id=\"package-add-form\" class=\"catalog-form\"><label>패키지 이름<input name=\"displayName\" required maxlength=\"191\" placeholder=\"예: 여름 이벤트 패키지\"></label><label>설명<textarea name=\"description\" required placeholder=\"패키지 설명을 입력하세요.\"></textarea></label><label>보상<textarea name=\"rewards\" required placeholder=\"ITEM|ITEM-CODE|2&#10;POINT|POINT|100\"></textarea></label><p class=\"package-reward-guide\">한 줄에 TYPE|assetCode|decimal quantity 형식으로 입력하세요.</p><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\" placeholder=\"추가 사유를 입력하세요.\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>패키지 이름, 설명과 전체 보상 목록을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">패키지 추가</button></form></aside></div><div id=\"package-confirm-region\"></div>";
+      byId("package-add-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var data = new FormData(event.currentTarget);
+        var rewards;
+        try { rewards = parsePackageRewards(data.get("rewards").toString()); }
+        catch (error) { showPackageMutationFailure(error, function () {}); return; }
+        mutatePackageCatalog("/api/v1/admin/package-catalog/packages", "POST", { displayName: data.get("displayName").toString().trim(), description: data.get("description").toString().trim(), rewards: rewards, expectedCatalogVersion: catalog.catalogVersion, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, catalogIdempotencyKey());
+      });
+      main.querySelectorAll("[data-package-action]").forEach(function (button) {
+        button.addEventListener("click", function () { showPackageActionConfirmation(button.dataset.packageAction, button.dataset.packageId, button.dataset.packageName, catalog.catalogVersion); });
+      });
+      state.packageCatalogNotice = null;
+      markUpdated();
+    } catch (error) {
+      main.innerHTML = renderViewIntro("패키지 카탈로그", "기존 package web adapter가 지원하는 변경만 수행합니다.") + errorState(error, "package-catalog");
       attachRetry(main);
     }
   }
