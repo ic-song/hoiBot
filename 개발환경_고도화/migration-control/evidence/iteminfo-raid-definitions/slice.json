@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ASSET-ITEMINFO-RAID-DEFINITIONS-01",
+  "executionId": "작업반장-SL-ASSET-ITEMINFO-RAID-DEFINITIONS-01-복구-202608301545",
+  "claimRow": 2342,
+  "branch": "codex/modernization-iteminfo-raid-definitions-v2400-20260830",
+  "baseline": "bd2ee304",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "sourcePath": "data/itemInfo.json#raidSpecialItem",
+  "sourceFileHash": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+  "sourceHash": "d505b493502a08173763c86f6d3b9fc3048bfa6fcf34cebe9915bb04c14b8259",
+  "migration": "386_iteminfo_raid_definitions.sql",
+  "scope": {
+    "definitions": 9,
+    "dept1": 8,
+    "dept2": 1,
+    "reusedCanonical": "ITEM-RWD-043",
+    "newCanonicalItems": 8,
+    "ownership": "existing inventory_stacks/inventory_ledger",
+    "legacyMutation": false,
+    "featureProdMutation": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": "5/5 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "fullRegression": "1171 total / 1164 pass / 0 fail / 7 skip",
+    "migrationCount": 376,
+    "mariaParity": "8 checks PASS; definitions/items/objects/bindings 9/9",
+    "rollback": "PASS; 50 -> 999 -> rollback 50",
+    "replay": "PASS; migration-count 376",
+    "reconnect": "PASS; 9/9",
+    "shadow": "6/6 PASS"
+  },
+  "status": "shadow_validated"
+}
