@@ -1,0 +1,18 @@
+{
+  "policyVersion": "PASS-SIX-v1-cdfd62d5a8f38662",
+  "policySha256": "cdfd62d5a8f38662132a63dfa9dc90d6c43f9928500e604079e255e92cd4f8c9",
+  "semanticDefinitions": ["contribution", "diamond", "oneday", "hoi", "newbie", "premium"],
+  "existingDefinitions": 3,
+  "addedDefinitions": 3,
+  "canonicalDefinitions": 6,
+  "compatibilityMappings": [
+    { "semanticCode": "hoi", "compatibilityCode": "support" },
+    { "semanticCode": "newbie", "compatibilityCode": "beginner" },
+    { "semanticCode": "premium", "compatibilityCode": "premium" }
+  ],
+  "canonicalTable": "player_support_passes",
+  "compatibilityTable": "player_passes",
+  "changeEventsRole": "EVIDENCE_ONLY",
+  "nullExpiryKind": "permanent",
+  "protected": ["reward_policy", "one_day_grant", "admin_generic_mutation", "legacy_branch", "player_passes_table", "main.js", "ui"]
+}

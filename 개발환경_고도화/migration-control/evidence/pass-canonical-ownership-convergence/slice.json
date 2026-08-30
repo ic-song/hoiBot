@@ -1,0 +1,38 @@
+{
+  "sliceId": "SL-PASS-CANONICAL-OWNERSHIP-CONVERGENCE-01",
+  "executionId": "개발자-SL-PASS-CANONICAL-OWNERSHIP-CONVERGENCE-01-20260831T0850",
+  "lease": 2416,
+  "wbs": 670,
+  "dbRow": 1948,
+  "baseline": "51f0cd49d48a24e2e93e73bd99bf08cb90f4642e",
+  "migration": "411_pass_canonical_ownership_convergence.sql",
+  "policyVersion": "PASS-SIX-v1-cdfd62d5a8f38662",
+  "valReservation": "10584:10591",
+  "scope": {
+    "semanticDefinitions": 6,
+    "existingDefinitions": 3,
+    "addedDefinitions": 3,
+    "canonicalOwnershipTable": "player_support_passes",
+    "compatibilityProjectionTable": "player_passes",
+    "compatibilityMappings": 3,
+    "changeEventsEvidenceOnly": true,
+    "rewardPolicyChanged": false,
+    "oneDayGrantChanged": false,
+    "adminGenericMutationChanged": false,
+    "legacyBranchRetired": false,
+    "playerPassesDropped": false,
+    "mainChanged": false,
+    "uiChanged": false,
+    "sheetsEdited": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "rollbackReapplyReconnectReplay": "required",
+    "defaultFullRegression": "required",
+    "shadow": "required"
+  }
+}
