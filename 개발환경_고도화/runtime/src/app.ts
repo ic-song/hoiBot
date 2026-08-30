@@ -25,6 +25,9 @@ import {
 } from "./integration/iris-channel-policy.js";
 import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
+import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
+import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-catalog-web-routes.js";
+import { DiamondShopCatalogWebAdapterProvider } from "./shop/diamond-shop-catalog-web-adapter-provider.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
@@ -699,8 +702,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   void app.register(cookie);
   if (database !== undefined) {
     const profiles = new MariaProfileRepository(database);
+    const adminAuth = new AdminAuthService(database);
     void registerAdminRoutes(app, {
-      auth: new AdminAuthService(database),
+      auth: adminAuth,
       profiles,
       changePlayerServer: new ChangePlayerServerService(database),
       directory: new AdminDirectoryService(database),
@@ -709,6 +713,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       retainedEventContents: retainedEventContents!,
       inspectIrisKakaoDatabase,
       secureCookies: config.nodeEnv === "production"
+    });
+    void registerAdminDiamondShopCatalogWebRoutes(app, {
+      auth: adminAuth,
+      catalog: new DiamondShopCatalogWebAdapterProvider(database)
     });
     void registerUserAuthRoutes(app, {
       auth: new UserAuthService(database, config.userVerificationPepper, config.nodeEnv),
