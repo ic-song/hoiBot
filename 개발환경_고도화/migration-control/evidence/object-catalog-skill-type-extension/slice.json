@@ -1,0 +1,26 @@
+{
+  "sliceId": "SL-COMMON-OBJECT-CATALOG-SKILL-TYPE-EXTENSION-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "7ec0d06680246017963aa45b5d5efebaf1ae681b",
+  "migration": "389_object_catalog_skill_type_extension.sql",
+  "scope": {
+    "addedObjectType": "SKILL",
+    "existingTypesPreserved": 7,
+    "providerRewrite": false,
+    "ownershipOrLedgerChange": false,
+    "petSkillSeedIncluded": false
+  },
+  "plannedValidation": [
+    "focused object catalog",
+    "typecheck",
+    "build",
+    "fresh MariaDB migration",
+    "SKILL registry/alias/source parity",
+    "rollback",
+    "replay",
+    "reconnect",
+    "Shadow",
+    "full regression"
+  ],
+  "gate8": false
+}
