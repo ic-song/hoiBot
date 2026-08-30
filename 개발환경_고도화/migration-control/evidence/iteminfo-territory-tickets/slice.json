@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ASSET-ITEMINFO-TERRITORY-TICKETS-01",
+  "executionId": "작업반장-SL-ASSET-ITEMINFO-TERRITORY-TICKETS-01-202608301559",
+  "claimRow": 2344,
+  "branch": "codex/modernization-iteminfo-territory-tickets-v2400-20260830",
+  "baseline": "959d8bf7",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "sourcePath": "data/itemInfo.json#castlePremiumItem",
+  "sourceFileHash": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+  "sourceHash": "b73af65e9e0545c2d44a38c95b23466726b02febfff81332af230a160dbb027a",
+  "migration": "387_iteminfo_territory_ticket_definitions.sql",
+  "scope": {
+    "definitions": 6,
+    "offense": 3,
+    "defense": 3,
+    "reusedCanonical": "ITEM-TERRITORY-DEFENSE-50",
+    "newCanonicalItems": 5,
+    "ownership": "existing inventory_stacks/inventory_ledger",
+    "legacyMutation": false,
+    "featureProdMutation": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": {
+      "total": 5,
+      "passed": 5,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "build": "passed",
+    "fullRegression": {
+      "total": 1176,
+      "passed": 1169,
+      "failed": 0,
+      "skipped": 7,
+      "durationMs": 290320.1424
+    },
+    "mariaDb": {
+      "host": "127.0.0.1",
+      "port": 33457,
+      "database": "hoibot_iteminfo_territory_387_01",
+      "migrationCount": 377,
+      "parityChecks": 8,
+      "definitions": 6,
+      "items": 6,
+      "objects": 6,
+      "bindings": 6,
+      "rollback": "1.000000->0.999999->1.000000",
+      "replay": "passed",
+      "reconnect": "2/2",
+      "shadow": "6/6"
+    }
+  },
+  "status": "gate7_verified_wbs_pending"
+}
