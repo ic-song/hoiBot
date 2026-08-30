@@ -85,9 +85,9 @@
     }
   },
   "gate7": {
-    "status": "shadow_complete_pending_commit",
-    "sourceCommit": null,
-    "sourcePushVerified": false,
+    "status": "shadow_complete",
+    "sourceCommit": "deb24017",
+    "sourcePushVerified": true,
     "browserTarget": "synthetic Fastify fixture server",
     "desktop": {
       "width": 1440,
