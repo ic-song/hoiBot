@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.436"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.437"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -906,8 +906,6 @@ const GLOBAL_CONFIG = {
         ticketEventStartTimes: ["20:30"],
         automationLogMax: 100,
         ticketEvent: {
-            startDate: "20260906",
-            endDate: "20260920",
             coupons: [
                 { name: "티켓이벤트할인쿠폰🎟️(10%)", rate: 10, weight: 70 },
                 { name: "티켓이벤트할인쿠폰🎟️(20%)", rate: 20, weight: 15 },
@@ -34001,28 +33999,13 @@ function getPetMusouKstDateTime(now) {
         month: month,
         day: day,
         hour: kst.getUTCHours(),
-        minute: kst.getUTCMinutes(),
-        dateValue: year * 10000 + month * 100 + day
+        minute: kst.getUTCMinutes()
     };
 }
 
-// 입력 시각이 티켓 이벤트 운영 기간에 포함되는지 확인하는 함수
-function isPetMusouTicketEventPeriod(now) {
-    var dateValue = getPetMusouKstDateTime(now).dateValue;
-    var config = GLOBAL_CONFIG.petMusou.ticketEvent;
-    return dateValue >= parseInt(config.startDate, 10) && dateValue <= parseInt(config.endDate, 10);
-}
-
-// 티켓 이벤트 운영 기간을 사용자 안내 문자열로 반환하는 함수
-function getPetMusouTicketEventPeriodText() {
-    var config = GLOBAL_CONFIG.petMusou.ticketEvent;
-    return config.startDate.substring(0, 4) + "." + config.startDate.substring(4, 6) + "." + config.startDate.substring(6, 8) + " ~ " +
-        config.endDate.substring(0, 4) + "." + config.endDate.substring(4, 6) + "." + config.endDate.substring(6, 8) + " (KST)";
-}
-
-// 펫무쌍 티켓 이벤트가 현재 기간과 운영 상태 모두 활성인지 확인하는 함수
-function isPetMusouTicketEventActive(data, now) {
-    return !!(data && data.petMusouTicketEvent && data.petMusouTicketEvent.enabled === true && isPetMusouTicketEventPeriod(now));
+// 펫무쌍 티켓 이벤트가 운영 상태인지 확인하는 함수
+function isPetMusouTicketEventActive(data) {
+    return !!(data && data.petMusouTicketEvent && data.petMusouTicketEvent.enabled === true);
 }
 
 // 티켓 이벤트 관리자 명령인지 확인하는 함수
@@ -34035,7 +34018,6 @@ function processPetMusouTicketEventAdminCommand(msg, data, operator) {
     var eventData = ensurePetMusouTicketEventData(data);
     var nowText = formatDateTime(new Date());
     if (msg === "/티켓이벤트시작") {
-        if (!isPetMusouTicketEventPeriod(new Date())) return { changed: false, noticeMessage: "", message: "❌ 티켓이벤트 운영 기간이 아닙니다.\n기간: " + getPetMusouTicketEventPeriodText() };
         if (eventData.enabled) return { changed: false, noticeMessage: "", message: "이미 티켓이벤트가 진행 중입니다." };
         eventData.enabled = true;
         eventData.startedAt = nowText;
