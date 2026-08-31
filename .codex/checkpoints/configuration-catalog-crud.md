@@ -5,8 +5,8 @@
 - 작업 상태: 검증 완료
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 4
-- 마지막 갱신: 2026-08-31 23:41 KST
+- 체크포인트 버전: 5
+- 마지막 갱신: 2026-08-31 23:56 KST
 - 대화 식별명: 모든 자산 DB화
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -29,10 +29,10 @@
 - 브랜치: `codex/modernization-configuration-catalog-crud-v2400-20260831`
 - 원격 저장소: `https://github.com/ic-song/hoiBot.git`
 - 업스트림 브랜치: `origin/codex/modernization-configuration-catalog-crud-v2400-20260831`
-- 마지막 푸시 커밋: `c46e5d05` (구현 5개와 체크포인트 v2 보존)
-- 원격 동기화 상태: `c46e5d05` 원격 push 확인; 최종 검증 변경은 push 대기
+- 마지막 푸시 커밋: `52f7f39b` (기능 구현·최종 검증 증거)
+- 원격 동기화 상태: `52f7f39b` 원격 exact, 작업 트리 clean
 - 체크포인트 Git 추적: 예
-- 체크포인트 포함 푸시 커밋: `89d058c8`
+- 체크포인트 포함 푸시 커밋: `52f7f39b`
 
 ## 완료된 작업
 
@@ -46,7 +46,7 @@
 
 ## 진행 중인 작업
 
-- 구현과 검증은 완료됐고 최종 Git push 및 WBS/REPORT/Lease 마감이 남아 있다.
+- 구현·검증·Git push·WBS683/DB1960/VAL 갱신을 완료했고 REPORT5349 ACK와 Lease 마감만 남아 있다.
 
 ## 변경 파일
 
@@ -68,7 +68,7 @@
 
 ## 다음 행동
 
-1. 최종 검증 변경을 커밋·push하고 origin exact 확인 후 WBS683·VAL·REPORT·Lease를 마감한다.
+1. REPORT5349가 ACKED인지 재확인하고, ACK 후 Lease2444를 RELEASED로 마감한다.
 
 ## 보안
 
