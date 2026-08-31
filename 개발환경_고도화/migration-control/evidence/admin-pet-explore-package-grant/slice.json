@@ -1,0 +1,31 @@
+{
+  "sliceId": "SL-ADMIN-PET-EXPLORE-PACKAGE-GRANT-01",
+  "catalogVersion": "FROZEN-20260820",
+  "baseline": "50872fb924ffe86c11cf12032c8c16100f357c48",
+  "command": "/펫탐[N], 대상",
+  "packageId": "PKG-186",
+  "consumeItemId": "ITEM-PACKAGE-186",
+  "sourceKind": "LEGACY_ADMIN_GRANT",
+  "canonicalRoute": "/패키지지급",
+  "executable": false,
+  "validation": {
+    "focused": "1/1 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaMigrationCount": 402,
+    "migration414FirstApply": "PASS",
+    "migration414Reapply": "PASS",
+    "mariaParity": "1/1 PASS",
+    "rollback": "PASS",
+    "restartReconnect": "PASS",
+    "shadowExecutableAliasCount": 0,
+    "full": "1354 total / 1347 PASS / 0 FAIL / 7 SKIP"
+  },
+  "constraints": [
+    "No dedicated runtime command handler",
+    "No command_registry or command_alias registration",
+    "Legacy main.js and data remain unchanged",
+    "Existing package grant and package use Gate evidence is carried forward",
+    "Gate 8 and feature/prod remain unchanged"
+  ]
+}
