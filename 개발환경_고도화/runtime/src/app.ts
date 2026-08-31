@@ -717,6 +717,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   let retainedContentCleanupTimer: NodeJS.Timeout | undefined;
 
   void app.register(cookie);
+  void registerAdminWebShellRoutes(app);
   if (database !== undefined) {
     const profiles = new MariaProfileRepository(database);
     const adminAuth = new AdminAuthService(database);

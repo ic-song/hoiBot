@@ -105,6 +105,24 @@ describe("hoiBot Lite server", () => {
     await app.close();
   });
 
+  it("serves the admin web shell from the runtime entrypoint", async () => {
+    const app = buildApp(createConfig());
+    const [page, styles, client] = await Promise.all([
+      app.inject({ method: "GET", url: "/admin" }),
+      app.inject({ method: "GET", url: "/admin/assets/admin.css" }),
+      app.inject({ method: "GET", url: "/admin/assets/admin.js" })
+    ]);
+
+    assert.equal(page.statusCode, 200);
+    assert.match(page.headers["content-type"] ?? "", /^text\/html/);
+    assert.equal(page.headers["cache-control"], "no-store");
+    assert.equal(styles.statusCode, 200);
+    assert.match(styles.headers["content-type"] ?? "", /^text\/css/);
+    assert.equal(client.statusCode, 200);
+    assert.match(client.headers["content-type"] ?? "", /^text\/javascript/);
+    await app.close();
+  });
+
   it("returns pong", async () => {
     const app = buildApp(createConfig());
     const response = await app.inject({ method: "GET", url: "/api/v1/ping" });
