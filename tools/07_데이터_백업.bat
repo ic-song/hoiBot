@@ -35,7 +35,6 @@ if errorlevel 2 goto CANCELLED
 
 if not exist "%ADB_EXE%" goto FAIL_ADB_EXE
 if not exist "%MANIFEST_TOOL%" goto FAIL_MANIFEST_TOOL
-if not exist "%TARGET_REPO%\.git" goto FAIL_TARGET_REPO
 if not exist "%LOCAL_DATA_ABS%\" goto FAIL_LOCAL_DATA
 
 for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "RUN_TS=%%t"
@@ -210,9 +209,6 @@ echo [FAIL] ADB 파일 없음: %ADB_EXE%
 goto FAIL_END
 :FAIL_MANIFEST_TOOL
 echo [FAIL] manifest 검증 도구 없음: %MANIFEST_TOOL%
-goto FAIL_END
-:FAIL_TARGET_REPO
-echo [FAIL] 대상 저장소 확인 실패: %TARGET_REPO%
 goto FAIL_END
 :FAIL_LOCAL_DATA
 echo [FAIL] 로컬 data 폴더 없음: %LOCAL_DATA_ABS%
