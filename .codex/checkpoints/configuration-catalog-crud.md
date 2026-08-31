@@ -2,11 +2,11 @@
 
 - 작업 키: configuration-catalog-crud
 - 작업 이름: SL-COMMON-CONFIGURATION-CATALOG-CRUD-01 Gate 3~7 복구
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 정리 후보 기준 커밋:
-- 체크포인트 버전: 5
-- 마지막 갱신: 2026-08-31 23:56 KST
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: `6d3bc17a7532cfe79ac1583a66b9fb17b8aafb0e`
+- 체크포인트 버전: 6
+- 마지막 갱신: 2026-09-01 00:01 KST
 - 대화 식별명: 모든 자산 DB화
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -46,7 +46,7 @@
 
 ## 진행 중인 작업
 
-- 구현·검증·Git push·WBS683/DB1960/VAL 갱신을 완료했고 REPORT5349 ACK와 Lease 마감만 남아 있다.
+- 없음. REPORT5349 ACK와 Lease2444 RELEASED를 확인했다.
 
 ## 변경 파일
 
@@ -68,7 +68,7 @@
 
 ## 다음 행동
 
-1. REPORT5349가 ACKED인지 재확인하고, ACK 후 Lease2444를 RELEASED로 마감한다.
+1. 후속 자산 슬라이스는 작업반장이 별도 Lease를 발급한 뒤 시작한다.
 
 ## 보안
 

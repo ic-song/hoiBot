@@ -1,13 +1,13 @@
 # SL-COMMON-CONFIGURATION-CATALOG-CRUD-01 checkpoint
 
-- checkpoint: 2026-08-31 23:56:18 KST
+- checkpoint: 2026-09-01 00:01:31 KST
 - execution: `개발자-SL-COMMON-CONFIGURATION-CATALOG-CRUD-01-R2-20260831230938`
 - Lease: `2444`
 - WBS/DB/VAL: `683` / `1960` / `10724:10731`
 - branch: `codex/modernization-configuration-catalog-crud-v2400-20260831`
 - baseline: `92992344`
 - worktree: `C:\Users\user\Desktop\hoiBot-worktrees\configuration-catalog-crud-v2400-20260831`
-- state: `GATE7_ACK_PENDING` (REPORT5349 PENDING, Lease2444 ACTIVE)
+- state: `GATE7_ACKED` (REPORT5349 ACKED, Lease2444 RELEASED)
 
 ## 보존된 구현
 
@@ -61,6 +61,5 @@
 
 ## 다음 행동
 
-1. REPORT5349가 ACKED인지 재확인합니다.
-2. 작업반장 ACK 후 Lease2444를 RELEASED로 마감합니다.
-3. Gate8와 후속 consumer/admin/typed-policy 작업은 별도 승인·Lease 전까지 시작하지 않습니다.
+1. Gate8와 후속 consumer/admin/typed-policy 작업은 별도 승인·Lease 전까지 시작하지 않습니다.
+2. 후속 자산 슬라이스는 작업반장이 새 Lease를 발급한 뒤 시작합니다.
