@@ -1,0 +1,45 @@
+{
+  "sliceId": "SL-COMMON-TIER-AUTHORITY-PROVIDER-01",
+  "executionId": "작업반장-SL-COMMON-TIER-AUTHORITY-PROVIDER-01-20260831220940",
+  "claimRow": 2443,
+  "wbsRow": 693,
+  "baseline": "176f128c3ef6c2636c9724f9b2dcdbc74b537eaf",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "implementation": {
+    "migration": "409_tier_authority_provider.sql",
+    "publishedVersion": "TIER-MAIN-v2.435-20260831",
+    "definitionCount": 41,
+    "canonicalSource": "main.js:213-583",
+    "legacyMutationHelpers": "main.js:32437-32521",
+    "infoSemanticDriftCount": 20
+  },
+  "validation": {
+    "focused": "3/3 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaMigration": "PASS; migration-count 399 including 409",
+    "mariaIntegration": "1/1 PASS",
+    "transactionRollback": "PASS",
+    "migrationReplay": "PASS; second migrate migration-count 399",
+    "restartReconnect": "PASS after Docker random host port changed from 59676 to 60235",
+    "shadowParity": "41/41 exact PASS",
+    "fullRegression": "PASS; npm test exit code 0; final summary lines were not retained by the command transport"
+  },
+  "safety": {
+    "legacyMainChanged": false,
+    "legacyInfoChanged": false,
+    "dataChanged": false,
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false,
+    "gate8Changed": false
+  }
+}
