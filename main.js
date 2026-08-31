@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.433"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.435"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2857,9 +2857,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
             if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
-            for (var premiumNoticeIndex = 0; premiumNoticeIndex < premiumAutoAttendanceResult.noticeMessages.length; premiumNoticeIndex++) {
-                noticeMsg(premiumAutoAttendanceResult.noticeMessages[premiumNoticeIndex]);
-            }
+            if (premiumAutoAttendanceResult.noticeMessage) noticeMsg(premiumAutoAttendanceResult.noticeMessage);
             replier.reply(premiumAutoAttendanceResult.message);
             return;
         }
@@ -17739,11 +17737,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var taxAmount = 0;
                         var itemTotalCost = 0;
                         var taxExempt = false;
-                        var ticketEventCoupon = getBestTicketEventCoupon(data, sender, itemName); // 티켓 구매 1건에 적용할 최고 할인율 쿠폰
-
-                        if (ticketEventCoupon) {
-                            itemPrice = itemPrice * (1 - ticketEventCoupon.rate / 100);
-                        }
+                        var ticketEventCouponPlan = buildTicketEventCouponPurchasePlan(data, sender, itemName, quantity, data.shop[itemName]); // 티켓별 쿠폰 적용 가격과 차감 계획
+                        itemPrice = ticketEventCouponPlan.itemPrice;
 
                         if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
                             itemPrice = itemPrice * 0.8;
@@ -17958,9 +17953,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             isBuyFlag = true;
                         }
                         if (isBuyFlag) {
-                            if (ticketEventCoupon) {
-                                consumeTicketEventCoupon(data, sender, ticketEventCoupon.name);
-                                replier.reply("티켓이벤트 할인 적용🎟️: " + ticketEventCoupon.rate + "% 쿠폰 1장을 사용했습니다.");
+                            if (ticketEventCouponPlan.usedCount > 0) {
+                                var consumedTicketEventCouponCount = consumeTicketEventCouponPlan(data, sender, ticketEventCouponPlan);
+                                if (consumedTicketEventCouponCount !== ticketEventCouponPlan.usedCount) throw new Error("티켓 이벤트 쿠폰 차감 수량이 구매 계산과 일치하지 않습니다.");
+                                replier.reply(buildTicketEventCouponUsageMessage(ticketEventCouponPlan));
                             }
                             if (taxAmount > 0) {
                                 applyTax(itemPrice, data, guildData, taxAmount);
@@ -32290,7 +32286,7 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
         totalPointReward: totalPointReward,
         expReward: GLOBAL_CONFIG.attendance.bonusExp,
         openRunRewardGranted: openRunRewardGranted,
-        noticeMessage: "[자동출첵 완료]\n[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
+        noticeMessage: "[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
     };
 }
 
@@ -33822,6 +33818,12 @@ function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData
     var settings = ensureHoiPassPremiumAutomationSettings(data.member[sender]);
     var nowText = formatDateTime(new Date());
     if (msg === "/무쌍온") {
+        if (settings.petMusouAutoReady === true) {
+            return {
+                changed: false,
+                message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 이미 무쌍온 상태입니다."
+            };
+        }
         settings.petMusouAutoReady = true;
         var joinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
         var registeredNow = joinResult.ok === true; // 현재 준비 회차 즉시 자동 등록 여부
@@ -33847,6 +33849,12 @@ function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData
         };
     }
     if (msg === "/출첵온") {
+        if (settings.autoAttendance === true) {
+            return {
+                changed: false,
+                message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 이미 출첵온 상태입니다."
+            };
+        }
         settings.autoAttendance = true;
         appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "ON", user: sender, result: "SAVED", reason: "", processedAt: nowText });
         return {
@@ -33954,8 +33962,12 @@ function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData,
     }
     appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "SUMMARY", operator: operator, result: failedCount > 0 ? "PARTIAL" : "SUCCESS", successCount: successCount, alreadyCount: alreadyCount, inactiveCount: inactiveCount, failedCount: failedCount, processedAt: formatDateTime(new Date()) });
     changed = true;
+    var noticeMessage = "";
+    if (noticeMessages.length > 0) {
+        noticeMessage = "[👑호이패스 프리미엄 자동출첵 기능👑]\n[자동출첵 유저 리스트]" + allsee + "\n\n" + noticeMessages.join("\n\n") + "\n\n==========";
+    }
     var lines = [passMessage, "", "🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
-    return { changed: changed, noticeMessages: noticeMessages, message: lines.join("\n") };
+    return { changed: changed, noticeMessage: noticeMessage, noticeMessages: noticeMessages, message: lines.join("\n") };
 }
 
 // 펫무쌍 티켓 이벤트 저장 구조를 member.json 안에 보장하는 함수
@@ -34089,27 +34101,49 @@ function grantPetMusouTicketEventCoupon(data, user) {
     return { name: selectedCoupon.name, rate: selectedCoupon.rate, display: "티켓쿠폰🎟️(" + selectedCoupon.rate + "%) 획득" };
 }
 
-// 티켓 상품 구매에 사용할 보유 쿠폰 중 가장 높은 할인율을 반환하는 함수
-function getBestTicketEventCoupon(data, user, itemName) {
-    if (String(itemName || "").indexOf("티켓") === -1) return null;
+// 티켓 구매 수량에 맞춰 높은 할인율부터 쿠폰 적용 가격과 차감 계획을 계산하는 함수
+function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unitPrice) {
+    var plan = { itemPrice: Number(unitPrice) * quantity, usedCount: 0, usages: [] };
+    if (String(itemName || "").indexOf("티켓") === -1) return plan;
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
-    if (!bag) return null;
-    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
-    var bestCoupon = null;
-    for (var i = 0; i < coupons.length; i++) {
-        if ((parseInt(bag[coupons[i].name], 10) || 0) < 1) continue;
-        if (!bestCoupon || coupons[i].rate > bestCoupon.rate) bestCoupon = coupons[i];
+    if (!bag) return plan;
+    var remainingQuantity = quantity; // 아직 쿠폰을 적용하지 않은 구매 수량
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.slice();
+    coupons.sort(function (a, b) { return b.rate - a.rate; });
+    for (var i = 0; i < coupons.length && remainingQuantity > 0; i++) {
+        var heldCount = parseInt(bag[coupons[i].name], 10) || 0;
+        if (heldCount < 1) continue;
+        var useCount = Math.min(heldCount, remainingQuantity); // 이번 할인율에서 실제 적용할 쿠폰 수
+        plan.itemPrice -= Number(unitPrice) * (coupons[i].rate / 100) * useCount;
+        plan.usedCount += useCount;
+        plan.usages.push({ name: coupons[i].name, rate: coupons[i].rate, count: useCount });
+        remainingQuantity -= useCount;
     }
-    return bestCoupon;
+    return plan;
 }
 
-// 구매 성공 뒤 적용한 티켓 이벤트 쿠폰 1장을 차감하는 함수
-function consumeTicketEventCoupon(data, user, couponName) {
+// 구매 성공 뒤 계산된 티켓 이벤트 쿠폰을 할인율별 수량만큼 차감하는 함수
+function consumeTicketEventCouponPlan(data, user, plan) {
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
-    if (!bag || (parseInt(bag[couponName], 10) || 0) < 1) return false;
-    bag[couponName]--;
-    if (bag[couponName] < 1) delete bag[couponName];
-    return true;
+    if (!bag || !plan || !(plan.usages instanceof Array)) return 0;
+    for (var i = 0; i < plan.usages.length; i++) {
+        if ((parseInt(bag[plan.usages[i].name], 10) || 0) < plan.usages[i].count) return 0;
+    }
+    var consumedCount = 0; // 모든 할인율에서 실제 차감한 쿠폰 합계
+    for (var j = 0; j < plan.usages.length; j++) {
+        var usage = plan.usages[j];
+        bag[usage.name] -= usage.count;
+        consumedCount += usage.count;
+        if (bag[usage.name] < 1) delete bag[usage.name];
+    }
+    return consumedCount;
+}
+
+// 티켓 이벤트 쿠폰의 할인율별 사용 수량을 구매 완료 안내로 만드는 함수
+function buildTicketEventCouponUsageMessage(plan) {
+    var usageTexts = [];
+    for (var i = 0; i < plan.usages.length; i++) usageTexts.push(plan.usages[i].rate + "% 쿠폰 " + numberWithCommas(plan.usages[i].count) + "장");
+    return "티켓이벤트 할인 적용🎟️: " + usageTexts.join(", ") + "을 사용했습니다.";
 }
 
 // 펫무쌍 저장 구조를 기존 member.json 안에서 보장하는 함수

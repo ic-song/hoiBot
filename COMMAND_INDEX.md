@@ -2452,8 +2452,8 @@ Status: VERIFIED
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
 - `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
-- `/무쌍온`은 설정을 저장하고 현재 준비 회차 참가를 즉시 시도하며, 이후 수동·정시 시작 전 프리미엄 활성 유저를 자동 등록한다. 자동 등록은 유저별 오류를 격리·기록해 한 유저의 실패가 다음 유저를 중단하지 않으며, `/무쌍오프` 뒤에도 이미 등록된 현재 회차 참가는 유지한다.
-- `/출첵온` 설정은 프리미엄 만료 후에도 유지하지만 `/자동출첵` 실행 대상에서는 제외한다. `/자동출첵`은 MASTER·오픈채팅봇만 실행하며 구독 패스 지급 결과와 자동출첵 집계를 각각 기록하고, 대상자를 독립 처리해 한 유저의 실패가 다음 유저를 중단하지 않는다.
+- `/무쌍온`은 설정을 저장하고 현재 준비 회차 참가를 즉시 시도하며, 이후 수동·정시 시작 전 프리미엄 활성 유저를 자동 등록한다. 자동 등록은 유저별 오류를 격리·기록해 한 유저의 실패가 다음 유저를 중단하지 않으며, `/무쌍오프` 뒤에도 이미 등록된 현재 회차 참가는 유지한다. 이미 ON이면 중복 처리 없이 `이미 무쌍온 상태입니다.`를 안내한다.
+- `/출첵온` 설정은 프리미엄 만료 후에도 유지하지만 `/자동출첵` 실행 대상에서는 제외한다. `/자동출첵`은 MASTER·오픈채팅봇만 실행하며 구독 패스 지급 결과와 자동출첵 집계를 각각 기록하고, 대상자를 독립 처리해 한 유저의 실패가 다음 유저를 중단하지 않는다. 성공자 전원의 체크랭크·포인트·경험치 보상은 `allsee`가 포함된 하나의 NoticeMsg로 출력하며, 이미 ON이면 `이미 출첵온 상태입니다.`를 안내한다.
 - 수동 `ㅊㅊ`와 자동출첵은 같은 출석 판정·기본 보상·주사위·랭크·오픈런 보상 처리를 사용하며 명령 분기에서 `member.json`을 한 번 저장한다.
 - 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 장착 가구 중 매력이 가장 낮은 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
@@ -4163,8 +4163,9 @@ Status: VERIFIED
 - `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
-- `getBestTicketEventCoupon`
-- `consumeTicketEventCoupon`
+- `buildTicketEventCouponPurchasePlan`
+- `consumeTicketEventCouponPlan`
+- `buildTicketEventCouponUsageMessage`
 
 ## Data Usage
 
@@ -4183,7 +4184,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
-- 티켓 이름을 포함한 상품은 보유 쿠폰 중 최고 할인율을 상품가에 먼저 적용하고, 구매가 성공한 뒤 해당 쿠폰 1장만 차감한다. 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
+- 티켓 이름을 포함한 상품은 구매 수량만큼 보유 쿠폰을 높은 할인율부터 티켓 1개당 1장씩 적용하고, 구매가 성공한 뒤 할인율별 적용 수량을 차감한다. 보유 쿠폰이 부족하면 보유 수량까지만 할인하며 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
 
 ## Related Commands
@@ -4195,7 +4196,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `쇼핑광📙` discount applies before tax calculation
-- 티켓이벤트 쿠폰 할인은 `쇼핑광📙` 할인보다 먼저 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
+- 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 `쇼핑광📙` 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
 - `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
