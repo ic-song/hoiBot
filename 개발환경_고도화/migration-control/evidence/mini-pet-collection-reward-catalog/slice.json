@@ -1,0 +1,32 @@
+{
+  "sliceId": "SL-ASSET-MINIPET-COLLECTION-REWARD-CATALOG-01",
+  "catalogVersion": "ASSET-FREEZE-v2.435-mini-pet-collection-reward-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourceSha256": "3dadafd107bb82480d6d5218f98af2a31d0037af7c15b5fecaf8d3c62b9a4e39",
+  "sourceGitObjectSha256": "9d2d94abe3bfbbf0276f74e7ea2ffd2fb6242ba8a71b2a5af586d94cf4fdea2e",
+  "counts": {
+    "gradeRewards": 8,
+    "stageRewards": 100,
+    "titleDefinitions": 100,
+    "occurrences": 108
+  },
+  "canonicalRewardTarget": {
+    "definitionCode": "pet_food",
+    "objectKey": "item.direct_bag.3076ae479a9eb44e",
+    "displayName": "펫먹이🍼",
+    "ownershipModel": "STACK"
+  },
+  "titleBindingPolicy": "stable object source binding only; display-name-only matching forbidden",
+  "expectedBaselineTitleResolution": {
+    "resolved": 0,
+    "unresolved": 100,
+    "conflict": 0
+  },
+  "scope": {
+    "rewardConsumerCutover": false,
+    "titleDefinitionsMutated": false,
+    "ownershipChanged": false,
+    "operationalDataImported": false,
+    "gate8": false
+  }
+}
