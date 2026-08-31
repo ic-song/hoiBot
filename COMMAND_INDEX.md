@@ -4163,8 +4163,9 @@ Status: VERIFIED
 - `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
-- `getBestTicketEventCoupon`
-- `consumeTicketEventCoupon`
+- `buildTicketEventCouponPurchasePlan`
+- `consumeTicketEventCouponPlan`
+- `buildTicketEventCouponUsageMessage`
 
 ## Data Usage
 
@@ -4183,7 +4184,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
-- 티켓 이름을 포함한 상품은 보유 쿠폰 중 최고 할인율을 상품가에 먼저 적용하고, 구매가 성공한 뒤 해당 쿠폰 1장만 차감한다. 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
+- 티켓 이름을 포함한 상품은 구매 수량만큼 보유 쿠폰을 높은 할인율부터 티켓 1개당 1장씩 적용하고, 구매가 성공한 뒤 할인율별 적용 수량을 차감한다. 보유 쿠폰이 부족하면 보유 수량까지만 할인하며 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
 
 ## Related Commands
@@ -4195,7 +4196,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `쇼핑광📙` discount applies before tax calculation
-- 티켓이벤트 쿠폰 할인은 `쇼핑광📙` 할인보다 먼저 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
+- 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 `쇼핑광📙` 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
 - `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.

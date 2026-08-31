@@ -17737,11 +17737,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var taxAmount = 0;
                         var itemTotalCost = 0;
                         var taxExempt = false;
-                        var ticketEventCoupon = getBestTicketEventCoupon(data, sender, itemName); // 티켓 구매 1건에 적용할 최고 할인율 쿠폰
-
-                        if (ticketEventCoupon) {
-                            itemPrice = itemPrice * (1 - ticketEventCoupon.rate / 100);
-                        }
+                        var ticketEventCouponPlan = buildTicketEventCouponPurchasePlan(data, sender, itemName, quantity, data.shop[itemName]); // 티켓별 쿠폰 적용 가격과 차감 계획
+                        itemPrice = ticketEventCouponPlan.itemPrice;
 
                         if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
                             itemPrice = itemPrice * 0.8;
@@ -17956,9 +17953,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             isBuyFlag = true;
                         }
                         if (isBuyFlag) {
-                            if (ticketEventCoupon) {
-                                consumeTicketEventCoupon(data, sender, ticketEventCoupon.name);
-                                replier.reply("티켓이벤트 할인 적용🎟️: " + ticketEventCoupon.rate + "% 쿠폰 1장을 사용했습니다.");
+                            if (ticketEventCouponPlan.usedCount > 0) {
+                                var consumedTicketEventCouponCount = consumeTicketEventCouponPlan(data, sender, ticketEventCouponPlan);
+                                if (consumedTicketEventCouponCount !== ticketEventCouponPlan.usedCount) throw new Error("티켓 이벤트 쿠폰 차감 수량이 구매 계산과 일치하지 않습니다.");
+                                replier.reply(buildTicketEventCouponUsageMessage(ticketEventCouponPlan));
                             }
                             if (taxAmount > 0) {
                                 applyTax(itemPrice, data, guildData, taxAmount);
@@ -34103,27 +34101,49 @@ function grantPetMusouTicketEventCoupon(data, user) {
     return { name: selectedCoupon.name, rate: selectedCoupon.rate, display: "티켓쿠폰🎟️(" + selectedCoupon.rate + "%) 획득" };
 }
 
-// 티켓 상품 구매에 사용할 보유 쿠폰 중 가장 높은 할인율을 반환하는 함수
-function getBestTicketEventCoupon(data, user, itemName) {
-    if (String(itemName || "").indexOf("티켓") === -1) return null;
+// 티켓 구매 수량에 맞춰 높은 할인율부터 쿠폰 적용 가격과 차감 계획을 계산하는 함수
+function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unitPrice) {
+    var plan = { itemPrice: Number(unitPrice) * quantity, usedCount: 0, usages: [] };
+    if (String(itemName || "").indexOf("티켓") === -1) return plan;
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
-    if (!bag) return null;
-    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
-    var bestCoupon = null;
-    for (var i = 0; i < coupons.length; i++) {
-        if ((parseInt(bag[coupons[i].name], 10) || 0) < 1) continue;
-        if (!bestCoupon || coupons[i].rate > bestCoupon.rate) bestCoupon = coupons[i];
+    if (!bag) return plan;
+    var remainingQuantity = quantity; // 아직 쿠폰을 적용하지 않은 구매 수량
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.slice();
+    coupons.sort(function (a, b) { return b.rate - a.rate; });
+    for (var i = 0; i < coupons.length && remainingQuantity > 0; i++) {
+        var heldCount = parseInt(bag[coupons[i].name], 10) || 0;
+        if (heldCount < 1) continue;
+        var useCount = Math.min(heldCount, remainingQuantity); // 이번 할인율에서 실제 적용할 쿠폰 수
+        plan.itemPrice -= Number(unitPrice) * (coupons[i].rate / 100) * useCount;
+        plan.usedCount += useCount;
+        plan.usages.push({ name: coupons[i].name, rate: coupons[i].rate, count: useCount });
+        remainingQuantity -= useCount;
     }
-    return bestCoupon;
+    return plan;
 }
 
-// 구매 성공 뒤 적용한 티켓 이벤트 쿠폰 1장을 차감하는 함수
-function consumeTicketEventCoupon(data, user, couponName) {
+// 구매 성공 뒤 계산된 티켓 이벤트 쿠폰을 할인율별 수량만큼 차감하는 함수
+function consumeTicketEventCouponPlan(data, user, plan) {
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
-    if (!bag || (parseInt(bag[couponName], 10) || 0) < 1) return false;
-    bag[couponName]--;
-    if (bag[couponName] < 1) delete bag[couponName];
-    return true;
+    if (!bag || !plan || !(plan.usages instanceof Array)) return 0;
+    for (var i = 0; i < plan.usages.length; i++) {
+        if ((parseInt(bag[plan.usages[i].name], 10) || 0) < plan.usages[i].count) return 0;
+    }
+    var consumedCount = 0; // 모든 할인율에서 실제 차감한 쿠폰 합계
+    for (var j = 0; j < plan.usages.length; j++) {
+        var usage = plan.usages[j];
+        bag[usage.name] -= usage.count;
+        consumedCount += usage.count;
+        if (bag[usage.name] < 1) delete bag[usage.name];
+    }
+    return consumedCount;
+}
+
+// 티켓 이벤트 쿠폰의 할인율별 사용 수량을 구매 완료 안내로 만드는 함수
+function buildTicketEventCouponUsageMessage(plan) {
+    var usageTexts = [];
+    for (var i = 0; i < plan.usages.length; i++) usageTexts.push(plan.usages[i].rate + "% 쿠폰 " + numberWithCommas(plan.usages[i].count) + "장");
+    return "티켓이벤트 할인 적용🎟️: " + usageTexts.join(", ") + "을 사용했습니다.";
 }
 
 // 펫무쌍 저장 구조를 기존 member.json 안에서 보장하는 함수
