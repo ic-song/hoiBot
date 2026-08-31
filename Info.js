@@ -54,6 +54,7 @@ const GLOBAL_CONFIG = {
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
 		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
 		charmSkills: {
+			"전설의 몽둥이": { raidExp: 500000, castleExp: 500000 },
 			"청룡언월도": { raidExp: 1000000, castleExp: 1000000 },
 			"엘리트 박사": { raidExp: 1500000, castleExp: 1500000, condition: "eliteMiniPet" },
 			"오딘의 뿅망치": { raidExp: 2000000, castleExp: 2000000 },
@@ -1170,7 +1171,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var feedPostUsed = parseInt(data.member[sender].feedPostCnt, 10) || 0;
 			var homeAlertOpenUsed = parseInt(data.member[sender].homeAlertOpenCnt, 10) || 0;
 			var passDailyIconMsg = hasPassDailyQuest
-				? (hasPremiumPass ? "[🐺호프 전용]" : "[🐶호패 전용]") + "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][✍️" + getC(feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax) + "][🔔" + getC(homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax) + "]\n"
+				? (hasPremiumPass ? "[👑호프 전용]" : "[🐶호패 전용]") + "[💬" + getC(petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax) + "][✍️" + getC(feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax) + "][🔔" + getC(homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax) + "]\n"
 				: ""; // 패스 회원에게만 전용 3종 완료 아이콘 표시
 			var weeklyQuestMax = 7;
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));
@@ -1589,7 +1590,7 @@ function getMissingDevDataFiles() {
 		var sourceFile = sourceFiles[i];
 		if (!sourceFile || !sourceFile.isFile()) continue;
 		var fileName = String(sourceFile.getName());
-		if (COMMON_DATA_FILE_MAP[fileName]) continue;
+		if (COMMON_DATA_FILE_MAP[fileName] || /\.tmp$/.test(fileName)) continue;
 		var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
 		if (!devFile.exists()) missing.push(fileName);
 	}
@@ -2630,6 +2631,11 @@ function checkRank(data, petData, guildData, user) {
 					userwithrank += "_" + guildEmoji;
 				}
 			}
+		}
+
+		var musouChampion = data.petMusou && data.petMusou.currentChampion ? data.petMusou.currentChampion : null;
+		if (musouChampion && musouChampion.user === user && musouChampion.expiresAt > new Date().getTime()) {
+			userwithrank = "[무쌍⚔️]" + userwithrank;
 		}
 
 		return userwithrank;

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.400"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.433"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -84,7 +84,8 @@ const PET_SKILL_SELL_PRICE = 1000000000;
 const PET_SKILL_COMPAT_GROUPS = [
     ["십원", "구원"],
     ["헌터", "만렙헌터"],
-    ["건물주", "하느님 위에 갓물주"]
+    ["건물주", "하느님 위에 갓물주"],
+    ["무쌍신화", "무쌍귀신"]
 ];
 const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
     S: 10.5,
@@ -94,6 +95,7 @@ const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
 };
 const PET_SKILL_LIST = [
 
+    { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
@@ -124,6 +126,7 @@ const PET_SKILL_LIST = [
     { name: "징집명령", grade: "A", rate: 1.7, effect: "길드마스터 전용 스킬입니다.\n길드에 가입할 수 있는 최대 인원이 1명 증가합니다." },
     { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
     { name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
+    { name: "무쌍귀신", grade: "A", rate: 1.7, equipComment: "촹 촹 챙챙 슈슉 슈슉 윽! 악!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n펫무쌍 공격 보상 지급 시 포인트 1억을 추가로 획득합니다.\n※ 무쌍신화📙와 중복되지 않습니다." },
     // { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
     { name: "대머리 대장장이", grade: "A", rate: 1.7, effect: "/펫강화 성공 확률 5% 증가" },
     { name: "꽃집 대장장이", grade: "A", rate: 1.7, effect: "/정령강화 성공 확률 5% 증가" },
@@ -137,6 +140,7 @@ const PET_SKILL_LIST = [
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
+    { name: "무쌍신화", grade: "B", rate: 0.9195, fixedRate: true, equipComment: "슈슉..슈슈슉..챙..챙..챙!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n※ 무쌍귀신📙과 중복되지 않습니다." }, // 전체 스킬 풀 환산 확률 0.5%
     { name: "인플루언서", grade: "B", rate: 2.0, fixedRate: true, followerBonus: 1000, equipComment: "여러분 안녕 이건 뒷광고 ㄴㄴ 내돈내산이야루~", equipCommentNoColon: true, effect: "팔로워가 1,000명 증가합니다.\n셀럽 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 1,000명은 회수됩니다." },
     { name: "큐피드의 활", grade: "B", rate: 1.5, fixedRate: true, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
@@ -767,6 +771,9 @@ let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 
 var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리 객체 (guildId: timerId)
+var petMusouOpeningTimers = {}; // 펫무쌍 30초 시작 유예 타이머 관리 객체 (실행 컨텍스트별 timerId)
+var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 컨텍스트별 timerId)
+var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     attendance: { // 출석 보상 설정
@@ -787,6 +794,15 @@ const GLOBAL_CONFIG = {
     },
     supportPass: { // 후원 패스 지급 설정
         diamondBoxCount: 20,
+        territoryPayoutLogMax: 500,
+        territoryAuditLogMax: 500,
+        territoryDailyRewards: [
+            { name: "영지기습공격권🔥(40%)", count: 2 },
+            { name: "영지절대방어권🛡(50%)", count: 2 },
+            { name: "🌪️ 전쟁불안정 증폭권(/불안정)", count: 1 },
+            { name: "다이아상자💎(/다이아상자오픈)", count: 1 },
+            { name: "피뢰침⚡(자동 벼락 방지)", count: 1 }
+        ],
         hoiDailyRewards: [
             { name: "자동탐험권🌄", count: 1 },
             { name: "미니펫뽑기🐹(/미니펫오픈)", count: 2 },
@@ -866,6 +882,42 @@ const GLOBAL_CONFIG = {
             minVariant: 1,
             maxVariant: 10,
             alertCount: 3
+        }
+    },
+    petMusou: { // 펫무쌍 대회 진행 설정
+        flagCount: 10,
+        attackLimit: 4,
+        bonusAttackSkillNames: ["무쌍신화", "무쌍귀신"],
+        bonusAttackCount: 1,
+        startGraceMs: 30000,
+        turnTimeoutMs: 15000,
+        attackRewardPoint: 200000000,
+        realFlagDiscoveryBonusPoint: 200000000,
+        attackRewardBonusSkillName: "무쌍귀신",
+        attackRewardBonusPoint: 100000000,
+        winnerRewardPoint: 3000000000,
+        titleDurationMs: 24 * 60 * 60 * 1000,
+        lightningStartRate: 0.01,
+        lightningStepRate: 0.01,
+        timeoutLightningStepRate: 0.005,
+        lightningRodSuccessRate: 0.8,
+        scheduleCheckMs: 30000,
+        regularStartTimes: ["12:30"],
+        ticketEventStartTimes: ["20:30"],
+        automationLogMax: 100,
+        ticketEvent: {
+            startDate: "20260906",
+            endDate: "20260920",
+            coupons: [
+                { name: "티켓이벤트할인쿠폰🎟️(10%)", rate: 10, weight: 70 },
+                { name: "티켓이벤트할인쿠폰🎟️(20%)", rate: 20, weight: 15 },
+                { name: "티켓이벤트할인쿠폰🎟️(30%)", rate: 30, weight: 7 },
+                { name: "티켓이벤트할인쿠폰🎟️(40%)", rate: 40, weight: 5 },
+                { name: "티켓이벤트할인쿠폰🎟️(50%)", rate: 50, weight: 3 }
+            ]
+        },
+        items: {
+            lightningRod: "피뢰침⚡(자동 벼락 방지)"
         }
     },
     petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
@@ -979,7 +1031,7 @@ const GLOBAL_CONFIG = {
             { id: "S10", emoji: "🪽", name: "전설의 홈" },
             { id: "S11", emoji: "👑", name: "황제" },
             { id: "S12", emoji: "🎮", name: "GM" },
-            { id: "S13", emoji: "🐺", name: "호패 프리미엄" }
+            { id: "S13", emoji: "👑", name: "호패 프리미엄" }
         ],
         gachaItemName: "홈뱃지뽑기🛡️(/홈뱃지오픈)",
         gachaMaxOpenCount: 100,
@@ -1388,14 +1440,15 @@ blockedNicknameTerms: [
             archmageFragmentMaxCount: 5,
             rareRewardRate: 0.01,
             archmageRankLimit: 20,
-            successPenalty: 40
+            successPenalty: 45
         },
         eventDungeon: {
             openCommandAlias: "/이벤트박스오픈✡️",
             shopOpenCount: 100,
             dungeonTicketCount: 1
         },
-        dungeonSuccessPenalty: 10,
+        mineSuccessPenalty: 5,
+        dungeonSuccessPenalty: 15,
         tierReward: {
             fragmentItemName: "펫스킬북 조각📙",
             fragmentNeedCount: 10,
@@ -1545,9 +1598,9 @@ blockedNicknameTerms: [
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
-            personalAttackLimit: 10, // 개인별 영지공격 최대 횟수
+            personalAttackLimit: 10, // 본인·대리 공격을 합산한 개인별 영지공격 최대 횟수
             maxOwnedTerritories: 3, // 길드별 동시 점령 가능 영지 수
-            wrongTurnPenalty: 5, // 영지공격 오입력 패널티 턴
+            wrongTurnPenalty: 7, // 영지공격 오입력 패널티 턴
             timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준
             riftMaxTurn: 120, // 영지전 균열 최대 턴
             riftMaxEventCount: 2, // 영지전 균열/대균열 최대 발생 횟수
@@ -1555,9 +1608,14 @@ blockedNicknameTerms: [
         },
         timers: { // 길드 영토전 시간 설정
             turnTimeoutMs: 1000 * 24, // 길드 영토전 턴 타임아웃 (14초)
+            autoAttackDelayMs: 1000, // 영지 자동 공격 실행 전 안내 유예 시간
             startDelayMs: 20000, // 길드 영토전 시작 지연 시간 (20초)
             orderGraceMs: 5000, // 길드 영토전 명령어 입력 유예 시간 (5초)
             pendingStaleMs: 30000 // 길드 영토전 대기 상태 오래 지속 시 자동 취소 시간 (30초)
+        },
+        automation: { // 길드 영토전 자동화 권한 아이템
+            autoReadyItemName: "길드영지자동준비권",
+            logMax: 500
         },
         rewards: { // 길드 영토전 보상 설정
             turnFundReward: 50000000, // 영지전 공격 턴 기본보상
@@ -2711,6 +2769,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         var guildData = loadJsonFile(guildPath);
         addResponseTiming("guildData.json 로드", commonStepStart);
+        var invalidTerritoryAutoAttackUsers = disableInvalidGuildTerritoryAutoAttacks(data); // 만료·삭제된 패스 단독 자동공격 상태 정리
+        if (invalidTerritoryAutoAttackUsers.length > 0) saveJsonFile(data, filePath);
         castleSiegeFlag = guildData.castleSiegeFlag || false;
         var isPreSignupAttendanceFlow = msg === "ㅊㅊ";
         var hasPendingTerms = !!termsState[sender];
@@ -2735,7 +2795,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
-                "허용 명령어: /영지공격, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
+                    "허용 명령어: /영지공격, /영지온, /영지오프, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
             );
             return;
         }
@@ -2752,7 +2812,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petSkillData, petSkillDataPath);
             addResponseTiming("펫스킬 보정 저장", commonStepStart);
         }
-        var shouldCleanupAllPremiumUsers = (msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇");
+        var shouldCleanupAllPremiumUsers = ((msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) ||
+            (msg === "/자동출첵" && (isMaster(sender) || sender === "오픈채팅봇"));
         var premiumExpiryTarget = shouldCleanupAllPremiumUsers ? "" : sender;
         var premiumExpiredUsers = getExpiredHoiPassPremiumUsers(data, premiumExpiryTarget);
         if (premiumExpiredUsers.length > 0) {
@@ -2779,6 +2840,78 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         var matzangField = ensureMatzangFieldData(data);
         addResponseTiming("맞짱필드 보정", commonStepStart);
+        var petMusou = ensurePetMusouData(data);
+        recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat);
+        petMusou = ensurePetMusouData(data);
+        if (!ctx.isDev) ensurePetMusouScheduleTimer(replier);
+        if (isHoiPassPremiumAutomationCommand(msg)) {
+            var premiumAutomationResult = processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData, guildData, sender);
+            if (premiumAutomationResult.changed) saveJsonFile(data, filePath);
+            replier.reply(premiumAutomationResult.message);
+            return;
+        }
+        if (msg === "/자동출첵") {
+            if (!(isMaster(sender) || sender === "오픈채팅봇")) {
+                replier.reply("❌ /자동출첵 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
+            if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
+            for (var premiumNoticeIndex = 0; premiumNoticeIndex < premiumAutoAttendanceResult.noticeMessages.length; premiumNoticeIndex++) {
+                noticeMsg(premiumAutoAttendanceResult.noticeMessages[premiumNoticeIndex]);
+            }
+            replier.reply(premiumAutoAttendanceResult.message);
+            return;
+        }
+        if (/^\/자동출첵\s+.*$/.test(msg)) {
+            replier.reply("사용법: /자동출첵\n※ 추가 인자 없이 명령어만 입력해 주세요.");
+            return;
+        }
+        if (isPetMusouTicketEventAdminCommand(msg)) {
+            if (!isPetMusouOperator(sender)) {
+                replier.reply("❌ 티켓이벤트 관리 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var ticketEventCommandResult = processPetMusouTicketEventAdminCommand(msg, data, sender);
+            if (ticketEventCommandResult.changed) saveJsonFile(data, filePath);
+            if (ticketEventCommandResult.noticeMessage) noticeMsg(ticketEventCommandResult.noticeMessage);
+            replier.reply(ticketEventCommandResult.message);
+            return;
+        }
+        if (isPetMusouLightningRateCommand(msg)) {
+            if (sender !== "호이 남") {
+                replier.reply("❌ /벼락확률 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            if (msg === "/벼락확률") {
+                replier.reply("사용법: /벼락확률 [0~100]\n예시: /벼락확률 2.5");
+                return;
+            }
+            if (!petMusou.active) {
+                replier.reply("❌ 진행 중인 펫무쌍 대회가 없습니다.");
+                return;
+            }
+            var lightningRateMatch = msg.match(/^\/벼락확률\s+(\d{1,3}(?:\.\d)?)$/);
+            var lightningPercent = Number(lightningRateMatch[1]);
+            if (lightningPercent < 0 || lightningPercent > 100) {
+                replier.reply("❌ 벼락확률은 0~100 사이로 입력해 주세요.\n예시: /벼락확률 2.5");
+                return;
+            }
+            var previousLightningPercent = petMusou.lightningRate * 100; // 변경 전 현재 대회의 누적 벼락 발생확률
+            petMusou.lightningRate = lightningPercent / 100;
+            saveJsonFile(data, filePath);
+            replier.reply(
+                "⚡ 펫무쌍 벼락발생확률 변경\n" +
+                "━━━━━━━━━━━━\n" +
+                "변경 전: " + previousLightningPercent.toFixed(1) + "%\n" +
+                "변경 후: " + (petMusou.lightningRate * 100).toFixed(1) + "%\n" +
+                "다음 벼락 판정부터 적용됩니다."
+            );
+            return;
+        }
+        if (isPetMusouBlockedDuringTournamentCommand(petMusou, msg, sender)) {
+            return;
+        }
         commonStepStart = Date.now();
         var currencyLogData = ensureCurrencyLogData(loadJsonFile(currencyLogPath));
         addResponseTiming("currencyLog 로드/보정", commonStepStart);
@@ -2798,8 +2931,110 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
+        if (msg === "/펫무쌍준비") {
+            var petMusouJoinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
+            var premiumAutoReadyResult = autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, sender);
+            if (petMusouJoinResult.ok || premiumAutoReadyResult.changed) saveJsonFile(data, filePath);
+            replier.reply(petMusouJoinResult.message);
+            return;
+        }
+        if (msg === "/펫무쌍시작") {
+            if (!isPetMusouStartOperator(sender)) {
+                replier.reply("❌ /펫무쌍시작 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            if (matzangField.active) {
+                replier.reply("❌ 맞짱필드 진행 중에는 펫무쌍을 시작할 수 없습니다.");
+                return;
+            }
+            var activeTerritoryWar = ensureGuildTerritoryWar(data, guildData);
+            if (activeTerritoryWar.active || activeTerritoryWar.pendingStart) {
+                replier.reply("❌ 길드 영지전 진행 또는 시작 대기 중에는 펫무쌍을 시작할 수 없습니다.");
+                return;
+            }
+            var petMusouHomeData = loadJsonFile(homeDataFile);
+            var premiumStartAutoReadyResult = autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, "");
+            var petMusouStartResult = beginPetMusou(data, petData, petMusouHomeData, petSkillData, guildData);
+            if (!petMusouStartResult.ok) {
+                if (premiumStartAutoReadyResult.changed) saveJsonFile(data, filePath);
+                replier.reply(petMusouStartResult.message);
+                return;
+            }
+            saveJsonFile(data, filePath);
+            noticeMsg(petMusouStartResult.message);
+            startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
+            return;
+        }
+        if (/^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg)) {
+            if (!(room === room8 || ctx.isDev)) {
+                replier.reply("❌ 펫무쌍 공격은 공성전 방에서만 가능합니다.\nhttps://open.kakao.com/o/gaP4Xybh");
+                return;
+            }
+            var petMusouAttackNo = parseInt(msg.split(/\s+/)[1], 10);
+            var petMusouAttackResult = processPetMusouAttack(data, petData, guildData, sender, petMusouAttackNo);
+            if (petMusouAttackResult.expired) {
+                petMusouAttackResult = processPetMusouTimeout(data, petData, guildData);
+            }
+            if (!petMusouAttackResult.ok) {
+                replier.reply(petMusouAttackResult.message);
+                return;
+            }
+            saveJsonFile(data, filePath);
+            castleMsg(petMusouAttackResult.message, replier, isGroupChat);
+            if (petMusouAttackResult.lightningMessage) castleMsg(petMusouAttackResult.lightningMessage, replier, isGroupChat);
+            if (petMusouAttackResult.ended) {
+                if (petMusouAttackResult.finishMessage) castleMsg(petMusouAttackResult.finishMessage, replier, isGroupChat);
+                return;
+            }
+            castleMsg(petMusouAttackResult.statusMessage, replier, isGroupChat);
+            startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+            return;
+        }
+        if (/^\/펫무쌍공격(?:\s+.*)?$/.test(msg)) {
+            replier.reply("사용법: /펫무쌍공격 [1-10]\n예: /펫무쌍공격 7");
+            return;
+        }
+        if (msg === "/펫무쌍종료") {
+            if (!isPetMusouOperator(sender)) {
+                replier.reply("❌ /펫무쌍종료 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var petMusouFinishResult = finishPetMusou(data, petData, guildData, "운영자 강제 종료");
+            if (!petMusouFinishResult.ended) {
+                replier.reply(petMusouFinishResult.message);
+                return;
+            }
+            saveJsonFile(data, filePath);
+            replier.reply(petMusouFinishResult.message);
+            return;
+        }
+        if (msg === "/펫무쌍전체초기화") {
+            if (!isPetMusouOperator(sender)) {
+                replier.reply("❌ /펫무쌍전체초기화 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var petMusouResetResult = resetAllPetMusouData(data);
+            saveJsonFile(data, filePath);
+            replier.reply(
+                "✅ 펫무쌍 전체 초기화 완료\n" +
+                "━━━━━━━━━━━━━━━━\n" +
+                "참가·진행·회차·현재 칭호 초기화 완료\n" +
+                "유저 참가일 초기화: " + numberWithCommas(petMusouResetResult.signupUserCount) + "명\n" +
+                "유저 누적 전적 초기화: " + numberWithCommas(petMusouResetResult.rankingUserCount) + "명\n\n" +
+                "※ 기존 지급 포인트와 아이템은 회수하지 않습니다."
+            );
+            return;
+        }
+        if (msg === "/무쌍순위") {
+            replier.reply(buildPetMusouRankingMessage(data, petData, guildData));
+            return;
+        }
         if (msg === "/맞짱시작") {
             if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇" || isCastleSiegeRoomOperatorCommand(sender, msg))) return;
+            if (ensurePetMusouData(data).active) {
+                replier.reply("❌ 펫무쌍 진행 중에는 맞짱필드를 시작할 수 없습니다.");
+                return;
+            }
             if (room !== room8) {
                 replier.reply("맞짱필드👊는 공성전 방에서만 시작할 수 있습니다.");
                 return;
@@ -3501,16 +3736,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.startsWith("/펫스킬가방추가 ") && (isAdmin(sender) || isMaster(sender))) {
-                    var addSkillMatch = msg.match(/^\/펫스킬가방추가\s+([^,]+),\s+(.+)\s+(\d+)\s*$/);
-                    if (!addSkillMatch) {
-                        replier.reply("사용법: /펫스킬가방추가 [아이디], [펫스킬이름] [갯수]\n예: /펫스킬가방추가 호이 남, 장미칼 1");
-                        return;
-                    }
-
-                    var addSkillUser = addSkillMatch[1].trim();
-                    var addSkillName = normalizePetSkillName(addSkillMatch[2].trim());
-                    var addSkillCount = parseInt(addSkillMatch[3], 10);
+                var addSkillRequest = parsePetSkillBagGrantRequest(msg);
+                var canUseAddSkillRequest = addSkillRequest && (addSkillRequest.directGrantSkillData ? sender === addSkillRequest.directGrantSkillData.directGrantOperator : (isAdmin(sender) || isMaster(sender)));
+                if (canUseAddSkillRequest) {
+                    var directGrantSkillData = addSkillRequest.directGrantSkillData;
+                    var addSkillUser = addSkillRequest.user;
+                    var addSkillName = addSkillRequest.skillName;
+                    var addSkillCount = addSkillRequest.count;
 
                     if (!data.member[addSkillUser]) {
                         replier.reply("❌ 해당 유저가 없습니다: " + addSkillUser);
@@ -3520,6 +3752,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var addSkillData = getPetSkillData(addSkillName);
                     if (!addSkillData) {
                         replier.reply("❌ 등록되지 않은 펫스킬입니다: " + addSkillName + "\n/펫스킬확률에서 목록을 확인해주세요.");
+                        return;
+                    }
+
+                    if (addSkillData.directGrantOnly === true && !directGrantSkillData) {
+                        replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantUsage + "\n명령어로만 지급할 수 있습니다.");
                         return;
                     }
 
@@ -3615,6 +3852,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (!bSkillData) {
                             bulkResults.fail++;
                             bulkResults.failDetail.push((bIdx + 1) + "줄: 펫스킬 없음 — " + bSkillRaw);
+                            continue;
+                        }
+
+                        if (bSkillData.directGrantOnly === true) {
+                            bulkResults.fail++;
+                            bulkResults.failDetail.push((bIdx + 1) + "줄: 단독 지급 명령어 전용 — " + formatPetSkillName(bSkillData.name));
                             continue;
                         }
 
@@ -3872,9 +4115,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("등록되지 않은 펫스킬입니다.\n또는 존재하지 않는 유저입니다.");
                         return;
                     }
-                    var skillRateLine = "확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
-                    var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
-                    replier.reply(formatPetSkillName(skillInfo.name) + "\n등급: " + skillInfo.grade + "\n" + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine);
+                    replier.reply(buildPetSkillInfoMessage(skillInfo));
                     return;
                 }
 
@@ -5123,46 +5364,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 //
                 if (msg === "ㅊㅊ") {
                     if (!castleSiegeFlag) {
-                        if (!data.attend_list.includes(sender)) {
-                            data.attend_list.push(sender); //출석목록에 저장
-                            data.member[sender].cnt++; //출석일 증가
-                            data.member[sender].today++; //금일 출석 여부 증가
-                            data.member[sender].recent = getCurrentDate(); // 최근출석일에 등록
-                            data.member[sender].point += GLOBAL_CONFIG.attendance.bonusPoint; //포인트 출석비
-                            data.member[sender].exp += GLOBAL_CONFIG.attendance.bonusExp; //경험치 출석비
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치  " + GLOBAL_CONFIG.attendance.bonusExp + "exp 획득");
-                            var multi = rollAndCalculateMultiplier(); // 주사위를 굴려 배율을 계산하는 함수 호출
-                            var result = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multi).toFixed(0)); //보너스 ㅊㅊ포인트
-                            var diceMsg =
-                                "[" +
-                                checkRank(data, petData, guildData, sender) +
-                                "]님의 출첵 응모가 굴러갑니다!\n" +
-                                multi +
-                                "배 당첨!💸\n" +
-                                "🅟" +
-                                numberWithCommas(result) +
-                                " 추가적립 되었습니다.\nhttps://ibb.co/jkbgrzHt\n이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.";
-                            data.member[sender].point += result; // ㅊㅊ 주사위 포인트 추가
-                            replier.reply(diceMsg);
-                            var Bonus = RankBonus(data, sender); //랭크 ㅊㅊ 보너스
-                            var BonusResult = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * Bonus.BonusM).toFixed(0));
-                            if (Bonus.BonusM !== 0) {
-                                Bonus.Bonusmsg += "🎊\n🅟" + numberWithCommas(BonusResult) + " 추가적립 되었습니다.";
-                                data.member[sender].point += BonusResult; //랭크추가 ㅊㅊ 주사위 포인트 추가
-                                replier.reply(Bonus.Bonusmsg);
-                            }
-
-                            // 오픈런📙: /리셋 이후 출석 1등에게 일일 1회 보상
-                            if (data.attend_list[0] === sender && hasPetSkill(petSkillData, sender, "오픈런") && !data.member[sender].openRunRewardClaimed) {
-                                data.member[sender].bag["펫먹이🍼"] = (data.member[sender].bag["펫먹이🍼"] || 0) + 1000;
-                                data.member[sender].openRunRewardClaimed = true;
-                                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 오늘도 1등 출석 성공!");
-                                replier.reply("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
-                                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 누구보다 빠르게, 남들과는 다르게!");
-                            }
+                        var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, sender);
+                        if (attendanceResult.ok) {
                             saveJsonFile(data, filePath);
+                            for (var attendanceMessageIndex = 0; attendanceMessageIndex < attendanceResult.messages.length; attendanceMessageIndex++) {
+                                replier.reply(attendanceResult.messages[attendanceMessageIndex]);
+                            }
                         } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 이미 출첵 하셨습니다.");
+                            replier.reply(attendanceResult.message);
                         }
                     }
                     return;
@@ -7243,8 +7452,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(premiumCommandResult.message);
                     return;
                 }
+                if (/^\/영지패스(추가|삭제),\s*.+$/.test(msg)) {
+                    if (!(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) {
+                        replier.reply("❌ 영지기습패스 관리 명령어를 사용할 권한이 없습니다.");
+                        return;
+                    }
+                    var territoryPassCommandResult = processUserIDCommand(msg, data, sender);
+                    if (String(territoryPassCommandResult || "").indexOf("❌") !== 0 && String(territoryPassCommandResult || "").indexOf("알 수 없는 명령어") !== 0) {
+                        saveJsonFile(data, filePath);
+                        var savedTerritoryPassData = loadJsonFile(filePath);
+                        territoryPassCommandResult += buildSupportPassSaveCheckMessage(msg, savedTerritoryPassData);
+                    }
+                    replier.reply(territoryPassCommandResult);
+                    return;
+                }
                 if (sender == "호이 남" && (/^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
-                    let result = processUserIDCommand(msg, data);
+                    let result = processUserIDCommand(msg, data, sender);
                     if (String(result || "").indexOf("❌") !== 0 && String(result || "").indexOf("알 수 없는 명령어") !== 0) {
                         saveJsonFile(data, filePath);
                         var savedMemberData = loadJsonFile(filePath);
@@ -7259,7 +7482,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ /구독패스지급 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
-                    var supportPassPayoutResult = grantAllSupportPassDailyRewards(data);
+                    var supportPassPayoutResult = grantAllSupportPassDailyRewards(data, sender);
                     if (supportPassPayoutResult.changed) saveJsonFile(data, filePath);
                     replier.reply(buildSupportPassPayoutResultMessage(supportPassPayoutResult));
                     return;
@@ -13760,6 +13983,61 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 
+                if (msg === "/영지온") {
+                    var territoryAutoPassActive = isSupportPassActive(data, sender, "territory");
+                    var territoryAutoFailureMessage = "⚠️ 영지 자동 공격을 사용할 수 없습니다.\n" +
+                        "사용 권한: 영지기습패스 소유 소드마스터 또는 전투형지휘관을 소지한 길드마스터";
+                    if (!territoryAutoPassActive) {
+                        territoryAutoFailureMessage = "[" + checkRank(data, petData, guildData, sender) + "]님 영지기습패스를 구독중이지 않습니다.\n" + territoryAutoFailureMessage;
+                    }
+                    var territoryAutoGuildInfo = getMyGuildInfo(data, guildData, sender);
+                    if (!territoryAutoGuildInfo || territoryAutoGuildInfo.error || !territoryAutoGuildInfo.guild) {
+                        replier.reply(territoryAutoFailureMessage);
+                        return;
+                    }
+                    var territoryAutoValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, sender);
+                    if (!territoryAutoValidation.ok) {
+                        replier.reply(territoryAutoFailureMessage);
+                        return;
+                    }
+                    data.member[sender].guildTerritoryAutoAttackEnabled = true;
+                    appendGuildTerritoryAutomationDataLog(data, {
+                        type: "AUTO_ATTACK_ON",
+                        user: sender,
+                        processedAt: formatDateTime(new Date())
+                    });
+                    saveJsonFile(data, filePath);
+                    var territoryAutoWar = ensureGuildTerritoryWar(data, guildData);
+                    var territoryAutoTurn = getGuildTerritoryTurnRow(data, guildData);
+                    if (territoryAutoWar.active && territoryAutoWar.startReady && territoryAutoTurn && territoryAutoTurn.user === sender) {
+                        startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+                    }
+                    replier.reply(
+                        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+                        "⚔️ 영지 자동 공격이 활성화되었습니다.\n" +
+                        "내 공격 차례에 1~7번 영지 중 한 곳을 무작위로 공격합니다.\n" +
+                        "※ 우리 길드가 점령한 영지는 자동공격 대상에서 제외됩니다."
+                    );
+                    return;
+                }
+                if (msg === "/영지오프") {
+                    var territoryAutoOffPassActive = isSupportPassActive(data, sender, "territory");
+                    data.member[sender].guildTerritoryAutoAttackEnabled = false;
+                    appendGuildTerritoryAutomationDataLog(data, {
+                        type: "AUTO_ATTACK_OFF",
+                        user: sender,
+                        reason: "사용자 명령",
+                        processedAt: formatDateTime(new Date())
+                    });
+                    saveJsonFile(data, filePath);
+                    if (!territoryAutoOffPassActive) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 영지기습패스를 구독중이지 않습니다.");
+                    } else {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🛑 영지 자동 공격이 비활성화되었습니다.");
+                    }
+                    return;
+                }
+
                 if (msg === "영지종료보상" || msg === "/영지종료보상") {
                     replier.reply(
                         "🎖️길드 영지전 보상 안내🎖️\n\n" +
@@ -13869,6 +14147,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
+                    if (ensurePetMusouData(data).active) {
+                        replier.reply("❌ 펫무쌍 진행 중에는 길드 영지전을 시작할 수 없습니다.");
+                        return;
+                    }
                     var startWar = ensureGuildTerritoryWar(data, guildData);
                     if (startWar.active) {
                         replier.reply("❌ 이미 길드 영지전이 진행 중입니다.");
@@ -13921,7 +14203,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("✅ 예약된 길드 영지전 시작이 취소되었습니다.");
                         return;
                     }
-                    finishGuildTerritoryWar(data, guildData, "관리자 수동 종료");
+                    finishGuildTerritoryWar(data, guildData, "관리자 수동 종료", petSkillData);
                     if (!getCurrentContext().isDev) {
                         guildData.castleSiegeFlag = false;
                     }
@@ -14012,7 +14294,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.indexOf("/불안정") === 0 || msg.indexOf("/안정") === 0 || msg.indexOf("/균열") === 0 || msg.indexOf("/대균열") === 0) {
+                if (isGuildTerritoryRiftControlCommandMessage(msg)) {
                     var riftControlResult = handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg);
                     if (riftControlResult) {
                         replier.reply(riftControlResult.message);
@@ -14123,7 +14405,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 "⚔)(턴 -" +
                                 GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty +
                                 ")\n" +
-                                "→ -5회 차감 불가\n" +
+                                "→ -" + GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty + "회 차감 불가\n" +
                                 "→ [" +
                                 formatGuildDisplay(attackInfo.guild) +
                                 "] 길드 탈락";
@@ -14166,7 +14448,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                         replier.reply(wrongTurnMessage);
                         if (isGuildTerritoryAllDone(data, guildData)) {
-                            finishGuildTerritoryWar(data, guildData, "오입력 패널티");
+                            finishGuildTerritoryWar(data, guildData, "오입력 패널티", petSkillData);
                             withGuildTerritoryDataMode(guildData, function () {
                                 saveJsonFile(guildData, guildPath);
                                 saveJsonFile(data, filePath);
@@ -14204,7 +14486,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (isGuildTerritoryAllDone(data, guildData)) {
                             var dimensionFinishStartMs = ctx.isDev ? Date.now() : 0;
                             castleMsg(dimensionGateMessage, replier, isGroupChat);
-                            finishGuildTerritoryWar(data, guildData, "차원의 문");
+                            finishGuildTerritoryWar(data, guildData, "차원의 문", petSkillData);
                             withGuildTerritoryDataMode(guildData, function () {
                                 saveJsonFile(guildData, guildPath);
                                 saveJsonFile(data, filePath);
@@ -14227,11 +14509,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(guildData, guildPath);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - dimensionSaveStartMs });
                         var dimensionTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
-                        var dimensionTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+                        var dimensionAutoTerritoryNo = startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+                        var dimensionTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData, dimensionAutoTerritoryNo);
                         dimensionTurnMsgs.forEach(function (m) {
                             castleMsg(m, replier, isGroupChat);
                         });
-                        startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - dimensionTurnGuideStartMs });
                         if (ctx.isDev) {
                             replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
@@ -14255,7 +14537,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (isGuildTerritoryAllDone(data, guildData)) {
                             var rememberMeFinishStartMs = ctx.isDev ? Date.now() : 0;
                             castleMsg(rememberMeMessage, replier, isGroupChat);
-                            finishGuildTerritoryWar(data, guildData, "날 기억해줘");
+                            finishGuildTerritoryWar(data, guildData, "날 기억해줘", petSkillData);
                             withGuildTerritoryDataMode(guildData, function () {
                                 saveJsonFile(guildData, guildPath);
                                 saveJsonFile(data, filePath);
@@ -14279,11 +14561,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(data, filePath);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - rememberMeSaveStartMs });
                         var rememberMeTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
-                        var rememberMeTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
+                        var rememberMeAutoTerritoryNo = startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+                        var rememberMeTurnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData, rememberMeAutoTerritoryNo);
                         rememberMeTurnMsgs.forEach(function (m) {
                             castleMsg(m, replier, isGroupChat);
                         });
-                        startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
                         if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - rememberMeTurnGuideStartMs });
                         if (ctx.isDev) {
                             replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
@@ -14291,98 +14573,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    // 턴 초기화 및 공격 카운트 증가
-                    var attackPrepareStartMs = ctx.isDev ? Date.now() : 0;
-                    clearGuildTerritoryWarTimer();
-                    attackWar.turnToken = null;
-                    attackWar.guildAttackCounts[attackInfo.guildId] =
-                        (attackWar.guildAttackCounts[attackInfo.guildId] || 0) + 1;
-                    increaseGuildTerritoryUserAttackCount(attackWar, sender);
-
-                    // 턴 보상 처리 (공격 결과 메시지에 포함)
-                    var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "공격 준비/턴 보상", ms: Date.now() - attackPrepareStartMs });
-
-                    // 공격 처리
-                    var snapshotPrepareStartMs = ctx.isDev ? Date.now() : 0;
-                    var missingCastleExpUsers = getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo);
-                    if (missingCastleExpUsers.length > 0) {
-                        var legacyWarHomeData = loadJsonFile(homeDataFile);
-                        fillGuildTerritoryCastleExpSnapshots(data, petData, legacyWarHomeData, petSkillData, guildData, missingCastleExpUsers);
+                    var manualAttackHomeData = null;
+                    if (getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo).length > 0) {
+                        manualAttackHomeData = loadJsonFile(homeDataFile);
                     }
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "캐슬매력 스냅샷 준비", ms: Date.now() - snapshotPrepareStartMs });
-                    var attackResolveStartMs = ctx.isDev ? Date.now() : 0;
-                    var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo); // 공격 결과 메시지 반환
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "전투 판정", ms: Date.now() - attackResolveStartMs });
-                    var attackPostProcessStartMs = ctx.isDev ? Date.now() : 0;
-                    var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;// 공격 결과 메시지에 공격 불가 문구가 포함되어 있는지 체크
-                    // if (isAttackBlocked) resultMessage += "\n\n" + buildGuildTerritoryRiftCommandGuide();// 공격이 불가한 경우 균열 조작 가이드 메시지 추가
-                    var riftMessage = "";
-                    // 공격 불가가 아닐 때만 균열 판정
-                    if (!isAttackBlocked) {
-                        riftMessage = processGuildTerritoryRiftEvent(data, guildData);
-                    }
-                    var triggerMessages = [];
-
-                    // 소드마스터 트리거 체크
-                    if (shouldShowGuildTerritoryCommanderTrigger(attackInfo.guild, petSkillData, sender)) {
-                        triggerMessages.push(buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관"));
-                    }
-                    var rewardBlock = rewardMessage;
-                    if (triggerMessages.length > 0) rewardBlock += "\n" + triggerMessages.join("\n");
-                    resultMessage = addGuildTerritoryRewardToResultMessage(resultMessage, rewardBlock); // 공격 결과 메시지에 턴 보상/스킬 메시지 추가
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "균열/보상 후처리", ms: Date.now() - attackPostProcessStartMs });
-                    // 전체 종료 여부 체크
-                    if (isGuildTerritoryAllDone(data, guildData)) {
-                        var attackFinishStartMs = ctx.isDev ? Date.now() : 0;
-                        castleMsg(resultMessage, replier, isGroupChat);
-                        if (riftMessage) {
-                            castleMsg(riftMessage, replier, isGroupChat);
-                        }
-                        finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진");
-                        withGuildTerritoryDataMode(guildData, function () {
-                            saveJsonFile(guildData, guildPath);
-                            saveJsonFile(data, filePath);
-                        });
-                        if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 출력/종료 저장", ms: Date.now() - attackFinishStartMs });
-                        if (ctx.isDev) {
-                            replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
-                        }
-                        return;
-                    }
-
-                    // 턴 이동
-                    var attackTurnProcessStartMs = ctx.isDev ? Date.now() : 0;
-                    advanceGuildTerritoryTurn(data, guildData);
-                    // 다음 턴 안내 메시지 생성
-                    var nextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
-                    if (nextTurnLine) {
-                        resultMessage = nextTurnLine + "\n" + resultMessage;
-                    }
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 처리", ms: Date.now() - attackTurnProcessStartMs });
-
-                    var attackOutputStartMs = ctx.isDev ? Date.now() : 0;
-                    castleMsg(resultMessage, replier, isGroupChat);
-                    if (riftMessage) {
-                        castleMsg(riftMessage, replier, isGroupChat);
-                    }
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "결과 출력", ms: Date.now() - attackOutputStartMs });
-
-                    var attackSaveStartMs = ctx.isDev ? Date.now() : 0;
-                    saveJsonFile(guildData, guildPath);
-                    saveJsonFile(data, filePath);
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "데이터 저장", ms: Date.now() - attackSaveStartMs });
-
-                    // 다음 턴 안내
-                    var attackTurnGuideStartMs = ctx.isDev ? Date.now() : 0;
-                    var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData);
-                    turnMsgs.forEach(function (m) {
-                        castleMsg(m, replier, isGroupChat);
-                    });
-
-                    // 턴 타이머 시작
-                    startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat);
-                    if (ctx.isDev) territoryAttackTimingRows.push({ label: "다음 턴 안내/타이머", ms: Date.now() - attackTurnGuideStartMs });
+                    var normalAttackResult = executeGuildTerritoryNormalAttack(data, petData, manualAttackHomeData, guildData, petSkillData, sender, territoryNo, replier, isGroupChat, false, territoryAttackTimingRows);
+                    if (!normalAttackResult.ok) replier.reply(normalAttackResult.message);
                     if (ctx.isDev) {
                         replier.reply(buildGuildTerritoryAttackTimeCheckMessage(responseStartMs, territoryAttackBranchStartMs, responseTimingRows, territoryAttackTimingRows));
                     }
@@ -17406,7 +17602,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         formatPointValue(transferAmount) +
                         "를 이체했습니다.\n\n" +
                         "이체 수수료🤫: " +
-                        ((isDiscounted || isPremiumDiscounted) ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%" + (isDiscounted ? "(호행권📙)" : "") + (isPremiumDiscounted ? "(호프🐺)" : "") : formatTransferFeeRate(transferFeeRate) + "%") +
+                        ((isDiscounted || isPremiumDiscounted) ? formatTransferFeeRate(transferFeeRate) + "→ " + formatTransferFeeRate(discountedFeeRate) + "%" + (isDiscounted ? "(호행권📙)" : "") + (isPremiumDiscounted ? "(호프👑)" : "") : formatTransferFeeRate(transferFeeRate) + "%") +
                         "\n(-🅟" +
                         formatPointValue(transferFee) +
                         ")\n" +
@@ -17543,6 +17739,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var taxAmount = 0;
                         var itemTotalCost = 0;
                         var taxExempt = false;
+                        var ticketEventCoupon = getBestTicketEventCoupon(data, sender, itemName); // 티켓 구매 1건에 적용할 최고 할인율 쿠폰
+
+                        if (ticketEventCoupon) {
+                            itemPrice = itemPrice * (1 - ticketEventCoupon.rate / 100);
+                        }
 
                         if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
                             itemPrice = itemPrice * 0.8;
@@ -17757,6 +17958,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             isBuyFlag = true;
                         }
                         if (isBuyFlag) {
+                            if (ticketEventCoupon) {
+                                consumeTicketEventCoupon(data, sender, ticketEventCoupon.name);
+                                replier.reply("티켓이벤트 할인 적용🎟️: " + ticketEventCoupon.rate + "% 쿠폰 1장을 사용했습니다.");
+                            }
                             if (taxAmount > 0) {
                                 applyTax(itemPrice, data, guildData, taxAmount);
                             }
@@ -19153,7 +19358,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/글자수전체정리") {
-                    if (!(isMaster(sender) || (room === room90 && isAdmin(sender)))) {
+                    if (!(isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                         replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
@@ -20108,7 +20313,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     let hasPremiumNotice = isHoiPassPremiumActive(data, sender);
                     if (!hasPremiumNotice) {
-                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 🐺호패프리미엄🐺 유저가 아닙니다.");
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님은 👑호패프리미엄 유저가 아닙니다.");
                         return;
                     }
                     if (typeof data.member[sender].noticePremiumCount !== "number") {
@@ -22944,7 +23149,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "/" +
                         maxSlots +
                         "\n" +
-                        (isHoiPassPremiumActive(data, sender) ? "호패프리미엄🐺: +" + GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount + "\n" : "") +
+                        (isHoiPassPremiumActive(data, sender) ? "호패프리미엄👑: +" + GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount + "\n" : "") +
                         "적용 매력: " +
                         numberWithCommas(placedExp) +
                         "💕";
@@ -28032,6 +28237,44 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
 
+                    var invalidAutoAttackItemName = "영지자동공격권⚔️"; // 잘못 지급된 독립 자동공격권 명칭
+                    var invalidAutoAttackItemRemovedUserCount = 0; // 가방에서 잘못 지급된 아이템 키를 삭제한 유저 수
+                    var invalidAutoAttackItemRemovedCount = 0; // 실제 수거한 잘못 지급 아이템 총수량
+                    var invalidAutoAttackFlagRemovedUserCount = 0; // 잘못 생성된 권한 플래그를 삭제한 유저 수
+                    var invalidAutoAttackFlagRemovedCount = 0; // 삭제한 잘못된 권한 플래그 총개수
+                    var invalidAutoAttackCleanupLogs = [];
+                    for (var invalidAutoAttackUser in data.member) {
+                        if (!data.member.hasOwnProperty(invalidAutoAttackUser)) continue;
+                        var invalidAutoAttackMember = data.member[invalidAutoAttackUser];
+                        if (!invalidAutoAttackMember || typeof invalidAutoAttackMember !== "object") continue;
+
+                        var removedAutoAttackItemCount = 0; // 해당 유저에게서 수거한 아이템 수량
+                        var removedAutoAttackFlags = [];
+                        if (invalidAutoAttackMember.bag && invalidAutoAttackMember.bag.hasOwnProperty(invalidAutoAttackItemName)) {
+                            removedAutoAttackItemCount = Math.max(0, Math.floor(Number(invalidAutoAttackMember.bag[invalidAutoAttackItemName]) || 0));
+                            delete invalidAutoAttackMember.bag[invalidAutoAttackItemName];
+                            invalidAutoAttackItemRemovedUserCount++;
+                            invalidAutoAttackItemRemovedCount += removedAutoAttackItemCount;
+                        }
+                        if (invalidAutoAttackMember.guildTerritoryAutoAttackGranted !== undefined) {
+                            delete invalidAutoAttackMember.guildTerritoryAutoAttackGranted;
+                            removedAutoAttackFlags.push("최초지급");
+                            invalidAutoAttackFlagRemovedCount++;
+                        }
+                        if (invalidAutoAttackMember.guildTerritoryAutoAttackPermanent !== undefined) {
+                            delete invalidAutoAttackMember.guildTerritoryAutoAttackPermanent;
+                            removedAutoAttackFlags.push("영구권한");
+                            invalidAutoAttackFlagRemovedCount++;
+                        }
+                        if (removedAutoAttackFlags.length > 0) invalidAutoAttackFlagRemovedUserCount++;
+                        if (removedAutoAttackItemCount > 0 || removedAutoAttackFlags.length > 0) {
+                            var invalidAutoAttackCleanupParts = [];
+                            if (removedAutoAttackItemCount > 0) invalidAutoAttackCleanupParts.push("아이템 " + numberWithCommas(removedAutoAttackItemCount) + "개");
+                            if (removedAutoAttackFlags.length > 0) invalidAutoAttackCleanupParts.push("권한플래그 " + removedAutoAttackFlags.join(", "));
+                            invalidAutoAttackCleanupLogs.push(invalidAutoAttackUser + " : " + invalidAutoAttackCleanupParts.join(" / "));
+                        }
+                    }
+
                     var petSkillMoveCount = 0;
                     var petSkillDeleteCount = 0;
                     var petCharDeleteCount = 0;
@@ -28234,6 +28477,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n[삭제된 길드창고 반지 데이터]\n" + guildRingDeleteLogs.join("\n");
                     } else {
                         out += "\n삭제할 길드창고 반지 데이터 없음";
+                    }
+
+                    out += "\n\n[8] 잘못 지급된 영지자동공격 데이터 정리\n";
+                    out += invalidAutoAttackItemName + " 수거 유저 : " + numberWithCommas(invalidAutoAttackItemRemovedUserCount) + "명\n";
+                    out += "수거 수량 : " + numberWithCommas(invalidAutoAttackItemRemovedCount) + "개\n";
+                    out += "권한 플래그 삭제 유저 : " + numberWithCommas(invalidAutoAttackFlagRemovedUserCount) + "명\n";
+                    out += "권한 플래그 삭제 건수 : " + numberWithCommas(invalidAutoAttackFlagRemovedCount) + "건";
+                    if (invalidAutoAttackCleanupLogs.length > 0) {
+                        out += "\n[영지자동공격 데이터 정리 유저]\n" + invalidAutoAttackCleanupLogs.join("\n");
+                    } else {
+                        out += "\n수거할 영지자동공격 데이터 없음";
                     }
 
                     replier.reply(out);
@@ -28486,6 +28740,12 @@ function createContextReplier(replier, ctx) {
     };
 }
 
+// 영지전 균열 조정 명령어의 정확한 입력 형식을 확인하는 함수
+function isGuildTerritoryRiftControlCommandMessage(msg) {
+    if (typeof msg !== "string") return false;
+    return /^\/(?:불안정|안정|균열|대균열)(?:\s+\d+)?$/.test(msg);
+}
+
 // 길드 영지전 데이터를 변경하는 명령어인지 확인하는 함수
 function isMutableGuildTerritoryCommand(msg) {
     if (typeof msg !== "string") return false;
@@ -28496,6 +28756,8 @@ function isMutableGuildTerritoryCommand(msg) {
         msg === "/길드영지초기화" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지확인" ||
+        msg === "/영지온" ||
+        msg === "/영지오프" ||
         /^\/영지공격\s+[1-9]$/.test(msg) ||
         msg === "/차원의문on" ||
         msg === "/차원의문off" ||
@@ -28503,10 +28765,7 @@ function isMutableGuildTerritoryCommand(msg) {
         msg === "/차원의문오프" ||
         msg === "/날기억해줘온" ||
         msg === "/날기억해줘오프" ||
-        msg.indexOf("/불안정") === 0 ||
-        msg.indexOf("/안정") === 0 ||
-        msg.indexOf("/균열") === 0 ||
-        msg.indexOf("/대균열") === 0
+        isGuildTerritoryRiftControlCommandMessage(msg)
     );
 }
 
@@ -28526,14 +28785,13 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/길드영지순위" ||
         msg === "/영지순위보상" ||
         msg === "/영지보상순위" ||
+        msg === "/영지온" ||
+        msg === "/영지오프" ||
         msg === "/디버깅모드" ||
         msg === "/매력버프체크" ||
         /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg) ||
         /^\/영지공격(?:\s+[1-9])?$/.test(msg) ||
-        /^\/안정(?:\s+\d+)?$/.test(msg) ||
-        /^\/불안정(?:\s+\d+)?$/.test(msg) ||
-        /^\/균열(?:\s+\d+)?$/.test(msg) ||
-        /^\/대균열(?:\s+\d+)?$/.test(msg)
+        isGuildTerritoryRiftControlCommandMessage(msg)
     );
 }
 
@@ -29027,6 +29285,7 @@ function backupDevDataFromProduction() {
         var sourceFile = sourceFiles[i];
         if (!sourceFile || !sourceFile.isFile()) continue;
         var fileName = String(sourceFile.getName());
+        if (/\.tmp$/.test(fileName)) continue;
         var sourcePath = DATA_ROOT_PATH + fileName;
         var targetPath = DEV_DATA_ROOT_PATH + fileName;
         ensureParentFolder(targetPath);
@@ -29047,7 +29306,7 @@ function getMissingDevDataFiles() {
         var sourceFile = sourceFiles[i];
         if (!sourceFile || !sourceFile.isFile()) continue;
         var fileName = String(sourceFile.getName());
-        if (COMMON_DATA_FILE_MAP[fileName]) continue;
+        if (COMMON_DATA_FILE_MAP[fileName] || /\.tmp$/.test(fileName)) continue;
         var devFile = new java.io.File(DEV_DATA_ROOT_PATH + fileName);
         if (!devFile.exists()) missing.push(fileName);
     }
@@ -29563,6 +29822,19 @@ function getGuildTerritoryOwnedCount(war, guildId) {
     return count;
 }
 
+// 자동공격 후보에서 현재 길드 점령지를 제외하고 영지 번호를 선택하는 함수
+function getGuildTerritoryAutoAttackTargetNo(war, guildId) {
+    if (!war || !war.territories || !guildId) return 0;
+    var candidates = [];
+    for (var territoryNo = 1; territoryNo <= 7; territoryNo++) {
+        var territory = war.territories[String(territoryNo)];
+        if (territory && territory.ownerGuildId === guildId) continue;
+        candidates.push(territoryNo);
+    }
+    if (candidates.length === 0) return 0;
+    return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 // 길드 정보 표시 함수
 function formatGuildDisplay(g) {
     if (!g) return "미점령";
@@ -29815,6 +30087,8 @@ function ensureGuildTerritoryWar(data, guildData) {
     if (!war.instabilityUses || typeof war.instabilityUses !== "object") war.instabilityUses = {};// 불안정 사용 정보
     if (!war.riftGuideUses || typeof war.riftGuideUses !== "object") war.riftGuideUses = {};// 균열 유도 사용 정보
     if (!war.riftCommandUses || typeof war.riftCommandUses !== "object") war.riftCommandUses = {};// 균열 명령 사용 정보
+    if (!war.autoAttackProcessedKeys || typeof war.autoAttackProcessedKeys !== "object") war.autoAttackProcessedKeys = {};// 턴별 자동·수동 중복 공격 방지 키
+    if (!(war.automationLogs instanceof Array)) war.automationLogs = [];// 자동 준비·자동 공격 처리 로그
     if (typeof war.turnCount !== "number") war.turnCount = 0;// 진행된 턴 수
     if (typeof war.instabilityAdjust !== "number") war.instabilityAdjust = 0;// 불안정 조정치
     if (typeof war.riftBias !== "number") war.riftBias = 0;// 균열 편향치
@@ -29822,6 +30096,7 @@ function ensureGuildTerritoryWar(data, guildData) {
     if (typeof war.pendingStartAt !== "string") war.pendingStartAt = null;// 영지전 준비 시작 시각 (ISO 문자열)
     if (typeof war.pendingStartToken !== "string") war.pendingStartToken = null;// 영지전 준비 시작 토큰 (중복 시작 방지용)
     if (typeof war.pendingStartRequestedAt !== "number") war.pendingStartRequestedAt = 0;// 영지전 준비 시작 요청 시각 (타임아웃 판정용)
+    if (typeof war.roundId !== "string") war.roundId = "";// 길드 영지전 회차 식별자
     if (typeof war.startReady !== "boolean") war.startReady = false;// 실제 영지전 시작 완료 여부
     if (typeof war.openingToken !== "string") war.openingToken = null;// 시작 유예 토큰
     if (typeof war.dimensionGateEnabled !== "boolean") war.dimensionGateEnabled = true;// 차원의 문 이벤트 사용 여부
@@ -30029,6 +30304,7 @@ function beginGuildTerritoryWarNow(data, petData, homeData, petSkillData, guildD
     }
 
     war.active = true;// 영지전 활성화
+    war.roundId = String(getTodaySupportPassDateValue()) + "_" + String(new Date().getTime());// 영지전 회차 식별자
     war.isDevWar = getCurrentContext().isDev;// 개발자 모드 여부 기록
     war.startedAt = formatDateTime(new Date());// 영지전 시작 시간 기록
     war.endedAt = null;// 턴 진행 순서 초기화
@@ -30052,6 +30328,7 @@ function beginGuildTerritoryWarNow(data, petData, homeData, petSkillData, guildD
     war.instabilityUses = {};	// 불안정성 사용 기록 초기화
     war.riftGuideUses = {};// 균열 가이드 사용 기록 초기화
     war.riftCommandUses = {};// 길드별 균열 명령 사용 기록 초기화
+    war.autoAttackProcessedKeys = {};// 새 회차의 턴별 자동·수동 공격 처리 키 초기화
     war.turnToken = null;// 턴 토큰 초기화
     war.startReady = false;// 시작 유예 중에는 공격 불가
     war.openingToken = String(new Date().getTime()) + "_" + String(Math.random());// 시작 유예 토큰
@@ -30087,7 +30364,13 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
 
     guildTerritoryPendingStartTimers[timerCtxKey] = setTimeout(function () {
         var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
         try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
             delete guildTerritoryPendingStartTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
@@ -30106,6 +30389,8 @@ function scheduleGuildTerritoryWarStart(data, petData, guildData, replier, isGro
                 saveJsonFile(latestGuildData, guildPath);
             }
         } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
     }, GLOBAL_CONFIG.guildTerritory.timers.startDelayMs);
@@ -30120,10 +30405,17 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 
     guildTerritoryOpeningTimers[timerCtxKey] = setTimeout(function () {
         var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
         try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
             delete guildTerritoryOpeningTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
+            var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
             var latestWar = ensureGuildTerritoryWar(latestData, latestGuildData);
 
@@ -30137,13 +30429,14 @@ function scheduleGuildTerritoryOpening(data, petData, guildData, replier, isGrou
 
             castleMsg(buildGuildTerritoryStartMessage(latestData, latestGuildData), replier, isGroupChat);
 
-            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
+            var openingAutoTerritoryNo = startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
+            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData, openingAutoTerritoryNo);
             turnMsgs.forEach(function (m) {
                 castleMsg(m, replier, isGroupChat);
             });
-
-            startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
         } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
     }, GLOBAL_CONFIG.guildTerritory.timers.orderGraceMs);
@@ -30651,7 +30944,7 @@ function buildGuildTerritoryStartMessage(data, guildData) {
         "━━━━━━━━━━━━━━━\n" +
         "⚠️ 오입력 패널티\n" +
         "공격 명령 오입력 시\n" +
-        "공격 횟수 -5회 차감\n" +
+        "공격 횟수 -" + GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty + "회 차감\n" +
         "━━━━━━━━━━━━━━━\n" +
         "😵 길드 탈락 조건\n" +
         "남은 공격 턴이 오입력 패널티 \n" +
@@ -30659,8 +30952,8 @@ function buildGuildTerritoryStartMessage(data, guildData) {
         "공격 횟수 차감이 불가능하므로 \n" +
         "길드 탈락 처리\n" +
         "예시)\n" +
-        "남은 턴 4회 상태에서 오입력 발생\n" +
-        "→ -5회 차감 불가\n" +
+        "남은 턴 " + (GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty - 1) + "회 상태에서 오입력 발생\n" +
+        "→ -" + GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty + "회 차감 불가\n" +
         "→ 길드 탈락"
     );
 }
@@ -30765,14 +31058,17 @@ function advanceGuildTerritoryTurn(data, guildData) {
 }
 
 // 영지전 현재 공격 차례 한 줄 빌드
-function buildGuildTerritoryCurrentTurnLine(data, petData, guildData) {
+function buildGuildTerritoryCurrentTurnLine(data, petData, guildData, isAutoAttackScheduled) {
     var row = getGuildTerritoryTurnRow(data, guildData);
     if (!row) return "";
+    if (isAutoAttackScheduled) {
+        return "[" + checkRank(data, petData, guildData, row.user) + "] 님이 자동공격을 진행합니다.";
+    }
     return "[" + checkRank(data, petData, guildData, row.user) + "] 님의 공격 차례입니다.";
 }
 
 // 영지전 턴 메시지 빌드
-function buildGuildTerritoryTurnMessage(data, petData, guildData) {
+function buildGuildTerritoryTurnMessage(data, petData, guildData, autoTerritoryNo) {
     var war = guildData.territoryWar;
     var row = getGuildTerritoryTurnRow(data, guildData);
     if (!row) return ["⚠️ 다음 공격 가능한 소드마스터가 없습니다."];
@@ -30782,10 +31078,18 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
     var remain = Math.max(0, attackLimit - used);
     var status = buildGuildTerritoryStatusMessage(data, guildData, false);
 
-    var turnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+    var isAutoAttackScheduled = autoTerritoryNo >= 1 && autoTerritoryNo <= 7; // 예약된 자동공격 영지가 있는 턴인지 여부
+    var turnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData, isAutoAttackScheduled);
+    var turnDetail = "";
+    if (isAutoAttackScheduled) {
+        var autoTerritory = getGuildTerritoryByNo(autoTerritoryNo);
+        turnDetail += "자동공격 영지: [" + autoTerritoryNo + "] " + (autoTerritory ? autoTerritory.name : "") + "\n";
+    }
 
     var msg =
         turnLine + "\n" +
+        "━━━━━━━━━━━━\n" +
+        turnDetail +
         "[" +
         formatGuildDisplay(g) +
         "] 남은 턴(" +
@@ -30795,10 +31099,8 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData) {
         "⚔)\n" +
         buildGuildTerritoryRiftUi(war) +
         "\n" +
-        "━━━━━━━━━━━━━━━━\n" +
-        status +
-        "━━━━━━━━━━━━━━━━\n" +
-        turnLine;
+        "━━━━━━━━━━━━\n" +
+        status;
 
     return [msg];
 }
@@ -30851,18 +31153,6 @@ function formatGuildTerritoryRewardAmount(amount) {
     if (amount % 100000000 === 0) return numberWithCommas(amount / 100000000) + "억";
     if (amount % 10000 === 0) return numberWithCommas(amount / 10000) + "만";
     return numberWithCommas(amount);
-}
-
-// 영지전 균열 이벤트 보상 메시지를 결과 메시지에 추가하여 반환
-function addGuildTerritoryRewardToResultMessage(resultMessage, rewardMessage) {
-    if (!rewardMessage) return resultMessage;
-
-    var headerEnd = resultMessage.indexOf("\n");
-    if (headerEnd === -1) return resultMessage + "\n" + rewardMessage;
-
-    return resultMessage.slice(0, headerEnd + 1) +
-        rewardMessage + "\n\n" +
-        resultMessage.slice(headerEnd + 1);
 }
 
 // 영지전 균열 이벤트 가이드 메시지 빌드
@@ -31054,7 +31344,10 @@ function buildGuildTerritoryCommandReuseBlockedMessage(guild, command) {
 
 // 영지전 균열 아이템 사용 명령 처리
 function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSkillData, sender, msg) {
-    var command = msg.split(" ")[0];
+    if (!isGuildTerritoryRiftControlCommandMessage(msg)) return null;
+
+    var parts = msg.trim().split(/\s+/);
+    var command = parts[0];
 
     var config = null;
     if (command === "/불안정") {
@@ -31070,8 +31363,7 @@ function handleGuildTerritoryRiftControlCommand(data, petData, guildData, petSki
     }
     var bagItemName = config.item;
 
-    var parts = msg.trim().split(/\s+/);
-    var count = parts.length >= 2 ? parseInt(parts[1], 10) : 1;
+    var count = parts.length === 2 ? parseInt(parts[1], 10) : 1;
     if (isNaN(count) || count <= 0) {
         return { message: "사용법: " + command + " 숫자\n예) " + command + " 1" };
     }
@@ -31211,8 +31503,8 @@ function applyGuildTerritoryTimeoutMiss(guildData, guildId) {
     );
 }
 
-// 길드 영지전 턴 타이머 시작
-function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroupChat) {
+// 길드 영지전 턴 타이머 또는 현재 공격자의 자동 공격 예약을 시작하는 함수
+function startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat) {
     var war = guildData.territoryWar;
     if (!war || !war.active) return;
 
@@ -31222,7 +31514,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
     // 현재 공격자 정보 가져오기
     var row = getGuildTerritoryTurnRow(data, guildData);
     if (!row) {
-        finishGuildTerritoryWar(data, guildData, "자동 종료");
+        finishGuildTerritoryWar(data, guildData, "자동 종료", petSkillData);
         withGuildTerritoryDataMode(guildData, function () {
             saveJsonFile(guildData, guildPath);
         });
@@ -31233,21 +31525,124 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
     war.turnToken = String(new Date().getTime()) + "_" + String(Math.random());
     var token = war.turnToken;
     var turnGuildId = row.guildId;
+    var turnUser = row.user;
+    var autoAttackScheduled = false; // 현재 턴 사용자의 자동 공격 예약 여부
+    var scheduledAutoTerritoryNo = 0; // 턴 안내와 실제 자동공격에 함께 사용할 영지 번호
+    if (data.member[turnUser] && data.member[turnUser].guildTerritoryAutoAttackEnabled === true) {
+        var scheduleValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, turnUser);
+        if (scheduleValidation.ok) {
+            scheduledAutoTerritoryNo = getGuildTerritoryAutoAttackTargetNo(war, turnGuildId);
+            autoAttackScheduled = scheduledAutoTerritoryNo > 0;
+            if (!autoAttackScheduled) {
+                data.member[turnUser].guildTerritoryAutoAttackEnabled = false;
+                appendGuildTerritoryAutomationLog(war, {
+                    type: "AUTO_ATTACK_OFF",
+                    roundId: war.roundId,
+                    user: turnUser,
+                    reason: "공격 가능한 타 길드 영지가 없음",
+                    processedAt: formatDateTime(new Date())
+                });
+                appendGuildTerritoryAutomationDataLog(data, {
+                    type: "AUTO_ATTACK_OFF",
+                    user: turnUser,
+                    reason: "공격 가능한 타 길드 영지가 없음",
+                    processedAt: formatDateTime(new Date())
+                });
+                saveJsonFile(data, filePath);
+            }
+        } else {
+            data.member[turnUser].guildTerritoryAutoAttackEnabled = false;
+            appendGuildTerritoryAutomationLog(war, {
+                type: "AUTO_ATTACK_OFF",
+                roundId: war.roundId,
+                user: turnUser,
+                reason: scheduleValidation.reason,
+                processedAt: formatDateTime(new Date())
+            });
+            appendGuildTerritoryAutomationDataLog(data, {
+                type: "AUTO_ATTACK_OFF",
+                user: turnUser,
+                reason: scheduleValidation.reason,
+                processedAt: formatDateTime(new Date())
+            });
+            saveJsonFile(data, filePath);
+        }
+    }
     var timerCtx = getCurrentContext();
     var timerCtxKey = timerCtx.key();
     saveJsonFile(guildData, guildPath);
 
     guildTerritoryWarTimers[timerCtxKey] = setTimeout(function () {
         var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
         try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
             delete guildTerritoryWarTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
+            var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
             ensureGuildTerritoryWar(latestData, latestGuildData);
             var latestWar = latestGuildData ? latestGuildData.territoryWar : null;
             if (!latestWar || !latestWar.active) return;
             if (latestWar.turnToken !== token) return;
+
+            if (autoAttackScheduled) {
+                var latestTurn = getGuildTerritoryTurnRow(latestData, latestGuildData);
+                var latestMember = latestData.member && latestData.member[turnUser] ? latestData.member[turnUser] : null;
+                var executionValidation = validateGuildTerritoryAutoAttack(latestData, latestGuildData, latestPetSkillData, turnUser);
+                var autoAttackLimit = getGuildTerritoryAttackLimitForWar(latestWar, executionValidation.guildInfo ? executionValidation.guildInfo.guild : null, turnGuildId);
+                var personalAttackLimit = GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit;
+                var canExecuteAutoAttack = !!(
+                    latestTurn && latestTurn.guildId === turnGuildId && latestTurn.user === turnUser &&
+                    latestMember && latestMember.guildTerritoryAutoAttackEnabled === true &&
+                    executionValidation.ok && executionValidation.guildInfo && executionValidation.guildInfo.guildId === turnGuildId &&
+                    (latestWar.guildAttackCounts[turnGuildId] || 0) < autoAttackLimit &&
+                    getGuildTerritoryUserAttackCount(latestWar, turnUser) < personalAttackLimit
+                );
+                if (!canExecuteAutoAttack) {
+                    if (latestMember) latestMember.guildTerritoryAutoAttackEnabled = false;
+                    appendGuildTerritoryAutomationLog(latestWar, {
+                        type: "AUTO_ATTACK_OFF",
+                        roundId: latestWar.roundId,
+                        user: turnUser,
+                        reason: executionValidation.ok ? "공격 차례·횟수 조건 불충족" : executionValidation.reason,
+                        processedAt: formatDateTime(new Date())
+                    });
+                    appendGuildTerritoryAutomationDataLog(latestData, {
+                        type: "AUTO_ATTACK_OFF",
+                        user: turnUser,
+                        reason: executionValidation.ok ? "공격 차례·횟수 조건 불충족" : executionValidation.reason,
+                        processedAt: formatDateTime(new Date())
+                    });
+                    saveJsonFile(latestData, filePath);
+                    saveJsonFile(latestGuildData, guildPath);
+                    startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
+                    return;
+                }
+                var autoHomeData = null;
+                if (getGuildTerritoryMissingCastleExpUsers(latestData, latestPetData, latestGuildData, turnUser, scheduledAutoTerritoryNo).length > 0) {
+                    autoHomeData = loadJsonFile(homeDataFile);
+                }
+                var autoExecutionResult = executeGuildTerritoryNormalAttack(latestData, latestPetData, autoHomeData, latestGuildData, latestPetSkillData, turnUser, scheduledAutoTerritoryNo, replier, isGroupChat, true, null);
+                if (!autoExecutionResult.ok && latestGuildData.territoryWar && latestGuildData.territoryWar.active) {
+                    latestData.member[turnUser].guildTerritoryAutoAttackEnabled = false;
+                    appendGuildTerritoryAutomationDataLog(latestData, {
+                        type: "AUTO_ATTACK_OFF",
+                        user: turnUser,
+                        reason: autoExecutionResult.message,
+                        processedAt: formatDateTime(new Date())
+                    });
+                    saveJsonFile(latestData, filePath);
+                    saveJsonFile(latestGuildData, guildPath);
+                    startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
+                }
+                return;
+            }
 
             // 현재 공격자 길드의 미공격 처리 및 누적 횟수 증가
             latestWar.guildAttackCounts[turnGuildId] = (latestWar.guildAttackCounts[turnGuildId] || 0) + 1;
@@ -31269,7 +31664,7 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
 
             // 모든 길드가 공격 횟수를 다 채웠거나 공격할 수 있는 소드마스터가 없는 경우 영지전 종료 처리
             if (isGuildTerritoryAllDone(latestData, latestGuildData)) {
-                finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료");
+                finishGuildTerritoryWar(latestData, latestGuildData, "자동 종료", latestPetSkillData);
                 withGuildTerritoryDataMode(latestGuildData, function () {
                     saveJsonFile(latestGuildData, guildPath);
                     saveJsonFile(latestData, filePath);
@@ -31284,17 +31679,18 @@ function startGuildTerritoryTurnTimer(data, petData, guildData, replier, isGroup
             });
 
             // 다음 공격자 정보로 턴 메시지 빌드 및 발송
-            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData);
+            var timeoutAutoTerritoryNo = startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, latestPetSkillData, replier, isGroupChat);
+            var turnMsgs = buildGuildTerritoryTurnMessage(latestData, latestPetData, latestGuildData, timeoutAutoTerritoryNo);
             turnMsgs.forEach(function (m) {
                 castleMsg(m, replier, isGroupChat);
             });
-
-            // 다음 공격자부터 새로운 타이머 시작
-            startGuildTerritoryTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat);
         } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
             exitCommandContext(prevCtx);
         }
-    }, GLOBAL_CONFIG.guildTerritory.timers.turnTimeoutMs);
+    }, autoAttackScheduled ? GLOBAL_CONFIG.guildTerritory.timers.autoAttackDelayMs : GLOBAL_CONFIG.guildTerritory.timers.turnTimeoutMs);
+    return scheduledAutoTerritoryNo;
 }
 
 // 영지전 공격 시 특수 아이템 체크
@@ -31594,11 +31990,179 @@ function resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sen
     return out;
 }
 
+// 종료된 영지전 참가 길드 중 권한·직책을 충족한 길드를 다음 회차에 자동 준비하는 함수
+function prepareNextGuildTerritoryWarAutomatically(data, guildData, petSkillData, war, finishedReadyGuildIds) {
+    var nextReadyGuilds = {};
+    var messages = [];
+    var nextRoundId = "READY_" + String(new Date().getTime());
+    for (var guildIndex = 0; guildIndex < finishedReadyGuildIds.length; guildIndex++) {
+        var guildId = finishedReadyGuildIds[guildIndex];
+        var guild = getGuildByIdSafe(guildData, guildId);
+        if (!guild) continue;
+        var candidates = [];
+        if (guild.master) candidates.push(guild.master);
+        var subMasters = ensureGuildSubMasters(guild);
+        for (var subIndex = 0; subIndex < subMasters.length; subIndex++) {
+            if (candidates.indexOf(subMasters[subIndex]) === -1) candidates.push(subMasters[subIndex]);
+        }
+        var basisUser = "";
+        for (var candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
+            var candidate = candidates[candidateIndex];
+            if (!guild.members || !guild.members[candidate]) continue;
+            if (!hasGuildTerritoryAutoReadyEntitlement(data, candidate)) continue;
+            basisUser = candidate;
+            break;
+        }
+        if (!basisUser) continue;
+        nextReadyGuilds[guildId] = {
+            guildId: guildId,
+            guildName: guild.name,
+            preparedBy: basisUser,
+            preparedAt: formatDateTime(new Date()),
+            automatic: true,
+            roundId: nextRoundId
+        };
+        appendGuildTerritoryAutomationLog(war, {
+            type: "AUTO_READY",
+            roundId: war.roundId,
+            nextRoundId: nextRoundId,
+            guildId: guildId,
+            basisUser: basisUser,
+            entitlement: hasGuildTerritoryAutomationItem(data, basisUser, GLOBAL_CONFIG.guildTerritory.automation.autoReadyItemName) ? "ITEM" : "TERRITORY_PASS",
+            processedAt: formatDateTime(new Date())
+        });
+        messages.push("✅ 길드영지 자동 준비 완료\n[" + formatGuildDisplay(guild) + "] 길드가 다음 길드영지전 준비를 완료했습니다.");
+    }
+    return { readyGuilds: nextReadyGuilds, messages: messages, nextRoundId: nextRoundId };
+}
+
+// 현재 영지전 턴의 자동·수동 공격 중복 방지 키를 반환하는 함수
+function getGuildTerritoryAttackActionKey(war, user) {
+    var turnId = war.turnToken || ("TURN_" + String(war.currentTurnIndex || 0) + "_" + String(war.turnCount || 0));
+    return (war.roundId || war.startedAt || "ROUND") + "_" + turnId + "_" + user;
+}
+
+// 영지전 수동·자동 공격 결과의 상단 요약과 접힌 상세 내용을 생성
+function buildGuildTerritoryAttackResultMessage(data, petData, guildData, sender, territoryNo, isAutoAttack, resultMessage, rewardMessage, triggerMessages) {
+    var territory = getGuildTerritoryByNo(territoryNo); // 요약에 표시할 실제 공격 영지
+    var headerEnd = resultMessage.indexOf("\n");
+    var header = headerEnd === -1 ? resultMessage : resultMessage.slice(0, headerEnd); // 공격 성공·실패 결과 제목
+    var detailBody = headerEnd === -1 ? "" : resultMessage.slice(headerEnd + 1); // 접힌 상세보기로 이동할 기존 결과 본문
+    var detailMarker = "공격/방어/보상 상세보기" + allsee;
+    var detailMarkerIndex = detailBody.indexOf(detailMarker); // 기존 상세보기 표기의 시작 위치
+    if (detailMarkerIndex !== -1) {
+        detailBody = detailBody.slice(0, detailMarkerIndex) + detailBody.slice(detailMarkerIndex + detailMarker.length);
+    }
+    detailBody = detailBody.replace(/^\n+|\n+$/g, "");
+    if (triggerMessages && triggerMessages.length > 0) {
+        detailBody = triggerMessages.join("\n") + (detailBody ? "\n" + detailBody : "");
+    }
+
+    var out = header + "\n";
+    out += "⚔️ [" + checkRank(data, petData, guildData, sender) + "] 님의 상세 결과" + (isAutoAttack ? "(자동)" : "") + "\n\n";
+    out += (isAutoAttack ? "자동공격 영지: " : "공격 영지: ") + "[" + territoryNo + "] " + (territory ? territory.name : "") + "\n";
+    if (rewardMessage) out += rewardMessage + "\n";
+    out += "\n공격/방어/보상 상세보기" + allsee;
+    if (detailBody) out += "\n" + detailBody;
+    return out;
+}
+
+// 1~7번 길드영지의 공통 공격·보상·저장·다음 턴 처리를 실행하는 함수
+function executeGuildTerritoryNormalAttack(data, petData, homeData, guildData, petSkillData, sender, territoryNo, replier, isGroupChat, isAutoAttack, timingRows) {
+    var war = ensureGuildTerritoryWar(data, guildData);
+    var attackInfo = getMyGuildInfo(data, guildData, sender);
+    if (!war.active || !war.startReady || !attackInfo || attackInfo.error || !attackInfo.guild) {
+        return { ok: false, message: "❌ 영지공격 실행 조건이 유효하지 않습니다." };
+    }
+    var currentTurn = getGuildTerritoryTurnRow(data, guildData);
+    if (!currentTurn || currentTurn.guildId !== attackInfo.guildId || (isAutoAttack && currentTurn.user !== sender)) {
+        return { ok: false, message: "❌ 현재 공격 차례가 아닙니다." };
+    }
+    var missingCastleExpUsers = getGuildTerritoryMissingCastleExpUsers(data, petData, guildData, sender, territoryNo);
+    if (missingCastleExpUsers.length > 0 && !homeData) {
+        return { ok: false, message: "❌ 영지공격 스냅샷 데이터를 확인할 수 없습니다." };
+    }
+    var actionKey = getGuildTerritoryAttackActionKey(war, sender);
+    if (war.autoAttackProcessedKeys[actionKey]) {
+        return { ok: false, duplicate: true, message: "⚠️ 이미 처리된 영지공격 차례입니다." };
+    }
+    war.autoAttackProcessedKeys[actionKey] = {
+        user: sender,
+        territoryNo: territoryNo,
+        automatic: isAutoAttack === true,
+        processedAt: formatDateTime(new Date())
+    };
+
+    var attackPrepareStartMs = timingRows ? Date.now() : 0;
+    clearGuildTerritoryWarTimer();
+    war.turnToken = null;
+    war.guildAttackCounts[attackInfo.guildId] = (war.guildAttackCounts[attackInfo.guildId] || 0) + 1;
+    increaseGuildTerritoryUserAttackCount(war, sender); // 본인·대리 공격을 실제 실행자 기준으로 1회 누적
+    var rewardMessage = applyGuildTerritoryTurnReward(data, guildData, attackInfo.guildId, sender);
+    if (timingRows) timingRows.push({ label: "공격 준비/턴 보상", ms: Date.now() - attackPrepareStartMs });
+
+    var snapshotPrepareStartMs = timingRows ? Date.now() : 0;
+    if (missingCastleExpUsers.length > 0) {
+        fillGuildTerritoryCastleExpSnapshots(data, petData, homeData, petSkillData, guildData, missingCastleExpUsers);
+    }
+    if (timingRows) timingRows.push({ label: "캐슬매력 스냅샷 준비", ms: Date.now() - snapshotPrepareStartMs });
+
+    var attackResolveStartMs = timingRows ? Date.now() : 0;
+    var resultMessage = resolveGuildTerritoryAttack(data, petData, guildData, petSkillData, sender, territoryNo);
+    if (timingRows) timingRows.push({ label: "전투 판정", ms: Date.now() - attackResolveStartMs });
+    var attackPostProcessStartMs = timingRows ? Date.now() : 0;
+    var isAttackBlocked = resultMessage.indexOf("[공격 불가⚠️]") !== -1;
+    var riftMessage = isAttackBlocked ? "" : processGuildTerritoryRiftEvent(data, guildData);
+    var triggerMessages = [];
+    if (shouldShowGuildTerritoryCommanderTrigger(attackInfo.guild, petSkillData, sender)) {
+        triggerMessages.push(buildPetSkillMsg(data, petData, guildData, sender, "전투형 지휘관"));
+    }
+    resultMessage = buildGuildTerritoryAttackResultMessage(data, petData, guildData, sender, territoryNo, isAutoAttack, resultMessage, rewardMessage, triggerMessages);
+    appendGuildTerritoryAutomationLog(war, {
+        type: isAutoAttack ? "AUTO_ATTACK" : "MANUAL_ATTACK",
+        roundId: war.roundId,
+        actionKey: actionKey,
+        user: sender,
+        guildId: attackInfo.guildId,
+        territoryNo: territoryNo,
+        blocked: isAttackBlocked,
+        result: isAttackBlocked ? "BLOCKED" : (resultMessage.indexOf("[공격 성공✅]") !== -1 ? "SUCCESS" : "FAIL"),
+        processedAt: formatDateTime(new Date())
+    });
+    if (timingRows) timingRows.push({ label: "균열/보상 후처리", ms: Date.now() - attackPostProcessStartMs });
+
+    if (isGuildTerritoryAllDone(data, guildData)) {
+        castleMsg(resultMessage, replier, isGroupChat);
+        if (riftMessage) castleMsg(riftMessage, replier, isGroupChat);
+        finishGuildTerritoryWar(data, guildData, "전체 공격 횟수 소진", petSkillData);
+        withGuildTerritoryDataMode(guildData, function () {
+            saveJsonFile(guildData, guildPath);
+            saveJsonFile(data, filePath);
+        });
+        return { ok: true, ended: true, actionKey: actionKey };
+    }
+
+    advanceGuildTerritoryTurn(data, guildData);
+    var nextTurnLine = buildGuildTerritoryCurrentTurnLine(data, petData, guildData);
+    if (nextTurnLine) resultMessage = nextTurnLine + "\n━━━━━━━━━━━━\n" + resultMessage;
+    castleMsg(resultMessage, replier, isGroupChat);
+    if (riftMessage) castleMsg(riftMessage, replier, isGroupChat);
+    saveJsonFile(guildData, guildPath);
+    saveJsonFile(data, filePath);
+    var nextAutoTerritoryNo = startGuildTerritoryTurnTimer(data, petData, guildData, petSkillData, replier, isGroupChat);
+    var turnMsgs = buildGuildTerritoryTurnMessage(data, petData, guildData, nextAutoTerritoryNo);
+    turnMsgs.forEach(function (turnMessage) {
+        castleMsg(turnMessage, replier, isGroupChat);
+    });
+    return { ok: true, ended: false, actionKey: actionKey };
+}
+
 // 영지전 종료 처리
-function finishGuildTerritoryWar(data, guildData, reason) {
+function finishGuildTerritoryWar(data, guildData, reason, petSkillData) {
     return withGuildTerritoryDataMode(guildData, function () {
         var war = ensureGuildTerritoryWar(data, guildData);
         if (!war.active && war.finishProcessed) return;
+        var finishedReadyGuildIds = Object.keys(war.readyGuilds || {}); // 종료 회차에 참가한 길드 ID
         clearGuildTerritoryWarTimer();
         clearGuildTerritoryPendingStartTimer();
         clearGuildTerritoryOpeningTimer();
@@ -31648,6 +32212,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
         }
 
         var scoreLogs = applyGuildTerritoryScores(guildData, list, war);
+        var autoReadyResult = prepareNextGuildTerritoryWarAutomatically(data, guildData, petSkillData, war, finishedReadyGuildIds);
 
         var out = "[🎖️길드 영지전 종료🎖️]\n";
         if (reason) out += reason + "\n";
@@ -31657,6 +32222,7 @@ function finishGuildTerritoryWar(data, guildData, reason) {
             var owner = getGuildByIdSafe(guildData, t ? t.ownerGuildId : null);
             out += "[" + list[j].no + "] " + list[j].name + ": " + (owner ? formatGuildDisplay(owner) : "점령 길드 없음") + "\n";
         }
+        if (autoReadyResult.messages.length > 0) out += "\n" + autoReadyResult.messages.join("\n\n") + "\n";
         out += "\n💥영지종료보상 및 영지순위 보상 확인하기..";
         if (typeof allsee !== "undefined") out += allsee;
         else out += "\n";
@@ -31669,11 +32235,65 @@ function finishGuildTerritoryWar(data, guildData, reason) {
         }
         out += "\n영지순위 확인: /길드영지순위\n영지순위 보상: /영지순위보상\n영지점령 보상: /영지종료보상";
         war.finishProcessed = true;
-        war.readyGuilds = {};
+        war.readyGuilds = autoReadyResult.readyGuilds;
         war.riftCommandUses = {};
         noticeMsg(out);
     });
 }
+// 수동·자동 출석이 함께 사용하는 출석 판정과 보상 처리 함수
+function processAttendanceForUser(data, petData, petSkillData, guildData, user) {
+    if (!data || !data.member || !data.member[user]) return { ok: false, message: "❌ 존재하지 않거나 비정상적인 회원 데이터입니다." };
+    if (!(data.attend_list instanceof Array)) data.attend_list = [];
+    var member = data.member[user];
+    var todayText = String(getCurrentDate());
+    var alreadyAttended = data.attend_list.indexOf(user) !== -1 || (String(member.recent || "") === todayText && (parseInt(member.today, 10) || 0) > 0);
+    var rankText = checkRank(data, petData, guildData, user);
+    if (alreadyAttended) return { ok: false, already: true, message: "[" + rankText + "] 님 이미 출첵 하셨습니다." };
+
+    if (!member.bag || typeof member.bag !== "object") member.bag = {};
+    data.attend_list.push(user);
+    member.cnt = (parseInt(member.cnt, 10) || 0) + 1;
+    member.today = (parseInt(member.today, 10) || 0) + 1;
+    member.recent = getCurrentDate();
+    member.point = (Number(member.point) || 0) + GLOBAL_CONFIG.attendance.bonusPoint;
+    member.exp = (Number(member.exp) || 0) + GLOBAL_CONFIG.attendance.bonusExp;
+
+    var messages = [];
+    messages.push("[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치  " + GLOBAL_CONFIG.attendance.bonusExp + "exp 획득");
+    var multiplier = rollAndCalculateMultiplier(); // 출석 응모 주사위 배율
+    var dicePoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multiplier).toFixed(0), 10); // 주사위 추가 포인트
+    member.point += dicePoint;
+    messages.push("[" + rankText + "]님의 출첵 응모가 굴러갑니다!\n" + multiplier + "배 당첨!💸\n🅟" + numberWithCommas(dicePoint) + " 추가적립 되었습니다.\nhttps://ibb.co/jkbgrzHt\n이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.");
+
+    var rankBonus = RankBonus(data, user) || {}; // 랭크별 출석 추가 보너스
+    var rankBonusMultiplier = Number(rankBonus.BonusM) || 0; // 유효한 랭크 보너스 배율
+    var rankBonusPoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * rankBonusMultiplier).toFixed(0), 10); // 랭크 추가 포인트
+    if (rankBonusMultiplier !== 0) {
+        member.point += rankBonusPoint;
+        messages.push(String(rankBonus.Bonusmsg || "") + "🎊\n🅟" + numberWithCommas(rankBonusPoint) + " 추가적립 되었습니다.");
+    }
+
+    var openRunRewardGranted = false; // 출석 1등 오픈런 보상 지급 여부
+    if (data.attend_list[0] === user && hasPetSkill(petSkillData, user, "오픈런") && !member.openRunRewardClaimed) {
+        member.bag["펫먹이🍼"] = (member.bag["펫먹이🍼"] || 0) + 1000;
+        member.openRunRewardClaimed = true;
+        openRunRewardGranted = true;
+        messages.push("[" + rankText + "] : 오늘도 1등 출석 성공!");
+        messages.push("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
+        messages.push("[" + rankText + "] : 누구보다 빠르게, 남들과는 다르게!");
+    }
+
+    var totalPointReward = GLOBAL_CONFIG.attendance.bonusPoint + dicePoint + rankBonusPoint; // 이번 출석의 총 포인트 보상
+    return {
+        ok: true,
+        messages: messages,
+        totalPointReward: totalPointReward,
+        expReward: GLOBAL_CONFIG.attendance.bonusExp,
+        openRunRewardGranted: openRunRewardGranted,
+        noticeMessage: "[자동출첵 완료]\n[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
+    };
+}
+
 // 출석 /리셋 함수
 function resetAttendance(petData, data, replier) {
     for (let user in data.member) {
@@ -33167,6 +33787,1353 @@ function useLetterInBag(data, memberName) {
     return false;
 }
 
+// 호이패스 프리미엄 자동화 설정 객체를 회원 데이터에 보장하는 함수
+function ensureHoiPassPremiumAutomationSettings(member) {
+    if (!member.premiumAutomation || typeof member.premiumAutomation !== "object" || member.premiumAutomation instanceof Array) {
+        member.premiumAutomation = {};
+    }
+    if (typeof member.premiumAutomation.petMusouAutoReady !== "boolean") member.premiumAutomation.petMusouAutoReady = false;
+    if (typeof member.premiumAutomation.autoAttendance !== "boolean") member.premiumAutomation.autoAttendance = false;
+    return member.premiumAutomation;
+}
+
+// 프리미엄 자동화 처리 내역을 member.json에 제한 개수로 기록하는 함수
+function appendPetMusouAutomationLog(data, log) {
+    if (!(data.petMusouAutomationLogs instanceof Array)) data.petMusouAutomationLogs = [];
+    data.petMusouAutomationLogs.push(log);
+    var logMax = GLOBAL_CONFIG.petMusou.automationLogMax;
+    if (data.petMusouAutomationLogs.length > logMax) data.petMusouAutomationLogs.splice(0, data.petMusouAutomationLogs.length - logMax);
+}
+
+// 프리미엄 자동 준비·자동 출석 설정 명령인지 확인하는 함수
+function isHoiPassPremiumAutomationCommand(msg) {
+    return msg === "/무쌍온" || msg === "/무쌍오프" || msg === "/출첵온" || msg === "/출첵오프";
+}
+
+// 프리미엄 자동 준비·자동 출석 ON/OFF 명령을 처리하는 함수
+function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData, guildData, sender) {
+    var rankText = checkRank(data, petData, guildData, sender);
+    if (!isHoiPassPremiumActive(data, sender)) {
+        return {
+            changed: false,
+            message: "[" + rankText + "] 님 해당 기능은 호이패스 프리미엄 전용 기능입니다.\n호이패스 프리미엄 이용 상태를 확인해 주세요."
+        };
+    }
+    var settings = ensureHoiPassPremiumAutomationSettings(data.member[sender]);
+    var nowText = formatDateTime(new Date());
+    if (msg === "/무쌍온") {
+        settings.petMusouAutoReady = true;
+        var joinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
+        var registeredNow = joinResult.ok === true; // 현재 준비 회차 즉시 자동 등록 여부
+        appendPetMusouAutomationLog(data, {
+            feature: "PET_MUSOU_AUTO_READY",
+            action: "ON",
+            user: sender,
+            result: registeredNow ? "REGISTERED" : "PENDING",
+            reason: registeredNow ? "" : String(joinResult.message || "").substring(0, 200),
+            processedAt: nowText
+        });
+        return {
+            changed: true,
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 펫무쌍 대회 자동 준비 기능을 켰습니다.\n" + (registeredNow ? "현재 준비 중인 펫무쌍 대회에 자동 등록되었습니다." : "다음 펫무쌍 준비 시 자동으로 참가 등록됩니다.")
+        };
+    }
+    if (msg === "/무쌍오프") {
+        settings.petMusouAutoReady = false;
+        appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "OFF", user: sender, result: "SAVED", reason: "", processedAt: nowText });
+        return {
+            changed: true,
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 펫무쌍 대회 자동 준비 기능을 껐습니다.\n이미 등록된 현재 회차의 참가는 유지됩니다."
+        };
+    }
+    if (msg === "/출첵온") {
+        settings.autoAttendance = true;
+        appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "ON", user: sender, result: "SAVED", reason: "", processedAt: nowText });
+        return {
+            changed: true,
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 자동 출석체크 기능을 켰습니다.\n매일 01:10에 자동출첵 처리가 되며 전체공지로 안내합니다."
+        };
+    }
+    settings.autoAttendance = false;
+    appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "OFF", user: sender, result: "SAVED", reason: "", processedAt: nowText });
+    return {
+        changed: true,
+        message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 자동 출석체크 기능을 껐습니다.\n이후 자동 출석 대상에서 제외됩니다."
+    };
+}
+
+// 프리미엄 자동 준비 ON 이용자를 현재 펫무쌍 준비 회차에 일괄 등록하는 함수
+function autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, excludedUser) {
+    var result = { changed: false, registeredCount: 0, skippedCount: 0, failedCount: 0 };
+    if (!data || !data.member) return result;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || user === excludedUser) continue;
+        var member = data.member[user];
+        if (!member || typeof member !== "object" || member instanceof Array) {
+            result.changed = true;
+            result.failedCount++;
+            appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "FAILED", reason: "존재하지 않거나 비정상적인 회원 데이터", processedAt: formatDateTime(new Date()) });
+            continue;
+        }
+        var settings = member.premiumAutomation;
+        if (!settings || settings.petMusouAutoReady !== true) continue;
+        try {
+            if (!isHoiPassPremiumActive(data, user)) {
+                result.changed = true;
+                result.skippedCount++;
+                appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "SKIPPED", reason: "호이패스 프리미엄 비활성 또는 만료", processedAt: formatDateTime(new Date()) });
+                continue;
+            }
+            var joinResult = joinPetMusou(data, petData, petSkillData, guildData, user);
+            if (joinResult.ok) {
+                result.changed = true;
+                result.registeredCount++;
+                appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "REGISTERED", reason: "", processedAt: formatDateTime(new Date()) });
+            } else {
+                result.changed = true;
+                result.skippedCount++;
+                appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "SKIPPED", reason: String(joinResult.message || "").substring(0, 200), processedAt: formatDateTime(new Date()) });
+            }
+        } catch (autoReadyError) {
+            result.changed = true;
+            result.failedCount++;
+            appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "ERROR", reason: String(autoReadyError).substring(0, 200), processedAt: formatDateTime(new Date()) });
+        }
+    }
+    return result;
+}
+
+// 패스 일괄 지급 뒤 프리미엄 자동 출석 대상자를 독립적으로 처리하는 함수
+function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, operator) {
+    var changed = false;
+    var passMessage = "";
+    try {
+        var passResult = grantAllSupportPassDailyRewards(data, operator);
+        changed = passResult.changed || changed;
+        passMessage = buildSupportPassPayoutResultMessage(passResult);
+        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "SUCCESS", grantedCount: passResult.totalGrantedCount, skippedCount: passResult.totalSkippedCount, reason: "", processedAt: formatDateTime(new Date()) });
+        changed = true;
+    } catch (passError) {
+        passMessage = "❌ 구독 패스 지급 중 오류가 발생했습니다: " + passError;
+        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "ERROR", reason: String(passError).substring(0, 200), processedAt: formatDateTime(new Date()) });
+        changed = true;
+    }
+
+    var successCount = 0;
+    var alreadyCount = 0;
+    var inactiveCount = 0;
+    var failedCount = 0;
+    var noticeMessages = [];
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var settings = data.member[user].premiumAutomation;
+        if (!settings || settings.autoAttendance !== true) continue;
+        if (!isHoiPassPremiumActive(data, user)) {
+            inactiveCount++;
+            continue;
+        }
+        try {
+            var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, user);
+            if (attendanceResult.ok) {
+                changed = true;
+                successCount++;
+                noticeMessages.push(attendanceResult.noticeMessage);
+                appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "RUN", user: user, result: "SUCCESS", reason: "", processedAt: formatDateTime(new Date()) });
+            } else if (attendanceResult.already) {
+                alreadyCount++;
+            } else {
+                failedCount++;
+                changed = true;
+                appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "RUN", user: user, result: "FAILED", reason: attendanceResult.message, processedAt: formatDateTime(new Date()) });
+            }
+        } catch (attendanceError) {
+            failedCount++;
+            changed = true;
+            appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "RUN", user: user, result: "ERROR", reason: String(attendanceError), processedAt: formatDateTime(new Date()) });
+        }
+    }
+    appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "SUMMARY", operator: operator, result: failedCount > 0 ? "PARTIAL" : "SUCCESS", successCount: successCount, alreadyCount: alreadyCount, inactiveCount: inactiveCount, failedCount: failedCount, processedAt: formatDateTime(new Date()) });
+    changed = true;
+    var lines = [passMessage, "", "🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
+    return { changed: changed, noticeMessages: noticeMessages, message: lines.join("\n") };
+}
+
+// 펫무쌍 티켓 이벤트 저장 구조를 member.json 안에 보장하는 함수
+function ensurePetMusouTicketEventData(data) {
+    if (!data.petMusouTicketEvent || typeof data.petMusouTicketEvent !== "object" || data.petMusouTicketEvent instanceof Array) data.petMusouTicketEvent = {};
+    var eventData = data.petMusouTicketEvent;
+    if (typeof eventData.enabled !== "boolean") eventData.enabled = false;
+    if (!(eventData.logs instanceof Array)) eventData.logs = [];
+    return eventData;
+}
+
+// 펫무쌍 티켓 이벤트 운영·지급 로그를 제한 개수로 기록하는 함수
+function appendPetMusouTicketEventLog(data, log) {
+    var eventData = ensurePetMusouTicketEventData(data);
+    eventData.logs.push(log);
+    var logMax = GLOBAL_CONFIG.petMusou.automationLogMax;
+    if (eventData.logs.length > logMax) eventData.logs.splice(0, eventData.logs.length - logMax);
+}
+
+// 입력 시각을 한국 표준시 기준 펫무쌍 일정 값으로 변환하는 함수
+function getPetMusouKstDateTime(now) {
+    var source = now instanceof Date ? now : new Date();
+    var kst = new Date(source.getTime() + 9 * 60 * 60 * 1000);
+    var year = kst.getUTCFullYear();
+    var month = kst.getUTCMonth() + 1;
+    var day = kst.getUTCDate();
+    return {
+        year: year,
+        month: month,
+        day: day,
+        hour: kst.getUTCHours(),
+        minute: kst.getUTCMinutes(),
+        dateValue: year * 10000 + month * 100 + day
+    };
+}
+
+// 입력 시각이 티켓 이벤트 운영 기간에 포함되는지 확인하는 함수
+function isPetMusouTicketEventPeriod(now) {
+    var dateValue = getPetMusouKstDateTime(now).dateValue;
+    var config = GLOBAL_CONFIG.petMusou.ticketEvent;
+    return dateValue >= parseInt(config.startDate, 10) && dateValue <= parseInt(config.endDate, 10);
+}
+
+// 티켓 이벤트 운영 기간을 사용자 안내 문자열로 반환하는 함수
+function getPetMusouTicketEventPeriodText() {
+    var config = GLOBAL_CONFIG.petMusou.ticketEvent;
+    return config.startDate.substring(0, 4) + "." + config.startDate.substring(4, 6) + "." + config.startDate.substring(6, 8) + " ~ " +
+        config.endDate.substring(0, 4) + "." + config.endDate.substring(4, 6) + "." + config.endDate.substring(6, 8) + " (KST)";
+}
+
+// 펫무쌍 티켓 이벤트가 현재 기간과 운영 상태 모두 활성인지 확인하는 함수
+function isPetMusouTicketEventActive(data, now) {
+    return !!(data && data.petMusouTicketEvent && data.petMusouTicketEvent.enabled === true && isPetMusouTicketEventPeriod(now));
+}
+
+// 티켓 이벤트 관리자 명령인지 확인하는 함수
+function isPetMusouTicketEventAdminCommand(msg) {
+    return msg === "/티켓이벤트시작" || msg === "/티켓이벤트종료" || msg === "/티켓전체회수";
+}
+
+// 티켓 이벤트 시작·종료·쿠폰 전체 회수 명령을 처리하는 함수
+function processPetMusouTicketEventAdminCommand(msg, data, operator) {
+    var eventData = ensurePetMusouTicketEventData(data);
+    var nowText = formatDateTime(new Date());
+    if (msg === "/티켓이벤트시작") {
+        if (!isPetMusouTicketEventPeriod(new Date())) return { changed: false, noticeMessage: "", message: "❌ 티켓이벤트 운영 기간이 아닙니다.\n기간: " + getPetMusouTicketEventPeriodText() };
+        if (eventData.enabled) return { changed: false, noticeMessage: "", message: "이미 티켓이벤트가 진행 중입니다." };
+        eventData.enabled = true;
+        eventData.startedAt = nowText;
+        eventData.startedBy = operator;
+        appendPetMusouTicketEventLog(data, { action: "START", operator: operator, processedAt: nowText });
+        return {
+            changed: true,
+            message: "✅ 티켓이벤트를 시작했습니다.\n펫무쌍 시작 시각: 12:30, 20:30",
+            noticeMessage: "[🎟️호이월드 티켓 이벤트 시작🎟️]\n티켓이벤트가 시작되었습니다.\n펫무쌍대회에 참여하셔서 티켓할인쿠폰을\n획득해보세요! 참여방법 채팅창에 \"펫무쌍 컨텐츠\"를 입력해보세요"
+        };
+    }
+    if (msg === "/티켓이벤트종료") {
+        if (!eventData.enabled) return { changed: false, noticeMessage: "", message: "현재 티켓이벤트가 진행 중이 아닙니다." };
+        eventData.enabled = false;
+        eventData.endedAt = nowText;
+        eventData.endedBy = operator;
+        appendPetMusouTicketEventLog(data, { action: "END", operator: operator, processedAt: nowText });
+        return {
+            changed: true,
+            message: "✅ 티켓이벤트를 종료했습니다.\n기존 보유 쿠폰은 유지됩니다.",
+            noticeMessage: "[🎟️호이월드 티켓 이벤트 종료🎟️]\n티켓이벤트가 종료되었습니다.\n참여해주신 유저분들께 진심으로 감사드리며\n더 좋은 이벤트로 찾아뵙겠습니다. -호이 남-"
+        };
+    }
+
+    var couponConfig = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var removedCounts = [];
+    var totalRemovedCount = 0;
+    for (var couponIndex = 0; couponIndex < couponConfig.length; couponIndex++) removedCounts[couponIndex] = 0;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user] || !data.member[user].bag) continue;
+        for (var removeIndex = 0; removeIndex < couponConfig.length; removeIndex++) {
+            var couponName = couponConfig[removeIndex].name;
+            var couponCount = parseInt(data.member[user].bag[couponName], 10) || 0;
+            if (couponCount > 0) {
+                removedCounts[removeIndex] += couponCount;
+                totalRemovedCount += couponCount;
+            }
+            if (data.member[user].bag[couponName] !== undefined) delete data.member[user].bag[couponName];
+        }
+    }
+    appendPetMusouTicketEventLog(data, { action: "REVOKE_ALL", operator: operator, totalRemovedCount: totalRemovedCount, processedAt: nowText });
+    var lines = ["[🎟️티켓 이벤트 쿠폰 전체 회수 완료🎟️]"];
+    for (var resultIndex = 0; resultIndex < couponConfig.length; resultIndex++) lines.push(couponConfig[resultIndex].rate + "% 쿠폰: " + numberWithCommas(removedCounts[resultIndex]) + "개");
+    lines.push("━━━━━━━━━━━━", "총 회수: " + numberWithCommas(totalRemovedCount) + "개");
+    return { changed: true, noticeMessage: "", message: lines.join("\n") };
+}
+
+// 이벤트 확률표에 따라 유효한 펫무쌍 공격의 쿠폰 1장을 지급하는 함수
+function grantPetMusouTicketEventCoupon(data, user) {
+    if (!isPetMusouTicketEventActive(data) || !data.member || !data.member[user]) return null;
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var roll = Math.floor(Math.random() * 100) + 1;
+    var cumulativeWeight = 0;
+    var selectedCoupon = coupons[0];
+    for (var i = 0; i < coupons.length; i++) {
+        cumulativeWeight += coupons[i].weight;
+        if (roll <= cumulativeWeight) {
+            selectedCoupon = coupons[i];
+            break;
+        }
+    }
+    if (!data.member[user].bag || typeof data.member[user].bag !== "object") data.member[user].bag = {};
+    data.member[user].bag[selectedCoupon.name] = (parseInt(data.member[user].bag[selectedCoupon.name], 10) || 0) + 1;
+    appendPetMusouTicketEventLog(data, { action: "COUPON_DROP", user: user, coupon: selectedCoupon.name, roll: roll, processedAt: formatDateTime(new Date()) });
+    return { name: selectedCoupon.name, rate: selectedCoupon.rate, display: "티켓쿠폰🎟️(" + selectedCoupon.rate + "%) 획득" };
+}
+
+// 티켓 상품 구매에 사용할 보유 쿠폰 중 가장 높은 할인율을 반환하는 함수
+function getBestTicketEventCoupon(data, user, itemName) {
+    if (String(itemName || "").indexOf("티켓") === -1) return null;
+    var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
+    if (!bag) return null;
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var bestCoupon = null;
+    for (var i = 0; i < coupons.length; i++) {
+        if ((parseInt(bag[coupons[i].name], 10) || 0) < 1) continue;
+        if (!bestCoupon || coupons[i].rate > bestCoupon.rate) bestCoupon = coupons[i];
+    }
+    return bestCoupon;
+}
+
+// 구매 성공 뒤 적용한 티켓 이벤트 쿠폰 1장을 차감하는 함수
+function consumeTicketEventCoupon(data, user, couponName) {
+    var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
+    if (!bag || (parseInt(bag[couponName], 10) || 0) < 1) return false;
+    bag[couponName]--;
+    if (bag[couponName] < 1) delete bag[couponName];
+    return true;
+}
+
+// 펫무쌍 저장 구조를 기존 member.json 안에서 보장하는 함수
+function ensurePetMusouData(data) {
+    if (!data.petMusou || typeof data.petMusou !== "object" || data.petMusou instanceof Array) data.petMusou = {};
+    var musou = data.petMusou;
+    if (typeof musou.signupOpen !== "boolean") musou.signupOpen = true;
+    if (!musou.participants || typeof musou.participants !== "object" || musou.participants instanceof Array) musou.participants = {};
+    if (!musou.nextParticipants || typeof musou.nextParticipants !== "object" || musou.nextParticipants instanceof Array) {
+        musou.nextParticipants = !musou.active && Object.keys(musou.participants).length > 0 ? musou.participants : {};
+        if (!musou.active) musou.participants = {};
+    }
+    if (!musou.players || typeof musou.players !== "object" || musou.players instanceof Array) musou.players = {};
+    if (!(musou.turnQueue instanceof Array)) musou.turnQueue = [];
+    if (!musou.fakeFlags || typeof musou.fakeFlags !== "object" || musou.fakeFlags instanceof Array) musou.fakeFlags = {};
+    if (!musou.processedRounds || typeof musou.processedRounds !== "object" || musou.processedRounds instanceof Array) musou.processedRounds = {};
+    if (typeof musou.active !== "boolean") musou.active = false;
+    if (typeof musou.lightningRate !== "number") musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
+    if (typeof musou.roundNo !== "number") musou.roundNo = 0;
+    if (typeof musou.actionSeq !== "number") musou.actionSeq = 0;
+    if (typeof musou.turnDeadlineAt !== "number") musou.turnDeadlineAt = 0;
+    if (typeof musou.turnToken !== "string") musou.turnToken = "";
+    if (typeof musou.startReady !== "boolean") musou.startReady = musou.active;
+    if (typeof musou.startGraceDeadlineAt !== "number") musou.startGraceDeadlineAt = 0;
+    if (typeof musou.startGraceToken !== "string") musou.startGraceToken = "";
+    if (typeof musou.nextRoundId !== "string") musou.nextRoundId = "";
+    if (!musou.active && !musou.nextRoundId) musou.nextRoundId = "PREP_" + String(new Date().getTime());
+    if (typeof musou.realFlagDiscoveryBonusPaid !== "boolean") musou.realFlagDiscoveryBonusPaid = !!musou.realFlagFound;
+    return musou;
+}
+
+// 현재 로컬 시각을 펫무쌍 일정 비교용 HH:mm 문자열로 반환하는 함수
+function getPetMusouScheduleTimeText(now) {
+    var kst = getPetMusouKstDateTime(now);
+    var hour = kst.hour;
+    var minute = kst.minute;
+    return (hour < 10 ? "0" : "") + hour + ":" + (minute < 10 ? "0" : "") + minute;
+}
+
+// 펫무쌍 일정의 날짜·회차 중복 방지 키를 반환하는 함수
+function getPetMusouScheduleKey(now, timeText) {
+    var kst = getPetMusouKstDateTime(now);
+    return String(kst.year) + (kst.month < 10 ? "0" : "") + kst.month + (kst.day < 10 ? "0" : "") + kst.day + "_" + timeText;
+}
+
+// 일반 일정과 이벤트 추가 일정을 합쳐 현재 활성 시작 시각을 반환하는 함수
+function getActivePetMusouStartTimes(data, now) {
+    var times = GLOBAL_CONFIG.petMusou.regularStartTimes.slice();
+    if (isPetMusouTicketEventActive(data, now)) {
+        for (var i = 0; i < GLOBAL_CONFIG.petMusou.ticketEventStartTimes.length; i++) times.push(GLOBAL_CONFIG.petMusou.ticketEventStartTimes[i]);
+    }
+    return times;
+}
+
+// 저장된 일정과 현재 운영 상태를 기준으로 펫무쌍 정시 시작을 한 번 처리하는 함수
+function runScheduledPetMusouStart(data, petData, homeData, petSkillData, guildData, now) {
+    var timeText = getPetMusouScheduleTimeText(now);
+    var activeTimes = getActivePetMusouStartTimes(data, now);
+    if (activeTimes.indexOf(timeText) === -1) return { changed: false, started: false, message: "" };
+    var musou = ensurePetMusouData(data);
+    var scheduleKey = getPetMusouScheduleKey(now, timeText); // 같은 날짜·시각의 중복 시작 방지 키
+    if (musou.lastScheduledStartKey === scheduleKey) return { changed: false, started: false, message: "" };
+    musou.lastScheduledStartKey = scheduleKey;
+
+    var matzangField = ensureMatzangFieldData(data);
+    var territoryWar = ensureGuildTerritoryWar(data, guildData);
+    if (musou.active || matzangField.active || territoryWar.active || territoryWar.pendingStart) {
+        var blockedReason = musou.active ? "기존 펫무쌍 진행 중" : matzangField.active ? "맞짱필드 진행 중" : "길드 영지전 진행·대기 중";
+        appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_SCHEDULE", action: "START", result: "SKIPPED", reason: blockedReason, scheduleKey: scheduleKey, processedAt: formatDateTime(now) });
+        return { changed: true, started: false, message: "" };
+    }
+
+    autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, "");
+    var startResult = beginPetMusou(data, petData, homeData, petSkillData, guildData);
+    if (!startResult.ok) {
+        appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_SCHEDULE", action: "START", result: "SKIPPED", reason: startResult.message, scheduleKey: scheduleKey, processedAt: formatDateTime(now) });
+        return { changed: true, started: false, message: "" };
+    }
+    appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_SCHEDULE", action: "START", result: "SUCCESS", reason: "", scheduleKey: scheduleKey, processedAt: formatDateTime(now) });
+    return { changed: true, started: true, message: startResult.message };
+}
+
+// 현재 시각의 펫무쌍 정시 시작을 잠금·저장 단위로 한 번 확인하는 함수
+function runPetMusouScheduleTick(timerCtx, replier, now) {
+    var timeText = getPetMusouScheduleTimeText(now);
+    var isRegularTime = GLOBAL_CONFIG.petMusou.regularStartTimes.indexOf(timeText) !== -1;
+    var isEventTime = GLOBAL_CONFIG.petMusou.ticketEventStartTimes.indexOf(timeText) !== -1;
+    if (!isRegularTime && !isEventTime) return;
+
+    var prevCtx = enterCommandContext(timerCtx);
+    var timerTransactionAcquired = false;
+    var timerTransactionEntered = false;
+    try {
+        dataTransactionLock.lock();
+        timerTransactionAcquired = true;
+        beginDataSaveTransaction();
+        timerTransactionEntered = true;
+        var latestData = loadJsonFile(filePath);
+        var latestPetData = loadJsonFile(memberPetPath);
+        var latestHomeData = loadJsonFile(homeDataFile);
+        var latestPetSkillData = loadJsonFile(petSkillDataPath);
+        var latestGuildData = loadJsonFile(guildPath);
+        var scheduleResult = runScheduledPetMusouStart(latestData, latestPetData, latestHomeData, latestPetSkillData, latestGuildData, now);
+        if (!scheduleResult.changed) return;
+        saveJsonFile(latestData, filePath);
+        if (scheduleResult.started) {
+            noticeMsg(scheduleResult.message);
+            startPetMusouOpeningTimer(latestData, latestPetData, latestGuildData, replier, true, true);
+        }
+    } catch (scheduleError) {
+        debuggerLog("[펫무쌍 정시 시작 오류] " + scheduleError);
+    } finally {
+        if (timerTransactionEntered) endDataSaveTransaction();
+        if (timerTransactionAcquired) dataTransactionLock.unlock();
+        exitCommandContext(prevCtx);
+    }
+}
+
+// PROD 실행 컨텍스트별 펫무쌍 정시 시작 감시 타이머를 한 번만 생성하는 함수
+function ensurePetMusouScheduleTimer(replier) {
+    var timerCtx = getCurrentContext();
+    var timerCtxKey = timerCtx.key();
+    if (petMusouScheduleTimers[timerCtxKey]) return;
+    var scheduleTick = function () { runPetMusouScheduleTick(timerCtx, replier, new Date()); };
+    petMusouScheduleTimers[timerCtxKey] = setInterval(scheduleTick, GLOBAL_CONFIG.petMusou.scheduleCheckMs);
+    scheduleTick();
+}
+
+// 길드영지 자동화 권한 아이템을 보유했는지 확인하는 함수
+function hasGuildTerritoryAutomationItem(data, user, itemName) {
+    var bag = data && data.member && data.member[user] && data.member[user].bag ? data.member[user].bag : null;
+    return !!(bag && Number(bag[itemName]) > 0);
+}
+
+// 길드영지 자동 준비 권한 보유 여부를 확인하는 함수
+function hasGuildTerritoryAutoReadyEntitlement(data, user) {
+    return hasGuildTerritoryAutomationItem(data, user, GLOBAL_CONFIG.guildTerritory.automation.autoReadyItemName) ||
+        isSupportPassActive(data, user, "territory");
+}
+
+// 영지 자동 공격 권한 보유 여부를 확인하는 함수
+function hasGuildTerritoryAutoAttackEntitlement(data, user) {
+    return isSupportPassActive(data, user, "territory");
+}
+
+// 현재 직책과 펫스킬을 기준으로 영지 자동 공격 자격을 확인하는 함수
+function hasGuildTerritoryAutoAttackQualification(g, petSkillData, user) {
+    if (!g || !user || !g.members || !g.members[user]) return false;
+    if (isGuildSwordMaster(g, user, petSkillData)) return true;
+    return isGuildMaster(g, user) && hasPetSkill(petSkillData, user, "전투형 지휘관");
+}
+
+// 영지 자동 공격 권한과 현재 자격을 함께 검증하는 함수
+function validateGuildTerritoryAutoAttack(data, guildData, petSkillData, user) {
+    var guildInfo = getMyGuildInfo(data, guildData, user);
+    if (!guildInfo || guildInfo.error || !guildInfo.guild) {
+        return { ok: false, reason: "길드 미가입", guildInfo: null };
+    }
+    if (!hasGuildTerritoryAutoAttackEntitlement(data, user)) {
+        return { ok: false, reason: "기능 권한 없음", guildInfo: guildInfo };
+    }
+    if (!hasGuildTerritoryAutoAttackQualification(guildInfo.guild, petSkillData, user)) {
+        return { ok: false, reason: "직책·자격 조건 불충족", guildInfo: guildInfo };
+    }
+    return { ok: true, reason: "", guildInfo: guildInfo };
+}
+
+// 길드영지 자동화 처리 로그를 회차 데이터에 추가하는 함수
+function appendGuildTerritoryAutomationLog(war, log) {
+    if (!war.automationLogs || !(war.automationLogs instanceof Array)) war.automationLogs = [];
+    war.automationLogs.push(log);
+    var logMax = GLOBAL_CONFIG.guildTerritory.automation.logMax;
+    if (war.automationLogs.length > logMax) war.automationLogs.splice(0, war.automationLogs.length - logMax);
+}
+
+// 유저별 영지 자동화 설정 변경 로그를 member.json에 추가하는 함수
+function appendGuildTerritoryAutomationDataLog(data, log) {
+    if (!(data.guildTerritoryAutomationLogs instanceof Array)) data.guildTerritoryAutomationLogs = [];
+    data.guildTerritoryAutomationLogs.push(log);
+    var logMax = GLOBAL_CONFIG.guildTerritory.automation.logMax;
+    if (data.guildTerritoryAutomationLogs.length > logMax) {
+        data.guildTerritoryAutomationLogs.splice(0, data.guildTerritoryAutomationLogs.length - logMax);
+    }
+}
+
+// 만료·삭제된 영지기습패스로 켜 둔 자동 공격을 OFF 처리하는 함수
+function disableInvalidGuildTerritoryAutoAttacks(data) {
+    var changedUsers = [];
+    if (!data || !data.member) return changedUsers;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        if (member.guildTerritoryAutoAttackEnabled !== true) continue;
+        if (hasGuildTerritoryAutoAttackEntitlement(data, user)) continue;
+        member.guildTerritoryAutoAttackEnabled = false;
+        appendGuildTerritoryAutomationDataLog(data, {
+            type: "AUTO_ATTACK_OFF",
+            user: user,
+            reason: "영지기습패스 만료·삭제",
+            processedAt: formatDateTime(new Date())
+        });
+        changedUsers.push(user);
+    }
+    return changedUsers;
+}
+
+// 펫무쌍 운영 명령어 사용 권한을 확인하는 함수
+function isPetMusouOperator(sender) {
+    return isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇";
+}
+
+// 펫무쌍 시작 명령에 오픈채팅봇과 명령어방 MASTER 권한을 허용하는 함수
+function isPetMusouStartOperator(sender) {
+    var permissionRoom = getCurrentContext().permissionRoom;
+    return sender === "오픈채팅봇" || isMaster(sender) || (permissionRoom === room8 && Master.includes(sender));
+}
+
+// 펫무쌍 진행 중 일반 유저에게 허용할 명령어인지 확인하는 함수
+function isPetMusouAllowedDuringTournamentCommand(msg) {
+    return msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
+}
+
+// 펫무쌍 누적 벼락 발생확률 운영 명령의 정확한 입력 형식을 확인하는 함수
+function isPetMusouLightningRateCommand(msg) {
+    return msg === "/벼락확률" || /^\/벼락확률\s+\d{1,3}(?:\.\d)?$/.test(msg);
+}
+
+// 펫무쌍 진행 중 일반 유저의 펫무쌍 외 입력 차단 여부를 확인하는 함수
+function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
+    if (!musou || !musou.active || typeof msg !== "string") return false;
+    if (isPetMusouOperator(sender)) return false;
+    if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
+    return !isPetMusouAllowedDuringTournamentCommand(msg);
+}
+
+// 펫무쌍 참가자의 길드 가입 상태를 확인하는 함수
+function getPetMusouGuildInfo(data, guildData, user) {
+    var guildInfo = getMyGuildInfo(data, guildData, user);
+    if (!guildInfo || guildInfo.error || !guildInfo.guild) return null;
+    return guildInfo;
+}
+
+// 펫무쌍 참가·진행 순서를 무작위로 섞어 반환하는 함수
+function shufflePetMusouUsers(users) {
+    var shuffled = users.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = temp;
+    }
+    return shuffled;
+}
+
+// 펫무쌍 깃발 번호에 대응하는 이름을 반환하는 함수
+function getPetMusouFlagName(flagNo) {
+    var flagNames = ["화염의 깃발🔥", "해일의 깃발🌊", "천둥의 깃발⚡", "폭풍의 깃발🌪️", "빙설의 깃발❄️", "생명의 깃발🌿", "월광의 깃발🌙", "태양의 깃발☀️", "망령의 깃발💀", "천왕의 깃발👑"];
+    return flagNames[flagNo - 1] || "알 수 없는 깃발";
+}
+
+// 펫무쌍 전투용 종합매력·크리티컬 스냅샷을 생성하는 함수
+function createPetMusouBattleSnapshot(user, totalCharm, petData, data) {
+    var upgradeLevel = calculateEffectivePetUpgradeLevel(user, data, petData);
+    return {
+        baseExp: Math.max(0, Math.round(totalCharm || 0)),
+        petName: petData[user] && petData[user].petname ? petData[user].petname : "펫 정보 없음",
+        upgradeLevel: upgradeLevel,
+        critChance: calculateCritChance(upgradeLevel),
+        critMultiplier: getCritMultiplier(upgradeLevel)
+    };
+}
+
+// 다음 펫무쌍 대회 준비자 목록을 표시용 문자열로 생성하는 함수
+function buildPetMusouPreparedParticipantList(data, petData, guildData, musou) {
+    var preparedUsers = Object.keys(musou.nextParticipants || {});
+    var preparedLines = [];
+    for (var preparedIndex = 0; preparedIndex < preparedUsers.length; preparedIndex++) {
+        preparedLines.push("[" + checkRank(data, petData, guildData, preparedUsers[preparedIndex]) + "] 준비 완료");
+    }
+    return preparedLines.join("\n");
+}
+
+// 펫무쌍 참가 신청을 저장하는 함수
+function joinPetMusou(data, petData, petSkillData, guildData, sender) {
+    var musou = ensurePetMusouData(data);
+    if (musou.active || !musou.signupOpen) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
+    if (isAccountSuspended(data, sender)) return { ok: false, message: "❌ 계정정지 상태에서는 펫무쌍에 참가할 수 없습니다." };
+    var guildInfo = getPetMusouGuildInfo(data, guildData, sender);
+    if (!guildInfo) return { ok: false, message: "❌ 길드에 가입된 유저만 펫무쌍에 참가할 수 있습니다." };
+    if (!petData[sender]) return { ok: false, message: "❌ 펫 정보가 없어 펫무쌍에 참가할 수 없습니다." };
+    if (musou.nextParticipants[sender]) {
+        return {
+            ok: false,
+            message: "⚠️ 이미 다음 펫무쌍 대회 준비를 완료했습니다.\n" +
+                "현재 펫무쌍 참여자 목록" + allsee + "\n" + buildPetMusouPreparedParticipantList(data, petData, guildData, musou)
+        };
+    }
+    musou.nextParticipants[sender] = {
+        user: sender,
+        guildId: guildInfo.guildId,
+        guildName: guildInfo.guild.name,
+        joinedAt: formatDateTime(new Date()),
+        roundId: musou.nextRoundId
+    };
+    var preparedParticipantList = buildPetMusouPreparedParticipantList(data, petData, guildData, musou); // 방금 준비한 사용자를 포함한 다음 회차 준비자 목록
+    return {
+        ok: true,
+        message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+            "✅ 다음 펫무쌍 대회 준비가 완료되었습니다.\n" +
+            "대회 시작 시 자동으로 참가 처리됩니다.\n\n" +
+            "펫무쌍 규칙 상세보기 및 참여자 준비 목록\n" + allsee +
+            "1. 대회 시작: 매일 12:30 · 이벤트 중 20:30 추가 · 운영자 수동 시작 가능\n" +
+            "2. 개인 공격: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
+            "3. 공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n" +
+            "4. 처음 발견한 가짜 깃발은 공격권만 1회 차감\n" +
+            "5. 공개된 가짜 재공격·시간 초과·벼락 시 탈락\n" +
+            "6. 종합매력은 대회 시작 시점 기준\n" +
+            "7. 최종 점령자 우승\n" +
+            "━━━━━━━━━━━━\n" +
+            preparedParticipantList
+    };
+}
+
+// 펫무쌍 참가자 전원의 시작 시점 종합매력을 저장하고 대회를 시작하는 함수
+function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
+    var musou = ensurePetMusouData(data);
+    if (musou.active) return { ok: false, message: "❌ 이미 펫무쌍 대회가 진행 중입니다." };
+    var preparedParticipants = musou.nextParticipants;
+    var participantNames = Object.keys(preparedParticipants);
+    var validUsers = [];
+    var excludedUsers = [];
+    var players = {};
+    for (var i = 0; i < participantNames.length; i++) {
+        var user = participantNames[i];
+        var guildInfo = getPetMusouGuildInfo(data, guildData, user);
+        if (!data.member[user] || !petData[user] || !guildInfo || isAccountSuspended(data, user)) {
+            excludedUsers.push(user);
+            continue;
+        }
+        var totalCharm = calculateTotalExp(user, data, petData, homeData, petSkillData, guildData);
+        var bonusAttackSkillName = ""; // 대회 시작 시 장착 중인 펫무쌍 공격 보너스 스킬 스냅샷
+        for (var skillIndex = 0; skillIndex < GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.length; skillIndex++) {
+            var candidateSkillName = GLOBAL_CONFIG.petMusou.bonusAttackSkillNames[skillIndex];
+            if (hasPetSkill(petSkillData, user, candidateSkillName)) {
+                bonusAttackSkillName = candidateSkillName;
+                break;
+            }
+        }
+        var maxAttacks = GLOBAL_CONFIG.petMusou.attackLimit + (bonusAttackSkillName ? GLOBAL_CONFIG.petMusou.bonusAttackCount : 0); // 대회 시작 시 장착 스킬을 반영한 개인 공격 한도
+        players[user] = {
+            alive: true,
+            attacksLeft: maxAttacks,
+            maxAttacks: maxAttacks,
+            bonusAttackSkillName: bonusAttackSkillName,
+            guildId: guildInfo.guildId,
+            totalCharmSnapshot: createPetMusouBattleSnapshot(user, totalCharm, petData, data)
+        };
+        validUsers.push(user);
+    }
+    if (validUsers.length < 1) return { ok: false, message: "❌ 참가 조건을 충족한 펫무쌍 참가자가 없습니다." };
+
+    var activeParticipants = {}; // 조건 재확인을 통과해 현재 회차에 확정된 참가자 목록
+    for (var activeParticipantIndex = 0; activeParticipantIndex < validUsers.length; activeParticipantIndex++) {
+        activeParticipants[validUsers[activeParticipantIndex]] = preparedParticipants[validUsers[activeParticipantIndex]];
+    }
+    musou.participants = activeParticipants;
+    musou.nextParticipants = {};
+    musou.active = true;
+    musou.signupOpen = false;
+    musou.roundId = musou.nextRoundId || (String(getTodaySupportPassDateValue()) + "_" + String(new Date().getTime()));
+    musou.nextRoundId = "";
+    musou.startedAt = formatDateTime(new Date());
+    musou.endedAt = "";
+    musou.realFlagNo = Math.floor(Math.random() * GLOBAL_CONFIG.petMusou.flagCount) + 1;
+    musou.realFlagFound = false;
+    musou.realFlagDiscoveryBonusPaid = false;
+    musou.realFlagDiscovery = null;
+    musou.fakeFlags = {};
+    musou.currentHolder = "";
+    musou.players = players;
+    musou.turnQueue = shufflePetMusouUsers(validUsers);
+    musou.roundNo = 1;
+    musou.actionSeq = 0;
+    musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
+    musou.turnToken = "";
+    musou.turnDeadlineAt = 0;
+    var startGraceNow = new Date().getTime(); // 30초 시작 유예 토큰과 마감시각의 공통 기준시각
+    musou.startReady = false;
+    musou.startGraceToken = String(startGraceNow) + "_" + String(Math.random());
+    musou.startGraceDeadlineAt = startGraceNow + GLOBAL_CONFIG.petMusou.startGraceMs;
+    musou.lastActionId = "";
+    return {
+        ok: true,
+        excludedUsers: excludedUsers,
+        message: "🗡️ 펫 무쌍 대회 시작 🗡️\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "참가자: " + validUsers.length + "명\n" +
+            "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
+            "준비 유예시간: " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초\n" +
+            "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
+            "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
+            "10개의 깃발 중 진짜 깃발은 단 1개!\n" +
+            "처음 발견한 가짜 깃발은 공격권만 차감됩니다.\n" +
+            "공개된 가짜를 다시 공격하면 즉시 탈락합니다.\n\n" +
+            "⚡ 최초 누적 벼락발생확률: 1.0%\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "펫무쌍 공격은 공성전 방에서만 가능합니다.\n" +
+            "https://open.kakao.com/o/gaP4Xybh" +
+            (excludedUsers.length > 0 ? "\n\n참가 조건 재확인 제외: " + excludedUsers.join(", ") : "")
+    };
+}
+
+// 펫무쌍 현재 공격자를 반환하는 함수
+function getPetMusouCurrentAttacker(musou) {
+    return musou && musou.turnQueue && musou.turnQueue.length > 0 ? musou.turnQueue[0] : "";
+}
+
+// 펫무쌍에서 다음 라운드 공격 순서를 구성하는 함수
+function preparePetMusouNextRound(musou) {
+    var candidates = [];
+    for (var user in musou.players) {
+        if (!musou.players.hasOwnProperty(user)) continue;
+        var player = musou.players[user];
+        if (player.alive && player.attacksLeft > 0 && user !== musou.currentHolder) candidates.push(user);
+    }
+    musou.turnQueue = shufflePetMusouUsers(candidates);
+    if (candidates.length > 0) musou.roundNo++;
+    return candidates.length;
+}
+
+// 펫무쌍 종료 조건을 확인하는 함수
+function shouldFinishPetMusou(musou) {
+    var attackableCount = 0;
+    for (var user in musou.players) {
+        if (!musou.players.hasOwnProperty(user)) continue;
+        var player = musou.players[user];
+        if (player.alive && player.attacksLeft > 0 && user !== musou.currentHolder) attackableCount++;
+    }
+    return attackableCount === 0;
+}
+
+// 펫무쌍 우승 보상과 누적 순위를 회차당 한 번만 확정하는 함수
+function finishPetMusou(data, petData, guildData, reason) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active) return { ended: false, message: "❌ 현재 진행 중인 펫무쌍 대회가 없습니다." };
+    var roundId = musou.roundId;
+    var winner = musou.currentHolder && musou.players[musou.currentHolder] && musou.players[musou.currentHolder].alive ? musou.currentHolder : "";
+    var alreadyProcessed = !!musou.processedRounds[roundId];
+    clearPetMusouOpeningTimer();
+    clearPetMusouTurnTimer();
+    musou.active = false;
+    musou.signupOpen = true;
+    musou.endedAt = formatDateTime(new Date());
+    musou.turnToken = "";
+    musou.turnDeadlineAt = 0;
+    musou.startReady = false;
+    musou.startGraceToken = "";
+    musou.startGraceDeadlineAt = 0;
+    musou.turnQueue = [];
+    musou.participants = {};
+    if (!musou.nextRoundId) musou.nextRoundId = "PREP_" + String(new Date().getTime());
+    if (!alreadyProcessed) {
+        musou.processedRounds[roundId] = { winner: winner, endedAt: musou.endedAt, reason: reason || "자동 종료" };
+        if (winner && data.member[winner]) {
+            data.member[winner].point = (data.member[winner].point || 0) + GLOBAL_CONFIG.petMusou.winnerRewardPoint;
+            data.member[winner].musouWinCount = (data.member[winner].musouWinCount || 0) + 1;
+            data.member[winner].musouLastWinAt = musou.endedAt;
+            musou.currentChampion = {
+                user: winner,
+                roundId: roundId,
+                wonAt: musou.endedAt,
+                expiresAt: new Date().getTime() + GLOBAL_CONFIG.petMusou.titleDurationMs
+            };
+        }
+    }
+    if (!winner) {
+        return {
+            ended: true,
+            winner: "",
+            message: "🏆 펫 무쌍 대회 종료 🏆\n" +
+                "━━━━━━━━━━━━━━━━\n" +
+                "최종 점령자가 없어 우승자 없이 종료됩니다.\n" +
+                "공격 보상은 회수하지 않습니다."
+        };
+    }
+    var guildInfo = getPetMusouGuildInfo(data, guildData, winner);
+    return {
+        ended: true,
+        winner: winner,
+        message: "🏆 펫 무쌍 대회 종료 🏆\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "🚩 최종 점령자: [" + checkRank(data, petData, guildData, winner).replace(/^\[무쌍⚔️\]/, "") + "]\n" +
+            "🏳️ 소속길드: " + (guildInfo ? formatGuildDisplay(guildInfo.guild) : "길드 정보 없음") + "\n\n" +
+            "우승 상금🤑: 🅟30억\n" +
+            "전용 칭호⚔️: [무쌍⚔️]\n" +
+            "적용 기간⏰: 24시간\n" +
+            "누적 무쌍⚔️: " + (data.member[winner].musouWinCount || 0) + "회\n\n" +
+            "[무쌍⚔️][" + checkRank(data, petData, guildData, winner).replace(/^\[무쌍⚔️\]/, "") + "] 님이\n" +
+            "펫 무쌍 대회의 최종 우승자가 되었습니다!"
+    };
+}
+
+// 펫무쌍 진행 상태와 전 유저의 참가·누적 전적을 초기화하는 함수
+function resetAllPetMusouData(data) {
+    clearPetMusouOpeningTimer();
+    clearPetMusouTurnTimer();
+    var signupUserCount = 0; // 당일 참가 표시가 제거된 유저 수
+    var rankingUserCount = 0; // 누적 무쌍 기록이 제거된 유저 수
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        if (member.petMusouLastSignupDate !== undefined) {
+            delete member.petMusouLastSignupDate;
+            signupUserCount++;
+        }
+        if (member.musouWinCount !== undefined || member.musouLastWinAt !== undefined) {
+            delete member.musouWinCount;
+            delete member.musouLastWinAt;
+            rankingUserCount++;
+        }
+    }
+    data.petMusou = {};
+    ensurePetMusouData(data);
+    return { signupUserCount: signupUserCount, rankingUserCount: rankingUserCount };
+}
+
+// 펫무쌍 생존자에게 누적 확률로 벼락을 판정하는 함수
+function processPetMusouLightning(musou, data, petData, guildData) {
+    var currentRate = Math.max(0, Math.min(1, musou.lightningRate));
+    if (Math.random() >= currentRate) {
+        musou.lightningRate = Math.min(1, currentRate + GLOBAL_CONFIG.petMusou.lightningStepRate);
+        musou.lastLightningResult = {
+            triggered: false,
+            checkedAt: formatDateTime(new Date()),
+            checkedRate: currentRate,
+            nextRate: musou.lightningRate
+        };
+        return { triggered: false, message: "⚡ 벼락 미발생 · 다음 확률 " + (musou.lightningRate * 100).toFixed(1) + "%" };
+    }
+    var aliveUsers = [];
+    for (var user in musou.players) {
+        if (musou.players.hasOwnProperty(user) && musou.players[user].alive) aliveUsers.push(user);
+    }
+    var targetCount = Math.floor(Math.random() * 3) + 1;
+    var targets = shufflePetMusouUsers(aliveUsers).slice(0, Math.min(targetCount, aliveUsers.length));
+    var eliminatedTargets = []; // 피뢰침 방어 후 실제 벼락으로 탈락한 유저
+    var protectedTargets = []; // 피뢰침 1개를 자동 소모하고 생존한 유저
+    var failedRodTargets = []; // 피뢰침 방어 판정에 실패한 유저
+    var holderExceptionTargets = []; // 진짜 깃발 점령으로 피뢰침이 적용되지 않은 유저
+    for (var targetIndex = 0; targetIndex < targets.length; targetIndex++) {
+        var target = targets[targetIndex];
+        var targetBag = data.member[target] && data.member[target].bag ? data.member[target].bag : null;
+        var lightningRodName = GLOBAL_CONFIG.petMusou.items.lightningRod;
+        var hasLightningRod = targetBag && Number(targetBag[lightningRodName]) > 0;
+        if (hasLightningRod && musou.currentHolder === target) {
+            holderExceptionTargets.push(target);
+        } else if (hasLightningRod && Math.random() < GLOBAL_CONFIG.petMusou.lightningRodSuccessRate) {
+            decreaseGuildTerritoryItem(data, target, lightningRodName);
+            protectedTargets.push(target);
+            continue;
+        } else if (hasLightningRod) {
+            failedRodTargets.push(target);
+        }
+        musou.players[target].alive = false;
+        musou.players[target].attacksLeft = 0;
+        if (musou.currentHolder === target) musou.currentHolder = "";
+        eliminatedTargets.push(target);
+    }
+    var lines = ["🗡️펫 무쌍 대회 결과🗡️[벼락 발생⚡]", "우루루⚡ 캉캉캉⚡ 뿌라찌랴쨖쨖⚡", "━━━━━━━━━━━━", "벼락 판정⚡: [⚡]벼락 발생!", "━━━━━━━━━━━━", "└ 벼락 탈락 인원: " + eliminatedTargets.length + "명"];
+    for (var eliminatedIndex = 0; eliminatedIndex < eliminatedTargets.length; eliminatedIndex++) {
+        lines.push("  └[" + checkRank(data, petData, guildData, eliminatedTargets[eliminatedIndex]) + "] 님이 객사(탈락)");
+    }
+    if (protectedTargets.length > 0) {
+        lines.push("━━━━━━━━━━━━", "└ 피뢰침⚡(" + (GLOBAL_CONFIG.petMusou.lightningRodSuccessRate * 100).toFixed(0) + "%) 발동: " + protectedTargets.length + "명");
+        for (var protectedIndex = 0; protectedIndex < protectedTargets.length; protectedIndex++) {
+            lines.push("  └[" + checkRank(data, petData, guildData, protectedTargets[protectedIndex]) + "] 피뢰침 1개 소모 · 생존");
+        }
+    }
+    if (failedRodTargets.length > 0) {
+        lines.push("━━━━━━━━━━━━", "└ 피뢰침⚡(" + (GLOBAL_CONFIG.petMusou.lightningRodSuccessRate * 100).toFixed(0) + "%) 미발동: " + failedRodTargets.length + "명");
+        for (var failedRodIndex = 0; failedRodIndex < failedRodTargets.length; failedRodIndex++) {
+            lines.push("  └[" + checkRank(data, petData, guildData, failedRodTargets[failedRodIndex]) + "] 피뢰침 미소모 · 탈락");
+        }
+    }
+    if (holderExceptionTargets.length > 0) {
+        lines.push("━━━━━━━━━━━━", "└ 진짜 깃발 점령자 예외: " + holderExceptionTargets.length + "명");
+        for (var holderExceptionIndex = 0; holderExceptionIndex < holderExceptionTargets.length; holderExceptionIndex++) {
+            lines.push("  └[" + checkRank(data, petData, guildData, holderExceptionTargets[holderExceptionIndex]) + "] 피뢰침 미적용·미소모 · 탈락");
+        }
+    }
+    musou.turnQueue = musou.turnQueue.filter(function (queuedUser) {
+        return musou.players[queuedUser] && musou.players[queuedUser].alive && musou.players[queuedUser].attacksLeft > 0 && queuedUser !== musou.currentHolder;
+    });
+    musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
+    musou.lastLightningResult = {
+        triggered: true,
+        checkedAt: formatDateTime(new Date()),
+        checkedRate: currentRate,
+        targets: targets.slice(),
+        eliminatedTargets: eliminatedTargets.slice(),
+        protectedTargets: protectedTargets.slice(),
+        failedRodTargets: failedRodTargets.slice(),
+        holderExceptionTargets: holderExceptionTargets.slice(),
+        nextRate: musou.lightningRate
+    };
+    lines.push("━━━━━━━━━━━━");
+    lines.push("누적 벼락발생확률이 1.0%로 초기화됩니다.");
+    return { triggered: true, targets: targets, eliminatedTargets: eliminatedTargets, protectedTargets: protectedTargets, failedRodTargets: failedRodTargets, holderExceptionTargets: holderExceptionTargets, message: lines.join("\n") };
+}
+
+// 펫무쌍 방어권→공격권→종합매력 순서로 점령 결투를 판정하는 함수
+function resolvePetMusouBattle(data, petData, musou, attackerName, defenderName) {
+    var defenseItem = getGuildTerritorySpecialItem(data.member[defenderName].bag, [
+        { name: "영지절대방어권🛡(50%)", successRate: 0.5, label: "절대🛡(50%)" }
+    ]);
+    if (defenseItem && Math.random() <= defenseItem.successRate) {
+        decreaseGuildTerritoryItem(data, defenderName, defenseItem.name);
+        return { attackerWin: false, defenseItem: defenseItem, offenseItem: null, attacker: null, defender: null };
+    }
+    var offenseItem = getGuildTerritorySpecialItem(data.member[attackerName].bag, [
+        { name: "영지기습공격권🔥(40%)", successRate: 0.4, label: "기습🔥(40%)" }
+    ]);
+    if (offenseItem && Math.random() <= offenseItem.successRate) {
+        decreaseGuildTerritoryItem(data, attackerName, offenseItem.name);
+        return { attackerWin: true, defenseItem: null, offenseItem: offenseItem, attacker: null, defender: null };
+    }
+    var attackerSnapshot = musou.players[attackerName].totalCharmSnapshot;
+    var defenderSnapshot = musou.players[defenderName].totalCharmSnapshot;
+    var attackerCritical = Math.random() < attackerSnapshot.critChance;
+    var defenderCritical = Math.random() < defenderSnapshot.critChance;
+    var attackerFinal = attackerCritical ? Math.round(attackerSnapshot.baseExp * attackerSnapshot.critMultiplier) : attackerSnapshot.baseExp;
+    var defenderFinal = defenderCritical ? Math.round(defenderSnapshot.baseExp * defenderSnapshot.critMultiplier) : defenderSnapshot.baseExp;
+    return {
+        attackerWin: attackerFinal > defenderFinal,
+        defenseItem: null,
+        offenseItem: null,
+        attacker: { name: attackerName, petName: attackerSnapshot.petName, baseExp: attackerSnapshot.baseExp, finalExp: attackerFinal, isCritical: attackerCritical },
+        defender: { name: defenderName, petName: defenderSnapshot.petName, baseExp: defenderSnapshot.baseExp, finalExp: defenderFinal, isCritical: defenderCritical }
+    };
+}
+
+// 펫무쌍 종합매력 결투 상세 메시지를 생성하는 함수
+function buildPetMusouBattleMessage(data, petData, guildData, result) {
+    if (result.defenseItem) return "🛡 방어성공 [" + result.defenseItem.label + "] 발동\n[공격 실패❌]";
+    if (result.offenseItem) return "🔥 공격 성공! [" + result.offenseItem.label + "] 발동\n[공격 성공✅]";
+    var compareSymbol = result.attacker.finalExp > result.defender.finalExp ? ">" : result.attacker.finalExp < result.defender.finalExp ? "<" : "=";
+    var lines = [result.attackerWin ? "[공격 성공✅]" : "[공격 실패❌]", "━━━━━━━━━━━━", "펫무쌍 결과 상세보기📋" + allsee, "⚔️ 공격", "유저: " + checkRank(data, petData, guildData, result.attacker.name), "펫: [" + result.attacker.petName + "]", "기본: " + numberWithCommas(result.attacker.baseExp) + "💕", "최종: " + numberWithCommas(result.attacker.finalExp) + "💕" + (result.attacker.isCritical ? " 💥크리티컬" : ""), "", "              🆚", "", "🛡️ 방어", "유저: " + checkRank(data, petData, guildData, result.defender.name), "펫: [" + result.defender.petName + "]", "기본: " + numberWithCommas(result.defender.baseExp) + "💕", "최종: " + numberWithCommas(result.defender.finalExp) + "💕" + (result.defender.isCritical ? " 💥크리티컬" : ""), "", "━━━━━━━━━━━━", "📊 최종 매력 비교", numberWithCommas(result.attacker.finalExp) + " " + compareSymbol + " " + numberWithCommas(result.defender.finalExp), "매력 차이: " + numberWithCommas(Math.abs(result.attacker.finalExp - result.defender.finalExp)) + "💕"];
+    return lines.join("\n");
+}
+
+// 양자 결투 상세가 없는 펫무쌍 공격의 시작 시점 능력치를 출력하는 함수
+function buildPetMusouAttackDetailMessage(data, petData, guildData, musou, attackerName) {
+    var player = musou.players[attackerName];
+    var snapshot = player && player.totalCharmSnapshot ? player.totalCharmSnapshot : null;
+    if (!snapshot) return "";
+    return "펫무쌍 공격 상세정보📋" + allsee + "\n" +
+        "⚔️ 공격\n" +
+        "유저: " + checkRank(data, petData, guildData, attackerName) + "\n" +
+        "펫: [" + snapshot.petName + "]\n" +
+        "종합매력(시작 기준): " + numberWithCommas(snapshot.baseExp) + "💕";
+}
+
+// 펫무쌍 깃발 현황과 다음 공격자를 출력하는 함수
+function buildPetMusouStatusMessage(data, petData, guildData, musou) {
+    var attacker = getPetMusouCurrentAttacker(musou);
+    if (!attacker) return "";
+    var player = musou.players[attacker];
+    var maxAttacks = parseInt(player.maxAttacks, 10) || GLOBAL_CONFIG.petMusou.attackLimit; // 구버전 진행 데이터는 기본 공격 한도로 표시
+    var lines = ["[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", "[⏳ 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초]", "[남은 공격(" + player.attacksLeft + "/" + maxAttacks + "⚔)]"];
+    if (maxAttacks > GLOBAL_CONFIG.petMusou.attackLimit) {
+        var bonusAttackSkillName = player.bonusAttackSkillName || "무쌍신화"; // 구버전 진행 데이터는 기존 무쌍신화 스냅샷으로 표시
+        if (bonusAttackSkillName === GLOBAL_CONFIG.petMusou.attackRewardBonusSkillName) {
+            lines.push("무쌍귀신📙[A]: 공격횟수+1 · 공격 보상+1억");
+        } else {
+            lines.push("무쌍신화📙[B]: 어이 원코(공격횟수+1)");
+        }
+    }
+    lines.push("[⚡ 누적 벼락발생확률: " + (musou.lightningRate * 100).toFixed(1) + "%]", "━━━━━━━━━━━━━━━━", "🗡️현재 펫 무쌍 대회 상황🗡️", "━━━━━━━━━━━━");
+    for (var flagNo = 1; flagNo <= GLOBAL_CONFIG.petMusou.flagCount; flagNo++) {
+        var stateText = "미확인(❓)";
+        if (musou.realFlagFound && flagNo === musou.realFlagNo) {
+            stateText = musou.currentHolder ? checkRank(data, petData, guildData, musou.currentHolder) + "(🚩)" : "주인 없음(🚩)";
+        } else if (musou.fakeFlags[String(flagNo)] || musou.realFlagFound) {
+            stateText = "가짜(✖️)";
+        }
+        lines.push("[" + flagNo + "] " + getPetMusouFlagName(flagNo) + ": " + stateText);
+    }
+    lines.push("━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.");
+    return lines.join("\n");
+}
+
+// 펫무쌍 공격 1회를 처리하고 다음 턴 또는 종료 결과를 반환하는 함수
+function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active) return { ok: false, message: "❌ 현재 진행 중인 펫무쌍 대회가 없습니다." };
+    if (!musou.startReady) {
+        var remainingGraceSeconds = Math.max(1, Math.ceil((musou.startGraceDeadlineAt - new Date().getTime()) / 1000));
+        return { ok: false, message: "⏳ 펫무쌍 시작 준비 중입니다.\n첫 공격은 " + remainingGraceSeconds + "초 뒤 시작됩니다." };
+    }
+    if (!musou.players[sender]) return { ok: false, message: "❌ 펫무쌍 참가자만 공격할 수 있습니다." };
+    if (!musou.players[sender].alive) return { ok: false, message: "❌ 이미 펫무쌍에서 탈락했습니다." };
+    if (musou.players[sender].attacksLeft < 1) return { ok: false, message: "❌ 남은 펫무쌍 공격권이 없습니다." };
+    var currentAttacker = getPetMusouCurrentAttacker(musou);
+    if (currentAttacker !== sender) return { ok: false, message: "❌ 현재 공격 차례가 아닙니다.\n현재 공격자: " + currentAttacker };
+    if (!getPetMusouGuildInfo(data, guildData, sender)) return { ok: false, message: "❌ 길드 가입 상태가 확인되지 않아 공격할 수 없습니다." };
+    if (new Date().getTime() > musou.turnDeadlineAt) return { ok: false, expired: true, message: "❌ 공격 제한시간이 지났습니다." };
+    clearPetMusouTurnTimer();
+    musou.turnQueue.shift();
+    musou.players[sender].attacksLeft--;
+    var ticketEventCouponReward = grantPetMusouTicketEventCoupon(data, sender); // 유효 공격권 차감 후 확정되는 이벤트 쿠폰
+    musou.actionSeq++;
+    musou.lastActionId = musou.roundId + "_" + musou.actionSeq;
+    musou.turnToken = "";
+    musou.turnDeadlineAt = 0;
+    var lines = ["🗡️펫 무쌍 대회 결과🗡️", "━━━━━━━━━━━━", "공격자: [" + checkRank(data, petData, guildData, sender) + "]", "공격 깃발: [" + flagNo + "] " + getPetMusouFlagName(flagNo)];
+    var rewardGranted = false;
+    var attackSucceeded = false; // 깃발 발견·점령·전투 승리 여부에 따른 공격 성공 판정
+    var hasBattleDetail = false; // 공격자·점령자 양쪽의 종합매력 상세 출력 여부
+    var rewardBonusActive = musou.players[sender].bonusAttackSkillName === GLOBAL_CONFIG.petMusou.attackRewardBonusSkillName; // 시작 시 저장한 무쌍귀신 공격 보상 적용 여부
+    var attackRewardPoint = GLOBAL_CONFIG.petMusou.attackRewardPoint + (rewardBonusActive ? GLOBAL_CONFIG.petMusou.attackRewardBonusPoint : 0); // 이번 공격의 최종 포인트 보상
+    var attackRewardText = "🅟" + (attackRewardPoint / 100000000) + "억";
+    var discoveryBonusPoint = 0; // 진짜 깃발 최초 발견 시 별도 지급되는 보너스 포인트
+
+    if (!musou.realFlagFound && musou.fakeFlags[String(flagNo)]) {
+        musou.players[sender].alive = false;
+        musou.players[sender].attacksLeft = 0;
+        lines.push("공격 보상🤑: 미지급", "", "이미 가짜로 밝혀진 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님은 즉시 탈락합니다.");
+    } else if (!musou.realFlagFound) {
+        rewardGranted = true;
+        data.member[sender].point = (data.member[sender].point || 0) + attackRewardPoint;
+        if (flagNo === musou.realFlagNo) {
+            attackSucceeded = true;
+            musou.realFlagFound = true;
+            musou.currentHolder = sender;
+            if (!musou.realFlagDiscoveryBonusPaid) {
+                discoveryBonusPoint = GLOBAL_CONFIG.petMusou.realFlagDiscoveryBonusPoint;
+                data.member[sender].point = (data.member[sender].point || 0) + discoveryBonusPoint;
+                musou.realFlagDiscoveryBonusPaid = true;
+                musou.realFlagDiscovery = {
+                    user: sender,
+                    at: formatDateTime(new Date()),
+                    attackRewardPoint: attackRewardPoint,
+                    discoveryBonusPoint: discoveryBonusPoint
+                };
+            }
+            for (var fakeNo = 1; fakeNo <= GLOBAL_CONFIG.petMusou.flagCount; fakeNo++) {
+                if (fakeNo !== musou.realFlagNo) musou.fakeFlags[String(fakeNo)] = true;
+            }
+            var discoveryTotalPoint = attackRewardPoint + discoveryBonusPoint;
+            var discoveryRewardText = "🅟" + (attackRewardPoint / 100000000) + "억+" + (discoveryBonusPoint / 100000000) + "억 = " + (discoveryTotalPoint / 100000000) + "억";
+            lines.push("공격 보상🤑: " + discoveryRewardText, "", "[진짜 깃발 발견🚩]", "🎁 발견 보너스: " + (discoveryBonusPoint / 100000000) + "억 포인트", "[" + checkRank(data, petData, guildData, sender) + "] 님이 진짜 깃발을 점령했습니다!");
+        } else {
+            musou.fakeFlags[String(flagNo)] = true;
+            var attackerMaxAttacks = parseInt(musou.players[sender].maxAttacks, 10) || GLOBAL_CONFIG.petMusou.attackLimit; // 대회 시작 시 확정된 개인 공격 한도
+            lines.splice(1, 0, "[" + checkRank(data, petData, guildData, sender) + "] 님의 남은 공격(" + musou.players[sender].attacksLeft + "/" + attackerMaxAttacks + "⚔)");
+            lines.push("공격 보상🤑: " + attackRewardText, "", "가짜 깃발입니다!");
+        }
+    } else if (flagNo !== musou.realFlagNo) {
+        musou.players[sender].alive = false;
+        musou.players[sender].attacksLeft = 0;
+        lines.push("공격 보상🤑: 미지급", "", "이미 가짜로 밝혀진 깃발입니다!", "[" + checkRank(data, petData, guildData, sender) + "] 님은 즉시 탈락합니다.");
+    } else if (!musou.currentHolder) {
+        attackSucceeded = true;
+        rewardGranted = true;
+        data.member[sender].point = (data.member[sender].point || 0) + attackRewardPoint;
+        musou.currentHolder = sender;
+        lines.push("공격 보상🤑: " + attackRewardText, "", "주인 없는 진짜 깃발을 즉시 점령했습니다!");
+    } else {
+        rewardGranted = true;
+        data.member[sender].point = (data.member[sender].point || 0) + attackRewardPoint;
+        var previousHolder = musou.currentHolder;
+        var battleResult = resolvePetMusouBattle(data, petData, musou, sender, previousHolder);
+        lines.push("공격 보상🤑: " + attackRewardText, "", buildPetMusouBattleMessage(data, petData, guildData, battleResult));
+        hasBattleDetail = !!(battleResult.attacker && battleResult.defender);
+        if (battleResult.attackerWin) {
+            attackSucceeded = true;
+            musou.currentHolder = sender;
+            if (musou.players[previousHolder] && musou.players[previousHolder].alive && musou.players[previousHolder].attacksLeft > 0 && musou.turnQueue.indexOf(previousHolder) === -1) {
+                musou.turnQueue.push(previousHolder);
+            }
+        }
+    }
+    if (ticketEventCouponReward) {
+        for (var rewardLineIndex = 0; rewardLineIndex < lines.length; rewardLineIndex++) {
+            if (String(lines[rewardLineIndex]).indexOf("공격 보상🤑:") === 0) {
+                lines.splice(rewardLineIndex + 1, 0, "이벤트 보상🎟️: " + ticketEventCouponReward.display);
+                break;
+            }
+        }
+    }
+    lines[0] += attackSucceeded ? "[성공✅]" : "[실패❌]";
+    var lightningResult = processPetMusouLightning(musou, data, petData, guildData);
+    var lightningMessage = lightningResult.triggered ? lightningResult.message : ""; // 실제 벼락 발생 문구는 공격 결과와 분리해 전송
+    if (!lightningResult.triggered) lines.push("━━━━━━━━━━━━", lightningResult.message);
+    if (!hasBattleDetail) {
+        var attackDetailMessage = buildPetMusouAttackDetailMessage(data, petData, guildData, musou, sender);
+        if (attackDetailMessage) lines.push("━━━━━━━━━━━━", attackDetailMessage);
+    }
+    musou.lastActionRewardGranted = rewardGranted;
+    musou.lastActionAttackRewardPoint = rewardGranted ? attackRewardPoint : 0;
+    musou.lastActionDiscoveryBonusPoint = discoveryBonusPoint;
+
+    if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
+    if (shouldFinishPetMusou(musou)) {
+        var finishResult = finishPetMusou(data, petData, guildData, "공격 가능 횟수 소진");
+        return { ok: true, ended: true, message: lines.join("\n"), lightningMessage: lightningMessage, finishMessage: finishResult.message, ticketEventCouponReward: ticketEventCouponReward };
+    }
+    return { ok: true, ended: false, message: lines.join("\n"), lightningMessage: lightningMessage, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou), ticketEventCouponReward: ticketEventCouponReward };
+}
+
+// 펫무쌍 현재 공격자의 제한시간 초과를 처리하는 함수
+function processPetMusouTimeout(data, petData, guildData) {
+    var musou = ensurePetMusouData(data);
+    var attacker = getPetMusouCurrentAttacker(musou);
+    if (!musou.active || !musou.startReady || !attacker || !musou.players[attacker]) return { ok: false };
+    musou.turnQueue.shift();
+    musou.players[attacker].alive = false;
+    musou.players[attacker].attacksLeft = 0;
+    musou.turnToken = "";
+    musou.turnDeadlineAt = 0;
+    musou.lightningRate = Math.min(1, Math.max(0, musou.lightningRate) + GLOBAL_CONFIG.petMusou.timeoutLightningStepRate);
+    var message = "🗡️펫 무쌍 대회 결과🗡️[시간 초과⚠️]\n" +
+        "━━━━━━━━━━━━━━━━\n" +
+        "공격 보상🤑: 미지급\n" +
+        "벼락 판정⚡: 판정 없음\n" +
+        "누적 벼락발생확률⚡: +" + (GLOBAL_CONFIG.petMusou.timeoutLightningStepRate * 100).toFixed(1) + "% (현재 " + (musou.lightningRate * 100).toFixed(1) + "%)\n\n" +
+        Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초 이내에 공격하지 않아 즉시 탈락합니다.\n" +
+        "남은 공격권이 모두 소멸했습니다.";
+    if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
+    if (shouldFinishPetMusou(musou)) {
+        var finishResult = finishPetMusou(data, petData, guildData, "공격 제한시간 종료");
+        return { ok: true, ended: true, message: message, finishMessage: finishResult.message };
+    }
+    return { ok: true, ended: false, message: message, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou) };
+}
+
+// 펫무쌍 실행 컨텍스트의 시작 유예 타이머를 해제하는 함수
+function clearPetMusouOpeningTimer(ctx) {
+    var targetCtx = ctx || getCurrentContext();
+    var ctxKey = targetCtx.key();
+    if (petMusouOpeningTimers[ctxKey]) {
+        clearTimeout(petMusouOpeningTimers[ctxKey]);
+        delete petMusouOpeningTimers[ctxKey];
+    }
+}
+
+// 펫무쌍 30초 준비 종료 후 첫 공격과 턴 타이머를 시작하는 함수
+function openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return false;
+    musou.startReady = true;
+    musou.startGraceToken = "";
+    musou.startGraceDeadlineAt = 0;
+    startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+    castleMsg(buildPetMusouStatusMessage(data, petData, guildData, musou), replier, isGroupChat);
+    return true;
+}
+
+// 펫무쌍 저장 마감시각을 기준으로 30초 시작 유예 타이머를 예약하거나 복구하는 함수
+function startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, preserveDeadline) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return;
+    var timerCtx = getCurrentContext();
+    var timerCtxKey = timerCtx.key();
+    clearPetMusouOpeningTimer(timerCtx);
+    var now = new Date().getTime();
+    if (!preserveDeadline || !musou.startGraceToken || musou.startGraceDeadlineAt <= 0) {
+        musou.startGraceToken = String(now) + "_" + String(Math.random());
+        musou.startGraceDeadlineAt = now + GLOBAL_CONFIG.petMusou.startGraceMs;
+        saveJsonFile(data, filePath);
+    }
+    var token = musou.startGraceToken;
+    var delayMs = Math.max(1, musou.startGraceDeadlineAt - now);
+    petMusouOpeningTimers[timerCtxKey] = setTimeout(function () {
+        var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
+        try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
+            delete petMusouOpeningTimers[timerCtxKey];
+            var latestData = loadJsonFile(filePath);
+            var latestPetData = loadJsonFile(memberPetPath);
+            var latestGuildData = loadJsonFile(guildPath);
+            var latestMusou = ensurePetMusouData(latestData);
+            if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
+            openPetMusouForAttacks(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+        } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
+            exitCommandContext(prevCtx);
+        }
+    }, delayMs);
+}
+
+// 펫무쌍 실행 컨텍스트의 턴 타이머를 해제하는 함수
+function clearPetMusouTurnTimer(ctx) {
+    var targetCtx = ctx || getCurrentContext();
+    var ctxKey = targetCtx.key();
+    if (petMusouTurnTimers[ctxKey]) {
+        clearTimeout(petMusouTurnTimers[ctxKey]);
+        delete petMusouTurnTimers[ctxKey];
+    }
+}
+
+// 펫무쌍 현재 턴의 제한시간 타이머를 시작하거나 저장된 마감시각으로 복구하는 함수
+function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, preserveDeadline) {
+    var musou = ensurePetMusouData(data);
+    var attacker = getPetMusouCurrentAttacker(musou);
+    if (!musou.active || !musou.startReady || !attacker) return;
+    var timerCtx = getCurrentContext();
+    var timerCtxKey = timerCtx.key();
+    clearPetMusouTurnTimer(timerCtx);
+    var now = new Date().getTime();
+    if (!preserveDeadline || !musou.turnToken || musou.turnDeadlineAt <= now) {
+        musou.turnToken = String(now) + "_" + String(Math.random());
+        musou.turnDeadlineAt = now + GLOBAL_CONFIG.petMusou.turnTimeoutMs;
+    }
+    var token = musou.turnToken;
+    var delayMs = Math.max(1, musou.turnDeadlineAt - now);
+    saveJsonFile(data, filePath);
+    petMusouTurnTimers[timerCtxKey] = setTimeout(function () {
+        var prevCtx = enterCommandContext(timerCtx);
+        var timerTransactionAcquired = false;
+        var timerTransactionEntered = false;
+        try {
+            dataTransactionLock.lock();
+            timerTransactionAcquired = true;
+            beginDataSaveTransaction();
+            timerTransactionEntered = true;
+            delete petMusouTurnTimers[timerCtxKey];
+            var latestData = loadJsonFile(filePath);
+            var latestPetData = loadJsonFile(memberPetPath);
+            var latestGuildData = loadJsonFile(guildPath);
+            var latestMusou = ensurePetMusouData(latestData);
+            if (!latestMusou.active || latestMusou.turnToken !== token) return;
+            var timeoutResult = processPetMusouTimeout(latestData, latestPetData, latestGuildData);
+            if (!timeoutResult.ok) return;
+            saveJsonFile(latestData, filePath);
+            castleMsg(timeoutResult.message, replier, isGroupChat);
+            if (timeoutResult.ended) {
+                if (timeoutResult.finishMessage) castleMsg(timeoutResult.finishMessage, replier, isGroupChat);
+                return;
+            }
+            castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
+            startPetMusouTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat, false);
+        } finally {
+            if (timerTransactionEntered) endDataSaveTransaction();
+            if (timerTransactionAcquired) dataTransactionLock.unlock();
+            exitCommandContext(prevCtx);
+        }
+    }, delayMs);
+}
+
+// 봇 재시작 후 저장된 펫무쌍 턴을 다음 수신 메시지에서 복구하는 함수
+function recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat) {
+    var musou = ensurePetMusouData(data);
+    if (!musou.active || !getPetMusouCurrentAttacker(musou)) return;
+    var ctx = getCurrentContext();
+    if (!musou.startReady) {
+        if (petMusouOpeningTimers[ctx.key()]) return;
+        if (musou.startGraceDeadlineAt > 0 && musou.startGraceDeadlineAt <= new Date().getTime()) {
+            openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat);
+            return;
+        }
+        startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
+        return;
+    }
+    if (petMusouTurnTimers[ctx.key()]) return;
+    if (musou.turnDeadlineAt > 0 && musou.turnDeadlineAt <= new Date().getTime()) {
+        var timeoutResult = processPetMusouTimeout(data, petData, guildData);
+        if (!timeoutResult.ok) return;
+        saveJsonFile(data, filePath);
+        castleMsg(timeoutResult.message, replier, isGroupChat);
+        if (timeoutResult.ended) {
+            if (timeoutResult.finishMessage) castleMsg(timeoutResult.finishMessage, replier, isGroupChat);
+            return;
+        }
+        castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
+        startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+        return;
+    }
+    startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, true);
+}
+
+// 누적 펫무쌍 우승 순위와 현재 칭호 보유자를 출력하는 함수
+function buildPetMusouRankingMessage(data, petData, guildData) {
+    var musou = ensurePetMusouData(data);
+    var users = [];
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user)) continue;
+        var winCount = parseInt(data.member[user].musouWinCount, 10) || 0;
+        if (winCount > 0) users.push({ user: user, winCount: winCount, lastWinAt: data.member[user].musouLastWinAt || "" });
+    }
+    users.sort(function (a, b) {
+        if (a.winCount !== b.winCount) return b.winCount - a.winCount;
+        if (a.lastWinAt !== b.lastWinAt) return a.lastWinAt < b.lastWinAt ? 1 : -1;
+        return a.user < b.user ? -1 : a.user > b.user ? 1 : 0;
+    });
+    var lines = ["⚔️ 펫무쌍 누적 순위 ⚔️", "━━━━━━━━━━━━━━━━"];
+    if (users.length < 1) {
+        lines.push("아직 펫무쌍 대회 우승자가 없습니다.");
+    } else {
+        for (var i = 0; i < Math.min(10, users.length); i++) {
+            lines.push((i + 1) + ". [" + checkRank(data, petData, guildData, users[i].user).replace(/^\[무쌍⚔️\]/, "") + "] — 무쌍 " + users[i].winCount + "회");
+        }
+    }
+    lines.push("━━━━━━━━━━━━━━━━");
+    var champion = musou.currentChampion;
+    if (champion && champion.user && champion.expiresAt > new Date().getTime() && data.member[champion.user]) {
+        var remainMs = champion.expiresAt - new Date().getTime();
+        var remainHours = Math.floor(remainMs / 3600000);
+        var remainMinutes = Math.floor((remainMs % 3600000) / 60000);
+        lines.push("🚩 현재 무쌍: [무쌍⚔️][" + checkRank(data, petData, guildData, champion.user).replace(/^\[무쌍⚔️\]/, "") + "]");
+        lines.push("└ 칭호 남은시간: " + remainHours + "시간 " + remainMinutes + "분");
+    } else {
+        lines.push("🚩 현재 무쌍: 없음");
+        lines.push("└ 다음 펫무쌍 대회 우승자를 기다리는 중입니다");
+    }
+    return lines.join("\n");
+}
+
 // 후원패스 설정 목록 반환 함수
 function getSupportPassConfigs() {
     return [
@@ -33175,7 +35142,8 @@ function getSupportPassConfigs() {
         { key: "hoi", label: "호이패스🐶", commandNames: ["호이패스"] },
         { key: "premium", label: "호이패스 프리미엄👑", commandNames: ["호패프리미엄"] },
         { key: "contribution", label: "길드공헌패스🎖️", commandNames: ["공헌패스"] },
-        { key: "diamond", label: "다이아패스💎", commandNames: ["다이아패스"] }
+        { key: "diamond", label: "다이아패스💎", commandNames: ["다이아패스"] },
+        { key: "territory", label: "영지기습패스", commandNames: ["영지패스"] }
     ];
 }
 
@@ -33196,6 +35164,36 @@ function ensureSupportPassStore(data, user) {
     var member = data.member[user];
     if (!member.pass || typeof member.pass !== "object") member.pass = {};
     return member.pass;
+}
+
+// 영지기습패스 변경 전후 값을 로그용 단순 객체로 복사하는 함수
+function copyTerritoryPassAuditValue(pass) {
+    if (!pass || typeof pass !== "object") return null;
+    return {
+        enabled: pass.enabled === true,
+        permanent: pass.permanent === true,
+        endDate: pass.endDate || "",
+        updatedAt: pass.updatedAt || "",
+        updatedBy: pass.updatedBy || ""
+    };
+}
+
+// 영지기습패스 추가·연장·삭제 이력을 저장하는 함수
+function appendTerritoryPassAuditLog(data, operator, user, action, beforeValue, afterValue) {
+    if (!(data.territoryPassAuditLogs instanceof Array)) data.territoryPassAuditLogs = [];
+    data.territoryPassAuditLogs.push({
+        operator: operator || "시스템",
+        user: user,
+        action: action,
+        processedAt: formatDateTime(new Date()),
+        expireAt: afterValue && afterValue.permanent ? "영구권" : (afterValue && afterValue.endDate ? afterValue.endDate : ""),
+        before: beforeValue,
+        after: afterValue
+    });
+    var logMax = GLOBAL_CONFIG.supportPass.territoryAuditLogMax;
+    if (data.territoryPassAuditLogs.length > logMax) {
+        data.territoryPassAuditLogs.splice(0, data.territoryPassAuditLogs.length - logMax);
+    }
 }
 
 // 후원패스 날짜 문자열이 유효한지 확인하는 함수
@@ -33424,7 +35422,7 @@ function getActiveSupportPassUsers(data, passKey) {
 
 // 지정 후원패스의 일일 보상을 계정당 하루 한 번 지급하는 함수
 function grantSupportPassDailyRewards(data, passKey, rewards) {
-    var result = { grantedUserCount: 0, skippedUserCount: 0 };
+    var result = { grantedUserCount: 0, skippedUserCount: 0, grantedUsers: [], skippedUsers: [] };
     var users = getActiveSupportPassUsers(data, passKey);
     var today = String(getTodaySupportPassDateValue());
     for (var userIndex = 0; userIndex < users.length; userIndex++) {
@@ -33432,6 +35430,7 @@ function grantSupportPassDailyRewards(data, passKey, rewards) {
         var pass = data.member[user].pass[passKey];
         if (pass.dailyRewardLastDate === today) {
             result.skippedUserCount++;
+            result.skippedUsers.push(user);
             continue;
         }
         for (var rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
@@ -33439,12 +35438,50 @@ function grantSupportPassDailyRewards(data, passKey, rewards) {
         }
         pass.dailyRewardLastDate = today;
         result.grantedUserCount++;
+        result.grantedUsers.push(user);
     }
     return result;
 }
 
+// 영지기습패스 일일 지급 결과를 최근 운영 로그에 기록하는 함수
+function appendTerritoryPassPayoutLogs(data, result, operator) {
+    if (!(data.supportPassPayoutLogs instanceof Array)) data.supportPassPayoutLogs = [];
+    var nowText = formatDateTime(new Date());
+    var today = String(getTodaySupportPassDateValue());
+    for (var grantedIndex = 0; grantedIndex < result.grantedUsers.length; grantedIndex++) {
+        data.supportPassPayoutLogs.push({
+            paidAt: nowText,
+            operator: operator || "시스템",
+            user: result.grantedUsers[grantedIndex],
+            passType: "territory",
+            offenseCount: 2,
+            defenseCount: 2,
+            success: true,
+            reason: "지급 완료",
+            duplicateKey: today + ":" + result.grantedUsers[grantedIndex]
+        });
+    }
+    for (var skippedIndex = 0; skippedIndex < result.skippedUsers.length; skippedIndex++) {
+        data.supportPassPayoutLogs.push({
+            paidAt: nowText,
+            operator: operator || "시스템",
+            user: result.skippedUsers[skippedIndex],
+            passType: "territory",
+            offenseCount: 0,
+            defenseCount: 0,
+            success: false,
+            reason: "당일 지급 완료로 제외",
+            duplicateKey: today + ":" + result.skippedUsers[skippedIndex]
+        });
+    }
+    var logMax = GLOBAL_CONFIG.supportPass.territoryPayoutLogMax;
+    if (data.supportPassPayoutLogs.length > logMax) {
+        data.supportPassPayoutLogs.splice(0, data.supportPassPayoutLogs.length - logMax);
+    }
+}
+
 // 모든 구독패스의 일일 보상을 순서대로 지급하고 패스별 처리 수를 반환하는 함수
-function grantAllSupportPassDailyRewards(data) {
+function grantAllSupportPassDailyRewards(data, operator) {
     var config = GLOBAL_CONFIG.supportPass;
     var rows = [];
     rows.push({ label: "호프", result: grantHoiPassPremiumDailyRewards(data) });
@@ -33455,6 +35492,9 @@ function grantAllSupportPassDailyRewards(data) {
         label: "다이아패스",
         result: grantSupportPassDailyRewards(data, "diamond", [{ name: GLOBAL_CONFIG.items.diamondBoxName, count: config.diamondBoxCount }])
     });
+    var territoryResult = grantSupportPassDailyRewards(data, "territory", config.territoryDailyRewards);
+    rows.push({ label: "영지기습패스", result: territoryResult });
+    appendTerritoryPassPayoutLogs(data, territoryResult, operator);
     var totalGrantedCount = 0; // 패스별 실제 지급 건수 합계
     var totalSkippedCount = 0; // 당일 중복으로 제외된 패스 건수 합계
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
@@ -33462,7 +35502,7 @@ function grantAllSupportPassDailyRewards(data) {
         totalSkippedCount += rows[rowIndex].result.skippedUserCount;
     }
     return {
-        changed: totalGrantedCount > 0,
+        changed: totalGrantedCount > 0 || territoryResult.skippedUserCount > 0,
         rows: rows,
         totalGrantedCount: totalGrantedCount,
         totalSkippedCount: totalSkippedCount
@@ -33484,7 +35524,7 @@ function buildSupportPassPayoutResultMessage(result) {
 
 // 호이패스 프리미엄 일일 아이템을 계정당 하루 한 번 지급하는 함수
 function grantHoiPassPremiumDailyRewards(data) {
-    var result = { grantedUserCount: 0, skippedUserCount: 0 };
+    var result = { grantedUserCount: 0, skippedUserCount: 0, grantedUsers: [], skippedUsers: [] };
     var users = getActiveSupportPassUsers(data, "premium");
     var today = String(getTodaySupportPassDateValue());
     var rewards = GLOBAL_CONFIG.supportPass.premium.dailyRewards;
@@ -33493,6 +35533,7 @@ function grantHoiPassPremiumDailyRewards(data) {
         var pass = data.member[user].pass.premium;
         if (pass.dailyRewardLastDate === today) {
             result.skippedUserCount++;
+            result.skippedUsers.push(user);
             continue;
         }
         for (var rewardIndex = 0; rewardIndex < rewards.length; rewardIndex++) {
@@ -33500,6 +35541,7 @@ function grantHoiPassPremiumDailyRewards(data) {
         }
         pass.dailyRewardLastDate = today;
         result.grantedUserCount++;
+        result.grantedUsers.push(user);
     }
     return result;
 }
@@ -33730,7 +35772,7 @@ function buildDailyRewardPayoutStatusLines(data, guildData) {
 // 전체 후원패스 목록 메시지를 만드는 함수
 function buildSupportPassListMessage(data, petData, guildData) {
     var configs = getSupportPassConfigs();
-    var lines = ["호월패스 전체목록 안내:", "[원데이패스, 초보패스, 호이패스, 호이패스 프리미엄, 길드공헌패스, 다이아패스] / " + allsee, ""];
+    var lines = ["호월패스 전체목록 안내:", "[원데이패스, 초보패스, 호이패스, 호이패스 프리미엄, 길드공헌패스, 다이아패스, 영지기습패스] / " + allsee, ""];
     for (var i = 0; i < configs.length; i++) {
         var config = configs[i];
         var activeUsers = [];
@@ -33804,7 +35846,7 @@ function buildSupportPassListMessage(data, petData, guildData) {
 
 // 후원패스 명령어의 대상과 옵션을 분석하는 함수
 function parseSupportPassCommandMeta(msg) {
-    var passMatch = String(msg || "").match(/^\/(원데이패스|공헌패스|초보패스|초보|호이패스|다이아패스)(추가|삭제),\s*([^]+)$/);
+    var passMatch = String(msg || "").match(/^\/(원데이패스|공헌패스|초보패스|초보|호이패스|다이아패스|영지패스)(추가|삭제),\s*([^]+)$/);
     if (!passMatch) return null;
     var passConfig = getSupportPassConfigByCommandName(passMatch[1]);
     if (!passConfig) return null;
@@ -33813,7 +35855,8 @@ function parseSupportPassCommandMeta(msg) {
     var tokens = body.split(/\s+/);
     var lastToken = tokens.length > 0 ? tokens[tokens.length - 1] : "";
     var option = action === "추가" && (lastToken === "영구권" || isValidSupportPassDateText(lastToken)) ? lastToken : "";
-    var userIDText = action === "추가" && option ? tokens.slice(0, tokens.length - 1).join(" ") : body;
+    var shouldSplitTerritoryOption = action === "추가" && passConfig.key === "territory";
+    var userIDText = action === "추가" && (option || shouldSplitTerritoryOption) ? tokens.slice(0, tokens.length - 1).join(" ") : body;
     return { config: passConfig, action: action, user: userIDText, option: option };
 }
 
@@ -33951,7 +35994,7 @@ function processHoiPassPremiumCommand(msg, data, petSkillData, activityData, ope
             changed: true,
             action: "추가",
             requiresPetSkillSave: addResult.restoredSkillCount > 0,
-            message: "✅ [" + meta.user + "] 님에게 호이패스 프리미엄을 적용했습니다.\n종료 예정일: " + meta.endDate + "\n전용 홈뱃지: 🐺 호패 프리미엄" + (addResult.autoExploreTicketGranted ? "\n자동탐험권🌄 1개를 지급했습니다." : "\n기존 호이패스가 활성 상태여서 자동탐험권🌄을 추가 지급하지 않았습니다.") + (addResult.restoredSkillCount > 0 ? "\n잠금 펫스킬 " + addResult.restoredSkillCount + "개를 다시 활성화했습니다." : "")
+            message: "✅ [" + meta.user + "] 님에게 호이패스 프리미엄을 적용했습니다.\n종료 예정일: " + meta.endDate + "\n전용 홈뱃지:  호패 프리미엄" + (addResult.autoExploreTicketGranted ? "\n자동탐험권🌄 1개를 지급했습니다." : "\n기존 호이패스가 활성 상태여서 자동탐험권🌄을 추가 지급하지 않았습니다.") + (addResult.restoredSkillCount > 0 ? "\n잠금 펫스킬 " + addResult.restoredSkillCount + "개를 다시 활성화했습니다." : "")
         };
     }
 
@@ -33967,7 +36010,7 @@ function processHoiPassPremiumCommand(msg, data, petSkillData, activityData, ope
     };
 }
 
-function processUserIDCommand(msg, data) {
+function processUserIDCommand(msg, data, operator) {
     var passMeta = parseSupportPassCommandMeta(msg);
     if (!passMeta) return "알 수 없는 명령어입니다.";
 
@@ -33976,24 +36019,55 @@ function processUserIDCommand(msg, data) {
     var action = passMeta.action;
     var option = passMeta.option;
     var userIDText = passMeta.user;
-    if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
 
     if (action === "추가") {
+        if (passConfig.key === "territory" && !option) {
+            return "❌ 날짜 형식이 올바르지 않습니다.\n\n사용법:\n/영지패스추가, 아이디 YY.MM.DD\n/영지패스추가, 아이디 영구권";
+        }
+        if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
         if (!option) option = "영구권";
         if (option !== "영구권") {
             var expireValue = getSupportPassDateValue(option);
             if (expireValue !== null && expireValue < getTodaySupportPassDateValue()) {
-                return "❌ 지난 날짜로 패스를 추가할 수 없습니다.\n오늘 이후 날짜를 입력해주세요.\n예) /호이패스추가, " + userIDText + " 26.06.21";
+                return "❌ 지난 날짜로 패스를 추가할 수 없습니다.\n오늘 이후 날짜를 입력해주세요.\n예) /" + passConfig.commandNames[0] + "추가, " + userIDText + " 26.09.30";
             }
         }
         var passStore = ensureSupportPassStore(data, userIDText);
-        var beforeActive = passStore[passConfig.key] && passStore[passConfig.key].enabled === true;
-        passStore[passConfig.key] = {
+        var previousPass = passStore[passConfig.key] || {};
+        var previousTerritoryPassValue = passConfig.key === "territory" ? copyTerritoryPassAuditValue(previousPass) : null;
+        var beforeActive = previousPass.enabled === true;
+        var nextPass = {
             enabled: true,
             endDate: option === "영구권" ? "" : option,
             permanent: option === "영구권"
         };
+        if (passConfig.key === "territory") nextPass.dailyRewardLastDate = previousPass.dailyRewardLastDate || "";
+        passStore[passConfig.key] = nextPass;
+        if (passConfig.key === "territory") {
+            passStore[passConfig.key].createdAt = previousPass.createdAt || formatDateTime(new Date());
+            passStore[passConfig.key].updatedAt = formatDateTime(new Date());
+            passStore[passConfig.key].createdBy = previousPass.createdBy || operator || "시스템";
+            passStore[passConfig.key].updatedBy = operator || "시스템";
+            appendTerritoryPassAuditLog(data, operator, userIDText, beforeActive ? "연장" : "추가", previousTerritoryPassValue, copyTerritoryPassAuditValue(passStore[passConfig.key]));
+        }
         var passEndText = option === "영구권" ? "영구권" : option + "까지";
+        if (passConfig.key === "territory") {
+            return "✅ 영지기습패스 추가 완료\n" +
+                "━━━━━━━━━━━━━━━━\n" +
+                "대상: " + userIDText + "\n" +
+                "만료일: " + passEndText + "\n\n" +
+                "일일 지급 구성\n" +
+                "└ 영지기습공격권🔥(40%) x2\n" +
+                "└ 영지절대방어권🛡(50%) x2\n" +
+                "└ 🌪️ 전쟁불안정 증폭권(/불안정) x1\n" +
+                "└ 다이아상자💎(/다이아상자오픈) x1\n" +
+                "└ 피뢰침⚡(자동 벼락 방지) 1개\n" +
+                "\n구독 기능\n" +
+                "└ 길드영지 자동 준비\n" +
+                "└ 영지 자동 공격(/영지온, /영지오프)\n" +
+                "━━━━━━━━━━━━━━━━" +
+                (beforeActive ? "\n기존 패스의 만료일을 갱신했습니다." : "");
+        }
         var addLines = [
             beforeActive ? "⚠️ 이미 해당 패스를 보유 중입니다.\n기존 종료일을 새 종료일로 갱신합니다." : userIDText + " 사용자에게 패스가 추가되었습니다.",
             "패스 기간: " + passEndText
@@ -34005,11 +36079,34 @@ function processUserIDCommand(msg, data) {
         return addLines.join("\n");
     }
 
+    if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
     var userPassStore = ensureSupportPassStore(data, userIDText);
     if (!userPassStore[passConfig.key] || userPassStore[passConfig.key].enabled !== true) {
         return "❌ 해당 유저는 해당 패스를 보유하고 있지 않습니다.";
     }
+    var deletedTerritoryPassBeforeValue = passConfig.key === "territory" ? copyTerritoryPassAuditValue(userPassStore[passConfig.key]) : null;
     userPassStore[passConfig.key].enabled = false;
+    if (passConfig.key === "territory") {
+        userPassStore[passConfig.key].updatedAt = formatDateTime(new Date());
+        userPassStore[passConfig.key].updatedBy = operator || "시스템";
+        if (!hasGuildTerritoryAutoAttackEntitlement(data, userIDText) && data.member[userIDText].guildTerritoryAutoAttackEnabled === true) {
+            data.member[userIDText].guildTerritoryAutoAttackEnabled = false;
+            appendGuildTerritoryAutomationDataLog(data, {
+                type: "AUTO_ATTACK_OFF",
+                user: userIDText,
+                reason: "영지기습패스 관리자 삭제",
+                processedAt: formatDateTime(new Date())
+            });
+        }
+        appendTerritoryPassAuditLog(data, operator, userIDText, "삭제", deletedTerritoryPassBeforeValue, copyTerritoryPassAuditValue(userPassStore[passConfig.key]));
+        return "✅ 영지기습패스 삭제 완료\n" +
+            "━━━━━━━━━━━━━━━━\n" +
+            "대상: " + userIDText + "\n\n" +
+            "영지기습패스 명단에서 삭제되었습니다.\n" +
+            "패스로 이용하던 길드영지 자동화 권한도 종료됩니다.\n" +
+            "다른 패스 가입 정보는 유지됩니다.\n" +
+            "━━━━━━━━━━━━━━━━";
+    }
     var deleteLines = [userIDText + " 사용자의 패스가 삭제되었습니다."];
     if (passConfig.key === "newbie" || passConfig.key === "hoi") {
         if (!hasActiveAutoExplorePass(data, userIDText)) {
@@ -36442,7 +38539,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
             if (status.passDailyRewardDone) lines.push("[✅ 금일 호패,초패 일퀘 보상 지급 완료]");
         }
         if (status.hasPremiumDailyQuest) {
-            lines.push("《🐺 호이패스 프리미엄 추가 보상》");
+            lines.push("《👑 호이패스 프리미엄 추가 보상》");
             lines.push("다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
             if (status.premiumDailyRewardDone) lines.push("[✅ 금일 프리미엄 일퀘 보상 지급 완료]");
         }
@@ -36574,6 +38671,11 @@ function checkRank(data, petData, guildData, user) {
                     }
                 }
             }
+        }
+
+        var musouChampion = data.petMusou && data.petMusou.currentChampion ? data.petMusou.currentChampion : null;
+        if (musouChampion && musouChampion.user === user && musouChampion.expiresAt > new Date().getTime()) {
+            userwithrank = "[무쌍⚔️]" + userwithrank;
         }
 
         return userwithrank;
@@ -38868,6 +40970,49 @@ function getPetSkillData(skillName) {
     return null;
 }
 
+// 펫스킬 등급·확률·효과 조회 메시지를 생성
+function buildPetSkillInfoMessage(skillInfo) {
+    var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
+    var skillRateLine = skillInfo.openable === false ? "" : "\n확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
+    var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
+    return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
+}
+
+// 단독 지급 전용 펫스킬 명령과 선택 수량을 검증해 지급 요청을 반환
+function parseDirectGrantPetSkillRequest(command) {
+    var match = String(command || "").match(/^\/펫스킬가방추가\s+([^,\r\n]+),\s+(.+?)(?:\s+(\d+))?\s*$/);
+    if (!match) return null;
+    var skillData = getPetSkillData(match[2].trim());
+    if (!skillData || skillData.directGrantOnly !== true) return null;
+    return {
+        user: match[1].trim(),
+        skillData: skillData,
+        count: match[3] ? parseInt(match[3], 10) : 1
+    };
+}
+
+// 펫스킬가방 단독·일반 지급 명령을 검증하고 지급 요청 정보로 변환
+function parsePetSkillBagGrantRequest(command) {
+    var directGrantRequest = parseDirectGrantPetSkillRequest(command);
+    if (directGrantRequest) {
+        var directGrantSkillData = directGrantRequest.skillData;
+        return {
+            user: directGrantRequest.user,
+            skillName: directGrantSkillData.name,
+            count: directGrantRequest.count,
+            directGrantSkillData: directGrantSkillData
+        };
+    }
+    var match = String(command || "").match(/^\/펫스킬가방추가\s+([^,\r\n]+),\s+(.+)\s+(\d+)\s*$/);
+    if (!match) return null;
+    return {
+        user: match[1].trim(),
+        skillName: normalizePetSkillName(match[2].trim()),
+        count: parseInt(match[3], 10),
+        directGrantSkillData: null
+    };
+}
+
 // 티어 전용 펫스킬 이름에서 선행 이모지를 제외한 조회용 이름 반환
 function getTierPetSkillSearchName(skillData) {
     if (!skillData || !skillData.tierExclusive) return "";
@@ -39192,6 +41337,7 @@ function getPetSkillTotalRate() {
 // 명시 확률을 우선하고 남은 등급 확률을 나머지 스킬에 균등 분배한 추첨 가중치 반환
 function getPetSkillRandomWeight(skillData) {
     if (!skillData) return 0;
+    if (skillData.openable === false) return 0;
     var gradeWeightTotal = PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS[skillData.grade];
     if (typeof gradeWeightTotal !== "number") return skillData.rate || 0;
     if (skillData.fixedRate === true) return skillData.rate || 0;
@@ -40469,7 +42615,7 @@ function getHomeBadgeCubeOptionDebugDetail(data, user, optionKey) {
 function formatHomeBadgeCubeDebugOptionFormula(detail) {
     var text = "+" + formatHomeBadgeCubeCardPercent(detail.basePercent);
     if (detail.totalBuffActive) text += " → +" + formatHomeBadgeCubeCardPercent(detail.totalBuffAppliedPercent) + "(기본합계 100% ×1.1)";
-    if (detail.premiumBonusPercent > 0) text += " +" + formatHomeBadgeCubeCardPercent(detail.premiumBonusPercent) + "🐺";
+    if (detail.premiumBonusPercent > 0) text += " +" + formatHomeBadgeCubeCardPercent(detail.premiumBonusPercent) + "👑";
     return text + " = +" + formatHomeBadgeCubeCardPercent(detail.appliedPercent);
 }
 
@@ -40610,7 +42756,7 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var explore = record ? record.explore : 0;
     var store = getHomeBadgeCubeStore(data, user, false);
     var showPremiumAppliedValue = isHoiPassPremiumActive(data, user) && store && store.equippedBadgeId === badge.id;
-    var premiumSuffix = showPremiumAppliedValue ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%🐺)" : "";
+    var premiumSuffix = showPremiumAppliedValue ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%👑)" : "";
     var castleFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "castle")) : "";
     var raidFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "raid")) : "";
     var petUpgradeFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade")) : "";
@@ -41777,7 +43923,7 @@ function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
     return slotSize;
 }
 
-// 프리미엄 종료 후 추가 장착 한도를 넘긴 최근 가구를 가구가방으로 회수하는 함수
+// 프리미엄 종료 후 추가 장착 한도를 넘긴 최저 매력 가구를 가구가방으로 회수하는 함수
 function releaseHoiPassPremiumExtraFurniture(data, petData, petSkillData, homeData, placedFurnitureData, userName) {
     homeData = initSweetHomeUser(homeData, userName);
     var userHome = homeData[userName];
@@ -41785,16 +43931,16 @@ function releaseHoiPassPremiumExtraFurniture(data, petData, petSkillData, homeDa
     var maxSlots = getFurnitureMaxSlots(data, petData, userName, userHome.floor || 0, petSkillData);
     var releasedCount = 0;
     while (placedFurnitureList.length > maxSlots) {
-        var latestIndex = placedFurnitureList.length - 1; // 배치 시각이 없는 기존 데이터의 회수 위치
-        var latestPlacedAt = parseInt(placedFurnitureList[latestIndex] && placedFurnitureList[latestIndex].placedAt, 10) || 0;
-        for (var i = 0; i < placedFurnitureList.length; i++) {
-            var placedAt = parseInt(placedFurnitureList[i] && placedFurnitureList[i].placedAt, 10) || 0;
-            if (placedAt >= latestPlacedAt) {
-                latestIndex = i;
-                latestPlacedAt = placedAt;
+        var lowestIndex = 0; // 현재 장착 가구 중 회수할 최저 매력 위치
+        var lowestExp = Number(placedFurnitureList[lowestIndex] && placedFurnitureList[lowestIndex].exp) || 0;
+        for (var i = 1; i < placedFurnitureList.length; i++) {
+            var furnitureExp = Number(placedFurnitureList[i] && placedFurnitureList[i].exp) || 0;
+            if (furnitureExp < lowestExp) {
+                lowestIndex = i;
+                lowestExp = furnitureExp;
             }
         }
-        var releasedItem = placedFurnitureList.splice(latestIndex, 1)[0];
+        var releasedItem = placedFurnitureList.splice(lowestIndex, 1)[0];
         if (releasedItem && releasedItem.placedAt !== undefined) delete releasedItem.placedAt;
         userHome.furnitureBag.push(releasedItem);
         releasedCount++;
@@ -43803,8 +45949,6 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
     cleanupInvalidPetExploreUsers(petExploreData, data);
     if (!petExploreData.bet) return null;
 
-    var baseP = 5;
-
     var successLines = [];
     var failLines = [];
     var any = false;
@@ -43884,6 +46028,8 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 }
             }
 
+            var successDungeon = finalDungeon; // 입장권 재확인까지 끝난 실제 성공률 기준 탐험지
+
             // 이벤트 던전 5% 진입(일반 광산만)
             if (isRegularMineExploreSlot(finalDungeon)) {
                 if (Math.random() < 0.05) finalDungeon = "E";
@@ -43904,23 +46050,14 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 }
             }
 
-            // 티어/매력/영주 가산
-            var tierP = getExploreTierBonusPercent(data, user);
-            var expP = getExploreExpBonusPercent(data, petData, homeData, user, petSkillData, guildData);
-            var lordP = typeof isLordActive === "function" && isLordActive(data, user) ? 10 : 0;
-            var traitP = getExploreTraitBonusPercent(petSkillData, user, finalDungeon);
-            var pendantP = getPendantExploreBonusPercent(petData, user);
-            var homeBadgeP = getHomeBadgeCubeActiveOptionPercent(data, user, "explore");
-            var penaltyP = getExploreSuccessPenaltyPercent(finalDungeon); // 던전/미궁 성공률 디버프 계산
-
+            var successPercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, successDungeon, guildData); // 실제 정산 시점의 공용 성공률 계산
             var usedUpItem = pickAndConsumeExploreUpItem(data, user);
-            var upP = usedUpItem ? parseExploreUpPercent(usedUpItem) : 0;
 
             entry.usedTicket = usedTicket;
             entry.usedTreasure = usedTreasure;
             entry.usedUpItem = usedUpItem;
 
-            var totalP = Math.max(0, baseP + tierP + expP + lordP + traitP + pendantP + homeBadgeP + upP - penaltyP);
+            var totalP = successPercent.totalP;
 
             var success = Math.random() * 100 < totalP;
 
@@ -45642,6 +47779,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     }
 
     out += "광산⛰️【/탐 1~3, /탐(랜덤)】\n";
+    out += "*도전 시 탐험 성공확률 -" + GLOBAL_CONFIG.petExplore.mineSuccessPenalty + "% 디버프\n";
     out += "【1】 펫강화 광산⭐️: " + cnt["1"] + "명\n";
     out += "【2】 친밀도 광산🐾: " + cnt["2"] + "명\n";
     out += "【3】 행운의 광산🍀: " + cnt["3"] + "명\n";
@@ -45755,9 +47893,10 @@ function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {
     return 0;
 }
 
-// 펫탐험 던전/미궁 성공률 디버프를 반환하는 함수
+// 펫탐험 광산·던전·미궁 성공률 디버프를 반환하는 함수
 function getExploreSuccessPenaltyPercent(dungeonKey) {
     dungeonKey = String(dungeonKey || "");
+    if (isRegularMineExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.mineSuccessPenalty;
     if (isRegularDungeonExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.dungeonSuccessPenalty;
     if (isMazeExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.maze.successPenalty;
     return 0;

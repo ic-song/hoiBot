@@ -279,7 +279,7 @@ Status: VERIFIED
 - `main.js` creates a command context with `createCommandContext(isDevCommandMessage(msg))` near the top of `response(...)`
 - DEV-prefixed messages are normalized through `stripDevCommandPrefix(msg)` before regular command branching continues
 - Both `loadJsonFile(...)` and `saveJsonFile(...)` pass through `resolveActiveDataPath(...)`, so save-flow verification should check path resolution rather than only literal file constants
-- `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing
+- `dev/데이터백업` is gated early in the main response flow and is the canonical bootstrap path when DEV files are missing; transient `.tmp` files are excluded from backup and required-file checks
 - `/데이터상태` and `/데이터복구` follow `resolveActiveDataPath(...)`; normal commands target production and `dev/` commands target DEV data.
 - If a command looks read-only but still writes, inspect whether it sanitizes or normalizes data before display
 
@@ -511,7 +511,7 @@ Status: VERIFIED
 
 - Canonical read path for sweet-home furniture bag
 - This branch normalizes home user data before output
-- 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 최근 배치한 초과 가구를 가방으로 회수한다.
+- 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 장착 가구 중 매력이 가장 낮은 초과 가구를 가방으로 회수한다.
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
@@ -807,6 +807,9 @@ Status: VERIFIED
 - `buildGuildTerritoryRankingMessage`
 - `buildGuildTerritoryStartMessage`
 - `finishGuildTerritoryWar`
+- `prepareNextGuildTerritoryWarAutomatically`
+- `validateGuildTerritoryAutoAttack`
+- `executeGuildTerritoryNormalAttack`
 - `addGuildWarehouseReward`
 - `ensureGuildTerritoryBoosterCount`
 - `getGuildTerritoryByNo`
@@ -823,6 +826,11 @@ Status: VERIFIED
 - `guildData.territoryWar.startReady`
 - `guildData.territoryWar.openingToken`
 - `guildData.territoryWar.turnOrder`
+- `guildData.territoryWar.roundId`
+- `guildData.territoryWar.autoAttackProcessedKeys`
+- `guildData.territoryWar.automationLogs`
+- `data.member[user].guildTerritoryAutoAttackEnabled`
+- `data.guildTerritoryAutomationLogs`
 - `guildData.castleSiegeFlag`
 - `guildData.guilds[*].warehouse.petSkillBook`
 - `guildData.guilds[*].warehouse.fund`
@@ -832,9 +840,10 @@ Status: VERIFIED
 ## Save Flow
 
 - Saves `guildData` when start reservation is created
-- Reloads latest `member/pet/guild` data inside delayed start callback
+- Reloads latest `member/pet/petSkill/guild` data inside delayed start and opening callbacks
 - Saves `guildData` after turn order is created
 - Saves `guildData` again when 5-second opening grace ends and attacks become available
+- Delayed start, opening grace, and turn timer callbacks use the shared data transaction lock so command saves and timer saves do not overlap.
 
 ## Related Commands
 
@@ -846,6 +855,8 @@ Status: VERIFIED
 - `/영지순위보상`
 - `/영지보상순위`
 - `/영지공격 [숫자]`
+- `/영지온`
+- `/영지오프`
 
 ## AI Notes
 
@@ -862,7 +873,10 @@ Status: VERIFIED
 - `/길드영지순위` is read-only and displays cumulative guild territory score sorted by score, guild level, then guild name; guild masters are formatted through `checkRank` when member data exists.
 - `/영지순위보상` and `/영지보상순위` are read-only guide commands that show the fixed rank reward table and scheduled payout time.
 - `/길드영지보상지급` and `/영지순위보상지급` are exact aliases. Both are Admin/Master only and pay guild warehouse fund rewards to rank 1~10 based on the current cumulative territory score snapshot; duplicate payment for the same snapshot is blocked.
-- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
+- 영지전 종료 시 참가 길드의 현재 길드마스터·부길드마스터 중 `길드영지자동준비권` 또는 유효한 영지기습패스 보유자를 다시 확인해 다음 회차 준비를 길드당 1회 생성한다.
+- `/영지온`은 유효한 영지기습패스와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 미구독 상태에서 활성화에 실패하면 체크랭크와 영지기습패스 미구독 안내를 함께 표시한다. 실제 턴에도 패스와 자격을 재검증하며 실패하면 OFF 처리한다. `/영지오프`는 기존 설정·로그·저장을 유지하고 미구독 상태일 때 응답 문구만 구독 안내로 변경한다.
+- 자동 공격은 1~7번 중 현재 공격 길드가 점령한 영지를 제외한 후보를 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지하며, 예약 당시 길드와 실행 시점의 실제 길드가 다르면 실행하지 않는다.
+- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
 - `/길드영지시작` and `/길드영지종료` can also be entered from the dedicated siege room by their existing named operators; this room allowance does not bypass the active territory-war command lock.
 
 ---
@@ -896,6 +910,9 @@ Status: VERIFIED
 - `resolveGuildTerritoryDimensionGate`
 - `resolveGuildTerritoryRememberMe`
 - `resolveGuildTerritoryAttack`
+- `executeGuildTerritoryNormalAttack`
+- `getGuildTerritoryAttackActionKey`
+- `validateGuildTerritoryAutoAttack`
 - `getGuildTerritoryDefenderName`
 - `createGuildTerritoryCastleBattleSnapshot`
 - `buildGuildTerritoryCastleExpSnapshots`
@@ -906,6 +923,7 @@ Status: VERIFIED
 - `buildGuildTerritoryCastleBattleDetailMessage`
 - `getGuildTerritoryByNo`
 - `getGuildTerritoryOwnedCount`
+- `getGuildTerritoryAutoAttackTargetNo`
 - `processGuildTerritoryRiftEvent`
 - `advanceGuildTerritoryTurn`
 - `buildGuildTerritoryCurrentTurnLine`
@@ -925,6 +943,8 @@ Status: VERIFIED
 - `guildData.territoryWar.userAttackCounts`
 - `guildData.territoryWar.castleExpSnapshots`
 - `guildData.territoryWar.castleBattleSnapshots`
+- `guildData.territoryWar.autoAttackProcessedKeys`
+- `data.member[user].guildTerritoryAutoAttackEnabled`
 - `GLOBAL_CONFIG.guildTerritory.rewards.maxTerritoryTurnFundMultiplier`
 - `guildData.territoryWar.dimensionGateEnabled`
 - `guildData.territoryWar.rememberMeEnabled`
@@ -947,6 +967,8 @@ Status: VERIFIED
 - `/길드영지준비`
 - `/길드영지순서`
 - `/길드영지종료`
+- `/영지온`
+- `/영지오프`
 - `/차원의문on`
 - `/차원의문off`
 - `/차원의문온`
@@ -957,17 +979,19 @@ Status: VERIFIED
 ## AI Notes
 
 - Rejects attacks while the war is active but not yet start-ready
-- `전투형 지휘관📙` 보유 길드마스터는 영지전에서 소드마스터로 취급되며, 같은 길드 턴에는 현재 차례 유저가 아니어도 같은 길드의 다른 소드마스터 또는 길드마스터가 대신 공격할 수 있다. 해당 스킬 보유 상태로 직접 공격하면 랜덤 발동 멘트가 prepend한다
-- `/불안정`, `/안정`, `/균열`, `/대균열`도 `isGuildTerritoryAttacker` 기준을 따라 `전투형 지휘관📙` 길드마스터가 사용할 수 있다
+- `전투형 지휘관📙` 보유 길드마스터는 영지전에서 소드마스터로 취급된다. 수동 공격은 같은 길드 턴이면 현재 차례 유저가 아니어도 같은 길드의 다른 소드마스터 또는 전투형 지휘관 길드마스터가 대신 공격할 수 있고, 자동 공격은 현재 차례 유저 본인만 실행한다. 해당 스킬 보유 상태로 직접 공격하면 랜덤 발동 멘트가 prepend한다
+- `/불안정`, `/안정`, `/균열`, `/대균열`도 `isGuildTerritoryAttacker` 기준을 따라 `전투형 지휘관📙` 길드마스터가 사용할 수 있다. 명령어 단독 또는 순수 숫자 인자 1개만 허용하며, 숫자 뒤 접미문이나 추가 설명이 붙은 입력은 실행하지 않는다
 - DEV 컨텍스트에서는 테스트용으로 `dev/강제균열`, `dev/강제대균열` 명령으로 확률 없이 이벤트를 즉시 발생시킬 수 있다
 - `🌌균열` 또는 `🌋대균열`이 실제 발생하면 누적 전쟁불안정도는 즉시 0으로 초기화된다
 - `기사단 증원📙` 길드마스터가 있으면 소드마스터 슬롯이 1명 추가되며, 공격 결과에 발동 멘트가 prepend된다
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
-- Non-final attack results prepend the next attacker's turn line before the result body
+- 종료되지 않은 공격 결과는 다음 공격자의 턴 안내와 구분선을 결과 본문 앞에 표시한다.
+- 수동 턴은 `[체크랭크] 님의 공격 차례입니다.`, 자동 턴은 `[체크랭크] 님이 자동공격을 진행합니다.`로 표시한다. 자동 공격은 우리 길드 점령지를 제외한 후보에서 예약 시 선택한 영지를 `자동공격 영지`로 안내하고 같은 영지를 실제 공격에 사용한다.
+- 공격 결과 상단에는 수동·자동 여부에 맞는 `상세 결과`와 공격 영지, 길드·확률 보상을 표시하며 기존 전투 및 스킬 발동 내용은 `공격/방어/보상 상세보기` 안에 유지한다.
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
-- Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` turns from the user's guild when remaining turns are at least 5
+- Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- 개인별 영지공격은 `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회이며, 초과 시 공격 처리 전에 차단한다.
+- 개인별 영지공격은 본인 차례와 같은 길드 대리 공격을 실제 공격자 기준으로 합산하며, `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회까지 가능하다. 초과 시 공격 처리 전에 차단한다.
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
@@ -1369,7 +1393,7 @@ Status: VERIFIED
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
 - `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함)과 길드공헌 큐브를 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
-- 일반 종합매력 무기 펫스킬 10종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다.
+- 일반 종합매력 무기 펫스킬 11종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
 - `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
 - `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
@@ -2116,6 +2140,7 @@ Status: VERIFIED
 - `packageLog.json`
 - `data.member[user].bag`
 - `data.member[user].point`
+- `data.petMusou.players[user].maxAttacks`
 
 ## Save Flow
 
@@ -2220,6 +2245,97 @@ Status: VERIFIED
 
 ---
 
+# /펫무쌍준비|/펫무쌍시작|/펫무쌍공격 [1-10]|/펫무쌍종료|/펫무쌍전체초기화|/무쌍순위|/벼락확률 [0-100]|/티켓이벤트시작|/티켓이벤트종료|/티켓전체회수
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+- `ensurePetMusouData`
+- `joinPetMusou`
+- `beginPetMusou`
+- `processPetMusouAttack`
+- `processPetMusouTimeout`
+- `resolvePetMusouBattle`
+- `processPetMusouLightning`
+- `finishPetMusou`
+- `resetAllPetMusouData`
+- `buildPetMusouAttackDetailMessage`
+- `startPetMusouTurnTimer`
+- `recoverPetMusouTurnIfNeeded`
+- `buildPetMusouRankingMessage`
+- `runScheduledPetMusouStart`
+- `ensurePetMusouScheduleTimer`
+- `grantPetMusouTicketEventCoupon`
+- `processPetMusouTicketEventAdminCommand`
+- `checkRank`
+
+## Data Usage
+- `data.petMusou`
+- `data.petMusou.nextParticipants`
+- `data.petMusou.nextRoundId`
+- `data.petMusou.realFlagDiscoveryBonusPaid`
+- `data.accountSuspensions.users`
+- `data.member[user].musouWinCount`
+- `data.member[user].musouLastWinAt`
+- `data.member[user].point`
+- `data.member[user].bag["영지기습공격권🔥(40%)"]`
+- `data.member[user].bag["영지절대방어권🛡(50%)"]`
+- `data.member[user].bag["피뢰침⚡(자동 벼락 방지)"]`
+- `data.petMusouTicketEvent`
+- `data.member[user].bag["티켓이벤트할인쿠폰🎟️(10~50%)"]`
+- `petData`, `homeData`, `petSkillData`, `guildData` (대회 시작 시 종합매력 스냅샷)
+
+## Save Flow
+- 참가, 시작, 공격, 시간 초과, 강제 종료, 전체 초기화 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
+- 운영 컨텍스트에서는 KST 기준 매일 12:30에 정규 펫무쌍 시작을 확인하고, 2026-09-06~2026-09-20 티켓 이벤트 기간에 이벤트가 활성화되어 있으면 20:30 시작을 추가한다. 타이머 등록 직후에도 현재 회차를 확인하고 날짜·시각 키로 중복 실행을 막으며 맞짱필드·길드 영지전과 동시 시작하지 않는다.
+- `/티켓이벤트시작`, `/티켓이벤트종료`, `/티켓전체회수`는 이벤트 상태·로그·쿠폰 회수 결과를 `member.json`에 한 번 저장한다. 이벤트 종료만으로 보유 쿠폰을 회수하지 않는다.
+- `/벼락확률 [0-100]`은 진행 중인 대회의 `lightningRate`만 변경하고 `member.json`을 한 번 저장한다. `dev/` 입력은 기존 DEV 컨텍스트의 `member.json`에만 반영한다.
+- 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
+- 다음 회차 준비자와 현재 회차 참가자를 별도 객체로 저장한다. 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
+- 참가 신청 명령은 `/펫무쌍준비`이며 `/펫무쌍참가` 별칭은 사용하지 않는다. `/펫무쌍시작`은 `오픈채팅봇`과 명령어방의 MASTER가 실행할 수 있다.
+- `/펫무쌍준비` 성공 안내의 접힌 영역에는 규칙과 현재 다음 회차 준비자 전원의 체크랭크 목록을 함께 표시하며, 방금 준비한 사용자도 목록에 포함한다.
+- `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 15초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
+- 시작 유예 마감시각과 토큰을 `member.json`에 저장하며, 봇 재시작 뒤 첫 수신 메시지에서 남은 유예 타이머를 복구하거나 마감된 준비를 완료한다.
+- 정상 공격 결과 제목에는 깃발 발견·점령·전투 승리 여부에 따라 `[성공✅]` 또는 `[실패❌]`를 표시하며, 미공격 탈락은 기존 `[시간 초과⚠️]`를 유지한다.
+- 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올리고, 증가값과 변경 후 확률을 탈락 결과 및 다음 공격자 상태 UI에 반영한다.
+- 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 2억이다. 최종 우승 상금은 기존 값을 유지한다.
+- 티켓 이벤트 활성 중 공격권이 정상 차감된 공격에는 10% 70%, 20% 15%, 30% 7%, 40% 5%, 50% 3% 확률로 할인쿠폰 1장을 지급하고 공격 보상 바로 아래에 표시한다.
+- 진짜 깃발 발견 전 처음 찾은 가짜 깃발은 공격권만 1회 차감하고 생존하며, 결과 제목 바로 아래에 차감 후 남은 공격 횟수를 `[현재/최대⚔]` 형식으로 표시한다. 이미 공개된 가짜를 다시 공격하거나 진짜 깃발 발견 후 가짜를 공격하면 즉시 탈락한다.
+- 벼락이 실제 발생하면 벼락 결과만 별도 `castleMsg`로 전송하고 공격 결과·공격 상세에는 합치지 않는다. 미발생 문구는 기존처럼 공격 결과에 포함한다.
+- 진짜 깃발 최초 발견 시 기본 공격 보상과 별도로 2억을 한 번 지급하며 `realFlagDiscoveryBonusPaid`와 발견 기록으로 중복 지급을 막는다.
+- 벼락 대상자가 `피뢰침⚡(자동 벼락 방지)`을 보유하면 80% 확률로 1개를 소모하고 생존한다. 벼락 결과 UI는 `피뢰침⚡(80%) 발동` 또는 `피뢰침⚡(80%) 미발동`으로 판정 결과를 구분한다. 실패 시 미소모로 탈락하며, 현재 진짜 깃발 점령자는 피뢰침을 적용·소모하지 않고 탈락한다.
+- 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
+- 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
+- 보상 대상 공격 1회당 기본 2억, 최종 점령자 우승 상금 30억을 지급한다. 우승 확정 메시지는 `NoticeMsg`로 방송하지 않고 공격·시간 초과·재시작 복구로 종료된 펫무쌍 방에 `castleMsg`로 출력한다. `/펫무쌍종료`는 명령 실행 방에 전체 종료 결과를 회신한다.
+- `무쌍신화📙[B]` 또는 `무쌍귀신📙[A]` 장착 여부는 대회 시작 시 스냅샷으로 확정하며, 장착자는 개인 공격권이 4회에서 5회로 증가한다. `무쌍귀신📙[A]` 스냅샷 참가자는 보상 대상 공격마다 1억을 추가로 받아 총 3억을 획득한다. 두 스킬은 동시에 장착할 수 없으며, 상태 UI는 개인별 스킬과 `maxAttacks`를 표시한다.
+- 상태 UI는 공개된 가짜 깃발을 `가짜(✖️)`로 표시하고, 하단에도 현재 공격자를 다시 표시한다. 이미 탈락한 참가자의 공격 시도는 탈락 상태만 별도 안내하며, 생존 상태에서 공격권만 모두 사용한 참가자는 `남은 펫무쌍 공격권이 없습니다`로 구분한다.
+- 전투는 영지절대방어권→영지기습공격권→종합매력 순서이며, 아이템은 기존 영지전과 동일하게 발동 성공 시 1개 소모한다.
+- 현재 데이터 키가 닉네임 문자열이므로 대회 진행 중 닉네임 변경 및 변경 후 기록 연결은 지원하지 않는다.
+- `/펫무쌍전체초기화`는 참가·진행·회차·현재 칭호·당일 참가 표시·누적 전적을 초기화하고, 이미 지급된 포인트와 아이템은 회수하지 않는다.
+
+## Command Guards
+- 인자 없는 명령은 exact equality로만 실행한다.
+- `/펫무쌍전체초기화`는 운영자만 exact equality로 실행한다.
+- 티켓 이벤트 관리 명령 3종은 펫무쌍 운영자만 exact equality로 실행한다.
+- 공격은 `/^\/펫무쌍공격\s+(?:10|[1-9])$/` 전체 패턴만 허용한다.
+- `/벼락확률`은 `호이 남`만 사용할 수 있다. 값은 `0`~`100`과 선택적인 소수점 첫째 자리만 허용하며, 접미문이 붙은 입력은 실행하지 않는다.
+- 슬래시가 없는 `펫무쌍준비`, `펫무쌍시작`, `펫무쌍공격 [번호]` 입력은 실행하지 않는다.
+- 공격은 공성전 방 또는 DEV 컨텍스트에서만 처리한다.
+- 대회 진행 중 일반 유저는 `main.js`에서 `/펫무쌍공격 [1-10]`, `/무쌍순위` 외의 슬래시 명령과 무슬래시 입력이 차단되며, 운영자는 관리 명령을 계속 사용할 수 있다. `Info.js`의 정보 명령은 펫무쌍 차단 대상에서 제외한다. 단, 펫무쌍·맞짱필드·길드 영지전은 어느 시작 경로에서도 동시에 활성화되지 않도록 상호 차단한다.
+
+## Related Commands
+- `/영지공격 [숫자]`
+- `/길드영지시작`
+- `/맞짱시작`
+- `/영지패스추가, [아이디] [YY.MM.DD|영구권]`
+- `/영지패스삭제, [아이디]`
+
+---
+
 # /패스목록
 
 Status: VERIFIED
@@ -2245,6 +2361,9 @@ Status: VERIFIED
 
 ## Data Usage
 - `data.member[user].pass`
+- `data.member[user].pass.territory`
+- `data.territoryPassAuditLogs`
+- `data.member[user].guildTerritoryAutoAttackEnabled`
 - `data.member[user].bag["자동탐험권🌄"]`
 - `data.member[user].bag["호이응원패키지(무료)🐹[1]" ... "호이응원패키지(무료)🐹[10]"]`
 - `data.rewardPayoutStatus`
@@ -2257,6 +2376,8 @@ Status: VERIFIED
 - `/패스목록` consistency scanning is read-only: users holding `자동탐험권🌄` without an active newbie/hoi/premium pass are listed for manual review and are not mutated by the scan; hidden emoji variation selectors and trailing spaces in the item key are normalized for counting
 - `/패스목록` sums `호이응원패키지(무료)🐹[1]` through `[10]` for each user and lists users holding at least 3 in total; this scan is read-only and does not mutate bag data
 - Pass add/delete commands save `member.json` through their command branch after `processUserIDCommand`
+- 영지기습패스 추가·연장·삭제는 운영자·대상·처리시각·만료일·변경 전후 값을 `territoryPassAuditLogs`에 남긴다. 유효한 영지기습패스는 자동 준비·자동 공격의 구독형 권한으로 판정하며 물리 자동화권을 반복 지급하지 않는다.
+- 영지기습패스가 만료·삭제되면 `guildTerritoryAutoAttackEnabled`를 OFF로 저장하며, 패스를 다시 추가해도 자동으로 ON 복구하지 않는다.
 - `/초보패스추가` and `/호이패스추가` grant one `자동탐험권🌄`
 - `/초보패스삭제` and `/호이패스삭제` remove all `자동탐험권🌄` only when no other newbie/hoi/premium automatic-explore pass is active
 - Past end dates are rejected before pass mutation and automatic ticket grant
@@ -2276,6 +2397,8 @@ Status: VERIFIED
 - `/호프구독`
 - `/공헌패스추가, [아이디] [날짜|영구권]`
 - `/다이아패스추가, [아이디] [날짜|영구권]`
+- `/영지패스추가, [아이디] [YY.MM.DD|영구권]`
+- `/영지패스삭제, [아이디]`
 - `/패키지가방`
 - `/보상지급`
 - `/연금지급`
@@ -2286,7 +2409,7 @@ Status: VERIFIED
 
 ---
 
-# /호패프리미엄추가|/호패프리미엄삭제|/호프단체추가|/호프구독
+# /호패프리미엄추가|/호패프리미엄삭제|/호프단체추가|/호프구독|/무쌍온|/무쌍오프|/출첵온|/출첵오프|/자동출첵
 
 Status: VERIFIED
 
@@ -2308,11 +2431,17 @@ Status: VERIFIED
 - `getPetHomeHeartUsageStatus`
 - `calcExploreSuccessPercent`
 - `claimQuestReward`
+- `processHoiPassPremiumAutomationCommand`
+- `autoRegisterHoiPassPremiumPetMusouUsers`
+- `runHoiPassPremiumAutoAttendance`
+- `processAttendanceForUser`
 
 ## Data Usage
 - `data.member[user].pass.premium`
 - `data.member[user].premiumDailyQuestCnt`
 - `data.member[user].bag`
+- `data.member[user].premiumAutomation`
+- `data.petMusouAutomationLogs`
 - `petSkillData[user].petSkills.equipped`
 - `petSkillData[user].petSkills.bag`
 - `petHomeActivityData.petHomeSocial[user].badges`
@@ -2323,7 +2452,10 @@ Status: VERIFIED
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
 - `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
-- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 최근 배치한 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
+- `/무쌍온`은 설정을 저장하고 현재 준비 회차 참가를 즉시 시도하며, 이후 수동·정시 시작 전 프리미엄 활성 유저를 자동 등록한다. 자동 등록은 유저별 오류를 격리·기록해 한 유저의 실패가 다음 유저를 중단하지 않으며, `/무쌍오프` 뒤에도 이미 등록된 현재 회차 참가는 유지한다.
+- `/출첵온` 설정은 프리미엄 만료 후에도 유지하지만 `/자동출첵` 실행 대상에서는 제외한다. `/자동출첵`은 MASTER·오픈채팅봇만 실행하며 구독 패스 지급 결과와 자동출첵 집계를 각각 기록하고, 대상자를 독립 처리해 한 유저의 실패가 다음 유저를 중단하지 않는다.
+- 수동 `ㅊㅊ`와 자동출첵은 같은 출석 판정·기본 보상·주사위·랭크·오픈런 보상 처리를 사용하며 명령 분기에서 `member.json`을 한 번 저장한다.
+- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 장착 가구 중 매력이 가장 낮은 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
 
@@ -2336,6 +2468,8 @@ Status: VERIFIED
 - `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
 - `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
 - `/이체`
+- `/펫무쌍준비`, `/펫무쌍시작`
+- `ㅊㅊ`, `/자동출첵`
 
 ---
 
@@ -2542,6 +2676,7 @@ Status: VERIFIED
 
 - `formatSkillBagMessage`
 - `getPetSkillData`
+- `buildPetSkillInfoMessage`
 - `getTierPetSkillSearchName`
 - `buildTierPetSkillInfoLine`
 - `normalizePetSkillName`
@@ -2563,6 +2698,8 @@ Status: VERIFIED
 ## AI Notes
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
+- `무쌍신화📙[B]`는 고정 확률 0.5%이며, 효과 안내에 `무쌍귀신📙`과 중복되지 않는다는 문구를 표시한다.
+- `전설의 몽둥이📙[한정판]` 조회는 확률 줄 없이 한정판 등급과 레이드·캐슬 매력 50만 효과를 표시한다.
 - 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
 - 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬끼리는 중복 불가, 일반 종합매력 무기 펫스킬과는 중복 가능하다는 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
@@ -3323,6 +3460,8 @@ Status: VERIFIED
 ## Related Helpers
 - `normalizePetSkillName`
 - `getPetSkillData`
+- `parseDirectGrantPetSkillRequest`
+- `parsePetSkillBagGrantRequest`
 - `getPetSkillBagRemainCount`
 - `addPetSkillToBag`
 ## Data Usage
@@ -3332,6 +3471,9 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬가방`
 - `/펫스킬일괄지급`
+
+## AI Notes
+- `전설의 몽둥이📙[한정판]` 지급 명령은 `호이 남`만 실행할 수 있다. `/펫스킬가방추가 [이름], 전설의 몽둥이` 입력 시 대상에게 1개, 뒤에 숫자를 입력하면 해당 수량만큼 지급하며 숫자 뒤 추가 문구는 차단한다.
 
 ---
 
@@ -3351,6 +3493,9 @@ Status: VERIFIED
 - Bulk mutates skill bags and saves `petSkillData`
 ## Related Commands
 - `/펫스킬가방추가`
+
+## AI Notes
+- 단독 지급 전용인 `전설의 몽둥이📙[한정판]`는 일괄 지급 대상에서 제외한다.
 
 ---
 
@@ -3442,6 +3587,7 @@ Status: VERIFIED
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
+- `전설의 몽둥이📙[한정판]`는 `/펫스킬확률`과 일반 오픈 풀에 포함되지 않는다.
 - S/A/B/C의 기존 등급별 총확률은 유지한다. 노션에 개별 확률이 명시된 신규·조정 스킬은 그 값을 우선하고, 남은 등급 확률은 나머지 스킬과 티어책에 균등 분배한다. SS/D는 개별 확률을 사용한다.
 
 ---
@@ -3487,6 +3633,7 @@ Status: VERIFIED
 
 - `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C의 명시 확률을 먼저 배정하고 남은 등급 확률을 균등 분배하며 티어 전용 펫스킬북도 추첨한다.
 - `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
+- `openable === false`인 `전설의 몽둥이📙[한정판]`의 추첨 가중치는 항상 0이라 단건·다건 오픈 모두에서 획득할 수 없다.
 
 ---
 
@@ -3543,12 +3690,14 @@ Status: VERIFIED
 - `야호📙`은 신규 뽑기 목록과 `/알림` 효과가 주석 처리되어 더 이상 획득·사용되지 않는다. 기존 보유 데이터는 유지한다.
 - 티어 전용 펫스킬은 `ticketTierData` 순서로 현재 티어가 요구 티어 이상인지 장착 시 검사하며, 티어책끼리는 한 종만 허용하고 일반 스킬과는 함께 장착할 수 있다.
 - 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
+- `무쌍귀신📙` 장착 성공 시 공통 `equipComment` 출력 흐름으로 `무쌍귀신📙 촹 촹 챙챙 슈슉 슈슉 윽! 악!`을 표시한다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
 - `/계삭진행`과 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
+- `전설의 몽둥이📙[한정판]`는 장착 목록에 있을 때 레이드·캐슬 매력 50만씩을 동적으로 적용하고 `/펫스킬소멸`로 제거되면 즉시 회수한다. 장착 성공 시 `오오.. 영롱하군요 너..빌런인가?` 멘트를 표시한다.
 - `인플루언서📙`과 `셀럽📙`은 중복 장착 시 `/펫홈`, `/홈알림`, `/팔로워순위` 표시 팔로워에 합계 3,000명을 더하며 실제 팔로워 관계와 뱃지 누적값은 바꾸지 않는다.
 - `망므📙` 장착 멘트는 `이건 내 망므야!`이며 일일 마음 한도를 5회 늘린다.
 - 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 장착 미니펫이 엘리트 등급일 때, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
@@ -4014,6 +4163,8 @@ Status: VERIFIED
 - `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
+- `getBestTicketEventCoupon`
+- `consumeTicketEventCoupon`
 
 ## Data Usage
 
@@ -4023,6 +4174,7 @@ Status: VERIFIED
 - `data.member[sender].bag`
 - `data.member[sender].diamondBoxBuyCount`
 - `petSkillData`
+- `data.member[sender].bag["티켓이벤트할인쿠폰🎟️(10~50%)"]`
 
 ## Save Flow
 
@@ -4031,6 +4183,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
+- 티켓 이름을 포함한 상품은 보유 쿠폰 중 최고 할인율을 상품가에 먼저 적용하고, 구매가 성공한 뒤 해당 쿠폰 1장만 차감한다. 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
 
 ## Related Commands
@@ -4042,6 +4195,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `쇼핑광📙` discount applies before tax calculation
+- 티켓이벤트 쿠폰 할인은 `쇼핑광📙` 할인보다 먼저 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
 - `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
@@ -5079,9 +5233,10 @@ Status: VERIFIED
 - `/자동탐고정 10` when the guild raid event is active
 
 ## AI Notes
-- `calcExploreSuccessPercent` is used for the reservation/status success-rate display
+- `calcExploreSuccessPercent` is used for the reservation/status display and the actual settlement success roll
 - `/탐 [숫자]` 예약 안내와 `/지도`의 상단 성공확률·상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
-- `doPetExploreInterval` recalculates the same success-rate components during settlement
+- `doPetExploreInterval` uses the shared success-rate calculation immediately before consuming the selected probability-UP item and rolling the result, so premium, pendant, home-badge, and penalty values match the displayed formula and the final rate remains capped at 100%
+- 일반 광산 1~3에서 이벤트 던전 `E` 보상으로 전환되어도 성공률은 입장권 재확인까지 끝난 원래 광산 기준으로 계산하므로 `광산탐험가📙` 효과가 사라지지 않는다.
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
 - `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
@@ -5089,11 +5244,11 @@ Status: VERIFIED
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
-- Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket or success penalty.
-- Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-10%` success penalty and check `펫던전 입장권🌋` at settlement.
+- Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket and applies a `-5%` success penalty.
+- Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-15%` success penalty and check `펫던전 입장권🌋` at settlement.
 - `/탐 6` rewards `땅문서던전박스📜(/땅문서박스오픈)` 1개, and `/탐 7` rewards `샵오픈던전박스🏡(/샵오픈박스오픈)` 1개 on success.
 - `/땅문서박스오픈` grants `땅문서📜` 1개 per box, and `/샵오픈박스오픈` grants `펫스윗홈인테리어샵🖼️(/샵오픈)` 70개 per box; both boxes are auto-opened by `/정리`.
-- Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-40%` success penalty.
+- Maze entries `/탐 8~9` require `미궁 입장권🕋` and apply a `-45%` success penalty.
 - `/탐 8` rewards `펜던트미궁박스💎(/펜던트미궁박스오픈)` on success.
 - `/탐 1` 강화박스는 `펫 강화석⭐` 70~100개, `/탐 2` 펫먹이박스는 `펫먹이🍼` 40~50개, `/탐 3` 행운의박스는 `럭키박스🍀(/럭키오픈)` 5개를 지급한다.
 - `/탐 8` 펜던트미궁박스는 `펜던트 강화석📿` 3~4개와 독립 1% 확률의 `펜던트 복원석🔷` 1개를 지급한다.
@@ -5402,14 +5557,17 @@ Status: VERIFIED
 - `grantHoiPassPremiumDailyRewards`
 - `buildSupportPassPayoutResultMessage`
 - `getActiveSupportPassUsers`
+- `appendTerritoryPassPayoutLogs`
 
 ## Data Usage
-- `member.json -> member[user].pass[premium|hoi|newbie|contribution|diamond]`
+- `member.json -> member[user].pass[premium|hoi|newbie|contribution|diamond|territory]`
 - `member.json -> member[user].bag`
+- `member.json -> supportPassPayoutLogs`
 - 각 패스의 `dailyRewardLastDate`로 당일 중복 지급을 방지한다.
 
 ## Save Flow
-- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 실제 지급 건수가 있을 때 `member.json`을 한 번 저장한다.
+- MASTER 또는 `오픈채팅봇`만 실행 가능하며, 6종 패스의 실제 지급 건수 또는 영지기습패스 중복 제외 로그가 있을 때 `member.json`을 한 번 저장한다.
+- 영지기습패스는 `영지기습공격권🔥(40%)` 2개, `영지절대방어권🛡(50%)` 2개, `🌪️ 전쟁불안정 증폭권(/불안정)` 1개, `다이아상자💎(/다이아상자오픈)` 1개, `피뢰침⚡(자동 벼락 방지)` 1개를 지급하며, 성공·당일 중복 제외 내역을 최근 500건까지 기록한다.
 
 ## Related Commands
 - `/호프구독`
@@ -5704,6 +5862,8 @@ Status: VERIFIED
 - `homeData[*].furnitureBag`
 - `placedFurnitureData[*]` after separation, with legacy home fallback before separation
 - `data.member[*].bag`
+- `data.member[*].guildTerritoryAutoAttackGranted`
+- `data.member[*].guildTerritoryAutoAttackPermanent`
 - `data.member[*].point`
 - `data.allowedUsers2`
 - `data.allowedUsers4`
@@ -5734,6 +5894,7 @@ Status: VERIFIED
 - Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
 - Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
 - Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
+- Step 8 removes every mistakenly issued `영지자동공격권⚔️` from member bags and deletes the obsolete first-grant/permanent-entitlement flags. Re-running the cleanup is idempotent and does not disable a valid `영지기습패스` user's current auto-attack setting.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
@@ -5924,7 +6085,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Master 또는 `호이월드 GM 관리자방`의 Admin이 실행하는 통합 정리 명령이다.
+- Master 또는 `호이월드 GM 관리자방`의 Admin·`오픈채팅봇`이 실행하는 통합 정리 명령이다.
 - 미니펫·가구 가방은 일반 10개, 호이패스 프리미엄 15개 한도만 남기고 초과분을 삭제한다.
 - 미니펫 또는 펜던트 정리 결과가 있으면 `member_pet.json`을, 가구 정리 결과가 있으면 `homeData.json`을 저장한다.
 
