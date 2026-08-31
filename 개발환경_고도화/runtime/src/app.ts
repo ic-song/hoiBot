@@ -58,6 +58,7 @@ import { isPlayerDiamondRankReadCommand, PlayerDiamondRankReadService } from "./
 import { isPlayerLevelResetCommand, PlayerLevelResetService } from "./player/player-level-reset-service.js";
 import { isPlayerLevelRankReadCommand, PlayerLevelRankReadService } from "./player/player-level-rank-read-service.js";
 import { isPlayerVerificationRankReadCommand, PlayerVerificationRankReadService } from "./player/player-verification-rank-read-service.js";
+import { isPlayerRankReadCommandCandidate } from "./player/privileged-rank-read-command-dispatch.js";
 import { AdminPlayerInfoReadService, isAdminPlayerInfoReadCandidate, normalizeAdminPlayerInfoReadDispatchMessage } from "./player/admin-player-info-read-service.js";
 import { DeveloperNoteReadService, isDeveloperNoteReadCommand } from "./admin/developer-note-read-service.js";
 import { isSocialBoardReadCommand, SocialBoardReadService } from "./social/social-board-read-service.js";
@@ -1161,12 +1162,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isHomeFurnitureCarrotTransferCandidate(normalizedEvent.message)
          || isHomeFurnitureRankCommand(normalizedEvent.message)
          || isHomeRankingReadCommand(normalizedEvent.message)
-         || isPlayerCumulativeLevelRankReadCommand(normalizedEvent.message)
-         || isPlayerCumulativeLikeRankReadCommand(normalizedEvent.message)
-         || isPlayerDiamondRankReadCommand(normalizedEvent.message)
+         || isPlayerRankReadCommandCandidate(normalizedEvent.message)
          || isPlayerLevelResetCommand(normalizedEvent.message)
-         || isPlayerLevelRankReadCommand(normalizedEvent.message)
-         || isPlayerVerificationRankReadCommand(normalizedEvent.message)
          || isAdminPlayerInfoReadCandidate(normalizedEvent.message)
          || isDeveloperNoteReadCommand(normalizedEvent.message)
          || isSocialBoardReadCommand(normalizedEvent.message)
@@ -1268,17 +1265,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              ? normalizedEvent.message ?? ""
              : isHomeRankingReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
-             : isPlayerCumulativeLevelRankReadCommand(normalizedEvent.message)
-             ? normalizedEvent.message ?? ""
-             : isPlayerCumulativeLikeRankReadCommand(normalizedEvent.message)
-             ? normalizedEvent.message ?? ""
-             : isPlayerDiamondRankReadCommand(normalizedEvent.message)
+             : isPlayerRankReadCommandCandidate(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isPlayerLevelResetCommand(normalizedEvent.message)
-             ? normalizedEvent.message ?? ""
-             : isPlayerLevelRankReadCommand(normalizedEvent.message)
-             ? normalizedEvent.message ?? ""
-             : isPlayerVerificationRankReadCommand(normalizedEvent.message)
              ? normalizedEvent.message ?? ""
              : isAdminPlayerInfoReadCandidate(normalizedEvent.message)
              ? normalizeAdminPlayerInfoReadDispatchMessage(normalizedEvent.message ?? "")
@@ -2676,7 +2665,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isPlayerVerificationRankReadCommand(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_verification_rank_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PlayerVerificationRankReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+        const result = await new PlayerVerificationRankReadService(database!).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message });
         if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
