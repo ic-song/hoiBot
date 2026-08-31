@@ -1,4 +1,5 @@
 // post-freeze 펫스킬 3종의 MariaDB canonical parity를 검증한다.
+import { readFileSync } from "node:fs";
 import mariadb from "mariadb";
 
 const connection = await mariadb.createConnection({
@@ -6,14 +7,31 @@ const connection = await mariadb.createConnection({
   port: Number(process.env.HOIBOT_DB_PORT ?? "33310"),
   user: process.env.HOIBOT_DB_USER ?? "root",
   password: process.env.HOIBOT_DB_PASSWORD ?? "",
-  database: process.env.HOIBOT_DB_NAME ?? "hoibot_pet_skill_post_freeze_probe"
+  database: process.env.HOIBOT_DB_NAME ?? "hoibot_pet_skill_post_freeze_probe",
+  multipleStatements: true
 });
 const checks = [];
+const runCollisionChecks = process.env.HOIBOT_PET_SKILL_COLLISION_CHECK === "true";
 
 // 이름 붙은 비동기 검증을 실행하고 통과 목록에 기록한다.
 async function check(name, work) {
   await work();
   checks.push(name);
+}
+
+// 동결 migration이 다른 payload나 source owner를 덮지 않고 실패하는지 검증한다.
+async function expectMigrationCollision(migration, label) {
+  let collisionError = null;
+  try {
+    await connection.query(migration);
+  } catch (error) {
+    collisionError = error;
+    await connection.query("ROLLBACK");
+  }
+  const errorNumber = Number(collisionError?.errno);
+  if (!collisionError || ![1048, 1064].includes(errorNumber)) {
+    throw new Error(`${label} collision did not fail closed: ${collisionError?.errno ?? "no error"} ${collisionError?.sqlMessage ?? collisionError?.message ?? ""}`);
+  }
 }
 
 try {
@@ -70,6 +88,41 @@ try {
       throw new Error("ten-won/salvation identity separation mismatch");
     }
   });
+  if (runCollisionChecks) {
+    await check("stable identity and source collision fail closed", async () => {
+      const migration = readFileSync(new URL("../migrations/408_pet_skill_post_freeze_seed.sql", import.meta.url), "utf8");
+      await connection.query(migration); // 동일 payload 전체 replay가 문법·identity 변경 없이 성공해야 한다.
+      try {
+        await connection.query("UPDATE skill_definitions SET display_name='충돌-전설' WHERE code='pet_skill_legendary_club'");
+        await expectMigrationCollision(migration, "definition payload");
+        const definition = await connection.query("SELECT display_name FROM skill_definitions WHERE code='pet_skill_legendary_club'");
+        if (definition[0]?.display_name !== "충돌-전설") throw new Error("definition collision was overwritten");
+      } finally {
+        await connection.query("ROLLBACK");
+        await connection.query("UPDATE skill_definitions SET display_name='전설의 몽둥이' WHERE code='pet_skill_legendary_club'");
+      }
+
+      const objects = await connection.query("SELECT id, object_key FROM object_registry WHERE object_key IN ('skill.pet_skill_000','skill.pet_skill_090')");
+      const originalObjectId = objects.find((row) => row.object_key === "skill.pet_skill_090")?.id;
+      const wrongObjectId = objects.find((row) => row.object_key === "skill.pet_skill_000")?.id;
+      if (originalObjectId === undefined || wrongObjectId === undefined) throw new Error("collision fixture object missing");
+      try {
+        await connection.query(
+          "UPDATE object_source_bindings SET object_id=? WHERE source_system='LEGACY_JSON' AND source_table='PET_SKILL_LIST' AND source_key='skill_090'",
+          [wrongObjectId]
+        );
+        await expectMigrationCollision(migration, "source binding");
+        const binding = await connection.query("SELECT object_id FROM object_source_bindings WHERE source_system='LEGACY_JSON' AND source_table='PET_SKILL_LIST' AND source_key='skill_090'");
+        if (String(binding[0]?.object_id) !== String(wrongObjectId)) throw new Error("source binding collision was overwritten");
+      } finally {
+        await connection.query("ROLLBACK");
+        await connection.query(
+          "UPDATE object_source_bindings SET object_id=? WHERE source_system='LEGACY_JSON' AND source_table='PET_SKILL_LIST' AND source_key='skill_090'",
+          [originalObjectId]
+        );
+      }
+    });
+  }
   console.log(JSON.stringify({ result: "passed", checks, total: checks.length, activeSourceParity: "93/93", physicalDefinitions: 96 }));
 } finally {
   await connection.end();

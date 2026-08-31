@@ -64,27 +64,58 @@ function renderSeed(row, sourceHash) {
     tierExclusive: row.source.tierExclusive === true,
     postFreeze: true,
   };
+  const catalogJson = sqlJson(catalog);
+  const metadataJson = sqlJson(metadata);
   return `INSERT INTO skill_definitions (code, display_name, rules_json, active)
-VALUES (${sqlText(row.definitionCode)}, ${sqlText(row.source.name)}, JSON_OBJECT('catalog', JSON_EXTRACT('${sqlJson(catalog)}', '$')), TRUE)
+VALUES (${sqlText(row.definitionCode)}, ${sqlText(row.source.name)}, JSON_OBJECT('catalog', JSON_EXTRACT('${catalogJson}', '$')), TRUE)
 ON DUPLICATE KEY UPDATE
+  code = IF(
+    display_name = VALUES(display_name)
+    AND active = VALUES(active)
+    AND JSON_EXTRACT(rules_json, '$.catalog') = JSON_EXTRACT('${catalogJson}', '$'),
+    code,
+    NULL
+  ),
   display_name = VALUES(display_name),
-  rules_json = JSON_MERGE_PATCH(COALESCE(skill_definitions.rules_json, JSON_OBJECT()), JSON_OBJECT('catalog', JSON_EXTRACT('${sqlJson(catalog)}', '$'))),
+  rules_json = JSON_MERGE_PATCH(COALESCE(skill_definitions.rules_json, JSON_OBJECT()), JSON_OBJECT('catalog', JSON_EXTRACT('${catalogJson}', '$'))),
   active = TRUE;
 
 INSERT INTO object_registry (object_key, object_type, display_name, active, metadata_json)
-VALUES (${sqlText(row.objectKey)}, 'SKILL', ${sqlText(row.source.name)}, TRUE, JSON_EXTRACT('${sqlJson(metadata)}', '$'))
+VALUES (${sqlText(row.objectKey)}, 'SKILL', ${sqlText(row.source.name)}, TRUE, JSON_EXTRACT('${metadataJson}', '$'))
 ON DUPLICATE KEY UPDATE
+  object_key = IF(
+    object_type = VALUES(object_type)
+    AND display_name = VALUES(display_name)
+    AND active = VALUES(active)
+    AND JSON_EXTRACT(metadata_json, '$') = JSON_EXTRACT('${metadataJson}', '$'),
+    object_key,
+    NULL
+  ),
   display_name = VALUES(display_name),
   active = TRUE,
   metadata_json = VALUES(metadata_json);
 
-INSERT IGNORE INTO object_aliases (object_id, object_type, alias_type, alias_value)
+INSERT INTO object_aliases (object_id, object_type, alias_type, alias_value)
 SELECT id, object_type, 'legacy_name', ${sqlText(row.source.name)}
-FROM object_registry WHERE object_key = ${sqlText(row.objectKey)};
+FROM object_registry WHERE object_key = ${sqlText(row.objectKey)}
+ON DUPLICATE KEY UPDATE
+  object_id = IF(
+    object_aliases.object_id = VALUES(object_id)
+    AND object_aliases.object_type = VALUES(object_type),
+    object_aliases.object_id,
+    NULL
+  );
 
-INSERT IGNORE INTO object_source_bindings (object_id, object_type, source_system, source_table, source_key)
+INSERT INTO object_source_bindings (object_id, object_type, source_system, source_table, source_key)
 SELECT id, object_type, 'LEGACY_JSON', 'PET_SKILL_LIST', ${sqlText(row.sourceKey)}
-FROM object_registry WHERE object_key = ${sqlText(row.objectKey)};`;
+FROM object_registry WHERE object_key = ${sqlText(row.objectKey)}
+ON DUPLICATE KEY UPDATE
+  object_id = IF(
+    object_source_bindings.object_id = VALUES(object_id)
+    AND object_source_bindings.object_type = VALUES(object_type),
+    object_source_bindings.object_id,
+    NULL
+  );`;
 }
 
 const sourceText = gitShow(SOURCE_REF, "main.js");

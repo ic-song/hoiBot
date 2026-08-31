@@ -86,4 +86,15 @@ describe("post-freeze pet skill seed", () => {
     assert.equal(migration.includes("CREATE TABLE"), false);
     assert.equal(migration.includes("ALTER TABLE"), false);
   });
+
+  it("replays only identical stable identities and fails closed on collisions", () => {
+    assert.equal(migration.includes("INSERT IGNORE"), false);
+    assert.equal((migration.match(/code = IF\(/g) ?? []).length, 3);
+    assert.equal((migration.match(/object_key = IF\(/g) ?? []).length, 3);
+    assert.equal((migration.match(/object_id = IF\(/g) ?? []).length, 6);
+    assert.equal((migration.match(/object_aliases\.object_id = VALUES\(object_id\)/g) ?? []).length, 3);
+    assert.equal((migration.match(/object_source_bindings\.object_id = VALUES\(object_id\)/g) ?? []).length, 3);
+    assert.equal((migration.match(/AND JSON_EXTRACT\(rules_json, '\$\.catalog'\) = JSON_EXTRACT/g) ?? []).length, 3);
+    assert.equal((migration.match(/AND JSON_EXTRACT\(metadata_json, '\$'\) = JSON_EXTRACT/g) ?? []).length, 3);
+  });
 });
