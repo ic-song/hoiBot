@@ -5,8 +5,8 @@
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 1
-- 마지막 갱신: 2026-08-31 23:18 KST
+- 체크포인트 버전: 2
+- 마지막 갱신: 2026-08-31 23:21 KST
 - 대화 식별명: 모든 자산 DB화
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -28,11 +28,11 @@
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\configuration-catalog-crud-v2400-20260831`
 - 브랜치: `codex/modernization-configuration-catalog-crud-v2400-20260831`
 - 원격 저장소: `https://github.com/ic-song/hoiBot.git`
-- 업스트림 브랜치: 체크포인트 push 후 설정
-- 마지막 푸시 커밋: 체크포인트 push 후 기록
-- 원격 동기화 상태: 체크포인트 push 전
-- 체크포인트 Git 추적: 아니요
-- 체크포인트 포함 푸시 커밋: 체크포인트 push 후 기록
+- 업스트림 브랜치: `origin/codex/modernization-configuration-catalog-crud-v2400-20260831`
+- 마지막 푸시 커밋: `89d058c8` (구현 5개와 체크포인트 v1 보존)
+- 원격 동기화 상태: `89d058c8` 원격 push 확인
+- 체크포인트 Git 추적: 예
+- 체크포인트 포함 푸시 커밋: `89d058c8`
 
 ## 완료된 작업
 
