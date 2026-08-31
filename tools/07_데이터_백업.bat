@@ -6,17 +6,16 @@ set "ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe"
 set "TARGET_ADB_DEVICE=auto"
 set "REMOTE_DATA_DIR=/storage/emulated/0/호이랜드"
 set "LOCAL_DATA_DIR=data"
-set "MIGRATION_JSON_FILES=member.json;board.json;carrotBoard.json;itemInfo.json;trialTowerBoss.json;eventTowerBoss.json;castleBattle2.json;errorLog.json;member_title.json;pet_title.json;miniPet_title.json;miniPet_collection.json;miniPetCollectionInfo.json;member_pet.json;petSkillData.json;punchRankData.json;trialTower.json;miniPetData.json;memberBagCheck\memberBagCheck.json;petSweetHomeInfo.json;petSweetHomeData.json;petHomePlacedFurniture.json;petHomeComments.json;petHomeActivityData.json;petExploreData.json;attendanceLight.json;itemList.json;hoiBotChangeLog.json;freeMarket.json;packageInfo.json;packageLog.json;currencyLog.json;guildData.json;requestMonitorConfig.json"
 set "SYNC_LOG=%TEMP%\hoibot_data_pull_%RANDOM%.log"
 
 title hoiBot LDPlayer data pull
 
 echo.
 echo ============================================================
-echo  hoiBot LDPlayer 마이그레이션 대상 JSON 교체
+echo  hoiBot LDPlayer 운영 데이터 전체 교체
 echo ============================================================
-echo  ADB로 호이랜드 폴더를 임시로 가져온 뒤
-echo  main.js와 Info.js의 이관 대상 JSON으로 data\를 완전 교체합니다.
+echo  ADB로 호이랜드 폴더 전체를 임시로 가져온 뒤
+echo  저장소 data\를 운영 데이터와 동일하게 완전 교체합니다.
 echo  Git 작업은 처리하지 않습니다.
 echo  일관된 스냅샷을 위해 MessengerBot 데이터 쓰기를 멈춰 주세요.
 echo ============================================================
@@ -33,7 +32,6 @@ if not exist "%LOCAL_DATA_DIR%\" goto FAIL_LOCAL_DATA
 for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "RUN_TS=%%t"
 set "PULL_ROOT=%TEMP%\hoibot_ld_data_%RUN_TS%_%RANDOM%"
 set "PULLED_DATA_DIR=%PULL_ROOT%\호이랜드"
-set "JSON_DATA_DIR=%PULL_ROOT%\json-data"
 mkdir "%PULL_ROOT%" > nul 2>&1
 if errorlevel 1 goto FAIL_PULL_ROOT
 
@@ -69,7 +67,7 @@ if not errorlevel 1 goto FAIL_REMOTE_DATA
 echo [OK] 운영 데이터 폴더 확인 완료
 echo.
 
-echo [3/4] 이관 대상 운영 JSON 가져오기 및 검증
+echo [3/4] 운영 데이터 전체 가져오기 및 목록 확인
 echo ------------------------------------------------------------
 "%ADB_EXE%" -s "%TARGET_ADB_DEVICE%" pull "%REMOTE_DATA_DIR%" "%PULL_ROOT%" > "%SYNC_LOG%" 2>&1
 type "%SYNC_LOG%"
@@ -77,33 +75,31 @@ if errorlevel 1 goto FAIL_PULL
 findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%SYNC_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_PULL
 if not exist "%PULLED_DATA_DIR%\" goto FAIL_PULL_VERIFY
-mkdir "%JSON_DATA_DIR%" > nul 2>&1
-if errorlevel 1 goto FAIL_JSON_STAGE
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$root=$env:PULLED_DATA_DIR; $stage=$env:JSON_DATA_DIR; $required=@($env:MIGRATION_JSON_FILES -split ';'); $utf8=New-Object System.Text.UTF8Encoding($false,$true); $failed=$false; foreach($relative in $required){$source=Join-Path $root $relative; if(-not (Test-Path -LiteralPath $source -PathType Leaf)){Write-Output ('MISSING=' + $relative); $failed=$true; continue}; $file=Get-Item -LiteralPath $source; if($file.Length -le 0){Write-Output ('EMPTY=' + $relative); $failed=$true; continue}; try{$text=$utf8.GetString([System.IO.File]::ReadAllBytes($source))}catch{Write-Output ('INVALID_UTF8=' + $relative); $failed=$true; continue}; try{$null=$text | ConvertFrom-Json -ErrorAction Stop}catch{Write-Output ('INVALID_JSON=' + $relative); $failed=$true; continue}; $destination=Join-Path $stage $relative; $parent=Split-Path -Parent $destination; if(-not (Test-Path -LiteralPath $parent)){New-Item -ItemType Directory -Path $parent -Force | Out-Null}; Copy-Item -LiteralPath $source -Destination $destination -Force}; if($failed){exit 11}; Write-Output ('JSON_COUNT=' + $required.Count)" > "%SYNC_LOG%" 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$root=$env:PULLED_DATA_DIR; $files=@(Get-ChildItem -LiteralPath $root -File -Recurse); if($files.Count -eq 0){Write-Output 'FAIL_NO_FILES'; exit 11}; $jsonFiles=@($files | Where-Object {$_.Extension -ieq '.json'}); $emptyFiles=@($files | Where-Object {$_.Length -eq 0}); $totalBytes=($files | Measure-Object -Property Length -Sum).Sum; Write-Output ('PULL_COUNT=' + $files.Count); Write-Output ('JSON_COUNT=' + $jsonFiles.Count); Write-Output ('NON_JSON_COUNT=' + ($files.Count - $jsonFiles.Count)); Write-Output ('EMPTY_COUNT=' + $emptyFiles.Count); Write-Output ('TOTAL_BYTES=' + $totalBytes)" > "%SYNC_LOG%" 2>&1
 set "VALIDATE_CODE=%ERRORLEVEL%"
 type "%SYNC_LOG%"
 if not "%VALIDATE_CODE%"=="0" goto FAIL_VALIDATE
 set "PULL_COUNT=0"
-for /f "tokens=2 delims==" %%c in ('findstr /b /c:"JSON_COUNT=" "%SYNC_LOG%"') do set "PULL_COUNT=%%c"
+for /f "tokens=2 delims==" %%c in ('findstr /b /c:"PULL_COUNT=" "%SYNC_LOG%"') do set "PULL_COUNT=%%c"
 if "%PULL_COUNT%"=="0" goto FAIL_VALIDATE
-echo [OK] 이관 대상 운영 JSON %PULL_COUNT%개 검증 완료
+echo [OK] 운영 데이터 전체 %PULL_COUNT%개 목록 확인 완료
 echo.
 
-echo [4/4] 검증된 운영 JSON으로 data\ 완전 교체
+echo [4/4] 가져온 운영 데이터로 data\ 완전 교체
 echo ------------------------------------------------------------
-robocopy "%JSON_DATA_DIR%" "%LOCAL_DATA_DIR%" /MIR /COPY:DAT /R:1 /W:1 > "%SYNC_LOG%" 2>&1
+robocopy "%PULLED_DATA_DIR%" "%LOCAL_DATA_DIR%" /MIR /COPY:DAT /R:1 /W:1 > "%SYNC_LOG%" 2>&1
 set "ROBOCOPY_CODE=%ERRORLEVEL%"
 type "%SYNC_LOG%"
 if %ROBOCOPY_CODE% GEQ 8 goto FAIL_COPY
 rmdir /s /q "%PULL_ROOT%"
 del /q "%SYNC_LOG%" > nul 2>&1
-echo [OK] 이관 대상 운영 JSON %PULL_COUNT%개로 data\를 완전 교체했습니다.
+echo [OK] 운영 데이터 %PULL_COUNT%개로 data\를 완전 교체했습니다.
 echo.
 
 :SUCCESS
 echo ============================================================
-echo  SUCCESS - LDPlayer 이관 대상 JSON 교체 완료
+echo  SUCCESS - LDPlayer 운영 데이터 전체 교체 완료
 echo ============================================================
 echo  다음 단계: Codex에 "07 백업 완료"라고 알려 주세요.
 echo ============================================================
@@ -181,15 +177,7 @@ exit /b 1
 
 :FAIL_VALIDATE
 echo.
-echo [FAIL] 이관 대상 JSON 누락 또는 빈 파일·UTF-8·파싱 검증 실패
-echo 원본과 data\는 변경하지 않았습니다.
-echo 임시 가져오기 폴더: %PULL_ROOT%
-pause
-exit /b 1
-
-:FAIL_JSON_STAGE
-echo.
-echo [FAIL] 검증된 JSON staging 폴더 생성 실패
+echo [FAIL] 가져온 운영 데이터 목록 확인 실패
 echo 원본과 data\는 변경하지 않았습니다.
 echo 임시 가져오기 폴더: %PULL_ROOT%
 pause
@@ -197,7 +185,7 @@ exit /b 1
 
 :FAIL_COPY
 echo.
-echo [FAIL] 검증된 운영 JSON의 data\ 완전 교체 실패
+echo [FAIL] 가져온 운영 데이터의 data\ 완전 교체 실패
 echo 임시 가져오기 폴더: %PULL_ROOT%
 pause
 exit /b 1
