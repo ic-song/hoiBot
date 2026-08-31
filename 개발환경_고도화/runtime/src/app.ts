@@ -46,6 +46,7 @@ import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/da
 import { AutoExploreFixedConfigService, isAutoExploreFixedConfigCommand } from "./pet/auto-explore-fixed-config-service.js";
 import { PetExploreSettlementCommandConsumer, isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
 import { PetExploreSettlementInputSnapshotProvider } from "./pet/pet-explore-settlement-input-snapshot-provider.js";
+import { isPetExploreEventControlCommand, PetExploreEventControlCommandService } from "./pet/pet-explore-event-control-command-service.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { InventoryCleanupIrisHandler } from "./inventory/inventory-cleanup-iris-handler.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
@@ -686,6 +687,36 @@ async function dispatchPetExploreSettlementCommand(database: DatabaseClient | un
     if (error instanceof ApplicationError && [403,404,409,422].includes(error.statusCode)) replies.push(await eventProcessor.queueCommandReply(event,"pet_explore_settlement_error",error.message));
     else throw error;
   }
+}
+
+// 펫탐험 이벤트 제어 exact 명령을 공용 provider 소비자로 전달합니다.
+async function dispatchPetExploreEventControlCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
+  if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || !isPetExploreEventControlCommand(event.message)
+    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
+  try {
+    const result = await new PetExploreEventControlCommandService(database).handleDispatchedIris({
+      eventId: event.eventId,
+      externalUserId: event.userId,
+      channelId: event.channelId,
+      message: event.message!,
+    });
+    if (result.status === "changed") {
+      replies.push(await eventProcessor.queueCommandReply(event, "PET_EXPLORE_EVENT_CONTROL", result.data));
+    }
+  } catch (error) {
+    if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+      replies.push(await eventProcessor.queueCommandReply(event, "pet_explore_event_control_error", error.message));
+    } else {
+      throw error;
+    }
+  }
+}
+
+// 펫탐험 명령 소비자들을 app 본문의 단일 호출 경계로 묶습니다.
+async function dispatchPetExploreCommandConsumers(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
+  await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,duplicate,event,replies);
+  await dispatchPetExploreEventControlCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
 }
 
 // 테스트와 실제 실행에서 공통으로 사용할 Fastify 앱을 생성합니다.
@@ -1945,7 +1976,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
+      await dispatchPetExploreCommandConsumers(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAttributeCommandCandidate(normalizedEvent.message)
