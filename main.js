@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.430"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.433"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -773,6 +773,7 @@ var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 �
 var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리 객체 (guildId: timerId)
 var petMusouOpeningTimers = {}; // 펫무쌍 30초 시작 유예 타이머 관리 객체 (실행 컨텍스트별 timerId)
 var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 컨텍스트별 timerId)
+var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     attendance: { // 출석 보상 설정
@@ -900,6 +901,21 @@ const GLOBAL_CONFIG = {
         lightningStepRate: 0.01,
         timeoutLightningStepRate: 0.005,
         lightningRodSuccessRate: 0.8,
+        scheduleCheckMs: 30000,
+        regularStartTimes: ["12:30"],
+        ticketEventStartTimes: ["20:30"],
+        automationLogMax: 100,
+        ticketEvent: {
+            startDate: "20260906",
+            endDate: "20260920",
+            coupons: [
+                { name: "티켓이벤트할인쿠폰🎟️(10%)", rate: 10, weight: 70 },
+                { name: "티켓이벤트할인쿠폰🎟️(20%)", rate: 20, weight: 15 },
+                { name: "티켓이벤트할인쿠폰🎟️(30%)", rate: 30, weight: 7 },
+                { name: "티켓이벤트할인쿠폰🎟️(40%)", rate: 40, weight: 5 },
+                { name: "티켓이벤트할인쿠폰🎟️(50%)", rate: 50, weight: 3 }
+            ]
+        },
         items: {
             lightningRod: "피뢰침⚡(자동 벼락 방지)"
         }
@@ -2796,7 +2812,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petSkillData, petSkillDataPath);
             addResponseTiming("펫스킬 보정 저장", commonStepStart);
         }
-        var shouldCleanupAllPremiumUsers = (msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇");
+        var shouldCleanupAllPremiumUsers = ((msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) ||
+            (msg === "/자동출첵" && (isMaster(sender) || sender === "오픈채팅봇"));
         var premiumExpiryTarget = shouldCleanupAllPremiumUsers ? "" : sender;
         var premiumExpiredUsers = getExpiredHoiPassPremiumUsers(data, premiumExpiryTarget);
         if (premiumExpiredUsers.length > 0) {
@@ -2826,6 +2843,41 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var petMusou = ensurePetMusouData(data);
         recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat);
         petMusou = ensurePetMusouData(data);
+        if (!ctx.isDev) ensurePetMusouScheduleTimer(replier);
+        if (isHoiPassPremiumAutomationCommand(msg)) {
+            var premiumAutomationResult = processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData, guildData, sender);
+            if (premiumAutomationResult.changed) saveJsonFile(data, filePath);
+            replier.reply(premiumAutomationResult.message);
+            return;
+        }
+        if (msg === "/자동출첵") {
+            if (!(isMaster(sender) || sender === "오픈채팅봇")) {
+                replier.reply("❌ /자동출첵 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
+            if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
+            for (var premiumNoticeIndex = 0; premiumNoticeIndex < premiumAutoAttendanceResult.noticeMessages.length; premiumNoticeIndex++) {
+                noticeMsg(premiumAutoAttendanceResult.noticeMessages[premiumNoticeIndex]);
+            }
+            replier.reply(premiumAutoAttendanceResult.message);
+            return;
+        }
+        if (/^\/자동출첵\s+.*$/.test(msg)) {
+            replier.reply("사용법: /자동출첵\n※ 추가 인자 없이 명령어만 입력해 주세요.");
+            return;
+        }
+        if (isPetMusouTicketEventAdminCommand(msg)) {
+            if (!isPetMusouOperator(sender)) {
+                replier.reply("❌ 티켓이벤트 관리 명령어를 사용할 권한이 없습니다.");
+                return;
+            }
+            var ticketEventCommandResult = processPetMusouTicketEventAdminCommand(msg, data, sender);
+            if (ticketEventCommandResult.changed) saveJsonFile(data, filePath);
+            if (ticketEventCommandResult.noticeMessage) noticeMsg(ticketEventCommandResult.noticeMessage);
+            replier.reply(ticketEventCommandResult.message);
+            return;
+        }
         if (isPetMusouLightningRateCommand(msg)) {
             if (sender !== "호이 남") {
                 replier.reply("❌ /벼락확률 명령어를 사용할 권한이 없습니다.");
@@ -2881,7 +2933,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (msg === "/펫무쌍준비") {
             var petMusouJoinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
-            if (petMusouJoinResult.ok) saveJsonFile(data, filePath);
+            var premiumAutoReadyResult = autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, sender);
+            if (petMusouJoinResult.ok || premiumAutoReadyResult.changed) saveJsonFile(data, filePath);
             replier.reply(petMusouJoinResult.message);
             return;
         }
@@ -2900,8 +2953,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             var petMusouHomeData = loadJsonFile(homeDataFile);
+            var premiumStartAutoReadyResult = autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, "");
             var petMusouStartResult = beginPetMusou(data, petData, petMusouHomeData, petSkillData, guildData);
             if (!petMusouStartResult.ok) {
+                if (premiumStartAutoReadyResult.changed) saveJsonFile(data, filePath);
                 replier.reply(petMusouStartResult.message);
                 return;
             }
@@ -5309,46 +5364,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 //
                 if (msg === "ㅊㅊ") {
                     if (!castleSiegeFlag) {
-                        if (!data.attend_list.includes(sender)) {
-                            data.attend_list.push(sender); //출석목록에 저장
-                            data.member[sender].cnt++; //출석일 증가
-                            data.member[sender].today++; //금일 출석 여부 증가
-                            data.member[sender].recent = getCurrentDate(); // 최근출석일에 등록
-                            data.member[sender].point += GLOBAL_CONFIG.attendance.bonusPoint; //포인트 출석비
-                            data.member[sender].exp += GLOBAL_CONFIG.attendance.bonusExp; //경험치 출석비
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치  " + GLOBAL_CONFIG.attendance.bonusExp + "exp 획득");
-                            var multi = rollAndCalculateMultiplier(); // 주사위를 굴려 배율을 계산하는 함수 호출
-                            var result = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multi).toFixed(0)); //보너스 ㅊㅊ포인트
-                            var diceMsg =
-                                "[" +
-                                checkRank(data, petData, guildData, sender) +
-                                "]님의 출첵 응모가 굴러갑니다!\n" +
-                                multi +
-                                "배 당첨!💸\n" +
-                                "🅟" +
-                                numberWithCommas(result) +
-                                " 추가적립 되었습니다.\nhttps://ibb.co/jkbgrzHt\n이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.";
-                            data.member[sender].point += result; // ㅊㅊ 주사위 포인트 추가
-                            replier.reply(diceMsg);
-                            var Bonus = RankBonus(data, sender); //랭크 ㅊㅊ 보너스
-                            var BonusResult = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * Bonus.BonusM).toFixed(0));
-                            if (Bonus.BonusM !== 0) {
-                                Bonus.Bonusmsg += "🎊\n🅟" + numberWithCommas(BonusResult) + " 추가적립 되었습니다.";
-                                data.member[sender].point += BonusResult; //랭크추가 ㅊㅊ 주사위 포인트 추가
-                                replier.reply(Bonus.Bonusmsg);
-                            }
-
-                            // 오픈런📙: /리셋 이후 출석 1등에게 일일 1회 보상
-                            if (data.attend_list[0] === sender && hasPetSkill(petSkillData, sender, "오픈런") && !data.member[sender].openRunRewardClaimed) {
-                                data.member[sender].bag["펫먹이🍼"] = (data.member[sender].bag["펫먹이🍼"] || 0) + 1000;
-                                data.member[sender].openRunRewardClaimed = true;
-                                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 오늘도 1등 출석 성공!");
-                                replier.reply("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
-                                replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 누구보다 빠르게, 남들과는 다르게!");
-                            }
+                        var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, sender);
+                        if (attendanceResult.ok) {
                             saveJsonFile(data, filePath);
+                            for (var attendanceMessageIndex = 0; attendanceMessageIndex < attendanceResult.messages.length; attendanceMessageIndex++) {
+                                replier.reply(attendanceResult.messages[attendanceMessageIndex]);
+                            }
                         } else {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 이미 출첵 하셨습니다.");
+                            replier.reply(attendanceResult.message);
                         }
                     }
                     return;
@@ -17716,6 +17739,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var taxAmount = 0;
                         var itemTotalCost = 0;
                         var taxExempt = false;
+                        var ticketEventCoupon = getBestTicketEventCoupon(data, sender, itemName); // 티켓 구매 1건에 적용할 최고 할인율 쿠폰
+
+                        if (ticketEventCoupon) {
+                            itemPrice = itemPrice * (1 - ticketEventCoupon.rate / 100);
+                        }
 
                         if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
                             itemPrice = itemPrice * 0.8;
@@ -17930,6 +17958,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             isBuyFlag = true;
                         }
                         if (isBuyFlag) {
+                            if (ticketEventCoupon) {
+                                consumeTicketEventCoupon(data, sender, ticketEventCoupon.name);
+                                replier.reply("티켓이벤트 할인 적용🎟️: " + ticketEventCoupon.rate + "% 쿠폰 1장을 사용했습니다.");
+                            }
                             if (taxAmount > 0) {
                                 applyTax(itemPrice, data, guildData, taxAmount);
                             }
@@ -32208,6 +32240,60 @@ function finishGuildTerritoryWar(data, guildData, reason, petSkillData) {
         noticeMsg(out);
     });
 }
+// 수동·자동 출석이 함께 사용하는 출석 판정과 보상 처리 함수
+function processAttendanceForUser(data, petData, petSkillData, guildData, user) {
+    if (!data || !data.member || !data.member[user]) return { ok: false, message: "❌ 존재하지 않거나 비정상적인 회원 데이터입니다." };
+    if (!(data.attend_list instanceof Array)) data.attend_list = [];
+    var member = data.member[user];
+    var todayText = String(getCurrentDate());
+    var alreadyAttended = data.attend_list.indexOf(user) !== -1 || (String(member.recent || "") === todayText && (parseInt(member.today, 10) || 0) > 0);
+    var rankText = checkRank(data, petData, guildData, user);
+    if (alreadyAttended) return { ok: false, already: true, message: "[" + rankText + "] 님 이미 출첵 하셨습니다." };
+
+    if (!member.bag || typeof member.bag !== "object") member.bag = {};
+    data.attend_list.push(user);
+    member.cnt = (parseInt(member.cnt, 10) || 0) + 1;
+    member.today = (parseInt(member.today, 10) || 0) + 1;
+    member.recent = getCurrentDate();
+    member.point = (Number(member.point) || 0) + GLOBAL_CONFIG.attendance.bonusPoint;
+    member.exp = (Number(member.exp) || 0) + GLOBAL_CONFIG.attendance.bonusExp;
+
+    var messages = [];
+    messages.push("[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치  " + GLOBAL_CONFIG.attendance.bonusExp + "exp 획득");
+    var multiplier = rollAndCalculateMultiplier(); // 출석 응모 주사위 배율
+    var dicePoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multiplier).toFixed(0), 10); // 주사위 추가 포인트
+    member.point += dicePoint;
+    messages.push("[" + rankText + "]님의 출첵 응모가 굴러갑니다!\n" + multiplier + "배 당첨!💸\n🅟" + numberWithCommas(dicePoint) + " 추가적립 되었습니다.\nhttps://ibb.co/jkbgrzHt\n이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.");
+
+    var rankBonus = RankBonus(data, user) || {}; // 랭크별 출석 추가 보너스
+    var rankBonusMultiplier = Number(rankBonus.BonusM) || 0; // 유효한 랭크 보너스 배율
+    var rankBonusPoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * rankBonusMultiplier).toFixed(0), 10); // 랭크 추가 포인트
+    if (rankBonusMultiplier !== 0) {
+        member.point += rankBonusPoint;
+        messages.push(String(rankBonus.Bonusmsg || "") + "🎊\n🅟" + numberWithCommas(rankBonusPoint) + " 추가적립 되었습니다.");
+    }
+
+    var openRunRewardGranted = false; // 출석 1등 오픈런 보상 지급 여부
+    if (data.attend_list[0] === user && hasPetSkill(petSkillData, user, "오픈런") && !member.openRunRewardClaimed) {
+        member.bag["펫먹이🍼"] = (member.bag["펫먹이🍼"] || 0) + 1000;
+        member.openRunRewardClaimed = true;
+        openRunRewardGranted = true;
+        messages.push("[" + rankText + "] : 오늘도 1등 출석 성공!");
+        messages.push("오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!");
+        messages.push("[" + rankText + "] : 누구보다 빠르게, 남들과는 다르게!");
+    }
+
+    var totalPointReward = GLOBAL_CONFIG.attendance.bonusPoint + dicePoint + rankBonusPoint; // 이번 출석의 총 포인트 보상
+    return {
+        ok: true,
+        messages: messages,
+        totalPointReward: totalPointReward,
+        expReward: GLOBAL_CONFIG.attendance.bonusExp,
+        openRunRewardGranted: openRunRewardGranted,
+        noticeMessage: "[자동출첵 완료]\n[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
+    };
+}
+
 // 출석 /리셋 함수
 function resetAttendance(petData, data, replier) {
     for (let user in data.member) {
@@ -33701,6 +33787,331 @@ function useLetterInBag(data, memberName) {
     return false;
 }
 
+// 호이패스 프리미엄 자동화 설정 객체를 회원 데이터에 보장하는 함수
+function ensureHoiPassPremiumAutomationSettings(member) {
+    if (!member.premiumAutomation || typeof member.premiumAutomation !== "object" || member.premiumAutomation instanceof Array) {
+        member.premiumAutomation = {};
+    }
+    if (typeof member.premiumAutomation.petMusouAutoReady !== "boolean") member.premiumAutomation.petMusouAutoReady = false;
+    if (typeof member.premiumAutomation.autoAttendance !== "boolean") member.premiumAutomation.autoAttendance = false;
+    return member.premiumAutomation;
+}
+
+// 프리미엄 자동화 처리 내역을 member.json에 제한 개수로 기록하는 함수
+function appendPetMusouAutomationLog(data, log) {
+    if (!(data.petMusouAutomationLogs instanceof Array)) data.petMusouAutomationLogs = [];
+    data.petMusouAutomationLogs.push(log);
+    var logMax = GLOBAL_CONFIG.petMusou.automationLogMax;
+    if (data.petMusouAutomationLogs.length > logMax) data.petMusouAutomationLogs.splice(0, data.petMusouAutomationLogs.length - logMax);
+}
+
+// 프리미엄 자동 준비·자동 출석 설정 명령인지 확인하는 함수
+function isHoiPassPremiumAutomationCommand(msg) {
+    return msg === "/무쌍온" || msg === "/무쌍오프" || msg === "/출첵온" || msg === "/출첵오프";
+}
+
+// 프리미엄 자동 준비·자동 출석 ON/OFF 명령을 처리하는 함수
+function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData, guildData, sender) {
+    var rankText = checkRank(data, petData, guildData, sender);
+    if (!isHoiPassPremiumActive(data, sender)) {
+        return {
+            changed: false,
+            message: "[" + rankText + "] 님 해당 기능은 호이패스 프리미엄 전용 기능입니다.\n호이패스 프리미엄 이용 상태를 확인해 주세요."
+        };
+    }
+    var settings = ensureHoiPassPremiumAutomationSettings(data.member[sender]);
+    var nowText = formatDateTime(new Date());
+    if (msg === "/무쌍온") {
+        settings.petMusouAutoReady = true;
+        var joinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
+        var registeredNow = joinResult.ok === true; // 현재 준비 회차 즉시 자동 등록 여부
+        appendPetMusouAutomationLog(data, {
+            feature: "PET_MUSOU_AUTO_READY",
+            action: "ON",
+            user: sender,
+            result: registeredNow ? "REGISTERED" : "PENDING",
+            reason: registeredNow ? "" : String(joinResult.message || "").substring(0, 200),
+            processedAt: nowText
+        });
+        return {
+            changed: true,
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 펫무쌍 대회 자동 준비 기능을 켰습니다.\n" + (registeredNow ? "현재 준비 중인 펫무쌍 대회에 자동 등록되었습니다." : "다음 펫무쌍 준비 시 자동으로 참가 등록됩니다.")
+        };
+    }
+    if (msg === "/무쌍오프") {
+        settings.petMusouAutoReady = false;
+        appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "OFF", user: sender, result: "SAVED", reason: "", processedAt: nowText });
+        return {
+            changed: true,
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 펫무쌍 대회 자동 준비 기능을 껐습니다.\n이미 등록된 현재 회차의 참가는 유지됩니다."
+        };
+    }
+    if (msg === "/출첵온") {
+        settings.autoAttendance = true;
+        appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "ON", user: sender, result: "SAVED", reason: "", processedAt: nowText });
+        return {
+            changed: true,
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 자동 출석체크 기능을 켰습니다.\n매일 01:10에 자동출첵 처리가 되며 전체공지로 안내합니다."
+        };
+    }
+    settings.autoAttendance = false;
+    appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "OFF", user: sender, result: "SAVED", reason: "", processedAt: nowText });
+    return {
+        changed: true,
+        message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 자동 출석체크 기능을 껐습니다.\n이후 자동 출석 대상에서 제외됩니다."
+    };
+}
+
+// 프리미엄 자동 준비 ON 이용자를 현재 펫무쌍 준비 회차에 일괄 등록하는 함수
+function autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, excludedUser) {
+    var result = { changed: false, registeredCount: 0, skippedCount: 0, failedCount: 0 };
+    if (!data || !data.member) return result;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || user === excludedUser) continue;
+        var member = data.member[user];
+        if (!member || typeof member !== "object" || member instanceof Array) {
+            result.changed = true;
+            result.failedCount++;
+            appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "FAILED", reason: "존재하지 않거나 비정상적인 회원 데이터", processedAt: formatDateTime(new Date()) });
+            continue;
+        }
+        var settings = member.premiumAutomation;
+        if (!settings || settings.petMusouAutoReady !== true) continue;
+        try {
+            if (!isHoiPassPremiumActive(data, user)) {
+                result.changed = true;
+                result.skippedCount++;
+                appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "SKIPPED", reason: "호이패스 프리미엄 비활성 또는 만료", processedAt: formatDateTime(new Date()) });
+                continue;
+            }
+            var joinResult = joinPetMusou(data, petData, petSkillData, guildData, user);
+            if (joinResult.ok) {
+                result.changed = true;
+                result.registeredCount++;
+                appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "REGISTERED", reason: "", processedAt: formatDateTime(new Date()) });
+            } else {
+                result.changed = true;
+                result.skippedCount++;
+                appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "SKIPPED", reason: String(joinResult.message || "").substring(0, 200), processedAt: formatDateTime(new Date()) });
+            }
+        } catch (autoReadyError) {
+            result.changed = true;
+            result.failedCount++;
+            appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_AUTO_READY", action: "AUTO_REGISTER", user: user, result: "ERROR", reason: String(autoReadyError).substring(0, 200), processedAt: formatDateTime(new Date()) });
+        }
+    }
+    return result;
+}
+
+// 패스 일괄 지급 뒤 프리미엄 자동 출석 대상자를 독립적으로 처리하는 함수
+function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, operator) {
+    var changed = false;
+    var passMessage = "";
+    try {
+        var passResult = grantAllSupportPassDailyRewards(data, operator);
+        changed = passResult.changed || changed;
+        passMessage = buildSupportPassPayoutResultMessage(passResult);
+        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "SUCCESS", grantedCount: passResult.totalGrantedCount, skippedCount: passResult.totalSkippedCount, reason: "", processedAt: formatDateTime(new Date()) });
+        changed = true;
+    } catch (passError) {
+        passMessage = "❌ 구독 패스 지급 중 오류가 발생했습니다: " + passError;
+        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "ERROR", reason: String(passError).substring(0, 200), processedAt: formatDateTime(new Date()) });
+        changed = true;
+    }
+
+    var successCount = 0;
+    var alreadyCount = 0;
+    var inactiveCount = 0;
+    var failedCount = 0;
+    var noticeMessages = [];
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var settings = data.member[user].premiumAutomation;
+        if (!settings || settings.autoAttendance !== true) continue;
+        if (!isHoiPassPremiumActive(data, user)) {
+            inactiveCount++;
+            continue;
+        }
+        try {
+            var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, user);
+            if (attendanceResult.ok) {
+                changed = true;
+                successCount++;
+                noticeMessages.push(attendanceResult.noticeMessage);
+                appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "RUN", user: user, result: "SUCCESS", reason: "", processedAt: formatDateTime(new Date()) });
+            } else if (attendanceResult.already) {
+                alreadyCount++;
+            } else {
+                failedCount++;
+                changed = true;
+                appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "RUN", user: user, result: "FAILED", reason: attendanceResult.message, processedAt: formatDateTime(new Date()) });
+            }
+        } catch (attendanceError) {
+            failedCount++;
+            changed = true;
+            appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "RUN", user: user, result: "ERROR", reason: String(attendanceError), processedAt: formatDateTime(new Date()) });
+        }
+    }
+    appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "SUMMARY", operator: operator, result: failedCount > 0 ? "PARTIAL" : "SUCCESS", successCount: successCount, alreadyCount: alreadyCount, inactiveCount: inactiveCount, failedCount: failedCount, processedAt: formatDateTime(new Date()) });
+    changed = true;
+    var lines = [passMessage, "", "🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
+    return { changed: changed, noticeMessages: noticeMessages, message: lines.join("\n") };
+}
+
+// 펫무쌍 티켓 이벤트 저장 구조를 member.json 안에 보장하는 함수
+function ensurePetMusouTicketEventData(data) {
+    if (!data.petMusouTicketEvent || typeof data.petMusouTicketEvent !== "object" || data.petMusouTicketEvent instanceof Array) data.petMusouTicketEvent = {};
+    var eventData = data.petMusouTicketEvent;
+    if (typeof eventData.enabled !== "boolean") eventData.enabled = false;
+    if (!(eventData.logs instanceof Array)) eventData.logs = [];
+    return eventData;
+}
+
+// 펫무쌍 티켓 이벤트 운영·지급 로그를 제한 개수로 기록하는 함수
+function appendPetMusouTicketEventLog(data, log) {
+    var eventData = ensurePetMusouTicketEventData(data);
+    eventData.logs.push(log);
+    var logMax = GLOBAL_CONFIG.petMusou.automationLogMax;
+    if (eventData.logs.length > logMax) eventData.logs.splice(0, eventData.logs.length - logMax);
+}
+
+// 입력 시각을 한국 표준시 기준 펫무쌍 일정 값으로 변환하는 함수
+function getPetMusouKstDateTime(now) {
+    var source = now instanceof Date ? now : new Date();
+    var kst = new Date(source.getTime() + 9 * 60 * 60 * 1000);
+    var year = kst.getUTCFullYear();
+    var month = kst.getUTCMonth() + 1;
+    var day = kst.getUTCDate();
+    return {
+        year: year,
+        month: month,
+        day: day,
+        hour: kst.getUTCHours(),
+        minute: kst.getUTCMinutes(),
+        dateValue: year * 10000 + month * 100 + day
+    };
+}
+
+// 입력 시각이 티켓 이벤트 운영 기간에 포함되는지 확인하는 함수
+function isPetMusouTicketEventPeriod(now) {
+    var dateValue = getPetMusouKstDateTime(now).dateValue;
+    var config = GLOBAL_CONFIG.petMusou.ticketEvent;
+    return dateValue >= parseInt(config.startDate, 10) && dateValue <= parseInt(config.endDate, 10);
+}
+
+// 티켓 이벤트 운영 기간을 사용자 안내 문자열로 반환하는 함수
+function getPetMusouTicketEventPeriodText() {
+    var config = GLOBAL_CONFIG.petMusou.ticketEvent;
+    return config.startDate.substring(0, 4) + "." + config.startDate.substring(4, 6) + "." + config.startDate.substring(6, 8) + " ~ " +
+        config.endDate.substring(0, 4) + "." + config.endDate.substring(4, 6) + "." + config.endDate.substring(6, 8) + " (KST)";
+}
+
+// 펫무쌍 티켓 이벤트가 현재 기간과 운영 상태 모두 활성인지 확인하는 함수
+function isPetMusouTicketEventActive(data, now) {
+    return !!(data && data.petMusouTicketEvent && data.petMusouTicketEvent.enabled === true && isPetMusouTicketEventPeriod(now));
+}
+
+// 티켓 이벤트 관리자 명령인지 확인하는 함수
+function isPetMusouTicketEventAdminCommand(msg) {
+    return msg === "/티켓이벤트시작" || msg === "/티켓이벤트종료" || msg === "/티켓전체회수";
+}
+
+// 티켓 이벤트 시작·종료·쿠폰 전체 회수 명령을 처리하는 함수
+function processPetMusouTicketEventAdminCommand(msg, data, operator) {
+    var eventData = ensurePetMusouTicketEventData(data);
+    var nowText = formatDateTime(new Date());
+    if (msg === "/티켓이벤트시작") {
+        if (!isPetMusouTicketEventPeriod(new Date())) return { changed: false, noticeMessage: "", message: "❌ 티켓이벤트 운영 기간이 아닙니다.\n기간: " + getPetMusouTicketEventPeriodText() };
+        if (eventData.enabled) return { changed: false, noticeMessage: "", message: "이미 티켓이벤트가 진행 중입니다." };
+        eventData.enabled = true;
+        eventData.startedAt = nowText;
+        eventData.startedBy = operator;
+        appendPetMusouTicketEventLog(data, { action: "START", operator: operator, processedAt: nowText });
+        return {
+            changed: true,
+            message: "✅ 티켓이벤트를 시작했습니다.\n펫무쌍 시작 시각: 12:30, 20:30",
+            noticeMessage: "[🎟️호이월드 티켓 이벤트 시작🎟️]\n티켓이벤트가 시작되었습니다.\n펫무쌍대회에 참여하셔서 티켓할인쿠폰을\n획득해보세요! 참여방법 채팅창에 \"펫무쌍 컨텐츠\"를 입력해보세요"
+        };
+    }
+    if (msg === "/티켓이벤트종료") {
+        if (!eventData.enabled) return { changed: false, noticeMessage: "", message: "현재 티켓이벤트가 진행 중이 아닙니다." };
+        eventData.enabled = false;
+        eventData.endedAt = nowText;
+        eventData.endedBy = operator;
+        appendPetMusouTicketEventLog(data, { action: "END", operator: operator, processedAt: nowText });
+        return {
+            changed: true,
+            message: "✅ 티켓이벤트를 종료했습니다.\n기존 보유 쿠폰은 유지됩니다.",
+            noticeMessage: "[🎟️호이월드 티켓 이벤트 종료🎟️]\n티켓이벤트가 종료되었습니다.\n참여해주신 유저분들께 진심으로 감사드리며\n더 좋은 이벤트로 찾아뵙겠습니다. -호이 남-"
+        };
+    }
+
+    var couponConfig = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var removedCounts = [];
+    var totalRemovedCount = 0;
+    for (var couponIndex = 0; couponIndex < couponConfig.length; couponIndex++) removedCounts[couponIndex] = 0;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user] || !data.member[user].bag) continue;
+        for (var removeIndex = 0; removeIndex < couponConfig.length; removeIndex++) {
+            var couponName = couponConfig[removeIndex].name;
+            var couponCount = parseInt(data.member[user].bag[couponName], 10) || 0;
+            if (couponCount > 0) {
+                removedCounts[removeIndex] += couponCount;
+                totalRemovedCount += couponCount;
+            }
+            if (data.member[user].bag[couponName] !== undefined) delete data.member[user].bag[couponName];
+        }
+    }
+    appendPetMusouTicketEventLog(data, { action: "REVOKE_ALL", operator: operator, totalRemovedCount: totalRemovedCount, processedAt: nowText });
+    var lines = ["[🎟️티켓 이벤트 쿠폰 전체 회수 완료🎟️]"];
+    for (var resultIndex = 0; resultIndex < couponConfig.length; resultIndex++) lines.push(couponConfig[resultIndex].rate + "% 쿠폰: " + numberWithCommas(removedCounts[resultIndex]) + "개");
+    lines.push("━━━━━━━━━━━━", "총 회수: " + numberWithCommas(totalRemovedCount) + "개");
+    return { changed: true, noticeMessage: "", message: lines.join("\n") };
+}
+
+// 이벤트 확률표에 따라 유효한 펫무쌍 공격의 쿠폰 1장을 지급하는 함수
+function grantPetMusouTicketEventCoupon(data, user) {
+    if (!isPetMusouTicketEventActive(data) || !data.member || !data.member[user]) return null;
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var roll = Math.floor(Math.random() * 100) + 1;
+    var cumulativeWeight = 0;
+    var selectedCoupon = coupons[0];
+    for (var i = 0; i < coupons.length; i++) {
+        cumulativeWeight += coupons[i].weight;
+        if (roll <= cumulativeWeight) {
+            selectedCoupon = coupons[i];
+            break;
+        }
+    }
+    if (!data.member[user].bag || typeof data.member[user].bag !== "object") data.member[user].bag = {};
+    data.member[user].bag[selectedCoupon.name] = (parseInt(data.member[user].bag[selectedCoupon.name], 10) || 0) + 1;
+    appendPetMusouTicketEventLog(data, { action: "COUPON_DROP", user: user, coupon: selectedCoupon.name, roll: roll, processedAt: formatDateTime(new Date()) });
+    return { name: selectedCoupon.name, rate: selectedCoupon.rate, display: "티켓쿠폰🎟️(" + selectedCoupon.rate + "%) 획득" };
+}
+
+// 티켓 상품 구매에 사용할 보유 쿠폰 중 가장 높은 할인율을 반환하는 함수
+function getBestTicketEventCoupon(data, user, itemName) {
+    if (String(itemName || "").indexOf("티켓") === -1) return null;
+    var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
+    if (!bag) return null;
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var bestCoupon = null;
+    for (var i = 0; i < coupons.length; i++) {
+        if ((parseInt(bag[coupons[i].name], 10) || 0) < 1) continue;
+        if (!bestCoupon || coupons[i].rate > bestCoupon.rate) bestCoupon = coupons[i];
+    }
+    return bestCoupon;
+}
+
+// 구매 성공 뒤 적용한 티켓 이벤트 쿠폰 1장을 차감하는 함수
+function consumeTicketEventCoupon(data, user, couponName) {
+    var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
+    if (!bag || (parseInt(bag[couponName], 10) || 0) < 1) return false;
+    bag[couponName]--;
+    if (bag[couponName] < 1) delete bag[couponName];
+    return true;
+}
+
 // 펫무쌍 저장 구조를 기존 member.json 안에서 보장하는 함수
 function ensurePetMusouData(data) {
     if (!data.petMusou || typeof data.petMusou !== "object" || data.petMusou instanceof Array) data.petMusou = {};
@@ -33728,6 +34139,103 @@ function ensurePetMusouData(data) {
     if (!musou.active && !musou.nextRoundId) musou.nextRoundId = "PREP_" + String(new Date().getTime());
     if (typeof musou.realFlagDiscoveryBonusPaid !== "boolean") musou.realFlagDiscoveryBonusPaid = !!musou.realFlagFound;
     return musou;
+}
+
+// 현재 로컬 시각을 펫무쌍 일정 비교용 HH:mm 문자열로 반환하는 함수
+function getPetMusouScheduleTimeText(now) {
+    var kst = getPetMusouKstDateTime(now);
+    var hour = kst.hour;
+    var minute = kst.minute;
+    return (hour < 10 ? "0" : "") + hour + ":" + (minute < 10 ? "0" : "") + minute;
+}
+
+// 펫무쌍 일정의 날짜·회차 중복 방지 키를 반환하는 함수
+function getPetMusouScheduleKey(now, timeText) {
+    var kst = getPetMusouKstDateTime(now);
+    return String(kst.year) + (kst.month < 10 ? "0" : "") + kst.month + (kst.day < 10 ? "0" : "") + kst.day + "_" + timeText;
+}
+
+// 일반 일정과 이벤트 추가 일정을 합쳐 현재 활성 시작 시각을 반환하는 함수
+function getActivePetMusouStartTimes(data, now) {
+    var times = GLOBAL_CONFIG.petMusou.regularStartTimes.slice();
+    if (isPetMusouTicketEventActive(data, now)) {
+        for (var i = 0; i < GLOBAL_CONFIG.petMusou.ticketEventStartTimes.length; i++) times.push(GLOBAL_CONFIG.petMusou.ticketEventStartTimes[i]);
+    }
+    return times;
+}
+
+// 저장된 일정과 현재 운영 상태를 기준으로 펫무쌍 정시 시작을 한 번 처리하는 함수
+function runScheduledPetMusouStart(data, petData, homeData, petSkillData, guildData, now) {
+    var timeText = getPetMusouScheduleTimeText(now);
+    var activeTimes = getActivePetMusouStartTimes(data, now);
+    if (activeTimes.indexOf(timeText) === -1) return { changed: false, started: false, message: "" };
+    var musou = ensurePetMusouData(data);
+    var scheduleKey = getPetMusouScheduleKey(now, timeText); // 같은 날짜·시각의 중복 시작 방지 키
+    if (musou.lastScheduledStartKey === scheduleKey) return { changed: false, started: false, message: "" };
+    musou.lastScheduledStartKey = scheduleKey;
+
+    var matzangField = ensureMatzangFieldData(data);
+    var territoryWar = ensureGuildTerritoryWar(data, guildData);
+    if (musou.active || matzangField.active || territoryWar.active || territoryWar.pendingStart) {
+        var blockedReason = musou.active ? "기존 펫무쌍 진행 중" : matzangField.active ? "맞짱필드 진행 중" : "길드 영지전 진행·대기 중";
+        appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_SCHEDULE", action: "START", result: "SKIPPED", reason: blockedReason, scheduleKey: scheduleKey, processedAt: formatDateTime(now) });
+        return { changed: true, started: false, message: "" };
+    }
+
+    autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, "");
+    var startResult = beginPetMusou(data, petData, homeData, petSkillData, guildData);
+    if (!startResult.ok) {
+        appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_SCHEDULE", action: "START", result: "SKIPPED", reason: startResult.message, scheduleKey: scheduleKey, processedAt: formatDateTime(now) });
+        return { changed: true, started: false, message: "" };
+    }
+    appendPetMusouAutomationLog(data, { feature: "PET_MUSOU_SCHEDULE", action: "START", result: "SUCCESS", reason: "", scheduleKey: scheduleKey, processedAt: formatDateTime(now) });
+    return { changed: true, started: true, message: startResult.message };
+}
+
+// 현재 시각의 펫무쌍 정시 시작을 잠금·저장 단위로 한 번 확인하는 함수
+function runPetMusouScheduleTick(timerCtx, replier, now) {
+    var timeText = getPetMusouScheduleTimeText(now);
+    var isRegularTime = GLOBAL_CONFIG.petMusou.regularStartTimes.indexOf(timeText) !== -1;
+    var isEventTime = GLOBAL_CONFIG.petMusou.ticketEventStartTimes.indexOf(timeText) !== -1;
+    if (!isRegularTime && !isEventTime) return;
+
+    var prevCtx = enterCommandContext(timerCtx);
+    var timerTransactionAcquired = false;
+    var timerTransactionEntered = false;
+    try {
+        dataTransactionLock.lock();
+        timerTransactionAcquired = true;
+        beginDataSaveTransaction();
+        timerTransactionEntered = true;
+        var latestData = loadJsonFile(filePath);
+        var latestPetData = loadJsonFile(memberPetPath);
+        var latestHomeData = loadJsonFile(homeDataFile);
+        var latestPetSkillData = loadJsonFile(petSkillDataPath);
+        var latestGuildData = loadJsonFile(guildPath);
+        var scheduleResult = runScheduledPetMusouStart(latestData, latestPetData, latestHomeData, latestPetSkillData, latestGuildData, now);
+        if (!scheduleResult.changed) return;
+        saveJsonFile(latestData, filePath);
+        if (scheduleResult.started) {
+            noticeMsg(scheduleResult.message);
+            startPetMusouOpeningTimer(latestData, latestPetData, latestGuildData, replier, true, true);
+        }
+    } catch (scheduleError) {
+        debuggerLog("[펫무쌍 정시 시작 오류] " + scheduleError);
+    } finally {
+        if (timerTransactionEntered) endDataSaveTransaction();
+        if (timerTransactionAcquired) dataTransactionLock.unlock();
+        exitCommandContext(prevCtx);
+    }
+}
+
+// PROD 실행 컨텍스트별 펫무쌍 정시 시작 감시 타이머를 한 번만 생성하는 함수
+function ensurePetMusouScheduleTimer(replier) {
+    var timerCtx = getCurrentContext();
+    var timerCtxKey = timerCtx.key();
+    if (petMusouScheduleTimers[timerCtxKey]) return;
+    var scheduleTick = function () { runPetMusouScheduleTick(timerCtx, replier, new Date()); };
+    petMusouScheduleTimers[timerCtxKey] = setInterval(scheduleTick, GLOBAL_CONFIG.petMusou.scheduleCheckMs);
+    scheduleTick();
 }
 
 // 길드영지 자동화 권한 아이템을 보유했는지 확인하는 함수
@@ -33913,7 +34421,7 @@ function joinPetMusou(data, petData, petSkillData, guildData, sender) {
             "✅ 다음 펫무쌍 대회 준비가 완료되었습니다.\n" +
             "대회 시작 시 자동으로 참가 처리됩니다.\n\n" +
             "펫무쌍 규칙 상세보기 및 참여자 준비 목록\n" + allsee +
-            "1. 대회 시작: 운영자 수동 시작\n" +
+            "1. 대회 시작: 매일 12:30 · 이벤트 중 20:30 추가 · 운영자 수동 시작 가능\n" +
             "2. 개인 공격: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
             "3. 공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n" +
             "4. 처음 발견한 가짜 깃발은 공격권만 1회 차감\n" +
@@ -34311,6 +34819,7 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     clearPetMusouTurnTimer();
     musou.turnQueue.shift();
     musou.players[sender].attacksLeft--;
+    var ticketEventCouponReward = grantPetMusouTicketEventCoupon(data, sender); // 유효 공격권 차감 후 확정되는 이벤트 쿠폰
     musou.actionSeq++;
     musou.lastActionId = musou.roundId + "_" + musou.actionSeq;
     musou.turnToken = "";
@@ -34383,6 +34892,14 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
             }
         }
     }
+    if (ticketEventCouponReward) {
+        for (var rewardLineIndex = 0; rewardLineIndex < lines.length; rewardLineIndex++) {
+            if (String(lines[rewardLineIndex]).indexOf("공격 보상🤑:") === 0) {
+                lines.splice(rewardLineIndex + 1, 0, "이벤트 보상🎟️: " + ticketEventCouponReward.display);
+                break;
+            }
+        }
+    }
     lines[0] += attackSucceeded ? "[성공✅]" : "[실패❌]";
     var lightningResult = processPetMusouLightning(musou, data, petData, guildData);
     var lightningMessage = lightningResult.triggered ? lightningResult.message : ""; // 실제 벼락 발생 문구는 공격 결과와 분리해 전송
@@ -34398,9 +34915,9 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
     if (shouldFinishPetMusou(musou)) {
         var finishResult = finishPetMusou(data, petData, guildData, "공격 가능 횟수 소진");
-        return { ok: true, ended: true, message: lines.join("\n"), lightningMessage: lightningMessage, finishMessage: finishResult.message };
+        return { ok: true, ended: true, message: lines.join("\n"), lightningMessage: lightningMessage, finishMessage: finishResult.message, ticketEventCouponReward: ticketEventCouponReward };
     }
-    return { ok: true, ended: false, message: lines.join("\n"), lightningMessage: lightningMessage, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou) };
+    return { ok: true, ended: false, message: lines.join("\n"), lightningMessage: lightningMessage, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou), ticketEventCouponReward: ticketEventCouponReward };
 }
 
 // 펫무쌍 현재 공격자의 제한시간 초과를 처리하는 함수
@@ -43406,7 +43923,7 @@ function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
     return slotSize;
 }
 
-// 프리미엄 종료 후 추가 장착 한도를 넘긴 최근 가구를 가구가방으로 회수하는 함수
+// 프리미엄 종료 후 추가 장착 한도를 넘긴 최저 매력 가구를 가구가방으로 회수하는 함수
 function releaseHoiPassPremiumExtraFurniture(data, petData, petSkillData, homeData, placedFurnitureData, userName) {
     homeData = initSweetHomeUser(homeData, userName);
     var userHome = homeData[userName];
@@ -43414,16 +43931,16 @@ function releaseHoiPassPremiumExtraFurniture(data, petData, petSkillData, homeDa
     var maxSlots = getFurnitureMaxSlots(data, petData, userName, userHome.floor || 0, petSkillData);
     var releasedCount = 0;
     while (placedFurnitureList.length > maxSlots) {
-        var latestIndex = placedFurnitureList.length - 1; // 배치 시각이 없는 기존 데이터의 회수 위치
-        var latestPlacedAt = parseInt(placedFurnitureList[latestIndex] && placedFurnitureList[latestIndex].placedAt, 10) || 0;
-        for (var i = 0; i < placedFurnitureList.length; i++) {
-            var placedAt = parseInt(placedFurnitureList[i] && placedFurnitureList[i].placedAt, 10) || 0;
-            if (placedAt >= latestPlacedAt) {
-                latestIndex = i;
-                latestPlacedAt = placedAt;
+        var lowestIndex = 0; // 현재 장착 가구 중 회수할 최저 매력 위치
+        var lowestExp = Number(placedFurnitureList[lowestIndex] && placedFurnitureList[lowestIndex].exp) || 0;
+        for (var i = 1; i < placedFurnitureList.length; i++) {
+            var furnitureExp = Number(placedFurnitureList[i] && placedFurnitureList[i].exp) || 0;
+            if (furnitureExp < lowestExp) {
+                lowestIndex = i;
+                lowestExp = furnitureExp;
             }
         }
-        var releasedItem = placedFurnitureList.splice(latestIndex, 1)[0];
+        var releasedItem = placedFurnitureList.splice(lowestIndex, 1)[0];
         if (releasedItem && releasedItem.placedAt !== undefined) delete releasedItem.placedAt;
         userHome.furnitureBag.push(releasedItem);
         releasedCount++;
