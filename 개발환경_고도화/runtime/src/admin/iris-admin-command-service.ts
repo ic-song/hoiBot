@@ -28,6 +28,7 @@ import { isDataStatusCommand, DataStatusService } from "./data-status-service.js
 import { isDataBackupCommand, DataBackupService } from "./data-backup-service.js";
 import { isManagedBackupCommand, ManagedBackupCommandService } from "./managed-backup-command-service.js";
 import { isDataRestoreCommandCandidate, DataRestoreService } from "./data-restore-service.js";
+import { BotRecoverySetService, isBotRecoverySetCommand } from "./bot-recovery-set-service.js";
 import { isPreSignupAdminCommandCandidate, PreSignupAdminService } from "./pre-signup-admin-service.js";
 import { isPetMemberCharacterCountCommand, PetMemberCharacterCountService } from "./pet-member-character-count-service.js";
 import { isPetDataSyncCommand, PetDataSyncService } from "./pet-data-sync-service.js";
@@ -212,6 +213,7 @@ export class IrisAdminCommandService {
     if (isRingRewardClaimCommand(input.message)) return new RingRewardClaimService(this.database).handleIris(input);
     if (isRetiredRingCommandCandidate(input.message)) return this.handleRetiredRingCommand(input);
     if (isPreSignupAdminCommandCandidate(input.message)) return new PreSignupAdminService(this.database).handleIris(input);
+    if (isBotRecoverySetCommand(input.message)) return new BotRecoverySetService(this.database).handleIris(input);
     if (isDataRestoreCommandCandidate(input.message)) return new DataRestoreService(this.database).handleIris(input);
     if (isManagedBackupCommand(input.message)) return new ManagedBackupCommandService(this.database).handleIris(input);
     if (isDataBackupCommand(input.message)) return new DataBackupService(this.database).handleIris(input);
@@ -1307,6 +1309,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isTrialTowerSeasonResetCommand(message)
     || isAutoExploreSchedulerStartCommand(message)
     || isPreSignupAdminCommandCandidate(message)
+    || isBotRecoverySetCommand(message)
     || isDataRestoreCommandCandidate(message)
     || isManagedBackupCommand(message)
     || isDataBackupCommand(message)
