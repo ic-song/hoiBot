@@ -7,7 +7,7 @@ set "TARGET_ADB_DEVICE=auto"
 set "REMOTE_DATA_DIR=/storage/emulated/0/호이랜드"
 set "LOCAL_DATA_DIR=data"
 set "SYNC_LOG=%TEMP%\hoibot_data_pull_%RANDOM%.log"
-set "REQUIRED_JSON_FILES=member.json board.json carrotBoard.json itemInfo.json trialTowerBoss.json eventTowerBoss.json castleBattle2.json errorLog.json member_title.json pet_title.json miniPet_title.json miniPet_collection.json miniPetCollectionInfo.json member_pet.json petSkillData.json punchRankData.json trialTower.json miniPetData.json memberBagCheck/memberBagCheck.json petSweetHomeInfo.json petSweetHomeData.json petHomePlacedFurniture.json petHomeComments.json petHomeActivityData.json petExploreData.json attendanceLight.json itemList.json hoiBotChangeLog.json freeMarket.json packageInfo.json packageLog.json currencyLog.json guildData.json requestMonitorConfig.json"
+set "REQUIRED_JSON_FILES=member.json board.json carrotBoard.json itemInfo.json trialTowerBoss.json eventTowerBoss.json castleBattle2.json errorLog.json member_title.json pet_title.json miniPet_title.json miniPet_collection.json miniPetCollectionInfo.json member_pet.json petSkillData.json punchRankData.json trialTower.json miniPetData.json petSweetHomeInfo.json petSweetHomeData.json petHomePlacedFurniture.json petHomeComments.json petHomeActivityData.json petExploreData.json attendanceLight.json itemList.json hoiBotChangeLog.json freeMarket.json packageInfo.json packageLog.json currencyLog.json guildData.json requestMonitorConfig.json"
 
 title hoiBot LDPlayer data pull
 
