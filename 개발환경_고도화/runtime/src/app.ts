@@ -90,7 +90,7 @@ import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamo
 
 import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand, normalizeAdminAccountSuspensionDispatchMessage } from "./admin/admin-account-suspension-service.js";
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
-import { isMemberTicketTierRecalculateCommand, MemberTicketTierRecalculateService, normalizeMemberTicketTierRecalculateDispatchMessage } from "./player/member-ticket-tier-recalculate-service.js";
+import { createTierCommandService, isTierCommandCandidate, isTierCommandDispatch, isTierCommandHandler } from "./player/tier-command-dispatch.js";
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
 import { TierRewardPayoutService, isTierRewardPayoutCommand, normalizeTierRewardPayoutDispatchMessage } from "./player/tier-reward-payout-service.js";
@@ -1106,7 +1106,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminDiamondEditCommand(normalizedEvent.message)
         || isAdminAccountSuspensionCommand(normalizedEvent.message)
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
-        || isMemberTicketTierRecalculateCommand(normalizedEvent.message)
+        || isTierCommandCandidate(normalizedEvent.message)
         || isAdminPackageDeleteCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
         || isTierRewardPayoutCommand(normalizedEvent.message)
@@ -1492,8 +1492,6 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeAdminAccountSuspensionDispatchMessage(normalizedEvent.message ?? "")
               : isAdminDiamondResetAllCommand(normalizedEvent.message)
                 ? normalizeAdminDiamondResetAllDispatchMessage(normalizedEvent.message ?? "")
-              : isMemberTicketTierRecalculateCommand(normalizedEvent.message)
-                ? normalizeMemberTicketTierRecalculateDispatchMessage(normalizedEvent.message ?? "")
               : isAdminPackageDeleteCommand(normalizedEvent.message)
                 ? normalizeAdminPackageDeleteDispatchMessage(normalizedEvent.message ?? "")
               : isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
@@ -2102,7 +2100,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && ((isAdminDiamondResetAllCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_diamond_reset_all")
-          || (isMemberTicketTierRecalculateCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "member_ticket_tier_recalculate")
+          || isTierCommandDispatch(normalizedEvent.message, partialDispatchDecision?.handlerKey)
           || (isAdminPackageDeleteCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_package_delete")
           || (isMiniPetRankRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "mini_pet_rank_reward_payout")
           || (isTierRewardPayoutCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "tier_reward_payout")
@@ -2112,8 +2110,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         try {
           const service = partialDispatchDecision.handlerKey === "admin_diamond_reset_all"
             ? new AdminDiamondResetAllService(database!)
-            : partialDispatchDecision.handlerKey === "member_ticket_tier_recalculate"
-              ? new MemberTicketTierRecalculateService(database!)
+            : isTierCommandHandler(partialDispatchDecision.handlerKey)
+              ? createTierCommandService(database!, partialDispatchDecision.handlerKey)
             : partialDispatchDecision.handlerKey === "admin_package_delete"
               ? new AdminPackageDeleteService(database!)
               : partialDispatchDecision.handlerKey === "mini_pet_rank_reward_payout"
