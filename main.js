@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.435"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.436"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2841,7 +2841,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var matzangField = ensureMatzangFieldData(data);
         addResponseTiming("맞짱필드 보정", commonStepStart);
         var petMusou = ensurePetMusouData(data);
-        recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat);
+        recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat);
         petMusou = ensurePetMusouData(data);
         if (!ctx.isDev) ensurePetMusouScheduleTimer(replier);
         if (isHoiPassPremiumAutomationCommand(msg)) {
@@ -2857,7 +2857,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
             if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
-            if (premiumAutoAttendanceResult.noticeMessage) noticeMsg(premiumAutoAttendanceResult.noticeMessage);
+            if (premiumAutoAttendanceResult.noticeMessage) {
+                if (ctx.isDev) {
+                    replier.reply(premiumAutoAttendanceResult.noticeMessage);
+                } else {
+                    noticeMsg(premiumAutoAttendanceResult.noticeMessage);
+                }
+            }
             replier.reply(premiumAutoAttendanceResult.message);
             return;
         }
@@ -2960,7 +2966,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             saveJsonFile(data, filePath);
             noticeMsg(petMusouStartResult.message);
-            startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
+            startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
             return;
         }
         if (/^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg)) {
@@ -2969,9 +2975,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             var petMusouAttackNo = parseInt(msg.split(/\s+/)[1], 10);
-            var petMusouAttackResult = processPetMusouAttack(data, petData, guildData, sender, petMusouAttackNo);
+            var petMusouAttackResult = processPetMusouAttack(data, petData, petSkillData, guildData, sender, petMusouAttackNo);
             if (petMusouAttackResult.expired) {
-                petMusouAttackResult = processPetMusouTimeout(data, petData, guildData);
+                petMusouAttackResult = processPetMusouTimeout(data, petData, petSkillData, guildData);
             }
             if (!petMusouAttackResult.ok) {
                 replier.reply(petMusouAttackResult.message);
@@ -2985,7 +2991,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             castleMsg(petMusouAttackResult.statusMessage, replier, isGroupChat);
-            startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+            startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier, isGroupChat, false);
             return;
         }
         if (/^\/펫무쌍공격(?:\s+.*)?$/.test(msg)) {
@@ -2997,7 +3003,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("❌ /펫무쌍종료 명령어를 사용할 권한이 없습니다.");
                 return;
             }
-            var petMusouFinishResult = finishPetMusou(data, petData, guildData, "운영자 강제 종료");
+            var petMusouFinishResult = finishPetMusou(data, petData, petSkillData, guildData, "운영자 강제 종료");
             if (!petMusouFinishResult.ended) {
                 replier.reply(petMusouFinishResult.message);
                 return;
@@ -33626,22 +33632,18 @@ function noticeMsg(msg) {
         Api.replyRoom(isDebuggerFlag ? testRoom : room8, ctx.header(msg));
         return;
     }
-    if (isDebuggerFlag) {
-        Api.replyRoom(testRoom, msg);
-    } else {
-        Api.replyRoom(room1, msg);
-        Api.replyRoom(room2, msg);
-        Api.replyRoom(room3, msg);
-        Api.replyRoom(room5, msg);
-        Api.replyRoom(room6, msg);
-        Api.replyRoom(room7, msg);
-        Api.replyRoom(room8, msg);
-        Api.replyRoom(room10, msg);
-        Api.replyRoom(room11, msg);
-        Api.replyRoom(room12, msg);
-        Api.replyRoom(room13, msg);
-        Api.replyRoom(room90, msg);
-    }
+    Api.replyRoom(room1, msg);
+    Api.replyRoom(room2, msg);
+    Api.replyRoom(room3, msg);
+    Api.replyRoom(room5, msg);
+    Api.replyRoom(room6, msg);
+    Api.replyRoom(room7, msg);
+    Api.replyRoom(room8, msg);
+    Api.replyRoom(room10, msg);
+    Api.replyRoom(room11, msg);
+    Api.replyRoom(room12, msg);
+    Api.replyRoom(room13, msg);
+    Api.replyRoom(room90, msg);
 }
 function debuggerToggle() {
     if (isDebuggerFlag) {
@@ -34251,7 +34253,7 @@ function runPetMusouScheduleTick(timerCtx, replier, now) {
         saveJsonFile(latestData, filePath);
         if (scheduleResult.started) {
             noticeMsg(scheduleResult.message);
-            startPetMusouOpeningTimer(latestData, latestPetData, latestGuildData, replier, true, true);
+            startPetMusouOpeningTimer(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, true, true);
         }
     } catch (scheduleError) {
         debuggerLog("[펫무쌍 정시 시작 오류] " + scheduleError);
@@ -34586,7 +34588,7 @@ function shouldFinishPetMusou(musou) {
 }
 
 // 펫무쌍 우승 보상과 누적 순위를 회차당 한 번만 확정하는 함수
-function finishPetMusou(data, petData, guildData, reason) {
+function finishPetMusou(data, petData, petSkillData, guildData, reason) {
     var musou = ensurePetMusouData(data);
     if (!musou.active) return { ended: false, message: "❌ 현재 진행 중인 펫무쌍 대회가 없습니다." };
     var roundId = musou.roundId;
@@ -34619,6 +34621,11 @@ function finishPetMusou(data, petData, guildData, reason) {
             };
         }
     }
+    var nextAutoReadyResult = autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, guildData, "");
+    var nextAutoReadyMessage = "\n\n🤖 다음 회차 자동 준비: " + nextAutoReadyResult.registeredCount + "명";
+    if (nextAutoReadyResult.skippedCount > 0 || nextAutoReadyResult.failedCount > 0) {
+        nextAutoReadyMessage += " (제외 " + nextAutoReadyResult.skippedCount + "명 · 실패 " + nextAutoReadyResult.failedCount + "명)";
+    }
     if (!winner) {
         return {
             ended: true,
@@ -34626,7 +34633,7 @@ function finishPetMusou(data, petData, guildData, reason) {
             message: "🏆 펫 무쌍 대회 종료 🏆\n" +
                 "━━━━━━━━━━━━━━━━\n" +
                 "최종 점령자가 없어 우승자 없이 종료됩니다.\n" +
-                "공격 보상은 회수하지 않습니다."
+                "공격 보상은 회수하지 않습니다." + nextAutoReadyMessage
         };
     }
     var guildInfo = getPetMusouGuildInfo(data, guildData, winner);
@@ -34642,7 +34649,7 @@ function finishPetMusou(data, petData, guildData, reason) {
             "적용 기간⏰: 24시간\n" +
             "누적 무쌍⚔️: " + (data.member[winner].musouWinCount || 0) + "회\n\n" +
             "[무쌍⚔️][" + checkRank(data, petData, guildData, winner).replace(/^\[무쌍⚔️\]/, "") + "] 님이\n" +
-            "펫 무쌍 대회의 최종 우승자가 되었습니다!"
+            "펫 무쌍 대회의 최종 우승자가 되었습니다!" + nextAutoReadyMessage
     };
 }
 
@@ -34836,7 +34843,7 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
 }
 
 // 펫무쌍 공격 1회를 처리하고 다음 턴 또는 종료 결과를 반환하는 함수
-function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
+function processPetMusouAttack(data, petData, petSkillData, guildData, sender, flagNo) {
     var musou = ensurePetMusouData(data);
     if (!musou.active) return { ok: false, message: "❌ 현재 진행 중인 펫무쌍 대회가 없습니다." };
     if (!musou.startReady) {
@@ -34948,14 +34955,14 @@ function processPetMusouAttack(data, petData, guildData, sender, flagNo) {
 
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
     if (shouldFinishPetMusou(musou)) {
-        var finishResult = finishPetMusou(data, petData, guildData, "공격 가능 횟수 소진");
+        var finishResult = finishPetMusou(data, petData, petSkillData, guildData, "공격 가능 횟수 소진");
         return { ok: true, ended: true, message: lines.join("\n"), lightningMessage: lightningMessage, finishMessage: finishResult.message, ticketEventCouponReward: ticketEventCouponReward };
     }
     return { ok: true, ended: false, message: lines.join("\n"), lightningMessage: lightningMessage, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou), ticketEventCouponReward: ticketEventCouponReward };
 }
 
 // 펫무쌍 현재 공격자의 제한시간 초과를 처리하는 함수
-function processPetMusouTimeout(data, petData, guildData) {
+function processPetMusouTimeout(data, petData, petSkillData, guildData) {
     var musou = ensurePetMusouData(data);
     var attacker = getPetMusouCurrentAttacker(musou);
     if (!musou.active || !musou.startReady || !attacker || !musou.players[attacker]) return { ok: false };
@@ -34974,7 +34981,7 @@ function processPetMusouTimeout(data, petData, guildData) {
         "남은 공격권이 모두 소멸했습니다.";
     if (musou.turnQueue.length < 1 && !shouldFinishPetMusou(musou)) preparePetMusouNextRound(musou);
     if (shouldFinishPetMusou(musou)) {
-        var finishResult = finishPetMusou(data, petData, guildData, "공격 제한시간 종료");
+        var finishResult = finishPetMusou(data, petData, petSkillData, guildData, "공격 제한시간 종료");
         return { ok: true, ended: true, message: message, finishMessage: finishResult.message };
     }
     return { ok: true, ended: false, message: message, statusMessage: buildPetMusouStatusMessage(data, petData, guildData, musou) };
@@ -34991,19 +34998,19 @@ function clearPetMusouOpeningTimer(ctx) {
 }
 
 // 펫무쌍 30초 준비 종료 후 첫 공격과 턴 타이머를 시작하는 함수
-function openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat) {
+function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat) {
     var musou = ensurePetMusouData(data);
     if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return false;
     musou.startReady = true;
     musou.startGraceToken = "";
     musou.startGraceDeadlineAt = 0;
-    startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+    startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier, isGroupChat, false);
     castleMsg(buildPetMusouStatusMessage(data, petData, guildData, musou), replier, isGroupChat);
     return true;
 }
 
 // 펫무쌍 저장 마감시각을 기준으로 30초 시작 유예 타이머를 예약하거나 복구하는 함수
-function startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, preserveDeadline) {
+function startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, preserveDeadline) {
     var musou = ensurePetMusouData(data);
     if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return;
     var timerCtx = getCurrentContext();
@@ -35029,10 +35036,11 @@ function startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupCha
             delete petMusouOpeningTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
+            var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
             var latestMusou = ensurePetMusouData(latestData);
             if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
-            openPetMusouForAttacks(latestData, latestPetData, latestGuildData, replier, isGroupChat);
+            openPetMusouForAttacks(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat);
         } finally {
             if (timerTransactionEntered) endDataSaveTransaction();
             if (timerTransactionAcquired) dataTransactionLock.unlock();
@@ -35052,7 +35060,7 @@ function clearPetMusouTurnTimer(ctx) {
 }
 
 // 펫무쌍 현재 턴의 제한시간 타이머를 시작하거나 저장된 마감시각으로 복구하는 함수
-function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, preserveDeadline) {
+function startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier, isGroupChat, preserveDeadline) {
     var musou = ensurePetMusouData(data);
     var attacker = getPetMusouCurrentAttacker(musou);
     if (!musou.active || !musou.startReady || !attacker) return;
@@ -35079,10 +35087,11 @@ function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, 
             delete petMusouTurnTimers[timerCtxKey];
             var latestData = loadJsonFile(filePath);
             var latestPetData = loadJsonFile(memberPetPath);
+            var latestPetSkillData = loadJsonFile(petSkillDataPath);
             var latestGuildData = loadJsonFile(guildPath);
             var latestMusou = ensurePetMusouData(latestData);
             if (!latestMusou.active || latestMusou.turnToken !== token) return;
-            var timeoutResult = processPetMusouTimeout(latestData, latestPetData, latestGuildData);
+            var timeoutResult = processPetMusouTimeout(latestData, latestPetData, latestPetSkillData, latestGuildData);
             if (!timeoutResult.ok) return;
             saveJsonFile(latestData, filePath);
             castleMsg(timeoutResult.message, replier, isGroupChat);
@@ -35091,7 +35100,7 @@ function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, 
                 return;
             }
             castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
-            startPetMusouTurnTimer(latestData, latestPetData, latestGuildData, replier, isGroupChat, false);
+            startPetMusouTurnTimer(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat, false);
         } finally {
             if (timerTransactionEntered) endDataSaveTransaction();
             if (timerTransactionAcquired) dataTransactionLock.unlock();
@@ -35101,22 +35110,22 @@ function startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, 
 }
 
 // 봇 재시작 후 저장된 펫무쌍 턴을 다음 수신 메시지에서 복구하는 함수
-function recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupChat) {
+function recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat) {
     var musou = ensurePetMusouData(data);
     if (!musou.active || !getPetMusouCurrentAttacker(musou)) return;
     var ctx = getCurrentContext();
     if (!musou.startReady) {
         if (petMusouOpeningTimers[ctx.key()]) return;
         if (musou.startGraceDeadlineAt > 0 && musou.startGraceDeadlineAt <= new Date().getTime()) {
-            openPetMusouForAttacks(data, petData, guildData, replier, isGroupChat);
+            openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat);
             return;
         }
-        startPetMusouOpeningTimer(data, petData, guildData, replier, isGroupChat, true);
+        startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
         return;
     }
     if (petMusouTurnTimers[ctx.key()]) return;
     if (musou.turnDeadlineAt > 0 && musou.turnDeadlineAt <= new Date().getTime()) {
-        var timeoutResult = processPetMusouTimeout(data, petData, guildData);
+        var timeoutResult = processPetMusouTimeout(data, petData, petSkillData, guildData);
         if (!timeoutResult.ok) return;
         saveJsonFile(data, filePath);
         castleMsg(timeoutResult.message, replier, isGroupChat);
@@ -35125,10 +35134,10 @@ function recoverPetMusouTurnIfNeeded(data, petData, guildData, replier, isGroupC
             return;
         }
         castleMsg(timeoutResult.statusMessage, replier, isGroupChat);
-        startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, false);
+        startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier, isGroupChat, false);
         return;
     }
-    startPetMusouTurnTimer(data, petData, guildData, replier, isGroupChat, true);
+    startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
 }
 
 // 누적 펫무쌍 우승 순위와 현재 칭호 보유자를 출력하는 함수
