@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "executionId": "자산카탈로그-JSON-DELTA-READONLY-20260901T005943",
+  "mode": "READ_ONLY_FREEZE_CORRECTION_CANDIDATE",
+  "baselineCatalogVersion": "ASSET-FREEZE-v2.435-8f075b4e-02",
+  "candidateCatalogVersion": "ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01-CANDIDATE",
+  "sourceRoot": "C:/Users/user/Desktop/hoiBot/data",
+  "sourceContract": {
+    "rawModified": false,
+    "databaseImported": false,
+    "totalJsonFiles": 751,
+    "currentLogicalFiles": 33,
+    "excludedBackupOrHistoricalFiles": 718,
+    "fullIncludeFiles": 10,
+    "partialFiles": 11,
+    "wholeFileHashMayClassifyPartial": false
+  },
+  "fullIncludes": [
+    {
+      "path": "data/eventTowerBoss.json",
+      "domain": "tower_boss_definition_reward",
+      "bytes": 3298,
+      "baselineSha256": "894397b9a8afc2fe0978801c501b518f286a49250a6fea60ca563ab408aa84e5",
+      "currentSha256": "b5661ba8572db6bb24d2ac10121281149dd3a2fefe932edd78af0983e625abbf",
+      "delta": "VALUE_ONLY_DRIFT",
+      "identity": { "old": 7, "current": 7, "added": 0, "removed": 0, "changed": 1, "changedFields": ["reward"] }
+    },
+    {
+      "path": "data/hoiBotChangeLog.json",
+      "domain": "developer_note_content",
+      "bytes": 102003,
+      "baselineSha256": "25d2a46908d47826b0029de0340799598bfac0296582674bacb3b3f057dc5a61",
+      "currentSha256": "dc530a997ccc6575fa9792b9726eab9d4fadd2ac774559f9fc946d05c0e44fb8",
+      "delta": "IDENTITY_ADD",
+      "identity": { "old": 287, "current": 325, "added": 38, "removed": 0 }
+    },
+    {
+      "path": "data/itemInfo.json",
+      "domain": "item_definition",
+      "bytes": 31289,
+      "baselineSha256": "244c56cf238f4e4f2da38e5130481d7e3c64d2c4f6498b749edbbaa9b5c5a29a",
+      "currentSha256": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+      "delta": "SERIALIZATION_ONLY",
+      "identity": { "castleItem": 10, "castlePremiumOffense": 3, "castlePremiumDefense": 3, "elemental": 61, "raidDept1": 8, "raidDept2": 1, "ring": 45, "logicalChanges": 0 }
+    },
+    {
+      "path": "data/itemList.json",
+      "domain": "item_restriction",
+      "bytes": 53315,
+      "baselineSha256": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "currentSha256": "b6f4751f2faf7588c2e41c032bac4fc5b05ff6bd2c105ea0c57a0e072c60c402",
+      "delta": "IDENTITY_ADD_DELETE",
+      "identity": {
+        "nonItems": { "oldRows": 544, "currentRows": 674, "oldUnique": 537, "currentUnique": 669, "added": 147, "removed": 15, "currentDuplicateRows": 5 },
+        "untradableList": { "oldRows": 377, "currentRows": 504, "oldUnique": 376, "currentUnique": 503, "added": 129, "removed": 2, "currentDuplicateRows": 1 }
+      }
+    },
+    {
+      "path": "data/miniPetCollectionInfo.json",
+      "domain": "mini_pet_collection_policy",
+      "bytes": 13567,
+      "baselineSha256": "9d2d94abe3bfbbf0276f74e7ea2ffd2fb6242ba8a71b2a5af586d94cf4fdea2e",
+      "currentSha256": "3dadafd107bb82480d6d5218f98af2a31d0037af7c15b5fecaf8d3c62b9a4e39",
+      "delta": "SERIALIZATION_ONLY",
+      "identity": { "gradeRewards": 8, "stageRewards": 100, "titles": 100, "logicalChanges": 0 }
+    },
+    {
+      "path": "data/miniPetData.json",
+      "domain": "mini_pet_definition_policy",
+      "bytes": 144246,
+      "baselineSha256": "3d74d20015c8bea29c63661b7ff35c069d9d9f060068e5dec5575486d32c332c",
+      "currentSha256": "b361e9d2922a9e7997416f49e49187fd6924642a5aec8018ab68d6c8c9d2b5a7",
+      "delta": "SERIALIZATION_ONLY_WITH_PREEXISTING_IDENTITY_COLLISION",
+      "identity": { "gradeRows": 14, "definitionRows": 1078, "logicalChanges": 0, "duplicateDisplayNames": 33 }
+    },
+    {
+      "path": "data/packageInfo.json",
+      "domain": "package_definition_reward",
+      "bytes": 51721,
+      "baselineSha256": "c4e4b5a3373e5c4e6baffbf470d52844dbc30f2f82042a262f98fd5886c49123",
+      "currentSha256": "4d2072a8e829391cb2ad546ca9ba37d7081c677bdb9e2dedbc7e08e12697e7dc",
+      "delta": "IDENTITY_ADD_DELETE_AND_VALUE_DRIFT",
+      "identity": { "old": 6, "current": 107, "added": 102, "removed": 1, "changed": 3, "changedFields": ["rewards"], "duplicateIds": 0 }
+    },
+    {
+      "path": "data/petSweetHomeInfo.json",
+      "domain": "home_building_furniture_definition",
+      "bytes": 591205,
+      "baselineSha256": "6d89a8e23de8cd9a8f51d86cea5b713e643c38fc0c7ddc87cc33559a2ff35421",
+      "currentSha256": "726385f7c9b9aed94bcb62c2eb6f9267e32d6a90a4216b50175cdfded878744b",
+      "delta": "DRAW_POOL_MULTIPLICITY_IDENTITY_AND_VALUE_DRIFT",
+      "identity": {
+        "furniturePool": { "oldRows": 1551, "currentRows": 2447, "oldCompositeIdentities": 518, "currentCompositeIdentities": 539, "addedCompositeIdentities": 21, "multiplicityChanged": 86, "rowDelta": 896, "valueChanged": 4, "changedFields": ["display", "exp"] },
+        "homeInfo": { "old": 300, "current": 300, "changed": 299, "changedFields": ["required"], "duplicateCompositeIds": 1 }
+      }
+    },
+    {
+      "path": "data/requestMonitorConfig.json",
+      "domain": "system_rate_limit_configuration",
+      "bytes": 335,
+      "baselineSha256": "911f00fcecb0934ef4ecd0cae53449f3a831d6b6220e2514054309caffa32a01",
+      "currentSha256": "911f00fcecb0934ef4ecd0cae53449f3a831d6b6220e2514054309caffa32a01",
+      "delta": "UNCHANGED_CARRY_FORWARD"
+    },
+    {
+      "path": "data/trialTowerBoss.json",
+      "domain": "tower_boss_definition_reward",
+      "bytes": 48137,
+      "baselineSha256": "64fc851823ba0fa3d3e974716fd4e322535a8cfb4bdbbace4451ad99f12bab06",
+      "currentSha256": "363b92ed5a74c41e08fbf9f854a8eb7c008c45bb87cd27989dc30bf5d0eccb14",
+      "delta": "VALUE_ONLY_DRIFT",
+      "identity": { "old": 120, "current": 120, "added": 0, "removed": 0, "changed": 120, "changedFields": ["reward"] }
+    }
+  ],
+  "partialProjections": [
+    { "path": "data/guildData.json#$.shop", "domain": "guild_shop_catalog", "oldHash": "14ec7a8834535de89e755bbc0a81d24656a23e57f0296bc226ddcd1c237cc6f2", "currentHash": "14ec7a8834535de89e755bbc0a81d24656a23e57f0296bc226ddcd1c237cc6f2", "oldCount": 6, "currentCount": 6, "delta": "UNCHANGED_CARRY_FORWARD" },
+    { "path": "data/member.json#$.shop", "domain": "shop_catalog", "oldHash": "176ecd9bcc4a9477ff8c8418edb3fc3455697bdf5698fd0c6de32bb49bd3cd48", "currentHash": "c75b4590d7af8850ba8bdae4dafef8807f71fbca06abdd0beb75033121fae9dd", "oldCount": 9, "currentCount": 11, "delta": "IDENTITY_ADD_DELETE_AND_VALUE_DRIFT", "added": 3, "removed": 1, "priceChanged": 2 },
+    { "path": "data/member.json#$.lordShop", "domain": "lord_shop_catalog", "oldHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a", "currentHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a", "oldCount": 0, "currentCount": 0, "delta": "UNCHANGED_EMPTY" },
+    { "path": "data/member.json#$.matzangField.shop", "domain": "matzang_shop_catalog", "oldHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "currentHash": "4431cba8643d844a348e8108ebfa37cbbfa9f330bc9732941ebd49c19b4d24e2", "oldCount": 0, "currentCount": 15, "delta": "PATH_CONTENT_ADDED" },
+    { "path": "data/member.json#$.master", "domain": "access_control_configuration", "oldHash": "a0549d4f134b7e15792fbaaccd6a1d033e4bf7166b50ff631086ecc2806693a7", "currentHash": "bd1dafeef1068231e882471ee57b3f5376c7269e8e8c260e0badea7fad6c1797", "oldCount": 12, "currentCount": 9, "delta": "MEMBERSHIP_STATE_DRIFT" },
+    { "path": "data/member.json#$.admin", "domain": "access_control_configuration", "oldHash": "a533d8b62395ab63a75c58ad1998e16b6aeb89fa3e6e1343c73e8f8e91a6891a", "currentHash": "5771abfe02ffd2af58a4393f1d53d45ff1c08de7a0aaeccf14c0c0c86e6a4303", "oldCount": 87, "currentCount": 76, "delta": "MEMBERSHIP_STATE_DRIFT" },
+    { "path": "data/member.json#$.allowedUsers2", "domain": "access_control_configuration", "oldHash": "59139bcd686bf372b71fb15064085f924effce963832b777965f7918c7f7f870", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 61, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
+    { "path": "data/member.json#$.allowedUsers4", "domain": "access_control_configuration", "oldHash": "ce8864997c1fb4208a3e4e3bf91bf027ffbe21e497947e40be1490ffbc3aa31d", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 5, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
+    { "path": "data/member.json#$.allowedUsers6", "domain": "access_control_configuration", "oldHash": "7f3b6e36bbf5308eb31d4595f7685d745a10a78f8d10edd3f5d0a1035f05ae9f", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 44, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
+    { "path": "data/member.json#$.allowedUsersHoipass", "domain": "access_control_configuration", "oldHash": "3fc66f5eae71573c48a989e6ee0c0cbe150133314eb10b1aada6157fe9c8cc37", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 117, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
+    { "path": "data/member.json#$.HoiCastle.taxRate", "domain": "castle_configuration", "oldHash": "92e9e7e5922d26e17e48f0869ab25cc99499fdab722c065de8e0965c96c68e86", "currentHash": "d10a4bc9e0c1fa4e8f3d7ce2512b8756e47ca5fa451f373c39a1431bb88db49f", "oldCount": 1, "currentCount": 1, "delta": "VALUE_ONLY_DRIFT" },
+    { "path": "data/member.json#$.hoiHappyFoundation.feeRate", "domain": "foundation_configuration", "oldHash": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b", "currentHash": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b", "oldCount": 1, "currentCount": 1, "delta": "UNCHANGED_CARRY_FORWARD" },
+    { "path": "data/member.json#$.petSkillSystem", "domain": "pet_skill_system_configuration", "oldHash": "e39ba916ac97a6b2ad9eff099b2ddee6924965e113edbec7c84d2da5d82dedd0", "currentHash": "e39ba916ac97a6b2ad9eff099b2ddee6924965e113edbec7c84d2da5d82dedd0", "oldCount": 2, "currentCount": 2, "delta": "UNCHANGED_CARRY_FORWARD" },
+    { "path": "data/petExploreData.json#$.notice", "domain": "pet_explore_content", "oldHash": "097b14a12d19090be9aa6f0c1ecfcb3b43d4a5c0deb59096a40b87aaaefa3418", "currentHash": "dcf27e24ddc494a9aed639c4b27b76b3f8da8bf4f14a27b424389861bbd19855", "oldCount": 1, "currentCount": 1, "delta": "VALUE_ONLY_DRIFT" }
+  ],
+  "newRuntimeStateFiles": [
+    { "path": "data/petHomeActivityData.json", "disposition": "EXCLUDED_RUNTIME_STATE" },
+    { "path": "data/petHomePlacedFurniture.json", "disposition": "EXCLUDED_OWNERSHIP_STATE" }
+  ],
+  "missingLegacyStateFiles": [
+    { "path": "data/castleBattle.json", "disposition": "EXCLUDED_RUNTIME_STATE_PATH_REMOVED" },
+    { "path": "data/memberBagCheck/memberBagCheck.json", "disposition": "EXCLUDED_OWNERSHIP_STATE_PATH_REMOVED" }
+  ],
+  "decision": "CANDIDATE_ONLY_DO_NOT_IMPORT_OR_RESET_EXISTING_GATES"
+}
