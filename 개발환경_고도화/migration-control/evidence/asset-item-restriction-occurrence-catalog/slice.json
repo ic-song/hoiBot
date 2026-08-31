@@ -1,0 +1,34 @@
+{
+  "sliceId": "SL-ASSET-ITEM-RESTRICTION-OCCURRENCE-CATALOG-01",
+  "catalogVersion": "ASSET-FREEZE-v2.435-item-restriction-occurrence-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourceSha256": "b6f4751f2faf7588c2e41c032bac4fc5b05ff6bd2c105ea0c57a0e072c60c402",
+  "sourceCounts": {
+    "nonItems": {
+      "rows": 674,
+      "unique": 670
+    },
+    "untradableList": {
+      "rows": 504,
+      "unique": 503
+    }
+  },
+  "totals": {
+    "sets": 2,
+    "definitions": 1173,
+    "occurrences": 1178,
+    "duplicateGroups": 5
+  },
+  "semantics": [
+    "source order preserved",
+    "duplicate occurrences preserved",
+    "first matching occurrence removable without clearing later duplicates"
+  ],
+  "scope": {
+    "legacyChanged": false,
+    "operationalDataImported": false,
+    "existingRestrictionConsumerCutover": false,
+    "ownershipChanged": false,
+    "gate8": false
+  }
+}
