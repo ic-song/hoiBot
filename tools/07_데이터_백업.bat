@@ -5,7 +5,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 set "ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe"
 set "TARGET_ADB_DEVICE=auto"
 set "REMOTE_DATA_DIR=/storage/emulated/0/호이랜드"
-set "TARGET_REPO=C:\Users\user\Desktop\hoiBot"
+for %%I in ("%~dp0..") do set "TARGET_REPO=%%~fI"
 set "LOCAL_DATA_ABS=%TARGET_REPO%\data"
 set "SNAPSHOT_BASE=%LOCALAPPDATA%\hoiBot\raw-snapshots"
 set "MANIFEST_TOOL=%~dp007_raw_snapshot_manifest.ps1"
@@ -24,7 +24,7 @@ echo  hoiBot LDPlayer 운영 데이터 RAW 스냅샷 및 로컬 적재
 echo ============================================================
 echo  운영 호이랜드 전체를 읽기 전용으로 가져옵니다.
 echo  원본 전/후와 TEMP의 경로, 크기, SHA256이 같을 때만
-echo  C:\Users\user\Desktop\hoiBot\data 를 완전 교체합니다.
+echo  %LOCAL_DATA_ABS% 를 완전 교체합니다.
 echo  Git commit/push, 외부 업로드, DB import는 수행하지 않습니다.
 echo  일관된 스냅샷을 위해 MessengerBot 데이터 쓰기를 멈춰 주세요.
 echo ============================================================
