@@ -7,7 +7,7 @@
     "reward": [
       {
         "item": "전설의 돌맹이🗿",
-        "quantity": 20
+        "quantity": 30
       },
       {
         "item": "미니펫뽑기🐹(/미니펫오픈)",
@@ -19,27 +19,15 @@
       },
       {
         "item": "펫 강화석⭐",
-        "quantity": 700
+        "quantity": 3000
       },
       {
         "item": "양념치킨🐔",
         "quantity": 700
       },
       {
-        "item": "캐슬코인🥇",
-        "quantity": 500
-      },
-      {
         "item": "경찰과 도둑🚨(/삐뽀삐뽀)",
-        "quantity": 30
-      },
-      {
-        "item": "정령 강화석🥀",
-        "quantity": 700
-      },
-      {
-        "item": "반지 강화석💍",
-        "quantity": 1000
+        "quantity": 50
       },
       {
         "item": "돌멩이🪨",
@@ -47,7 +35,7 @@
       },
       {
         "item": "미니펫대전리셋권🐹",
-        "quantity": 1200
+        "quantity": 500
       },
       {
         "item": "캐슬대전리셋권🐶",
@@ -59,11 +47,7 @@
       },
       {
         "item": "펫던전 입장권🌋",
-        "quantity": 30
-      },
-      {
-        "item": "시탑 부스터🔮",
-        "quantity": 400
+        "quantity": 100
       },
       {
         "item": "레이드타격대인장👑(+600👾)",
@@ -71,11 +55,11 @@
       },
       {
         "item": "잡템상자☠",
-        "quantity": 70
+        "quantity": 100
       },
       {
         "item": "펫먹이🍼",
-        "quantity": 100000
+        "quantity": 200000
       },
       {
         "item": "펫스킬북📙(/펫스킬오픈)",
@@ -102,7 +86,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 5
       },
       {
@@ -110,7 +94,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -122,7 +106,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 3
       },
       {
@@ -130,7 +114,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -142,7 +126,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -150,7 +134,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -162,7 +146,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 3
       },
       {
@@ -170,7 +154,7 @@
         "quantity": 3
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -182,7 +166,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 3
       },
       {
@@ -190,7 +174,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -202,7 +186,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 3
       },
       {
@@ -210,7 +194,7 @@
         "quantity": 3
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -222,7 +206,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -230,7 +214,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -242,7 +226,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -250,7 +234,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -262,7 +246,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -270,7 +254,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -282,7 +266,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -290,7 +274,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -302,7 +286,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -310,7 +294,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -322,7 +306,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 5
       },
       {
@@ -330,7 +314,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -342,7 +326,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -350,7 +334,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -362,7 +346,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -370,7 +354,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -382,7 +366,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -390,7 +374,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -402,7 +386,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -410,7 +394,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -422,7 +406,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -430,7 +414,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -442,7 +426,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -450,7 +434,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -462,7 +446,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -470,7 +454,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -482,7 +466,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -490,7 +474,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 2
       }
     ]
@@ -502,7 +486,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -510,7 +494,7 @@
         "quantity": 3
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 4
       }
     ]
@@ -522,7 +506,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -530,7 +514,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -542,7 +526,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -550,7 +534,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -562,7 +546,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -570,7 +554,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -582,7 +566,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -590,7 +574,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -602,7 +586,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -610,7 +594,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -622,7 +606,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -630,7 +614,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -642,7 +626,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -650,7 +634,7 @@
         "quantity": 8
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -662,7 +646,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -670,7 +654,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -682,7 +666,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 3
       },
       {
@@ -690,7 +674,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -702,7 +686,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -710,7 +694,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -722,7 +706,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 3
       },
       {
@@ -730,7 +714,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -742,7 +726,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -750,7 +734,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -762,7 +746,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -770,7 +754,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 4
       }
     ]
@@ -782,7 +766,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -790,7 +774,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 4
       }
     ]
@@ -802,7 +786,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -810,7 +794,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 4
       }
     ]
@@ -822,7 +806,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -830,7 +814,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -842,7 +826,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -850,7 +834,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 4
       }
     ]
@@ -862,7 +846,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -870,7 +854,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -882,7 +866,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -890,7 +874,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -902,7 +886,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -910,7 +894,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -922,7 +906,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -930,7 +914,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 8
       }
     ]
@@ -942,7 +926,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 9
       },
       {
@@ -950,7 +934,7 @@
         "quantity": 8
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 8
       }
     ]
@@ -962,7 +946,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -970,7 +954,7 @@
         "quantity": 7
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 7
       }
     ]
@@ -982,7 +966,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -990,7 +974,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 6
       }
     ]
@@ -1002,7 +986,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1010,7 +994,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1022,7 +1006,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1030,7 +1014,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1042,7 +1026,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1050,7 +1034,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1062,7 +1046,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1070,7 +1054,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1082,7 +1066,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1090,7 +1074,7 @@
         "quantity": 3
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1102,7 +1086,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1110,7 +1094,7 @@
         "quantity": 3
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1122,7 +1106,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1130,7 +1114,7 @@
         "quantity": 3
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1142,7 +1126,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1150,7 +1134,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -1162,7 +1146,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1170,7 +1154,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -1182,7 +1166,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1190,7 +1174,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -1202,7 +1186,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 9
       },
       {
@@ -1210,7 +1194,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -1222,7 +1206,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -1230,7 +1214,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 4
       }
     ]
@@ -1242,7 +1226,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1250,7 +1234,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1262,7 +1246,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 9
       },
       {
@@ -1270,7 +1254,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -1282,7 +1266,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1290,7 +1274,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -1302,7 +1286,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1310,7 +1294,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -1322,7 +1306,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1330,7 +1314,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 18
       }
     ]
@@ -1342,7 +1326,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 7
       },
       {
@@ -1350,7 +1334,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1362,7 +1346,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1370,7 +1354,7 @@
         "quantity": 9
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1382,7 +1366,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1390,7 +1374,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 3
       }
     ]
@@ -1402,7 +1386,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1410,7 +1394,7 @@
         "quantity": 5
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1422,7 +1406,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1430,7 +1414,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1442,7 +1426,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -1450,7 +1434,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -1462,7 +1446,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -1470,7 +1454,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1482,7 +1466,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 23
       },
       {
@@ -1490,7 +1474,7 @@
         "quantity": 12
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 12
       }
     ]
@@ -1502,7 +1486,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1510,7 +1494,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1522,7 +1506,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1530,7 +1514,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1542,7 +1526,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1550,7 +1534,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -1562,7 +1546,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1570,7 +1554,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -1582,7 +1566,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1590,7 +1574,7 @@
         "quantity": 30
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1602,7 +1586,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1610,7 +1594,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1622,7 +1606,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -1630,7 +1614,7 @@
         "quantity": 23
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -1642,7 +1626,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 15
       },
       {
@@ -1650,7 +1634,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -1662,7 +1646,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1670,7 +1654,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 30
       }
     ]
@@ -1682,7 +1666,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 30
       },
       {
@@ -1690,7 +1674,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -1702,7 +1686,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1710,7 +1694,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -1722,7 +1706,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 18
       },
       {
@@ -1730,7 +1714,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 18
       }
     ]
@@ -1742,7 +1726,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -1750,7 +1734,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1762,7 +1746,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 15
       },
       {
@@ -1770,7 +1754,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -1782,7 +1766,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1790,7 +1774,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1802,7 +1786,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1810,7 +1794,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -1822,7 +1806,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -1830,7 +1814,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -1842,7 +1826,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1850,7 +1834,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1862,7 +1846,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1870,7 +1854,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 8
       }
     ]
@@ -1882,7 +1866,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 8
       },
       {
@@ -1890,7 +1874,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1902,7 +1886,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 10
       },
       {
@@ -1910,7 +1894,7 @@
         "quantity": 10
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 30
       }
     ]
@@ -1922,7 +1906,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 30
       },
       {
@@ -1930,7 +1914,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1942,7 +1926,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -1950,7 +1934,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -1962,7 +1946,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 15
       },
       {
@@ -1970,7 +1954,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -1982,7 +1966,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -1990,7 +1974,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -2002,7 +1986,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -2010,7 +1994,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -2022,7 +2006,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -2030,7 +2014,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -2042,7 +2026,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -2050,7 +2034,7 @@
         "quantity": 50
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -2062,7 +2046,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 30
       },
       {
@@ -2070,7 +2054,7 @@
         "quantity": 8
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -2082,7 +2066,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -2090,7 +2074,7 @@
         "quantity": 50
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 30
       }
     ]
@@ -2102,7 +2086,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 25
       },
       {
@@ -2110,7 +2094,7 @@
         "quantity": 30
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -2122,7 +2106,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 15
       },
       {
@@ -2130,7 +2114,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -2142,7 +2126,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 30
       },
       {
@@ -2150,7 +2134,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -2162,7 +2146,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 25
       },
       {
@@ -2170,7 +2154,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -2182,7 +2166,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -2190,7 +2174,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -2202,7 +2186,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -2210,7 +2194,7 @@
         "quantity": 20
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -2222,7 +2206,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -2230,7 +2214,7 @@
         "quantity": 30
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 5
       }
     ]
@@ -2242,7 +2226,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -2250,7 +2234,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
@@ -2262,7 +2246,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 15
       },
       {
@@ -2270,7 +2254,7 @@
         "quantity": 15
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 15
       }
     ]
@@ -2282,7 +2266,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -2290,7 +2274,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2302,7 +2286,7 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -2310,7 +2294,7 @@
         "quantity": 2
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2322,7 +2306,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -2330,7 +2314,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2342,7 +2326,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 5
       },
       {
@@ -2350,7 +2334,7 @@
         "quantity": 100
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 1
       }
     ]
@@ -2362,7 +2346,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 20
       },
       {
@@ -2370,7 +2354,7 @@
         "quantity": 100
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 20
       }
     ]
@@ -2382,7 +2366,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 50
       },
       {
@@ -2390,7 +2374,7 @@
         "quantity": 50
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2402,7 +2386,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 100
       },
       {
@@ -2410,7 +2394,7 @@
         "quantity": 1
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2422,7 +2406,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 100
       },
       {
@@ -2430,7 +2414,7 @@
         "quantity": 100
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2442,7 +2426,7 @@
     "pettype": "땅",
     "reward": [
       {
-        "item": "정령조각🥀",
+        "item": "펫 강화석⭐",
         "quantity": 100
       },
       {
@@ -2454,7 +2438,7 @@
         "quantity": 100
       },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 100
       }
     ]
@@ -2466,7 +2450,7 @@
     "pettype": "하늘",
     "reward": [
       {
-        "item": "정령 강화석🥀",
+        "item": "미니펫 강화석💫",
         "quantity": 1
       },
       {
@@ -2478,7 +2462,7 @@
       "quantity": 1
     },
       {
-        "item": "마정석🔮",
+        "item": "잡템상자☠",
         "quantity": 10
       }
     ]
