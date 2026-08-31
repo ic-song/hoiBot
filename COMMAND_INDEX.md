@@ -2245,7 +2245,7 @@ Status: VERIFIED
 
 ---
 
-# /펫무쌍준비|/펫무쌍시작|/펫무쌍공격 [1-10]|/펫무쌍종료|/펫무쌍전체초기화|/무쌍순위|/벼락확률 [0-100]
+# /펫무쌍준비|/펫무쌍시작|/펫무쌍공격 [1-10]|/펫무쌍종료|/펫무쌍전체초기화|/무쌍순위|/벼락확률 [0-100]|/티켓이벤트시작|/티켓이벤트종료|/티켓전체회수
 
 Status: VERIFIED
 
@@ -2267,6 +2267,10 @@ Status: VERIFIED
 - `startPetMusouTurnTimer`
 - `recoverPetMusouTurnIfNeeded`
 - `buildPetMusouRankingMessage`
+- `runScheduledPetMusouStart`
+- `ensurePetMusouScheduleTimer`
+- `grantPetMusouTicketEventCoupon`
+- `processPetMusouTicketEventAdminCommand`
 - `checkRank`
 
 ## Data Usage
@@ -2281,10 +2285,14 @@ Status: VERIFIED
 - `data.member[user].bag["영지기습공격권🔥(40%)"]`
 - `data.member[user].bag["영지절대방어권🛡(50%)"]`
 - `data.member[user].bag["피뢰침⚡(자동 벼락 방지)"]`
+- `data.petMusouTicketEvent`
+- `data.member[user].bag["티켓이벤트할인쿠폰🎟️(10~50%)"]`
 - `petData`, `homeData`, `petSkillData`, `guildData` (대회 시작 시 종합매력 스냅샷)
 
 ## Save Flow
 - 참가, 시작, 공격, 시간 초과, 강제 종료, 전체 초기화 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
+- 운영 컨텍스트에서는 매일 12:30에 정규 펫무쌍 시작을 확인하고, 티켓 이벤트 활성 중에는 20:30 시작을 추가한다. 날짜·시각 키로 같은 회차의 중복 실행을 막으며 맞짱필드·길드 영지전과 동시 시작하지 않는다.
+- `/티켓이벤트시작`, `/티켓이벤트종료`, `/티켓전체회수`는 이벤트 상태·로그·쿠폰 회수 결과를 `member.json`에 한 번 저장한다. 이벤트 종료만으로 보유 쿠폰을 회수하지 않는다.
 - `/벼락확률 [0-100]`은 진행 중인 대회의 `lightningRate`만 변경하고 `member.json`을 한 번 저장한다. `dev/` 입력은 기존 DEV 컨텍스트의 `member.json`에만 반영한다.
 - 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
 - 다음 회차 준비자와 현재 회차 참가자를 별도 객체로 저장한다. 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
@@ -2295,6 +2303,7 @@ Status: VERIFIED
 - 정상 공격 결과 제목에는 깃발 발견·점령·전투 승리 여부에 따라 `[성공✅]` 또는 `[실패❌]`를 표시하며, 미공격 탈락은 기존 `[시간 초과⚠️]`를 유지한다.
 - 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올리고, 증가값과 변경 후 확률을 탈락 결과 및 다음 공격자 상태 UI에 반영한다.
 - 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 2억이다. 최종 우승 상금은 기존 값을 유지한다.
+- 티켓 이벤트 활성 중 공격권이 정상 차감된 공격에는 10% 70%, 20% 15%, 30% 7%, 40% 5%, 50% 3% 확률로 할인쿠폰 1장을 지급하고 공격 보상 바로 아래에 표시한다.
 - 진짜 깃발 발견 전 처음 찾은 가짜 깃발은 공격권만 1회 차감하고 생존하며, 결과 제목 바로 아래에 차감 후 남은 공격 횟수를 `[현재/최대⚔]` 형식으로 표시한다. 이미 공개된 가짜를 다시 공격하거나 진짜 깃발 발견 후 가짜를 공격하면 즉시 탈락한다.
 - 벼락이 실제 발생하면 벼락 결과만 별도 `castleMsg`로 전송하고 공격 결과·공격 상세에는 합치지 않는다. 미발생 문구는 기존처럼 공격 결과에 포함한다.
 - 진짜 깃발 최초 발견 시 기본 공격 보상과 별도로 2억을 한 번 지급하며 `realFlagDiscoveryBonusPaid`와 발견 기록으로 중복 지급을 막는다.
@@ -2311,6 +2320,7 @@ Status: VERIFIED
 ## Command Guards
 - 인자 없는 명령은 exact equality로만 실행한다.
 - `/펫무쌍전체초기화`는 운영자만 exact equality로 실행한다.
+- 티켓 이벤트 관리 명령 3종은 펫무쌍 운영자만 exact equality로 실행한다.
 - 공격은 `/^\/펫무쌍공격\s+(?:10|[1-9])$/` 전체 패턴만 허용한다.
 - `/벼락확률`은 `호이 남`만 사용할 수 있다. 값은 `0`~`100`과 선택적인 소수점 첫째 자리만 허용하며, 접미문이 붙은 입력은 실행하지 않는다.
 - 슬래시가 없는 `펫무쌍준비`, `펫무쌍시작`, `펫무쌍공격 [번호]` 입력은 실행하지 않는다.
@@ -2399,7 +2409,7 @@ Status: VERIFIED
 
 ---
 
-# /호패프리미엄추가|/호패프리미엄삭제|/호프단체추가|/호프구독
+# /호패프리미엄추가|/호패프리미엄삭제|/호프단체추가|/호프구독|/무쌍온|/무쌍오프|/출첵온|/출첵오프|/자동출첵
 
 Status: VERIFIED
 
@@ -2421,11 +2431,17 @@ Status: VERIFIED
 - `getPetHomeHeartUsageStatus`
 - `calcExploreSuccessPercent`
 - `claimQuestReward`
+- `processHoiPassPremiumAutomationCommand`
+- `autoRegisterHoiPassPremiumPetMusouUsers`
+- `runHoiPassPremiumAutoAttendance`
+- `processAttendanceForUser`
 
 ## Data Usage
 - `data.member[user].pass.premium`
 - `data.member[user].premiumDailyQuestCnt`
 - `data.member[user].bag`
+- `data.member[user].premiumAutomation`
+- `data.petMusouAutomationLogs`
 - `petSkillData[user].petSkills.equipped`
 - `petSkillData[user].petSkills.bag`
 - `petHomeActivityData.petHomeSocial[user].badges`
@@ -2436,6 +2452,9 @@ Status: VERIFIED
 - `/호패프리미엄추가, 아이디 YY.MM.DD`는 기본 호이패스가 없는 유저에게 `자동탐험권🌄` 1개를 지급한다. 기존 공백 형식도 호환한다.
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
 - `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
+- `/무쌍온`은 설정을 저장하고 현재 준비 회차 참가를 즉시 시도하며, 이후 수동·정시 시작 전 프리미엄 활성 유저를 자동 등록한다. `/무쌍오프` 뒤에도 이미 등록된 현재 회차 참가는 유지한다.
+- `/출첵온` 설정은 프리미엄 만료 후에도 유지하지만 `/자동출첵` 실행 대상에서는 제외한다. `/자동출첵`은 MASTER·오픈채팅봇만 실행하며 구독 패스 지급 후 대상자를 독립 처리하고, 한 유저의 실패가 다음 유저를 중단하지 않는다.
+- 수동 `ㅊㅊ`와 자동출첵은 같은 출석 판정·기본 보상·주사위·랭크·오픈런 보상 처리를 사용하며 명령 분기에서 `member.json`을 한 번 저장한다.
 - 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 최근 배치한 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
@@ -2449,6 +2468,8 @@ Status: VERIFIED
 - `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
 - `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
 - `/이체`
+- `/펫무쌍준비`, `/펫무쌍시작`
+- `ㅊㅊ`, `/자동출첵`
 
 ---
 
@@ -4142,6 +4163,8 @@ Status: VERIFIED
 - `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
+- `getBestTicketEventCoupon`
+- `consumeTicketEventCoupon`
 
 ## Data Usage
 
@@ -4151,6 +4174,7 @@ Status: VERIFIED
 - `data.member[sender].bag`
 - `data.member[sender].diamondBoxBuyCount`
 - `petSkillData`
+- `data.member[sender].bag["티켓이벤트할인쿠폰🎟️(10~50%)"]`
 
 ## Save Flow
 
@@ -4159,6 +4183,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
+- 티켓 이름을 포함한 상품은 보유 쿠폰 중 최고 할인율을 상품가에 먼저 적용하고, 구매가 성공한 뒤 해당 쿠폰 1장만 차감한다. 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
 
 ## Related Commands
@@ -4170,6 +4195,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `쇼핑광📙` discount applies before tax calculation
+- 티켓이벤트 쿠폰 할인은 `쇼핑광📙` 할인보다 먼저 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
 - `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
