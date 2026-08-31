@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { readKakaoVerificationCode } from "../user-auth/policy.js";
 
 const REWARD_ITEM_CODE = "ITEM-RWD-001";
 const REWARD_ITEM_QUANTITY = 20n;
@@ -19,7 +20,9 @@ export interface MemberVoiceAuthRewardResult {
 
 // 회원 음성 인증 명령은 대상 표시명이 온전히 포함된 형식만 허용합니다.
 export function isMemberVoiceAuthRewardCommandCandidate(message: string | undefined): boolean {
-  return message !== undefined && /^\/인증\s+\S(?:.*\S)?$/.test(message);
+  return message !== undefined
+    && readKakaoVerificationCode(message) === null
+    && /^\/인증\s+\S(?:.*\S)?$/.test(message);
 }
 
 // 인자 명령을 공용 command alias와 일치하는 기본 명령으로 정규화합니다.

@@ -27,6 +27,7 @@ import { AdminAuthService } from "./admin/auth-service.js";
 import { registerAdminRoutes } from "./admin/routes.js";
 import { CurrencyService } from "./currency/currency-service.js";
 import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
+import { registerSiteSignupWebRoutes } from "./signup/site-signup-web.js";
 import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-catalog-web-routes.js";
 import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-web-routes.js";
 import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-routes.js";
@@ -95,6 +96,7 @@ import { MiniPetBindingReleaseService, isMiniPetBindingReleaseCommand, normalize
 import { isOperationNoticeCommandCandidate, normalizeOperationNoticeDispatchMessage, OperationNoticeService } from "./admin/operation-notice-service.js";
 import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
+import { buildSiteSignupEntryMessage, isSiteSignupEntryCommand } from "./signup/site-signup-entry.js";
 import {
   CommandDispatcher,
   MariaCommandDispatchRepository,
@@ -718,6 +720,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
 
   void app.register(cookie);
   void registerAdminWebShellRoutes(app);
+  void registerSiteSignupWebRoutes(app);
   if (database !== undefined) {
     const profiles = new MariaProfileRepository(database);
     const adminAuth = new AdminAuthService(database);
@@ -3694,23 +3697,30 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate && normalizedEvent.direction === "incoming"
         && isSignupCommand(normalizedEvent.message) && partialDispatchDecision?.route === "MODERN"
-        && partialDispatchDecision.handlerKey === "USER_SIGNUP" && normalizedEvent.userId !== undefined
-        && normalizedEvent.channelId !== undefined && commandEvent.displayNameTrust === "trusted"
-        && commandEvent.displayName !== undefined) {
-        try {
-          const result = await new SignupService(database!).handle({
-            externalUserId: normalizedEvent.userId,
-            displayName: commandEvent.displayName,
-            channelId: normalizedEvent.channelId,
-            message: normalizedEvent.message!,
-            eventId: normalizedEvent.eventId
-          });
-          processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
-        } catch (error) {
-          if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "signup", error.message));
-          } else {
-            throw error;
+        && partialDispatchDecision.handlerKey === "USER_SIGNUP" && normalizedEvent.channelId !== undefined) {
+        if (isSiteSignupEntryCommand(normalizedEvent.message)) {
+          processing.replies.push(await eventProcessor!.queueCommandReply(
+            normalizedEvent,
+            "site_signup_web_entry",
+            buildSiteSignupEntryMessage()
+          ));
+        } else if (normalizedEvent.userId !== undefined && commandEvent.displayNameTrust === "trusted"
+          && commandEvent.displayName !== undefined) {
+          try {
+            const result = await new SignupService(database!).handle({
+              externalUserId: normalizedEvent.userId,
+              displayName: commandEvent.displayName,
+              channelId: normalizedEvent.channelId,
+              message: normalizedEvent.message!,
+              eventId: normalizedEvent.eventId
+            });
+            processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+          } catch (error) {
+            if (error instanceof ApplicationError && [409, 422].includes(error.statusCode)) {
+              processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent, "signup", error.message));
+            } else {
+              throw error;
+            }
           }
         }
       }
@@ -3803,7 +3813,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   app.get<{ Querystring: TokenQuery }>(
     "/api/v1/debug/recent-events",
     { preHandler: tokenGuard },
-    async (request, reply) => {
+    async (request: FastifyRequest<{ Querystring: TokenQuery }>, reply: FastifyReply) => {
       if (!config.recentEventsEnabled) {
         return reply.code(404).send({
           ok: false,

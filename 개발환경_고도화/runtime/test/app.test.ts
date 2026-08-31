@@ -123,6 +123,26 @@ describe("hoiBot Lite server", () => {
     await app.close();
   });
 
+  it("serves the public signup shell from the runtime entrypoint", async () => {
+    const app = buildApp(createConfig());
+    const [page, styles, client] = await Promise.all([
+      app.inject({ method: "GET", url: "/signup" }),
+      app.inject({ method: "GET", url: "/signup/assets/signup.css" }),
+      app.inject({ method: "GET", url: "/signup/assets/signup.js" })
+    ]);
+
+    assert.equal(page.statusCode, 200);
+    assert.match(page.headers["content-type"] ?? "", /^text\/html/);
+    assert.equal(page.headers["cache-control"], "no-store");
+    assert.match(page.headers["content-security-policy"] ?? "", /default-src 'self'/);
+    assert.match(page.body, /호이월드 계정 만들기/);
+    assert.equal(styles.statusCode, 200);
+    assert.match(styles.body, /min-height: 48px/);
+    assert.equal(client.statusCode, 200);
+    assert.match(client.body, /\/api\/v1\/user-accounts/);
+    await app.close();
+  });
+
   it("returns pong", async () => {
     const app = buildApp(createConfig());
     const response = await app.inject({ method: "GET", url: "/api/v1/ping" });

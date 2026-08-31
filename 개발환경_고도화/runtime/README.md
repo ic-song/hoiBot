@@ -45,13 +45,15 @@ PowerShell 실행 정책과 무관하게 `npm.cmd`를 사용합니다.
 
 ```powershell
 cd C:\Users\user\Desktop\hoiBot_modernization\개발환경_고도화\runtime
-Copy-Item .env.example .env
+npm.cmd run env:setup
 # .env의 IRIS_SHARED_TOKEN을 16자 이상의 임의 문자열로 변경
 # .env의 IRIS_BASE_URL을 redroid Iris 주소로 변경
 # 운영 환경에서는 USER_VERIFICATION_PEPPER를 32자 이상 별도 secret으로 설정
 npm.cmd install
 npm.cmd run dev
 ```
+
+`env:setup`은 `.env`가 없을 때만 Git에 포함된 DB 비활성 개발 기본값을 복사합니다. 기존 `.env`는 byte 단위로 보존하며 실제 토큰·비밀번호는 저장소에 커밋하지 않습니다. 다른 개발 환경에서는 clone 후 이 명령으로 동일한 로컬 MVP 설정을 만들고, DB 검증이 필요할 때만 `hoibot_import_verify_*` 임시 DB 자격증명을 로컬 secret으로 주입합니다.
 
 `IRIS_ALLOWED_OPEN_CHAT_IDS`에는 운영 기능을 허용할 오픈채팅방 ID를 쉼표로 구분해 입력합니다. 서버는 먼저 KakaoTalk DB에서 현재 검증된 `OM + link_id + active=1 + expired=0` 오픈채팅 근거를 확인하고, 그다음 이 목록에 포함된 방만 운영 처리합니다. `IRIS_OPEN_CHAT_OBSERVATION_MODE=observe_all_open`은 1차 검증용으로 모든 활성 오픈방의 최소 이벤트 메타데이터만 관찰하며, 지정방 외 명령은 실행하지 않습니다. 검증 뒤에는 `designated_only`로 전환합니다. 비운영 `IRIS_EVENT_MONITOR_ROOM_ID`는 `/ping`, `/info`, 이벤트 관측만 가능한 진단 예외입니다.
 

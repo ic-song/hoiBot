@@ -6308,6 +6308,61 @@ Status: VERIFIED
 
 ---
 
+# /가입
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/signup/site-signup-entry.ts`
+- `개발환경_고도화/runtime/src/signup/site-signup-web.ts`
+- `개발환경_고도화/runtime/src/signup/site-signup-web-assets.ts`
+- `개발환경_고도화/runtime/src/user-auth/routes.ts`
+- `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
+
+## Related Helpers
+
+- `isSiteSignupEntryCommand`
+- `buildSiteSignupEntryMessage`
+- `registerSiteSignupWebRoutes`
+- `UserAuthService.signup`
+- `ProviderVerificationService.verifyInitialKakao`
+- `createInitialPlayer`
+
+## Data Usage
+
+- Modern DB: `user_accounts`, `user_terms_acceptances`, `user_verification_challenges`
+- Modern DB after Kakao verification: `external_identities`, `players`, `player_profiles`, `player_pets`, `currency_accounts`, `player_counters`
+- Modern operation evidence: `operations`, `command_audit`, `command_executions`, `outbox_messages`
+- Legacy Gate 8 source remains in `main.js` and its JSON member flow is unchanged.
+
+## Save Flow
+
+- The modern exact `/가입` command queues only the `/signup` web guidance reply; it does not create a legacy `player_signup_requests` row.
+- `POST /api/v1/user-accounts` creates the pending account, terms acceptance, and one-time challenge in the existing transaction.
+- Exact `/인증 [A-Z2-9 8자리]` links the Kakao identity and calls `createInitialPlayer` in the existing provider-verification transaction.
+- `/가입한다` remains the guild join confirmation command and is not treated as the web signup entry.
+
+## Related Commands
+
+- `/인증 [8자리 코드]`
+- `/가입한다`
+- `시작한다`
+- `/시작한다`
+- `거절한다`
+- `/거절한다`
+
+## AI Notes
+
+- General signup web entry must use exact equality for `/가입`; suffix text must not enter this flow.
+- The generated code alphabet excludes ambiguous `0`, `1`, `I`, and `O` values.
+- Exact 8-character signup codes are reserved for user verification; other `/인증 [대상]` inputs retain the existing administrator RBAC path.
+- Public signup uses the same-origin `/signup` shell and existing authentication APIs. Do not invent a production hostname before Gate 8.
+
+---
+
 # ㅊㅊ
 
 Status: VERIFIED

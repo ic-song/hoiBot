@@ -18,6 +18,7 @@ const eventProcessor = new ProcessIrisEventService(database);
 const signupService = new SignupService(database);
 const suffix = Date.now().toString().slice(-8);
 const channelId = `signup-probe-room-${suffix}`;
+let rollbackTriggerInstalled = false;
 
 // 실제 Iris inbox·identity 관측을 거친 가입 명령 입력을 생성합니다.
 async function prepareCommand(message: string, userId: string, displayName: string) {
@@ -148,12 +149,160 @@ try {
   assert.equal(siteRows[0]?.verified_count, 1n);
   assert.equal(siteRows[0]?.linked_count, 1n);
 
+  await assert.rejects(
+    () => new ProviderVerificationService(database, config.userVerificationPepper)
+      .verifyInitialKakao({
+        code: siteSignup.verificationCode,
+        externalUserId: `site-signup-probe-${suffix}`,
+        displayName: "솜별 남",
+        channelId
+      }),
+    (error: unknown) => typeof error === "object" && error !== null
+      && "code" in error && error.code === "VERIFICATION_CODE_INVALID"
+  );
+  const usedCodeRows = await database.query<Array<{ player_count: bigint }>>(
+    "SELECT COUNT(*) AS player_count FROM user_accounts WHERE id = ? AND player_id = ? AND status = 'active'",
+    [siteSignup.accountId, siteVerification.playerId]
+  );
+  assert.equal(usedCodeRows[0]?.player_count, 1n);
+
+  const invalidSignup = await siteAuth.signup({
+    loginId: `invalid${suffix}`.slice(0, 20),
+    password: `invalidPassword${suffix}`,
+    systemAccountName: "오류 여",
+    acceptTerms: true
+  });
+  await assert.rejects(
+    () => new ProviderVerificationService(database, config.userVerificationPepper)
+      .verifyInitialKakao({
+        code: "ZZZZZZZZ",
+        externalUserId: `site-invalid-probe-${suffix}`,
+        displayName: "오류 여",
+        channelId
+      }),
+    (error: unknown) => typeof error === "object" && error !== null
+      && "code" in error && error.code === "VERIFICATION_CODE_INVALID"
+  );
+  const invalidRows = await database.query<Array<{ pending_count: bigint }>>(
+    "SELECT COUNT(*) AS pending_count FROM user_accounts WHERE id = ? AND status = 'pending_kakao_link' AND player_id IS NULL",
+    [invalidSignup.accountId]
+  );
+  assert.equal(invalidRows[0]?.pending_count, 1n);
+
+  const expiredSignup = await siteAuth.signup({
+    loginId: `expired${suffix}`.slice(0, 20),
+    password: `expiredPassword${suffix}`,
+    systemAccountName: "만료 남",
+    acceptTerms: true
+  });
+  await database.execute(
+    "UPDATE user_verification_challenges SET expires_at = DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 1 SECOND) WHERE user_account_id = ?",
+    [expiredSignup.accountId]
+  );
+  await assert.rejects(
+    () => new ProviderVerificationService(database, config.userVerificationPepper)
+      .verifyInitialKakao({
+        code: expiredSignup.verificationCode,
+        externalUserId: `site-expired-probe-${suffix}`,
+        displayName: "만료 남",
+        channelId
+      }),
+    (error: unknown) => typeof error === "object" && error !== null
+      && "code" in error && error.code === "VERIFICATION_CODE_EXPIRED"
+  );
+  const expiredRows = await database.query<Array<{ expired_count: bigint; player_count: bigint }>>(
+    `SELECT
+      (SELECT COUNT(*) FROM user_verification_challenges
+        WHERE user_account_id = ? AND status = 'expired') AS expired_count,
+      (SELECT COUNT(*) FROM user_accounts
+        WHERE id = ? AND player_id IS NOT NULL) AS player_count`,
+    [expiredSignup.accountId, expiredSignup.accountId]
+  );
+  assert.equal(expiredRows[0]?.expired_count, 1n);
+  assert.equal(expiredRows[0]?.player_count, 0n);
+
+  const rollbackSignup = await siteAuth.signup({
+    loginId: `rollback${suffix}`.slice(0, 20),
+    password: `rollbackPassword${suffix}`,
+    systemAccountName: "복구 여",
+    acceptTerms: true
+  });
+  await database.execute(
+    "CREATE TRIGGER synthetic_site_signup_audit_failure BEFORE INSERT ON command_audit FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'forced site signup rollback'"
+  );
+  rollbackTriggerInstalled = true;
+  await assert.rejects(
+    () => new ProviderVerificationService(database, config.userVerificationPepper)
+      .verifyInitialKakao({
+        code: rollbackSignup.verificationCode,
+        externalUserId: `site-rollback-probe-${suffix}`,
+        displayName: "복구 여",
+        channelId
+      }),
+    /forced site signup rollback/
+  );
+  await database.execute("DROP TRIGGER synthetic_site_signup_audit_failure");
+  rollbackTriggerInstalled = false;
+  const rollbackRows = await database.query<Array<{
+    account_pending: bigint; challenge_pending: bigint; linked_count: bigint;
+  }>>(
+    `SELECT
+      (SELECT COUNT(*) FROM user_accounts
+        WHERE id = ? AND status = 'pending_kakao_link' AND player_id IS NULL) AS account_pending,
+      (SELECT COUNT(*) FROM user_verification_challenges
+        WHERE user_account_id = ? AND status = 'pending' AND consumed_at IS NULL) AS challenge_pending,
+      (SELECT COUNT(*) FROM external_identities
+        WHERE provider_code = 'kakao' AND external_user_id = ?) AS linked_count`,
+    [rollbackSignup.accountId, rollbackSignup.accountId, `site-rollback-probe-${suffix}`]
+  );
+  assert.equal(rollbackRows[0]?.account_pending, 1n);
+  assert.equal(rollbackRows[0]?.challenge_pending, 1n);
+  assert.equal(rollbackRows[0]?.linked_count, 0n);
+
+  const rollbackRetry = await new ProviderVerificationService(database, config.userVerificationPepper)
+    .verifyInitialKakao({
+      code: rollbackSignup.verificationCode,
+      externalUserId: `site-rollback-probe-${suffix}`,
+      displayName: "복구 여",
+      channelId
+    });
+  assert.equal(rollbackRetry.status, "verified");
+
+  const reconnectedDatabase = createDatabaseClient(config.database);
+  try {
+    const reconnectRows = await reconnectedDatabase.query<Array<{
+      account_active: bigint; challenge_verified: bigint; player_count: bigint;
+    }>>(
+      `SELECT
+        (SELECT COUNT(*) FROM user_accounts
+          WHERE id = ? AND player_id = ? AND status = 'active') AS account_active,
+        (SELECT COUNT(*) FROM user_verification_challenges
+          WHERE user_account_id = ? AND status = 'verified' AND consumed_at IS NOT NULL) AS challenge_verified,
+        (SELECT COUNT(*) FROM players WHERE id = ?) AS player_count`,
+      [rollbackSignup.accountId, rollbackRetry.playerId, rollbackSignup.accountId, rollbackRetry.playerId]
+    );
+    assert.equal(reconnectRows[0]?.account_active, 1n);
+    assert.equal(reconnectRows[0]?.challenge_verified, 1n);
+    assert.equal(reconnectRows[0]?.player_count, 1n);
+  } finally {
+    await reconnectedDatabase.close();
+  }
+
   process.stdout.write(JSON.stringify({
     ok: true,
     acceptedPlayerId: accepted.playerId,
     rejectedWithoutPlayer: true,
-    siteSignupPlayerId: siteVerification.playerId
+    siteSignupPlayerId: siteVerification.playerId,
+    invalidCodeRejected: true,
+    expiredCodeRejected: true,
+    usedCodeRejected: true,
+    rollbackPreservedPendingState: true,
+    rollbackRetryPlayerId: rollbackRetry.playerId,
+    reconnectParity: true
   }) + "\n");
 } finally {
+  if (rollbackTriggerInstalled) {
+    await database.execute("DROP TRIGGER IF EXISTS synthetic_site_signup_audit_failure");
+  }
   await database.close();
 }

@@ -53,6 +53,7 @@ describe("site user authentication", () => {
     assert.equal(readKakaoVerificationCode("/인증 ABCD2345 해줘"), null);
     assert.equal(readKakaoVerificationCode(" /인증 ABCD2345"), null);
     assert.equal(readKakaoVerificationCode("/인증 ABCD-234"), null);
+    assert.equal(readKakaoVerificationCode("/인증 ABCD2301"), null);
   });
 
   it("creates a pending site account, consent history, and one-time code without a player", async () => {
