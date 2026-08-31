@@ -1,0 +1,53 @@
+import type { PetExploreParticipationInput } from "../../src/pet/pet-explore-participation-provider.js";
+
+export const petExploreParticipationFixture = {
+  canonicalBase: ["pet_explore_rounds", "pet_explore_participations"],
+  changeTable: "pet_explore_participation_changes",
+  sourceContract: {
+    manual: "same destination noop; different destination replacement; reservation never consumes tickets",
+    auto: "requires auto ticket; skips an existing next-round participation; reservation never consumes tickets",
+  },
+  sourceSlots: {
+    "0": "diamond_mine_event",
+    "1": "pet_enhancement_mine",
+    "2": "intimacy_mine",
+    "3": "luck_mine",
+    "4": "jeondor_dungeon",
+    "5": "chicken_farm_dungeon",
+    "6": "land_document_dungeon",
+    "7": "shop_open_dungeon",
+    "8": "belcar_maze",
+    "9": "archmage_ruins",
+    "10": "guild_raid_event",
+  },
+  ticketReads: {
+    auto: "자동탐험권🌄",
+    belcar_maze: "미궁 입장권🕋",
+    archmage_ruins: "미궁 입장권🕋",
+    guild_raid_event: "펫던전 입장권🌋",
+  },
+  idempotencyNamespaces: ["pet_explore.participation.manual", "pet_explore.participation.auto"],
+  prohibitedWrites: ["inventory_stacks", "inventory_ledger", "settlement", "reward", "rng", "legacy_json"],
+  manualInput: {
+    mode: "manual",
+    roundKey: "pet-explore-round-20260831-01",
+    playerId: "984720001",
+    destinationCode: "pet_enhancement_mine",
+    expectedRoundVersion: "4",
+    expectedParticipationVersion: null,
+    idempotencyKey: "lease2427-manual-create",
+    reason: "수동 펫 탐험 참가 예약",
+    sourceCode: "iris",
+  } satisfies PetExploreParticipationInput,
+  autoInput: {
+    mode: "auto",
+    roundKey: "pet-explore-round-20260831-02",
+    playerId: "984720002",
+    destinationCode: "intimacy_mine",
+    expectedRoundVersion: "1",
+    expectedParticipationVersion: null,
+    idempotencyKey: "lease2427-auto-create",
+    reason: "자동 다음 round 참가 예약",
+    sourceCode: "scheduler",
+  } satisfies PetExploreParticipationInput,
+} as const;
