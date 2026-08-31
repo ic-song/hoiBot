@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.437"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.438"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1496,8 +1496,6 @@ blockedNicknameTerms: [
             successRate: 0.1
         },
         master: { // 마스터 미니펫 조합 설정
-            allowedRoom: "팻 테스트방",
-            allowedSender: "호이 남",
             cost: 35000000000,
             successRate: 0.05
         }
@@ -3629,7 +3627,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (msg === "/미니펫조합마스터" || /^\/미니펫조합마스터(?:\s+\d+){5}$/.test(msg)) {
             var masterCombinationConfig = GLOBAL_CONFIG.miniPetCombination.master;
-            if (room !== masterCombinationConfig.allowedRoom || sender !== masterCombinationConfig.allowedSender) return;
 
             if (msg === "/미니펫조합마스터") {
                 replier.reply(buildMasterMiniPetGuideMessage());
@@ -44643,8 +44640,7 @@ function buildMasterMiniPetGuideMessage() {
         "천상의 엠피레온🔥(+8300만💕)[마스터]\n\n" +
         "1강 강화 시 매력이 15,000💕 상승하며,\n" +
         "최대 300강까지 강화할 수 있습니다.\n\n" +
-        "판매 금액은 5000억입니다.\n\n" +
-        "※ 팻 테스트방에서 호이 남 전용 테스트 콘텐츠입니다."
+        "판매 금액은 5000억입니다."
     );
 }
 
