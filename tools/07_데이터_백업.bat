@@ -6,20 +6,20 @@ set "ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe"
 set "TARGET_ADB_DEVICE=auto"
 set "REMOTE_DATA_DIR=/storage/emulated/0/호이랜드"
 set "LOCAL_DATA_DIR=data"
-set "SOURCE_BRANCH=feature/hoi"
-set "PROD_BRANCH=feature/prod"
 set "SYNC_LOG=%TEMP%\hoibot_data_pull_%RANDOM%.log"
-set "GIT_COMMIT_PREFIX=데이터: LDPlayer 운영 데이터 전체 최신화"
+set "REQUIRED_JSON_FILES=member.json board.json carrotBoard.json itemInfo.json trialTowerBoss.json eventTowerBoss.json castleBattle2.json errorLog.json member_title.json pet_title.json miniPet_title.json miniPet_collection.json miniPetCollectionInfo.json member_pet.json petSkillData.json punchRankData.json trialTower.json miniPetData.json petSweetHomeInfo.json petSweetHomeData.json petHomePlacedFurniture.json petHomeComments.json petHomeActivityData.json petExploreData.json attendanceLight.json itemList.json hoiBotChangeLog.json freeMarket.json packageInfo.json packageLog.json currencyLog.json guildData.json requestMonitorConfig.json"
+set "PULL_ROOT="
+set "INCOMING_DIR="
 
-title hoiBot LDPlayer full data sync
+title hoiBot LDPlayer local data backup
 
 echo.
 echo ============================================================
-echo  hoiBot LDPlayer 운영 데이터 전체 최신화
+echo  hoiBot LDPlayer 운영 데이터 로컬 백업
 echo ============================================================
-echo  운영 /storage/emulated/0/호이랜드/ 전체를 data\에 반영합니다.
-echo  검증된 데이터 커밋을 feature/hoi에 먼저 push한 뒤
-echo  같은 커밋을 feature/prod에 fast-forward push합니다.
+echo  운영 /storage/emulated/0/호이랜드/ 전체를 TEMP에 가져와
+echo  검증한 뒤 이 PC의 data\만 안전하게 교체합니다.
+echo  Git commit/push 및 외부 업로드는 절대 수행하지 않습니다.
 echo  일관된 스냅샷을 위해 MessengerBot 데이터 쓰기를 멈춰 주세요.
 echo ============================================================
 echo.
@@ -34,23 +34,29 @@ if not exist "%LOCAL_DATA_DIR%\" goto FAIL_LOCAL_DATA
 
 for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "RUN_TS=%%t"
 set "PULL_ROOT=%TEMP%\hoibot_ld_data_%RUN_TS%_%RANDOM%"
-set "PULLED_DATA_DIR=%PULL_ROOT%\호이랜드"
-set "GIT_WORKTREE_DIR=%TEMP%\hoibot_data_git_%RUN_TS%_%RANDOM%"
-set "DATA_COMMIT="
-set "PULL_COUNT=0"
+set "PULL_DEST=%PULL_ROOT%\pull"
+set "PULLED_DATA_DIR=%PULL_DEST%\호이랜드"
+set "REMOTE_BEFORE_FILE=%PULL_ROOT%\remote_before.txt"
+set "REMOTE_AFTER_FILE=%PULL_ROOT%\remote_after.txt"
+set "LOCAL_DATA_ABS=%CD%\%LOCAL_DATA_DIR%"
+set "INCOMING_DIR=%CD%\.hoibot_data_incoming_%RUN_TS%_%RANDOM%"
+set "ROLLBACK_DIR=%CD%\.hoibot_data_rollback_%RUN_TS%_%RANDOM%"
+set "FAILED_NEW_DIR=%CD%\.hoibot_data_failed_%RUN_TS%_%RANDOM%"
+set "REMOTE_FILE_COUNT=0"
+set "REMOTE_TOTAL_BYTES=0"
+set "STAGING_FILE_COUNT=0"
+set "STAGING_TOTAL_BYTES=0"
+set "JSON_COUNT=0"
+set "REQUIRED_COUNT=0"
+set "REQUIRED_MISSING_COUNT=0"
+set "STAGING_TREE_HASH="
+set "INCOMING_TREE_HASH="
+set "LOCAL_TREE_HASH="
 
-echo [1/7] 저장소와 data 작업상태 확인
-echo ------------------------------------------------------------
-git rev-parse --show-toplevel > "%SYNC_LOG%" 2>&1
-if errorlevel 1 goto FAIL_GIT_REPO
-git status --porcelain -- "%LOCAL_DATA_DIR%" > "%SYNC_LOG%" 2>&1
-if errorlevel 1 goto FAIL_GIT_STATUS
-findstr "." "%SYNC_LOG%" > nul 2>&1
-if not errorlevel 1 goto FAIL_DIRTY_DATA
-echo [OK] data\ 작업상태 깨끗함
-echo.
+mkdir "%PULL_DEST%" > nul 2>&1
+if errorlevel 1 goto FAIL_PULL_ROOT
 
-echo [2/7] ADB device 확인
+echo [1/7] ADB device 확인
 echo ------------------------------------------------------------
 "%ADB_EXE%" devices
 if errorlevel 1 goto FAIL_ADB
@@ -69,122 +75,107 @@ if /i "%TARGET_ADB_DEVICE%"=="auto" (
 	if not "!DEVICE_COUNT!"=="1" goto FAIL_MULTI_DEVICE
 	set "TARGET_ADB_DEVICE=!FIRST_DEVICE!"
 )
-echo [OK] TARGET_ADB_DEVICE = %TARGET_ADB_DEVICE%
+echo [OK] ADB device 1개 확인 완료
 echo.
 
-echo [3/7] LDPlayer 운영 데이터 폴더 확인
+echo [2/7] 운영 원본 파일수와 총바이트 확인
 echo ------------------------------------------------------------
-"%ADB_EXE%" -s "%TARGET_ADB_DEVICE%" shell "ls -ld '%REMOTE_DATA_DIR%'" > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_REMOTE_DATA
-findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%SYNC_LOG%" > nul 2>&1
-if not errorlevel 1 goto FAIL_REMOTE_DATA
-echo [OK] 운영 데이터 폴더 확인 완료
+"%ADB_EXE%" -s "%TARGET_ADB_DEVICE%" shell "find '%REMOTE_DATA_DIR%' -type f -exec stat -c %%s {} \;" > "%REMOTE_BEFORE_FILE%" 2>&1
+if errorlevel 1 goto FAIL_REMOTE_STATS
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$lines=@(Get-Content -LiteralPath $env:REMOTE_BEFORE_FILE | ForEach-Object {$_.Trim()} | Where-Object {$_ -ne ''}); $sizes=@(); foreach($line in $lines){$n=0L; if(-not [long]::TryParse($line,[ref]$n)){exit 21}; $sizes+=$n}; if($sizes.Count -eq 0){exit 22}; Write-Output ('REMOTE_FILE_COUNT=' + $sizes.Count); Write-Output ('REMOTE_TOTAL_BYTES=' + (($sizes | Measure-Object -Sum).Sum))" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_REMOTE_STATS
+for /f "usebackq tokens=1,2 delims==" %%a in ("%SYNC_LOG%") do set "%%a=%%b"
+echo [OK] 운영 원본 집계 완료
 echo.
 
-echo [4/7] 운영 데이터 전체 임시 가져오기
+echo [3/7] 운영 데이터 전체 TEMP 가져오기
 echo ------------------------------------------------------------
-mkdir "%PULL_ROOT%" > nul 2>&1
-if errorlevel 1 goto FAIL_PULL_ROOT
-"%ADB_EXE%" -s "%TARGET_ADB_DEVICE%" pull "%REMOTE_DATA_DIR%" "%PULL_ROOT%" > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
+"%ADB_EXE%" -s "%TARGET_ADB_DEVICE%" pull "%REMOTE_DATA_DIR%" "%PULL_DEST%" > "%SYNC_LOG%" 2>&1
 if errorlevel 1 goto FAIL_PULL
 findstr /i /c:"No such file" /c:"not found" /c:"failed" /c:"error" "%SYNC_LOG%" > nul 2>&1
 if not errorlevel 1 goto FAIL_PULL
-if not exist "%PULLED_DATA_DIR%\" set "PULLED_DATA_DIR=%PULL_ROOT%"
-echo [OK] 운영 데이터 전체 가져오기 완료
+if not exist "%PULLED_DATA_DIR%\" set "PULLED_DATA_DIR=%PULL_DEST%"
+echo [OK] TEMP 가져오기 완료
 echo.
 
-echo [5/7] 파일·JSON UTF-8·파싱 검증
+echo [4/7] 해시·UTF-8·JSON·필수 자산 검증
 echo ------------------------------------------------------------
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$root=$env:PULLED_DATA_DIR; $files=@(Get-ChildItem -LiteralPath $root -File -Recurse); if($files.Count -eq 0){Write-Output 'FAIL_NO_FILES'; exit 11}; $empty=@($files | Where-Object {$_.Length -le 0}); if($empty.Count -gt 0){$empty | ForEach-Object {Write-Output ('EMPTY=' + $_.FullName.Substring($root.Length).TrimStart('\'))}; exit 12}; $utf8=New-Object System.Text.UTF8Encoding($false,$true); $jsonFiles=@($files | Where-Object {$_.Extension -ieq '.json'}); foreach($file in $jsonFiles){try{$text=$utf8.GetString([System.IO.File]::ReadAllBytes($file.FullName))}catch{Write-Output ('INVALID_UTF8=' + $file.FullName.Substring($root.Length).TrimStart('\')); exit 13}; try{$null=$text | ConvertFrom-Json -ErrorAction Stop}catch{Write-Output ('INVALID_JSON=' + $file.FullName.Substring($root.Length).TrimStart('\')); exit 14}}; Write-Output ('PULL_COUNT=' + $files.Count); Write-Output ('JSON_COUNT=' + $jsonFiles.Count)" > "%SYNC_LOG%" 2>&1
-set "VALIDATE_CODE=%ERRORLEVEL%"
-type "%SYNC_LOG%"
-if not "%VALIDATE_CODE%"=="0" goto FAIL_VALIDATE
-for /f "tokens=2 delims==" %%c in ('findstr /b /c:"PULL_COUNT=" "%SYNC_LOG%"') do set "PULL_COUNT=%%c"
-if "%PULL_COUNT%"=="0" goto FAIL_VALIDATE
-echo [OK] 전체 파일 %PULL_COUNT%개 검증 완료
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$root=(Resolve-Path -LiteralPath $env:PULLED_DATA_DIR).Path; $files=@(Get-ChildItem -LiteralPath $root -File -Recurse); if($files.Count -eq 0){exit 31}; $utf8=New-Object System.Text.UTF8Encoding($false,$true); $jsonFiles=@($files | Where-Object {$_.Extension -ieq '.json'}); foreach($file in $jsonFiles){try{$text=$utf8.GetString([IO.File]::ReadAllBytes($file.FullName))}catch{exit 32}; if([string]::IsNullOrWhiteSpace($text)){exit 33}; try{$null=$text | ConvertFrom-Json -ErrorAction Stop}catch{exit 34}}; $rows=@($files | ForEach-Object {$rel=$_.FullName.Substring($root.Length).TrimStart('\').Replace('\','/'); $hash=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash; $rel+'|'+$_.Length+'|'+$hash} | Sort-Object); $sha=[Security.Cryptography.SHA256]::Create(); try{$tree=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($rows -join [Environment]::NewLine))))).Replace('-','')}finally{$sha.Dispose()}; $required=@($env:REQUIRED_JSON_FILES -split ' ' | Where-Object {$_}); $missing=@($required | Where-Object {-not (Test-Path -LiteralPath (Join-Path $root ($_ -replace '/','\')) -PathType Leaf)}); Write-Output ('STAGING_FILE_COUNT=' + $files.Count); Write-Output ('STAGING_TOTAL_BYTES=' + (($files | Measure-Object Length -Sum).Sum)); Write-Output ('JSON_COUNT=' + $jsonFiles.Count); Write-Output ('REQUIRED_COUNT=' + $required.Count); Write-Output ('REQUIRED_MISSING_COUNT=' + $missing.Count); Write-Output ('STAGING_TREE_HASH=' + $tree); foreach($name in $missing){Write-Output ('MISSING_REQUIRED=' + $name)}" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_VALIDATE
+for /f "usebackq tokens=1,2 delims==" %%a in ("%SYNC_LOG%") do if /i not "%%a"=="MISSING_REQUIRED" set "%%a=%%b"
+if not "%REMOTE_FILE_COUNT%"=="%STAGING_FILE_COUNT%" goto FAIL_REMOTE_STAGING_PARITY
+if not "%REMOTE_TOTAL_BYTES%"=="%STAGING_TOTAL_BYTES%" goto FAIL_REMOTE_STAGING_PARITY
+echo [OK] 전체 파일 해시 및 JSON 검증 완료
+echo [INFO] 필수 JSON %REQUIRED_COUNT%개 중 누락 %REQUIRED_MISSING_COUNT%개
 echo.
 
-echo [6/7] feature/hoi 기록 후 feature/prod 반영
+echo [5/7] 운영 원본 변경 여부 재확인
 echo ------------------------------------------------------------
-git fetch origin "%SOURCE_BRANCH%" "%PROD_BRANCH%" > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_GIT_FETCH
-git merge-base --is-ancestor "origin/%SOURCE_BRANCH%" "origin/%PROD_BRANCH%" > nul 2>&1
-if errorlevel 1 goto FAIL_SOURCE_DIVERGED
-git worktree add --detach "%GIT_WORKTREE_DIR%" "origin/%PROD_BRANCH%" > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_GIT_WORKTREE
-robocopy "%PULLED_DATA_DIR%" "%GIT_WORKTREE_DIR%\data" /MIR /COPY:DAT /R:1 /W:1 > "%SYNC_LOG%" 2>&1
+"%ADB_EXE%" -s "%TARGET_ADB_DEVICE%" shell "find '%REMOTE_DATA_DIR%' -type f -exec stat -c %%s {} \;" > "%REMOTE_AFTER_FILE%" 2>&1
+if errorlevel 1 goto FAIL_REMOTE_STATS
+fc /b "%REMOTE_BEFORE_FILE%" "%REMOTE_AFTER_FILE%" > nul 2>&1
+if errorlevel 1 goto FAIL_REMOTE_CHANGED
+echo [OK] 가져오기 전후 원본 파일수·크기 동일
+echo.
+
+echo [6/7] 교체 후보를 로컬과 같은 볼륨에 준비
+echo ------------------------------------------------------------
+if exist "%INCOMING_DIR%\" goto FAIL_LOCAL_PREPARE
+mkdir "%INCOMING_DIR%" > nul 2>&1
+if errorlevel 1 goto FAIL_LOCAL_PREPARE
+robocopy "%PULLED_DATA_DIR%" "%INCOMING_DIR%" /E /COPY:DAT /R:1 /W:1 > "%SYNC_LOG%" 2>&1
 set "ROBOCOPY_CODE=%ERRORLEVEL%"
-type "%SYNC_LOG%"
-if %ROBOCOPY_CODE% GEQ 8 goto FAIL_GIT_MIRROR
-git -C "%GIT_WORKTREE_DIR%" add -A -- data > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_GIT_ADD
-git -C "%GIT_WORKTREE_DIR%" ls-files --others --ignored --exclude-standard -- data > "%SYNC_LOG%" 2>&1
-if errorlevel 1 goto FAIL_GIT_IGNORED_CHECK
-findstr "." "%SYNC_LOG%" > nul 2>&1
-if not errorlevel 1 goto FAIL_GIT_IGNORED
-git -C "%GIT_WORKTREE_DIR%" diff --cached --quiet -- data
-set "DIFF_CODE=%ERRORLEVEL%"
-if "%DIFF_CODE%"=="0" goto NO_GIT_CHANGES
-if not "%DIFF_CODE%"=="1" goto FAIL_GIT_DIFF
-git -C "%GIT_WORKTREE_DIR%" commit -m "%GIT_COMMIT_PREFIX% %RUN_TS%" > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_GIT_COMMIT
-for /f "usebackq delims=" %%h in (`git -C "%GIT_WORKTREE_DIR%" rev-parse HEAD`) do set "DATA_COMMIT=%%h"
-git -C "%GIT_WORKTREE_DIR%" push origin HEAD:refs/heads/%SOURCE_BRANCH% > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_SOURCE_PUSH
-git fetch origin "%SOURCE_BRANCH%" > nul 2>&1
-for /f "usebackq delims=" %%h in (`git rev-parse "origin/%SOURCE_BRANCH%"`) do set "REMOTE_SOURCE_COMMIT=%%h"
-if /i not "%DATA_COMMIT%"=="%REMOTE_SOURCE_COMMIT%" goto FAIL_SOURCE_VERIFY
-git -C "%GIT_WORKTREE_DIR%" push origin HEAD:refs/heads/%PROD_BRANCH% > "%SYNC_LOG%" 2>&1
-type "%SYNC_LOG%"
-if errorlevel 1 goto FAIL_PROD_PUSH
-git fetch origin "%PROD_BRANCH%" > nul 2>&1
-for /f "usebackq delims=" %%h in (`git rev-parse "origin/%PROD_BRANCH%"`) do set "REMOTE_PROD_COMMIT=%%h"
-if /i not "%DATA_COMMIT%"=="%REMOTE_PROD_COMMIT%" goto FAIL_PROD_VERIFY
-echo [OK] feature/hoi push 완료: %DATA_COMMIT%
-echo [OK] feature/prod 반영 완료: %DATA_COMMIT%
-goto LOCAL_MIRROR
-
-:NO_GIT_CHANGES
-echo [OK] 원격 feature/prod와 data\ 내용이 같아 commit/push를 생략합니다.
-
-:LOCAL_MIRROR
+if %ROBOCOPY_CODE% GEQ 8 goto FAIL_LOCAL_PREPARE
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$root=(Resolve-Path -LiteralPath $env:INCOMING_DIR).Path; $files=@(Get-ChildItem -LiteralPath $root -File -Recurse); $rows=@($files | ForEach-Object {$rel=$_.FullName.Substring($root.Length).TrimStart('\').Replace('\','/'); $hash=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash; $rel+'|'+$_.Length+'|'+$hash} | Sort-Object); $sha=[Security.Cryptography.SHA256]::Create(); try{$tree=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($rows -join [Environment]::NewLine))))).Replace('-','')}finally{$sha.Dispose()}; Write-Output ('INCOMING_FILE_COUNT=' + $files.Count); Write-Output ('INCOMING_TOTAL_BYTES=' + (($files | Measure-Object Length -Sum).Sum)); Write-Output ('INCOMING_TREE_HASH=' + $tree)" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_LOCAL_PREPARE
+for /f "usebackq tokens=1,2 delims==" %%a in ("%SYNC_LOG%") do set "%%a=%%b"
+if not "%STAGING_FILE_COUNT%"=="%INCOMING_FILE_COUNT%" goto FAIL_LOCAL_PREPARE
+if not "%STAGING_TOTAL_BYTES%"=="%INCOMING_TOTAL_BYTES%" goto FAIL_LOCAL_PREPARE
+if /i not "%STAGING_TREE_HASH%"=="%INCOMING_TREE_HASH%" goto FAIL_LOCAL_PREPARE
+echo [OK] 로컬 교체 후보 해시 일치
 echo.
-echo [7/7] 현재 저장소 data\ 전체 최신화
-echo ------------------------------------------------------------
-robocopy "%PULLED_DATA_DIR%" "%LOCAL_DATA_DIR%" /MIR /COPY:DAT /R:1 /W:1 > "%SYNC_LOG%" 2>&1
-set "ROBOCOPY_CODE=%ERRORLEVEL%"
-type "%SYNC_LOG%"
-if %ROBOCOPY_CODE% GEQ 8 goto FAIL_LOCAL_MIRROR
-echo [OK] 현재 저장소 data\ 전체 최신화 완료
 
-:CLEANUP_SUCCESS
-git worktree remove --force "%GIT_WORKTREE_DIR%" > nul 2>&1
-rmdir /s /q "%PULL_ROOT%"
+echo [7/7] 기존 data 롤백 보관 후 원자적 교체
+echo ------------------------------------------------------------
+if exist "%ROLLBACK_DIR%\" goto FAIL_SWAP
+move "%LOCAL_DATA_ABS%" "%ROLLBACK_DIR%" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_SWAP
+if "%HOIBOT_07_TEST_FAIL_AFTER_BACKUP%"=="1" goto FAIL_SWAP_RESTORE
+move "%INCOMING_DIR%" "%LOCAL_DATA_ABS%" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_SWAP_RESTORE
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$root=(Resolve-Path -LiteralPath $env:LOCAL_DATA_ABS).Path; $files=@(Get-ChildItem -LiteralPath $root -File -Recurse); $rows=@($files | ForEach-Object {$rel=$_.FullName.Substring($root.Length).TrimStart('\').Replace('\','/'); $hash=(Get-FileHash -Algorithm SHA256 -LiteralPath $_.FullName).Hash; $rel+'|'+$_.Length+'|'+$hash} | Sort-Object); $sha=[Security.Cryptography.SHA256]::Create(); try{$tree=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes(($rows -join [Environment]::NewLine))))).Replace('-','')}finally{$sha.Dispose()}; Write-Output ('LOCAL_FILE_COUNT=' + $files.Count); Write-Output ('LOCAL_TOTAL_BYTES=' + (($files | Measure-Object Length -Sum).Sum)); Write-Output ('LOCAL_TREE_HASH=' + $tree)" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_SWAP_RESTORE
+for /f "usebackq tokens=1,2 delims==" %%a in ("%SYNC_LOG%") do set "%%a=%%b"
+if not "%REMOTE_FILE_COUNT%"=="%LOCAL_FILE_COUNT%" goto FAIL_SWAP_RESTORE
+if not "%REMOTE_TOTAL_BYTES%"=="%LOCAL_TOTAL_BYTES%" goto FAIL_SWAP_RESTORE
+if /i not "%STAGING_TREE_HASH%"=="%LOCAL_TREE_HASH%" goto FAIL_SWAP_RESTORE
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[IO.Path]::GetFullPath($env:ROLLBACK_DIR); $base=[IO.Path]::GetFullPath($env:CD + '\.hoibot_data_rollback_'); if(-not $p.StartsWith($base,[StringComparison]::OrdinalIgnoreCase)){exit 41}; Remove-Item -LiteralPath $p -Recurse -Force" > "%SYNC_LOG%" 2>&1
+if errorlevel 1 goto FAIL_ROLLBACK_CLEANUP
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$p=[IO.Path]::GetFullPath($env:PULL_ROOT); $base=[IO.Path]::GetFullPath($env:TEMP + '\hoibot_ld_data_'); if(-not $p.StartsWith($base,[StringComparison]::OrdinalIgnoreCase)){exit 42}; Remove-Item -LiteralPath $p -Recurse -Force" > nul 2>&1
 del /q "%SYNC_LOG%" > nul 2>&1
 goto SUCCESS
+
+:FAIL_SWAP_RESTORE
+if exist "%LOCAL_DATA_ABS%\" move "%LOCAL_DATA_ABS%" "%FAILED_NEW_DIR%" > nul 2>&1
+if exist "%ROLLBACK_DIR%\" move "%ROLLBACK_DIR%" "%LOCAL_DATA_ABS%" > nul 2>&1
+if not exist "%LOCAL_DATA_ABS%\" goto FAIL_RESTORE_FATAL
+echo [FAIL] 새 data 교체 검증 실패 - 기존 data 자동 복원 완료
+goto FAIL_END
 
 :SUCCESS
 echo.
 echo ============================================================
-echo  SUCCESS - LDPlayer 운영 데이터 전체 최신화 완료
+echo  SUCCESS - LDPlayer 운영 데이터 로컬 백업 완료
 echo ============================================================
-echo  전체 파일 수: %PULL_COUNT%
-echo  로컬 반영: %CD%\%LOCAL_DATA_DIR%
-if defined DATA_COMMIT echo  Git commit: %DATA_COMMIT%
-echo  원격 반영: feature/hoi -^> feature/prod
+echo  원본/TEMP/로컬 파일수·총바이트·해시가 일치합니다.
+echo  필수 JSON 누락: %REQUIRED_MISSING_COUNT%개
+echo  Git commit/push 및 외부 업로드: 없음
+echo  다음 단계: Codex에 "07 백업 완료"라고 알려 주세요.
 echo ============================================================
 pause
 exit /b 0
 
 :CANCELLED
-echo.
 echo [CANCEL] MessengerBot 데이터 쓰기를 멈춘 뒤 다시 실행하세요.
 pause
 exit /b 2
@@ -201,17 +192,8 @@ goto FAIL_END
 echo [FAIL] 로컬 data 폴더 없음: %LOCAL_DATA_DIR%
 goto FAIL_END
 
-:FAIL_GIT_REPO
-echo [FAIL] 현재 경로가 Git 저장소가 아님
-goto FAIL_END
-
-:FAIL_GIT_STATUS
-echo [FAIL] data\ 작업상태 확인 실패
-goto FAIL_END
-
-:FAIL_DIRTY_DATA
-type "%SYNC_LOG%"
-echo [FAIL] data\에 미정리 변경사항이 있어 중단함
+:FAIL_PULL_ROOT
+echo [FAIL] TEMP 가져오기 폴더 생성 실패
 goto FAIL_END
 
 :FAIL_ADB
@@ -226,83 +208,48 @@ goto FAIL_END
 echo [FAIL] 연결된 ADB 기기가 2개 이상임
 goto FAIL_END
 
-:FAIL_REMOTE_DATA
-echo [FAIL] 운영 데이터 폴더 확인 실패: %REMOTE_DATA_DIR%
-goto FAIL_END
-
-:FAIL_PULL_ROOT
-echo [FAIL] 임시 가져오기 폴더 생성 실패: %PULL_ROOT%
+:FAIL_REMOTE_STATS
+echo [FAIL] 운영 원본 파일수·총바이트 집계 실패
 goto FAIL_END
 
 :FAIL_PULL
-echo [FAIL] 운영 데이터 전체 가져오기 실패
+echo [FAIL] 운영 데이터 전체 TEMP 가져오기 실패
 goto FAIL_END
 
 :FAIL_VALIDATE
-echo [FAIL] 가져온 파일의 누락·빈 파일 또는 JSON UTF-8·파싱 검증 실패
+echo [FAIL] 해시·UTF-8 또는 JSON 파싱 검증 실패
 goto FAIL_END
 
-:FAIL_GIT_FETCH
-echo [FAIL] 원격 feature/hoi 또는 feature/prod 갱신 실패
+:FAIL_REMOTE_STAGING_PARITY
+echo [FAIL] 운영 원본과 TEMP의 파일수 또는 총바이트 불일치
 goto FAIL_END
 
-:FAIL_SOURCE_DIVERGED
-echo [FAIL] origin/feature/hoi가 origin/feature/prod와 분기되어 자동 반영할 수 없음
+:FAIL_REMOTE_CHANGED
+echo [FAIL] 가져오기 도중 운영 원본 파일 구성이 변경됨
 goto FAIL_END
 
-:FAIL_GIT_WORKTREE
-echo [FAIL] 임시 Git worktree 생성 실패: %GIT_WORKTREE_DIR%
+:FAIL_LOCAL_PREPARE
+echo [FAIL] 로컬 교체 후보 준비 또는 해시 검증 실패
 goto FAIL_END
 
-:FAIL_GIT_MIRROR
-echo [FAIL] 임시 Git worktree data\ 최신화 실패
+:FAIL_SWAP
+echo [FAIL] 기존 data 롤백 보관 실패
 goto FAIL_END
 
-:FAIL_GIT_ADD
-echo [FAIL] data\ Git staging 실패
-goto FAIL_END
+:FAIL_ROLLBACK_CLEANUP
+echo [WARN] 새 data 교체는 완료되었지만 임시 롤백 폴더 정리에 실패함
+echo [WARN] 롤백 폴더: %ROLLBACK_DIR%
+goto SUCCESS
 
-:FAIL_GIT_IGNORED_CHECK
-echo [FAIL] Git ignored 파일 확인 실패
-goto FAIL_END
-
-:FAIL_GIT_IGNORED
-type "%SYNC_LOG%"
-echo [FAIL] data\ 안에 Git에서 제외된 파일이 있어 전체 반영을 중단함
-goto FAIL_END
-
-:FAIL_GIT_DIFF
-echo [FAIL] data\ staged diff 확인 실패
-goto FAIL_END
-
-:FAIL_GIT_COMMIT
-echo [FAIL] 운영 데이터 commit 실패
-goto FAIL_END
-
-:FAIL_SOURCE_PUSH
-echo [FAIL] feature/hoi push 실패
-goto FAIL_END
-
-:FAIL_SOURCE_VERIFY
-echo [FAIL] origin/feature/hoi 원격 commit 검증 실패
-goto FAIL_END
-
-:FAIL_PROD_PUSH
-echo [FAIL] feature/prod fast-forward push 실패
-echo feature/hoi에는 검증된 데이터 commit이 보존되어 있습니다: %DATA_COMMIT%
-goto FAIL_END
-
-:FAIL_PROD_VERIFY
-echo [FAIL] origin/feature/prod 원격 commit 검증 실패
-goto FAIL_END
-
-:FAIL_LOCAL_MIRROR
-echo [FAIL] 원격 반영 후 현재 저장소 data\ 전체 최신화 실패
+:FAIL_RESTORE_FATAL
+echo [CRITICAL] 기존 data 자동 복원 실패
+echo [CRITICAL] 롤백 폴더: %ROLLBACK_DIR%
+echo [CRITICAL] 새 data 보존 폴더: %FAILED_NEW_DIR%
 goto FAIL_END
 
 :FAIL_END
-echo 원본 운영 데이터는 변경하지 않았습니다.
-if exist "%PULL_ROOT%\" echo 임시 pull 경로: %PULL_ROOT%
-if exist "%GIT_WORKTREE_DIR%\" echo 임시 Git worktree: %GIT_WORKTREE_DIR%
+echo 운영 원본은 변경하지 않았고 Git/외부 업로드는 수행하지 않았습니다.
+if defined PULL_ROOT if exist "%PULL_ROOT%\" echo TEMP 진단 경로: %PULL_ROOT%
+if defined INCOMING_DIR if exist "%INCOMING_DIR%\" echo 교체 후보 보존 경로: %INCOMING_DIR%
 pause
 exit /b 1
