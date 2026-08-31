@@ -2,11 +2,11 @@
 
 - 작업 키: sl-asset-pet-skill-post-freeze-seed-01
 - 작업 이름: post-freeze 활성 펫스킬 3종 canonical seed
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 정리 후보 기준 커밋:
-- 체크포인트 버전: 6
-- 마지막 갱신: 2026-08-31 21:52 KST
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: `47b43630`
+- 체크포인트 버전: 7
+- 마지막 갱신: 2026-08-31 22:01 KST
 - 대화 식별명: 자산 카탈로그 후속 펫스킬 seed
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -29,10 +29,10 @@
 - 브랜치: `codex/modernization-pet-skill-post-freeze-seed-v2435-20260831`
 - 원격 저장소: `origin`
 - 업스트림 브랜치: `origin/codex/modernization-pet-skill-post-freeze-seed-v2435-20260831`
-- 마지막 푸시 커밋: `50d7d630` (`펫스킬 시드 작업 중간 상태를 보존한다`)
-- 원격 동기화 상태: 로컬 HEAD와 원격 branch head가 `50d7d630`으로 일치
+- 마지막 푸시 커밋: `47b43630` (`동결 이후 펫스킬 3종 카탈로그를 보정한다`)
+- 원격 동기화 상태: 구현·검증 HEAD와 원격 branch head가 `47b43630`으로 일치
 - 체크포인트 Git 추적: 예
-- 체크포인트 포함 푸시 커밋: `50d7d630`
+- 체크포인트 포함 푸시 커밋: `47b43630`
 
 ## 완료된 작업
 
@@ -50,10 +50,12 @@
 - runner replay applied0, direct replay, definition payload/source owner 충돌 2종 fail-closed, ownership/ledger 0/0/0 보존을 확인했다.
 - container restart 전후 source snapshot `93|93|93|93|e4c66521...`가 동일하고 Shadow legacy93/canonical93가 통과했다.
 - WBS683 HANDOFF_READY의 configuration src/test/evidence 파일과 현재 선언 파일의 겹침이 없음을 확인했다.
+- 검증된 변경을 커밋 `47b43630`으로 원격 작업 브랜치에 push하고 원격 head 일치를 확인했다.
+- WBS684 Gate1~7 TRUE/Gate8 FALSE, VAL10716:10723 PASS, REPORT5341 ACKED, Lease2440 RELEASED를 사후 재읽기했다.
 
 ## 진행 중인 작업
 
-- 검증된 변경을 한국어 커밋으로 push한 뒤 WBS Gate1~7, REPORT와 Lease를 마감한다.
+- 없음. 이 슬라이스의 승인 범위인 Gate1~7은 완료됐다.
 
 ## 변경 파일
 
@@ -72,6 +74,7 @@
 - 전체 회귀: tests1353 / pass1346 / fail0 / skip7, duration 569375ms.
 - 결과: generator deterministic, focused 5/5, typecheck/build/full PASS. WBS684 Gate1~4 TRUE와 VAL10719:10722 PASS를 사후 재읽기 완료.
 - 최종 범위 확인: `main.js`, `Info.js`, `data/`, feature/prod와 운영 DB 변경 없음; `git diff --check` PASS.
+- 마감 확인: commit `47b43630` origin exact, REPORT5341 ACKED, Lease2440 RELEASED.
 
 ## 충돌·막힘·미승인 사항
 
@@ -81,7 +84,7 @@
 
 ## 다음 행동
 
-1. 선언 파일만 커밋·push하고 원격 commit을 확인한다.
+1. 없음. Gate8 또는 추가 자산 구현은 별도 승인과 새 Lease에서 시작한다.
 
 ## 보안
 
