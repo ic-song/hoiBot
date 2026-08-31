@@ -300,8 +300,10 @@ class CurrentPackageCatalogRepository implements PackageCatalogRepository, Packa
 class CurrentPackageItemDefinitionRepository {
   public constructor(private readonly database: DatabaseClient) {}
 
-  public async findById(id: string): Promise<ItemDefinition | undefined> {
-    const rows = await this.database.query<DefinitionRow[]>(
+  public async findById(id: string, transactionHandle?: unknown): Promise<ItemDefinition | undefined> {
+    const handle = transactionHandle as { databaseTransaction?: DatabaseTransaction } | undefined;
+    const query = handle?.databaseTransaction ?? this.database;
+    const rows = await query.query<DefinitionRow[]>(
       `${CANONICAL_PACKAGE_ITEM_DEFINITION_SELECT}
        WHERE compatibility.item_id = ?`,
       [id],
@@ -481,9 +483,8 @@ export interface CurrentDomainPackageRuntime {
   catalog: PackageCatalogRepository;
 }
 
-// 검증된 패키지 규칙 엔진과 현재 도메인 Provider를 조립
-export function createCurrentDomainPackageRuntime(database: DatabaseClient): CurrentDomainPackageRuntime {
-  const catalog = new CurrentPackageCatalogRepository(database);
+// package와 다른 canonical consumer도 같은 definition·handler·ledger 경계를 재사용합니다.
+export function createCurrentDomainItemProvider(database: DatabaseClient): ItemProvider {
   const items = new ItemProvider(
     new CurrentPackageItemDefinitionRepository(database),
     new PackageRewardTargetRegistry(),
@@ -494,6 +495,13 @@ export function createCurrentDomainPackageRuntime(database: DatabaseClient): Cur
     "PET_TITLE", "PET_APPEARANCE", "GUILD_RESOURCE",
   ];
   for (const itemType of itemTypes) items.register(itemType, handler);
+  return items;
+}
+
+// 검증된 패키지 규칙 엔진과 현재 도메인 Provider를 조립
+export function createCurrentDomainPackageRuntime(database: DatabaseClient): CurrentDomainPackageRuntime {
+  const catalog = new CurrentPackageCatalogRepository(database);
+  const items = createCurrentDomainItemProvider(database);
   return {
     catalog,
     packages: new PackageProvider(catalog, items, new CurrentPackageTransactionManager(database)),
