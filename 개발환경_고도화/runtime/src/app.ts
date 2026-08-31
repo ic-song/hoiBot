@@ -44,6 +44,8 @@ import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { AutoExploreFixedConfigService, isAutoExploreFixedConfigCommand } from "./pet/auto-explore-fixed-config-service.js";
+import { PetExploreSettlementCommandConsumer, isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
+import { PetExploreSettlementInputSnapshotProvider } from "./pet/pet-explore-settlement-input-snapshot-provider.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { InventoryCleanupIrisHandler } from "./inventory/inventory-cleanup-iris-handler.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
@@ -667,6 +669,20 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
   });
   if (result.outboxId !== undefined && result.data !== undefined) {
     input.replies?.push({ outboxId: result.outboxId, room: event.channelId!, data: result.data });
+  }
+}
+
+// 펫탐험 정산 exact 명령을 app 본문 제어흐름과 분리해 registry consumer로 전달합니다.
+async function dispatchPetExploreSettlementCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
+  if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || !isPetExploreSettlementCommand(event.message)
+    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
+  try {
+    const result = await new PetExploreSettlementCommandConsumer(database, new PetExploreSettlementInputSnapshotProvider(database)).handleIris(event);
+    if ("message" in result) replies.push({ outboxId: result.outboxId ?? "", room: result.room, data: result.message });
+  } catch (error) {
+    if (error instanceof ApplicationError && [403,404,409,422].includes(error.statusCode)) replies.push(await eventProcessor.queueCommandReply(event,"pet_explore_settlement_error",error.message));
+    else throw error;
   }
 }
 
@@ -1937,6 +1953,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           }
         }
       }
+
+      await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAttributeCommandCandidate(normalizedEvent.message)
