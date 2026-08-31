@@ -274,6 +274,8 @@ import { isContributionPassCommandCandidate, normalizeContributionPassDispatchMe
 import { ContributionPassIrisHandler } from "./pass/contribution-pass-iris-handler.js";
 import { isDiamondPassCommandCandidate, normalizeDiamondPassDispatchMessage } from "./pass/diamond-pass-command.js";
 import { DiamondPassIrisHandler } from "./pass/diamond-pass-iris-handler.js";
+import { isHoiPassCommandCandidate, normalizeHoiPassDispatchMessage } from "./pass/hoi-pass-command.js";
+import { HoiPassIrisHandler } from "./pass/hoi-pass-iris-handler.js";
 import { isPassSubscriptionRetiredCommandCandidate, normalizePassSubscriptionRetiredDispatchMessage } from "./pass/pass-subscription-retired-command-service.js";
 import { PassSubscriptionRetiredIrisHandler } from "./pass/pass-subscription-retired-iris-handler.js";
 import { isOneDayPassSubscriptionCommand, normalizeOneDayPassSubscriptionDispatchMessage } from "./pass/one-day-pass-subscription-command.js";
@@ -719,6 +721,29 @@ async function dispatchPetExploreCommandConsumers(database: DatabaseClient | und
   await dispatchPetExploreEventControlCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
 }
 
+// 후원패스 registry 후보 판정과 alias 정규화를 app 본문 밖의 단일 경계로 묶습니다.
+function resolveSupportPassRegistryDispatchMessage(message: string | undefined): string | undefined {
+  const value = message ?? "";
+  if (process.env.CONTRIBUTION_PASS_COMMAND_ENABLED === "true" && isContributionPassCommandCandidate(message)) return normalizeContributionPassDispatchMessage(value);
+  if (process.env.DIAMOND_PASS_COMMAND_ENABLED === "true" && isDiamondPassCommandCandidate(message)) return normalizeDiamondPassDispatchMessage(value);
+  if (process.env.HOI_PASS_COMMAND_ENABLED === "true" && isHoiPassCommandCandidate(message)) return normalizeHoiPassDispatchMessage(value);
+  return undefined;
+}
+
+// 공헌·다이아·호이패스 handler 분기를 app 본문 밖의 단일 실행 경계로 묶습니다.
+async function dispatchSupportPassRegistryCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, duplicate: boolean | undefined, route: string | undefined, handlerKey: string | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
+  if (database === undefined || eventProcessor === undefined || replies === undefined || duplicate || route !== "MODERN") return;
+  const response = handlerKey === "contribution_pass_registry"
+    ? await new ContributionPassIrisHandler(database).execute(event)
+    : handlerKey === "diamond_pass_registry"
+      ? await new DiamondPassIrisHandler(database).execute(event)
+      : handlerKey === "hoi_pass_registry"
+        ? await new HoiPassIrisHandler(database).execute(event)
+        : undefined;
+  if (response === undefined) return;
+  replies.push({ outboxId: response.outboxId, room: response.room, data: response.message });
+}
+
 // 테스트와 실제 실행에서 공통으로 사용할 Fastify 앱을 생성합니다.
 export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) {
   const app = Fastify({
@@ -1064,10 +1089,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isLegendaryStoneDrawCommandCandidate(normalizedEvent.message);
       const petExploreRecordsResetDispatchCandidate = process.env.PET_EXPLORE_RECORDS_RESET_COMMAND_ENABLED === "true"
         && isPetExploreRecordsResetCommand(normalizedEvent.message);
-      const contributionPassDispatchCandidate = process.env.CONTRIBUTION_PASS_COMMAND_ENABLED === "true"
-        && isContributionPassCommandCandidate(normalizedEvent.message);
-      const diamondPassDispatchCandidate = process.env.DIAMOND_PASS_COMMAND_ENABLED === "true"
-        && isDiamondPassCommandCandidate(normalizedEvent.message);
+      const supportPassRegistryDispatchMessage = resolveSupportPassRegistryDispatchMessage(normalizedEvent.message);
       const passSubscriptionRetiredDispatchCandidate = process.env.PASS_SUBSCRIPTION_RETIRED_COMMAND_ENABLED === "true"
         && isPassSubscriptionRetiredCommandCandidate(normalizedEvent.message);
       const oneDayPassSubscriptionDispatchCandidate = process.env.ONE_DAY_PASS_SUBSCRIPTION_COMMAND_ENABLED === "true"
@@ -1247,8 +1269,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || homeBaseballPitchDispatchCandidate
         || legendaryStoneDrawDispatchCandidate
         || petExploreRecordsResetDispatchCandidate
-        || contributionPassDispatchCandidate
-        || diamondPassDispatchCandidate
+        || supportPassRegistryDispatchMessage !== undefined
         || passSubscriptionRetiredDispatchCandidate
         || oneDayPassSubscriptionDispatchCandidate
         || oneDayPassDispatchCandidate
@@ -1446,10 +1467,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizeLegendaryStoneDrawDispatchMessage(normalizedEvent.message ?? "")
                 : petExploreRecordsResetDispatchCandidate
                   ? normalizePetExploreRecordsResetDispatchMessage(normalizedEvent.message ?? "")
-                : contributionPassDispatchCandidate
-                  ? normalizeContributionPassDispatchMessage(normalizedEvent.message ?? "")
-                : diamondPassDispatchCandidate
-                  ? normalizeDiamondPassDispatchMessage(normalizedEvent.message ?? "")
+                : supportPassRegistryDispatchMessage !== undefined
+                  ? supportPassRegistryDispatchMessage
                 : passSubscriptionRetiredDispatchCandidate
                   ? normalizePassSubscriptionRetiredDispatchMessage(normalizedEvent.message ?? "")
                 : oneDayPassSubscriptionDispatchCandidate
@@ -1684,24 +1703,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         const resetResponse = await new PetExploreRecordsResetIrisHandler(database).execute(normalizedEvent);
         processing.replies.push({ outboxId: resetResponse.outboxId, room: resetResponse.room, data: resetResponse.message });
       }
-      if (database !== undefined
-        && eventProcessor !== undefined
-        && processing !== undefined
-        && !processing.duplicate
-        && partialDispatchDecision?.route === "MODERN"
-        && partialDispatchDecision.handlerKey === "contribution_pass_registry") {
-        const passResponse = await new ContributionPassIrisHandler(database).execute(normalizedEvent);
-        processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
-      }
-      if (database !== undefined
-        && eventProcessor !== undefined
-        && processing !== undefined
-        && !processing.duplicate
-        && partialDispatchDecision?.route === "MODERN"
-        && partialDispatchDecision.handlerKey === "diamond_pass_registry") {
-        const passResponse = await new DiamondPassIrisHandler(database).execute(normalizedEvent);
-        processing.replies.push({ outboxId: passResponse.outboxId, room: passResponse.room, data: passResponse.message });
-      }
+      await dispatchSupportPassRegistryCommand(database, eventProcessor, processing?.duplicate, partialDispatchDecision?.route, partialDispatchDecision?.handlerKey, normalizedEvent, processing?.replies);
       if (database !== undefined
         && eventProcessor !== undefined
         && processing !== undefined

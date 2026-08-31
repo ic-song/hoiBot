@@ -1,0 +1,57 @@
+{
+  "sliceId": "SL-HOI-PASS-DELETE-LIFECYCLE",
+  "executionId": "작업반장-SL-HOI-PASS-DELETE-LIFECYCLE-20260901T031612",
+  "leaseRow": 2458,
+  "wbsRow": 529,
+  "baselineCommit": "a51af1a4b1041e977f060aff799e6b5c19b14617",
+  "commands": [
+    "/호이패스추가, [대상] [영구권|YY.MM.DD]",
+    "/호이패스삭제, [대상]"
+  ],
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "database": {
+    "migration": "417_hoi_pass_lifecycle_consumer.sql",
+    "freshMigrationCount": 404,
+    "reapply": "PASS",
+    "definitions": ["support_pass_definitions:hoi"],
+    "ownership": ["player_support_passes", "inventory_stacks"],
+    "ledgers": ["support_pass_change_events", "inventory_ledger"],
+    "evidence": ["operations", "command_executions", "command_audit", "outbox_messages"]
+  },
+  "validation": {
+    "commandTests": { "total": 2, "passed": 2, "failed": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "mariaIntegration": { "total": 1, "passed": 1, "failed": 0 },
+    "mariaRestartIntegration": { "total": 1, "passed": 1, "failed": 0 },
+    "fullRegression": { "total": 1359, "passed": 1352, "failed": 0, "skipped": 7 },
+    "rollback": "PASS",
+    "replay": "PASS",
+    "reconnect": "PASS",
+    "restart": "PASS",
+    "shadow": "PASS"
+  },
+  "parity": {
+    "addAlwaysGrantsOneTicket": true,
+    "deleteRevokesAllTicketsWithoutOtherEligiblePass": true,
+    "deleteRetainsTicketsWithOtherEligiblePass": true,
+    "datedAndPermanentEntitlements": true,
+    "legacyReplyShape": true
+  },
+  "safety": {
+    "legacyMainChanged": false,
+    "legacyDataChanged": false,
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false,
+    "gate8Changed": false
+  }
+}
