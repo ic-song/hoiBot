@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "executionId": "자산카탈로그-JSON-DELTA-READONLY-20260901T005943",
-  "mode": "READ_ONLY_FREEZE_CORRECTION_CANDIDATE",
+  "mode": "READ_ONLY_APPROVED_OPERATIONAL_JSON_OVERLAY",
   "baselineCatalogVersion": "ASSET-FREEZE-v2.435-8f075b4e-02",
-  "candidateCatalogVersion": "ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01-CANDIDATE",
+  "catalogVersion": "ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01",
   "sourceRoot": "C:/Users/user/Desktop/hoiBot/data",
   "sourceProvenance": {
     "authority": "OPERATIONAL_ADB_SNAPSHOT",
@@ -13,7 +13,7 @@
     "snapshotCommittedAt": "2026-09-01T00:00:33+09:00",
     "pullTool": "tools/07_데이터_백업.bat",
     "pullContractAtSnapshot": "ADB_PULL_FULL_REMOTE_DIRECTORY_AND_REPLACE_LOCAL_DATA_NO_DB_IMPORT",
-    "classification": "PUBLISH_READY_AWAIT_FOREMAN_APPROVAL"
+    "classification": "APPROVED_OPERATIONAL_JSON_DELTA_OVERLAY"
   },
   "sourceContract": {
     "rawModified": false,
@@ -146,5 +146,5 @@
     { "path": "data/castleBattle.json", "disposition": "EXCLUDED_RUNTIME_STATE_PATH_REMOVED" },
     { "path": "data/memberBagCheck/memberBagCheck.json", "disposition": "EXCLUDED_OWNERSHIP_STATE_PATH_REMOVED" }
   ],
-  "decision": "PUBLISH_READY_AWAIT_FOREMAN_APPROVAL_NO_IMPORT_OR_RESET_EXISTING_GATES"
+  "decision": "APPROVED_OVERLAY_NO_IMPORT_OR_RESET_EXISTING_GATES"
 }

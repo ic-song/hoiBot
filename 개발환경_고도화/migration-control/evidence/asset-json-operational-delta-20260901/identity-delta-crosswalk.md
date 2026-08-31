@@ -2,7 +2,7 @@
 
 - 실행 ID: `자산카탈로그-JSON-DELTA-READONLY-20260901T005943`
 - 비교 기준: `ASSET-FREEZE-v2.435-8f075b4e-02`
-- 후보 버전: `ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01-CANDIDATE`
+- 승인 overlay 버전: `ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01`
 - 원본: `C:/Users/user/Desktop/hoiBot/data`
 - 원본 JSON, DB, schema/provider/migration, 기존 Gate는 변경하지 않았다.
 

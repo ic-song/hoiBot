@@ -55,6 +55,6 @@
 | 직렬화만 달라진 delta | itemInfo, miniPetData, miniPetCollectionInfo |
 | 운영 스냅샷 원천 확인 | petSweetHomeInfo draw/recipe, trial/event tower reward (`OPERATIONAL_ADB_SNAPSHOT`) |
 | 경로 이동 해결 | legacy `allowedUsers*` → `member.*.pass` |
-| 후보 상태 | `PUBLISH_READY_AWAIT_FOREMAN_APPROVAL` |
+| 동결 상태 | `APPROVED_OPERATIONAL_JSON_DELTA_OVERLAY` |
 
-`ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01-CANDIDATE`는 분류 동결 승인 가능한 상태다. 작업반장 승인 전 이름의 `CANDIDATE`를 제거하거나 DB import하지 않는다.
+작업반장이 `ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01`을 기존 `ASSET-FREEZE-v2.435-8f075b4e-02` 위의 운영 JSON delta overlay로 승인했다. 이 승인은 분류 동결이며 DB import, schema/provider/migration/runtime 변경이나 기존 Gate 승계를 의미하지 않는다.
