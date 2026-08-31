@@ -86,11 +86,21 @@ integration("configuration catalog MariaDB immutable lifecycle", () => {
     await provider.publish({ setCode, actorId: operatorId, idempotencyKey: `${keyPrefix}-publish-3`, reason: "개정 합성 설정 게시", expectedActiveVersion: "1", draftVersion: "3" });
     await assert.rejects(() => provider.retire({ setCode, actorId: operatorId, idempotencyKey: `${keyPrefix}-stale`, reason: "오래된 버전 충돌 검증", expectedActiveVersion: "1" }), /현재 설정 버전은 3/);
 
-    const rollback = await provider.rollback({ setCode, actorId: operatorId, idempotencyKey: `${keyPrefix}-rollback`, reason: "최초 버전 복구 검증", expectedActiveVersion: "3", targetVersion: "1" });
+    const rollbackInput = { setCode, actorId: operatorId, idempotencyKey: `${keyPrefix}-rollback`, reason: "최초 버전 복구 검증", expectedActiveVersion: "3", targetVersion: "1" };
+    const rollback = await provider.rollback(rollbackInput);
     assert.equal(rollback.version, "4");
     assert.equal(rollback.targetVersion, "1");
     assert.equal(rollback.snapshot?.contentHash, publish1.snapshot?.contentHash);
     assert.equal((await provider.readVersion(setCode, "1"))?.status, "retired");
+
+    await database.close();
+    database = createDatabaseClient(loadConfig().database);
+    provider = new ConfigurationCatalogProvider(new ConfigurationCatalogRegistry([definition]), new MariaConfigurationCatalogRepository(database));
+    const reconnectReplay = await provider.rollback(rollbackInput);
+    assert.equal(reconnectReplay.replayed, true);
+    assert.equal(reconnectReplay.version, "4");
+    assert.equal((await provider.readCurrent(setCode))?.contentHash, publish1.snapshot?.contentHash);
+
     await provider.retire({ setCode, actorId: operatorId, idempotencyKey: `${keyPrefix}-retire`, reason: "활성 합성 설정 종료", expectedActiveVersion: "4" });
     assert.equal(await provider.readCurrent(setCode), null);
 

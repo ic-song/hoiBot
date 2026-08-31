@@ -92,6 +92,37 @@ describe("configuration catalog typed provider", () => {
     assert.throws(() => validateConfigurationSnapshot(definition, drifted), /source binding/);
   });
 
+  it("matches the legacy scalar/bootstrap projection and excludes typed policy sets", async () => {
+    const legacy = {
+      baseAttacks: 4,
+      lightningIncrement: "0.5",
+      title: "펫무쌍",
+      enabled: true,
+      flags: { timeoutElimination: true, labels: ["⚔", "⚡"] },
+    } as const;
+    const repository = new RecordingRepository();
+    const provider = new ConfigurationCatalogProvider(new ConfigurationCatalogRegistry([definition]), repository);
+    await provider.createDraft({
+      ...input,
+      idempotencyKey: "configuration-shadow-1",
+      changes: [
+        { key: "base_attacks", value: legacy.baseAttacks },
+        { key: "lightning_increment", value: legacy.lightningIncrement },
+        { key: "title", value: legacy.title },
+        { key: "enabled", value: legacy.enabled },
+        { key: "flags", value: legacy.flags },
+      ],
+    });
+    assert.deepEqual(Object.fromEntries(repository.changes.map((entry) => [entry.key, entry.value])), {
+      base_attacks: "4",
+      enabled: true,
+      flags: legacy.flags,
+      lightning_increment: "0.5",
+      title: "펫무쌍",
+    });
+    await assert.rejects(() => provider.readCurrent("member.ticket_tier.policy"), /관리 대상으로 등록되지 않은/);
+  });
+
   it("validates mutation metadata before repository execution", async () => {
     const provider = new ConfigurationCatalogProvider(new ConfigurationCatalogRegistry([definition]), new RecordingRepository());
     await assert.rejects(() => provider.createDraft({ ...input, actorId: "0" }), /actorId/);
