@@ -5,6 +5,16 @@
   "baselineCatalogVersion": "ASSET-FREEZE-v2.435-8f075b4e-02",
   "candidateCatalogVersion": "ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01-CANDIDATE",
   "sourceRoot": "C:/Users/user/Desktop/hoiBot/data",
+  "sourceProvenance": {
+    "authority": "OPERATIONAL_ADB_SNAPSHOT",
+    "remotePath": "/storage/emulated/0/호이랜드",
+    "snapshotCommit": "82a0373d3666b6afa29912ef9441273d20375266",
+    "snapshotParent": "0b20c9bf2da1b6e26885ebe017ed030de9ac7e46",
+    "snapshotCommittedAt": "2026-09-01T00:00:33+09:00",
+    "pullTool": "tools/07_데이터_백업.bat",
+    "pullContractAtSnapshot": "ADB_PULL_FULL_REMOTE_DIRECTORY_AND_REPLACE_LOCAL_DATA_NO_DB_IMPORT",
+    "classification": "PUBLISH_READY_AWAIT_FOREMAN_APPROVAL"
+  },
   "sourceContract": {
     "rawModified": false,
     "databaseImported": false,
@@ -119,10 +129,10 @@
     { "path": "data/member.json#$.matzangField.shop", "domain": "matzang_shop_catalog", "oldHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "currentHash": "4431cba8643d844a348e8108ebfa37cbbfa9f330bc9732941ebd49c19b4d24e2", "oldCount": 0, "currentCount": 15, "delta": "PATH_CONTENT_ADDED" },
     { "path": "data/member.json#$.master", "domain": "access_control_configuration", "oldHash": "a0549d4f134b7e15792fbaaccd6a1d033e4bf7166b50ff631086ecc2806693a7", "currentHash": "bd1dafeef1068231e882471ee57b3f5376c7269e8e8c260e0badea7fad6c1797", "oldCount": 12, "currentCount": 9, "delta": "MEMBERSHIP_STATE_DRIFT" },
     { "path": "data/member.json#$.admin", "domain": "access_control_configuration", "oldHash": "a533d8b62395ab63a75c58ad1998e16b6aeb89fa3e6e1343c73e8f8e91a6891a", "currentHash": "5771abfe02ffd2af58a4393f1d53d45ff1c08de7a0aaeccf14c0c0c86e6a4303", "oldCount": 87, "currentCount": 76, "delta": "MEMBERSHIP_STATE_DRIFT" },
-    { "path": "data/member.json#$.allowedUsers2", "domain": "access_control_configuration", "oldHash": "59139bcd686bf372b71fb15064085f924effce963832b777965f7918c7f7f870", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 61, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
-    { "path": "data/member.json#$.allowedUsers4", "domain": "access_control_configuration", "oldHash": "ce8864997c1fb4208a3e4e3bf91bf027ffbe21e497947e40be1490ffbc3aa31d", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 5, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
-    { "path": "data/member.json#$.allowedUsers6", "domain": "access_control_configuration", "oldHash": "7f3b6e36bbf5308eb31d4595f7685d745a10a78f8d10edd3f5d0a1035f05ae9f", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 44, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
-    { "path": "data/member.json#$.allowedUsersHoipass", "domain": "access_control_configuration", "oldHash": "3fc66f5eae71573c48a989e6ee0c0cbe150133314eb10b1aada6157fe9c8cc37", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 117, "currentCount": 0, "delta": "PATH_REMOVED_REPLACEMENT_UNRESOLVED" },
+    { "path": "data/member.json#$.allowedUsers2", "domain": "access_control_configuration", "oldHash": "59139bcd686bf372b71fb15064085f924effce963832b777965f7918c7f7f870", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 61, "currentCount": 0, "delta": "PATH_RETIRED_TO_MEMBER_PASS", "disposition": "EXCLUDED_OWNERSHIP_STATE" },
+    { "path": "data/member.json#$.allowedUsers4", "domain": "access_control_configuration", "oldHash": "ce8864997c1fb4208a3e4e3bf91bf027ffbe21e497947e40be1490ffbc3aa31d", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 5, "currentCount": 0, "delta": "PATH_RETIRED_TO_MEMBER_PASS", "disposition": "EXCLUDED_OWNERSHIP_STATE" },
+    { "path": "data/member.json#$.allowedUsers6", "domain": "access_control_configuration", "oldHash": "7f3b6e36bbf5308eb31d4595f7685d745a10a78f8d10edd3f5d0a1035f05ae9f", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 44, "currentCount": 0, "delta": "PATH_RETIRED_TO_MEMBER_PASS", "disposition": "EXCLUDED_OWNERSHIP_STATE" },
+    { "path": "data/member.json#$.allowedUsersHoipass", "domain": "access_control_configuration", "oldHash": "3fc66f5eae71573c48a989e6ee0c0cbe150133314eb10b1aada6157fe9c8cc37", "currentHash": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b", "oldCount": 117, "currentCount": 0, "delta": "PATH_RETIRED_TO_MEMBER_PASS", "disposition": "EXCLUDED_OWNERSHIP_STATE" },
     { "path": "data/member.json#$.HoiCastle.taxRate", "domain": "castle_configuration", "oldHash": "92e9e7e5922d26e17e48f0869ab25cc99499fdab722c065de8e0965c96c68e86", "currentHash": "d10a4bc9e0c1fa4e8f3d7ce2512b8756e47ca5fa451f373c39a1431bb88db49f", "oldCount": 1, "currentCount": 1, "delta": "VALUE_ONLY_DRIFT" },
     { "path": "data/member.json#$.hoiHappyFoundation.feeRate", "domain": "foundation_configuration", "oldHash": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b", "currentHash": "f5ca38f748a1d6eaf726b8a42fb575c3c71f1864a8143301782de13da2d9202b", "oldCount": 1, "currentCount": 1, "delta": "UNCHANGED_CARRY_FORWARD" },
     { "path": "data/member.json#$.petSkillSystem", "domain": "pet_skill_system_configuration", "oldHash": "e39ba916ac97a6b2ad9eff099b2ddee6924965e113edbec7c84d2da5d82dedd0", "currentHash": "e39ba916ac97a6b2ad9eff099b2ddee6924965e113edbec7c84d2da5d82dedd0", "oldCount": 2, "currentCount": 2, "delta": "UNCHANGED_CARRY_FORWARD" },
@@ -136,5 +146,5 @@
     { "path": "data/castleBattle.json", "disposition": "EXCLUDED_RUNTIME_STATE_PATH_REMOVED" },
     { "path": "data/memberBagCheck/memberBagCheck.json", "disposition": "EXCLUDED_OWNERSHIP_STATE_PATH_REMOVED" }
   ],
-  "decision": "CANDIDATE_ONLY_DO_NOT_IMPORT_OR_RESET_EXISTING_GATES"
+  "decision": "PUBLISH_READY_AWAIT_FOREMAN_APPROVAL_NO_IMPORT_OR_RESET_EXISTING_GATES"
 }
