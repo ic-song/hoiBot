@@ -1,0 +1,71 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.435-8f075b4e-02",
+  "sourceRef": "8f075b4ef249543563e3338e8f3dd32046344880",
+  "sourceHash": "435a49512498b33295734e7dc864628792a47409b1e818c047d0051b2f15d176",
+  "baselineHash": "595370c8495ca8901412b892b022faf7493d20eddd8dcc4f4849fea72d777a0f",
+  "commentedBacklog": [
+    "길드의 심장",
+    "기사도",
+    "야호",
+    "성실한 일꾼"
+  ],
+  "rows": [
+    {
+      "name": "전설의 몽둥이",
+      "sourceIndex": 90,
+      "runtimeSourceIndex": 0,
+      "sourceKey": "skill_090",
+      "objectKey": "skill.pet_skill_090",
+      "definitionCode": "pet_skill_legendary_club",
+      "reusedExisting": false,
+      "source": {
+        "name": "전설의 몽둥이",
+        "grade": "한정판",
+        "limitedEdition": true,
+        "openable": false,
+        "directGrantOnly": true,
+        "directGrantOperator": "호이 남",
+        "directGrantUsage": "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]",
+        "raidExp": 500000,
+        "castleExp": 500000,
+        "equipComment": "오오.. 영롱하군요 너..빌런인가?",
+        "effect": "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가"
+      }
+    },
+    {
+      "name": "무쌍귀신",
+      "sourceIndex": 91,
+      "runtimeSourceIndex": 29,
+      "sourceKey": "skill_091",
+      "objectKey": "skill.pet_skill_091",
+      "definitionCode": "pet_skill_musou_ghost",
+      "reusedExisting": false,
+      "source": {
+        "name": "무쌍귀신",
+        "grade": "A",
+        "rate": 1.7,
+        "equipComment": "촹 촹 챙챙 슈슉 슈슉 윽! 악!",
+        "equipCommentNoColon": true,
+        "effect": "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n펫무쌍 공격 보상 지급 시 포인트 1억을 추가로 획득합니다.\n※ 무쌍신화📙와 중복되지 않습니다."
+      }
+    },
+    {
+      "name": "무쌍신화",
+      "sourceIndex": 92,
+      "runtimeSourceIndex": 41,
+      "sourceKey": "skill_092",
+      "objectKey": "skill.pet_skill_092",
+      "definitionCode": "pet_skill_musou_myth",
+      "reusedExisting": false,
+      "source": {
+        "name": "무쌍신화",
+        "grade": "B",
+        "rate": 0.9195,
+        "fixedRate": true,
+        "equipComment": "슈슉..슈슈슉..챙..챙..챙!",
+        "equipCommentNoColon": true,
+        "effect": "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n※ 무쌍귀신📙과 중복되지 않습니다."
+      }
+    }
+  ]
+}
