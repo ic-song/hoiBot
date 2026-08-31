@@ -15,7 +15,7 @@ echo ============================================================
 echo  hoiBot LDPlayer 운영 데이터 전체 내려받기
 echo ============================================================
 echo  %REMOTE_DATA_DIR% 전체를 ADB pull하여
-echo  %LOCAL_DATA_DIR% 로 교체합니다.
+echo  !LOCAL_DATA_DIR! 로 교체합니다.
 echo  Git 작업과 DB import는 수행하지 않습니다.
 echo ============================================================
 echo.
@@ -108,7 +108,7 @@ echo ============================================================
 echo  SUCCESS - /호이랜드 전체 ADB pull 완료
 echo ============================================================
 echo  내려받은 파일: %PULL_COUNT%개
-echo  대상 data: %LOCAL_DATA_DIR%
+echo  대상 data: !LOCAL_DATA_DIR!
 echo ============================================================
 pause
 exit /b 0
@@ -117,7 +117,7 @@ exit /b 0
 echo [FAIL] ADB 파일 없음: %ADB_EXE%
 goto FAIL_END
 :FAIL_LOCAL_DATA
-echo [FAIL] 기존 data 폴더 없음: %LOCAL_DATA_DIR%
+echo [FAIL] 기존 data 폴더 없음: !LOCAL_DATA_DIR!
 goto FAIL_END
 :FAIL_PATH_COLLISION
 echo [FAIL] 임시 롤백 경로가 이미 존재함
@@ -148,7 +148,7 @@ echo [FAIL] 기존 data 롤백 보관 실패
 goto FAIL_END
 :FAIL_ROLLBACK_CLEANUP
 echo [WARN] ADB pull은 완료됐지만 이전 data 롤백 폴더 정리에 실패함
-echo [WARN] 롤백 폴더: %ROLLBACK_DIR%
+echo [WARN] 롤백 폴더: !ROLLBACK_DIR!
 goto SUCCESS
 :FAIL_TEMP_CLEANUP
 echo [WARN] data 교체는 완료됐지만 TEMP 폴더 정리에 실패함
@@ -156,8 +156,8 @@ echo [WARN] TEMP 폴더: %PULL_ROOT%
 goto SUCCESS
 :FAIL_RESTORE_FATAL
 echo [CRITICAL] 기존 data 자동 복원 실패
-echo [CRITICAL] 롤백 폴더: %ROLLBACK_DIR%
-echo [CRITICAL] 실패한 pull 보존 폴더: %FAILED_PULL_DIR%
+echo [CRITICAL] 롤백 폴더: !ROLLBACK_DIR!
+echo [CRITICAL] 실패한 pull 보존 폴더: !FAILED_PULL_DIR!
 goto FAIL_END
 
 :FAIL_END
