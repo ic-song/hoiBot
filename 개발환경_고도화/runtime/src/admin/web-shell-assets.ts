@@ -350,6 +350,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 100; display: grid; gap: 8px; }
 .toast { min-width: 260px; max-width: 420px; padding: 12px 14px; background: var(--nav-deep); color: #fff; border-left: 3px solid #56b9ad; box-shadow: var(--shadow); font-size: 12px; }
 .toast.error { border-left-color: #e9746d; }
+.balance-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) 180px 220px; gap: 10px; }
+.balance-domain { margin-top: 14px; }
+.balance-domain summary { cursor: pointer; font-weight: 800; list-style: none; }
+.balance-domain summary::-webkit-details-marker { display: none; }
+.balance-group { padding: 14px 16px; border-top: 1px solid var(--line); }
+.balance-group h4 { margin: 0 0 10px; font-size: 12px; }
+.balance-value-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.balance-value { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, .55fr); align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--line); background: #fff; }
+.balance-value label { min-width: 0; font-size: 11px; font-weight: 800; }
+.balance-value label span { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; font-weight: 500; overflow-wrap: anywhere; }
+.balance-value input { margin: 0; text-align: right; }
+.balance-impact { padding: 12px; border-left: 3px solid var(--warning); background: #fff8e8; color: #604a10; font-size: 11px; line-height: 1.6; }
+.balance-diff-table td:nth-child(2), .balance-diff-table td:nth-child(3) { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
 
 @media (max-width: 980px) {
   .login-view { grid-template-columns: 1fr; }
@@ -368,6 +381,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .metric:nth-last-child(-n+3) { border-bottom: 1px solid var(--line); }
   .metric:nth-last-child(-n+2) { border-bottom: 0; }
   .content-grid, .catalog-layout, .risk-grid { grid-template-columns: 1fr; }
+  .balance-toolbar { grid-template-columns: 1fr 1fr; }
+  .balance-toolbar input { grid-column: 1 / -1; }
 }
 
 @media (max-width: 640px) {
@@ -393,6 +408,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .catalog-confirm-actions { flex-direction: column-reverse; }
   .catalog-confirm-actions button { width: 100%; }
   .currency-action-grid { grid-template-columns: 1fr; }
+  .balance-toolbar, .balance-value-grid { grid-template-columns: 1fr; }
+  .balance-toolbar input { grid-column: auto; }
+  .balance-value { grid-template-columns: 1fr; }
 }`;
 
 export const ADMIN_WEB_CLIENT = String.raw`(function () {
@@ -414,6 +432,9 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     objectCatalogNotice: null,
     objectCatalogRetry: null,
     objectCatalogKey: "",
+    balanceSnapshot: null,
+    balancePreviewRequest: null,
+    balanceNotice: null,
     mutationKeys: {},
     restorePreview: null
   };
@@ -426,6 +447,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "activity", label: "채널 활동", icon: "⌁", permission: "activity.read", group: "감사·모니터링", kicker: "CHANNEL ACTIVITY" },
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
     { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" },
+    { id: "balance", label: "확률·수치 관리", icon: "±", permission: "admin.balance.manage", group: "게임 설정", kicker: "BALANCE CONTROL" },
     { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
     { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" },
     { id: "object-catalog", label: "오브젝트 카탈로그", icon: "◎", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "OBJECT CATALOG" }
@@ -668,6 +690,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "activity") loadActivity(1);
     else if (item.id === "incidents") loadIncidents(1);
     else if (item.id === "monitoring") loadMonitoring(1);
+    else if (item.id === "balance") loadBalance();
     else if (item.id === "diamond-catalog") loadDiamondCatalog();
     else if (item.id === "package-catalog") loadPackageCatalog();
     else loadObjectCatalog(state.objectCatalogKey);
@@ -1486,6 +1509,169 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       } catch (error) { byId("object-detail").innerHTML = errorState(error, "object-catalog"); attachRetry(byId("object-detail")); }
     }
     state.objectCatalogNotice = null;
+  }
+
+  // 수치 도메인 코드를 운영자용 이름으로 표시합니다.
+  function balanceDomainLabel(domain) {
+    return { home_badge: "홈뱃지 조건", home_furniture: "가구 뽑기", pendant: "펜던트 강화" }[domain] || domain;
+  }
+
+  // decimal string을 비교 가능한 공통 scale bigint로 변환합니다.
+  function balanceDecimal(value) {
+    var match = /^(0|[1-9][0-9]*)(?:\.([0-9]+))?$/.exec(String(value));
+    if (!match) throw new Error("0 이상의 정확한 숫자 문자열을 입력해 주세요.");
+    return { whole: match[1], fraction: match[2] || "" };
+  }
+
+  function balanceScaled(value, scale) {
+    var parsed = balanceDecimal(value);
+    if (parsed.fraction.length > scale) throw new Error("허용된 소수 자릿수를 초과했습니다.");
+    return BigInt(parsed.whole) * (10n ** BigInt(scale)) + BigInt(parsed.fraction.padEnd(scale, "0") || "0");
+  }
+
+  // min·max·step과 합계 100%를 브라우저에서도 사전 검증합니다.
+  function validateBalanceDraft(domain) {
+    var inputs = Array.from(document.querySelectorAll("[data-balance-input][data-domain=\"" + domain + "\"]"));
+    var changes = [];
+    inputs.forEach(function (input) {
+      var value = input.value.trim();
+      var parsed = balanceDecimal(value);
+      var step = balanceDecimal(input.dataset.step);
+      var scale = Math.max(parsed.fraction.length, step.fraction.length, balanceDecimal(input.dataset.min || "0").fraction.length);
+      var current = balanceScaled(value, scale);
+      var minimum = balanceScaled(input.dataset.min || "0", scale);
+      if (current < minimum) throw new Error(input.dataset.label + " 최솟값은 " + input.dataset.min + "입니다.");
+      if (input.dataset.max && current > balanceScaled(input.dataset.max, scale)) throw new Error(input.dataset.label + " 최댓값은 " + input.dataset.max + "입니다.");
+      var stepValue = balanceScaled(input.dataset.step, scale);
+      if ((current - minimum) % stepValue !== 0n) throw new Error(input.dataset.label + " 값은 " + input.dataset.step + " 단위여야 합니다.");
+      if (value !== input.dataset.original) changes.push({ key: input.dataset.key, value: value });
+    });
+    if (!changes.length) throw new Error("변경된 수치가 없습니다.");
+    var touchedSums = new Set(inputs.filter(function (input) { return input.dataset.sumGroup && input.value.trim() !== input.dataset.original; }).map(function (input) { return input.dataset.sumGroup; }));
+    touchedSums.forEach(function (sumGroup) {
+      var groupInputs = inputs.filter(function (input) { return input.dataset.sumGroup === sumGroup; });
+      var scale = Math.max.apply(null, groupInputs.map(function (input) { return balanceDecimal(input.value.trim()).fraction.length; }));
+      var sum = groupInputs.reduce(function (total, input) { return total + balanceScaled(input.value.trim(), scale); }, 0n);
+      if (sum !== 100n * (10n ** BigInt(scale))) throw new Error("등급 확률 합계는 정확히 100%여야 합니다.");
+    });
+    return changes;
+  }
+
+  // 도메인·그룹별 typed 값을 편집 가능한 카드로 렌더링합니다.
+  function balanceDomains(domains) {
+    if (!domains.length) return emptyState("관리 수치가 없습니다.", "승인된 provider 상태를 확인해 주세요.");
+    return domains.map(function (domain) {
+      var groups = {};
+      domain.values.forEach(function (value) { (groups[value.group] = groups[value.group] || []).push(value); });
+      var body = Object.keys(groups).map(function (group) {
+        var values = groups[group];
+        return "<section class=\"balance-group\" data-balance-group=\"" + escapeHtml(group) + "\"><h4>" + escapeHtml(group) + "</h4><div class=\"balance-value-grid\">" + values.map(function (value) {
+          var control = value.editable
+            ? "<input inputmode=\"decimal\" data-balance-input data-domain=\"" + escapeHtml(domain.domain) + "\" data-key=\"" + escapeHtml(value.key) + "\" data-label=\"" + escapeHtml(value.label) + "\" data-original=\"" + escapeHtml(value.value) + "\" data-min=\"" + escapeHtml(value.min || "0") + "\" data-max=\"" + escapeHtml(value.max || "") + "\" data-step=\"" + escapeHtml(value.step) + "\" data-sum-group=\"" + escapeHtml(value.sumGroup || "") + "\" value=\"" + escapeHtml(value.value) + "\" aria-label=\"" + escapeHtml(value.label) + "\">"
+            : "<strong class=\"mono\">" + escapeHtml(value.value) + " " + escapeHtml(value.unit) + "</strong>";
+          return "<div class=\"balance-value\" data-balance-search=\"" + escapeHtml((value.label + " " + value.key).toLocaleLowerCase("ko-KR")) + "\"><label>" + escapeHtml(value.label) + "<span>" + escapeHtml(value.key) + " · " + escapeHtml(value.unit) + " · step " + escapeHtml(value.step) + "</span></label>" + control + "</div>";
+        }).join("") + "</div></section>";
+      }).join("");
+      return "<details class=\"panel balance-domain\" data-balance-domain=\"" + escapeHtml(domain.domain) + "\" open><summary class=\"panel-heading\"><span>" + escapeHtml(domain.label) + "</span><span class=\"section-meta\">v" + escapeHtml(domain.version) + "</span></summary>" + body + "</details>";
+    }).join("");
+  }
+
+  // 검색·도메인·그룹 필터를 현재 projection 카드에 적용합니다.
+  function filterBalanceCards() {
+    var search = byId("balance-search").value.trim().toLocaleLowerCase("ko-KR");
+    var domain = byId("balance-domain-filter").value;
+    var group = byId("balance-group-filter").value;
+    document.querySelectorAll("[data-balance-domain]").forEach(function (section) {
+      var domainVisible = !domain || section.dataset.balanceDomain === domain;
+      var visibleCount = 0;
+      section.querySelectorAll("[data-balance-group]").forEach(function (groupSection) {
+        var groupVisible = !group || groupSection.dataset.balanceGroup === group;
+        var rowCount = 0;
+        groupSection.querySelectorAll("[data-balance-search]").forEach(function (row) {
+          var visible = domainVisible && groupVisible && (!search || row.dataset.balanceSearch.includes(search));
+          row.hidden = !visible;
+          if (visible) rowCount += 1;
+        });
+        groupSection.hidden = rowCount === 0;
+        visibleCount += rowCount;
+      });
+      section.hidden = visibleCount === 0;
+    });
+  }
+
+  function balanceWarnings(changes) {
+    var warnings = [];
+    if (changes.some(function (change) { return change.unit === "%"; })) warnings.push("확률 변경은 신규 획득 분포와 체감 난이도에 즉시 영향을 줄 수 있습니다.");
+    if (changes.some(function (change) { return /비용|조건|증가/.test(change.label); })) warnings.push("비용·조건·증가량 변경은 기존 성장 속도와 경제 밸런스에 영향을 줄 수 있습니다.");
+    return warnings.length ? warnings : ["변경 대상과 before/after 값을 다시 확인하세요."];
+  }
+
+  // provider preview diff와 영향 경고를 실행 전 확인 영역에 표시합니다.
+  function showBalancePreview(preview, requestBody) {
+    state.balancePreviewRequest = { preview: preview, body: requestBody };
+    var region = byId("balance-preview-region");
+    var rows = preview.changes.map(function (change) { return "<tr><td>" + escapeHtml(change.label) + "</td><td>" + escapeHtml(change.before + change.unit) + "</td><td>" + escapeHtml(change.after + change.unit) + "</td></tr>"; }).join("");
+    region.innerHTML = "<section class=\"panel\"><div class=\"panel-heading\"><div><h3>변경 diff 사전검증</h3><p>" + escapeHtml(balanceDomainLabel(preview.domain)) + " · 현재 v" + escapeHtml(preview.expectedVersion) + "</p></div><span class=\"section-meta\">PREVIEW ONLY</span></div><div class=\"balance-impact\">" + balanceWarnings(preview.changes).map(escapeHtml).join("<br>") + "</div><div class=\"table-wrap\"><table class=\"data-table balance-diff-table\"><thead><tr><th>항목</th><th>Before</th><th>After</th></tr></thead><tbody>" + rows + "</tbody></table></div><div class=\"catalog-confirm-actions\"><label class=\"checkbox-field\"><input id=\"balance-final-confirm\" type=\"checkbox\"><span>영향 경고와 변경 diff를 확인했습니다.</span></label><button id=\"balance-execute-button\" class=\"danger-button\" type=\"button\">" + (preview.mode === "rollback" ? "새 버전으로 롤백" : "변경 적용") + "</button></div></section>";
+    byId("balance-execute-button").addEventListener("click", executeBalancePreview);
+    region.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function previewBalance(mode) {
+    try {
+      var domain = byId("balance-action-domain").value;
+      var reason = byId("balance-reason").value.trim();
+      if (reason.length < 5) throw new Error("변경 사유를 5자 이상 입력해 주세요.");
+      var selected = state.balanceSnapshot.domains.find(function (item) { return item.domain === domain; });
+      var body = { mode: mode, expectedVersion: selected.version, reason: reason };
+      if (mode === "apply") body.changes = validateBalanceDraft(domain);
+      else {
+        body.targetVersion = byId("balance-target-version").value.trim();
+        if (!/^(0|[1-9][0-9]*)$/.test(body.targetVersion)) throw new Error("롤백 대상 버전을 정확히 입력해 주세요.");
+      }
+      var payload = await api("/api/v1/admin/balance/" + encodeURIComponent(domain) + "/preview", { method: "POST", headers: { "x-csrf-token": state.csrfToken }, body: JSON.stringify(body) });
+      showBalancePreview(payload.preview, body);
+    } catch (error) { showToast(errorMessage(error), true); }
+  }
+
+  async function executeBalancePreview() {
+    var current = state.balancePreviewRequest;
+    if (!current || !byId("balance-final-confirm").checked) { showToast("영향 경고와 diff 확인이 필요합니다.", true); return; }
+    var preview = current.preview;
+    var scope = "balance:" + preview.mode + ":" + preview.domain;
+    var body = Object.assign({}, current.body, { confirmationToken: preview.confirmationToken, confirmed: true });
+    delete body.mode;
+    try {
+      var payload = await api("/api/v1/admin/balance/" + encodeURIComponent(preview.domain) + "/" + preview.mode, { method: "POST", headers: { "x-csrf-token": state.csrfToken, "idempotency-key": mutationKey(scope) }, body: JSON.stringify(body) });
+      clearMutationKey(scope);
+      state.balancePreviewRequest = null;
+      state.balanceNotice = { replayed: payload.result.replayed, version: payload.result.version, auditId: payload.result.auditId };
+      showToast(payload.result.replayed ? "이미 완료된 요청 결과를 다시 표시했습니다." : "확률·수치 새 버전을 반영했습니다.", false);
+      await loadBalance();
+    } catch (error) { showToast(errorMessage(error), true); }
+  }
+
+  // typed read model을 그룹·검색·diff·rollback 운영 화면으로 구성합니다.
+  async function loadBalance() {
+    state.refresh = loadBalance;
+    var main = byId("main-content");
+    main.innerHTML = renderViewIntro("확률·수치 관리", "승인된 세 versioned provider만 preview 후 새 버전으로 적용합니다.", "admin.balance.manage · permission GAP") + loadingState("확률·수치를 불러오는 중");
+    try {
+      var payload = await api("/api/v1/admin/balance");
+      state.balanceSnapshot = { domains: payload.domains };
+      var groups = [];
+      payload.domains.forEach(function (domain) { domain.values.forEach(function (value) { if (!groups.includes(value.group)) groups.push(value.group); }); });
+      var notice = state.balanceNotice ? "<section class=\"panel\"><div class=\"panel-heading\"><div><h3>" + (state.balanceNotice.replayed ? "완료 결과 재조회" : "새 버전 반영 완료") + "</h3><p>version " + escapeHtml(state.balanceNotice.version) + " · audit #" + escapeHtml(state.balanceNotice.auditId) + "</p></div><div class=\"risk-form-actions\"><button class=\"secondary-button\" data-balance-view=\"audit\">감사 기록 보기</button><button class=\"secondary-button\" data-balance-view=\"monitoring\">모니터링 보기</button></div></div></section>" : "";
+      main.innerHTML = renderViewIntro("확률·수치 관리", "승인된 세 versioned provider만 preview 후 새 버전으로 적용합니다.", "admin.balance.manage · permission GAP") + notice +
+        "<section class=\"panel\"><div class=\"panel-heading\"><div><h3>그룹·검색</h3><p>label, stable key, domain group으로 값을 찾습니다.</p></div></div><div class=\"detail-body balance-toolbar\"><input id=\"balance-search\" placeholder=\"수치 또는 key 검색\"><select id=\"balance-domain-filter\"><option value=\"\">모든 도메인</option>" + payload.domains.map(function (domain) { return "<option value=\"" + domain.domain + "\">" + escapeHtml(domain.label) + "</option>"; }).join("") + "</select><select id=\"balance-group-filter\"><option value=\"\">모든 그룹</option>" + groups.map(function (group) { return "<option value=\"" + escapeHtml(group) + "\">" + escapeHtml(group) + "</option>"; }).join("") + "</select></div></section>" +
+        balanceDomains(payload.domains) +
+        "<section class=\"panel balance-domain\"><div class=\"panel-heading\"><div><h3>변경 또는 롤백 사전검증</h3><p>실제 적용 전 provider preview diff와 영향 경고를 확인합니다.</p></div></div><div class=\"detail-body risk-form\"><label>도메인<select id=\"balance-action-domain\">" + payload.domains.map(function (domain) { return "<option value=\"" + domain.domain + "\">" + escapeHtml(domain.label) + " · v" + escapeHtml(domain.version) + "</option>"; }).join("") + "</select></label><label>변경 사유<textarea id=\"balance-reason\" maxlength=\"500\" placeholder=\"운영 승인 근거와 변경 목적을 입력하세요.\"></textarea></label><label>롤백 대상 버전<input id=\"balance-target-version\" inputmode=\"numeric\" placeholder=\"롤백 preview에만 사용\"></label><div class=\"risk-form-actions\"><button id=\"balance-apply-preview\" class=\"primary-button\" type=\"button\">변경 preview</button><button id=\"balance-rollback-preview\" class=\"secondary-button\" type=\"button\">롤백 preview</button></div></div></section><div id=\"balance-preview-region\"></div>";
+      ["balance-search", "balance-domain-filter", "balance-group-filter"].forEach(function (id) { byId(id).addEventListener(id === "balance-search" ? "input" : "change", filterBalanceCards); });
+      byId("balance-apply-preview").addEventListener("click", function () { previewBalance("apply"); });
+      byId("balance-rollback-preview").addEventListener("click", function () { previewBalance("rollback"); });
+      main.querySelectorAll("[data-balance-view]").forEach(function (button) { button.addEventListener("click", function () { activateView(button.dataset.balanceView); }); });
+      state.balanceNotice = null;
+      markUpdated();
+    } catch (error) { main.innerHTML = renderViewIntro("확률·수치 관리", "승인된 provider 값을 불러오지 못했습니다.") + errorState(error, "balance"); attachRetry(main); }
   }
 
   byId("login-form").addEventListener("submit", async function (event) {

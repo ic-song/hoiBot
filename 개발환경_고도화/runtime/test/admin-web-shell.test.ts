@@ -65,6 +65,7 @@ describe("admin web shell", () => {
       "/api/v1/admin/moderation-incidents",
       "/api/v1/admin/monitoring-events",
       "/api/v1/admin/delivery-failures",
+      "/api/v1/admin/balance",
       "/api/v1/admin/diamond-shop/catalog",
       "/api/v1/admin/package-catalog",
       "/api/v1/admin/object-catalog/objects/",
@@ -85,7 +86,7 @@ describe("admin web shell", () => {
 
   it("freezes synthetic Gate 3 session and read-response fixtures", () => {
     assert.deepEqual(syntheticAdminSession.permissions, [
-      "overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage"
+      "overview.read", "player.read", "account.restrict", "game.currency.change", "managed_backup.execute", "data_backup.execute", "data_restore.execute", "audit.read", "activity.read", "incident.read", "monitoring.read", "package.catalog.manage", "admin.balance.manage"
     ]);
     assert.equal(syntheticAdminOverview.activePlayers, "1280");
     assert.equal(syntheticAdminPlayer.playerId, "40001");
@@ -112,7 +113,8 @@ describe("admin web shell", () => {
         app.inject({ method: "GET", url: "/api/v1/admin/monitoring-events?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/delivery-failures?page=1&limit=25" }),
         app.inject({ method: "GET", url: "/api/v1/admin/diamond-shop/catalog" }),
-        app.inject({ method: "GET", url: "/api/v1/admin/package-catalog" })
+        app.inject({ method: "GET", url: "/api/v1/admin/package-catalog" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/balance" })
       ]);
       assert.ok(responses.every((response) => response.statusCode === 200));
       assert.equal(responses[2]?.json().total, 1);
@@ -121,6 +123,7 @@ describe("admin web shell", () => {
       assert.equal(responses[8]?.json().items[0].errorCode, "SYNTHETIC_TIMEOUT");
       assert.equal(responses[9]?.json().catalog.catalogVersion, "14");
       assert.equal(responses[10]?.json().catalog.catalogKey, "PACKAGE_CATALOG");
+      assert.equal(responses[11]?.json().domains.length, 3);
     } finally {
       await app.close();
     }
@@ -167,5 +170,19 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
     assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
+  });
+
+  it("exposes grouped balance search, preview diff, apply and rollback only", () => {
+    assert.match(ADMIN_WEB_CLIENT, /확률·수치 관리/);
+    assert.match(ADMIN_WEB_CLIENT, /admin\.balance\.manage/);
+    assert.match(ADMIN_WEB_CLIENT, /그룹·검색/);
+    assert.match(ADMIN_WEB_CLIENT, /변경 diff 사전검증/);
+    assert.match(ADMIN_WEB_CLIENT, /영향 경고/);
+    assert.match(ADMIN_WEB_CLIENT, /balance\/.*\/preview/);
+    assert.match(ADMIN_WEB_CLIENT, /preview\.mode/);
+    assert.match(ADMIN_WEB_CLIENT, /"idempotency-key"/);
+    assert.match(ADMIN_WEB_CLIENT, /감사 기록 보기/);
+    assert.match(ADMIN_WEB_CLIENT, /모니터링 보기/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /generic SQL|table editor|direct DB/);
   });
 });

@@ -13,6 +13,7 @@ import {
 import { syntheticDiamondCatalogResponse } from "../fixtures/admin-diamond-catalog-web-consumer.js";
 import { syntheticPackageCatalogResponse } from "../fixtures/admin-package-catalog-web-consumer.js";
 import { syntheticObjectCatalogObject } from "../fixtures/admin-object-catalog-web-consumer.js";
+import type { AdminBalanceDomainProjection } from "../../src/admin/admin-balance-read-model.js";
 
 // 운영 데이터 없이 관리자 웹 셸을 검수할 합성 API 서버를 구성합니다.
 export async function buildSyntheticAdminWebShellApp() {
@@ -43,6 +44,23 @@ export async function buildSyntheticAdminWebShellApp() {
   let restoreRevision = 12n;
   const restoreSourceRevision = "sha256:" + "a".repeat(64);
   const restoreSourceHash = "b".repeat(64);
+  let balanceDomains: AdminBalanceDomainProjection[] = [
+    { domain: "home_badge", label: "홈뱃지 조건", version: "41", source: "synthetic:badge", values: [
+      { domain: "home_badge", key: "home_badge.visit.criteria.totalVisits", group: "home_badge.visit", sumGroup: null, label: "🏠 방문왕 · 누적 방문", value: "100", unit: "회", min: "0", max: "9007199254740991", step: "1", version: "41", editable: true, source: "synthetic:badge" },
+      { domain: "home_badge", key: "home_badge.like.criteria.receivedHomeLikes", group: "home_badge.like", sumGroup: null, label: "💗 인기홈 · 받은 좋아홈", value: "50", unit: "회", min: "0", max: "9007199254740991", step: "1", version: "41", editable: true, source: "synthetic:badge" }
+    ] },
+    { domain: "home_furniture", label: "가구 뽑기", version: "14", source: "synthetic:furniture", values: [
+      { domain: "home_furniture", key: "home_furniture.grade.1.probability", group: "home_furniture.grade.1", sumGroup: "home_furniture.grade.probability", label: "일반 등급 확률", value: "70", unit: "%", min: "0", max: "100", step: "0.01", version: "14", editable: true, source: "synthetic:furniture" },
+      { domain: "home_furniture", key: "home_furniture.grade.2.probability", group: "home_furniture.grade.2", sumGroup: "home_furniture.grade.probability", label: "희귀 등급 확률", value: "20", unit: "%", min: "0", max: "100", step: "0.01", version: "14", editable: true, source: "synthetic:furniture" },
+      { domain: "home_furniture", key: "home_furniture.grade.3.probability", group: "home_furniture.grade.3", sumGroup: "home_furniture.grade.probability", label: "전설 등급 확률", value: "10", unit: "%", min: "0", max: "100", step: "0.01", version: "14", editable: true, source: "synthetic:furniture" }
+    ] },
+    { domain: "pendant", label: "펜던트 강화", version: "9", source: "synthetic:pendant", values: [
+      { domain: "pendant", key: "pendant.level.1.success_rate", group: "pendant.level.1", sumGroup: null, label: "+1 성공 확률", value: "95", unit: "%", min: "0", max: "100", step: "0.0001", version: "9", editable: true, source: "synthetic:pendant" },
+      { domain: "pendant", key: "pendant.level.1.point_cost", group: "pendant.level.1", sumGroup: null, label: "+1 포인트 비용", value: "1000", unit: "포인트", min: "0", max: "18446744073709551615", step: "1", version: "9", editable: true, source: "synthetic:pendant" }
+    ] }
+  ];
+  const balancePreviews = new Map<string, { mode: "apply" | "rollback"; domain: string; expectedVersion: string; targetVersion: string | null; reason: string; changes: Array<{ key: string; value: string }> }>();
+  const completedBalances = new Map<string, Record<string, unknown>>();
 
   // 합성 재화 문자열을 실제 decimal(30,3)과 같은 1/1000 단위 정수로 변환합니다.
   function parseDecimal3(value: string): bigint | undefined {
@@ -237,6 +255,38 @@ export async function buildSyntheticAdminWebShellApp() {
     id: "93001", providerCode: "iris", status: "failed", attemptCount: "3", errorCode: "SYNTHETIC_TIMEOUT",
     createdAt: "2026-08-30T01:05:00.000Z"
   }], page: 1, limit: 25, total: 1, requestId: "synthetic-failures" }));
+  app.get("/api/v1/admin/balance", async (_request, reply) => loggedIn
+    ? { ok: true, domains: balanceDomains, relatedLinks: { audit: "/api/v1/admin/audit-entries", monitoring: "/api/v1/admin/monitoring-events" }, requestId: "synthetic-balance" }
+    : reply.code(401).send({ ok: false, error: { code: "AUTH_REQUIRED", message: "로그인이 필요합니다." } }));
+  app.post<{ Params: { domain: string }; Body: { mode: "apply" | "rollback"; expectedVersion: string; reason: string; changes?: Array<{ key: string; value: string }>; targetVersion?: string } }>("/api/v1/admin/balance/:domain/preview", async (request, reply) => {
+    const denied = authorizeMutation(request, reply, "admin.balance.manage", false); if (denied !== undefined) return denied;
+    const domain = balanceDomains.find((item) => item.domain === request.params.domain);
+    if (domain === undefined) return reply.code(404).send({ ok: false, error: { code: "BALANCE_DOMAIN_INVALID", message: "관리 가능한 수치 도메인이 아닙니다." } });
+    if (domain.version !== request.body.expectedVersion) return reply.code(409).send({ ok: false, error: { code: "BALANCE_VERSION_CONFLICT", message: "수치 버전이 먼저 변경되었습니다." } });
+    const changes = request.body.mode === "apply" ? (request.body.changes ?? []) : domain.values.filter((value) => value.editable).map((value) => ({ key: value.key, value: value.value }));
+    const diff = changes.map((change) => { const value = domain.values.find((item) => item.key === change.key)!; return { key: change.key, label: value.label, before: value.value, after: change.value, unit: value.unit }; });
+    const token = "sha256:synthetic-" + request.params.domain + "-" + request.body.mode + "-" + request.body.expectedVersion;
+    balancePreviews.set(token, { mode: request.body.mode, domain: request.params.domain, expectedVersion: request.body.expectedVersion, targetVersion: request.body.targetVersion ?? null, reason: request.body.reason, changes });
+    return { ok: true, preview: { mode: request.body.mode, domain: request.params.domain, expectedVersion: request.body.expectedVersion, targetVersion: request.body.targetVersion ?? null, changes: diff, confirmationToken: token }, requestId: "synthetic-balance-preview" };
+  });
+  for (const mode of ["apply", "rollback"] as const) app.post<{ Params: { domain: string }; Body: { expectedVersion: string; reason: string; changes?: Array<{ key: string; value: string }>; targetVersion?: string; confirmationToken: string; confirmed: boolean } }>(`/api/v1/admin/balance/:domain/${mode}`, async (request, reply) => {
+    const denied = authorizeMutation(request, reply, "admin.balance.manage"); if (denied !== undefined) return denied;
+    const replayKey = `balance:${mode}:${request.params.domain}:${request.headers["idempotency-key"]}`;
+    const replay = completedBalances.get(replayKey); if (replay !== undefined) return { ok: true, result: { ...replay, replayed: true }, requestId: "synthetic-balance-replay" };
+    const preview = balancePreviews.get(request.body.confirmationToken);
+    if (request.body.confirmed !== true || preview === undefined || preview.mode !== mode || preview.domain !== request.params.domain || preview.expectedVersion !== request.body.expectedVersion) return reply.code(409).send({ ok: false, error: { code: "BALANCE_CONFIRMATION_STALE", message: "preview 결과가 오래되었습니다." } });
+    const domain = balanceDomains.find((item) => item.domain === request.params.domain)!;
+    const nextVersion = (BigInt(domain.version) + 1n).toString();
+    const beforeVersion = domain.version;
+    balanceDomains = balanceDomains.map((item) => item.domain === request.params.domain ? {
+      ...item,
+      version: nextVersion,
+      values: item.values.map((value) => ({ ...value, value: preview.changes.find((change) => change.key === value.key)?.value ?? value.value, version: nextVersion }))
+    } : item);
+    const result = { mode, domain: request.params.domain, beforeVersion, version: nextVersion, targetVersion: preview.targetVersion, changes: preview.changes, operationId: "synthetic-balance-operation", auditId: String(nextAuditId++), outboxId: "synthetic-balance-outbox", replayed: false };
+    completedBalances.set(replayKey, result);
+    return { ok: true, result, requestId: "synthetic-balance-execute" };
+  });
   app.get("/api/v1/admin/diamond-shop/catalog", async () => ({ ok: true, catalog, requestId: "synthetic-diamond-catalog" }));
   app.post<{ Body: { displayName: string; quantity: string; price: string; expectedVersion: string } }>("/api/v1/admin/diamond-shop/catalog/items", async (request, reply) => {
     const key = String(request.headers["idempotency-key"] ?? "");

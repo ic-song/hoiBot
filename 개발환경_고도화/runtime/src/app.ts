@@ -30,6 +30,10 @@ import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
 import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-catalog-web-routes.js";
 import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-web-routes.js";
 import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-routes.js";
+import { registerAdminBalanceWebRoutes } from "./admin/admin-balance-web-routes.js";
+import { AdminBalanceReadModelProvider } from "./admin/admin-balance-read-model.js";
+import { AdminBalanceMutationProvider } from "./admin/admin-balance-mutation-provider.js";
+import { MariaAdminBalanceMutationRepository } from "./admin/maria-admin-balance-mutation-repository.js";
 import { DiamondShopCatalogWebAdapterProvider } from "./shop/diamond-shop-catalog-web-adapter-provider.js";
 import { MariaPackageCatalogAdminRepository, MariaPackageCatalogWebAdapterRepository } from "./package/mariadb-package-catalog-admin.js";
 import { PackageCatalogWebAdapter } from "./package/package-catalog-web-adapter.js";
@@ -744,6 +748,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       auth: adminAuth,
       reader: new ObjectCatalogService(new MariaObjectCatalogRepository(database)),
       catalog: new ObjectCatalogWebAdapterProvider(database)
+    });
+    const adminBalanceRepository = new MariaAdminBalanceMutationRepository(database);
+    void registerAdminBalanceWebRoutes(app, {
+      auth: adminAuth,
+      reader: new AdminBalanceReadModelProvider(database),
+      mutation: new AdminBalanceMutationProvider(database, adminBalanceRepository)
     });
     void registerUserAuthRoutes(app, {
       auth: new UserAuthService(database, config.userVerificationPepper, config.nodeEnv),
