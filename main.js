@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.433"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.434"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2857,9 +2857,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
             if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
-            for (var premiumNoticeIndex = 0; premiumNoticeIndex < premiumAutoAttendanceResult.noticeMessages.length; premiumNoticeIndex++) {
-                noticeMsg(premiumAutoAttendanceResult.noticeMessages[premiumNoticeIndex]);
-            }
+            if (premiumAutoAttendanceResult.noticeMessage) noticeMsg(premiumAutoAttendanceResult.noticeMessage);
             replier.reply(premiumAutoAttendanceResult.message);
             return;
         }
@@ -32290,7 +32288,7 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
         totalPointReward: totalPointReward,
         expReward: GLOBAL_CONFIG.attendance.bonusExp,
         openRunRewardGranted: openRunRewardGranted,
-        noticeMessage: "[자동출첵 완료]\n[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
+        noticeMessage: "[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
     };
 }
 
@@ -33822,6 +33820,12 @@ function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData
     var settings = ensureHoiPassPremiumAutomationSettings(data.member[sender]);
     var nowText = formatDateTime(new Date());
     if (msg === "/무쌍온") {
+        if (settings.petMusouAutoReady === true) {
+            return {
+                changed: false,
+                message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 이미 무쌍온 상태입니다."
+            };
+        }
         settings.petMusouAutoReady = true;
         var joinResult = joinPetMusou(data, petData, petSkillData, guildData, sender);
         var registeredNow = joinResult.ok === true; // 현재 준비 회차 즉시 자동 등록 여부
@@ -33847,6 +33851,12 @@ function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData
         };
     }
     if (msg === "/출첵온") {
+        if (settings.autoAttendance === true) {
+            return {
+                changed: false,
+                message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 이미 출첵온 상태입니다."
+            };
+        }
         settings.autoAttendance = true;
         appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "ON", user: sender, result: "SAVED", reason: "", processedAt: nowText });
         return {
@@ -33954,8 +33964,12 @@ function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData,
     }
     appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "SUMMARY", operator: operator, result: failedCount > 0 ? "PARTIAL" : "SUCCESS", successCount: successCount, alreadyCount: alreadyCount, inactiveCount: inactiveCount, failedCount: failedCount, processedAt: formatDateTime(new Date()) });
     changed = true;
+    var noticeMessage = "";
+    if (noticeMessages.length > 0) {
+        noticeMessage = "[👑호이패스 프리미엄 자동출첵 기능👑]\n[자동출첵 유저 리스트]" + allsee + "\n\n" + noticeMessages.join("\n\n") + "\n\n==========";
+    }
     var lines = [passMessage, "", "🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
-    return { changed: changed, noticeMessages: noticeMessages, message: lines.join("\n") };
+    return { changed: changed, noticeMessage: noticeMessage, noticeMessages: noticeMessages, message: lines.join("\n") };
 }
 
 // 펫무쌍 티켓 이벤트 저장 구조를 member.json 안에 보장하는 함수
