@@ -1,0 +1,48 @@
+import assert from "node:assert/strict";
+import { after, before, describe, it } from "node:test";
+import { createDatabaseClient, type DatabaseClient } from "../src/database.js";
+import type { NormalizedIrisEvent } from "../src/integration/iris-normalizer.js";
+import { RequestCountIrisHandler, RequestCountRuntime } from "../src/admin/request-count-runtime.js";
+const enabled = process.env.DATABASE_INTEGRATION_ENABLED === "true";
+const required = (name: string): string => process.env[name] ?? "integration-not-configured";
+describe("request count runtime MariaDB integration", { skip: !enabled }, () => {
+  let database: DatabaseClient;
+  const suffix = Date.now().toString(), externalId = `request-count-admin-${suffix}`;
+  const event = (eventId: string, message: string): NormalizedIrisEvent => ({ eventId, providerEventId: eventId, providerCode: "iris", eventKind: "1", direction: "incoming", channelId: "990000000000701", userId: externalId, displayName: "호이 남", displayNameSource: "iris_cache", displayNameTrust: "untrusted", message, eventCode: "message.created", eventCategory: "message", monitoringGroup: "text", eventMetadata: {}, payloadHash: eventId.padEnd(64, "0").slice(0, 64) });
+  before(async () => {
+    database = createDatabaseClient({ enabled: true, host: required("DATABASE_HOST"), port: Number(required("DATABASE_PORT")), user: required("DATABASE_USER"), password: required("DATABASE_PASSWORD"), name: required("DATABASE_NAME"), connectionLimit: 5, connectTimeoutMs: 5_000 });
+    await database.execute("UPDATE command_registry SET rollout_state='ACTIVE',enabled=TRUE WHERE command_code='REQUEST_COUNT_RUNTIME'");
+    await database.execute("INSERT INTO admin_operators(login_id,display_name,password_hash,status) VALUES (?,'호이 남','x','active')", [`request-count-${suffix}`]);
+    const operator = (await database.query<Array<{ id: bigint }>>("SELECT id FROM admin_operators WHERE login_id=?", [`request-count-${suffix}`]))[0]!;
+    const role = (await database.query<Array<{ id: bigint }>>("SELECT id FROM admin_roles WHERE code='super_admin'"))[0]!;
+    await database.execute("INSERT IGNORE INTO admin_operator_roles(operator_id,role_id) VALUES (?,?)", [operator.id, role.id]);
+    await database.execute("INSERT INTO players(status,version) VALUES ('active',1)");
+    const player = (await database.query<Array<{ id: bigint }>>("SELECT id FROM players ORDER BY id DESC LIMIT 1"))[0]!;
+    await database.execute("INSERT INTO player_profiles(player_id,current_display_name,version) VALUES (?,'호이 남',1)", [player.id]);
+    await database.execute("INSERT INTO external_identities(player_id,provider_code,external_user_id,display_name,status) VALUES (?,'kakao',?,'호이 남','linked')", [player.id, externalId]);
+    const identity = (await database.query<Array<{ id: bigint }>>("SELECT id FROM external_identities WHERE external_user_id=?", [externalId]))[0]!;
+    await database.execute("INSERT INTO admin_operator_external_identities(operator_id,external_identity_id) VALUES (?,?)", [operator.id, identity.id]);
+  });
+  after(async () => { if (database) { await database.execute("DROP TRIGGER IF EXISTS fail_request_count_outbox"); await database.close(); } });
+  it("reads target counts, replays, rolls back and restarts empty", async () => {
+    let now = 10_000;
+    const runtime = new RequestCountRuntime(() => now);
+    await runtime.observe(database, { ...event(`observe-${suffix}`, "/가방"), displayName: "대상 사용자", userId: "target" }, "일반방");
+    const prepare = async (id: string) => database.execute("INSERT INTO event_inbox(event_id,provider_code,provider_event_id,event_kind,event_origin,direction,payload_hash,parse_status,processing_status,received_at) VALUES (?,'iris',?,'message','test','incoming',REPEAT('r',64),'parsed','processing',UTC_TIMESTAMP(3))", [id, id]);
+    const eventId = `request-count-read-${suffix}`;
+    await prepare(eventId);
+    const handler = new RequestCountIrisHandler(database, runtime);
+    const first = await handler.execute(event(eventId, "/요청횟수 대상 사용자"));
+    assert.match(first.message, /대상 사용자.*1회/);
+    assert.equal((await handler.execute(event(eventId, "/요청횟수 대상 사용자"))).replayed, true);
+    const rollbackId = `request-count-rollback-${suffix}`;
+    await prepare(rollbackId);
+    await database.execute("CREATE TRIGGER fail_request_count_outbox BEFORE INSERT ON outbox_messages FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic request count outbox failure'");
+    await assert.rejects(() => handler.execute(event(rollbackId, "/요청횟수")), /synthetic request count outbox failure/);
+    await database.execute("DROP TRIGGER fail_request_count_outbox");
+    assert.equal((await database.query<Array<{ count_value: bigint }>>("SELECT COUNT(*) count_value FROM operations WHERE idempotency_scope='admin.request_count.read' AND idempotency_key=?", [rollbackId]))[0]!.count_value, 0n);
+    now += 2_001;
+    assert.equal(runtime.count("대상 사용자", 2_000), 0);
+    assert.equal(new RequestCountRuntime(() => now).count("대상 사용자", 2_000), 0);
+  });
+});

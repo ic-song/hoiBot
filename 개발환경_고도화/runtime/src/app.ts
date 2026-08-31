@@ -5,6 +5,7 @@ import type { AppConfig } from "./config.js";
 import type { DatabaseClient } from "./database.js";
 import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
+import { isRequestCountCommandCandidate, normalizeRequestCountDispatchMessage, observeRequestCountEvent, RequestCountIrisHandler } from "./admin/request-count-runtime.js";
 import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
 import { ProcessIrisEventService, recordOutboxDelivery, type PendingReply } from "./integration/event-processing-service.js";
 import {
@@ -1063,6 +1064,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           || normalizedEvent.eventCode === "message.hidden_by_host");
       const isMembershipEvent = normalizedEvent.eventCode === "member.joined"
         || normalizedEvent.eventCode === "member.departed";
+      await observeRequestCountEvent(database, normalizedEvent, typeof request.body.room === "string" ? request.body.room : undefined);
       const packageDispatchCandidate = process.env.PACKAGE_COMMAND_ENABLED === "true"
         && isPackageCommandCandidate(normalizedEvent.message ?? "");
       const packageCatalogAdminDispatchCandidate = process.env.PACKAGE_CATALOG_ADMIN_COMMAND_ENABLED === "true"
@@ -1090,6 +1092,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const petExploreRecordsResetDispatchCandidate = process.env.PET_EXPLORE_RECORDS_RESET_COMMAND_ENABLED === "true"
         && isPetExploreRecordsResetCommand(normalizedEvent.message);
       const supportPassRegistryDispatchMessage = resolveSupportPassRegistryDispatchMessage(normalizedEvent.message);
+      const requestCountRuntimeDispatchCandidate = process.env.REQUEST_COUNT_RUNTIME_COMMAND_ENABLED === "true"
+        && isRequestCountCommandCandidate(normalizedEvent.message);
       const passSubscriptionRetiredDispatchCandidate = process.env.PASS_SUBSCRIPTION_RETIRED_COMMAND_ENABLED === "true"
         && isPassSubscriptionRetiredCommandCandidate(normalizedEvent.message);
       const oneDayPassSubscriptionDispatchCandidate = process.env.ONE_DAY_PASS_SUBSCRIPTION_COMMAND_ENABLED === "true"
@@ -1270,6 +1274,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || legendaryStoneDrawDispatchCandidate
         || petExploreRecordsResetDispatchCandidate
         || supportPassRegistryDispatchMessage !== undefined
+        || requestCountRuntimeDispatchCandidate
         || passSubscriptionRetiredDispatchCandidate
         || oneDayPassSubscriptionDispatchCandidate
         || oneDayPassDispatchCandidate
@@ -1469,6 +1474,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   ? normalizePetExploreRecordsResetDispatchMessage(normalizedEvent.message ?? "")
                 : supportPassRegistryDispatchMessage !== undefined
                   ? supportPassRegistryDispatchMessage
+                : requestCountRuntimeDispatchCandidate
+                  ? normalizeRequestCountDispatchMessage(normalizedEvent.message ?? "")
                 : passSubscriptionRetiredDispatchCandidate
                   ? normalizePassSubscriptionRetiredDispatchMessage(normalizedEvent.message ?? "")
                 : oneDayPassSubscriptionDispatchCandidate
@@ -1704,6 +1711,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         processing.replies.push({ outboxId: resetResponse.outboxId, room: resetResponse.room, data: resetResponse.message });
       }
       await dispatchSupportPassRegistryCommand(database, eventProcessor, processing?.duplicate, partialDispatchDecision?.route, partialDispatchDecision?.handlerKey, normalizedEvent, processing?.replies);
+      if (database !== undefined
+        && eventProcessor !== undefined
+        && processing !== undefined
+        && !processing.duplicate
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "request_count_runtime") {
+        const requestCountResponse = await new RequestCountIrisHandler(database).execute(normalizedEvent);
+        processing.replies.push({ outboxId: requestCountResponse.outboxId, room: requestCountResponse.room, data: requestCountResponse.message });
+      }
       if (database !== undefined
         && eventProcessor !== undefined
         && processing !== undefined
