@@ -8,6 +8,11 @@ import {
   type ConfigurationSetDefinition,
 } from "../src/configuration/configuration-catalog.js";
 import { MariaConfigurationCatalogRepository } from "../src/configuration/maria-configuration-catalog-repository.js";
+import {
+  PET_SKILL_CATALOG_CONFIGURATION,
+  PET_SKILL_CATALOG_SET_CODE,
+  PetSkillCatalogCrudProvider,
+} from "../src/pet/pet-skill-catalog.js";
 
 const integration = process.env.RUN_MARIADB_INTEGRATION === "true" ? describe : describe.skip;
 const suffix = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
@@ -144,5 +149,102 @@ integration("configuration catalog MariaDB immutable lifecycle", () => {
     assert.equal(Number(residue.operation_count), 0);
     assert.equal(Number(residue.outbox_count), 0);
     await provider.discardDraft({ setCode, actorId: operatorId, idempotencyKey: `${keyPrefix}-fault-discard`, reason: "실패 검증 초안 정리", draftVersion: draft.version });
+  });
+});
+
+integration("pet skill catalog seed and immutable lifecycle", () => {
+  const petSkillSuffix = `${Date.now()}${Math.floor(Math.random() * 1_000_000)}`;
+  const petSkillKeyPrefix = `pet-skill-catalog-${petSkillSuffix}`;
+  let database: DatabaseClient;
+  let operatorId: string;
+  let provider: PetSkillCatalogCrudProvider;
+
+  before(async () => {
+    database = createDatabaseClient(loadConfig().database);
+    const inserted = await database.execute(
+      "INSERT INTO admin_operators(login_id,display_name,password_hash,status) VALUES (?,?,?,'active')",
+      [`pet-skill-${petSkillSuffix}`, "합성 펫스킬 관리자", "synthetic"],
+    );
+    operatorId = inserted.insertId.toString();
+    provider = new PetSkillCatalogCrudProvider(new ConfigurationCatalogProvider(
+      new ConfigurationCatalogRegistry([PET_SKILL_CATALOG_CONFIGURATION]),
+      new MariaConfigurationCatalogRepository(database),
+    ));
+  });
+
+  after(async () => {
+    const operationIds = await database.query<Array<{ id: bigint }>>(
+      "SELECT id FROM operations WHERE idempotency_key LIKE ?",
+      [`${petSkillKeyPrefix}%`],
+    );
+    for (const operation of operationIds) {
+      await database.execute("DELETE FROM outbox_messages WHERE operation_id=?", [operation.id]);
+      await database.execute("DELETE FROM command_audit WHERE operation_id=?", [operation.id]);
+    }
+    await database.execute("DELETE FROM configuration_change_log WHERE configuration_set_id IN (SELECT id FROM configuration_sets WHERE set_code=? AND version>1)", [PET_SKILL_CATALOG_SET_CODE]);
+    await database.execute("DELETE FROM configuration_sets WHERE set_code=? AND version>1", [PET_SKILL_CATALOG_SET_CODE]);
+    await database.execute("UPDATE configuration_sets SET status='active',effective_to=NULL WHERE set_code=? AND version=1", [PET_SKILL_CATALOG_SET_CODE]);
+    await database.execute("DELETE FROM operations WHERE idempotency_key LIKE ?", [`${petSkillKeyPrefix}%`]);
+    await database.execute("DELETE FROM admin_operators WHERE id=?", [operatorId]);
+    await database.close();
+  });
+
+  it("reads all 93 seeded identities and preserves publish, replay, rollback and reconnect semantics", async () => {
+    const current = await provider.readCurrent();
+    assert.ok(current);
+    assert.equal(current.version, "1");
+    assert.equal(current.definitions.length, 93);
+    assert.equal(current.compatibilityGroups.length, 4);
+    assert.equal(new Set(current.definitions.map((entry) => entry.code)).size, 93);
+    assert.equal(new Set(current.definitions.map((entry) => entry.sourceKey)).size, 93);
+    assert.notEqual(
+      current.definitions.find((entry) => entry.name === "십원")?.code,
+      current.definitions.find((entry) => entry.name === "구원")?.code,
+    );
+    assert.equal(Math.round(current.definitions.reduce((sum, entry) => sum + entry.actualRate, 0)), 100);
+
+    const draft = await provider.createDraft({
+      actorId: operatorId,
+      idempotencyKey: `${petSkillKeyPrefix}-draft`,
+      reason: "합성 펫스킬 전체 카탈로그 초안",
+      expectedActiveVersion: "1",
+      catalog: {
+        catalogVersion: `${current.catalogVersion}-synthetic`,
+        definitions: current.definitions,
+        compatibilityGroups: current.compatibilityGroups,
+        drawPolicy: current.drawPolicy,
+      },
+    });
+    assert.equal(draft.version, "2");
+    const publishInput = {
+      actorId: operatorId,
+      idempotencyKey: `${petSkillKeyPrefix}-publish`,
+      reason: "합성 펫스킬 카탈로그 게시",
+      expectedActiveVersion: "1",
+      draftVersion: "2",
+    };
+    const published = await provider.publish(publishInput);
+    assert.equal(published.version, "2");
+    assert.equal((await provider.publish(publishInput)).replayed, true);
+
+    const rollbackInput = {
+      actorId: operatorId,
+      idempotencyKey: `${petSkillKeyPrefix}-rollback`,
+      reason: "초기 펫스킬 카탈로그 복구",
+      expectedActiveVersion: "2",
+      targetVersion: "1",
+    };
+    const rollback = await provider.rollback(rollbackInput);
+    assert.equal(rollback.version, "3");
+    assert.equal((await provider.readCurrent())?.catalogVersion, current.catalogVersion);
+
+    await database.close();
+    database = createDatabaseClient(loadConfig().database);
+    provider = new PetSkillCatalogCrudProvider(new ConfigurationCatalogProvider(
+      new ConfigurationCatalogRegistry([PET_SKILL_CATALOG_CONFIGURATION]),
+      new MariaConfigurationCatalogRepository(database),
+    ));
+    assert.equal((await provider.rollback(rollbackInput)).replayed, true);
+    assert.equal((await provider.readCurrent())?.definitions.length, 93);
   });
 });
