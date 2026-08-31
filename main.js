@@ -43863,7 +43863,7 @@ function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
     return slotSize;
 }
 
-// 프리미엄 종료 후 추가 장착 한도를 넘긴 최근 가구를 가구가방으로 회수하는 함수
+// 프리미엄 종료 후 추가 장착 한도를 넘긴 최저 매력 가구를 가구가방으로 회수하는 함수
 function releaseHoiPassPremiumExtraFurniture(data, petData, petSkillData, homeData, placedFurnitureData, userName) {
     homeData = initSweetHomeUser(homeData, userName);
     var userHome = homeData[userName];
@@ -43871,16 +43871,16 @@ function releaseHoiPassPremiumExtraFurniture(data, petData, petSkillData, homeDa
     var maxSlots = getFurnitureMaxSlots(data, petData, userName, userHome.floor || 0, petSkillData);
     var releasedCount = 0;
     while (placedFurnitureList.length > maxSlots) {
-        var latestIndex = placedFurnitureList.length - 1; // 배치 시각이 없는 기존 데이터의 회수 위치
-        var latestPlacedAt = parseInt(placedFurnitureList[latestIndex] && placedFurnitureList[latestIndex].placedAt, 10) || 0;
-        for (var i = 0; i < placedFurnitureList.length; i++) {
-            var placedAt = parseInt(placedFurnitureList[i] && placedFurnitureList[i].placedAt, 10) || 0;
-            if (placedAt >= latestPlacedAt) {
-                latestIndex = i;
-                latestPlacedAt = placedAt;
+        var lowestIndex = 0; // 현재 장착 가구 중 회수할 최저 매력 위치
+        var lowestExp = Number(placedFurnitureList[lowestIndex] && placedFurnitureList[lowestIndex].exp) || 0;
+        for (var i = 1; i < placedFurnitureList.length; i++) {
+            var furnitureExp = Number(placedFurnitureList[i] && placedFurnitureList[i].exp) || 0;
+            if (furnitureExp < lowestExp) {
+                lowestIndex = i;
+                lowestExp = furnitureExp;
             }
         }
-        var releasedItem = placedFurnitureList.splice(latestIndex, 1)[0];
+        var releasedItem = placedFurnitureList.splice(lowestIndex, 1)[0];
         if (releasedItem && releasedItem.placedAt !== undefined) delete releasedItem.placedAt;
         userHome.furnitureBag.push(releasedItem);
         releasedCount++;
