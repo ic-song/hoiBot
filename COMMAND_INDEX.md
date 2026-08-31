@@ -3868,8 +3868,8 @@ Status: VERIFIED
 - `buildMasterMiniPetCombinationFailMessage`
 - `buildMasterMiniPetCombinationSuccessMessage`
 ## Data Usage
-- `data.member["호이 남"].point`
-- `petData["호이 남"].miniPetBag`
+- `data.member[sender].point`
+- `petData[sender].miniPetBag`
 ## Save Flow
 - Failure consumes only 350억 points and saves `filePath`
 - Success consumes 350억 points, removes the selected five 엘리트 300강 mini-pets, adds one 마스터 mini-pet, saves `filePath` and `memberPetPath`
@@ -3879,7 +3879,7 @@ Status: VERIFIED
 - `/미니펫강화`
 - `/미니펫판매`
 ## AI Notes
-- The command and its guide are available only to `호이 남` in `팻 테스트방`; other senders and rooms receive no response.
+- The command and its guide are available to every registered user in every room.
 - The command accepts exactly five numeric, non-duplicate bag indexes; suffix guide text does not execute.
 - Master reward pool contains 영겁의 템푸스, 무한의 인피니타, 천상의 엠피레온 with equal selection probability after the 5% combination succeeds.
 - Master mini-pets gain 15,000 charm per successful upgrade, support up to 300 upgrades, and sell for 5000억 points.
