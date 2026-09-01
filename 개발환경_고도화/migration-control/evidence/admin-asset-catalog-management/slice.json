@@ -1,0 +1,10 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-ASSET-CATALOG-MANAGEMENT-01",
+  "executionId": "작업반장-SL-COMMON-ADMIN-WEB-ASSET-CATALOG-MANAGEMENT-01-202609020030",
+  "baseline": "2549c541",
+  "gate": { "1": true, "2": true, "3": true, "4": true, "5": true, "6": true, "7": true, "8": false },
+  "scope": ["통합 자산 목록", "표시명·stable key 검색", "유형·활성상태 필터", "canonical source binding", "도메인 정의 규모", "패키지 frozen/effective GAP"],
+  "packageParity": { "frozenResolved": 467, "overlayResolved": 10, "effectiveResolved": 477, "residualStackGaps": 36, "residualPackageGaps": 44, "conflicts": 0 },
+  "validation": { "focused": "21/21 PASS", "typecheck": "PASS", "build": "PASS", "mariaMigrationCount": 427, "mariaShadow": "1/1 PASS", "restartReconnect": "1/1 PASS", "full": "1577 total / 1569 pass / 0 fail / 8 skip" },
+  "safety": { "migration": 0, "schema": 0, "canonicalProvider": 0, "legacy": 0, "featureProd": 0, "operationalDatabase": 0, "gate8": false }
+}

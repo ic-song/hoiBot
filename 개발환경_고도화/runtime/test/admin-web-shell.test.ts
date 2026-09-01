@@ -171,7 +171,8 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /object-catalog\/objects/);
     assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
     assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
-    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제/);
+    assert.match(ADMIN_WEB_CLIENT, /object-catalog\/objects\?/);
   });
 
   it("exposes versioned configuration draft, publish, rollback, retire and discard states", () => {

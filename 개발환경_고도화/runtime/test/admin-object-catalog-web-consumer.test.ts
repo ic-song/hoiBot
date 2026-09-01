@@ -8,6 +8,7 @@ import { ApplicationError } from "../src/shared/application-error.js";
 import { syntheticObjectCatalogAdminSession, syntheticObjectCatalogMutationHeaders, syntheticObjectCatalogObject } from "./fixtures/admin-object-catalog-web-consumer.js";
 
 type CatalogProvider = AdminObjectCatalogWebRouteDependencies["catalog"];
+type ManagementReader = AdminObjectCatalogWebRouteDependencies["management"];
 
 async function buildApp(input: { roleCodes?: string[]; catalog?: Partial<CatalogProvider>; readerError?: Error } = {}) {
   const authCalls: Array<{ sessionToken: string; csrfToken?: string }> = [];
@@ -25,6 +26,7 @@ async function buildApp(input: { roleCodes?: string[]; catalog?: Partial<Catalog
   await registerAdminObjectCatalogWebRoutes(app, {
     auth: { authenticate: async (sessionToken, csrfToken) => { authCalls.push({ sessionToken, csrfToken }); return session; } },
     reader: { getByKey: async () => { if (input.readerError) throw input.readerError; return syntheticObjectCatalogObject; } },
+    management: { read: async () => ({ page: 1, limit: 25, total: 1, activeCount: 1, inactiveCount: 0, items: [{ ...syntheticObjectCatalogObject, sourceBindings: [] }], typeCounts: [{ objectType: "CURRENCY", count: 1 }], domains: [], packageResolution: null }) } satisfies ManagementReader,
     catalog: {
       register: input.catalog?.register ?? (async (request) => { registerCalls.push(request); return result("registered"); }),
       update: input.catalog?.update ?? (async (request) => { updateCalls.push(request); return result("updated"); }),
@@ -46,7 +48,7 @@ describe("admin object catalog web consumer", () => {
       assert.equal(response.json().object.definitionId, "18446744073709551615");
       assert.equal(response.json().object.version, "9007199254740993");
       assert.deepEqual(authCalls, [{ sessionToken: "synthetic-session-token", csrfToken: undefined }]);
-      assert.equal((await app.inject({ method: "GET", url: "/api/v1/admin/object-catalog/objects", headers: { cookie: syntheticObjectCatalogMutationHeaders.cookie } })).statusCode, 404);
+      assert.equal((await app.inject({ method: "GET", url: "/api/v1/admin/object-catalog/objects", headers: { cookie: syntheticObjectCatalogMutationHeaders.cookie } })).statusCode, 200);
     } finally { await app.close(); }
   });
 

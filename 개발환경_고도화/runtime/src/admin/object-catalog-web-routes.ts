@@ -10,6 +10,7 @@ import {
 } from "../catalog/object-catalog.js";
 import type { ObjectCatalogWebAdapterProvider } from "../catalog/object-catalog-web-adapter-provider.js";
 import { ApplicationError } from "../shared/application-error.js";
+import type { AdminAssetCatalogReadModel } from "./asset-catalog-read-model.js";
 
 interface AdminSessionAuthenticator {
   authenticate(sessionToken: string, csrfToken?: string): Promise<AdminSession>;
@@ -17,11 +18,13 @@ interface AdminSessionAuthenticator {
 
 type ObjectReader = Pick<ObjectCatalogService, "getByKey">;
 type ObjectMutationProvider = Pick<ObjectCatalogWebAdapterProvider, "register" | "update" | "setActive">;
+type AssetCatalogReader = Pick<AdminAssetCatalogReadModel, "read">;
 
 export interface AdminObjectCatalogWebRouteDependencies {
   auth: AdminSessionAuthenticator;
   reader: ObjectReader;
   catalog: ObjectMutationProvider;
+  management: AssetCatalogReader;
 }
 
 type MutationBody = { reason?: unknown; confirmed?: unknown };
@@ -121,6 +124,16 @@ function mutationResponse(result: Awaited<ReturnType<ObjectMutationProvider["reg
 }
 
 export async function registerAdminObjectCatalogWebRoutes(app: FastifyInstance, dependencies: AdminObjectCatalogWebRouteDependencies): Promise<void> {
+  app.get<{ Querystring: { query?: string; objectType?: string; active?: string; page?: string; limit?: string } }>("/api/v1/admin/object-catalog/objects", async (request) => {
+    await authenticate(request, dependencies, false);
+    const page = request.query.page === undefined ? 1 : Number(request.query.page);
+    const limit = request.query.limit === undefined ? 25 : Number(request.query.limit);
+    if (!Number.isInteger(page) || page < 1 || !Number.isInteger(limit) || limit < 1 || limit > 100) throw new ApplicationError("OBJECT_CATALOG_PAGE_INVALID", "page와 limit 값을 확인해 주세요.", 422);
+    if (request.query.objectType !== undefined && !OBJECT_TYPES.includes(request.query.objectType as ObjectType)) throw new ApplicationError("OBJECT_CATALOG_TYPE_INVALID", "objectType 값을 확인해 주세요.", 422);
+    if (request.query.active !== undefined && !["true", "false"].includes(request.query.active)) throw new ApplicationError("OBJECT_CATALOG_ACTIVE_INVALID", "active 값은 true 또는 false여야 합니다.", 422);
+    return { ok: true, catalog: await dependencies.management.read({ query: request.query.query?.trim() || undefined, objectType: request.query.objectType, active: request.query.active === undefined ? undefined : request.query.active === "true", page, limit }), requestId: request.id };
+  });
+
   app.get<{ Params: { objectKey: string } }>("/api/v1/admin/object-catalog/objects/:objectKey", async (request) => {
     await authenticate(request, dependencies, false);
     const object = await normalizeObjectError(() => dependencies.reader.getByKey(request.params.objectKey, true));

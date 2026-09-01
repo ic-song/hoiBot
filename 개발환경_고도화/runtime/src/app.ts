@@ -34,6 +34,7 @@ import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-
 import { registerAdminBalanceWebRoutes } from "./admin/admin-balance-web-routes.js";
 import { registerAdminConfigurationCatalogWebRoutes } from "./admin/configuration-catalog-web-routes.js";
 import { registerAdminPetSkillCatalogWebRoutes } from "./admin/pet-skill-catalog-web-routes.js";
+import { AdminAssetCatalogReadModel } from "./admin/asset-catalog-read-model.js";
 import { AdminBalanceReadModelProvider } from "./admin/admin-balance-read-model.js";
 import { AdminBalanceMutationProvider } from "./admin/admin-balance-mutation-provider.js";
 import { MariaAdminBalanceMutationRepository } from "./admin/maria-admin-balance-mutation-repository.js";
@@ -832,7 +833,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     void registerAdminObjectCatalogWebRoutes(app, {
       auth: adminAuth,
       reader: new ObjectCatalogService(new MariaObjectCatalogRepository(database)),
-      catalog: new ObjectCatalogWebAdapterProvider(database)
+      catalog: new ObjectCatalogWebAdapterProvider(database),
+      management: new AdminAssetCatalogReadModel(database)
     });
     void registerAdminConfigurationCatalogWebRoutes(app, {
       auth: adminAuth,
