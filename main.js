@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.438"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.439"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -2833,6 +2833,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 saveJsonFile(data, filePath);
             }
         }
+        var restoredExpiredPremiumSkillCount = data.member[sender] ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 기존 잠금 중 현재 빈 슬롯에 복구된 스킬 수
+        if (restoredExpiredPremiumSkillCount > 0) saveJsonFile(petSkillData, petSkillDataPath);
         commonStepStart = Date.now();
         var matzangField = ensureMatzangFieldData(data);
         addResponseTiming("맞짱필드 보정", commonStepStart);
@@ -23710,6 +23712,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 친밀도 처리 중 오류가 발생했습니다.");
                         return;
                     }
+                    var restoredLockedSkillCount = result.levelUps > 0 ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 친밀도 슬롯 증가로 다시 활성화된 잠금 스킬 수
 
                     // UI
                     var out = "";
@@ -23722,6 +23725,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "축하합니다 펫과 적당히 친해졌습니다!\n\n";
                         out += "Lv." + result.levelBefore + " -> Lv." + result.levelAfter + " 레벨업 보너스✨\n";
                         out += "레벨매력+" + result.addedLevelBonus + "💕  중첩매력+" + result.addedStackExp + "💕  증가\n";
+                        if (restoredLockedSkillCount > 0) out += "🔓 늘어난 펫스킬 공간에 잠금 스킬 " + restoredLockedSkillCount + "개가 다시 활성화되었습니다.\n";
                         out += "\n펫 친밀도🐾: " + result.newKey.replace(/^펫 친밀도🐾\s*/, "");
                     } else {
                         out += "다음 레벨까지 남은 포만감 " + (1000 - result.progressAfter) + "🍼\n";
@@ -23730,6 +23734,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     replier.reply(out);
                     saveJsonFile(data, filePath);
+                    if (restoredLockedSkillCount > 0) saveJsonFile(petSkillData, petSkillDataPath);
                     return;
                 }
 
@@ -35348,11 +35353,11 @@ function lockHoiPassPremiumExtraSkills(data, petSkillData, user) {
     return lockedCount;
 }
 
-// 프리미엄 재가입 시 잠금 슬롯의 펫스킬 장착 정보를 다시 활성화하는 함수
-function restoreHoiPassPremiumLockedSkills(petSkillData, user) {
+// 현재 빈 장착 슬롯만큼 프리미엄 잠금 펫스킬을 다시 활성화하는 함수
+function restoreHoiPassPremiumLockedSkills(data, petSkillData, user) {
     var skills = initPetSkillUser(petSkillData, user);
     var restoredCount = 0;
-    while (skills.lockedPremium.length > 0) {
+    while (skills.lockedPremium.length > 0 && skills.equipped.length < getPetSkillSlotCount(data, petSkillData, user)) {
         var skillName = normalizePetSkillName(skills.lockedPremium.shift());
         if (!skillName) continue;
         skills.equipped.push(skillName);
@@ -35971,7 +35976,7 @@ function addHoiPassPremium(data, petSkillData, activityData, user, endDate, oper
     };
     if (shouldGrantAutoExploreTicket) addItem(data, user, "자동탐험권🌄", 1);
     grantHoiPassPremiumBadge(activityData, user, operator);
-    var restoredSkillCount = restoreHoiPassPremiumLockedSkills(petSkillData, user);
+    var restoredSkillCount = restoreHoiPassPremiumLockedSkills(data, petSkillData, user);
     return { autoExploreTicketGranted: shouldGrantAutoExploreTicket, restoredSkillCount: restoredSkillCount };
 }
 
@@ -41447,7 +41452,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
     if (skills.lockedPremium.length > 0) {
         msg += "\n🔒 프리미엄 잠금 펫스킬 [" + skills.lockedPremium.length + "개]\n";
-        msg += "※ 프리미엄 재가입 시 다시 활성화됩니다. 현재 효과는 적용되지 않습니다.\n";
+        msg += "※ 프리미엄 재가입 또는 친밀도 레벨로 공간이 늘어나면 다시 활성화됩니다. 현재 효과는 적용되지 않습니다.\n";
         for (var lockedIndex = 0; lockedIndex < skills.lockedPremium.length; lockedIndex++) {
             msg += "🔒 " + formatPetSkillName(skills.lockedPremium[lockedIndex]) + "\n";
         }
