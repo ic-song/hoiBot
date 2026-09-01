@@ -100,6 +100,7 @@ import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand, normali
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
 import { createTierCommandService, isTierCommandCandidate, isTierCommandDispatch, isTierCommandHandler } from "./player/tier-command-dispatch.js";
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
+import { AdminStorageLimitCleanupService, isAdminStorageLimitCleanupCommand } from "./admin/admin-storage-limit-cleanup-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
 import { TierRewardPayoutService, isTierRewardPayoutCommand, normalizeTierRewardPayoutDispatchMessage } from "./player/tier-reward-payout-service.js";
 import { MiniPetBindingReleaseService, isMiniPetBindingReleaseCommand, normalizeMiniPetBindingReleaseDispatchMessage } from "./mini-pet/mini-pet-binding-release-service.js";
@@ -686,6 +687,29 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
   }
 }
 
+// 가구 전체정리와 통합 가방 한도 정리를 큰 app 본문 밖에서 실행합니다.
+async function dispatchAdminStorageCleanup(input: {
+  database: DatabaseClient | undefined;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+  route: string | undefined;
+  handlerKey: string | undefined;
+  event: NormalizedIrisEvent;
+  replies: PendingReply[] | undefined;
+}): Promise<void> {
+  const event = input.event;
+  if (input.database === undefined || !input.isOperationalChannel || input.duplicate !== false || input.route !== "MODERN"
+    || event.userId === undefined || event.channelId === undefined || event.message === undefined) return;
+  if (input.handlerKey === "home_furniture_full_cleanup" && isHomeFurnitureFullCleanupCommand(event.message)) {
+    const result = await new HomeFurnitureFullCleanupService(input.database).handle({ eventId: event.eventId, externalUserId: event.userId, destinationId: event.channelId });
+    if (result.reply !== undefined && result.outboxId !== undefined) input.replies?.push({ outboxId: result.outboxId, room: event.channelId, data: result.reply });
+    return;
+  }
+  if (input.handlerKey !== "admin_storage_limit_cleanup" || !isAdminStorageLimitCleanupCommand(event.message)) return;
+  const result = await new AdminStorageLimitCleanupService(input.database).handle({ eventId: event.eventId, externalUserId: event.userId, destinationId: event.channelId, message: event.message });
+  if (result.data !== undefined && result.outboxId !== undefined) input.replies?.push({ outboxId: result.outboxId, room: event.channelId, data: result.data });
+}
+
 // 펫탐험 정산 exact 명령을 app 본문 제어흐름과 분리해 registry consumer로 전달합니다.
 async function dispatchPetExploreSettlementCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
   if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
@@ -1189,6 +1213,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isTierCommandCandidate(normalizedEvent.message)
         || isAdminPackageDeleteCommand(normalizedEvent.message)
+        || isAdminStorageLimitCleanupCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
         || isTierRewardPayoutCommand(normalizedEvent.message)
         || isMiniPetBindingReleaseCommand(normalizedEvent.message)
@@ -1401,6 +1426,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
              : isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureInfoReadDispatchMessage(normalizedEvent.message ?? "")
             : isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
+            ? normalizedEvent.message ?? ""
+            : isAdminStorageLimitCleanupCommand(normalizedEvent.message)
             ? normalizedEvent.message ?? ""
             : isHomeFurnitureEquipCandidate(normalizedEvent.message)
             ? normalizeHomeFurnitureEquipDispatchMessage(normalizedEvent.message ?? "")
@@ -2633,13 +2660,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isHomeFurnitureFullCleanupCommand(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_full_cleanup"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result=await new HomeFurnitureFullCleanupService(database!).handle({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
-        if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
-      }
+      await dispatchAdminStorageCleanup({ database, isOperationalChannel, duplicate: processing?.duplicate, route: partialDispatchDecision?.route, handlerKey: partialDispatchDecision?.handlerKey, event: normalizedEvent, replies: processing?.replies });
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isHomeFurnitureEquipCandidate(normalizedEvent.message)

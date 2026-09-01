@@ -1,0 +1,34 @@
+{
+  "sliceId": "SL-ADMIN-STORAGE-TEXT-CLEANUP",
+  "executionId": "작업반장-SL-ADMIN-STORAGE-TEXT-CLEANUP-RECOVERY-202609012330",
+  "catalogVersion": "SC-v2.438-command-migration-final",
+  "baseline": "a21397ee",
+  "branch": "codex/modernization-admin-storage-limit-cleanup-v2438-20260901",
+  "command": "/글자수전체정리",
+  "migration": "438_admin_storage_limit_cleanup.sql",
+  "gates": {
+    "gate1": "legacy exact guard, authorization, sorting, limits, save boundary reverified",
+    "gate2": "owned_mini_pets, furniture_inventory_instances, inventory_instances mapped with canonical ledgers",
+    "gate3": "focused 2/2 and synthetic fixtures PASS",
+    "gate4": "single MariaDB transaction, operation, execution, audit and outbox implemented",
+    "gate5": "fresh MariaDB migration count 430 and three-domain integration PASS",
+    "gate6": "full 1576, pass 1568, fail 0, skip 8; typecheck/build PASS",
+    "gate7": "SHADOW registry, idempotent replay, rollback, migration replay and reconnect PASS",
+    "gate8": false
+  },
+  "maria": {
+    "database": "hoibot_admin_storage_limit_cleanup",
+    "operationalDataTouched": false,
+    "removed": { "miniPet": 3, "furniture": 2, "pendant": 2 },
+    "protected": ["mini-pet protected ref", "furniture placed", "pendant reserved"],
+    "rollback": "audit failure rolled back all three domains",
+    "restartReplay": "same event returned the stored result without another mutation",
+    "migrationReplay": { "migration438": 1, "tables": 2, "registry": 1, "alias": 1 }
+  },
+  "forbiddenChanges": {
+    "gate8": 0,
+    "featureProd": 0,
+    "operationalDatabase": 0,
+    "legacyMainData": 0
+  }
+}
