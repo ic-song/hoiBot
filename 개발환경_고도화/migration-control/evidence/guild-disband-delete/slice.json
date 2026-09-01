@@ -1,0 +1,32 @@
+{
+  "sliceId": "SL-GUILD-DISBAND-DELETE-01",
+  "executionId": "작업반장-SL-GUILD-DISBAND-DELETE-01-RECOVERY-202609011742",
+  "catalogVersion": "SC-20260824-01",
+  "baselineCommit": "15e7e554f2a652b2e4a6d6cc36f39561ee0d0ad4",
+  "commands": ["/길드삭제 [길드명]", "/길드해산 [길드명]", "/길드해지 [길드명]"],
+  "migration": "431_guild_disband_delete.sql",
+  "gates": {
+    "1": "legacy exact-name aliases and disbandGuildByExactName flow verified",
+    "2": "stable guild_id, tombstone, current projection cleanup, operation and audit mapping frozen",
+    "3": "isolated synthetic admin, guild, member, active territory and castle fixtures",
+    "4": "GuildDisbandDeleteService and independent app dispatch implemented",
+    "5": "fresh MariaDB migration 431 and canonical guild/territory/castle integration passed",
+    "6": "transaction rollback, idempotent replay, reconnect and full regression passed",
+    "7": "SHADOW returned without mutation"
+  },
+  "validation": {
+    "focused": "2/2 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "maria": "1/1 PASS",
+    "full": "1372 total; 1365 pass; 0 fail; 7 skip"
+  },
+  "safety": {
+    "physicalGuildDelete": false,
+    "historyPreserved": true,
+    "legacyChanged": false,
+    "operationalDatabaseChanged": false,
+    "featureProdChanged": false,
+    "gate8": false
+  }
+}

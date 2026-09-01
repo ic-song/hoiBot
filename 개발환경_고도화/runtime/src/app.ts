@@ -55,6 +55,7 @@ import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCr
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
 import { HappyFoundationCommandService, isHappyFoundationCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-command-service.js";
 import { GuildShopPurchaseService, isGuildShopPurchaseCommandCandidate } from "./guild/guild-shop-purchase-service.js";
+import { GuildDisbandDeleteService, isGuildDisbandDeleteCommandCandidate } from "./guild/guild-disband-delete-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
 
 // 거대 Iris 라우트의 제어흐름 한도를 넘지 않도록 길드상점 구매 분기를 격리합니다.
@@ -77,9 +78,29 @@ async function dispatchGuildShopPurchase(input: {
   }
 }
 
+// 길드 해산·삭제 별칭을 동일한 안정 ID 기반 소비자로 전달합니다.
+async function dispatchGuildDisbandDelete(input: {
+  database: DatabaseClient;
+  eventProcessor: ProcessIrisEventService;
+  event: NormalizedIrisEvent;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+}): Promise<PendingReply | null> {
+  if (!input.isOperationalChannel || input.duplicate === true
+    || !isGuildDisbandDeleteCommandCandidate(input.event.message)
+    || input.event.userId === undefined || input.event.channelId === undefined) return null;
+  try {
+    const result = await new GuildDisbandDeleteService(input.database).handle({ eventId: input.event.eventId, externalUserId: input.event.userId, channelId: input.event.channelId, message: input.event.message! });
+    return result === null ? null : { outboxId: result.outboxId, room: input.event.channelId, data: result.data };
+  } catch (error) {
+    if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) return input.eventProcessor.queueCommandReply(input.event, "guild_disband_delete_error", error.message);
+    throw error;
+  }
+}
+
 // 길드 독립 소비자들을 한 번의 부분 dispatch 후보 판정으로 묶습니다.
 function isGuildIndependentCommandCandidate(message: string | undefined): boolean {
-  return isGuildRecruitmentToggleCommand(message) || isGuildShopPurchaseCommandCandidate(message);
+  return isGuildRecruitmentToggleCommand(message) || isGuildShopPurchaseCommandCandidate(message) || isGuildDisbandDeleteCommandCandidate(message);
 }
 
 // 부분 dispatch 환경 플래그 판정을 거대 Iris handler 밖에서 수행합니다.
@@ -773,6 +794,8 @@ async function dispatchIndependentCommandConsumers(database: DatabaseClient | un
   if (database !== undefined && eventProcessor !== undefined && replies !== undefined) {
     const guildShopReply = await dispatchGuildShopPurchase({ database, eventProcessor, event, isOperationalChannel, duplicate });
     if (guildShopReply !== null) replies.push(guildShopReply);
+    const guildDisbandReply = await dispatchGuildDisbandDelete({ database, eventProcessor, event, isOperationalChannel, duplicate });
+    if (guildDisbandReply !== null) replies.push(guildDisbandReply);
   }
 }
 
