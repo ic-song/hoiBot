@@ -1,7 +1,8 @@
-# SL-ASSET-MINIPET-COLLECTION-REWARD-CATALOG-01 validation checkpoint
+# SL-ASSET-MINIPET-COLLECTION-REWARD-CATALOG-01 validation
 
-- Lease: `2462`
-- Execution: `개발자-SL-ASSET-MINIPET-COLLECTION-REWARD-CATALOG-01-20260901T042248`
+- Original lease: `2462` (`EXPIRED`, history preserved)
+- Recovery lease: `2465`
+- Execution: `개발자-SL-ASSET-MINIPET-COLLECTION-REWARD-CATALOG-01-RECOVERY-202609011402`
 - Catalog version: `ASSET-FREEZE-v2.435-mini-pet-collection-reward-01`
 - Baseline: `d7b7485b3996b32be67502954cac9a582b4dd928`
 - Approved source revision: `5925b83b1dbfb78ef583354604e112b9430003f3`
@@ -20,13 +21,11 @@
 - Migration 420 direct reapply: `PASS`.
 - Provider probe: `6/6 PASS`.
 - Shadow parity: `108/108 PASS`.
-
-## Pending after checkpoint
-
-- Narrow rollback and replay verification.
-- Dedicated database restart and reconnect verification.
-- Full regression.
-- Final commit/push verification and WBS Gate 1~7 report.
+- Narrow rollback removed both catalog tables; replay restored `1` catalog and `108` occurrences.
+- Dedicated MariaDB restart and reconnect: provider `6/6 PASS`, Shadow `108/108 PASS` after restart.
+- Full regression: `1373` tests, `1366` pass, `0` fail, `7` environment-dependent skips.
+- Final focused tests: `7/7 PASS`; TypeScript typecheck and build: `PASS`.
+- Gate 1 through Gate 7 are ready to close; Gate 8 remains false.
 
 ## Safety boundary
 
