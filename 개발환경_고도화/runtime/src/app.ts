@@ -33,6 +33,7 @@ import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-we
 import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-routes.js";
 import { registerAdminBalanceWebRoutes } from "./admin/admin-balance-web-routes.js";
 import { registerAdminConfigurationCatalogWebRoutes } from "./admin/configuration-catalog-web-routes.js";
+import { registerAdminPetSkillCatalogWebRoutes } from "./admin/pet-skill-catalog-web-routes.js";
 import { AdminBalanceReadModelProvider } from "./admin/admin-balance-read-model.js";
 import { AdminBalanceMutationProvider } from "./admin/admin-balance-mutation-provider.js";
 import { MariaAdminBalanceMutationRepository } from "./admin/maria-admin-balance-mutation-repository.js";
@@ -44,6 +45,7 @@ import { MariaObjectCatalogRepository } from "./catalog/maria-object-catalog-rep
 import { ObjectCatalogWebAdapterProvider } from "./catalog/object-catalog-web-adapter-provider.js";
 import { ConfigurationCatalogProvider, ConfigurationCatalogRegistry } from "./configuration/configuration-catalog.js";
 import { MariaConfigurationCatalogRepository } from "./configuration/maria-configuration-catalog-repository.js";
+import { PET_SKILL_CATALOG_CONFIGURATION, PetSkillCatalogCrudProvider } from "./pet/pet-skill-catalog.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
@@ -837,6 +839,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       catalog: new ConfigurationCatalogProvider(
         new ConfigurationCatalogRegistry([]),
         new MariaConfigurationCatalogRepository(database)
+      )
+    });
+    void registerAdminPetSkillCatalogWebRoutes(app, {
+      auth: adminAuth,
+      catalog: new PetSkillCatalogCrudProvider(
+        new ConfigurationCatalogProvider(
+          new ConfigurationCatalogRegistry([PET_SKILL_CATALOG_CONFIGURATION]),
+          new MariaConfigurationCatalogRepository(database)
+        )
       )
     });
     const adminBalanceRepository = new MariaAdminBalanceMutationRepository(database);

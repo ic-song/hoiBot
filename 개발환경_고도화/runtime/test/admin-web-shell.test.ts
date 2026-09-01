@@ -69,6 +69,7 @@ describe("admin web shell", () => {
       "/api/v1/admin/diamond-shop/catalog",
       "/api/v1/admin/package-catalog",
       "/api/v1/admin/configuration-catalog",
+      "/api/v1/admin/pet-skill-catalog",
       "/api/v1/admin/object-catalog/objects/",
       "/api/v1/admin/backups/managed",
       "/api/v1/admin/backups/dev-sync",
@@ -183,6 +184,17 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /configuration-catalog\/sets/);
     assert.match(ADMIN_WEB_CLIENT, /expectedActiveVersion/);
     assert.match(ADMIN_WEB_CLIENT, /source binding/);
+  });
+
+  it("exposes stable pet-skill definitions, effects, draw policy and version lifecycle", () => {
+    assert.match(ADMIN_WEB_CLIENT, /펫스킬 카탈로그/);
+    assert.match(ADMIN_WEB_CLIENT, /종 definition과 effect/);
+    assert.match(ADMIN_WEB_CLIENT, /펫스킬 definitions JSON/);
+    assert.match(ADMIN_WEB_CLIENT, /호환 그룹 JSON/);
+    assert.match(ADMIN_WEB_CLIENT, /추첨 정책 JSON/);
+    assert.match(ADMIN_WEB_CLIENT, /stable code와 source key/);
+    assert.match(ADMIN_WEB_CLIENT, /pet-skill-catalog\/drafts/);
+    assert.match(ADMIN_WEB_CLIENT, /expectedActiveVersion/);
   });
 
   it("exposes grouped balance search, preview diff, apply and rollback only", () => {

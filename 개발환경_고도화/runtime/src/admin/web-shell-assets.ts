@@ -431,6 +431,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     packageCatalogRetry: null,
     configurationCatalogNotice: null,
     configurationCatalogRetry: null,
+    petSkillCatalogNotice: null,
+    petSkillCatalogRetry: null,
     objectCatalogNotice: null,
     objectCatalogRetry: null,
     objectCatalogKey: "",
@@ -453,6 +455,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
     { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" },
     { id: "configuration-catalog", label: "설정 카탈로그", icon: "⚙", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "CONFIGURATION CATALOG" },
+    { id: "pet-skill-catalog", label: "펫스킬 카탈로그", icon: "♘", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "PET SKILL CATALOG" },
     { id: "object-catalog", label: "오브젝트 카탈로그", icon: "◎", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "OBJECT CATALOG" }
   ];
 
@@ -697,6 +700,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "diamond-catalog") loadDiamondCatalog();
     else if (item.id === "package-catalog") loadPackageCatalog();
     else if (item.id === "configuration-catalog") loadConfigurationCatalog();
+    else if (item.id === "pet-skill-catalog") loadPetSkillCatalog();
     else loadObjectCatalog(state.objectCatalogKey);
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
@@ -1396,6 +1400,116 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       markUpdated();
     } catch (error) {
       main.innerHTML = renderViewIntro("설정 카탈로그", "코드·JSON에서 동결된 운영 상수를 version 단위로 관리합니다.") + errorState(error, "configuration-catalog");
+      attachRetry(main);
+    }
+  }
+
+  // 펫스킬 카탈로그 조치마다 독립적인 멱등성 키를 생성하고 실패 재시도에서만 재사용합니다.
+  function petSkillCatalogIdempotencyKey(action) {
+    return "pet-skill-catalog:" + action + ":" + (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+      ? globalThis.crypto.randomUUID() : Date.now() + ":" + Math.random().toString(16).slice(2));
+  }
+
+  // 펫스킬 JSON 입력을 지정한 배열 또는 객체 형태로 제한합니다.
+  function parsePetSkillJson(value, shape, label) {
+    var parsed;
+    try { parsed = JSON.parse(value); }
+    catch (_) { throw new Error(label + " JSON 형식을 확인해 주세요."); }
+    if (shape === "array" ? !Array.isArray(parsed) : (!parsed || Array.isArray(parsed) || typeof parsed !== "object")) {
+      throw new Error(label + (shape === "array" ? "은 JSON 배열이어야 합니다." : "은 JSON 객체여야 합니다."));
+    }
+    return parsed;
+  }
+
+  // 펫스킬 mutation 결과 또는 안전한 replay 상태를 표시합니다.
+  function petSkillCatalogNotice() {
+    if (!state.petSkillCatalogNotice) return "<div id=\"pet-skill-catalog-message\"></div>";
+    return "<div id=\"pet-skill-catalog-message\" class=\"catalog-notice " + escapeHtml(state.petSkillCatalogNotice.kind || "") + "\"><strong>" + escapeHtml(state.petSkillCatalogNotice.title) + "</strong><span>" + escapeHtml(state.petSkillCatalogNotice.message) + "</span></div>";
+  }
+
+  // typed 펫스킬 provider에 CSRF·멱등성 계약으로 version mutation을 전송합니다.
+  async function mutatePetSkillCatalog(path, method, body, idempotencyKey) {
+    var retry = function () { return mutatePetSkillCatalog(path, method, body, idempotencyKey); };
+    state.petSkillCatalogRetry = retry;
+    try {
+      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
+      state.petSkillCatalogRetry = null;
+      state.petSkillCatalogNotice = payload.result.replayed
+        ? { kind: "replay", title: "이미 완료된 펫스킬 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
+        : { kind: "", title: "펫스킬 카탈로그를 변경했습니다.", message: payload.result.action + " 완료 · version " + payload.result.version };
+      showToast(payload.result.replayed ? "완료된 펫스킬 요청을 다시 불러왔습니다." : "펫스킬 카탈로그를 변경했습니다.", false);
+      await loadPetSkillCatalog();
+    } catch (error) {
+      var target = byId("pet-skill-catalog-message");
+      if (!target) return;
+      target.className = "catalog-notice error";
+      target.innerHTML = "<strong>펫스킬 변경 요청을 완료하지 못했습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"pet-skill-mutation-retry\">같은 요청 다시 보내기</button>";
+      byId("pet-skill-mutation-retry").addEventListener("click", retry);
+    }
+  }
+
+  // stable code와 source identity를 보존한 펫스킬 정의 표를 생성합니다.
+  function petSkillDefinitionTable(definitions, query) {
+    var keyword = (query || "").trim().toLowerCase();
+    var visible = definitions.filter(function (entry) { return !keyword || [entry.code, entry.name, entry.grade, entry.effect, entry.sourceKey].some(function (value) { return String(value || "").toLowerCase().includes(keyword); }); });
+    if (!visible.length) return emptyState("일치하는 펫스킬이 없습니다.", "이름, stable code, 등급 또는 효과를 다시 검색해 주세요.");
+    return "<div class=\"table-wrap\"><table class=\"data-table\"><thead><tr><th>펫스킬</th><th>등급·상태</th><th>설정 확률</th><th>추첨 비중</th><th>효과</th><th>source</th></tr></thead><tbody>" + visible.map(function (entry) {
+      var status = entry.active ? (entry.openable === false ? "활성 · 오픈 제외" : "활성 · 오픈 가능") : "비활성";
+      return "<tr><td><strong>" + escapeHtml(entry.name) + "</strong><br><span class=\"mono muted\">" + escapeHtml(entry.code) + "</span></td><td>" + escapeHtml(entry.grade + " · " + status) + "</td><td>" + escapeHtml(entry.rate == null ? "-" : entry.rate + "%") + (entry.fixedRate ? " · 고정" : "") + "</td><td>" + escapeHtml(entry.drawWeight.toFixed(4) + " / " + entry.actualRate.toFixed(4) + "%") + "</td><td>" + escapeHtml(entry.effect) + "</td><td><span class=\"mono muted\">" + escapeHtml(entry.sourceKey) + "</span></td></tr>";
+    }).join("") + "</tbody></table></div>";
+  }
+
+  // 조회된 projection에서 저장 대상 정의만 분리합니다.
+  function editablePetSkillDefinitions(definitions) {
+    return definitions.map(function (entry) {
+      var copy = Object.assign({}, entry);
+      delete copy.drawWeight;
+      delete copy.actualRate;
+      delete copy.effectIdentity;
+      return copy;
+    });
+  }
+
+  // 93종 정의·효과·호환 그룹·추첨 정책과 version lifecycle 관리 화면을 제공합니다.
+  async function loadPetSkillCatalog() {
+    state.refresh = loadPetSkillCatalog;
+    var main = byId("main-content");
+    main.innerHTML = renderViewIntro("펫스킬 카탈로그", "stable code와 source identity를 보존해 정의·효과·추첨 정책을 관리합니다.", "manager · super_admin") + loadingState("펫스킬 카탈로그를 불러오는 중");
+    try {
+      var payload = await api("/api/v1/admin/pet-skill-catalog");
+      var catalog = payload.catalog;
+      if (!catalog) {
+        main.innerHTML = renderViewIntro("펫스킬 카탈로그", "아직 게시된 펫스킬 카탈로그가 없습니다.") + petSkillCatalogNotice() + emptyState("활성 카탈로그가 없습니다.", "seed와 provider 상태를 확인한 뒤 초안 생성을 진행해 주세요.");
+        return;
+      }
+      var editableDefinitions = editablePetSkillDefinitions(catalog.definitions);
+      main.innerHTML = renderViewIntro("펫스킬 카탈로그", "현재 " + catalog.definitions.length + "종 projection을 조회하고 전체 검증 초안으로 definition/effect/draw를 변경합니다.", catalog.definitions.length + "종 · v" + catalog.version) + petSkillCatalogNotice() +
+        "<section class=\"panel\"><div class=\"panel-heading\"><div><h3>현재 펫스킬 정의</h3><p>동일·유사 이름은 병합하지 않고 stable code와 source key로 구분합니다.</p></div><div class=\"catalog-summary\"><span>Catalog <strong>" + escapeHtml(catalog.catalogVersion) + "</strong></span><span>호환 그룹 " + escapeHtml(catalog.compatibilityGroups.length) + "개</span></div></div><form id=\"pet-skill-search-form\" class=\"search-form\"><label class=\"sr-only\" for=\"pet-skill-search\">펫스킬 검색</label><input id=\"pet-skill-search\" placeholder=\"이름, code, 등급, 효과 검색\"><button class=\"secondary-button\" type=\"submit\">검색</button></form><div id=\"pet-skill-table-region\">" + petSkillDefinitionTable(catalog.definitions, "") + "</div></section>" +
+        "<div class=\"catalog-layout\"><section class=\"panel\"><div class=\"panel-heading\"><div><h3>전체 카탈로그 초안</h3><p>" + escapeHtml(catalog.definitions.length) + "종 definition과 effect, 호환 그룹, 추첨 정책을 한 version으로 검증합니다.</p></div></div><form id=\"pet-skill-draft-form\" class=\"catalog-form\"><label>카탈로그 버전<input name=\"catalogVersion\" value=\"" + escapeHtml(catalog.catalogVersion) + "\" required maxlength=\"191\"></label><label>펫스킬 definitions JSON<textarea name=\"definitions\" required>" + escapeHtml(JSON.stringify(editableDefinitions, null, 2)) + "</textarea></label><label>호환 그룹 JSON<textarea name=\"compatibilityGroups\" required>" + escapeHtml(JSON.stringify(catalog.compatibilityGroups, null, 2)) + "</textarea></label><label>추첨 정책 JSON<textarea name=\"drawPolicy\" required>" + escapeHtml(JSON.stringify(catalog.drawPolicy, null, 2)) + "</textarea></label><label>변경 사유<textarea name=\"reason\" minlength=\"5\" maxlength=\"500\" required></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>" + escapeHtml(catalog.definitions.length) + "종 identity, 효과, 그룹과 확률 합을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">펫스킬 초안 생성</button></form></section>" +
+        "<aside class=\"panel\"><div class=\"panel-heading\"><div><h3>버전 수명주기</h3><p>초안 게시·이전 version 복원·현재 version 종료·초안 폐기를 수행합니다.</p></div></div><form id=\"pet-skill-lifecycle-form\" class=\"catalog-form\"><label>동작<select name=\"action\"><option value=\"publish\">초안 게시</option><option value=\"rollback\">이전 version 복원</option><option value=\"retire\">현재 version 종료</option><option value=\"discard\">초안 폐기</option></select></label><label>대상 version<input name=\"targetVersion\" value=\"" + escapeHtml(catalog.version) + "\" pattern=\"(0|[1-9][0-9]*)\" required></label><label>변경 사유<textarea name=\"reason\" minlength=\"5\" maxlength=\"500\" required></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>현재 active version과 대상 version을 확인했습니다.</span></label><button class=\"danger-button\" type=\"submit\">선택 동작 실행</button></form></aside></div>";
+      byId("pet-skill-search-form").addEventListener("submit", function (event) { event.preventDefault(); byId("pet-skill-table-region").innerHTML = petSkillDefinitionTable(catalog.definitions, byId("pet-skill-search").value); });
+      byId("pet-skill-draft-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var data = new FormData(event.currentTarget);
+        var draft;
+        try { draft = { catalogVersion: data.get("catalogVersion").toString().trim(), definitions: parsePetSkillJson(data.get("definitions").toString(), "array", "definitions"), compatibilityGroups: parsePetSkillJson(data.get("compatibilityGroups").toString(), "array", "호환 그룹"), drawPolicy: parsePetSkillJson(data.get("drawPolicy").toString(), "object", "추첨 정책") }; }
+        catch (error) { showToast(errorMessage(error), true); return; }
+        mutatePetSkillCatalog("/api/v1/admin/pet-skill-catalog/drafts", "POST", { expectedActiveVersion: catalog.version, baseVersion: catalog.version, catalog: draft, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, petSkillCatalogIdempotencyKey("draft"));
+      });
+      byId("pet-skill-lifecycle-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var data = new FormData(event.currentTarget);
+        var action = data.get("action").toString();
+        var target = data.get("targetVersion").toString();
+        var path = action === "publish" ? "/api/v1/admin/pet-skill-catalog/drafts/" + encodeURIComponent(target) + "/publish" : action === "rollback" ? "/api/v1/admin/pet-skill-catalog/rollback" : action === "retire" ? "/api/v1/admin/pet-skill-catalog/retire" : "/api/v1/admin/pet-skill-catalog/drafts/" + encodeURIComponent(target);
+        var body = { expectedActiveVersion: catalog.version, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" };
+        if (action === "rollback") body.targetVersion = target;
+        mutatePetSkillCatalog(path, action === "discard" ? "DELETE" : "POST", body, petSkillCatalogIdempotencyKey(action));
+      });
+      state.petSkillCatalogNotice = null;
+      markUpdated();
+    } catch (error) {
+      main.innerHTML = renderViewIntro("펫스킬 카탈로그", "stable code와 source identity를 보존해 정의·효과·추첨 정책을 관리합니다.") + errorState(error, "pet-skill-catalog");
       attachRetry(main);
     }
   }
