@@ -274,6 +274,8 @@ import { isPetExploreRecordsResetCommand, normalizePetExploreRecordsResetDispatc
 import { PetExploreRecordsResetIrisHandler } from "./pet/pet-explore-records-reset-iris-handler.js";
 import { isContributionPassCommandCandidate, normalizeContributionPassDispatchMessage } from "./pass/contribution-pass-command.js";
 import { ContributionPassIrisHandler } from "./pass/contribution-pass-iris-handler.js";
+import { isPassListCommandCandidate, normalizePassListDispatchMessage } from "./pass/pass-list-command.js";
+import { PassListIrisHandler } from "./pass/pass-list-iris-handler.js";
 import { isDiamondPassCommandCandidate, normalizeDiamondPassDispatchMessage } from "./pass/diamond-pass-command.js";
 import { DiamondPassIrisHandler } from "./pass/diamond-pass-iris-handler.js";
 import { isHoiPassCommandCandidate, normalizeHoiPassDispatchMessage } from "./pass/hoi-pass-command.js";
@@ -741,6 +743,7 @@ async function dispatchPetExploreCommandConsumers(database: DatabaseClient | und
 // 후원패스 registry 후보 판정과 alias 정규화를 app 본문 밖의 단일 경계로 묶습니다.
 function resolveSupportPassRegistryDispatchMessage(message: string | undefined): string | undefined {
   const value = message ?? "";
+  if (process.env.PASS_LIST_READ_COMMAND_ENABLED === "true" && isPassListCommandCandidate(message)) return normalizePassListDispatchMessage(value);
   if (process.env.CONTRIBUTION_PASS_COMMAND_ENABLED === "true" && isContributionPassCommandCandidate(message)) return normalizeContributionPassDispatchMessage(value);
   if (process.env.DIAMOND_PASS_COMMAND_ENABLED === "true" && isDiamondPassCommandCandidate(message)) return normalizeDiamondPassDispatchMessage(value);
   if (process.env.HOI_PASS_COMMAND_ENABLED === "true" && isHoiPassCommandCandidate(message)) return normalizeHoiPassDispatchMessage(value);
@@ -752,6 +755,8 @@ async function dispatchSupportPassRegistryCommand(database: DatabaseClient | und
   if (database === undefined || eventProcessor === undefined || replies === undefined || duplicate || route !== "MODERN") return;
   const response = handlerKey === "contribution_pass_registry"
     ? await new ContributionPassIrisHandler(database).execute(event)
+    : handlerKey === "pass_list_read"
+      ? await new PassListIrisHandler(database).execute(event)
     : handlerKey === "diamond_pass_registry"
       ? await new DiamondPassIrisHandler(database).execute(event)
       : handlerKey === "hoi_pass_registry"

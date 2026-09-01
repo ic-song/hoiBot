@@ -1,0 +1,35 @@
+{
+  "sliceId": "SL-PASS-LIST-READ",
+  "executionId": "작업반장-SL-PASS-LIST-READ-RECOVERY-202609011454",
+  "baseline": "69ab41383eb9b80d630a8c2f2dc4de63b7a88af5",
+  "command": "/패스목록",
+  "migration": "425_pass_list_read.sql",
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "scope": {
+    "stores": ["player_passes", "player_support_passes"],
+    "projection": ["pass list", "reward payout status", "auto explore ticket consistency", "free package warning"],
+    "cleanup": ["D+1 expiry", "premium badge revoke", "premium excess skill lock", "premium excess furniture release", "conditional auto ticket removal"]
+  },
+  "validation": {
+    "focused": { "passed": 5, "failed": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaMigrations": 408,
+    "registry": "1/1",
+    "aliases": "1/1",
+    "mariaScenarios": "1/1",
+    "rollbackRegistryAliases": "0/0",
+    "replayRegistryAliases": "1/1",
+    "restartReconnect": "PASS",
+    "shadow": "PASS",
+    "premiumParity": { "lockedSkills": 2, "revokedBadge": "S13", "remainingFurniture": 1, "removedTicketQuantity": 4 },
+    "fullRegression": { "tests": 1368, "passed": 1361, "failed": 0, "skipped": 7 }
+  },
+  "safety": {
+    "gate8": false,
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false,
+    "legacyMainOrDataChanged": false,
+    "dualModelDeleted": false
+  }
+}
