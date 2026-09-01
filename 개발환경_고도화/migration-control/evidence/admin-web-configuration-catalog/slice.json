@@ -1,0 +1,69 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-CONFIGURATION-CATALOG-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-WEB-CONFIGURATION-CATALOG-01-202609011806",
+  "baseline": "f5c143aacd0b6ae86799b7ca9055c841d110d8b7",
+  "wbs": 708,
+  "lease": 2479,
+  "runtimeMode": "SHADOW",
+  "scope": {
+    "provider": "ConfigurationCatalogProvider",
+    "repository": "MariaConfigurationCatalogRepository",
+    "routes": ["read", "readVersion", "draft", "publish", "rollback", "retire", "discard"],
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "operationalRowsMutated": 0
+  },
+  "stagedBoundary": {
+    "registeredDefinitions": 0,
+    "reason": "영역별 설정 정의는 후속 Lease에서 독립 연결하며 pet skill consumer를 이 공용 Lease에 혼합하지 않음",
+    "emptyRegistryBehavior": "authenticated manager/super_admin에게 정상 빈 목록 반환"
+  },
+  "gate1": {
+    "status": "complete",
+    "existingProvider": "개발환경_고도화/runtime/src/configuration/configuration-catalog.ts",
+    "existingRepository": "개발환경_고도화/runtime/src/configuration/maria-configuration-catalog-repository.ts",
+    "existingShell": "개발환경_고도화/runtime/src/admin/web-shell-assets.ts"
+  },
+  "gate2": {
+    "status": "complete",
+    "mapping": "typed versioned REST plus manager/super_admin RBAC, CSRF, Idempotency-Key, reason and confirmation",
+    "schema": "none"
+  },
+  "gate3": {
+    "status": "complete",
+    "fixture": "개발환경_고도화/runtime/test/admin-configuration-catalog-web-consumer.test.ts",
+    "precision": "all identifiers and versions remain decimal strings",
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "routes": "개발환경_고도화/runtime/src/admin/configuration-catalog-web-routes.ts",
+    "client": "개발환경_고도화/runtime/src/admin/web-shell-assets.ts",
+    "wiring": "개발환경_고도화/runtime/src/app.ts"
+  },
+  "gate5": {
+    "status": "complete",
+    "focused": { "total": 16, "passed": 16, "failed": 0 },
+    "mariaLifecycle": { "total": 3, "passed": 3, "failed": 0 },
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "freshMariaDb": "11.8.8",
+    "migrationCount": 425,
+    "replayApplied": 0,
+    "restartReconnect": "pass",
+    "postReconnectCounts": { "configurationSets": 5, "configurationValues": 8, "itemDefinitions": 415 },
+    "fullRegression": { "total": 1560, "passed": 1552, "failed": 0, "skipped": 8 }
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "desktop": "synthetic Fastify and admin shell contract pass",
+    "mobile": "existing 640px responsive contract pass",
+    "providerLifecycle": "draft revision, publish, replay, rollback, retire, discard, transaction rollback and reconnect pass",
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  },
+  "gate8": false
+}

@@ -429,6 +429,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     catalogRetry: null,
     packageCatalogNotice: null,
     packageCatalogRetry: null,
+    configurationCatalogNotice: null,
+    configurationCatalogRetry: null,
     objectCatalogNotice: null,
     objectCatalogRetry: null,
     objectCatalogKey: "",
@@ -450,6 +452,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "balance", label: "확률·수치 관리", icon: "±", permission: "admin.balance.manage", group: "게임 설정", kicker: "BALANCE CONTROL" },
     { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
     { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" },
+    { id: "configuration-catalog", label: "설정 카탈로그", icon: "⚙", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "CONFIGURATION CATALOG" },
     { id: "object-catalog", label: "오브젝트 카탈로그", icon: "◎", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "OBJECT CATALOG" }
   ];
 
@@ -693,6 +696,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "balance") loadBalance();
     else if (item.id === "diamond-catalog") loadDiamondCatalog();
     else if (item.id === "package-catalog") loadPackageCatalog();
+    else if (item.id === "configuration-catalog") loadConfigurationCatalog();
     else loadObjectCatalog(state.objectCatalogKey);
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
@@ -1292,6 +1296,106 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       markUpdated();
     } catch (error) {
       main.innerHTML = renderViewIntro("다이아상점 카탈로그", "활성 상품을 추가하거나 stable productId로 비활성화합니다.") + errorState(error, "catalog");
+      attachRetry(main);
+    }
+  }
+
+  // 설정 변경 textarea를 key/value JSON 배열로 제한합니다.
+  function parseConfigurationChanges(value) {
+    var parsed;
+    try { parsed = JSON.parse(value); }
+    catch (_) { throw new Error("변경 값은 JSON 배열 형식이어야 합니다."); }
+    if (!Array.isArray(parsed) || !parsed.length || parsed.some(function (entry) { return !entry || typeof entry !== "object" || Array.isArray(entry) || typeof entry.key !== "string" || !entry.key.trim() || !("value" in entry); })) {
+      throw new Error("변경 값은 [{\"key\":\"...\",\"value\":...}] 형식이어야 합니다.");
+    }
+    return parsed.map(function (entry) { return { key: entry.key.trim(), value: entry.value }; });
+  }
+
+  // 설정 카탈로그 조치마다 독립적인 멱등성 키를 생성하고 실패 재시도에서만 재사용합니다.
+  function configurationIdempotencyKey(action, setCode) {
+    return "configuration:" + action + ":" + setCode + ":" + (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+      ? globalThis.crypto.randomUUID() : Date.now() + ":" + Math.random().toString(16).slice(2));
+  }
+
+  // 설정 mutation 결과 또는 안전한 replay 상태를 표시합니다.
+  function configurationCatalogNotice() {
+    if (!state.configurationCatalogNotice) return "<div id=\"configuration-catalog-message\"></div>";
+    return "<div id=\"configuration-catalog-message\" class=\"catalog-notice " + escapeHtml(state.configurationCatalogNotice.kind || "") + "\"><strong>" + escapeHtml(state.configurationCatalogNotice.title) + "</strong><span>" + escapeHtml(state.configurationCatalogNotice.message) + "</span></div>";
+  }
+
+  // 설정 mutation을 CSRF·멱등성 계약으로 전송하고 같은 요청 재시도를 보존합니다.
+  async function mutateConfigurationCatalog(path, method, body, idempotencyKey) {
+    var retry = function () { return mutateConfigurationCatalog(path, method, body, idempotencyKey); };
+    state.configurationCatalogRetry = retry;
+    try {
+      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
+      state.configurationCatalogRetry = null;
+      state.configurationCatalogNotice = payload.result.replayed
+        ? { kind: "replay", title: "이미 완료된 설정 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
+        : { kind: "", title: "설정 카탈로그를 변경했습니다.", message: payload.result.action + " 완료 · version " + payload.result.version };
+      showToast(payload.result.replayed ? "완료된 설정 요청을 다시 불러왔습니다." : "설정 카탈로그를 변경했습니다.", false);
+      await loadConfigurationCatalog();
+    } catch (error) {
+      var target = byId("configuration-catalog-message");
+      if (!target) return;
+      target.className = "catalog-notice error";
+      target.innerHTML = "<strong>설정 변경 요청을 완료하지 못했습니다.</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"configuration-mutation-retry\">같은 요청 다시 보내기</button>";
+      byId("configuration-mutation-retry").addEventListener("click", retry);
+    }
+  }
+
+  // 한 설정 세트의 source binding·현재값과 전체 lifecycle 입력 폼을 생성합니다.
+  function configurationSetPanel(set, index) {
+    var currentVersion = set.current ? set.current.version : "0";
+    var valueByKey = {};
+    if (set.current) set.current.values.forEach(function (entry) { valueByKey[entry.key] = entry.value; });
+    var rows = set.keys.map(function (key) {
+      var value = Object.prototype.hasOwnProperty.call(valueByKey, key.key) ? JSON.stringify(valueByKey[key.key]) : "-";
+      return "<tr><td><strong>" + escapeHtml(key.label) + "</strong><br><span class=\"mono muted\">" + escapeHtml(key.key) + "</span></td><td>" + escapeHtml(key.type) + (key.editable ? " · 수정 가능" : " · 읽기 전용") + "</td><td class=\"mono\">" + escapeHtml(value) + "</td><td><span class=\"mono muted\">" + escapeHtml(key.source.file + " :: " + key.source.path) + "</span></td></tr>";
+    }).join("");
+    return "<section class=\"panel configuration-set\"><div class=\"panel-heading\"><div><h3>" + escapeHtml(set.label) + "</h3><p class=\"mono\">" + escapeHtml(set.setCode) + "</p></div><div class=\"catalog-summary\"><span>Active <strong>v" + escapeHtml(currentVersion) + "</strong></span><span>" + escapeHtml(set.current ? set.current.status : "미게시") + "</span></div></div><div class=\"table-wrap\"><table class=\"data-table\"><thead><tr><th>설정</th><th>형식</th><th>현재값</th><th>원본 binding</th></tr></thead><tbody>" + rows + "</tbody></table></div><div class=\"catalog-layout\"><form class=\"catalog-form\" data-configuration-draft=\"" + index + "\"><h4>초안 생성</h4><label>변경 JSON<textarea name=\"changes\" required placeholder='[{\"key\":\"limit\",\"value\":4}]'></textarea></label><label>기준 version<input name=\"baseVersion\" value=\"" + escapeHtml(currentVersion) + "\" pattern=\"(0|[1-9][0-9]*)\" required></label><label>변경 사유<textarea name=\"reason\" minlength=\"5\" maxlength=\"500\" required></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>현재값과 source binding을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">설정 초안 생성</button></form><form class=\"catalog-form\" data-configuration-lifecycle=\"" + index + "\"><h4>버전 수명주기</h4><label>동작<select name=\"action\"><option value=\"publish\">초안 게시</option><option value=\"rollback\">이전 version 복원</option><option value=\"retire\">현재 version 종료</option><option value=\"discard\">초안 폐기</option></select></label><label>대상 version<input name=\"targetVersion\" value=\"" + escapeHtml(currentVersion) + "\" pattern=\"(0|[1-9][0-9]*)\" required></label><label>변경 사유<textarea name=\"reason\" minlength=\"5\" maxlength=\"500\" required></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>덮어쓰기 없이 version 동작을 실행합니다.</span></label><button class=\"danger-button\" type=\"submit\">선택 동작 실행</button></form></div></section>";
+  }
+
+  // 등록된 공용 설정 정의를 조회하고 draft·publish·rollback·retire·discard CRUD를 제공합니다.
+  async function loadConfigurationCatalog() {
+    state.refresh = loadConfigurationCatalog;
+    var main = byId("main-content");
+    main.innerHTML = renderViewIntro("설정 카탈로그", "코드·JSON에서 동결된 운영 상수를 version 단위로 관리합니다.", "manager · super_admin") + loadingState("설정 세트를 불러오는 중");
+    try {
+      var payload = await api("/api/v1/admin/configuration-catalog");
+      var panels = payload.sets.length ? payload.sets.map(configurationSetPanel).join("") : emptyState("등록된 설정 세트가 없습니다.", "영역별 정의가 승인되어 연결되면 이 화면에 자동으로 표시됩니다.");
+      main.innerHTML = renderViewIntro("설정 카탈로그", "초안 작성 후 명시적으로 게시하며 이전 version 복원과 종료 이력을 보존합니다.", payload.sets.length + "개 세트") + configurationCatalogNotice() + panels;
+      main.querySelectorAll("[data-configuration-draft]").forEach(function (form) {
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var set = payload.sets[Number(form.dataset.configurationDraft)];
+          var data = new FormData(form);
+          var changes;
+          try { changes = parseConfigurationChanges(data.get("changes").toString()); }
+          catch (error) { showToast(errorMessage(error), true); return; }
+          var currentVersion = set.current ? set.current.version : "0";
+          mutateConfigurationCatalog("/api/v1/admin/configuration-catalog/sets/" + encodeURIComponent(set.setCode) + "/drafts", "POST", { expectedActiveVersion: currentVersion, baseVersion: data.get("baseVersion").toString(), changes: changes, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, configurationIdempotencyKey("draft", set.setCode));
+        });
+      });
+      main.querySelectorAll("[data-configuration-lifecycle]").forEach(function (form) {
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var set = payload.sets[Number(form.dataset.configurationLifecycle)];
+          var data = new FormData(form);
+          var action = data.get("action").toString();
+          var target = data.get("targetVersion").toString();
+          var currentVersion = set.current ? set.current.version : "0";
+          var base = "/api/v1/admin/configuration-catalog/sets/" + encodeURIComponent(set.setCode);
+          var path = action === "publish" ? base + "/drafts/" + encodeURIComponent(target) + "/publish" : action === "rollback" ? base + "/rollback" : action === "retire" ? base + "/retire" : base + "/drafts/" + encodeURIComponent(target);
+          var body = { expectedActiveVersion: currentVersion, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" };
+          if (action === "rollback") body.targetVersion = target;
+          mutateConfigurationCatalog(path, action === "discard" ? "DELETE" : "POST", body, configurationIdempotencyKey(action, set.setCode));
+        });
+      });
+      state.configurationCatalogNotice = null;
+      markUpdated();
+    } catch (error) {
+      main.innerHTML = renderViewIntro("설정 카탈로그", "코드·JSON에서 동결된 운영 상수를 version 단위로 관리합니다.") + errorState(error, "configuration-catalog");
       attachRetry(main);
     }
   }

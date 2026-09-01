@@ -68,6 +68,7 @@ describe("admin web shell", () => {
       "/api/v1/admin/balance",
       "/api/v1/admin/diamond-shop/catalog",
       "/api/v1/admin/package-catalog",
+      "/api/v1/admin/configuration-catalog",
       "/api/v1/admin/object-catalog/objects/",
       "/api/v1/admin/backups/managed",
       "/api/v1/admin/backups/dev-sync",
@@ -170,6 +171,18 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
     assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
+  });
+
+  it("exposes versioned configuration draft, publish, rollback, retire and discard states", () => {
+    assert.match(ADMIN_WEB_CLIENT, /설정 카탈로그/);
+    assert.match(ADMIN_WEB_CLIENT, /설정 초안 생성/);
+    assert.match(ADMIN_WEB_CLIENT, /초안 게시/);
+    assert.match(ADMIN_WEB_CLIENT, /이전 version 복원/);
+    assert.match(ADMIN_WEB_CLIENT, /현재 version 종료/);
+    assert.match(ADMIN_WEB_CLIENT, /초안 폐기/);
+    assert.match(ADMIN_WEB_CLIENT, /configuration-catalog\/sets/);
+    assert.match(ADMIN_WEB_CLIENT, /expectedActiveVersion/);
+    assert.match(ADMIN_WEB_CLIENT, /source binding/);
   });
 
   it("exposes grouped balance search, preview diff, apply and rollback only", () => {

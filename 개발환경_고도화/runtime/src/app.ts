@@ -32,6 +32,7 @@ import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-c
 import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-web-routes.js";
 import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-routes.js";
 import { registerAdminBalanceWebRoutes } from "./admin/admin-balance-web-routes.js";
+import { registerAdminConfigurationCatalogWebRoutes } from "./admin/configuration-catalog-web-routes.js";
 import { AdminBalanceReadModelProvider } from "./admin/admin-balance-read-model.js";
 import { AdminBalanceMutationProvider } from "./admin/admin-balance-mutation-provider.js";
 import { MariaAdminBalanceMutationRepository } from "./admin/maria-admin-balance-mutation-repository.js";
@@ -41,6 +42,8 @@ import { PackageCatalogWebAdapter } from "./package/package-catalog-web-adapter.
 import { ObjectCatalogService } from "./catalog/object-catalog.js";
 import { MariaObjectCatalogRepository } from "./catalog/maria-object-catalog-repository.js";
 import { ObjectCatalogWebAdapterProvider } from "./catalog/object-catalog-web-adapter-provider.js";
+import { ConfigurationCatalogProvider, ConfigurationCatalogRegistry } from "./configuration/configuration-catalog.js";
+import { MariaConfigurationCatalogRepository } from "./configuration/maria-configuration-catalog-repository.js";
 import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
@@ -828,6 +831,13 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       auth: adminAuth,
       reader: new ObjectCatalogService(new MariaObjectCatalogRepository(database)),
       catalog: new ObjectCatalogWebAdapterProvider(database)
+    });
+    void registerAdminConfigurationCatalogWebRoutes(app, {
+      auth: adminAuth,
+      catalog: new ConfigurationCatalogProvider(
+        new ConfigurationCatalogRegistry([]),
+        new MariaConfigurationCatalogRepository(database)
+      )
     });
     const adminBalanceRepository = new MariaAdminBalanceMutationRepository(database);
     void registerAdminBalanceWebRoutes(app, {
