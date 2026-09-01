@@ -9,7 +9,7 @@
     "sourceOwnerScopes": 4,
     "actualProjection": 5,
     "accountScopeIdentities": 6,
-    "providerSources": 58,
+    "providerSources": 59,
     "packageBoundary": 3,
     "accountLedgerModels": 2,
     "productionCurrencyObjects": 0
@@ -156,11 +156,11 @@
   "providerMembership": {
     "sourceGlob": "개발환경_고도화/runtime/src/**/*.ts",
     "pathEncoding": "개발환경_고도화/runtime/src\\<relative Windows path>",
-    "playerAccountRefs": { "count": 48, "sha256": "ae2537956ee9d01890075fd60072efd5a3481c90eb99108a862c617d9f4dfe1a", "token": "currency_accounts" },
-    "playerLedgerRefs": { "count": 46, "sha256": "a276ee1398bbce14417b4bd486d0c9395d7f0ec2fef6f3c8caf114278b111b05", "token": "currency_ledger" },
-    "guildAccountRefs": { "count": 10, "sha256": "7aecd4125522f332a78a4ae199a1627da194818afacc6d4fc3b0be46974f671b", "token": "guild_resource_accounts" },
-    "guildLedgerRefs": { "count": 7, "sha256": "e0f5f678ee2e7d4cabda4ee9679618c81e19f669e581a8c2c2d3676ecb77faaa", "token": "guild_resource_ledger" },
-    "union": { "count": 58, "sha256": "2ea292ba94716b832ad3696104294d47625b5088f0a058d7f1a6a4a5a0ce9f00" }
+    "playerAccountRefs": { "count": 49, "sha256": "4af3c4bd9bf6dfbf80bd8234c29189b90f4c4aba3027c36fd6e4611a99d8da62", "token": "currency_accounts" },
+    "playerLedgerRefs": { "count": 47, "sha256": "a69ad1701daa05eb00a4f73d881addd65e43ad364c0deecbf8f3055a26a5eae1", "token": "currency_ledger" },
+    "guildAccountRefs": { "count": 11, "sha256": "9b484fc3cdea66c7102bd490636c39d849c2ae81d4858fdeccd3cec9f4674732", "token": "guild_resource_accounts" },
+    "guildLedgerRefs": { "count": 8, "sha256": "102420c0ff936686240173aede7cde2318b29d8723274c85cefc358844835809", "token": "guild_resource_ledger" },
+    "union": { "count": 59, "sha256": "d92a681f8af734e7d52a47da3033df286287081e7aeae8cdebd59ea603d3d4b0" }
   },
   "objectBoundary": {
     "existingType": "CURRENCY",
@@ -190,7 +190,7 @@
     "accountLedgerModelsSha256": "35f18efbd1faeaa0f3d4dc48f4c40f6aa524949e0377ffb1bd74c37e3ee36dc7",
     "accountScopeIdentitiesSha256": "92ca62028a4f7ea575389cd285bed5eba78a045d7113f17be8178b2a56f506d7",
     "packageBoundarySha256": "775a8f4118dd8206640ccdf666b330d119294bce7b79cf1bbd1bf0c466856d01",
-    "providerUnionSha256": "2ea292ba94716b832ad3696104294d47625b5088f0a058d7f1a6a4a5a0ce9f00"
+    "providerUnionSha256": "d92a681f8af734e7d52a47da3033df286287081e7aeae8cdebd59ea603d3d4b0"
   },
   "forbiddenChanges": ["global POINT alias", "object registry data", "provider", "schema", "migration", "main.js", "UI", "Gate8"]
 }

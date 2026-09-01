@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-POINT-SHOP-BUY",
+  "executionId": "작업반장-SL-POINT-SHOP-BUY-RECOVERY-2026090202",
+  "leaseRow": 2493,
+  "baseline": "37bdd4eb",
+  "command": "/구매",
+  "migration": "440_point_shop_buy_effects.sql",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "verification": {
+    "focused": { "total": 4, "pass": 4, "fail": 0 },
+    "currencyProviderSnapshot": { "total": 7, "pass": 7, "providerUnion": 59 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "migrationCount": 428,
+    "mariaDb": ["purchase", "replay", "quantity-limit", "rollback", "reconnect", "shadow"],
+    "full": { "total": 1583, "pass": 1575, "fail": 0, "skip": 8 }
+  },
+  "safety": {
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false,
+    "legacyMainChanged": false,
+    "legacyDataChanged": false
+  },
+  "verifiedAtKst": "2026-09-02 01:49:15"
+}
+
