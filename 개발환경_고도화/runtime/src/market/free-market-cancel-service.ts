@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { hasFreeMarketMembership } from "./free-market-membership.js";
+import { releaseMiniPetEscrow } from "./market-mini-pet-bulk-escrow.js";
 
 const ALIAS = "/자유시장취소 [번호]";
 const MAX_UINT64 = 18_446_744_073_709_551_615n;
@@ -125,9 +126,7 @@ export class FreeMarketCancelService {
       return;
     }
     if (listing.asset_type_code === "mini_pet" || listing.asset_type_code === "miniPet") {
-      const reservation = (await t.query<Array<{ owned_mini_pet_id: bigint }>>("SELECT owned_mini_pet_id FROM market_mini_pet_reservations WHERE listing_id=? AND player_id=? FOR UPDATE", [listing.id, listing.seller_player_id]))[0];
-      if (reservation === undefined) throw new ApplicationError("FREE_MARKET_ASSET_MISSING", "반환할 미니펫 정보가 없습니다.", 409);
-      await t.execute("DELETE FROM market_mini_pet_reservations WHERE listing_id=?", [listing.id]);
+      await releaseMiniPetEscrow(t, { listingId: listing.id, playerId: listing.seller_player_id, quantity: listing.quantity });
       return;
     }
     throw new ApplicationError("FREE_MARKET_ASSET_UNSUPPORTED", "지원하지 않는 자유시장 자산 유형입니다.", 409);
