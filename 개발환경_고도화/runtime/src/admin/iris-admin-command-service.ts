@@ -15,6 +15,7 @@ import { isMiniPetDirectGrantCommandCandidate, MiniPetDirectGrantService } from 
 import { isMiniPetBattleCountAdminCommandCandidate, MiniPetBattleCountAdminService } from "./mini-pet-battle-count-admin-service.js";
 import { AuthCheckCountResetService, isAuthCheckCountResetCommand } from "./auth-check-count-reset-service.js";
 import { AdminAuctionResetService, isAdminAuctionResetCommand } from "./admin-auction-reset-service.js";
+import { isOperationDailyResetCommand, OperationDailyResetCommandService } from "./operation-daily-reset-command-service.js";
 import { AuctionRegisterService, isAuctionRegisterCandidate } from "./auction-register-service.js";
 import { HoiLandEditService } from "./hoiland-edit-service.js";
 import { LordIncomeService } from "./lord-income-service.js";
@@ -255,6 +256,9 @@ export class IrisAdminCommandService {
     if (isAdminAuctionResetCommand(input.message)) {
       const result = await new AdminAuctionResetService(this.database).handle(input);
       return result === null ? { status: "handled_no_reply" } : { status: "changed", data: result.data, outboxId: result.outboxId };
+    }
+    if (isOperationDailyResetCommand(input.message)) {
+      return new OperationDailyResetCommandService(this.database, this.broadcastIds).handleDispatchedIris(input);
     }
     if (isAuctionRegisterCandidate(input.message)) {
       const result = await new AuctionRegisterService(this.database).handle(input);
@@ -1323,7 +1327,7 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isPetSkillBookGrantCommandCandidate(message) || isLegendaryStoneTicketGrantCandidate(message) || isGuildTerritoryRiftControlCandidate(message) || isGuildTerritoryBoosterContributeCandidate(message) || isGuildProfileNoticeMutateCandidate(message) || isGuildLeadershipTransferCandidate(message) || isGuildNameRenameCandidate(message) || isGuildSubMasterAssignCandidate(message) || isGuildLegacyFundCleanupCommand(message) || isGuildTerritoryWarStateStartCommand(message) || isGuildTerritoryAttackCommand(message) || isGuildRankSnapshotRefreshCommand(message) || isGuildTerritoryRankRewardPayoutCommand(message) || isGuildRankRewardPayoutCommand(message) || isOverallRankRewardPayoutCommand(message) || isAdminGuildWarehouseGrantCommandCandidate(message) || isAdminGuildMembershipSyncCommand(message) || isAdminFullSyncCommand(message) || isCastleBattleSeasonStartCommand(message) || isCastleBattleSeasonCloseCommand(message) || isCastleBattleResetAllCommand(message) || isAdminGuildResetAllCommand(message) || isPunchRankResetCommand(message) || isCastleBattleMemberEditCommandCandidate(message) || isPetResetCommandCandidate(message)
     || isPetOwnerReadCommand(message) || isMiniPetBattleCountAdminCommandCandidate(message)
     || isMiniPetUpgradeOverrideCommandCandidate(message) || isMiniPetDirectGrantCommandCandidate(message)
-    || isAdminAuctionResetCommand(message) || isAuctionRegisterCandidate(message));
+    || isAdminAuctionResetCommand(message) || isOperationDailyResetCommand(message) || isAuctionRegisterCandidate(message));
 }
 
 // 운영 수정 후보를 공백이 포함된 대상명과 마지막 정수의 전체 형식으로 제한합니다.
