@@ -48,6 +48,7 @@ import { AutoExploreFixedConfigService, isAutoExploreFixedConfigCommand } from "
 import { PetExploreSettlementCommandConsumer, isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
 import { PetExploreSettlementInputSnapshotProvider } from "./pet/pet-explore-settlement-input-snapshot-provider.js";
 import { isPetExploreEventControlCommand, PetExploreEventControlCommandService } from "./pet/pet-explore-event-control-command-service.js";
+import { parsePetExploreStatusProjectionCommand, PetExploreStatusProjectionService } from "./pet/pet-explore-status-projection-service.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { InventoryCleanupIrisHandler } from "./inventory/inventory-cleanup-iris-handler.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
@@ -716,10 +717,25 @@ async function dispatchPetExploreEventControlCommand(database: DatabaseClient | 
   }
 }
 
+// 펫탐험 지도와 관리자 유저 확인을 기존 탐험 provider의 DB projection으로 전달합니다.
+async function dispatchPetExploreStatusProjectionCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
+  if (process.env.PET_EXPLORE_STATUS_PROJECTION_COMMAND_ENABLED !== "true" || database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || parsePetExploreStatusProjectionCommand(event.message) === null
+    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
+  try {
+    const result = await new PetExploreStatusProjectionService(database).handleIris({ eventId: event.eventId, externalUserId: event.userId, channelId: event.channelId, message: event.message! });
+    if (result.status === "changed") replies.push(await eventProcessor.queueCommandReply(event, "pet_explore_status_projection", result.data));
+  } catch (error) {
+    if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) replies.push(await eventProcessor.queueCommandReply(event, "pet_explore_status_projection_error", error.message));
+    else throw error;
+  }
+}
+
 // 펫탐험 명령 소비자들을 app 본문의 단일 호출 경계로 묶습니다.
 async function dispatchPetExploreCommandConsumers(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
   await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,duplicate,event,replies);
   await dispatchPetExploreEventControlCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
+  await dispatchPetExploreStatusProjectionCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
 }
 
 // 후원패스 registry 후보 판정과 alias 정규화를 app 본문 밖의 단일 경계로 묶습니다.

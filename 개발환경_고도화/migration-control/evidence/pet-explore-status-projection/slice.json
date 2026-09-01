@@ -1,0 +1,30 @@
+{
+  "sliceId": "SL-PET-EXPLORE-STATUS-PROJECTION",
+  "wbsRow": 288,
+  "executionId": "작업반장-SL-PET-EXPLORE-STATUS-PROJECTION-202609011423",
+  "baseline": "0256db1db5e64be7bd95634d82a869c04ecdca95",
+  "commands": ["/지도", "/탐험유저확인", "/탐험유저확인 [0-10]"],
+  "migration": "423_pet_explore_status_projection.sql",
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "validation": {
+    "focused": { "tests": 3, "passed": 3, "failed": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaMigrations": 407,
+    "mariaScenario": { "tests": 1, "passed": 1, "failed": 0 },
+    "registry": "2/2",
+    "aliases": "2/2",
+    "rollback": "registry 0/2, aliases 0/2",
+    "replay": "migration 423 reapplied after restart",
+    "shadow": "PASS",
+    "restartReconnect": "PASS",
+    "fullRegression": { "tests": 1366, "passed": 1359, "failed": 0, "skipped": 7 }
+  },
+  "safety": {
+    "legacyMainOrDataChanged": false,
+    "sharedProviderReimplemented": false,
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false,
+    "gate8": false
+  }
+}
