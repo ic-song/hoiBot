@@ -1,0 +1,17 @@
+{
+  "sliceId": "SL-GUILD-SHOP-PURCHASE-01",
+  "executionId": "작업반장-SL-GUILD-SHOP-PURCHASE-01-RECOVERY-202609011540",
+  "baseline": "7e680d2eb0aa98bdd0a8327da123fb57f5428719",
+  "command": "/길드상점구매",
+  "migration": "427_guild_shop_purchase.sql",
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "validation": {
+    "focused": { "pass": 2, "fail": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMigrationCount": 409,
+    "maria": { "pass": 1, "fail": 0, "scenarios": ["purchase", "taxSplit", "replay", "rollback", "reconnect", "shadow"] },
+    "full": { "total": 1370, "pass": 1363, "fail": 0, "skip": 7 }
+  },
+  "safety": { "gate8": false, "featureProdChanged": false, "operationalDatabaseChanged": false, "legacyChanged": false }
+}

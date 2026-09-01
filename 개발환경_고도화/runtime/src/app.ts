@@ -54,7 +54,39 @@ import { InventoryCleanupIrisHandler } from "./inventory/inventory-cleanup-iris-
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
 import { FirstSponsorRegistryService, isFirstSponsorCommandCandidate, normalizeFirstSponsorDispatchMessage } from "./admin/first-sponsor-registry-service.js";
 import { HappyFoundationCommandService, isHappyFoundationCommand, normalizeHappyFoundationDispatchMessage } from "./foundation/happy-foundation-command-service.js";
+import { GuildShopPurchaseService, isGuildShopPurchaseCommandCandidate } from "./guild/guild-shop-purchase-service.js";
 import { GetMyProfileService } from "./player/get-my-profile-service.js";
+
+// 거대 Iris 라우트의 제어흐름 한도를 넘지 않도록 길드상점 구매 분기를 격리합니다.
+async function dispatchGuildShopPurchase(input: {
+  database: DatabaseClient;
+  eventProcessor: ProcessIrisEventService;
+  event: NormalizedIrisEvent;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+}): Promise<PendingReply | null> {
+  if (!input.isOperationalChannel || input.duplicate === true
+    || !isGuildShopPurchaseCommandCandidate(input.event.message)
+    || input.event.userId === undefined || input.event.channelId === undefined) return null;
+  try {
+    const result = await new GuildShopPurchaseService(input.database).handle({ eventId: input.event.eventId, externalUserId: input.event.userId, channelId: input.event.channelId, message: input.event.message! });
+    return result === null ? null : { outboxId: result.outboxId, room: input.event.channelId, data: result.data };
+  } catch (error) {
+    if (error instanceof ApplicationError && [404, 409, 422].includes(error.statusCode)) return input.eventProcessor.queueCommandReply(input.event, "guild_shop_purchase_error", error.message);
+    throw error;
+  }
+}
+
+// 길드 독립 소비자들을 한 번의 부분 dispatch 후보 판정으로 묶습니다.
+function isGuildIndependentCommandCandidate(message: string | undefined): boolean {
+  return isGuildRecruitmentToggleCommand(message) || isGuildShopPurchaseCommandCandidate(message);
+}
+
+// 부분 dispatch 환경 플래그 판정을 거대 Iris handler 밖에서 수행합니다.
+function isPartialDispatchEnabled(nodeEnv: string): boolean {
+  return process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
+    || (nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
+}
 import { isPlayerCumulativeLevelRankReadCommand, PlayerCumulativeLevelRankReadService } from "./player/player-cumulative-level-rank-read-service.js";
 import { isPlayerCumulativeLikeRankReadCommand, PlayerCumulativeLikeRankReadService } from "./player/player-cumulative-like-rank-read-service.js";
 import { isPlayerDiamondRankReadCommand, PlayerDiamondRankReadService } from "./player/player-diamond-rank-read-service.js";
@@ -734,10 +766,14 @@ async function dispatchPetExploreStatusProjectionCommand(database: DatabaseClien
 }
 
 // 펫탐험 명령 소비자들을 app 본문의 단일 호출 경계로 묶습니다.
-async function dispatchPetExploreCommandConsumers(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
+async function dispatchIndependentCommandConsumers(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
   await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,duplicate,event,replies);
   await dispatchPetExploreEventControlCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
   await dispatchPetExploreStatusProjectionCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
+  if (database !== undefined && eventProcessor !== undefined && replies !== undefined) {
+    const guildShopReply = await dispatchGuildShopPurchase({ database, eventProcessor, event, isOperationalChannel, duplicate });
+    if (guildShopReply !== null) replies.push(guildShopReply);
+  }
 }
 
 // 후원패스 registry 후보 판정과 alias 정규화를 app 본문 밖의 단일 경계로 묶습니다.
@@ -1193,7 +1229,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCommand(normalizedEvent.message)
-        || isGuildRecruitmentToggleCommand(normalizedEvent.message)
+        || isGuildIndependentCommandCandidate(normalizedEvent.message)
         || isRiftForceAdminCommand(normalizedEvent.message)
         || isCastleBattleExecuteCommand(normalizedEvent.message)
         || isCastleBattleRankingCommand(normalizedEvent.message)
@@ -1324,8 +1360,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || homeActivityFileBootstrapDispatchCandidate
          || packageCatalogWizardControlCandidate
         || packageCatalogWizardActiveInput;
-      const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
-        || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
+      const partialDispatchEnabled = isPartialDispatchEnabled(config.nodeEnv);
       const partialDispatchDecision = database !== undefined
         && normalizedEvent.direction === "incoming"
         && partialDispatchCandidate
@@ -2015,7 +2050,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      await dispatchPetExploreCommandConsumers(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
+      await dispatchIndependentCommandConsumers(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAttributeCommandCandidate(normalizedEvent.message)
