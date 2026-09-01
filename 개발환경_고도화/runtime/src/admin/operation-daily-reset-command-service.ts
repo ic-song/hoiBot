@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createScopedDatabaseClient } from "../database.js";
 import { CommandDispatcher, MariaCommandDispatchRepository } from "../dispatch/command-dispatcher.js";
-import { createCurrentDomainItemProvider } from "../package/current-domain-package-runtime.js";
+import { createCanonicalDomainItemProvider } from "../package/current-domain-package-runtime.js";
 import type { ItemProvider } from "../package/item-provider.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { CommonDailyResetProvider, dailyResetKstPeriodKey, type DailyResetResult } from "./common-daily-reset-provider.js";
@@ -68,7 +68,7 @@ export class OperationDailyResetCommandService {
     itemProviderFactory?: (database: DatabaseClient) => ItemProviderPort,
   ) {
     this.resetProvider = resetProvider ?? new CommonDailyResetProvider(database);
-    this.itemProviderFactory = itemProviderFactory ?? createCurrentDomainItemProvider;
+    this.itemProviderFactory = itemProviderFactory ?? createCanonicalDomainItemProvider;
   }
 
   async handleDispatchedIris(input: { eventId: string; externalUserId: string; channelId: string; message: string }): Promise<OperationDailyResetCommandResult | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }> {

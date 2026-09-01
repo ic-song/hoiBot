@@ -34,10 +34,15 @@ describe("operation daily reset command consumer MariaDB integration", { skip: !
     }
   }
 
+  async function seedEvent(eventId: string): Promise<void> {
+    await database.execute("INSERT INTO event_inbox(event_id,provider_code,provider_event_id,external_channel_id,external_user_id,event_kind,event_origin,direction,payload_hash,parse_status,processing_status,received_at) VALUES (?,'iris',?,'request-room',?,'message','test','incoming',REPEAT('d',64),'parsed','processing',UTC_TIMESTAMP(3))", [eventId, eventId, externalUserId]);
+  }
+
   it("removes three canonical temporary stacks, queues eleven replies and replays without duplicate mutation", async () => {
     await seedTemporaryItems(2n);
     const service = new OperationDailyResetCommandService(database, rooms);
     const eventId = `daily-reset-consumer-${suffix}`;
+    await seedEvent(eventId);
     const result = await service.execute({ eventId, externalUserId, channelId: "request-room", message: "/리셋" });
     assert.equal(result?.status, "changed");
     assert.equal(result?.removedTemporaryItemQuantity, "6");
@@ -59,6 +64,7 @@ describe("operation daily reset command consumer MariaDB integration", { skip: !
     await database.execute(`CREATE TRIGGER fail_daily_reset_consumer_audit BEFORE INSERT ON command_audit FOR EACH ROW BEGIN IF NEW.action_code='operation.daily_reset' THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='synthetic audit failure'; END IF; END`);
     const service = new OperationDailyResetCommandService(database, rooms);
     const eventId = `daily-reset-recovery-${suffix}`;
+    await seedEvent(eventId);
     await assert.rejects(() => service.execute({ eventId, externalUserId, channelId: "request-room", message: "/리셋" }), /synthetic audit failure/);
     const remaining = (await database.query<Array<{ quantity: string }>>("SELECT COALESCE(SUM(stack.quantity),0) quantity FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND item.code IN (?,?,?)", [playerId, ...itemCodes]))[0]!;
     assert.equal(BigInt(remaining.quantity), 3n);
