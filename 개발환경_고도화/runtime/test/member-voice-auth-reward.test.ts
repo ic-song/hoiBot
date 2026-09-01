@@ -16,5 +16,7 @@ describe("member voice auth reward command boundary", () => {
     for (const message of ["/인증", "/인증 ", "/인증회원", "인증 회원", "/인증 회원 "]) {
       assert.equal(isMemberVoiceAuthRewardCommandCandidate(message), false);
     }
+    assert.equal(isMemberVoiceAuthRewardCommandCandidate("/인증 ABCD2345"), false);
+    assert.equal(normalizeMemberVoiceAuthRewardDispatchMessage("/인증 ABCD2345"), "/인증 ABCD2345");
   });
 });
