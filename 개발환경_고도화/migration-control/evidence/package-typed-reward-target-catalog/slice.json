@@ -1,0 +1,35 @@
+{
+  "sliceId": "SL-ASSET-PACKAGE-TYPED-REWARD-TARGET-CATALOG-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-package-typed-target-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourceSha256": "4d2072a8e829391cb2ad546ca9ba37d7081c677bdb9e2dedbc7e08e12697e7dc",
+  "counts": {
+    "packages": 107,
+    "rewards": 557,
+    "stackRows": 513,
+    "packageRows": 44,
+    "resolvedStackRows": 467,
+    "gapStackRows": 46,
+    "uniqueStackTargets": 58,
+    "uniquePackageTargets": 21
+  },
+  "classification": {
+    "packageTargetRule": "exact source inventory key relationship",
+    "stackCanonicalRule": "frozen code plus exact display verification",
+    "maxUseOnce": "INERT_METADATA",
+    "consumerChanged": false
+  },
+  "carryForward": [
+    "package catalog Gate1~7",
+    "package ownership Gate1~7",
+    "canonical item adapter Gate1~7",
+    "object catalog Gate1~7"
+  ],
+  "scope": {
+    "providerMode": "READ_ONLY",
+    "packageConsumerChanged": false,
+    "canonicalDefinitionsMutated": false,
+    "operationalDataTouched": false,
+    "gate8": false
+  }
+}
