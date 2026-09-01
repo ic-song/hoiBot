@@ -11,7 +11,13 @@
 - Approved source: `325` entries, `499` changes, duplicate versions `0`.
 - Latest developer-note version and deployed `HoiBotVersion`: `2.438` / `2.438`.
 - Existing `developer_note_entries` and `developer_note_changes` are reused.
-- Focused tests, typecheck, build, isolated MariaDB, rollback/replay/restart/reconnect, Shadow and full regression are recorded before Gate 7 closure.
+- Focused tests: `7/7 PASS`; TypeScript typecheck and build: `PASS`.
+- Fresh isolated MariaDB: `407` migrations including migration 422; direct reapply: `PASS`.
+- Provider probe: `6/6 PASS`; Shadow parity: entries `325/325`, changes `499/499`.
+- Narrow rollback: binding tables `0`, seeded entries `0`, changes `0`; replay: catalog `1`, bindings `325`, entries `325`, changes `499`.
+- Dedicated MariaDB restart and reconnect: provider and Shadow `PASS` after restart.
+- Full regression: `1380` tests, `1373` pass, `0` fail, `7` environment-dependent skips.
+- Gate 1 through Gate 7 are ready to close; Gate 8 remains false.
 
 ## Safety boundary
 
