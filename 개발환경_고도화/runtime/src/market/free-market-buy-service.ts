@@ -13,6 +13,7 @@ import {
   isFreeMarketBagRegisterCandidate,
   normalizeFreeMarketBagRegisterDispatchMessage,
 } from "./free-market-bag-register-service.js";
+import { transferMiniPetEscrow } from "./market-mini-pet-bulk-escrow.js";
 
 const BUY_ALIAS = "/자유시장구매 [번호]";
 const CONFIRM = "자유시장거래";
@@ -363,15 +364,7 @@ export class FreeMarketBuyService {
       return;
     }
     if (listing.asset_type_code === "mini_pet" || listing.asset_type_code === "miniPet") {
-      const reservation = (await t.query<Array<{ owned_mini_pet_id: bigint }>>("SELECT owned_mini_pet_id FROM market_mini_pet_reservations WHERE listing_id=? AND player_id=? FOR UPDATE", [listing.id, listing.seller_player_id]))[0];
-      if (reservation === undefined || listing.quantity !== 1n) throw new ApplicationError("FREE_MARKET_ASSET_MISSING", "구매할 미니펫 정보가 일치하지 않습니다.", 409);
-      const pet = (await t.query<Array<{ version: bigint }>>("SELECT version FROM owned_mini_pets WHERE id=? AND player_id=? AND equipped=FALSE FOR UPDATE", [reservation.owned_mini_pet_id, listing.seller_player_id]))[0];
-      if (pet === undefined) throw new ApplicationError("FREE_MARKET_ASSET_CONFLICT", "미니펫 소유권이 먼저 변경되었습니다.", 409);
-      const targetSequence = (await t.query<Array<{ next_value: bigint }>>("SELECT COALESCE(MAX(bag_sequence),0)+1 next_value FROM owned_mini_pets WHERE player_id=? FOR UPDATE", [buyer]))[0]?.next_value ?? 1n;
-      if ((await t.execute("UPDATE owned_mini_pets SET player_id=?,bag_sequence=?,version=version+1 WHERE id=? AND player_id=? AND equipped=FALSE AND version=?", [buyer, targetSequence, reservation.owned_mini_pet_id, listing.seller_player_id, pet.version])).affectedRows !== 1n) throw new ApplicationError("FREE_MARKET_ASSET_CONFLICT", "미니펫 소유권이 먼저 변경되었습니다.", 409);
-      const remaining = await t.query<Array<{ id: bigint }>>("SELECT id FROM owned_mini_pets WHERE player_id=? AND equipped=FALSE ORDER BY COALESCE(bag_sequence,id),id FOR UPDATE", [listing.seller_player_id]);
-      for (let index = 0; index < remaining.length; index += 1) await t.execute("UPDATE owned_mini_pets SET bag_sequence=?,version=version+1 WHERE id=?", [index + 1, remaining[index]!.id]);
-      await t.execute("DELETE FROM market_mini_pet_reservations WHERE listing_id=?", [listing.id]);
+      await transferMiniPetEscrow(t, { operationId, listingId: listing.id, sellerPlayerId: listing.seller_player_id, buyerPlayerId: buyer, quantity: listing.quantity });
       return;
     }
     throw new ApplicationError("FREE_MARKET_ASSET_UNSUPPORTED", "지원하지 않는 자유시장 상품 유형입니다.", 409);
