@@ -323,6 +323,45 @@ class CurrentPackageItemDefinitionRepository {
   }
 }
 
+// 패키지 compatibility 행 없이 canonical item_definitions만 안정 코드로 조회합니다.
+export class CanonicalItemDefinitionRepository {
+  public constructor(private readonly database: DatabaseClient) {}
+
+  public async findById(id: string, transactionHandle?: unknown): Promise<ItemDefinition | undefined> {
+    const handle = transactionHandle as { databaseTransaction?: DatabaseTransaction } | undefined;
+    const query = handle?.databaseTransaction ?? this.database;
+    const rows = await query.query<Array<{
+      item_id: string;
+      item_type: ItemType;
+      item_name: string;
+      stackable: number;
+      metadata_json: string | Record<string, unknown> | null;
+      enabled: number;
+    }>>(
+      `SELECT code item_id,asset_type_code item_type,display_name item_name,stackable,
+              metadata_json,active enabled
+         FROM item_definitions
+        WHERE code=? AND asset_type_code IN ('STACK','POINT','PET','MINI_PET','FURNITURE','MEMBER_TITLE','PET_TITLE','PET_APPEARANCE','GUILD_RESOURCE')
+        LIMIT 1`,
+      [id],
+    );
+    const row = rows[0];
+    if (row === undefined) return undefined;
+    return {
+      id: row.item_id,
+      type: row.item_type,
+      name: row.item_name,
+      stackable: row.stackable === 1,
+      metadata: row.metadata_json === null
+        ? {}
+        : typeof row.metadata_json === "string"
+          ? JSON.parse(row.metadata_json) as Record<string, unknown>
+          : row.metadata_json,
+      enabled: row.enabled === 1,
+    };
+  }
+}
+
 // PackageProvider 트랜잭션을 현재 operations와 package_domain_uses에 결합
 class CurrentPackageTransactionManager implements PackageTransactionManager {
   public constructor(private readonly database: DatabaseClient) {}
@@ -490,6 +529,100 @@ export function createCurrentDomainItemProvider(database: DatabaseClient): ItemP
     new PackageRewardTargetRegistry(),
   );
   const handler = new CurrentDomainItemTypeHandler(new PackageDomainItemMutationStore());
+  const itemTypes: ItemType[] = [
+    "STACK", "POINT", "PET", "MINI_PET", "FURNITURE", "MEMBER_TITLE",
+    "PET_TITLE", "PET_APPEARANCE", "GUILD_RESOURCE",
+  ];
+  for (const itemType of itemTypes) items.register(itemType, handler);
+  return items;
+}
+
+// 일반 소비자의 기존 operation·transaction 안에서 canonical ownership과 ledger만 변경합니다.
+class CanonicalDomainItemTypeHandler implements ItemTypeHandler {
+  private readonly sequences = new WeakMap<object, number>();
+
+  public constructor(private readonly domainItems: PackageDomainItemMutationStore) {}
+
+  public async checkAdd(_definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void> {
+    this.assertQuantity(quantity);
+    this.transaction(context);
+  }
+
+  public async checkRemove(definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void> {
+    this.assertQuantity(quantity);
+    const transaction = this.transaction(context);
+    const hasItem = await this.domainItems.has(
+      new DomainTransactionAdapter(transaction),
+      this.definition(definition),
+      this.mutation(context, quantity, transaction, false),
+    );
+    if (!hasItem) throw new Error("ITEM_BALANCE_INSUFFICIENT");
+  }
+
+  public async add(definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void> {
+    this.assertQuantity(quantity);
+    const transaction = this.transaction(context);
+    await this.domainItems.add(
+      new DomainTransactionAdapter(transaction),
+      this.definition(definition),
+      this.mutation(context, quantity, transaction, true),
+    );
+  }
+
+  public async remove(definition: ItemDefinition, quantity: bigint, context: ItemMutationContext): Promise<void> {
+    this.assertQuantity(quantity);
+    const transaction = this.transaction(context);
+    await this.domainItems.remove(
+      new DomainTransactionAdapter(transaction),
+      this.definition(definition),
+      this.mutation(context, quantity, transaction, true),
+    );
+  }
+
+  private transaction(context: ItemMutationContext): DatabaseTransaction {
+    const handle = context.transactionHandle as (DatabaseTransaction & { databaseTransaction?: DatabaseTransaction }) | undefined;
+    const transaction = handle?.databaseTransaction ?? handle;
+    if (transaction === undefined || typeof transaction.query !== "function" || typeof transaction.execute !== "function") {
+      throw new Error("ITEM_TRANSACTION_HANDLE_REQUIRED");
+    }
+    if (!/^\d+$/.test(context.transactionId)) throw new Error("ITEM_OPERATION_ID_INVALID");
+    return transaction;
+  }
+
+  private definition(definition: ItemDefinition): PackageDomainItemDefinition {
+    return { id: definition.id, type: definition.type, displayName: definition.name, metadata: definition.metadata };
+  }
+
+  private mutation(context: ItemMutationContext, quantity: bigint, transaction: DatabaseTransaction, advance: boolean): PackageDomainMutation {
+    const key = transaction as object;
+    let sequenceNo = this.sequences.get(key) ?? 0;
+    if (advance) {
+      sequenceNo += 1;
+      this.sequences.set(key, sequenceNo);
+    }
+    return {
+      operationId: context.transactionId,
+      sequenceNo: Math.max(sequenceNo, 1),
+      playerId: context.actorUserId ?? context.ownerId,
+      quantity: Number(quantity),
+      targetId: typeof context.targetSelector === "string" && /^\d+$/.test(context.targetSelector) ? context.targetSelector : undefined,
+      guildId: context.ownerType === "GUILD" ? context.ownerId : undefined,
+      reasonCode: "CANONICAL_ITEM_PROVIDER",
+    };
+  }
+
+  private assertQuantity(quantity: bigint): void {
+    if (quantity <= 0n || quantity > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("ITEM_QUANTITY_INVALID");
+  }
+}
+
+// 일반 명령 소비자가 canonical item 정의와 기존 도메인 mutation handler를 직접 재사용합니다.
+export function createCanonicalDomainItemProvider(database: DatabaseClient): ItemProvider {
+  const items = new ItemProvider(
+    new CanonicalItemDefinitionRepository(database),
+    new PackageRewardTargetRegistry(),
+  );
+  const handler = new CanonicalDomainItemTypeHandler(new PackageDomainItemMutationStore());
   const itemTypes: ItemType[] = [
     "STACK", "POINT", "PET", "MINI_PET", "FURNITURE", "MEMBER_TITLE",
     "PET_TITLE", "PET_APPEARANCE", "GUILD_RESOURCE",
