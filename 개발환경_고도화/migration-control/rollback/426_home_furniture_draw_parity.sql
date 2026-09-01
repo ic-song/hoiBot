@@ -1,0 +1,12 @@
+SET NAMES utf8mb4;
+START TRANSACTION;
+DELETE FROM object_source_bindings WHERE object_type='FURNITURE' AND source_system='LEGACY_JSON' AND source_table='petSweetHomeInfo.furnitureDraw.v2_438';
+DELETE alias_row FROM object_aliases alias_row JOIN object_registry object_row ON object_row.id=alias_row.object_id WHERE object_row.object_type='FURNITURE' AND object_row.object_key LIKE 'furniture.catalog_home-draw-v2438-%';
+DELETE FROM object_registry WHERE object_type='FURNITURE' AND object_key LIKE 'furniture.catalog_home-draw-v2438-%';
+SET @home_furniture_draw_catalog_id_426=(SELECT id FROM home_furniture_draw_catalog_versions WHERE version_code='ASSET-FREEZE-v2.438-home-furniture-draw-01' LIMIT 1);
+DELETE FROM home_furniture_draw_entries WHERE catalog_version_id=@home_furniture_draw_catalog_id_426;
+DELETE FROM home_furniture_draw_grade_bands WHERE catalog_version_id=@home_furniture_draw_catalog_id_426;
+DELETE FROM home_furniture_draw_catalog_versions WHERE id=@home_furniture_draw_catalog_id_426;
+DELETE definition_row FROM furniture_definitions definition_row WHERE definition_row.code LIKE 'HOME-DRAW-V2438-%' AND NOT EXISTS(SELECT 1 FROM home_furniture_draw_entries entry_row WHERE entry_row.furniture_definition_id=definition_row.id) AND NOT EXISTS(SELECT 1 FROM furniture_inventory_instances instance_row WHERE instance_row.furniture_definition_id=definition_row.id) AND NOT EXISTS(SELECT 1 FROM owned_furniture owned_row WHERE owned_row.furniture_definition_id=definition_row.id);
+UPDATE home_furniture_draw_catalog_versions SET active=(source_sha256='73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195');
+COMMIT;

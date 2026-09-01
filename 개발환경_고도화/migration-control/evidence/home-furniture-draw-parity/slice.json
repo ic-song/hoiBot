@@ -1,0 +1,87 @@
+{
+  "sliceId": "SL-ASSET-HOME-FURNITURE-DRAW-PARITY-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-home-furniture-draw-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourceSha256": "726385f7c9b9aed94bcb62c2eb6f9267e32d6a90a4216b50175cdfded878744b",
+  "sourceGitObjectSha256": "9aa01517393750942992547223445ad0c77f0351d4a6700c05c36bd10cc7e288",
+  "baselineSha256": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+  "counts": {
+    "baselineRows": 1551,
+    "approvedRows": 2447,
+    "sourceRowDelta": 896,
+    "baselineDefinitions": 1533,
+    "approvedDefinitions": 2422,
+    "reusedDefinitions": 1444,
+    "newDefinitions": 978,
+    "duplicateGroups": 9,
+    "duplicateRows": 34,
+    "duplicateWeightOccurrences": 25,
+    "grades": 7,
+    "logicalNames": 538,
+    "currentSourceBindings": 2447
+  },
+  "gradeBands": [
+    {
+      "gradeOrdinal": 1,
+      "gradeDisplayName": "리브",
+      "rateText": "0.99959",
+      "weightScaled": 9995900,
+      "entryCount": 617
+    },
+    {
+      "gradeOrdinal": 2,
+      "gradeDisplayName": "쁘띠",
+      "rateText": "0.0003",
+      "weightScaled": 3000,
+      "entryCount": 400
+    },
+    {
+      "gradeOrdinal": 3,
+      "gradeDisplayName": "부띠끄",
+      "rateText": "0.00005",
+      "weightScaled": 500,
+      "entryCount": 400
+    },
+    {
+      "gradeOrdinal": 4,
+      "gradeDisplayName": "시그니엘",
+      "rateText": "0.00003",
+      "weightScaled": 300,
+      "entryCount": 551
+    },
+    {
+      "gradeOrdinal": 5,
+      "gradeDisplayName": "그랑 루미에르",
+      "rateText": "0.00002",
+      "weightScaled": 200,
+      "entryCount": 298
+    },
+    {
+      "gradeOrdinal": 6,
+      "gradeDisplayName": "로열 루미에르",
+      "rateText": "0.00001",
+      "weightScaled": 100,
+      "entryCount": 41
+    },
+    {
+      "gradeOrdinal": 7,
+      "gradeDisplayName": "아르카나 루미에르",
+      "rateText": "0.0000065",
+      "weightScaled": 65,
+      "entryCount": 140
+    }
+  ],
+  "identityRule": "exact name+exp+grade+display signature; duplicate source rows remain ordered draw occurrences",
+  "carryForward": [
+    "home furniture draw Gate1~7",
+    "furniture object catalog Gate1~7",
+    "existing ownership and draw provider"
+  ],
+  "scope": {
+    "providerAdded": false,
+    "ownershipChanged": false,
+    "consumerChanged": false,
+    "operationalDataTouched": false,
+    "gate8": false
+  }
+}
