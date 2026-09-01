@@ -1,3 +1,5 @@
+import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-resolver.js";
+
 export type PackageDomainItemType =
   | "STACK"
   | "POINT"
@@ -90,7 +92,7 @@ export class PackageDomainItemMutationStore {
       case "STACK":
         return this.getStackBalance(transaction, definition.id, mutation.playerId);
       case "POINT":
-        return this.getCurrencyBalance(transaction, this.metadataString(definition, "currencyCode", definition.id), mutation.playerId);
+        return this.getCurrencyBalance(transaction, this.packagePointCurrencyCode(definition), mutation.playerId);
       case "FURNITURE":
         return this.getOwnedDefinitionBalance(transaction, "owned_furniture", "furniture_definitions", "furniture_definition_id", definition.id, mutation.playerId);
       case "MINI_PET":
@@ -122,7 +124,7 @@ export class PackageDomainItemMutationStore {
         await this.mutateStack(transaction, definition.id, mutation, delta);
         break;
       case "POINT":
-        await this.mutateCurrency(transaction, this.metadataString(definition, "currencyCode", definition.id), mutation, delta);
+        await this.mutateCurrency(transaction, this.packagePointCurrencyCode(definition), mutation, delta);
         break;
       case "FURNITURE":
         await this.mutateFurniture(transaction, definition.id, mutation, delta);
@@ -441,6 +443,16 @@ export class PackageDomainItemMutationStore {
   private metadataString(definition: PackageDomainItemDefinition, key: string, fallback: string): string {
     const value = definition.metadata[key];
     return typeof value === "string" && value.length > 0 ? value : fallback;
+  }
+
+  // package POINT projection을 player 통화 계정의 canonical 코드로 제한해 해석합니다.
+  private packagePointCurrencyCode(definition: PackageDomainItemDefinition): string {
+    return resolveCanonicalCurrencyCode({
+      providerContext: "PACKAGE_POINT",
+      ownerScope: "PLAYER",
+      sourceCode: this.metadataString(definition, "currencyCode", definition.id),
+      definitionCode: definition.id,
+    });
   }
 
   // 정수형 양수 수량 검증

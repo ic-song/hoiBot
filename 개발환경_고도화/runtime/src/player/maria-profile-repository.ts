@@ -1,4 +1,5 @@
 import type { DatabaseClient } from "../database.js";
+import { PASS_CODE_POLICY_VERSION, resolvePassCode } from "../pass/pass-code-resolver.js";
 import type { ProfileRepository, ProfileView } from "./profile.js";
 
 interface ProfileRow {
@@ -112,7 +113,17 @@ async function hydrateProfile(database: Pick<DatabaseClient, "query">, row: Prof
     rebirthCount: row.rebirth_count.toString(),
     termsAgreed: Boolean(row.terms_agreed),
     firstSponsor: Boolean(row.first_sponsor),
-    passes: passes.map((pass) => ({ code: pass.code, enabled: Boolean(pass.enabled), permanent: Boolean(pass.permanent), endsAt: toIso(pass.ends_at) })),
+    passes: passes.map((pass) => ({
+      code: resolvePassCode({
+        code: pass.code,
+        sourceScope: "COMPATIBILITY",
+        targetScope: "SEMANTIC",
+        policyVersion: PASS_CODE_POLICY_VERSION
+      }),
+      enabled: Boolean(pass.enabled),
+      permanent: Boolean(pass.permanent),
+      endsAt: toIso(pass.ends_at)
+    })),
     currencies: Object.fromEntries(currencies.map((currency) => [currency.code, currency.balance])),
     currencyAccounts: currencies.map((currency) => ({ code: currency.code, balance: currency.balance, version: currency.version.toString() })),
     counters: Object.fromEntries(counters.map((counter) => [counter.code, counter.value.toString()])),

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-PACKAGE-RWD047-CROSS-CLASS-TRACE-CORRECTION-01",
+  "executionId": "개발자-SL-PACKAGE-RWD047-CROSS-CLASS-TRACE-CORRECTION-01-20260831T0700",
+  "wbs": 659,
+  "dbRow": 1937,
+  "lease": 2405,
+  "baseline": "ecbf73efcb65a640fdd92f7529cf11904ba172ec",
+  "migrationChanges": 0,
+  "partition": {
+    "membershipCount": 151,
+    "classes": {
+      "A_PACKAGE_ONLY": 74,
+      "B_DUAL_CONSUMER": 76,
+      "D_UNRESOLVED": 1
+    },
+    "overlapCount": 0,
+    "missingCount": 0,
+    "extraCount": 0,
+    "membershipSha256": "77dfaed8d3156387e8b0db6ee8cf9ec442fe27a0994f4fcdcd732073289c71ca",
+    "aSha256": "4b7a0d117341a720d5f9ca8140c61cbee407cd85ab55790d2d092d224ee27bd2",
+    "bSha256": "945264f191fac5cc749629d19c33f7ccef127f820936296171da429b31c8e784",
+    "dSha256": "909c13b28198c70d937c7def2b1a6f2e2fd7273d607b5f42022469027a54fd70",
+    "sourceCodeHashes": {
+      "algorithm": "SHA256(sorted stable code joined by LF)",
+      "membershipSha256": "9ebbab1b2249ec120c6bd76028dd390f45ea688f036d449c6fc1a3ca10f6afed",
+      "aSha256": "4b7a0d117341a720d5f9ca8140c61cbee407cd85ab55790d2d092d224ee27bd2",
+      "bSha256": "c914bed3a5576984149725ae641971a7b25877f1805c091e0c85b07d5f0b82e7",
+      "dSha256": "909c13b28198c70d937c7def2b1a6f2e2fd7273d607b5f42022469027a54fd70"
+    }
+  },
+  "bCompatibility": {
+    "canonicalIdentityCount": 72,
+    "aliasCount": 5,
+    "unchanged": true
+  },
+  "crossClassTrace": {
+    "count": 1,
+    "sha256": "5b64d2132ce43c48aa649a49f3cb1a9c51f4b15082909a4450530bd994c28995",
+    "records": [
+      {
+        "sourceClass": "A_PACKAGE_ONLY",
+        "sourceCode": "ITEM-RWD-047",
+        "canonicalClass": "B_DUAL_CONSUMER",
+        "canonicalCode": "police_thief_ticket",
+        "migrationEvidence": "382_package_reward_canonical_gap.sql",
+        "disposition": "COMPATIBILITY_RETIREMENT_TRACE",
+        "partitionMutation": false
+      }
+    ]
+  },
+  "ownershipBoundary": {
+    "canonicalDefinition": "item_definitions",
+    "canonicalBalance": "inventory_stacks",
+    "canonicalLedger": "inventory_ledger",
+    "forbiddenWriteTables": [
+      "package_item_balances",
+      "package_item_instances",
+      "package_item_ledger"
+    ]
+  },
+  "scopeGuards": {
+    "d1Code": "free_market_membership",
+    "convergeA74": false,
+    "convergeD1": false,
+    "runtimeChanges": 0,
+    "providerChanges": 0,
+    "schemaChanges": 0,
+    "migrationFilesAdded": 0,
+    "uiChanges": 0,
+    "databaseWrites": 0
+  }
+}

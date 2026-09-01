@@ -1,0 +1,52 @@
+{
+  "sliceId": "SL-CURRENCY-PROVIDER-PARITY-01",
+  "executionId": "개발자-SL-CURRENCY-PROVIDER-PARITY-01-20260831T0515",
+  "wbs": 649,
+  "dbRow": 1927,
+  "lease": 2395,
+  "baseline": "4b2b8687dcf3a2cb9bca6b5c8818045969ad967e",
+  "scope": {
+    "canonicalDefinitions": 3,
+    "ownerScopedProviders": 9,
+    "requiredScenarios": 7,
+    "rawUppercaseAccountWrites": 0,
+    "globalPointAliasCreated": false,
+    "wrongAccountLedgerWrites": 0,
+    "providerChanges": 0,
+    "objectChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "operationalDbTouched": false
+  },
+  "hashes": {
+    "providerMatrixSha256": "56281e2674f678f1475aea5a8104ae700d8f1318459b637577fdfaa7edb0f518",
+    "canonicalDefinitionsSha256": "20f4f8c54e9e9986eab67c7a6303be0267aa7f234b8570da04570c7c556a9f5d",
+    "resolverMatrixSha256": "6855602b5972e2abe95546673314886bd18f570dd862fcd2be1b170597aea598"
+  },
+  "carryForward": [
+    "SL-COMMON-CURRENCY-CODE-SCOPE-CONVERGENCE-01 Lease2393 commit 4b2b8687",
+    "SL-ASSET-CURRENCY-DEFINITION-SNAPSHOT-FREEZE-01 Lease2392 commit 3488e332",
+    "provider-specific Gate1-7 evidence for admin, package, wallet and guild territory writers"
+  ],
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaNormalNotFoundVersionConflictReplayIdempotencyRollbackReconnect": "PASS",
+    "defaultFullRegression": "PASS",
+    "providerShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "sheetsEdited": false
+}

@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-resolver.js";
 import type { DatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 
@@ -41,6 +42,7 @@ export class MemberVoiceAuthRewardService {
     operatorDisplayName: string;
   }): Promise<MemberVoiceAuthRewardResult> {
     const scope = "admin.member_voice_auth_reward";
+    const pointCurrencyCode = resolveCanonicalCurrencyCode({ providerContext: "PLAYER_REWARD", ownerScope: "PLAYER", sourceCode: "POINT" });
     const targetName = input.message.replace(/^\/인증\s+/, "").trim();
     if (targetName.length === 0) throw new ApplicationError("INVALID_MEMBER_VOICE_AUTH_COMMAND", "인증할 회원을 입력해 주세요.", 422);
     const idempotencyKey = input.idempotencyKey.length <= 191
@@ -87,7 +89,7 @@ export class MemberVoiceAuthRewardService {
       if (item === undefined) throw new ApplicationError("VOICE_AUTH_REWARD_ITEM_MISSING", "인증 보상 아이템 설정이 없습니다.", 409);
 
       await transaction.query("SELECT quantity FROM inventory_stacks WHERE player_id=? AND item_id=? FOR UPDATE", [input.operatorPlayerId, item.id]);
-      await transaction.query("SELECT balance FROM currency_accounts WHERE player_id=? AND currency_code='POINT' FOR UPDATE", [input.operatorPlayerId]);
+      await transaction.query("SELECT balance FROM currency_accounts WHERE player_id=? AND currency_code=? FOR UPDATE", [input.operatorPlayerId, pointCurrencyCode]);
       await transaction.query("SELECT check_count FROM player_check_counts WHERE player_id=? FOR UPDATE", [input.operatorPlayerId]);
 
       const operation = await transaction.execute(
@@ -107,18 +109,18 @@ export class MemberVoiceAuthRewardService {
         [operation.insertId, input.operatorPlayerId, item.id, REWARD_ITEM_QUANTITY]
       );
       await transaction.execute(
-        `INSERT INTO currency_accounts(player_id,currency_code,balance,version,updated_at) VALUES (?,'POINT',?,1,UTC_TIMESTAMP(3))
+        `INSERT INTO currency_accounts(player_id,currency_code,balance,version,updated_at) VALUES (?,?,?,1,UTC_TIMESTAMP(3))
          ON DUPLICATE KEY UPDATE balance=balance+VALUES(balance),version=version+1,updated_at=UTC_TIMESTAMP(3)`,
-        [input.operatorPlayerId, REWARD_POINT_QUANTITY]
+        [input.operatorPlayerId, pointCurrencyCode, REWARD_POINT_QUANTITY]
       );
       const balances = await transaction.query<Array<{ balance: string }>>(
-        "SELECT CAST(balance AS CHAR) balance FROM currency_accounts WHERE player_id=? AND currency_code='POINT'",
-        [input.operatorPlayerId]
+        "SELECT CAST(balance AS CHAR) balance FROM currency_accounts WHERE player_id=? AND currency_code=?",
+        [input.operatorPlayerId, pointCurrencyCode]
       );
       await transaction.execute(
         `INSERT INTO currency_ledger(operation_id,sequence_no,player_id,currency_code,delta,balance_after,reason_code)
-         VALUES (?,1,?,'POINT',?,?,'member_voice_auth_reward')`,
-        [operation.insertId, input.operatorPlayerId, REWARD_POINT_QUANTITY, balances[0]!.balance]
+         VALUES (?,1,?,?,?,?, 'member_voice_auth_reward')`,
+        [operation.insertId, input.operatorPlayerId, pointCurrencyCode, REWARD_POINT_QUANTITY, balances[0]!.balance]
       );
       await transaction.execute(
         `INSERT INTO player_check_counts(player_id,check_count,version,created_at,updated_at) VALUES (?,1,1,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))

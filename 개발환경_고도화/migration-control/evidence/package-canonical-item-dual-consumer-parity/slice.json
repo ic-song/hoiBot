@@ -1,0 +1,58 @@
+{
+  "sliceId": "SL-PACKAGE-CANONICAL-ITEM-DUAL-CONSUMER-PARITY-01",
+  "executionId": "개발자-SL-PACKAGE-CANONICAL-ITEM-DUAL-CONSUMER-PARITY-01-20260831T0350",
+  "wbs": 642,
+  "dbRow": 1920,
+  "lease": 2388,
+  "baseline": "36ffea25ef26a386021c31e4e63a56d06a8f9afa",
+  "scope": {
+    "includedB": 76,
+    "canonicalIdentities": 72,
+    "compatibilityAliases": {
+      "castle_coin": "ITEM-RWD-042",
+      "ITEM-RWD-026": "pet_enhance_stone",
+      "ITEM-RWD-046": "ITEM-RWD-018",
+      "ITEM-RWD-RANDOM-SPIRIT-BOX": "spirit_box",
+      "ITEM-RWD-SEASONED-CHICKEN": "legacy-seasoned-chicken"
+    },
+    "existingObjectsPreserved": 61,
+    "objectAliasesPreserved": 60,
+    "objectSourceBindingsPreserved": 72,
+    "objectlessNotCreated": 15,
+    "excludedA": 74,
+    "excludedD": 1,
+    "canonicalIdentity": "item_definitions",
+    "ownershipMutation": ["inventory_stacks", "inventory_ledger"],
+    "legacyPackageOwnershipWrites": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "providerChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "operationalDbTouched": false
+  },
+  "carryForward": [
+    "SL-COMMON-ASSET-CATALOG-PACKAGE-ADAPTER-01",
+    "SL-ASSET-ITEM-DEFINITION-SNAPSHOT-FREEZE-01",
+    "CATALOG-BATCH-ASSET-PACKAGE-COMPATIBILITY-OBJECT-CONFLICT-01"
+  ],
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaIdentityReplayRollbackIdempotency": "PASS",
+    "defaultFullRegression": "PASS",
+    "syntheticShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "sheetsEdited": false
+}

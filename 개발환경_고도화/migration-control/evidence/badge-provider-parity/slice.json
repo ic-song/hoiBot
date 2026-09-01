@@ -1,0 +1,58 @@
+{
+  "sliceId": "SL-BADGE-PROVIDER-PARITY-01",
+  "executionId": "개발자-SL-BADGE-PROVIDER-PARITY-01-20260831T0610",
+  "wbs": 654,
+  "dbRow": 1932,
+  "lease": 2400,
+  "baseline": "9899eac1f5de4bb9147a8af31788f0a0ececf5c7",
+  "scope": {
+    "canonicalDefinitions": 204,
+    "runtimeDisplay": 127,
+    "awardLifecycle": 77,
+    "providerIdentities": 10,
+    "lifecycleStateTables": 7,
+    "directServices": 8,
+    "requiredScenarios": 10,
+    "deletedBadgeRegrants": 0,
+    "providerChanges": 0,
+    "newOwnedBadges": 0,
+    "badgeTypeChanges": 0,
+    "objectChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "operationalDbTouched": false
+  },
+  "hashes": {
+    "providerMatrixSha256": "ddf52bb0906f4518e4190f63a0bb4748c4c0b86f7445c5afd8ca887fbd9365ee",
+    "stateTablesSha256": "403b72c502ff71cd4ce5fb3a98bfc518c7d4840f6161976d8bb155855a6dbbba",
+    "directServicesSha256": "9e28f7846798c50d5b4762d7b9a50e36c8c7bdb9b65f637b22553bbfebbea897"
+  },
+  "carryForward": [
+    "SL-ASSET-BADGE-DEFINITION-SNAPSHOT-FREEZE-01 Lease2398 commit 9899eac1",
+    "SL-HOME-BADGE-INVENTORY-QUERIES Gate1-7",
+    "SL-HOME-BADGE-GACHA-OPEN-01-03 Gate1-7",
+    "SL-HOME-BADGE-CUBE Gate1-7",
+    "provider-specific inventory equip delete special and social Maria suites"
+  ],
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaOperationSequenceReplayRollbackReconnect": "PASS",
+    "defaultFullRegression": "PASS",
+    "providerShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "sheetsEdited": false
+}

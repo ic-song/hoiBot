@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
+import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-resolver.js";
 import { createScopedDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { GuildTerritoryWarFinishService, type GuildTerritoryWarFinishResult } from "./guild-territory-war-finish-service.js";
@@ -400,19 +401,20 @@ export class GuildTerritoryAttackService {
 
   // 길드 보유 영지 수에 따른 턴 기금을 계정과 원장에 반영합니다.
   private async grantTurnFund(transaction: DatabaseTransaction, operationId: bigint, guildId: bigint, amount: bigint): Promise<void> {
-    await transaction.execute("INSERT IGNORE INTO guild_resource_accounts(guild_id,currency_code,balance,version) VALUES (?,'POINT',0,1)", [guildId]);
+    const fundCurrencyCode = resolveCanonicalCurrencyCode({ providerContext: "GUILD_REWARD", ownerScope: "GUILD", sourceCode: "POINT" });
+    await transaction.execute("INSERT IGNORE INTO guild_resource_accounts(guild_id,currency_code,balance,version) VALUES (?,?,0,1)", [guildId, fundCurrencyCode]);
     const account = (await transaction.query<Array<{ balance: string; version: bigint }>>(
-      "SELECT CAST(balance AS CHAR) balance,version FROM guild_resource_accounts WHERE guild_id=? AND currency_code='POINT' FOR UPDATE", [guildId]
+      "SELECT CAST(balance AS CHAR) balance,version FROM guild_resource_accounts WHERE guild_id=? AND currency_code=? FOR UPDATE", [guildId, fundCurrencyCode]
     ))[0];
     if (account === undefined) throw new ApplicationError("GUILD_TERRITORY_ATTACK_FUND_ACCOUNT_MISSING", "길드 기금 계정을 찾을 수 없습니다.", 409);
     const balance = decimalInteger(account.balance) + amount;
     const write = await transaction.execute(
-      "UPDATE guild_resource_accounts SET balance=?,version=version+1 WHERE guild_id=? AND currency_code='POINT' AND version=?", [balance, guildId, account.version]
+      "UPDATE guild_resource_accounts SET balance=?,version=version+1 WHERE guild_id=? AND currency_code=? AND version=?", [balance, guildId, fundCurrencyCode, account.version]
     );
     if (write.affectedRows !== 1n) throw new ApplicationError("GUILD_TERRITORY_ATTACK_FUND_CONFLICT", "길드 기금이 먼저 변경되었습니다.", 409);
     await transaction.execute(
-      "INSERT INTO guild_resource_ledger(operation_id,sequence_no,guild_id,currency_code,delta,balance_after,reason_code) VALUES (?,1,?,'POINT',?,?,'guild_territory_turn_fund')",
-      [operationId, guildId, amount, balance]
+      "INSERT INTO guild_resource_ledger(operation_id,sequence_no,guild_id,currency_code,delta,balance_after,reason_code) VALUES (?,1,?,?,?,?, 'guild_territory_turn_fund')",
+      [operationId, guildId, fundCurrencyCode, amount, balance]
     );
   }
 

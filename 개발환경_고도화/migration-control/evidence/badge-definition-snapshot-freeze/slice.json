@@ -1,0 +1,73 @@
+{
+  "sliceId": "SL-ASSET-BADGE-DEFINITION-SNAPSHOT-FREEZE-01",
+  "executionId": "개발자-SL-ASSET-BADGE-DEFINITION-SNAPSHOT-FREEZE-01-20260831T0550",
+  "wbs": 652,
+  "dbRow": 1930,
+  "lease": 2398,
+  "baseline": "328c056447d48d0c558aa164d544a8f1ca45f933",
+  "scope": {
+    "canonicalDefinitions": 204,
+    "runtimeDisplay": 127,
+    "awardLifecycle": 77,
+    "legacyProjection": 77,
+    "versionRows": 408,
+    "currentDefinitions": 204,
+    "duplicateDisplayGroups": 2,
+    "identityConflicts": 0,
+    "ownershipLifecycleTables": 5,
+    "directLifecycleServices": 8,
+    "badgeTypes": 0,
+    "badgeObjects": 0,
+    "providerChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "operationalDbTouched": false
+  },
+  "versionTransition": {
+    "placeholderVersionId": "930000001",
+    "placeholderVersionKey": "legacy-structure-v1-pending-name-parity",
+    "exactVersionId": "930000002",
+    "exactVersionKey": "legacy-v2.400-exact-display-v1",
+    "exactDisplayTransitions": 127,
+    "awardLifecyclePreserved": 77,
+    "mergeByDisplayNameAllowed": false
+  },
+  "hashes": {
+    "canonicalContentSha256": "70d6731d0c5e2f72832fe70042ab1e0a7ba16d38af106b71617a31c33ed7932b",
+    "canonicalMembershipSha256": "ecb6afee5ad8704b9a9b1db07305513115671530431a7a4dde1e1ce4a7bc073d",
+    "identitySha256": "ffd7343c543076f8281ee7744f602b1ce9d893c2005f6806548d9348c6e761e7",
+    "runtimeDisplayMembershipSha256": "d22e2a6edebc4d408980822ce4a41903f8242b6fc72bdf2847242bcb80e47d05",
+    "runtimeDisplayContentSha256": "c67f70ae64c955841e8cea4973f4e541c46b72e5a58acc9fde717596808f0e71",
+    "awardLifecycleMembershipSha256": "851ca2b5774e7121dc94c1d14b2c6f50ff191df83d965df8de09656e4e839842",
+    "awardLifecycleContentSha256": "e02b99b30bfda141a37c3893155c0122e66086f77bb5dccc61ef952e189a55b5",
+    "ownershipLifecycleTablesSha256": "e369dcad6b6a41dea62dc470d212deff9ae4448e0d5f4419c5e916bc5a1d601c",
+    "directLifecycleServicesSha256": "9e28f7846798c50d5b4762d7b9a50e36c8c7bdb9b65f637b22553bbfebbea897"
+  },
+  "carryForward": [
+    "CATALOG-BATCH-ASSET-BADGE-DEFINITION-OBJECT-FREEZE-01 Lease2397",
+    "SL-HOME-BADGE-INVENTORY-QUERIES Gate1-7 definition parity 204/204 and exact display parity 127/127",
+    "SL-HOME-BADGE-GACHA-OPEN-01-03 Gate1-7",
+    "SL-HOME-BADGE-CUBE Gate1-7",
+    "SL-CURRENCY-PROVIDER-PARITY-01 baseline 328c0564"
+  ],
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "defaultFullRegression": "PASS",
+    "sourceShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "sheetsEdited": false
+}

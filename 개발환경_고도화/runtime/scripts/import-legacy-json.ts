@@ -4,6 +4,7 @@ import path from "node:path";
 import { isLosslessNumber, parse } from "lossless-json";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../src/database.js";
+import { PASS_CODE_POLICY_VERSION, resolvePassCode } from "../src/pass/pass-code-resolver.js";
 
 interface Anomaly {
   sourceFile: string;
@@ -354,11 +355,17 @@ async function importMembers(
       for (const [passCode, passRaw] of Object.entries(passes)) {
         const pass = asRecord(passRaw);
         if (pass === undefined) continue;
+        const compatibilityPassCode = resolvePassCode({
+          code: passCode,
+          sourceScope: "SEMANTIC",
+          targetScope: "COMPATIBILITY",
+          policyVersion: PASS_CODE_POLICY_VERSION
+        });
         await transaction.execute(
           `INSERT INTO player_passes
             (player_id, pass_code, enabled, permanent, starts_at, ends_at)
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [player.insertId, /^[a-z0-9_]+$/i.test(passCode) ? passCode : stableLegacyCode("pass", passCode), pass.enabled === true, pass.permanent === true,
+          [player.insertId, compatibilityPassCode, pass.enabled === true, pass.permanent === true,
             legacyDate(pass.startDate) ?? null, supportPassEndDate(pass.endDate) ?? null]
         );
       }
