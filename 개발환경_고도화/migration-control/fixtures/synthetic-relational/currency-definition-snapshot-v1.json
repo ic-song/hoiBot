@@ -9,7 +9,7 @@
     "sourceOwnerScopes": 4,
     "actualProjection": 5,
     "accountScopeIdentities": 6,
-    "providerSources": 57,
+    "providerSources": 58,
     "packageBoundary": 3,
     "accountLedgerModels": 2,
     "productionCurrencyObjects": 0
@@ -156,11 +156,11 @@
   "providerMembership": {
     "sourceGlob": "개발환경_고도화/runtime/src/**/*.ts",
     "pathEncoding": "개발환경_고도화/runtime/src\\<relative Windows path>",
-    "playerAccountRefs": { "count": 47, "sha256": "7ad416601a59425d99c80a4711bebde3fd8493d022613a47a53912e41e3b5fc2", "token": "currency_accounts" },
+    "playerAccountRefs": { "count": 48, "sha256": "ae2537956ee9d01890075fd60072efd5a3481c90eb99108a862c617d9f4dfe1a", "token": "currency_accounts" },
     "playerLedgerRefs": { "count": 46, "sha256": "a276ee1398bbce14417b4bd486d0c9395d7f0ec2fef6f3c8caf114278b111b05", "token": "currency_ledger" },
     "guildAccountRefs": { "count": 10, "sha256": "7aecd4125522f332a78a4ae199a1627da194818afacc6d4fc3b0be46974f671b", "token": "guild_resource_accounts" },
     "guildLedgerRefs": { "count": 7, "sha256": "e0f5f678ee2e7d4cabda4ee9679618c81e19f669e581a8c2c2d3676ecb77faaa", "token": "guild_resource_ledger" },
-    "union": { "count": 57, "sha256": "23d57a6da6a340b9940e0c6766112befd45e3962a0a0db7ccbade00eeb1e9e30" }
+    "union": { "count": 58, "sha256": "2ea292ba94716b832ad3696104294d47625b5088f0a058d7f1a6a4a5a0ce9f00" }
   },
   "objectBoundary": {
     "existingType": "CURRENCY",
@@ -190,7 +190,7 @@
     "accountLedgerModelsSha256": "35f18efbd1faeaa0f3d4dc48f4c40f6aa524949e0377ffb1bd74c37e3ee36dc7",
     "accountScopeIdentitiesSha256": "92ca62028a4f7ea575389cd285bed5eba78a045d7113f17be8178b2a56f506d7",
     "packageBoundarySha256": "775a8f4118dd8206640ccdf666b330d119294bce7b79cf1bbd1bf0c466856d01",
-    "providerUnionSha256": "23d57a6da6a340b9940e0c6766112befd45e3962a0a0db7ccbade00eeb1e9e30"
+    "providerUnionSha256": "2ea292ba94716b832ad3696104294d47625b5088f0a058d7f1a6a4a5a0ce9f00"
   },
   "forbiddenChanges": ["global POINT alias", "object registry data", "provider", "schema", "migration", "main.js", "UI", "Gate8"]
 }

@@ -103,7 +103,7 @@ test("freezes the two versioned owner-account and append-only ledger models", ()
   assert.match(migration007, /CREATE TABLE guild_resource_ledger/);
 });
 
-test("recomputes the exact provider57 membership and all four source hashes", () => {
+test("recomputes the exact provider58 membership and all four source hashes", () => {
   const memberships = [
     fixture.providerMembership.playerAccountRefs,
     fixture.providerMembership.playerLedgerRefs,

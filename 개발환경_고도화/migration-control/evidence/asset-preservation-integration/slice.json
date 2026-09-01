@@ -1,0 +1,81 @@
+{
+  "sliceId": "SL-COMMON-ASSET-PRESERVATION-INTEGRATION-01",
+  "executionId": "개발자-SL-COMMON-ASSET-PRESERVATION-INTEGRATION-01-202609011714",
+  "baselineRevision": "5e3fa90b",
+  "scope": "verified Gate1~7 asset branches preservation integration",
+  "commitGraph": {
+    "completedBranchTips": 76,
+    "maximalHeadsIncludingBaseline": 9,
+    "mergedHeads": [
+      "5c4f6693",
+      "5303d162",
+      "71fd5d4f",
+      "cb0c31c7",
+      "9d2c8733",
+      "260e38b0",
+      "96047ec2",
+      "f09e0b5f"
+    ],
+    "missingAncestorsAfterIntegration": 0
+  },
+  "conflictResolutions": [
+    {
+      "area": "admin web shell",
+      "decision": "keep the newer integrated shell and register the managed backup routes"
+    },
+    {
+      "area": "application route registration",
+      "decision": "keep both admin web shell and site signup web route registrations"
+    }
+  ],
+  "migrationIdentity": {
+    "runnerKey": "full migration filename",
+    "migrationCount": 425,
+    "historicalDuplicatePrefix": ["051"],
+    "integratedDuplicatePrefixes": ["401", "402", "403", "404", "405", "406", "407", "408", "409", "410", "411"],
+    "integratedDuplicateFilesApplied": 22,
+    "renumbered": false,
+    "reason": "lexical dependency order is valid and every full filename has an independent checksum record"
+  },
+  "currencyCorrection": {
+    "approvedAddedProvider": "runtime/src/player/privileged-point-rank-read-service.ts",
+    "playerAccountProviderCount": 48,
+    "providerUnionCount": 58,
+    "playerCanonicalCode": "point",
+    "guildCanonicalCode": "guild_fund",
+    "globalPointAliasCreated": false
+  },
+  "database": {
+    "environment": "dedicated synthetic MariaDB 11.8.8",
+    "freshMigrationCount": 425,
+    "replayApplied": 0,
+    "restartReconnect": true,
+    "petSkillCatalogDefinitions": 93,
+    "petSkillConfigurationValues": 4,
+    "playerPointDefinitions": 1,
+    "guildFundDefinitions": 1,
+    "operationalDatabaseTouched": false
+  },
+  "validation": {
+    "focusedCurrencySnapshot": "7/7 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "fullRegression": "1554 total / 1546 pass / 0 fail / 8 skip"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "forbiddenChanges": {
+    "featureProd": false,
+    "operationalDatabase": false,
+    "legacyJson": false,
+    "gate8": false
+  }
+}
