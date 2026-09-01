@@ -1,0 +1,33 @@
+{
+  "sliceId": "SL-ASSET-PET-EXPLORE-NOTICE-CATALOG-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-pet-explore-notice-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "baselineRevision": "dd2b63f315d72a445ab4cd55f13c90dc5ae0ccd8",
+  "sourcePath": "data/petExploreData.json",
+  "sourceGitSha256": "5fd232c3840eb2a6b9628e703f505a9a1f98becd265c70b0914d524a3e4ba7f7",
+  "baselineGitSha256": "bc0138e8eacf4f71dae37405f6fb51d8f0e7627937c40ea422a014c7b5db4add",
+  "notice": {
+    "configKey": "notice.pet_explore",
+    "valueSha256": "502c02bb0a67cee3b81a29ea939f069ef5b7e2527f5c7a925ec9461917fbfeb0",
+    "utf16Length": 66,
+    "utf8Bytes": 108,
+    "lineCount": 3
+  },
+  "providerBinding": {
+    "setCode": "operation_notices",
+    "headTable": "operation_notice_heads",
+    "configurationTable": "configuration_values",
+    "mutationScope": "operation.notice.mutate",
+    "mode": "EXISTING_PROVIDER_DEPENDENCY"
+  },
+  "carryForward": [
+    "SL-OPERATION-NOTICE-MUTATE Gate1~7",
+    "SL-PET-EXPLORE-GUILD-RAID-EVENT-CONTROL-01 Gate1~7"
+  ],
+  "scope": {
+    "providerChanged": false,
+    "consumerChanged": false,
+    "operationalDataTouched": false,
+    "gate8": false
+  }
+}
