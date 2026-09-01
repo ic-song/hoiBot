@@ -1,7 +1,12 @@
 {
   "sliceId": "SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01",
-  "executionId": "자산카탈로그-SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01-202609012345",
-  "lease": 2489,
+  "executionId": "작업반장-SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01-RECOVERY-202609020003",
+  "lease": 2490,
+  "recoveredFrom": {
+    "executionId": "자산카탈로그-SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01-202609012345",
+    "lease": 2489,
+    "state": "HANDOFF_READY"
+  },
   "wbsRow": 714,
   "baselineRevision": "60df8b2771636a0b35d0c2961ae5a0b41bde58f4",
   "migration": "439_asset_package_canonical_gap_correction.sql",

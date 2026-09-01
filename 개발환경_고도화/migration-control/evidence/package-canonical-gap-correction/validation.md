@@ -1,8 +1,8 @@
 # SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01 검증
 
-- Lease: `2489`
+- Lease: `2490` (기존 `2489` HANDOFF_READY 인계)
 - WBS: `714`
-- 실행 ID: `자산카탈로그-SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01-202609012345`
+- 실행 ID: `작업반장-SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01-RECOVERY-202609020003`
 - 기준 커밋: `60df8b2771636a0b35d0c2961ae5a0b41bde58f4`
 - 마이그레이션: `439_asset_package_canonical_gap_correction.sql`
 - 카탈로그 버전: `ASSET-FREEZE-v2.438-package-canonical-gap-correction-01`
@@ -31,6 +31,7 @@
 - rollback/replay: migration 439 재적용 및 probe `PASS`
 - MariaDB restart/reconnect: Docker 임의 포트 재조회 후 provider probe `PASS`
 - full regression: `1,575 total / 1,567 pass / 0 fail / 8 skip`
+- 복구 독립 재검증: focused `5/5`, typecheck/build, fresh MariaDB `427`, rollback/replay/restart/reconnect, full `1,575/1,567/0/8` PASS
 - Gate 8: `FALSE`
 
 ## 관리 웹 후속 read contract
