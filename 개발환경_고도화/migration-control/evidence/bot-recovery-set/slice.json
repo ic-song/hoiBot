@@ -1,0 +1,46 @@
+{
+  "sliceId": "SL-BOT-RECOVERY-RESTART",
+  "executionId": "작업반장-SL-BOT-RECOVERY-RESTART-20260901T042736",
+  "baselineCommit": "3885b3022ee8b79a6784dfa8861a7f4f87867ca8",
+  "checkpointCommit": "16adf9b546e1844831b137614769455bdb937fa5",
+  "command": "/봇살리기",
+  "migration": "421_bot_recovery_set.sql",
+  "validation": {
+    "focused": { "passed": 3, "failed": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMigrationCount": 406,
+    "migration421DirectReapply": "PASS",
+    "mariaDbScenario": { "passed": 1, "failed": 0 },
+    "restartReconnect": { "passed": 1, "failed": 0 },
+    "rollbackReplay": {
+      "tablesAfterRollback": 0,
+      "tablesAfterReplay": 2,
+      "registryAfterReplay": 1,
+      "aliasAfterReplay": 1
+    },
+    "shadow": "BOT_RECOVERY_SET -> bot_recovery_set / SHADOW",
+    "fullRegression": { "tests": 1363, "passed": 1356, "failed": 0, "skipped": 7 }
+  },
+  "contract": {
+    "generation": "latest complete prod generation, backup1",
+    "requiredTargets": ["member", "member_pet", "petHomeActivityData"],
+    "optionalTargets": ["petSkillData"],
+    "atomic": true,
+    "idempotent": true,
+    "legacyMainOrDataChanged": false,
+    "operationalDatabaseChanged": false,
+    "featureProdChanged": false,
+    "gate8": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  }
+}

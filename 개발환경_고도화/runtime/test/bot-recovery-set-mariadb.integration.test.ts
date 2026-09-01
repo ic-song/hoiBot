@@ -69,6 +69,7 @@ integration("bot recovery set MariaDB integration", () => {
 
     const service = new BotRecoverySetService(db);
     const eventId = `${prefix}-success`;
+    await event(db, eventId, user, room);
     const result = await service.restore({ externalUserId: user, channelId: room, eventId });
     assert.equal(result?.restored, true);
     assert.equal(result?.sourceRevisionKey, firstRevision);
@@ -103,6 +104,7 @@ integration("bot recovery set MariaDB integration", () => {
     await managed(db, "petHomeActivityData.json", '{"home":"stable"}');
     await managed(db, "petSkillData.json", '{"skill":"stable"}');
     const rollbackEvent = `${prefix}-rollback-event`;
+    await event(db, rollbackEvent, user, room);
     await assert.rejects(
       () => new BotRecoverySetService(failAudit(db)).restore({
         externalUserId: user,
@@ -170,6 +172,18 @@ async function count(
 ): Promise<bigint> {
   const rows = await db.query<Array<{ value: bigint | string }>>(sql, values);
   return BigInt(rows[0]?.value ?? 0);
+}
+
+async function event(
+  db: DatabaseClient,
+  eventId: string,
+  externalUserId: string,
+  channelId: string,
+) {
+  await db.execute(
+    "INSERT INTO event_inbox(event_id,provider_event_id,external_channel_id,external_user_id,event_kind,direction,payload_hash,processing_status,received_at) VALUES(?,?,?,?,'message','incoming',REPEAT('b',64),'processed',UTC_TIMESTAMP(3))",
+    [eventId, eventId, channelId, externalUserId],
+  );
 }
 
 function failAudit(inner: DatabaseClient): DatabaseClient {
