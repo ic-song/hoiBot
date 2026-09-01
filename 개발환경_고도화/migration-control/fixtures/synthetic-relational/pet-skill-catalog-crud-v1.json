@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ASSET-PET-SKILL-CATALOG-CRUD-01",
+  "setCode": "asset.pet_skill.catalog",
+  "catalogVersion": "synthetic-pet-skill-v1",
+  "definitions": [
+    {
+      "code": "pet_skill_ten_won",
+      "name": "십원",
+      "grade": "B",
+      "rate": 1,
+      "sourceKey": "skill_001",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "effect": "십원 합성 효과",
+      "active": true,
+      "sourceIndex": 0
+    },
+    {
+      "code": "pet_skill_salvation",
+      "name": "구원",
+      "grade": "B",
+      "rate": 1,
+      "sourceKey": "skill_002",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "effect": "구원 합성 효과",
+      "active": true,
+      "sourceIndex": 1
+    },
+    {
+      "code": "pet_skill_musou_myth",
+      "name": "무쌍신화",
+      "grade": "B",
+      "rate": 0.5,
+      "sourceKey": "skill_003",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "effect": "공격 횟수 증가",
+      "active": true,
+      "fixedRate": true,
+      "sourceIndex": 2
+    },
+    {
+      "code": "pet_skill_musou_ghost",
+      "name": "무쌍귀신",
+      "grade": "B",
+      "rate": 0.5,
+      "sourceKey": "skill_004",
+      "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "effect": "공격 횟수 증가",
+      "active": true,
+      "openable": false,
+      "sourceIndex": 3
+    }
+  ],
+  "compatibilityGroups": [
+    {
+      "code": "musou_myth_ghost",
+      "displayOrder": 1,
+      "active": true,
+      "members": [
+        "pet_skill_musou_myth",
+        "pet_skill_musou_ghost"
+      ]
+    }
+  ],
+  "drawPolicy": {
+    "gradeWeightTotals": {
+      "B": 20
+    }
+  },
+  "expected": {
+    "definitionCount": 4,
+    "distinctSimilarNameCodes": [
+      "pet_skill_ten_won",
+      "pet_skill_salvation"
+    ],
+    "drawWeights": [
+      9.75,
+      9.75,
+      0.5,
+      0
+    ],
+    "drawWeightTotal": 20,
+    "compatibilityGroupCount": 1
+  }
+}
