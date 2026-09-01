@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { MariaPlayerTitleDefinitionLinkRepository } from "./maria-player-title-definition-link-repository.js";
+import { PlayerTitleDefinitionLinkProvider } from "./player-title-definition-link.js";
 
 const COMMAND = "/타이틀선물";
 const COMMAND_CODE = "PLAYER_TITLE_GIFT";
@@ -61,10 +63,6 @@ function eventKey(value: string): string {
   return value.length <= 191 ? value : `sha256:${createHash("sha256").update(value).digest("hex")}`;
 }
 
-function titleCode(value: string): string {
-  return `player-gift-${createHash("sha256").update(value).digest("hex")}`;
-}
-
 function stored(value: string | PlayerTitleGiftResult): PlayerTitleGiftResult {
   return typeof value === "string" ? JSON.parse(value) as PlayerTitleGiftResult : value;
 }
@@ -95,7 +93,10 @@ async function complete(transaction: DatabaseTransaction, input: {
 
 // 티켓 차감과 사용자 지정 타이틀 생성·선택을 하나의 DB transaction으로 처리합니다.
 export class PlayerTitleGiftService {
-  public constructor(private readonly database: DatabaseClient) {}
+  public constructor(
+    private readonly database: DatabaseClient,
+    private readonly titleDefinitions = new PlayerTitleDefinitionLinkProvider(new MariaPlayerTitleDefinitionLinkRepository()),
+  ) {}
 
   public async gift(input: { eventId: string; externalUserId: string; destinationId: string; message: string }): Promise<PlayerTitleGiftResult | null> {
     return this.database.withTransaction(async transaction => {
@@ -133,26 +134,23 @@ export class PlayerTitleGiftService {
         WHERE item.code=? AND item.active=TRUE AND item.stackable=TRUE FOR UPDATE`, [actor.player_id, TICKET_CODE]))[0];
       if (ticket === undefined || ticket.quantity < 1n) return complete(transaction, { operationId, eventId: input.eventId, destinationId: input.destinationId, actor, target, status: "ticket_required", data: `${TITLE_GIFT_TICKET_NAME}이 없습니다.` });
 
-      const code = titleCode(parsed.titleName);
-      await transaction.execute("INSERT INTO title_definitions(code,display_name,scope_code,active) VALUES (?,?,'player_custom',TRUE) ON DUPLICATE KEY UPDATE active=TRUE", [code, parsed.titleName]);
-      const definition = (await transaction.query<Array<{ id: bigint; display_name: string }>>("SELECT id,display_name FROM title_definitions WHERE code=? FOR UPDATE", [code]))[0]!;
-      if (definition.display_name !== parsed.titleName) throw new ApplicationError("TITLE_CODE_COLLISION", "타이틀 정의 충돌을 확인해 주세요.", 409);
-      const existing = (await transaction.query<Array<{ title_id: bigint }>>("SELECT title_id FROM player_titles WHERE player_id=? AND title_id=? FOR UPDATE", [target.player_id, definition.id]))[0];
+      const definition = await this.titleDefinitions.ensureGift(transaction, parsed.titleName);
+      const existing = (await transaction.query<Array<{ title_id: bigint }>>("SELECT title_id FROM player_titles WHERE player_id=? AND title_id=? FOR UPDATE", [target.player_id, definition.titleId]))[0];
+      await transaction.execute("UPDATE player_title_instances SET equipped=FALSE WHERE player_id=? AND status='owned' AND equipped=TRUE", [target.player_id]);
       await transaction.execute("UPDATE player_titles SET equipped=FALSE WHERE player_id=? AND equipped=TRUE", [target.player_id]);
-      let created = false;
+      const order = (await transaction.query<Array<{ max_order: bigint | null }>>("SELECT MAX(display_order) max_order FROM player_title_instances WHERE player_id=? AND status='owned' FOR UPDATE", [target.player_id]))[0]?.max_order ?? 0n;
+      await transaction.execute("INSERT INTO player_title_instances(instance_key,player_id,title_id,title_catalog_entry_id,snapshot_name,source_operation_id,source_sequence_no,price_value,legacy_price_json,display_order,status,equipped,acquired_at,version) VALUES (UUID(),?,?,?,?,?,1,0,'0',?,'owned',TRUE,UTC_TIMESTAMP(3),1)", [target.player_id, definition.titleId, definition.catalogEntryId, parsed.titleName, operationId, order + 1n]);
+      const created = existing === undefined;
       if (existing === undefined) {
-        const order = (await transaction.query<Array<{ max_order: bigint | null }>>("SELECT MAX(display_order) max_order FROM player_titles WHERE player_id=? FOR UPDATE", [target.player_id]))[0]?.max_order ?? 0n;
-        await transaction.execute("INSERT INTO player_title_instances(instance_key,player_id,title_id,source_operation_id,source_sequence_no,price_value,display_order,status,equipped,acquired_at,version) VALUES (UUID(),?,?,?,?,0,?,'owned',TRUE,UTC_TIMESTAMP(3),1)", [target.player_id, definition.id, operationId, 1, order + 1n]);
-        await transaction.execute("INSERT INTO player_titles(player_id,title_id,acquired_at,equipped,display_order,acquisition_price) VALUES (?,?,UTC_TIMESTAMP(3),TRUE,?,0)", [target.player_id, definition.id, order + 1n]);
-        created = true;
+        await transaction.execute("INSERT INTO player_titles(player_id,title_id,acquired_at,equipped,display_order,acquisition_price) VALUES (?,?,UTC_TIMESTAMP(3),TRUE,?,0)", [target.player_id, definition.titleId, order + 1n]);
       } else {
-        await transaction.execute("UPDATE player_titles SET equipped=TRUE WHERE player_id=? AND title_id=?", [target.player_id, definition.id]);
+        await transaction.execute("UPDATE player_titles SET equipped=TRUE WHERE player_id=? AND title_id=?", [target.player_id, definition.titleId]);
       }
       const remaining = ticket.quantity - 1n;
       const changed = await transaction.execute("UPDATE inventory_stacks SET quantity=?,version=version+1 WHERE player_id=? AND item_id=? AND version=?", [remaining, actor.player_id, ticket.item_id, ticket.version]);
       if (changed.affectedRows !== 1n) throw new ApplicationError("INVENTORY_VERSION_CONFLICT", "인벤토리가 먼저 변경되었습니다.", 409);
       await transaction.execute("INSERT INTO inventory_ledger(operation_id,sequence_no,player_id,item_id,quantity_delta,reason_code) VALUES (?,1,?,?, -1,'PLAYER_TITLE_GIFT_TICKET_USED')", [operationId, actor.player_id, ticket.item_id]);
-      return complete(transaction, { operationId, eventId: input.eventId, destinationId: input.destinationId, actor, target, titleId: definition.id, ticketQuantity: remaining, created, status: "applied", data: formatPlayerTitleGiftSuccess(target, actor, parsed.titleName) });
+      return complete(transaction, { operationId, eventId: input.eventId, destinationId: input.destinationId, actor, target, titleId: definition.titleId, ticketQuantity: remaining, created, status: "applied", data: formatPlayerTitleGiftSuccess(target, actor, parsed.titleName) });
     });
   }
 }

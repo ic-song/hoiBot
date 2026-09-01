@@ -1,0 +1,27 @@
+# Lease2401 / WBS655 / DB1933
+
+- Slice: `SL-MINI-PET-COLLECTION-TITLE-OWNER-LINK-01`
+- Baseline: `ddd1ab3897bc9368b1157357d896957741cfa02f`
+- Migration: `406_mini_pet_collection_title_owner_link.sql`
+- Canonical definitions: 100 (`MINI_PET_COLLECTION`, version 1, ACTIVE)
+- Canonical ownership truth: `player_title_instances`
+- Definition projection: `player_titles`
+- Compatibility source: legacy player-level `miniPet_title` list, dual-read only
+- Explicit boundary: `mini_pet_title_assignments` is observed only and never mutated
+- Exclusions: reward 108, custom title, object link, per-mini assignment mutation
+- Focused: 4/4 passed
+- Typecheck/build: passed
+- Fresh MariaDB: 396 migration files through migration406
+- Maria parity: definitions 100, compatibility sources 2, owned instances 1, removed instances 1, per-mini assignment mutations 0
+- Rollback: instances 2 to 0, projections 1 to 0, source table 1 to 0, definitions preserved 100
+- Reapply/reconnect: definitions 100, sources reset 0 then probe 2, replay/rollback/reconnect true
+- Default regression: tests 1306, passed 1299, failed 0, skipped 7
+- Shadow: definitions 100, invalid links 0, reward definitions 0, per-mini assignments observed only 0
+- Gate 1: TRUE - source scope and ownership boundary frozen
+- Gate 2: TRUE - additive migration406 and rollback supplied
+- Gate 3: TRUE - provider/repository/service preserve grant, repeat, select, remove, replay and version semantics
+- Gate 4: TRUE after focused/typecheck/build evidence
+- Gate 5: TRUE after fresh MariaDB parity/rollback/reapply/reconnect evidence
+- Gate 6: TRUE after Shadow evidence
+- Gate 7: TRUE after default full regression and exact remote evidence
+- Gate 8: FALSE

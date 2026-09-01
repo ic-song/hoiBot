@@ -1,0 +1,39 @@
+{
+  "sliceId": "SL-ASSET-CURRENCY-OBJECT-CATALOG-LINK-01",
+  "executionId": "개발자-SL-ASSET-CURRENCY-OBJECT-CATALOG-LINK-01-20260831T0730",
+  "lease": 2408,
+  "wbs": 662,
+  "dbRow": 1940,
+  "baseline": "5440ac87654ca91fe2cdd108ac6202412a910629",
+  "migration": "408_currency_object_catalog_link.sql",
+  "catalogVersion": "ASSET-FREEZE-v2.400-currency-object-link-01",
+  "valReservation": "10536:10543",
+  "scope": {
+    "canonicalDefinitions": 3,
+    "currencyObjects": 3,
+    "definitionBindings": 3,
+    "aliases": 0,
+    "playerOwnerScopes": 2,
+    "guildOwnerScopes": 1,
+    "uppercasePointExcluded": true,
+    "ownershipRowsMutated": 0,
+    "accountsChanged": false,
+    "balancesChanged": false,
+    "ledgersChanged": false,
+    "providerChanged": false,
+    "runtimeChanged": false,
+    "mainChanged": false,
+    "uiChanged": false,
+    "sheetsEdited": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "rollbackReapplyReconnectReplay": "required",
+    "defaultFullRegression": "required",
+    "shadow": "required"
+  }
+}

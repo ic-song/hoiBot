@@ -32,6 +32,8 @@ import { isPreSignupAdminCommandCandidate, PreSignupAdminService } from "./pre-s
 import { isPetMemberCharacterCountCommand, PetMemberCharacterCountService } from "./pet-member-character-count-service.js";
 import { isPetDataSyncCommand, PetDataSyncService } from "./pet-data-sync-service.js";
 import { isPetTitleAddCommandCandidate, parsePetTitleAddCommand, PetTitleAddService } from "./pet-title-add-service.js";
+import { PetTitleDefinitionLinkProvider } from "../pet/pet-title-definition-link.js";
+import { MariaPetTitleDefinitionLinkRepository } from "../pet/maria-pet-title-definition-link-repository.js";
 import { isPetTitleStoreResetCommand, PetTitleStoreResetService } from "./pet-title-store-reset-service.js";
 import { isPetTitleSyncCommand, PetTitleSyncService } from "./pet-title-sync-service.js";
 import { isRequestMonitorConfigCommandCandidate, parseRequestMonitorConfigCommand, RequestMonitorConfigService } from "./request-monitor-config-service.js";
@@ -738,7 +740,7 @@ export class IrisAdminCommandService {
     );
     const operator = operators[0];
     if (operator === undefined) throw new ApplicationError("FORBIDDEN", "펫타이틀 추가 권한이 없습니다.", 403);
-    const result = await new PetTitleAddService(this.database).add({
+    const result = await new PetTitleAddService(this.database, new PetTitleDefinitionLinkProvider(new MariaPetTitleDefinitionLinkRepository())).add({
       ...command, idempotencyKey: input.eventId, sourceEventId: input.eventId,
       destinationId: input.channelId, operatorId: operator.operator_id.toString(),
     });

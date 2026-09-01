@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import type { PetTitleDefinitionLinkProvider } from "../pet/pet-title-definition-link.js";
 
 export interface PetTitleAddCommand {
   targetName: string;
@@ -57,7 +58,7 @@ function parseStoredResult(value: string | PetTitleAddResult): PetTitleAddResult
 
 // 펫 존재 여부와 무관하게 사용자별 펫 타이틀 지급 인스턴스를 순서대로 추가합니다.
 export class PetTitleAddService {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: DatabaseClient, private readonly titleDefinitions?: PetTitleDefinitionLinkProvider) {}
 
   async add(input: PetTitleAddInput): Promise<PetTitleAddResult> {
     return this.database.withTransaction(async (transaction) => {
@@ -95,12 +96,20 @@ export class PetTitleAddService {
       );
       const instanceKey = randomUUID();
       const stableTitleKey = titleKey(input.titleName);
-      const instance = await transaction.execute(
-        `INSERT INTO player_pet_title_instances
-          (instance_key,player_id,title_key,display_name,price_digits,display_order,acquired_at,equipped,status,version)
-         VALUES (?,?,?,?,?,?,UTC_TIMESTAMP(3),FALSE,'owned',1)`,
-        [instanceKey, target.player_id, stableTitleKey, input.titleName, input.priceDigits, displayOrder],
-      );
+      const definition = await this.titleDefinitions?.ensureAdminCustom(transaction, input.titleName);
+      const instance = definition === undefined
+        ? await transaction.execute(
+          `INSERT INTO player_pet_title_instances
+            (instance_key,player_id,title_key,display_name,price_digits,display_order,acquired_at,equipped,status,version)
+           VALUES (?,?,?,?,?,?,UTC_TIMESTAMP(3),FALSE,'owned',1)`,
+          [instanceKey, target.player_id, stableTitleKey, input.titleName, input.priceDigits, displayOrder],
+        )
+        : await transaction.execute(
+          `INSERT INTO player_pet_title_instances
+            (instance_key,player_id,title_key,legacy_title_definition_id,title_catalog_entry_id,display_name,price_digits,display_order,acquired_at,equipped,status,version)
+           VALUES (?,?,?,?,?,?,?,?,UTC_TIMESTAMP(3),FALSE,'owned',1)`,
+          [instanceKey, target.player_id, stableTitleKey, definition.titleId, definition.catalogEntryId, input.titleName, input.priceDigits, displayOrder],
+        );
       const data = `[${target.display_name}] 님에게\n[${input.titleName}] 펫 타이틀이 부여되었습니다.`;
       const outbox = await transaction.execute(
         `INSERT INTO outbox_messages

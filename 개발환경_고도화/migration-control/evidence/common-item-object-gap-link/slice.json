@@ -1,0 +1,43 @@
+{
+  "sliceId": "SL-ASSET-COMMON-ITEM-OBJECT-GAP-LINK-01",
+  "executionId": "개발자-SL-ASSET-COMMON-ITEM-OBJECT-GAP-LINK-01-20260831T0400",
+  "catalogVersion": "ASSET-FREEZE-v2.400-common-item-object-gap-01",
+  "baseline": "99fd1aded9f33f483c9eeb4b3c71d24499722025",
+  "wbs": 643,
+  "dbRow": 1921,
+  "lease": 2389,
+  "migration": "401_common_item_object_gap_link.sql",
+  "scope": {
+    "frozenMembership": 413,
+    "commonItemEligible": 249,
+    "existingSemanticValid": 195,
+    "gapLinked": 54,
+    "objectsBefore": 269,
+    "objectsAfter": 323,
+    "aliasesAdded": 54,
+    "sourceBindingsAdded": 54,
+    "runtimeDefinitionLinks": 54,
+    "definitionsSeeded": 2,
+    "semanticValidCommonPlusPendant": 262,
+    "pendantPreserved": 13,
+    "conflictOccurrencesPreserved": 61,
+    "packageDefinitionsPreserved": 151,
+    "currencyDefinitionsPreserved": 2,
+    "nameOnlyMerges": 0,
+    "ownershipRowsMutated": 0,
+    "providerIncluded": false,
+    "adminIncluded": false,
+    "wbs625AdapterReused": true
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration401ExactParityRollbackReapplyReconnect": "required",
+    "shadow54": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}

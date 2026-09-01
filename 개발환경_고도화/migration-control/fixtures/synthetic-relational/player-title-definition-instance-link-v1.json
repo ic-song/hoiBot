@@ -1,0 +1,27 @@
+{
+  "catalogCode": "TITLE_DEFINITION_SCOPE_LEGACY",
+  "catalogVersion": 1,
+  "staticDefinitions": 5,
+  "dynamicDisplayName": "공용타이틀",
+  "admin": {
+    "sourceScope": "PLAYER_ADMIN_CUSTOM",
+    "stableCode": "admin-custom-title:ca1c1c6c7bd0500b7d4f5e0c7398b409"
+  },
+  "gift": {
+    "sourceScope": "PLAYER_GIFT",
+    "stableCode": "player-gift-ca1c1c6c7bd0500b7d4f5e0c7398b409be581b1727efe8fef78fcb94bfc1f78e"
+  },
+  "expected": {
+    "definitions": 7,
+    "catalogEntries": 7,
+    "dynamicDefinitions": 2,
+    "instances": 4,
+    "ownedInstances": 3,
+    "removedInstances": 1,
+    "aggregateProjectionRows": 2,
+    "instanceCatalogLinks": 4,
+    "distinctSourceOperations": 4,
+    "sameDisplayMerges": 0,
+    "petMiniGuildObjectLinks": 0
+  }
+}

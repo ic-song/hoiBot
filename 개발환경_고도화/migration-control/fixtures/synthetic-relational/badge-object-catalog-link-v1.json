@@ -1,0 +1,24 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.400-badge-object-link-01",
+  "sourceHash": "70d6731d0c5e2f72832fe70042ab1e0a7ba16d38af106b71617a31c33ed7932b",
+  "sourceSystem": "RUNTIME_DB",
+  "sourceTable": "home_badge_definitions",
+  "objectType": "BADGE",
+  "definitionVersion": 930000002,
+  "canonicalDefinitions": 204,
+  "physicalVersionRows": 408,
+  "objects": 204,
+  "aliases": 0,
+  "sourceBindings": 204,
+  "awardLifecycle": 77,
+  "displayLifecycle": 127,
+  "ownershipRowsMutated": 0,
+  "identity": ["objectType", "series", "badgeCode", "definitionVersion"],
+  "sourceKeyFormat": "930000002|<series>|<badgeCode>",
+  "representatives": [
+    { "badgeCode": "F01", "series": "achievement", "lifecycleClass": "AWARD", "objectKey": "badge.achievement.f01.v930000002" },
+    { "badgeCode": "S13", "series": "special", "lifecycleClass": "AWARD", "objectKey": "badge.special.s13.v930000002" },
+    { "badgeCode": "HB001", "series": "gacha", "lifecycleClass": "DISPLAY", "objectKey": "badge.gacha.hb001.v930000002" },
+    { "badgeCode": "LOVE50", "series": "love", "lifecycleClass": "DISPLAY", "objectKey": "badge.love.love50.v930000002" }
+  ]
+}

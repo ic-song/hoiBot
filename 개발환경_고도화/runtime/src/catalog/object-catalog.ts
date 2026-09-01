@@ -1,8 +1,9 @@
 export const OBJECT_TYPES = [
-  "ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING", "MINI_PET"
+  "ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING", "MINI_PET", "BADGE"
 ] as const;
 
-export type ObjectType = typeof OBJECT_TYPES[number];
+export type RegisteredObjectType = typeof OBJECT_TYPES[number];
+export type ObjectType = Exclude<RegisteredObjectType, "BADGE">;
 export type ObjectAliasType = "display_name" | "legacy_name" | "legacy_code" | "command_name";
 
 export interface ObjectAliasInput {

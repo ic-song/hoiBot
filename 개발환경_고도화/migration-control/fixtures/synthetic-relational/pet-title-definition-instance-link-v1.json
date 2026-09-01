@@ -1,0 +1,19 @@
+{
+  "fixtureVersion": "pet-title-definition-instance-link-v1",
+  "sliceId": "SL-PET-TITLE-DEFINITION-INSTANCE-LINK-01",
+  "migration": 404,
+  "sameDisplay": "같은 펫 타이틀",
+  "legacyTitleKeyContract": "PET_TITLE_<sha256(display)>",
+  "sourceScopes": ["PET_ADMIN_CUSTOM", "PET_USER_CUSTOM"],
+  "expected": {
+    "staticPetDefinitions": 0,
+    "dynamicDefinitions": 2,
+    "catalogEntries": 2,
+    "instances": 3,
+    "ownedInstances": 2,
+    "removedInstances": 1,
+    "selectionProjectionRows": 1,
+    "sameDisplayMerges": 0,
+    "miniGuildObjectLinks": 0
+  }
+}

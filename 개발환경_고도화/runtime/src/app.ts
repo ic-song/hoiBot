@@ -167,6 +167,8 @@ import { GetPetInfoService, isPetInfoCommand } from "./pet/pet-info-service.js";
 import { isPetStatusCommand, PetStatusService } from "./pet/pet-status-service.js";
 import { isPetIntimacyRankCommand, PetIntimacyRankReadService } from "./pet/pet-intimacy-rank-read-service.js";
 import { isPetTitleCommandCandidate, normalizePetTitleDispatchMessage, PetTitleLifecycleService } from "./pet/pet-title-lifecycle-service.js";
+import { PetTitleDefinitionLinkProvider } from "./pet/pet-title-definition-link.js";
+import { MariaPetTitleDefinitionLinkRepository } from "./pet/maria-pet-title-definition-link-repository.js";
 import { isPetRebirthCommandCandidate, normalizePetRebirthDispatchMessage, PetRebirthService } from "./pet/pet-rebirth-service.js";
 import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, PetDuelEmoteService } from "./pet/pet-duel-emote-service.js";
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
@@ -2444,7 +2446,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "pet_title_lifecycle"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
-          const result = await new PetTitleLifecycleService(database!).handle({
+          const result = await new PetTitleLifecycleService(database!, new PetTitleDefinitionLinkProvider(new MariaPetTitleDefinitionLinkRepository())).handle({
             externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId,
             eventId: normalizedEvent.eventId, message: normalizedEvent.message!,
           });
