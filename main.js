@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.439"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.440"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -890,7 +890,7 @@ const GLOBAL_CONFIG = {
         bonusAttackSkillNames: ["무쌍신화", "무쌍귀신"],
         bonusAttackCount: 1,
         startGraceMs: 30000,
-        turnTimeoutMs: 15000,
+        turnTimeoutMs: 12000,
         attackRewardPoint: 200000000,
         realFlagDiscoveryBonusPoint: 200000000,
         attackRewardBonusSkillName: "무쌍귀신",
@@ -1594,7 +1594,7 @@ blockedNicknameTerms: [
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
             attackCountPerSwordMaster: 5, // 소드마스터 1명당 영지전 공격 턴
-            personalAttackLimit: 10, // 본인·대리 공격을 합산한 개인별 영지공격 최대 횟수
+            personalAttackLimit: 7, // 본인·대리 공격을 합산한 개인별 영지공격 최대 횟수
             maxOwnedTerritories: 3, // 길드별 동시 점령 가능 영지 수
             wrongTurnPenalty: 7, // 영지공격 오입력 패널티 턴
             timeoutMissLimit: 3, // 영지전 시간초과 미공격 탈락 기준

@@ -991,7 +991,7 @@ Status: VERIFIED
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- 개인별 영지공격은 본인 차례와 같은 길드 대리 공격을 실제 공격자 기준으로 합산하며, `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회까지 가능하다. 초과 시 공격 처리 전에 차단한다.
+- 개인별 영지공격은 본인 차례와 같은 길드 대리 공격을 실제 공격자 기준으로 합산하며, `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 7회까지 가능하다. 초과 시 공격 처리 전에 차단한다.
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
@@ -2298,7 +2298,7 @@ Status: VERIFIED
 - 다음 회차 준비자와 현재 회차 참가자를 별도 객체로 저장한다. 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
 - 참가 신청 명령은 `/펫무쌍준비`이며 `/펫무쌍참가` 별칭은 사용하지 않는다. `/펫무쌍시작`은 `오픈채팅봇`과 명령어방의 MASTER가 실행할 수 있다.
 - `/펫무쌍준비` 성공 안내의 접힌 영역에는 규칙과 현재 다음 회차 준비자 전원의 체크랭크 목록을 함께 표시하며, 방금 준비한 사용자도 목록에 포함한다. 강제 종료·공격 소진·시간초과로 대회가 끝나면 프리미엄 자동 준비 ON 이용자를 다음 회차에 즉시 등록하고 종료 결과에 등록·제외·실패 인원을 표시한다.
-- `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 15초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
+- `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 12초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
 - 시작 유예 마감시각과 토큰을 `member.json`에 저장하며, 봇 재시작 뒤 첫 수신 메시지에서 남은 유예 타이머를 복구하거나 마감된 준비를 완료한다.
 - 정상 공격 결과 제목에는 깃발 발견·점령·전투 승리 여부에 따라 `[성공✅]` 또는 `[실패❌]`를 표시하며, 미공격 탈락은 기존 `[시간 초과⚠️]`를 유지한다.
 - 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올리고, 증가값과 변경 후 확률을 탈락 결과 및 다음 공격자 상태 UI에 반영한다.
