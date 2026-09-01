@@ -1,0 +1,39 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.438-package-canonical-gap-correction-01",
+  "baseCatalogVersion": "ASSET-FREEZE-v2.438-package-typed-target-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourcePath": "data/packageInfo.json",
+  "sourceSha256": "4d2072a8e829391cb2ad546ca9ba37d7081c677bdb9e2dedbc7e08e12697e7dc",
+  "publicationStatus": "SHADOW",
+  "frozen": {
+    "packages": 107,
+    "occurrences": 557,
+    "resolvedStack": 467,
+    "gapStack": 46,
+    "packageSourceResolvedCanonicalGap": 44
+  },
+  "effective": {
+    "resolvedStack": 477,
+    "resolvedByExactSourceBinding": 10,
+    "residualStackGap": 36,
+    "residualPackageGap": 44,
+    "conflicts": 0
+  },
+  "overlaySource": {
+    "system": "RUNTIME_DB",
+    "table": "asset_package_reward_target_occurrences",
+    "keyFormat": "<catalog_version>#<global_source_order>"
+  },
+  "bindings": [
+    { "globalSourceOrder": 41, "sourcePackageId": "package_8", "rewardOrder": 4, "canonicalItemCode": "ITEM-RWD-016", "objectKey": "item.direct_bag.d4f37b7d57da963d" },
+    { "globalSourceOrder": 43, "sourcePackageId": "package_8", "rewardOrder": 6, "canonicalItemCode": "ITEM-RWD-034", "objectKey": "item.direct_bag.4ce96c3980927f12" },
+    { "globalSourceOrder": 52, "sourcePackageId": "package_9", "rewardOrder": 4, "canonicalItemCode": "ITEM-RWD-016", "objectKey": "item.direct_bag.d4f37b7d57da963d" },
+    { "globalSourceOrder": 77, "sourcePackageId": "package_15_2", "rewardOrder": 1, "canonicalItemCode": "ITEM-RWD-034", "objectKey": "item.direct_bag.4ce96c3980927f12" },
+    { "globalSourceOrder": 87, "sourcePackageId": "package_16", "rewardOrder": 5, "canonicalItemCode": "ITEM-RWD-016", "objectKey": "item.direct_bag.d4f37b7d57da963d" },
+    { "globalSourceOrder": 117, "sourcePackageId": "package_23", "rewardOrder": 5, "canonicalItemCode": "ITEM-RWD-034", "objectKey": "item.direct_bag.4ce96c3980927f12" },
+    { "globalSourceOrder": 154, "sourcePackageId": "package_29", "rewardOrder": 4, "canonicalItemCode": "ITEM-RWD-016", "objectKey": "item.direct_bag.d4f37b7d57da963d" },
+    { "globalSourceOrder": 187, "sourcePackageId": "package_39", "rewardOrder": 4, "canonicalItemCode": "ITEM-RWD-016", "objectKey": "item.direct_bag.d4f37b7d57da963d" },
+    { "globalSourceOrder": 190, "sourcePackageId": "package_40", "rewardOrder": 1, "canonicalItemCode": "ITEM-PACKAGE-204", "objectKey": "item.direct_bag.8cd392b5f18fca80" },
+    { "globalSourceOrder": 514, "sourcePackageId": "package_97", "rewardOrder": 1, "canonicalItemCode": "ITEM-PACKAGE-206", "objectKey": "item.direct_bag.c4b362ab11e2a7a7" }
+  ]
+}
