@@ -16,18 +16,7 @@ export const ADMIN_WEB_HTML = String.raw`<!doctype html>
 
   <main id="login-view" class="login-view" hidden>
     <section class="login-copy" aria-labelledby="login-title">
-      <div class="brand-lockup">
-        <span class="brand-mark" aria-hidden="true">H</span>
-        <span>hoiBot Operations</span>
-      </div>
-      <p class="eyebrow">PERMISSIONED CONTROL SURFACE</p>
-      <h1 id="login-title">운영 판단과 계정 조치를<br>한 흐름에서 처리하세요.</h1>
-      <p class="login-description">회원, 감사 기록, 채널 활동과 모니터링 이벤트를 조회하고, 허용된 운영자는 사유와 확인 절차를 거쳐 계정과 재화 조치를 처리합니다.</p>
-      <dl class="login-principles">
-        <div><dt>권한 우선</dt><dd>허용된 메뉴만 표시</dd></div>
-        <div><dt>변경 통제</dt><dd>사유·재확인·멱등 처리</dd></div>
-        <div><dt>감사 기반</dt><dd>조치와 요청 ID를 보존</dd></div>
-      </dl>
+      <h1 id="login-title">호이월드</h1>
     </section>
     <section class="login-panel" aria-label="관리자 로그인">
       <div class="login-panel-heading">
@@ -129,21 +118,11 @@ button { cursor: pointer; }
 
 .login-view { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(400px, .8fr); }
 .login-copy {
-  display: flex; flex-direction: column; justify-content: center; padding: clamp(48px, 8vw, 128px);
-  background: var(--nav); color: #fff; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; padding: clamp(48px, 8vw, 128px);
+  background: var(--nav); color: #fff;
 }
-.login-copy::after {
-  content: ""; position: absolute; width: 420px; height: 420px; right: -240px; bottom: -190px;
-  border: 70px solid rgba(255,255,255,.04); border-radius: 50%;
-}
-.brand-lockup { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 700; letter-spacing: .04em; margin-bottom: 90px; }
 .eyebrow, .page-kicker { margin: 0 0 12px; color: #4fa59c; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
-.login-copy h1 { max-width: 720px; margin: 0; font-size: clamp(36px, 5vw, 68px); line-height: 1.12; letter-spacing: -.045em; }
-.login-description { max-width: 650px; margin: 30px 0 42px; color: #c5d0da; line-height: 1.8; font-size: 16px; }
-.login-principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 700px; margin: 0; }
-.login-principles div { border-top: 1px solid rgba(255,255,255,.18); padding-top: 14px; }
-.login-principles dt { font-size: 13px; font-weight: 700; }
-.login-principles dd { margin: 6px 0 0; color: var(--nav-muted); font-size: 12px; }
+.login-copy h1 { margin: 0; font-size: clamp(52px, 8vw, 112px); font-weight: 800; line-height: 1; letter-spacing: -.06em; }
 
 .login-panel { display: flex; flex-direction: column; justify-content: center; padding: clamp(44px, 7vw, 100px); background: #fff; }
 .login-panel-heading h2 { margin: 0; font-size: 30px; letter-spacing: -.03em; }
@@ -366,9 +345,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 
 @media (max-width: 980px) {
   .login-view { grid-template-columns: 1fr; }
-  .login-copy { min-height: 48vh; padding: 48px; }
-  .brand-lockup { margin-bottom: 44px; }
-  .login-principles { display: none; }
+  .login-copy { min-height: 38vh; padding: 48px; }
   .login-panel { padding: 48px; }
   .sidebar { transform: translateX(-100%); transition: transform .2s ease; box-shadow: var(--shadow); }
   .sidebar.open { transform: translateX(0); }
@@ -388,9 +365,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 @media (max-width: 640px) {
   .object-lookup-form { align-items: stretch; flex-direction: column; }
   .object-lookup-form .primary-button { width: 100%; }
-  .login-copy { min-height: 44vh; padding: 32px 24px; }
-  .login-copy h1 { font-size: 34px; }
-  .login-description { margin: 20px 0 0; font-size: 14px; }
+  .login-copy { min-height: 30vh; padding: 32px 24px; }
+  .login-copy h1 { font-size: 44px; }
   .login-panel { padding: 38px 24px; }
   .topbar { align-items: flex-start; padding: 12px 16px; }
   .topbar-actions { align-items: flex-end; flex-wrap: wrap; justify-content: flex-end; }

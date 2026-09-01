@@ -34,7 +34,8 @@ describe("admin web shell", () => {
       assert.equal(page.headers["cache-control"], "no-store");
       assert.match(page.headers["content-security-policy"] ?? "", /frame-ancestors 'none'/);
       assert.equal(page.headers["x-frame-options"], "DENY");
-      assert.match(page.body, /hoiBot Operations/);
+      assert.match(page.body, /<h1 id="login-title">호이월드<\/h1>/);
+      assert.doesNotMatch(page.body, /hoiBot Operations|PERMISSIONED CONTROL SURFACE|권한 우선/);
       assert.equal(styles.body, ADMIN_WEB_STYLES);
       assert.equal(client.body, ADMIN_WEB_CLIENT);
     } finally {
@@ -46,6 +47,7 @@ describe("admin web shell", () => {
     assert.match(ADMIN_WEB_HTML, /<html lang="ko">/);
     assert.match(ADMIN_WEB_HTML, /class="skip-link" href="#main-content"/);
     assert.match(ADMIN_WEB_HTML, /aria-label="관리자 로그인"/);
+    assert.match(ADMIN_WEB_HTML, /<section class="login-copy" aria-labelledby="login-title">\s*<h1 id="login-title">호이월드<\/h1>\s*<\/section>/);
     assert.match(ADMIN_WEB_HTML, /aria-live="polite"/);
     assert.match(ADMIN_WEB_HTML, /id="main-content"[^>]*tabindex="-1"/);
   });

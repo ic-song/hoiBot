@@ -1,0 +1,33 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-LOGIN-HERO-POLISH-01",
+  "executionId": "작업반장-SL-COMMON-ADMIN-WEB-LOGIN-HERO-POLISH-01-RECOVERY-2026090201",
+  "baseline": "ab9ce803023f3568ec63e2fd96140670de3daf80",
+  "branch": "codex/modernization-admin-web-login-hero-polish-v2438-20260902",
+  "leaseRow": 2492,
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "validation": {
+    "focused": { "total": 17, "passed": 17, "failed": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "full": { "total": 1580, "passed": 1572, "failed": 0, "skipped": 8 },
+    "responsive": ["desktop", "tablet", "mobile"],
+    "syntheticShadow": "PASS"
+  },
+  "mutations": {
+    "mariaDbSchema": 0,
+    "migration": 0,
+    "operationalData": 0,
+    "legacy": 0,
+    "featureProd": 0
+  }
+}
+
