@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
+import { FREE_MARKET_MEMBERSHIP_EXISTS_SQL } from "./free-market-membership.js";
 
 const MAX_UINT64 = 18_446_744_073_709_551_615n;
 const MAX_DECIMAL_30_3_INTEGER = 999_999_999_999_999_999_999_999_999n;
@@ -291,7 +292,7 @@ export class PetSkillMarketListingService {
   private async registrationLimit(transaction: DatabaseTransaction, playerId: bigint): Promise<bigint> {
     const benefits = await transaction.query<Array<{ ticket: bigint; merchant: bigint }>>(
       `SELECT
-       EXISTS(SELECT 1 FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND stack.quantity>0 AND item.display_name='자유시장회원권🏪') ticket,
+       ${FREE_MARKET_MEMBERSHIP_EXISTS_SQL} ticket,
        EXISTS(SELECT 1 FROM player_pets pet JOIN pet_skills owned ON owned.player_pet_id=pet.id JOIN skill_definitions skill ON skill.id=owned.skill_id WHERE pet.player_id=? AND skill.display_name='타고난 장사꾼') merchant`,
       [playerId, playerId],
     );

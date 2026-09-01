@@ -1,0 +1,64 @@
+{
+  "sliceId": "SL-PACKAGE-FREE-MARKET-MEMBERSHIP-REWARD-BINDING-01",
+  "executionId": "개발자-SL-PACKAGE-FREE-MARKET-MEMBERSHIP-REWARD-BINDING-01-20260831T0900",
+  "wbs": 671,
+  "dbRow": 1949,
+  "lease": 2417,
+  "baseline": "b7d575d1b31c07d67028ca779cf53ab0625b1625",
+  "migration": 412,
+  "scope": {
+    "legacyPackage": "package_5",
+    "catalogPackages": 1,
+    "rewardRules": 1,
+    "rewardQuantity": "1",
+    "canonicalItem": "free_market_membership",
+    "ownership": "inventory_stacks",
+    "ledger": "inventory_ledger",
+    "packageItemBalanceWrites": 0,
+    "packageItemInstanceWrites": 0,
+    "packageItemLedgerWrites": 0,
+    "runtimeChanges": 0,
+    "providerChanges": 0,
+    "schemaChanges": 0,
+    "mainChanges": 0,
+    "uiChanges": 0
+  },
+  "hashes": {
+    "sourceProjectionSha256": "4de63c4c58d365c9532d039af8f84770928145685fdc097c572a25e54b07c4a9",
+    "bindingProjectionSha256": "6376e3772841726d1a7b915f9ce722816fd959b738127b32e624feb513e5783c"
+  },
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMaria": "PASS",
+    "normal": "PASS",
+    "replay": "PASS",
+    "repeat": "PASS",
+    "transactionRollback": "PASS",
+    "migrationRollbackReapply": "PASS",
+    "reconnect": "PASS",
+    "sourceParity": "PASS",
+    "syntheticShadow": "PASS",
+    "fullRegression": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "carryForward": {
+    "canonicalItemMigration382": true,
+    "packageDualConsumerParityLease2388": true,
+    "marketTypedConsumerLease2414": true
+  },
+  "valRangeReserved": "10600:10607",
+  "sheetsEdited": false,
+  "featureProdChanged": false,
+  "operationalDatabaseUsed": false
+}

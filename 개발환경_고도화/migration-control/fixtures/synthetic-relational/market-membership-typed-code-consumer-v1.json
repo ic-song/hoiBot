@@ -1,0 +1,33 @@
+{
+  "sliceId": "SL-MARKET-MEMBERSHIP-TYPED-CODE-CONSUMER-01",
+  "itemCode": "free_market_membership",
+  "consumerFiles": [
+    "free-market-bag-register-service.ts",
+    "home-furniture-market-listing-service.ts",
+    "pendant-market-register-service.ts",
+    "pet-skill-market-listing-service.ts",
+    "free-market-buy-service.ts",
+    "free-market-cancel-service.ts",
+    "free-market-force-cancel-service.ts"
+  ],
+  "semantics": {
+    "registrationBaseLimit": 1,
+    "membershipLimitBonus": 7,
+    "standardFeeBasisPoints": 1000,
+    "membershipFeeBasisPoints": 500,
+    "cancelRefundRequiresMembership": true,
+    "membershipConsumed": false,
+    "nonTradeBehaviorChanged": false,
+    "uiDisplayNameChanged": false
+  },
+  "scopeGuards": {
+    "ownershipChanges": 0,
+    "grantChanges": 0,
+    "packageChanges": 0,
+    "passChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainChanges": 0,
+    "sheetsEdited": false
+  }
+}

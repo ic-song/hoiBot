@@ -1,0 +1,60 @@
+{
+  "sliceId": "SL-PACKAGE-FREE-MARKET-MEMBERSHIP-REWARD-BINDING-01",
+  "executionId": "개발자-SL-PACKAGE-FREE-MARKET-MEMBERSHIP-REWARD-BINDING-01-20260831T0900",
+  "lease": 2417,
+  "wbs": 671,
+  "dbRow": 1949,
+  "baseline": "b7d575d1b31c07d67028ca779cf53ab0625b1625",
+  "migration": "412_package_free_market_membership_reward_binding.sql",
+  "source": {
+    "path": "data/packageInfo.json",
+    "packageId": "package_5",
+    "displayName": "자유시장회원권🏪+주간🦋 20개",
+    "enabled": true,
+    "maxUseOnce": 100,
+    "rewardIndex": 0,
+    "rewardType": "item",
+    "rewardDisplayName": "자유시장회원권🏪",
+    "rewardQuantity": "1",
+    "sourceRewardCount": 2,
+    "scopedRewardCount": 1,
+    "excludedReward": "주간상자🦋(/주간오픈):20"
+  },
+  "binding": {
+    "packageId": "package_5",
+    "consumeItemCode": "package_5",
+    "catalogVersion": "LEGACY-PACKAGEINFO-v1",
+    "definitionStatus": "READY",
+    "rewardRuleId": "RULE-PACKAGE-5-FREE-MARKET-MEMBERSHIP-001",
+    "canonicalItemCode": "free_market_membership",
+    "itemType": "STACK",
+    "quantity": "1",
+    "ownershipTable": "inventory_stacks",
+    "ledgerTable": "inventory_ledger"
+  },
+  "counts": {
+    "sourcePackage": 1,
+    "catalogPackage": 1,
+    "scopedRewardRule": 1,
+    "canonicalRewardTarget": 1,
+    "commandAlias": 0,
+    "packageItemBalanceWrites": 0,
+    "packageItemInstanceWrites": 0,
+    "packageItemLedgerWrites": 0
+  },
+  "hashes": {
+    "sourceProjectionSha256": "4de63c4c58d365c9532d039af8f84770928145685fdc097c572a25e54b07c4a9",
+    "bindingProjectionSha256": "6376e3772841726d1a7b915f9ce722816fd959b738127b32e624feb513e5783c"
+  },
+  "scopeGuards": {
+    "legacySourceDeleted": false,
+    "passModelChanged": false,
+    "marketBenefitChanged": false,
+    "runtimeChanged": false,
+    "providerChanged": false,
+    "schemaChanged": false,
+    "mainChanged": false,
+    "uiChanged": false,
+    "gate8": false
+  }
+}

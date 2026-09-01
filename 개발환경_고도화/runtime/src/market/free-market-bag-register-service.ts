@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { compareLegacyBagItems } from "../inventory/legacy-bag-formatter.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { FREE_MARKET_MEMBERSHIP_EXISTS_SQL } from "./free-market-membership.js";
 
 const COMMAND = "/가방거래등록";
 const CARROT_FEE = 100n;
@@ -288,7 +289,7 @@ export class FreeMarketBagRegisterService {
   // 기본 1건에 회원권 7건과 장사꾼 스킬 2건을 합산합니다.
   private async registrationLimit(transaction: DatabaseTransaction, playerId: bigint): Promise<bigint> {
     const benefits = (await transaction.query<Array<{ ticket: bigint; merchant: bigint }>>(`SELECT
-      EXISTS(SELECT 1 FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND stack.quantity>0 AND item.display_name='자유시장회원권🏪') ticket,
+      ${FREE_MARKET_MEMBERSHIP_EXISTS_SQL} ticket,
       EXISTS(SELECT 1 FROM player_pets pet JOIN pet_skills owned ON owned.player_pet_id=pet.id JOIN skill_definitions skill ON skill.id=owned.skill_id WHERE pet.player_id=? AND skill.display_name='타고난 장사꾼') merchant`,
     [playerId, playerId]))[0];
     return 1n + ((benefits?.ticket ?? 0n) > 0n ? 7n : 0n) + ((benefits?.merchant ?? 0n) > 0n ? 2n : 0n);
