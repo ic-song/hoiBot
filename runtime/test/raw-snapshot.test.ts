@@ -35,7 +35,13 @@ describe("RAW snapshot manifest", () => {
     const first = await buildRawSnapshotManifest(root, "source");
     const second = await buildRawSnapshotManifest(root, "downloaded");
 
-    assert.deepEqual(compareRawSnapshotManifests(first, second), { equal: true, reasons: [] });
+    assert.deepEqual(compareRawSnapshotManifests(first, second), {
+      equal: true,
+      reasons: [],
+      missingPathSha256: [],
+      additionalPathSha256: [],
+      changedPathSha256: []
+    });
   });
 
   it("detects content tampering", async () => {
@@ -46,6 +52,22 @@ describe("RAW snapshot manifest", () => {
 
     assert.equal(compareRawSnapshotManifests(first, second).equal, false);
     assert.ok(compareRawSnapshotManifests(first, second).reasons.includes("MANIFEST_HASH_MISMATCH"));
+    assert.equal(compareRawSnapshotManifests(first, second).changedPathSha256.length, 1);
+  });
+
+  it("classifies missing and additional files without exposing their names", async () => {
+    const expectedRoot = await fixture();
+    const actualRoot = await mkdtemp(join(tmpdir(), "hoibot-raw-snapshot-actual-"));
+    await writeFile(join(actualRoot, "additional.json"), "{}", "utf8");
+    const expected = await buildRawSnapshotManifest(expectedRoot, "expected");
+    const actual = await buildRawSnapshotManifest(actualRoot, "actual");
+    const comparison = compareRawSnapshotManifests(expected, actual);
+
+    assert.equal(comparison.missingPathSha256.length, 2);
+    assert.equal(comparison.additionalPathSha256.length, 1);
+    assert.ok(comparison.reasons.includes("MISSING_FILES"));
+    assert.ok(comparison.reasons.includes("ADDITIONAL_FILES"));
+    assert.equal(JSON.stringify(comparison).includes("additional.json"), false);
   });
 
   it("rejects malformed JSON and invalid UTF-8", async () => {
@@ -66,4 +88,3 @@ describe("RAW snapshot manifest", () => {
     assert.equal(written.fileCount, 1);
   });
 });
-

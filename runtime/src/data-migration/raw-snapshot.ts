@@ -23,6 +23,9 @@ export interface RawSnapshotManifest {
 export interface RawSnapshotComparison {
   equal: boolean;
   reasons: string[];
+  missingPathSha256: string[];
+  additionalPathSha256: string[];
+  changedPathSha256: string[];
 }
 
 const UTF8_DECODER = new TextDecoder("utf-8", { fatal: true });
@@ -131,12 +134,41 @@ export function compareRawSnapshotManifests(
   actual: RawSnapshotManifest
 ): RawSnapshotComparison {
   const reasons: string[] = [];
+  const expectedByPath = new Map(expected.entries.map((entry) => [entry.pathSha256, entry]));
+  const actualByPath = new Map(actual.entries.map((entry) => [entry.pathSha256, entry]));
+  const missingPathSha256 = [...expectedByPath.keys()]
+    .filter((pathSha256) => !actualByPath.has(pathSha256))
+    .sort();
+  const additionalPathSha256 = [...actualByPath.keys()]
+    .filter((pathSha256) => !expectedByPath.has(pathSha256))
+    .sort();
+  const changedPathSha256 = [...expectedByPath.entries()]
+    .filter(([pathSha256, expectedEntry]) => {
+      const actualEntry = actualByPath.get(pathSha256);
+      return Boolean(
+        actualEntry &&
+          (expectedEntry.size !== actualEntry.size ||
+            expectedEntry.contentSha256 !== actualEntry.contentSha256)
+      );
+    })
+    .map(([pathSha256]) => pathSha256)
+    .sort();
+
   if (expected.format !== actual.format) reasons.push("FORMAT_MISMATCH");
   if (expected.fileCount !== actual.fileCount) reasons.push("FILE_COUNT_MISMATCH");
   if (expected.jsonFileCount !== actual.jsonFileCount) reasons.push("JSON_COUNT_MISMATCH");
   if (expected.totalBytes !== actual.totalBytes) reasons.push("TOTAL_BYTES_MISMATCH");
   if (expected.manifestSha256 !== actual.manifestSha256) reasons.push("MANIFEST_HASH_MISMATCH");
-  return { equal: reasons.length === 0, reasons };
+  if (missingPathSha256.length > 0) reasons.push("MISSING_FILES");
+  if (additionalPathSha256.length > 0) reasons.push("ADDITIONAL_FILES");
+  if (changedPathSha256.length > 0) reasons.push("CHANGED_FILES");
+  return {
+    equal: reasons.length === 0,
+    reasons,
+    missingPathSha256,
+    additionalPathSha256,
+    changedPathSha256
+  };
 }
 
 // manifest 파일을 같은 디렉터리의 임시 파일을 거쳐 원자적으로 저장한다.
@@ -150,4 +182,3 @@ export async function writeRawSnapshotManifest(
   await writeFile(temporaryOutput, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   await rename(temporaryOutput, absoluteOutput);
 }
-
