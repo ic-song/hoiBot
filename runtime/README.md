@@ -59,3 +59,19 @@ npm.cmd run typecheck
 npm.cmd test
 npm.cmd run build
 ```
+
+## 운영 RAW 스냅샷 검증
+
+운영 데이터 원문을 출력하지 않고 경로 해시, 파일 크기와 내용 SHA-256으로 manifest를 생성합니다. 모든 JSON은 UTF-8 디코딩과 파싱을 함께 검사합니다.
+
+```powershell
+npm.cmd run snapshot:validate -- --source ..\data --output ..\snapshot-evidence\source-manifest.json --label operational-source
+```
+
+격리 환경에 업로드한 뒤 다시 내려받은 디렉터리는 원본 manifest와 비교합니다.
+
+```powershell
+npm.cmd run snapshot:validate -- --source C:\Temp\hoibot-downloaded --output ..\snapshot-evidence\downloaded-manifest.json --compare ..\snapshot-evidence\source-manifest.json --label isolated-download
+```
+
+manifest에는 데이터 내용과 실제 파일명이 들어가지 않습니다. 이 절차는 운영 DB 반영이나 `feature/prod` 갱신을 수행하지 않습니다.
