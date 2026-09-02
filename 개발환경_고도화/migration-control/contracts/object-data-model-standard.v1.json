@@ -1,7 +1,7 @@
 {
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
-  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "450_object_furniture_market_active_listing.sql"],
+  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "450_object_furniture_market_active_listing.sql"],
   "tables": [
     {
       "table": "object_identities",
@@ -220,6 +220,42 @@
       "table": "object_furniture_active_market_listings", "role": "relation",
       "columns": [{ "name": "furniture_market_listing_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }],
       "primaryKey": ["furniture_market_listing_id"], "foreignKeys": [{ "column": "furniture_market_listing_id", "referencesTable": "object_furniture_market_listings", "referencesColumn": "furniture_market_listing_id" }, { "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }], "uniqueKeys": [["owned_furniture_id"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_mini_pet_definitions", "role": "definition",
+      "columns": [
+        { "name": "mini_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "mini_pet_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "mini_pet_emoji", "type": "VARCHAR(32)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "mini_pet_grade", "type": "VARCHAR(50)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "sale_price", "type": "BIGINT UNSIGNED" }, { "name": "base_battle_charm", "type": "BIGINT" }, { "name": "base_castle_charm", "type": "BIGINT" }, { "name": "base_raid_charm", "type": "BIGINT" },
+        { "name": "max_enhancement_level", "type": "INT UNSIGNED" }, { "name": "active_flag", "type": "BOOLEAN" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["mini_pet_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules", "role": "definition",
+      "columns": [
+        { "name": "mini_pet_enhancement_rule_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "mini_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "target_enhancement_level", "type": "INT UNSIGNED" }, { "name": "battle_charm_gain", "type": "BIGINT" }, { "name": "castle_charm_gain", "type": "BIGINT" }, { "name": "raid_charm_gain", "type": "BIGINT" },
+        { "name": "success_probability", "type": "DECIMAL(12,10)" }, { "name": "point_cost", "type": "BIGINT UNSIGNED" }, { "name": "stone_quantity", "type": "BIGINT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["mini_pet_enhancement_rule_id"], "foreignKeys": [{ "column": "mini_pet_id", "referencesTable": "canonical_mini_pet_definitions", "referencesColumn": "mini_pet_id" }], "uniqueKeys": [["mini_pet_id", "target_enhancement_level"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances", "role": "ownership_instance",
+      "columns": [
+        { "name": "owned_mini_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "mini_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "enhancement_level", "type": "INT UNSIGNED" }, { "name": "equipped_flag", "type": "BOOLEAN" }, { "name": "bound_flag", "type": "BOOLEAN" }, { "name": "ownership_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["owned_mini_pet_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "mini_pet_id", "referencesTable": "canonical_mini_pet_definitions", "referencesColumn": "mini_pet_id" }], "uniqueKeys": [["owned_mini_pet_id", "player_id"]],
+      "allowedStateColumns": ["enhancement_level", "equipped_flag", "bound_flag", "ownership_status"], "definitionOnlyColumns": ["mini_pet_name", "mini_pet_emoji", "mini_pet_grade", "sale_price", "base_battle_charm", "base_castle_charm", "base_raid_charm", "max_enhancement_level"], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_mini_pet_operation_replays", "role": "operation",
+      "columns": [
+        { "name": "mini_pet_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "request_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "operation_kind", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "payload_fingerprint", "type": "CHAR(64)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_mini_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "operation_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["mini_pet_operation_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "owned_mini_pet_id", "referencesTable": "canonical_owned_mini_pet_instances", "referencesColumn": "owned_mini_pet_id" }], "uniqueKeys": [["player_id", "request_key"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]

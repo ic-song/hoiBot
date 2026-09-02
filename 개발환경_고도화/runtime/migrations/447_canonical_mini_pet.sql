@@ -1,0 +1,90 @@
+-- WBS736: 레거시 BIGINT/id/code 미니펫 테이블은 유지하고 표준 canonical 경로만 추가합니다.
+-- 통합 선행조건: 444_canonical_item_inventory.sql의 canonical_players(player_id).
+CREATE TABLE canonical_mini_pet_definitions (
+  mini_pet_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  mini_pet_name VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  mini_pet_emoji VARCHAR(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  mini_pet_grade VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  sale_price BIGINT UNSIGNED NULL,
+  base_battle_charm BIGINT NOT NULL DEFAULT 0,
+  base_castle_charm BIGINT NOT NULL DEFAULT 0,
+  base_raid_charm BIGINT NOT NULL DEFAULT 0,
+  max_enhancement_level INT UNSIGNED NOT NULL DEFAULT 0,
+  active_flag BOOLEAN NOT NULL DEFAULT TRUE,
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (mini_pet_id),
+  CONSTRAINT chk_canonical_mini_pet_definition_level CHECK (max_enhancement_level <= 10000),
+  CONSTRAINT chk_canonical_mini_pet_definition_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
+  CONSTRAINT chk_canonical_mini_pet_definition_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE canonical_mini_pet_enhancement_rules (
+  mini_pet_enhancement_rule_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  mini_pet_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  target_enhancement_level INT UNSIGNED NOT NULL,
+  battle_charm_gain BIGINT NOT NULL,
+  castle_charm_gain BIGINT NOT NULL,
+  raid_charm_gain BIGINT NOT NULL,
+  success_probability DECIMAL(12,10) NOT NULL,
+  point_cost BIGINT UNSIGNED NOT NULL,
+  stone_quantity BIGINT UNSIGNED NOT NULL,
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (mini_pet_enhancement_rule_id),
+  UNIQUE KEY uq_canonical_mini_pet_enhancement_level (mini_pet_id, target_enhancement_level),
+  CONSTRAINT fk_canonical_mini_pet_enhancement_definition FOREIGN KEY (mini_pet_id) REFERENCES canonical_mini_pet_definitions (mini_pet_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_canonical_mini_pet_enhancement_target CHECK (target_enhancement_level > 0),
+  CONSTRAINT chk_canonical_mini_pet_enhancement_probability CHECK (success_probability >= 0 AND success_probability <= 1),
+  CONSTRAINT chk_canonical_mini_pet_enhancement_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
+  CONSTRAINT chk_canonical_mini_pet_enhancement_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE canonical_owned_mini_pet_instances (
+  owned_mini_pet_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  player_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  mini_pet_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  enhancement_level INT UNSIGNED NOT NULL DEFAULT 0,
+  equipped_flag BOOLEAN NOT NULL DEFAULT FALSE,
+  bound_flag BOOLEAN NOT NULL DEFAULT FALSE,
+  ownership_status VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'owned',
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (owned_mini_pet_id),
+  UNIQUE KEY uq_canonical_owned_mini_pet_owner (owned_mini_pet_id, player_id),
+  KEY idx_canonical_owned_mini_pet_player_status (player_id, ownership_status, equipped_flag),
+  KEY idx_canonical_owned_mini_pet_definition (mini_pet_id),
+  CONSTRAINT fk_canonical_owned_mini_pet_player FOREIGN KEY (player_id) REFERENCES canonical_players (player_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_canonical_owned_mini_pet_definition FOREIGN KEY (mini_pet_id) REFERENCES canonical_mini_pet_definitions (mini_pet_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_canonical_owned_mini_pet_status CHECK (ownership_status IN ('owned','listed','consumed','removed')),
+  CONSTRAINT chk_canonical_owned_mini_pet_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
+  CONSTRAINT chk_canonical_owned_mini_pet_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE canonical_mini_pet_operation_replays (
+  mini_pet_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  player_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  request_key VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  operation_kind VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  payload_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  owned_mini_pet_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  operation_status VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (mini_pet_operation_id),
+  UNIQUE KEY uq_canonical_mini_pet_operation_request (player_id, request_key),
+  CONSTRAINT fk_canonical_mini_pet_operation_player FOREIGN KEY (player_id) REFERENCES canonical_players (player_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_canonical_mini_pet_operation_owned FOREIGN KEY (owned_mini_pet_id, player_id) REFERENCES canonical_owned_mini_pet_instances (owned_mini_pet_id, player_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_canonical_mini_pet_operation_kind CHECK (operation_kind IN ('acquire')),
+  CONSTRAINT chk_canonical_mini_pet_operation_status CHECK (operation_status IN ('completed')),
+  CONSTRAINT chk_canonical_mini_pet_operation_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
+  CONSTRAINT chk_canonical_mini_pet_operation_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

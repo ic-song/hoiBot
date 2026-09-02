@@ -1,0 +1,32 @@
+{
+  "fixtureVersion": "canonical-mini-pet-v1",
+  "dependency": "444_canonical_item_inventory.sql -> canonical_players(player_id)",
+  "player": { "player_id": "player01" },
+  "definition": {
+    "mini_pet_id": "minipet1",
+    "mini_pet_name": "테스트 미니펫",
+    "mini_pet_emoji": "🐹",
+    "mini_pet_grade": "창조",
+    "sale_price": "500000000",
+    "base_battle_charm": "1000",
+    "base_castle_charm": "1000",
+    "base_raid_charm": "1000",
+    "max_enhancement_level": 3
+  },
+  "enhancementRules": [
+    { "targetEnhancementLevel": 1, "battleCharmGain": "100", "castleCharmGain": "100", "raidCharmGain": "100" },
+    { "targetEnhancementLevel": 2, "battleCharmGain": "150", "castleCharmGain": "150", "raidCharmGain": "150" },
+    { "targetEnhancementLevel": 3, "battleCharmGain": "250", "castleCharmGain": "250", "raidCharmGain": "250" }
+  ],
+  "ownedInstances": [
+    { "owned_mini_pet_id": "ownedmp1", "player_id": "player01", "mini_pet_id": "minipet1", "enhancement_level": 0, "equipped_flag": false },
+    { "owned_mini_pet_id": "ownedmp2", "player_id": "player01", "mini_pet_id": "minipet1", "enhancement_level": 2, "equipped_flag": true }
+  ],
+  "expectedLevel2Charm": "1250",
+  "invariants": [
+    "same mini_pet_id may have N distinct owned_mini_pet_id rows",
+    "name, emoji, grade, price, base charms, and enhancement rules are definition-only",
+    "final charm is calculated and never persisted on owned instances",
+    "equipped and bound values are instance state"
+  ]
+}
