@@ -140,6 +140,7 @@ describe("canonical furniture home repository", () => {
   it("preserves cancelled and sold listing history when furniture is re-listed", async () => {
     const statusByOwned = new Map<string, string>([["o1234567", "bag"], ["q1234567", "bag"]]);
     const listingStatuses: string[] = [];
+    const activeListings = new Set<string>();
     const transaction: DatabaseTransaction = {
       query: async <T>(): Promise<T> => [] as T,
       execute: async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
@@ -148,11 +149,12 @@ describe("canonical furniture home repository", () => {
           if (values[5] !== statusByOwned.get(ownedFurnitureId)) return { affectedRows: 0n, insertId: 0n };
           statusByOwned.set(ownedFurnitureId, String(values[0]));
         } else if (sql.startsWith("INSERT INTO object_furniture_market_listings")) listingStatuses.push("active");
+        else if (sql.startsWith("INSERT INTO object_furniture_active_market_listings")) activeListings.add(String(values[1]));
         else if (sql.startsWith("UPDATE object_furniture_market_listings")) {
           const active = listingStatuses.lastIndexOf("active");
           if (active < 0) return { affectedRows: 0n, insertId: 0n };
           listingStatuses[active] = String(values[0]);
-        }
+        } else if (sql.startsWith("DELETE FROM object_furniture_active_market_listings")) activeListings.delete(String(values[0]));
         return { affectedRows: 1n, insertId: 0n };
       }
     };
@@ -165,6 +167,7 @@ describe("canonical furniture home repository", () => {
     assert.equal((await transition("q1234567", "listed", "bag", "cancel-1")).replayed, false);
     assert.equal((await transition("q1234567", "bag", "listed", "list-3", 300n)).replayed, false);
     assert.deepEqual(listingStatuses, ["sold", "cancelled", "active"]);
+    assert.deepEqual([...activeListings], ["q1234567"]);
   });
 
   it("rejects unsupported ownership transitions before opening a transaction", async () => {
@@ -178,11 +181,11 @@ describe("canonical furniture home repository", () => {
 
   it("keeps a concurrent re-list active-listing UNIQUE conflict meaningful and rolls back", async () => {
     let rolledBack = false;
-    const duplicate = Object.assign(new Error("Duplicate entry 'o1234567' for key 'uq_object_furniture_market_active_owned'"), { code: "ER_DUP_ENTRY" });
+    const duplicate = Object.assign(new Error("Duplicate entry 'o1234567' for key 'uq_object_furniture_active_market_owned'"), { code: "ER_DUP_ENTRY" });
     const transaction: DatabaseTransaction = {
       query: async <T>(): Promise<T> => [] as T,
       execute: async (sql: string): Promise<DatabaseWriteResult> => {
-        if (sql.startsWith("INSERT INTO object_furniture_market_listings")) throw duplicate;
+        if (sql.startsWith("INSERT INTO object_furniture_active_market_listings")) throw duplicate;
         return { affectedRows: 1n, insertId: 0n };
       }
     };

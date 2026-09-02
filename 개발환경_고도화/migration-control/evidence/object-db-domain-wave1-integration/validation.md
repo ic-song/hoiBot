@@ -8,30 +8,32 @@
 
 ## 통합 범위
 
-- migration `443`, `444`, `445`, `446`을 중앙 manifest에 직렬 등록했다.
+- migration `443`, `444`, `445`, `446`, `450`을 중앙 manifest에 직렬 등록했다.
 - 공용 사용자 PK는 `canonical_players.player_id` 하나만 사용한다.
-- 계약 등록 대상은 21개 테이블이며 각 테이블에 `INSERT_USER`, `INSERT_TIME`, `UPDATE_USER`, `UPDATE_TIME`을 둔다.
+- 계약 등록 대상은 22개 테이블이며 각 테이블에 `INSERT_USER`, `INSERT_TIME`, `UPDATE_USER`, `UPDATE_TIME`을 둔다.
 - 정의값과 사용자 보유값을 분리하고, 가구 매력은 정의의 기본값·강화 증가값과 보유 인스턴스의 강화 단계로 계산한다.
 
 ## 실제 MariaDB 검증
 
 격리된 일회용 `mariadb:11.4` 컨테이너와 빈 DB에서 수행했다.
 
-- 전체 migration 적용: 성공, migration count `434`
-- 같은 DB에 migration 재실행: 성공, migration count `434`
-- 등록 대상 테이블: `21/21`
-- 필수 감사 컬럼: `84/84`
+- 전체 migration 적용: 성공, migration count `435`
+- 같은 DB에 migration 재실행: 성공, migration count `435`
+- 등록 대상 테이블: `22/22`
+- 필수 감사 컬럼: `88/88`
 - 등록 대상 FK: `35`; FK 원본·참조 컬럼 타입/문자셋/collation 불일치 `0`
 - 다른 사용자의 장비를 펫에 장착하는 교차 소유 INSERT: FK `fk_canonical_owned_pet_equipment_equipment`로 거부
 - `2026-09-03 25:00:00` 감사시간 INSERT: CHECK `chk_object_furniture_market_insert_time`으로 거부
+- 취소된 가구 매물 이력을 보존한 뒤 같은 가구를 재등록: 성공, 과거 `cancelled` 1건과 현재 `active` 1건 확인
+- 같은 가구의 두 번째 활성 매물 transaction: UNIQUE `uq_object_furniture_active_market_owned`로 거부되고 신규 이력도 rollback
 
 ## 코드 검증
 
-- `npm run object-data:validate`: 성공, 등록 대상 21개
+- `npm run object-data:validate`: 성공, 등록 대상 22개
 - `npm run typecheck`: 성공
 - `npm run build`: 성공
 - Wave 1 집중 테스트: `41/41` 성공
-- 가구 최종 동시성·생명주기 집중 테스트: `22/22` 성공
+- 가구 최종 동시성·생명주기 집중 테스트: `26/26` 성공
 - 전체 회귀 테스트: `1634`개 중 `1626` 성공, 실패 `0`, 환경 의존 `8`개 skip
 - `main.js`, `Info.js` Node 구문 검사: 성공
 - `git diff --check`: 성공

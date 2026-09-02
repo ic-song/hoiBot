@@ -292,13 +292,16 @@ export class MariaCanonicalFurnitureHomeRepository {
       if (changed.affectedRows !== 1n) throw new Error("CANONICAL_FURNITURE_STATE_INVALID");
       if (input.fromStatus === "placed") await transaction.execute("DELETE FROM object_home_furniture_placements WHERE owned_furniture_id=?", [input.ownedFurnitureId]);
       if (input.toStatus === "listed") {
-        await reserveId(transaction, this.generate, async (candidate) => {
+        const furnitureMarketListingId = await reserveId(transaction, this.generate, async (candidate) => {
           await transaction.execute("INSERT INTO object_furniture_market_listings(furniture_market_listing_id,owned_furniture_id,listing_price,listing_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'active',?,?,?,?)", [candidate,input.ownedFurnitureId,input.listingPrice!,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
         });
+        await transaction.execute("INSERT INTO object_furniture_active_market_listings(furniture_market_listing_id,owned_furniture_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)", [furnitureMarketListingId,input.ownedFurnitureId,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
       } else if (input.fromStatus === "listed") {
         const listingStatus = input.toStatus === "sold" ? "sold" : "cancelled";
-        const listing = await transaction.execute("UPDATE object_furniture_market_listings SET listing_status=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND listing_status='active'", [listingStatus,audit.UPDATE_USER,audit.UPDATE_TIME,input.ownedFurnitureId]);
+        const listing = await transaction.execute("UPDATE object_furniture_market_listings listing JOIN object_furniture_active_market_listings active ON active.furniture_market_listing_id=listing.furniture_market_listing_id SET listing.listing_status=?,listing.UPDATE_USER=?,listing.UPDATE_TIME=? WHERE active.owned_furniture_id=? AND listing.listing_status='active'", [listingStatus,audit.UPDATE_USER,audit.UPDATE_TIME,input.ownedFurnitureId]);
         if (listing.affectedRows !== 1n) throw new Error("CANONICAL_FURNITURE_MARKET_STATE_INVALID");
+        const activeListing = await transaction.execute("DELETE FROM object_furniture_active_market_listings WHERE owned_furniture_id=?", [input.ownedFurnitureId]);
+        if (activeListing.affectedRows !== 1n) throw new Error("CANONICAL_FURNITURE_MARKET_STATE_INVALID");
       }
       let operationId = "";
       await reserveOperationReplayId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'transitioned',?,?,?,?)", [candidate,input.playerId,input.idempotencyScope,input.idempotencyKey,kind,digest,input.ownedFurnitureId,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); operationId=candidate; });
