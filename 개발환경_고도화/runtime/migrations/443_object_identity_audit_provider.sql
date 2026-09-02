@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS object_identities (
   UPDATE_TIME CHAR(19) NOT NULL,
   PRIMARY KEY (object_identity_id),
   CONSTRAINT chk_object_identities_type CHECK (object_type REGEXP '^[A-Z][A-Z0-9_]{0,49}$'),
-  CONSTRAINT chk_object_identities_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
-  CONSTRAINT chk_object_identities_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$')
+  CONSTRAINT chk_object_identities_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
+  CONSTRAINT chk_object_identities_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS object_identity_crosswalks (
@@ -27,6 +27,6 @@ CREATE TABLE IF NOT EXISTS object_identity_crosswalks (
   KEY idx_object_identity_crosswalk_target (object_identity_id),
   CONSTRAINT fk_object_identity_crosswalk_target FOREIGN KEY (object_identity_id)
     REFERENCES object_identities (object_identity_id) ON DELETE RESTRICT,
-  CONSTRAINT chk_object_identity_crosswalks_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
-  CONSTRAINT chk_object_identity_crosswalks_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$')
+  CONSTRAINT chk_object_identity_crosswalks_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
+  CONSTRAINT chk_object_identity_crosswalks_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

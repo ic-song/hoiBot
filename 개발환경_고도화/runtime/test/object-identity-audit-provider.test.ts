@@ -50,7 +50,7 @@ describe("object identity and audit provider", () => {
 
   it("returns an existing source mapping without creating another canonical identity", async () => {
     let writes = 0;
-    const database = scriptedDatabase([[{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567" }]], () => { writes += 1; return { affectedRows: 1n, insertId: 0n }; });
+    const database = scriptedDatabase([[{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567", INSERT_USER: "persisted", INSERT_TIME: "2026-06-22 23:00:00", UPDATE_USER: "persisted", UPDATE_TIME: "2026-06-22 23:00:00" }]], () => { writes += 1; return { affectedRows: 1n, insertId: 0n }; });
     const provider = new MariaObjectIdentityAuditProvider(database, () => "b1234567");
     const result = await provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" });
     assert.deepEqual({ objectIdentityId: result.objectIdentityId, objectIdentityCrosswalkId: result.objectIdentityCrosswalkId, replayed: result.replayed }, { objectIdentityId: "a1234567", objectIdentityCrosswalkId: "c1234567", replayed: true });
@@ -72,7 +72,7 @@ describe("object identity and audit provider", () => {
     };
     const database: DatabaseClient = {
       ping: async () => undefined, verifyRollback: async () => true, execute: transaction.execute, close: async () => undefined,
-      query: async <T>(): Promise<T> => { externalReads += 1; return [{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567" }] as T; },
+      query: async <T>(): Promise<T> => { externalReads += 1; return [{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567", INSERT_USER: "persisted", INSERT_TIME: "2026-06-22 23:00:00", UPDATE_USER: "persisted", UPDATE_TIME: "2026-06-22 23:00:00" }] as T; },
       withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>): Promise<T> => {
         let stagedIdentities = 0;
         let stagedCrosswalks = 0;
@@ -99,6 +99,7 @@ describe("object identity and audit provider", () => {
     const provider = new MariaObjectIdentityAuditProvider(database, () => candidates.shift()!, 2);
     const result = await provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" });
     assert.deepEqual({ objectIdentityId: result.objectIdentityId, objectIdentityCrosswalkId: result.objectIdentityCrosswalkId, replayed: result.replayed }, { objectIdentityId: "a1234567", objectIdentityCrosswalkId: "c1234567", replayed: true });
+    assert.equal(result.audit.INSERT_USER, "persisted");
     assert.deepEqual({ committedIdentities, committedCrosswalks, rolledBack, externalReads }, { committedIdentities: 0, committedCrosswalks: 0, rolledBack: 1, externalReads: 1 });
   });
 

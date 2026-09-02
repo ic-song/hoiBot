@@ -58,19 +58,13 @@ export function createObjectAuditValues(actor: string, now: Date = new Date()): 
   return { INSERT_USER: actor, INSERT_TIME: timestamp, UPDATE_USER: actor, UPDATE_TIME: timestamp };
 }
 
-interface CrosswalkRow { object_identity_crosswalk_id: string; object_identity_id: string; }
+interface CrosswalkRow extends ObjectAuditValues { object_identity_crosswalk_id: string; object_identity_id: string; }
 
 function isDuplicate(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const code = "code" in error ? String(error.code) : "";
   const message = "message" in error ? String(error.message) : "";
   return code === "ER_DUP_ENTRY" || /duplicate entry/i.test(message);
-}
-
-function isSourceDuplicate(error: unknown): boolean {
-  if (!isDuplicate(error)) return false;
-  const message = typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
-  return message.includes("uq_object_identity_crosswalk_source");
 }
 
 // source namespace와 식별자는 원문을 보존하되 저장 가능한 명시 입력만 허용합니다.
@@ -121,44 +115,38 @@ export class MariaObjectIdentityAuditProvider {
   async registerCrosswalk(input: ObjectIdentityCrosswalkInput): Promise<ObjectIdentityCrosswalkResult> {
     assertCrosswalkInput(input);
     const audit = createObjectAuditValues(input.actor, this.now());
-    try {
-      return await this.database.withTransaction(async (transaction) => {
-      const existing = (await transaction.query<CrosswalkRow[]>(
-        "SELECT object_identity_crosswalk_id,object_identity_id FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=? FOR UPDATE",
-        [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
-      ))[0];
-      if (existing !== undefined) return { objectIdentityId: existing.object_identity_id, objectIdentityCrosswalkId: existing.object_identity_crosswalk_id, replayed: true, audit };
-      const objectIdentityId = await reserveIdentity(
+    for (let transactionAttempt = 0; transactionAttempt < this.maxAttempts; transactionAttempt += 1) {
+      try {
+        return await this.database.withTransaction(async (transaction) => {
+          const existing = (await transaction.query<CrosswalkRow[]>(
+            "SELECT object_identity_crosswalk_id,object_identity_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=? FOR UPDATE",
+            [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
+          ))[0];
+          if (existing !== undefined) return { objectIdentityId: existing.object_identity_id, objectIdentityCrosswalkId: existing.object_identity_crosswalk_id, replayed: true, audit: auditFrom(existing) };
+          const objectIdentityId = await reserveIdentity(
         (candidate) => transaction.execute(
           "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
           [candidate, input.objectType, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
         ).then(() => undefined), this.generate, this.maxAttempts
-      );
-      for (let attempt = 0; attempt < this.maxAttempts; attempt += 1) {
-        const crosswalkId = this.generate();
-        assertObjectIdentityCandidate(crosswalkId);
-        try {
+          );
+          const crosswalkId = this.generate();
+          assertObjectIdentityCandidate(crosswalkId);
           await transaction.execute(
             "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
             [crosswalkId, objectIdentityId, input.sourceSystem, input.sourceNamespace, input.sourceIdentifier, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
           );
           return { objectIdentityId, objectIdentityCrosswalkId: crosswalkId, replayed: false, audit };
-        } catch (error) {
-          if (isSourceDuplicate(error)) throw error;
-          if (!isDuplicate(error)) throw error;
-        }
+        });
+      } catch (error) {
+        if (!isDuplicate(error)) throw error;
+        const concurrent = (await this.database.query<CrosswalkRow[]>(
+          "SELECT object_identity_crosswalk_id,object_identity_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
+          [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
+        ))[0];
+        if (concurrent !== undefined) return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit: auditFrom(concurrent) };
       }
-      throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
-      });
-    } catch (error) {
-      if (!isSourceDuplicate(error)) throw error;
-      const concurrent = (await this.database.query<CrosswalkRow[]>(
-        "SELECT object_identity_crosswalk_id,object_identity_id FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
-        [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
-      ))[0];
-      if (concurrent === undefined) throw error;
-      return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit };
     }
+    throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
   }
 
   // source 식별자의 감사 주체만 변경하고 canonical PK는 보존합니다.
@@ -172,4 +160,8 @@ export class MariaObjectIdentityAuditProvider {
     if (result.affectedRows !== 1n) throw new Error("OBJECT_IDENTITY_CROSSWALK_NOT_FOUND");
     return audit;
   }
+}
+
+function auditFrom(row: ObjectAuditValues): ObjectAuditValues {
+  return { INSERT_USER: row.INSERT_USER, INSERT_TIME: row.INSERT_TIME, UPDATE_USER: row.UPDATE_USER, UPDATE_TIME: row.UPDATE_TIME };
 }
