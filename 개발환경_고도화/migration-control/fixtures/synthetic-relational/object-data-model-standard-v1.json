@@ -12,7 +12,7 @@
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
         { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ],
-      "primaryKey": ["player_id"], "foreignKeys": []
+      "primaryKey": ["player_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     },
     {
       "table": "item_definitions",
@@ -23,7 +23,7 @@
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
         { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ],
-      "primaryKey": ["item_id"], "foreignKeys": []
+      "primaryKey": ["item_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     },
     {
       "table": "owned_items",
@@ -42,7 +42,8 @@
         { "column": "item_id", "referencesTable": "item_definitions", "referencesColumn": "item_id" }
       ],
       "allowedStateColumns": ["quantity"],
-      "definitionOnlyColumns": ["item_name", "price", "base_charm"]
+      "definitionOnlyColumns": ["item_name", "price", "base_charm"],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ]
 }

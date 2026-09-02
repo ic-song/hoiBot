@@ -74,14 +74,18 @@ function isSourceDuplicate(error: unknown): boolean {
 }
 
 // source namespace와 식별자는 원문을 보존하되 저장 가능한 명시 입력만 허용합니다.
-function assertCrosswalkInput(input: ObjectIdentityCrosswalkInput): void {
+function assertSourceLocator(input: Pick<ObjectIdentityCrosswalkInput, "sourceSystem" | "sourceNamespace" | "sourceIdentifier">): void {
   const asciiToken = (value: string, maxLength: number, code: string): void => {
     if (value.trim() === "" || value.length > maxLength || !/^[A-Za-z0-9_.-]+$/.test(value)) throw new Error(code);
   };
-  asciiToken(input.objectType, 50, "OBJECT_IDENTITY_TYPE_INVALID");
   asciiToken(input.sourceSystem, 50, "OBJECT_IDENTITY_SOURCE_SYSTEM_INVALID");
   asciiToken(input.sourceNamespace, 100, "OBJECT_IDENTITY_SOURCE_NAMESPACE_INVALID");
   if (input.sourceIdentifier.trim() === "" || input.sourceIdentifier.length > 191) throw new Error("OBJECT_IDENTITY_SOURCE_IDENTIFIER_INVALID");
+}
+
+function assertCrosswalkInput(input: ObjectIdentityCrosswalkInput): void {
+  assertSourceLocator(input);
+  if (!/^[A-Z][A-Z0-9_]{0,49}$/.test(input.objectType)) throw new Error("OBJECT_IDENTITY_TYPE_INVALID");
 }
 
 // CUID2 후보를 DB PK 충돌 확인과 제한된 재시도로 예약합니다.
@@ -117,7 +121,8 @@ export class MariaObjectIdentityAuditProvider {
   async registerCrosswalk(input: ObjectIdentityCrosswalkInput): Promise<ObjectIdentityCrosswalkResult> {
     assertCrosswalkInput(input);
     const audit = createObjectAuditValues(input.actor, this.now());
-    return this.database.withTransaction(async (transaction) => {
+    try {
+      return await this.database.withTransaction(async (transaction) => {
       const existing = (await transaction.query<CrosswalkRow[]>(
         "SELECT object_identity_crosswalk_id,object_identity_id FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=? FOR UPDATE",
         [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
@@ -139,23 +144,26 @@ export class MariaObjectIdentityAuditProvider {
           );
           return { objectIdentityId, objectIdentityCrosswalkId: crosswalkId, replayed: false, audit };
         } catch (error) {
-          if (isSourceDuplicate(error)) {
-            const concurrent = (await transaction.query<CrosswalkRow[]>(
-              "SELECT object_identity_crosswalk_id,object_identity_id FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
-              [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
-            ))[0];
-            if (concurrent !== undefined) return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit };
-            throw error;
-          }
+          if (isSourceDuplicate(error)) throw error;
           if (!isDuplicate(error)) throw error;
         }
       }
       throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
-    });
+      });
+    } catch (error) {
+      if (!isSourceDuplicate(error)) throw error;
+      const concurrent = (await this.database.query<CrosswalkRow[]>(
+        "SELECT object_identity_crosswalk_id,object_identity_id FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
+        [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
+      ))[0];
+      if (concurrent === undefined) throw error;
+      return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit };
+    }
   }
 
   // source 식별자의 감사 주체만 변경하고 canonical PK는 보존합니다.
   async touchCrosswalk(input: Pick<ObjectIdentityCrosswalkInput, "actor" | "sourceSystem" | "sourceNamespace" | "sourceIdentifier">): Promise<ObjectAuditValues> {
+    assertSourceLocator(input);
     const audit = createObjectAuditValues(input.actor, this.now());
     const result = await this.database.execute(
       "UPDATE object_identity_crosswalks SET UPDATE_USER=?,UPDATE_TIME=? WHERE source_system=? AND source_namespace=? AND source_identifier=?",

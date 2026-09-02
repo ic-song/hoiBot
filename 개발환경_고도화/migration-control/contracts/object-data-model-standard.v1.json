@@ -11,7 +11,7 @@
         { "name": "object_type", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
         { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
-      ], "primaryKey": ["object_identity_id"], "foreignKeys": []
+      ], "primaryKey": ["object_identity_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     },
     {
       "table": "object_identity_crosswalks",
@@ -27,7 +27,8 @@
       ],
       "primaryKey": ["object_identity_crosswalk_id"],
       "foreignKeys": [{ "column": "object_identity_id", "referencesTable": "object_identities", "referencesColumn": "object_identity_id" }],
-      "uniqueKeys": [["source_system", "source_namespace", "source_identifier"]]
+      "uniqueKeys": [["source_system", "source_namespace", "source_identifier"]],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]

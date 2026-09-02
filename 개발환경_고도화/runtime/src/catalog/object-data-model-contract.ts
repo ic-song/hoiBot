@@ -18,6 +18,7 @@ export interface ObjectDataModelTable {
   allowedStateColumns?: readonly string[];
   // 정의 전용값을 명시해 변경 검토 때 복제 시도를 바로 드러냅니다.
   definitionOnlyColumns?: readonly string[];
+  auditTimeFormat?: "KST_YYYY-MM-DD HH:MM:SS";
 }
 export interface ObjectDataModelContract {
   standardVersion: typeof OBJECT_DATA_MODEL_STANDARD_VERSION;
@@ -41,6 +42,7 @@ function validateAuditColumns(table: ObjectDataModelTable): void {
   for (const name of REQUIRED_AUDIT_COLUMNS) column(table, name);
   if (column(table, "INSERT_USER").type !== "VARCHAR(100)" || column(table, "UPDATE_USER").type !== "VARCHAR(100)") fail("AUDIT_USER_TYPE", table.table);
   if (column(table, "INSERT_TIME").type !== "CHAR(19)" || column(table, "UPDATE_TIME").type !== "CHAR(19)") fail("AUDIT_TIME_TYPE", table.table);
+  if (table.auditTimeFormat !== "KST_YYYY-MM-DD HH:MM:SS") fail("AUDIT_TIME_FORMAT", table.table);
 }
 function validateIdentifier(value: ObjectDataModelColumn, location: string): void {
   if (value.type !== "CHAR(8)" || value.charset !== "ascii" || value.collation !== "ascii_bin") fail("IDENTIFIER_SHAPE", location);

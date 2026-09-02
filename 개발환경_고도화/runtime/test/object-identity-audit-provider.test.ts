@@ -59,15 +59,47 @@ describe("object identity and audit provider", () => {
 
   it("treats concurrent source-unique conflicts as an idempotent replay, not a PK retry", async () => {
     const sourceDuplicate = Object.assign(new Error("Duplicate entry for key 'uq_object_identity_crosswalk_source'"), { code: "ER_DUP_ENTRY" });
-    let queryIndex = 0;
-    const database = scriptedDatabase([[], [{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567" }]], () => {
-      queryIndex += 1;
-      return queryIndex === 2 ? sourceDuplicate : { affectedRows: 1n, insertId: 0n };
-    });
+    let committedIdentities = 0;
+    let committedCrosswalks = 0;
+    let rolledBack = 0;
+    let externalReads = 0;
+    const transaction: DatabaseTransaction = {
+      query: async <T>(): Promise<T> => [] as T,
+      execute: async (sql: string): Promise<DatabaseWriteResult> => {
+        if (sql.includes("object_identity_crosswalks")) throw sourceDuplicate;
+        return { affectedRows: 1n, insertId: 0n };
+      }
+    };
+    const database: DatabaseClient = {
+      ping: async () => undefined, verifyRollback: async () => true, execute: transaction.execute, close: async () => undefined,
+      query: async <T>(): Promise<T> => { externalReads += 1; return [{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567" }] as T; },
+      withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>): Promise<T> => {
+        let stagedIdentities = 0;
+        let stagedCrosswalks = 0;
+        const staged: DatabaseTransaction = {
+          query: transaction.query,
+          execute: async (sql: string): Promise<DatabaseWriteResult> => {
+            if (sql.includes("object_identity_crosswalks")) { stagedCrosswalks += 1; throw sourceDuplicate; }
+            if (sql.includes("object_identities")) stagedIdentities += 1;
+            return { affectedRows: 1n, insertId: 0n };
+          }
+        };
+        try {
+          const result = await work(staged);
+          committedIdentities += stagedIdentities;
+          committedCrosswalks += stagedCrosswalks;
+          return result;
+        } catch (error) {
+          rolledBack += 1;
+          throw error;
+        }
+      }
+    };
     const candidates = ["a1234567", "b1234567"];
     const provider = new MariaObjectIdentityAuditProvider(database, () => candidates.shift()!, 2);
     const result = await provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" });
     assert.deepEqual({ objectIdentityId: result.objectIdentityId, objectIdentityCrosswalkId: result.objectIdentityCrosswalkId, replayed: result.replayed }, { objectIdentityId: "a1234567", objectIdentityCrosswalkId: "c1234567", replayed: true });
+    assert.deepEqual({ committedIdentities, committedCrosswalks, rolledBack, externalReads }, { committedIdentities: 0, committedCrosswalks: 0, rolledBack: 1, externalReads: 1 });
   });
 
   it("rejects blank, oversized, or unsafe source namespace inputs before database work", async () => {
@@ -76,6 +108,7 @@ describe("object identity and audit provider", () => {
     await assert.rejects(provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: " ", sourceNamespace: "itemInfo", sourceIdentifier: "상자" }), /SOURCE_SYSTEM_INVALID/);
     await assert.rejects(provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "item info", sourceIdentifier: "상자" }), /SOURCE_NAMESPACE_INVALID/);
     await assert.rejects(provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: " ".repeat(192) }), /SOURCE_IDENTIFIER_INVALID/);
+    await assert.rejects(provider.registerCrosswalk({ actor: "migration", objectType: "item", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" }), /TYPE_INVALID/);
   });
 
   it("updates only UPDATE audit fields for an existing source mapping", async () => {
@@ -83,5 +116,6 @@ describe("object identity and audit provider", () => {
     const provider = new MariaObjectIdentityAuditProvider(database, undefined, undefined, () => new Date("2026-06-22T14:30:00.000Z"));
     const audit = await provider.touchCrosswalk({ actor: "operator", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" });
     assert.deepEqual(audit, { INSERT_USER: "operator", INSERT_TIME: "2026-06-22 23:30:00", UPDATE_USER: "operator", UPDATE_TIME: "2026-06-22 23:30:00" });
+    await assert.rejects(provider.touchCrosswalk({ actor: "operator", sourceSystem: " ", sourceNamespace: "itemInfo", sourceIdentifier: "상자" }), /SOURCE_SYSTEM_INVALID/);
   });
 });

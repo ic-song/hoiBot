@@ -79,7 +79,7 @@ describe("object data model standard contract", () => {
         { name: "handler_key", type: "VARCHAR(100)" }, { name: "options_json", type: "JSON" },
         { name: "INSERT_USER", type: "VARCHAR(100)" }, { name: "INSERT_TIME", type: "CHAR(19)" },
         { name: "UPDATE_USER", type: "VARCHAR(100)" }, { name: "UPDATE_TIME", type: "CHAR(19)" }
-      ], primaryKey: ["pet_skill_id"], foreignKeys: []
+      ], primaryKey: ["pet_skill_id"], foreignKeys: [], auditTimeFormat: "KST_YYYY-MM-DD HH:MM:SS"
     }];
     assert.doesNotThrow(() => validateObjectDataModelContract(petSkill));
   });
