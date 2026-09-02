@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.442"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.443"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4421,26 +4421,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var pickpocketTarget = msg.replace(/^\/슈킹\s+/, "");
                     var pickpocketTitle = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 전설의소매치기📙";
                     if (!hasPetSkill(petSkillData, sender, "전설의소매치기")) {
-                        replier.reply(pickpocketTitle + "\n❌ 전설의소매치기📙를 장착해야 사용할 수 있습니다.");
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n전설의소매치기📙를 장착해야 /슈킹을 사용할 수 있습니다.\n※ 일일 시도 횟수는 차감되지 않았습니다.");
                         return;
                     }
                     if (!Object.prototype.hasOwnProperty.call(data.member, pickpocketTarget) || !data.member[pickpocketTarget]) {
-                        replier.reply(pickpocketTitle + "\n❌ [" + pickpocketTarget + "] 님은 존재하지 않는 사용자입니다.");
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n대상 유저를 찾을 수 없습니다.\n사용방법: /슈킹 아이디\n※ 일일 시도 횟수는 차감되지 않았습니다.");
                         return;
                     }
                     if (pickpocketTarget === sender) {
-                        replier.reply(pickpocketTitle + "\n❌ 자신에게는 슈킹할 수 없습니다.");
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n본인의 포인트는 슈킹할 수 없습니다.\n※ 일일 시도 횟수는 차감되지 않았습니다.");
                         return;
                     }
 
                     var pickpocketDailyData = getLegendaryPickpocketDailyData(data, sender);
                     if (pickpocketDailyData.count >= GLOBAL_CONFIG.petSkill.pickpocket.dailyLimit) {
-                        replier.reply(pickpocketTitle + "\n❌ 오늘의 슈킹 시도 횟수를 모두 사용했습니다.\n내일 다시 시도해주세요.");
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n오늘은 이미 슈킹을 " + GLOBAL_CONFIG.petSkill.pickpocket.dailyLimit + "회 시도했습니다.\n일일 리셋 후 다시 이용해 주세요.🥷");
                         return;
                     }
                     var pickpocketTargetKey = "$" + pickpocketTarget;
                     if (Object.prototype.hasOwnProperty.call(pickpocketDailyData.targets, pickpocketTargetKey)) {
-                        replier.reply(pickpocketTitle + "\n❌ 동일한 상대에게는 하루 1회만 시도할 수 있습니다.");
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n오늘 이미 슈킹을 시도한 상대입니다.\n동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n※ 일일 시도 횟수는 차감되지 않았습니다.");
                         return;
                     }
 
@@ -4454,7 +4454,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     if (pickpocketTargetPoint < pickpocketPoint) {
-                        replier.reply(pickpocketTitle + "\n❌ [" + pickpocketTarget + "] 님의 포인트가 🅟" + numberWithCommas(pickpocketPoint) + " 미만이라 슈킹할 수 없습니다.");
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n슈킹할 포인트가 부족한 상대입니다.\n필요 포인트💸: 🅟" + numberWithCommas(pickpocketPoint) + "\n상대 보유 포인트💸: 🅟" + numberWithCommas(pickpocketTargetPoint) + "\n※ 일일 시도 횟수는 차감되지 않았습니다.");
                         return;
                     }
 
@@ -4472,9 +4472,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var pickpocketMessages = pickpocketSuccess ? GLOBAL_CONFIG.petSkill.pickpocket.successMessages : GLOBAL_CONFIG.petSkill.pickpocket.failureMessages;
                     var pickpocketMessage = pickpocketMessages[Math.floor(Math.random() * pickpocketMessages.length)];
                     var pickpocketResult = pickpocketSuccess ?
-                        "✅ 슈킹 성공!\n[" + pickpocketTarget + "] 님에게서 🅟" + numberWithCommas(pickpocketPoint) + "을 가져왔습니다." :
-                        "❌ 슈킹 실패!\n포인트는 이동하지 않았습니다.";
-                    replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n" + pickpocketResult + "\n오늘 시도: " + pickpocketDailyData.count + "/" + GLOBAL_CONFIG.petSkill.pickpocket.dailyLimit + "회\n━━━━━━━━━━━━━\n" + formatLegendaryPickpocketMessage(pickpocketMessage, sender, pickpocketTarget));
+                        "🥷 슈킹 성공!\n[" + pickpocketTarget + "] 님의 포인트 🅟" + numberWithCommas(pickpocketPoint) + "을 슬쩍했습니다!\n획득 포인트💸: +🅟" + numberWithCommas(pickpocketPoint) :
+                        "🚨 슈킹 실패!\n[" + pickpocketTarget + "] 님의 포인트를 노렸지만 실패했습니다!\n포인트 변동💸: 없음";
+                    var pickpocketActorRank = checkRank(data, petData, guildData, sender);
+                    replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n" + pickpocketResult + "\n━━━━━━━━━━━━━\n" + formatLegendaryPickpocketMessage(pickpocketMessage, pickpocketActorRank, pickpocketTarget));
                     return;
                 }
 
@@ -18164,9 +18165,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             saveJsonFile(data, filePath);
                             saveJsonFile(petData, memberPetPath);
                             if (pointShopDiscountSkill === "VIP블랙카드") {
-                                replier.reply("💳 VIP블랙카드📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 VIP 결제!\n쇼핑광📙과 중복 없이 더 높은 할인율을 적용합니다.\n상품가 30% 할인 적용.\n검은 카드는 가격표 앞에서도 흔들리지 않습니다.😎");
+                                replier.reply("💳 VIP블랙카드📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 VIP 결제\n말없이 블랙카드를 계산대에 올려놓습니다.\n직원이 허리를 숙입니다.\n상품가 30% 할인👑");
                             } else if (pointShopDiscountSkill === "쇼핑광") {
-                                replier.reply("🛍️ 쇼핑광📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 흥정 시작!\n상품가 20% 할인 적용.\n알뜰한 쇼핑이 포인트를 지켜줍니다.✨");
+                                replier.reply("🛍️ 쇼핑광📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 흥정 시작!\n“사장님~ 단골인데 좀 깎아주시죠?”\n흥정 성공! 상품가 20% 할인💸");
                             }
                         }
                     }
