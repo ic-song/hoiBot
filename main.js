@@ -1184,6 +1184,7 @@ const GLOBAL_CONFIG = {
         cube: {
             itemName: "홈뱃지 큐브💟",
             maxTryCount: 1000,
+            rewardPointPerCube: 500000,
             optionKeys: ["castle", "raid", "petUpgrade", "explore"],
             options: [
                 { number: 1, key: "castle", emoji: "⚔️", name: "캐슬 매력", cost: 1, max: 50 },
@@ -21631,6 +21632,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeSocial = getPetHomeSocialUser(homeBadgeCubeActivityData, sender);
                     var hadHomeBadgeCubeStore = data.member[sender].hasOwnProperty("homeBadgeCube");
                     var homeBadgeCubeStoreSnapshot = hadHomeBadgeCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
+                    var homeBadgeCubePointSnapshot = Number(data.member[sender].point);
+                    var homeBadgeCubeMaxSafePoint = 9007199254740991; // Rhino 숫자 정밀도를 보장하는 최대 안전 정수
+                    if (!isFinite(homeBadgeCubePointSnapshot) || Math.floor(homeBadgeCubePointSnapshot) !== homeBadgeCubePointSnapshot || Math.abs(homeBadgeCubePointSnapshot) > homeBadgeCubeMaxSafePoint) {
+                        replier.reply("❌ 보유 포인트 데이터 확인이 필요하여 큐브를 사용하지 않았습니다.\n관리자에게 문의해주세요.");
+                        return;
+                    }
                     syncHomeBadgeCubeEquippedBadge(data, sender, homeBadgeCubeSocial.equippedBadgeId);
                     var homeBadgeCubeRecord = getHomeBadgeCubeRecord(data, sender, homeBadgeCubeBadge.id, true);
                     var homeBadgeCubeBefore = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
@@ -21682,8 +21689,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     var homeBadgeCubeConsumed = homeBadgeCubeUsedCount * homeBadgeCubeOption.cost;
+                    var homeBadgeCubeRewardPoint = homeBadgeCubeConsumed * homeBadgeCubeConfig.rewardPointPerCube; // 실제 소모 큐브 기준 총 지급 포인트
+                    var homeBadgeCubePointAfter = homeBadgeCubePointSnapshot + homeBadgeCubeRewardPoint; // 지급 후 보유 포인트
+                    if (!isFinite(homeBadgeCubePointAfter) || Math.floor(homeBadgeCubePointAfter) !== homeBadgeCubePointAfter || Math.abs(homeBadgeCubePointAfter) > homeBadgeCubeMaxSafePoint) {
+                        if (hadHomeBadgeCubeStore) data.member[sender].homeBadgeCube = homeBadgeCubeStoreSnapshot;
+                        else delete data.member[sender].homeBadgeCube;
+                        replier.reply("❌ 포인트 안전 범위를 초과하여 큐브를 사용하지 않았습니다.\n관리자에게 문의해주세요.");
+                        return;
+                    }
                     homeBadgeCubeBag[homeBadgeCubeConfig.itemName] = homeBadgeCubeHeld - homeBadgeCubeConsumed;
                     if (homeBadgeCubeBag[homeBadgeCubeConfig.itemName] <= 0) delete homeBadgeCubeBag[homeBadgeCubeConfig.itemName];
+                    data.member[sender].point = homeBadgeCubePointAfter;
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord) && homeBadgeCubeRecord.allMaxNotified !== true) {
                         homeBadgeCubeRecord.allMaxNotified = true;
                         homeBadgeCubeAllMaxNotice = true;
@@ -21692,6 +21708,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(data, filePath);
                     } catch (homeBadgeCubeSaveError) {
                         data.member[sender].bag = homeBadgeCubeBagSnapshot;
+                        data.member[sender].point = homeBadgeCubePointSnapshot;
                         if (hadHomeBadgeCubeStore) data.member[sender].homeBadgeCube = homeBadgeCubeStoreSnapshot;
                         else delete data.member[sender].homeBadgeCube;
                         try {
@@ -21711,6 +21728,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
                     homeBadgeCubeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeCubeConsumed) + "개");
                     homeBadgeCubeLines.push("💟 남은 큐브: " + numberWithCommas(homeBadgeCubeRemain) + "개");
+                    homeBadgeCubeLines.push("🪙 획득 포인트: 🅟" + numberWithCommas(homeBadgeCubeRewardPoint));
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
                     homeBadgeCubeLines.push("[" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge) + (homeBadgeCubeIsEquipped ? " ✅ 장착 중" : " ⚠️ 미장착"));
                     homeBadgeCubeLines.push(buildHomeBadgeCubeOptionLines(data, sender, homeBadgeCubeBadge));
