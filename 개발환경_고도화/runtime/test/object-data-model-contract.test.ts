@@ -38,9 +38,11 @@ describe("object data model standard contract", () => {
     const uppercaseCode = copy();
     uppercaseCode.tables[1]!.columns = [...uppercaseCode.tables[1]!.columns, { name: "ITEM_CODE", type: "VARCHAR(20)" }];
     assert.throws(() => validateObjectDataModelContract(uppercaseCode), /OBJECT_CODE/);
-    const executable = copy();
-    executable.tables[1]!.columns = [...executable.tables[1]!.columns, { name: "script", type: "TEXT" }];
-    assert.throws(() => validateObjectDataModelContract(executable), /EXECUTABLE_PAYLOAD/);
+    for (const name of ["script_body", "sql_payload", "handler_script", "javascript_source"]) {
+      const executable = copy();
+      executable.tables[1]!.columns = [...executable.tables[1]!.columns, { name, type: "TEXT" }];
+      assert.throws(() => validateObjectDataModelContract(executable), /EXECUTABLE_PAYLOAD/, name);
+    }
   });
 
   it("requires FK targets to be their declared PK and enforces ownership boundaries", () => {

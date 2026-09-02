@@ -46,6 +46,10 @@ function validateIdentifier(value: ObjectDataModelColumn, location: string): voi
   if (value.type !== "CHAR(8)" || value.charset !== "ascii" || value.collation !== "ascii_bin") fail("IDENTIFIER_SHAPE", location);
 }
 function isOwnership(table: ObjectDataModelTable): boolean { return table.role === "ownership_quantity" || table.role === "ownership_instance"; }
+function executableColumnPattern(tokens: readonly string[]): RegExp {
+  const escaped = tokens.map((token) => token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  return new RegExp(`(^|_)(?:${escaped.join("|")})(?:_|$)`, "i");
+}
 
 // 신규 표준 manifest만 검사합니다. CUID2 생성·충돌 재시도와 KST 시계 구현은 WBS731의 runtime 책임입니다.
 export function validateObjectDataModelContract(contract: ObjectDataModelContract): void {
@@ -53,7 +57,7 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
   if (contract.scope !== "new_object_schema_only") fail("SCOPE", contract.scope);
   if ((contract.registeredMigrations.length === 0) !== (contract.tables.length === 0)) fail("REGISTRATION_PAIR", "registeredMigrations and tables must both be empty or populated");
   if (contract.forbiddenExecutableColumns.length === 0) fail("EXECUTABLE_POLICY", "forbiddenExecutableColumns");
-  const forbidden = new Set(contract.forbiddenExecutableColumns.map((name) => name.toLowerCase()));
+  const forbiddenPattern = executableColumnPattern(contract.forbiddenExecutableColumns);
   const tables = new Map<string, ObjectDataModelTable>();
   for (const table of contract.tables) {
     if (!/^[a-z][a-z0-9_]*$/.test(table.table)) fail("TABLE_NAME", table.table);
@@ -64,7 +68,7 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
     if (new Set(names).size !== names.length) fail("COLUMN_DUPLICATE", table.table);
     if (table.columns.some((entry) => entry.name.toLowerCase() === "id")) fail("BARE_ID", table.table);
     if (table.columns.some((entry) => /(^|_)code$/i.test(entry.name))) fail("OBJECT_CODE", table.table);
-    if (table.columns.some((entry) => forbidden.has(entry.name.toLowerCase()))) fail("EXECUTABLE_PAYLOAD", table.table);
+    if (table.columns.some((entry) => forbiddenPattern.test(entry.name))) fail("EXECUTABLE_PAYLOAD", table.table);
     validateAuditColumns(table);
     for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
     if (table.role === "ownership_instance" && !table.primaryKey.some((name) => /^owned_.*_id$/.test(name))) fail("INSTANCE_PK", table.table);
