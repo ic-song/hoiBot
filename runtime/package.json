@@ -14,6 +14,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
     "snapshot:validate": "node --import tsx scripts/validate-raw-snapshot.ts",
+    "snapshot:classify": "node --import tsx scripts/classify-raw-snapshot.ts",
     "fake:event": "node --env-file-if-exists=.env scripts/send-fake-iris-event.mjs"
   },
   "dependencies": {
