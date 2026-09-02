@@ -1,0 +1,11 @@
+{
+  "sliceId": "SL-ASSET-PACKAGE-DATA-MIGRATION-READY-GAP-CLOSURE-01",
+  "executionId": "개발자-SL-ASSET-PACKAGE-DATA-MIGRATION-READY-GAP-CLOSURE-01-20260902105446",
+  "wbsRow": 717,
+  "leaseRow": 2499,
+  "baseline": "2549c541473696ff29284b6e3a1c53ab8850e074",
+  "catalogVersion": "ASSET-FREEZE-v2.438-package-data-migration-ready-gap-closure-01",
+  "scope": { "stackResidual": 36, "packageResidual": 44, "totalResidual": 80 },
+  "expected": { "stackBindings": 46, "packageBindings": 44, "residualStackGap": 0, "residualPackageGap": 0, "conflicts": 0 },
+  "constraints": { "gate8": false, "featureProd": false, "operationalDatabase": false, "legacyMutation": false, "newSchema": false, "newProvider": false }
+}

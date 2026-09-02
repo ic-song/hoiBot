@@ -1,0 +1,39 @@
+{
+  "sliceId": "SL-ASSET-PACKAGE-DATA-MIGRATION-READY-GAP-CLOSURE-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-package-data-migration-ready-gap-closure-01",
+  "baseCatalogVersion": "ASSET-FREEZE-v2.438-package-canonical-gap-correction-01",
+  "publicationStatus": "SHADOW",
+  "frozen": { "packages": 107, "occurrences": 557, "stackGaps": 46, "packageGaps": 44 },
+  "carryForward": { "stackOccurrenceBindings": 10, "stackObjects": 4 },
+  "closure": {
+    "residualStackOccurrenceBindings": 36,
+    "residualStackIdentities": 12,
+    "packageOccurrenceBindings": 44,
+    "packageSourceIdentities": 21,
+    "effectiveResidualStackGap": 0,
+    "effectiveResidualPackageGap": 0,
+    "conflicts": 0
+  },
+  "rules": {
+    "stackIdentity": "stable item code plus exact source display",
+    "packageIdentity": "exact target_source_package_id relationship",
+    "nameOnlyMerge": false,
+    "newProvider": false,
+    "newSchema": false,
+    "consumerChanged": false
+  },
+  "stackIdentities": [
+    ["ITEM-PACKAGE-100", "[🏡가구]로열패키지 확정(/로열오픈)", 1],
+    ["ITEM-PACKAGE-GENESIS-CONFIRMED", "[🐹미니펫]창세패키지 확정(/창세오픈)", 1],
+    ["ITEM-PACKAGE-156", "[🐹미니펫]창조패키지 확정(/창조오픈)", 1],
+    ["ITEM-MAZE-ENTRY-TICKET", "미궁 입장권🕋", 2],
+    ["ITEM-ICE-AMERICANO-REQUEST", "아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)", 1],
+    ["ITEM-AUTO-EXPLORE-TICKET", "자동탐험권🌄", 2],
+    ["ITEM-PACKAGE-CREATION-LEGACY", "창조패키지🐹(/창조오픈)", 1],
+    ["ITEM-RWD-032", "탐험확률UP🗻(30%)", 2],
+    ["ITEM-RWD-031", "탐험확률UP🗻(40%)", 6],
+    ["ITEM-RWD-030", "탐험확률UP🗻(50%)", 12],
+    ["ITEM-PENDANT-RESTORATION-STONE", "펜던트 복원석🔷", 6],
+    ["ITEM-PACKAGE-EMPEROR-4", "황제패키지👑[4](/황제패키지오픈4)", 1]
+  ]
+}
