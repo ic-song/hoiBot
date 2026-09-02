@@ -101,6 +101,9 @@ CREATE TABLE canonical_pet_equipment_operation_replays (
   pet_equipment_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   player_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   request_key VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  owned_pet_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  owned_equipment_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  equipment_slot VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   operation_status VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   owned_pet_equipment_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL,
   INSERT_USER VARCHAR(100) NOT NULL,
@@ -110,6 +113,8 @@ CREATE TABLE canonical_pet_equipment_operation_replays (
   PRIMARY KEY (pet_equipment_operation_id),
   UNIQUE KEY uq_canonical_pet_equipment_operation_request (player_id, request_key),
   CONSTRAINT fk_canonical_pet_equipment_operation_player FOREIGN KEY (player_id) REFERENCES canonical_players (player_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_canonical_pet_equipment_operation_pet FOREIGN KEY (owned_pet_id, player_id) REFERENCES canonical_owned_pet_instances (owned_pet_id, player_id) ON DELETE RESTRICT,
+  CONSTRAINT fk_canonical_pet_equipment_operation_equipment FOREIGN KEY (owned_equipment_id, player_id) REFERENCES canonical_owned_equipment_instances (owned_equipment_id, player_id) ON DELETE RESTRICT,
   CONSTRAINT fk_canonical_pet_equipment_operation_assignment FOREIGN KEY (owned_pet_equipment_id, player_id) REFERENCES canonical_owned_pet_equipment (owned_pet_equipment_id, player_id) ON DELETE RESTRICT,
   CONSTRAINT chk_canonical_pet_equipment_operation_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
   CONSTRAINT chk_canonical_pet_equipment_operation_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')

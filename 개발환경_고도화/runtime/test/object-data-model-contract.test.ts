@@ -20,7 +20,7 @@ describe("object data model standard contract", () => {
   });
 
   it("keeps migration446 aligned with the common player provider and owner-bound replay contract", () => {
-    for (const token of ["Requires 444_canonical_item_inventory.sql for canonical_players(player_id)", "REFERENCES canonical_players (player_id)", "UNIQUE KEY uq_canonical_owned_pet_owner (owned_pet_id, player_id)", "UNIQUE KEY uq_canonical_owned_equipment_owner (owned_equipment_id, player_id)", "FOREIGN KEY (owned_pet_id, player_id)", "FOREIGN KEY (owned_equipment_id, player_id)", "FOREIGN KEY (owned_pet_equipment_id, player_id)", "canonical_pet_equipment_operation_replays"]) assert.match(migration446, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    for (const token of ["Requires 444_canonical_item_inventory.sql for canonical_players(player_id)", "REFERENCES canonical_players (player_id)", "UNIQUE KEY uq_canonical_owned_pet_owner (owned_pet_id, player_id)", "UNIQUE KEY uq_canonical_owned_equipment_owner (owned_equipment_id, player_id)", "FOREIGN KEY (owned_pet_id, player_id)", "FOREIGN KEY (owned_equipment_id, player_id)", "FOREIGN KEY (owned_pet_equipment_id, player_id)", "canonical_pet_equipment_operation_replays", "request_key VARCHAR(191)", "equipment_slot VARCHAR(50)"]) assert.match(migration446, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(migration446, /canonical_item_players/);
   });
 

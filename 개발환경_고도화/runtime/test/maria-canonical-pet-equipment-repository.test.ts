@@ -6,10 +6,17 @@ import { MariaCanonicalPetEquipmentRepository } from "../src/pet/maria-canonical
 
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/canonical-pet-equipment-v1.json", import.meta.url), "utf8")) as { dependency: string; ownerMatchRequired: boolean; playerId: string; ownedPetId: string; ownedEquipmentId: string; replayKey: string };
 
-function database(): { client: DatabaseClient; writes: string[] } {
+function database(replays: Array<Record<string, unknown>> = [], duplicateOnce = false): { client: DatabaseClient; writes: string[] } {
   const writes: string[] = [];
-  const transaction: DatabaseTransaction = { query: async <T>(): Promise<T> => [] as T, execute: async (sql: string): Promise<DatabaseWriteResult> => { writes.push(sql); return { affectedRows: 1n, insertId: 0n }; } };
-  return { writes, client: { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: async <T>(work: (value: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined } };
+  let duplicate = duplicateOnce;
+  let replayReads = 0;
+  const query = async <T>(sql: string): Promise<T> => {
+    if (sql.includes("canonical_pet_equipment_operation_replays")) { replayReads += 1; return duplicateOnce && replayReads === 1 ? [] as T : replays as T; }
+    if (sql.includes("canonical_equipment_definitions")) return [{ equipment_slot: "pendant" }] as T;
+    return [] as T;
+  };
+  const transaction: DatabaseTransaction = { query, execute: async (sql: string): Promise<DatabaseWriteResult> => { writes.push(sql); if (duplicate && sql.includes("canonical_pet_equipment_operation_replays")) { duplicate = false; const error = Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" }); throw error; } return { affectedRows: 1n, insertId: 0n }; } };
+  return { writes, client: { ping: async () => undefined, verifyRollback: async () => true, query, execute: transaction.execute, withTransaction: async <T>(work: (value: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined } };
 }
 
 test("assigns with one transaction, shared CUID2 audit provider, and owner-bound rows", async () => {
@@ -23,4 +30,19 @@ test("assigns with one transaction, shared CUID2 audit provider, and owner-bound
   assert.equal(result.ownedPetEquipmentId.length, 8);
   assert.ok(mock.writes.some((sql) => sql.includes("canonical_owned_pet_equipment") && sql.includes("player_id")));
   assert.ok(mock.writes.some((sql) => sql.includes("canonical_pet_equipment_operation_replays")));
+});
+
+test("rejects same request key with a different payload and incompatible definition slot", async () => {
+  const replay = { pet_equipment_operation_id: "operat01", owned_pet_equipment_id: "assgn001", owned_pet_id: "ownedp01", owned_equipment_id: "ownede01", equipment_slot: "pendant" };
+  const repository = new MariaCanonicalPetEquipmentRepository(database([replay]).client);
+  await assert.rejects(repository.assign({ actor: "migration", playerId: "player01", ownedPetId: "ownedp02", ownedEquipmentId: "ownede01", equipmentSlot: "pendant", requestKey: "event-1" }), /REQUEST_PAYLOAD_CONFLICT/);
+  const noSlotDatabase = database();
+  noSlotDatabase.client.withTransaction = async (work) => work({ query: async <T>(sql: string): Promise<T> => sql.includes("canonical_equipment_definitions") ? [{ equipment_slot: "ring" }] as T : [] as T, execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 1n, insertId: 0n }) });
+  await assert.rejects(new MariaCanonicalPetEquipmentRepository(noSlotDatabase.client).assign({ actor: "migration", playerId: "player01", ownedPetId: "ownedp01", ownedEquipmentId: "ownede01", equipmentSlot: "pendant", requestKey: "event-2" }), /SLOT_MISMATCH/);
+});
+
+test("re-reads committed replay after a same-key duplicate race", async () => {
+  const concurrent = { pet_equipment_operation_id: "operat01", owned_pet_equipment_id: "assgn001", owned_pet_id: "ownedp01", owned_equipment_id: "ownede01", equipment_slot: "pendant" };
+  const result = await new MariaCanonicalPetEquipmentRepository(database([concurrent], true).client).assign({ actor: "migration", playerId: "player01", ownedPetId: "ownedp01", ownedEquipmentId: "ownede01", equipmentSlot: "pendant", requestKey: "event-1" });
+  assert.deepEqual(result, { petEquipmentOperationId: "operat01", ownedPetEquipmentId: "assgn001", replayed: true });
 });

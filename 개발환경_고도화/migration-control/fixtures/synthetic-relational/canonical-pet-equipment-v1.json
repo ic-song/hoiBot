@@ -6,5 +6,9 @@
   "ownedEquipmentId": "ownede01",
   "ownerMatchRequired": true,
   "replayKey": "event-1",
+  "sameKeyDifferentPayload": "conflict",
+  "sameKeyConcurrentCommit": "replay_after_transaction_restart",
+  "slotMismatch": "reject",
+  "rollbackExpectation": "no assignment or replay row persists on failed transaction",
   "expected": { "petCharm": "145", "equipmentCharm": "64", "totalCharm": "209" }
 }
