@@ -23,6 +23,7 @@
     "admin:create-test-account": "node --env-file-if-exists=.env --import tsx scripts/create-test-account.ts",
     "account:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup-deleted-accounts.ts",
     "config:inventory": "node --import tsx scripts/inventory-hardcoded-config.ts",
+    "object-data:validate": "node --import tsx scripts/validate-object-data-model-contract.ts",
     "db:probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database.ts",
     "db:probe:modernization": "node --env-file-if-exists=.env --import tsx scripts/probe-modernization-flow.ts",
     "db:probe:authorization": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-authorization.ts",

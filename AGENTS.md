@@ -18,6 +18,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
   - `ERROR_FIX_LOG.md`: runtime error investigation records for future bug-fix reference
+  - `docs/database/OBJECT_DATA_MODEL_STANDARD.md`: authoritative object database, ownership, migration, seed, and deployment data standard
 
 ---
 
@@ -104,6 +105,13 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   - line breaks
   - emojis
   - `allsee` formatting
+
+## Object Data Model Standard
+
+- All work that creates or changes object-related database tables, columns, PKs, FKs, migrations, seeds, repositories, ownership models, catalog data, or legacy-data imports MUST read and comply with `docs/database/OBJECT_DATA_MODEL_STANDARD.md` before implementation.
+- `docs/database/OBJECT_DATA_MODEL_STANDARD.md` is the authoritative source for object database modeling rules. Do not duplicate a shortened interpretation of its rules in implementation tasks.
+- If existing code, schema, migrations, or task instructions conflict with that standard, preserve already-applied migrations and validation evidence, report the conflict, and implement corrections through new migrations or an explicitly approved migration plan.
+- Documentation-only compliance does not prove implementation compliance. Validate the resulting schema and data flow against every applicable rule in the standard.
 - When creating or modifying slash commands, avoid broad prefix guards for execution commands.
 - Commands with no arguments must use exact equality such as `msg === "/명령어"`.
 - Commands with numeric arguments must use full-pattern guards such as `msg === "/명령어" || /^\/명령어\s+\d+$/.test(msg)` or `/^\/명령어\s+\d+$/.test(msg)` when the argument is required.
