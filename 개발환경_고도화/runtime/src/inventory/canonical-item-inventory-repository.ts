@@ -11,7 +11,8 @@ export type CanonicalItemDefinitionInput = {
   itemKind: string;
   itemGrade?: string | null;
   priceAmount?: string | null;
-  priceCurrencyName?: string | null;
+  // WBS740 canonical currency FK가 준비되기 전 레거시 재화 source 식별자만 보존합니다.
+  priceCurrencySourceIdentifier?: string | null;
   stackable: boolean;
   active?: boolean;
   definitionOptions?: Record<string, unknown> | null;
@@ -36,9 +37,24 @@ type DefinitionImportRow = { item_id: string };
 type OperationRow = { resulting_quantity: bigint };
 type StackRow = { owned_item_stack_id: string; quantity: bigint };
 
-function isDuplicate(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  return ("code" in error && String(error.code) === "ER_DUP_ENTRY") || ("message" in error && /duplicate entry/i.test(String(error.message)));
+function duplicateKey(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) return null;
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+  if (code !== "ER_DUP_ENTRY" && !/duplicate entry/i.test(message)) return null;
+  return /for key ['`]?([^'`\s]+)['`]?/i.exec(message)?.[1] ?? "UNKNOWN";
+}
+
+// PK 충돌만 CUID 후보 재시도 대상으로 취급하고 업무 UNIQUE 충돌은 호출자에게 돌려줍니다.
+function isPrimaryKeyDuplicate(error: unknown): boolean {
+  const key = duplicateKey(error);
+  return key !== null && (key === "PRIMARY" || /_pkey$/i.test(key));
+}
+
+// source/request/stack UNIQUE 충돌은 커밋한 선행 transaction을 재조회하는 멱등성 경계입니다.
+function isBusinessUniqueDuplicate(error: unknown): boolean {
+  const key = duplicateKey(error);
+  return key !== null && !isPrimaryKeyDuplicate(error);
 }
 
 function assertText(value: string, name: string, maxLength: number): void {
@@ -62,7 +78,7 @@ async function insertWithCuidRetry(
       await insert(candidate);
       return candidate;
     } catch (error) {
-      if (!isDuplicate(error)) throw error;
+      if (!isPrimaryKeyDuplicate(error)) throw error;
     }
   }
   throw new Error("CANONICAL_ITEM_CUID_COLLISION_RETRY_EXHAUSTED");
@@ -83,18 +99,25 @@ export class CanonicalItemInventoryRepository {
     assertText(input.sourceSystem, "SOURCE_SYSTEM", 50);
     assertText(input.sourceIdentifier, "SOURCE_IDENTIFIER", 191);
     const audit = auditValues(input.actor, this.now);
-    return this.database.withTransaction(async (transaction) => {
-      const existing = (await transaction.query<PlayerRow[]>(
-        "SELECT player_id FROM canonical_item_players WHERE source_system=? AND source_identifier=? FOR UPDATE",
+    for (let attempt = 0; attempt < this.maxAttempts; attempt += 1) {
+      try {
+        return await this.database.withTransaction(async (transaction) => {
+          const existing = (await transaction.query<PlayerRow[]>(
+        "SELECT player_id FROM canonical_players WHERE source_system=? AND source_identifier=? FOR UPDATE",
         [input.sourceSystem, input.sourceIdentifier]
-      ))[0];
-      if (existing !== undefined) return { playerId: existing.player_id, replayed: true };
-      const playerId = await insertWithCuidRetry((candidate) => transaction.execute(
-        "INSERT INTO canonical_item_players(player_id,source_system,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+          ))[0];
+          if (existing !== undefined) return { playerId: existing.player_id, replayed: true };
+          const playerId = await insertWithCuidRetry((candidate) => transaction.execute(
+        "INSERT INTO canonical_players(player_id,source_system,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
         [candidate, input.sourceSystem, input.sourceIdentifier, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
-      ).then(() => undefined), this.generate, this.maxAttempts);
-      return { playerId, replayed: false };
-    });
+          ).then(() => undefined), this.generate, this.maxAttempts);
+          return { playerId, replayed: false };
+        });
+      } catch (error) {
+        if (!isBusinessUniqueDuplicate(error) || attempt + 1 === this.maxAttempts) throw error;
+      }
+    }
+    throw new Error("CANONICAL_ITEM_PLAYER_REGISTER_RETRY_EXHAUSTED");
   }
 
   async registerDefinition(input: CanonicalItemDefinitionInput): Promise<{ itemId: string; replayed: boolean }> {
@@ -104,22 +127,29 @@ export class CanonicalItemInventoryRepository {
     assertText(input.itemName, "NAME", 255);
     assertText(input.itemKind, "KIND", 50);
     const audit = auditValues(input.actor, this.now);
-    return this.database.withTransaction(async (transaction) => {
+    for (let attempt = 0; attempt < this.maxAttempts; attempt += 1) {
+      try {
+        return await this.database.withTransaction(async (transaction) => {
       const existing = (await transaction.query<DefinitionImportRow[]>(
         "SELECT item_id FROM canonical_item_definition_imports WHERE source_system=? AND source_namespace=? AND source_identifier=? FOR UPDATE",
         [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
       ))[0];
       if (existing !== undefined) return { itemId: existing.item_id, replayed: true };
       const itemId = await insertWithCuidRetry((candidate) => transaction.execute(
-        "INSERT INTO canonical_item_definitions(item_id,item_name,item_description,item_kind,item_grade,price_amount,price_currency_name,stackable_flag,active_flag,definition_options,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [candidate, input.itemName, input.itemDescription ?? null, input.itemKind, input.itemGrade ?? null, input.priceAmount ?? null, input.priceCurrencyName ?? null, input.stackable, input.active ?? true, input.definitionOptions === undefined ? null : JSON.stringify(input.definitionOptions), audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+        "INSERT INTO canonical_item_definitions(item_id,item_name,item_description,item_kind,item_grade,price_amount,price_currency_source_identifier,stackable_flag,active_flag,definition_options,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        [candidate, input.itemName, input.itemDescription ?? null, input.itemKind, input.itemGrade ?? null, input.priceAmount ?? null, input.priceCurrencySourceIdentifier ?? null, input.stackable, input.active ?? true, input.definitionOptions === undefined ? null : JSON.stringify(input.definitionOptions), audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
       ).then(() => undefined), this.generate, this.maxAttempts);
       await insertWithCuidRetry((candidate) => transaction.execute(
         "INSERT INTO canonical_item_definition_imports(item_definition_import_id,item_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
         [candidate, itemId, input.sourceSystem, input.sourceNamespace, input.sourceIdentifier, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
       ).then(() => undefined), this.generate, this.maxAttempts);
-      return { itemId, replayed: false };
-    });
+          return { itemId, replayed: false };
+        });
+      } catch (error) {
+        if (!isBusinessUniqueDuplicate(error) || attempt + 1 === this.maxAttempts) throw error;
+      }
+    }
+    throw new Error("CANONICAL_ITEM_DEFINITION_REGISTER_RETRY_EXHAUSTED");
   }
 
   async changeStackQuantity(input: CanonicalItemStackChange): Promise<CanonicalItemStackChangeResult> {
@@ -131,7 +161,7 @@ export class CanonicalItemInventoryRepository {
       try {
         return await this.database.withTransaction(async (transaction) => this.changeStackInTransaction(transaction, input, audit));
       } catch (error) {
-        if (!isDuplicate(error) || attempt + 1 === this.maxAttempts) throw error;
+        if (!isBusinessUniqueDuplicate(error) || attempt + 1 === this.maxAttempts) throw error;
       }
     }
     throw new Error("CANONICAL_ITEM_OPERATION_RETRY_EXHAUSTED");

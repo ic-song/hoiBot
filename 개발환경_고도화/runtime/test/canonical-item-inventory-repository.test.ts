@@ -22,7 +22,7 @@ function database(query: (sql: string) => unknown[] = () => [], onExecute: (sql:
 
 describe("canonical item inventory repository", () => {
   it("preserves the complete emoji and command-guide display name while retrying an item PK collision", async () => {
-    const duplicate = Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" });
+    const duplicate = Object.assign(new Error("Duplicate entry for key 'PRIMARY'"), { code: "ER_DUP_ENTRY" });
     let definitionAttempts = 0;
     const scripted = database(undefined, (sql) => {
       if (sql.includes("INSERT INTO canonical_item_definitions") && ++definitionAttempts === 1) return duplicate;
@@ -66,6 +66,40 @@ describe("canonical item inventory repository", () => {
     const result = await repository.changeStackQuantity({ actor: "system", playerId: "p1234567", itemId: "i1234567", requestKey: "event-1", quantityDelta: 1n, reasonType: "REWARD" });
     assert.deepEqual(result, { quantity: 7n, replayed: true });
     assert.equal(scripted.writes.length, 0);
+  });
+
+  it("treats a player source UNIQUE conflict as a concurrent registration replay, not a CUID collision", async () => {
+    let reads = 0;
+    const sourceDuplicate = Object.assign(new Error("Duplicate entry for key 'uq_canonical_players_source'"), { code: "ER_DUP_ENTRY" });
+    const scripted = database((sql) => sql.includes("canonical_players") && ++reads > 1 ? [{ player_id: "p1234567" }] : [], (sql) => sql.includes("INSERT INTO canonical_players") ? sourceDuplicate : { affectedRows: 1n, insertId: 0n });
+    const repository = new CanonicalItemInventoryRepository(scripted.database, () => "a1234567", 2);
+    const result = await repository.registerPlayer({ actor: "import", sourceSystem: "LEGACY_JSON", sourceIdentifier: "same-user" });
+    assert.deepEqual(result, { playerId: "p1234567", replayed: true });
+    assert.equal(scripted.writes.filter((write) => write.sql.includes("INSERT INTO canonical_players")).length, 1);
+  });
+
+  it("returns a concurrent identical request from the completed operation rather than retrying its CUID", async () => {
+    let reads = 0;
+    const requestDuplicate = Object.assign(new Error("Duplicate entry for key 'uq_canonical_item_inventory_operations_player_request'"), { code: "ER_DUP_ENTRY" });
+    const scripted = database((sql) => sql.includes("canonical_item_inventory_operations") && ++reads > 1 ? [{ resulting_quantity: 9n }] : [], (sql) => sql.includes("INSERT INTO canonical_item_inventory_operations") ? requestDuplicate : { affectedRows: 1n, insertId: 0n });
+    const repository = new CanonicalItemInventoryRepository(scripted.database, () => "a1234567", 2);
+    const result = await repository.changeStackQuantity({ actor: "system", playerId: "p1234567", itemId: "i1234567", requestKey: "same-event", quantityDelta: 1n, reasonType: "REWARD" });
+    assert.deepEqual(result, { quantity: 9n, replayed: true });
+    assert.equal(scripted.writes.filter((write) => write.sql.includes("INSERT INTO canonical_item_inventory_operations")).length, 1);
+  });
+
+  it("replays after a concurrent first stack UNIQUE conflict instead of treating it as a PK collision", async () => {
+    let operationReads = 0;
+    const stackDuplicate = Object.assign(new Error("Duplicate entry for key 'uq_canonical_owned_item_stacks_player_item'"), { code: "ER_DUP_ENTRY" });
+    const scripted = database((sql) => {
+      if (sql.includes("canonical_item_inventory_operations")) return ++operationReads > 1 ? [{ resulting_quantity: 3n }] : [];
+      return [];
+    }, (sql) => sql.includes("INSERT INTO canonical_owned_item_stacks") ? stackDuplicate : { affectedRows: 1n, insertId: 0n });
+    const candidates = ["o1234567", "s1234567"];
+    const repository = new CanonicalItemInventoryRepository(scripted.database, () => candidates.shift()!, 2);
+    const result = await repository.changeStackQuantity({ actor: "system", playerId: "p1234567", itemId: "i1234567", requestKey: "first-stack", quantityDelta: 3n, reasonType: "REWARD" });
+    assert.deepEqual(result, { quantity: 3n, replayed: true });
+    assert.equal(scripted.writes.filter((write) => write.sql.includes("INSERT INTO canonical_owned_item_stacks")).length, 1);
   });
 
   it("rejects an insufficient debit before creating a ledger entry", async () => {
