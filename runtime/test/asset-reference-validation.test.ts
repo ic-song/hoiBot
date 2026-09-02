@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { describe, it } from "node:test";
 import {
   buildPrivateAssetReferenceGapCrosswalk,
+  buildAssetReferenceQuarantineManifest,
   validateAssetReferences,
   type CanonicalAssetEntry,
   type CanonicalAssetSnapshot
@@ -158,5 +159,53 @@ describe("data migration asset reference validation", () => {
     const first = await validateAssetReferences(input.root, input.manifest, input.snapshot);
     const second = await validateAssetReferences(input.root, input.manifest, input.snapshot);
     assert.equal(first.reportSha256, second.reportSha256);
+  });
+
+  it("accepts only an exact full-coverage quarantine manifest", async () => {
+    const input = await fixture([]);
+    const crosswalk = await buildPrivateAssetReferenceGapCrosswalk(input.root, input.manifest, input.snapshot);
+    const quarantine = buildAssetReferenceQuarantineManifest(crosswalk, "2026-09-02T00:00:00.000Z");
+    const report = await validateAssetReferences(input.root, input.manifest, input.snapshot, quarantine);
+    assert.equal(report.dataMigrationReady, true);
+    assert.equal(report.quarantinedIdentityCount, 9);
+    assert.equal(report.quarantinedCount, 11);
+    assert.equal(report.issues.length, 0);
+    assert.equal(report.detectedOrphanCount, 11);
+    assert.equal(JSON.stringify(quarantine).includes("Synthetic Potion"), false);
+  });
+
+  it("rejects a quarantine manifest with changed occurrence evidence", async () => {
+    const input = await fixture([]);
+    const crosswalk = await buildPrivateAssetReferenceGapCrosswalk(input.root, input.manifest, input.snapshot);
+    const quarantine = buildAssetReferenceQuarantineManifest(crosswalk, "2026-09-02T00:00:00.000Z");
+    const targetIdentityHash = quarantine.entries[0]!.identityHash;
+    const changedCrosswalk = {
+      ...crosswalk,
+      entries: crosswalk.entries.map((entry) => entry.identityHash === targetIdentityHash
+        ? { ...entry, occurrenceCount: entry.occurrenceCount + 1 }
+        : entry)
+    };
+    const changed = buildAssetReferenceQuarantineManifest(changedCrosswalk, "2026-09-02T00:00:00.000Z");
+    await assert.rejects(
+      validateAssetReferences(input.root, input.manifest, input.snapshot, changed),
+      /QUARANTINE_MANIFEST_OCCURRENCE_MISMATCH/
+    );
+  });
+
+  it("rejects partial and stale quarantine manifests", async () => {
+    const input = await fixture([]);
+    const crosswalk = await buildPrivateAssetReferenceGapCrosswalk(input.root, input.manifest, input.snapshot);
+    const partialCrosswalk = { ...crosswalk, entries: crosswalk.entries.slice(1) };
+    const partial = buildAssetReferenceQuarantineManifest(partialCrosswalk, "2026-09-02T00:00:00.000Z");
+    await assert.rejects(
+      validateAssetReferences(input.root, input.manifest, input.snapshot, partial),
+      /QUARANTINE_MANIFEST_COVERAGE_MISMATCH/
+    );
+    const stale = buildAssetReferenceQuarantineManifest(crosswalk, "2026-09-02T00:00:00.000Z");
+    stale.stagingSha256 = "stale";
+    await assert.rejects(
+      validateAssetReferences(input.root, input.manifest, input.snapshot, stale),
+      /QUARANTINE_MANIFEST_BASELINE_MISMATCH/
+    );
   });
 });

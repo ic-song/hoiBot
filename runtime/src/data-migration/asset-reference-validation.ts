@@ -59,6 +59,12 @@ export interface AssetReferenceValidationReport {
   orphanCount: number;
   ambiguousCount: number;
   inactiveCount: number;
+  detectedOrphanCount: number;
+  detectedAmbiguousCount: number;
+  detectedInactiveCount: number;
+  quarantinedIdentityCount: number;
+  quarantinedCount: number;
+  quarantineManifestSha256?: string;
   canonicalDuplicateCount: number;
   canonicalCollisionCount: number;
   referenceCountsByType: Record<string, number>;
@@ -70,6 +76,7 @@ export interface AssetReferenceValidationReport {
 export interface PrivateAssetReferenceGapEntry {
   kind: "ORPHAN" | "AMBIGUOUS" | "INACTIVE";
   requestedType: string;
+  identityHash: string;
   exactKey?: string;
   displayName?: string;
   grade?: string;
@@ -87,6 +94,23 @@ export interface PrivateAssetReferenceGapEntry {
     active: boolean;
     sources: CanonicalAssetSource[];
   }>;
+}
+
+export interface AssetReferenceQuarantineManifestEntry {
+  kind: "ORPHAN" | "AMBIGUOUS" | "INACTIVE";
+  requestedType: string;
+  identityHash: string;
+  occurrenceCount: number;
+}
+
+export interface AssetReferenceQuarantineManifest {
+  format: "hoibot-private-asset-reference-quarantine-v1";
+  catalogVersion: string;
+  stagingSha256: string;
+  canonicalSha256: string;
+  generatedAt: string;
+  entries: AssetReferenceQuarantineManifestEntry[];
+  manifestSha256: string;
 }
 
 export interface PrivateAssetReferenceGapCrosswalk {
@@ -130,6 +154,37 @@ function canonicalJson(value: unknown): string {
       .join(",")}}`;
   }
   return JSON.stringify(value);
+}
+
+function quarantineManifestHash(manifest: Omit<AssetReferenceQuarantineManifest, "manifestSha256">): string {
+  return sha256(canonicalJson({ ...manifest, generatedAt: undefined }));
+}
+
+// 비공개 crosswalk의 해시 identity만 보존하는 전수 격리 manifest를 만든다.
+export function buildAssetReferenceQuarantineManifest(
+  crosswalk: PrivateAssetReferenceGapCrosswalk,
+  generatedAt = new Date().toISOString()
+): AssetReferenceQuarantineManifest {
+  const entries = crosswalk.entries
+    .map((entry) => ({
+      kind: entry.kind,
+      requestedType: entry.requestedType,
+      identityHash: entry.identityHash,
+      occurrenceCount: entry.occurrenceCount
+    }))
+    .sort((left, right) => `${left.kind}|${left.requestedType}|${left.identityHash}`.localeCompare(
+      `${right.kind}|${right.requestedType}|${right.identityHash}`,
+      "en"
+    ));
+  const base = {
+    format: "hoibot-private-asset-reference-quarantine-v1" as const,
+    catalogVersion: crosswalk.catalogVersion,
+    stagingSha256: crosswalk.stagingSha256,
+    canonicalSha256: crosswalk.canonicalSha256,
+    generatedAt,
+    entries
+  };
+  return { ...base, manifestSha256: quarantineManifestHash(base) };
 }
 
 function stringValue(value: unknown): string | undefined {
@@ -505,6 +560,7 @@ export async function buildPrivateAssetReferenceGapCrosswalk(
     entries.push({
       kind,
       requestedType: group.reference.requestedTypes.join("|") || "TYPED_CODE",
+      identityHash: sha256(canonicalJson(referenceIdentity(group.reference))),
       exactKey: group.reference.exactKey,
       displayName: group.reference.displayName,
       grade: group.reference.grade,
@@ -542,7 +598,8 @@ export async function buildPrivateAssetReferenceGapCrosswalk(
 export async function validateAssetReferences(
   stagingRoot: string,
   stagingManifest: StagingTransformManifest,
-  canonicalSnapshot: CanonicalAssetSnapshot
+  canonicalSnapshot: CanonicalAssetSnapshot,
+  quarantineManifest?: AssetReferenceQuarantineManifest
 ): Promise<AssetReferenceValidationReport> {
   if (canonicalSnapshot.format !== "hoibot-canonical-asset-reference-v1") throw new Error("CANONICAL_SNAPSHOT_FORMAT_INVALID");
   const { references, payloadFileCount } = await loadAssetReferences(stagingRoot, stagingManifest);
@@ -578,6 +635,52 @@ export async function validateAssetReferences(
     }
   }
 
+  const detectedOrphanCount = issues.filter((issue) => issue.kind === "ORPHAN").length;
+  const detectedAmbiguousCount = issues.filter((issue) => issue.kind === "AMBIGUOUS").length;
+  const detectedInactiveCount = issues.filter((issue) => issue.kind === "INACTIVE").length;
+  let quarantinedIdentityCount = 0;
+  let quarantinedCount = 0;
+  let quarantineManifestSha256: string | undefined;
+  if (quarantineManifest) {
+    if (quarantineManifest.format !== "hoibot-private-asset-reference-quarantine-v1") {
+      throw new Error("QUARANTINE_MANIFEST_FORMAT_INVALID");
+    }
+    if (quarantineManifest.catalogVersion !== canonicalSnapshot.catalogVersion
+      || quarantineManifest.stagingSha256 !== stagingManifest.stagingSha256
+      || quarantineManifest.canonicalSha256 !== canonicalSnapshotHash(canonicalSnapshot)) {
+      throw new Error("QUARANTINE_MANIFEST_BASELINE_MISMATCH");
+    }
+    const { manifestSha256, ...manifestBase } = quarantineManifest;
+    if (manifestSha256 !== quarantineManifestHash(manifestBase)) throw new Error("QUARANTINE_MANIFEST_HASH_MISMATCH");
+    const actual = new Map<string, { kind: AssetReferenceIssue["kind"]; requestedType: string; occurrenceCount: number }>();
+    for (const issue of issues) {
+      const current = actual.get(issue.identityHash);
+      if (current) {
+        if (current.kind !== issue.kind || current.requestedType !== issue.requestedType) {
+          throw new Error("QUARANTINE_ACTUAL_IDENTITY_COLLISION");
+        }
+        current.occurrenceCount += 1;
+      } else {
+        actual.set(issue.identityHash, { kind: issue.kind, requestedType: issue.requestedType, occurrenceCount: 1 });
+      }
+    }
+    const approved = new Set<string>();
+    for (const entry of quarantineManifest.entries) {
+      if (approved.has(entry.identityHash)) throw new Error("QUARANTINE_MANIFEST_DUPLICATE_IDENTITY");
+      approved.add(entry.identityHash);
+      const current = actual.get(entry.identityHash);
+      if (!current || current.kind !== entry.kind || current.requestedType !== entry.requestedType) {
+        throw new Error("QUARANTINE_MANIFEST_IDENTITY_MISMATCH");
+      }
+      if (current.occurrenceCount !== entry.occurrenceCount) throw new Error("QUARANTINE_MANIFEST_OCCURRENCE_MISMATCH");
+      quarantinedCount += entry.occurrenceCount;
+    }
+    if (approved.size !== actual.size) throw new Error("QUARANTINE_MANIFEST_COVERAGE_MISMATCH");
+    quarantinedIdentityCount = approved.size;
+    quarantineManifestSha256 = manifestSha256;
+    issues.length = 0;
+  }
+
   issues.sort((left, right) => `${left.kind}|${left.identityHash}|${left.locationHash}`.localeCompare(`${right.kind}|${right.identityHash}|${right.locationHash}`, "en"));
   const distinctReferenceCount = new Set(
     references.map((reference) => sha256(canonicalJson(referenceIdentity(reference))))
@@ -596,6 +699,12 @@ export async function validateAssetReferences(
     orphanCount: issues.filter((issue) => issue.kind === "ORPHAN").length,
     ambiguousCount: issues.filter((issue) => issue.kind === "AMBIGUOUS").length,
     inactiveCount: issues.filter((issue) => issue.kind === "INACTIVE").length,
+    detectedOrphanCount,
+    detectedAmbiguousCount,
+    detectedInactiveCount,
+    quarantinedIdentityCount,
+    quarantinedCount,
+    quarantineManifestSha256,
     canonicalDuplicateCount,
     canonicalCollisionCount,
     referenceCountsByType: Object.fromEntries(Object.entries(referenceCountsByType).sort(([left], [right]) => left.localeCompare(right, "en"))),

@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import type { StagingTransformManifest } from "../src/data-migration/staging-transform.js";
 import {
   validateAssetReferences,
+  type AssetReferenceQuarantineManifest,
   type CanonicalAssetSnapshot
 } from "../src/data-migration/asset-reference-validation.js";
 
@@ -16,12 +17,16 @@ async function main(): Promise<void> {
   const stagingManifestPath = argument("--staging-manifest");
   const canonicalSnapshotPath = argument("--canonical-snapshot");
   const outputPath = argument("--output");
+  const quarantineManifestPath = argument("--quarantine-manifest");
   if (!stagingRoot || !stagingManifestPath || !canonicalSnapshotPath || !outputPath) {
     throw new Error("USAGE: --staging <private-root> --staging-manifest <json> --canonical-snapshot <json> --output <json>");
   }
   const stagingManifest = JSON.parse(await readFile(resolve(stagingManifestPath), "utf8")) as StagingTransformManifest;
   const canonicalSnapshot = JSON.parse(await readFile(resolve(canonicalSnapshotPath), "utf8")) as CanonicalAssetSnapshot;
-  const report = await validateAssetReferences(resolve(stagingRoot), stagingManifest, canonicalSnapshot);
+  const quarantineManifest = quarantineManifestPath
+    ? JSON.parse(await readFile(resolve(quarantineManifestPath), "utf8")) as AssetReferenceQuarantineManifest
+    : undefined;
+  const report = await validateAssetReferences(resolve(stagingRoot), stagingManifest, canonicalSnapshot, quarantineManifest);
   const output = resolve(outputPath);
   const temporary = `${output}.tmp`;
   await mkdir(dirname(output), { recursive: true });
@@ -37,6 +42,12 @@ async function main(): Promise<void> {
     orphanCount: report.orphanCount,
     ambiguousCount: report.ambiguousCount,
     inactiveCount: report.inactiveCount,
+    detectedOrphanCount: report.detectedOrphanCount,
+    detectedAmbiguousCount: report.detectedAmbiguousCount,
+    detectedInactiveCount: report.detectedInactiveCount,
+    quarantinedIdentityCount: report.quarantinedIdentityCount,
+    quarantinedCount: report.quarantinedCount,
+    quarantineManifestSha256: report.quarantineManifestSha256,
     canonicalDuplicateCount: report.canonicalDuplicateCount,
     canonicalCollisionCount: report.canonicalCollisionCount,
     stagingSha256: report.stagingSha256,
