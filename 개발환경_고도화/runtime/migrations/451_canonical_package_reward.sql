@@ -136,7 +136,7 @@ CREATE TABLE canonical_package_definition_replays (
   package_definition_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   source_system VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   source_namespace VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
-  request_key VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  request_key VARCHAR(182) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   payload_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   package_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
   operation_status VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,

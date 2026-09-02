@@ -25,13 +25,20 @@ function input(overrides: Partial<CanonicalPackageImportInput> = {}): CanonicalP
   };
 }
 
-function database(options: { replay?: Record<string, string>; imported?: Record<string, string>; deadlockOnce?: boolean; unsafeNested?: Record<string, string | number>; invalidDetail?: boolean } = {}): { client: DatabaseClient; writes: Array<{ sql: string; values: readonly unknown[] }>; attempts: () => number } {
+function database(options: { replay?: Record<string, string>; imported?: Record<string, string>; deadlockOnce?: boolean; unsafeNested?: Record<string, string | number>; forceUnsafeNested?: boolean; invalidDetail?: boolean } = {}): { client: DatabaseClient; writes: Array<{ sql: string; values: readonly unknown[] }>; attempts: () => number } {
   const writes: Array<{ sql: string; values: readonly unknown[] }> = [];
   let attempts = 0;
-  const query = async <T>(sql: string): Promise<T> => {
+  const query = async <T>(sql: string, values: readonly unknown[] = []): Promise<T> => {
     if (sql.includes("canonical_package_definition_replays")) return (options.replay === undefined ? [] : [options.replay]) as T;
     if (sql.includes("canonical_package_definition_imports")) return (options.imported === undefined ? [] : [options.imported]) as T;
-    if (sql.includes("WITH RECURSIVE package_descendants")) return (options.unsafeNested === undefined ? [] : [options.unsafeNested]) as T;
+    if (sql.includes("WITH RECURSIVE package_descendants")) {
+      if (options.unsafeNested === undefined) return [] as T;
+      const depth = Number(options.unsafeNested.depth);
+      const sourcePackageId = String(values[2]);
+      const rejectedDepth = Number(values[3]);
+      const isCycle = String(options.unsafeNested.package_id) === sourcePackageId && depth > 0;
+      return (options.forceUnsafeNested || isCycle || depth >= rejectedDepth ? [options.unsafeNested] : []) as T;
+    }
     if (sql.includes("HAVING detail_count<>1")) return (options.invalidDetail ? [{ package_reward_entry_id: "entry001", detail_count: 2 }] : []) as T;
     if (sql.includes("canonical_item_definitions") || sql.includes("canonical_package_definitions")) return [{ target_id: "target01" }] as T;
     if (sql.includes("object_identity_crosswalks")) return [] as T;
@@ -52,6 +59,7 @@ test("migration451 keeps package definitions, typed targets, gaps, and replay ad
   assert.match(migration, /UNIQUE KEY uq_canonical_package_reward_entry_order \(package_reward_group_id, reward_order\)/);
   assert.doesNotMatch(migration, /ALTER TABLE (?:package_catalog|package_rewards|object_registry)/i);
   assert.doesNotMatch(migration, /\b(?:package|item)_code\b/i);
+  assert.match(migration, /request_key VARCHAR\(182\)/);
   assert.equal((migration.match(/INSERT_USER VARCHAR\(100\)/g) ?? []).length, 8);
 });
 
@@ -78,6 +86,9 @@ test("replays the same request and rejects changed payload or changed source pay
   const replay = database({ replay: { package_definition_operation_id: created.packageDefinitionOperationId, package_id: created.packageId, payload_fingerprint: fingerprint } });
   assert.equal((await new MariaCanonicalPackageRewardRepository(replay.client).importDefinition(input())).replayed, true);
   await assert.rejects(new MariaCanonicalPackageRewardRepository(replay.client).importDefinition(input({ packageName: "변경" })), /REQUEST_PAYLOAD_CONFLICT/);
+  const changedSourceIdentifier = database({ replay: { package_definition_operation_id: created.packageDefinitionOperationId, package_id: created.packageId, payload_fingerprint: fingerprint } });
+  await assert.rejects(new MariaCanonicalPackageRewardRepository(changedSourceIdentifier.client).importDefinition(input({ sourceIdentifier: "fixture-package-002" })), /REQUEST_PAYLOAD_CONFLICT/);
+  assert.equal(changedSourceIdentifier.writes.length, 0);
   const imported = database({ imported: { package_id: created.packageId, payload_fingerprint: "0".repeat(64) } });
   await assert.rejects(new MariaCanonicalPackageRewardRepository(imported.client).importDefinition(input({ requestKey: "second-request" })), /SOURCE_PAYLOAD_CONFLICT/);
 });
@@ -100,8 +111,9 @@ test("fails closed for weighted sums, gaps, self-reference, cycles, and depth ov
   await assert.rejects(new MariaCanonicalPackageRewardRepository(database().client).importDefinition(input({ selectionMode: "weighted_one", rewards: [{ kind: "gap", sourceRewardIdentifier: "x", rewardOrder: 1, targetKind: "item", targetSourceIdentifier: "missing", targetDisplayName: "미확인", quarantineReason: "TARGET_UNMAPPED" }] })), /WEIGHTED_GAP_UNSAFE/);
   assert.throws(() => assertSafeCanonicalNestedPackageTarget("pack0002", "pack0002"), /NESTED_SELF_REFERENCE/);
   assert.equal(CANONICAL_PACKAGE_MAX_NESTED_DEPTH, 8);
-  await assert.rejects(new MariaCanonicalPackageRewardRepository(database({ unsafeNested: { package_id: "source01", depth: 2 } }).client).importDefinition(input({ rewards: [{ kind: "package", sourceRewardIdentifier: "x", rewardOrder: 1, packageId: "pack0002", quantity: 1n }] })), /NESTED_(?:CYCLE|DEPTH_EXCEEDED)/);
-  await assert.rejects(new MariaCanonicalPackageRewardRepository(database({ unsafeNested: { package_id: "other001", depth: 7 } }).client).importDefinition(input({ rewards: [{ kind: "package", sourceRewardIdentifier: "x", rewardOrder: 1, packageId: "pack0002", quantity: 1n }] })), /NESTED_DEPTH_EXCEEDED/);
+  await assert.rejects(new MariaCanonicalPackageRewardRepository(database({ unsafeNested: { package_id: "source01", depth: 2 }, forceUnsafeNested: true }).client).importDefinition(input({ rewards: [{ kind: "package", sourceRewardIdentifier: "x", rewardOrder: 1, packageId: "pack0002", quantity: 1n }] })), /NESTED_(?:CYCLE|DEPTH_EXCEEDED)/);
+  await new MariaCanonicalPackageRewardRepository(database({ unsafeNested: { package_id: "other001", depth: 7 } }).client).importDefinition(input({ rewards: [{ kind: "package", sourceRewardIdentifier: "x", rewardOrder: 1, packageId: "pack0002", quantity: 1n }] }));
+  await assert.rejects(new MariaCanonicalPackageRewardRepository(database({ unsafeNested: { package_id: "other001", depth: 8 } }).client).importDefinition(input({ rewards: [{ kind: "package", sourceRewardIdentifier: "x", rewardOrder: 1, packageId: "pack0002", quantity: 1n }] })), /NESTED_DEPTH_EXCEEDED/);
 });
 
 test("uses exact fixed-10 probability arithmetic and the shared request-key boundary", async () => {

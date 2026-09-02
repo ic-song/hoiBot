@@ -100,7 +100,17 @@ function payloadFingerprint(input: CanonicalPackageImportInput): string {
   const rewards = [...input.rewards].sort((left, right) => left.rewardOrder - right.rewardOrder).map((reward) => reward.kind === "gap"
     ? { ...reward }
     : { ...reward, quantity: reward.quantity.toString(), probability: probability(reward.probability).normalized });
-  return hash(JSON.stringify({ packageName: input.packageName, packageDescription: input.packageDescription ?? null, maxOpenQuantity: input.maxOpenQuantity, active: input.active, selectionMode: input.selectionMode, rewards }));
+  return hash(JSON.stringify({
+    sourceSystem: input.sourceSystem,
+    sourceNamespace: input.sourceNamespace,
+    sourceIdentifier: input.sourceIdentifier,
+    packageName: input.packageName,
+    packageDescription: input.packageDescription ?? null,
+    maxOpenQuantity: input.maxOpenQuantity,
+    active: input.active,
+    selectionMode: input.selectionMode,
+    rewards,
+  }));
 }
 
 function isDuplicate(error: unknown): boolean {
@@ -226,7 +236,7 @@ export class MariaCanonicalPackageRewardRepository {
             WHERE package_descendants.depth<?
          )
          SELECT package_id,depth FROM package_descendants WHERE (package_id=? AND depth>0) OR depth>=? LIMIT 1 FOR UPDATE`,
-        [reward.packageId, CANONICAL_PACKAGE_MAX_NESTED_DEPTH, packageId, CANONICAL_PACKAGE_MAX_NESTED_DEPTH - 1],
+        [reward.packageId, CANONICAL_PACKAGE_MAX_NESTED_DEPTH, packageId, CANONICAL_PACKAGE_MAX_NESTED_DEPTH],
       ))[0];
       if (unsafe !== undefined) throw new Error(unsafe.package_id === packageId ? "CANONICAL_PACKAGE_NESTED_CYCLE" : "CANONICAL_PACKAGE_NESTED_DEPTH_EXCEEDED");
     }

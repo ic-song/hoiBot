@@ -29,17 +29,18 @@
 
 ## Gate 4 구현·검증
 
-- repository는 source import 및 request replay fingerprint를 분리하고, same request replay/changed payload conflict/source payload conflict를 fail-closed 처리한다.
+- repository는 source import 및 request replay fingerprint를 분리한다. replay fingerprint에는 `source_system`, `source_namespace`, `source_identifier`가 모두 포함되므로 동일 request key에서 source identifier만 바뀌어도 쓰기 전에 `REQUEST_PAYLOAD_CONFLICT`로 fail-closed한다.
 - reward entry마다 item/package/quarantine detail이 정확히 1건인지 commit 전에 transaction 내부에서 대사한다.
 - weighted probability는 DECIMAL(12,10)을 고정 10자리 `BigInt`로 계산해 합계 `10^10`을 정확 비교하며 지수표기·초과 소수·비정규 표기를 거부한다.
-- nested package는 self-reference, recursive cycle, 최대 깊이 8 초과를 fail-closed 처리한다.
-- request key는 공통 182자 경계를 사용하며 deadlock/lock-timeout은 최대 3회 transaction retry한다.
+- nested package는 self-reference, recursive cycle, 총 깊이 8 초과를 fail-closed 처리한다. 총 깊이 8은 허용하고 9부터 거부한다.
+- request key는 repository·migration·contract manifest 모두 공통 182자 경계를 사용하며 182자는 허용하고 183자는 쓰기 전에 거부한다. deadlock/lock-timeout은 최대 3회 transaction retry한다.
 - `object-data:validate`: 48 tables PASS
 - `typecheck`, `build`: PASS
-- focused tests: 신규·계약·기존 typed-target parity 37/37 PASS
+- focused tests: 신규·계약·기존 typed-target parity 25/25 PASS (독립 리뷰 보완 후 재실행)
 - MariaDB 11.4 fresh migration: 439 migrations, migration451/replay PASS
 - MariaDB repository: typed entries 3, item 1, nested 1, quarantine 1, replay 1; 동일 요청 재실행은 동일 operation/package 반환
 - MariaDB recursive CTE + `FOR UPDATE`: nested import 실행 PASS
+- MariaDB 11.4 recursive CTE + `FOR UPDATE` 깊이 경계: 총 depth 8 허용, 9 거부 PASS
 - MariaDB gap import: 요청이 active여도 canonical `active_flag=0` 확인
 - MariaDB constraint negatives: duplicate reward order `ER_DUP_ENTRY`, package ID를 item FK에 삽입 `ER_NO_REFERENCED_ROW_2`, `25:00:00` 감사시각 `ER_CONSTRAINT_FAILED`
 

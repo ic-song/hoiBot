@@ -47,7 +47,9 @@ describe("object data model standard contract", () => {
   });
 
   it("keeps canonical package rewards typed and unresolved targets quarantined", () => {
-    for (const token of ["canonical_package_definitions", "canonical_package_reward_groups", "canonical_package_reward_entries", "canonical_package_item_rewards", "canonical_package_nested_rewards", "canonical_package_reward_quarantines", "canonical_package_definition_replays", "FOREIGN KEY (item_id) REFERENCES canonical_item_definitions (item_id)", "payload_fingerprint CHAR(64)"]) assert.match(migration451, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    for (const token of ["canonical_package_definitions", "canonical_package_reward_groups", "canonical_package_reward_entries", "canonical_package_item_rewards", "canonical_package_nested_rewards", "canonical_package_reward_quarantines", "canonical_package_definition_replays", "FOREIGN KEY (item_id) REFERENCES canonical_item_definitions (item_id)", "payload_fingerprint CHAR(64)", "request_key VARCHAR(182)"]) assert.match(migration451, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    const replay = contract.tables.find((entry) => entry.table === "canonical_package_definition_replays");
+    assert.equal(replay?.columns.find((column) => column.name === "request_key")?.type, "VARCHAR(182)");
     assert.doesNotMatch(migration451, /ALTER TABLE (?:package_catalog|package_rewards|object_registry)/i);
   });
 
