@@ -1,0 +1,34 @@
+{
+  "fixtureVersion": "canonical-title-domains-v1",
+  "source": "non-identifying synthetic data only",
+  "players": [
+    { "player_id": "player01" },
+    { "player_id": "player02" }
+  ],
+  "memberTitles": {
+    "definition": { "member_title_id": "memttl01", "title_name": "위대한 모험가✨", "base_sale_price": "100000000" },
+    "owned": [
+      { "owned_member_title_id": "ownmem01", "player_id": "player01", "member_title_id": "memttl01", "acquisition_sequence": "1", "acquired_time": "2026-09-03 10:00:00" },
+      { "owned_member_title_id": "ownmem02", "player_id": "player02", "member_title_id": "memttl01", "acquisition_sequence": "1", "acquired_time": "2026-09-03 10:01:00" }
+    ],
+    "selection": { "player_id": "player01", "owned_member_title_id": "ownmem01" }
+  },
+  "petTitles": {
+    "definition": { "pet_title_id": "petttl01", "title_name": "믿음직한 파트너🦊", "base_sale_price": "100000000" },
+    "owned": { "owned_pet_title_id": "ownpet01", "player_id": "player01", "pet_title_id": "petttl01", "acquisition_sequence": "1", "acquired_time": "2026-09-03 10:02:00" },
+    "selection": { "player_id": "player01", "owned_pet_title_id": "ownpet01" }
+  },
+  "miniPetTitles": {
+    "definition": { "mini_pet_title_id": "minttl01", "title_name": "미니펫 수집가🐹", "base_sale_price": "10000000000" },
+    "owned": { "owned_mini_pet_title_id": "ownmini1", "player_id": "player01", "mini_pet_title_id": "minttl01", "acquisition_sequence": "1", "acquired_time": "2026-09-03 10:03:00" },
+    "selection": { "player_id": "player01", "owned_mini_pet_title_id": "ownmini1" }
+  },
+  "expectations": {
+    "definitionUpdateFanout": "one member-title definition update is visible to both owners without ownership-row updates",
+    "duplicateOwnership": "the same definition may be owned by multiple players and repeated grants remain separate instances",
+    "selection": "exactly one current selection row per player and title domain",
+    "crossOwnerSelection": "rejected by composite owned-title/player foreign key",
+    "legacyOrder": "acquisition_sequence preserves list index semantics",
+    "legacyAcquisitionTime": "acquired_time preserves the displayed legacy inDate independently from DB audit time"
+  }
+}

@@ -10,6 +10,7 @@ const migration444 = readFileSync(new URL("../migrations/444_canonical_item_inve
 const migration445 = readFileSync(new URL("../migrations/445_object_furniture_home_canonical_model.sql", import.meta.url), "utf8");
 const migration446 = readFileSync(new URL("../migrations/446_canonical_pet_equipment.sql", import.meta.url), "utf8");
 const migration447 = readFileSync(new URL("../migrations/447_canonical_mini_pet.sql", import.meta.url), "utf8");
+const migration448 = readFileSync(new URL("../migrations/448_canonical_title_domains.sql", import.meta.url), "utf8");
 const migration450 = readFileSync(new URL("../migrations/450_object_furniture_market_active_listing.sql", import.meta.url), "utf8");
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
@@ -17,8 +18,8 @@ describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "450_object_furniture_market_active_listing.sql"]);
-    for (const table of ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment", "canonical_pet_equipment_operation_replays", "object_furniture_ownership_history", "object_furniture_market_listings", "object_furniture_active_market_listings", "canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances", "canonical_mini_pet_operation_replays"]) assert.ok(contract.tables.some((entry) => entry.table === table));
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "450_object_furniture_market_active_listing.sql"]);
+    for (const table of ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment", "canonical_pet_equipment_operation_replays", "object_furniture_ownership_history", "object_furniture_market_listings", "object_furniture_active_market_listings", "canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances", "canonical_mini_pet_operation_replays", "canonical_member_title_definitions", "canonical_owned_member_title_instances", "canonical_member_title_selections", "canonical_pet_title_definitions", "canonical_owned_pet_title_instances", "canonical_pet_title_selections", "canonical_mini_pet_title_definitions", "canonical_owned_mini_pet_title_instances", "canonical_mini_pet_title_selections"]) assert.ok(contract.tables.some((entry) => entry.table === table));
   });
 
   it("keeps migration446 aligned with the common player provider and owner-bound replay contract", () => {
@@ -53,6 +54,21 @@ describe("object data model standard contract", () => {
     for (const token of ["444_canonical_item_inventory.sql", "canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances", "canonical_mini_pet_operation_replays", "mini_pet_id CHAR(8)", "owned_mini_pet_id CHAR(8)", "base_battle_charm BIGINT", "target_enhancement_level INT UNSIGNED", "enhancement_level INT UNSIGNED", "INSERT_USER VARCHAR(100)", "UPDATE_TIME CHAR(19)"]) assert.match(migration447, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(migration447, /final_(?:battle_|castle_|raid_)?charm/i);
     assert.doesNotMatch(migration447, /(?:mini_pet_|object_)code/i);
+  });
+
+  it("keeps migration448 split across member, pet, and mini-pet definitions, ownership, and selection", () => {
+    for (const token of [
+      "Requires 443_object_identity_audit_provider.sql and 444_canonical_item_inventory.sql",
+      "canonical_member_title_definitions", "canonical_owned_member_title_instances", "canonical_member_title_selections",
+      "canonical_pet_title_definitions", "canonical_owned_pet_title_instances", "canonical_pet_title_selections",
+      "canonical_mini_pet_title_definitions", "canonical_owned_mini_pet_title_instances", "canonical_mini_pet_title_selections",
+      "base_sale_price BIGINT UNSIGNED", "acquisition_sequence BIGINT UNSIGNED", "acquired_time CHAR(19)",
+      "FOREIGN KEY (owned_member_title_id, player_id)", "FOREIGN KEY (owned_pet_title_id, player_id)", "FOREIGN KEY (owned_mini_pet_title_id, player_id)"
+    ]) assert.match(migration448, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    for (const table of ["canonical_owned_member_title_instances", "canonical_owned_pet_title_instances", "canonical_owned_mini_pet_title_instances"]) {
+      const body = migration448.match(new RegExp(`CREATE TABLE ${table} \\(([\\s\\S]*?)\\n\\) ENGINE`))?.[1] ?? "";
+      assert.doesNotMatch(body, /title_name|base_sale_price|active_flag/);
+    }
   });
 
   it("accepts the anonymized identity, definition, and ownership fixture", () => {
