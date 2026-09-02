@@ -20,6 +20,57 @@ function database(query: (sql: string) => unknown[] = () => [], onExecute: (sql:
   return { database: { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined }, writes };
 }
 
+// 빈 stack을 먼저 본 두 요청 중 패배자가 재시작한 뒤, 승자 stack에 별도 수량·원장을 누적하는 상태 기반 경쟁 모형입니다.
+function competingFirstStackDatabase(): { database: DatabaseClient; state: { quantity: bigint; operations: Map<string, bigint>; ledgerDeltas: bigint[]; stackInsertAttempts: number; stackUpdated: boolean } } {
+  const state = { quantity: 0n, operations: new Map<string, bigint>(), ledgerDeltas: [] as bigint[], stackInsertAttempts: 0, stackUpdated: false };
+  let transactionAttempt = 0;
+  const database: DatabaseClient = {
+    ping: async () => undefined, verifyRollback: async () => true, close: async () => undefined,
+    query: async <T>(): Promise<T> => [] as T,
+    execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 1n, insertId: 0n }),
+    withTransaction: async <T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> => {
+      transactionAttempt += 1;
+      let operationKey = "";
+      let pendingQuantity: bigint | null = null;
+      let pendingLedgerDelta: bigint | null = null;
+      const transaction: DatabaseTransaction = {
+        query: async <R>(sql: string, values: readonly unknown[] = []): Promise<R> => {
+          if (sql.includes("canonical_item_inventory_operations")) {
+            const existing = state.operations.get(String(values[1]));
+            return (existing === undefined ? [] : [{ resulting_quantity: existing }]) as R;
+          }
+          if (sql.includes("canonical_owned_item_stacks")) {
+            return (state.quantity === 0n ? [] : [{ owned_item_stack_id: "s1234567", quantity: state.quantity }]) as R;
+          }
+          return [] as R;
+        },
+        execute: async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
+          if (sql.includes("INSERT INTO canonical_item_inventory_operations")) operationKey = String(values[2]);
+          if (sql.includes("INSERT INTO canonical_owned_item_stacks")) {
+            state.stackInsertAttempts += 1;
+            if (transactionAttempt === 1) {
+              // 경쟁 요청 A가 이 UNIQUE 충돌 직전에 stack=2, operation/ledger를 모두 commit한 상태를 모델링합니다.
+              state.quantity = 2n;
+              state.operations.set("request-a", 2n);
+              state.ledgerDeltas.push(2n);
+              throw Object.assign(new Error("Duplicate entry for key 'uq_canonical_owned_item_stacks_player_item'"), { code: "ER_DUP_ENTRY" });
+            }
+          }
+          if (sql.startsWith("UPDATE canonical_owned_item_stacks")) { pendingQuantity = BigInt(values[0] as bigint); state.stackUpdated = true; }
+          if (sql.includes("INSERT INTO canonical_item_inventory_ledger_entries")) pendingLedgerDelta = BigInt(values[5] as bigint);
+          return { affectedRows: 1n, insertId: 0n };
+        }
+      };
+      const result = await work(transaction);
+      if (pendingQuantity !== null) state.quantity = pendingQuantity;
+      if (pendingLedgerDelta !== null) state.ledgerDeltas.push(pendingLedgerDelta);
+      if (operationKey !== "") state.operations.set(operationKey, state.quantity);
+      return result;
+    }
+  };
+  return { database, state };
+}
+
 describe("canonical item inventory repository", () => {
   it("preserves the complete emoji and command-guide display name while retrying an item PK collision", async () => {
     const duplicate = Object.assign(new Error("Duplicate entry for key 'PRIMARY'"), { code: "ER_DUP_ENTRY" });
@@ -100,6 +151,19 @@ describe("canonical item inventory repository", () => {
     const result = await repository.changeStackQuantity({ actor: "system", playerId: "p1234567", itemId: "i1234567", requestKey: "first-stack", quantityDelta: 3n, reasonType: "REWARD" });
     assert.deepEqual(result, { quantity: 3n, replayed: true });
     assert.equal(scripted.writes.filter((write) => write.sql.includes("INSERT INTO canonical_owned_item_stacks")).length, 1);
+  });
+
+  it("restarts a losing different request after first-stack contention and applies its own ledger delta", async () => {
+    const scripted = competingFirstStackDatabase();
+    const candidates = ["a1234567", "b1234567", "c1234567", "d1234567"];
+    const repository = new CanonicalItemInventoryRepository(scripted.database, () => candidates.shift()!, 3);
+    const result = await repository.changeStackQuantity({ actor: "system", playerId: "p1234567", itemId: "i1234567", requestKey: "request-b", quantityDelta: 3n, reasonType: "REWARD" });
+    assert.deepEqual(result, { quantity: 5n, replayed: false });
+    assert.equal(scripted.state.stackInsertAttempts, 1);
+    assert.equal(scripted.state.stackUpdated, true);
+    assert.equal(scripted.state.quantity, 5n);
+    assert.deepEqual(Array.from(scripted.state.operations.entries()).sort((left, right) => left[0].localeCompare(right[0])), [["request-a", 2n], ["request-b", 5n]]);
+    assert.deepEqual(scripted.state.ledgerDeltas, [2n, 3n]);
   });
 
   it("rejects an insufficient debit before creating a ledger entry", async () => {
