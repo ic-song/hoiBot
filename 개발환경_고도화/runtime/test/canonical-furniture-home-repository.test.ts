@@ -61,6 +61,17 @@ describe("canonical furniture home repository", () => {
     await assert.rejects(repository.grantOwnedFurniture({ actor: "migration", playerId: "p1234567", furnitureId: "f1234567", idempotencyScope: "legacy.import", idempotencyKey: "source-1" }), /IDEMPOTENCY_CONFLICT/);
   });
 
+  it("retries a concurrent unique-key race and returns the committed replay", async () => {
+    const duplicate = Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" });
+    let attempts = 0, reads = 0;
+    const transaction: DatabaseTransaction = { query: async <T>(): Promise<T> => (++reads === 1 ? [{ owned_furniture_id: "o1234567", result_status: "granted", operation_kind: "grant_owned_furniture", payload_fingerprint: fingerprint("grant_owned_furniture", ["p1234567", "f1234567", "0"]) }] : [{ owned_furniture_id: "o1234567", player_id: "p1234567", furniture_id: "f1234567", enhancement_level: 0n, base_charm: 10n, charm_per_enhancement: 5n }]) as T, execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 1n, insertId: 0n }) };
+    const database: DatabaseClient = { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, close: async () => undefined, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { attempts += 1; if (attempts === 1) throw duplicate; return work(transaction); } };
+    const repository = new MariaCanonicalFurnitureHomeRepository(database, () => "a1234567", audit);
+    const result = await repository.grantOwnedFurniture({ actor: "migration", playerId: "p1234567", furnitureId: "f1234567", idempotencyScope: "legacy.import", idempotencyKey: "source-1" });
+    assert.equal(result.replayed, true);
+    assert.equal(attempts, 2);
+  });
+
   it("uses placement existence as the only placed-state source and records it atomically with replay", async () => {
     const statements: string[] = [];
     const transaction: DatabaseTransaction = {
