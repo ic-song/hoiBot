@@ -4103,7 +4103,7 @@ Status: VERIFIED
 
 ---
 
-# /미니펫컬렉션
+# /미니펫컬렉션|/미니펫컬렉션 [미니펫컬렉션번호]
 Status: VERIFIED
 ## Command Anchors
 - Search in main.js: `/미니펫컬렉션`
@@ -4112,11 +4112,17 @@ Status: VERIFIED
 ## Related Helpers
 - `sanitizeMiniPetCollectionData`
 - `ensureMiniPetCollection`
+- `getMiniPetCollectionAutoUpgradePlan`
+- `tryAutoUpgradeMiniPetForCollection`
 ## Data Usage
 - `miniPetCollectionData.member[sender]`
 - `miniPetCollectionInfo.stageReward`
+- `petData[sender].miniPetBag`
+- `data.member[sender].bag["미니펫컬렉션 만능 열쇠🗝️"]`
 ## Save Flow
-- Primarily read-only; may sanitize then save collection data
+- 인자 없는 명령은 현황을 조회하며 필요하면 컬렉션 데이터를 정리해 저장한다.
+- 번호 명령은 같은 등급의 등록 가능한 미니펫을 먼저 선택하고, 없을 때만 만능 열쇠를 선택해 `등록` 확인 상태를 만든다.
+- `등록` 성공 시 기존 컬렉션·타이틀·회원·미니펫 저장 흐름을 재사용한다.
 ## Related Commands
 - `/컬렉션등록`
 - `/미니펫컬렉션순위`
@@ -5550,7 +5556,7 @@ Status: VERIFIED
 
 ---
 
-# /펫스킬컬렉션|/펫스킬컬렉션등록 [펫스킬가방번호] ...
+# /펫스킬컬렉션|/펫스킬컬렉션등록 [번호] ...
 
 Status: VERIFIED
 
@@ -5566,6 +5572,7 @@ Status: VERIFIED
 - `buildPetSkillCollectionProgressLines`
 - `buildPetSkillCollectionMessage`
 - `buildPetSkillCollectionConfirmMessage`
+- `getPetSkillCollectionTargetList`
 - `getPetSkillBagList`
 - `removePetSkillFromBag`
 
@@ -5573,17 +5580,75 @@ Status: VERIFIED
 - `petSkillData.json -> [user].petSkillCollection[skillName]`
 - `petSkillData.json -> [user].petSkills.bag[skillName]`
 - `member.json -> member[user].bag["홈뱃지 큐브💟"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚"]`
 
 ## Save Flow
-- `/펫스킬컬렉션`은 컬렉션 파일을 읽어 SS~D 현황만 출력한다.
-- `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 펫스킬가방 번호를 확인 상태에 저장한다.
-- `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상 아이템을 `member.json`에 저장한다.
+- `/펫스킬컬렉션`은 SS~D 현황과 통합 컬렉션 번호를 출력한다.
+- `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 번호를 받으며, 등록 가능한 펫스킬북이 있으면 가방 재료를 우선 선택한다.
+- 해당 가방 재료가 없거나 등록 불가하고 만능 열쇠가 있으면 같은 입력값을 컬렉션 번호로 해석한다.
+- `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상·만능 열쇠를 `member.json`에 저장한다.
 - 두 파일은 기존 1·2세대 자동 백업과 명령 단위 롤백 보호 흐름을 재사용한다.
 
 ## Related Commands
 - `/펫스킬가방`
 - `등록`
 - `ㄴㄴ`
+
+---
+
+# /만능상자오픈 [숫자]
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/만능상자오픈`, `runUniversalBoxOpen`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `runUniversalBoxOpen`
+- `addItem`
+- `removeItem`
+- `noticeMsg`
+
+## Data Usage
+- `member.json -> member[user].bag["만능상자🔐(/만능상자오픈 숫자)"]`
+- `member.json -> member[user].bag["펫스킬북📙(/펫스킬오픈)"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚"]`
+- `member.json -> member[user].bag["미니펫컬렉션 만능 열쇠🗝️"]`
+
+## Save Flow
+- 상자마다 70%·25%·5%를 독립 추첨한 뒤 보상을 합산하고, 상자 차감과 보상 지급을 한 번 저장한다.
+- 미니펫컬렉션 만능 열쇠가 하나 이상 나오면 저장 후 전체 알림을 시도한다.
+
+---
+
+# /재벌도전
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/재벌도전`, `runDiamondTycoonChallenge`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `getDiamondTycoonDailyData`
+- `buildDiamondTycoonResultMessage`
+- `runDiamondTycoonChallenge`
+- `hasPetSkill`
+
+## Data Usage
+- `petSkillData.json -> [user].petSkills.equipped`
+- `member.json -> member[user].diamondTycoon`
+- `member.json -> member[user].bag["다이아상자💎(/다이아상자오픈)"]`
+
+## Save Flow
+- 장착 여부와 하루 10회 제한을 확인한 뒤 단일 난수로 로또·일반 성공·실패를 판정한다.
+- 모든 판정은 도전 횟수를 1회 사용하며, 성공 보상과 일일 상태를 함께 `member.json`에 저장한다.
+- 로또 결과는 저장 후 전체 알림을 시도하고, 알림 실패가 저장된 보상을 되돌리지 않는다.
 
 ---
 
