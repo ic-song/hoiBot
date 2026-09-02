@@ -137,6 +137,61 @@ describe("canonical furniture home repository", () => {
     assert.equal(rolledBack, true);
   });
 
+  it("preserves cancelled and sold listing history when furniture is re-listed", async () => {
+    const statusByOwned = new Map<string, string>([["o1234567", "bag"], ["q1234567", "bag"]]);
+    const listingStatuses: string[] = [];
+    const transaction: DatabaseTransaction = {
+      query: async <T>(): Promise<T> => [] as T,
+      execute: async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
+        if (sql.startsWith("UPDATE object_owned_furniture_instances")) {
+          const ownedFurnitureId = String(values[3]);
+          if (values[5] !== statusByOwned.get(ownedFurnitureId)) return { affectedRows: 0n, insertId: 0n };
+          statusByOwned.set(ownedFurnitureId, String(values[0]));
+        } else if (sql.startsWith("INSERT INTO object_furniture_market_listings")) listingStatuses.push("active");
+        else if (sql.startsWith("UPDATE object_furniture_market_listings")) {
+          const active = listingStatuses.lastIndexOf("active");
+          if (active < 0) return { affectedRows: 0n, insertId: 0n };
+          listingStatuses[active] = String(values[0]);
+        }
+        return { affectedRows: 1n, insertId: 0n };
+      }
+    };
+    const database: DatabaseClient = { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined };
+    const repository = new MariaCanonicalFurnitureHomeRepository(database, () => "a1234567", audit);
+    const transition = (ownedFurnitureId: string, fromStatus: "bag" | "listed", toStatus: "bag" | "listed" | "sold", key: string, listingPrice?: bigint) => repository.transitionOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId, fromStatus, toStatus, listingPrice, idempotencyScope: "market", idempotencyKey: key });
+    assert.equal((await transition("o1234567", "bag", "listed", "list-1", 100n)).replayed, false);
+    assert.equal((await transition("o1234567", "listed", "sold", "sold-1")).replayed, false);
+    assert.equal((await transition("q1234567", "bag", "listed", "list-2", 200n)).replayed, false);
+    assert.equal((await transition("q1234567", "listed", "bag", "cancel-1")).replayed, false);
+    assert.equal((await transition("q1234567", "bag", "listed", "list-3", 300n)).replayed, false);
+    assert.deepEqual(listingStatuses, ["sold", "cancelled", "active"]);
+  });
+
+  it("rejects unsupported ownership transitions before opening a transaction", async () => {
+    let transactions = 0;
+    const database = scriptedDatabase([]);
+    const guarded: DatabaseClient = { ...database, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { transactions += 1; return database.withTransaction(work); } };
+    const repository = new MariaCanonicalFurnitureHomeRepository(guarded, () => "a1234567", audit);
+    await assert.rejects(repository.transitionOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", fromStatus: "bag", toStatus: "sold", idempotencyScope: "market", idempotencyKey: "invalid-1" }), /TRANSITION_INVALID/);
+    assert.equal(transactions, 0);
+  });
+
+  it("keeps a concurrent re-list active-listing UNIQUE conflict meaningful and rolls back", async () => {
+    let rolledBack = false;
+    const duplicate = Object.assign(new Error("Duplicate entry 'o1234567' for key 'uq_object_furniture_market_active_owned'"), { code: "ER_DUP_ENTRY" });
+    const transaction: DatabaseTransaction = {
+      query: async <T>(): Promise<T> => [] as T,
+      execute: async (sql: string): Promise<DatabaseWriteResult> => {
+        if (sql.startsWith("INSERT INTO object_furniture_market_listings")) throw duplicate;
+        return { affectedRows: 1n, insertId: 0n };
+      }
+    };
+    const database: DatabaseClient = { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, close: async () => undefined, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { try { return await work(transaction); } catch (error) { rolledBack = true; throw error; } } };
+    const repository = new MariaCanonicalFurnitureHomeRepository(database, () => "a1234567", audit);
+    await assert.rejects(repository.transitionOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", fromStatus: "bag", toStatus: "listed", listingPrice: 100n, idempotencyScope: "market", idempotencyKey: "relist-1" }), /Duplicate entry/);
+    assert.equal(rolledBack, true);
+  });
+
 
   it("records lifecycle status and its placement detail atomically with replay", async () => {
     const statements: string[] = [];

@@ -9,13 +9,14 @@ const migration443 = readFileSync(new URL("../migrations/443_object_identity_aud
 const migration444 = readFileSync(new URL("../migrations/444_canonical_item_inventory.sql", import.meta.url), "utf8");
 const migration445 = readFileSync(new URL("../migrations/445_object_furniture_home_canonical_model.sql", import.meta.url), "utf8");
 const migration446 = readFileSync(new URL("../migrations/446_canonical_pet_equipment.sql", import.meta.url), "utf8");
+const migration450 = readFileSync(new URL("../migrations/450_object_furniture_market_active_listing.sql", import.meta.url), "utf8");
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql"]);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "450_object_furniture_market_active_listing.sql"]);
     assert.deepEqual(contract.tables.map((table) => table.table), ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment", "canonical_pet_equipment_operation_replays", "object_furniture_ownership_history", "object_furniture_market_listings"]);
   });
 
@@ -39,6 +40,12 @@ describe("object data model standard contract", () => {
     assert.doesNotMatch(migration445, /final_charm/);
     assert.doesNotMatch(migration445, /charm_snapshot/);
     assert.match(migration445, /ownership_status/);
+  });
+
+  it("keeps cancelled and sold market history while allowing one active listing", () => {
+    for (const token of ["DROP INDEX uq_object_furniture_market_listing_owned", "active_owned_furniture_id CHAR(8)", "GENERATED ALWAYS AS", "listing_status = 'active'", "uq_object_furniture_market_active_owned"]) assert.match(migration450, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    const market = contract.tables.find((entry) => entry.table === "object_furniture_market_listings");
+    assert.deepEqual(market?.uniqueKeys, [["active_owned_furniture_id"]]);
   });
 
   it("accepts the anonymized identity, definition, and ownership fixture", () => {

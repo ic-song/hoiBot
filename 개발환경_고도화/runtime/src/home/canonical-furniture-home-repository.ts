@@ -93,7 +93,7 @@ async function reserveId(transaction: DatabaseTransaction, generate: ObjectIdent
   for (let attempt = 0; attempt < OBJECT_IDENTITY_MAX_ATTEMPTS; attempt += 1) {
     const candidate = generate();
     assertCuid2Length(candidate);
-    try { await insert(candidate); return candidate; } catch (error) { if (!duplicate(error) || !retryDuplicate) throw error; }
+    try { await insert(candidate); return candidate; } catch (error) { if (!retryDuplicate || !isPrimaryDuplicate(error)) throw error; }
   }
   throw new Error("CANONICAL_FURNITURE_ID_COLLISION_RETRY_EXHAUSTED");
 }
@@ -112,6 +112,16 @@ function isOperationReplayUniqueDuplicate(error: unknown): boolean {
   return duplicateKeyName(error)?.toLowerCase() === "uq_object_furniture_operation_replay";
 }
 
+const operationReplayBusinessDuplicates = new WeakSet<object>();
+
+function markOperationReplayBusinessDuplicate(error: unknown): void {
+  if (typeof error === "object" && error !== null) operationReplayBusinessDuplicates.add(error);
+}
+
+function isOperationReplayBusinessDuplicate(error: unknown): boolean {
+  return isOperationReplayUniqueDuplicate(error) || (typeof error === "object" && error !== null && operationReplayBusinessDuplicates.has(error));
+}
+
 // 재실행 원장은 PK 충돌만 새 CUID로 재시도합니다. 업무 UNIQUE 충돌은 상위 transaction이
 // rollback 후 replay 행을 다시 읽게 해야 하므로 여기서 절대로 삼키지 않습니다.
 async function reserveOperationReplayId(transaction: DatabaseTransaction, generate: ObjectIdentityCandidateGenerator, insert: (candidate: string) => Promise<void>): Promise<string> {
@@ -122,14 +132,15 @@ async function reserveOperationReplayId(transaction: DatabaseTransaction, genera
       await insert(candidate);
       return candidate;
     } catch (error) {
-      if (!duplicate(error) || isOperationReplayUniqueDuplicate(error)) throw error;
+      if (!duplicate(error)) throw error;
+      if (isOperationReplayUniqueDuplicate(error)) { markOperationReplayBusinessDuplicate(error); throw error; }
       if (isPrimaryDuplicate(error)) continue;
       // 드라이버가 constraint 이름을 생략한 경우에는 후보 PK 존재 여부로만 PK 충돌을 판별합니다.
       const existing = (await transaction.query<Array<{ furniture_operation_id: string }>>(
         "SELECT furniture_operation_id FROM object_furniture_operation_replays WHERE furniture_operation_id=? FOR UPDATE",
         [candidate]
       ))[0];
-      if (existing === undefined) throw error;
+      if (existing === undefined) { markOperationReplayBusinessDuplicate(error); throw error; }
     }
   }
   throw new Error("CANONICAL_FURNITURE_ID_COLLISION_RETRY_EXHAUSTED");
@@ -141,6 +152,16 @@ function fingerprint(operationKind: string, values: readonly string[]): string {
 
 function requireReplayMatch(row: ReplayRow, operationKind: string, payloadFingerprint: string): void {
   if (row.operation_kind !== operationKind || row.payload_fingerprint !== payloadFingerprint) throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_CONFLICT");
+}
+
+const ALLOWED_OWNERSHIP_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
+  bag: ["listed", "removed"],
+  placed: ["bag", "removed"],
+  listed: ["bag", "sold"]
+};
+
+function assertAllowedOwnershipTransition(input: TransitionCanonicalFurnitureInput): void {
+  if (!ALLOWED_OWNERSHIP_TRANSITIONS[input.fromStatus]?.includes(input.toStatus)) throw new Error("CANONICAL_FURNITURE_TRANSITION_INVALID");
 }
 
 // WBS742 importer와 홈 read 소비자가 함께 사용할 canonical 가구 보유 저장소입니다.
@@ -195,7 +216,7 @@ export class MariaCanonicalFurnitureHomeRepository {
           }, replayed: false };
         });
       } catch (error) {
-        if (!duplicate(error)) throw error;
+        if (!isOperationReplayBusinessDuplicate(error)) throw error;
       }
     }
     throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
@@ -249,7 +270,7 @@ export class MariaCanonicalFurnitureHomeRepository {
           return { ownedFurnitureId: input.ownedFurnitureId, replayed: false };
         });
       } catch (error) {
-        if (!duplicate(error)) throw error;
+        if (!isOperationReplayBusinessDuplicate(error)) throw error;
       }
     }
     throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
@@ -258,6 +279,7 @@ export class MariaCanonicalFurnitureHomeRepository {
   // 해제·등록·취소·판매·삭제는 소유 상태와 placement/market 관계를 한 transaction에서 같이 바꿉니다.
   async transitionOwnedFurniture(input: TransitionCanonicalFurnitureInput): Promise<{ ownedFurnitureId: string; replayed: boolean }> {
     assertPlacementInput({ ...input, placementOrder: 0n });
+    assertAllowedOwnershipTransition(input);
     if (input.toStatus === "listed" && (input.listingPrice === undefined || input.listingPrice < 0n)) throw new Error("CANONICAL_FURNITURE_LISTING_PRICE_INVALID");
     const kind = `transition_${input.fromStatus}_to_${input.toStatus}`;
     const digest = fingerprint(kind, [input.playerId, input.ownedFurnitureId, String(input.listingPrice ?? "")]);
@@ -283,7 +305,7 @@ export class MariaCanonicalFurnitureHomeRepository {
       await reserveId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)", [candidate,input.ownedFurnitureId,operationId,input.fromStatus,input.toStatus,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); });
       return { ownedFurnitureId: input.ownedFurnitureId, replayed: false };
       });
-    } catch (error) { if (!duplicate(error)) throw error; }
+    } catch (error) { if (!isOperationReplayBusinessDuplicate(error)) throw error; }
     throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
   }
 

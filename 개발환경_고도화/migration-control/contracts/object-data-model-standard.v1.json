@@ -1,7 +1,7 @@
 {
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
-  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql"],
+  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "450_object_furniture_market_active_listing.sql"],
   "tables": [
     {
       "table": "object_identities",
@@ -213,8 +213,8 @@
     },
     {
       "table": "object_furniture_market_listings", "role": "relation",
-      "columns": [{ "name": "furniture_market_listing_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "listing_price", "type": "BIGINT UNSIGNED" }, { "name": "listing_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }],
-      "primaryKey": ["furniture_market_listing_id"], "foreignKeys": [{ "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }], "uniqueKeys": [["owned_furniture_id"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+      "columns": [{ "name": "furniture_market_listing_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "listing_price", "type": "BIGINT UNSIGNED" }, { "name": "listing_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "active_owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }],
+      "primaryKey": ["furniture_market_listing_id"], "foreignKeys": [{ "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }], "uniqueKeys": [["active_owned_furniture_id"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]
