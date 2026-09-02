@@ -2658,6 +2658,8 @@ Status: VERIFIED
 - Summary view for equipped and available skills
 - Use this when the user report is about equip slots rather than whole bag totals
 - 기본 장착 슬롯은 친밀도 Lv.100당 1칸, 최대 30칸이며 `펫스킬 학개론📙` 장착 시 최대 33칸이다.
+- 장착 중인 스킬과 장착 가능한 스킬은 이름 뒤에 `PET_SKILL_LIST` 기준 등급을 표시한다.
+- 장착 가능 목록은 이미 장착된 스킬을 숨기되 `/펫스킬가방`의 원래 번호를 유지하므로 표시 번호를 `/펫스킬장착 [번호]`에 바로 사용할 수 있다.
 
 ---
 

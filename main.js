@@ -41800,7 +41800,9 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
         msg += "장착 중인 펫스킬이 없습니다.\n";
     } else {
         for (var i = 0; i < skills.equipped.length; i++) {
-            msg += i + 1 + ". " + formatPetSkillName(skills.equipped[i]) + "\n";
+            var equippedSkillData = getPetSkillData(skills.equipped[i]);
+            var equippedSkillGrade = equippedSkillData ? equippedSkillData.grade : "미확인";
+            msg += i + 1 + ". " + formatPetSkillName(skills.equipped[i]) + "[" + equippedSkillGrade + "]\n";
         }
     }
 
@@ -41814,23 +41816,33 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
     msg += "\n📚 장착 가능한 스킬 목록\n";
     msg += "※ 이미 장착되어있는 펫스킬은 표시되지 않습니다." + allsee + "\n";
+    msg += "※ /펫스킬장착 [번호]를 입력하시면 장착이 가능합니다.\n";
     msg += "※ 전체 펫스킬을 보시려면 [/펫스킬가방]\n";
     msg += "━━━━━━━━━━\n";
+    msg += "[펫스킬 가방번호]\n";
 
     var equippedMap = {};
     for (var e = 0; e < skills.equipped.length; e++) {
         equippedMap[normalizePetSkillName(skills.equipped[e])] = true;
     }
 
-    var list = getPetSkillBagList(petSkillData, user).filter(function (name) {
-        return !equippedMap[normalizePetSkillName(name)];
-    });
+    var bagList = getPetSkillBagList(petSkillData, user);
+    var list = [];
+    for (var bagIndex = 0; bagIndex < bagList.length; bagIndex++) {
+        if (equippedMap[normalizePetSkillName(bagList[bagIndex])]) continue;
+        list.push({
+            bagNumber: bagIndex + 1,
+            name: bagList[bagIndex]
+        });
+    }
 
     if (list.length === 0) {
         msg += "미장착 스킬이 없습니다.";
     } else {
         for (var j = 0; j < list.length; j++) {
-            msg += '- ' + formatPetSkillName(list[j]) + " x" + numberWithCommas(skills.bag[list[j]]) + "\n";
+            var availableSkillData = getPetSkillData(list[j].name);
+            var availableSkillGrade = availableSkillData ? availableSkillData.grade : "미확인";
+            msg += "[" + list[j].bagNumber + "] - " + formatPetSkillName(list[j].name) + "[" + availableSkillGrade + "] x" + numberWithCommas(skills.bag[list[j].name]) + "\n";
         }
     }
 
