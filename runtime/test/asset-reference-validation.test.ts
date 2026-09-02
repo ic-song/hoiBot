@@ -44,7 +44,7 @@ async function fixture(canonicalEntries?: CanonicalAssetEntry[]): Promise<{ root
     entry("5", "TITLE", "TITLE-SYNTHETIC-HERO", "Synthetic Hero"),
     entry("6", "SKILL", "SKILL-SYNTHETIC-SLASH", "Synthetic Slash"),
     entry("7", "BADGE", "BADGE-SYNTHETIC-001", "Synthetic Badge"),
-    entry("8", "PACKAGE", "PACKAGE-SYNTHETIC-001", "Synthetic Package"),
+    entry("8", "PACKAGE_DEFINITION", "PACKAGE-SYNTHETIC-001", "Synthetic Package"),
     entry("9", "PASS", "PASS-SYNTHETIC-001", "Synthetic Pass")
   ];
   return { root, manifest, snapshot: { format: "hoibot-canonical-asset-reference-v1", catalogVersion: "ASSET-SYNTHETIC-01", generatedAt: "2026-09-02T00:00:00.000Z", entries } };
@@ -117,12 +117,22 @@ describe("data migration asset reference validation", () => {
       entry("4", "ITEM", "ITEM-SYNTHETIC-PENDANT", "Synthetic Pendant", { grade: "1" }),
       entry("5", "TITLE", "TITLE-SYNTHETIC-HERO", "Synthetic Hero"),
       entry("6", "SKILL", "SKILL-SYNTHETIC-SLASH", "Synthetic Slash"),
-      entry("8", "PACKAGE", "PACKAGE-SYNTHETIC-001", "Synthetic Package"),
+      entry("8", "PACKAGE_DEFINITION", "PACKAGE-SYNTHETIC-001", "Synthetic Package"),
       entry("9", "PASS", "PASS-SYNTHETIC-001", "Synthetic Pass")
     ]);
     const report = await validateAssetReferences(input.root, input.manifest, input.snapshot);
     assert.equal(report.ambiguousCount, 0);
     assert.equal(report.dataMigrationReady, true);
+  });
+
+  it("fails an unknown exact key closed instead of retaining every typed candidate", async () => {
+    const input = await fixture([
+      entry("8", "PACKAGE_DEFINITION", "PACKAGE-OTHER-001", "Other Package")
+    ]);
+    const report = await validateAssetReferences(input.root, input.manifest, input.snapshot);
+    const packageIssue = report.issues.find((issue) => issue.requestedType === "PACKAGE_DEFINITION");
+    assert.equal(packageIssue?.kind, "ORPHAN");
+    assert.equal(report.ambiguousCount, 0);
   });
 
   it("rejects a changed private staging payload", async () => {

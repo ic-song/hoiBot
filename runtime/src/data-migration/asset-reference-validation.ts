@@ -154,6 +154,7 @@ function objectEntries(value: unknown): Array<[string, unknown]> {
 
 function stableCodeTypes(value: string): string[] {
   const prefix = value.split(/[-_.:]/, 1)[0]!.toUpperCase();
+  if (/^package_/i.test(value)) return ["PACKAGE_DEFINITION"];
   if (prefix === "MEMBER" || prefix === "TITLE" || (prefix === "PET" && /TITLE/i.test(value))) return ["TITLE", "MEMBER_TITLE", "PET_TITLE"];
   if ((prefix === "PET" && /SKILL/i.test(value)) || prefix === "SKILL") return ["SKILL"];
   if (prefix === "MINI") return ["MINI_PET"];
@@ -179,8 +180,20 @@ function collectAssetReferences(
   }
   if (typeof value !== "object") return;
 
-  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+  const record = value as Record<string, unknown>;
+  const packageId = stringValue(record.packageId);
+  const packageName = stringValue(record.packageName);
+  if (packageId || packageName) {
+    addReference(output, sourcePathSha256, `${pointer}/package`, ["PACKAGE_DEFINITION"], {
+      sourceKind: "package",
+      exactKey: packageId,
+      displayName: packageName
+    });
+  }
+
+  for (const [key, child] of Object.entries(record)) {
     const childPointer = `${pointer}/${sha256(key).slice(0, 16)}`;
+    if (key === "packageId" || key === "packageName") continue;
     if (key === "bag" && child && typeof child === "object" && !Array.isArray(child)) {
       for (const itemName of Object.keys(child as Record<string, unknown>)) {
         addReference(output, sourcePathSha256, `${childPointer}/${sha256(itemName)}`, ["ITEM"], {
@@ -292,13 +305,6 @@ function collectAssetReferences(
         exactKey: identity && STABLE_CODE.test(identity) ? identity : undefined,
         displayName: identity
       });
-    } else if (key === "packageId" || key === "packageName") {
-      const identity = stringValue(child);
-      addReference(output, sourcePathSha256, childPointer, ["PACKAGE"], {
-        sourceKind: key,
-        exactKey: key === "packageId" ? identity : undefined,
-        displayName: key === "packageName" ? identity : undefined
-      });
     } else if (key === "passType") {
       const identity = stringValue(child);
       addReference(output, sourcePathSha256, childPointer, ["PASS"], {
@@ -306,7 +312,7 @@ function collectAssetReferences(
         exactKey: identity,
         displayName: identity
       });
-    } else if (typeof child === "string" && STABLE_CODE.test(child)) {
+    } else if (typeof child === "string" && STABLE_CODE.test(child) && /(?:id|code|key)$/i.test(key)) {
       addReference(output, sourcePathSha256, childPointer, stableCodeTypes(child), { sourceKind: "stableCode", exactKey: child });
     }
     if (!["title", "petTitle", "petSkills"].includes(key)) {
@@ -351,6 +357,7 @@ function resolveReference(reference: AssetReference, entries: CanonicalAssetEntr
     if (objectKeyMatches.length > 0) candidates = objectKeyMatches;
     else if (sourceKeyMatches.length > 0) candidates = sourceKeyMatches;
     else if (metadataMatches.length > 0) candidates = metadataMatches;
+    else return [];
   }
   if (reference.displayName) {
     const display = candidates.filter(
