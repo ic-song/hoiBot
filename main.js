@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.448"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.449"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -35188,7 +35188,6 @@ function processPetMusouTimeout(data, petData, petSkillData, guildData) {
     var timeoutMember = data.member[attacker];
     var timeoutPointBefore = Math.max(0, Number(timeoutMember.point) || 0); // 시간초과 직전 보유 포인트
     var timeoutPointAfter = Math.max(0, timeoutPointBefore - GLOBAL_CONFIG.petMusou.timeoutPenaltyPoint); // 0 미만으로 내려가지 않는 패널티 적용 결과
-    var timeoutPointDeducted = timeoutPointBefore - timeoutPointAfter; // 실제 차감된 포인트
     timeoutMember.point = timeoutPointAfter;
     var timeoutAutomationSettings = ensureHoiPassPremiumAutomationSettings(timeoutMember);
     timeoutAutomationSettings.petMusouAutoReady = false;
@@ -35205,7 +35204,8 @@ function processPetMusouTimeout(data, petData, petSkillData, guildData) {
         "━━━━━━━━━━━━━━━━\n" +
         "공격 보상🤑: 미지급\n" +
         "벼락 판정⚡: 판정 없음\n" +
-        "시간초과 패널티💸: -🅟" + numberWithCommas(timeoutPointDeducted) + " (남은 포인트 🅟" + numberWithCommas(timeoutPointAfter) + ")\n" +
+        "시간초과 패널티💸: -🅟1억\n" +
+        "(남은 포인트 🅟" + numberWithCommas(timeoutPointAfter) + ")\n" +
         "펫무쌍 자동준비🐹: OFF [❌]\n" +
         "누적 벼락발생확률⚡: +" + (GLOBAL_CONFIG.petMusou.timeoutLightningStepRate * 100).toFixed(1) + "% (현재 " + (musou.lightningRate * 100).toFixed(1) + "%)\n\n" +
         Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초 이내에 공격하지 않아 즉시 탈락합니다.\n" +
