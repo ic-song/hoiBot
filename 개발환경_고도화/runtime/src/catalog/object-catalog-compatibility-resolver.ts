@@ -9,7 +9,38 @@ export const LEGACY_OBJECT_REGISTRY_SOURCE = {
 } as const;
 
 export type ObjectCatalogCompatibilityStatus = "RESOLVED" | "UNMAPPED" | "TYPE_MISMATCH" | "AMBIGUOUS";
-export type LegacySourceSystem = ObjectSourceBindingInput["system"] | "legacy-json" | "legacy-db" | "runtime-db";
+
+// migration 384~443과 현재 catalog consumer가 실제로 기록·조회하는 binding locator만 동결합니다.
+const LEGACY_SOURCE_TABLES = {
+  LEGACY_JS: ["member.bag"],
+  LEGACY_JSON: [
+    "PET_SKILL_LIST",
+    "miniPetData.miniPet",
+    "petSweetHomeInfo.homeInfo.required",
+    "petSweetHomeInfo.homeInfo",
+    "petSweetHomeInfo.furnitureDraw",
+    "data/miniPetCollectionInfo.json#titles",
+    "petSweetHomeInfo.furnitureDraw.v2_438",
+    "petSweetHomeInfo.homeInfo.required.v2_438",
+    "petSweetHomeInfo.homeInfo.v2_438",
+    "trialTowerBoss.reward.v2_438",
+    "data/packageInfo.json"
+  ],
+  RUNTIME_DB: [
+    "item_definitions",
+    "currency_definitions",
+    "home_badge_definitions",
+    "asset_package_reward_target_occurrences"
+  ],
+  "legacy-json": [
+    "data/itemInfo.json#ring",
+    "data/itemInfo.json#raidSpecialItem",
+    "data/itemInfo.json#castlePremiumItem",
+    "data/itemInfo.json#castleItem"
+  ]
+} as const;
+
+export type LegacySourceSystem = keyof typeof LEGACY_SOURCE_TABLES;
 export interface LegacySourceLocator { system: LegacySourceSystem; table: string; key: string; }
 
 export interface ObjectCatalogCompatibilityResult {
@@ -31,10 +62,7 @@ interface LegacyObjectRow {
 type ResolverInput = { expectedObjectType?: ObjectType };
 const MAX_LEGACY_OBJECT_ID = 18446744073709551615n;
 const MAX_LEGACY_LOCATOR_LENGTH = 191;
-// legacy source_table에는 기존 `data/itemInfo.json#castleItem` 경로가 있으므로 /와 #를 보존합니다.
 const LEGACY_TOKEN_PATTERN = /^[A-Za-z0-9_.#-]+$/;
-const LEGACY_SOURCE_TABLE_PATTERN = /^[A-Za-z0-9_./#-]+$/;
-const LEGACY_SOURCE_SYSTEMS: readonly LegacySourceSystem[] = ["LEGACY_JSON", "LEGACY_DB", "RUNTIME_DB", "legacy-json", "legacy-db", "runtime-db"];
 
 function unresolved(status: Exclude<ObjectCatalogCompatibilityStatus, "RESOLVED">, reason: string): ObjectCatalogCompatibilityResult {
   return { status, canonicalObjectIdentityId: null, legacyObjectId: null, legacyObjectKey: null, objectType: null, quarantineReason: reason };
@@ -54,8 +82,10 @@ function isLegacyToken(value: string, maxLength: number): boolean {
   return value.length > 0 && value.length <= maxLength && LEGACY_TOKEN_PATTERN.test(value);
 }
 
-function isLegacySourceTable(value: string): boolean {
-  return value.length > 0 && value.length <= MAX_LEGACY_LOCATOR_LENGTH && LEGACY_SOURCE_TABLE_PATTERN.test(value);
+function isLegacySourceLocator(binding: ObjectSourceBindingInput | LegacySourceLocator): binding is LegacySourceLocator {
+  if (!(binding.system in LEGACY_SOURCE_TABLES) || binding.key.length === 0 || binding.key.length > MAX_LEGACY_LOCATOR_LENGTH) return false;
+  const tables = LEGACY_SOURCE_TABLES[binding.system as LegacySourceSystem] as readonly string[];
+  return tables.includes(binding.table);
 }
 
 function resolved(row: LegacyObjectRow, expectedObjectType: ObjectType | undefined): ObjectCatalogCompatibilityResult {
@@ -100,10 +130,9 @@ export class ObjectCatalogCompatibilityResolver {
     ), { expectedObjectType: input.expectedObjectType ?? objectType });
   }
 
-  // 기존 migration의 `legacy-json` 같은 소문자 locator도 값 변환 없이 정확히 비교합니다.
+  // 기존 migration의 `legacy-json` 표기는 보존하되, system/table 모두 동결 목록과 정확히 일치해야 합니다.
   async resolveSource(binding: ObjectSourceBindingInput | LegacySourceLocator, input: ResolverInput = {}): Promise<ObjectCatalogCompatibilityResult> {
-    if (!LEGACY_SOURCE_SYSTEMS.includes(binding.system) || !isLegacySourceTable(binding.table)
-      || binding.key.length === 0 || binding.key.length > MAX_LEGACY_LOCATOR_LENGTH) {
+    if (!isLegacySourceLocator(binding)) {
       return unresolved("UNMAPPED", "LEGACY_OBJECT_SOURCE_INVALID");
     }
     return this.resolveRows(await this.database.query<LegacyObjectRow[]>(

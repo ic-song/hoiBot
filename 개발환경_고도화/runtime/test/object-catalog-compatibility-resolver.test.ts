@@ -38,15 +38,20 @@ describe("object catalog compatibility resolver", () => {
     assert.deepEqual(scripted.values, [["1"], ["18446744073709551615"]]);
   });
 
-  it("resolves aliases and source bindings through their existing legacy namespaces", async () => {
-    const scripted = database([[mapped], [mapped], [mapped]]);
+  it("resolves aliases and only the exact source locators seeded by existing migrations", async () => {
+    const scripted = database([[mapped], [mapped], [mapped], [mapped], [mapped]]);
     const resolver = new ObjectCatalogCompatibilityResolver(scripted.database);
     assert.equal((await resolver.resolveAlias("ITEM", "legacy_name", "다이아상자💎(/다이아상자오픈)")).canonicalObjectIdentityId, "a1234567");
-    assert.equal((await resolver.resolveSource({ system: "LEGACY_JSON", table: "itemInfo", key: "다이아상자💎(/다이아상자오픈)" })).legacyObjectId, "71");
+    assert.equal((await resolver.resolveSource({ system: "LEGACY_JS", table: "member.bag", key: "다이아상자💎(/다이아상자오픈)" })).legacyObjectId, "71");
+    assert.equal((await resolver.resolveSource({ system: "LEGACY_JSON", table: "PET_SKILL_LIST", key: "skill_000" })).canonicalObjectIdentityId, "a1234567");
+    assert.equal((await resolver.resolveSource({ system: "RUNTIME_DB", table: "item_definitions", key: "ITEM-RWD-041" })).canonicalObjectIdentityId, "a1234567");
     assert.equal((await resolver.resolveSource({ system: "legacy-json", table: "data/itemInfo.json#castleItem", key: "돌멩이🪨" })).canonicalObjectIdentityId, "a1234567");
     assert.match(scripted.sql[0]!, /JOIN object_aliases alias/);
     assert.match(scripted.sql[1]!, /JOIN object_source_bindings source/);
-    assert.deepEqual(scripted.values[2], ["legacy-json", "data/itemInfo.json#castleItem", "돌멩이🪨"]);
+    assert.deepEqual(scripted.values[1], ["LEGACY_JS", "member.bag", "다이아상자💎(/다이아상자오픈)"]);
+    assert.deepEqual(scripted.values[2], ["LEGACY_JSON", "PET_SKILL_LIST", "skill_000"]);
+    assert.deepEqual(scripted.values[3], ["RUNTIME_DB", "item_definitions", "ITEM-RWD-041"]);
+    assert.deepEqual(scripted.values[4], ["legacy-json", "data/itemInfo.json#castleItem", "돌멩이🪨"]);
   });
 
   it("fails closed for unmapped, type-mismatched, ambiguous, and invalid locators", async () => {
@@ -70,6 +75,7 @@ describe("object catalog compatibility resolver", () => {
     const resolver = new ObjectCatalogCompatibilityResolver(scripted.database);
     assert.equal((await resolver.resolveAlias("ITEM", "legacy_name", "x".repeat(192))).quarantineReason, "LEGACY_OBJECT_ALIAS_INVALID");
     assert.equal((await resolver.resolveSource({ system: "LEGACY_JSON", table: "invalid table", key: "상자" })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
+    assert.equal((await resolver.resolveSource({ system: "LEGACY_DB", table: "object_registry", key: "71" })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
     assert.equal((await resolver.resolveSource({ system: "LEGACY_JSON", table: "itemInfo", key: "x".repeat(192) })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
     assert.equal(scripted.sql.length, 0);
   });
