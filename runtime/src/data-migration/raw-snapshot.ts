@@ -1,0 +1,153 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { dirname, extname, join, relative, resolve, sep } from "node:path";
+
+export interface RawSnapshotEntry {
+  pathSha256: string;
+  size: number;
+  contentSha256: string;
+}
+
+export interface RawSnapshotManifest {
+  format: "hoibot-raw-snapshot-v1";
+  generatedAt: string;
+  sourceLabel: string;
+  fileCount: number;
+  jsonFileCount: number;
+  textFileCount: number;
+  totalBytes: number;
+  manifestSha256: string;
+  entries: RawSnapshotEntry[];
+}
+
+export interface RawSnapshotComparison {
+  equal: boolean;
+  reasons: string[];
+}
+
+const UTF8_DECODER = new TextDecoder("utf-8", { fatal: true });
+const TEXT_EXTENSIONS = new Set([".json", ".txt"]);
+
+function sha256(value: Uint8Array | string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+async function collectFiles(root: string, current: string, output: string[]): Promise<void> {
+  const entries = await readdir(current, { withFileTypes: true });
+  entries.sort((left, right) => left.name.localeCompare(right.name, "en"));
+
+  for (const entry of entries) {
+    const absolutePath = join(current, entry.name);
+    if (entry.isSymbolicLink()) {
+      throw new Error(`SYMLINK_NOT_ALLOWED:${sha256(relative(root, absolutePath))}`);
+    }
+    if (entry.isDirectory()) {
+      await collectFiles(root, absolutePath, output);
+      continue;
+    }
+    if (entry.isFile()) {
+      output.push(absolutePath);
+    }
+  }
+}
+
+function normalizeRelativePath(root: string, absolutePath: string): string {
+  return relative(root, absolutePath).split(sep).join("/");
+}
+
+// 운영 RAW 디렉터리를 원문 비노출 SHA-256 manifest로 변환한다.
+export async function buildRawSnapshotManifest(
+  sourceRoot: string,
+  sourceLabel = "operational-data"
+): Promise<RawSnapshotManifest> {
+  const root = resolve(sourceRoot);
+  const rootStat = await stat(root);
+  if (!rootStat.isDirectory()) {
+    throw new Error("SOURCE_NOT_DIRECTORY");
+  }
+
+  const files: string[] = [];
+  await collectFiles(root, root, files);
+  if (files.length === 0) {
+    throw new Error("EMPTY_SNAPSHOT");
+  }
+
+  let jsonFileCount = 0;
+  let textFileCount = 0;
+  let totalBytes = 0;
+  const entries: RawSnapshotEntry[] = [];
+
+  for (const absolutePath of files) {
+    const relativePath = normalizeRelativePath(root, absolutePath);
+    const bytes = await readFile(absolutePath);
+    const extension = extname(relativePath).toLowerCase();
+
+    if (TEXT_EXTENSIONS.has(extension)) {
+      let text: string;
+      try {
+        text = UTF8_DECODER.decode(bytes);
+      } catch {
+        throw new Error(`INVALID_UTF8:${sha256(relativePath)}`);
+      }
+      textFileCount += 1;
+      if (extension === ".json") {
+        try {
+          JSON.parse(text);
+        } catch {
+          throw new Error(`INVALID_JSON:${sha256(relativePath)}`);
+        }
+        jsonFileCount += 1;
+      }
+    }
+
+    totalBytes += bytes.byteLength;
+    entries.push({
+      pathSha256: sha256(relativePath),
+      size: bytes.byteLength,
+      contentSha256: sha256(bytes)
+    });
+  }
+
+  const canonicalLines = entries.map(
+    (entry) => `${entry.pathSha256}|${entry.size}|${entry.contentSha256}`
+  );
+
+  return {
+    format: "hoibot-raw-snapshot-v1",
+    generatedAt: new Date().toISOString(),
+    sourceLabel,
+    fileCount: entries.length,
+    jsonFileCount,
+    textFileCount,
+    totalBytes,
+    manifestSha256: sha256(canonicalLines.join("\n")),
+    entries
+  };
+}
+
+// 두 RAW manifest의 파일 수, 바이트 수와 전체 해시가 같은지 판정한다.
+export function compareRawSnapshotManifests(
+  expected: RawSnapshotManifest,
+  actual: RawSnapshotManifest
+): RawSnapshotComparison {
+  const reasons: string[] = [];
+  if (expected.format !== actual.format) reasons.push("FORMAT_MISMATCH");
+  if (expected.fileCount !== actual.fileCount) reasons.push("FILE_COUNT_MISMATCH");
+  if (expected.jsonFileCount !== actual.jsonFileCount) reasons.push("JSON_COUNT_MISMATCH");
+  if (expected.totalBytes !== actual.totalBytes) reasons.push("TOTAL_BYTES_MISMATCH");
+  if (expected.manifestSha256 !== actual.manifestSha256) reasons.push("MANIFEST_HASH_MISMATCH");
+  return { equal: reasons.length === 0, reasons };
+}
+
+// manifest 파일을 같은 디렉터리의 임시 파일을 거쳐 원자적으로 저장한다.
+export async function writeRawSnapshotManifest(
+  outputPath: string,
+  manifest: RawSnapshotManifest
+): Promise<void> {
+  const absoluteOutput = resolve(outputPath);
+  const temporaryOutput = `${absoluteOutput}.tmp`;
+  await mkdir(dirname(absoluteOutput), { recursive: true });
+  await writeFile(temporaryOutput, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await rename(temporaryOutput, absoluteOutput);
+}
+
