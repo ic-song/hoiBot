@@ -85,7 +85,8 @@ const PET_SKILL_COMPAT_GROUPS = [
     ["십원", "구원"],
     ["헌터", "만렙헌터"],
     ["건물주", "하느님 위에 갓물주"],
-    ["무쌍신화", "무쌍귀신"]
+    ["무쌍신화", "무쌍귀신"],
+    ["쇼핑광", "VIP블랙카드"]
 ];
 const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
     S: 10.5,
@@ -96,6 +97,9 @@ const PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS = {
 const PET_SKILL_LIST = [
 
     { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "전설의소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 30% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "VIP블랙카드", grade: "SS", targetActualRate: 0.02, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
@@ -121,7 +125,7 @@ const PET_SKILL_LIST = [
     { name: "사신의 낫", grade: "A", rate: 0.4, fixedRate: true, raidExp: 500000, castleExp: 500000, effect: "영혼마저 베어버린다는 사신의 거대한 낫입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "아르카나 하우스", grade: "A", rate: 1.5, fixedRate: true, raidExp: 500000, castleExp: 500000, charmCondition: "arcanaFurniture", effect: "가구 [아르카나 루미에르]를 5개 이상 보유하면 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     // { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
-    { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점 20% 할인" },
+    { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점에서 상품 구매 시 20% 할인됩니다.\n※ VIP블랙카드📙와 중복되지 않습니다." },
     { name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
     { name: "징집명령", grade: "A", rate: 1.7, effect: "길드마스터 전용 스킬입니다.\n길드에 가입할 수 있는 최대 인원이 1명 증가합니다." },
     { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
@@ -1485,6 +1489,60 @@ blockedNicknameTerms: [
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
         unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
+        verandaFurnitureSlotBonus: 3,
+        shopDiscounts: {
+            shoppingFanRate: 0.2,
+            vipBlackCardRate: 0.3
+        },
+        pickpocket: {
+            successRate: 0.3,
+            stealPoint: 1000000,
+            dailyLimit: 2,
+            successMessages: [
+                "🥷 [{actor}] 님이 포인트를 낚아채자 [{target}] 님은 뒤늦게 빈 주머니만 확인했습니다.",
+                "💨 [{actor}] 님이 순식간에 사라졌고, [{target}] 님은 가벼워진 주머니를 붙잡고 주변을 두리번거렸습니다.",
+                "🪙 [{target}] 님이 한눈판 사이 [{actor}] 님이 포인트를 챙겨 유유히 사라졌습니다.",
+                "😱 [{target}] 님이 포인트를 다시 세어봤지만, [{actor}] 님은 이미 흔적도 없이 사라진 뒤였습니다.",
+                "🕶️ [{actor}] 님이 태연하게 스쳐 지나가자 [{target}] 님은 아무것도 모른 채 인사를 건넸습니다.",
+                "🏃 [{target}] 님이 뒤늦게 [{actor}] 님을 쫓아갔지만 눈앞에서 놓치고 말았습니다.",
+                "🎭 [{actor}] 님의 완벽한 연기에 속은 [{target}] 님은 사라진 포인트만 바라봤습니다.",
+                "🫥 [{actor}] 님이 그림자처럼 다가와 포인트를 챙겼고, [{target}] 님은 인기척조차 느끼지 못했습니다.",
+                "👀 [{target}] 님이 잠시 고개를 돌린 순간, [{actor}] 님이 포인트를 슬쩍했습니다.",
+                "🤔 [{target}] 님은 포인트가 어디로 사라졌는지 고민했지만, [{actor}] 님은 모르는 척 휘파람을 불었습니다.",
+                "📦 [{actor}] 님이 가짜 소포로 시선을 끄는 동안 [{target}] 님의 포인트를 챙겼습니다.",
+                "🐾 [{actor}] 님은 발자국 하나 남기지 않았고, [{target}] 님은 허공만 바라봤습니다.",
+                "🫢 [{target}] 님이 재채기한 순간 [{actor}] 님의 손이 번개처럼 움직였습니다.",
+                "🎩 [{actor}] 님이 모자를 고쳐주는 척하며 포인트를 챙겼고, [{target}] 님은 고맙다고 인사까지 했습니다.",
+                "🔍 [{target}] 님이 범인을 찾기 시작했지만, [{actor}] 님은 태연하게 구경꾼 행세를 했습니다.",
+                "🚪 [{actor}] 님이 문이 닫히기 직전 빠져나갔고, [{target}] 님은 문 너머로 주먹만 흔들었습니다.",
+                "🐹 [{actor}] 님이 귀여운 햄스터로 시선을 끈 사이 [{target}] 님의 포인트가 감쪽같이 사라졌습니다.",
+                "🔔 [{target}] 님이 도난 사실을 알아차려 경보를 울렸지만, [{actor}] 님은 이미 안전한 곳에 도착했습니다.",
+                "🧤 [{actor}] 님이 흔적 하나 남기지 않고 포인트를 챙기자 [{target}] 님은 범인의 정체를 알아내지 못했습니다.",
+                "😎 [{actor}] 님이 포인트를 챙겨 유유히 떠났고, [{target}] 님은 텅 빈 주머니만 바라봤습니다."
+            ],
+            failureMessages: [
+                "✋ [{target}] 님이 수상한 손길을 붙잡자 [{actor}] 님은 아무 일도 없던 척 웃었습니다.",
+                "🚨 [{target}] 님이 도난 경보를 울렸고, 놀란 [{actor}] 님은 황급히 도망쳤습니다.",
+                "👀 [{target}] 님이 갑자기 뒤를 돌아보자 [{actor}] 님은 손을 주머니에 넣은 채 얼어붙었습니다.",
+                "🪤 [{target}] 님이 설치한 함정 지갑에 걸려 [{actor}] 님의 슈킹이 실패했습니다.",
+                "🏃 [{target}] 님이 소리치며 쫓아오자 [{actor}] 님은 포인트를 포기하고 달아났습니다.",
+                "🔔 [{actor}] 님이 주머니에 손을 대는 순간 [{target}] 님의 도난 방지 방울이 울렸습니다.",
+                "😏 [{target}] 님은 처음부터 눈치채고 있었고, [{actor}] 님이 다가오자 지갑을 꽉 붙잡았습니다.",
+                "🧱 [{actor}] 님이 도망치다 벽에 부딪혔고, [{target}] 님은 포인트를 무사히 지켰습니다.",
+                "🫢 [{actor}] 님이 결정적인 순간 재채기를 하는 바람에 [{target}] 님에게 들켰습니다.",
+                "👮 [{target}] 님이 경비대를 부르자 [{actor}] 님은 빈손으로 줄행랑쳤습니다.",
+                "🎒 [{actor}] 님이 훔친 것은 포인트가 아니라 [{target}] 님이 준비한 빈 주머니였습니다.",
+                "🪙 [{target}] 님이 가짜 포인트를 미끼로 던졌고, [{actor}] 님은 그대로 속아 넘어갔습니다.",
+                "🪞 [{target}] 님이 거울로 뒤를 지켜보고 있어 [{actor}] 님의 손길이 그대로 들켰습니다.",
+                "🐹 [{actor}] 님의 햄스터가 갑자기 울어버렸고, [{target}] 님이 인기척을 알아차렸습니다.",
+                "👟 [{actor}] 님이 도망치려다 신발 끈을 밟았고, [{target}] 님은 포인트를 지키며 웃었습니다.",
+                "💡 [{target}] 님이 갑자기 불을 켜자 숨어 있던 [{actor}] 님의 모습이 그대로 드러났습니다.",
+                "🤝 [{actor}] 님이 자연스럽게 악수를 건넸지만, [{target}] 님은 수상함을 느끼고 주머니부터 확인했습니다.",
+                "📢 [{target}] 님이 “도둑이야!”라고 외치자 [{actor}] 님은 포인트도 챙기지 못하고 달아났습니다.",
+                "🕳️ [{actor}] 님이 멋지게 도망치려다 구덩이에 빠졌고, [{target}] 님은 포인트를 안전하게 지켰습니다.",
+                "😅 [{target}] 님과 눈이 마주친 [{actor}] 님은 길을 물어보려 했다고 둘러댔습니다."
+            ]
+        },
         effects: {
             robberStealPoint: 10000000,
             experiencedWarriorCharm: 20
@@ -4082,7 +4140,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                             var rate = getPetSkillActualRate(sd);
                             totalPercent += rate;
-                            rateMsg += formatPetSkillName(sd.name) + " (확률: " + rate.toFixed(1) + "%)\n";
+                            rateMsg += formatPetSkillName(sd.name) + " (확률: " + formatPetSkillRate(rate) + "%)\n";
                         }
 
                         rateMsg += "\n";
@@ -4199,7 +4257,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (sr === 10) skillOpenMsg += allsee;
                         var row = pickedSkillMap[skillResultKeys[sr]];
                         var rowSkillData = getPetSkillData(row.name);
-                        var rowRateText = rowSkillData ? " (확률: " + getPetSkillActualRate(rowSkillData).toFixed(1) + "%)" : "";
+                        var rowRateText = rowSkillData ? " (확률: " + formatPetSkillRate(getPetSkillActualRate(rowSkillData)) + "%)" : "";
                         skillOpenMsg += "- [" + row.grade + "] " + formatPetSkillName(row.name) + rowRateText + " x" + numberWithCommas(row.count) + "\n";
                     }
                     skillOpenMsg += "\n잔여: " + numberWithCommas(data.member[sender].bag[GLOBAL_CONFIG.petSkill.bookItemName] || 0) + "개\n/펫스킬가방에서 확인하세요.";
@@ -4243,6 +4301,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ " + compat.reason);
                         return;
                     }
+                    var verandaEquipBeforeSlots = 0;
+                    if (normalizePetSkillName(equipName) === "베란다 확장") {
+                        var verandaEquipHomeData = loadJsonFile(homeDataFile);
+                        verandaEquipHomeData = initSweetHomeUser(verandaEquipHomeData, sender);
+                        verandaEquipBeforeSlots = getFurnitureMaxSlots(data, petData, sender, verandaEquipHomeData[sender].floor || 0, petSkillData);
+                    }
                     removePetSkillFromBag(petSkillData, sender, equipName, 1);
                     skillStore.equipped.push(equipName);
                     saveJsonFile(petSkillData, petSkillDataPath);
@@ -4270,11 +4334,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             equipMsg += "\n(로열 루미에르 배치: " + royalCount + "/10)";
                         }
                     }
+                    if (normalizePetSkillName(equipName) === "베란다 확장") {
+                        var verandaEquipAfterSlots = verandaEquipBeforeSlots + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus;
+                        equipMsg = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 펫스킬북 장착📙\n" +
+                            "━━━━━━━━━━━━━\n" +
+                            "🪟 베란다 확장 공사가 완료되었습니다!\n" +
+                            "가구 장착 가능 수: " + verandaEquipBeforeSlots + "개 → " + verandaEquipAfterSlots + "개(⬆️+" + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus + ")\n" +
+                            "━━━━━━━━━━━━━\n" +
+                            "베란다 확장📙 햇살도 공간도 넉넉해졌습니다.🏡";
+                    } else if (normalizePetSkillName(equipName) === "전설의소매치기") {
+                        equipMsg = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 펫스킬북 장착📙\n" +
+                            "━━━━━━━━━━━━━\n" +
+                            "🥷 전설의소매치기📙 장착 완료!\n" +
+                            "발소리는 숨기고 포인트만 챙깁니다.\n" +
+                            "성공확률🎲: " + Math.round(GLOBAL_CONFIG.petSkill.pickpocket.successRate * 100) + "%\n" +
+                            "슈킹 포인트💸: 🅟" + numberWithCommas(GLOBAL_CONFIG.petSkill.pickpocket.stealPoint) + "\n" +
+                            "일일 시도 횟수: " + GLOBAL_CONFIG.petSkill.pickpocket.dailyLimit + "회\n" +
+                            "━━━━━━━━━━━━━\n" +
+                            "사용방법: /슈킹 아이디";
+                    }
                     replier.reply(equipMsg);
                     return;
                 }
 
-                if (msg.startsWith("/펫스킬소멸 ")) {
+                if (/^\/펫스킬소멸\s+\d+$/.test(msg)) {
                     var unequipIndex = parseInt(msg.replace("/펫스킬소멸", "").trim(), 10);
                     var unequipStore = initPetSkillUser(petSkillData, sender);
                     if (isNaN(unequipIndex) || unequipIndex < 1 || unequipIndex > unequipStore.equipped.length) {
@@ -4286,11 +4369,117 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    var unequipName = unequipStore.equipped.splice(unequipIndex - 1, 1)[0];
+                    var unequipName = unequipStore.equipped[unequipIndex - 1];
+                    var verandaUnequipHomeData = null;
+                    var verandaUnequipPlacedData = null;
+                    var verandaUnequipPlacedFileExists = false;
+                    var verandaUnequipReleaseCount = 0; // 베란다 확장 해제 후 가구가방으로 회수할 수량
+                    if (normalizePetSkillName(unequipName) === "베란다 확장") {
+                        verandaUnequipHomeData = loadJsonFile(homeDataFile);
+                        verandaUnequipPlacedFileExists = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                        if (!verandaUnequipPlacedFileExists && !canCreatePlacedFurnitureData(verandaUnequipHomeData)) {
+                            replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
+                            return;
+                        }
+                        verandaUnequipPlacedData = verandaUnequipPlacedFileExists ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                        verandaUnequipHomeData = initSweetHomeUser(verandaUnequipHomeData, sender);
+                        var verandaUnequipUserHome = verandaUnequipHomeData[sender];
+                        if (!Array.isArray(verandaUnequipUserHome.furnitureBag)) verandaUnequipUserHome.furnitureBag = [];
+                        var verandaUnequipPlacedList = verandaUnequipPlacedData ? ensurePlacedFurnitureUser(verandaUnequipPlacedData, sender) : getPlacedFurnitureList(verandaUnequipHomeData, null, sender);
+                        var verandaUnequipCurrentMax = getFurnitureMaxSlots(data, petData, sender, verandaUnequipUserHome.floor || 0, petSkillData); // 스킬 장착 중인 현재 한도
+                        var verandaUnequipAfterMax = Math.max(0, verandaUnequipCurrentMax - GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus); // 스킬 해제 후 한도
+                        verandaUnequipReleaseCount = Math.max(0, verandaUnequipPlacedList.length - verandaUnequipAfterMax);
+                        var verandaUnequipBagLimit = getFurnitureBagLimit(data, sender);
+                        if (verandaUnequipUserHome.furnitureBag.length + verandaUnequipReleaseCount > verandaUnequipBagLimit) {
+                            replier.reply("❌ 가구가방 공간이 부족하여 베란다 확장📙을 소멸할 수 없습니다.\n필요 공간: " + verandaUnequipReleaseCount + "칸\n남은 공간: " + Math.max(0, verandaUnequipBagLimit - verandaUnequipUserHome.furnitureBag.length) + "칸");
+                            return;
+                        }
+                    }
+
+                    unequipStore.equipped.splice(unequipIndex - 1, 1);
                     removeItem(data, sender, GLOBAL_CONFIG.petSkill.unbindItemName, 1);
-                    saveJsonFile(data, filePath);
+                    var verandaUnequipReleasedItems = [];
+                    if (normalizePetSkillName(unequipName) === "베란다 확장" && verandaUnequipReleaseCount > 0) {
+                        verandaUnequipReleasedItems = releaseVerandaExpansionFurniture(verandaUnequipHomeData, verandaUnequipPlacedData, sender, verandaUnequipReleaseCount);
+                    }
                     saveJsonFile(petSkillData, petSkillDataPath);
-                    replier.reply("✅ " + formatPetSkillName(unequipName) + " 소멸 완료!");
+                    if (normalizePetSkillName(unequipName) === "베란다 확장") {
+                        if (verandaUnequipPlacedFileExists) saveJsonFile(verandaUnequipPlacedData, petHomePlacedFurniturePath);
+                        saveJsonFile(verandaUnequipHomeData, homeDataFile);
+                    }
+                    saveJsonFile(data, filePath);
+                    replier.reply("✅ " + formatPetSkillName(unequipName) + " 소멸 완료!" + (verandaUnequipReleasedItems.length > 0 ? "\n가장 하단의 가구 " + verandaUnequipReleasedItems.length + "개를 가구가방으로 회수했습니다." : ""));
+                    return;
+                }
+
+                if (msg === "/슈킹") {
+                    replier.reply("사용법: /슈킹 [아이디]");
+                    return;
+                }
+
+                if (/^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(msg)) {
+                    var pickpocketTarget = msg.replace(/^\/슈킹\s+/, "");
+                    var pickpocketTitle = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 전설의소매치기📙";
+                    if (!hasPetSkill(petSkillData, sender, "전설의소매치기")) {
+                        replier.reply(pickpocketTitle + "\n❌ 전설의소매치기📙를 장착해야 사용할 수 있습니다.");
+                        return;
+                    }
+                    if (!Object.prototype.hasOwnProperty.call(data.member, pickpocketTarget) || !data.member[pickpocketTarget]) {
+                        replier.reply(pickpocketTitle + "\n❌ [" + pickpocketTarget + "] 님은 존재하지 않는 사용자입니다.");
+                        return;
+                    }
+                    if (pickpocketTarget === sender) {
+                        replier.reply(pickpocketTitle + "\n❌ 자신에게는 슈킹할 수 없습니다.");
+                        return;
+                    }
+
+                    var pickpocketDailyData = getLegendaryPickpocketDailyData(data, sender);
+                    if (pickpocketDailyData.count >= GLOBAL_CONFIG.petSkill.pickpocket.dailyLimit) {
+                        replier.reply(pickpocketTitle + "\n❌ 오늘의 슈킹 시도 횟수를 모두 사용했습니다.\n내일 다시 시도해주세요.");
+                        return;
+                    }
+                    var pickpocketTargetKey = "$" + pickpocketTarget;
+                    if (Object.prototype.hasOwnProperty.call(pickpocketDailyData.targets, pickpocketTargetKey)) {
+                        replier.reply(pickpocketTitle + "\n❌ 동일한 상대에게는 하루 1회만 시도할 수 있습니다.");
+                        return;
+                    }
+
+                    var pickpocketPoint = GLOBAL_CONFIG.petSkill.pickpocket.stealPoint;
+                    var pickpocketSenderPoint = Number(data.member[sender].point);
+                    var pickpocketTargetPoint = Number(data.member[pickpocketTarget].point);
+                    if (!isFinite(pickpocketSenderPoint) || !isFinite(pickpocketTargetPoint) ||
+                        Math.abs(pickpocketSenderPoint) > 9007199254740991 || Math.abs(pickpocketTargetPoint) > 9007199254740991 ||
+                        pickpocketSenderPoint + pickpocketPoint > 9007199254740991) {
+                        replier.reply(pickpocketTitle + "\n❌ 포인트 정보를 안전하게 처리할 수 없습니다. 관리자에게 문의해주세요.");
+                        return;
+                    }
+                    if (pickpocketTargetPoint < pickpocketPoint) {
+                        replier.reply(pickpocketTitle + "\n❌ [" + pickpocketTarget + "] 님의 포인트가 🅟" + numberWithCommas(pickpocketPoint) + " 미만이라 슈킹할 수 없습니다.");
+                        return;
+                    }
+
+                    var pickpocketSuccess = Math.random() < GLOBAL_CONFIG.petSkill.pickpocket.successRate;
+                    pickpocketDailyData.count++;
+                    pickpocketDailyData.targets[pickpocketTargetKey] = true;
+                    if (pickpocketSuccess) {
+                        data.member[pickpocketTarget].point = pickpocketTargetPoint;
+                        data.member[sender].point = pickpocketSenderPoint;
+                        addPoint(data, pickpocketTarget, -pickpocketPoint);
+                        addPoint(data, sender, pickpocketPoint);
+                    }
+                    saveJsonFile(data, filePath);
+
+                    var pickpocketMessages = pickpocketSuccess ? GLOBAL_CONFIG.petSkill.pickpocket.successMessages : GLOBAL_CONFIG.petSkill.pickpocket.failureMessages;
+                    var pickpocketMessage = pickpocketMessages[Math.floor(Math.random() * pickpocketMessages.length)];
+                    var pickpocketResult = pickpocketSuccess ?
+                        "✅ 슈킹 성공!\n[" + pickpocketTarget + "] 님에게서 🅟" + numberWithCommas(pickpocketPoint) + "을 가져왔습니다." :
+                        "❌ 슈킹 실패!\n포인트는 이동하지 않았습니다.";
+                    replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n" + pickpocketResult + "\n오늘 시도: " + pickpocketDailyData.count + "/" + GLOBAL_CONFIG.petSkill.pickpocket.dailyLimit + "회\n━━━━━━━━━━━━━\n" + formatLegendaryPickpocketMessage(pickpocketMessage, sender, pickpocketTarget));
+                    return;
+                }
+
+                if (/^\/슈킹(?:\s+.*)?$/.test(msg)) {
+                    replier.reply("사용법: /슈킹 [아이디]");
                     return;
                 }
 
@@ -17743,9 +17932,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var ticketEventCouponPlan = buildTicketEventCouponPurchasePlan(data, sender, itemName, quantity, data.shop[itemName]); // 티켓별 쿠폰 적용 가격과 차감 계획
                         itemPrice = ticketEventCouponPlan.itemPrice;
 
-                        if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
-                            itemPrice = itemPrice * 0.8;
-                            replier.reply("쇼핑광 [" + petData[sender].petimg + petData[sender].petname + "] 이(가)\nVIP카드를 제시합니다.\n상품가 20%할인 적용.");
+                        var pointShopDiscountSkill = "";
+                        if (hasPetSkill(petSkillData, sender, "VIP블랙카드")) {
+                            pointShopDiscountSkill = "VIP블랙카드";
+                            itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.vipBlackCardRate);
+                        } else if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
+                            pointShopDiscountSkill = "쇼핑광";
+                            itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate);
                         }
 
                         if (hasPetSkill(petSkillData, sender, "탈세자")) {
@@ -17970,6 +18163,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             }
                             saveJsonFile(data, filePath);
                             saveJsonFile(petData, memberPetPath);
+                            if (pointShopDiscountSkill === "VIP블랙카드") {
+                                replier.reply("💳 VIP블랙카드📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 VIP 결제!\n쇼핑광📙과 중복 없이 더 높은 할인율을 적용합니다.\n상품가 30% 할인 적용.\n검은 카드는 가격표 앞에서도 흔들리지 않습니다.😎");
+                            } else if (pointShopDiscountSkill === "쇼핑광") {
+                                replier.reply("🛍️ 쇼핑광📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 흥정 시작!\n상품가 20% 할인 적용.\n알뜰한 쇼핑이 포인트를 지켜줍니다.✨");
+                            }
                         }
                     }
                 }
@@ -28652,6 +28850,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
+        /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
@@ -32325,6 +32524,9 @@ function resetAttendance(petData, data, replier) {
         }
         if (data.member[user].diamondBoxBuyCount !== undefined) {
             delete data.member[user].diamondBoxBuyCount;
+        }
+        if (data.member[user].legendaryPickpocket !== undefined) {
+            delete data.member[user].legendaryPickpocket;
         }
         data.member[user].battle.ticket = 0;
         data.member[user].battle.count = 0;
@@ -41000,7 +41202,7 @@ function getPetSkillData(skillName) {
 // 펫스킬 등급·확률·효과 조회 메시지를 생성
 function buildPetSkillInfoMessage(skillInfo) {
     var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
-    var skillRateLine = skillInfo.openable === false ? "" : "\n확률: " + getPetSkillActualRate(skillInfo).toFixed(1) + "%";
+    var skillRateLine = skillInfo.openable === false ? "" : "\n확률: " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%";
     var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
     return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
 }
@@ -41203,6 +41405,22 @@ function hasPetSkill(petSkillData, user, skillName) {
     return equipped.indexOf(skillName) !== -1;
 }
 
+// 전설의소매치기 일일 시도 횟수와 대상 기록을 초기화하고 반환하는 함수
+function getLegendaryPickpocketDailyData(data, user) {
+    if (!data.member[user].legendaryPickpocket || typeof data.member[user].legendaryPickpocket !== "object") {
+        data.member[user].legendaryPickpocket = { count: 0, targets: {} };
+    }
+    var dailyData = data.member[user].legendaryPickpocket;
+    dailyData.count = Math.max(0, parseInt(dailyData.count, 10) || 0);
+    if (!dailyData.targets || typeof dailyData.targets !== "object" || dailyData.targets instanceof Array) dailyData.targets = {};
+    return dailyData;
+}
+
+// 전설의소매치기 연출 문구에 시도자와 대상 아이디를 반영하는 함수
+function formatLegendaryPickpocketMessage(message, actor, target) {
+    return String(message || "").replace(/\{actor\}/g, actor).replace(/\{target\}/g, target);
+}
+
 // 장착 중인 펫스킬이 제공하는 표시용 팔로워 보너스를 합산
 function getPetSkillFollowerBonus(petSkillData, user) {
     var equipped = getEquippedPetSkillNames(petSkillData, user);
@@ -41361,10 +41579,11 @@ function getPetSkillTotalRate() {
     return totalRate;
 }
 
-// 명시 확률을 우선하고 남은 등급 확률을 나머지 스킬에 균등 분배한 추첨 가중치 반환
-function getPetSkillRandomWeight(skillData) {
+// 실제 확률 고정 스킬을 제외한 기본 펫스킬 추첨 가중치를 반환
+function getPetSkillBaseRandomWeight(skillData) {
     if (!skillData) return 0;
     if (skillData.openable === false) return 0;
+    if (typeof skillData.targetActualRate === "number") return 0;
     var gradeWeightTotal = PET_SKILL_EQUAL_GRADE_WEIGHT_TOTALS[skillData.grade];
     if (typeof gradeWeightTotal !== "number") return skillData.rate || 0;
     if (skillData.fixedRate === true) return skillData.rate || 0;
@@ -41373,6 +41592,7 @@ function getPetSkillRandomWeight(skillData) {
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
         var gradeSkill = PET_SKILL_LIST[i];
         if (gradeSkill.grade !== skillData.grade) continue;
+        if (typeof gradeSkill.targetActualRate === "number") continue;
         if (gradeSkill.fixedRate === true) fixedRateTotal += Number(gradeSkill.rate) || 0;
         else flexibleItemCount++;
     }
@@ -41380,10 +41600,44 @@ function getPetSkillRandomWeight(skillData) {
     return flexibleItemCount > 0 ? flexibleRateTotal / flexibleItemCount : 0;
 }
 
+// 실제 확률 고정 스킬을 제외한 전체 기본 추첨 가중치를 반환
+function getPetSkillBaseWeightTotal() {
+    var totalWeight = 0;
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) totalWeight += getPetSkillBaseRandomWeight(PET_SKILL_LIST[i]);
+    return totalWeight;
+}
+
+// 실제 확률로 고정할 모든 펫스킬의 비율 합계를 반환
+function getPetSkillTargetActualRateTotal() {
+    var totalRate = 0;
+    for (var i = 0; i < PET_SKILL_LIST.length; i++) {
+        if (PET_SKILL_LIST[i].openable === false) continue;
+        var targetRate = Number(PET_SKILL_LIST[i].targetActualRate);
+        if (isFinite(targetRate) && targetRate > 0) totalRate += targetRate / 100;
+    }
+    return totalRate;
+}
+
+// 명시 확률과 등급 배분을 반영한 최종 펫스킬 추첨 가중치를 반환
+function getPetSkillRandomWeight(skillData) {
+    if (!skillData || skillData.openable === false) return 0;
+    var targetRate = Number(skillData.targetActualRate);
+    if (!isFinite(targetRate) || targetRate <= 0) return getPetSkillBaseRandomWeight(skillData);
+    var targetRateTotal = getPetSkillTargetActualRateTotal(); // 전체 확률 고정 스킬이 차지할 비율
+    if (targetRateTotal >= 1) throw new Error("Invalid pet skill target actual rate total");
+    return getPetSkillBaseWeightTotal() * (targetRate / 100) / (1 - targetRateTotal);
+}
+
 function getPetSkillActualRate(skillData) {
     var totalRate = getPetSkillTotalRate();
     if (!skillData || totalRate <= 0) return 0;
     return (getPetSkillRandomWeight(skillData) / totalRate) * 100;
+}
+
+// 희귀 확률은 소수 둘째 자리, 나머지는 소수 첫째 자리로 표시
+function formatPetSkillRate(rate) {
+    var numericRate = Number(rate) || 0;
+    return numericRate > 0 && numericRate < 0.1 ? numericRate.toFixed(2) : numericRate.toFixed(1);
 }
 
 // 무작위 펫 스킬을 선택하는 함수
@@ -43945,9 +44199,32 @@ function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
         if (hasPetSkill(petSkillData, userName, "건물주")) slotSize += 10;
         else if (hasPetSkill(petSkillData, userName, "하느님 위에 갓물주")) slotSize += 15;
     }
+    if (hasPetSkill(petSkillData, userName, "베란다 확장")) slotSize += GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus;
     if (isHoiPassPremiumActive(data, userName)) slotSize += GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount;
 
     return slotSize;
+}
+
+// 베란다 확장 해제 후 초과한 하단 가구를 가구가방으로 회수하는 함수
+function releaseVerandaExpansionFurniture(homeData, placedFurnitureData, userName, releaseCount) {
+    homeData = initSweetHomeUser(homeData, userName);
+    var userHome = homeData[userName];
+    if (!Array.isArray(userHome.furnitureBag)) userHome.furnitureBag = [];
+    var placedFurnitureList = placedFurnitureData ? ensurePlacedFurnitureUser(placedFurnitureData, userName) : getPlacedFurnitureList(homeData, null, userName);
+    var releasedItems = [];
+    sortFurnitureList(placedFurnitureList);
+    while (releaseCount > 0 && placedFurnitureList.length > 0) {
+        var releasedItem = placedFurnitureList.pop();
+        if (releasedItem && releasedItem.placedAt !== undefined) delete releasedItem.placedAt;
+        userHome.furnitureBag.push(releasedItem);
+        releasedItems.push(releasedItem);
+        releaseCount--;
+    }
+    userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
+    sortFurnitureList(placedFurnitureList);
+    refreshPlacedFurnitureSummary(homeData, userName, placedFurnitureList);
+    if (placedFurnitureData && userHome.placedFurniture !== undefined) delete userHome.placedFurniture;
+    return releasedItems;
 }
 
 // 프리미엄 종료 후 추가 장착 한도를 넘긴 최저 매력 가구를 가구가방으로 회수하는 함수

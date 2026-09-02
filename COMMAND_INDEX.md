@@ -3699,9 +3699,44 @@ Status: VERIFIED
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
 - `전설의 몽둥이📙[한정판]`는 장착 목록에 있을 때 레이드·캐슬 매력 50만씩을 동적으로 적용하고 `/펫스킬소멸`로 제거되면 즉시 회수한다. 장착 성공 시 `오오.. 영롱하군요 너..빌런인가?` 멘트를 표시한다.
+- `베란다 확장📙[한정판]`은 가구 장착 한도를 3칸 늘린다. 소멸 후 한도를 초과하면 장착 목록 하단 가구부터 가구가방으로 회수하며, 가방 공간이 부족하면 스킬과 소멸권을 소비하지 않는다.
+- `전설의소매치기📙[한정판]`을 장착하면 `/슈킹 [아이디]`를 사용할 수 있다.
+- `VIP블랙카드📙`와 `쇼핑광📙`은 함께 장착할 수 없다.
 - `인플루언서📙`과 `셀럽📙`은 중복 장착 시 `/펫홈`, `/홈알림`, `/팔로워순위` 표시 팔로워에 합계 3,000명을 더하며 실제 팔로워 관계와 뱃지 누적값은 바꾸지 않는다.
 - `망므📙` 장착 멘트는 `이건 내 망므야!`이며 일일 마음 한도를 5회 늘린다.
 - 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 장착 미니펫이 엘리트 등급일 때, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
+
+---
+
+# /슈킹 [아이디]
+Status: VERIFIED
+## Files
+- `main.js`
+## Related Helpers
+- `hasPetSkill`
+- `getLegendaryPickpocketDailyData`
+- `formatLegendaryPickpocketMessage`
+- `addPoint`
+- `checkRank`
+## Data Usage
+- `data.member[sender].point`
+- `data.member[target].point`
+- `data.member[sender].legendaryPickpocket.count`
+- `data.member[sender].legendaryPickpocket.targets`
+- `petSkillData[sender].petSkills.equipped`
+## Save Flow
+- 유효한 대상에 대한 확률 판정부터 일일 횟수와 동일 대상 기록을 소비하고 `saveJsonFile(data, filePath)`로 한 번 저장한다.
+- 성공하면 대상 포인트 100만을 시도자에게 이동하고, 실패하면 포인트를 변경하지 않는다.
+- `/리셋`에서 모든 회원의 `legendaryPickpocket` 일일 기록을 제거한다.
+## Related Commands
+- `/펫스킬장착 [번호]`
+- `/펫스킬소멸 [번호]`
+- `/리셋`
+## AI Notes
+- `전설의소매치기📙` 장착이 필요하며 하루 2회, 동일 대상 하루 1회로 제한한다.
+- 존재하지 않는 대상, 자기 자신, 일일 제한 초과, 동일 대상 재시도, 대상의 100만 미만 포인트는 확률 판정 전에 거절하므로 횟수를 소비하지 않는다.
+- 유효한 시도는 성공·실패 모두 횟수를 소비하며 성공 확률은 30%다.
+- 전체 인자 문자열을 회원 키로 사용하고 명령 접미 텍스트를 별도 인자로 허용하지 않는다.
 
 ---
 
@@ -4198,8 +4233,9 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `쇼핑광📙` discount applies before tax calculation
-- 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 `쇼핑광📙` 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
+- `쇼핑광📙`은 20%, `VIP블랙카드📙`는 30%를 할인하며 두 스킬은 호환 그룹으로 중복 장착할 수 없다. 기존 비정상 데이터에 둘 다 있으면 VIP 할인만 적용한다.
+- 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 펫스킬 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
+- 펫스킬 할인 안내는 구매와 데이터 저장이 성공한 뒤에만 출력한다.
 - `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
