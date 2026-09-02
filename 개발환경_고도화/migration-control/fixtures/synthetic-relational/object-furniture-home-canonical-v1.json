@@ -1,0 +1,21 @@
+{
+  "fixtureVersion": "object-furniture-home-canonical-v1",
+  "player": { "player_id": "p1234567" },
+  "definition": {
+    "furniture_id": "f1234567",
+    "display_name": "다이아상자💎(/다이아상자오픈)",
+    "purchase_price": "500000000",
+    "base_charm": "120",
+    "charm_per_enhancement": "15"
+  },
+  "ownedInstances": [
+    { "owned_furniture_id": "o1234567", "player_id": "p1234567", "furniture_id": "f1234567", "enhancement_level": 0 },
+    { "owned_furniture_id": "o7654321", "player_id": "p1234567", "furniture_id": "f1234567", "enhancement_level": 3 }
+  ],
+  "expectedFinalCharm": ["120", "165"],
+  "invariants": [
+    "same furniture_id may have N distinct owned_furniture_id rows",
+    "base_charm and charm_per_enhancement exist only on the definition",
+    "final charm is calculated and not persisted on the owned instance"
+  ]
+}

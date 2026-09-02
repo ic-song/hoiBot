@@ -1,7 +1,7 @@
 {
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
-  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql"],
+  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql"],
   "tables": [
     {
       "table": "object_identities",
@@ -85,6 +85,81 @@
         { "name": "item_inventory_ledger_entry_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_inventory_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_item_stack_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "quantity_delta", "type": "BIGINT" }, { "name": "reason_type", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["item_inventory_ledger_entry_id"], "foreignKeys": [{ "column": "item_inventory_operation_id", "referencesTable": "canonical_item_inventory_operations", "referencesColumn": "item_inventory_operation_id" }, { "column": "player_id", "referencesTable": "canonical_item_players", "referencesColumn": "player_id" }, { "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" }, { "column": "owned_item_stack_id", "referencesTable": "canonical_owned_item_stacks", "referencesColumn": "owned_item_stack_id" }, { "column": "owned_item_id", "referencesTable": "canonical_owned_item_instances", "referencesColumn": "owned_item_id" }], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_furniture_players",
+      "role": "identity",
+      "columns": [
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["player_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "role": "definition",
+      "columns": [
+        { "name": "furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "display_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_unicode_ci" },
+        { "name": "purchase_price", "type": "BIGINT UNSIGNED" }, { "name": "base_charm", "type": "BIGINT" },
+        { "name": "charm_per_enhancement", "type": "BIGINT" }, { "name": "active", "type": "BOOLEAN" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["furniture_id"], "foreignKeys": [],
+      "definitionOnlyColumns": ["display_name", "purchase_price", "base_charm", "charm_per_enhancement", "active"],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_owned_furniture_instances",
+      "role": "ownership_instance",
+      "columns": [
+        { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "enhancement_level", "type": "INT UNSIGNED" }, { "name": "ownership_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["owned_furniture_id"],
+      "foreignKeys": [
+        { "column": "player_id", "referencesTable": "object_furniture_players", "referencesColumn": "player_id" },
+        { "column": "furniture_id", "referencesTable": "object_furniture_definitions", "referencesColumn": "furniture_id" }
+      ], "allowedStateColumns": ["enhancement_level", "ownership_status"],
+      "definitionOnlyColumns": ["display_name", "purchase_price", "base_charm", "charm_per_enhancement", "final_charm"],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_home_furniture_placements",
+      "role": "relation",
+      "columns": [
+        { "name": "home_furniture_placement_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "placement_order", "type": "INT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["home_furniture_placement_id"],
+      "foreignKeys": [
+        { "column": "player_id", "referencesTable": "object_furniture_players", "referencesColumn": "player_id" },
+        { "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }
+      ], "uniqueKeys": [["owned_furniture_id"], ["player_id", "placement_order"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_furniture_operation_replays",
+      "role": "operation",
+      "columns": [
+        { "name": "furniture_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "idempotency_scope", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "idempotency_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "result_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["furniture_operation_id"],
+      "foreignKeys": [
+        { "column": "player_id", "referencesTable": "object_furniture_players", "referencesColumn": "player_id" },
+        { "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }
+      ], "uniqueKeys": [["player_id", "idempotency_scope", "idempotency_key"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]
