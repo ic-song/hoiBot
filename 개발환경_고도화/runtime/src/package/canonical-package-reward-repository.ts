@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+// OBJECT_DATA_MODEL_STANDARD_CANONICAL_PROVIDER: additive canonical model, excluded from frozen legacy-provider inventories.
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createScopedDatabaseClient } from "../database.js";
 import { MariaObjectIdentityAuditProvider } from "../identity/object-identity-audit-provider.js";

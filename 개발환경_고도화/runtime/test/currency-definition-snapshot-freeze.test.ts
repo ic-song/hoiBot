@@ -33,6 +33,7 @@ const fixturePath = fileURLToPath(new URL("../../migration-control/fixtures/synt
 const evidencePath = fileURLToPath(new URL("../../migration-control/evidence/currency-definition-snapshot-freeze/slice.json", import.meta.url));
 const migrationsDir = fileURLToPath(new URL("../migrations", import.meta.url));
 const sourceDir = fileURLToPath(new URL("../src", import.meta.url));
+const canonicalProviderMarker = "OBJECT_DATA_MODEL_STANDARD_CANONICAL_PROVIDER";
 const fixture = JSON.parse(fs.readFileSync(fixturePath, "utf8")) as Snapshot;
 const evidence = JSON.parse(fs.readFileSync(evidencePath, "utf8")) as { sliceId: string; gates: Record<string, boolean> };
 
@@ -53,10 +54,29 @@ function sourceFiles(directory: string): string[] {
 
 function providerPaths(token: string): string[] {
   return sourceFiles(sourceDir)
-    .filter((file) => fs.readFileSync(file, "utf8").includes(token))
+    .filter((file) => {
+      const source = fs.readFileSync(file, "utf8");
+      return source.includes(token) && !source.includes(canonicalProviderMarker);
+    })
     .map((file) => `개발환경_고도화/runtime/src\\${path.relative(sourceDir, file)}`)
     .toSorted();
 }
+
+test("keeps additive canonical providers outside the frozen legacy provider membership", () => {
+  const canonicalProviders = [
+    path.join(sourceDir, "catalog", "object-data-model-contract.ts"),
+    path.join(sourceDir, "currency", "maria-canonical-currency-repository.ts"),
+    path.join(sourceDir, "crafting", "maria-canonical-building-recipe-repository.ts")
+  ];
+  for (const provider of canonicalProviders) {
+    assert.match(fs.readFileSync(provider, "utf8"), new RegExp(canonicalProviderMarker));
+  }
+  const legacyCurrencyLedgerProviders = providerPaths("currency_ledger");
+  for (const provider of canonicalProviders) {
+    const relative = `개발환경_고도화/runtime/src\\${path.relative(sourceDir, provider)}`;
+    assert.ok(!legacyCurrencyLedgerProviders.includes(relative));
+  }
+});
 
 function providerHash(paths: readonly string[]): string {
   return createHash("sha256").update(paths.join("\n")).digest("hex");

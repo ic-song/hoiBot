@@ -122,3 +122,4 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
     }
   }
 }
+// OBJECT_DATA_MODEL_STANDARD_CANONICAL_PROVIDER: additive schema contract, excluded from frozen legacy-provider inventories.

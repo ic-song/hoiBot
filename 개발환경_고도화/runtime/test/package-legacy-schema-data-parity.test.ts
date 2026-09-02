@@ -20,7 +20,8 @@ const fixture = JSON.parse(readFileSync(fileURLToPath(new URL(
 )), "utf8")) as Fixture;
 const oldDdl = readFileSync(fileURLToPath(new URL("../migrations/028_complete_legacy_domains.sql", import.meta.url)), "utf8");
 const runtimeSourceRoot = fileURLToPath(new URL("../src/", import.meta.url));
-const oldTablePattern = /package_definitions|package_contents|package_purchases/g;
+const oldTablePattern = /(?<![A-Za-z0-9_])(?:package_definitions|package_contents|package_purchases)(?![A-Za-z0-9_])/g;
+const canonicalProviderMarker = "OBJECT_DATA_MODEL_STANDARD_CANONICAL_PROVIDER";
 const sha256 = (value: string): string => createHash("sha256").update(value, "utf8").digest("hex");
 
 function sourceFiles(root: string): string[] {
@@ -78,6 +79,13 @@ describe("Lease2420 package legacy schema data parity", () => {
     assert.match(oldDdl, /CREATE TABLE package_contents/);
     assert.match(oldDdl, /CREATE TABLE package_purchases/);
     assert.equal((oldDdl.match(/ON DELETE RESTRICT/g) ?? []).length >= 3, true);
+  });
+
+  it("keeps the additive canonical package repository outside the frozen legacy reference count", () => {
+    const source = readFileSync(join(runtimeSourceRoot, "package", "canonical-package-reward-repository.ts"), "utf8");
+    assert.match(source, new RegExp(canonicalProviderMarker));
+    assert.equal("canonical_package_definitions".match(oldTablePattern), null);
+    assert.deepEqual("SELECT * FROM package_definitions".match(oldTablePattern), ["package_definitions"]);
   });
 
   it("refuses drop-ready from zero rows or runtime-ref0 alone", () => {
