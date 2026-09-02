@@ -1,0 +1,36 @@
+{
+  "sliceId": "SL-OBJECT-DB-CURRENCY-LEDGER-01",
+  "executionId": "재화원장DB-SL-OBJECT-DB-CURRENCY-LEDGER-01-202609030246",
+  "wbs": 740,
+  "lease": 2527,
+  "baseline": "1e25f0d1a0bedd0d0f2a73f74f947dd4f58cb273",
+  "searchedKeywords": ["currency", "currency_accounts", "currency_ledger", "point", "diamond", "포인트", "다이아", "currencyLogData", "saveJsonFile", "loadJsonFile"],
+  "legacySources": [
+    { "path": "data/member.json", "field": "member.*.point", "observedRows": 610, "fractionalRows": 4, "unsafeJavascriptIntegerRows": 4 },
+    { "path": "data/member.json", "field": "member.*.diamond", "observedRows": 579, "fractionalRows": 0, "unsafeJavascriptIntegerRows": 0 },
+    { "path": "data/currencyLog.json", "field": "user.*.diamond", "observedRows": 10, "meaning": "cumulative earned diamond, not current balance" }
+  ],
+  "discoveredFlows": [
+    "main.js mutates member.*.point and member.*.diamond and persists member.json through saveJsonFile",
+    "diamond helpers additionally persist cumulative earned/used history in currencyLog.json",
+    "Info.js /point reads current point and diamond from member.json",
+    "existing modernization uses code-keyed currency_definitions, DECIMAL(30,3) currency_accounts, and currency_ledger from migrations 005/007"
+  ],
+  "model": {
+    "definition": "canonical_currency_definitions(currency_id, currency_name, decimal_places)",
+    "ownership": "canonical_player_currency_balances(player_currency_balance_id, player_id, currency_id, balance_minor_amount)",
+    "replay": "canonical_currency_operations unique(player_id, request_key)",
+    "history": "canonical_currency_ledger_entries append-only relation to the exact operation and balance",
+    "precision": "source text is parsed directly with BigInt; Number conversion is forbidden"
+  },
+  "uncertainAreas": [
+    "legacy point values already serialized above JavaScript safe integer precision cannot be proven equal to their pre-serialization originals",
+    "the isolated branch has no operational MariaDB and does not prove migration apply/rollback",
+    "all existing currency consumers still target legacy JSON or old code-keyed tables"
+  ],
+  "possibleDuplicateLogic": ["runtime currency-service.ts", "many domain services directly lock/update currency_accounts and append currency_ledger"],
+  "quarantinePolicy": ["invalid decimal text", "more fractional digits than definition decimal_places", "signed BIGINT overflow", "negative imported balance"],
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": false, "gate6": false, "gate7": false },
+  "operationalDatabaseTouched": false,
+  "consumerCutover": false
+}
