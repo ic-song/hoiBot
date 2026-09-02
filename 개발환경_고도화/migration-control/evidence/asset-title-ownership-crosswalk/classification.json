@@ -1,0 +1,122 @@
+{
+  "format": "hoibot-asset-reference-gap-classification-v1",
+  "catalogVersion": "ASSET-FREEZE-v2.438-title-ownership-01",
+  "stagingSha256": "eca2404d20b5391991b49d7ee71653f1931a109140341209c0369646c486b1b5",
+  "canonicalSha256": "055062decc7da0c4b8037935ec62af850f88681b52e251384188ab5d623502b8",
+  "privateCrosswalkContentSha256": "4bddb94a1c7084a6966516d58bced624ca0d6719f981d1c995cdc8d309095ef0",
+  "gapIdentityCount": 6443,
+  "gapOccurrenceCount": 578096,
+  "lanes": {
+    "LEGACY_BAG_ITEM": {
+      "downstreamSliceId": "SL-ASSET-LEGACY-BAG-ITEM-REFERENCE-CORRECTION-01",
+      "identityCount": 3306,
+      "occurrenceCount": 256327,
+      "breakdown": [
+        {
+          "kind": "AMBIGUOUS",
+          "requestedType": "ITEM",
+          "sourceKind": "bag",
+          "identityCount": 2,
+          "occurrenceCount": 21453
+        },
+        {
+          "kind": "INACTIVE",
+          "requestedType": "ITEM",
+          "sourceKind": "bag",
+          "identityCount": 16,
+          "occurrenceCount": 39388
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "ITEM",
+          "sourceKind": "bag",
+          "identityCount": 3214,
+          "occurrenceCount": 195050
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "ITEM",
+          "sourceKind": "item",
+          "identityCount": 2,
+          "occurrenceCount": 2
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "ITEM",
+          "sourceKind": "itemName",
+          "identityCount": 73,
+          "occurrenceCount": 114
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "ITEM",
+          "sourceKind": "pendantBag",
+          "identityCount": 2,
+          "occurrenceCount": 320
+        }
+      ]
+    },
+    "LEGACY_TITLE_OWNERSHIP": {
+      "downstreamSliceId": "SL-ASSET-LEGACY-TITLE-OWNERSHIP-CROSSWALK-01",
+      "identityCount": 2033,
+      "occurrenceCount": 262544,
+      "breakdown": [
+        {
+          "kind": "INACTIVE",
+          "requestedType": "TITLE|MEMBER_TITLE|PET_TITLE",
+          "sourceKind": "title",
+          "identityCount": 2,
+          "occurrenceCount": 1347
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "TITLE|MEMBER_TITLE|PET_TITLE",
+          "sourceKind": "title",
+          "identityCount": 2031,
+          "occurrenceCount": 261197
+        }
+      ]
+    },
+    "DOMAIN_INSTANCE_IDENTITY": {
+      "downstreamSliceId": "SL-ASSET-DOMAIN-INSTANCE-REFERENCE-CORRECTION-01",
+      "identityCount": 1104,
+      "occurrenceCount": 59225,
+      "breakdown": [
+        {
+          "kind": "ORPHAN",
+          "requestedType": "FURNITURE",
+          "sourceKind": "furnitureBag",
+          "identityCount": 691,
+          "occurrenceCount": 44934
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "MINI_PET",
+          "sourceKind": "miniPetBag",
+          "identityCount": 412,
+          "occurrenceCount": 14267
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "SKILL",
+          "sourceKind": "petSkills.bag",
+          "identityCount": 1,
+          "occurrenceCount": 15
+        },
+        {
+          "kind": "ORPHAN",
+          "requestedType": "SKILL",
+          "sourceKind": "petSkills.equipped",
+          "identityCount": 1,
+          "occurrenceCount": 9
+        }
+      ]
+    },
+    "CATALOG_COMPATIBILITY": {
+      "downstreamSliceId": "SL-ASSET-CATALOG-COMPATIBILITY-REFERENCE-CORRECTION-01",
+      "identityCount": 0,
+      "occurrenceCount": 0,
+      "breakdown": []
+    }
+  }
+}

@@ -29,4 +29,12 @@ describe("asset catalog compatibility reference correction", () => {
     assert.match(source, /battle:\$\{String\(battle\)\}\|castle:/);
     assert.doesNotMatch(source, /UPDATE package_item_definitions|INSERT INTO package_item_definitions/);
   });
+
+  it("projects missing title catalog definitions without creating another title table", async () => {
+    const source = await readFile(exporter, "utf8");
+    assert.match(source, /title_definition_catalog_entries/);
+    assert.match(source, /additionalTitleEntries/);
+    assert.match(source, /sourceScope/);
+    assert.doesNotMatch(source, /INSERT INTO title_definition|UPDATE title_definition|DELETE FROM title_definition/);
+  });
 });

@@ -42,6 +42,12 @@ try {
   const miniPetCatalog = await database.query<Array<{ item_id: string; metadata_json: unknown }>>(
     "SELECT item_id,metadata_json FROM package_item_definitions WHERE item_type='MINI_PET' ORDER BY item_id"
   );
+  const titleCatalog = await database.query<Array<{
+    stable_code: string; source_scope: string; display_name: string; active_snapshot: number | boolean; definition_version: number;
+  }>>(`SELECT stable_code,source_scope,display_name,active_snapshot,definition_version
+       FROM title_definition_catalog_entries
+       WHERE catalog_version_id=(SELECT id FROM title_definition_catalog_versions ORDER BY id DESC LIMIT 1)
+       ORDER BY source_scope,stable_code`);
   const packages = await database.query<Array<{
     package_id: string; display_name: string; enabled: number | boolean; definition_status: string;
   }>>("SELECT package_id,display_name,enabled,definition_status FROM package_catalog WHERE deleted_at IS NULL ORDER BY package_id");
@@ -80,6 +86,32 @@ try {
       sources: sources.get(object.id.toString()) ?? []
     };
   });
+  const titleRegistryByCode = new Map<string, (typeof registryEntries)[number]>();
+  for (const entry of registryEntries) {
+    if (entry.objectType === "TITLE" && typeof entry.metadata.definitionCode === "string") {
+      titleRegistryByCode.set(entry.metadata.definitionCode, entry);
+    }
+  }
+  const additionalTitleEntries: Array<(typeof registryEntries)[number]> = [];
+  for (const entry of titleCatalog) {
+    const existing = titleRegistryByCode.get(entry.stable_code);
+    const source = { sourceSystem: "TITLE_CATALOG", sourceTable: "title_definition_catalog_entries", sourceKey: entry.stable_code };
+    if (existing) {
+      existing.sources.push(source);
+      existing.metadata.sourceScope = entry.source_scope;
+      existing.metadata.definitionVersion = entry.definition_version;
+    } else {
+      additionalTitleEntries.push({
+        objectId: `title-definition:${entry.stable_code}`,
+        objectKey: entry.stable_code,
+        objectType: "TITLE",
+        displayName: entry.display_name,
+        active: Boolean(entry.active_snapshot),
+        metadata: { definitionCode: entry.stable_code, sourceScope: entry.source_scope, definitionVersion: entry.definition_version },
+        sources: [source]
+      });
+    }
+  }
   const packageEntries = new Map<string, {
     objectId: string; objectKey: string; objectType: string; displayName: string; active: boolean;
     metadata: Record<string, unknown>; sources: Array<{ sourceSystem: string; sourceTable: string; sourceKey: string }>;
@@ -115,6 +147,7 @@ try {
   }
   const entries = [
     ...registryEntries,
+    ...additionalTitleEntries,
     ...packageEntries.values(),
     ...passes.map((entry) => ({
       objectId: `pass-definition:${entry.pass_code}`,
@@ -141,7 +174,10 @@ try {
     "SELECT COUNT(*) count FROM asset_package_source_definitions WHERE catalog_id=(SELECT id FROM asset_package_typed_target_catalogs ORDER BY id DESC LIMIT 1)"
   ))[0]!.count);
   const replayPassCount = Number((await database.query<Array<{ count: bigint }>>("SELECT COUNT(*) count FROM support_pass_definitions"))[0]!.count);
-  if (replayObjectCount !== registryEntries.length || replayPackageCount !== packages.length || replaySourcePackageCount !== sourcePackages.length || replayPassCount !== passes.length) {
+  const replayTitleCount = Number((await database.query<Array<{ count: bigint }>>(
+    "SELECT COUNT(*) count FROM title_definition_catalog_entries WHERE catalog_version_id=(SELECT id FROM title_definition_catalog_versions ORDER BY id DESC LIMIT 1)"
+  ))[0]!.count);
+  if (replayObjectCount !== registryEntries.length || replayPackageCount !== packages.length || replaySourcePackageCount !== sourcePackages.length || replayPassCount !== passes.length || replayTitleCount !== titleCatalog.length) {
     throw new Error("CANONICAL_SNAPSHOT_RECONNECT_MISMATCH");
   }
   process.stdout.write(`${JSON.stringify({
@@ -149,6 +185,7 @@ try {
     packageDefinitionCount: packageEntries.size, packageSourceDefinitionCount: sourcePackages.length,
     packageRuntimeDefinitionCount: packages.length, passDefinitionCount: passes.length,
     miniPetCatalogCount: miniPetCatalog.length, miniPetSignatureCount,
+    titleDefinitionCount: titleCatalog.length, titleVirtualDefinitionCount: additionalTitleEntries.length,
     bindingCount: bindings.length + sourcePackages.length + packages.length + passes.length, registryBindingCount: bindings.length,
     snapshotSha256: createHash("sha256").update(serialized).digest("hex"), reconnect: true
   })}\n`);

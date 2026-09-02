@@ -1,0 +1,58 @@
+{
+  "sliceId": "SL-ASSET-LEGACY-TITLE-OWNERSHIP-CROSSWALK-01",
+  "executionId": "작업반장-SL-ASSET-LEGACY-TITLE-OWNERSHIP-CROSSWALK-01-2026090213",
+  "catalogVersion": "ASSET-FREEZE-v2.438-title-ownership-01",
+  "baselineCommit": "5aca301fb2c9b6be4384d232bcef6191d8cf0789",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "counts": {
+    "rawOwnershipRows": 368458,
+    "rawDistinctNames": 2089,
+    "titleDefinitions": 125,
+    "virtualTitleDefinitions": 25,
+    "additionalResolvedOccurrences": 104305,
+    "remainingTitleIdentities": 2033,
+    "remainingTitleOccurrences": 262544,
+    "inactiveTitleIdentities": 2,
+    "inactiveTitleOccurrences": 1347,
+    "orphanTitleIdentities": 2031,
+    "orphanTitleOccurrences": 261197,
+    "referenceCount": 2077609,
+    "resolvedCount": 1499513,
+    "orphanCount": 515908,
+    "ambiguousCount": 21453,
+    "inactiveCount": 40735
+  },
+  "verification": {
+    "focused": "4/4 PASS",
+    "rootFull": "32/32 PASS",
+    "runtimeFull": "1576 PASS / 0 FAIL / 8 SKIP",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "migrationCount": 429,
+    "schemaMutationCount": 0,
+    "canonicalSha256": "055062decc7da0c4b8037935ec62af850f88681b52e251384188ab5d623502b8",
+    "reportSha256": "135ca38f9838854d5cd8769e893d0d40ec558a53a39054ab23216eeb3c5beffa",
+    "normalizedCrosswalkReplaySha256": "e96ba7e402df6c258523011b669aadfa02bb4be295eb9b9d164fed1ab97138ea"
+  },
+  "privacy": {
+    "rawNamesCommitted": false,
+    "privateCrosswalkCommitted": false,
+    "publicClassificationOnly": true
+  },
+  "dataMigrationReady": false,
+  "forbiddenMutations": {
+    "gate8": 0,
+    "featureProd": 0,
+    "operationalDatabase": 0,
+    "legacyMainOrData": 0
+  }
+}
