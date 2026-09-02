@@ -3603,9 +3603,13 @@ Status: VERIFIED
 - `main.js`
 ## Related Helpers
 - `getPetSkillActualRate`
+- `getPetSkillRandomWeight`
+- `getOpenablePetSkillCountByGrade`
+- `getPetSkillFixedActualRateTotal`
 - `formatPetSkillName`
 ## Data Usage
 - `PET_SKILL_LIST`
+- `PET_SKILL_FIXED_ACTUAL_RATES`
 ## Save Flow
 - Read-only
 ## Related Commands
@@ -3617,7 +3621,7 @@ Status: VERIFIED
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
 - `전설의 몽둥이📙[한정판]`는 `/펫스킬확률`과 일반 오픈 풀에 포함되지 않는다.
-- S/A/B/C의 기존 등급별 총확률은 유지한다. 노션에 개별 확률이 명시된 신규·조정 스킬은 그 값을 우선하고, 남은 등급 확률은 나머지 스킬과 티어책에 균등 분배한다. SS/D는 개별 확률을 사용한다.
+- 오픈 가능한 93종 기준으로 SS는 각 0.1%, S는 각 0.3%, A는 각 0.4%, B는 각 0.6%, C는 각 1.5%다. SS~C 합계 58.9%를 제외한 41.1%는 D등급 6종에 균등 배분해 각각 6.85%로 추첨한다.
 
 ---
 
@@ -3660,7 +3664,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C의 명시 확률을 먼저 배정하고 남은 등급 확률을 균등 분배하며 티어 전용 펫스킬북도 추첨한다.
+- `pickRandomPetSkill`은 `getPetSkillRandomWeight`가 반환한 스킬별 실제 확률을 하나의 통합 풀에서 누적 추첨한다. SS~C는 등급별 스킬당 고정값을 사용하고, D는 100%에서 SS~C 합계를 뺀 잔여 확률을 오픈 가능한 D 스킬 수로 균등 배분한다.
 - `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
 - `openable === false`인 `전설의 몽둥이📙[한정판]`의 추첨 가중치는 항상 0이라 단건·다건 오픈 모두에서 획득할 수 없다.
 
