@@ -23,6 +23,10 @@
     { "owned_mini_pet_id": "ownedmp2", "player_id": "player01", "mini_pet_id": "minipet1", "enhancement_level": 2, "equipped_flag": true }
   ],
   "expectedLevel2Charm": "1250",
+  "transactionScenarios": [
+    { "errorCode": "ER_LOCK_DEADLOCK", "errno": 1213, "firstTransaction": "rollback", "secondTransaction": "committed_replay" },
+    { "errorCode": "ER_LOCK_WAIT_TIMEOUT", "errno": 1205, "firstTransaction": "rollback", "secondTransaction": "committed_replay" }
+  ],
   "invariants": [
     "same mini_pet_id may have N distinct owned_mini_pet_id rows",
     "name, emoji, grade, price, base charms, and enhancement rules are definition-only",

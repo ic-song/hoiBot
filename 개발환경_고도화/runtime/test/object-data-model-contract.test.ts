@@ -113,8 +113,11 @@ describe("object data model standard contract", () => {
   it("accepts only explicitly pinned integration-only identity dependencies", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     const invalid = copy();
-    invalid.integrationOnlyTables = [{ table: "canonical_players", role: "identity", columns: [{ name: "player_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }], primaryKey: ["player_id"], foreignKeys: [], integrationMigration: "not-a-migration" }];
+    invalid.integrationOnlyTables = [{ table: "canonical_players", role: "identity", columns: [{ name: "player_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }], primaryKey: ["player_id"], foreignKeys: [], integrationMigration: "999_nonexistent_dependency.sql" }];
     assert.throws(() => validateObjectDataModelContract(invalid), /INTEGRATION_MIGRATION_INVALID/);
+    const wrongPrimary = copy();
+    wrongPrimary.integrationOnlyTables = [{ table: "canonical_players", role: "identity", columns: [{ name: "canonical_player_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }], primaryKey: ["canonical_player_id"], foreignKeys: [], integrationMigration: "444_canonical_item_inventory.sql" }];
+    assert.throws(() => validateObjectDataModelContract(wrongPrimary), /INTEGRATION_MIGRATION_INVALID/);
   });
 
   it("allows pet-skill handler keys and options while retaining executable-payload denial", () => {

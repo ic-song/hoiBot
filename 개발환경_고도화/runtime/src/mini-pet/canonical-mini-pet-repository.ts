@@ -3,6 +3,9 @@ import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createScopedDatabaseClient } from "../database.js";
 import { createObjectAuditValues, MariaObjectIdentityAuditProvider } from "../identity/object-identity-audit-provider.js";
 
+export const CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH = 182;
+const CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS = 3;
+
 export interface CanonicalMiniPetAcquireInput {
   actor: string;
   playerId: string;
@@ -47,7 +50,8 @@ function assertIdentifier(value: string): void {
 function assertAcquireInput(input: CanonicalMiniPetAcquireInput): void {
   assertIdentifier(input.playerId);
   assertIdentifier(input.miniPetId);
-  if (input.actor.trim() === "" || input.actor.length > 100 || input.requestKey.trim() === "" || input.requestKey.length > 191) {
+  // identity sourceIdentifier `${playerId}:${requestKey}`의 VARCHAR(191) 경계를 넘지 않습니다.
+  if (input.actor.trim() === "" || input.actor.length > 100 || input.requestKey.trim() === "" || input.requestKey.length > CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH) {
     throw new Error("CANONICAL_MINI_PET_ACQUIRE_INPUT_INVALID");
   }
 }
@@ -58,6 +62,13 @@ function acquireFingerprint(input: CanonicalMiniPetAcquireInput): string {
 
 function isDuplicate(error: unknown): boolean {
   return typeof error === "object" && error !== null && (("code" in error && String(error.code) === "ER_DUP_ENTRY") || ("message" in error && /duplicate entry/i.test(String(error.message))));
+}
+
+function isRetryableTransactionConflict(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const code = "code" in error ? String(error.code) : "";
+  const errno = "errno" in error ? Number(error.errno) : Number.NaN;
+  return code === "ER_LOCK_DEADLOCK" || code === "ER_LOCK_WAIT_TIMEOUT" || errno === 1213 || errno === 1205;
 }
 
 export function calculateCanonicalMiniPetCharm(
@@ -80,13 +91,16 @@ export class MariaCanonicalMiniPetRepository {
 
   async acquire(input: CanonicalMiniPetAcquireInput): Promise<CanonicalMiniPetAcquireResult> {
     assertAcquireInput(input);
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    for (let attempt = 0; attempt < CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS; attempt += 1) {
       try {
         return await this.database.withTransaction((transaction) => this.acquireInTransaction(transaction, input));
       } catch (error) {
-        if (!isDuplicate(error) || attempt === 1) throw error;
-        const replay = await this.findReplay(input);
-        if (replay !== undefined) return replay;
+        if (isDuplicate(error)) {
+          const replay = await this.findReplay(input);
+          if (replay !== undefined) return replay;
+        }
+        if (isRetryableTransactionConflict(error) && attempt + 1 < CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS) continue;
+        throw error;
       }
     }
     throw new Error("CANONICAL_MINI_PET_CONCURRENT_RETRY_EXHAUSTED");

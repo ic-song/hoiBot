@@ -44,6 +44,8 @@
 - `MariaCanonicalMiniPetRepository.acquire`는 공용 CUID2/감사 provider를 같은 트랜잭션에서 사용한다.
 - 서로 다른 request key로 같은 `mini_pet_id`를 획득하면 서로 다른 `owned_mini_pet_id`가 생성된다.
 - 같은 request key와 같은 payload는 replay하고, payload가 바뀌면 거부한다. 동시 UNIQUE 충돌은 committed replay를 다시 읽는다.
+- gap lock 경합에서 MariaDB `ER_LOCK_DEADLOCK`/1213 또는 `ER_LOCK_WAIT_TIMEOUT`/1205가 발생하면 최대 3개 transaction으로 제한 재시도한다. 다음 transaction은 먼저 committed replay를 다시 조회한다.
+- request key는 `${playerId}:${requestKey}`가 source locator 191자를 넘지 않도록 최대 182자로 제한하며 183자는 DB 접근 전에 거부한다.
 - `equip`은 사용자 소유 행을 잠근 뒤 기존 장착을 해제하고 동일 사용자·`owned` 상태 대상만 장착한다.
 - `calculateCanonicalMiniPetCharm`은 정의 기본값과 단계 규칙을 합산하며 사용자 행의 최종 매력 snapshot에 의존하지 않는다.
 
@@ -52,7 +54,7 @@
 - object data contract validator: PASS, 등록 대상 6개
 - typecheck: PASS
 - build: PASS
-- focused tests: 23/23 PASS
+- focused tests: 26/26 PASS
 - `node --check main.js`, `node --check Info.js`, `git diff --check`: PASS
 - Gate 1~4: 구현 및 정적 검증 완료
 - Gate 5: 미완료. migration 444와 함께 격리 MariaDB에 실제 적용하고 FK/CHECK/rollback/restart를 검증해야 한다.

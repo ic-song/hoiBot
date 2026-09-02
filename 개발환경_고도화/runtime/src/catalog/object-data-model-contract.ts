@@ -21,6 +21,9 @@ export interface ObjectDataModelTable {
   auditTimeFormat?: "KST_YYYY-MM-DD HH:MM:SS";
 }
 export interface ObjectDataModelIntegrationTable extends ObjectDataModelTable { integrationMigration: string; }
+const INTEGRATION_DEPENDENCY_REGISTRY = Object.freeze({
+  canonical_players: { integrationMigration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"] as const },
+});
 export interface ObjectDataModelContract {
   standardVersion: typeof OBJECT_DATA_MODEL_STANDARD_VERSION;
   scope: "new_object_schema_only";
@@ -89,7 +92,8 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
   for (const table of contract.integrationOnlyTables ?? []) {
     if (tables.has(table.table)) fail("INTEGRATION_TABLE_DUPLICATE", table.table);
     if (table.primaryKey.length === 0 || table.role !== "identity") fail("INTEGRATION_TABLE_INVALID", table.table);
-    if (!/^\d+_[a-z0-9_]+\.sql$/i.test(table.integrationMigration) || contract.registeredMigrations.includes(table.integrationMigration)) fail("INTEGRATION_MIGRATION_INVALID", table.table);
+    const dependency = INTEGRATION_DEPENDENCY_REGISTRY[table.table as keyof typeof INTEGRATION_DEPENDENCY_REGISTRY];
+    if (dependency === undefined || table.integrationMigration !== dependency.integrationMigration || table.primaryKey.length !== dependency.primaryKey.length || table.primaryKey.some((key, index) => key !== dependency.primaryKey[index]) || contract.registeredMigrations.includes(table.integrationMigration)) fail("INTEGRATION_MIGRATION_INVALID", table.table);
     for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
     if (table.foreignKeys.length !== 0) fail("INTEGRATION_TABLE_FK", table.table);
     tables.set(table.table, table);

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
-import { calculateCanonicalMiniPetCharm, MariaCanonicalMiniPetRepository } from "../src/mini-pet/canonical-mini-pet-repository.js";
+import { calculateCanonicalMiniPetCharm, CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH, MariaCanonicalMiniPetRepository } from "../src/mini-pet/canonical-mini-pet-repository.js";
 
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/canonical-mini-pet-v1.json", import.meta.url), "utf8")) as {
   dependency: string;
@@ -11,6 +11,7 @@ const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixture
   enhancementRules: Array<{ targetEnhancementLevel: number; battleCharmGain: string; castleCharmGain: string; raidCharmGain: string }>;
   ownedInstances: Array<{ owned_mini_pet_id: string; mini_pet_id: string }>;
   expectedLevel2Charm: string;
+  transactionScenarios: Array<{ errorCode: string; errno: number; firstTransaction: string; secondTransaction: string }>;
 };
 
 function fingerprint(miniPetId: string, bound: boolean): string {
@@ -78,6 +79,57 @@ test("re-reads the committed replay after a same-key duplicate race", async () =
   const replay = { mini_pet_operation_id: "operat01", owned_mini_pet_id: "ownedmp1", operation_kind: "acquire", payload_fingerprint: fingerprint("minipet1", false) };
   const result = await new MariaCanonicalMiniPetRepository(database([replay], true).client).acquire({ actor: "migration", playerId: "player01", miniPetId: "minipet1", requestKey: "event-1", bound: false });
   assert.deepEqual(result, { miniPetOperationId: "operat01", ownedMiniPetId: "ownedmp1", replayed: true });
+});
+
+test("retries deadlock and lock-timeout transactions so the second transaction can read the committed replay", async () => {
+  for (const scenario of fixture.transactionScenarios) {
+    assert.equal(scenario.firstTransaction, "rollback");
+    assert.equal(scenario.secondTransaction, "committed_replay");
+    let attempts = 0;
+    const replay = { mini_pet_operation_id: "operat01", owned_mini_pet_id: "ownedmp1", operation_kind: "acquire", payload_fingerprint: fingerprint("minipet1", false) };
+    const transaction: DatabaseTransaction = {
+      query: async <T>(sql: string): Promise<T> => sql.includes("canonical_mini_pet_operation_replays") ? [replay] as T : [] as T,
+      execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 1n, insertId: 0n }),
+    };
+    const client: DatabaseClient = {
+      ping: async () => undefined, verifyRollback: async () => true, query: async <T>(): Promise<T> => [] as T,
+      execute: transaction.execute,
+      withTransaction: async <T>(work: (value: DatabaseTransaction) => Promise<T>): Promise<T> => {
+        attempts += 1;
+        if (attempts === 1) throw Object.assign(new Error(scenario.errorCode), { code: scenario.errorCode, errno: scenario.errno });
+        return work(transaction);
+      },
+      close: async () => undefined,
+    };
+    const result = await new MariaCanonicalMiniPetRepository(client).acquire({ actor: "migration", playerId: "player01", miniPetId: "minipet1", requestKey: "event-1", bound: false });
+    assert.deepEqual(result, { miniPetOperationId: "operat01", ownedMiniPetId: "ownedmp1", replayed: true });
+    assert.equal(attempts, 2);
+  }
+});
+
+test("stops transaction-conflict retries after the fixed attempt limit", async () => {
+  let attempts = 0;
+  const client: DatabaseClient = {
+    ping: async () => undefined, verifyRollback: async () => true, query: async <T>(): Promise<T> => [] as T,
+    execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 0n, insertId: 0n }),
+    withTransaction: async <T>(): Promise<T> => {
+      attempts += 1;
+      throw Object.assign(new Error("deadlock"), { code: "ER_LOCK_DEADLOCK", errno: 1213 });
+    },
+    close: async () => undefined,
+  };
+  await assert.rejects(new MariaCanonicalMiniPetRepository(client).acquire({ actor: "migration", playerId: "player01", miniPetId: "minipet1", requestKey: "event-1", bound: false }), /deadlock/);
+  assert.equal(attempts, 3);
+});
+
+test("accepts a 182-character request key and rejects 183 before database work", async () => {
+  assert.equal(CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH, 182);
+  const accepted = database();
+  await new MariaCanonicalMiniPetRepository(accepted.client).acquire({ actor: "migration", playerId: "player01", miniPetId: "minipet1", requestKey: "a".repeat(182), bound: false });
+  assert.ok(accepted.writes.some((entry) => entry.sql.includes("canonical_owned_mini_pet_instances")));
+  const rejected = database();
+  await assert.rejects(new MariaCanonicalMiniPetRepository(rejected.client).acquire({ actor: "migration", playerId: "player01", miniPetId: "minipet1", requestKey: "a".repeat(183), bound: false }), /ACQUIRE_INPUT_INVALID/);
+  assert.equal(rejected.writes.length, 0);
 });
 
 test("equips only an owned instance for the same player and updates audit fields", async () => {
