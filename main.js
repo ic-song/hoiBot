@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.449"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.450"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -4153,7 +4153,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     rateMsg += "━━━━━━━━━━━━━━━\n";
-                    rateMsg += "총 확률: " + totalPercent.toFixed(1) + "%";
+                    rateMsg += "총 확률: " + totalPercent.toFixed(1) + "%\n\n";
+                    rateMsg += "━━━한정판 등급━━━\n";
+                    for (var limitedIndex = 0; limitedIndex < PET_SKILL_LIST.length; limitedIndex++) {
+                        var limitedSkillData = PET_SKILL_LIST[limitedIndex];
+                        if (limitedSkillData.limitedEdition !== true) continue;
+                        rateMsg += formatPetSkillName(limitedSkillData.name) + "\n";
+                    }
+                    rateMsg += "\n※ 한정판 펫스킬은 펫스킬북에서 등장하지 않습니다.";
 
                     replier.reply(rateMsg.trim());
                     return;
