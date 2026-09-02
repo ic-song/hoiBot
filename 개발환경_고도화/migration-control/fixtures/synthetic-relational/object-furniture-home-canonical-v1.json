@@ -16,6 +16,7 @@
   "invariants": [
     "same furniture_id may have N distinct owned_furniture_id rows",
     "base_charm and charm_per_enhancement exist only on the definition",
-    "final charm is calculated and not persisted on the owned instance"
+    "final charm is calculated and not persisted on the owned instance",
+    "a placement row is the only source of placed state"
   ]
 }

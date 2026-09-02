@@ -14,8 +14,8 @@ describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql"]);
-    assert.deepEqual(contract.tables.map((table) => table.table), ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_players", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays"]);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql"]);
+    assert.deepEqual(contract.tables.map((table) => table.table), ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays"]);
   });
 
   it("keeps migration443 DDL aligned with registered PK, FK, audit, and KST checks", () => {
@@ -29,9 +29,10 @@ describe("object data model standard contract", () => {
   });
 
   it("keeps migration445 definition values separate from owned instance state", () => {
-    for (const token of ["object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "furniture_id CHAR(8)", "owned_furniture_id CHAR(8)", "base_charm BIGINT", "charm_per_enhancement BIGINT", "enhancement_level INT UNSIGNED", "INSERT_USER VARCHAR(100)", "UPDATE_TIME CHAR(19)"]) assert.match(migration445, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    for (const token of ["444_canonical_item_inventory.sql", "canonical_players (player_id)", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "furniture_id CHAR(8)", "owned_furniture_id CHAR(8)", "base_charm BIGINT", "charm_per_enhancement BIGINT", "enhancement_level INT UNSIGNED", "INSERT_USER VARCHAR(100)", "UPDATE_TIME CHAR(19)"]) assert.match(migration445, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(migration445, /final_charm/);
     assert.doesNotMatch(migration445, /charm_snapshot/);
+    assert.doesNotMatch(migration445, /ownership_status/);
   });
 
   it("accepts the anonymized identity, definition, and ownership fixture", () => {

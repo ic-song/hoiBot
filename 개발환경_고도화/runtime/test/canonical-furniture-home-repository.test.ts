@@ -29,7 +29,7 @@ describe("canonical furniture home repository", () => {
         statements.push(sql);
         if (sql.includes("object_furniture_operation_replays")) return [] as T;
         if (sql.includes("object_furniture_definitions")) return [{ furniture_id: "f1234567", display_name: "다이아상자💎(/다이아상자오픈)", purchase_price: 500n, base_charm: 120n, charm_per_enhancement: 15n, active: 1 }] as T;
-        if (sql.includes("object_furniture_players")) return [{ player_id: "p1234567" }] as T;
+        if (sql.includes("canonical_players")) return [{ player_id: "p1234567" }] as T;
         return [] as T;
       },
       execute: async (sql: string): Promise<DatabaseWriteResult> => { statements.push(sql); return { affectedRows: 1n, insertId: 0n }; }
@@ -46,10 +46,31 @@ describe("canonical furniture home repository", () => {
   it("returns an existing operation as a replay rather than creating another owned instance", async () => {
     const database = scriptedDatabase([
       [{ owned_furniture_id: "o1234567", result_status: "granted" }],
-      [{ owned_furniture_id: "o1234567", player_id: "p1234567", furniture_id: "f1234567", enhancement_level: 2n, ownership_status: "bag", base_charm: 10n, charm_per_enhancement: 5n }]
+      [{ owned_furniture_id: "o1234567", player_id: "p1234567", furniture_id: "f1234567", enhancement_level: 2n, base_charm: 10n, charm_per_enhancement: 5n }]
     ]);
     const repository = new MariaCanonicalFurnitureHomeRepository(database, () => "o7654321", audit);
     const result = await repository.grantOwnedFurniture({ actor: "migration", playerId: "p1234567", furnitureId: "f1234567", idempotencyScope: "legacy.import", idempotencyKey: "source-1" });
     assert.deepEqual(result, { furniture: { ownedFurnitureId: "o1234567", playerId: "p1234567", furnitureId: "f1234567", enhancementLevel: 2n, finalCharm: 20n, ownershipStatus: "bag" }, replayed: true });
+  });
+
+  it("uses placement existence as the only placed-state source and records it atomically with replay", async () => {
+    const statements: string[] = [];
+    const transaction: DatabaseTransaction = {
+      query: async <T>(sql: string): Promise<T> => {
+        statements.push(sql);
+        if (sql.includes("object_furniture_operation_replays")) return [] as T;
+        if (sql.includes("object_owned_furniture_instances")) return [{ owned_furniture_id: "o1234567" }] as T;
+        if (sql.includes("object_home_furniture_placements")) return [] as T;
+        return [] as T;
+      },
+      execute: async (sql: string): Promise<DatabaseWriteResult> => { statements.push(sql); return { affectedRows: 1n, insertId: 0n }; }
+    };
+    const database: DatabaseClient = { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined };
+    const ids = ["l1234567", "r1234567"];
+    const repository = new MariaCanonicalFurnitureHomeRepository(database, () => ids.shift()!, audit);
+    assert.deepEqual(await repository.placeOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", placementOrder: 0n, idempotencyScope: "legacy.import", idempotencyKey: "place-1" }), { ownedFurnitureId: "o1234567", replayed: false });
+    assert.ok(statements.some((sql) => sql.includes("INSERT INTO object_home_furniture_placements")));
+    assert.ok(statements.some((sql) => sql.includes("INSERT INTO object_furniture_operation_replays")));
+    assert.ok(statements.every((sql) => !sql.includes("ownership_status")));
   });
 });
