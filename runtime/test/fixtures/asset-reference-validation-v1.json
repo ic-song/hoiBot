@@ -1,0 +1,18 @@
+{
+  "payload": {
+    "member": {
+      "synthetic-user": {
+        "bag": { "Synthetic Potion": 2 },
+        "furnitureBag": [null, { "name": "Synthetic Chair", "grade": "A" }],
+        "miniPetBag": [null, { "name": "Synthetic Mini", "grade": "S", "emoji": "M" }],
+        "pendantBag": [null, { "name": "Synthetic Pendant", "grade": "1" }],
+        "title": { "list": [{ "name": "Synthetic Hero" }], "num": 1 },
+        "petSkills": { "bag": { "Synthetic Slash": 1 }, "equipped": ["Synthetic Slash"], "lockedPremium": [] },
+        "badges": ["BADGE-SYNTHETIC-001"]
+      }
+    },
+    "packageId": "PACKAGE-SYNTHETIC-001",
+    "passType": "PASS-SYNTHETIC-001",
+    "reward": [{ "item": "Synthetic Potion" }]
+  }
+}

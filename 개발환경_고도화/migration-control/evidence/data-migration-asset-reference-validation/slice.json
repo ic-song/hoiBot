@@ -1,0 +1,40 @@
+{
+  "sliceId": "SL-DATA-MIGRATION-ASSET-REFERENCE-VALIDATION-01",
+  "executionId": "작업반장-SL-DATA-MIGRATION-ASSET-REFERENCE-VALIDATION-01-2026090211",
+  "claimRow": 2500,
+  "baseline": "389c2210225033dbce78e8bef6eed5f636afccc1",
+  "dependencies": ["WBS683", "WBS684", "WBS688", "WBS717"],
+  "scope": "private staging 회원·가방·펫·자산 참조와 canonical object/source binding의 read-only 정합성 검증",
+  "privacy": "원본 경로·회원명·자산 표시명은 evidence에 기록하지 않고 SHA-256 위치·identity만 기록",
+  "validation": {
+    "focused": { "pass": 6, "fail": 0 },
+    "rootRegression": { "pass": 28, "fail": 0 },
+    "modernizationRegression": { "pass": 1572, "fail": 0, "skip": 8 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "maria": {
+      "migrationCount": 428,
+      "objectCount": 4648,
+      "bindingCount": 6554,
+      "rollbackReplay": "PASS",
+      "restartReconnect": "PASS"
+    },
+    "snapshot": {
+      "payloadFileCount": 753,
+      "referenceCount": 2100820,
+      "distinctReferenceCount": 7613,
+      "resolvedCount": 1337716,
+      "orphanCount": 569004,
+      "ambiguousCount": 154712,
+      "inactiveCount": 39388,
+      "canonicalDuplicateCount": 0,
+      "canonicalCollisionCount": 0,
+      "stagingSha256": "eca2404d20b5391991b49d7ee71653f1931a109140341209c0369646c486b1b5",
+      "canonicalSha256": "1cb70e6c3c079f53963313388fe28240c46a6c11e85411eba0420fc32546f3fb",
+      "reportSha256": "6e3a2c1e5242f62857b85ab664ac3a89e5954d18f9743604fe001c0f26a46f9e",
+      "dataMigrationReady": false
+    }
+  },
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "forbidden": ["운영 DB", "feature/prod", "legacy main.js", "legacy data mutation", "Gate8"]
+}
