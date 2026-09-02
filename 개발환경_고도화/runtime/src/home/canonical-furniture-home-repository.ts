@@ -89,11 +89,11 @@ function owned(row: OwnedRow, ownershipStatus = "bag"): CanonicalOwnedFurniture 
   };
 }
 
-async function reserveId(transaction: DatabaseTransaction, generate: ObjectIdentityCandidateGenerator, insert: (candidate: string) => Promise<void>): Promise<string> {
+async function reserveId(transaction: DatabaseTransaction, generate: ObjectIdentityCandidateGenerator, insert: (candidate: string) => Promise<void>, retryDuplicate = true): Promise<string> {
   for (let attempt = 0; attempt < OBJECT_IDENTITY_MAX_ATTEMPTS; attempt += 1) {
     const candidate = generate();
     assertCuid2Length(candidate);
-    try { await insert(candidate); return candidate; } catch (error) { if (!duplicate(error)) throw error; }
+    try { await insert(candidate); return candidate; } catch (error) { if (!duplicate(error) || !retryDuplicate) throw error; }
   }
   throw new Error("CANONICAL_FURNITURE_ID_COLLISION_RETRY_EXHAUSTED");
 }
@@ -151,7 +151,7 @@ export class MariaCanonicalFurnitureHomeRepository {
               "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
               [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
-          });
+          }, false);
           return { furniture: {
             ownedFurnitureId, playerId: input.playerId, furnitureId: definition.furniture_id, enhancementLevel,
             finalCharm: calculateCanonicalFurnitureCharm(BigInt(definition.base_charm), BigInt(definition.charm_per_enhancement), enhancementLevel), ownershipStatus: "bag"
@@ -223,7 +223,7 @@ export class MariaCanonicalFurnitureHomeRepository {
     assertPlacementInput({ ...input, placementOrder: 0n });
     if (input.toStatus === "listed" && (input.listingPrice === undefined || input.listingPrice < 0n)) throw new Error("CANONICAL_FURNITURE_LISTING_PRICE_INVALID");
     const kind = `transition_${input.fromStatus}_to_${input.toStatus}`;
-    const digest = fingerprint(kind, [input.playerId, input.ownedFurnitureId]);
+    const digest = fingerprint(kind, [input.playerId, input.ownedFurnitureId, String(input.listingPrice ?? "")]);
     for (let attempt = 0; attempt < OBJECT_IDENTITY_MAX_ATTEMPTS; attempt += 1) try {
       return await this.database.withTransaction(async (transaction) => {
       const replay = (await transaction.query<ReplayRow[]>("SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE", [input.playerId, input.idempotencyScope, input.idempotencyKey]))[0];

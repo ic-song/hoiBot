@@ -72,6 +72,7 @@ describe("canonical furniture home repository", () => {
     assert.equal(attempts, 2);
   });
 
+
   it("uses placement existence as the only placed-state source and records it atomically with replay", async () => {
     const statements: string[] = [];
     const transaction: DatabaseTransaction = {
