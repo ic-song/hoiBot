@@ -3622,8 +3622,8 @@ Status: VERIFIED
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
-- 일반 등급 총 확률 아래 `한정판 등급` 구역에서 `전설의 몽둥이📙`, `베란다 확장📙`, `전설의 소매치기📙`를 별도로 표시하며, 세 스킬은 일반 오픈 풀과 총 확률에 포함되지 않는다.
-- 오픈 가능한 93종 기준으로 SS는 각 0.1%, S는 각 0.3%, A는 각 0.4%, B는 각 0.6%, C는 각 1.5%다. SS~C 합계 58.9%를 제외한 41.1%는 D등급 6종에 균등 배분해 각각 6.85%로 추첨한다.
+- 일반 등급 총 확률 아래 `한정판 등급` 구역에서 `전설의 몽둥이📙`, `베란다 확장📙`, `전설의 소매치기📙`, `광산에서 재벌까지📙`를 별도로 표시하며, 네 스킬은 일반 오픈 풀과 총 확률에 포함되지 않는다.
+- `신성한 기도📙[A]`와 `호월신의 총애📙[S]`를 포함한 오픈 가능한 95종 기준으로 SS는 각 0.1%, S는 각 0.3%, A는 각 0.4%, B는 각 0.6%, C는 각 1.5%다. SS~C 합계 59.6%를 제외한 40.4%는 D등급 6종에 균등 배분해 각각 약 6.73%로 추첨한다.
 
 ---
 
@@ -6415,3 +6415,55 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+---
+
+# /기도
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `msg === "/기도"`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getEquippedPrayerSkillName`
+- `getPrayerSkillConfig`
+- `buildPrayerResultMessage`
+- `buildPrayerSkillEquipMessage`
+- `buildPrayerSkillInfoMessage`
+- `checkRank`
+- `addItem`
+- `saveJsonFile`
+
+## Data Usage
+
+- `petSkillData[sender].petSkills.equipped`
+- `data.member[sender].isGidoFlag`
+- `data.member[sender].bag["주간상자🌼"]`
+
+## Save Flow
+
+- 정상 사용 시 성공·실패와 관계없이 일일 사용 기록을 남기고, 성공 시에만 주간상자🌼 1개를 추가한 뒤 `saveJsonFile(data, filePath)`로 한 번 저장한다.
+- `/기도`는 단독 데이터 변경 잠금을 사용하며, 저장 실패 시 메모리의 일일 기록과 보상 수량을 복구하고 오류 안내를 표시한다.
+- `/리셋`에서 모든 회원의 기도 일일 사용 기록을 제거한다.
+
+## Related Commands
+
+- `/펫스킬장착 [번호]`
+- `/펫스킬정보 [스킬이름]`
+- `/펫스킬확률`
+- `/리셋`
+
+## AI Notes
+
+- `기도📙[C]`, `신성한 기도📙[A]`, `호월신의 총애📙[S]` 중 하나를 장착해야 하며 응답 확률은 각각 3%, 5%, 7%다.
+- 세 스킬은 서로 중복 장착할 수 없고, 장착 차단은 가방의 스킬북을 소모하기 전에 처리한다.
+- 결과는 장착 스킬과 성공 여부별 10개 멘트 중 하나를 사용하며 실제 채크랭크를 표시한다.
+
+---
