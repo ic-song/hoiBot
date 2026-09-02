@@ -1,0 +1,23 @@
+{
+  "format": "hoibot-public-asset-bag-reference-correction-v1",
+  "catalogVersion": "ASSET-FREEZE-v2.438-bag-reference-01",
+  "prior": {
+    "itemGapIdentities": 3306,
+    "itemGapOccurrences": 256327
+  },
+  "dynamicProjection": {
+    "classification": "PET_INTIMACY_STATE_PROJECTION",
+    "identities": 3076,
+    "occurrences": 21980,
+    "definitionSeedAllowed": false
+  },
+  "remaining": {
+    "itemIdentities": 230,
+    "itemOccurrences": 234347,
+    "orphan": { "identities": 212, "occurrences": 173506 },
+    "inactive": { "identities": 16, "occurrences": 39388 },
+    "ambiguous": { "identities": 2, "occurrences": 21453 },
+    "disposition": "QUARANTINE"
+  },
+  "containsRawIdentity": false
+}

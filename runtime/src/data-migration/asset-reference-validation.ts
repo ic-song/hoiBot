@@ -110,6 +110,12 @@ interface PrivateStagingEnvelope {
 }
 
 const STABLE_CODE = /^(?:ITEM|PET|MINI[_-]?PET|FURNITURE|BADGE|TITLE|MEMBER[_-]?TITLE|PET[_-]?TITLE|PASS|PACKAGE|CURRENCY|SKILL|PET[_-]?SKILL|PENDANT|HOME[_-]?BUILDING|GUILD[_-]?RESOURCE)[-_.:][A-Z0-9][A-Z0-9_.:-]*$/i;
+const LEGACY_PET_INTIMACY_PROJECTION = /^펫 친밀도🐾\s*\[Lv\.\d+\]\(\d+\/1000\)\+\d+💕$/;
+
+// 레거시 가방에서 정의가 아니라 현재 상태를 이름에 합성한 projection인지 판별한다.
+export function isLegacyDynamicBagProjection(value: string): boolean {
+  return LEGACY_PET_INTIMACY_PROJECTION.test(value);
+}
 
 function sha256(value: string | Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");
@@ -204,6 +210,7 @@ function collectAssetReferences(
     if (key === "packageId" || key === "packageName") continue;
     if (key === "bag" && child && typeof child === "object" && !Array.isArray(child)) {
       for (const itemName of Object.keys(child as Record<string, unknown>)) {
+        if (isLegacyDynamicBagProjection(itemName)) continue;
         addReference(output, sourcePathSha256, `${childPointer}/${sha256(itemName)}`, ["ITEM"], {
           sourceKind: "bag",
           displayName: itemName
