@@ -1,27 +1,12 @@
 export const OBJECT_DATA_MODEL_STANDARD_VERSION = "object-data-model-standard.v1" as const;
 
 export const REQUIRED_AUDIT_COLUMNS = ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] as const;
-const DEFINITION_ONLY_COLUMNS = new Set([
-  "item_name", "furniture_name", "pet_name", "mini_pet_name", "equipment_name", "title_name", "pet_skill_name",
-  "display_name", "description", "price", "base_charm", "charm_per_enhancement", "max_enhancement_level",
-  "grade", "base_stat", "effect", "common_effect"
-]);
+const OWNERSHIP_COMMON_COLUMNS = new Set(["player_id", "quantity", ...REQUIRED_AUDIT_COLUMNS]);
 
-export type ObjectTableRole = "definition" | "ownership_quantity" | "ownership_instance" | "relation" | "history" | "operation";
+export type ObjectTableRole = "identity" | "definition" | "ownership_quantity" | "ownership_instance" | "relation" | "history" | "operation";
 
-export interface ObjectDataModelColumn {
-  name: string;
-  type: string;
-  charset?: string;
-  collation?: string;
-}
-
-export interface ObjectDataModelForeignKey {
-  column: string;
-  referencesTable: string;
-  referencesColumn: string;
-}
-
+export interface ObjectDataModelColumn { name: string; type: string; charset?: string; collation?: string; }
+export interface ObjectDataModelForeignKey { column: string; referencesTable: string; referencesColumn: string; }
 export interface ObjectDataModelTable {
   table: string;
   role: ObjectTableRole;
@@ -29,67 +14,66 @@ export interface ObjectDataModelTable {
   primaryKey: readonly string[];
   foreignKeys: readonly ObjectDataModelForeignKey[];
   uniqueKeys?: readonly (readonly string[])[];
+  // 보유 테이블은 PK/FK/감사 컬럼 외에 이 목록의 사용자별 상태만 허용합니다.
+  allowedStateColumns?: readonly string[];
+  // 정의 전용값을 명시해 변경 검토 때 복제 시도를 바로 드러냅니다.
+  definitionOnlyColumns?: readonly string[];
 }
-
 export interface ObjectDataModelContract {
   standardVersion: typeof OBJECT_DATA_MODEL_STANDARD_VERSION;
   scope: "new_object_schema_only";
   registeredMigrations: readonly string[];
   tables: readonly ObjectDataModelTable[];
+  // handler_key/options_json은 안전한 데이터이며 이 목록의 실행 payload 컬럼은 허용하지 않습니다.
+  forbiddenExecutableColumns: readonly string[];
 }
 
-function fail(code: string, message: string): never {
-  throw new Error(`OBJECT_DATA_MODEL_${code}:${message}`);
-}
-
+function fail(code: string, message: string): never { throw new Error(`OBJECT_DATA_MODEL_${code}:${message}`); }
 function column(table: ObjectDataModelTable, name: string): ObjectDataModelColumn {
   const found = table.columns.find((entry) => entry.name === name);
   if (found === undefined) fail("COLUMN_MISSING", `${table.table}.${name}`);
   return found;
 }
-
 function sameColumnShape(left: ObjectDataModelColumn, right: ObjectDataModelColumn): boolean {
   return left.type === right.type && (left.charset ?? "") === (right.charset ?? "") && (left.collation ?? "") === (right.collation ?? "");
 }
-
 function validateAuditColumns(table: ObjectDataModelTable): void {
   for (const name of REQUIRED_AUDIT_COLUMNS) column(table, name);
-  if (column(table, "INSERT_TIME").type !== "CHAR(19)" || column(table, "UPDATE_TIME").type !== "CHAR(19)") {
-    fail("AUDIT_TIME_TYPE", table.table);
-  }
+  if (column(table, "INSERT_USER").type !== "VARCHAR(100)" || column(table, "UPDATE_USER").type !== "VARCHAR(100)") fail("AUDIT_USER_TYPE", table.table);
+  if (column(table, "INSERT_TIME").type !== "CHAR(19)" || column(table, "UPDATE_TIME").type !== "CHAR(19)") fail("AUDIT_TIME_TYPE", table.table);
 }
-
-function validateIdentifier(columnDefinition: ObjectDataModelColumn, location: string): void {
-  if (columnDefinition.type !== "CHAR(8)" || columnDefinition.charset !== "ascii" || columnDefinition.collation !== "ascii_bin") {
-    fail("IDENTIFIER_SHAPE", location);
-  }
+function validateIdentifier(value: ObjectDataModelColumn, location: string): void {
+  if (value.type !== "CHAR(8)" || value.charset !== "ascii" || value.collation !== "ascii_bin") fail("IDENTIFIER_SHAPE", location);
 }
+function isOwnership(table: ObjectDataModelTable): boolean { return table.role === "ownership_quantity" || table.role === "ownership_instance"; }
 
-// 신규 표준 대상 manifest만 검사하고 이미 적용된 migration을 소급 판정하지 않습니다.
+// 신규 표준 manifest만 검사합니다. CUID2 생성·충돌 재시도와 KST 시계 구현은 WBS731의 runtime 책임입니다.
 export function validateObjectDataModelContract(contract: ObjectDataModelContract): void {
   if (contract.standardVersion !== OBJECT_DATA_MODEL_STANDARD_VERSION) fail("VERSION", String(contract.standardVersion));
   if (contract.scope !== "new_object_schema_only") fail("SCOPE", contract.scope);
+  if ((contract.registeredMigrations.length === 0) !== (contract.tables.length === 0)) fail("REGISTRATION_PAIR", "registeredMigrations and tables must both be empty or populated");
+  if (contract.forbiddenExecutableColumns.length === 0) fail("EXECUTABLE_POLICY", "forbiddenExecutableColumns");
+  const forbidden = new Set(contract.forbiddenExecutableColumns.map((name) => name.toLowerCase()));
   const tables = new Map<string, ObjectDataModelTable>();
   for (const table of contract.tables) {
     if (!/^[a-z][a-z0-9_]*$/.test(table.table)) fail("TABLE_NAME", table.table);
     if (tables.has(table.table)) fail("TABLE_DUPLICATE", table.table);
-    if (table.columns.some((entry) => entry.name === "id")) fail("BARE_ID", table.table);
-    if (table.columns.some((entry) => /(^|_)code$/.test(entry.name))) fail("OBJECT_CODE", table.table);
+    if (table.primaryKey.length === 0) fail("PRIMARY_KEY_EMPTY", table.table);
+    if (new Set(table.primaryKey).size !== table.primaryKey.length) fail("PRIMARY_KEY_DUPLICATE", table.table);
+    const names = table.columns.map((entry) => entry.name);
+    if (new Set(names).size !== names.length) fail("COLUMN_DUPLICATE", table.table);
+    if (table.columns.some((entry) => entry.name.toLowerCase() === "id")) fail("BARE_ID", table.table);
+    if (table.columns.some((entry) => /(^|_)code$/i.test(entry.name))) fail("OBJECT_CODE", table.table);
+    if (table.columns.some((entry) => forbidden.has(entry.name.toLowerCase()))) fail("EXECUTABLE_PAYLOAD", table.table);
     validateAuditColumns(table);
     for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
-    if (table.role === "ownership_instance" && !table.primaryKey.some((name) => /^owned_.*_id$/.test(name))) {
-      fail("INSTANCE_PK", table.table);
-    }
-    if (table.role === "ownership_quantity") {
-      const uniqueKeys = table.uniqueKeys ?? [];
-      if (!uniqueKeys.some((key) => key.includes("player_id") && key.some((name) => name !== "player_id" && name.endsWith("_id")))) {
-        fail("QUANTITY_UNIQUE", table.table);
-      }
-    }
-    if (table.role === "ownership_quantity" || table.role === "ownership_instance") {
-      for (const entry of table.columns) {
-        if (DEFINITION_ONLY_COLUMNS.has(entry.name)) fail("DEFINITION_VALUE_COPIED", `${table.table}.${entry.name}`);
-      }
+    if (table.role === "ownership_instance" && !table.primaryKey.some((name) => /^owned_.*_id$/.test(name))) fail("INSTANCE_PK", table.table);
+    if (table.role === "ownership_quantity" && !(table.uniqueKeys ?? []).some((key) => key.includes("player_id") && key.some((name) => name !== "player_id" && name.endsWith("_id")))) fail("QUANTITY_UNIQUE", table.table);
+    if (isOwnership(table)) {
+      if (table.allowedStateColumns === undefined) fail("OWNERSHIP_BOUNDARY", table.table);
+      const allowed = new Set([...OWNERSHIP_COMMON_COLUMNS, ...table.primaryKey, ...table.foreignKeys.map((key) => key.column), ...table.allowedStateColumns]);
+      for (const entry of table.columns) if (!allowed.has(entry.name)) fail("OWNERSHIP_COLUMN", `${table.table}.${entry.name}`);
+      for (const name of table.definitionOnlyColumns ?? []) if (names.includes(name)) fail("DEFINITION_VALUE_COPIED", `${table.table}.${name}`);
     }
     tables.set(table.table, table);
   }
@@ -98,9 +82,12 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
       const target = tables.get(foreignKey.referencesTable);
       if (target === undefined) fail("FK_TARGET", `${table.table}.${foreignKey.column}`);
       if (foreignKey.column !== foreignKey.referencesColumn) fail("FK_NAME", `${table.table}.${foreignKey.column}`);
-      const sourceColumn = column(table, foreignKey.column);
-      const targetColumn = column(target, foreignKey.referencesColumn);
-      if (!sameColumnShape(sourceColumn, targetColumn)) fail("FK_SHAPE", `${table.table}.${foreignKey.column}`);
+      if (!target.primaryKey.includes(foreignKey.referencesColumn)) fail("FK_NOT_PRIMARY", `${table.table}.${foreignKey.column}`);
+      if (!sameColumnShape(column(table, foreignKey.column), column(target, foreignKey.referencesColumn))) fail("FK_SHAPE", `${table.table}.${foreignKey.column}`);
+    }
+    if (isOwnership(table)) {
+      if (!table.foreignKeys.some((key) => key.column === "player_id" && tables.get(key.referencesTable)?.role === "identity")) fail("OWNERSHIP_PLAYER_FK", table.table);
+      if (!table.foreignKeys.some((key) => tables.get(key.referencesTable)?.role === "definition")) fail("OWNERSHIP_DEFINITION_FK", table.table);
     }
   }
 }

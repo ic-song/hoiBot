@@ -43,6 +43,7 @@
 - 오브젝트 식별용 `CODE` 컬럼은 금지한다. `ITEM-DIAMOND-BOX` 같은 값은 PK 대체물이 아니다. 표시명도 식별자로 사용하지 않는다.
 - 신규 PK는 CUID2 기반 8자리 문자열이며 `CHAR(8) CHARACTER SET ascii COLLATE ascii_bin`을 사용한다.
 - 8자리 CUID2는 충돌 가능성이 있으므로 PK 또는 UNIQUE로 충돌을 검출하고, 충돌하면 새 식별자를 생성해 재시도한다. 모든 서비스는 동일한 생성·재시도 정책을 공유한다.
+- 이 문서는 정책과 schema 계약만 정의한다. 실제 CUID2 8자리 생성·충돌 재시도 구현은 WBS731 공용 identity/audit provider에서 추가하고 그때 runtime 시험으로 증명한다.
 - FK 컬럼명은 참조 PK와 정확히 같아야 한다. 예: `owned_items.player_id → players.player_id`, `owned_items.item_id → item_definitions.item_id`.
 - FK와 참조 PK는 이름, 타입, 길이, 문자셋, collation 및 부호 속성이 같아야 한다. 다중 역할 관계의 예외는 설계 검토와 FK 제약으로 명시한다.
 
@@ -58,6 +59,8 @@
 | `UPDATE_TIME` | `CHAR(19)` | 마지막 수정 시각 |
 
 시간은 KST(`Asia/Seoul`)의 24시간제 문자열 `YYYY-MM-DD HH:MM:SS`만 사용한다. 최초 insert에서는 두 사용자·시간 컬럼을 같은 값으로 넣고, update에서는 `UPDATE_*`만 바꾼다. DB 기본값만으로 작업 주체를 숨기지 않는다.
+
+KST 시계와 문자열 formatter의 실제 구현·시험도 WBS731 공용 identity/audit provider의 책임이다.
 
 ## 보유 모델과 계산값
 
@@ -93,14 +96,14 @@
 
 ## 기계 검증 계약
 
-`개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json`은 신규 표준 적용 schema의 선언형 manifest다. 신규 오브젝트 migration을 추가할 때 대상 table, PK, FK, 보유 모델, 정의/보유 컬럼 경계를 이 manifest에 함께 등록하고 아래 명령을 통과해야 한다.
+`개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json`은 신규 표준 적용 schema의 선언형 manifest다. 신규 오브젝트 migration을 추가할 때 대상 table, PK, FK, 보유 모델, 정의/보유 컬럼 경계(`allowedStateColumns`, `definitionOnlyColumns`)를 이 manifest에 함께 등록하고 아래 명령을 통과해야 한다. `handler_key`, `options_json`은 펫스킬의 안전한 데이터 컬럼으로 허용하지만 `forbiddenExecutableColumns`에 선언한 JavaScript·SQL·script 실행 payload 컬럼은 금지한다.
 
 ```powershell
 cd 개발환경_고도화/runtime
 npm.cmd run object-data:validate
 ```
 
-이 validator는 manifest에 등록된 신규 표준 대상만 검사한다. 이미 적용된 001~442 migration은 수정하거나 소급 실패시키지 않는다.
+이 validator는 manifest에 등록된 신규 표준 대상만 검사한다. `registeredMigrations`와 `tables`는 모두 비어 있거나 모두 등록되어야 한다. 비어 있을 때 통과 메시지는 표준 준비 상태일 뿐 신규 schema compliance 증거가 아니다. 이미 적용된 001~442 migration은 수정하거나 소급 실패시키지 않는다.
 
 ## 금지 요약
 

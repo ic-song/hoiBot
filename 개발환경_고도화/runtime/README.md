@@ -197,7 +197,7 @@ Remove-Item Env:HOIBOT_BOOTSTRAP_ADMIN_PASSWORD
 
 ## 검증
 
-오브젝트 관련 신규 migration/schema는 먼저 [오브젝트 데이터 모델 표준](../../docs/database/OBJECT_DATA_MODEL_STANDARD.md)을 읽고, migration과 같은 변경에서 `../migration-control/contracts/object-data-model-standard.v1.json`에 대상 테이블을 등록해야 합니다. 아래 검증은 등록된 신규 표준 대상만 검사하므로 기존 적용 migration을 소급 실패시키지 않습니다.
+오브젝트 관련 신규 migration/schema는 먼저 [오브젝트 데이터 모델 표준](../../docs/database/OBJECT_DATA_MODEL_STANDARD.md)을 읽고, migration과 같은 변경에서 `../migration-control/contracts/object-data-model-standard.v1.json`에 대상 테이블을 등록해야 합니다. `registeredMigrations`와 `tables`는 함께 등록하며, 비어 있는 manifest의 통과는 등록 대상 없음(신규 schema compliance 증거 아님)을 뜻합니다. 아래 검증은 등록된 신규 표준 대상만 검사하므로 기존 적용 migration을 소급 실패시키지 않습니다.
 
 ```powershell
 npm.cmd run object-data:validate

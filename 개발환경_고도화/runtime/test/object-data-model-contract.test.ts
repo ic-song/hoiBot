@@ -5,20 +5,80 @@ import { validateObjectDataModelContract, type ObjectDataModelContract } from ".
 
 const contract = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-data-model-standard.v1.json", import.meta.url), "utf8")) as ObjectDataModelContract;
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/object-data-model-standard-v1.json", import.meta.url), "utf8")) as ObjectDataModelContract;
+const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
-  it("accepts the registered new-object scope without retroactively judging legacy migrations", () => {
+  it("accepts an empty registration only as a no-schema-evidence baseline", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
     assert.deepEqual(contract.registeredMigrations, []);
+    assert.deepEqual(contract.tables, []);
   });
 
-  it("rejects bare ids, object codes, copied definition values, and incompatible foreign keys", () => {
-    const compliant = fixture;
-    assert.doesNotThrow(() => validateObjectDataModelContract(compliant));
-    assert.throws(() => validateObjectDataModelContract({ ...compliant, tables: [{ ...compliant.tables[0]!, columns: [...compliant.tables[0]!.columns, { name: "id", type: "CHAR(8)" }] }]}), /BARE_ID/);
-    assert.throws(() => validateObjectDataModelContract({ ...compliant, tables: [{ ...compliant.tables[0]!, columns: [...compliant.tables[0]!.columns, { name: "item_code", type: "VARCHAR(20)" }] }]}), /OBJECT_CODE/);
-    assert.throws(() => validateObjectDataModelContract({ ...compliant, tables: [{ ...compliant.tables[1]!, columns: [...compliant.tables[1]!.columns, { name: "base_charm", type: "BIGINT" }] }]}), /DEFINITION_VALUE_COPIED/);
-    assert.throws(() => validateObjectDataModelContract({ ...compliant, tables: [compliant.tables[0]!, { ...compliant.tables[1]!, foreignKeys: [{ column: "item_id", referencesTable: "item_definitions", referencesColumn: "wrong_item_id" }] }]}), /FK_NAME/);
+  it("accepts the anonymized identity, definition, and ownership fixture", () => {
+    assert.doesNotThrow(() => validateObjectDataModelContract(fixture));
+  });
+
+  it("rejects audit user type, primary-key, and duplicate-column bypasses", () => {
+    const wrongAudit = copy();
+    wrongAudit.tables[0]!.columns = wrongAudit.tables[0]!.columns.map((entry) => entry.name === "INSERT_USER" ? { ...entry, type: "VARCHAR(30)" } : entry);
+    assert.throws(() => validateObjectDataModelContract(wrongAudit), /AUDIT_USER_TYPE/);
+    const emptyPrimaryKey = copy();
+    emptyPrimaryKey.tables[0]!.primaryKey = [];
+    assert.throws(() => validateObjectDataModelContract(emptyPrimaryKey), /PRIMARY_KEY_EMPTY/);
+    const duplicateColumn = copy();
+    duplicateColumn.tables[0]!.columns = [...duplicateColumn.tables[0]!.columns, duplicateColumn.tables[0]!.columns[0]!];
+    assert.throws(() => validateObjectDataModelContract(duplicateColumn), /COLUMN_DUPLICATE/);
+  });
+
+  it("rejects bare and uppercase CODE columns plus executable payloads", () => {
+    const bareId = copy();
+    bareId.tables[1]!.columns = [...bareId.tables[1]!.columns, { name: "ID", type: "CHAR(8)" }];
+    assert.throws(() => validateObjectDataModelContract(bareId), /BARE_ID/);
+    const uppercaseCode = copy();
+    uppercaseCode.tables[1]!.columns = [...uppercaseCode.tables[1]!.columns, { name: "ITEM_CODE", type: "VARCHAR(20)" }];
+    assert.throws(() => validateObjectDataModelContract(uppercaseCode), /OBJECT_CODE/);
+    const executable = copy();
+    executable.tables[1]!.columns = [...executable.tables[1]!.columns, { name: "script", type: "TEXT" }];
+    assert.throws(() => validateObjectDataModelContract(executable), /EXECUTABLE_PAYLOAD/);
+  });
+
+  it("requires FK targets to be their declared PK and enforces ownership boundaries", () => {
+    const nonPrimaryTarget = copy();
+    nonPrimaryTarget.tables[1]!.primaryKey = ["other_item_id"];
+    nonPrimaryTarget.tables[1]!.columns = [...nonPrimaryTarget.tables[1]!.columns, { name: "other_item_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }];
+    assert.throws(() => validateObjectDataModelContract(nonPrimaryTarget), /FK_NOT_PRIMARY/);
+    const copiedDefinition = copy();
+    copiedDefinition.tables[2]!.columns = [...copiedDefinition.tables[2]!.columns, { name: "base_charm", type: "BIGINT" }];
+    assert.throws(() => validateObjectDataModelContract(copiedDefinition), /OWNERSHIP_COLUMN/);
+    const noPlayerFk = copy();
+    noPlayerFk.tables[2]!.foreignKeys = noPlayerFk.tables[2]!.foreignKeys.filter((key) => key.column !== "player_id");
+    assert.throws(() => validateObjectDataModelContract(noPlayerFk), /OWNERSHIP_PLAYER_FK/);
+    const noDefinitionFk = copy();
+    noDefinitionFk.tables[2]!.foreignKeys = noDefinitionFk.tables[2]!.foreignKeys.filter((key) => key.column !== "item_id");
+    assert.throws(() => validateObjectDataModelContract(noDefinitionFk), /OWNERSHIP_DEFINITION_FK/);
+  });
+
+  it("requires migrations and registered tables to be paired", () => {
+    const migrationOnly = copy();
+    migrationOnly.tables = [];
+    assert.throws(() => validateObjectDataModelContract(migrationOnly), /REGISTRATION_PAIR/);
+    const tableOnly = copy();
+    tableOnly.registeredMigrations = [];
+    assert.throws(() => validateObjectDataModelContract(tableOnly), /REGISTRATION_PAIR/);
+  });
+
+  it("allows pet-skill handler keys and options while retaining executable-payload denial", () => {
+    const petSkill = copy();
+    petSkill.tables = [...petSkill.tables, {
+      table: "pet_skill_definitions", role: "definition",
+      columns: [
+        { name: "pet_skill_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" },
+        { name: "handler_key", type: "VARCHAR(100)" }, { name: "options_json", type: "JSON" },
+        { name: "INSERT_USER", type: "VARCHAR(100)" }, { name: "INSERT_TIME", type: "CHAR(19)" },
+        { name: "UPDATE_USER", type: "VARCHAR(100)" }, { name: "UPDATE_TIME", type: "CHAR(19)" }
+      ], primaryKey: ["pet_skill_id"], foreignKeys: []
+    }];
+    assert.doesNotThrow(() => validateObjectDataModelContract(petSkill));
   });
 });

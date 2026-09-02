@@ -2,5 +2,6 @@
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
   "registeredMigrations": [],
-  "tables": []
+  "tables": [],
+  "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]
 }
