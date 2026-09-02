@@ -3,8 +3,8 @@
     "member": {
       "synthetic-user": {
         "bag": { "Synthetic Potion": 2 },
-        "furnitureBag": [null, { "name": "Synthetic Chair", "grade": "A" }],
-        "miniPetBag": [null, { "name": "Synthetic Mini", "grade": "S", "emoji": "M" }],
+        "furnitureBag": [null, { "name": "Synthetic Chair", "grade": "A", "exp": 100 }],
+        "miniPetBag": [null, { "name": "Synthetic Custom Name", "grade": "S", "emoji": "M", "battleExp": 100, "castleExp": 200, "raidExp": 300 }],
         "pendantBag": [null, { "name": "Synthetic Pendant", "grade": "1" }],
         "title": { "list": [{ "name": "Synthetic Hero" }], "num": 1 },
         "petSkills": { "bag": { "Synthetic Slash": 1 }, "equipped": ["Synthetic Slash"], "lockedPremium": [] },

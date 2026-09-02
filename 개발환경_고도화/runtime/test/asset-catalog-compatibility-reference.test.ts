@@ -21,4 +21,12 @@ describe("asset catalog compatibility reference correction", () => {
     assert.match(source, /packageEntries\.set/);
     assert.doesNotMatch(source, /INSERT INTO|UPDATE package_catalog|DELETE FROM/);
   });
+
+  it("projects legacy mini-pet stat signatures without writing catalog data", async () => {
+    const source = await readFile(exporter, "utf8");
+    assert.match(source, /package_item_definitions WHERE item_type='MINI_PET'/);
+    assert.match(source, /legacyStatSignature/);
+    assert.match(source, /battle:\$\{String\(battle\)\}\|castle:/);
+    assert.doesNotMatch(source, /UPDATE package_item_definitions|INSERT INTO package_item_definitions/);
+  });
 });

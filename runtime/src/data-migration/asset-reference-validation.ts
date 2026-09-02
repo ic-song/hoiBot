@@ -130,6 +130,14 @@ function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+function miniPetStatSignature(row: Record<string, unknown>): string | undefined {
+  const battle = row.battleExp;
+  const castle = row.castleExp;
+  const raid = row.raidExp;
+  if (battle === undefined || castle === undefined || raid === undefined) return undefined;
+  return `battle:${String(battle)}|castle:${String(castle)}|raid:${String(raid)}`;
+}
+
 function addReference(
   output: AssetReference[],
   sourcePathSha256: string,
@@ -212,7 +220,7 @@ function collectAssetReferences(
           displayName: stringValue(row.name) ?? stringValue(row.display),
           grade: stringValue(row.grade),
           visual: stringValue(row.emoji),
-          metric: row.rate === undefined ? undefined : String(row.rate)
+          metric: row.exp === undefined ? undefined : String(row.exp)
         });
       });
     } else if (key === "miniPetBag" && Array.isArray(child)) {
@@ -225,7 +233,8 @@ function collectAssetReferences(
           exactKey: stringValue(row.code) ?? stringValue(row.objectKey),
           displayName: stringValue(row.name),
           grade: stringValue(row.grade),
-          visual: stringValue(row.emoji) ?? stringValue(row.display)
+          visual: stringValue(row.emoji) ?? stringValue(row.display),
+          metric: miniPetStatSignature(row)
         });
       });
     } else if (key === "pendantBag" && Array.isArray(child)) {
@@ -370,15 +379,22 @@ function resolveReference(reference: AssetReference, entries: CanonicalAssetEntr
         ))
     );
     if (display.length > 0) candidates = display;
-    else if (!reference.exactKey) return [];
+    else if (!reference.exactKey && !(reference.requestedTypes.includes("MINI_PET") && reference.metric)) return [];
   }
-  for (const qualifier of [reference.grade, reference.visual, reference.metric].filter(Boolean) as string[]) {
+  for (const qualifier of [reference.grade, reference.visual].filter(Boolean) as string[]) {
     const narrowed = candidates.filter((entry) => {
       const metadata = new Set<string>();
       metadataStrings(entry.metadata, metadata);
       return metadata.has(qualifier);
     });
     if (narrowed.length > 0) candidates = narrowed;
+  }
+  if (reference.metric) {
+    candidates = candidates.filter((entry) => {
+      const metadata = new Set<string>();
+      metadataStrings(entry.metadata, metadata);
+      return metadata.has(reference.metric!);
+    });
   }
   if (reference.requestedTypes.includes("FURNITURE") && candidates.length > 1) {
     const current = candidates.filter((entry) => entry.sources.some((source) => source.sourceTable.endsWith(".v2_438")));

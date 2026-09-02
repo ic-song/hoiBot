@@ -9,6 +9,20 @@ function argument(name: string): string | undefined {
   return index >= 0 ? process.argv[index + 1] : undefined;
 }
 
+function parsedMetadata(value: unknown): Record<string, unknown> {
+  if (typeof value === "string") return JSON.parse(value) as Record<string, unknown>;
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function miniPetStatSignature(value: unknown): string | undefined {
+  const metadata = parsedMetadata(value);
+  const battle = metadata.battleExp;
+  const castle = metadata.castleExp;
+  const raid = metadata.raidExp;
+  if (battle === undefined || castle === undefined || raid === undefined) return undefined;
+  return `battle:${String(battle)}|castle:${String(castle)}|raid:${String(raid)}`;
+}
+
 const output = argument("--output");
 const catalogVersion = argument("--catalog-version");
 if (!output || !catalogVersion) throw new Error("USAGE: --output <private-json> --catalog-version <version>");
@@ -25,6 +39,9 @@ try {
   const bindings = await database.query<Array<{
     object_id: bigint; source_system: string; source_table: string; source_key: string;
   }>>("SELECT object_id,source_system,source_table,source_key FROM object_source_bindings ORDER BY object_id,source_system,source_table,source_key");
+  const miniPetCatalog = await database.query<Array<{ item_id: string; metadata_json: unknown }>>(
+    "SELECT item_id,metadata_json FROM package_item_definitions WHERE item_type='MINI_PET' ORDER BY item_id"
+  );
   const packages = await database.query<Array<{
     package_id: string; display_name: string; enabled: number | boolean; definition_status: string;
   }>>("SELECT package_id,display_name,enabled,definition_status FROM package_catalog WHERE deleted_at IS NULL ORDER BY package_id");
@@ -45,12 +62,24 @@ try {
     rows.push({ sourceSystem: binding.source_system, sourceTable: binding.source_table, sourceKey: binding.source_key });
     sources.set(key, rows);
   }
-  const registryEntries = objects.map((object) => ({
-    objectId: object.id.toString(), objectKey: object.object_key, objectType: object.object_type,
-    displayName: object.display_name, active: Boolean(object.active),
-    metadata: typeof object.metadata_json === "string" ? JSON.parse(object.metadata_json) : (object.metadata_json ?? {}),
-    sources: sources.get(object.id.toString()) ?? []
-  }));
+  const miniPetSignatures = new Map(miniPetCatalog.map((entry) => [entry.item_id, miniPetStatSignature(entry.metadata_json)]));
+  let miniPetSignatureCount = 0;
+  const registryEntries = objects.map((object) => {
+    const metadata = parsedMetadata(object.metadata_json);
+    if (object.object_type === "MINI_PET") {
+      const definitionCode = typeof metadata.definitionCode === "string" ? metadata.definitionCode : undefined;
+      const signature = definitionCode ? miniPetSignatures.get(definitionCode) : undefined;
+      if (signature) {
+        metadata.legacyStatSignature = signature;
+        miniPetSignatureCount += 1;
+      }
+    }
+    return {
+      objectId: object.id.toString(), objectKey: object.object_key, objectType: object.object_type,
+      displayName: object.display_name, active: Boolean(object.active), metadata,
+      sources: sources.get(object.id.toString()) ?? []
+    };
+  });
   const packageEntries = new Map<string, {
     objectId: string; objectKey: string; objectType: string; displayName: string; active: boolean;
     metadata: Record<string, unknown>; sources: Array<{ sourceSystem: string; sourceTable: string; sourceKey: string }>;
@@ -119,6 +148,7 @@ try {
     status: "PASS", catalogVersion, objectCount: entries.length, registryObjectCount: registryEntries.length,
     packageDefinitionCount: packageEntries.size, packageSourceDefinitionCount: sourcePackages.length,
     packageRuntimeDefinitionCount: packages.length, passDefinitionCount: passes.length,
+    miniPetCatalogCount: miniPetCatalog.length, miniPetSignatureCount,
     bindingCount: bindings.length + sourcePackages.length + packages.length + passes.length, registryBindingCount: bindings.length,
     snapshotSha256: createHash("sha256").update(serialized).digest("hex"), reconnect: true
   })}\n`);

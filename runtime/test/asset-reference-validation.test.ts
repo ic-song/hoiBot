@@ -38,8 +38,8 @@ async function fixture(canonicalEntries?: CanonicalAssetEntry[]): Promise<{ root
   };
   const entries = canonicalEntries ?? [
     entry("1", "ITEM", "ITEM-SYNTHETIC-POTION", "Synthetic Potion"),
-    entry("2", "FURNITURE", "FURNITURE-SYNTHETIC-CHAIR", "Synthetic Chair", { grade: "A" }),
-    entry("3", "MINI_PET", "MINI-PET-SYNTHETIC", "Synthetic MiniM", { grade: "S", emoji: "M" }),
+    entry("2", "FURNITURE", "FURNITURE-SYNTHETIC-CHAIR", "Synthetic Chair", { grade: "A", charmValue: 100 }),
+    entry("3", "MINI_PET", "MINI-PET-SYNTHETIC", "Canonical MiniM", { grade: "S", emoji: "M", legacyStatSignature: "battle:100|castle:200|raid:300" }),
     entry("4", "ITEM", "ITEM-SYNTHETIC-PENDANT", "Synthetic Pendant", { grade: "1" }),
     entry("5", "TITLE", "TITLE-SYNTHETIC-HERO", "Synthetic Hero"),
     entry("6", "SKILL", "SKILL-SYNTHETIC-SLASH", "Synthetic Slash"),
@@ -112,8 +112,8 @@ describe("data migration asset reference validation", () => {
       exact,
       compatibility,
       entry("1", "ITEM", "ITEM-SYNTHETIC-POTION", "Synthetic Potion"),
-      entry("2", "FURNITURE", "FURNITURE-SYNTHETIC-CHAIR", "Synthetic Chair", { grade: "A" }),
-      entry("3", "MINI_PET", "MINI-PET-SYNTHETIC", "Synthetic MiniM", { grade: "S", emoji: "M" }),
+      entry("2", "FURNITURE", "FURNITURE-SYNTHETIC-CHAIR", "Synthetic Chair", { grade: "A", charmValue: 100 }),
+      entry("3", "MINI_PET", "MINI-PET-SYNTHETIC", "Canonical MiniM", { grade: "S", emoji: "M", legacyStatSignature: "battle:100|castle:200|raid:300" }),
       entry("4", "ITEM", "ITEM-SYNTHETIC-PENDANT", "Synthetic Pendant", { grade: "1" }),
       entry("5", "TITLE", "TITLE-SYNTHETIC-HERO", "Synthetic Hero"),
       entry("6", "SKILL", "SKILL-SYNTHETIC-SLASH", "Synthetic Slash"),
@@ -132,6 +132,16 @@ describe("data migration asset reference validation", () => {
     const report = await validateAssetReferences(input.root, input.manifest, input.snapshot);
     const packageIssue = report.issues.find((issue) => issue.requestedType === "PACKAGE_DEFINITION");
     assert.equal(packageIssue?.kind, "ORPHAN");
+    assert.equal(report.ambiguousCount, 0);
+  });
+
+  it("fails a changed domain instance signature closed instead of guessing by display", async () => {
+    const input = await fixture([
+      entry("2", "FURNITURE", "FURNITURE-SYNTHETIC-CHAIR", "Synthetic Chair", { grade: "A", charmValue: 999 }),
+      entry("3", "MINI_PET", "MINI-PET-SYNTHETIC", "Canonical MiniM", { grade: "S", emoji: "M", legacyStatSignature: "battle:999|castle:999|raid:999" })
+    ]);
+    const report = await validateAssetReferences(input.root, input.manifest, input.snapshot);
+    assert.ok(report.orphanCount >= 2);
     assert.equal(report.ambiguousCount, 0);
   });
 
