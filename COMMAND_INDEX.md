@@ -678,7 +678,7 @@ Status: VERIFIED
 - `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지오픈3 [숫자]` opens 1 badge when the count is omitted or accepts a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[3](/홈뱃지오픈3)"]`, runs under the response data write lock, uniformly draws one of 50 `LOVE01`–`LOVE50` relationship-type badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
-- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. It allows 1–1,000 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Rates from 10.1% through 49.9% are configured as separate 1% bands before selecting a uniform 0.1% value inside the chosen band. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room the four actual applied option percentages plus before/after comparisons for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows every configured 1% range rate to six decimal places with blank lines between high-value groups.
+- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. Each consumed cube grants 500,000 points in the same `member.json` save, and point overflow or save failure rolls the point, cube bag, and cube-option state back together. It allows 1–1,000 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Rates from 10.1% through 49.9% are configured as separate 1% bands before selecting a uniform 0.1% value inside the chosen band. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room the four actual applied option percentages plus before/after comparisons for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows every configured 1% range rate to six decimal places with blank lines between high-value groups.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -2184,7 +2184,7 @@ Status: VERIFIED
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
 - `/패키지가방 [아이디]` is Master/Admin-only and reads another user's package bag without mutating or saving data
-- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then displays current support pass status below the package use guide
+- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then separates support-pass status from territory attack, pet-Musou preparation, and attendance automation status. Missing or expired entitlements display `이용 불가 [🔒]`; the view is read-only and does not initialize automation data.
 
 ---
 
@@ -2237,7 +2237,7 @@ Status: VERIFIED
 
 ## AI Notes
 - `/패키지가방` displays saved package notices with an `(알림)` prefix.
-- The support pass status section keeps `현재 호월패스🐹 사용중인 목록:` visible and folds the actual pass status rows from the first row with `allsee`.
+- The support pass and automation sections follow `allsee`, show active expiry dates or `사용 중`, and distinguish ON, OFF, and unavailable/locked states without saving data.
 
 ## Related Commands
 - `/패키지가방`
@@ -2301,7 +2301,7 @@ Status: VERIFIED
 - `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 12초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
 - 시작 유예 마감시각과 토큰을 `member.json`에 저장하며, 봇 재시작 뒤 첫 수신 메시지에서 남은 유예 타이머를 복구하거나 마감된 준비를 완료한다.
 - 정상 공격 결과 제목에는 깃발 발견·점령·전투 승리 여부에 따라 `[성공✅]` 또는 `[실패❌]`를 표시하며, 미공격 탈락은 기존 `[시간 초과⚠️]`를 유지한다.
-- 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올리고, 증가값과 변경 후 확률을 탈락 결과 및 다음 공격자 상태 UI에 반영한다.
+- 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올린다. 탈락자의 포인트를 최대 1억 차감해 0 미만으로 내리지 않고, `/무쌍온` 설정을 OFF 처리한 뒤 증가값·남은 포인트·자동준비 상태를 결과 UI에 반영한다.
 - 정상 공격에서 벼락이 발생하지 않으면 다음 벼락 판정 확률이 `2%p`씩 누적되며, 벼락 발생 후에는 기본 `1%`로 초기화한다.
 - 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 2억이다. 최종 우승 상금은 기존 값을 유지한다.
 - 티켓 이벤트 활성 중 공격권이 정상 차감된 공격에는 10% 70%, 20% 15%, 30% 7%, 40% 5%, 50% 3% 확률로 할인쿠폰 1장을 지급하고 공격 보상 바로 아래에 표시한다.
@@ -2941,6 +2941,34 @@ Status: VERIFIED
 
 - Ranking companion to the main tower progression command
 - Open `trialTowerRanking` first when sorting or display order is incorrect
+
+---
+
+# /길드공지 [내용]
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `getMyGuildInfo`
+- `canTransferGuildMaster`
+
+## Data Usage
+- `guildData.guilds[guildId].notice`
+- `GLOBAL_CONFIG.guild.noticeMaxLength`
+
+## Save Flow
+- 길드마스터가 최대 100자의 공지를 설정하고 `guildData`를 저장한다.
+
+## Related Commands
+- `/길드정보`
+- `/길드게시판`
+
+## AI Notes
+- `/길드공지` 단독 입력은 사용법을 표시하고, 공백 뒤 자유문자열만 공지 내용으로 처리한다.
+- 100자를 초과하면 저장하지 않는다.
 
 ---
 
@@ -3692,6 +3720,7 @@ Status: VERIFIED
 - 티어 전용 펫스킬은 `ticketTierData` 순서로 현재 티어가 요구 티어 이상인지 장착 시 검사하며, 티어책끼리는 한 종만 허용하고 일반 스킬과는 함께 장착할 수 있다.
 - 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
 - `무쌍귀신📙` 장착 성공 시 공통 `equipComment` 출력 흐름으로 `무쌍귀신📙 촹 촹 챙챙 슈슉 슈슉 윽! 악!`을 표시한다.
+- `VIP블랙카드📙` 장착 성공 시 귀속 안내 대신 `“가격표는 보지 않습니다. 직원이 알아서 낮출 테니까요.”` 전용 문구를 표시한다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
 - `/계삭진행`과 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
@@ -6270,7 +6299,7 @@ Status: VERIFIED
 - `/펜던트장착 [번호]`는 장착 펜던트가 없으면 즉시 장착하고, 이미 장착 중이면 `장착할래` / `생각해볼게` 확인 단계를 거친다.
 - `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 번호와 각 펜던트의 뽑기 확률을 함께 표시한다.
 - `/펜던트오픈` 결과는 5번째 항목부터 `allsee` 뒤에 표시한다.
-- `/펜던트오픈` 전체알림은 최상급+ 이상 펜던트마다 1개씩 송출하고, 창세/창조처럼 1% 미만인 획득 확률도 소수점으로 보존해 함께 표시한다.
+- `/펜던트오픈` 전체알림은 신화 이상 펜던트마다 1개씩 송출하고, 창세/창조처럼 1% 미만인 획득 확률도 소수점으로 보존해 함께 표시한다. 최상급+ `심판의 펜던트`는 전체알림에서 제외한다.
 - `/펜던트오픈`은 펜던트가방이 이미 50/50일 때만 막고, 49/50 이하에서는 보유한 펜던트뽑기 수량만큼 오픈할 수 있다.
 - `/펜던트당근거래`는 기존 호환 별칭이며, 안내 문구와 문서 기준 명령어는 `/펜던트당근`이다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
