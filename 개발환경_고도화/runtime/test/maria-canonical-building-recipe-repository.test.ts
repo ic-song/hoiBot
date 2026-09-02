@@ -18,6 +18,8 @@ class CraftDatabase implements DatabaseClient, DatabaseTransaction {
   public balances = new Map<string, { id: string; amount: bigint }>([["point001", { id: "bal00001", amount: 1_000_000_000n }]]);
   public operation: { craft_operation_id: string; craft_recipe_id: string; requested_count: bigint; payload_fingerprint: string; operation_status: string } | undefined;
   public concurrentOperation: CraftDatabase["operation"];
+  public concurrentCommonOperations: Array<{ operationId: bigint; status: string }> = [];
+  public concurrentOutboxMessages: Array<{ operationId: bigint; craftOperationId: string; playerId: string }> = [];
   public injectConcurrentDuplicate = false;
   public importRow: { definition_id: string; payload_fingerprint: string } | undefined;
   public executions: Array<{ sql: string; values: readonly unknown[] }> = [];
@@ -50,7 +52,13 @@ class CraftDatabase implements DatabaseClient, DatabaseTransaction {
     this.executions.push({ sql, values });
     if (sql.startsWith("INSERT INTO canonical_craft_operations")) {
       this.operation = { craft_operation_id: String(values[0]), craft_recipe_id: String(values[2]), requested_count: values[4] as bigint, payload_fingerprint: String(values[5]), operation_status: "processing" };
-      if (this.injectConcurrentDuplicate) { this.injectConcurrentDuplicate = false; this.concurrentOperation = { ...this.operation, craft_operation_id: "winner01", operation_status: "completed" }; throw { code: "ER_DUP_ENTRY", message: "Duplicate entry for key 'uq_canonical_craft_operation_request'" }; }
+      if (this.injectConcurrentDuplicate) {
+        this.injectConcurrentDuplicate = false;
+        this.concurrentOperation = { ...this.operation, craft_operation_id: "winner01", operation_status: "completed" };
+        this.concurrentCommonOperations.push({ operationId: 901n, status: "completed" });
+        this.concurrentOutboxMessages.push({ operationId: 901n, craftOperationId: "winner01", playerId: String(values[1]) });
+        throw { code: "ER_DUP_ENTRY", message: "Duplicate entry for key 'uq_canonical_craft_operation_request'" };
+      }
     }
     if (sql.startsWith("INSERT INTO outbox_messages") && this.failOutbox) throw new Error("OUTBOX_WRITE_FAILED");
     if (sql.startsWith("UPDATE canonical_craft_operations") && this.operation !== undefined) this.operation.operation_status = "completed";
@@ -122,8 +130,22 @@ describe("MariaCanonicalBuildingRecipeRepository", () => {
     const db = new CraftDatabase(); db.injectConcurrentDuplicate = true;
     const result = await new MariaCanonicalBuildingRecipeRepository(db, ids(), 3).execute(craft({ requestKey: "concurrent" }));
     assert.deepEqual(result, { craftOperationId: "winner01", replayed: true });
+    assert.equal(db.concurrentOperation?.craft_operation_id, "winner01");
+    assert.equal(db.concurrentOperation?.craft_recipe_id, "recipe01");
+    assert.equal(db.concurrentOperation?.requested_count, 1n);
+    assert.match(db.concurrentOperation?.payload_fingerprint ?? "", /^[a-f0-9]{64}$/);
+    assert.equal(db.concurrentOperation?.operation_status, "completed");
+    assert.deepEqual(db.concurrentCommonOperations, [{ operationId: 901n, status: "completed" }]);
+    assert.deepEqual(db.concurrentOutboxMessages, [{ operationId: 901n, craftOperationId: "winner01", playerId: "player01" }]);
+    assert.equal(db.concurrentOutboxMessages.length + db.executions.filter((entry) => entry.sql.startsWith("INSERT INTO outbox_messages")).length, 1, "winner and loser aggregate to one outbox row");
+    assert.equal(db.operation, undefined, "the losing canonical operation insert rolled back");
     assert.equal(db.stacks.get("stone001")?.quantity, 2n);
-    assert.equal(db.executions.filter((entry) => entry.sql.startsWith("INSERT INTO outbox_messages")).length, 0, "loser adds no outbox; the winning transaction already owns the single row");
+    assert.equal(db.stacks.has("box00001"), false);
+    assert.equal(db.balances.get("point001")?.amount, 1_000_000_000n);
+    for (const prefix of ["INSERT INTO canonical_owned_item_stacks", "UPDATE canonical_owned_item_stacks", "INSERT INTO canonical_craft_item_ledger_entries", "INSERT INTO canonical_player_currency_balances", "UPDATE canonical_player_currency_balances", "INSERT INTO canonical_craft_currency_ledger_entries", "INSERT INTO operations", "UPDATE operations", "INSERT INTO outbox_messages"]) {
+      assert.equal(db.executions.filter((entry) => entry.sql.startsWith(prefix)).length, 0, `loser must not persist ${prefix}`);
+    }
+    assert.equal(db.executions.length, 0, "the replaying loser leaves no committed mutation");
   });
 
   it("retries ER_LOCK_WAIT_TIMEOUT and rejects an oversized batch before mutation", async () => {
