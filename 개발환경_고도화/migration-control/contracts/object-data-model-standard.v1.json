@@ -1,7 +1,7 @@
 {
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
-  "registeredMigrations": ["443_object_identity_audit_provider.sql"],
+  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql"],
   "tables": [
     {
       "table": "object_identities",
@@ -29,6 +29,62 @@
       "foreignKeys": [{ "column": "object_identity_id", "referencesTable": "object_identities", "referencesColumn": "object_identity_id" }],
       "uniqueKeys": [["source_system", "source_namespace", "source_identifier"]],
       "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_item_players", "role": "identity",
+      "columns": [
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "source_system", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "source_identifier", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["player_id"], "foreignKeys": [], "uniqueKeys": [["source_system", "source_identifier"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_item_definitions", "role": "definition",
+      "columns": [
+        { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "item_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "item_description", "type": "TEXT" },
+        { "name": "item_kind", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_grade", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "price_amount", "type": "DECIMAL(30,3)" }, { "name": "price_currency_name", "type": "VARCHAR(100)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "stackable_flag", "type": "BOOLEAN" }, { "name": "active_flag", "type": "BOOLEAN" }, { "name": "definition_options", "type": "JSON" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["item_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_item_definition_imports", "role": "relation",
+      "columns": [
+        { "name": "item_definition_import_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "source_system", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "source_namespace", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "source_identifier", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["item_definition_import_id"], "foreignKeys": [{ "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" }], "uniqueKeys": [["source_system", "source_namespace", "source_identifier"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_owned_item_stacks", "role": "ownership_quantity",
+      "columns": [
+        { "name": "owned_item_stack_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "quantity", "type": "BIGINT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["owned_item_stack_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_item_players", "referencesColumn": "player_id" }, { "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" }], "uniqueKeys": [["player_id", "item_id"]], "allowedStateColumns": ["quantity"], "definitionOnlyColumns": ["item_name", "item_description", "item_kind", "item_grade", "price_amount", "price_currency_name", "stackable_flag", "active_flag", "definition_options"], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_owned_item_instances", "role": "ownership_instance",
+      "columns": [
+        { "name": "owned_item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "ownership_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "instance_options", "type": "JSON" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["owned_item_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_item_players", "referencesColumn": "player_id" }, { "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" }], "allowedStateColumns": ["ownership_status", "instance_options"], "definitionOnlyColumns": ["item_name", "item_description", "item_kind", "item_grade", "price_amount", "price_currency_name", "stackable_flag", "active_flag", "definition_options"], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_item_inventory_operations", "role": "operation",
+      "columns": [
+        { "name": "item_inventory_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "request_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "operation_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "resulting_quantity", "type": "BIGINT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["item_inventory_operation_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_item_players", "referencesColumn": "player_id" }], "uniqueKeys": [["player_id", "request_key"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_item_inventory_ledger_entries", "role": "history",
+      "columns": [
+        { "name": "item_inventory_ledger_entry_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_inventory_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_item_stack_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "quantity_delta", "type": "BIGINT" }, { "name": "reason_type", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["item_inventory_ledger_entry_id"], "foreignKeys": [{ "column": "item_inventory_operation_id", "referencesTable": "canonical_item_inventory_operations", "referencesColumn": "item_inventory_operation_id" }, { "column": "player_id", "referencesTable": "canonical_item_players", "referencesColumn": "player_id" }, { "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" }, { "column": "owned_item_stack_id", "referencesTable": "canonical_owned_item_stacks", "referencesColumn": "owned_item_stack_id" }, { "column": "owned_item_id", "referencesTable": "canonical_owned_item_instances", "referencesColumn": "owned_item_id" }], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]

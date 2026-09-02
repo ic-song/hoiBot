@@ -6,18 +6,25 @@ import { validateObjectDataModelContract, type ObjectDataModelContract } from ".
 const contract = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-data-model-standard.v1.json", import.meta.url), "utf8")) as ObjectDataModelContract;
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/object-data-model-standard-v1.json", import.meta.url), "utf8")) as ObjectDataModelContract;
 const migration443 = readFileSync(new URL("../migrations/443_object_identity_audit_provider.sql", import.meta.url), "utf8");
+const migration444 = readFileSync(new URL("../migrations/444_canonical_item_inventory.sql", import.meta.url), "utf8");
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
   it("accepts the registered WBS731 identity/audit schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql"]);
-    assert.deepEqual(contract.tables.map((table) => table.table), ["object_identities", "object_identity_crosswalks"]);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql"]);
+    assert.deepEqual(contract.tables.map((table) => table.table), ["object_identities", "object_identity_crosswalks", "canonical_item_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries"]);
   });
 
   it("keeps migration443 DDL aligned with registered PK, FK, audit, and KST checks", () => {
     for (const token of ["object_identities", "object_identity_crosswalks", "object_identity_id CHAR(8)", "object_identity_crosswalk_id CHAR(8)", "FOREIGN KEY (object_identity_id)", "INSERT_USER VARCHAR(100)", "UPDATE_TIME CHAR(19)", "2[0-3]", "[0-5][0-9]"]) assert.match(migration443, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  });
+
+  it("registers the additive canonical item schema without altering legacy item tables", () => {
+    for (const token of ["canonical_item_players", "canonical_item_definitions", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_ledger_entries", "item_id CHAR(8)", "owned_item_id CHAR(8)", "FOREIGN KEY (player_id)", "INSERT_USER VARCHAR(100)", "UPDATE_TIME CHAR(19)"]) assert.match(migration444, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.doesNotMatch(migration444, /ALTER TABLE item_definitions/i);
+    assert.doesNotMatch(migration444, /\bCODE\b/i);
   });
 
   it("accepts the anonymized identity, definition, and ownership fixture", () => {
