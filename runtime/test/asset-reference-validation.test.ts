@@ -5,11 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import {
+  buildPrivateAssetReferenceGapCrosswalk,
   validateAssetReferences,
   type CanonicalAssetEntry,
   type CanonicalAssetSnapshot
 } from "../src/data-migration/asset-reference-validation.js";
 import type { StagingTransformManifest } from "../src/data-migration/staging-transform.js";
+import { classifyPrivateAssetReferenceGaps } from "../src/data-migration/asset-reference-gap-classification.js";
 
 const hash = (value: string | Uint8Array): string => createHash("sha256").update(value).digest("hex");
 
@@ -64,6 +66,33 @@ describe("data migration asset reference validation", () => {
     assert.equal(report.orphanCount, 11);
     assert.equal(serialized.includes("synthetic-user"), false);
     assert.equal(serialized.includes("Synthetic Potion"), false);
+  });
+
+  it("keeps exact gap identities only in the explicit private crosswalk", async () => {
+    const input = await fixture([]);
+    const crosswalk = await buildPrivateAssetReferenceGapCrosswalk(input.root, input.manifest, input.snapshot);
+    const serialized = JSON.stringify(crosswalk);
+    assert.equal(crosswalk.gapIdentityCount, 9);
+    assert.equal(crosswalk.entries.reduce((sum, entry) => sum + entry.occurrenceCount, 0), 11);
+    assert.equal(serialized.includes("Synthetic Potion"), true);
+    assert.equal(serialized.includes("synthetic-user"), false);
+    const potion = crosswalk.entries.find((entry) => entry.displayName === "Synthetic Potion");
+    assert.deepEqual(potion?.sourceKinds, { bag: 1, item: 1 });
+  });
+
+  it("publishes only aggregate corrective lanes without private identities", async () => {
+    const input = await fixture([]);
+    const crosswalk = await buildPrivateAssetReferenceGapCrosswalk(input.root, input.manifest, input.snapshot);
+    const classification = classifyPrivateAssetReferenceGaps(crosswalk);
+    const serialized = JSON.stringify(classification);
+    assert.equal(classification.gapIdentityCount, 9);
+    assert.equal(classification.gapOccurrenceCount, 11);
+    assert.equal(classification.lanes.LEGACY_BAG_ITEM.identityCount, 2);
+    assert.equal(classification.lanes.LEGACY_TITLE_OWNERSHIP.identityCount, 1);
+    assert.equal(classification.lanes.DOMAIN_INSTANCE_IDENTITY.identityCount, 3);
+    assert.equal(classification.lanes.CATALOG_COMPATIBILITY.identityCount, 3);
+    assert.equal(serialized.includes("Synthetic Potion"), false);
+    assert.equal(serialized.includes("Synthetic Hero"), false);
   });
 
   it("fails closed when one display identity has multiple canonical owners", async () => {

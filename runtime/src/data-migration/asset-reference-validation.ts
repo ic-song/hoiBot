@@ -27,6 +27,8 @@ export interface CanonicalAssetSnapshot {
 }
 
 interface AssetReference {
+  sourceKind: string;
+  sourcePathSha256: string;
   requestedTypes: string[];
   exactKey?: string;
   displayName?: string;
@@ -65,6 +67,40 @@ export interface AssetReferenceValidationReport {
   dataMigrationReady: boolean;
 }
 
+export interface PrivateAssetReferenceGapEntry {
+  kind: "ORPHAN" | "AMBIGUOUS" | "INACTIVE";
+  requestedType: string;
+  exactKey?: string;
+  displayName?: string;
+  grade?: string;
+  visual?: string;
+  metric?: string;
+  sourceKinds: Record<string, number>;
+  sourceFileCount: number;
+  occurrenceCount: number;
+  candidateCount: number;
+  candidates: Array<{
+    objectId: string;
+    objectKey: string;
+    objectType: string;
+    displayName: string;
+    active: boolean;
+    sources: CanonicalAssetSource[];
+  }>;
+}
+
+export interface PrivateAssetReferenceGapCrosswalk {
+  format: "hoibot-private-asset-reference-gap-crosswalk-v1";
+  catalogVersion: string;
+  stagingSha256: string;
+  canonicalSha256: string;
+  generatedAt: string;
+  payloadFileCount: number;
+  distinctReferenceCount: number;
+  gapIdentityCount: number;
+  entries: PrivateAssetReferenceGapEntry[];
+}
+
 interface PrivateStagingEnvelope {
   sourcePathSha256: string;
   sourceContentSha256: string;
@@ -99,10 +135,11 @@ function addReference(
   sourcePathSha256: string,
   pointer: string,
   requestedTypes: string[],
-  values: Pick<AssetReference, "exactKey" | "displayName" | "grade" | "visual" | "metric">
+  values: Pick<AssetReference, "sourceKind" | "exactKey" | "displayName" | "grade" | "visual" | "metric">
 ): void {
   if (!values.exactKey && !values.displayName) return;
   output.push({
+    sourcePathSha256,
     requestedTypes,
     ...values,
     locationHash: sha256(`${sourcePathSha256}|${pointer}`)
@@ -147,6 +184,7 @@ function collectAssetReferences(
     if (key === "bag" && child && typeof child === "object" && !Array.isArray(child)) {
       for (const itemName of Object.keys(child as Record<string, unknown>)) {
         addReference(output, sourcePathSha256, `${childPointer}/${sha256(itemName)}`, ["ITEM"], {
+          sourceKind: "bag",
           displayName: itemName
         });
       }
@@ -156,6 +194,7 @@ function collectAssetReferences(
           ? entry as Record<string, unknown>
           : {};
         addReference(output, sourcePathSha256, `${childPointer}/${index}`, ["FURNITURE"], {
+          sourceKind: "furnitureBag",
           exactKey: stringValue(row.code) ?? stringValue(row.objectKey),
           displayName: stringValue(row.name) ?? stringValue(row.display),
           grade: stringValue(row.grade),
@@ -169,6 +208,7 @@ function collectAssetReferences(
           ? entry as Record<string, unknown>
           : {};
         addReference(output, sourcePathSha256, `${childPointer}/${index}`, ["MINI_PET"], {
+          sourceKind: "miniPetBag",
           exactKey: stringValue(row.code) ?? stringValue(row.objectKey),
           displayName: stringValue(row.name),
           grade: stringValue(row.grade),
@@ -181,6 +221,7 @@ function collectAssetReferences(
           ? entry as Record<string, unknown>
           : {};
         addReference(output, sourcePathSha256, `${childPointer}/${index}`, ["ITEM"], {
+          sourceKind: "pendantBag",
           exactKey: stringValue(row.code) ?? stringValue(row.objectKey),
           displayName: stringValue(row.name),
           grade: stringValue(row.grade),
@@ -191,6 +232,7 @@ function collectAssetReferences(
       child.forEach((entry, index) => {
         const exactKey = stringValue(entry);
         addReference(output, sourcePathSha256, `${childPointer}/${index}`, ["BADGE"], {
+          sourceKind: key,
           exactKey,
           displayName: exactKey
         });
@@ -206,6 +248,7 @@ function collectAssetReferences(
           : {};
         const identity = stringValue(row.code) ?? stringValue(row.objectKey) ?? stringValue(row.name);
         addReference(output, sourcePathSha256, `${childPointer}/list/${index}`, ["TITLE", "MEMBER_TITLE", "PET_TITLE"], {
+          sourceKind: key,
           exactKey: identity && STABLE_CODE.test(identity) ? identity : undefined,
           displayName: stringValue(row.name) ?? identity
         });
@@ -219,6 +262,7 @@ function collectAssetReferences(
         : {};
       for (const identity of Object.keys(bag)) {
         addReference(output, sourcePathSha256, `${childPointer}/bag/${sha256(identity)}`, ["SKILL"], {
+          sourceKind: "petSkills.bag",
           exactKey: STABLE_CODE.test(identity) ? identity : undefined,
           displayName: identity
         });
@@ -228,6 +272,7 @@ function collectAssetReferences(
         collection.forEach((entry, index) => {
           const identity = stringValue(entry);
           addReference(output, sourcePathSha256, `${childPointer}/${collectionKey}/${index}`, ["SKILL"], {
+            sourceKind: `petSkills.${collectionKey}`,
             exactKey: identity && STABLE_CODE.test(identity) ? identity : undefined,
             displayName: identity
           });
@@ -236,29 +281,33 @@ function collectAssetReferences(
     } else if (["badgeId", "equippedBadgeId"].includes(key)) {
       const identity = stringValue(child);
       addReference(output, sourcePathSha256, childPointer, ["BADGE"], {
+        sourceKind: key,
         exactKey: identity,
         displayName: identity
       });
     } else if (["item", "itemName"].includes(key)) {
       const identity = stringValue(child);
       addReference(output, sourcePathSha256, childPointer, ["ITEM"], {
+        sourceKind: key,
         exactKey: identity && STABLE_CODE.test(identity) ? identity : undefined,
         displayName: identity
       });
     } else if (key === "packageId" || key === "packageName") {
       const identity = stringValue(child);
       addReference(output, sourcePathSha256, childPointer, ["PACKAGE"], {
+        sourceKind: key,
         exactKey: key === "packageId" ? identity : undefined,
         displayName: key === "packageName" ? identity : undefined
       });
     } else if (key === "passType") {
       const identity = stringValue(child);
       addReference(output, sourcePathSha256, childPointer, ["PASS"], {
+        sourceKind: key,
         exactKey: identity,
         displayName: identity
       });
     } else if (typeof child === "string" && STABLE_CODE.test(child)) {
-      addReference(output, sourcePathSha256, childPointer, stableCodeTypes(child), { exactKey: child });
+      addReference(output, sourcePathSha256, childPointer, stableCodeTypes(child), { sourceKind: "stableCode", exactKey: child });
     }
     if (!["title", "petTitle", "petSkills"].includes(key)) {
       collectAssetReferences(child, sourcePathSha256, childPointer, output, depth + 1);
@@ -346,13 +395,21 @@ function canonicalSnapshotHash(snapshot: CanonicalAssetSnapshot): string {
   return sha256(canonicalJson(entries));
 }
 
-// 격리 payload와 canonical snapshot을 읽기 전용으로 대조하고 비식별 증거만 반환한다.
-export async function validateAssetReferences(
+function referenceIdentity(reference: AssetReference): Record<string, unknown> {
+  return {
+    requestedTypes: reference.requestedTypes,
+    exactKey: reference.exactKey,
+    displayName: reference.displayName,
+    grade: reference.grade,
+    visual: reference.visual,
+    metric: reference.metric
+  };
+}
+
+async function loadAssetReferences(
   stagingRoot: string,
-  stagingManifest: StagingTransformManifest,
-  canonicalSnapshot: CanonicalAssetSnapshot
-): Promise<AssetReferenceValidationReport> {
-  if (canonicalSnapshot.format !== "hoibot-canonical-asset-reference-v1") throw new Error("CANONICAL_SNAPSHOT_FORMAT_INVALID");
+  stagingManifest: StagingTransformManifest
+): Promise<{ references: AssetReference[]; payloadFileCount: number }> {
   const payloadDirectory = join(resolve(stagingRoot), stagingManifest.decisionSha256, "payload");
   const expectedEntries = stagingManifest.entries.filter((entry) => entry.stagingPayloadSha256 !== null);
   const payloadNames = (await readdir(payloadDirectory)).sort();
@@ -370,6 +427,95 @@ export async function validateAssetReferences(
     }
     if (envelope.format === "JSON") collectAssetReferences(envelope.payload, entry.sourcePathSha256, "", references);
   }
+  return { references, payloadFileCount: expectedEntries.length };
+}
+
+// 비공개 임시 경로에서만 사용하는 원문 identity와 canonical 후보 crosswalk를 만든다.
+export async function buildPrivateAssetReferenceGapCrosswalk(
+  stagingRoot: string,
+  stagingManifest: StagingTransformManifest,
+  canonicalSnapshot: CanonicalAssetSnapshot
+): Promise<PrivateAssetReferenceGapCrosswalk> {
+  if (canonicalSnapshot.format !== "hoibot-canonical-asset-reference-v1") throw new Error("CANONICAL_SNAPSHOT_FORMAT_INVALID");
+  const { references, payloadFileCount } = await loadAssetReferences(stagingRoot, stagingManifest);
+  const grouped = new Map<string, {
+    reference: AssetReference;
+    occurrenceCount: number;
+    sourceKinds: Map<string, number>;
+    sourcePaths: Set<string>;
+  }>();
+  for (const reference of references) {
+    const identity = canonicalJson(referenceIdentity(reference));
+    const existing = grouped.get(identity);
+    if (existing) {
+      existing.occurrenceCount += 1;
+      existing.sourceKinds.set(reference.sourceKind, (existing.sourceKinds.get(reference.sourceKind) ?? 0) + 1);
+      existing.sourcePaths.add(reference.sourcePathSha256);
+    } else {
+      grouped.set(identity, {
+        reference,
+        occurrenceCount: 1,
+        sourceKinds: new Map([[reference.sourceKind, 1]]),
+        sourcePaths: new Set([reference.sourcePathSha256])
+      });
+    }
+  }
+
+  const entries: PrivateAssetReferenceGapEntry[] = [];
+  for (const group of grouped.values()) {
+    const candidates = resolveReference(group.reference, canonicalSnapshot.entries);
+    const kind = candidates.length === 0
+      ? "ORPHAN"
+      : candidates.length > 1
+        ? "AMBIGUOUS"
+        : !candidates[0]!.active
+          ? "INACTIVE"
+          : null;
+    if (kind === null) continue;
+    entries.push({
+      kind,
+      requestedType: group.reference.requestedTypes.join("|") || "TYPED_CODE",
+      exactKey: group.reference.exactKey,
+      displayName: group.reference.displayName,
+      grade: group.reference.grade,
+      visual: group.reference.visual,
+      metric: group.reference.metric,
+      sourceKinds: Object.fromEntries([...group.sourceKinds.entries()].sort(([left], [right]) => left.localeCompare(right, "en"))),
+      sourceFileCount: group.sourcePaths.size,
+      occurrenceCount: group.occurrenceCount,
+      candidateCount: candidates.length,
+      candidates: candidates.map((entry) => ({
+        objectId: entry.objectId,
+        objectKey: entry.objectKey,
+        objectType: entry.objectType,
+        displayName: entry.displayName,
+        active: entry.active,
+        sources: entry.sources
+      }))
+    });
+  }
+  entries.sort((left, right) => canonicalJson(left).localeCompare(canonicalJson(right), "en"));
+  return {
+    format: "hoibot-private-asset-reference-gap-crosswalk-v1",
+    catalogVersion: canonicalSnapshot.catalogVersion,
+    stagingSha256: stagingManifest.stagingSha256,
+    canonicalSha256: canonicalSnapshotHash(canonicalSnapshot),
+    generatedAt: new Date().toISOString(),
+    payloadFileCount,
+    distinctReferenceCount: grouped.size,
+    gapIdentityCount: entries.length,
+    entries
+  };
+}
+
+// 격리 payload와 canonical snapshot을 읽기 전용으로 대조하고 비식별 증거만 반환한다.
+export async function validateAssetReferences(
+  stagingRoot: string,
+  stagingManifest: StagingTransformManifest,
+  canonicalSnapshot: CanonicalAssetSnapshot
+): Promise<AssetReferenceValidationReport> {
+  if (canonicalSnapshot.format !== "hoibot-canonical-asset-reference-v1") throw new Error("CANONICAL_SNAPSHOT_FORMAT_INVALID");
+  const { references, payloadFileCount } = await loadAssetReferences(stagingRoot, stagingManifest);
 
   const duplicateKeys = new Map<string, number>();
   const objectKeyOwners = new Map<string, Set<string>>();
@@ -389,14 +535,7 @@ export async function validateAssetReferences(
   for (const reference of references) {
     const requestedType = reference.requestedTypes.join("|") || "TYPED_CODE";
     referenceCountsByType[requestedType] = (referenceCountsByType[requestedType] ?? 0) + 1;
-    const identityHash = sha256(canonicalJson({
-      requestedTypes: reference.requestedTypes,
-      exactKey: reference.exactKey,
-      displayName: reference.displayName,
-      grade: reference.grade,
-      visual: reference.visual,
-      metric: reference.metric
-    }));
+    const identityHash = sha256(canonicalJson(referenceIdentity(reference)));
     const candidates = resolveReference(reference, canonicalSnapshot.entries);
     if (candidates.length === 0) {
       issues.push({ kind: "ORPHAN", requestedType, identityHash, locationHash: reference.locationHash });
@@ -411,14 +550,7 @@ export async function validateAssetReferences(
 
   issues.sort((left, right) => `${left.kind}|${left.identityHash}|${left.locationHash}`.localeCompare(`${right.kind}|${right.identityHash}|${right.locationHash}`, "en"));
   const distinctReferenceCount = new Set(
-    references.map((reference) => sha256(canonicalJson({
-      requestedTypes: reference.requestedTypes,
-      exactKey: reference.exactKey,
-      displayName: reference.displayName,
-      grade: reference.grade,
-      visual: reference.visual,
-      metric: reference.metric
-    })))
+    references.map((reference) => sha256(canonicalJson(referenceIdentity(reference))))
   ).size;
   const base = {
     format: "hoibot-asset-reference-validation-v1" as const,
@@ -427,7 +559,7 @@ export async function validateAssetReferences(
     stagingSha256: stagingManifest.stagingSha256,
     canonicalSha256: canonicalSnapshotHash(canonicalSnapshot),
     generatedAt: new Date().toISOString(),
-    payloadFileCount: expectedEntries.length,
+    payloadFileCount,
     referenceCount: references.length,
     distinctReferenceCount,
     resolvedCount,

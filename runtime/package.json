@@ -17,6 +17,8 @@
     "snapshot:classify": "node --import tsx scripts/classify-raw-snapshot.ts",
     "snapshot:stage": "node --import tsx scripts/build-isolated-staging.ts",
     "snapshot:validate-assets": "node --import tsx scripts/validate-asset-references.ts",
+    "snapshot:crosswalk-assets": "node --import tsx scripts/export-private-asset-reference-gap-crosswalk.ts",
+    "snapshot:classify-asset-gaps": "node --import tsx scripts/classify-private-asset-reference-gaps.ts",
     "fake:event": "node --env-file-if-exists=.env scripts/send-fake-iris-event.mjs"
   },
   "dependencies": {
