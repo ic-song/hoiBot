@@ -155,7 +155,7 @@
       "columns": [
         { "name": "pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "pet_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
-        { "name": "base_charm", "type": "BIGINT" }, { "name": "charm_per_enhancement", "type": "BIGINT" },
+        { "name": "pet_description", "type": "TEXT" }, { "name": "pet_grade", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "base_charm", "type": "BIGINT" }, { "name": "charm_per_enhancement", "type": "BIGINT" }, { "name": "active_flag", "type": "BOOLEAN" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
         { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["pet_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
@@ -167,7 +167,7 @@
         { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "custom_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
-        { "name": "enhancement_level", "type": "BIGINT" }, { "name": "experience_amount", "type": "BIGINT" }, { "name": "ownership_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "enhancement_level", "type": "BIGINT UNSIGNED" }, { "name": "experience_amount", "type": "BIGINT UNSIGNED" }, { "name": "ownership_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["owned_pet_id"],
       "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "pet_id", "referencesTable": "canonical_pet_definitions", "referencesColumn": "pet_id" }],
@@ -178,7 +178,7 @@
       "columns": [
         { "name": "equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "equipment_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
-        { "name": "base_charm", "type": "BIGINT" }, { "name": "charm_per_enhancement", "type": "BIGINT" },
+        { "name": "equipment_description", "type": "TEXT" }, { "name": "equipment_slot", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "equipment_grade", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "base_charm", "type": "BIGINT" }, { "name": "charm_per_enhancement", "type": "BIGINT" }, { "name": "active_flag", "type": "BOOLEAN" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["equipment_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     },
@@ -186,7 +186,7 @@
       "table": "canonical_owned_equipment_instances", "role": "ownership_instance",
       "columns": [
         { "name": "owned_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
-        { "name": "custom_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "enhancement_level", "type": "BIGINT" }, { "name": "durability_amount", "type": "BIGINT" }, { "name": "ownership_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "custom_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "enhancement_level", "type": "BIGINT UNSIGNED" }, { "name": "durability_amount", "type": "BIGINT UNSIGNED" }, { "name": "ownership_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["owned_equipment_id"],
       "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "equipment_id", "referencesTable": "canonical_equipment_definitions", "referencesColumn": "equipment_id" }],
@@ -195,9 +195,16 @@
     {
       "table": "canonical_owned_pet_equipment", "role": "relation",
       "columns": [
-        { "name": "owned_pet_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "equipment_slot", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "owned_pet_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "equipment_slot", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
-      ], "primaryKey": ["owned_pet_equipment_id"], "foreignKeys": [{ "column": "owned_pet_id", "referencesTable": "canonical_owned_pet_instances", "referencesColumn": "owned_pet_id" }, { "column": "owned_equipment_id", "referencesTable": "canonical_owned_equipment_instances", "referencesColumn": "owned_equipment_id" }], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+      ], "primaryKey": ["owned_pet_equipment_id"], "foreignKeys": [{ "column": "owned_pet_id", "referencesTable": "canonical_owned_pet_instances", "referencesColumn": "owned_pet_id" }, { "column": "owned_equipment_id", "referencesTable": "canonical_owned_equipment_instances", "referencesColumn": "owned_equipment_id" }, { "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }], "uniqueKeys": [["owned_pet_equipment_id", "player_id"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_pet_equipment_operation_replays", "role": "operation",
+      "columns": [
+        { "name": "pet_equipment_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "request_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "operation_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["pet_equipment_operation_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "owned_pet_equipment_id", "referencesTable": "canonical_owned_pet_equipment", "referencesColumn": "owned_pet_equipment_id" }], "uniqueKeys": [["player_id", "request_key"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]

@@ -1,0 +1,10 @@
+{
+  "fixtureVersion": "canonical-pet-equipment-v1",
+  "dependency": "444_canonical_item_inventory.sql -> canonical_players(player_id)",
+  "playerId": "player01",
+  "ownedPetId": "ownedp01",
+  "ownedEquipmentId": "ownede01",
+  "ownerMatchRequired": true,
+  "replayKey": "event-1",
+  "expected": { "petCharm": "145", "equipmentCharm": "64", "totalCharm": "209" }
+}

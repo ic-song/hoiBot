@@ -7,6 +7,7 @@ export interface PetDefinitionCatalogRow {
 
 export interface OwnedPetCatalogRow {
   ownedPetId: string;
+  playerId: string;
   petId: string;
   enhancementLevel: bigint;
 }
@@ -20,12 +21,14 @@ export interface EquipmentDefinitionCatalogRow {
 
 export interface OwnedEquipmentCatalogRow {
   ownedEquipmentId: string;
+  playerId: string;
   equipmentId: string;
   enhancementLevel: bigint;
   durability: bigint | null;
 }
 
 export interface OwnedPetEquipmentCatalogRow {
+  playerId: string;
   ownedPetId: string;
   ownedEquipmentId: string;
   slotName: string;
@@ -59,11 +62,13 @@ export function calculatePetEquipmentCharm(
   let equipmentCharm = 0n;
   for (const assignment of assignments) {
     if (assignment.ownedPetId !== pet.ownedPetId) continue;
+    if (assignment.playerId !== pet.playerId) throw new Error("PET_EQUIPMENT_ASSIGNMENT_OWNER_MISMATCH");
     if (assignment.slotName.trim() === "") throw new Error("PET_EQUIPMENT_SLOT_EMPTY");
     if (assignedIds.has(assignment.ownedEquipmentId)) throw new Error("PET_EQUIPMENT_ASSIGNMENT_DUPLICATE");
     assignedIds.add(assignment.ownedEquipmentId);
     const owned = equipment.find((row) => row.ownedEquipmentId === assignment.ownedEquipmentId);
     if (!owned) throw new Error("PET_EQUIPMENT_OWNED_EQUIPMENT_NOT_FOUND");
+    if (owned.playerId !== pet.playerId) throw new Error("PET_EQUIPMENT_EQUIPMENT_OWNER_MISMATCH");
     const definition = equipmentDefinitions.find((row) => row.equipmentId === owned.equipmentId);
     if (!definition) throw new Error("PET_EQUIPMENT_DEFINITION_NOT_FOUND");
     if (!definition.active) throw new Error("PET_EQUIPMENT_DEFINITION_INACTIVE");
