@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.451"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.452"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -86,7 +86,8 @@ const PET_SKILL_COMPAT_GROUPS = [
     ["헌터", "만렙헌터"],
     ["건물주", "하느님 위에 갓물주"],
     ["무쌍신화", "무쌍귀신"],
-    ["쇼핑광", "VIP블랙카드"]
+    ["쇼핑광", "VIP블랙카드"],
+    ["기도", "신성한 기도", "호월신의 총애"]
 ];
 const PET_SKILL_FIXED_ACTUAL_RATES = {
     SS: 0.1,
@@ -109,7 +110,9 @@ const PET_SKILL_LIST = [
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
     { name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
+    { name: "호월신의 총애", grade: "S", rate: 0.3, effect: "하루 한 번 호월신에게 특별한 기도를 올립니다.\n7% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 신성한 기도📙와 중복 장착할 수 없습니다." },
     { name: "장미칼", grade: "A", rate: 0.4, raidExp: 500000, castleExp: 500000, effect: "사악한 마녀의 칼입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "신성한 기도", grade: "A", rate: 0.4, effect: "하루 한 번 호월신에게 신성한 기도를 올립니다.\n5% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
     { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
@@ -158,7 +161,7 @@ const PET_SKILL_LIST = [
     { name: "오픈런", grade: "C", rate: 4.0, effect: "명령어: ㅊㅊ 1등시 펫먹이🍼1,000개를 획득합니다.\n출석목록 기준 1등" },
     { name: "야수의 본능", grade: "C", rate: 4.0, effect: "미니펫대전시 30% 확률로 포인트를 2배 획득합니다.(600만포)" },
     { name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +2 획득" },
-    { name: "기도", grade: "C", rate: 4.5, effect: "하루 한번 호월신에게 기도를 올립니다 3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다." },
+    { name: "기도", grade: "C", rate: 1.5, effect: "하루 한 번 호월신에게 기도를 올립니다.\n3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 신성한 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
     { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
@@ -1546,6 +1549,100 @@ blockedNicknameTerms: [
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
         unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
         verandaFurnitureSlotBonus: 3,
+        prayer: {
+            rewardItemName: "주간상자🌼",
+            dailyFlagKey: "isGidoFlag",
+            skillNames: ["기도", "신성한 기도", "호월신의 총애"],
+            skills: {
+                "기도": {
+                    responseRate: 0.03,
+                    equipExclusiveText: "※ 신성한 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다.",
+                    equipGuideText: "호월신이 응답하면 주간상자🌼 1개를 획득합니다.",
+                    successMessages: [
+                        "호월신이 당신의 간절한 기도에 응답했습니다!",
+                        "호월신이 당신의 정성을 기특하게 여깁니다.",
+                        "당신의 기도가 호월신의 마음을 움직였습니다!",
+                        "호월신이 고개를 끄덕이며 작은 축복을 내려줍니다.",
+                        "호월신이 말합니다. “오늘은 네 기도를 들어주마.”",
+                        "간절한 목소리가 호월신에게 무사히 전달되었습니다!",
+                        "호월신이 당신의 기도를 마음에 들어 합니다.",
+                        "호월신이 잠시 고민한 끝에 응답했습니다!",
+                        "당신의 정성이 하늘에 닿아 작은 기적이 일어납니다.",
+                        "호월신의 온화한 미소와 함께 축복이 내려옵니다!"
+                    ],
+                    failureMessages: [
+                        "호월신이 당신의 기도를 씹습니다.",
+                        "호월신이 당신의 기도를 못마땅해합니다.",
+                        "호월신이 들었지만 못 들은 척합니다.",
+                        "호월신이 당신의 기도를 읽고도 답하지 않습니다.",
+                        "호월신은 현재 다른 기도를 처리 중입니다.",
+                        "호월신이 말합니다. “정성이 조금 부족하구나.”",
+                        "호월신이 깊은 한숨을 내쉬며 고개를 젓습니다.",
+                        "당신의 기도가 호월신에게 닿기 전에 사라졌습니다.",
+                        "호월신은 아무런 대답도 하지 않습니다.",
+                        "호월신이 말합니다. “오늘은 날이 아닌 듯하구나.”"
+                    ]
+                },
+                "신성한 기도": {
+                    responseRate: 0.05,
+                    equipExclusiveText: "※ 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다.",
+                    equipGuideText: "호월신이 응답하면 주간상자🌼 1개를 획득합니다.",
+                    successMessages: [
+                        "호월신이 신성한 기도에 응답하며 찬란한 축복을 내립니다!",
+                        "눈부신 빛과 함께 호월신의 응답이 내려왔습니다!",
+                        "호월신이 당신의 깊은 신앙심을 인정했습니다.",
+                        "신성한 기운이 하늘에 닿아 기적을 불러옵니다!",
+                        "호월신이 말합니다. “제법 신성한 기도였느니라.”",
+                        "하늘이 열리며 호월신의 축복이 쏟아집니다!",
+                        "호월신이 당신을 지켜보고 있었다며 응답합니다.",
+                        "신성한 기도에 감동한 호월신이 선물을 내려줍니다!",
+                        "강렬한 신성력이 호월신의 마음을 움직였습니다.",
+                        "호월신이 당신의 이름을 기억하며 축복을 내립니다!"
+                    ],
+                    failureMessages: [
+                        "신성한 기도였지만 호월신은 가볍게 무시합니다.",
+                        "호월신이 말합니다. “이름만 신성한 기도는 아니겠지?”",
+                        "찬란한 빛이 나타났다가 아무 일도 없이 사라집니다.",
+                        "호월신이 당신의 신앙심을 조금 더 지켜보기로 합니다.",
+                        "신성한 기운은 느껴졌지만 호월신의 마음에는 닿지 않았습니다.",
+                        "호월신이 응답하려다가 갑자기 마음을 바꿉니다.",
+                        "호월신이 당신의 기도를 심사 보류했습니다.",
+                        "호월신이 말합니다. “신성함이 아직 부족하구나.”",
+                        "하늘이 잠시 열렸지만 호월신은 모습을 드러내지 않았습니다.",
+                        "호월신이 당신의 신성한 기도마저 읽고 씹습니다."
+                    ]
+                },
+                "호월신의 총애": {
+                    responseRate: 0.07,
+                    equipExclusiveText: "※ 기도📙 및 신성한 기도📙와 중복 장착할 수 없습니다.",
+                    equipGuideText: "호월신의 총애를 받은 자에게 특별한 응답이 내려옵니다.",
+                    successMessages: [
+                        "호월신이 총애하는 당신의 기도에 기꺼이 응답했습니다!",
+                        "호월신이 기다렸다는 듯 당신에게 축복을 내려줍니다.",
+                        "호월신이 당신의 이름을 부르며 특별한 선물을 내립니다!",
+                        "황금빛 신성력이 당신을 감싸며 호월신의 응답이 내려옵니다.",
+                        "호월신이 말합니다. “내가 아끼는 자의 기도이니 들어주마.”",
+                        "수많은 기도 중 당신의 목소리가 가장 먼저 호월신에게 닿았습니다!",
+                        "호월신이 만족스러운 미소를 지으며 축복을 내려줍니다.",
+                        "총애받는 자의 기도가 하늘을 움직여 특별한 기적이 일어납니다!",
+                        "호월신이 당신을 위해 천상의 보물창고를 열었습니다.",
+                        "호월신의 찬란한 응답이 당신이 총애받는 자임을 증명합니다!"
+                    ],
+                    failureMessages: [
+                        "총애받는 당신의 기도마저 호월신이 가볍게 씹습니다.",
+                        "호월신이 말합니다. “총애와 응답은 별개의 문제이니라.”",
+                        "호월신이 당신의 기도를 들었지만 괜히 한 번 튕겨봅니다.",
+                        "호월신이 응답하려다가 다음 기회를 기약합니다.",
+                        "총애는 여전하지만 오늘은 아무것도 주고 싶지 않은 모양입니다.",
+                        "호월신이 익숙한 당신의 목소리를 듣고도 모른 척합니다.",
+                        "황금빛 하늘이 열렸다가 아무 일도 없이 다시 닫힙니다.",
+                        "호월신이 말합니다. “나를 너무 자주 찾는 것 아니냐?”",
+                        "아무런 응답도 없지만 호월신의 총애는 아직 유효합니다.",
+                        "오늘은 호월신의 기분이 좋지 않아 총애도 통하지 않았습니다."
+                    ]
+                }
+            }
+        },
         shopDiscounts: {
             shoppingFanRate: 0.2,
             vipBlackCardRate: 0.3
@@ -4364,7 +4461,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var compat = isPetSkillCompatible(petSkillData, sender, equipName);
                     if (!compat.ok) {
-                        replier.reply("❌ " + compat.reason);
+                        if (isPrayerSkillName(equipName) && isPrayerSkillName(compat.conflictingSkill)) {
+                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 ❌ 기도 계열 펫스킬은 동시에 장착할 수 없습니다.\n기존에 장착된 " + formatPetSkillName(compat.conflictingSkill) + "을 먼저 제거해 주세요.");
+                        } else {
+                            replier.reply("❌ " + compat.reason);
+                        }
                         return;
                     }
                     var verandaEquipBeforeSlots = 0;
@@ -4377,6 +4478,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     skillStore.equipped.push(equipName);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
+                    if (isPrayerSkillName(equipName)) {
+                        equipMsg = buildPrayerSkillEquipMessage(data, petData, guildData, sender, equipName);
+                    }
                     if (normalizePetSkillName(equipName) === "VIP블랙카드") {
                         equipMsg = "✅ VIP블랙카드📙 장착 완료!\n“가격표는 보지 않습니다. 직원이 알아서 낮출 테니까요.”";
                     }
@@ -15973,25 +16077,44 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (!data.member || !data.member[sender]) return;
 
                     var nickName = checkRank(data, petData, guildData, sender);
-                    if (!hasPetSkill(petSkillData, sender, "기도")) {
-                        replier.reply("❌ [" + nickName + "]님 당신은 기도📙 드릴 자격이 없습니다.\n기도📙 스킬을 장착해주세요");
+                    var prayerSkillName = getEquippedPrayerSkillName(petSkillData, sender);
+                    if (!prayerSkillName) {
+                        replier.reply("[" + nickName + "] 님 ❌ 장착된 기도 계열 펫스킬이 없습니다.\n기도📙, 신성한 기도📙 또는 호월신의 총애📙를 장착한 후\n[/기도]를 입력해 주세요.");
                         return;
                     }
 
-                    if (data.member[sender].isGidoFlag) {
-                        replier.reply("[" + nickName + "]님\n오늘은 이미 기도를 올렸습니다.");
+                    var prayerConfig = GLOBAL_CONFIG.petSkill.prayer;
+                    var prayerDailyFlagKey = prayerConfig.dailyFlagKey;
+                    if (data.member[sender][prayerDailyFlagKey]) {
+                        replier.reply("[" + nickName + "] 님\n⚠️ 오늘은 이미 호월신에게 기도를 올렸습니다.\n내일 다시 [/기도]를 입력해 주세요.");
                         return;
                     }
 
-                    data.member[sender].isGidoFlag = true;
-                    var gidoSuccess = Math.random() < 0.03;
+                    var prayerSkillConfig = getPrayerSkillConfig(prayerSkillName);
+                    var prayerRewardItemName = prayerConfig.rewardItemName;
+                    var previousPrayerFlag = data.member[sender][prayerDailyFlagKey]; // 저장 실패 시 복구할 기존 일일 사용 기록
+                    var previousPrayerRewardCount = data.member[sender].bag && data.member[sender].bag[prayerRewardItemName]; // 저장 실패 시 복구할 기존 보상 수량
+                    var gidoSuccess = Math.random() < prayerSkillConfig.responseRate;
+                    data.member[sender][prayerDailyFlagKey] = true;
                     if (gidoSuccess) {
-                        addItem(data, sender, "주간상자🌼", 1);
-                        replier.reply("[" + nickName + "]님.. 호월신이 당신에게 흥미를 느낍니다.\n주간상자🌼 1개를 지급받습니다.");
-                    } else {
-                        replier.reply("[" + nickName + "]님.. 호월신이 당신의 기도를 씹습니다.");
+                        addItem(data, sender, prayerRewardItemName, 1);
                     }
-                    saveJsonFile(data, filePath);
+
+                    try {
+                        saveJsonFile(data, filePath);
+                    } catch (prayerSaveError) {
+                        if (previousPrayerFlag === undefined) delete data.member[sender][prayerDailyFlagKey];
+                        else data.member[sender][prayerDailyFlagKey] = previousPrayerFlag;
+                        if (gidoSuccess) {
+                            if (previousPrayerRewardCount === undefined) delete data.member[sender].bag[prayerRewardItemName];
+                            else data.member[sender].bag[prayerRewardItemName] = previousPrayerRewardCount;
+                        }
+                        debuggerLog("[ERROR : prayer reward] " + sender + " " + prayerSaveError.toString());
+                        replier.reply("[" + nickName + "] 님\n⚠️ 기도 보상 처리 중 오류가 발생했습니다.\n잠시 후 관리자에게 문의해 주세요.");
+                        return;
+                    }
+
+                    replier.reply(buildPrayerResultMessage(data, petData, guildData, sender, prayerSkillName, gidoSuccess));
                     return;
                 }
 
@@ -29096,7 +29219,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
-        /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" ||
+        /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/미니펫컬렉션\s+\d+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
@@ -32810,8 +32933,8 @@ function resetAttendance(petData, data, replier) {
         if (data.member[user].premiumDailyQuestCnt !== undefined) {
             delete data.member[user].premiumDailyQuestCnt;
         }
-        if (data.member[user].isGidoFlag !== undefined) {
-            delete data.member[user].isGidoFlag;
+        if (data.member[user][GLOBAL_CONFIG.petSkill.prayer.dailyFlagKey] !== undefined) {
+            delete data.member[user][GLOBAL_CONFIG.petSkill.prayer.dailyFlagKey];
         }
         if (data.member[user].openRunRewardClaimed !== undefined) {
             delete data.member[user].openRunRewardClaimed;
@@ -41527,8 +41650,68 @@ function getPetSkillData(skillName) {
     return null;
 }
 
+// 기도 계열 펫스킬의 설정을 이름으로 조회하는 함수
+function getPrayerSkillConfig(skillName) {
+    skillName = normalizePetSkillName(skillName);
+    var prayerConfig = GLOBAL_CONFIG.petSkill.prayer;
+    return prayerConfig.skills[skillName] || null;
+}
+
+// 펫스킬 이름이 기도 계열인지 확인하는 함수
+function isPrayerSkillName(skillName) {
+    return !!getPrayerSkillConfig(skillName);
+}
+
+// 사용자가 장착 중인 기도 계열 펫스킬 이름을 반환하는 함수
+function getEquippedPrayerSkillName(petSkillData, user) {
+    var equipped = getEquippedPetSkillNames(petSkillData, user);
+    var prayerSkillNames = GLOBAL_CONFIG.petSkill.prayer.skillNames;
+    for (var i = 0; i < prayerSkillNames.length; i++) {
+        if (equipped.indexOf(prayerSkillNames[i]) !== -1) return prayerSkillNames[i];
+    }
+    return null;
+}
+
+// 기도 계열 펫스킬의 성공·실패 결과 멘트 중 하나를 반환하는 함수
+function getPrayerResultMessage(skillName, success) {
+    var skillConfig = getPrayerSkillConfig(skillName);
+    if (!skillConfig) return "";
+    var messages = success ? skillConfig.successMessages : skillConfig.failureMessages;
+    return messages[Math.floor(Math.random() * messages.length)];
+}
+
+// 기도 계열 펫스킬 정보 메시지를 생성하는 함수
+function buildPrayerSkillInfoMessage(skillInfo) {
+    var skillConfig = getPrayerSkillConfig(skillInfo.name);
+    return formatPetSkillName(skillInfo.name) +
+        "\n등급: " + skillInfo.grade +
+        "\n드랍 확률: " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%" +
+        "\n호월신 응답 확률: " + formatPetSkillRate(skillConfig.responseRate * 100) + "%" +
+        "\n사용 횟수: 하루 1회" +
+        "\n보상: 주간상자🌼 x1" +
+        "\n중복 제한: 다른 기도 계열 펫스킬과 동시 장착 불가";
+}
+
+// 기도 계열 펫스킬 장착 완료 메시지를 생성하는 함수
+function buildPrayerSkillEquipMessage(data, petData, guildData, user, skillName) {
+    var skillConfig = getPrayerSkillConfig(skillName);
+    return "[" + checkRank(data, petData, guildData, user) + "] 님 ✅ " + formatPetSkillName(skillName) + " 장착 완료!\n" +
+        "장착된 스킬은 귀속됩니다.\n" +
+        skillConfig.equipExclusiveText +
+        "\n\n🙏 하루 한 번 [/기도]를 입력해 보세요.\n" +
+        skillConfig.equipGuideText;
+}
+
+// 기도 성공·실패 결과 메시지를 생성하는 함수
+function buildPrayerResultMessage(data, petData, guildData, user, skillName, success) {
+    var message = formatPetSkillName(skillName) + "\n[" + checkRank(data, petData, guildData, user) + "]님.. " + getPrayerResultMessage(skillName, success);
+    if (success) message += "\n🌼 주간상자 x1 획득";
+    return message;
+}
+
 // 펫스킬 등급·확률·효과 조회 메시지를 생성
 function buildPetSkillInfoMessage(skillInfo) {
+    if (isPrayerSkillName(skillInfo.name)) return buildPrayerSkillInfoMessage(skillInfo);
     var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
     var skillRateLine = skillInfo.openable === false ? (skillInfo.showUnopenableRate === true ? "\n확률: /펫스킬오픈 획득 불가" : "") : "\n확률: " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%";
     var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
@@ -42018,7 +42201,7 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
         if (group.indexOf(skillName) === -1) continue;
         for (var j = 0; j < group.length; j++) {
             if (group[j] !== skillName && equipped.indexOf(group[j]) !== -1) {
-                return { ok: false, reason: formatPetSkillName(group[j]) + "와(과) 함께 장착할 수 없습니다." };
+                return { ok: false, reason: formatPetSkillName(group[j]) + "와(과) 함께 장착할 수 없습니다.", conflictingSkill: group[j] };
             }
         }
     }
