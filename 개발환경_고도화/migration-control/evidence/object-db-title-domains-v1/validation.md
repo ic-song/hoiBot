@@ -6,7 +6,7 @@
 - 대상: 일반 타이틀, 펫타이틀, 미니펫타이틀
 - 기준: `docs/database/OBJECT_DATA_MODEL_STANDARD.md`
 - migration: `448_canonical_title_domains.sql`
-- 공용 dependency: `443_object_identity_audit_provider.sql`, `444_canonical_item_inventory.sql`의 `canonical_players(player_id)`
+- 공용 dependency: `443_object_identity_audit_provider.sql`, 현재 branch에 없는 `444_canonical_item_inventory.sql`의 `canonical_players(player_id)`는 `integrationOnlyTables`로 정확히 고정
 - 제외: 운영 JSON 수정, 운영 DB 적용, Rhino consumer 전환, 실사용자 Shadow
 
 ## Gate 1 현행 조사
@@ -77,5 +77,5 @@ save flow:
 - Gate 3: 완료 — 비식별 합성 fixture
 - Gate 4: 완료 — additive migration, manifest, repository, unit/contract tests
 - Gate 5: 미완료 — Wave2 integration DB에 448 적용, 이관/소비자 dispatch 미연결
-- Gate 6: 미완료 — 운영 snapshot 합계·선택·판매 transaction parity 미검증
+- Gate 6: 미완료 — 운영 snapshot 합계·선택·판매 transaction parity 미검증. 현재 `select` 연산은 목표 상태 UPSERT로 반복 호출 결과는 멱등이지만 별도 request key/replay 원장이 없다. 동일 이벤트 재실행·서로 다른 선택의 동시 순서를 Gate 6에서 검증하고, 필요하면 요청 원장을 추가한다.
 - Gate 7: 미완료 — Shadow 미수행
