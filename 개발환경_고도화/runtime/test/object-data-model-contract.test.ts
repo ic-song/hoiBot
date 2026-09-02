@@ -44,7 +44,7 @@ describe("object data model standard contract", () => {
   });
 
   it("keeps cancelled and sold market history while allowing one active listing", () => {
-    for (const token of ["CREATE INDEX IF NOT EXISTS idx_object_furniture_market_owned", "DROP INDEX IF EXISTS uq_object_furniture_market_listing_owned", "object_furniture_active_market_listings", "PRIMARY KEY (furniture_market_listing_id)", "uq_object_furniture_active_market_owned", "FOREIGN KEY (furniture_market_listing_id)", "FOREIGN KEY (owned_furniture_id)"]) assert.match(migration450, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    for (const token of ["CREATE INDEX IF NOT EXISTS idx_object_furniture_market_owned", "uq_object_furniture_market_listing_owner", "FOREIGN KEY (furniture_market_listing_id, owned_furniture_id)", "INSERT INTO object_furniture_active_market_listings", "listing.listing_status = 'active'", "NOT EXISTS", "DROP INDEX IF EXISTS uq_object_furniture_market_listing_owned", "PRIMARY KEY (furniture_market_listing_id)", "uq_object_furniture_active_market_owned", "FOREIGN KEY (owned_furniture_id)"]) assert.match(migration450, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     const activeMarket = contract.tables.find((entry) => entry.table === "object_furniture_active_market_listings");
     assert.deepEqual(activeMarket?.uniqueKeys, [["owned_furniture_id"]]);
   });
