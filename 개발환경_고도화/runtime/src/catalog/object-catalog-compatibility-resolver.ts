@@ -11,7 +11,7 @@ export const LEGACY_OBJECT_REGISTRY_SOURCE = {
 export type ObjectCatalogCompatibilityStatus = "RESOLVED" | "UNMAPPED" | "TYPE_MISMATCH" | "AMBIGUOUS";
 
 // migration 384~443과 현재 catalog consumer가 실제로 기록·조회하는 binding locator만 동결합니다.
-const LEGACY_SOURCE_TABLES = {
+export const LEGACY_SOURCE_TABLES = {
   LEGACY_JS: ["member.bag"],
   LEGACY_JSON: [
     "PET_SKILL_LIST",
@@ -23,6 +23,12 @@ const LEGACY_SOURCE_TABLES = {
     "petSweetHomeInfo.furnitureDraw.v2_438",
     "petSweetHomeInfo.homeInfo.required.v2_438",
     "petSweetHomeInfo.homeInfo.v2_438",
+    "castleBattle2.rank.rewards.items",
+    "data/itemList.json",
+    "data/miniPetCollectionInfo.json",
+    "itemList.nonItems",
+    "itemList.untradableList",
+    "trialTowerBoss.reward",
     "trialTowerBoss.reward.v2_438",
     "data/packageInfo.json"
   ],
@@ -30,7 +36,9 @@ const LEGACY_SOURCE_TABLES = {
     "item_definitions",
     "currency_definitions",
     "home_badge_definitions",
-    "asset_package_reward_target_occurrences"
+    "asset_package_reward_target_occurrences",
+    "guild_rank_title_definitions",
+    "title_definitions"
   ],
   "legacy-json": [
     "data/itemInfo.json#ring",
@@ -63,6 +71,8 @@ type ResolverInput = { expectedObjectType?: ObjectType };
 const MAX_LEGACY_OBJECT_ID = 18446744073709551615n;
 const MAX_LEGACY_LOCATOR_LENGTH = 191;
 const LEGACY_TOKEN_PATTERN = /^[A-Za-z0-9_.#-]+$/;
+const OBJECT_CATALOG_OBJECT_TYPES: readonly ObjectType[] = ["ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING", "MINI_PET"];
+const OBJECT_CATALOG_ALIAS_TYPES: readonly ObjectAliasType[] = ["display_name", "legacy_name", "legacy_code", "command_name"];
 
 function unresolved(status: Exclude<ObjectCatalogCompatibilityStatus, "RESOLVED">, reason: string): ObjectCatalogCompatibilityResult {
   return { status, canonicalObjectIdentityId: null, legacyObjectId: null, legacyObjectKey: null, objectType: null, quarantineReason: reason };
@@ -83,9 +93,17 @@ function isLegacyToken(value: string, maxLength: number): boolean {
 }
 
 function isLegacySourceLocator(binding: ObjectSourceBindingInput | LegacySourceLocator): binding is LegacySourceLocator {
-  if (!(binding.system in LEGACY_SOURCE_TABLES) || binding.key.length === 0 || binding.key.length > MAX_LEGACY_LOCATOR_LENGTH) return false;
+  if (!Object.hasOwn(LEGACY_SOURCE_TABLES, binding.system) || binding.key.length === 0 || binding.key.length > MAX_LEGACY_LOCATOR_LENGTH) return false;
   const tables = LEGACY_SOURCE_TABLES[binding.system as LegacySourceSystem] as readonly string[];
   return tables.includes(binding.table);
+}
+
+function isSupportedObjectType(value: unknown): value is ObjectType {
+  return typeof value === "string" && (OBJECT_CATALOG_OBJECT_TYPES as readonly string[]).includes(value);
+}
+
+function isSupportedObjectAliasType(value: unknown): value is ObjectAliasType {
+  return typeof value === "string" && (OBJECT_CATALOG_ALIAS_TYPES as readonly string[]).includes(value);
 }
 
 function resolved(row: LegacyObjectRow, expectedObjectType: ObjectType | undefined): ObjectCatalogCompatibilityResult {
@@ -121,7 +139,8 @@ export class ObjectCatalogCompatibilityResolver {
   }
 
   async resolveAlias(objectType: ObjectType, aliasType: ObjectAliasType, aliasValue: string, input: ResolverInput = {}): Promise<ObjectCatalogCompatibilityResult> {
-    if (!isLegacyToken(String(aliasType), 32) || aliasValue.length === 0 || aliasValue.length > MAX_LEGACY_LOCATOR_LENGTH) {
+    if (!isSupportedObjectType(objectType) || !isSupportedObjectAliasType(aliasType)
+      || !isLegacyToken(aliasType, 32) || aliasValue.length === 0 || aliasValue.length > MAX_LEGACY_LOCATOR_LENGTH) {
       return unresolved("UNMAPPED", "LEGACY_OBJECT_ALIAS_INVALID");
     }
     return this.resolveRows(await this.database.query<LegacyObjectRow[]>(

@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import type { DatabaseClient } from "../src/database.js";
-import { LEGACY_OBJECT_REGISTRY_SOURCE, ObjectCatalogCompatibilityResolver } from "../src/catalog/object-catalog-compatibility-resolver.js";
+import { LEGACY_OBJECT_REGISTRY_SOURCE, LEGACY_SOURCE_TABLES, ObjectCatalogCompatibilityResolver } from "../src/catalog/object-catalog-compatibility-resolver.js";
 
 function database(rows: unknown[]): { database: Pick<DatabaseClient, "query">; sql: string[]; values: unknown[][] } {
   const sql: string[] = [];
@@ -15,7 +17,31 @@ function database(rows: unknown[]): { database: Pick<DatabaseClient, "query">; s
 
 const mapped = { legacy_object_id: 71n, legacy_object_key: "item.diamond_box", object_type: "ITEM" as const, object_identity_id: "a1234567" };
 
+function seededMigrationLocatorPairs(): string[] {
+  const migrationDirectory = fileURLToPath(new URL("../migrations/", import.meta.url));
+  const pairs = new Set<string>();
+  for (const file of readdirSync(migrationDirectory)) {
+    const migrationNumber = Number(file.slice(0, 3));
+    if (!Number.isInteger(migrationNumber) || migrationNumber < 384 || migrationNumber > 443 || !file.endsWith(".sql")) continue;
+    const sql = readFileSync(new URL(`../migrations/${file}`, import.meta.url), "utf8");
+    for (const match of sql.matchAll(/'(LEGACY_JS|LEGACY_JSON|RUNTIME_DB|legacy-json)'\s*,\s*'([^']+)'/g)) {
+      pairs.add(`${match[1]}|${match[2]}`);
+    }
+  }
+  return [...pairs].sort();
+}
+
+function allowedLocatorPairs(): string[] {
+  return Object.entries(LEGACY_SOURCE_TABLES)
+    .flatMap(([system, tables]) => tables.map((table) => `${system}|${table}`))
+    .sort();
+}
+
 describe("object catalog compatibility resolver", () => {
+  it("freezes the exact 384~443 migration source-system/table locator set", () => {
+    assert.deepEqual(allowedLocatorPairs(), seededMigrationLocatorPairs());
+  });
+
   it("uses the WBS731 crosswalk with a legacy registry id as a read-only source locator", async () => {
     const scripted = database([[mapped]]);
     const result = await new ObjectCatalogCompatibilityResolver(scripted.database).resolveLegacyObjectId("71", { expectedObjectType: "ITEM" });
@@ -74,8 +100,12 @@ describe("object catalog compatibility resolver", () => {
     const scripted = database([]);
     const resolver = new ObjectCatalogCompatibilityResolver(scripted.database);
     assert.equal((await resolver.resolveAlias("ITEM", "legacy_name", "x".repeat(192))).quarantineReason, "LEGACY_OBJECT_ALIAS_INVALID");
+    assert.equal((await resolver.resolveAlias("toString" as never, "legacy_name", "상자")).quarantineReason, "LEGACY_OBJECT_ALIAS_INVALID");
+    assert.equal((await resolver.resolveAlias("ITEM", "toString" as never, "상자")).quarantineReason, "LEGACY_OBJECT_ALIAS_INVALID");
     assert.equal((await resolver.resolveSource({ system: "LEGACY_JSON", table: "invalid table", key: "상자" })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
     assert.equal((await resolver.resolveSource({ system: "LEGACY_DB", table: "object_registry", key: "71" })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
+    assert.equal((await resolver.resolveSource({ system: "toString" as never, table: "member.bag", key: "상자" })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
+    assert.equal((await resolver.resolveSource({ system: "constructor" as never, table: "member.bag", key: "상자" })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
     assert.equal((await resolver.resolveSource({ system: "LEGACY_JSON", table: "itemInfo", key: "x".repeat(192) })).quarantineReason, "LEGACY_OBJECT_SOURCE_INVALID");
     assert.equal(scripted.sql.length, 0);
   });
