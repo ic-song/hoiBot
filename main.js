@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.445"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.446"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -77,7 +77,7 @@ var guildLevelTable = {
 };
 
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
-const PET_SKILL_SYSTEM_VERSION = 1;
+const PET_SKILL_SYSTEM_VERSION = 2;
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
@@ -98,7 +98,7 @@ const PET_SKILL_LIST = [
 
     { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
-    { name: "전설의소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 50% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "전설의 소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 50% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "VIP블랙카드", grade: "SS", targetActualRate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, fixedRate: true, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
@@ -4342,10 +4342,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             "가구 장착 가능 수: " + verandaEquipBeforeSlots + "개 → " + verandaEquipAfterSlots + "개(⬆️+" + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus + ")\n" +
                             "━━━━━━━━━━━━━\n" +
                             "베란다 확장📙 햇살도 공간도 넉넉해졌습니다.🏡";
-                    } else if (normalizePetSkillName(equipName) === "전설의소매치기") {
+                    } else if (normalizePetSkillName(equipName) === "전설의 소매치기") {
                         equipMsg = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 펫스킬북 장착📙\n" +
                             "━━━━━━━━━━━━━\n" +
-                            "🥷 전설의소매치기📙 장착 완료!\n" +
+                            "🥷 전설의 소매치기📙 장착 완료!\n" +
                             "발소리는 숨기고 포인트만 챙깁니다.\n" +
                             "성공확률🎲: " + Math.round(GLOBAL_CONFIG.petSkill.pickpocket.successRate * 100) + "%\n" +
                             "슈킹 포인트💸: 🅟" + numberWithCommas(GLOBAL_CONFIG.petSkill.pickpocket.stealPoint) + "\n" +
@@ -4419,9 +4419,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (/^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(msg)) {
                     var pickpocketTarget = msg.replace(/^\/슈킹\s+/, "");
-                    var pickpocketTitle = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 전설의소매치기📙";
-                    if (!hasPetSkill(petSkillData, sender, "전설의소매치기")) {
-                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n전설의소매치기📙를 장착해야 /슈킹을 사용할 수 있습니다.\n※ 일일 시도 횟수는 차감되지 않았습니다.");
+                    var pickpocketTitle = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 전설의 소매치기📙";
+                    if (!hasPetSkill(petSkillData, sender, "전설의 소매치기")) {
+                        replier.reply(pickpocketTitle + "\n━━━━━━━━━━━━━\n전설의 소매치기📙를 장착해야 /슈킹을 사용할 수 있습니다.\n※ 일일 시도 횟수는 차감되지 않았습니다.");
                         return;
                     }
                     if (!Object.prototype.hasOwnProperty.call(data.member, pickpocketTarget) || !data.member[pickpocketTarget]) {
@@ -41280,6 +41280,7 @@ function normalizePetSkillName(skillName) {
     else if (skillName === "타고난장사꾼") return "타고난 장사꾼";
     else if (skillName === "티어상승론") return "티어 상승론";
     else if (skillName === "망한건맞아") return "망한건 맞아";
+    else if (skillName === "전설의소매치기" || skillName === "전설의소매채기" || skillName === "전설의 소매채기") return "전설의 소매치기";
     else if (skillName === "광산 탐험가") return "광산탐험가";
     else if (skillName === "던전 탐험가") return "던전탐험가";
     return skillName;
@@ -41309,6 +41310,45 @@ function initPetSkillUser(petSkillData, user) {
     return petSkillData[user].petSkills;
 }
 
+// 저장된 펫스킬 이름을 현재 표준 이름으로 변환하고 가방 수량을 합치는 함수
+function normalizePetSkillStoredNames(petSkillData, user) {
+    var skills = initPetSkillUser(petSkillData, user);
+    var before = JSON.stringify(petSkillData[user] || {});
+    var normalizedEquipped = [];
+    var normalizedLockedPremium = [];
+    var normalizedBag = {};
+    for (var i = 0; i < skills.equipped.length; i++) {
+        var equippedName = normalizePetSkillName(skills.equipped[i]);
+        if (equippedName && normalizedEquipped.indexOf(equippedName) === -1) normalizedEquipped.push(equippedName);
+    }
+    for (var j = 0; j < skills.lockedPremium.length; j++) {
+        var lockedPremiumName = normalizePetSkillName(skills.lockedPremium[j]);
+        if (lockedPremiumName && normalizedLockedPremium.indexOf(lockedPremiumName) === -1) normalizedLockedPremium.push(lockedPremiumName);
+    }
+    for (var rawName in skills.bag) {
+        if (!skills.bag.hasOwnProperty(rawName)) continue;
+        var normalizedName = normalizePetSkillName(rawName);
+        var storedCount = parseInt(skills.bag[rawName], 10) || 0;
+        if (!normalizedName || storedCount <= 0) continue;
+        normalizedBag[normalizedName] = (normalizedBag[normalizedName] || 0) + storedCount;
+    }
+    skills.equipped = normalizedEquipped;
+    skills.lockedPremium = normalizedLockedPremium;
+    skills.bag = normalizedBag;
+    if (petSkillData[user].petSkillCollection && typeof petSkillData[user].petSkillCollection === "object") {
+        var normalizedCollection = {};
+        for (var collectionName in petSkillData[user].petSkillCollection) {
+            if (!petSkillData[user].petSkillCollection.hasOwnProperty(collectionName)) continue;
+            var normalizedCollectionName = normalizePetSkillName(collectionName);
+            var registeredCount = parseInt(petSkillData[user].petSkillCollection[collectionName], 10) || 0;
+            if (!normalizedCollectionName || registeredCount <= 0) continue;
+            normalizedCollection[normalizedCollectionName] = (normalizedCollection[normalizedCollectionName] || 0) + registeredCount;
+        }
+        petSkillData[user].petSkillCollection = normalizedCollection;
+    }
+    return JSON.stringify(petSkillData[user] || {}) !== before;
+}
+
 // 펫 스킬 시스템 데이터 초기화 및 버전 관리
 function ensurePetSkillSystemData(data, petData, petSkillData) {
     if (!data || !data.member || !petData || !petSkillData) return false;
@@ -41326,7 +41366,7 @@ function ensurePetSkillSystemData(data, petData, petSkillData) {
     if (data.petSkillSystem.version !== PET_SKILL_SYSTEM_VERSION) {
         for (var j = 0; j < users.length; j++) {
             var name = users[j];
-            initPetSkillUser(petSkillData, name);
+            if (normalizePetSkillStoredNames(petSkillData, name)) changed = true;
         }
         data.petSkillSystem.version = PET_SKILL_SYSTEM_VERSION;
         data.petSkillSystem.updatedAt = formatDateTime(new Date());
@@ -41406,7 +41446,7 @@ function hasPetSkill(petSkillData, user, skillName) {
     return equipped.indexOf(skillName) !== -1;
 }
 
-// 전설의소매치기 일일 시도 횟수와 대상 기록을 초기화하고 반환하는 함수
+// 전설의 소매치기 일일 시도 횟수와 대상 기록을 초기화하고 반환하는 함수
 function getLegendaryPickpocketDailyData(data, user) {
     if (!data.member[user].legendaryPickpocket || typeof data.member[user].legendaryPickpocket !== "object") {
         data.member[user].legendaryPickpocket = { count: 0, targets: {} };
@@ -41417,7 +41457,7 @@ function getLegendaryPickpocketDailyData(data, user) {
     return dailyData;
 }
 
-// 전설의소매치기 연출 문구에 시도자와 대상 아이디를 반영하는 함수
+// 전설의 소매치기 연출 문구에 시도자와 대상 아이디를 반영하는 함수
 function formatLegendaryPickpocketMessage(message, actor, target) {
     return String(message || "").replace(/\{actor\}/g, actor).replace(/\{target\}/g, target);
 }
