@@ -1,7 +1,7 @@
 {
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
-  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "450_object_furniture_market_active_listing.sql"],
+  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql"],
   "tables": [
     {
       "table": "object_identities",
@@ -301,6 +301,45 @@
       "table": "canonical_mini_pet_title_selections", "role": "relation",
       "columns": [{ "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_mini_pet_title_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }],
       "primaryKey": ["player_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "owned_mini_pet_title_id", "referencesTable": "canonical_owned_mini_pet_title_instances", "referencesColumn": "owned_mini_pet_title_id" }], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_pet_skill_definitions", "role": "definition",
+      "columns": [
+        { "name": "pet_skill_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "pet_skill_name", "type": "VARCHAR(255)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "pet_skill_description", "type": "TEXT" }, { "name": "pet_skill_grade", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "handler_key", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "options_json", "type": "JSON" }, { "name": "active_flag", "type": "BOOLEAN" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["pet_skill_id"], "foreignKeys": [], "definitionOnlyColumns": ["pet_skill_name", "pet_skill_description", "pet_skill_grade", "handler_key", "options_json", "active_flag"], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_pet_skill_definition_imports", "role": "relation",
+      "columns": [
+        { "name": "pet_skill_definition_import_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "pet_skill_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "source_system", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "source_namespace", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "source_identifier", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "payload_fingerprint", "type": "CHAR(64)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["pet_skill_definition_import_id"], "foreignKeys": [{ "column": "pet_skill_id", "referencesTable": "canonical_pet_skill_definitions", "referencesColumn": "pet_skill_id" }], "uniqueKeys": [["source_system", "source_namespace", "source_identifier"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_owned_pet_skill_stacks", "role": "ownership_quantity",
+      "columns": [
+        { "name": "owned_pet_skill_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "pet_skill_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "quantity", "type": "BIGINT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["owned_pet_skill_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "pet_skill_id", "referencesTable": "canonical_pet_skill_definitions", "referencesColumn": "pet_skill_id" }], "uniqueKeys": [["player_id", "pet_skill_id"]], "allowedStateColumns": [], "definitionOnlyColumns": ["pet_skill_name", "pet_skill_description", "pet_skill_grade", "handler_key", "options_json"], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_owned_pet_skill_equipments", "role": "relation",
+      "columns": [
+        { "name": "owned_pet_skill_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "pet_skill_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "slot_number", "type": "INT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["owned_pet_skill_equipment_id"], "foreignKeys": [{ "column": "owned_pet_id", "referencesTable": "canonical_owned_pet_instances", "referencesColumn": "owned_pet_id" }, { "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "pet_skill_id", "referencesTable": "canonical_pet_skill_definitions", "referencesColumn": "pet_skill_id" }], "uniqueKeys": [["owned_pet_skill_equipment_id", "player_id"], ["owned_pet_id", "slot_number"], ["owned_pet_id", "pet_skill_id"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_pet_skill_operation_replays", "role": "operation",
+      "columns": [
+        { "name": "pet_skill_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "request_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "operation_kind", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "payload_fingerprint", "type": "CHAR(64)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "pet_skill_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_skill_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "resulting_quantity", "type": "BIGINT UNSIGNED" }, { "name": "operation_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ], "primaryKey": ["pet_skill_operation_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "pet_skill_id", "referencesTable": "canonical_pet_skill_definitions", "referencesColumn": "pet_skill_id" }, { "column": "owned_pet_id", "referencesTable": "canonical_owned_pet_instances", "referencesColumn": "owned_pet_id" }, { "column": "owned_pet_skill_equipment_id", "referencesTable": "canonical_owned_pet_skill_equipments", "referencesColumn": "owned_pet_skill_equipment_id" }], "uniqueKeys": [["player_id", "request_key"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]

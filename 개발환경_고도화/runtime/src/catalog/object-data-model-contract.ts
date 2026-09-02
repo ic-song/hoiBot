@@ -29,7 +29,7 @@ export interface ObjectDataModelContract {
   scope: "new_object_schema_only";
   registeredMigrations: readonly string[];
   tables: readonly ObjectDataModelTable[];
-  // 현재 branch에 없는 선행 migration table은 통합 시점에만 FK 대상으로 허용합니다.
+  // 현재 branch에 없는 선행 migration table은 정확한 migration과 shape를 고정해 FK 대상으로만 사용합니다.
   integrationOnlyTables?: readonly ObjectDataModelIntegrationTable[];
   // handler_key/options_json은 안전한 데이터이며 이 목록의 실행 payload 컬럼은 허용하지 않습니다.
   forbiddenExecutableColumns: readonly string[];
