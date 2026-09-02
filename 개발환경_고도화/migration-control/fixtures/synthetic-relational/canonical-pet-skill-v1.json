@@ -1,7 +1,7 @@
 {
   "definitions": [
     { "sourceIdentifier": "skill_001", "petSkillName": "청룡언월도", "petSkillGrade": "S", "handlerKey": "passive_modifier", "options": { "raidCharm": 1000000, "castleCharm": 1000000 } },
-    { "sourceIdentifier": "skill_050", "petSkillName": "롤렉스", "petSkillGrade": "C", "handlerKey": "command_unlock", "options": { "commandName": "/자랑" } },
+    { "sourceIdentifier": "skill_050", "petSkillName": "롤렉스", "petSkillGrade": "C", "handlerKey": "command_unlock", "options": { "commandIdentifier": "pet_skill_boast" } },
     { "sourceIdentifier": "skill_090", "petSkillName": "망한건 맞아", "petSkillGrade": "D", "handlerKey": "presentation_only", "options": {} }
   ],
   "ownership": { "playerId": "player01", "petSkillId": "skill001", "quantity": 2 },

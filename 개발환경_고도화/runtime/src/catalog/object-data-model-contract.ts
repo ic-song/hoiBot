@@ -2,6 +2,10 @@ export const OBJECT_DATA_MODEL_STANDARD_VERSION = "object-data-model-standard.v1
 
 export const REQUIRED_AUDIT_COLUMNS = ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] as const;
 const OWNERSHIP_COMMON_COLUMNS = new Set(["player_id", "quantity", ...REQUIRED_AUDIT_COLUMNS]);
+const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: string; primaryKey: readonly string[]; requiredUniqueKeys: readonly (readonly string[])[] }>> = {
+  canonical_players: { migration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"], requiredUniqueKeys: [] },
+  canonical_owned_pet_instances: { migration: "446_canonical_pet_equipment.sql", primaryKey: ["owned_pet_id"], requiredUniqueKeys: [["owned_pet_id", "player_id"]] },
+};
 
 export type ObjectTableRole = "identity" | "definition" | "ownership_quantity" | "ownership_instance" | "relation" | "history" | "operation";
 
@@ -21,9 +25,6 @@ export interface ObjectDataModelTable {
   auditTimeFormat?: "KST_YYYY-MM-DD HH:MM:SS";
 }
 export interface ObjectDataModelIntegrationTable extends ObjectDataModelTable { integrationMigration: string; }
-const INTEGRATION_DEPENDENCY_REGISTRY = Object.freeze({
-  canonical_players: { integrationMigration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"] as const },
-});
 export interface ObjectDataModelContract {
   standardVersion: typeof OBJECT_DATA_MODEL_STANDARD_VERSION;
   scope: "new_object_schema_only";
@@ -91,11 +92,18 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
   }
   for (const table of contract.integrationOnlyTables ?? []) {
     if (tables.has(table.table)) fail("INTEGRATION_TABLE_DUPLICATE", table.table);
-    if (table.primaryKey.length === 0 || table.role !== "identity") fail("INTEGRATION_TABLE_INVALID", table.table);
-    const dependency = INTEGRATION_DEPENDENCY_REGISTRY[table.table as keyof typeof INTEGRATION_DEPENDENCY_REGISTRY];
-    if (dependency === undefined || table.integrationMigration !== dependency.integrationMigration || table.primaryKey.length !== dependency.primaryKey.length || table.primaryKey.some((key, index) => key !== dependency.primaryKey[index]) || contract.registeredMigrations.includes(table.integrationMigration)) fail("INTEGRATION_MIGRATION_INVALID", table.table);
+    if (!/^[a-z][a-z0-9_]*$/.test(table.table) || table.primaryKey.length === 0) fail("INTEGRATION_TABLE_INVALID", table.table);
+    if (!/^\d+_[a-z0-9_]+\.sql$/i.test(table.integrationMigration) || contract.registeredMigrations.includes(table.integrationMigration)) fail("INTEGRATION_MIGRATION_INVALID", table.table);
+    const dependency = INTEGRATION_DEPENDENCY_REGISTRY[table.table];
+    if (dependency === undefined || dependency.migration !== table.integrationMigration) fail("INTEGRATION_DEPENDENCY_NOT_PINNED", table.table);
+    if (JSON.stringify(table.primaryKey) !== JSON.stringify(dependency.primaryKey)) fail("INTEGRATION_PRIMARY_KEY_MISMATCH", table.table);
+    const names = table.columns.map((entry) => entry.name);
+    if (new Set(names).size !== names.length) fail("INTEGRATION_COLUMN_DUPLICATE", table.table);
     for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
-    if (table.foreignKeys.length !== 0) fail("INTEGRATION_TABLE_FK", table.table);
+    for (const requiredKey of dependency.requiredUniqueKeys) {
+      if (!(table.uniqueKeys ?? []).some((key) => JSON.stringify(key) === JSON.stringify(requiredKey))) fail("INTEGRATION_UNIQUE_KEY_MISSING", `${table.table}.${requiredKey.join(",")}`);
+      for (const keyColumn of requiredKey) validateIdentifier(column(table, keyColumn), `${table.table}.${keyColumn}`);
+    }
     tables.set(table.table, table);
   }
   for (const table of contract.tables) {

@@ -11,10 +11,26 @@ export type PassiveModifierOptions = {
 };
 
 export type CommandUnlockOptions = {
-  commandName: string;
+  commandIdentifier: CanonicalPetSkillCommandIdentifier;
   chancePercent?: number;
   quantity?: number;
 };
+
+export type CanonicalPetSkillCommandIdentifier = "pet_skill_boast" | "pet_skill_duel" | "pet_skill_prayer" | "attendance_first";
+
+// 현행 main.js에서 실제 펫스킬 보유를 확인하는 명령만 의미 식별자로 등록합니다.
+export const CANONICAL_PET_SKILL_COMMAND_REGISTRY: Readonly<Record<CanonicalPetSkillCommandIdentifier, { trigger: string }>> = {
+  pet_skill_boast: { trigger: "/자랑" },
+  pet_skill_duel: { trigger: "/결투" },
+  pet_skill_prayer: { trigger: "/기도" },
+  attendance_first: { trigger: "ㅊㅊ" },
+};
+
+export function resolveCanonicalPetSkillCommand(commandIdentifier: string): { trigger: string } {
+  const command = CANONICAL_PET_SKILL_COMMAND_REGISTRY[commandIdentifier as CanonicalPetSkillCommandIdentifier];
+  if (command === undefined) throw new Error("CANONICAL_PET_SKILL_COMMAND_NOT_ALLOWED");
+  return command;
+}
 
 export type CanonicalPetSkillOptions = PassiveModifierOptions | CommandUnlockOptions | Record<string, never>;
 
@@ -55,9 +71,10 @@ function passive(options: unknown): PassiveModifierOptions {
 
 function command(options: unknown): CommandUnlockOptions {
   const value = record(options);
-  exactKeys(value, ["commandName", "chancePercent", "quantity"]);
-  if (typeof value.commandName !== "string" || value.commandName.trim() === "" || value.commandName.length > 100) throw new Error("CANONICAL_PET_SKILL_COMMAND_INVALID");
-  const result: CommandUnlockOptions = { commandName: value.commandName };
+  exactKeys(value, ["commandIdentifier", "chancePercent", "quantity"]);
+  if (typeof value.commandIdentifier !== "string") throw new Error("CANONICAL_PET_SKILL_COMMAND_NOT_ALLOWED");
+  resolveCanonicalPetSkillCommand(value.commandIdentifier);
+  const result: CommandUnlockOptions = { commandIdentifier: value.commandIdentifier as CanonicalPetSkillCommandIdentifier };
   const chancePercent = optionalNumber(value, "chancePercent");
   const quantity = optionalNumber(value, "quantity");
   if (chancePercent !== undefined) {

@@ -45,6 +45,7 @@ export interface CanonicalPetSkillMutationResult {
 
 interface ImportRow { pet_skill_id: string; payload_fingerprint: string; }
 interface StackRow { owned_pet_skill_id: string; quantity: bigint; }
+interface DefinitionRuntimeRow { pet_skill_id: string; active_flag: boolean | number; handler_key: string; options_json: unknown; }
 interface ReplayRow {
   pet_skill_operation_id: string;
   operation_kind: string;
@@ -64,6 +65,25 @@ function text(value: string, maximum: number, code: string): void {
 
 function duplicate(error: unknown): boolean {
   return typeof error === "object" && error !== null && (("code" in error && String(error.code) === "ER_DUP_ENTRY") || ("message" in error && /duplicate entry/i.test(String(error.message))));
+}
+
+function retryableTransaction(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const code = "code" in error ? String(error.code) : "";
+  const errno = "errno" in error ? Number(error.errno) : Number.NaN;
+  return code === "ER_LOCK_DEADLOCK" || code === "ER_LOCK_WAIT_TIMEOUT" || errno === 1213 || errno === 1205;
+}
+
+function validateDefinition(row: DefinitionRuntimeRow | undefined): void {
+  if (row === undefined) throw new Error("CANONICAL_PET_SKILL_DEFINITION_NOT_FOUND");
+  if (row.active_flag !== true && row.active_flag !== 1) throw new Error("CANONICAL_PET_SKILL_DEFINITION_INACTIVE");
+  let options: unknown = row.options_json;
+  if (typeof options === "string") {
+    try { options = JSON.parse(options); }
+    catch { throw new Error("CANONICAL_PET_SKILL_DEFINITION_OPTIONS_MALFORMED"); }
+  }
+  try { normalizeCanonicalPetSkillOptions(row.handler_key, options); }
+  catch { throw new Error("CANONICAL_PET_SKILL_DEFINITION_OPTIONS_MALFORMED"); }
 }
 
 function fingerprint(value: Record<string, string | number>): string {
@@ -112,7 +132,13 @@ export class MariaCanonicalPetSkillRepository {
           return { petSkillId: definition.objectIdentityId, replayed: false };
         });
       } catch (error) {
-        if (!duplicate(error) || attempt === 2) throw error;
+        if (!duplicate(error) && !retryableTransaction(error)) throw error;
+        const committed = await this.findDefinitionImport(input.sourceSystem, input.sourceNamespace, input.sourceIdentifier);
+        if (committed !== undefined) {
+          if (committed.payload_fingerprint !== definitionFingerprint) throw new Error("CANONICAL_PET_SKILL_DEFINITION_PAYLOAD_CONFLICT");
+          return { petSkillId: committed.pet_skill_id, replayed: true };
+        }
+        if (attempt === 2) throw error;
       }
     }
     throw new Error("CANONICAL_PET_SKILL_DEFINITION_RETRY_EXHAUSTED");
@@ -138,7 +164,7 @@ export class MariaCanonicalPetSkillRepository {
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try { return await this.database.withTransaction(work); }
       catch (error) {
-        if (!duplicate(error)) throw error;
+        if (!duplicate(error) && !retryableTransaction(error)) throw error;
         const row = await this.findReplay(playerId, requestKey);
         if (row !== undefined) return replay(row, kind, payload);
         if (attempt === 2) throw error;
@@ -155,11 +181,15 @@ export class MariaCanonicalPetSkillRepository {
     return (await this.database.query<ReplayRow[]>("SELECT pet_skill_operation_id,operation_kind,payload_fingerprint,resulting_quantity,owned_pet_skill_equipment_id FROM canonical_pet_skill_operation_replays WHERE player_id=? AND request_key=?", [playerId, requestKey]))[0];
   }
 
+  private async findDefinitionImport(sourceSystem: string, sourceNamespace: string, sourceIdentifier: string): Promise<ImportRow | undefined> {
+    return (await this.database.query<ImportRow[]>("SELECT pet_skill_id,payload_fingerprint FROM canonical_pet_skill_definition_imports WHERE source_system=? AND source_namespace=? AND source_identifier=?", [sourceSystem, sourceNamespace, sourceIdentifier]))[0];
+  }
+
   private async grantInTransaction(transaction: DatabaseTransaction, input: CanonicalPetSkillGrantInput, payload: string): Promise<CanonicalPetSkillMutationResult> {
     const prior = await this.prior(transaction, input.playerId, input.requestKey);
     if (prior !== undefined) return replay(prior, "grant", payload);
-    const active = await transaction.query<Array<{ pet_skill_id: string }>>("SELECT pet_skill_id FROM canonical_pet_skill_definitions WHERE pet_skill_id=? AND active_flag=TRUE FOR UPDATE", [input.petSkillId]);
-    if (active[0] === undefined) throw new Error("CANONICAL_PET_SKILL_DEFINITION_NOT_FOUND");
+    const definition = (await transaction.query<DefinitionRuntimeRow[]>("SELECT pet_skill_id,active_flag,handler_key,options_json FROM canonical_pet_skill_definitions WHERE pet_skill_id=? FOR UPDATE", [input.petSkillId]))[0];
+    validateDefinition(definition);
     const identity = new MariaObjectIdentityAuditProvider(createScopedDatabaseClient(transaction));
     const operation = await identity.registerCrosswalk({ actor: input.actor, objectType: "PET_SKILL_OPERATION", sourceSystem: "CANONICAL_RUNTIME", sourceNamespace: "petSkillOperation", sourceIdentifier: sourceDigest(`${input.playerId}:${input.requestKey}`) });
     let stack = (await transaction.query<StackRow[]>("SELECT owned_pet_skill_id,quantity FROM canonical_owned_pet_skill_stacks WHERE player_id=? AND pet_skill_id=? FOR UPDATE", [input.playerId, input.petSkillId]))[0];
@@ -182,6 +212,8 @@ export class MariaCanonicalPetSkillRepository {
     if (prior !== undefined) return replay(prior, "equip", payload);
     const pet = await transaction.query<Array<{ owned_pet_id: string }>>("SELECT owned_pet_id FROM canonical_owned_pet_instances WHERE owned_pet_id=? AND player_id=? AND ownership_status='owned' FOR UPDATE", [input.ownedPetId, input.playerId]);
     if (pet[0] === undefined) throw new Error("CANONICAL_PET_SKILL_OWNED_PET_NOT_FOUND");
+    const definition = (await transaction.query<DefinitionRuntimeRow[]>("SELECT pet_skill_id,active_flag,handler_key,options_json FROM canonical_pet_skill_definitions WHERE pet_skill_id=? FOR UPDATE", [input.petSkillId]))[0];
+    validateDefinition(definition);
     const stack = (await transaction.query<StackRow[]>("SELECT owned_pet_skill_id,quantity FROM canonical_owned_pet_skill_stacks WHERE player_id=? AND pet_skill_id=? FOR UPDATE", [input.playerId, input.petSkillId]))[0];
     if (stack === undefined || stack.quantity < 1n) throw new Error("CANONICAL_PET_SKILL_INSUFFICIENT_QUANTITY");
     const identity = new MariaObjectIdentityAuditProvider(createScopedDatabaseClient(transaction));
