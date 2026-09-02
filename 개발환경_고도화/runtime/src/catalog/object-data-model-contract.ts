@@ -25,6 +25,8 @@ export interface ObjectDataModelContract {
   scope: "new_object_schema_only";
   registeredMigrations: readonly string[];
   tables: readonly ObjectDataModelTable[];
+  // 현재 branch에 없는 선행 migration table은 통합 시점에만 FK 대상으로 허용합니다.
+  integrationOnlyTables?: readonly ObjectDataModelTable[];
   // handler_key/options_json은 안전한 데이터이며 이 목록의 실행 payload 컬럼은 허용하지 않습니다.
   forbiddenExecutableColumns: readonly string[];
 }
@@ -81,6 +83,12 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
       for (const entry of table.columns) if (!allowed.has(entry.name)) fail("OWNERSHIP_COLUMN", `${table.table}.${entry.name}`);
       for (const name of table.definitionOnlyColumns ?? []) if (names.includes(name)) fail("DEFINITION_VALUE_COPIED", `${table.table}.${name}`);
     }
+    tables.set(table.table, table);
+  }
+  for (const table of contract.integrationOnlyTables ?? []) {
+    if (tables.has(table.table)) fail("INTEGRATION_TABLE_DUPLICATE", table.table);
+    if (table.primaryKey.length === 0 || table.role !== "identity") fail("INTEGRATION_TABLE_INVALID", table.table);
+    for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
     tables.set(table.table, table);
   }
   for (const table of contract.tables) {

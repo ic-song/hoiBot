@@ -1,5 +1,6 @@
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
-import { assertObjectIdentityCandidate, type ObjectAuditValues, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
+import { createHash } from "node:crypto";
+import { assertObjectIdentityCandidate, OBJECT_IDENTITY_MAX_ATTEMPTS, type ObjectAuditValues, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
 
 export interface CanonicalFurnitureDefinition {
   furnitureId: string;
@@ -38,7 +39,7 @@ export interface PlaceCanonicalFurnitureInput {
 
 export type CanonicalFurnitureAuditFactory = (actor: string, now: Date) => ObjectAuditValues;
 
-interface ReplayRow { owned_furniture_id: string; result_status: string; }
+interface ReplayRow { owned_furniture_id: string; result_status: string; operation_kind: string; payload_fingerprint: string; }
 interface DefinitionRow { furniture_id: string; display_name: string; purchase_price: bigint; base_charm: bigint; charm_per_enhancement: bigint; active: number; }
 interface OwnedRow { owned_furniture_id: string; player_id: string; furniture_id: string; enhancement_level: bigint; base_charm: bigint; charm_per_enhancement: bigint; }
 
@@ -86,12 +87,20 @@ function owned(row: OwnedRow, ownershipStatus = "bag"): CanonicalOwnedFurniture 
 }
 
 async function reserveId(transaction: DatabaseTransaction, generate: ObjectIdentityCandidateGenerator, insert: (candidate: string) => Promise<void>): Promise<string> {
-  for (let attempt = 0; attempt < 8; attempt += 1) {
+  for (let attempt = 0; attempt < OBJECT_IDENTITY_MAX_ATTEMPTS; attempt += 1) {
     const candidate = generate();
     assertCuid2Length(candidate);
     try { await insert(candidate); return candidate; } catch (error) { if (!duplicate(error)) throw error; }
   }
   throw new Error("CANONICAL_FURNITURE_ID_COLLISION_RETRY_EXHAUSTED");
+}
+
+function fingerprint(operationKind: string, values: readonly string[]): string {
+  return createHash("sha256").update(JSON.stringify([operationKind, ...values])).digest("hex");
+}
+
+function requireReplayMatch(row: ReplayRow, operationKind: string, payloadFingerprint: string): void {
+  if (row.operation_kind !== operationKind || row.payload_fingerprint !== payloadFingerprint) throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_CONFLICT");
 }
 
 // WBS742 importer와 홈 read 소비자가 함께 사용할 canonical 가구 보유 저장소입니다.
@@ -107,14 +116,16 @@ export class MariaCanonicalFurnitureHomeRepository {
 
   async grantOwnedFurniture(input: GrantCanonicalFurnitureInput): Promise<{ furniture: CanonicalOwnedFurniture; replayed: boolean }> {
     assertGrantInput(input);
-    for (let transactionAttempt = 0; transactionAttempt < 8; transactionAttempt += 1) {
+    const operationKind = "grant_owned_furniture";
+    const payloadFingerprint = fingerprint(operationKind, [input.playerId, input.furnitureId, String(input.enhancementLevel ?? 0n)]);
+    for (let transactionAttempt = 0; transactionAttempt < OBJECT_IDENTITY_MAX_ATTEMPTS; transactionAttempt += 1) {
       try {
         return await this.database.withTransaction(async (transaction) => {
           const replay = (await transaction.query<ReplayRow[]>(
             "SELECT owned_furniture_id,result_status FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
             [input.playerId, input.idempotencyScope, input.idempotencyKey]
           ))[0];
-          if (replay !== undefined) return { furniture: await this.findOwnedForUpdate(transaction, replay.owned_furniture_id), replayed: true };
+          if (replay !== undefined) { requireReplayMatch(replay, operationKind, payloadFingerprint); return { furniture: await this.findOwnedForUpdate(transaction, replay.owned_furniture_id), replayed: true }; }
           const definition = (await transaction.query<DefinitionRow[]>(
             "SELECT furniture_id,display_name,purchase_price,base_charm,charm_per_enhancement,active FROM object_furniture_definitions WHERE furniture_id=? FOR UPDATE",
             [input.furnitureId]
@@ -127,15 +138,15 @@ export class MariaCanonicalFurnitureHomeRepository {
           let ownedFurnitureId = "";
           await reserveId(transaction, this.generate, async (candidate) => {
             await transaction.execute(
-              "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+              "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
               [candidate, input.playerId, input.furnitureId, enhancementLevel, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
             ownedFurnitureId = candidate;
           });
           await reserveId(transaction, this.generate, async (candidate) => {
             await transaction.execute(
-              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,'granted',?,?,?,?)",
-              [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+              [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
           });
           return { furniture: {
@@ -153,25 +164,35 @@ export class MariaCanonicalFurnitureHomeRepository {
   // 배치 행 존재만 장착 상태로 사용해 이중 상태를 만들지 않고 원자적으로 기록합니다.
   async placeOwnedFurniture(input: PlaceCanonicalFurnitureInput): Promise<{ ownedFurnitureId: string; replayed: boolean }> {
     assertPlacementInput(input);
-    for (let transactionAttempt = 0; transactionAttempt < 8; transactionAttempt += 1) {
+    const operationKind = "place_owned_furniture";
+    const payloadFingerprint = fingerprint(operationKind, [input.playerId, input.ownedFurnitureId, String(input.placementOrder)]);
+    for (let transactionAttempt = 0; transactionAttempt < OBJECT_IDENTITY_MAX_ATTEMPTS; transactionAttempt += 1) {
       try {
         return await this.database.withTransaction(async (transaction) => {
           const replay = (await transaction.query<ReplayRow[]>(
             "SELECT owned_furniture_id,result_status FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
             [input.playerId, input.idempotencyScope, input.idempotencyKey]
           ))[0];
-          if (replay !== undefined) return { ownedFurnitureId: replay.owned_furniture_id, replayed: true };
-          const ownedFurniture = (await transaction.query<Array<{ owned_furniture_id: string }>>(
-            "SELECT owned_furniture_id FROM object_owned_furniture_instances WHERE owned_furniture_id=? AND player_id=? FOR UPDATE",
+          if (replay !== undefined) { requireReplayMatch(replay, operationKind, payloadFingerprint); return { ownedFurnitureId: replay.owned_furniture_id, replayed: true }; }
+          const ownedFurniture = (await transaction.query<Array<{ owned_furniture_id: string; ownership_status: string }>>(
+            "SELECT owned_furniture_id,ownership_status FROM object_owned_furniture_instances WHERE owned_furniture_id=? AND player_id=? FOR UPDATE",
             [input.ownedFurnitureId, input.playerId]
           ))[0];
           if (ownedFurniture === undefined) throw new Error("CANONICAL_FURNITURE_OWNERSHIP_NOT_FOUND");
+          if (ownedFurniture.ownership_status !== "bag") throw new Error("CANONICAL_FURNITURE_STATE_INVALID");
           const alreadyPlaced = (await transaction.query<Array<{ home_furniture_placement_id: string }>>(
             "SELECT home_furniture_placement_id FROM object_home_furniture_placements WHERE owned_furniture_id=? FOR UPDATE",
             [input.ownedFurnitureId]
           ))[0];
           if (alreadyPlaced !== undefined) throw new Error("CANONICAL_FURNITURE_ALREADY_PLACED");
           const audit = this.createAudit(input.actor, this.now());
+          let operationId = "";
+          await reserveId(transaction, this.generate, async (candidate) => {
+            await transaction.execute(
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, input.ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+            ); operationId = candidate;
+          });
           await reserveId(transaction, this.generate, async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
@@ -180,10 +201,11 @@ export class MariaCanonicalFurnitureHomeRepository {
           });
           await reserveId(transaction, this.generate, async (candidate) => {
             await transaction.execute(
-              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,'placed',?,?,?,?)",
-              [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, input.ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              [candidate, input.ownedFurnitureId, operationId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
           });
+          await transaction.execute("UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'", [audit.UPDATE_USER, audit.UPDATE_TIME, input.ownedFurnitureId, input.playerId]);
           return { ownedFurnitureId: input.ownedFurnitureId, replayed: false };
         });
       } catch (error) {

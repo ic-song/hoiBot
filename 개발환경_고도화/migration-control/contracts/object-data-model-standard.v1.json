@@ -107,14 +107,14 @@
         { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
-        { "name": "enhancement_level", "type": "INT UNSIGNED" },
+        { "name": "enhancement_level", "type": "INT UNSIGNED" }, { "name": "ownership_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
         { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["owned_furniture_id"],
       "foreignKeys": [
         { "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" },
         { "column": "furniture_id", "referencesTable": "object_furniture_definitions", "referencesColumn": "furniture_id" }
-      ], "allowedStateColumns": ["enhancement_level"],
+      ], "allowedStateColumns": ["enhancement_level", "ownership_status"],
       "definitionOnlyColumns": ["display_name", "purchase_price", "base_charm", "charm_per_enhancement", "final_charm"],
       "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     },
@@ -139,7 +139,7 @@
         { "name": "furniture_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "idempotency_scope", "type": "VARCHAR(100)", "charset": "ascii", "collation": "ascii_bin" },
-        { "name": "idempotency_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" },
+        { "name": "idempotency_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "operation_kind", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "payload_fingerprint", "type": "CHAR(64)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "result_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
@@ -205,6 +205,16 @@
         { "name": "pet_equipment_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "request_key", "type": "VARCHAR(191)", "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "owned_pet_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "equipment_slot", "type": "VARCHAR(50)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "operation_status", "type": "VARCHAR(32)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_equipment_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
       ], "primaryKey": ["pet_equipment_operation_id"], "foreignKeys": [{ "column": "player_id", "referencesTable": "canonical_players", "referencesColumn": "player_id" }, { "column": "owned_pet_id", "referencesTable": "canonical_owned_pet_instances", "referencesColumn": "owned_pet_id" }, { "column": "owned_equipment_id", "referencesTable": "canonical_owned_equipment_instances", "referencesColumn": "owned_equipment_id" }, { "column": "owned_pet_equipment_id", "referencesTable": "canonical_owned_pet_equipment", "referencesColumn": "owned_pet_equipment_id" }], "uniqueKeys": [["player_id", "request_key"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_furniture_ownership_history", "role": "history",
+      "columns": [{ "name": "furniture_ownership_history_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "furniture_operation_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "status_before", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "status_after", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }],
+      "primaryKey": ["furniture_ownership_history_id"], "foreignKeys": [{ "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }, { "column": "furniture_operation_id", "referencesTable": "object_furniture_operation_replays", "referencesColumn": "furniture_operation_id" }], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "object_furniture_market_listings", "role": "relation",
+      "columns": [{ "name": "furniture_market_listing_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_furniture_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "listing_price", "type": "BIGINT UNSIGNED" }, { "name": "listing_status", "type": "VARCHAR(20)", "charset": "ascii", "collation": "ascii_bin" }, { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" }, { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }],
+      "primaryKey": ["furniture_market_listing_id"], "foreignKeys": [{ "column": "owned_furniture_id", "referencesTable": "object_owned_furniture_instances", "referencesColumn": "owned_furniture_id" }], "uniqueKeys": [["owned_furniture_id"]], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
     }
   ],
   "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]
