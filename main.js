@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.446"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.447"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -899,6 +899,7 @@ const GLOBAL_CONFIG = {
         realFlagDiscoveryBonusPoint: 200000000,
         attackRewardBonusSkillName: "무쌍귀신",
         attackRewardBonusPoint: 100000000,
+        timeoutPenaltyPoint: 100000000,
         winnerRewardPoint: 3000000000,
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
@@ -1187,6 +1188,7 @@ const GLOBAL_CONFIG = {
         },
         cube: {
             itemName: "홈뱃지 큐브💟",
+            pointRewardPerCube: 500000,
             maxTryCount: 1000,
             optionKeys: ["castle", "raid", "petUpgrade", "explore"],
             options: [
@@ -1648,6 +1650,9 @@ blockedNicknameTerms: [
             "3": { key: "territoryPoint", emoji: "💸", name: "영지 공격 시 포인트 획득", cost: 15, maxUnits: 1000 },
             "4": { key: "ambushDefense", emoji: "🛡️", name: "기습방어확률", cost: 40, maxUnits: 250 }
         }
+    },
+    guild: { // 길드 기본 운영 설정
+        noticeMaxLength: 100
     },
     guildTerritory: { // 길드 영토전 설정
         limits: { // 길드 영토전 제한
@@ -4311,6 +4316,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     skillStore.equipped.push(equipName);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
+                    if (normalizePetSkillName(equipName) === "VIP블랙카드") {
+                        equipMsg = "✅ VIP블랙카드📙 장착 완료!\n“가격표는 보지 않습니다. 직원이 알아서 낮출 테니까요.”";
+                    }
                     var equippedSkillData = getPetSkillData(equipName);
                     if (equippedSkillData && equippedSkillData.equipComment) {
                         var equipCommentSeparator = equippedSkillData.equipCommentNoColon === true ? " " : ": ";
@@ -15849,7 +15857,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     var packageInfoData = loadJsonFile(packageInfoPath); // 패키지가방 필터링용 패키지 목록
-                    replier.reply(buildUserPackageBagMessage(data, petData, guildData, packageBagTarget, packageInfoData));
+                    replier.reply(buildUserPackageBagMessage(data, petData, petSkillData, guildData, packageBagTarget, packageInfoData));
                     return;
                 }
 
@@ -21830,6 +21838,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var homeBadgeCubeSocial = getPetHomeSocialUser(homeBadgeCubeActivityData, sender);
                     var hadHomeBadgeCubeStore = data.member[sender].hasOwnProperty("homeBadgeCube");
                     var homeBadgeCubeStoreSnapshot = hadHomeBadgeCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
+                    var hadHomeBadgeCubePoint = data.member[sender].hasOwnProperty("point");
+                    var homeBadgeCubePointSnapshot = data.member[sender].point;
                     syncHomeBadgeCubeEquippedBadge(data, sender, homeBadgeCubeSocial.equippedBadgeId);
                     var homeBadgeCubeRecord = getHomeBadgeCubeRecord(data, sender, homeBadgeCubeBadge.id, true);
                     var homeBadgeCubeBefore = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
@@ -21881,8 +21891,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     var homeBadgeCubeConsumed = homeBadgeCubeUsedCount * homeBadgeCubeOption.cost;
+                    var homeBadgeCubePointReward = homeBadgeCubeConsumed * homeBadgeCubeConfig.pointRewardPerCube;
+                    var homeBadgeCubeCurrentPoint = Number(data.member[sender].point) || 0;
+                    var homeBadgeCubeNextPoint = homeBadgeCubeCurrentPoint + homeBadgeCubePointReward;
+                    if (!isSafePointValue(homeBadgeCubeCurrentPoint) || !isSafePointValue(homeBadgeCubePointReward) || !isSafePointValue(homeBadgeCubeNextPoint)) {
+                        data.member[sender].bag = homeBadgeCubeBagSnapshot;
+                        if (hadHomeBadgeCubeStore) data.member[sender].homeBadgeCube = homeBadgeCubeStoreSnapshot;
+                        else delete data.member[sender].homeBadgeCube;
+                        if (hadHomeBadgeCubePoint) data.member[sender].point = homeBadgeCubePointSnapshot;
+                        else delete data.member[sender].point;
+                        replier.reply("❌ 포인트 안전 범위를 초과하여 홈뱃지 큐브를 사용하지 않았습니다.");
+                        return;
+                    }
                     homeBadgeCubeBag[homeBadgeCubeConfig.itemName] = homeBadgeCubeHeld - homeBadgeCubeConsumed;
                     if (homeBadgeCubeBag[homeBadgeCubeConfig.itemName] <= 0) delete homeBadgeCubeBag[homeBadgeCubeConfig.itemName];
+                    data.member[sender].point = homeBadgeCubeNextPoint;
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord) && homeBadgeCubeRecord.allMaxNotified !== true) {
                         homeBadgeCubeRecord.allMaxNotified = true;
                         homeBadgeCubeAllMaxNotice = true;
@@ -21893,6 +21916,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         data.member[sender].bag = homeBadgeCubeBagSnapshot;
                         if (hadHomeBadgeCubeStore) data.member[sender].homeBadgeCube = homeBadgeCubeStoreSnapshot;
                         else delete data.member[sender].homeBadgeCube;
+                        if (hadHomeBadgeCubePoint) data.member[sender].point = homeBadgeCubePointSnapshot;
+                        else delete data.member[sender].point;
                         try {
                             saveJsonFile(data, filePath);
                         } catch (homeBadgeCubeRollbackError) {
@@ -21910,6 +21935,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
                     homeBadgeCubeLines.push("✅️ 사용: " + numberWithCommas(homeBadgeCubeConsumed) + "개");
                     homeBadgeCubeLines.push("💟 남은 큐브: " + numberWithCommas(homeBadgeCubeRemain) + "개");
+                    homeBadgeCubeLines.push("🪙 획득 포인트: 🅟" + numberWithCommas(homeBadgeCubePointReward));
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
                     homeBadgeCubeLines.push("[" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge) + (homeBadgeCubeIsEquipped ? " ✅ 장착 중" : " ⚠️ 미장착"));
                     homeBadgeCubeLines.push(buildHomeBadgeCubeOptionLines(data, sender, homeBadgeCubeBadge));
@@ -25296,7 +25322,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.indexOf("/길드공지") === 0) {
+                if (msg === "/길드공지" || /^\/길드공지\s+[^]+$/.test(msg)) {
                     var lordGuildInfo = getMyGuildInfo(data, guildData, sender);
 
                     var g = lordGuildInfo.guild;
@@ -25307,15 +25333,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    var notice = msg.replace("/길드공지", "").trim();
+                    var notice = msg.replace(/^\/길드공지/, "").trim();
 
                     if (!notice) {
                         replier.reply("사용법: /길드공지 내용\n예) /길드공지 대머리로 살아라");
                         return;
                     }
 
-                    if (notice.length > 30) {
-                        replier.reply("❌ 길드공지는 30자 이하만 가능합니다.");
+                    if (notice.length > GLOBAL_CONFIG.guild.noticeMaxLength) {
+                        replier.reply("❌ 길드공지는 " + GLOBAL_CONFIG.guild.noticeMaxLength + "자 이하만 가능합니다.");
                         return;
                     }
 
@@ -35158,11 +35184,28 @@ function processPetMusouTimeout(data, petData, petSkillData, guildData) {
     musou.players[attacker].attacksLeft = 0;
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
+    var timeoutMember = data.member[attacker];
+    var timeoutPointBefore = Math.max(0, Number(timeoutMember.point) || 0); // 시간초과 직전 보유 포인트
+    var timeoutPointAfter = Math.max(0, timeoutPointBefore - GLOBAL_CONFIG.petMusou.timeoutPenaltyPoint); // 0 미만으로 내려가지 않는 패널티 적용 결과
+    var timeoutPointDeducted = timeoutPointBefore - timeoutPointAfter; // 실제 차감된 포인트
+    timeoutMember.point = timeoutPointAfter;
+    var timeoutAutomationSettings = ensureHoiPassPremiumAutomationSettings(timeoutMember);
+    timeoutAutomationSettings.petMusouAutoReady = false;
+    appendPetMusouAutomationLog(data, {
+        feature: "PET_MUSOU_AUTO_READY",
+        action: "OFF",
+        user: attacker,
+        result: "TIMEOUT_ELIMINATED",
+        reason: "펫무쌍 시간초과 탈락",
+        processedAt: formatDateTime(new Date())
+    });
     musou.lightningRate = Math.min(1, Math.max(0, musou.lightningRate) + GLOBAL_CONFIG.petMusou.timeoutLightningStepRate);
     var message = "🗡️펫 무쌍 대회 결과🗡️[시간 초과⚠️]\n" +
         "━━━━━━━━━━━━━━━━\n" +
         "공격 보상🤑: 미지급\n" +
         "벼락 판정⚡: 판정 없음\n" +
+        "시간초과 패널티💸: -🅟" + numberWithCommas(timeoutPointDeducted) + " (남은 포인트 🅟" + numberWithCommas(timeoutPointAfter) + ")\n" +
+        "펫무쌍 자동준비🐹: OFF [❌]\n" +
         "누적 벼락발생확률⚡: +" + (GLOBAL_CONFIG.petMusou.timeoutLightningStepRate * 100).toFixed(1) + "% (현재 " + (musou.lightningRate * 100).toFixed(1) + "%)\n\n" +
         Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초 이내에 공격하지 않아 즉시 탈락합니다.\n" +
         "남은 공격권이 모두 소멸했습니다.";
@@ -35944,11 +35987,12 @@ function getHoiFreeSupportPackageAlertUsers(data) {
 
 // 후원패스 표시 문자열을 만드는 함수
 function formatSupportPassStatus(data, user, config) {
-    if (!isSupportPassActive(data, user, config.key)) return config.label + " 미사용중[❌]";
+    var packageLabel = config.key === "territory" ? "영지기습패스⚔️🛡️" : config.label;
+    if (!isSupportPassActive(data, user, config.key)) return packageLabel + ": 미사용 [❌]";
     var pass = data.member[user].pass && data.member[user].pass[config.key] ? data.member[user].pass[config.key] : null;
-    if (!pass) return config.label + " 미사용중[❌]";
-    if (pass.permanent === true) return config.label + " 영구권 사용중[✅]";
-    return config.label + " " + pass.endDate + " 종료예정[✅]";
+    if (!pass) return packageLabel + ": 미사용 [❌]";
+    if (pass.permanent === true || !String(pass.endDate || "").trim()) return packageLabel + ": 사용 중 [✅]";
+    return packageLabel + ": " + pass.endDate + " 종료 예정 [✅]";
 }
 
 // 유저 패키지가방용 후원패스 표시 줄을 만드는 함수
@@ -38570,7 +38614,7 @@ function setOperationNoticeByCommand(data, msg) {
 }
 
 // 유저 패키지가방 메시지 생성 함수
-function buildUserPackageBagMessage(data, petData, guildData, sender, packageInfoData) {
+function buildUserPackageBagMessage(data, petData, petSkillData, guildData, sender, packageInfoData) {
     var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저가 보유한 패키지 목록
     var lines = ["🎁 [" + checkRank(data, petData, guildData, sender) + "] 님의 패키지가방🎁"];
     var packageBagNotice = getOperationNotice(data, "packageBag"); // 패키지가방 상단 운영 알림 문구
@@ -38592,13 +38636,43 @@ function buildUserPackageBagMessage(data, petData, guildData, sender, packageInf
     }
     lines.push("");
     lines.push("사용 방법: /패키지사용 [가방번호] [오픈갯수]");
+    lines.push(allsee);
     lines.push("━━━━━━━━━━━");
-    lines.push("호월패스🐹 사용/날짜 확인하기:");
-    lines.push("");
+    lines.push("🐹 호월패스 사용 현황");
+    lines.push("━━━━━━━━━━━");
     var passLines = buildUserSupportPassLines(data, sender);
     for (var p = 0; p < passLines.length; p++) {
-        lines.push((p === 0 ? allsee : "") + passLines[p]);
+        lines.push(passLines[p]);
     }
+    var member = data.member[sender];
+    var premiumActive = isHoiPassPremiumActive(data, sender); // 프리미엄 자동기능 이용 가능 여부
+    var premiumAutomation = member.premiumAutomation && typeof member.premiumAutomation === "object" ? member.premiumAutomation : {};
+    var territoryValidation = validateGuildTerritoryAutoAttack(data, guildData, petSkillData, sender); // 영지패스와 현재 길드 직책을 함께 확인한 결과
+    var territoryStatus = territoryValidation.ok ? (member.guildTerritoryAutoAttackEnabled === true ? "ON [✅]" : "OFF [❌]") : "이용 불가 [🔒]";
+    var musouStatus = premiumActive ? (premiumAutomation.petMusouAutoReady === true ? "ON [✅]" : "OFF [❌]") : "이용 불가 [🔒]";
+    var attendanceStatus = premiumActive ? (premiumAutomation.autoAttendance === true ? "ON [✅]" : "OFF [❌]") : "이용 불가 [🔒]";
+    lines.push("");
+    lines.push("━━━━━━━━━━━");
+    lines.push("⚙️ 자동기능 설정");
+    lines.push("━━━━━━━━━━━");
+    lines.push("⚔️ 길드영지 자동공격: " + territoryStatus);
+    lines.push("└ 내 공격 차례에 영지 1~7번 중 자동 공격");
+    lines.push("└ 같은 길드 영지를 공격할 수도 있으니 확인이 필요합니다.");
+    lines.push("└ 설정: /영지온 · /영지오프");
+    lines.push("└ 필요: 영지기습패스⚔️🛡️");
+    lines.push("");
+    lines.push("🐹 펫무쌍 자동준비: " + musouStatus);
+    lines.push("└ 펫무쌍 준비 시 자동 참가 등록");
+    lines.push("└ 설정: /무쌍온 · /무쌍오프");
+    lines.push("└ 필요: 호이패스 프리미엄👑");
+    lines.push("");
+    lines.push("📅 자동 출석체크: " + attendanceStatus);
+    lines.push("└ 매일 01:10 자동 출석체크");
+    lines.push("└ 설정: /출첵온 · /출첵오프");
+    lines.push("└ 필요: 호이패스 프리미엄👑");
+    lines.push("");
+    lines.push("[✅] ON　[❌] OFF　[🔒] 이용 불가");
+    lines.push("※ 패스가 만료되면 연결된 자동기능도 중지됩니다.");
     return lines.join("\n");
 }
 
@@ -46747,7 +46821,7 @@ var PENDANT_GRADE_TABLE = [
     { name: "별무리 펜던트", icon: "🌌", grade: "상급", rate: 3, charm: 4000000, explore: 0.9, notice: false },
     { name: "탐욕의 펜던트", icon: "🪙", grade: "상급+", rate: 2, charm: 5000000, explore: 1.0, notice: false },
     { name: "운명의 펜던트", icon: "🎲", grade: "최상급", rate: 1.2, charm: 6000000, explore: 1.1, notice: false },
-    { name: "심판의 펜던트", icon: "⚖️", grade: "최상급+", rate: 0.6, charm: 7000000, explore: 1.2, notice: true },
+    { name: "심판의 펜던트", icon: "⚖️", grade: "최상급+", rate: 0.6, charm: 7000000, explore: 1.2, notice: false },
     { name: "왕좌의 펜던트", icon: "👑", grade: "신화", rate: 0.2, charm: 8000000, explore: 1.3, notice: true },
     { name: "천공의 펜던트", icon: "🪽", grade: "초월", rate: 0.08, charm: 10000000, explore: 1.5, notice: true },
     { name: "창세의 펜던트", icon: "🌠", grade: "창세", rate: 0.02, charm: 15000000, explore: 2.0, notice: true },
