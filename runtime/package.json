@@ -14,6 +14,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
     "snapshot:validate": "node --import tsx scripts/validate-raw-snapshot.ts",
+    "snapshot:land": "node --import tsx scripts/build-raw-landing-bundle.ts",
     "snapshot:classify": "node --import tsx scripts/classify-raw-snapshot.ts",
     "snapshot:stage": "node --import tsx scripts/build-isolated-staging.ts",
     "snapshot:validate-assets": "node --import tsx scripts/validate-asset-references.ts",

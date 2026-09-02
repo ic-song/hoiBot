@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import {
   buildRawSnapshotManifest,
+  buildRawLandingBundle,
   compareRawSnapshotManifests,
+  writeRawLandingBundleManifest,
   writeRawSnapshotManifest
 } from "../src/data-migration/raw-snapshot.js";
 
@@ -86,5 +88,41 @@ describe("RAW snapshot manifest", () => {
     await writeRawSnapshotManifest(output, manifest);
     const written = await buildRawSnapshotManifest(join(root, "evidence"), "manifest-output");
     assert.equal(written.fileCount, 1);
+  });
+
+  it("builds a replay-safe byte-exact RAW landing bundle", async () => {
+    const root = await fixture();
+    const bundle = await mkdtemp(join(tmpdir(), "hoibot-raw-landing-"));
+    const snapshot = await buildRawSnapshotManifest(root, "test");
+    const first = await buildRawLandingBundle(root, bundle, snapshot);
+    const replay = await buildRawLandingBundle(root, bundle, snapshot);
+
+    assert.equal(first.fileCount, 2);
+    assert.equal(first.bundleSha256, replay.bundleSha256);
+    for (const entry of first.entries) {
+      const payload = await readFile(
+        join(bundle, first.snapshotManifestSha256, "payload", entry.storageName)
+      );
+      assert.equal(payload.byteLength, entry.size);
+      assert.equal(entry.storageName.includes("member.json"), false);
+    }
+    await writeRawLandingBundleManifest(join(bundle, "manifest.json"), first);
+    assert.equal(JSON.parse(await readFile(join(bundle, "manifest.json"), "utf8")).fileCount, 2);
+  });
+
+  it("rejects source drift and an altered existing landing payload", async () => {
+    const root = await fixture();
+    const bundle = await mkdtemp(join(tmpdir(), "hoibot-raw-landing-conflict-"));
+    const snapshot = await buildRawSnapshotManifest(root, "test");
+    const first = await buildRawLandingBundle(root, bundle, snapshot);
+    const target = first.entries[0]!;
+    await writeFile(
+      join(bundle, first.snapshotManifestSha256, "payload", target.storageName),
+      "tampered",
+      "utf8"
+    );
+    await assert.rejects(buildRawLandingBundle(root, bundle, snapshot), /RAW_LANDING_PAYLOAD_CONFLICT/);
+    await writeFile(join(root, "member.json"), "{}", "utf8");
+    await assert.rejects(buildRawLandingBundle(root, await mkdtemp(join(tmpdir(), "raw-drift-")), snapshot), /RAW_LANDING_SOURCE_DRIFT/);
   });
 });

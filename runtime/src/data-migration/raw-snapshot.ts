@@ -28,11 +28,40 @@ export interface RawSnapshotComparison {
   changedPathSha256: string[];
 }
 
+export interface RawLandingBundleEntry extends RawSnapshotEntry {
+  storageName: string;
+}
+
+export interface RawLandingBundleManifest {
+  format: "hoibot-raw-landing-bundle-v1";
+  generatedAt: string;
+  sourceLabel: string;
+  snapshotManifestSha256: string;
+  fileCount: number;
+  totalBytes: number;
+  bundleSha256: string;
+  entries: RawLandingBundleEntry[];
+}
+
 const UTF8_DECODER = new TextDecoder("utf-8", { fatal: true });
 const TEXT_EXTENSIONS = new Set([".json", ".txt"]);
 
 function sha256(value: Uint8Array | string): string {
   return createHash("sha256").update(value).digest("hex");
+}
+
+async function writeBytesIfAbsent(path: string, bytes: Buffer): Promise<void> {
+  try {
+    const existing = await readFile(path);
+    if (sha256(existing) !== sha256(bytes)) throw new Error("RAW_LANDING_PAYLOAD_CONFLICT");
+    return;
+  } catch (error) {
+    if (error instanceof Error && error.message === "RAW_LANDING_PAYLOAD_CONFLICT") throw error;
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+  const temporaryPath = `${path}.tmp`;
+  await writeFile(temporaryPath, bytes);
+  await rename(temporaryPath, path);
 }
 
 async function collectFiles(root: string, current: string, output: string[]): Promise<void> {
@@ -126,6 +155,74 @@ export async function buildRawSnapshotManifest(
     manifestSha256: sha256(canonicalLines.join("\n")),
     entries
   };
+}
+
+// 검증된 RAW snapshot을 경로 비노출 해시명과 원문 bytes 그대로 landing bundle로 만든다.
+export async function buildRawLandingBundle(
+  sourceRoot: string,
+  bundleRoot: string,
+  expected: RawSnapshotManifest
+): Promise<RawLandingBundleManifest> {
+  const source = resolve(sourceRoot);
+  const bundle = resolve(bundleRoot);
+  if (!(await stat(source)).isDirectory()) throw new Error("SOURCE_NOT_DIRECTORY");
+  if (source === bundle || bundle.startsWith(`${source}${sep}`)) {
+    throw new Error("RAW_LANDING_INSIDE_SOURCE_NOT_ALLOWED");
+  }
+
+  const files: string[] = [];
+  await collectFiles(source, source, files);
+  if (files.length !== expected.fileCount) throw new Error("RAW_LANDING_FILE_COUNT_MISMATCH");
+  const expectedByPath = new Map(expected.entries.map((entry) => [entry.pathSha256, entry]));
+  const payloadDirectory = join(bundle, expected.manifestSha256, "payload");
+  await mkdir(payloadDirectory, { recursive: true });
+  const entries: RawLandingBundleEntry[] = [];
+
+  for (const absolutePath of files) {
+    const relativePath = normalizeRelativePath(source, absolutePath);
+    const pathSha256 = sha256(relativePath);
+    const expectedEntry = expectedByPath.get(pathSha256);
+    if (!expectedEntry) throw new Error("RAW_LANDING_PATH_NOT_IN_SNAPSHOT");
+    const bytes = await readFile(absolutePath);
+    if (bytes.byteLength !== expectedEntry.size || sha256(bytes) !== expectedEntry.contentSha256) {
+      throw new Error("RAW_LANDING_SOURCE_DRIFT");
+    }
+    const storageName = `${pathSha256}.bin`;
+    await writeBytesIfAbsent(join(payloadDirectory, storageName), bytes);
+    entries.push({ ...expectedEntry, storageName });
+  }
+
+  entries.sort((left, right) => left.pathSha256.localeCompare(right.pathSha256, "en"));
+  const expectedNames = new Set(entries.map((entry) => entry.storageName));
+  const actualNames = (await readdir(payloadDirectory)).sort();
+  if (actualNames.length !== expectedNames.size || actualNames.some((name) => !expectedNames.has(name))) {
+    throw new Error("RAW_LANDING_UNEXPECTED_PAYLOAD");
+  }
+  const canonical = entries.map(
+    (entry) => `${entry.pathSha256}|${entry.size}|${entry.contentSha256}|${entry.storageName}`
+  );
+  return {
+    format: "hoibot-raw-landing-bundle-v1",
+    generatedAt: new Date().toISOString(),
+    sourceLabel: expected.sourceLabel,
+    snapshotManifestSha256: expected.manifestSha256,
+    fileCount: entries.length,
+    totalBytes: entries.reduce((sum, entry) => sum + entry.size, 0),
+    bundleSha256: sha256(canonical.join("\n")),
+    entries
+  };
+}
+
+// RAW landing bundle manifest를 임시 파일을 거쳐 원자적으로 저장한다.
+export async function writeRawLandingBundleManifest(
+  outputPath: string,
+  manifest: RawLandingBundleManifest
+): Promise<void> {
+  const absoluteOutput = resolve(outputPath);
+  const temporaryOutput = `${absoluteOutput}.tmp`;
+  await mkdir(dirname(absoluteOutput), { recursive: true });
+  await writeFile(temporaryOutput, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await rename(temporaryOutput, absoluteOutput);
 }
 
 // 두 RAW manifest의 파일 수, 바이트 수와 전체 해시가 같은지 판정한다.
