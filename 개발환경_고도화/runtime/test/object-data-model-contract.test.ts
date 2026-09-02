@@ -8,11 +8,11 @@ const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixture
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
-  it("accepts an empty registration only as a no-schema-evidence baseline", () => {
+  it("accepts the registered WBS731 identity/audit schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, []);
-    assert.deepEqual(contract.tables, []);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql"]);
+    assert.deepEqual(contract.tables.map((table) => table.table), ["object_identities", "object_identity_crosswalks"]);
   });
 
   it("accepts the anonymized identity, definition, and ownership fixture", () => {

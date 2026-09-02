@@ -187,6 +187,7 @@
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
+    "@paralleldrive/cuid2": "3.0.2",
     "argon2": "^0.45.1",
     "fastify": "^5.10.0",
     "lossless-json": "^4.3.1",
