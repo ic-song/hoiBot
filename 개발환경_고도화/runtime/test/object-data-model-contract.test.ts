@@ -15,14 +15,22 @@ const migration450 = readFileSync(new URL("../migrations/450_object_furniture_ma
 const migration449 = readFileSync(new URL("../migrations/449_canonical_pet_skill.sql", import.meta.url), "utf8");
 const migration452 = readFileSync(new URL("../migrations/452_canonical_currency_ledger.sql", import.meta.url), "utf8");
 const migration451 = readFileSync(new URL("../migrations/451_canonical_package_reward.sql", import.meta.url), "utf8");
+const migration453 = readFileSync(new URL("../migrations/453_canonical_building_recipe.sql", import.meta.url), "utf8");
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql"]);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql"]);
     for (const table of ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment", "canonical_pet_equipment_operation_replays", "object_furniture_ownership_history", "object_furniture_market_listings", "object_furniture_active_market_listings", "canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances", "canonical_mini_pet_operation_replays", "canonical_member_title_definitions", "canonical_owned_member_title_instances", "canonical_member_title_selections", "canonical_pet_title_definitions", "canonical_owned_pet_title_instances", "canonical_pet_title_selections", "canonical_mini_pet_title_definitions", "canonical_owned_mini_pet_title_instances", "canonical_mini_pet_title_selections", "canonical_pet_skill_definitions", "canonical_pet_skill_definition_imports", "canonical_owned_pet_skill_stacks", "canonical_owned_pet_skill_equipments", "canonical_pet_skill_operation_replays", "canonical_package_definitions", "canonical_package_definition_imports", "canonical_package_reward_groups", "canonical_package_reward_entries", "canonical_package_item_rewards", "canonical_package_nested_rewards", "canonical_package_reward_quarantines", "canonical_package_definition_replays", "canonical_currency_definitions", "canonical_currency_definition_imports", "canonical_player_currency_balances", "canonical_currency_operations", "canonical_currency_ledger_entries"]) assert.ok(contract.tables.some((entry) => entry.table === table));
+    for (const table of ["canonical_building_definitions", "canonical_building_definition_imports", "canonical_craft_recipe_definitions", "canonical_craft_recipe_definition_imports", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_building_craft_recipes", "canonical_craft_operations", "canonical_craft_item_ledger_entries", "canonical_craft_currency_ledger_entries"]) assert.ok(contract.tables.some((entry) => entry.table === table));
+  });
+
+  it("keeps building and recipe definitions, typed targets, replay, and owner-bound ledgers explicit", () => {
+    for (const token of ["canonical_building_definitions", "canonical_craft_recipe_definitions", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_craft_operations", "payload_fingerprint CHAR(64)", "FOREIGN KEY (craft_operation_id, player_id)", "FOREIGN KEY (owned_item_stack_id, player_id, item_id)", "FOREIGN KEY (player_currency_balance_id, player_id, currency_id)"]) assert.ok(migration453.includes(token));
+    assert.doesNotMatch(migration453, /\bCODE\b|javascript|script_body|sql_payload/i);
+    assert.equal(contract.integrationOnlyTables, undefined);
   });
 
   it("keeps migration446 aligned with the common player provider and owner-bound replay contract", () => {
@@ -169,6 +177,16 @@ describe("object data model standard contract", () => {
       primaryKey: ["owned_pet_id"], foreignKeys: [], uniqueKeys: [], integrationMigration: "446_canonical_pet_equipment.sql"
     }];
     assert.throws(() => validateObjectDataModelContract(missingOwnerKey), /INTEGRATION_UNIQUE_KEY_MISSING/);
+    const fakeCurrencyMigration = copy();
+    fakeCurrencyMigration.integrationOnlyTables = [{ table: "canonical_currency_definitions", role: "definition", columns: [{ name: "currency_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }], primaryKey: ["currency_id"], foreignKeys: [], integrationMigration: "999_fake_currency.sql" }];
+    assert.throws(() => validateObjectDataModelContract(fakeCurrencyMigration), /INTEGRATION_DEPENDENCY_NOT_PINNED/);
+    const missingBalanceOwnerTarget = copy();
+    missingBalanceOwnerTarget.integrationOnlyTables = [{
+      table: "canonical_player_currency_balances", role: "ownership_quantity",
+      columns: [{ name: "player_currency_balance_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }, { name: "player_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }, { name: "currency_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }],
+      primaryKey: ["player_currency_balance_id"], foreignKeys: [], uniqueKeys: [["player_id", "currency_id"]], integrationMigration: "452_canonical_currency_ledger.sql"
+    }];
+    assert.throws(() => validateObjectDataModelContract(missingBalanceOwnerTarget), /INTEGRATION_UNIQUE_KEY_MISSING/);
   });
 
   it("allows pet-skill handler keys and options while retaining executable-payload denial", () => {

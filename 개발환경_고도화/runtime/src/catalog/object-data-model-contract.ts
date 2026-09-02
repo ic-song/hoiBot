@@ -5,6 +5,8 @@ const OWNERSHIP_COMMON_COLUMNS = new Set(["player_id", "quantity", ...REQUIRED_A
 const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: string; primaryKey: readonly string[]; requiredUniqueKeys: readonly (readonly string[])[] }>> = {
   canonical_players: { migration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"], requiredUniqueKeys: [] },
   canonical_owned_pet_instances: { migration: "446_canonical_pet_equipment.sql", primaryKey: ["owned_pet_id"], requiredUniqueKeys: [["owned_pet_id", "player_id"]] },
+  canonical_currency_definitions: { migration: "452_canonical_currency_ledger.sql", primaryKey: ["currency_id"], requiredUniqueKeys: [] },
+  canonical_player_currency_balances: { migration: "452_canonical_currency_ledger.sql", primaryKey: ["player_currency_balance_id"], requiredUniqueKeys: [["player_id", "currency_id"], ["player_currency_balance_id", "player_id", "currency_id"]] },
 };
 
 export type ObjectTableRole = "identity" | "definition" | "ownership_quantity" | "ownership_instance" | "relation" | "history" | "operation";
