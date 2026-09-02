@@ -18,6 +18,36 @@ function scriptedDatabase(queries: unknown[]): DatabaseClient {
   return { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined };
 }
 
+function executeLevelReplayRaceDatabase(replay: { owned_furniture_id: string; result_status: string; operation_kind: string; payload_fingerprint: string }) {
+  let transactionCount = 0;
+  let operationReplayInserts = 0;
+  const duplicate = Object.assign(new Error("Duplicate entry 'legacy.import/source-1' for key 'uq_object_furniture_operation_replay'"), { code: "ER_DUP_ENTRY" });
+  const transaction: DatabaseTransaction = {
+    query: async <T>(sql: string): Promise<T> => {
+      if (sql.includes("object_furniture_operation_replays")) return (transactionCount === 1 ? [] : [replay]) as T;
+      if (sql.includes("object_owned_furniture_instances") && sql.includes("JOIN object_furniture_definitions")) return [{ owned_furniture_id: "o1234567", player_id: "p1234567", furniture_id: "f1234567", enhancement_level: 0n, base_charm: 10n, charm_per_enhancement: 5n }] as T;
+      if (sql.includes("object_furniture_definitions")) return [{ furniture_id: "f1234567", display_name: "다이아상자💎(/다이아상자오픈)", purchase_price: 500n, base_charm: 10n, charm_per_enhancement: 5n, active: 1 }] as T;
+      if (sql.includes("canonical_players")) return [{ player_id: "p1234567" }] as T;
+      if (sql.includes("SELECT owned_furniture_id,ownership_status")) return [{ owned_furniture_id: "o1234567", ownership_status: "bag" }] as T;
+      if (sql.includes("object_home_furniture_placements")) return [] as T;
+      if (sql.includes("object_owned_furniture_instances")) return [{ owned_furniture_id: "o1234567", player_id: "p1234567", furniture_id: "f1234567", enhancement_level: 0n, base_charm: 10n, charm_per_enhancement: 5n }] as T;
+      return [] as T;
+    },
+    execute: async (sql: string): Promise<DatabaseWriteResult> => {
+      if (sql.includes("INSERT INTO object_furniture_operation_replays")) {
+        operationReplayInserts += 1;
+        if (transactionCount === 1) throw duplicate;
+      }
+      return { affectedRows: 1n, insertId: 0n };
+    }
+  };
+  const database: DatabaseClient = {
+    ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute,
+    withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { transactionCount += 1; return work(transaction); }, close: async () => undefined
+  };
+  return { database, stats: () => ({ transactionCount, operationReplayInserts }) };
+}
+
 describe("canonical furniture home repository", () => {
   it("calculates current charm from definition and enhancement without an instance snapshot", () => {
     assert.equal(calculateCanonicalFurnitureCharm(120n, 15n, 3n), 165n);
@@ -61,19 +91,54 @@ describe("canonical furniture home repository", () => {
     await assert.rejects(repository.grantOwnedFurniture({ actor: "migration", playerId: "p1234567", furnitureId: "f1234567", idempotencyScope: "legacy.import", idempotencyKey: "source-1" }), /IDEMPOTENCY_CONFLICT/);
   });
 
-  it("retries a concurrent unique-key race and returns the committed replay", async () => {
-    const duplicate = Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" });
-    let attempts = 0, reads = 0;
-    const transaction: DatabaseTransaction = { query: async <T>(): Promise<T> => (++reads === 1 ? [{ owned_furniture_id: "o1234567", result_status: "granted", operation_kind: "grant_owned_furniture", payload_fingerprint: fingerprint("grant_owned_furniture", ["p1234567", "f1234567", "0"]) }] : [{ owned_furniture_id: "o1234567", player_id: "p1234567", furniture_id: "f1234567", enhancement_level: 0n, base_charm: 10n, charm_per_enhancement: 5n }]) as T, execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 1n, insertId: 0n }) };
-    const database: DatabaseClient = { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, close: async () => undefined, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { attempts += 1; if (attempts === 1) throw duplicate; return work(transaction); } };
+  it("re-reads a committed grant replay after the replay INSERT has an execute-level business UNIQUE conflict", async () => {
+    const replay = { owned_furniture_id: "o1234567", result_status: "granted", operation_kind: "grant_owned_furniture", payload_fingerprint: fingerprint("grant_owned_furniture", ["p1234567", "f1234567", "0"]) };
+    const fixture = executeLevelReplayRaceDatabase(replay);
+    const repository = new MariaCanonicalFurnitureHomeRepository(fixture.database, () => "a1234567", audit);
+    assert.equal((await repository.grantOwnedFurniture({ actor: "migration", playerId: "p1234567", furnitureId: "f1234567", idempotencyScope: "legacy.import", idempotencyKey: "source-1" })).replayed, true);
+    assert.deepEqual(fixture.stats(), { transactionCount: 2, operationReplayInserts: 1 });
+  });
+
+  it("re-reads a committed placement replay after the replay INSERT has an execute-level business UNIQUE conflict", async () => {
+    const replay = { owned_furniture_id: "o1234567", result_status: "placed", operation_kind: "place_owned_furniture", payload_fingerprint: fingerprint("place_owned_furniture", ["p1234567", "o1234567", "0"]) };
+    const fixture = executeLevelReplayRaceDatabase(replay);
+    const repository = new MariaCanonicalFurnitureHomeRepository(fixture.database, () => "a1234567", audit);
+    assert.equal((await repository.placeOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", placementOrder: 0n, idempotencyScope: "legacy.import", idempotencyKey: "source-1" })).replayed, true);
+    assert.deepEqual(fixture.stats(), { transactionCount: 2, operationReplayInserts: 1 });
+  });
+
+  it("re-reads a committed transition replay after the replay INSERT has an execute-level business UNIQUE conflict", async () => {
+    const replay = { owned_furniture_id: "o1234567", result_status: "transitioned", operation_kind: "transition_bag_to_listed", payload_fingerprint: fingerprint("transition_bag_to_listed", ["p1234567", "o1234567", "100"]) };
+    const fixture = executeLevelReplayRaceDatabase(replay);
+    const repository = new MariaCanonicalFurnitureHomeRepository(fixture.database, () => "a1234567", audit);
+    assert.equal((await repository.transitionOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", fromStatus: "bag", toStatus: "listed", listingPrice: 100n, idempotencyScope: "legacy.import", idempotencyKey: "source-1" })).replayed, true);
+    assert.deepEqual(fixture.stats(), { transactionCount: 2, operationReplayInserts: 1 });
+  });
+
+  it("rejects a transition replay when the same key changes the listing price", async () => {
+    const replay = [{ owned_furniture_id: "o1234567", result_status: "transitioned", operation_kind: "transition_bag_to_listed", payload_fingerprint: fingerprint("transition_bag_to_listed", ["p1234567", "o1234567", "100"]) }];
+    const repository = new MariaCanonicalFurnitureHomeRepository(scriptedDatabase([replay]), () => "a1234567", audit);
+    await assert.rejects(repository.transitionOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", fromStatus: "bag", toStatus: "listed", listingPrice: 101n, idempotencyScope: "legacy.import", idempotencyKey: "source-1" }), /IDEMPOTENCY_CONFLICT/);
+  });
+
+  it("rolls back listed-to-sold when its active market listing is absent", async () => {
+    let rolledBack = false;
+    let writes = 0;
+    const transaction: DatabaseTransaction = {
+      query: async <T>(): Promise<T> => [] as T,
+      execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: BigInt(++writes === 1 ? 1 : 0), insertId: 0n })
+    };
+    const database: DatabaseClient = {
+      ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, close: async () => undefined,
+      withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { try { return await work(transaction); } catch (error) { rolledBack = true; throw error; } }
+    };
     const repository = new MariaCanonicalFurnitureHomeRepository(database, () => "a1234567", audit);
-    const result = await repository.grantOwnedFurniture({ actor: "migration", playerId: "p1234567", furnitureId: "f1234567", idempotencyScope: "legacy.import", idempotencyKey: "source-1" });
-    assert.equal(result.replayed, true);
-    assert.equal(attempts, 2);
+    await assert.rejects(repository.transitionOwnedFurniture({ actor: "migration", playerId: "p1234567", ownedFurnitureId: "o1234567", fromStatus: "listed", toStatus: "sold", idempotencyScope: "legacy.import", idempotencyKey: "sold-1" }), /MARKET_STATE_INVALID/);
+    assert.equal(rolledBack, true);
   });
 
 
-  it("uses placement existence as the only placed-state source and records it atomically with replay", async () => {
+  it("records lifecycle status and its placement detail atomically with replay", async () => {
     const statements: string[] = [];
     const transaction: DatabaseTransaction = {
       query: async <T>(sql: string): Promise<T> => {

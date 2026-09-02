@@ -98,6 +98,43 @@ async function reserveId(transaction: DatabaseTransaction, generate: ObjectIdent
   throw new Error("CANONICAL_FURNITURE_ID_COLLISION_RETRY_EXHAUSTED");
 }
 
+function duplicateKeyName(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("message" in error)) return undefined;
+  const matched = /(?:for key|key)\s+['`]?([^'`\s]+)/i.exec(String(error.message));
+  return matched === null ? undefined : matched[1];
+}
+
+function isPrimaryDuplicate(error: unknown): boolean {
+  return duplicateKeyName(error)?.toUpperCase() === "PRIMARY";
+}
+
+function isOperationReplayUniqueDuplicate(error: unknown): boolean {
+  return duplicateKeyName(error)?.toLowerCase() === "uq_object_furniture_operation_replay";
+}
+
+// 재실행 원장은 PK 충돌만 새 CUID로 재시도합니다. 업무 UNIQUE 충돌은 상위 transaction이
+// rollback 후 replay 행을 다시 읽게 해야 하므로 여기서 절대로 삼키지 않습니다.
+async function reserveOperationReplayId(transaction: DatabaseTransaction, generate: ObjectIdentityCandidateGenerator, insert: (candidate: string) => Promise<void>): Promise<string> {
+  for (let attempt = 0; attempt < OBJECT_IDENTITY_MAX_ATTEMPTS; attempt += 1) {
+    const candidate = generate();
+    assertCuid2Length(candidate);
+    try {
+      await insert(candidate);
+      return candidate;
+    } catch (error) {
+      if (!duplicate(error) || isOperationReplayUniqueDuplicate(error)) throw error;
+      if (isPrimaryDuplicate(error)) continue;
+      // 드라이버가 constraint 이름을 생략한 경우에는 후보 PK 존재 여부로만 PK 충돌을 판별합니다.
+      const existing = (await transaction.query<Array<{ furniture_operation_id: string }>>(
+        "SELECT furniture_operation_id FROM object_furniture_operation_replays WHERE furniture_operation_id=? FOR UPDATE",
+        [candidate]
+      ))[0];
+      if (existing === undefined) throw error;
+    }
+  }
+  throw new Error("CANONICAL_FURNITURE_ID_COLLISION_RETRY_EXHAUSTED");
+}
+
 function fingerprint(operationKind: string, values: readonly string[]): string {
   return createHash("sha256").update(JSON.stringify([operationKind, ...values])).digest("hex");
 }
@@ -146,12 +183,12 @@ export class MariaCanonicalFurnitureHomeRepository {
             );
             ownedFurnitureId = candidate;
           });
-          await reserveId(transaction, this.generate, async (candidate) => {
+          await reserveOperationReplayId(transaction, this.generate, async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
               [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
-          }, false);
+          });
           return { furniture: {
             ownedFurnitureId, playerId: input.playerId, furnitureId: definition.furniture_id, enhancementLevel,
             finalCharm: calculateCanonicalFurnitureCharm(BigInt(definition.base_charm), BigInt(definition.charm_per_enhancement), enhancementLevel), ownershipStatus: "bag"
@@ -164,7 +201,7 @@ export class MariaCanonicalFurnitureHomeRepository {
     throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
   }
 
-  // 배치 행 존재만 장착 상태로 사용해 이중 상태를 만들지 않고 원자적으로 기록합니다.
+  // ownership_status가 lifecycle 권위이고 placement는 placed 상태의 상세 관계입니다. 둘은 한 transaction에서 같이 기록합니다.
   async placeOwnedFurniture(input: PlaceCanonicalFurnitureInput): Promise<{ ownedFurnitureId: string; replayed: boolean }> {
     assertPlacementInput(input);
     const operationKind = "place_owned_furniture";
@@ -190,7 +227,7 @@ export class MariaCanonicalFurnitureHomeRepository {
           if (alreadyPlaced !== undefined) throw new Error("CANONICAL_FURNITURE_ALREADY_PLACED");
           const audit = this.createAudit(input.actor, this.now());
           let operationId = "";
-          await reserveId(transaction, this.generate, async (candidate) => {
+          await reserveOperationReplayId(transaction, this.generate, async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
               [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, input.ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
@@ -242,7 +279,7 @@ export class MariaCanonicalFurnitureHomeRepository {
         if (listing.affectedRows !== 1n) throw new Error("CANONICAL_FURNITURE_MARKET_STATE_INVALID");
       }
       let operationId = "";
-      await reserveId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'transitioned',?,?,?,?)", [candidate,input.playerId,input.idempotencyScope,input.idempotencyKey,kind,digest,input.ownedFurnitureId,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); operationId=candidate; });
+      await reserveOperationReplayId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'transitioned',?,?,?,?)", [candidate,input.playerId,input.idempotencyScope,input.idempotencyKey,kind,digest,input.ownedFurnitureId,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); operationId=candidate; });
       await reserveId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)", [candidate,input.ownedFurnitureId,operationId,input.fromStatus,input.toStatus,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); });
       return { ownedFurnitureId: input.ownedFurnitureId, replayed: false };
       });
