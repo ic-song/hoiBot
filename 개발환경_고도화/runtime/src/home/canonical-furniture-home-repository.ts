@@ -36,6 +36,9 @@ export interface PlaceCanonicalFurnitureInput {
   idempotencyScope: string;
   idempotencyKey: string;
 }
+export interface TransitionCanonicalFurnitureInput {
+  actor: string; playerId: string; ownedFurnitureId: string; fromStatus: "bag"|"placed"|"listed"; toStatus: "bag"|"listed"|"sold"|"removed"; idempotencyScope: string; idempotencyKey: string;
+}
 
 export type CanonicalFurnitureAuditFactory = (actor: string, now: Date) => ObjectAuditValues;
 
@@ -122,7 +125,7 @@ export class MariaCanonicalFurnitureHomeRepository {
       try {
         return await this.database.withTransaction(async (transaction) => {
           const replay = (await transaction.query<ReplayRow[]>(
-            "SELECT owned_furniture_id,result_status FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
+            "SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
             [input.playerId, input.idempotencyScope, input.idempotencyKey]
           ))[0];
           if (replay !== undefined) { requireReplayMatch(replay, operationKind, payloadFingerprint); return { furniture: await this.findOwnedForUpdate(transaction, replay.owned_furniture_id), replayed: true }; }
@@ -170,7 +173,7 @@ export class MariaCanonicalFurnitureHomeRepository {
       try {
         return await this.database.withTransaction(async (transaction) => {
           const replay = (await transaction.query<ReplayRow[]>(
-            "SELECT owned_furniture_id,result_status FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
+            "SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
             [input.playerId, input.idempotencyScope, input.idempotencyKey]
           ))[0];
           if (replay !== undefined) { requireReplayMatch(replay, operationKind, payloadFingerprint); return { ownedFurnitureId: replay.owned_furniture_id, replayed: true }; }
@@ -215,11 +218,31 @@ export class MariaCanonicalFurnitureHomeRepository {
     throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
   }
 
+  // 해제·등록·취소·판매·삭제는 소유 상태와 placement/market 관계를 한 transaction에서 같이 바꿉니다.
+  async transitionOwnedFurniture(input: TransitionCanonicalFurnitureInput): Promise<{ ownedFurnitureId: string; replayed: boolean }> {
+    assertPlacementInput({ ...input, placementOrder: 0n });
+    const kind = `transition_${input.fromStatus}_to_${input.toStatus}`;
+    const digest = fingerprint(kind, [input.playerId, input.ownedFurnitureId]);
+    return this.database.withTransaction(async (transaction) => {
+      const replay = (await transaction.query<ReplayRow[]>("SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE", [input.playerId, input.idempotencyScope, input.idempotencyKey]))[0];
+      if (replay !== undefined) { requireReplayMatch(replay, kind, digest); return { ownedFurnitureId: replay.owned_furniture_id, replayed: true }; }
+      const audit = this.createAudit(input.actor, this.now());
+      const changed = await transaction.execute("UPDATE object_owned_furniture_instances SET ownership_status=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status=?", [input.toStatus, audit.UPDATE_USER, audit.UPDATE_TIME, input.ownedFurnitureId, input.playerId, input.fromStatus]);
+      if (changed.affectedRows !== 1n) throw new Error("CANONICAL_FURNITURE_STATE_INVALID");
+      if (input.fromStatus === "placed") await transaction.execute("DELETE FROM object_home_furniture_placements WHERE owned_furniture_id=?", [input.ownedFurnitureId]);
+      if (input.toStatus !== "listed") await transaction.execute("UPDATE object_furniture_market_listings SET listing_status='cancelled',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND listing_status='active'", [audit.UPDATE_USER, audit.UPDATE_TIME, input.ownedFurnitureId]);
+      let operationId = "";
+      await reserveId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'transitioned',?,?,?,?)", [candidate,input.playerId,input.idempotencyScope,input.idempotencyKey,kind,digest,input.ownedFurnitureId,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); operationId=candidate; });
+      await reserveId(transaction, this.generate, async (candidate) => { await transaction.execute("INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)", [candidate,input.ownedFurnitureId,operationId,input.fromStatus,input.toStatus,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]); });
+      return { ownedFurnitureId: input.ownedFurnitureId, replayed: false };
+    });
+  }
+
   // 홈 화면은 definition과 instance를 조인해 현재 정의 기준의 매력을 읽습니다.
   async listPlacedFurniture(playerId: string): Promise<CanonicalOwnedFurniture[]> {
     assertCuid2Length(playerId);
     const rows = await this.database.query<OwnedRow[]>(
-      "SELECT owned.owned_furniture_id,owned.player_id,owned.furniture_id,owned.enhancement_level,definition.base_charm,definition.charm_per_enhancement FROM object_home_furniture_placements placement JOIN object_owned_furniture_instances owned ON owned.owned_furniture_id=placement.owned_furniture_id JOIN object_furniture_definitions definition ON definition.furniture_id=owned.furniture_id WHERE owned.player_id=? ORDER BY placement.placement_order,placement.home_furniture_placement_id",
+      "SELECT owned.owned_furniture_id,owned.player_id,owned.furniture_id,owned.enhancement_level,definition.base_charm,definition.charm_per_enhancement FROM object_home_furniture_placements placement JOIN object_owned_furniture_instances owned ON owned.owned_furniture_id=placement.owned_furniture_id JOIN object_furniture_definitions definition ON definition.furniture_id=owned.furniture_id WHERE owned.player_id=? AND owned.ownership_status='placed' ORDER BY placement.placement_order,placement.home_furniture_placement_id",
       [playerId]
     );
     return rows.map((row) => owned(row, "placed"));

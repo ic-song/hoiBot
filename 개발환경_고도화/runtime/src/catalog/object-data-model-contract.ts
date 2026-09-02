@@ -20,13 +20,14 @@ export interface ObjectDataModelTable {
   definitionOnlyColumns?: readonly string[];
   auditTimeFormat?: "KST_YYYY-MM-DD HH:MM:SS";
 }
+export interface ObjectDataModelIntegrationTable extends ObjectDataModelTable { integrationMigration: string; }
 export interface ObjectDataModelContract {
   standardVersion: typeof OBJECT_DATA_MODEL_STANDARD_VERSION;
   scope: "new_object_schema_only";
   registeredMigrations: readonly string[];
   tables: readonly ObjectDataModelTable[];
   // 현재 branch에 없는 선행 migration table은 통합 시점에만 FK 대상으로 허용합니다.
-  integrationOnlyTables?: readonly ObjectDataModelTable[];
+  integrationOnlyTables?: readonly ObjectDataModelIntegrationTable[];
   // handler_key/options_json은 안전한 데이터이며 이 목록의 실행 payload 컬럼은 허용하지 않습니다.
   forbiddenExecutableColumns: readonly string[];
 }
@@ -88,7 +89,9 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
   for (const table of contract.integrationOnlyTables ?? []) {
     if (tables.has(table.table)) fail("INTEGRATION_TABLE_DUPLICATE", table.table);
     if (table.primaryKey.length === 0 || table.role !== "identity") fail("INTEGRATION_TABLE_INVALID", table.table);
+    if (!/^\d+_[a-z0-9_]+\.sql$/i.test(table.integrationMigration) || contract.registeredMigrations.includes(table.integrationMigration)) fail("INTEGRATION_MIGRATION_INVALID", table.table);
     for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
+    if (table.foreignKeys.length !== 0) fail("INTEGRATION_TABLE_FK", table.table);
     tables.set(table.table, table);
   }
   for (const table of contract.tables) {
