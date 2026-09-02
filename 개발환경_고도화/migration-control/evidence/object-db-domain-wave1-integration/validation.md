@@ -3,24 +3,24 @@
 - 검증일: 2026-09-03 KST
 - 기준선: `47d84abde86c9aeca06fa8698c4cdc0f5ce70823`
 - 통합 브랜치: `codex/object-db-domain-wave1-integration-v1-20260903`
-- 대상: WBS733 아이템·가방, WBS734 가구·홈, WBS735 펫·장비와 후속 합류한 WBS736 미니펫의 Gate 1~4 산출물
+- 대상: WBS733 아이템·가방, WBS734 가구·홈, WBS735 펫·장비와 후속 합류한 WBS736 미니펫·WBS737 타이틀 3종의 Gate 1~4 산출물
 - 운영 영향: 없음. 운영 DB와 운영 배포는 사용하지 않았다.
 
 ## 통합 범위
 
-- migration `443`, `444`, `445`, `446`, `447`, `450`을 중앙 manifest에 직렬 등록했다.
+- migration `443`, `444`, `445`, `446`, `447`, `448`, `450`을 중앙 manifest에 직렬 등록했다.
 - 공용 사용자 PK는 `canonical_players.player_id` 하나만 사용한다.
-- 계약 등록 대상은 26개 테이블이며 각 테이블에 `INSERT_USER`, `INSERT_TIME`, `UPDATE_USER`, `UPDATE_TIME`을 둔다.
+- 계약 등록 대상은 35개 테이블이며 각 테이블에 `INSERT_USER`, `INSERT_TIME`, `UPDATE_USER`, `UPDATE_TIME`을 둔다.
 - 정의값과 사용자 보유값을 분리하고, 가구 매력은 정의의 기본값·강화 증가값과 보유 인스턴스의 강화 단계로 계산한다.
 
 ## 실제 MariaDB 검증
 
 격리된 일회용 `mariadb:11.4` 컨테이너와 빈 DB에서 수행했다.
 
-- 전체 migration 적용: 성공, migration count `436`
-- 같은 DB에 migration 재실행: 성공, migration count `436`
-- 등록 대상 테이블: `26/26`
-- 필수 감사 컬럼: `104/104`
+- 전체 migration 적용: 성공, migration count `437`
+- 같은 DB에 migration 재실행: 성공, migration count `437`
+- 등록 대상 테이블: `35/35`
+- 필수 감사 컬럼: `140/140`
 - 등록 대상 FK: `35`; FK 원본·참조 컬럼 타입/문자셋/collation 불일치 `0`
 - 다른 사용자의 장비를 펫에 장착하는 교차 소유 INSERT: FK `fk_canonical_owned_pet_equipment_equipment`로 거부
 - `2026-09-03 25:00:00` 감사시간 INSERT: CHECK `chk_object_furniture_market_insert_time`으로 거부
@@ -28,10 +28,11 @@
 - 같은 가구의 두 번째 활성 매물 transaction: UNIQUE `uq_object_furniture_active_market_owned`로 거부되고 신규 이력도 rollback
 - 445 활성 매물 seed 후 450 적용: 기존 활성 관계가 1:1 backfill되고 재실행 후 동일 상태 유지
 - 다른 가구의 매물 ID와 보유 가구 ID를 섞은 활성 관계: 복합 FK `fk_object_furniture_active_market_pair`로 거부; 정확한 쌍은 허용
+- 다른 사용자가 보유한 일반 타이틀 인스턴스를 선택: 복합 FK `fk_canonical_member_title_selection_owned`로 거부
 
 ## 코드 검증
 
-- `npm run object-data:validate`: 성공, 등록 대상 26개
+- `npm run object-data:validate`: 성공, 등록 대상 35개
 - `npm run typecheck`: 성공
 - `npm run build`: 성공
 - Wave 1 집중 테스트: `41/41` 성공
