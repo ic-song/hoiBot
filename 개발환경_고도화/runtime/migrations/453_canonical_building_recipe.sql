@@ -195,3 +195,11 @@ CREATE TABLE canonical_craft_currency_ledger_entries (
   CONSTRAINT chk_canonical_craft_currency_ledger_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'),
   CONSTRAINT chk_canonical_craft_currency_ledger_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 공용 operations/outbox를 그대로 사용하고 canonical craft owner를 복합 FK로 결속합니다.
+ALTER TABLE outbox_messages
+  ADD COLUMN craft_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER operation_id,
+  ADD COLUMN player_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL AFTER craft_operation_id,
+  ADD UNIQUE KEY uq_outbox_canonical_craft_owner (craft_operation_id, player_id),
+  ADD CONSTRAINT fk_outbox_canonical_craft_owner FOREIGN KEY (craft_operation_id, player_id)
+    REFERENCES canonical_craft_operations (craft_operation_id, player_id) ON DELETE RESTRICT;

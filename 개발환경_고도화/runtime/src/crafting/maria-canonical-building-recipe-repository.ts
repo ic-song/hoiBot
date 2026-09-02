@@ -1,8 +1,9 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { OBJECT_IDENTITY_MAX_ATTEMPTS, assertObjectIdentityCandidate, createObjectAuditValues, createObjectIdentityCandidate, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
 
 const UINT64_MAX = 18_446_744_073_709_551_615n;
+const SIGNED_BIGINT_MAX = 9_223_372_036_854_775_807n;
 type TargetAmount = { targetId: string; amount: bigint };
 export type CanonicalRecipeDefinitionInput = {
   actor: string; sourceSystem: string; sourceNamespace: string; sourceIdentifier: string;
@@ -15,7 +16,7 @@ export type CanonicalBuildingDefinitionInput = {
   actor: string; sourceSystem: string; sourceNamespace: string; sourceIdentifier: string;
   buildingName: string; floorValue: number; experienceRequired: bigint; active?: boolean;
 };
-export type CanonicalCraftExecutionInput = { actor: string; playerId: string; craftRecipeId: string; requestedCount: bigint; requestKey: string };
+export type CanonicalCraftExecutionInput = { actor: string; playerId: string; craftRecipeId: string; requestedCount: bigint; requestKey: string; destinationId: string; replyText: string };
 export type CanonicalCraftExecutionResult = { craftOperationId: string; replayed: boolean };
 
 type ImportRow = { definition_id: string; payload_fingerprint: string };
@@ -46,7 +47,9 @@ function retryable(error: unknown): boolean {
 }
 function multiplied(amount: bigint, count: bigint): bigint {
   if (amount < 1n || count < 1n || amount > UINT64_MAX / count) throw new Error("CANONICAL_CRAFT_AMOUNT_OVERFLOW");
-  return amount * count;
+  const result = amount * count;
+  if (result > SIGNED_BIGINT_MAX) throw new Error("CANONICAL_CRAFT_LEDGER_DELTA_OUT_OF_RANGE");
+  return result;
 }
 function normalizedTargets(rows: readonly TargetAmount[], label: string): TargetAmount[] {
   const seen = new Set<string>();
@@ -62,7 +65,7 @@ function assertDisjointTargets(inputs: readonly TargetAmount[], outputs: readonl
   const inputIds = new Set(inputs.map((row) => row.targetId));
   if (outputs.some((row) => inputIds.has(row.targetId))) throw new Error(`CANONICAL_CRAFT_${label}_INPUT_OUTPUT_OVERLAP`);
 }
-function payload(input: CanonicalCraftExecutionInput): string { return hash([input.playerId, input.craftRecipeId, input.requestedCount.toString()]); }
+function payload(input: CanonicalCraftExecutionInput): string { return hash([input.playerId, input.craftRecipeId, input.requestedCount.toString(), input.destinationId, input.replyText]); }
 
 export class MariaCanonicalBuildingRecipeRepository {
   public constructor(
@@ -119,6 +122,7 @@ export class MariaCanonicalBuildingRecipeRepository {
 
   public async execute(input: CanonicalCraftExecutionInput): Promise<CanonicalCraftExecutionResult> {
     identifier(input.playerId); identifier(input.craftRecipeId); text(input.requestKey, 182, "CANONICAL_CRAFT_REQUEST_KEY_INVALID");
+    text(input.destinationId, 191, "CANONICAL_CRAFT_DESTINATION_INVALID"); text(input.replyText, 10_000, "CANONICAL_CRAFT_REPLY_INVALID");
     if (input.requestedCount < 1n || input.requestedCount > UINT64_MAX) throw new Error("CANONICAL_CRAFT_REQUEST_COUNT_INVALID");
     const fingerprint = payload(input);
     return this.retry(async () => this.database.withTransaction(async (transaction) => {
@@ -128,8 +132,6 @@ export class MariaCanonicalBuildingRecipeRepository {
         if (prior.operation_status !== "completed") throw new Error("CANONICAL_CRAFT_REPLAY_INCOMPLETE");
         return { craftOperationId: prior.craft_operation_id, replayed: true };
       }
-      const audit = createObjectAuditValues(input.actor, this.now());
-      const operationId = await this.insertId(transaction, "INSERT INTO canonical_craft_operations(craft_operation_id,player_id,craft_recipe_id,request_key,requested_count,payload_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'processing',?,?,?,?)", (id) => [id, input.playerId, input.craftRecipeId, input.requestKey, input.requestedCount, fingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
       const recipe = (await transaction.query<RecipeRow[]>("SELECT active_flag,maximum_batch_count,craft_recipe_kind FROM canonical_craft_recipe_definitions WHERE craft_recipe_id=? FOR UPDATE", [input.craftRecipeId]))[0];
       if (recipe === undefined || (recipe.active_flag !== true && recipe.active_flag !== 1)) throw new Error("CANONICAL_CRAFT_RECIPE_INACTIVE");
       if (input.requestedCount > recipe.maximum_batch_count) throw new Error("CANONICAL_CRAFT_BATCH_LIMIT_EXCEEDED");
@@ -137,8 +139,13 @@ export class MariaCanonicalBuildingRecipeRepository {
       const itemPlan = await this.recipePlan(transaction, input.craftRecipeId, input.requestedCount, "item");
       const currencyPlan = await this.recipePlan(transaction, input.craftRecipeId, input.requestedCount, "currency");
       if (![...itemPlan.deltas.values(), ...currencyPlan.deltas.values()].some((delta) => delta > 0n)) throw new Error("CANONICAL_CRAFT_OUTPUT_REQUIRED");
+      const audit = createObjectAuditValues(input.actor, this.now());
+      const operationId = await this.insertId(transaction, "INSERT INTO canonical_craft_operations(craft_operation_id,player_id,craft_recipe_id,request_key,requested_count,payload_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'processing',?,?,?,?)", (id) => [id, input.playerId, input.craftRecipeId, input.requestKey, input.requestedCount, fingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+      const commonOperation = await transaction.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,NULL,NULL,'player',NULL,'canonical_craft','processing',UTC_TIMESTAMP(3))", [randomUUID()]);
       for (const [itemId, delta] of [...itemPlan.deltas.entries()].sort()) await this.applyItemDelta(transaction, operationId, input.playerId, itemId, delta, itemPlan.inputs.get(itemId) ?? 0n, audit);
       for (const [currencyId, delta] of [...currencyPlan.deltas.entries()].sort()) await this.applyCurrencyDelta(transaction, operationId, input.playerId, currencyId, delta, currencyPlan.inputs.get(currencyId) ?? 0n, audit);
+      await transaction.execute("INSERT INTO outbox_messages(operation_id,craft_operation_id,player_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,?,?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [commonOperation.insertId, operationId, input.playerId, input.destinationId, JSON.stringify({ data: input.replyText })]);
+      await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?", [JSON.stringify({ craftOperationId: operationId }), commonOperation.insertId]);
       await transaction.execute("UPDATE canonical_craft_operations SET operation_status='completed',UPDATE_USER=?,UPDATE_TIME=? WHERE craft_operation_id=?", [audit.UPDATE_USER, audit.UPDATE_TIME, operationId]);
       return { craftOperationId: operationId, replayed: false };
     }));
@@ -159,7 +166,10 @@ export class MariaCanonicalBuildingRecipeRepository {
     const deltas = new Map<string, bigint>(); const required = new Map<string, bigint>();
     for (const row of inputs) { const value = multiplied(row.amount, count); required.set(row.target_id, value); deltas.set(row.target_id, (deltas.get(row.target_id) ?? 0n) - value); }
     for (const row of outputs) deltas.set(row.target_id, (deltas.get(row.target_id) ?? 0n) + multiplied(row.amount, count));
-    for (const [key, value] of deltas) if (value === 0n) deltas.delete(key);
+    for (const [key, value] of deltas) {
+      if (value > SIGNED_BIGINT_MAX || value < -SIGNED_BIGINT_MAX) throw new Error("CANONICAL_CRAFT_LEDGER_DELTA_OUT_OF_RANGE");
+      if (value === 0n) deltas.delete(key);
+    }
     return { inputs: required, deltas };
   }
   private async applyItemDelta(transaction: DatabaseTransaction, operationId: string, playerId: string, itemId: string, delta: bigint, required: bigint, audit: ReturnType<typeof createObjectAuditValues>): Promise<void> {

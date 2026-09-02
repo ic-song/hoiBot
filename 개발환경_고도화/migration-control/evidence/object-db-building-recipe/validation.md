@@ -28,7 +28,9 @@
 - repository: definition payload-bound replay, CUID2 8자 충돌 제한 재시도, KST 감사값, recipe active/batch 검증, item/currency stable lock 및 원자 증감, typed ledger, duplicate/deadlock/lock-timeout 제한 재시도.
 - cross-owner FK는 operation owner와 stack/balance owner+target의 복합 FK로 차단한다.
 - 단독 `id`, object `CODE`, 실행 SQL/JS payload는 저장하지 않는다.
-- 검증: object-data contract validator PASS(52 tables), typecheck PASS, build PASS, focused tests 27/27 PASS.
+- 검증: object-data contract validator PASS(52 tables), typecheck PASS, build PASS, focused tests 29/29 PASS.
+- Gate 4 P1 보완: 같은 transaction에서 기존 `operations`와 `outbox_messages`를 재사용한다. outbox는 `(craft_operation_id, player_id)`로 canonical 조합 operation/owner에 결속하며 정상 1건, replay 추가 0건, outbox 실패 rollback 0건, duplicate/1205/1213 회복 후 최종 1건을 검증했다.
+- item/currency input/output의 `amount × batch` 및 net delta는 signed `BIGINT` 원장 범위를 넘기 전에 domain error로 차단한다. signed MAX×2와 MAX+1의 네 typed 방향을 각각 write 0으로 검증했다.
 - 전체 suite: 1,681개 중 1,672 PASS, 8 SKIP, 1 FAIL. 실패는 기존 `currency-definition-snapshot-freeze`가 신규 canonical 파일의 `currency_ledger` 문자열 2건을 과거 provider46 집합에 포함해 48건으로 계산한 경계 충돌이며, 적용 완료 snapshot은 수정하지 않았다. 452 통합 시 legacy provider snapshot과 신규 canonical provider를 분리하는 후속 correction이 필요하다.
 
 ## 미완료

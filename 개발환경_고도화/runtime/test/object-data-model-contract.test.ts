@@ -28,7 +28,7 @@ describe("object data model standard contract", () => {
   });
 
   it("keeps building and recipe definitions, typed targets, replay, and owner-bound ledgers explicit", () => {
-    for (const token of ["canonical_building_definitions", "canonical_craft_recipe_definitions", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_craft_operations", "payload_fingerprint CHAR(64)", "FOREIGN KEY (craft_operation_id, player_id)", "FOREIGN KEY (owned_item_stack_id, player_id, item_id)", "FOREIGN KEY (player_currency_balance_id, player_id, currency_id)"]) assert.ok(migration453.includes(token));
+    for (const token of ["canonical_building_definitions", "canonical_craft_recipe_definitions", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_craft_operations", "payload_fingerprint CHAR(64)", "FOREIGN KEY (craft_operation_id, player_id)", "FOREIGN KEY (owned_item_stack_id, player_id, item_id)", "FOREIGN KEY (player_currency_balance_id, player_id, currency_id)", "ALTER TABLE outbox_messages", "fk_outbox_canonical_craft_owner"]) assert.ok(migration453.includes(token));
     assert.doesNotMatch(migration453, /\bCODE\b|javascript|script_body|sql_payload/i);
     assert.equal(contract.integrationOnlyTables, undefined);
   });
