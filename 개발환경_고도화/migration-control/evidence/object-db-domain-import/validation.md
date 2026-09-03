@@ -1,9 +1,9 @@
-# 오브젝트 도메인 이관 Gate 1·2 검증
+# 오브젝트 도메인 이관 Gate 1~4 검증
 
 - 슬라이스: `SL-DATA-MIGRATION-OBJECT-DOMAIN-IMPORT-01` (WBS742)
 - 카탈로그: `SC-20260902-1`
 - 검증일: `2026-09-03 KST`
-- 범위: 현행 조사와 65개 canonical table별 import disposition/소스 매핑
+- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer
 - 운영 영향: 없음. 운영 DB, 운영 배포, `data/*.json`, `main.js`, `Info.js`를 변경하지 않았다.
 
 ## 확정된 결과
@@ -26,6 +26,16 @@
 - migration 455의 `acquisition_price`는 신규 legacy import에서 `list[].price`를 정확히 저장한다. 기존 canonical 타이틀 행은 occurrence 가격이 알려지지 않았으므로 NULL을 유지하며 definition 기본가로 역추론하지 않는다.
 - item/pet/equipment canonical 소비자는 현재 `ownership_status='owned'`만 활성 보유로 조회하며 다른 상태 literal을 쓰지 않는다. 기존 미니펫 lifecycle과 같은 `owned`, `listed`, `consumed`, `removed` 집합으로 CHECK를 추가해 현재 동작을 보존하면서 잘못된 상태 입력을 차단한다.
 - migration `443`~`453`의 domain table set hash를 실제 SQL에서 검증한다. `454`는 crosswalk payload fingerprint, `455`는 타이틀 3종 occurrence별 획득가격, `456`은 미니펫 사용자별 표시 상태와 item/pet/equipment 보유 상태 CHECK를 보완하며 table set은 바꾸지 않는다.
+- WBS724 Common Staging과 WBS725 Catalog Projection의 COMPLETE run, source decision/count coverage, quarantine/ignore 경계 및 projection record를 읽고, importer 내부에서 source locator/payload와 decision/record fingerprint를 다시 계산한다.
+- migration 458 projection manifest identity와 migration 459 upstream envelope identity를 별도 해시로 검증한다. 구 migration 458 run의 manifest hash를 새 envelope로 해석하지 않는다.
+- 합성 fixture는 정확히 45개 직접 대상 테이블과 241개 비감사 필드를 47개 projection row로 모두 포함하며, 23개 정의/규칙 대상을 ownership보다 먼저 기록한다. 패키지 item/nested typed extension은 서로 다른 reward entry를 사용하고 nested package graph는 비순환이다.
+- 동일 locator의 CUID2 binding은 target type, payload, origin, reference approval까지 포함한 fingerprint로 고정한다. reused PK 5종은 manifest source identity 또는 승인 crosswalk만 허용한다.
+- importer는 identity binding, canonical target, import run/decision/record 영수증을 하나의 outer transaction에서 기록한다. 중간 target 실패 시 모두 rollback하고, exact replay는 기존 영수증의 전수 coverage, projection별 import order, identity PK, binding/row fingerprint 및 canonical 전체 값을 재검증한 뒤 쓰기 0건으로 끝난다.
+- unknown target/column, SQL type/nullability/range·DB CHECK 위반, projection drift, quarantine 전파, cross-owner relation, 실행 가능한 펫스킬 option은 canonical write 전 fail-closed 처리한다. 펫스킬 장착은 동일 사용자·동일 스킬의 양수 보유 stack을 요구하고, 타이틀 3종 selection의 reused player PK도 implicit owner로 대사한다.
+- 가구 구매가/매력/강화 증가값, 미니펫 occurrence와 BAG/EQUIPPED, 타이틀 3종 획득가 provenance, 펫스킬 handler/options, 재화 `INITIAL_IMPORT` baseline, 건물 중복 floor 첫 행 우선 정책을 domain validation으로 강제한다.
+- migration 460은 import run/decision/record 영수증 3개 테이블을 추가하며, rollback은 import_order 역순으로 canonical target을 삭제하고 upstream projection과 reusable identity provenance는 보존한다.
+- target-schema fingerprint는 WBS725가 공개한 canonical semantic JSON SHA-256 helper를 사용한다. 파일의 LF/CRLF 차이는 동일 해시이며 raw file-byte SHA-256은 사용하지 않는다.
+- rollback은 삭제 전에 모든 영수증을 frozen 45-table allowlist, 정확한 PK, 원본 projection target/locator와 전수 대사한다. 정상 테이블·PK로 redirect된 영수증도 첫 DELETE 전에 실패한다.
 
 ## 검증 결과
 
@@ -34,13 +44,17 @@
 | `node --import tsx --test test/object-domain-import-disposition.test.ts test/object-domain-import-field-map.test.ts test/object-domain-import-target-schema.test.ts test/object-domain-import-source-semantics.test.ts` | `18/18 PASS` |
 | `node --import tsx --test test/object-domain-import-target-schema.test.ts test/owned-object-state-hardening-migration.test.ts test/mini-pet-definition-binding-semantics.test.ts test/object-domain-import-field-map.test.ts test/object-data-model-contract.test.ts` | `35/35 PASS` |
 | Gate 1·2 전체 focused 계약·source semantics·migration suite (10 files) | `57/57 PASS` |
-| `npm run object-data:validate` | 등록 대상 `65`, PASS |
+| `node --import tsx --test test/data-migration-object-domain-import.test.ts` | `23/23 PASS` |
+| importer + object model + disposition focused suite (3 files) | `46/46 PASS` |
+| Catalog Projection + importer + object model/disposition focused suite | `58/58 PASS` |
+| `npm test` | `1787 PASS / 8 SKIP / 0 FAIL` (`1795` tests) |
+| `npm run object-data:validate` | 등록 대상 `73`, PASS |
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
 | `git diff --check` | PASS |
 
 ## Gate 판정 경계
 
-- 이 근거는 WBS742 Gate 1(현행 조사)과 Gate 2(DB 매핑)만 대상으로 한다.
-- Gate 3 합성 fixture와 Gate 4 domain importer 구현은 WBS724 Common Staging 및 WBS725 Catalog Projection Gate 4 완료 후 수행한다.
+- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer)를 대상으로 한다.
+- 독립 reviewer 판정과 커밋 전 Gate 3·4 구현 근거이며, MariaDB 통합 테스트의 환경 의존 SKIP 8건은 운영 실행 근거가 아니다.
 - 데이터 실이관, consumer parity, Shadow, 운영 배포 완료 근거로 사용하지 않는다.

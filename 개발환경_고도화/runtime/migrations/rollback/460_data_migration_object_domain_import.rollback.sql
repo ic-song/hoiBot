@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS data_migration_object_domain_import_records;
+DROP TABLE IF EXISTS data_migration_object_domain_import_decisions;
+DROP TABLE IF EXISTS data_migration_object_domain_import_runs;

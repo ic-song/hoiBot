@@ -1,0 +1,37 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-data-migration-object-domain-import-contract-v1",
+  "migration": "460_data_migration_object_domain_import.sql",
+  "catalogProjectionContract": "data-migration-catalog-projection.v1.json",
+  "targetSchemaHashing": "use the catalog projection contract's canonical semantic JSON SHA-256 and never hash target-schema file bytes",
+  "targetSchemaContract": "object-domain-import-target-schema.v1.json",
+  "identityBindingContract": "object-domain-import-identity-bindings.v1.json",
+  "dispositionContract": "object-domain-import-disposition.v1.json",
+  "fieldMapContract": "object-domain-import-field-map.v1.json",
+  "componentSemanticSha256": {
+    "identityBindings": "283278b9d9e0f99c452da8bac8a3c3318575ff78853d2da301ea6266597e4696",
+    "objectModel": "8fba17a16bab6f85a68cfbe91a3802ed263484a5544e0073f4173b93277b7243",
+    "disposition": "e479e1f9531ed3221500d7c8cf211435c176461c70fac19b03ca1c93a45c6335",
+    "fieldMap": "7d42a8f3afdb6133293a60604f2a0b55ab3484b853e305f9f5b2316137db812d"
+  },
+  "directTargetCount": 45,
+  "targetColumnCount": 241,
+  "definitionTargetCount": 23,
+  "transactionBoundary": "one COMPLETE catalog projection run is fully preflighted, identities are bound, definitions are inserted before ownership, and all canonical targets plus receipts commit in one outer transaction",
+  "replay": "same COMPLETE projection, upstream envelope, target schema, import contract, decision fingerprints and record bindings returns the existing COMPLETE import with zero INSERT/UPDATE; drift, type mismatch, unknown target, missing target or PK mismatch fails closed",
+  "rollback": "delete imported target rows in reverse import order and then delete the import run receipts in one transaction; preserve upstream projection and reusable identity crosswalk provenance",
+  "policies": {
+    "furniture": "purchase_price and charm_per_enhancement require approved catalog provenance; rate is forbidden; missing or ambiguous definition decisions remain quarantined",
+    "miniPet": "every owned occurrence requires OCCURRENCE_CROSSWALK plus approved mini_pet_id crosswalk; BAG/EQUIPPED state is exact and omitted enhancement defaults only to zero",
+    "titles": "member, pet and mini-pet definitions use approved base price; occurrence acquisition price is SOURCE_EXACT or SOURCE_ABSENT only",
+    "petSkill": "handler_key and typed options are data; nested executable JavaScript, SQL or script payload keys are forbidden",
+    "currency": "every imported balance has exactly one completed INITIAL_IMPORT operation and one sequence-1 ledger row whose delta and balance equal the current balance",
+    "building": "duplicate floor definitions keep the first projection locator active and all later duplicates inactive"
+  },
+  "tables": [
+    { "table": "data_migration_object_domain_import_runs", "primaryKey": "object_domain_import_run_id", "foreignKeys": [{ "column": "catalog_projection_run_id", "references": "data_migration_catalog_projection_runs.catalog_projection_run_id" }], "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] },
+    { "table": "data_migration_object_domain_import_decisions", "primaryKey": "object_domain_import_decision_id", "foreignKeys": [{ "column": "object_domain_import_run_id", "references": "data_migration_object_domain_import_runs.object_domain_import_run_id" }, { "column": "catalog_source_decision_id", "references": "data_migration_catalog_source_decisions.catalog_source_decision_id" }], "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] },
+    { "table": "data_migration_object_domain_import_records", "primaryKey": "object_domain_import_record_id", "foreignKeys": [{ "column": "object_domain_import_run_id", "references": "data_migration_object_domain_import_runs.object_domain_import_run_id" }, { "column": "catalog_projection_record_id", "references": "data_migration_catalog_projection_records.catalog_projection_record_id" }], "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] }
+  ],
+  "operationalDataAllowed": false
+}

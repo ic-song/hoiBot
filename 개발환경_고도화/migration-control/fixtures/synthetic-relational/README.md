@@ -9,6 +9,7 @@
 - SQL은 같은 결과로 반복 적용할 수 있도록 고정 PK와 upsert를 사용한다.
 - 운영 오픈 전 합성 DB를 폐기·재생성하며 이 데이터는 최종 import·reconciliation 증거로 인정하지 않는다.
 - `data-migration-common-staging-v1.json`은 WBS724의 RAW→Common Staging JSON Pointer, 해시형 owner/source locator, 수량·KST 시각 envelope를 검증한다. 실제 사용자 식별자나 운영 snapshot은 포함하지 않는다.
+- `data-migration-object-domain-import-v1.json`은 WBS742의 45개 직접 대상/241개 필드/23개 정의·규칙 투영, 정의 선행 순서, CUID2 binding, exact replay와 domain policy를 검증한다. WBS724/WBS725 결과를 합성한 비식별 envelope만 포함한다.
 
 실행:
 
