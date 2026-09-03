@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.452"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.453"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -937,8 +937,10 @@ const GLOBAL_CONFIG = {
     },
     universalBox: { // 만능상자와 컬렉션 만능열쇠 설정
         boxItemName: "만능상자🔐(/만능상자오픈 숫자)",
-        petSkillKeyItemName: "펫스킬컬렉션 만능 열쇠📚",
-        miniPetKeyItemName: "미니펫컬렉션 만능 열쇠🗝️",
+        petSkillKeyItemName: "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션 번호)",
+        miniPetKeyItemName: "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)",
+        oldPetSkillKeyItemName: "펫스킬컬렉션 만능 열쇠📚",
+        oldMiniPetKeyItemName: "미니펫컬렉션 만능 열쇠🗝️",
         petSkillBookRate: 0.70,
         petSkillKeyRate: 0.25,
         miniPetKeyRate: 0.05
@@ -17288,6 +17290,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         let memberInfo = data.member[sender];
                         if (memberInfo) {
                             let bagItems = memberInfo.bag;
+                            if (normalizeUniversalCollectionKeyBagItems(bagItems)) saveJsonFile(data, filePath);
                             let bagOutput = generateBagOutput(bagItems).bagOutput;
                             let sortedItemList = generateBagOutput(bagItems).sortedItemList;
                             if (bagOutput) {
@@ -27564,6 +27567,49 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (/^\/펫스킬컬렉션\s+\d+$/.test(msg)) {
+                    if (castleSiegeFlag) return;
+                    var petSkillUniversalNumber = parseInt(msg.replace("/펫스킬컬렉션", "").trim(), 10);
+                    var petSkillUniversalTargetList = getPetSkillCollectionTargetList();
+                    var petSkillUniversalSkillData = petSkillUniversalTargetList[petSkillUniversalNumber - 1];
+                    if (!petSkillUniversalSkillData) {
+                        replier.reply("⚠️ 컬렉션 번호를 확인해 주세요.\n\n사용 방법: /펫스킬컬렉션 [펫스킬컬렉션번호]");
+                        return;
+                    }
+
+                    var petSkillUniversalCollection = ensurePetSkillCollection(petSkillData, sender);
+                    var petSkillUniversalMaxCount = GLOBAL_CONFIG.petSkillCollection.maxCounts[petSkillUniversalSkillData.grade];
+                    var petSkillUniversalCurrentCount = getPetSkillCollectionCount(petSkillUniversalCollection, petSkillUniversalSkillData.name);
+                    if (petSkillUniversalCurrentCount >= petSkillUniversalMaxCount) {
+                        replier.reply("⚠️ 이미 최대 수량까지 완성된 펫스킬 컬렉션입니다: " + petSkillUniversalNumber + "번 " + formatPetSkillName(petSkillUniversalSkillData.name));
+                        return;
+                    }
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.universalBox.petSkillKeyItemName, 1)) {
+                        replier.reply("⚠️ " + GLOBAL_CONFIG.universalBox.petSkillKeyItemName + "가 부족합니다.");
+                        return;
+                    }
+
+                    var petSkillUniversalSelected = [{
+                        collectionNumber: petSkillUniversalNumber,
+                        name: petSkillUniversalSkillData.name,
+                        grade: petSkillUniversalSkillData.grade,
+                        beforeCount: petSkillUniversalCurrentCount,
+                        afterCount: petSkillUniversalCurrentCount + 1,
+                        maxCount: petSkillUniversalMaxCount,
+                        canRegister: true,
+                        useUniversalKey: true
+                    }];
+                    if (!userState[sender]) userState[sender] = {};
+                    userState[sender].petSkillCollection = { selectedList: petSkillUniversalSelected };
+                    replier.reply(buildPetSkillCollectionConfirmMessage(data, petData, guildData, sender, petSkillUniversalSelected, petSkillUniversalCollection));
+                    return;
+                }
+
+                if (/^\/펫스킬컬렉션\s+.*$/.test(msg)) {
+                    replier.reply("사용법: /펫스킬컬렉션 [펫스킬컬렉션번호]\n※ 만능열쇠 1개를 사용해 선택한 컬렉션 1칸을 등록합니다.");
+                    return;
+                }
+
                 if (/^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(msg)) {
                     if (castleSiegeFlag) return;
                     var petSkillCollectionArgs = msg.replace("/펫스킬컬렉션등록", "").trim().split(/\s+/);
@@ -27664,7 +27710,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                         if (petSkillCollectionUseKey) {
                             if (!hasItem(data, sender, GLOBAL_CONFIG.universalBox.petSkillKeyItemName, 1)) {
-                                petSkillCollectionSkippedLines.push("[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "\n└ 펫스킬컬렉션 만능 열쇠가 부족하여 등록에서 제외되었습니다.");
+                                petSkillCollectionSkippedLines.push("[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "\n└ " + GLOBAL_CONFIG.universalBox.petSkillKeyItemName + "가 부족하여 등록에서 제외되었습니다.");
                                 continue;
                             }
                             removeItem(data, sender, GLOBAL_CONFIG.universalBox.petSkillKeyItemName, 1);
@@ -27681,8 +27727,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         addItem(data, sender, GLOBAL_CONFIG.petSkillCollection.rewardItemName, petSkillCollectionReward);
                         petSkillCollectionRegisteredCount++;
                         petSkillCollectionTotalReward += petSkillCollectionReward;
+                        var petSkillCollectionMaterialResult = petSkillCollectionUseKey ? " (" + GLOBAL_CONFIG.universalBox.petSkillKeyItemName + " 사용)" : ""; // 실제 등록 재료 표시
                         petSkillCollectionRegisteredLines.push(
-                            "[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "[" + petSkillCollectionCurrentSkillData.grade + "] : [" + petSkillCollectionBefore + "/" + petSkillCollectionCurrentMax + "] → [" + petSkillCollectionAfter + "/" + petSkillCollectionCurrentMax + "] 등록 완료" + (petSkillCollectionAfter === petSkillCollectionCurrentMax ? "✅" : "") + (petSkillCollectionUseKey ? " (만능열쇠📚 사용)" : "") +
+                            "[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "[" + petSkillCollectionCurrentSkillData.grade + "] : [" + petSkillCollectionBefore + "/" + petSkillCollectionCurrentMax + "] → [" + petSkillCollectionAfter + "/" + petSkillCollectionCurrentMax + "] 등록 완료" + (petSkillCollectionAfter === petSkillCollectionCurrentMax ? "✅" : "") + petSkillCollectionMaterialResult +
                             "\n└ " + GLOBAL_CONFIG.petSkillCollection.rewardItemName + " " + numberWithCommas(petSkillCollectionReward) + "개 획득"
                         );
                     }
@@ -27908,7 +27955,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
 
                         if (useMiniPetUniversalKey && !hasItem(data, sender, GLOBAL_CONFIG.universalBox.miniPetKeyItemName, 1)) {
-                            skippedLines.push("[" + picked.collectionNumber + "번] " + currentGrade + " : 미니펫컬렉션 만능 열쇠가 부족합니다.");
+                            skippedLines.push("[" + picked.collectionNumber + "번] " + currentGrade + " : " + GLOBAL_CONFIG.universalBox.miniPetKeyItemName + "가 부족합니다.");
                             continue;
                         }
 
@@ -27922,7 +27969,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                         var currentReward = miniPetCollectionInfo.gradeReward[currentGrade];
                         var currentLine = useMiniPetUniversalKey ?
-                            "[" + picked.collectionNumber + "번] " + currentGrade + " 컬렉션 : 만능열쇠🗝️로 등록 완료" :
+                            "[" + picked.collectionNumber + "번] " + currentGrade + " 컬렉션 : " + GLOBAL_CONFIG.universalBox.miniPetKeyItemName + "로 등록 완료" :
                             "[" + picked.index + "번] " + selectedNow.name + "[" + currentGrade + "] : " + (autoUpgradeResult && autoUpgradeResult.upgraded ? "자동 강화 후 등록 완료" : "등록 완료");
                         if (currentReward) {
                             addItem(data, sender, currentReward.item, currentReward.count);
@@ -28149,7 +28196,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     if (!userState[sender]) userState[sender] = {};
                     userState[sender].miniPetCollection = { selectedList: [miniPetUniversalSelected] };
-                    var miniPetUniversalSource = miniPetUniversalSelected.useUniversalKey ? "미니펫컬렉션 만능 열쇠🗝️" : "미니펫가방 " + miniPetUniversalSelected.index + "번 " + miniPetUniversalSelected.name + "[" + miniPetUniversalSelected.grade + "]";
+                    var miniPetUniversalSource = miniPetUniversalSelected.useUniversalKey ? GLOBAL_CONFIG.universalBox.miniPetKeyItemName : "미니펫가방 " + miniPetUniversalSelected.index + "번 " + miniPetUniversalSelected.name + "[" + miniPetUniversalSelected.grade + "]";
                     replier.reply(
                         "✅ [" + checkRank(data, petData, guildData, sender) + "] 님\n" +
                         "🐹 미니펫 컬렉션 등록 확인\n\n" +
@@ -29220,7 +29267,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
-        /^\/미니펫컬렉션\s+\d+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
+        /^\/미니펫컬렉션\s+\d+$/.test(command) || /^\/펫스킬컬렉션\s+\d+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
@@ -34312,9 +34359,34 @@ function normalizePendantTransitionItemName(itemName) {
     return itemName;
 }
 
+// 기존 컬렉션 만능열쇠 이름을 관련 명령어가 포함된 새 이름으로 병합하는 함수
+function normalizeUniversalCollectionKeyBagItems(bag) {
+    if (!bag) return false;
+    var config = GLOBAL_CONFIG.universalBox;
+    var mappings = [
+        { oldName: config.oldPetSkillKeyItemName, newName: config.petSkillKeyItemName },
+        { oldName: config.oldMiniPetKeyItemName, newName: config.miniPetKeyItemName }
+    ];
+    var changed = false;
+    for (var i = 0; i < mappings.length; i++) {
+        var mapping = mappings[i];
+        if (typeof bag[mapping.oldName] === "undefined") continue;
+        var oldCount = parseInt(bag[mapping.oldName], 10) || 0;
+        var newCount = parseInt(bag[mapping.newName], 10) || 0;
+        if (oldCount > 0) bag[mapping.newName] = newCount + oldCount;
+        delete bag[mapping.oldName];
+        changed = true;
+    }
+    return changed;
+}
+
 // 아이템명 전환 훅
 function normalizePendantTransitionBagItem(bag, itemName) {
-    return normalizePendantTransitionItemName(itemName);
+    itemName = normalizePendantTransitionItemName(itemName);
+    normalizeUniversalCollectionKeyBagItems(bag);
+    if (itemName === GLOBAL_CONFIG.universalBox.oldPetSkillKeyItemName) return GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
+    if (itemName === GLOBAL_CONFIG.universalBox.oldMiniPetKeyItemName) return GLOBAL_CONFIG.universalBox.miniPetKeyItemName;
+    return itemName;
 }
 
 // 상자 오픈과 관련된 아이템들을 사용자의 가방에 추가하는 함수
@@ -36338,7 +36410,7 @@ function formatSupportPassStatus(data, user, config) {
     if (!isSupportPassActive(data, user, config.key)) return packageLabel + ": 미사용 [❌]";
     var pass = data.member[user].pass && data.member[user].pass[config.key] ? data.member[user].pass[config.key] : null;
     if (!pass) return packageLabel + ": 미사용 [❌]";
-    if (pass.permanent === true || !String(pass.endDate || "").trim()) return packageLabel + ": 사용 중 [✅]";
+    if (pass.permanent === true || !String(pass.endDate || "").trim()) return packageLabel + ": 영구권 사용 중 [✅]";
     return packageLabel + ": " + pass.endDate + " 종료 예정 [✅]";
 }
 
@@ -40639,6 +40711,7 @@ function removeItem(data, user, itemName, count) {
 function removeAllItem(data, user, itemName) {
     if (!data.member[user]) return 0;
     if (!data.member[user].bag) return 0;
+    itemName = normalizePendantTransitionBagItem(data.member[user].bag, itemName);
     var count = parseInt(data.member[user].bag[itemName], 10) || 0;
     if (typeof data.member[user].bag[itemName] !== "undefined") delete data.member[user].bag[itemName];
     return count;
@@ -41571,6 +41644,7 @@ function getPetSkillCollectionRegistrationMaterial(petSkillData, data, user, ski
     var bagList = getPetSkillBagList(petSkillData, user);
     if (bagList.indexOf(skillName) !== -1) return { useUniversalKey: false };
     var keyName = GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
+    normalizeUniversalCollectionKeyBagItems(data.member[user].bag);
     var keyCount = data.member[user].bag && data.member[user].bag[keyName] ? parseInt(data.member[user].bag[keyName], 10) || 0 : 0;
     if (plannedKeyCount < keyCount) return { useUniversalKey: true };
     return null;
@@ -41602,6 +41676,8 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push("📙 컬렉션 등록");
     lines.push("/펫스킬컬렉션등록 [펫스킬컬렉션번호] ...");
     lines.push("대상 스킬북이 있으면 먼저 사용하고, 없으면 만능열쇠를 사용합니다.");
+    lines.push("/펫스킬컬렉션 [펫스킬컬렉션번호]");
+    lines.push("대상 스킬북 보유 여부와 관계없이 만능열쇠를 사용합니다.");
     lines.push("");
     lines.push("※ 한 번에 최대 " + config.maxSelectionCount + "개까지 등록 가능합니다.");
     lines.push("※ 등록한 펫스킬북📙은 가방에서 소모됩니다.");
@@ -41622,7 +41698,7 @@ function buildPetSkillCollectionConfirmMessage(data, petData, guildData, user, s
     for (var i = 0; i < selectedList.length; i++) {
         var selected = selectedList[i];
         var selectedNumber = selected.collectionNumber;
-        var selectedSource = selected.useUniversalKey ? " / 만능열쇠📚" : " / 펫스킬북📙";
+        var selectedSource = selected.useUniversalKey ? " / " + GLOBAL_CONFIG.universalBox.petSkillKeyItemName : " / 펫스킬북📙";
         if (selected.canRegister) {
             lines.push("- [" + selectedNumber + "번] " + formatPetSkillName(selected.name) + "[" + selected.grade + "] [" + selected.beforeCount + "/" + selected.maxCount + "] → [" + selected.afterCount + "/" + selected.maxCount + "] (등록 가능🅾️" + selectedSource + ")");
         } else {
@@ -48284,18 +48360,18 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
             lines.push("━━━━━━━━━━━━━━");
             lines.push("🎊 만능 아이템 획득! 🎊");
             lines.push("");
-            lines.push("📚 펫스킬컬렉션 만능 열쇠 x1");
+            lines.push(config.petSkillKeyItemName + " x1");
             lines.push("");
             lines.push("펫스킬 등급과 상관없이 원하는\n펫스킬 컬렉션 1칸을 등록할 수 있습니다!");
             lines.push("");
             lines.push("📌 사용 방법");
-            lines.push("/펫스킬컬렉션등록 [펫스킬컬렉션번호]");
+            lines.push("/펫스킬컬렉션 [펫스킬컬렉션번호]");
         } else {
             lines.push("🔒 철컥…!\n🌈 눈부신 황금빛과 함께 특별한 보물이 나타납니다!");
             lines.push("━━━━━━━━━━━━━━");
             lines.push("🎊 만능 아이템 획득! 🎊");
             lines.push("");
-            lines.push("🗝️ 미니펫컬렉션 만능 열쇠 x1");
+            lines.push(config.miniPetKeyItemName + " x1");
             lines.push("");
             lines.push("미니펫 등급과 상관없이 원하는\n미니펫 컬렉션 1칸을 등록할 수 있습니다!");
             lines.push("");
@@ -48309,14 +48385,14 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
         lines.push("🎊 만능상자 개봉 결과 🎊");
         lines.push("");
         if (petSkillBookCount > 0) lines.push("📙 펫스킬북 x" + numberWithCommas(petSkillBookCount));
-        if (petSkillKeyCount > 0) lines.push("📚 펫스킬컬렉션 만능 열쇠 x" + numberWithCommas(petSkillKeyCount));
-        if (miniPetKeyCount > 0) lines.push("🗝️ 미니펫컬렉션 만능 열쇠 x" + numberWithCommas(miniPetKeyCount));
+        if (petSkillKeyCount > 0) lines.push(config.petSkillKeyItemName + " x" + numberWithCommas(petSkillKeyCount));
+        if (miniPetKeyCount > 0) lines.push(config.miniPetKeyItemName + " x" + numberWithCommas(miniPetKeyCount));
         lines.push("");
         lines.push("━━━━━━━━━━━━━━");
         lines.push("📌 아이템 사용 방법");
         lines.push("");
         if (petSkillBookCount > 0) lines.push("📙 /펫스킬오픈");
-        if (petSkillKeyCount > 0) lines.push("📚 /펫스킬컬렉션등록 [펫스킬컬렉션번호]");
+        if (petSkillKeyCount > 0) lines.push("📚 /펫스킬컬렉션 [펫스킬컬렉션번호]");
         if (miniPetKeyCount > 0) lines.push("🗝️ /미니펫컬렉션 [미니펫컬렉션번호]");
         lines.push("");
     }
@@ -48329,7 +48405,7 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
         noticeMessage = "🔐✨ 만능상자 희귀 보상 등장! ✨🔐\n" +
             "━━━━━━━━━━━━━━\n" +
             "[" + rankText + "] 님이 만능상자🔐에서\n\n" +
-            "🗝️ 미니펫컬렉션 만능 열쇠 x" + numberWithCommas(miniPetKeyCount) + "\n\n" +
+            config.miniPetKeyItemName + " x" + numberWithCommas(miniPetKeyCount) + "\n\n" +
             (miniPetKeyCount === 1 ? "단 5%의 확률을 뚫고 희귀 보상을 획득했습니다!" : "단 5%의 희귀 보상을 여러 개 획득했습니다!") + "\n\n" +
             "미니펫 등급과 상관없이 원하는\n미니펫 컬렉션 1칸을 등록할 수 있습니다!\n\n" +
             "📌 사용 방법\n/미니펫컬렉션 [미니펫컬렉션번호]\n\n" +

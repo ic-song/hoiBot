@@ -2184,7 +2184,7 @@ Status: VERIFIED
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
 - `/패키지가방 [아이디]` is Master/Admin-only and reads another user's package bag without mutating or saving data
-- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then separates support-pass status from territory attack, pet-Musou preparation, and attendance automation status. Missing or expired entitlements display `이용 불가 [🔒]`; the view is read-only and does not initialize automation data.
+- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then separates support-pass status from territory attack, pet-Musou preparation, and attendance automation status. 영구 패스는 `영구권 사용 중 [✅]`으로 구분하며, missing or expired entitlements display `이용 불가 [🔒]`; the view is read-only and does not initialize automation data.
 
 ---
 
@@ -4118,7 +4118,7 @@ Status: VERIFIED
 - `miniPetCollectionData.member[sender]`
 - `miniPetCollectionInfo.stageReward`
 - `petData[sender].miniPetBag`
-- `data.member[sender].bag["미니펫컬렉션 만능 열쇠🗝️"]`
+- `data.member[sender].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)"]`
 ## Save Flow
 - 인자 없는 명령은 현황을 조회하며 필요하면 컬렉션 데이터를 정리해 저장한다.
 - 번호 명령은 같은 등급의 등록 가능한 미니펫을 먼저 선택하고, 없을 때만 만능 열쇠를 선택해 `등록` 확인 상태를 만든다.
@@ -5581,10 +5581,11 @@ Status: VERIFIED
 - `petSkillData.json -> [user].petSkillCollection[skillName]`
 - `petSkillData.json -> [user].petSkills.bag[skillName]`
 - `member.json -> member[user].bag["홈뱃지 큐브💟"]`
-- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션 번호)"]`
 
 ## Save Flow
 - `/펫스킬컬렉션`은 SS~D 현황과 통합 컬렉션 번호를 출력한다.
+- `/펫스킬컬렉션 [번호]`는 일반 펫스킬북 보유 여부와 관계없이 만능 열쇠 1개로 해당 컬렉션을 등록한다.
 - `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 컬렉션 번호를 받는다.
 - 선택한 컬렉션과 같은 펫스킬북이 가방에 있으면 먼저 사용하고, 없을 때만 만능 열쇠를 사용한다.
 - `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상·만능 열쇠를 `member.json`에 저장한다.
@@ -5616,8 +5617,8 @@ Status: VERIFIED
 ## Data Usage
 - `member.json -> member[user].bag["만능상자🔐(/만능상자오픈 숫자)"]`
 - `member.json -> member[user].bag["펫스킬북📙(/펫스킬오픈)"]`
-- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚"]`
-- `member.json -> member[user].bag["미니펫컬렉션 만능 열쇠🗝️"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션 번호)"]`
+- `member.json -> member[user].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)"]`
 
 ## Save Flow
 - 상자마다 70%·25%·5%를 독립 추첨한 뒤 보상을 합산하고, 상자 차감과 보상 지급을 한 번 저장한다.
