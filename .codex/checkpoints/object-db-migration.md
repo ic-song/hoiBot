@@ -5,8 +5,8 @@
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 3
-- 마지막 갱신: 2026-09-03 15:16 KST
+- 체크포인트 버전: 4
+- 마지막 갱신: 2026-09-03 15:19 KST
 
 ## 현재 목표
 
@@ -24,7 +24,7 @@
 - 저장소: hoiBot
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-db-import-v1-20260903`
 - 브랜치: `codex/object-db-import-v1-20260903`
-- 마지막 기준 커밋: `2f65f58e`
+- 마지막 기준 커밋: `b5b22835`
 - 마지막 푸시 커밋: 없음
 - 원격 동기화 상태: 미확인·미푸시
 - 체크포인트 Git 추적: 아니요
@@ -43,7 +43,7 @@
 
 ## 진행 중인 작업
 
-- 독립 reviewer의 잔존 P1/P2 없음 및 Gate1/2 승인을 받았으며, 검증 변경을 커밋하고 WBS742를 현행화한다.
+- WBS742 Gate1/2를 완료했고, WBS724 Common Staging과 WBS725 Catalog Projection Gate4 완료를 기다리며 Gate3 fixture 준비 경계를 유지한다.
 
 ## 변경 파일
 
@@ -60,12 +60,12 @@
 
 ## 충돌·막힘·미승인 사항
 
-- WBS742 Gate3/4는 WBS724 Common Staging과 WBS725 Catalog Projection Gate4 완료가 선행 조건이다.
+- WBS742 Gate3/4는 WBS724 Common Staging과 WBS725 Catalog Projection Gate4 완료가 선행 조건이다. WBS742는 `DB 매핑`, Gate1/2 TRUE, 25.0%로 현행화했다.
 - 운영 DB/운영 배포/feature-prod 반영은 승인되지 않았다.
 
 ## 다음 행동
 
-1. 변경을 커밋하고 WBS742를 `DB 매핑`, Gate1/2 완료, 진행률 25%로 현행화한다.
+1. WBS724·WBS725의 진행 상태를 확인하고, 선행 Gate4 완료 후 WBS742 Gate3 합성 fixture와 Gate4 domain importer를 구현한다.
 
 ## 보안
 
