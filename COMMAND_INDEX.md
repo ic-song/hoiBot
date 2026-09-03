@@ -5577,6 +5577,7 @@ Status: VERIFIED
 - `buildPetSkillCollectionConfirmMessage`
 - `getPetSkillCollectionTargetList`
 - `getPetSkillCollectionRegistrationMaterial`
+- `normalizePetSkillStoredNames`
 - `getPetSkillBagList`
 - `removePetSkillFromBag`
 
@@ -5591,6 +5592,7 @@ Status: VERIFIED
 - `/펫스킬컬렉션 [번호]`는 일반 펫스킬북 보유 여부와 관계없이 만능 열쇠 1개로 해당 컬렉션을 등록한다.
 - `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 컬렉션 번호를 받는다.
 - 선택한 컬렉션과 같은 펫스킬북이 가방에 있으면 먼저 사용하고, 없을 때만 만능 열쇠를 사용한다.
+- 이전 표기 형태로 저장된 펫스킬북은 등록 재료 확인과 소모 전에 현재 표준 이름으로 병합한다.
 - `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상·만능 열쇠를 `member.json`에 저장한다.
 - 두 파일은 기존 1·2세대 자동 백업과 명령 단위 롤백 보호 흐름을 재사용한다.
 

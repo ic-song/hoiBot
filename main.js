@@ -41651,8 +41651,10 @@ function getPetSkillCollectionTargetList() {
 
 // 선택한 펫스킬 컬렉션에 사용할 일반 스킬북 또는 만능열쇠를 우선순위에 따라 반환하는 함수
 function getPetSkillCollectionRegistrationMaterial(petSkillData, data, user, skillName, plannedKeyCount) {
-    var bagList = getPetSkillBagList(petSkillData, user);
-    if (bagList.indexOf(skillName) !== -1) return { useUniversalKey: false };
+    normalizePetSkillStoredNames(petSkillData, user);
+    var skills = initPetSkillUser(petSkillData, user);
+    var normalizedSkillName = normalizePetSkillName(skillName);
+    if ((parseInt(skills.bag[normalizedSkillName], 10) || 0) > 0) return { useUniversalKey: false };
     var keyName = GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
     normalizeUniversalCollectionKeyBagItems(data.member[user].bag);
     var keyCount = data.member[user].bag && data.member[user].bag[keyName] ? parseInt(data.member[user].bag[keyName], 10) || 0 : 0;
@@ -42029,6 +42031,7 @@ function addPetSkillToBag(petSkillData, user, skillName, count) {
 
 // 사용자의 펫 스킬 가방에서 특정 스킬을 count 개수만큼 제거하려고 시도하고, 성공 여부를 반환
 function removePetSkillFromBag(petSkillData, user, skillName, count) {
+    normalizePetSkillStoredNames(petSkillData, user);
     skillName = normalizePetSkillName(skillName);
     var skills = initPetSkillUser(petSkillData, user);
     count = parseInt(count, 10) || 1;
