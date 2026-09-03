@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.458"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.459"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -39596,6 +39596,9 @@ function generateBagOutput(bagItems) {
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
             "🚑 전쟁불안정 감소권(/안정)",
+            "만능상자🔐(/만능상자오픈 숫자)",
+            "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)",
+            "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션 번호)",
 
             "캐슬고급유닛🧙🏼‍♂(+50💕)",
             "캐슬레어유닛⭐(+100💕)",

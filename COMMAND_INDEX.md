@@ -378,6 +378,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
+- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `전쟁불안정 감소권` 다음에 `만능상자` → `미니펫컬렉션 만능 열쇠` → `펫스킬컬렉션 만능 열쇠` 순으로 표시한다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
