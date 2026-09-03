@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.453"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.454"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -27628,41 +27628,32 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
-                    var petSkillCollectionTargetList = getPetSkillCollectionTargetList();
+                    var petSkillCollectionBagList = getPetSkillBagList(petSkillData, sender);
                     var petSkillCollectionUsedNumbers = {};
                     var petSkillCollectionSelected = [];
                     var petSkillCollectionPreview = ensurePetSkillCollection(petSkillData, sender);
                     var petSkillCollectionPlannedCounts = {};
-                    var petSkillCollectionKeyPlanned = 0; // 이번 확인 목록에서 사용할 만능열쇠 수량
 
                     for (var petSkillCollectionArgIndex = 0; petSkillCollectionArgIndex < petSkillCollectionArgs.length; petSkillCollectionArgIndex++) {
                         var petSkillCollectionNumber = parseInt(petSkillCollectionArgs[petSkillCollectionArgIndex], 10);
                         if (petSkillCollectionUsedNumbers[petSkillCollectionNumber]) {
-                            replier.reply("❌ 같은 컬렉션 번호를 중복 입력할 수 없습니다: " + petSkillCollectionNumber + "번");
+                            replier.reply("❌ 같은 펫스킬가방 번호를 중복 입력할 수 없습니다: " + petSkillCollectionNumber + "번");
                             return;
                         }
 
-                        var petSkillCollectionSkillData = petSkillCollectionTargetList[petSkillCollectionNumber - 1];
+                        var petSkillCollectionSkillName = petSkillCollectionBagList[petSkillCollectionNumber - 1];
+                        var petSkillCollectionSkillData = getPetSkillData(petSkillCollectionSkillName);
                         if (!petSkillCollectionSkillData) {
-                            replier.reply("❌ 해당 번호의 펫스킬 컬렉션이 존재하지 않습니다: " + petSkillCollectionNumber + "번");
+                            replier.reply("❌ 해당 펫스킬가방 번호의 스킬을 찾을 수 없습니다: " + petSkillCollectionNumber + "번\n/펫스킬가방에서 번호를 다시 확인해 주세요.");
                             return;
                         }
-                        var petSkillCollectionSkillName = petSkillCollectionSkillData.name;
                         var petSkillCollectionMaxCount = petSkillCollectionConfig.maxCounts[petSkillCollectionSkillData.grade];
                         var petSkillCollectionCurrentCount = getPetSkillCollectionCount(petSkillCollectionPreview, petSkillCollectionSkillName);
                         if (petSkillCollectionPlannedCounts[petSkillCollectionSkillName] !== undefined) petSkillCollectionCurrentCount = petSkillCollectionPlannedCounts[petSkillCollectionSkillName];
                         if (petSkillCollectionCurrentCount >= petSkillCollectionMaxCount) {
-                            replier.reply("⚠️ 이미 최대 수량까지 완성된 펫스킬 컬렉션입니다: " + petSkillCollectionNumber + "번 " + formatPetSkillName(petSkillCollectionSkillName));
+                            replier.reply("⚠️ 이미 최대 수량까지 완성된 펫스킬 컬렉션입니다: 펫스킬가방 " + petSkillCollectionNumber + "번 " + formatPetSkillName(petSkillCollectionSkillName));
                             return;
                         }
-
-                        var petSkillCollectionMaterial = getPetSkillCollectionRegistrationMaterial(petSkillData, data, sender, petSkillCollectionSkillName, petSkillCollectionKeyPlanned);
-                        if (!petSkillCollectionMaterial) {
-                            replier.reply("⚠️ 컬렉션을 등록할 수 없습니다.\n\n필요한 등록 아이템 또는 만능열쇠를 확인해 주세요.");
-                            return;
-                        }
-                        var petSkillCollectionUseKey = petSkillCollectionMaterial.useUniversalKey;
-                        if (petSkillCollectionUseKey) petSkillCollectionKeyPlanned++;
 
                         var petSkillCollectionAfterCount = petSkillCollectionCurrentCount + 1;
                         petSkillCollectionPlannedCounts[petSkillCollectionSkillName] = petSkillCollectionAfterCount;
@@ -27675,7 +27666,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             afterCount: petSkillCollectionAfterCount,
                             maxCount: petSkillCollectionMaxCount,
                             canRegister: true,
-                            useUniversalKey: petSkillCollectionUseKey
+                            useUniversalKey: false
                         });
                     }
 
@@ -27686,7 +27677,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (/^\/펫스킬컬렉션등록(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("사용법: /펫스킬컬렉션등록 [펫스킬컬렉션번호] ...\n※ 한 번에 최대 10개까지 등록할 수 있습니다.");
+                    replier.reply("사용법: /펫스킬컬렉션등록 [펫스킬가방번호] ...\n※ /펫스킬가방의 번호를 기준으로 한 번에 최대 10개까지 등록할 수 있습니다.");
                     return;
                 }
 
@@ -41649,19 +41640,6 @@ function getPetSkillCollectionTargetList() {
     return targets;
 }
 
-// 선택한 펫스킬 컬렉션에 사용할 일반 스킬북 또는 만능열쇠를 우선순위에 따라 반환하는 함수
-function getPetSkillCollectionRegistrationMaterial(petSkillData, data, user, skillName, plannedKeyCount) {
-    normalizePetSkillStoredNames(petSkillData, user);
-    var skills = initPetSkillUser(petSkillData, user);
-    var normalizedSkillName = normalizePetSkillName(skillName);
-    if ((parseInt(skills.bag[normalizedSkillName], 10) || 0) > 0) return { useUniversalKey: false };
-    var keyName = GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
-    normalizeUniversalCollectionKeyBagItems(data.member[user].bag);
-    var keyCount = data.member[user].bag && data.member[user].bag[keyName] ? parseInt(data.member[user].bag[keyName], 10) || 0 : 0;
-    if (plannedKeyCount < keyCount) return { useUniversalKey: true };
-    return null;
-}
-
 // 펫스킬 컬렉션 전체 현황 메시지를 생성하는 함수
 function buildPetSkillCollectionMessage(data, petData, guildData, user, collection) {
     var config = GLOBAL_CONFIG.petSkillCollection;
@@ -41686,8 +41664,8 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push("");
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("📙 컬렉션 등록");
-    lines.push("/펫스킬컬렉션등록 [펫스킬컬렉션번호] ...");
-    lines.push("대상 스킬북이 있으면 먼저 사용하고, 없으면 만능열쇠를 사용합니다.");
+    lines.push("/펫스킬컬렉션등록 [펫스킬가방번호] ...");
+    lines.push("/펫스킬가방에 표시된 번호의 펫스킬북을 사용합니다.");
     lines.push("/펫스킬컬렉션 [펫스킬컬렉션번호]");
     lines.push("대상 스킬북 보유 여부와 관계없이 만능열쇠를 사용합니다.");
     lines.push("");
