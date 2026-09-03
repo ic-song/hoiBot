@@ -1,0 +1,455 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-object-domain-import-identity-bindings-v1",
+  "sourceSystem": "LEGACY_JSON",
+  "locatorEncoding": "UTF-8 exact bytes; RFC6901 ~ and / escaping before SHA-256; display name alone forbidden",
+  "locatorExcludes": [
+    "raw_bundle_sha256",
+    "payload_fingerprint",
+    "audit timestamp"
+  ],
+  "runReplayKeySeparation": "run replay/checkpoint keys may include bundle hash and payload but MUST NOT allocate or select target identity",
+  "generatedCuidBindings": [
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_building_craft_recipes",
+      "targetPkColumn": "building_craft_recipe_id",
+      "objectType": "CANONICAL_BUILDING_CRAFT_RECIPES",
+      "sourceNamespace": "object-import.building-recipe.canonical_building_craft_recipes",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_building_definitions",
+      "targetPkColumn": "building_id",
+      "objectType": "CANONICAL_BUILDING_DEFINITIONS",
+      "sourceNamespace": "object-import.building-recipe.canonical_building_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_craft_recipe_currency_inputs",
+      "targetPkColumn": "craft_recipe_currency_input_id",
+      "objectType": "CANONICAL_CRAFT_RECIPE_CURRENCY_INPUTS",
+      "sourceNamespace": "object-import.building-recipe.canonical_craft_recipe_currency_inputs",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_craft_recipe_currency_outputs",
+      "targetPkColumn": "craft_recipe_currency_output_id",
+      "objectType": "CANONICAL_CRAFT_RECIPE_CURRENCY_OUTPUTS",
+      "sourceNamespace": "object-import.building-recipe.canonical_craft_recipe_currency_outputs",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_craft_recipe_definitions",
+      "targetPkColumn": "craft_recipe_id",
+      "objectType": "CANONICAL_CRAFT_RECIPE_DEFINITIONS",
+      "sourceNamespace": "object-import.building-recipe.canonical_craft_recipe_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_craft_recipe_item_inputs",
+      "targetPkColumn": "craft_recipe_item_input_id",
+      "objectType": "CANONICAL_CRAFT_RECIPE_ITEM_INPUTS",
+      "sourceNamespace": "object-import.building-recipe.canonical_craft_recipe_item_inputs",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "building-recipe",
+      "targetTable": "canonical_craft_recipe_item_outputs",
+      "targetPkColumn": "craft_recipe_item_output_id",
+      "objectType": "CANONICAL_CRAFT_RECIPE_ITEM_OUTPUTS",
+      "sourceNamespace": "object-import.building-recipe.canonical_craft_recipe_item_outputs",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "currency",
+      "targetTable": "canonical_currency_definitions",
+      "targetPkColumn": "currency_id",
+      "objectType": "CANONICAL_CURRENCY_DEFINITIONS",
+      "sourceNamespace": "object-import.currency.canonical_currency_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "currency",
+      "targetTable": "canonical_currency_ledger_entries",
+      "targetPkColumn": "currency_ledger_entry_id",
+      "objectType": "CANONICAL_CURRENCY_LEDGER_ENTRIES",
+      "sourceNamespace": "object-import.currency.canonical_currency_ledger_entries",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "currency",
+      "targetTable": "canonical_currency_operations",
+      "targetPkColumn": "currency_operation_id",
+      "objectType": "CANONICAL_CURRENCY_OPERATIONS",
+      "sourceNamespace": "object-import.currency.canonical_currency_operations",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-equipment",
+      "targetTable": "canonical_equipment_definitions",
+      "targetPkColumn": "equipment_id",
+      "objectType": "CANONICAL_EQUIPMENT_DEFINITIONS",
+      "sourceNamespace": "object-import.pet-equipment.canonical_equipment_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "item",
+      "targetTable": "canonical_item_definitions",
+      "targetPkColumn": "item_id",
+      "objectType": "CANONICAL_ITEM_DEFINITIONS",
+      "sourceNamespace": "object-import.item.canonical_item_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "member-title",
+      "targetTable": "canonical_member_title_definitions",
+      "targetPkColumn": "member_title_id",
+      "objectType": "CANONICAL_MEMBER_TITLE_DEFINITIONS",
+      "sourceNamespace": "object-import.member-title.canonical_member_title_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "mini-pet",
+      "targetTable": "canonical_mini_pet_definitions",
+      "targetPkColumn": "mini_pet_id",
+      "objectType": "CANONICAL_MINI_PET_DEFINITIONS",
+      "sourceNamespace": "object-import.mini-pet.canonical_mini_pet_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "mini-pet",
+      "targetTable": "canonical_mini_pet_enhancement_rules",
+      "targetPkColumn": "mini_pet_enhancement_rule_id",
+      "objectType": "CANONICAL_MINI_PET_ENHANCEMENT_RULES",
+      "sourceNamespace": "object-import.mini-pet.canonical_mini_pet_enhancement_rules",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "mini-pet-title",
+      "targetTable": "canonical_mini_pet_title_definitions",
+      "targetPkColumn": "mini_pet_title_id",
+      "objectType": "CANONICAL_MINI_PET_TITLE_DEFINITIONS",
+      "sourceNamespace": "object-import.mini-pet-title.canonical_mini_pet_title_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-equipment",
+      "targetTable": "canonical_owned_equipment_instances",
+      "targetPkColumn": "owned_equipment_id",
+      "objectType": "CANONICAL_OWNED_EQUIPMENT_INSTANCES",
+      "sourceNamespace": "object-import.pet-equipment.canonical_owned_equipment_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "item",
+      "targetTable": "canonical_owned_item_instances",
+      "targetPkColumn": "owned_item_id",
+      "objectType": "CANONICAL_OWNED_ITEM_INSTANCES",
+      "sourceNamespace": "object-import.item.canonical_owned_item_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "item",
+      "targetTable": "canonical_owned_item_stacks",
+      "targetPkColumn": "owned_item_stack_id",
+      "objectType": "CANONICAL_OWNED_ITEM_STACKS",
+      "sourceNamespace": "object-import.item.canonical_owned_item_stacks",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "member-title",
+      "targetTable": "canonical_owned_member_title_instances",
+      "targetPkColumn": "owned_member_title_id",
+      "objectType": "CANONICAL_OWNED_MEMBER_TITLE_INSTANCES",
+      "sourceNamespace": "object-import.member-title.canonical_owned_member_title_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "mini-pet",
+      "targetTable": "canonical_owned_mini_pet_instances",
+      "targetPkColumn": "owned_mini_pet_id",
+      "objectType": "CANONICAL_OWNED_MINI_PET_INSTANCES",
+      "sourceNamespace": "object-import.mini-pet.canonical_owned_mini_pet_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "mini-pet-title",
+      "targetTable": "canonical_owned_mini_pet_title_instances",
+      "targetPkColumn": "owned_mini_pet_title_id",
+      "objectType": "CANONICAL_OWNED_MINI_PET_TITLE_INSTANCES",
+      "sourceNamespace": "object-import.mini-pet-title.canonical_owned_mini_pet_title_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-equipment",
+      "targetTable": "canonical_owned_pet_equipment",
+      "targetPkColumn": "owned_pet_equipment_id",
+      "objectType": "CANONICAL_OWNED_PET_EQUIPMENT",
+      "sourceNamespace": "object-import.pet-equipment.canonical_owned_pet_equipment",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-equipment",
+      "targetTable": "canonical_owned_pet_instances",
+      "targetPkColumn": "owned_pet_id",
+      "objectType": "CANONICAL_OWNED_PET_INSTANCES",
+      "sourceNamespace": "object-import.pet-equipment.canonical_owned_pet_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-skill",
+      "targetTable": "canonical_owned_pet_skill_equipments",
+      "targetPkColumn": "owned_pet_skill_equipment_id",
+      "objectType": "CANONICAL_OWNED_PET_SKILL_EQUIPMENTS",
+      "sourceNamespace": "object-import.pet-skill.canonical_owned_pet_skill_equipments",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-skill",
+      "targetTable": "canonical_owned_pet_skill_stacks",
+      "targetPkColumn": "owned_pet_skill_id",
+      "objectType": "CANONICAL_OWNED_PET_SKILL_STACKS",
+      "sourceNamespace": "object-import.pet-skill.canonical_owned_pet_skill_stacks",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-title",
+      "targetTable": "canonical_owned_pet_title_instances",
+      "targetPkColumn": "owned_pet_title_id",
+      "objectType": "CANONICAL_OWNED_PET_TITLE_INSTANCES",
+      "sourceNamespace": "object-import.pet-title.canonical_owned_pet_title_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "package",
+      "targetTable": "canonical_package_definitions",
+      "targetPkColumn": "package_id",
+      "objectType": "CANONICAL_PACKAGE_DEFINITIONS",
+      "sourceNamespace": "object-import.package.canonical_package_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "package",
+      "targetTable": "canonical_package_reward_entries",
+      "targetPkColumn": "package_reward_entry_id",
+      "objectType": "CANONICAL_PACKAGE_REWARD_ENTRIES",
+      "sourceNamespace": "object-import.package.canonical_package_reward_entries",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "package",
+      "targetTable": "canonical_package_reward_groups",
+      "targetPkColumn": "package_reward_group_id",
+      "objectType": "CANONICAL_PACKAGE_REWARD_GROUPS",
+      "sourceNamespace": "object-import.package.canonical_package_reward_groups",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "package",
+      "targetTable": "canonical_package_reward_quarantines",
+      "targetPkColumn": "package_reward_quarantine_id",
+      "objectType": "CANONICAL_PACKAGE_REWARD_QUARANTINES",
+      "sourceNamespace": "object-import.package.canonical_package_reward_quarantines",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-equipment",
+      "targetTable": "canonical_pet_definitions",
+      "targetPkColumn": "pet_id",
+      "objectType": "CANONICAL_PET_DEFINITIONS",
+      "sourceNamespace": "object-import.pet-equipment.canonical_pet_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-skill",
+      "targetTable": "canonical_pet_skill_definitions",
+      "targetPkColumn": "pet_skill_id",
+      "objectType": "CANONICAL_PET_SKILL_DEFINITIONS",
+      "sourceNamespace": "object-import.pet-skill.canonical_pet_skill_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "pet-title",
+      "targetTable": "canonical_pet_title_definitions",
+      "targetPkColumn": "pet_title_id",
+      "objectType": "CANONICAL_PET_TITLE_DEFINITIONS",
+      "sourceNamespace": "object-import.pet-title.canonical_pet_title_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "currency",
+      "targetTable": "canonical_player_currency_balances",
+      "targetPkColumn": "player_currency_balance_id",
+      "objectType": "CANONICAL_PLAYER_CURRENCY_BALANCES",
+      "sourceNamespace": "object-import.currency.canonical_player_currency_balances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "player",
+      "targetTable": "canonical_players",
+      "targetPkColumn": "player_id",
+      "objectType": "CANONICAL_PLAYERS",
+      "sourceNamespace": "object-import.player.canonical_players",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "furniture",
+      "targetTable": "object_furniture_definitions",
+      "targetPkColumn": "furniture_id",
+      "objectType": "OBJECT_FURNITURE_DEFINITIONS",
+      "sourceNamespace": "object-import.furniture.object_furniture_definitions",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "furniture",
+      "targetTable": "object_furniture_market_listings",
+      "targetPkColumn": "furniture_market_listing_id",
+      "objectType": "OBJECT_FURNITURE_MARKET_LISTINGS",
+      "sourceNamespace": "object-import.furniture.object_furniture_market_listings",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "furniture",
+      "targetTable": "object_home_furniture_placements",
+      "targetPkColumn": "home_furniture_placement_id",
+      "objectType": "OBJECT_HOME_FURNITURE_PLACEMENTS",
+      "sourceNamespace": "object-import.furniture.object_home_furniture_placements",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    },
+    {
+      "domain": "furniture",
+      "targetTable": "object_owned_furniture_instances",
+      "targetPkColumn": "owned_furniture_id",
+      "objectType": "OBJECT_OWNED_FURNITURE_INSTANCES",
+      "sourceNamespace": "object-import.furniture.object_owned_furniture_instances",
+      "identityLocatorKey": "SHA256(logical-source-name NUL RFC6901-source-pointer-with-player-key-hash NUL record-kind NUL occurrence-index-or-projection-locator)",
+      "payloadFingerprint": "SHA256(canonical typed payload excluding audit fields)",
+      "replayReadOnly": true
+    }
+  ],
+  "reusedPrimaryKeys": [
+    {
+      "targetTable": "canonical_member_title_selections",
+      "targetPkColumn": "player_id",
+      "sourceTable": "canonical_players",
+      "sourceColumn": "player_id",
+      "reason": "one selection row per existing player"
+    },
+    {
+      "targetTable": "canonical_mini_pet_title_selections",
+      "targetPkColumn": "player_id",
+      "sourceTable": "canonical_players",
+      "sourceColumn": "player_id",
+      "reason": "one selection row per existing player"
+    },
+    {
+      "targetTable": "canonical_package_item_rewards",
+      "targetPkColumn": "package_reward_entry_id",
+      "sourceTable": "canonical_package_reward_entries",
+      "sourceColumn": "package_reward_entry_id",
+      "reason": "typed extension of an existing reward entry"
+    },
+    {
+      "targetTable": "canonical_package_nested_rewards",
+      "targetPkColumn": "package_reward_entry_id",
+      "sourceTable": "canonical_package_reward_entries",
+      "sourceColumn": "package_reward_entry_id",
+      "reason": "typed extension of an existing reward entry"
+    },
+    {
+      "targetTable": "canonical_pet_title_selections",
+      "targetPkColumn": "player_id",
+      "sourceTable": "canonical_players",
+      "sourceColumn": "player_id",
+      "reason": "one selection row per existing player"
+    }
+  ],
+  "definitionProjectionLocator": "WBS725 must emit stable logical source name, exact source pointer, source locator SHA-256 and typed payload fingerprint for every definition/rule row; specialized *_definition_imports are additional provenance and do not replace the common identity binding",
+  "ownershipLocator": "Use the exact sealed JSON pointer and zero-based index only when the source has no stable occurrence ID. Furniture must use playerSourceHash plus legacy furniture.id across bag/placement paths and quarantine empty or duplicate IDs. Equipped miniPet uses /{playerHash}/miniPet/equipped and never a miniPetBag index.",
+  "transactionContract": "Binding SELECT FOR UPDATE, identity reservation, crosswalk fingerprint, target row and complete player graph commit in one outer transaction",
+  "replayContract": "same locator+objectType+payload+target PK => read-only replay with zero INSERT/UPDATE; drift/type/missing target/PK mismatch => fail closed with zero canonical writes"
+}

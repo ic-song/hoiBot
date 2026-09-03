@@ -20,6 +20,11 @@ export interface ObjectIdentityCrosswalkInput {
   sourceIdentifier: string;
 }
 
+export interface ObjectImportBindingInput extends Omit<ObjectIdentityCrosswalkInput, "sourceIdentifier"> {
+  sourceLocatorSha256: string;
+  payloadFingerprint: string;
+}
+
 export interface ObjectIdentityCrosswalkResult {
   objectIdentityId: string;
   objectIdentityCrosswalkId: string;
@@ -59,6 +64,7 @@ export function createObjectAuditValues(actor: string, now: Date = new Date()): 
 }
 
 interface CrosswalkRow extends ObjectAuditValues { object_identity_crosswalk_id: string; object_identity_id: string; }
+interface ImportCrosswalkRow extends CrosswalkRow { object_type: string; payload_fingerprint: string | null; }
 
 function isDuplicate(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
@@ -80,6 +86,17 @@ function assertSourceLocator(input: Pick<ObjectIdentityCrosswalkInput, "sourceSy
 function assertCrosswalkInput(input: ObjectIdentityCrosswalkInput): void {
   assertSourceLocator(input);
   if (!/^[A-Z][A-Z0-9_]{0,49}$/.test(input.objectType)) throw new Error("OBJECT_IDENTITY_TYPE_INVALID");
+}
+
+function isPrimaryKeyDuplicate(error: unknown): boolean {
+  if (!isDuplicate(error) || typeof error !== "object" || error === null || !("message" in error)) return false;
+  return /for key ['`"]?(?:[a-z0-9_]+\.)?primary['`"]?/i.test(String(error.message));
+}
+
+function assertImportBindingInput(input: ObjectImportBindingInput): void {
+  assertCrosswalkInput({ ...input, sourceIdentifier: input.sourceLocatorSha256 });
+  if (!/^[0-9a-f]{64}$/.test(input.sourceLocatorSha256)) throw new Error("OBJECT_IDENTITY_IMPORT_SOURCE_LOCATOR_INVALID");
+  if (!/^[0-9a-f]{64}$/.test(input.payloadFingerprint)) throw new Error("OBJECT_IDENTITY_IMPORT_PAYLOAD_FINGERPRINT_INVALID");
 }
 
 // CUID2 후보를 DB PK 충돌 확인과 제한된 재시도로 예약합니다.
@@ -147,6 +164,50 @@ export class MariaObjectIdentityAuditProvider {
       }
     }
     throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
+  }
+
+  // 호출자가 소유한 transaction 안에서 locator와 payload fingerprint를 canonical identity에 결합합니다.
+  // 오류를 내부 commit/rollback으로 감추지 않아 caller가 전체 작업을 rollback할 수 있습니다.
+  async registerImportBinding(transaction: DatabaseTransaction, input: ObjectImportBindingInput): Promise<ObjectIdentityCrosswalkResult> {
+    assertImportBindingInput(input);
+    const existing = (await transaction.query<ImportCrosswalkRow[]>(
+      "SELECT crosswalk.object_identity_crosswalk_id,crosswalk.object_identity_id,crosswalk.payload_fingerprint,identity.object_type,crosswalk.INSERT_USER,crosswalk.INSERT_TIME,crosswalk.UPDATE_USER,crosswalk.UPDATE_TIME FROM object_identity_crosswalks crosswalk JOIN object_identities identity ON identity.object_identity_id=crosswalk.object_identity_id WHERE crosswalk.source_system=? AND crosswalk.source_namespace=? AND crosswalk.source_identifier=? FOR UPDATE",
+      [input.sourceSystem, input.sourceNamespace, input.sourceLocatorSha256]
+    ))[0];
+    if (existing !== undefined) {
+      if (existing.object_type !== input.objectType) throw new Error("OBJECT_IDENTITY_IMPORT_TYPE_MISMATCH");
+      if (existing.payload_fingerprint === null) throw new Error("OBJECT_IDENTITY_IMPORT_PAYLOAD_UNVERIFIED");
+      if (existing.payload_fingerprint !== input.payloadFingerprint) throw new Error("OBJECT_IDENTITY_IMPORT_PAYLOAD_DRIFT");
+      return { objectIdentityId: existing.object_identity_id, objectIdentityCrosswalkId: existing.object_identity_crosswalk_id, replayed: true, audit: auditFrom(existing) };
+    }
+
+    const audit = createObjectAuditValues(input.actor, this.now());
+    const objectIdentityId = await reserveIdentity(
+      (candidate) => transaction.execute(
+        "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+        [candidate, input.objectType, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+      ).then(() => undefined),
+      this.generate,
+      this.maxAttempts
+    );
+    let objectIdentityCrosswalkId: string | undefined;
+    for (let attempt = 0; attempt < this.maxAttempts; attempt += 1) {
+      const candidate = this.generate();
+      assertObjectIdentityCandidate(candidate);
+      try {
+        await transaction.execute(
+          "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)",
+          [candidate, objectIdentityId, input.sourceSystem, input.sourceNamespace, input.sourceLocatorSha256, input.payloadFingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+        );
+        objectIdentityCrosswalkId = candidate;
+        break;
+      } catch (error) {
+        // locator UNIQUE 충돌은 concurrent/drift 재판정이 필요하므로 caller transaction 전체를 실패시킵니다.
+        if (!isPrimaryKeyDuplicate(error)) throw error;
+      }
+    }
+    if (objectIdentityCrosswalkId === undefined) throw new Error("OBJECT_IDENTITY_CROSSWALK_COLLISION_RETRY_EXHAUSTED");
+    return { objectIdentityId, objectIdentityCrosswalkId, replayed: false, audit };
   }
 
   // source 식별자의 감사 주체만 변경하고 canonical PK는 보존합니다.
