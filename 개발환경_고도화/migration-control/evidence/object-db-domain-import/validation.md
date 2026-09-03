@@ -1,9 +1,9 @@
-# 오브젝트 도메인 이관 Gate 1~6 검증
+# 오브젝트 도메인 이관 Gate 1~7 검증
 
 - 슬라이스: `SL-DATA-MIGRATION-OBJECT-DOMAIN-IMPORT-01` (WBS742)
 - 카탈로그: `SC-20260902-1`
 - 검증일: `2026-09-03 KST`
-- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer, 격리 MariaDB 리허설, 독립 projection-target parity oracle
+- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer, 격리 MariaDB 리허설, 독립 projection-target parity oracle, combined Shadow
 - 운영 영향: 없음. 운영 DB, 운영 배포, `data/*.json`, `main.js`, `Info.js`를 변경하지 않았다.
 
 ## 확정된 결과
@@ -49,6 +49,12 @@
 - receipt의 `identity_locator_sha256`, `binding_fingerprint`, `imported_row_fingerprint`도 projection identity와 독립 재계산한 canonical payload/reference fingerprint에 정확히 결박하며 두 fingerprint/locator 변조 반례는 fail-closed 된다. compared field value `250`은 fixture와 테스트 assertion에 고정했다.
 - positive parity 실행 전후 MariaDB global DML counter는 `Com_delete=76`, `Com_insert=2028`, `Com_replace=0`, `Com_update=97`로 모두 불변하여 verifier 자체 write `0`을 확인했다.
 - 실제 DB transaction 안에서 target 누락, extra row, 값 drift, 유효한 다른 FK로 redirect, decision status/count drift, definition/ownership import order swap의 6개 반례가 각각 fail-closed 되었고 transaction rollback 뒤 clean parity를 다시 확인했다.
+- Gate7의 WBS724 및 WBS725 provider Shadow는 각각 synthetic 1-row 범위이며 운영 전체 데이터 proof로 해석하지 않는다. WBS724은 Raw 1 file→Common 3 records→Projection 1 row(`PROJECT/QUARANTINE/IGNORE=1/1/1`), WBS725는 Common 3→Projection 1→canonical 1을 증명한다.
+- actual production-like snapshot 13개 파일은 read-only inventory만 수행했다. source aggregate SHA-256은 `351e4a2a9bce402d652897355606c12fb77b004b0f626d35c01e4627464e3284`, inventory SHA-256은 `e2920422f0076b89cd9385d785cd48e198e578dd4d56e957c5e549250cef48de`이며 전후 byte hash가 같다. PII나 raw payload는 증빙에 기록하지 않았다.
+- actual inventory 분류는 가구 `unique candidate 3,525 / missing quarantine 1,715 / ambiguous quarantine 87`, 미니펫 `unique candidate 3,601 / missing quarantine 239 / ambiguous quarantine 50`이다. unique candidate는 승인된 identity가 아니며, 승인된 occurrence crosswalk가 없으므로 actual PROJECT는 `0`이다. 미해결·모호 값과 승인 전 unique candidate 모두 fail-closed 경계를 유지한다.
+- 동일 fresh MariaDB `127.0.0.1:3323`, allowlist DB `hoibot_rehearsal_wbs742_gate7`에서 migration 448개와 provider synthetic 체인 다음 WBS742 full 47→45 control을 실행했다. 독립 oracle은 재시작 전후 projection/target `47/47`, tables `45`, schema fields `241`, compared values `250`, definition order `24<25`, canonical hash 동일, diff `0`, verifier DML `0`을 확인했다.
+- importer restart replay의 global DML은 정확히 0이고 rollback 후 canonical target은 0이다. upstream projection `run/decision/record=1/14/47`과 identity/crosswalk `43/43`은 보존됐다. Maria PID는 `17400→17168→11048→7548`로 매 재시작마다 바뀌었다.
+- harness 정상 종료와 forced startup failure 모두 `WaitForExit` 결과와 `Refresh().HasExited`를 확인하고 모든 captured owned PID가 사라졌음을 전수 검사했다. 3323 listener 및 exact `.tmp/wbs742-gate7-mariadb`를 제거하고 환경을 복원했으며, 모든 정상·실패 cleanup 이후 운영 3306 listener PID set `5328` 불변을 검증했다.
 
 ## 검증 결과
 
@@ -70,9 +76,15 @@
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
 | `git diff --check` | PASS |
+| Gate7 actual snapshot read-only inventory | 13 files, byte hash unchanged, approved PROJECT `0`, furniture candidate/missing/ambiguous `3525/1715/87`, mini-pet `3601/239/50` |
+| `scripts/rehearse-object-domain-import-gate7.ps1` | migration `448`, provider synthetic `1-row` chains, full `47→45`, oracle diff `0`, restart replay DML `0`, rollback/upstream/identity preservation, 3323/3306 safety PASS |
+| Gate7 forced startup failure cleanup | expected failure; 3323 listener `0`, exact temp 없음, environment restored |
+| Gate7 focused snapshot/provider parity | `4/4 PASS` |
+| Gate7 전체 `npm test` | `1793 PASS / 8 SKIP / 0 FAIL` (`1801` tests) |
 
 ## Gate 판정 경계
 
-- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer), Gate 5(격리 DB 리허설), Gate 6(독립 데이터 parity)을 대상으로 한다.
+- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer), Gate 5(격리 DB 리허설), Gate 6(독립 데이터 parity), Gate 7(combined Shadow)을 대상으로 한다.
 - Gate 5는 독립 reviewer 판정과 커밋 전 근거이며, 일반 전체 suite의 환경 의존 SKIP 8건을 Gate 5 증거로 대체하지 않는다. 위의 명시적 격리 harness가 별도의 실DB 증거이다.
 - Gate 6는 합성 projection과 canonical target의 데이터 parity 근거이다. 운영 데이터 실이관, consumer command parity, Shadow, 운영 배포 완료 근거로 사용하지 않는다.
+- Gate 7도 실제 snapshot 전체를 canonical target에 적재했다는 근거가 아니다. 실제 snapshot은 read-only aggregate inventory이며, full 47→45 parity는 비식별 합성 control이다. 운영 실이관·Gate8·배포 근거로 사용하지 않는다.
