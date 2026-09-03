@@ -3482,7 +3482,7 @@ Status: VERIFIED
 
 ---
 
-# /펫스킬가방추가 [유저], [스킬명] [개수]
+# /펫스킬가방추가 [유저], [펫스킬가방번호|스킬명] [개수]
 Status: VERIFIED
 ## Command Anchors
 - Search in `main.js`: `/펫스킬가방추가`
@@ -3491,6 +3491,7 @@ Status: VERIFIED
 ## Related Helpers
 - `normalizePetSkillName`
 - `getPetSkillData`
+- `getPetSkillBagList`
 - `parseDirectGrantPetSkillRequest`
 - `parsePetSkillBagGrantRequest`
 - `getPetSkillBagRemainCount`
@@ -3498,6 +3499,7 @@ Status: VERIFIED
 ## Data Usage
 - `petSkillData[user].bag`
 ## Save Flow
+- 숫자를 입력하면 대상 유저의 `/펫스킬가방` 번호에 해당하는 스킬을 찾는다.
 - Mutates target skill bag and saves `petSkillData`
 ## Related Commands
 - `/펫스킬가방`
@@ -3505,6 +3507,7 @@ Status: VERIFIED
 
 ## AI Notes
 - `전설의 몽둥이📙[한정판]` 지급 명령은 `호이 남`만 실행할 수 있다. `/펫스킬가방추가 [이름], 전설의 몽둥이` 입력 시 대상에게 1개, 뒤에 숫자를 입력하면 해당 수량만큼 지급하며 숫자 뒤 추가 문구는 차단한다.
+- 일반 번호 지급은 `/펫스킬가방추가 [유저], [펫스킬가방번호] [개수]` 형식이며, 명령어 바로 뒤에 쉼표를 붙인 기존 형식은 실행하지 않는다.
 
 ---
 

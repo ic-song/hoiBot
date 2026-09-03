@@ -3966,6 +3966,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
+                    if (addSkillRequest.skillBagNumber !== null) {
+                        var addSkillBagList = getPetSkillBagList(petSkillData, addSkillUser);
+                        addSkillName = addSkillBagList[addSkillRequest.skillBagNumber - 1];
+                        if (!addSkillName) {
+                            replier.reply("❌ 펫스킬가방 번호가 올바르지 않습니다: " + addSkillRequest.skillBagNumber + "번");
+                            return;
+                        }
+                    }
+
                     var addSkillData = getPetSkillData(addSkillName);
                     if (!addSkillData) {
                         replier.reply("❌ 등록되지 않은 펫스킬입니다: " + addSkillName + "\n/펫스킬확률에서 목록을 확인해주세요.");
@@ -29267,6 +29276,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
+        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/미니펫컬렉션\s+\d+$/.test(command) || /^\/펫스킬컬렉션\s+\d+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
@@ -41816,7 +41826,18 @@ function parsePetSkillBagGrantRequest(command) {
             user: directGrantRequest.user,
             skillName: directGrantSkillData.name,
             count: directGrantRequest.count,
+            skillBagNumber: null,
             directGrantSkillData: directGrantSkillData
+        };
+    }
+    var numberedMatch = String(command || "").match(/^\/펫스킬가방추가\s+([^,\r\n]+),\s+(\d+)\s+(\d+)\s*$/);
+    if (numberedMatch) {
+        return {
+            user: numberedMatch[1].trim(),
+            skillName: "",
+            count: parseInt(numberedMatch[3], 10),
+            skillBagNumber: parseInt(numberedMatch[2], 10),
+            directGrantSkillData: null
         };
     }
     var match = String(command || "").match(/^\/펫스킬가방추가\s+([^,\r\n]+),\s+(.+)\s+(\d+)\s*$/);
@@ -41825,6 +41846,7 @@ function parsePetSkillBagGrantRequest(command) {
         user: match[1].trim(),
         skillName: normalizePetSkillName(match[2].trim()),
         count: parseInt(match[3], 10),
+        skillBagNumber: null,
         directGrantSkillData: null
     };
 }
