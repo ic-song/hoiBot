@@ -18,6 +18,7 @@
     "db:migrate": "node --env-file-if-exists=.env --import tsx scripts/migrate.ts",
     "db:import:dry-run": "node --env-file-if-exists=.env --import tsx scripts/import-legacy-json.ts",
     "db:import:raw-landing": "node --env-file-if-exists=.env --import tsx scripts/import-raw-landing.ts",
+    "db:import:common-staging": "node --env-file-if-exists=.env --import tsx scripts/import-common-staging.ts",
     "admin:bootstrap": "node --env-file-if-exists=.env --import tsx scripts/bootstrap-admin.ts",
     "admin:link-iris": "node --env-file-if-exists=.env --import tsx scripts/link-admin-iris-identity.ts",
     "admin:create-test-account": "node --env-file-if-exists=.env --import tsx scripts/create-test-account.ts",

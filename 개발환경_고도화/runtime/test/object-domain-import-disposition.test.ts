@@ -45,7 +45,9 @@ describe("object domain import disposition", () => {
       for (const match of sql.matchAll(/CREATE TABLE(?: IF NOT EXISTS)?\s+([a-z][a-z0-9_]*)\s*\(/gi)) migrationTables.add(match[1]!);
     }
     assert.deepEqual([...migrationTables].sort(), frozenTables, "frozen table set must come from the actual migration SQL");
-    assert.deepEqual(contract.tables.map((entry) => entry.table).sort(), frozenTables);
+    const commonStagingTables = ["data_migration_common_staging_records", "data_migration_common_staging_runs"];
+    assert.deepEqual(contract.tables.map((entry) => entry.table).filter((table) => !commonStagingTables.includes(table)).sort(), frozenTables);
+    assert.deepEqual(contract.tables.map((entry) => entry.table).filter((table) => commonStagingTables.includes(table)).sort(), commonStagingTables);
     assert.ok(disposition.objectContractMigrationBaseline.every((migration) => contract.registeredMigrations.includes(migration)));
     assert.equal(createHash("sha256").update(frozenTables.join("\n")).digest("hex"), disposition.domainTableSetSha256);
   });
