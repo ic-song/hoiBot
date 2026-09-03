@@ -781,8 +781,9 @@ if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain
     const config = loadConfig();
     assertObjectDomainImportDatabaseName(config.database.name);
     assert.equal(config.database.host, "127.0.0.1");
-    assert.equal(config.database.port, 3321);
-    assert.equal(config.database.name, process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate6-prepare" ? "hoibot_rehearsal_wbs742_gate6" : "hoibot_rehearsal_wbs742_gate5");
+    const gate7 = process.env.OBJECT_DOMAIN_GATE5_PHASE?.startsWith("gate7-") === true;
+    assert.equal(config.database.port, gate7 ? 3323 : 3321);
+    assert.equal(config.database.name, gate7 ? "hoibot_rehearsal_wbs742_gate7" : process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate6-prepare" ? "hoibot_rehearsal_wbs742_gate6" : "hoibot_rehearsal_wbs742_gate5");
     const database = createDatabaseClient(config.database);
     const importer = new MariaObjectDomainImporter(database, () => new Date("2026-09-03T09:00:00Z"));
     try {
@@ -801,7 +802,7 @@ if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain
         assert.equal(after.targets - baseline.targets, 47);
         assert.deepEqual([after.importRuns, after.importDecisions, after.importRecords], [1, input.decisions.length, 47]);
         process.stdout.write(`GATE5_PREPARE ${JSON.stringify({ projectionRunId: input.run.catalog_projection_run_id, objectDomainImportRunId: first.objectDomainImportRunId, baseline, after })}\n`);
-      } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate6-prepare") {
+      } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate6-prepare" || process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate7-prepare") {
         const input = withQuarantineAndIgnore();
         await seedGate5Projection(database, input);
         const baseline = await gate5Counts(database);
@@ -810,7 +811,7 @@ if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain
         assert.deepEqual([first.insertedCanonicalRows, first.insertedDecisionReceipts, first.replayed], [fixture.syntheticProjectionRowCount, fixture.gate6SourceDecisionCount, false]);
         assert.deepEqual([after.targets, after.importRuns, after.importDecisions, after.importRecords], [fixture.syntheticProjectionRowCount, 1, fixture.gate6SourceDecisionCount, fixture.syntheticProjectionRowCount]);
         process.stdout.write(`GATE6_PREPARE ${JSON.stringify({ projectionRunId: input.run.catalog_projection_run_id, objectDomainImportRunId: first.objectDomainImportRunId, baseline, after })}\n`);
-      } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "replay-rollback") {
+      } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "replay-rollback" || process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate7-replay-rollback") {
         const beforeReplay = await gate5Counts(database);
         const writesBeforeReplay = await gate5WriteCounters(database);
         const replay = await importer.importProjection("p1234567", policy, "wbs742-gate5-restart");

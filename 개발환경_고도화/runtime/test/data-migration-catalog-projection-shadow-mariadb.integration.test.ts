@@ -185,7 +185,13 @@ shadow("WBS725 Gate 7 isolated projection Shadow", () => {
   before(async () => {
     const config = loadConfig();
     assertCatalogProjectionDatabaseName(config.database.name);
-    assert.equal(config.database.port, 3322);
+    const combinedGate7 = process.env.WBS742_GATE7_COMBINED === "true";
+    assert.deepEqual(
+      [config.database.host, config.database.port, config.database.name],
+      combinedGate7
+        ? ["127.0.0.1", 3323, "hoibot_rehearsal_wbs742_gate7"]
+         : ["127.0.0.1", 3322, "hoibot_rehearsal_wbs725_gate7"]
+    );
     database = createDatabaseClient(config.database);
     if (process.env.CATALOG_PROJECTION_GATE7_PHASE === "prepare") {
       const audit = createObjectAuditValues("wbs725-gate7-shadow");

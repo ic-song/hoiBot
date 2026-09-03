@@ -62,7 +62,8 @@ if (process.env.OBJECT_DOMAIN_GATE6_PHASE === "verify") describe("object domain 
   it("compares projection and canonical rows with a zero-write independent oracle and rejects target, decision, and order drift", async () => {
     const config = loadConfig();
     assertObjectDomainImportDatabaseName(config.database.name);
-    assert.deepEqual([config.database.host, config.database.port, config.database.name], ["127.0.0.1", 3321, "hoibot_rehearsal_wbs742_gate6"]);
+    const gate7 = process.env.WBS742_GATE7_COMBINED === "true";
+    assert.deepEqual([config.database.host, config.database.port, config.database.name], gate7 ? ["127.0.0.1", 3323, "hoibot_rehearsal_wbs742_gate7"] : ["127.0.0.1", 3321, "hoibot_rehearsal_wbs742_gate6"]);
     const database = createDatabaseClient(config.database);
     const verifier = new ObjectDomainParityVerifier();
     try {
