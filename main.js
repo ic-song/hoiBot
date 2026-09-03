@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.455"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.456"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -929,9 +929,9 @@ const GLOBAL_CONFIG = {
         }
     },
     petSkillCollection: { // 펫스킬 컬렉션 등록 한도와 보상 설정
-        gradeOrder: ["SS", "S", "A", "B", "C", "D"],
-        maxCounts: { SS: 5, S: 10, A: 20, B: 50, C: 100, D: 200 },
-        rewardCounts: { SS: 500, S: 150, A: 80, B: 50, C: 20, D: 10 },
+        gradeOrder: ["SS", "S", "A", "B", "C", "D", "한정판"],
+        maxCounts: { SS: 5, S: 10, A: 20, B: 50, C: 100, D: 200, "한정판": 10 },
+        rewardCounts: { SS: 500, S: 150, A: 80, B: 50, C: 20, D: 10, "한정판": 300 },
         rewardItemName: "홈뱃지 큐브💟",
         maxSelectionCount: 10
     },
@@ -27648,8 +27648,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             return;
                         }
                         var petSkillCollectionMaxCount = petSkillCollectionConfig.maxCounts[petSkillCollectionSkillData.grade];
-                        if (petSkillCollectionSkillData.limitedEdition === true || petSkillCollectionMaxCount === undefined) {
-                            replier.reply("⚠️ 한정판 펫스킬은 펫스킬 컬렉션에 등록할 수 없습니다:\n" + formatPetSkillName(petSkillCollectionSkillName) + "[" + petSkillCollectionSkillData.grade + "]");
+                        if (petSkillCollectionMaxCount === undefined) {
+                            replier.reply("⚠️ 펫스킬 컬렉션 등록 대상이 아닙니다:\n" + formatPetSkillName(petSkillCollectionSkillName) + "[" + petSkillCollectionSkillData.grade + "]");
                             return;
                         }
                         var petSkillCollectionCurrentCount = getPetSkillCollectionCount(petSkillCollectionPreview, petSkillCollectionSkillName);
@@ -27708,7 +27708,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             petSkillCollectionSkippedLines.push("[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "\n└ 가방 정보가 변경되어 등록에서 제외되었습니다.");
                             continue;
                         }
-                        if (petSkillCollectionCurrentSkillData.limitedEdition === true || petSkillCollectionCurrentMax === undefined) {
+                        if (petSkillCollectionCurrentMax === undefined) {
                             petSkillCollectionSkippedLines.push("[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "[" + petSkillCollectionCurrentSkillData.grade + "]\n└ 펫스킬 컬렉션 등록 대상이 아닙니다.");
                             continue;
                         }
@@ -41655,7 +41655,7 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push("📙[" + checkRank(data, petData, guildData, user) + "]의 펫스킬 컬렉션📙");
     lines.push("");
     lines.push("각 펫스킬은 등급별 최대 등록 수량까지 등록 가능합니다.");
-    lines.push("SS 5개 / S 10개 / A 20개 / B 50개 / C 100개 / D 200개");
+    lines.push("SS 5개 / S 10개 / A 20개 / B 50개 / C 100개 / D 200개 / 한정판 10개");
     lines.push("펫스킬북📙 1개 등록 시 등급에 따라");
     lines.push(config.rewardItemName + "가 즉시 지급됩니다.");
     lines.push("");
@@ -42374,6 +42374,7 @@ function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
     msg += "※ 스킬 판매: /펫스킬판매 [번호]\n";
     msg += "※ 스킬 분해: /펫스킬북분해 [번호] [개수]\n";
     msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
+    msg += "※ 스킬 컬렉: /펫스킬컬렉션등록 [번호]\n";
     msg += "━━━━━━━━━━━━━\n";
 
     if (list.length === 0) {
