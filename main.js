@@ -13173,11 +13173,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply(openMsg);
                     }
                 }
-               if (msg === "/황제패키지오픈4") {
+               if (msg === "/황제패키지오픈5") {
     if (!castleSiegeFlag) {
         let member = data.member[sender];
         let bag = member.bag;
-        let itemName = "황제패키지👑[4](/황제패키지오픈4)";
+        let itemName = "황제패키지👑[5](/황제패키지오픈5)";
 
         if (!hasItem(data, sender, itemName, 1)) {
             replier.reply(
@@ -13193,22 +13193,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         // 🎁 기본 지급 아이템
         let starterItems = {
-            "미니펫뽑기🐹(/미니펫오픈)": 100000,
-            "펫스윗홈인테리어샵🖼️(/샵오픈)": 100000,
-            "미니펫 강화석💫": 10000,
-            "경찰과 도둑🚨(/삐뽀삐뽀)": 50,
+            "미니펫뽑기🐹(/미니펫오픈)": 120000,
+            "펫스윗홈인테리어샵🖼️(/샵오픈)": 120000,
+            "미니펫 강화석💫": 25000,
+            "경찰과 도둑🚨(/삐뽀삐뽀)": 100,
             "펫먹이특식🥡(/특식오픈)": 50,
             "주간상자🌼": 10,
             "월간상자🌕": 3,
-            "길드공헌훈장🌟(/길드공헌 숫자)": 200,
+            "만능상자🔐(/만능상자오픈 숫자)": 5,
             "땅문서📜": 100,
             "캐슬코인🥇": 200,
-            "탐험확률UP🗻(50%)": 100,
+            "탐험확률UP🗻(50%)": 150,
             "펫던전 입장권🌋": 100,
             "🥕당근이세요?": 50,
             "펫 강화석⭐": 5000,
             "강화확률뽑기⚒️(/강화뽑기)": 50,
-            "펫먹이🍼": 200000,
+            "펫먹이🍼": 250000,
             "전설의 돌맹이🗿": 50,
             "다이아상자💎(/다이아상자오픈)": 1000
         };
@@ -13269,7 +13269,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
 
         let emperorTitleName =
-            "침을 뱉으며.. 받아라 성수다👑";
+            "세상에 왕은 여럿 있어도 황제는 오로지 짐이니라👑";
 
         let emperorTitlePrice = 100000000; // 1억
 
@@ -13282,7 +13282,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         saveJsonFile(titleData, memberTitlePath);
 
         // 📢 결과 메시지
-        let openMsg = "👑👑 이것이 너와 나의 눈높이 ㅋㅋ 👑👑\n";
+        let openMsg = "👑👑세상에 왕은 여럿 있어도 황제는 오로지 짐이니라👑👑\n";
         openMsg +=
             "👑👑👑👑👑👑👑👑👑👑👑👑👑👑👑\n" +
             "https://ibb.co/x8zp5jLr\n\n";
