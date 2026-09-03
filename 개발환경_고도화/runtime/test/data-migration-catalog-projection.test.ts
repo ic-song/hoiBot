@@ -112,6 +112,7 @@ describe("data migration catalog projection Gate 1~3 contract", () => {
     assert.equal(fixture.targetSchemaSha256, policy.targetSchemaSha256);
     const plan = buildCatalogProjectionPlan(fixture, policy);
     assert.match(plan.projectionManifestSha256, /^[0-9a-f]{64}$/);
+    assert.equal(plan.projectionManifestSha256, "84c4f86cef099e54c21844e98bc85e639e534d0468af59cb75c3cad6f6cc0762");
     assert.match(plan.projectionSha256, /^[0-9a-f]{64}$/);
     assert.deepEqual(plan.decisions.map((decision) => decision.decisionStatus).sort(), ["IGNORE", "PROJECT", "QUARANTINE"]);
     const output = plan.decisions.find((decision) => decision.decisionStatus === "PROJECT")!.outputs[0]!;
@@ -122,6 +123,9 @@ describe("data migration catalog projection Gate 1~3 contract", () => {
     const reordered = structuredClone(fixture);
     reordered.sources.reverse();
     assert.equal(calculateCatalogProjectionManifestSha256(reordered, policy), plan.projectionManifestSha256);
+    const envelopeChanged = structuredClone(fixture);
+    envelopeChanged.commonStagingEnvelope.expectedTotalBytes = "2";
+    assert.equal(calculateCatalogProjectionManifestSha256(envelopeChanged, policy), plan.projectionManifestSha256);
   });
 
   it("rejects guessed furniture, mini-pet, title, and equipment values", () => {

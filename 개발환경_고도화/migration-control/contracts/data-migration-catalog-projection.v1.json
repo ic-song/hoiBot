@@ -12,7 +12,8 @@
     "requiredFields": ["rawBundleSha256", "snapshotManifestSha256", "extractionManifestSha256", "expectedFileCount", "expectedTotalBytes", "projectedFileCount", "ignoredFileCount"],
     "fingerprintColumn": "upstream_envelope_sha256",
     "fingerprintInput": "stable JSON of the seven required fields plus commonStagingSha256 as stagingSha256",
-    "countConsistency": "projectedFileCount + ignoredFileCount = expectedFileCount"
+    "countConsistency": "projectedFileCount + ignoredFileCount = expectedFileCount",
+    "manifestHashCompatibility": "projection_manifest_sha256 retains the immutable migration-458 algorithm and excludes this envelope; envelope drift is verified independently by upstream_envelope_sha256"
   },
   "sourceCoveragePolicy": "every row of one COMPLETE common staging run is decided exactly once as PROJECT, QUARANTINE, or IGNORE",
   "projectionPolicy": {

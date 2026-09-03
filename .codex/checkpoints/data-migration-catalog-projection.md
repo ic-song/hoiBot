@@ -12,6 +12,7 @@
 - Gate 3: 비식별 fixture, exact 표시명, 정상·drift·domain·replay 시나리오 완료
 - Gate 4: typed projection provider, atomic repository, approval/crosswalk provenance, 격리 DB allowlist와 rollback CLI 구현 완료
 - review: 독립 reviewer P1/P2 없음, Gate 1~5 승인; Maria 포함 59/59·validator 70·typecheck/build/diff-check 재현
+- compatibility-review: WBS724 owner가 실제 8e4 old458 hash 유지·459 upgrade same-run zero-write replay correction을 독립 재검토해 P1/P2 0 승인
 - Gate 5: port 3319 fresh MariaDB 12.2, migrations through 459, restart replay, envelope drift 0-write, old458-row→459 zero-write replay, logical/migration rollback-reapply, Maria regression 완료
 - Gate 6~7: 미완료
 - Gate 8: 금지·미완료

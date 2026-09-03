@@ -54,6 +54,7 @@
 - object-data model validator: 등록 대상 `70개` PASS
 - `git diff --check`: PASS
 - 독립 reviewer: P1/P2 없음, Gate 1~5 승인; Maria 포함 59/59·validator 70·typecheck/build/diff-check 및 cleanup 재현·검토
+- old458 manifest-hash 호환 correction: WBS724 owner 독립 재검토 P1/P2 0, focused 33/33·typecheck·validator70·diff-check 재현
 
 ## Gate 5 격리 MariaDB 검증
 
@@ -62,6 +63,7 @@
 - Common Staging `expected_total_bytes`를 1→2로 변조한 replay는 `CATALOG_PROJECTION_STAGING_ENVELOPE_MISMATCH`, 종료 1이었고 실패 전후 projection count는 `1/3/1`로 같았다. 시험값만 복원했다.
 - 논리 rollback은 projection `0/0/0`, upstream staging run `1`을 보존했다. migration 459 rollback은 신규 envelope column/registry `0`, 재실행은 migration 459만 적용해 총 `447`개를 복원했다.
 - 기존 projection run `hnkkl6c4`를 보존한 채 459만 rollback해 old458 형태로 만든 뒤 459를 재적용했다. canonical backfill hash `b9fd391a6569112fb04f219c9edc3a2b7e0c0b2e6b899270c9d943300ded00f2`가 provider와 일치했고 같은 manifest는 동일 run, decision/record 쓰기 `0/0`, `replayed=true`를 반환했다.
+- 별도 detached worktree의 실제 commit `8e4c7a4f` 코드와 migration 458로 run `zzinrqg7`을 먼저 생성했다. old projection manifest hash `84c4f86cef099e54c21844e98bc85e639e534d0468af59cb75c3cad6f6cc0762`를 유지한 DB에 현 migration runner로 459를 적용했으며 458 checksum 검증도 통과했다. 현 provider는 같은 입력을 동일 run, 쓰기 `0/0`, `replayed=true`로 재생했고 별도 upstream envelope hash `b9fd391a6569112fb04f219c9edc3a2b7e0c0b2e6b899270c9d943300ded00f2`를 검증했다. 임시 detached worktree와 datadir은 listener 종료 후 제거했다.
 - `RUN_MARIADB_INTEGRATION=true` 관련 회귀는 `59/59 PASS`, 실제 MariaDB suite 2개도 skip 없이 통과했다.
 - 운영 3306 서비스와 DB, 운영 JSON, Docker, `feature/prod`, Sheet, Gate 8은 변경하지 않았다. 종료 시 captured restart PID와 port listener를 대사하고 작업트리 내부 exact 임시 경로만 삭제한다.
 

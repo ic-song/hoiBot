@@ -421,7 +421,6 @@ export function calculateCatalogProjectionManifestSha256(manifest: CatalogProjec
     catalogVersion: manifest.catalogVersion,
     commonStagingRunId: manifest.commonStagingRunId,
     commonStagingSha256: manifest.commonStagingSha256,
-    commonStagingEnvelope: manifest.commonStagingEnvelope,
     targetSchemaSha256: manifest.targetSchemaSha256,
     sources
   }));
