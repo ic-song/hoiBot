@@ -1,0 +1,240 @@
+{
+  "format": "hoibot-object-db-transition-runtime-boundary-v1",
+  "catalogVersion": "SC-20260902-1",
+  "wbs": "WBS743-GATE2-RUNTIME-BOUNDARY",
+  "status": "PROPOSED_BLOCKING",
+  "scope": "Gate2 declarative runtime boundary only; no migration, runtime implementation, or production cutover",
+  "environmentContext": {
+    "name": "EnvironmentContext",
+    "immutable": true,
+    "constructedOnceAtStartup": true,
+    "fields": {
+      "environmentCode": {
+        "type": "enum",
+        "allowed": ["dev", "prod"]
+      },
+      "databaseIdentity": {
+        "type": "non-empty-string",
+        "source": "DATABASE_NAME"
+      },
+      "requestNamespace": {
+        "type": "non-empty-string",
+        "grammar": "hoibot:<environmentCode>:<databaseIdentity>",
+        "pattern": "^hoibot:(dev|prod):[A-Za-z0-9_$-]{1,64}$",
+        "maxLength": 76,
+        "derivedOnlyFrom": ["environmentCode", "databaseIdentity"]
+      }
+    },
+    "forbidden": [
+      "mutation after construction",
+      "deriving environmentCode per request",
+      "using NODE_ENV as an implicit database selector",
+      "using a legacy path to infer databaseIdentity"
+    ]
+  },
+  "environmentBindings": [
+    {
+      "environmentCode": "dev",
+      "legacyDataRoot": "/sdcard/호이랜드_dev/",
+      "databaseIdentitySource": "DATABASE_NAME",
+      "requestNamespaceTemplate": "hoibot:dev:<databaseIdentity>"
+    },
+    {
+      "environmentCode": "prod",
+      "legacyDataRoot": "/sdcard/호이랜드/",
+      "databaseIdentitySource": "DATABASE_NAME",
+      "requestNamespaceTemplate": "hoibot:prod:<databaseIdentity>"
+    }
+  ],
+  "partitionRules": {
+    "databaseIdentitiesMustDiffer": true,
+    "legacyRootsMustDiffer": true,
+    "requestNamespacesMustDiffer": true,
+    "crossEnvironmentReuse": "REJECT",
+    "contextComparison": "environmentCode, databaseIdentity, and requestNamespace must all match the startup context exactly",
+    "requestNamespaceFormula": "requestNamespace = 'hoibot:' + environmentCode + ':' + databaseIdentity",
+    "requestNamespaceMismatch": "REJECT_BEFORE_CLAIM; the shared entrypoint provider must validate the formula before insert or replay lookup"
+  },
+  "startupDatabaseIdentityVerification": {
+    "query": "SELECT DATABASE() AS database_identity",
+    "expected": "the returned database_identity equals EnvironmentContext.databaseIdentity byte-for-byte",
+    "nullOrEmptyResult": "REJECT_STARTUP",
+    "mismatch": "REJECT_STARTUP",
+    "requiredBefore": [
+      "Iris ingress registration",
+      "automatic job or timer start",
+      "admin command dispatch",
+      "admin or user web route registration",
+      "any repository read or write other than this verification"
+    ],
+    "failureMode": "fail closed without registering an entrypoint or starting a mutation-capable background task"
+  },
+  "requestIdentity": {
+    "storageModel": "store requestNamespace, entrypointKind, externalRequestId, request_key, and requestIdentityFingerprint as separate columns; never persist an ambiguous concatenation as the unique identity",
+    "requestNamespace": {
+      "pattern": "^hoibot:(dev|prod):[A-Za-z0-9_$-]{1,64}$",
+      "maxLength": 76
+    },
+    "entrypointKinds": ["IRIS", "AUTOMATIC", "ADMIN", "WEB"],
+    "entrypointKindMaxLength": 9,
+    "externalRequestId": {
+      "pattern": "^[A-Za-z0-9._:@/-]{1,172}$",
+      "maxLength": 172
+    },
+    "externalRequestIdRequired": true,
+    "payloadFingerprintRequired": true,
+    "payloadFingerprint": "lowercase 64-character SHA-256 hex of the entrypoint-normalized mutation payload",
+    "normalization": "entrypoint adapters must supply a stable externalRequestId; repositories may not invent or rewrite it",
+    "requestKey": {
+      "column": "request_key",
+      "value": "<entrypointKind>:<externalRequestId>",
+      "maxLength": 182,
+      "semantics": "human-auditable adapter idempotency key scoped by request_namespace; it is not the cross-environment unique key and must not be hashed or rewritten by a repository"
+    },
+    "requestIdentityFingerprint": {
+      "algorithm": "SHA-256",
+      "encoding": "lowercase hexadecimal",
+      "length": 64,
+      "canonicalInput": "UTF-8 JSON array with no whitespace and this exact order: [requestNamespace,entrypointKind,externalRequestId]",
+      "formula": "sha256Hex(JSON.stringify([requestNamespace,entrypointKind,externalRequestId]))",
+      "persistenceRole": "the UNIQUE lookup key for claim acquisition and replay"
+    },
+    "collisionRule": "same requestIdentityFingerprint and same payloadFingerprint replays; same requestIdentityFingerprint and different payloadFingerprint rejects"
+  },
+  "singleWriterClaim": {
+    "owner": "ENTRYPOINT_ONLY",
+    "appliesTo": ["IRIS", "AUTOMATIC", "ADMIN", "WEB"],
+    "claimKey": "requestIdentityFingerprint",
+    "initialState": "CLAIMED",
+    "terminalStates": ["COMPLETED", "FAILED"],
+    "states": ["CLAIMED", "MUTATION_STARTED", "COMPLETED", "FAILED"],
+    "allowedTransitions": [
+      { "from": "CLAIMED", "to": "MUTATION_STARTED", "condition": "the persisted route is MODERN or LEGACY_FALLBACK, the selected route is mutation-capable for this request, and its sole writer is immediately about to perform the first write" },
+      { "from": "CLAIMED", "to": "COMPLETED", "condition": "the persisted route completes with zero writes: MODERN read, SHADOW comparison, REJECT, or explicitly read-only LEGACY_FALLBACK handoff" },
+      { "from": "CLAIMED", "to": "FAILED", "condition": "routing, authorization, validation, or pre-mutation execution fails closed" },
+      { "from": "MUTATION_STARTED", "to": "COMPLETED", "condition": "the selected writer commits its transaction and durable receipt" },
+      { "from": "MUTATION_STARTED", "to": "FAILED", "condition": "the selected writer rolls back or records a terminal failure" }
+    ],
+    "forbiddenTransitions": [
+      "MUTATION_STARTED->CLAIMED",
+      "MUTATION_STARTED->LEGACY_FALLBACK",
+      "COMPLETED->MUTATION_STARTED",
+      "FAILED->MUTATION_STARTED"
+    ],
+    "concurrency": "exactly one entrypoint claim may own a requestIdentityFingerprint; all contenders read the persisted claim",
+    "mutationBoundary": "the entrypoint changes CLAIMED to MUTATION_STARTED immediately before the first mutation and no participant may do so independently"
+  },
+  "routeDecision": {
+    "allowedRoutes": ["MODERN", "SHADOW", "LEGACY_FALLBACK", "REJECT"],
+    "persistBeforeExecution": true,
+    "persistedFields": [
+      "requestNamespace",
+      "entrypointKind",
+      "externalRequestId",
+      "request_key",
+      "requestIdentityFingerprint",
+      "payloadFingerprint",
+      "route",
+      "reasonCode",
+      "commandCode",
+      "handlerKey",
+      "environmentCode",
+      "databaseIdentity"
+    ],
+    "replay": "an existing claim returns its stored route decision without consulting rollout, canary, aliases, or current configuration again",
+    "shadow": {
+      "mode": "READ_ONLY_COMPARISON",
+      "domainWritesAllowed": false,
+      "legacyWritesAllowed": false,
+      "controlPlaneClaimWriteRequired": true,
+      "completion": "compare modern read projection with the legacy read projection, write only canonical_app_wiring_operations control-plane claim/result fields, and transition CLAIMED to COMPLETED",
+      "forbidden": ["domain mutation", "legacy mutation", "MUTATION_STARTED transition"]
+    },
+    "legacyFallback": {
+      "allowedOnlyWhen": "the persisted route is LEGACY_FALLBACK; a read-only handoff may finish CLAIMED->COMPLETED, while a mutation-capable handoff must first transition CLAIMED->MUTATION_STARTED immediately before its first write",
+      "fallbackSelectionAfterMutationStarted": "FORBIDDEN",
+      "persistedLegacyWriterAfterMutationStarted": "CONTINUE_AS_SOLE_WRITER",
+      "modernFailure": "FAILED; never invoke legacy as recovery"
+    }
+  },
+  "claimReplayStore": {
+    "table": "canonical_app_wiring_operations",
+    "schemaStatus": "ADDITIVE_REQUIRED",
+    "purpose": "one shared entrypoint-owned claim, stored route decision, state transition, and replay result for IRIS, AUTOMATIC, ADMIN, and WEB",
+    "requiredColumns": [
+      "app_wiring_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin",
+      "request_identity_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+      "request_namespace VARCHAR(76)",
+      "entrypoint_kind VARCHAR(9)",
+      "external_request_id VARCHAR(172)",
+      "request_key VARCHAR(182)",
+      "payload_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+      "environment_code VARCHAR(4)",
+      "database_identity VARCHAR(64)",
+      "route VARCHAR(32)",
+      "reason_code VARCHAR(100)",
+      "command_code VARCHAR(100) NULL",
+      "handler_key VARCHAR(100) NULL",
+      "claim_state VARCHAR(32)",
+      "result_json LONGTEXT NULL",
+      "error_code VARCHAR(100) NULL",
+      "INSERT_USER VARCHAR(100)",
+      "INSERT_TIME CHAR(19)",
+      "UPDATE_USER VARCHAR(100)",
+      "UPDATE_TIME CHAR(19)"
+    ],
+    "requiredKeys": [
+      "PRIMARY KEY (app_wiring_operation_id)",
+      "UNIQUE KEY (request_identity_fingerprint)",
+      "UNIQUE KEY (request_namespace, request_key)"
+    ],
+    "unmatchedReject": "route REJECT may persist with both command_code and handler_key NULL because classification can fail before either identifier exists",
+    "namespaceInvariant": "request_namespace must equal CONCAT('hoibot:', environment_code, ':', database_identity); reject before claim on mismatch",
+    "ownership": "entrypoint boundary only; SQL domain repositories are transaction participants and cannot acquire or mutate this claim independently",
+    "migrationRule": "add through a new unapplied migration owned by the shared provider; never edit an applied migration"
+  },
+  "writerRoles": {
+    "entrypoint": {
+      "role": "WRITER_SELECTOR",
+      "responsibilities": ["bind immutable EnvironmentContext", "claim request", "persist or replay route decision", "advance claim state", "select exactly one writer"]
+    },
+    "sqlRepository": {
+      "role": "TRANSACTION_PARTICIPANT",
+      "may": ["execute reads and writes selected by the entrypoint-owned transaction", "return domain results or errors"],
+      "mustNot": ["select MODERN versus LEGACY_FALLBACK", "create an independent writer claim", "change EnvironmentContext", "invoke legacy fallback", "recompute a stored route decision"]
+    }
+  },
+  "sourceEvidence": [
+    {
+      "file": "개발환경_고도화/runtime/src/database.ts",
+      "observed": ["ping executes SELECT 1 AS connection_ok", "pool database is configured from DatabaseConfig.name"],
+      "missingRequired": ["SELECT DATABASE() startup identity verification", "EnvironmentContext binding"],
+      "blockingReason": "configured and connected database identities are not compared before use"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/app.ts",
+      "observed": ["admin web routes are registered directly", "CommandDispatcher is constructed in Iris request processing", "automatic maintenance timers are started directly"],
+      "missingRequired": ["entrypoint-owned single-writer claim shared by IRIS/AUTOMATIC/ADMIN/WEB", "CLAIMED to MUTATION_STARTED boundary", "immutable EnvironmentContext propagation"],
+      "blockingReason": "entrypoints can reach repositories without one common claim and environment boundary"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+      "observed": ["resolve reads current command definition before recording", "record uses ON DUPLICATE KEY UPDATE without loading the stored route"],
+      "missingRequired": ["canonical_app_wiring_operations shared replay lookup", "stored route decision replay", "payload fingerprint drift rejection", "claim state machine", "post-mutation fallback prohibition"],
+      "blockingReason": "a retry can recompute routing instead of replaying its original writer selection"
+    },
+    {
+      "file": "main.js",
+      "observed": ["production root /sdcard/호이랜드/", "development root /sdcard/호이랜드_dev/"],
+      "missingRequired": ["binding either legacy root to the verified database identity through EnvironmentContext"],
+      "blockingReason": "legacy path selection and SQL identity are not one immutable partition decision"
+    }
+  ],
+  "gate2Decision": {
+    "status": "PROPOSED_BLOCKING",
+    "promotionRequirement": "implement and test the full boundary for IRIS, AUTOMATIC, ADMIN, and WEB before changing status",
+    "currentRuntimeCompliant": false,
+    "migrationFilesChanged": false,
+    "runtimeFilesChanged": false
+  }
+}
