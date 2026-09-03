@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.459"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.460"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1328,7 +1328,7 @@ const GLOBAL_CONFIG = {
         batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
     },
     miniPet: { // 미니펫 시스템 설정
-        openMaxCount: 10000, // 미니펫오픈 1회 최대 수량
+        openMaxCount: 3000, // 미니펫오픈 1회 최대 수량
         battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
         battleBagMax: 9, // 미니펫대전 최대 가방 보유 수
         cleanupTriggerCount: 9, // 미니펫 가방 정리 대상 기준
@@ -1336,7 +1336,7 @@ const GLOBAL_CONFIG = {
         allowedGrades: ["일반", "고급", "희귀", "영웅", "전설", "전설+", "신화", "신화+", "초월", "초월+", "태초", "태초+", "창세", "창조"] // 미니펫 뽑기 허용 등급
     },
     furniture: { // 가구 시스템 설정
-        openMaxCount: 10000 // 샵오픈 1회 최대 수량
+        openMaxCount: 5000 // 샵오픈 1회 최대 수량
     },
     pet: { // 펫 성장 설정
         evolutionRequiredExp: 10, // 알 진화 필요 매력치

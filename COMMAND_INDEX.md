@@ -462,7 +462,7 @@ Status: VERIFIED
 
 - 가방 미니펫 강화 중에는 기존 `sortIndex`를 유지하고, `/미니펫가방` 조회 시 매력 기준으로 재정렬한다.
 - 연속 강화는 처음 선택한 가방 번호의 미니펫만 계속 강화해야 한다.
-- `/미니펫오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.miniPet.openMaxCount`에서 관리하며 현재 10,000개다.
+- `/미니펫오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.miniPet.openMaxCount`에서 관리하며 현재 3,000개다.
 
 ---
 
@@ -519,7 +519,7 @@ Status: VERIFIED
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
-- `/샵오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.furniture.openMaxCount`에서 관리하며 현재 10,000개다.
+- `/샵오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.furniture.openMaxCount`에서 관리하며 현재 5,000개다.
 
 ---
 
