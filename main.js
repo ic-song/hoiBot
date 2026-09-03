@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.456"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.457"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -28244,6 +28244,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else {
                         out += "보상: 없음\n\n";
                     }
+                    out += "🗝️ 만능열쇠 등록\n";
+                    out += "/미니펫컬렉션 [미니펫컬렉션번호]\n\n";
                     out += "※ [등급]+미니펫강화+" + stage + "💫 를 등록해주세요.\n";
                     out += "📊등록/미등록 컬렉션 보러가기📊";
                     if (typeof allsee !== "undefined") {
@@ -28258,8 +28260,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var isRegistered = collection.registered[grade] === true;
                         out += "[" + (i + 1) + "] [" + grade + "] [" + (isRegistered ? "✅등록" : "❌미등록") + "]\n";
                     }
-
-                    out += "\n🗝️ 만능열쇠 등록\n/미니펫컬렉션 [미니펫컬렉션번호]";
 
                     replier.reply(out.trim());
                     return;
@@ -41659,6 +41659,9 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push("펫스킬북📙 1개 등록 시 등급에 따라");
     lines.push(config.rewardItemName + "가 즉시 지급됩니다.");
     lines.push("");
+    lines.push("🗝️ 만능열쇠 등록");
+    lines.push("/펫스킬컬렉션 [펫스킬컬렉션번호]");
+    lines.push("");
     lines.push("━━━컬렉션 등록 보상━━━");
     for (var gradeIndex = 0; gradeIndex < config.gradeOrder.length; gradeIndex++) {
         var grade = config.gradeOrder[gradeIndex];
@@ -41674,8 +41677,6 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push("📙 컬렉션 등록");
     lines.push("/펫스킬컬렉션등록 [펫스킬가방번호] ...");
     lines.push("/펫스킬가방에 표시된 번호의 펫스킬북을 사용합니다.");
-    lines.push("/펫스킬컬렉션 [펫스킬컬렉션번호]");
-    lines.push("대상 스킬북 보유 여부와 관계없이 만능열쇠를 사용합니다.");
     lines.push("");
     lines.push("※ 한 번에 최대 " + config.maxSelectionCount + "개까지 등록 가능합니다.");
     lines.push("※ 등록한 펫스킬북📙은 가방에서 소모됩니다.");
