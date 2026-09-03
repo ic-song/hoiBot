@@ -6,6 +6,12 @@
   "targetColumnCount": 241,
   "definitionTargetCount": 23,
   "syntheticProjectionRowCount": 47,
+  "gate5SourceDecisionCount": 12,
+  "gate6SourceDecisionCount": 14,
+  "gate6ProjectedDecisionCount": 12,
+  "gate6QuarantinedDecisionCount": 1,
+  "gate6IgnoredDecisionCount": 1,
+  "gate6ComparedFieldValueCount": 250,
   "exactDisplayName": "다이아상자💎(/다이아상자오픈)",
   "scenarios": [
     "all-45-direct-targets-and-241-columns",
@@ -24,6 +30,9 @@
     "currency-initial-balance-operation-ledger-parity",
     "building-duplicate-floor-first-active",
     "transaction-rollback-and-restart",
-    "database-decimal-scale-canonical-replay"
+    "database-decimal-scale-canonical-replay",
+    "independent-projection-target-hash-parity",
+    "independent-missing-extra-value-fk-drift",
+    "independent-decision-count-and-definition-order-drift"
   ]
 }
