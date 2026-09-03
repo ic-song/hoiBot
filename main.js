@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.454"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.455"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -27648,6 +27648,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             return;
                         }
                         var petSkillCollectionMaxCount = petSkillCollectionConfig.maxCounts[petSkillCollectionSkillData.grade];
+                        if (petSkillCollectionSkillData.limitedEdition === true || petSkillCollectionMaxCount === undefined) {
+                            replier.reply("⚠️ 한정판 펫스킬은 펫스킬 컬렉션에 등록할 수 없습니다:\n" + formatPetSkillName(petSkillCollectionSkillName) + "[" + petSkillCollectionSkillData.grade + "]");
+                            return;
+                        }
                         var petSkillCollectionCurrentCount = getPetSkillCollectionCount(petSkillCollectionPreview, petSkillCollectionSkillName);
                         if (petSkillCollectionPlannedCounts[petSkillCollectionSkillName] !== undefined) petSkillCollectionCurrentCount = petSkillCollectionPlannedCounts[petSkillCollectionSkillName];
                         if (petSkillCollectionCurrentCount >= petSkillCollectionMaxCount) {
@@ -27702,6 +27706,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                         if (petSkillCollectionCurrentName !== petSkillCollectionPicked.name || !petSkillCollectionCurrentSkillData) {
                             petSkillCollectionSkippedLines.push("[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "\n└ 가방 정보가 변경되어 등록에서 제외되었습니다.");
+                            continue;
+                        }
+                        if (petSkillCollectionCurrentSkillData.limitedEdition === true || petSkillCollectionCurrentMax === undefined) {
+                            petSkillCollectionSkippedLines.push("[" + petSkillCollectionDisplayNumber + "번] " + formatPetSkillName(petSkillCollectionPicked.name) + "[" + petSkillCollectionCurrentSkillData.grade + "]\n└ 펫스킬 컬렉션 등록 대상이 아닙니다.");
                             continue;
                         }
                         if (petSkillCollectionBefore >= petSkillCollectionCurrentMax) {
