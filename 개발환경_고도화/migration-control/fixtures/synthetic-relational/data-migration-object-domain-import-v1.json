@@ -1,0 +1,28 @@
+{
+  "format": "hoibot-object-domain-import-synthetic-fixture-v1",
+  "catalogVersion": "SC-20260902-1",
+  "nonIdentifying": true,
+  "directTargetCount": 45,
+  "targetColumnCount": 241,
+  "definitionTargetCount": 23,
+  "syntheticProjectionRowCount": 47,
+  "exactDisplayName": "다이아상자💎(/다이아상자오픈)",
+  "scenarios": [
+    "all-45-direct-targets-and-241-columns",
+    "definition-before-ownership",
+    "generated-and-reused-cuid2-binding",
+    "project-quarantine-ignore-coverage",
+    "exact-replay-zero-write",
+    "projection-envelope-and-fingerprint-drift-zero-write",
+    "unknown-target-and-reference-type-fail-closed",
+    "furniture-approved-values-and-unresolved-quarantine",
+    "mini-pet-bag-and-equipped-occurrence-crosswalk",
+    "member-pet-mini-pet-title-price-and-selection",
+    "pet-skill-handler-options-without-executable-payload",
+    "pet-skill-equipment-requires-positive-owned-stack",
+    "package-typed-extension-and-acyclic-nesting",
+    "currency-initial-balance-operation-ledger-parity",
+    "building-duplicate-floor-first-active",
+    "transaction-rollback-and-restart"
+  ]
+}

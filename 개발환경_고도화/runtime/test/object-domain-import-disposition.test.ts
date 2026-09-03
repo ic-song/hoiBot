@@ -45,7 +45,7 @@ describe("object domain import disposition", () => {
       for (const match of sql.matchAll(/CREATE TABLE(?: IF NOT EXISTS)?\s+([a-z][a-z0-9_]*)\s*\(/gi)) migrationTables.add(match[1]!);
     }
     assert.deepEqual([...migrationTables].sort(), frozenTables, "frozen table set must come from the actual migration SQL");
-    const migrationPipelineTables = ["data_migration_common_staging_records", "data_migration_common_staging_runs", "data_migration_catalog_projection_records", "data_migration_catalog_projection_runs", "data_migration_catalog_source_decisions"].sort();
+    const migrationPipelineTables = ["data_migration_common_staging_records", "data_migration_common_staging_runs", "data_migration_catalog_projection_records", "data_migration_catalog_projection_runs", "data_migration_catalog_source_decisions", "data_migration_object_domain_import_runs", "data_migration_object_domain_import_decisions", "data_migration_object_domain_import_records"].sort();
     assert.deepEqual(contract.tables.map((entry) => entry.table).filter((table) => !migrationPipelineTables.includes(table)).sort(), frozenTables);
     assert.deepEqual(contract.tables.map((entry) => entry.table).filter((table) => migrationPipelineTables.includes(table)).sort(), migrationPipelineTables);
     assert.ok(disposition.objectContractMigrationBaseline.every((migration) => contract.registeredMigrations.includes(migration)));
