@@ -2,10 +2,16 @@
   "catalogVersion": "SC-20260902-1",
   "format": "hoibot-object-db-consumer-additive-schema-plan-v1",
   "wbs": "WBS743-GATE2",
-  "status": "PROPOSED_BLOCKING",
-  "scope": "Declarative Gate 2 schema proposal for the missing consumer receipts and canonical player identity bridge; this contract is not an executable migration.",
-  "migrationFiles": [],
-  "ddlExecution": "FORBIDDEN_UNTIL_PROVIDER_REVIEW_AND_NEW_MIGRATION",
+  "status": "IMPLEMENTED_BLOCKING_RUNTIME_INTEGRATION",
+  "scope": "Gate 2 additive schema implementation for the missing consumer receipts, canonical player identity bridge, and shared app-wiring claim store; runtime consumer integration remains blocking.",
+  "migrationFiles": [
+    "461_object_db_transition_identity_crosswalk.sql",
+    "462_object_db_transition_app_wiring_claim.sql",
+    "463_object_db_transition_operation_receipts.sql",
+    "464_object_db_transition_typed_asset_ledgers.sql",
+    "465_object_db_transition_operation_participants.sql"
+  ],
+  "ddlExecution": "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED",
   "authoritativeStandard": "docs/database/OBJECT_DATA_MODEL_STANDARD.md",
   "runtimeBoundaryContract": "object-db-transition-runtime-boundary.v1.json",
   "requiredAdditiveReceiptTables": [
@@ -242,7 +248,7 @@
         { "constraint": "market_transfer_asset_type_allowed", "expression": "asset_type IN ('ITEM','CURRENCY','OWNED_FURNITURE','OWNED_EQUIPMENT','OWNED_MINI_PET','OWNED_PET_SKILL')" },
         { "constraint": "market_transfer_typed_reference_exactly_one", "expression": "(item_id IS NOT NULL) + (currency_id IS NOT NULL) + (owned_furniture_id IS NOT NULL) + (owned_equipment_id IS NOT NULL) + (owned_mini_pet_id IS NOT NULL) + (owned_pet_skill_id IS NOT NULL) = 1" },
         { "constraint": "market_transfer_asset_type_matches_reference", "expression": "(asset_type='ITEM' AND item_id IS NOT NULL) OR (asset_type='CURRENCY' AND currency_id IS NOT NULL) OR (asset_type='OWNED_FURNITURE' AND owned_furniture_id IS NOT NULL) OR (asset_type='OWNED_EQUIPMENT' AND owned_equipment_id IS NOT NULL) OR (asset_type='OWNED_MINI_PET' AND owned_mini_pet_id IS NOT NULL) OR (asset_type='OWNED_PET_SKILL' AND owned_pet_skill_id IS NOT NULL)" },
-        { "constraint": "market_transfer_quantity_nonzero", "expression": "quantity_delta <> 0" }
+        { "constraint": "market_transfer_direction_quantity_sign_matches", "expression": "(transfer_direction='DEBIT' AND quantity_delta < 0) OR (transfer_direction='CREDIT' AND quantity_delta > 0)" }
       ],
       "typedAssetReference": {
         "discriminator": "asset_type",
@@ -360,7 +366,7 @@
         { "constraint": "package_reward_asset_type_allowed", "expression": "asset_type IN ('ITEM','CURRENCY','FURNITURE','EQUIPMENT','PET','MINI_PET','MEMBER_TITLE','PET_TITLE','MINI_PET_TITLE','PET_SKILL','PACKAGE')" },
         { "constraint": "package_reward_typed_reference_exactly_one", "expression": "(item_id IS NOT NULL) + (currency_id IS NOT NULL) + (furniture_id IS NOT NULL) + (equipment_id IS NOT NULL) + (pet_id IS NOT NULL) + (mini_pet_id IS NOT NULL) + (member_title_id IS NOT NULL) + (pet_title_id IS NOT NULL) + (mini_pet_title_id IS NOT NULL) + (pet_skill_id IS NOT NULL) + (package_id IS NOT NULL) = 1" },
         { "constraint": "package_reward_asset_type_matches_reference", "expression": "(asset_type='ITEM' AND item_id IS NOT NULL) OR (asset_type='CURRENCY' AND currency_id IS NOT NULL) OR (asset_type='FURNITURE' AND furniture_id IS NOT NULL) OR (asset_type='EQUIPMENT' AND equipment_id IS NOT NULL) OR (asset_type='PET' AND pet_id IS NOT NULL) OR (asset_type='MINI_PET' AND mini_pet_id IS NOT NULL) OR (asset_type='MEMBER_TITLE' AND member_title_id IS NOT NULL) OR (asset_type='PET_TITLE' AND pet_title_id IS NOT NULL) OR (asset_type='MINI_PET_TITLE' AND mini_pet_title_id IS NOT NULL) OR (asset_type='PET_SKILL' AND pet_skill_id IS NOT NULL) OR (asset_type='PACKAGE' AND package_id IS NOT NULL)" },
-        { "constraint": "package_reward_quantity_nonzero", "expression": "quantity_delta <> 0" }
+        { "constraint": "package_reward_quantity_positive", "expression": "quantity_delta > 0" }
       ],
       "typedAssetReference": {
         "discriminator": "asset_type",

@@ -99,11 +99,17 @@ function externalColumn(table: string, name: string): Column {
 }
 
 describe("WBS743 Gate 2 additive consumer schema proposal", () => {
-  it("keeps the plan blocking and covers exactly the eleven missing receipt tables without creating a migration", () => {
+  it("keeps runtime integration blocking and covers exactly the eleven missing receipt tables with ordered additive migrations", () => {
     assert.equal(plan.format, "hoibot-object-db-consumer-additive-schema-plan-v1");
-    assert.equal(plan.status, "PROPOSED_BLOCKING");
-    assert.deepEqual(plan.migrationFiles, []);
-    assert.equal(plan.ddlExecution, "FORBIDDEN_UNTIL_PROVIDER_REVIEW_AND_NEW_MIGRATION");
+    assert.equal(plan.status, "IMPLEMENTED_BLOCKING_RUNTIME_INTEGRATION");
+    assert.deepEqual(plan.migrationFiles, [
+      "461_object_db_transition_identity_crosswalk.sql",
+      "462_object_db_transition_app_wiring_claim.sql",
+      "463_object_db_transition_operation_receipts.sql",
+      "464_object_db_transition_typed_asset_ledgers.sql",
+      "465_object_db_transition_operation_participants.sql"
+    ]);
+    assert.equal(plan.ddlExecution, "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED");
     assert.deepEqual(plan.requiredAdditiveReceiptTables, transition.requiredAdditiveReceiptTables);
     assert.equal(plan.requiredAdditiveReceiptTables.length, 11);
     assert.deepEqual(plan.requiredAdditiveReceiptTables.filter((name) => !tables.has(name)), []);
@@ -238,7 +244,14 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
       assert.equal(table.columns.some(({ name }) => /^(?:asset|object)_id$|(?:asset|object)_code$|display_name$/i.test(name)), false, `${table.table}: generic asset reference`);
     }
     const packageLedger = tables.get("canonical_package_use_reward_ledger_entries");
+    const marketLedger = tables.get("canonical_market_transfer_ledger_entries");
+    assert.ok(marketLedger);
     assert.ok(packageLedger);
+    assert.equal(
+      check(marketLedger, "market_transfer_direction_quantity_sign_matches").expression,
+      "(transfer_direction='DEBIT' AND quantity_delta < 0) OR (transfer_direction='CREDIT' AND quantity_delta > 0)"
+    );
+    assert.equal(check(packageLedger, "package_reward_quantity_positive").expression, "quantity_delta > 0");
     assert.ok(packageLedger.typedAssetReference?.referenceColumns.includes("package_id"), "nested package reward FK");
     assert.ok(packageLedger.typedAssetReference?.referenceColumns.includes("pet_id"), "pet reward FK");
   });

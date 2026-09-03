@@ -22,7 +22,7 @@ describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql"]);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql"]);
     for (const table of ["data_migration_common_staging_runs", "data_migration_common_staging_records", "data_migration_catalog_projection_runs", "data_migration_catalog_source_decisions", "data_migration_catalog_projection_records", "data_migration_object_domain_import_runs", "data_migration_object_domain_import_decisions", "data_migration_object_domain_import_records"]) assert.ok(contract.tables.some((entry) => entry.table === table));
     for (const table of ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment", "canonical_pet_equipment_operation_replays", "object_furniture_ownership_history", "object_furniture_market_listings", "object_furniture_active_market_listings", "canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances", "canonical_mini_pet_operation_replays", "canonical_member_title_definitions", "canonical_owned_member_title_instances", "canonical_member_title_selections", "canonical_pet_title_definitions", "canonical_owned_pet_title_instances", "canonical_pet_title_selections", "canonical_mini_pet_title_definitions", "canonical_owned_mini_pet_title_instances", "canonical_mini_pet_title_selections", "canonical_pet_skill_definitions", "canonical_pet_skill_definition_imports", "canonical_owned_pet_skill_stacks", "canonical_owned_pet_skill_equipments", "canonical_pet_skill_operation_replays", "canonical_package_definitions", "canonical_package_definition_imports", "canonical_package_reward_groups", "canonical_package_reward_entries", "canonical_package_item_rewards", "canonical_package_nested_rewards", "canonical_package_reward_quarantines", "canonical_package_definition_replays", "canonical_currency_definitions", "canonical_currency_definition_imports", "canonical_player_currency_balances", "canonical_currency_operations", "canonical_currency_ledger_entries"]) assert.ok(contract.tables.some((entry) => entry.table === table));
     for (const table of ["canonical_building_definitions", "canonical_building_definition_imports", "canonical_craft_recipe_definitions", "canonical_craft_recipe_definition_imports", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_building_craft_recipes", "canonical_craft_operations", "canonical_craft_item_ledger_entries", "canonical_craft_currency_ledger_entries"]) assert.ok(contract.tables.some((entry) => entry.table === table));
@@ -122,13 +122,21 @@ describe("object data model standard contract", () => {
     assert.throws(() => validateObjectDataModelContract(duplicateColumn), /COLUMN_DUPLICATE/);
   });
 
-  it("rejects bare and uppercase CODE columns plus executable payloads", () => {
+  it("allows only explicit semantic code columns while rejecting object CODE columns and executable payloads", () => {
     const bareId = copy();
     bareId.tables[1]!.columns = [...bareId.tables[1]!.columns, { name: "ID", type: "CHAR(8)" }];
     assert.throws(() => validateObjectDataModelContract(bareId), /BARE_ID/);
     const uppercaseCode = copy();
     uppercaseCode.tables[1]!.columns = [...uppercaseCode.tables[1]!.columns, { name: "ITEM_CODE", type: "VARCHAR(20)" }];
     assert.throws(() => validateObjectDataModelContract(uppercaseCode), /OBJECT_CODE/);
+    for (const name of ["command_code", "environment_code", "error_code", "provider_code", "reason_code"]) {
+      const semanticCode = copy();
+      semanticCode.tables[1]!.columns = [...semanticCode.tables[1]!.columns, { name, type: "VARCHAR(100)" }];
+      assert.doesNotThrow(() => validateObjectDataModelContract(semanticCode), name);
+    }
+    const undeclaredSemanticCode = copy();
+    undeclaredSemanticCode.tables[1]!.columns = [...undeclaredSemanticCode.tables[1]!.columns, { name: "status_code", type: "VARCHAR(20)" }];
+    assert.throws(() => validateObjectDataModelContract(undeclaredSemanticCode), /OBJECT_CODE/);
     for (const name of ["script_body", "sql_payload", "handler_script", "javascript_source"]) {
       const executable = copy();
       executable.tables[1]!.columns = [...executable.tables[1]!.columns, { name, type: "TEXT" }];
@@ -136,11 +144,11 @@ describe("object data model standard contract", () => {
     }
   });
 
-  it("requires FK targets to be their declared PK and enforces ownership boundaries", () => {
+  it("requires FK targets to be an exact declared candidate key and enforces ownership boundaries", () => {
     const nonPrimaryTarget = copy();
     nonPrimaryTarget.tables[1]!.primaryKey = ["other_item_id"];
     nonPrimaryTarget.tables[1]!.columns = [...nonPrimaryTarget.tables[1]!.columns, { name: "other_item_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" }];
-    assert.throws(() => validateObjectDataModelContract(nonPrimaryTarget), /FK_NOT_PRIMARY/);
+    assert.throws(() => validateObjectDataModelContract(nonPrimaryTarget), /FK_NOT_CANDIDATE_KEY/);
     const copiedDefinition = copy();
     copiedDefinition.tables[2]!.columns = [...copiedDefinition.tables[2]!.columns, { name: "base_charm", type: "BIGINT" }];
     assert.throws(() => validateObjectDataModelContract(copiedDefinition), /OWNERSHIP_COLUMN/);
@@ -150,6 +158,84 @@ describe("object data model standard contract", () => {
     const noDefinitionFk = copy();
     noDefinitionFk.tables[2]!.foreignKeys = noDefinitionFk.tables[2]!.foreignKeys.filter((key) => key.column !== "item_id");
     assert.throws(() => validateObjectDataModelContract(noDefinitionFk), /OWNERSHIP_DEFINITION_FK/);
+  });
+
+  it("validates composite FK column names, order, candidate key, and shape", () => {
+    const valid = copy();
+    valid.tables = [...valid.tables, {
+      table: "owned_item_events", role: "history",
+      columns: [
+        { name: "owned_item_event_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" },
+        { name: "player_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" },
+        { name: "item_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" },
+        { name: "INSERT_USER", type: "VARCHAR(100)" }, { name: "INSERT_TIME", type: "CHAR(19)" },
+        { name: "UPDATE_USER", type: "VARCHAR(100)" }, { name: "UPDATE_TIME", type: "CHAR(19)" }
+      ],
+      primaryKey: ["owned_item_event_id"],
+      foreignKeys: [{ columns: ["player_id", "item_id"], referencesTable: "owned_items", referencesColumns: ["player_id", "item_id"] }],
+      auditTimeFormat: "KST_YYYY-MM-DD HH:MM:SS"
+    }];
+    assert.doesNotThrow(() => validateObjectDataModelContract(valid));
+
+    const wrongOrder = JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
+    wrongOrder.tables.at(-1)!.foreignKeys = [{ columns: ["player_id", "item_id"], referencesTable: "owned_items", referencesColumns: ["item_id", "player_id"] }];
+    assert.throws(() => validateObjectDataModelContract(wrongOrder), /FK_NAME/);
+    const partialCandidate = JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
+    partialCandidate.tables.at(-1)!.foreignKeys = [{ column: "player_id", referencesTable: "owned_items", referencesColumn: "player_id" }];
+    assert.throws(() => validateObjectDataModelContract(partialCandidate), /FK_NOT_CANDIDATE_KEY/);
+    const wrongShape = JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
+    wrongShape.tables.at(-1)!.columns = wrongShape.tables.at(-1)!.columns.map((entry) => entry.name === "item_id" ? { ...entry, collation: "ascii_general_ci" } : entry);
+    assert.throws(() => validateObjectDataModelContract(wrongShape), /FK_SHAPE/);
+    const wrongArity = JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
+    wrongArity.tables.at(-1)!.foreignKeys = [{ columns: ["player_id", "item_id"], referencesTable: "owned_items", referencesColumns: ["player_id"] }];
+    assert.throws(() => validateObjectDataModelContract(wrongArity), /FK_ARITY/);
+    const mixedDeclaration = JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
+    mixedDeclaration.tables.at(-1)!.foreignKeys = [{ column: "player_id", columns: ["player_id"], referencesTable: "players", referencesColumn: "player_id", referencesColumns: ["player_id"] }];
+    assert.throws(() => validateObjectDataModelContract(mixedDeclaration), /FK_DECLARATION/);
+  });
+
+  it("allows only the pinned external identity composite candidate key", () => {
+    const withExternalReference = (): ObjectDataModelContract => {
+      const value = copy();
+      value.tables = [...value.tables, {
+        table: "canonical_player_identity_crosswalks", role: "relation",
+        columns: [
+          { name: "player_identity_crosswalk_id", type: "CHAR(8)", charset: "ascii", collation: "ascii_bin" },
+          { name: "provider_code", type: "VARCHAR(64)", charset: "ascii", collation: "ascii_bin" },
+          { name: "external_user_id", type: "VARCHAR(191)", charset: "utf8mb4", collation: "utf8mb4_bin" },
+          { name: "INSERT_USER", type: "VARCHAR(100)" }, { name: "INSERT_TIME", type: "CHAR(19)" },
+          { name: "UPDATE_USER", type: "VARCHAR(100)" }, { name: "UPDATE_TIME", type: "CHAR(19)" }
+        ],
+        primaryKey: ["player_identity_crosswalk_id"],
+        foreignKeys: [{ columns: ["provider_code", "external_user_id"], referencesTable: "external_identities", referencesColumns: ["provider_code", "external_user_id"] }],
+        auditTimeFormat: "KST_YYYY-MM-DD HH:MM:SS"
+      }];
+      return value;
+    };
+    const missingDependency = withExternalReference();
+    assert.throws(() => validateObjectDataModelContract(missingDependency), /FK_TARGET/);
+
+    const pinned = withExternalReference();
+    pinned.externalDependencies = [{
+      table: "external_identities", integrationMigration: "003_identity_import.sql",
+      columns: [
+        { name: "id", type: "BIGINT UNSIGNED" },
+        { name: "provider_code", type: "VARCHAR(64)", charset: "ascii", collation: "ascii_bin" },
+        { name: "external_user_id", type: "VARCHAR(191)", charset: "utf8mb4", collation: "utf8mb4_bin" }
+      ],
+      primaryKey: ["id"], uniqueKeys: [["provider_code", "external_user_id"]]
+    }];
+    assert.doesNotThrow(() => validateObjectDataModelContract(pinned));
+
+    const dependencyShapeMismatch = JSON.parse(JSON.stringify(pinned)) as ObjectDataModelContract;
+    dependencyShapeMismatch.externalDependencies![0]!.columns = dependencyShapeMismatch.externalDependencies![0]!.columns.map((entry) => entry.name === "provider_code" ? { ...entry, type: "VARCHAR(32)" } : entry);
+    assert.throws(() => validateObjectDataModelContract(dependencyShapeMismatch), /EXTERNAL_DEPENDENCY_COLUMNS/);
+    const localShapeMismatch = JSON.parse(JSON.stringify(pinned)) as ObjectDataModelContract;
+    localShapeMismatch.tables.at(-1)!.columns = localShapeMismatch.tables.at(-1)!.columns.map((entry) => entry.name === "external_user_id" ? { ...entry, collation: "utf8mb4_unicode_ci" } : entry);
+    assert.throws(() => validateObjectDataModelContract(localShapeMismatch), /FK_SHAPE/);
+    const arbitraryExternal = copy();
+    arbitraryExternal.externalDependencies = [{ table: "unknown_external", integrationMigration: "003_identity_import.sql", columns: [], primaryKey: [], uniqueKeys: [] }];
+    assert.throws(() => validateObjectDataModelContract(arbitraryExternal), /EXTERNAL_DEPENDENCY_NOT_PINNED/);
   });
 
   it("requires migrations and registered tables to be paired", () => {
