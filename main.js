@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.457"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.458"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -48355,6 +48355,9 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
 
     var rankText = checkRank(data, petData, guildData, sender);
     var remainCount = parseInt(bag[config.boxItemName], 10) || 0;
+    var petSkillBookDisplayName = String(GLOBAL_CONFIG.petSkill.bookItemName).replace(/\([^)]*\)$/, ""); // 결과용 펫스킬북 이름
+    var petSkillKeyDisplayName = String(config.petSkillKeyItemName).replace(/\([^)]*\)$/, ""); // 결과용 펫스킬 만능열쇠 이름
+    var miniPetKeyDisplayName = String(config.miniPetKeyItemName).replace(/\([^)]*\)$/, ""); // 결과용 미니펫 만능열쇠 이름
     var lines = [];
     lines.push(openCount === 1 ? "🔐 만능상자 개봉! 🔐" : "🔐 만능상자 대량 개봉! 🔐");
     lines.push("━━━━━━━━━━━━━━");
@@ -48366,14 +48369,14 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
             lines.push("━━━━━━━━━━━━━━");
             lines.push("🎊 획득 결과 🎊");
             lines.push("");
-            lines.push("📙 펫스킬북 x1");
+            lines.push("1. " + petSkillBookDisplayName + " x1");
             lines.push("└ 사용 방법: /펫스킬오픈");
         } else if (petSkillKeyCount === 1) {
             lines.push("🔒 철컥…!\n🌈 신비로운 무지갯빛과 함께 특별한 보물이 나타납니다!");
             lines.push("━━━━━━━━━━━━━━");
             lines.push("🎊 만능 아이템 획득! 🎊");
             lines.push("");
-            lines.push(config.petSkillKeyItemName + " x1");
+            lines.push("1. " + petSkillKeyDisplayName + " x1");
             lines.push("");
             lines.push("펫스킬 등급과 상관없이 원하는\n펫스킬 컬렉션 1칸을 등록할 수 있습니다!");
             lines.push("");
@@ -48384,7 +48387,7 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
             lines.push("━━━━━━━━━━━━━━");
             lines.push("🎊 만능 아이템 획득! 🎊");
             lines.push("");
-            lines.push(config.miniPetKeyItemName + " x1");
+            lines.push("1. " + miniPetKeyDisplayName + " x1");
             lines.push("");
             lines.push("미니펫 등급과 상관없이 원하는\n미니펫 컬렉션 1칸을 등록할 수 있습니다!");
             lines.push("");
@@ -48397,9 +48400,10 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
         lines.push("━━━━━━━━━━━━━━");
         lines.push("🎊 만능상자 개봉 결과 🎊");
         lines.push("");
-        if (petSkillBookCount > 0) lines.push("📙 펫스킬북 x" + numberWithCommas(petSkillBookCount));
-        if (petSkillKeyCount > 0) lines.push(config.petSkillKeyItemName + " x" + numberWithCommas(petSkillKeyCount));
-        if (miniPetKeyCount > 0) lines.push(config.miniPetKeyItemName + " x" + numberWithCommas(miniPetKeyCount));
+        var universalBoxResultNumber = 1; // 실제 획득한 보상 종류의 출력 순번
+        if (petSkillBookCount > 0) lines.push(universalBoxResultNumber++ + ". " + petSkillBookDisplayName + " x" + numberWithCommas(petSkillBookCount));
+        if (petSkillKeyCount > 0) lines.push(universalBoxResultNumber++ + ". " + petSkillKeyDisplayName + " x" + numberWithCommas(petSkillKeyCount));
+        if (miniPetKeyCount > 0) lines.push(universalBoxResultNumber++ + ". " + miniPetKeyDisplayName + " x" + numberWithCommas(miniPetKeyCount));
         lines.push("");
         lines.push("━━━━━━━━━━━━━━");
         lines.push("📌 아이템 사용 방법");
@@ -48418,7 +48422,7 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
         noticeMessage = "🔐✨ 만능상자 희귀 보상 등장! ✨🔐\n" +
             "━━━━━━━━━━━━━━\n" +
             "[" + rankText + "] 님이 만능상자🔐에서\n\n" +
-            config.miniPetKeyItemName + " x" + numberWithCommas(miniPetKeyCount) + "\n\n" +
+            miniPetKeyDisplayName + " x" + numberWithCommas(miniPetKeyCount) + "\n\n" +
             (miniPetKeyCount === 1 ? "단 5%의 확률을 뚫고 희귀 보상을 획득했습니다!" : "단 5%의 희귀 보상을 여러 개 획득했습니다!") + "\n\n" +
             "미니펫 등급과 상관없이 원하는\n미니펫 컬렉션 1칸을 등록할 수 있습니다!\n\n" +
             "📌 사용 방법\n/미니펫컬렉션 [미니펫컬렉션번호]\n\n" +
