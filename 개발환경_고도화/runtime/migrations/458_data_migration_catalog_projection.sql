@@ -1,0 +1,106 @@
+CREATE TABLE IF NOT EXISTS data_migration_catalog_projection_runs (
+  catalog_projection_run_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  common_staging_run_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  catalog_version VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  projection_manifest_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  target_schema_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  projection_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  expected_source_count INT UNSIGNED NOT NULL,
+  projected_source_count INT UNSIGNED NOT NULL,
+  quarantined_source_count INT UNSIGNED NOT NULL,
+  ignored_source_count INT UNSIGNED NOT NULL,
+  projected_row_count INT UNSIGNED NOT NULL,
+  run_status VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (catalog_projection_run_id),
+  UNIQUE KEY uq_catalog_projection_run_source (common_staging_run_id, catalog_version, projection_manifest_sha256),
+  CONSTRAINT fk_catalog_projection_run_staging FOREIGN KEY (common_staging_run_id)
+    REFERENCES data_migration_common_staging_runs(common_staging_run_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_catalog_projection_run_status CHECK (run_status IN ('PROJECTING','COMPLETE')),
+  CONSTRAINT chk_catalog_projection_manifest_hash CHECK (projection_manifest_sha256 REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_schema_hash CHECK (target_schema_sha256 REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_result_hash CHECK (projection_sha256 REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_source_counts CHECK (projected_source_count + quarantined_source_count + ignored_source_count = expected_source_count),
+  CONSTRAINT chk_catalog_projection_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
+  CONSTRAINT chk_catalog_projection_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS data_migration_catalog_source_decisions (
+  catalog_source_decision_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  catalog_projection_run_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  common_staging_record_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_locator_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_payload_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  record_domain VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  decision_status VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  decision_reason VARCHAR(191) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  projected_row_count INT UNSIGNED NOT NULL,
+  decision_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (catalog_source_decision_id),
+  UNIQUE KEY uq_catalog_source_decision_run_owner (catalog_source_decision_id, catalog_projection_run_id),
+  UNIQUE KEY uq_catalog_source_decision_record (catalog_projection_run_id, common_staging_record_id),
+  UNIQUE KEY uq_catalog_source_decision_locator (catalog_projection_run_id, source_locator_sha256),
+  CONSTRAINT fk_catalog_source_decision_run FOREIGN KEY (catalog_projection_run_id)
+    REFERENCES data_migration_catalog_projection_runs(catalog_projection_run_id) ON DELETE CASCADE,
+  CONSTRAINT fk_catalog_source_decision_staging_record FOREIGN KEY (common_staging_record_id)
+    REFERENCES data_migration_common_staging_records(common_staging_record_id) ON DELETE RESTRICT,
+  CONSTRAINT chk_catalog_source_locator_hash CHECK (source_locator_sha256 REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_source_payload_hash CHECK (source_payload_fingerprint REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_decision_hash CHECK (decision_fingerprint REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_decision_status CHECK (
+    (decision_status = 'PROJECT' AND decision_reason IS NULL AND projected_row_count > 0) OR
+    (decision_status IN ('QUARANTINE','IGNORE') AND decision_reason IS NOT NULL AND projected_row_count = 0)
+  ),
+  CONSTRAINT chk_catalog_source_decision_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
+  CONSTRAINT chk_catalog_source_decision_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS data_migration_catalog_projection_records (
+  catalog_projection_record_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  catalog_projection_run_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  catalog_source_decision_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  projection_locator VARCHAR(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  identity_locator_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  identity_mode VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  target_table_name VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  target_pk_column_name VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  target_object_type VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  target_source_namespace VARCHAR(100) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  source_role VARCHAR(50) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  approval_kind VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  approval_sha256 CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+  target_payload_json JSON NOT NULL,
+  target_payload_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  value_origins_json JSON NOT NULL,
+  value_origins_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  reference_bindings_json JSON NOT NULL,
+  reference_bindings_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  INSERT_USER VARCHAR(100) NOT NULL,
+  INSERT_TIME CHAR(19) NOT NULL,
+  UPDATE_USER VARCHAR(100) NOT NULL,
+  UPDATE_TIME CHAR(19) NOT NULL,
+  PRIMARY KEY (catalog_projection_record_id),
+  UNIQUE KEY uq_catalog_projection_record_locator (catalog_source_decision_id, projection_locator, target_table_name),
+  UNIQUE KEY uq_catalog_projection_identity (catalog_projection_run_id, target_source_namespace, identity_locator_sha256),
+  CONSTRAINT fk_catalog_projection_record_run FOREIGN KEY (catalog_projection_run_id)
+    REFERENCES data_migration_catalog_projection_runs(catalog_projection_run_id) ON DELETE CASCADE,
+  CONSTRAINT fk_catalog_projection_record_decision FOREIGN KEY (catalog_source_decision_id)
+    REFERENCES data_migration_catalog_source_decisions(catalog_source_decision_id) ON DELETE CASCADE,
+  CONSTRAINT fk_catalog_projection_record_run_owner FOREIGN KEY (catalog_source_decision_id, catalog_projection_run_id)
+    REFERENCES data_migration_catalog_source_decisions(catalog_source_decision_id, catalog_projection_run_id) ON DELETE CASCADE,
+  CONSTRAINT chk_catalog_projection_identity_hash CHECK (identity_locator_sha256 REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_identity_mode CHECK (identity_mode IN ('GENERATED','REUSED')),
+  CONSTRAINT chk_catalog_projection_approval CHECK ((approval_kind IS NULL AND approval_sha256 IS NULL) OR (approval_kind IN ('OCCURRENCE_CROSSWALK','CATALOG_PROVENANCE','RULE_PROVENANCE','SOURCE_DIRECT') AND approval_sha256 REGEXP '^[0-9a-f]{64}$')),
+  CONSTRAINT chk_catalog_projection_payload_hash CHECK (target_payload_fingerprint REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_origins_hash CHECK (value_origins_fingerprint REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_references_hash CHECK (reference_bindings_fingerprint REGEXP '^[0-9a-f]{64}$'),
+  CONSTRAINT chk_catalog_projection_record_insert_time CHECK (INSERT_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'),
+  CONSTRAINT chk_catalog_projection_record_update_time CHECK (UPDATE_TIME REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$')
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
