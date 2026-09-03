@@ -1,4 +1,4 @@
-# WBS725 Catalog Projection Gate 1~4 검증
+# WBS725 Catalog Projection Gate 1~5 검증
 
 - 슬라이스: `SL-DATA-MIGRATION-CATALOG-PROJECTION-01`
 - 실행 ID: `카탈로그투영DB-SL-DATA-MIGRATION-CATALOG-PROJECTION-01-202609031600`
@@ -27,6 +27,8 @@
 - payload는 target schema의 비 PK·비 FK·비 감사 컬럼을 정확히 한 번 포함하고, FK는 이름·타입이 일치하는 reference binding으로 분리한다. SOURCE_EXACT/SOURCE_ABSENT는 RFC 6901 source binding으로 잠긴 Common Staging payload_json과 직접 대사한다.
 - bare `id`, CODE, business version, executable payload를 거부한다.
 - 동일 manifest는 COMPLETE run parity를 검증해 쓰기 0건으로 재생하며, preflight부터 COMPLETE 전환까지 하나의 transaction이다.
+- target schema integrity는 raw file bytes가 아니라 object key를 재귀 정렬하고 array 순서를 보존한 canonical semantic JSON SHA-256으로 검증하여 LF/CRLF 체크아웃에 독립적이다. malformed JSON과 semantic drift는 쓰기 전에 거부한다.
+- migration 458의 기존 raw schema hash run은 현재 parsed schema를 표준 two-space pretty JSON으로 재직렬화한 LF/CRLF 두 후보에서만 동적 alias를 계산한다. literal checkout hash는 사용하지 않으며, alias가 둘 이상 DB에 존재하면 모호성으로 거부하고 하나만 존재할 때 full stored parity 뒤 0-write replay한다. 신규 run은 canonical semantic hash만 저장한다.
 
 ## Gate 3 합성데이터와 도메인 대사
 
@@ -55,6 +57,7 @@
 - `git diff --check`: PASS
 - 독립 reviewer: P1/P2 없음, Gate 1~5 승인; Maria 포함 59/59·validator 70·typecheck/build/diff-check 및 cleanup 재현·검토
 - old458 manifest-hash 호환 correction: WBS724 owner 독립 재검토 P1/P2 0, focused 33/33·typecheck·validator70·diff-check 재현
+- target-schema portability correction: canonical/legacy alias focused `12/12 PASS`, WBS724 포함 focused `17/17 PASS`, 전체 저장소 `1764 PASS / 0 FAIL / 8 SKIP`, typecheck/build/validator70/diff-check PASS. SKIP 8건은 별도 환경변수·MariaDB가 필요한 기존 integration이며 이번 focused 검증과 Gate5 Maria 증거 범위는 skip 없이 별도로 완료했다.
 
 ## Gate 5 격리 MariaDB 검증
 

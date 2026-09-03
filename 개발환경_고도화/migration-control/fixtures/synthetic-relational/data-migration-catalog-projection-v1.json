@@ -12,7 +12,7 @@
     "projectedFileCount": 1,
     "ignoredFileCount": 0
   },
-  "targetSchemaSha256": "d197ed22a91e33f5e184381aed48b4edc67a63fb7776c910e0072977f9ec9f92",
+  "targetSchemaSha256": "2d0229891ffaaf486ec9fe7f786d362b90d219bfb915ed2cdf54c1937fe4cf3a",
   "actor": "catalog-projection-test",
   "sources": [
     {

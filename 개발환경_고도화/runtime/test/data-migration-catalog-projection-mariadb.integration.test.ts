@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { after, before, describe, it } from "node:test";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { createObjectAuditValues, createObjectIdentityCandidate } from "../src/identity/object-identity-audit-provider.js";
-import { assertCatalogProjectionDatabaseName, calculateCatalogProjectionManifestSha256, MariaCatalogProjectionRepository, type CatalogForeignKeyBinding, type CatalogGeneratedIdentityBinding, type CatalogProjectionManifest, type CatalogProjectionPolicy, type CatalogReusedIdentityBinding, type CatalogTargetSchemaColumn } from "../src/data-migration/catalog-projection-provider.js";
+import { assertCatalogProjectionDatabaseName, calculateCatalogProjectionManifestSha256, calculateCatalogTargetSchemaSha256, calculateLegacyCatalogTargetSchemaSha256s, MariaCatalogProjectionRepository, type CatalogForeignKeyBinding, type CatalogGeneratedIdentityBinding, type CatalogProjectionManifest, type CatalogProjectionPolicy, type CatalogReusedIdentityBinding, type CatalogTargetSchemaColumn } from "../src/data-migration/catalog-projection-provider.js";
 
 const integration = process.env.RUN_MARIADB_INTEGRATION === "true" ? describe : describe.skip;
 const schemaBytes = readFileSync(new URL("../../migration-control/contracts/object-domain-import-target-schema.v1.json", import.meta.url));
@@ -14,7 +13,7 @@ const bindings = JSON.parse(readFileSync(new URL("../../migration-control/contra
 const objectModel = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-data-model-standard.v1.json", import.meta.url), "utf8")) as { tables: Array<{ table: string; foreignKeys?: Array<{ column: string; referencesTable: string; referencesColumn: string }> }> };
 const fieldMap = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-domain-import-field-map.v1.json", import.meta.url), "utf8")) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
 const base = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-catalog-projection-v1.json", import.meta.url), "utf8")) as CatalogProjectionManifest;
-const policy: CatalogProjectionPolicy = { targetSchemaSha256: createHash("sha256").update(schemaBytes).digest("hex"), columns: schema.columns, generatedCuidBindings: bindings.generatedCuidBindings, reusedPrimaryKeys: bindings.reusedPrimaryKeys, foreignKeys: objectModel.tables.flatMap((table): CatalogForeignKeyBinding[] => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))), domainTargets: Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables])), quarantineReasons: fieldMap.recordQuarantine };
+const policy: CatalogProjectionPolicy = { targetSchemaSha256: calculateCatalogTargetSchemaSha256(schemaBytes.toString("utf8")), legacyTargetSchemaSha256s: calculateLegacyCatalogTargetSchemaSha256s(schemaBytes.toString("utf8")), columns: schema.columns, generatedCuidBindings: bindings.generatedCuidBindings, reusedPrimaryKeys: bindings.reusedPrimaryKeys, foreignKeys: objectModel.tables.flatMap((table): CatalogForeignKeyBinding[] => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))), domainTargets: Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables])), quarantineReasons: fieldMap.recordQuarantine };
 
 integration("data migration catalog projection MariaDB", () => {
   let database: DatabaseClient;

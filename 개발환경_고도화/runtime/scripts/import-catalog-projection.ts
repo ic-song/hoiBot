@@ -1,10 +1,11 @@
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient } from "../src/database.js";
 import {
   assertCatalogProjectionDatabaseName,
+  calculateLegacyCatalogTargetSchemaSha256s,
+  calculateCatalogTargetSchemaSha256,
   calculateCatalogProjectionManifestSha256,
   MariaCatalogProjectionRepository,
   type CatalogGeneratedIdentityBinding,
@@ -33,7 +34,8 @@ const bindings = JSON.parse(bindingsText) as { generatedCuidBindings: CatalogGen
 const objectModel = JSON.parse(objectModelText) as { tables: Array<{ table: string; foreignKeys?: Array<{ column: string; referencesTable: string; referencesColumn: string }> }> };
 const fieldMap = JSON.parse(fieldMapText) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
 const policy: CatalogProjectionPolicy = {
-  targetSchemaSha256: createHash("sha256").update(schemaBytes).digest("hex"),
+  targetSchemaSha256: calculateCatalogTargetSchemaSha256(schemaBytes.toString("utf8")),
+  legacyTargetSchemaSha256s: calculateLegacyCatalogTargetSchemaSha256s(schemaBytes.toString("utf8")),
   columns: schema.columns,
   generatedCuidBindings: bindings.generatedCuidBindings,
   reusedPrimaryKeys: bindings.reusedPrimaryKeys,

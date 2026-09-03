@@ -7,6 +7,8 @@ import {
   assertCatalogProjectionDatabaseName,
   assertCatalogProjectionSourceRole,
   buildCatalogProjectionPlan,
+  calculateCatalogTargetSchemaSha256,
+  calculateLegacyCatalogTargetSchemaSha256s,
   calculateCatalogProjectionManifestSha256,
   MariaCatalogProjectionRepository,
   type CatalogGeneratedIdentityBinding,
@@ -30,7 +32,7 @@ const bindings = JSON.parse(readFileSync(bindingUrl, "utf8")) as { generatedCuid
 const objectModel = JSON.parse(readFileSync(objectModelUrl, "utf8")) as { tables: Array<{ table: string; foreignKeys?: Array<{ column: string; referencesTable: string; referencesColumn: string }> }> };
 const fieldMap = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-domain-import-field-map.v1.json", import.meta.url), "utf8")) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
 const contract = JSON.parse(readFileSync(contractUrl, "utf8")) as { migration: string; tables: Array<{ primaryKey: string; auditColumns: string[] }>; domainDecisions: Record<string, unknown> };
-const policy: CatalogProjectionPolicy = { targetSchemaSha256: createHash("sha256").update(schemaBytes).digest("hex"), columns: schema.columns, generatedCuidBindings: bindings.generatedCuidBindings, reusedPrimaryKeys: bindings.reusedPrimaryKeys, foreignKeys: objectModel.tables.flatMap((table): CatalogForeignKeyBinding[] => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))), domainTargets: Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables])), quarantineReasons: fieldMap.recordQuarantine };
+const policy: CatalogProjectionPolicy = { targetSchemaSha256: calculateCatalogTargetSchemaSha256(schemaBytes.toString("utf8")), legacyTargetSchemaSha256s: calculateLegacyCatalogTargetSchemaSha256s(schemaBytes.toString("utf8")), columns: schema.columns, generatedCuidBindings: bindings.generatedCuidBindings, reusedPrimaryKeys: bindings.reusedPrimaryKeys, foreignKeys: objectModel.tables.flatMap((table): CatalogForeignKeyBinding[] => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))), domainTargets: Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables])), quarantineReasons: fieldMap.recordQuarantine };
 const migration = readFileSync(new URL("../migrations/458_data_migration_catalog_projection.sql", import.meta.url), "utf8");
 const rollback = readFileSync(new URL("../migrations/rollback/458_data_migration_catalog_projection.rollback.sql", import.meta.url), "utf8");
 const HASH = "9".repeat(64);
@@ -112,7 +114,9 @@ describe("data migration catalog projection Gate 1~3 contract", () => {
     assert.equal(fixture.targetSchemaSha256, policy.targetSchemaSha256);
     const plan = buildCatalogProjectionPlan(fixture, policy);
     assert.match(plan.projectionManifestSha256, /^[0-9a-f]{64}$/);
-    assert.equal(plan.projectionManifestSha256, "84c4f86cef099e54c21844e98bc85e639e534d0468af59cb75c3cad6f6cc0762");
+    assert.equal(plan.projectionManifestSha256, "020374b85e8f93afbf1d383296ca461ba32eb45f27eeaa4b621c44f28e934a7a");
+    assert.equal(plan.legacyProjectionManifestAliases.length, 2);
+    assert.ok(plan.legacyProjectionManifestAliases.some((alias) => alias.projectionManifestSha256 === "84c4f86cef099e54c21844e98bc85e639e534d0468af59cb75c3cad6f6cc0762"));
     assert.match(plan.projectionSha256, /^[0-9a-f]{64}$/);
     assert.deepEqual(plan.decisions.map((decision) => decision.decisionStatus).sort(), ["IGNORE", "PROJECT", "QUARANTINE"]);
     const output = plan.decisions.find((decision) => decision.decisionStatus === "PROJECT")!.outputs[0]!;
@@ -126,6 +130,21 @@ describe("data migration catalog projection Gate 1~3 contract", () => {
     const envelopeChanged = structuredClone(fixture);
     envelopeChanged.commonStagingEnvelope.expectedTotalBytes = "2";
     assert.equal(calculateCatalogProjectionManifestSha256(envelopeChanged, policy), plan.projectionManifestSha256);
+  });
+
+  it("canonicalizes target schema across LF/CRLF and fails closed on malformed or semantic drift", () => {
+    const document = JSON.parse(schemaBytes.toString("utf8")) as Record<string, unknown>;
+    const lf = `${JSON.stringify(document, null, 2)}\n`;
+    const crlf = lf.replace(/\n/g, "\r\n");
+    assert.equal(calculateCatalogTargetSchemaSha256(lf), calculateCatalogTargetSchemaSha256(crlf));
+    assert.deepEqual(calculateLegacyCatalogTargetSchemaSha256s(lf), calculateLegacyCatalogTargetSchemaSha256s(crlf));
+    assert.throws(() => calculateCatalogTargetSchemaSha256("{"), /TARGET_SCHEMA_JSON_INVALID/);
+    const drifted = structuredClone(document) as { columns: Array<Record<string, unknown>> };
+    drifted.columns[0]!.nullable = !drifted.columns[0]!.nullable;
+    assert.notEqual(calculateCatalogTargetSchemaSha256(JSON.stringify(drifted)), policy.targetSchemaSha256);
+    const driftedManifest = structuredClone(fixture);
+    driftedManifest.targetSchemaSha256 = calculateCatalogTargetSchemaSha256(JSON.stringify(drifted));
+    assert.throws(() => buildCatalogProjectionPlan(driftedManifest, policy), /SCHEMA_HASH_MISMATCH/);
   });
 
   it("rejects guessed furniture, mini-pet, title, and equipment values", () => {
@@ -244,7 +263,7 @@ class ProjectionDatabase implements DatabaseClient {
   readonly writes: Array<{ sql: string; values: readonly unknown[] }> = [];
   readonly decisionIds = new Map<string, string>();
   readonly outputRows: Array<{ decisionId: string; values: readonly unknown[] }> = [];
-  constructor(private readonly plan = buildCatalogProjectionPlan(fixture, policy), private readonly replayRunId?: string, private readonly itemName = "다이아상자💎(/다이아상자오픈)") {}
+  constructor(private readonly plan = buildCatalogProjectionPlan(fixture, policy), private readonly replayRunId?: string, private readonly itemName = "다이아상자💎(/다이아상자오픈)", private readonly replayTargetSchemaSha256 = fixture.targetSchemaSha256, private readonly replayManifestSha256 = plan.projectionManifestSha256, private readonly replayRowCount = 1) {}
   async ping(): Promise<void> {}
   async verifyRollback(): Promise<boolean> { return true; }
   async close(): Promise<void> {}
@@ -261,7 +280,7 @@ class ProjectionDatabase implements DatabaseClient {
     if (sql.includes("FROM data_migration_catalog_projection_runs")) {
       if (this.replayRunId === undefined) return [] as T;
       const counts = { projected: this.plan.decisions.filter((row) => row.decisionStatus === "PROJECT").length, quarantined: this.plan.decisions.filter((row) => row.decisionStatus === "QUARANTINE").length, ignored: this.plan.decisions.filter((row) => row.decisionStatus === "IGNORE").length, rows: this.plan.decisions.reduce((sum, row) => sum + row.outputs.length, 0) };
-      return [{ catalog_projection_run_id: this.replayRunId, raw_bundle_sha256: fixture.commonStagingEnvelope.rawBundleSha256, snapshot_manifest_sha256: fixture.commonStagingEnvelope.snapshotManifestSha256, extraction_manifest_sha256: fixture.commonStagingEnvelope.extractionManifestSha256, expected_file_count: fixture.commonStagingEnvelope.expectedFileCount, expected_total_bytes: fixture.commonStagingEnvelope.expectedTotalBytes, projected_file_count: fixture.commonStagingEnvelope.projectedFileCount, ignored_file_count: fixture.commonStagingEnvelope.ignoredFileCount, upstream_envelope_sha256: upstreamEnvelopeSha256, target_schema_sha256: fixture.targetSchemaSha256, projection_sha256: this.plan.projectionSha256, expected_source_count: this.plan.decisions.length, projected_source_count: counts.projected, quarantined_source_count: counts.quarantined, ignored_source_count: counts.ignored, projected_row_count: counts.rows, run_status: "COMPLETE" }] as T;
+      return Array.from({ length: this.replayRowCount }, (_, index) => ({ catalog_projection_run_id: index === 0 ? this.replayRunId : "z7654321", projection_manifest_sha256: index === 0 ? this.replayManifestSha256 : this.plan.legacyProjectionManifestAliases.find((alias) => alias.projectionManifestSha256 !== this.replayManifestSha256)?.projectionManifestSha256, raw_bundle_sha256: fixture.commonStagingEnvelope.rawBundleSha256, snapshot_manifest_sha256: fixture.commonStagingEnvelope.snapshotManifestSha256, extraction_manifest_sha256: fixture.commonStagingEnvelope.extractionManifestSha256, expected_file_count: fixture.commonStagingEnvelope.expectedFileCount, expected_total_bytes: fixture.commonStagingEnvelope.expectedTotalBytes, projected_file_count: fixture.commonStagingEnvelope.projectedFileCount, ignored_file_count: fixture.commonStagingEnvelope.ignoredFileCount, upstream_envelope_sha256: upstreamEnvelopeSha256, target_schema_sha256: this.replayTargetSchemaSha256, projection_sha256: this.plan.projectionSha256, expected_source_count: this.plan.decisions.length, projected_source_count: counts.projected, quarantined_source_count: counts.quarantined, ignored_source_count: counts.ignored, projected_row_count: counts.rows, run_status: "COMPLETE" })) as T;
     }
     if (sql.includes("FROM data_migration_catalog_source_decisions")) return this.plan.decisions.map((decision, index) => ({ catalog_source_decision_id: this.decisionIds.get(decision.sourceLocatorSha256) ?? `c123456${index}`, common_staging_record_id: `b123456${fixture.sources.findIndex((source) => source.sourceLocatorSha256 === decision.sourceLocatorSha256)}`, source_locator_sha256: decision.sourceLocatorSha256, source_payload_fingerprint: decision.sourcePayloadFingerprint, record_domain: decision.recordDomain, decision_status: decision.decisionStatus, decision_reason: decision.decisionReason, projected_row_count: decision.outputs.length, decision_fingerprint: decision.decisionFingerprint })) as T;
     if (sql.includes("FROM data_migration_catalog_projection_records")) {
@@ -286,6 +305,20 @@ describe("MariaCatalogProjectionRepository Gate 4", () => {
     const replayed = await new MariaCatalogProjectionRepository(replay).project(fixture, policy);
     assert.deepEqual(replayed, { catalogProjectionRunId: first.catalogProjectionRunId, insertedDecisions: 0, insertedProjectionRecords: 0, replayed: true });
     assert.equal(replay.writes.length, 0);
+  });
+
+  it("zero-write replays both deterministic LF/CRLF migration-458 aliases and rejects ambiguity", async () => {
+    const plan = buildCatalogProjectionPlan(fixture, policy);
+    assert.equal(plan.legacyProjectionManifestAliases.length, 2);
+    for (const alias of plan.legacyProjectionManifestAliases) {
+      const database = new ProjectionDatabase(plan, "z1234567", "다이아상자💎(/다이아상자오픈)", alias.targetSchemaSha256, alias.projectionManifestSha256);
+      const result = await new MariaCatalogProjectionRepository(database).project(fixture, policy);
+      assert.equal(result.replayed, true);
+      assert.equal(database.writes.length, 0);
+    }
+    const ambiguous = new ProjectionDatabase(plan, "z1234567", "다이아상자💎(/다이아상자오픈)", fixture.targetSchemaSha256, plan.projectionManifestSha256, 2);
+    await assert.rejects(() => new MariaCatalogProjectionRepository(ambiguous).project(fixture, policy), /REPLAY_ALIAS_AMBIGUOUS/);
+    assert.equal(ambiguous.writes.length, 0);
   });
 
   it("propagates Common Staging quarantine and fails before canonical projection writes", async () => {

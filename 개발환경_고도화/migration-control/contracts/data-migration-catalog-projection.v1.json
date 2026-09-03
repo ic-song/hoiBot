@@ -5,6 +5,13 @@
   "correctionMigration": "459_catalog_projection_upstream_envelope.sql",
   "commonStagingContract": "data-migration-common-staging.v1.json",
   "targetSchemaContract": "object-domain-import-target-schema.v1.json",
+  "targetSchemaIntegrity": {
+    "algorithm": "SHA-256 over canonical semantic JSON",
+    "canonicalization": "parse JSON, recursively sort object keys, preserve array order, serialize logical UTF-8 values without insignificant whitespace",
+    "failurePolicy": "malformed JSON, unsafe numeric values, schema hash mismatch, or semantic drift fails closed before writes",
+    "legacy458Replay": "derive migration-458 aliases only from the parsed current schema reserialized as two-space pretty JSON with one trailing LF, then hash deterministic LF and CRLF byte forms; query canonical plus both aliases, require at most one match, and full stored parity before zero-write replay",
+    "newRunPolicy": "new projection runs store only the canonical semantic target schema SHA-256"
+  },
   "identityBindingContract": "object-domain-import-identity-bindings.v1.json",
   "objectDataModelContract": "object-data-model-standard.v1.json",
   "inputFormat": "hoibot-catalog-projection-manifest-v1",
