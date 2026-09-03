@@ -1,9 +1,9 @@
-# 오브젝트 도메인 이관 Gate 1~5 검증
+# 오브젝트 도메인 이관 Gate 1~6 검증
 
 - 슬라이스: `SL-DATA-MIGRATION-OBJECT-DOMAIN-IMPORT-01` (WBS742)
 - 카탈로그: `SC-20260902-1`
 - 검증일: `2026-09-03 KST`
-- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer, 격리 MariaDB 리허설
+- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer, 격리 MariaDB 리허설, 독립 projection-target parity oracle
 - 운영 영향: 없음. 운영 DB, 운영 배포, `data/*.json`, `main.js`, `Info.js`를 변경하지 않았다.
 
 ## 확정된 결과
@@ -41,6 +41,14 @@
 - MariaDB를 PID `21672`에서 종료하고 새 PID `10660`으로 재시작한 뒤 동일 projection을 실행했다. global `Com_insert/update/delete/replace`가 모두 `0→0`이고 canonical/identity/receipt/upstream count도 전혀 바뀌지 않은 exact replay 0-write를 확인했다. 이후 47 receipt를 역순 rollback하여 45 target의 47행을 0행으로 만들면서 identity/crosswalk `42/42`와 upstream projection `1/12/47`을 보존했다.
 - `-ForceStartupFailure` 반례는 process 생성 직후 의도적으로 실패(exit `1`)시켰으며, 상위 소유 handle로 정확한 프로세스를 종료한 뒤 3321 listener `0`, 임시 datadir 없음, 운영 3306 PID `5328` 불변을 확인했다. cleanup 단계별 오류가 발생해도 환경 변수 복원은 독립적으로 끝까지 수행된다.
 - 최초 재시작 대사에서 `canonical_mini_pet_enhancement_rules.success_probability`의 projection 값 `1`과 MariaDB `DECIMAL(12,10)` 저장값 `1.0000000000` 차이를 검출했다. importer는 expected/actual 양쪽에 동일 SQL-type canonical 비교를 적용하며 DECIMAL은 부동소수 변환 없이 문자열로 scale만 정규화하고, INTEGER·BOOLEAN·JSON도 대칭 변환한다. 실제 값 차이는 계속 drift로 실패한다.
+- Gate 5와 Gate 6의 source decision 수치는 서로 다른 목적의 새 격리 DB fixture이다. Gate 5의 `completeInput`은 `PROJECT 12 / QUARANTINE 0 / IGNORE 0`, projection record `47`이며 rollback 뒤 upstream `run/decision/record=1/12/47`을 보존한다. Gate 6의 `withQuarantineAndIgnore`는 같은 47개 PROJECT record를 생성하는 `PROJECT 12`에 0-row `QUARANTINE 1`, 0-row `IGNORE 1`을 추가하여 source decision `14`(`12/1/1`)를 검증한다. Gate 5 DB에서 decision이 늘어난 것이 아니며 verifier가 임의 기대값에 맞춘 것도 아니다.
+- Gate 6 oracle은 importer의 `verifyReplay` 또는 import plan builder를 호출하지 않는다. projection record, identity locator와 generated/reused binding, manifest/approved-crosswalk FK를 독립 해석하고 45개 실제 target table의 241개 비감사 schema field를 전수 조회하여 47개 행의 250개 field value를 대사한다.
+- 최신 격리 실행의 projection canonical hash와 target canonical hash는 `6e3716a93bcfb8792a2cccc75b52cfe227508e3ff6080707a859184679771ef2`로 같고 row diff는 `0`이다. 생성 CUID를 포함하므로 실행 간 고정 상수로 취급하지 않고 같은 실행의 양쪽 hash 동일성으로 판정한다. 45개 table별 count도 모두 일치하며 package definition/reward entry 2개 테이블은 각 2행, 나머지 43개 테이블은 각 1행이다.
+- oracle은 persisted projection run의 target schema, projection, upstream envelope, manifest hash와 import run의 projection, upstream, schema, import contract, import hash를 독립 재계산·상호 대사한다. identity/object-model/disposition/field-map 네 component semantic hash도 상위 import contract의 동결값과 정확히 일치해야 하며, 각 persisted hash와 component drift 반례는 fail-closed 된다.
+- definition/ownership 순서는 마지막 definition import order `24`, 첫 non-definition import order `25`로 전수 대사했다. import run은 정확히 1개이고 receipt 47개의 projection ID, target PK, dense order, uniqueness를 독립 검증한다.
+- receipt의 `identity_locator_sha256`, `binding_fingerprint`, `imported_row_fingerprint`도 projection identity와 독립 재계산한 canonical payload/reference fingerprint에 정확히 결박하며 두 fingerprint/locator 변조 반례는 fail-closed 된다. compared field value `250`은 fixture와 테스트 assertion에 고정했다.
+- positive parity 실행 전후 MariaDB global DML counter는 `Com_delete=76`, `Com_insert=2028`, `Com_replace=0`, `Com_update=97`로 모두 불변하여 verifier 자체 write `0`을 확인했다.
+- 실제 DB transaction 안에서 target 누락, extra row, 값 drift, 유효한 다른 FK로 redirect, decision status/count drift, definition/ownership import order swap의 6개 반례가 각각 fail-closed 되었고 transaction rollback 뒤 clean parity를 다시 확인했다.
 
 ## 검증 결과
 
@@ -53,9 +61,11 @@
 | Gate 5 prepare / restart replay-rollback (각 importer 24 + integration 1) | `25/25 PASS`, `25/25 PASS` |
 | `scripts/rehearse-object-domain-import-gate5.ps1` | `GATE5_HARNESS_PASS`, port `3321`, PID `21672→10660`, replay DML `0→0`, 3306 unchanged, exit `0` after cleanup |
 | Gate 5 forced startup failure cleanup | expected exit `1`; 3321 listener `0`, temp 없음, 3306 PID `5328` unchanged |
-| importer + object model + disposition focused suite (3 files) | `47/47 PASS` |
-| Catalog Projection + importer + object model/disposition focused suite | `59/59 PASS` |
-| `npm test` | `1788 PASS / 8 SKIP / 0 FAIL` (`1796` tests) |
+| Gate 6 prepare / independent parity oracle | importer `25/25 PASS`; oracle `2/2 PASS`; source decisions `14=12 PROJECT+1 QUARANTINE+1 IGNORE`, records/targets `47/47`, tables `45`, fields `241`, compared values `250`, diff `0` |
+| `scripts/rehearse-object-domain-import-gate5.ps1 -Mode Gate6` | migration `448`, `GATE6_HARNESS_PASS`, port `3321`, PID `13016`, verifier DML counters unchanged, 3306 PID `5328` unchanged, exit `0` after cleanup |
+| importer + Gate 6 oracle contract + object model + disposition focused suite (4 files) | `48/48 PASS` |
+| Catalog Projection + importer + Gate 6 oracle contract + object model/disposition focused suite | `60/60 PASS` |
+| `npm test` | `1789 PASS / 8 SKIP / 0 FAIL` (`1797` tests) |
 | `npm run object-data:validate` | 등록 대상 `73`, PASS |
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
@@ -63,6 +73,6 @@
 
 ## Gate 판정 경계
 
-- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer), Gate 5(격리 DB 리허설)를 대상으로 한다.
+- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer), Gate 5(격리 DB 리허설), Gate 6(독립 데이터 parity)을 대상으로 한다.
 - Gate 5는 독립 reviewer 판정과 커밋 전 근거이며, 일반 전체 suite의 환경 의존 SKIP 8건을 Gate 5 증거로 대체하지 않는다. 위의 명시적 격리 harness가 별도의 실DB 증거이다.
-- 데이터 실이관, consumer parity, Shadow, 운영 배포 완료 근거로 사용하지 않는다.
+- Gate 6는 합성 projection과 canonical target의 데이터 parity 근거이다. 운영 데이터 실이관, consumer command parity, Shadow, 운영 배포 완료 근거로 사용하지 않는다.

@@ -20,7 +20,7 @@ const disposition = JSON.parse(dispositionText) as { definitionSeed: string[]; s
 const fieldMap = JSON.parse(fieldMapText) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
 const contractBytes = readFileSync(new URL(`${base}data-migration-object-domain-import.v1.json`, import.meta.url));
 const contract = JSON.parse(contractBytes.toString("utf8")) as { migration: string; directTargetCount: number; targetColumnCount: number; definitionTargetCount: number; componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; tables: Array<{ primaryKey: string; auditColumns: string[] }> };
-const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json", import.meta.url), "utf8")) as { directTargetCount: number; targetColumnCount: number; definitionTargetCount: number; syntheticProjectionRowCount: number; exactDisplayName: string; scenarios: string[] };
+const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json", import.meta.url), "utf8")) as { directTargetCount: number; targetColumnCount: number; definitionTargetCount: number; syntheticProjectionRowCount: number; gate5SourceDecisionCount: number; gate6SourceDecisionCount: number; gate6ProjectedDecisionCount: number; gate6QuarantinedDecisionCount: number; gate6IgnoredDecisionCount: number; exactDisplayName: string; scenarios: string[] };
 const migration = readFileSync(new URL("../migrations/460_data_migration_object_domain_import.sql", import.meta.url), "utf8");
 const rollback = readFileSync(new URL("../migrations/rollback/460_data_migration_object_domain_import.rollback.sql", import.meta.url), "utf8");
 const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
@@ -680,13 +680,13 @@ async function seedGate5Projection(database: DatabaseClient, input: ReturnType<t
   for (const row of input.rows) await database.execute("INSERT INTO data_migration_catalog_projection_records(catalog_projection_record_id,catalog_projection_run_id,catalog_source_decision_id,projection_locator,identity_locator_sha256,identity_mode,target_table_name,target_pk_column_name,target_object_type,target_source_namespace,source_role,approval_kind,approval_sha256,target_payload_json,target_payload_fingerprint,value_origins_json,value_origins_fingerprint,reference_bindings_json,reference_bindings_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [row.catalog_projection_record_id, input.run.catalog_projection_run_id, row.catalog_source_decision_id, row.projection_locator, row.identity_locator_sha256, row.identity_mode, row.target_table_name, row.target_pk_column_name, row.target_object_type, row.target_source_namespace, row.source_role, row.approval_kind, row.approval_sha256, row.target_payload_json, row.target_payload_fingerprint, row.value_origins_json, row.value_origins_fingerprint, row.reference_bindings_json, row.reference_bindings_fingerprint, ...audit]);
 }
 
-if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain import Gate 5 isolated MariaDB", () => {
+if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain import isolated MariaDB preparation", () => {
   it(`runs ${process.env.OBJECT_DOMAIN_GATE5_PHASE} against the allowlisted rehearsal database`, async () => {
     const config = loadConfig();
     assertObjectDomainImportDatabaseName(config.database.name);
     assert.equal(config.database.host, "127.0.0.1");
     assert.equal(config.database.port, 3321);
-    assert.equal(config.database.name, "hoibot_rehearsal_wbs742_gate5");
+    assert.equal(config.database.name, process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate6-prepare" ? "hoibot_rehearsal_wbs742_gate6" : "hoibot_rehearsal_wbs742_gate5");
     const database = createDatabaseClient(config.database);
     const importer = new MariaObjectDomainImporter(database, () => new Date("2026-09-03T09:00:00Z"));
     try {
@@ -705,6 +705,15 @@ if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain
         assert.equal(after.targets - baseline.targets, 47);
         assert.deepEqual([after.importRuns, after.importDecisions, after.importRecords], [1, input.decisions.length, 47]);
         process.stdout.write(`GATE5_PREPARE ${JSON.stringify({ projectionRunId: input.run.catalog_projection_run_id, objectDomainImportRunId: first.objectDomainImportRunId, baseline, after })}\n`);
+      } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "gate6-prepare") {
+        const input = withQuarantineAndIgnore();
+        await seedGate5Projection(database, input);
+        const baseline = await gate5Counts(database);
+        const first = await importer.importProjection(input.run.catalog_projection_run_id, policy, "wbs742-gate6");
+        const after = await gate5Counts(database);
+        assert.deepEqual([first.insertedCanonicalRows, first.insertedDecisionReceipts, first.replayed], [fixture.syntheticProjectionRowCount, fixture.gate6SourceDecisionCount, false]);
+        assert.deepEqual([after.targets, after.importRuns, after.importDecisions, after.importRecords], [fixture.syntheticProjectionRowCount, 1, fixture.gate6SourceDecisionCount, fixture.syntheticProjectionRowCount]);
+        process.stdout.write(`GATE6_PREPARE ${JSON.stringify({ projectionRunId: input.run.catalog_projection_run_id, objectDomainImportRunId: first.objectDomainImportRunId, baseline, after })}\n`);
       } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "replay-rollback") {
         const beforeReplay = await gate5Counts(database);
         const writesBeforeReplay = await gate5WriteCounters(database);

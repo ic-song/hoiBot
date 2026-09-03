@@ -5,8 +5,8 @@
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
 - 정리 후보 기준 커밋:
-- 체크포인트 버전: 6
-- 마지막 갱신: 2026-09-03 20:25 KST
+- 체크포인트 버전: 7
+- 마지막 갱신: 2026-09-03 22:45 KST
 
 ## 현재 목표
 
@@ -24,7 +24,7 @@
 - 저장소: hoiBot
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-db-import-v1-20260903`
 - 브랜치: `codex/object-db-import-v1-20260903`
-- 마지막 기준 커밋: `fd3f11a3`
+- 마지막 기준 커밋: `10690cf0`
 - 마지막 푸시 커밋: 없음
 - 원격 동기화 상태: 미확인·미푸시
 - 체크포인트 Git 추적: 아니요
@@ -48,10 +48,13 @@
 - WBS742 Gate3/4를 독립 reviewer P1/P2 0과 전체 회귀 후 `fd3f11a3`으로 커밋했다.
 - Gate5 격리 harness에서 신규 MariaDB 12.2에 migration 448개를 적용하고 forced-failure 원자 rollback, 47행→45 target 실이관, PID가 바뀐 재시작 후 exact replay 0-write, 47행 역순 rollback 및 upstream/identity 보존을 재현했다.
 - 실DB 재시작 대사로 DECIMAL scale 차이(`1` 대 `1.0000000000`)를 발견해 정밀도를 잃지 않는 SQL-type 대칭 canonical comparator와 회귀 반례를 추가했다.
+- WBS742 Gate5를 독립 reviewer P1/P2 0과 전체 회귀 후 `10690cf0`으로 커밋했다.
+- Gate6 독립 oracle은 importer replay 검증을 재사용하지 않고 projection 47행의 identity/PK/FK와 45개 target, 241개 schema field를 실제 격리 MariaDB에서 전수 대사한다.
+- Gate5 decision `12=12/0/0`과 Gate6 decision `14=12/1/1`은 별도의 새 DB fixture 목적 차이로 구분했고, 두 경우 모두 projection record는 47개이다.
 
 ## 진행 중인 작업
 
-- WBS742 Gate5 harness/evidence를 구현했다. 전체 회귀 후 독립 reviewer 판정을 기다린다.
+- WBS742 Gate6 독립 parity verifier와 실DB 반례 harness/evidence를 구현했다. 전체 회귀와 독립 reviewer 판정을 준비한다.
 
 ## 변경 파일
 
@@ -66,11 +69,13 @@
 - `개발환경_고도화/migration-control/contracts/data-migration-object-domain-import.v1.json`
 - `개발환경_고도화/migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json`
 - `개발환경_고도화/runtime/scripts/rehearse-object-domain-import-gate5.ps1`
+- `개발환경_고도화/runtime/src/data-migration/object-domain-parity-verifier.ts`
+- `개발환경_고도화/runtime/test/object-domain-import-parity-verifier.test.ts`
 
 ## 검증
 
-- 실행 명령: Gate5 격리 MariaDB harness, Gate1~5 importer/계약/disposition focused suite, object-data validator, typecheck, build, diff-check.
-- 현재 결과: 격리 harness `25/25 + 25/25 PASS`; migration 448개; target `0→47→0`; replay DML `Com_insert/update/delete/replace` 전부 `0→0`; identity/crosswalk `42/42`와 upstream `1/12/47` 보존; PID `21672→10660`; cleanup 후 exit 0. forced startup failure도 expected exit 1 후 3321 listener/temp 제거, 환경 복원 경로 유지 및 3306 PID `5328` 불변. importer `24/24`, 관련 `47/47`, Catalog 포함 `59/59`, 전체 `1788 PASS / 8 SKIP / 0 FAIL` (`1796` tests), validator 73/typecheck/build/diff PASS.
+- 실행 명령: Gate5 격리 MariaDB harness, Gate6 격리 MariaDB independent parity harness, Gate1~6 focused suite, object-data validator, typecheck, build, diff-check.
+- 현재 결과: Gate5는 이전 커밋 근거대로 완료. Gate6는 migration 448개, prepare importer `25/25`, parity `2/2`; source decisions `14=12 PROJECT+1 QUARANTINE+1 IGNORE`, projection/target `47/47`, 45 tables, 241 fields/250 values, definition order `24<25`, canonical hash 동일, diff 0, verifier DML counter 불변. missing/extra/value/FK redirect/decision/order, persisted run/component hash, receipt identity/imported-row fingerprint drift는 fail-closed 후 복원 parity PASS. PID `13016`, cleanup 후 3321 listener/temp 제거 및 3306 PID `5328` 불변. focused `48/48`, Catalog 포함 `60/60`, 전체 `1789 PASS / 8 SKIP / 0 FAIL`(`1797` tests), validator 등록73/typecheck/build/diff PASS.
 
 ## 충돌·막힘·미승인 사항
 
@@ -78,7 +83,7 @@
 
 ## 다음 행동
 
-1. 독립 reviewer 승인 후 WBS742 Gate5를 한국어 커밋으로 고정한다.
+1. 독립 reviewer 승인 후 WBS742 Gate6를 한국어 커밋으로 고정한다.
 
 ## 보안
 

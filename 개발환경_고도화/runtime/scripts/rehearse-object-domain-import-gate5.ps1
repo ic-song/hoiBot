@@ -1,11 +1,15 @@
-param([switch]$ForceStartupFailure)
+param(
+  [ValidateSet("Gate5", "Gate6")][string]$Mode = "Gate5",
+  [switch]$ForceStartupFailure
+)
 
 $ErrorActionPreference = "Stop"
 
 $runtimeRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $worktreeRoot = [System.IO.Path]::GetFullPath((Join-Path $runtimeRoot "..\.."))
-$temporaryRoot = [System.IO.Path]::GetFullPath((Join-Path $worktreeRoot ".tmp\wbs742-gate5-mariadb"))
-$expectedTemporaryRoot = [System.IO.Path]::GetFullPath((Join-Path $worktreeRoot ".tmp\wbs742-gate5-mariadb"))
+$gateLabel = $Mode.ToLowerInvariant()
+$temporaryRoot = [System.IO.Path]::GetFullPath((Join-Path $worktreeRoot ".tmp\wbs742-${gateLabel}-mariadb"))
+$expectedTemporaryRoot = [System.IO.Path]::GetFullPath((Join-Path $worktreeRoot ".tmp\wbs742-${gateLabel}-mariadb"))
 $dataDirectory = Join-Path $temporaryRoot "data"
 $pidFile = Join-Path $temporaryRoot "mariadbd.pid"
 $errorLog = Join-Path $temporaryRoot "mariadbd.err"
@@ -14,8 +18,8 @@ $installDatabase = Join-Path $mariaBin "mariadb-install-db.exe"
 $serverBinary = Join-Path $mariaBin "mariadbd.exe"
 $clientBinary = Join-Path $mariaBin "mariadb.exe"
 $rehearsalPort = 3321
-$rehearsalDatabase = "hoibot_rehearsal_wbs742_gate5"
-$rehearsalPassword = "wbs742-gate5-only"
+$rehearsalDatabase = "hoibot_rehearsal_wbs742_${gateLabel}"
+$rehearsalPassword = "wbs742-${gateLabel}-only"
 $serverProcess = $null
 $initialServerPid = $null
 $restartServerPid = $null
@@ -30,6 +34,7 @@ $savedEnvironment = @{
   DATABASE_NAME = $env:DATABASE_NAME
   IRIS_SHARED_TOKEN = $env:IRIS_SHARED_TOKEN
   OBJECT_DOMAIN_GATE5_PHASE = $env:OBJECT_DOMAIN_GATE5_PHASE
+  OBJECT_DOMAIN_GATE6_PHASE = $env:OBJECT_DOMAIN_GATE6_PHASE
 }
 
 function Assert-ExactTemporaryPath {
@@ -113,20 +118,32 @@ try {
   Push-Location $runtimeRoot
   try {
     Invoke-Checked { & npm.cmd run db:migrate }
-    $env:OBJECT_DOMAIN_GATE5_PHASE = "prepare"
-    Invoke-Checked { & node --import tsx --test test/data-migration-object-domain-import.test.ts }
-    Stop-OwnedMariaDb $serverProcess
-    $serverProcess = Start-IsolatedMariaDb
-    $restartServerPid = $serverProcess.Id
-    if ($restartServerPid -eq $initialServerPid) { throw "MariaDB restart did not produce a new PID." }
-    $env:OBJECT_DOMAIN_GATE5_PHASE = "replay-rollback"
-    Invoke-Checked { & node --import tsx --test test/data-migration-object-domain-import.test.ts }
+    if ($Mode -eq "Gate6") {
+      $env:OBJECT_DOMAIN_GATE5_PHASE = "gate6-prepare"
+      Invoke-Checked { & node --import tsx --test test/data-migration-object-domain-import.test.ts }
+      Remove-Item -LiteralPath "Env:OBJECT_DOMAIN_GATE5_PHASE" -ErrorAction SilentlyContinue
+      $env:OBJECT_DOMAIN_GATE6_PHASE = "verify"
+      Invoke-Checked { & node --import tsx --test test/object-domain-import-parity-verifier.test.ts }
+    } else {
+      $env:OBJECT_DOMAIN_GATE5_PHASE = "prepare"
+      Invoke-Checked { & node --import tsx --test test/data-migration-object-domain-import.test.ts }
+      Stop-OwnedMariaDb $serverProcess
+      $serverProcess = Start-IsolatedMariaDb
+      $restartServerPid = $serverProcess.Id
+      if ($restartServerPid -eq $initialServerPid) { throw "MariaDB restart did not produce a new PID." }
+      $env:OBJECT_DOMAIN_GATE5_PHASE = "replay-rollback"
+      Invoke-Checked { & node --import tsx --test test/data-migration-object-domain-import.test.ts }
+    }
   } finally {
     Pop-Location
   }
   $productionListenerAfter = @(Get-NetTCPConnection -State Listen -LocalPort 3306 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
   if (Compare-Object $productionListenerBefore $productionListenerAfter) { throw "Production 3306 listener ownership changed during Gate5 rehearsal." }
-  $successMessage = "GATE5_HARNESS_PASS port=$rehearsalPort database=$rehearsalDatabase initialPid=$initialServerPid restartPid=$restartServerPid production3306Unchanged=true"
+  if ($Mode -eq "Gate6") {
+    $successMessage = "GATE6_HARNESS_PASS port=$rehearsalPort database=$rehearsalDatabase initialPid=$initialServerPid production3306Unchanged=true"
+  } else {
+    $successMessage = "GATE5_HARNESS_PASS port=$rehearsalPort database=$rehearsalDatabase initialPid=$initialServerPid restartPid=$restartServerPid production3306Unchanged=true"
+  }
 } finally {
   $cleanupErrors = [System.Collections.Generic.List[string]]::new()
   try { if ($null -ne $serverProcess) { Stop-OwnedMariaDb $serverProcess } } catch { $cleanupErrors.Add($_.Exception.Message) }
