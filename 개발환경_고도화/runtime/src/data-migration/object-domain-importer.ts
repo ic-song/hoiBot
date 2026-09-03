@@ -497,14 +497,27 @@ function canonicalRowFingerprint(row: PreparedRow, targetPk: string, references:
   return sha256(stableDomainImportJson({ table: row.target_table_name, pkColumn: row.target_pk_column_name, pk: targetPk, payload: row.payload, references }));
 }
 
-function normalizeStoredValue(value: unknown, sqlType: string): unknown {
+function normalizeDecimal(value: unknown): string {
+  const raw = String(value);
+  const match = /^(-?)(\d+)(?:\.(\d+))?$/.exec(raw);
+  if (match === null) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_TARGET_DECIMAL_INVALID");
+  const integer = match[2]!.replace(/^0+(?=\d)/, "");
+  const fraction = (match[3] ?? "").replace(/0+$/, "");
+  const magnitude = fraction === "" ? integer : `${integer}.${fraction}`;
+  return magnitude === "0" ? "0" : `${match[1]}${magnitude}`;
+}
+
+function normalizeComparableValue(value: unknown, sqlType: string, stored: boolean): unknown {
   if (value === null) return null;
   if (sqlType === "BOOLEAN") return value === true || value === 1 || value === 1n || value === "1";
   if (sqlType === "JSON") {
-    if (typeof value !== "string") return value;
+    if (!stored || typeof value !== "string") return value;
     try { return JSON.parse(value); } catch { throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_TARGET_JSON_INVALID"); }
   }
-  if (/^(?:TINYINT|INT|BIGINT)(?: UNSIGNED)?$/.test(sqlType) || /^DECIMAL/.test(sqlType)) return String(value);
+  if (/^(?:TINYINT|INT|BIGINT)(?: UNSIGNED)?$/.test(sqlType)) {
+    try { return BigInt(String(value)).toString(); } catch { throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_TARGET_INTEGER_INVALID"); }
+  }
+  if (/^DECIMAL/.test(sqlType)) return normalizeDecimal(value);
   return value;
 }
 
@@ -655,8 +668,9 @@ export class MariaObjectDomainImporter {
       const schema = policy.columns.filter((column) => column.table === row.target_table_name);
       const stored = await transaction.query<Array<Record<string, unknown>>>(`SELECT ${schema.map((column) => column.column).join(",")} FROM ${row.target_table_name} WHERE ${row.target_pk_column_name}=? FOR UPDATE`, [receipt.target_pk_value]);
       if (stored.length !== 1 || String(stored[0]![row.target_pk_column_name]) !== receipt.target_pk_value) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_TARGET_MISSING");
-      const expected = { [row.target_pk_column_name]: receipt.target_pk_value, ...references, ...row.payload };
-      const actual = Object.fromEntries(schema.map((column) => [column.column, normalizeStoredValue(stored[0]![column.column], column.sqlType)]));
+      const expectedSource = { [row.target_pk_column_name]: receipt.target_pk_value, ...references, ...row.payload };
+      const expected = Object.fromEntries(schema.map((column) => [column.column, normalizeComparableValue(expectedSource[column.column], column.sqlType, false)]));
+      const actual = Object.fromEntries(schema.map((column) => [column.column, normalizeComparableValue(stored[0]![column.column], column.sqlType, true)]));
       if (stableDomainImportJson(actual) !== stableDomainImportJson(expected)) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_TARGET_DRIFT");
     }
     return receipts;
