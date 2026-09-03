@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
+import { createDatabaseClient, type DatabaseClient, type DatabaseTransaction, type DatabaseWriteResult } from "../src/database.js";
+import { loadConfig } from "../src/config.js";
 import { calculateCatalogTargetSchemaSha256 } from "../src/data-migration/catalog-projection-provider.js";
 import { assertObjectDomainImportDatabaseName, assertObjectDomainImportUpstreamEnvelope, buildObjectDomainImportPlan, calculateObjectDomainImportSemanticSha256, MariaObjectDomainImporter, stableDomainImportJson, type DomainImportPolicy } from "../src/data-migration/object-domain-importer.js";
 
@@ -174,7 +175,7 @@ function makePackageGraphValid(input: { rows: any[] }): void {
   const secondPackage = { ...packageDefinition, catalog_projection_record_id: "rpkgdef2", projection_locator: "synthetic-canonical_package_definitions-2", identity_locator_sha256: secondPackageLocator };
   const secondEntry = { ...rewardEntry, catalog_projection_record_id: "rpkgent2", projection_locator: "synthetic-canonical_package_reward_entries-2", identity_locator_sha256: secondEntryLocator };
   setRowPayload(rewardEntry, { target_kind: "item" });
-  setRowPayload(secondEntry, { target_kind: "package" });
+  setRowPayload(secondEntry, { target_kind: "package", reward_order: "2" });
   nestedReward.identity_locator_sha256 = secondEntryLocator;
   nestedReward.projection_locator = "synthetic-canonical_package_nested_rewards-2";
   const nestedReferences = JSON.parse(nestedReward.reference_bindings_json) as any[];
@@ -367,6 +368,19 @@ describe("object domain import Gate 3/4", () => {
     const beforeReplay = database.writes.length;
     const replay = await importer.importProjection(database.input.run.catalog_projection_run_id, policy, "object-domain-import");
     assert.deepEqual(replay, { objectDomainImportRunId: first.objectDomainImportRunId, insertedCanonicalRows: 0, insertedDecisionReceipts: 0, replayed: true });
+    assert.equal(database.writes.length, beforeReplay);
+  });
+
+  it("compares database-scaled decimals without losing precision or treating scale as drift", async () => {
+    const database = new DomainImportDatabase();
+    const importer = new MariaObjectDomainImporter(database, () => new Date("2026-09-03T09:00:00Z"));
+    const first = await importer.importProjection(database.input.run.catalog_projection_run_id, policy, "object-domain-import");
+    const receipt = database.receipts.find((row) => row.target_table_name === "canonical_mini_pet_enhancement_rules")!;
+    database.targets.get(receipt.target_table_name)!.get(receipt.target_pk_value)!.success_probability = "1.0000000000";
+    const beforeReplay = database.writes.length;
+    assert.deepEqual(await importer.importProjection(database.input.run.catalog_projection_run_id, policy, "object-domain-import"), {
+      objectDomainImportRunId: first.objectDomainImportRunId, insertedCanonicalRows: 0, insertedDecisionReceipts: 0, replayed: true
+    });
     assert.equal(database.writes.length, beforeReplay);
   });
 
@@ -619,5 +633,94 @@ describe("object domain import Gate 3/4", () => {
     assert.doesNotThrow(() => assertObjectDomainImportDatabaseName("hoibot_schema_design"));
     assert.doesNotThrow(() => assertObjectDomainImportDatabaseName("hoibot_rehearsal_wbs742"));
     assert.throws(() => assertObjectDomainImportDatabaseName("hoibot_prod"), /OPERATIONAL_DATABASE_REFUSED/);
+  });
+});
+
+async function gate5TargetCount(database: DatabaseClient): Promise<number> {
+  let count = 0;
+  for (const table of directTargets) count += Number((await database.query<Array<{ row_count: bigint }>>(`SELECT COUNT(*) row_count FROM ${table}`))[0]!.row_count);
+  return count;
+}
+
+interface Gate5DatabaseCounts {
+  targets: number; identities: number; crosswalks: number; importRuns: number; importDecisions: number;
+  importRecords: number; projectionRuns: number; projectionDecisions: number; projectionRecords: number;
+}
+
+async function gate5Counts(database: DatabaseClient): Promise<Gate5DatabaseCounts> {
+  const scalar = async (sql: string): Promise<number> => Number((await database.query<Array<{ row_count: bigint }>>(sql))[0]!.row_count);
+  return {
+    targets: await gate5TargetCount(database),
+    identities: await scalar("SELECT COUNT(*) row_count FROM object_identities"),
+    crosswalks: await scalar("SELECT COUNT(*) row_count FROM object_identity_crosswalks"),
+    importRuns: await scalar("SELECT COUNT(*) row_count FROM data_migration_object_domain_import_runs"),
+    importDecisions: await scalar("SELECT COUNT(*) row_count FROM data_migration_object_domain_import_decisions"),
+    importRecords: await scalar("SELECT COUNT(*) row_count FROM data_migration_object_domain_import_records"),
+    projectionRuns: await scalar("SELECT COUNT(*) row_count FROM data_migration_catalog_projection_runs"),
+    projectionDecisions: await scalar("SELECT COUNT(*) row_count FROM data_migration_catalog_source_decisions"),
+    projectionRecords: await scalar("SELECT COUNT(*) row_count FROM data_migration_catalog_projection_records")
+  };
+}
+
+async function gate5WriteCounters(database: DatabaseClient): Promise<Record<string, string>> {
+  const rows = await database.query<Array<{ Variable_name: string; Value: string }>>("SHOW GLOBAL STATUS WHERE Variable_name IN ('Com_insert','Com_update','Com_delete','Com_replace')");
+  return Object.fromEntries(rows.map((row) => [row.Variable_name, String(row.Value)]));
+}
+
+async function seedGate5Projection(database: DatabaseClient, input: ReturnType<typeof completeInput>): Promise<void> {
+  const audit = ["wbs742-gate5", "2026-09-03 18:00:00", "wbs742-gate5", "2026-09-03 18:00:00"];
+  await database.execute("INSERT INTO data_migration_common_staging_runs(common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,staging_sha256,expected_file_count,expected_total_bytes,expected_record_count,projected_file_count,ignored_file_count,run_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,'COMPLETE',?,?,?,?)", [input.staging.common_staging_run_id, input.staging.raw_bundle_sha256, input.staging.snapshot_manifest_sha256, input.staging.extraction_manifest_sha256, input.staging.staging_sha256, input.staging.expected_file_count, input.staging.expected_total_bytes, input.decisions.length, input.staging.projected_file_count, input.staging.ignored_file_count, ...audit]);
+  for (const [index, decision] of input.decisions.entries()) {
+    const stagingRecordId = `s${String(index).padStart(7, "0")}`;
+    await database.execute("INSERT INTO data_migration_common_staging_records(common_staging_record_id,common_staging_run_id,source_system,source_namespace,source_path_sha256,source_content_sha256,logical_source_name,source_pointer,identity_pointer,source_locator_sha256,owner_locator_sha256,occurrence_index,projection_locator,record_domain,record_kind,projection_status,quarantine_reason,quantity_value,observed_time,payload_json,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?, 'LEGACY_JSON','wbs742-gate5',?,?, 'synthetic.json','','',?,NULL,0,NULL,?,?, 'PROJECT',NULL,NULL,NULL,'{}',?,?,?,?,?)", [stagingRecordId, input.staging.common_staging_run_id, H(1500 + index), H(1600 + index), decision.source_locator_sha256, decision.record_domain, decision.record_kind, decision.source_payload_fingerprint, ...audit]);
+    decision.common_staging_record_id = stagingRecordId;
+  }
+  await database.execute("INSERT INTO data_migration_catalog_projection_runs(catalog_projection_run_id,common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,expected_file_count,expected_total_bytes,projected_file_count,ignored_file_count,upstream_envelope_sha256,catalog_version,projection_manifest_sha256,target_schema_sha256,projection_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'COMPLETE',?,?,?,?)", [input.run.catalog_projection_run_id, input.run.common_staging_run_id, input.run.raw_bundle_sha256, input.run.snapshot_manifest_sha256, input.run.extraction_manifest_sha256, input.run.expected_file_count, input.run.expected_total_bytes, input.run.projected_file_count, input.run.ignored_file_count, input.run.upstream_envelope_sha256, input.run.catalog_version, input.run.projection_manifest_sha256, input.run.target_schema_sha256, input.run.projection_sha256, input.run.expected_source_count, input.run.projected_source_count, input.run.quarantined_source_count, input.run.ignored_source_count, input.run.projected_row_count, ...audit]);
+  for (const decision of input.decisions) await database.execute("INSERT INTO data_migration_catalog_source_decisions(catalog_source_decision_id,catalog_projection_run_id,common_staging_record_id,source_locator_sha256,source_payload_fingerprint,record_domain,decision_status,decision_reason,projected_row_count,decision_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [decision.catalog_source_decision_id, input.run.catalog_projection_run_id, decision.common_staging_record_id, decision.source_locator_sha256, decision.source_payload_fingerprint, decision.record_domain, decision.decision_status, decision.decision_reason, decision.projected_row_count, decision.decision_fingerprint, ...audit]);
+  for (const row of input.rows) await database.execute("INSERT INTO data_migration_catalog_projection_records(catalog_projection_record_id,catalog_projection_run_id,catalog_source_decision_id,projection_locator,identity_locator_sha256,identity_mode,target_table_name,target_pk_column_name,target_object_type,target_source_namespace,source_role,approval_kind,approval_sha256,target_payload_json,target_payload_fingerprint,value_origins_json,value_origins_fingerprint,reference_bindings_json,reference_bindings_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [row.catalog_projection_record_id, input.run.catalog_projection_run_id, row.catalog_source_decision_id, row.projection_locator, row.identity_locator_sha256, row.identity_mode, row.target_table_name, row.target_pk_column_name, row.target_object_type, row.target_source_namespace, row.source_role, row.approval_kind, row.approval_sha256, row.target_payload_json, row.target_payload_fingerprint, row.value_origins_json, row.value_origins_fingerprint, row.reference_bindings_json, row.reference_bindings_fingerprint, ...audit]);
+}
+
+if (process.env.OBJECT_DOMAIN_GATE5_PHASE !== undefined) describe("object domain import Gate 5 isolated MariaDB", () => {
+  it(`runs ${process.env.OBJECT_DOMAIN_GATE5_PHASE} against the allowlisted rehearsal database`, async () => {
+    const config = loadConfig();
+    assertObjectDomainImportDatabaseName(config.database.name);
+    assert.equal(config.database.host, "127.0.0.1");
+    assert.equal(config.database.port, 3321);
+    assert.equal(config.database.name, "hoibot_rehearsal_wbs742_gate5");
+    const database = createDatabaseClient(config.database);
+    const importer = new MariaObjectDomainImporter(database, () => new Date("2026-09-03T09:00:00Z"));
+    try {
+      if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "prepare") {
+        const input = completeInput();
+        await seedGate5Projection(database, input);
+        const baseline = await gate5Counts(database);
+        await database.execute("CREATE TRIGGER trg_wbs742_gate5_failure BEFORE INSERT ON canonical_player_currency_balances FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='WBS742_GATE5_FORCED_FAILURE'");
+        await assert.rejects(() => importer.importProjection(input.run.catalog_projection_run_id, policy, "wbs742-gate5"), /WBS742_GATE5_FORCED_FAILURE/);
+        await database.execute("DROP TRIGGER trg_wbs742_gate5_failure");
+        assert.deepEqual(await gate5Counts(database), baseline);
+        const first = await importer.importProjection(input.run.catalog_projection_run_id, policy, "wbs742-gate5");
+        const after = await gate5Counts(database);
+        assert.equal(first.insertedCanonicalRows, 47);
+        assert.equal(new Set(input.rows.map((row) => row.target_table_name)).size, 45);
+        assert.equal(after.targets - baseline.targets, 47);
+        assert.deepEqual([after.importRuns, after.importDecisions, after.importRecords], [1, input.decisions.length, 47]);
+        process.stdout.write(`GATE5_PREPARE ${JSON.stringify({ projectionRunId: input.run.catalog_projection_run_id, objectDomainImportRunId: first.objectDomainImportRunId, baseline, after })}\n`);
+      } else if (process.env.OBJECT_DOMAIN_GATE5_PHASE === "replay-rollback") {
+        const beforeReplay = await gate5Counts(database);
+        const writesBeforeReplay = await gate5WriteCounters(database);
+        const replay = await importer.importProjection("p1234567", policy, "wbs742-gate5-restart");
+        assert.equal(replay.replayed, true);
+        assert.deepEqual(await gate5Counts(database), beforeReplay);
+        const writesAfterReplay = await gate5WriteCounters(database);
+        assert.deepEqual(writesAfterReplay, writesBeforeReplay);
+        assert.equal(await importer.rollback("p1234567", policy), 1);
+        const afterRollback = await gate5Counts(database);
+        assert.equal(afterRollback.targets, beforeReplay.targets - 47);
+        assert.deepEqual([afterRollback.importRuns, afterRollback.importDecisions, afterRollback.importRecords], [0, 0, 0]);
+        assert.deepEqual([afterRollback.projectionRuns, afterRollback.projectionDecisions, afterRollback.projectionRecords], [beforeReplay.projectionRuns, beforeReplay.projectionDecisions, beforeReplay.projectionRecords]);
+        assert.deepEqual([afterRollback.identities, afterRollback.crosswalks], [beforeReplay.identities, beforeReplay.crosswalks]);
+        process.stdout.write(`GATE5_REPLAY_ROLLBACK ${JSON.stringify({ replay, writesBeforeReplay, writesAfterReplay, beforeReplay, afterRollback })}\n`);
+      } else throw new Error("OBJECT_DOMAIN_GATE5_PHASE_INVALID");
+    } finally { await database.close(); }
   });
 });

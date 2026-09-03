@@ -1,9 +1,9 @@
-# 오브젝트 도메인 이관 Gate 1~4 검증
+# 오브젝트 도메인 이관 Gate 1~5 검증
 
 - 슬라이스: `SL-DATA-MIGRATION-OBJECT-DOMAIN-IMPORT-01` (WBS742)
 - 카탈로그: `SC-20260902-1`
 - 검증일: `2026-09-03 KST`
-- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer
+- 범위: 현행 조사, 65개 canonical table별 disposition/소스 매핑, 합성 fixture, 45개 직접 대상 atomic importer, 격리 MariaDB 리허설
 - 운영 영향: 없음. 운영 DB, 운영 배포, `data/*.json`, `main.js`, `Info.js`를 변경하지 않았다.
 
 ## 확정된 결과
@@ -36,6 +36,11 @@
 - migration 460은 import run/decision/record 영수증 3개 테이블을 추가하며, rollback은 import_order 역순으로 canonical target을 삭제하고 upstream projection과 reusable identity provenance는 보존한다.
 - target-schema fingerprint는 WBS725가 공개한 canonical semantic JSON SHA-256 helper를 사용한다. 파일의 LF/CRLF 차이는 동일 해시이며 raw file-byte SHA-256은 사용하지 않는다.
 - rollback은 삭제 전에 모든 영수증을 frozen 45-table allowlist, 정확한 PK, 원본 projection target/locator와 전수 대사한다. 정상 테이블·PK로 redirect된 영수증도 첫 DELETE 전에 실패한다.
+- Gate 5 harness는 운영 3306과 분리된 `127.0.0.1:3321`의 새 MariaDB 12.2 datadir 및 allowlist DB `hoibot_rehearsal_wbs742_gate5`만 사용한다. 실행 전 포트 미사용, listener PID 소유권, 정확한 임시 경로를 검사하고 종료 시 환경 변수 복원, listener 종료, 임시 datadir 삭제 및 3306 listener 소유권 불변을 검증한다.
+- 새 DB에 migration 448개(`001`~`460`, 병렬 번호 포함)를 전부 적용했다. 강제 중간 실패는 target/identity/crosswalk/import receipt를 모두 0건으로 원자 rollback했으며, 정상 실행은 12 source decision의 47 projection row를 45개 직접 target에 적재했다.
+- MariaDB를 PID `21672`에서 종료하고 새 PID `10660`으로 재시작한 뒤 동일 projection을 실행했다. global `Com_insert/update/delete/replace`가 모두 `0→0`이고 canonical/identity/receipt/upstream count도 전혀 바뀌지 않은 exact replay 0-write를 확인했다. 이후 47 receipt를 역순 rollback하여 45 target의 47행을 0행으로 만들면서 identity/crosswalk `42/42`와 upstream projection `1/12/47`을 보존했다.
+- `-ForceStartupFailure` 반례는 process 생성 직후 의도적으로 실패(exit `1`)시켰으며, 상위 소유 handle로 정확한 프로세스를 종료한 뒤 3321 listener `0`, 임시 datadir 없음, 운영 3306 PID `5328` 불변을 확인했다. cleanup 단계별 오류가 발생해도 환경 변수 복원은 독립적으로 끝까지 수행된다.
+- 최초 재시작 대사에서 `canonical_mini_pet_enhancement_rules.success_probability`의 projection 값 `1`과 MariaDB `DECIMAL(12,10)` 저장값 `1.0000000000` 차이를 검출했다. importer는 expected/actual 양쪽에 동일 SQL-type canonical 비교를 적용하며 DECIMAL은 부동소수 변환 없이 문자열로 scale만 정규화하고, INTEGER·BOOLEAN·JSON도 대칭 변환한다. 실제 값 차이는 계속 drift로 실패한다.
 
 ## 검증 결과
 
@@ -44,10 +49,13 @@
 | `node --import tsx --test test/object-domain-import-disposition.test.ts test/object-domain-import-field-map.test.ts test/object-domain-import-target-schema.test.ts test/object-domain-import-source-semantics.test.ts` | `18/18 PASS` |
 | `node --import tsx --test test/object-domain-import-target-schema.test.ts test/owned-object-state-hardening-migration.test.ts test/mini-pet-definition-binding-semantics.test.ts test/object-domain-import-field-map.test.ts test/object-data-model-contract.test.ts` | `35/35 PASS` |
 | Gate 1·2 전체 focused 계약·source semantics·migration suite (10 files) | `57/57 PASS` |
-| `node --import tsx --test test/data-migration-object-domain-import.test.ts` | `23/23 PASS` |
-| importer + object model + disposition focused suite (3 files) | `46/46 PASS` |
-| Catalog Projection + importer + object model/disposition focused suite | `58/58 PASS` |
-| `npm test` | `1787 PASS / 8 SKIP / 0 FAIL` (`1795` tests) |
+| `node --import tsx --test test/data-migration-object-domain-import.test.ts` | `24/24 PASS` |
+| Gate 5 prepare / restart replay-rollback (각 importer 24 + integration 1) | `25/25 PASS`, `25/25 PASS` |
+| `scripts/rehearse-object-domain-import-gate5.ps1` | `GATE5_HARNESS_PASS`, port `3321`, PID `21672→10660`, replay DML `0→0`, 3306 unchanged, exit `0` after cleanup |
+| Gate 5 forced startup failure cleanup | expected exit `1`; 3321 listener `0`, temp 없음, 3306 PID `5328` unchanged |
+| importer + object model + disposition focused suite (3 files) | `47/47 PASS` |
+| Catalog Projection + importer + object model/disposition focused suite | `59/59 PASS` |
+| `npm test` | `1788 PASS / 8 SKIP / 0 FAIL` (`1796` tests) |
 | `npm run object-data:validate` | 등록 대상 `73`, PASS |
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
@@ -55,6 +63,6 @@
 
 ## Gate 판정 경계
 
-- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer)를 대상으로 한다.
-- 독립 reviewer 판정과 커밋 전 Gate 3·4 구현 근거이며, MariaDB 통합 테스트의 환경 의존 SKIP 8건은 운영 실행 근거가 아니다.
+- 이 근거는 WBS742 Gate 1(현행 조사), Gate 2(DB 매핑), Gate 3(합성 fixture), Gate 4(domain importer), Gate 5(격리 DB 리허설)를 대상으로 한다.
+- Gate 5는 독립 reviewer 판정과 커밋 전 근거이며, 일반 전체 suite의 환경 의존 SKIP 8건을 Gate 5 증거로 대체하지 않는다. 위의 명시적 격리 harness가 별도의 실DB 증거이다.
 - 데이터 실이관, consumer parity, Shadow, 운영 배포 완료 근거로 사용하지 않는다.

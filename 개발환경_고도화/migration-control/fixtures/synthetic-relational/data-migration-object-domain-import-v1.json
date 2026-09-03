@@ -23,6 +23,7 @@
     "package-typed-extension-and-acyclic-nesting",
     "currency-initial-balance-operation-ledger-parity",
     "building-duplicate-floor-first-active",
-    "transaction-rollback-and-restart"
+    "transaction-rollback-and-restart",
+    "database-decimal-scale-canonical-replay"
   ]
 }
