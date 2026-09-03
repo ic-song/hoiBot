@@ -2,11 +2,18 @@
   "catalogVersion": "SC-20260902-1",
   "format": "hoibot-data-migration-catalog-projection-contract-v1",
   "migration": "458_data_migration_catalog_projection.sql",
+  "correctionMigration": "459_catalog_projection_upstream_envelope.sql",
   "commonStagingContract": "data-migration-common-staging.v1.json",
   "targetSchemaContract": "object-domain-import-target-schema.v1.json",
   "identityBindingContract": "object-domain-import-identity-bindings.v1.json",
   "objectDataModelContract": "object-data-model-standard.v1.json",
   "inputFormat": "hoibot-catalog-projection-manifest-v1",
+  "commonStagingEnvelope": {
+    "requiredFields": ["rawBundleSha256", "snapshotManifestSha256", "extractionManifestSha256", "expectedFileCount", "expectedTotalBytes", "projectedFileCount", "ignoredFileCount"],
+    "fingerprintColumn": "upstream_envelope_sha256",
+    "fingerprintInput": "stable JSON of the seven required fields plus commonStagingSha256 as stagingSha256",
+    "countConsistency": "projectedFileCount + ignoredFileCount = expectedFileCount"
+  },
   "sourceCoveragePolicy": "every row of one COMPLETE common staging run is decided exactly once as PROJECT, QUARANTINE, or IGNORE",
   "projectionPolicy": {
     "identity": "the projector emits GENERATED or REUSED identity mode plus a stable SHA-256 identity locator, target object type and target source namespace; WBS742 allocates or reuses the concrete CUID2 target PK atomically",
@@ -23,6 +30,7 @@
       "primaryKey": "catalog_projection_run_id",
       "foreignKeys": [{ "column": "common_staging_run_id", "references": "data_migration_common_staging_runs.common_staging_run_id" }],
       "unique": ["common_staging_run_id", "catalog_version", "projection_manifest_sha256"],
+      "upstreamEnvelope": ["raw_bundle_sha256", "snapshot_manifest_sha256", "extraction_manifest_sha256", "expected_file_count", "expected_total_bytes", "projected_file_count", "ignored_file_count", "upstream_envelope_sha256"],
       "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
     },
     {

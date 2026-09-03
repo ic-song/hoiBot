@@ -3,6 +3,15 @@
   "catalogVersion": "SC-20260902-1",
   "commonStagingRunId": "a1234567",
   "commonStagingSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "commonStagingEnvelope": {
+    "rawBundleSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "snapshotManifestSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "extractionManifestSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "expectedFileCount": 1,
+    "expectedTotalBytes": "1",
+    "projectedFileCount": 1,
+    "ignoredFileCount": 0
+  },
   "targetSchemaSha256": "d197ed22a91e33f5e184381aed48b4edc67a63fb7776c910e0072977f9ec9f92",
   "actor": "catalog-projection-test",
   "sources": [

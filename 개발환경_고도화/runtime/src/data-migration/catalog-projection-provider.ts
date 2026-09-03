@@ -46,6 +46,7 @@ export interface CatalogProjectionManifest {
   catalogVersion: "SC-20260902-1";
   commonStagingRunId: string;
   commonStagingSha256: string;
+  commonStagingEnvelope: { rawBundleSha256: string; snapshotManifestSha256: string; extractionManifestSha256: string; expectedFileCount: number; expectedTotalBytes: string; projectedFileCount: number; ignoredFileCount: number; };
   targetSchemaSha256: string;
   actor: string;
   sources: CatalogProjectionSourceDirective[];
@@ -131,9 +132,9 @@ export interface CatalogProjectionResult {
   replayed: boolean;
 }
 
-interface CommonRunRow { common_staging_run_id: string; staging_sha256: string; expected_record_count: number; run_status: string; }
+interface CommonRunRow { common_staging_run_id: string; raw_bundle_sha256: string; snapshot_manifest_sha256: string; extraction_manifest_sha256: string; staging_sha256: string; expected_file_count: number; expected_total_bytes: string; expected_record_count: number; projected_file_count: number; ignored_file_count: number; run_status: string; }
 interface CommonRecordRow { common_staging_record_id: string; source_locator_sha256: string; payload_json: string; payload_fingerprint: string; record_domain: string; record_kind: string; projection_status: string; quarantine_reason: string | null; }
-interface ProjectionRunRow { catalog_projection_run_id: string; target_schema_sha256: string; projection_sha256: string; expected_source_count: number; projected_source_count: number; quarantined_source_count: number; ignored_source_count: number; projected_row_count: number; run_status: string; }
+interface ProjectionRunRow { catalog_projection_run_id: string; raw_bundle_sha256: string; snapshot_manifest_sha256: string; extraction_manifest_sha256: string; expected_file_count: number; expected_total_bytes: string; projected_file_count: number; ignored_file_count: number; upstream_envelope_sha256: string; target_schema_sha256: string; projection_sha256: string; expected_source_count: number; projected_source_count: number; quarantined_source_count: number; ignored_source_count: number; projected_row_count: number; run_status: string; }
 interface StoredDecisionRow { catalog_source_decision_id: string; common_staging_record_id: string; source_locator_sha256: string; source_payload_fingerprint: string; record_domain: string; decision_status: string; decision_reason: string | null; projected_row_count: number; decision_fingerprint: string; }
 interface StoredProjectionRow { catalog_source_decision_id: string; projection_locator: string; identity_locator_sha256: string; identity_mode: string; target_table_name: string; target_pk_column_name: string; target_object_type: string; target_source_namespace: string; source_role: string | null; approval_kind: string | null; approval_sha256: string | null; target_payload_json: string; target_payload_fingerprint: string; value_origins_json: string; value_origins_fingerprint: string; reference_bindings_json: string; reference_bindings_fingerprint: string; }
 
@@ -362,6 +363,8 @@ function validateManifest(manifest: CatalogProjectionManifest, policy: CatalogPr
   if (manifest.format !== "hoibot-catalog-projection-manifest-v1" || manifest.catalogVersion !== "SC-20260902-1") throw new Error("CATALOG_PROJECTION_FORMAT_MISMATCH");
   assertObjectIdentityCandidate(manifest.commonStagingRunId);
   if (!SHA256.test(manifest.commonStagingSha256) || !SHA256.test(manifest.targetSchemaSha256) || manifest.targetSchemaSha256 !== policy.targetSchemaSha256) throw new Error("CATALOG_PROJECTION_SCHEMA_HASH_MISMATCH");
+  const envelope = manifest.commonStagingEnvelope;
+  if (![envelope.rawBundleSha256, envelope.snapshotManifestSha256, envelope.extractionManifestSha256].every((value) => SHA256.test(value)) || !UNSIGNED_INTEGER.test(envelope.expectedTotalBytes) || ![envelope.expectedFileCount, envelope.projectedFileCount, envelope.ignoredFileCount].every(Number.isSafeInteger) || envelope.projectedFileCount + envelope.ignoredFileCount !== envelope.expectedFileCount) throw new Error("CATALOG_PROJECTION_STAGING_ENVELOPE_INVALID");
   createObjectAuditValues(manifest.actor);
   if (manifest.sources.length === 0) throw new Error("CATALOG_PROJECTION_SOURCE_COVERAGE_EMPTY");
   const locators = new Set<string>();
@@ -418,6 +421,7 @@ export function calculateCatalogProjectionManifestSha256(manifest: CatalogProjec
     catalogVersion: manifest.catalogVersion,
     commonStagingRunId: manifest.commonStagingRunId,
     commonStagingSha256: manifest.commonStagingSha256,
+    commonStagingEnvelope: manifest.commonStagingEnvelope,
     targetSchemaSha256: manifest.targetSchemaSha256,
     sources
   }));
@@ -498,8 +502,11 @@ export class MariaCatalogProjectionRepository {
 
   private async projectTransaction(manifest: CatalogProjectionManifest, plan: CatalogProjectionPlan): Promise<CatalogProjectionResult> {
     return this.database.withTransaction(async (transaction) => {
-      const commonRun = (await transaction.query<CommonRunRow[]>("SELECT common_staging_run_id,staging_sha256,expected_record_count,run_status FROM data_migration_common_staging_runs WHERE common_staging_run_id=? FOR UPDATE", [manifest.commonStagingRunId]))[0];
+      const commonRun = (await transaction.query<CommonRunRow[]>("SELECT common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,staging_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,expected_record_count,projected_file_count,ignored_file_count,run_status FROM data_migration_common_staging_runs WHERE common_staging_run_id=? FOR UPDATE", [manifest.commonStagingRunId]))[0];
       if (commonRun === undefined || commonRun.run_status !== "COMPLETE") throw new Error("CATALOG_PROJECTION_STAGING_RUN_NOT_COMPLETE");
+      const envelope = manifest.commonStagingEnvelope;
+      if (commonRun.raw_bundle_sha256 !== envelope.rawBundleSha256 || commonRun.snapshot_manifest_sha256 !== envelope.snapshotManifestSha256 || commonRun.extraction_manifest_sha256 !== envelope.extractionManifestSha256 || Number(commonRun.expected_file_count) !== envelope.expectedFileCount || commonRun.expected_total_bytes !== envelope.expectedTotalBytes || Number(commonRun.projected_file_count) !== envelope.projectedFileCount || Number(commonRun.ignored_file_count) !== envelope.ignoredFileCount) throw new Error("CATALOG_PROJECTION_STAGING_ENVELOPE_MISMATCH");
+      const upstreamEnvelopeSha256 = sha256(stableJson({ ...envelope, stagingSha256: manifest.commonStagingSha256 }));
       if (commonRun.staging_sha256 !== manifest.commonStagingSha256 || Number(commonRun.expected_record_count) !== plan.decisions.length) throw new Error("CATALOG_PROJECTION_STAGING_PARITY_MISMATCH");
       const commonRecords = await transaction.query<CommonRecordRow[]>("SELECT common_staging_record_id,source_locator_sha256,CAST(payload_json AS CHAR) payload_json,payload_fingerprint,record_domain,record_kind,projection_status,quarantine_reason FROM data_migration_common_staging_records WHERE common_staging_run_id=? ORDER BY source_locator_sha256 FOR UPDATE", [manifest.commonStagingRunId]);
       if (commonRecords.length !== plan.decisions.length) throw new Error("CATALOG_PROJECTION_SOURCE_COVERAGE_MISMATCH");
@@ -511,7 +518,7 @@ export class MariaCatalogProjectionRepository {
         for (const output of manifest.sources.find((candidate) => candidate.sourceLocatorSha256 === decision.sourceLocatorSha256)!.outputs) assertCatalogProjectionSourceRole(source.record_kind, output);
         if (source.projection_status === "QUARANTINE" && (decision.decisionStatus !== "QUARANTINE" || decision.decisionReason !== source.quarantine_reason)) throw new Error("CATALOG_PROJECTION_STAGING_QUARANTINE_MUST_PROPAGATE");
       }
-      const prior = (await transaction.query<ProjectionRunRow[]>("SELECT catalog_projection_run_id,target_schema_sha256,projection_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status FROM data_migration_catalog_projection_runs WHERE common_staging_run_id=? AND catalog_version=? AND projection_manifest_sha256=? FOR UPDATE", [manifest.commonStagingRunId, manifest.catalogVersion, plan.projectionManifestSha256]))[0];
+      const prior = (await transaction.query<ProjectionRunRow[]>("SELECT catalog_projection_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,projected_file_count,ignored_file_count,upstream_envelope_sha256,target_schema_sha256,projection_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status FROM data_migration_catalog_projection_runs WHERE common_staging_run_id=? AND catalog_version=? AND projection_manifest_sha256=? FOR UPDATE", [manifest.commonStagingRunId, manifest.catalogVersion, plan.projectionManifestSha256]))[0];
       if (prior !== undefined) {
         this.assertRunParity(prior, manifest, plan);
         await this.verifyStored(transaction, prior.catalog_projection_run_id, commonByLocator, plan);
@@ -519,7 +526,7 @@ export class MariaCatalogProjectionRepository {
       }
       const audit = createObjectAuditValues(manifest.actor);
       const counts = this.counts(plan);
-      const runId = await insertWithCuidRetry(transaction, "INSERT INTO data_migration_catalog_projection_runs(catalog_projection_run_id,common_staging_run_id,catalog_version,projection_manifest_sha256,target_schema_sha256,projection_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,'PROJECTING',?,?,?,?)", (candidate) => [candidate, manifest.commonStagingRunId, manifest.catalogVersion, plan.projectionManifestSha256, manifest.targetSchemaSha256, plan.projectionSha256, plan.decisions.length, counts.projected, counts.quarantined, counts.ignored, counts.rows, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+      const runId = await insertWithCuidRetry(transaction, "INSERT INTO data_migration_catalog_projection_runs(catalog_projection_run_id,common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,expected_file_count,expected_total_bytes,projected_file_count,ignored_file_count,upstream_envelope_sha256,catalog_version,projection_manifest_sha256,target_schema_sha256,projection_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'PROJECTING',?,?,?,?)", (candidate) => [candidate, manifest.commonStagingRunId, envelope.rawBundleSha256, envelope.snapshotManifestSha256, envelope.extractionManifestSha256, envelope.expectedFileCount, envelope.expectedTotalBytes, envelope.projectedFileCount, envelope.ignoredFileCount, upstreamEnvelopeSha256, manifest.catalogVersion, plan.projectionManifestSha256, manifest.targetSchemaSha256, plan.projectionSha256, plan.decisions.length, counts.projected, counts.quarantined, counts.ignored, counts.rows, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
       for (const decision of plan.decisions) {
         const source = commonByLocator.get(decision.sourceLocatorSha256)!;
         const decisionId = await this.insertDecision(transaction, runId, source.common_staging_record_id, decision, audit);
@@ -550,7 +557,7 @@ export class MariaCatalogProjectionRepository {
 
   private assertRunParity(row: ProjectionRunRow, manifest: CatalogProjectionManifest, plan: CatalogProjectionPlan): void {
     const counts = this.counts(plan);
-    if (row.target_schema_sha256 !== manifest.targetSchemaSha256 || row.projection_sha256 !== plan.projectionSha256 || Number(row.expected_source_count) !== plan.decisions.length || Number(row.projected_source_count) !== counts.projected || Number(row.quarantined_source_count) !== counts.quarantined || Number(row.ignored_source_count) !== counts.ignored || Number(row.projected_row_count) !== counts.rows || row.run_status !== "COMPLETE") throw new Error("CATALOG_PROJECTION_REPLAY_CONFLICT");
+    if (row.raw_bundle_sha256 !== manifest.commonStagingEnvelope.rawBundleSha256 || row.snapshot_manifest_sha256 !== manifest.commonStagingEnvelope.snapshotManifestSha256 || row.extraction_manifest_sha256 !== manifest.commonStagingEnvelope.extractionManifestSha256 || Number(row.expected_file_count) !== manifest.commonStagingEnvelope.expectedFileCount || row.expected_total_bytes !== manifest.commonStagingEnvelope.expectedTotalBytes || Number(row.projected_file_count) !== manifest.commonStagingEnvelope.projectedFileCount || Number(row.ignored_file_count) !== manifest.commonStagingEnvelope.ignoredFileCount || row.upstream_envelope_sha256 !== sha256(stableJson({ ...manifest.commonStagingEnvelope, stagingSha256: manifest.commonStagingSha256 })) || row.target_schema_sha256 !== manifest.targetSchemaSha256 || row.projection_sha256 !== plan.projectionSha256 || Number(row.expected_source_count) !== plan.decisions.length || Number(row.projected_source_count) !== counts.projected || Number(row.quarantined_source_count) !== counts.quarantined || Number(row.ignored_source_count) !== counts.ignored || Number(row.projected_row_count) !== counts.rows || row.run_status !== "COMPLETE") throw new Error("CATALOG_PROJECTION_REPLAY_CONFLICT");
   }
 
   private async insertDecision(transaction: DatabaseTransaction, runId: string, commonRecordId: string, decision: CatalogProjectedDecision, audit: ObjectAuditValues): Promise<string> {

@@ -1,0 +1,14 @@
+ALTER TABLE data_migration_catalog_projection_runs
+  DROP CONSTRAINT chk_catalog_projection_file_counts,
+  DROP CONSTRAINT chk_catalog_projection_upstream_envelope_hash,
+  DROP CONSTRAINT chk_catalog_projection_extraction_manifest_hash,
+  DROP CONSTRAINT chk_catalog_projection_snapshot_manifest_hash,
+  DROP CONSTRAINT chk_catalog_projection_raw_bundle_hash,
+  DROP COLUMN upstream_envelope_sha256,
+  DROP COLUMN ignored_file_count,
+  DROP COLUMN projected_file_count,
+  DROP COLUMN expected_total_bytes,
+  DROP COLUMN expected_file_count,
+  DROP COLUMN extraction_manifest_sha256,
+  DROP COLUMN snapshot_manifest_sha256,
+  DROP COLUMN raw_bundle_sha256;

@@ -47,17 +47,26 @@
 
 ## 검증 결과
 
-- focused+WBS724+WBS742 회귀: `56 PASS / 0 FAIL`
-- MariaDB integration: 환경 변수 비활성으로 2개 suite skip; 실제 격리 DB 증거는 Gate 5에서 수행
+- focused+WBS724+WBS742 회귀와 실제 MariaDB integration: `59 PASS / 0 FAIL / 0 SKIP`
+- MariaDB integration: 작업트리 내부 fresh datadir, `127.0.0.1:3319`, allowlist DB `hoibot_rehearsal_wbs725_gate5`에서 2개 suite PASS
 - TypeScript typecheck: PASS
 - build: PASS
 - object-data model validator: 등록 대상 `70개` PASS
 - `git diff --check`: PASS
-- 독립 reviewer: P1/P2 없음, Gate 1~4 승인; 동일 56/56·validator 70·typecheck/build/diff-check 재현
+- 독립 reviewer: P1/P2 없음, Gate 1~5 승인; Maria 포함 59/59·validator 70·typecheck/build/diff-check 및 cleanup 재현·검토
+
+## Gate 5 격리 MariaDB 검증
+
+- MariaDB 12.2.2, 작업트리 `.tmp/wbs725-gate5-mariadb`, loopback port `3319`, allowlist DB `hoibot_rehearsal_wbs725_gate5`의 fresh datadir에서 기존 458 checksum을 보존한 전체 migration `447개`와 additive correction migration 459 등록을 확인했다.
+- 최초 projection은 run `t008ddfy`, decision `3`, record `1`을 적재했다. 실제 process를 PID `20172`에서 종료하고 PID `17520`으로 재기동해 listener 소유권을 확인한 뒤 같은 manifest가 `0/0`, `replayed=true`, 동일 run을 반환했다.
+- Common Staging `expected_total_bytes`를 1→2로 변조한 replay는 `CATALOG_PROJECTION_STAGING_ENVELOPE_MISMATCH`, 종료 1이었고 실패 전후 projection count는 `1/3/1`로 같았다. 시험값만 복원했다.
+- 논리 rollback은 projection `0/0/0`, upstream staging run `1`을 보존했다. migration 459 rollback은 신규 envelope column/registry `0`, 재실행은 migration 459만 적용해 총 `447`개를 복원했다.
+- 기존 projection run `hnkkl6c4`를 보존한 채 459만 rollback해 old458 형태로 만든 뒤 459를 재적용했다. canonical backfill hash `b9fd391a6569112fb04f219c9edc3a2b7e0c0b2e6b899270c9d943300ded00f2`가 provider와 일치했고 같은 manifest는 동일 run, decision/record 쓰기 `0/0`, `replayed=true`를 반환했다.
+- `RUN_MARIADB_INTEGRATION=true` 관련 회귀는 `59/59 PASS`, 실제 MariaDB suite 2개도 skip 없이 통과했다.
+- 운영 3306 서비스와 DB, 운영 JSON, Docker, `feature/prod`, Sheet, Gate 8은 변경하지 않았다. 종료 시 captured restart PID와 port listener를 대사하고 작업트리 내부 exact 임시 경로만 삭제한다.
 
 ## 남은 Gate
 
-- Gate 5: fresh non-operational MariaDB에서 migration 458, 실제 SQL replay/rollback/restart 통합
 - Gate 6: downstream importer가 decision/record count와 fingerprint parity를 소비하는 계약 확인
 - Gate 7: 격리 Shadow와 작업반장 승인
 - Gate 8: 금지·미수행

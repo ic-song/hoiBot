@@ -34,6 +34,7 @@ const policy: CatalogProjectionPolicy = { targetSchemaSha256: createHash("sha256
 const migration = readFileSync(new URL("../migrations/458_data_migration_catalog_projection.sql", import.meta.url), "utf8");
 const rollback = readFileSync(new URL("../migrations/rollback/458_data_migration_catalog_projection.rollback.sql", import.meta.url), "utf8");
 const HASH = "9".repeat(64);
+const upstreamEnvelopeSha256 = createHash("sha256").update(JSON.stringify({ expectedFileCount: fixture.commonStagingEnvelope.expectedFileCount, expectedTotalBytes: fixture.commonStagingEnvelope.expectedTotalBytes, extractionManifestSha256: fixture.commonStagingEnvelope.extractionManifestSha256, ignoredFileCount: fixture.commonStagingEnvelope.ignoredFileCount, projectedFileCount: fixture.commonStagingEnvelope.projectedFileCount, rawBundleSha256: fixture.commonStagingEnvelope.rawBundleSha256, snapshotManifestSha256: fixture.commonStagingEnvelope.snapshotManifestSha256, stagingSha256: fixture.commonStagingSha256 })).digest("hex");
 
 function sampleValue(column: CatalogTargetSchemaColumn): unknown {
   const type = column.sqlType.toUpperCase();
@@ -251,12 +252,12 @@ class ProjectionDatabase implements DatabaseClient {
     return { affectedRows: 1n, insertId: 0n };
   }
   async query<T>(sql: string): Promise<T> {
-    if (sql.includes("FROM data_migration_common_staging_runs")) return [{ common_staging_run_id: fixture.commonStagingRunId, staging_sha256: fixture.commonStagingSha256, expected_record_count: fixture.sources.length, run_status: "COMPLETE" }] as T;
+    if (sql.includes("FROM data_migration_common_staging_runs")) return [{ common_staging_run_id: fixture.commonStagingRunId, raw_bundle_sha256: fixture.commonStagingEnvelope.rawBundleSha256, snapshot_manifest_sha256: fixture.commonStagingEnvelope.snapshotManifestSha256, extraction_manifest_sha256: fixture.commonStagingEnvelope.extractionManifestSha256, staging_sha256: fixture.commonStagingSha256, expected_file_count: fixture.commonStagingEnvelope.expectedFileCount, expected_total_bytes: fixture.commonStagingEnvelope.expectedTotalBytes, expected_record_count: fixture.sources.length, projected_file_count: fixture.commonStagingEnvelope.projectedFileCount, ignored_file_count: fixture.commonStagingEnvelope.ignoredFileCount, run_status: "COMPLETE" }] as T;
     if (sql.includes("FROM data_migration_common_staging_records")) return fixture.sources.map((source, index) => ({ common_staging_record_id: `b123456${index}`, source_locator_sha256: source.sourceLocatorSha256, payload_json: source.decisionStatus === "PROJECT" ? JSON.stringify({ item_name: this.itemName }) : "{}", payload_fingerprint: source.sourcePayloadFingerprint, record_domain: source.recordDomain, record_kind: "SYNTHETIC", projection_status: source.decisionStatus === "QUARANTINE" ? "QUARANTINE" : "PROJECT", quarantine_reason: source.decisionStatus === "QUARANTINE" ? source.decisionReason : null })).sort((left, right) => left.source_locator_sha256.localeCompare(right.source_locator_sha256, "en")) as T;
     if (sql.includes("FROM data_migration_catalog_projection_runs")) {
       if (this.replayRunId === undefined) return [] as T;
       const counts = { projected: this.plan.decisions.filter((row) => row.decisionStatus === "PROJECT").length, quarantined: this.plan.decisions.filter((row) => row.decisionStatus === "QUARANTINE").length, ignored: this.plan.decisions.filter((row) => row.decisionStatus === "IGNORE").length, rows: this.plan.decisions.reduce((sum, row) => sum + row.outputs.length, 0) };
-      return [{ catalog_projection_run_id: this.replayRunId, target_schema_sha256: fixture.targetSchemaSha256, projection_sha256: this.plan.projectionSha256, expected_source_count: this.plan.decisions.length, projected_source_count: counts.projected, quarantined_source_count: counts.quarantined, ignored_source_count: counts.ignored, projected_row_count: counts.rows, run_status: "COMPLETE" }] as T;
+      return [{ catalog_projection_run_id: this.replayRunId, raw_bundle_sha256: fixture.commonStagingEnvelope.rawBundleSha256, snapshot_manifest_sha256: fixture.commonStagingEnvelope.snapshotManifestSha256, extraction_manifest_sha256: fixture.commonStagingEnvelope.extractionManifestSha256, expected_file_count: fixture.commonStagingEnvelope.expectedFileCount, expected_total_bytes: fixture.commonStagingEnvelope.expectedTotalBytes, projected_file_count: fixture.commonStagingEnvelope.projectedFileCount, ignored_file_count: fixture.commonStagingEnvelope.ignoredFileCount, upstream_envelope_sha256: upstreamEnvelopeSha256, target_schema_sha256: fixture.targetSchemaSha256, projection_sha256: this.plan.projectionSha256, expected_source_count: this.plan.decisions.length, projected_source_count: counts.projected, quarantined_source_count: counts.quarantined, ignored_source_count: counts.ignored, projected_row_count: counts.rows, run_status: "COMPLETE" }] as T;
     }
     if (sql.includes("FROM data_migration_catalog_source_decisions")) return this.plan.decisions.map((decision, index) => ({ catalog_source_decision_id: this.decisionIds.get(decision.sourceLocatorSha256) ?? `c123456${index}`, common_staging_record_id: `b123456${fixture.sources.findIndex((source) => source.sourceLocatorSha256 === decision.sourceLocatorSha256)}`, source_locator_sha256: decision.sourceLocatorSha256, source_payload_fingerprint: decision.sourcePayloadFingerprint, record_domain: decision.recordDomain, decision_status: decision.decisionStatus, decision_reason: decision.decisionReason, projected_row_count: decision.outputs.length, decision_fingerprint: decision.decisionFingerprint })) as T;
     if (sql.includes("FROM data_migration_catalog_projection_records")) {
@@ -303,6 +304,14 @@ describe("MariaCatalogProjectionRepository Gate 4", () => {
     changed.sources[0]!.outputs[0]!.sourceBindings.item_name = "/constructor/name";
     const database = new ProjectionDatabase(buildCatalogProjectionPlan(changed, policy));
     await assert.rejects(() => new MariaCatalogProjectionRepository(database).project(changed, policy), /SOURCE_EXACT_MISMATCH/);
+    assert.equal(database.writes.length, 0);
+  });
+
+  it("fails with zero writes when the locked Common Staging lineage envelope drifts", async () => {
+    const changed = structuredClone(fixture);
+    changed.commonStagingEnvelope.rawBundleSha256 = "f".repeat(64);
+    const database = new ProjectionDatabase(buildCatalogProjectionPlan(changed, policy));
+    await assert.rejects(() => new MariaCatalogProjectionRepository(database).project(changed, policy), /STAGING_ENVELOPE_MISMATCH/);
     assert.equal(database.writes.length, 0);
   });
 });
