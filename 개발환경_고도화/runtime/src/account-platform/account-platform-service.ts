@@ -70,7 +70,7 @@ export function deriveIdentityScopeKey(input: AccountPlatformContextInput): stri
 
 // /계정변경의 정확한 명령 형식에서 대상 게임계정만 추출합니다.
 export function readAccountSwitchSelector(message: string): string | null {
-  const match = /^\/계정변경\s+([^\s].*)$/.exec(message);
+  const match = /^\/계정변경[ \t]+([^ \t\r\n][^\r\n]*)$/.exec(message);
   if (match?.[1] === undefined || match[1].trim() !== match[1]) return null;
   return match[1];
 }
