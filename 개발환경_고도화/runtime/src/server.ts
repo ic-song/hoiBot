@@ -65,6 +65,7 @@ export async function startServer(
   let app: RuntimeApp | undefined;
   let outboxTimer: NodeJS.Timeout | undefined;
   let guildTerritoryTransitionTimer: NodeJS.Timeout | undefined;
+  let guildTerritoryTransitionInFlight: Promise<void> | undefined;
   let shuttingDown = false;
 
   try {
@@ -87,15 +88,16 @@ export async function startServer(
     if (database !== undefined) {
       const worker = createOutboxRunner(database, (message) => deliverIrisText(config, message));
       const guildTerritoryTransitionWorker = createGuildTerritoryTransitionRunner(database);
-      let guildTerritoryTransitionRunning = false;
-      const runGuildTerritoryTransitions = async (): Promise<void> => {
-        if (guildTerritoryTransitionRunning) return;
-        guildTerritoryTransitionRunning = true;
-        try {
-          await guildTerritoryTransitionWorker.runDueTransitions();
-        } finally {
-          guildTerritoryTransitionRunning = false;
-        }
+      const runGuildTerritoryTransitions = (): Promise<void> => {
+        if (guildTerritoryTransitionInFlight !== undefined) return guildTerritoryTransitionInFlight;
+        const current = Promise.resolve()
+          .then(() => guildTerritoryTransitionWorker.runDueTransitions())
+          .then(() => undefined)
+          .finally(() => {
+            if (guildTerritoryTransitionInFlight === current) guildTerritoryTransitionInFlight = undefined;
+          });
+        guildTerritoryTransitionInFlight = current;
+        return current;
       };
       await runGuildTerritoryTransitions();
       outboxTimer = setRecurring(() => {
@@ -125,6 +127,13 @@ export async function startServer(
       if (outboxTimer !== undefined) clearInterval(outboxTimer);
       if (guildTerritoryTransitionTimer !== undefined) clearInterval(guildTerritoryTransitionTimer);
       startedApp.log.info({ signal }, "server.shutdown.started");
+      if (guildTerritoryTransitionInFlight !== undefined) {
+        try {
+          await guildTerritoryTransitionInFlight;
+        } catch (error) {
+          startedApp.log.error({ err: error }, "guild-territory.transition-worker.drain-failed");
+        }
+      }
       await startedApp.close();
       startedApp.log.info("server.shutdown.completed");
     }

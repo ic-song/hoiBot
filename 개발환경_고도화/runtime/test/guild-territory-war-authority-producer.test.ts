@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
 import { GuildTerritoryAttackService } from "../src/guild/guild-territory-attack-service.js";
+import { GuildTerritoryOccupationResetService } from "../src/guild/guild-territory-occupation-reset-service.js";
 import { GuildTerritoryWarFinishService } from "../src/guild/guild-territory-war-finish-service.js";
 
 function rollbackDatabase(query: DatabaseTransaction["query"], writes: { value: number }, rolledBack: { value: boolean }): DatabaseClient {
@@ -58,6 +59,21 @@ describe("guild territory authority producer rollback", () => {
     }, writes, rolledBack);
 
     await assert.rejects(() => new GuildTerritoryAttackService(database).attack({ eventId: "attack-1", externalUserId: "user", channelId: "room", targetNo: 1 }), /활성 상태/);
+    assert.equal(writes.value, 0);
+    assert.equal(rolledBack.value, true);
+  });
+
+  it("rolls back occupation reset without DML when the scoped war is contradictory", async () => {
+    const writes = { value: 0 }, rolledBack = { value: false };
+    const database = rollbackDatabase(async <T>(sql: string) => {
+      if (sql.includes("FROM external_identities identity")) return [{ operator_id: 7n, player_id: 8n }] as T;
+      if (sql.includes("FROM operations")) return [] as T;
+      if (sql.includes("guild_territory_start_scopes")) return [{ war_id: 1n }] as T;
+      if (sql.includes("FROM guild_territory_wars")) return [{ id: 1n, war_key: "synthetic", active: 1, lifecycle_state: "PENDING_START", start_ready: 0, pending_start_token: null, pending_start_due_at: null, opening_token: null, opening_due_at: null, castle_lord_player_id: null, castle_earnings: "0", castle_defense_count: 0n, version: 1n }] as T;
+      throw new Error(`Unexpected query: ${sql}`);
+    }, writes, rolledBack);
+
+    await assert.rejects(() => new GuildTerritoryOccupationResetService(database).reset({ eventId: "reset-1", externalUserId: "user", channelId: "room", message: "/길드영지초기화" }), /활성 상태/);
     assert.equal(writes.value, 0);
     assert.equal(rolledBack.value, true);
   });
