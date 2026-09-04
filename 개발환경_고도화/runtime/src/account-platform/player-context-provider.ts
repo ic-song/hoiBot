@@ -36,6 +36,7 @@ interface PlayerContextRow {
   display_name: string | null;
   rank_emoji: string | null;
   provider_code: string | null;
+  caller_link_id?: string | null;
 }
 
 function fail(code: string): never {
@@ -66,12 +67,18 @@ function normalizeSelfLocator(input: { identityProviderCode: string; externalUse
 // 중복 identity 행은 player 쌍으로 접고 누락·복수 canonical 매핑은 차단합니다.
 function collapsePlayerContext(
   rows: readonly PlayerContextRow[],
-  input: { selectionSource: PlayerContext["selectionSource"]; platformCode?: string; externalContextId: string }
+  input: {
+    selectionSource: PlayerContext["selectionSource"];
+    platformCode?: string;
+    externalContextId: string;
+    requireCallerLink?: boolean;
+  }
 ): PlayerContext {
   if (rows.length === 0) fail("PLAYER_CONTEXT_MAPPING_REQUIRED");
   const pairs = new Map<string, { row: PlayerContextRow; identityId: bigint }>();
   for (const row of rows) {
     if (row.legacy_player_id === null || row.external_identity_id === null || row.canonical_player_id === null
+      || (input.requireCallerLink === true && row.caller_link_id == null)
       || row.display_name === null || row.provider_code === null || !/^[a-z][a-z0-9]{7}$/.test(row.canonical_player_id)) {
       fail("PLAYER_CONTEXT_MAPPING_DRIFT");
     }
@@ -139,7 +146,8 @@ export class MariaPlayerContextProvider implements PlayerContextPort {
     const activeRows = await database.query<PlayerContextRow[]>(
       `SELECT selection.active_player_id AS legacy_player_id,canonical_player.player_id AS canonical_player_id,
               caller_identity.id AS external_identity_id,profile.current_display_name AS display_name,
-              rank_profile.rank_emoji,caller_identity.provider_code
+              rank_profile.rank_emoji,caller_identity.provider_code,
+              caller_link.portal_game_account_link_id AS caller_link_id
          FROM account_platform_identities platform_identity
          JOIN account_platform_context_memberships membership
            ON membership.platform_identity_id=platform_identity.platform_identity_id AND membership.membership_status='ACTIVE'
@@ -154,9 +162,9 @@ export class MariaPlayerContextProvider implements PlayerContextPort {
          JOIN players player ON player.id=selection.active_player_id AND player.status='active' AND player.deleted_at IS NULL
          JOIN player_profiles profile ON profile.player_id=player.id
          LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id
-         JOIN external_identities caller_identity
+         LEFT JOIN external_identities caller_identity
            ON caller_identity.provider_code=? AND caller_identity.external_user_id=? AND caller_identity.status='linked'
-         JOIN portal_game_account_links caller_link
+         LEFT JOIN portal_game_account_links caller_link
            ON caller_link.portal_account_id=platform_identity.portal_account_id
           AND caller_link.player_id=caller_identity.player_id AND caller_link.link_status='ACTIVE'
          LEFT JOIN external_identities selected_identity
@@ -175,7 +183,8 @@ export class MariaPlayerContextProvider implements PlayerContextPort {
       return collapsePlayerContext(activeRows, {
         selectionSource: "ACTIVE_CONTEXT",
         platformCode: locator.providerCode,
-        externalContextId: input.externalContextId
+        externalContextId: input.externalContextId,
+        requireCallerLink: true
       });
     }
 

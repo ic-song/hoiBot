@@ -10,6 +10,7 @@ type Row = {
   display_name: string | null;
   rank_emoji: string | null;
   provider_code: string | null;
+  caller_link_id?: string | null;
 };
 
 function participant(active: Row[], legacy: Row[] = []): { database: PlayerContextReadParticipant; statements: Array<{ sql: string; values: readonly unknown[] }> } {
@@ -32,6 +33,7 @@ const mapped = (overrides: Partial<Row> = {}): Row => ({
   display_name: "가나다라",
   rank_emoji: "🌱",
   provider_code: "kakao",
+  caller_link_id: "link0001",
   ...overrides
 });
 
@@ -98,6 +100,18 @@ describe("MariaPlayerContextProvider", () => {
       /PLAYER_CONTEXT_MAPPING_DRIFT/
     );
     assert.equal(scripted.statements.length, 1);
+  });
+
+  it("does not fall back when an active selection exists but the caller portal link drifted", async () => {
+    const scripted = participant([mapped({ caller_link_id: null })], [mapped()]);
+    await assert.rejects(
+      new MariaPlayerContextProvider().resolveSelf(scripted.database, {
+        identityProviderCode: "kakao", externalUserId: "caller-1", externalContextId: "room-a"
+      }),
+      /PLAYER_CONTEXT_MAPPING_DRIFT/
+    );
+    assert.equal(scripted.statements.length, 1);
+    assert.match(scripted.statements[0]!.sql, /LEFT JOIN portal_game_account_links caller_link/);
   });
 
   it("uses one Discord platform identity with server-scoped active selections", async () => {
