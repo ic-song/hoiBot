@@ -52,6 +52,10 @@ export interface AppWiringMutationHandlerOutcome<T> {
   readonly receipt: AppWiringReceiptResult & { readonly resultFingerprint: string };
   readonly typedReceipt: AppWiringTypedReceipt;
 }
+export interface AppWiringMutationReplyOutcome<T> extends AppWiringMutationHandlerOutcome<T> {
+  readonly reply: AppWiringIrisReplyDraft;
+}
+export interface AppWiringMutationReplyContext { readonly operationId: bigint }
 export interface AppWiringReadParticipant { query<T>(sql: string, values?: readonly unknown[]): Promise<T> }
 export interface AppWiringMutationParticipant extends AppWiringReadParticipant {
   execute(sql: string, values?: readonly unknown[]): Promise<DatabaseWriteResult>;
@@ -133,6 +137,10 @@ function assertDomainMutation(sql: string): void {
   if (!/^(?:INSERT|UPDATE|DELETE)\b/i.test(statement) || statement.includes(";") || /--|#|\/\*/.test(statement)) throw new Error("APP_WIRING_MUTATION_STATEMENT_FORBIDDEN");
   if (/\bcanonical_app_wiring_operations\b/i.test(statement)) throw new Error("APP_WIRING_CLAIM_TABLE_MUTATION_FORBIDDEN");
   if (/\bcanonical_app_wiring_receipt_links\b/i.test(statement)) throw new Error("APP_WIRING_RECEIPT_LINK_COORDINATOR_ONLY");
+}
+function assertMutationReplyDomainMutation(sql: string): void {
+  assertDomainMutation(sql);
+  if (/\b(?:operations|command_executions|outbox_messages)\b/i.test(sql)) throw new Error("APP_WIRING_REPLY_TABLE_COORDINATOR_ONLY");
 }
 function safeResult(value: AppWiringReceiptResult): { serialized: string; value: Readonly<AppWiringReceiptResult> } {
   if (Object.keys(value).some((key) => !["status", "referenceId", "resultFingerprint"].includes(key))) throw new Error("APP_WIRING_RESULT_KEY_FORBIDDEN");
@@ -376,6 +384,37 @@ export class MariaAppWiringOperationProvider {
     }
   }
 
+  // MODERN mutation의 도메인 영수증과 Iris outbox를 runMutation의 동일 controlled transaction에 참여시킵니다.
+  async runMutationReply<T>(claim:ActivePreparedClaim,handler:(db:AppWiringMutationParticipant,claim:AppWiringClaim,context:AppWiringMutationReplyContext)=>Promise<AppWiringMutationReplyOutcome<T>>):Promise<AppWiringPersistedReply<T>>{
+    if(claim.claim.entrypointKind!=="IRIS"||claim.claim.route!=="MODERN"||claim.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
+    let persistedReply:AppWiringPersistedReply<T>["reply"]|undefined;
+    let expectedReceipt:Readonly<AppWiringReceiptResult>|undefined;
+    const value=await this.runMutation(claim,async(database,activeClaim)=>{
+      const operation=await database.execute(
+        "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'app-wiring.mutation-reply',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+        [randomUUID(),activeClaim.appWiringOperationId],
+      );
+      let domainParticipant!:AppWiringMutationParticipant;
+      domainParticipant=Object.freeze({
+        query:<R>(sql:string,values:readonly unknown[]=[])=>database.query<R>(sql,values),
+        execute:(sql:string,values:readonly unknown[]=[])=>{assertMutationReplyDomainMutation(sql);return database.execute(sql,values);},
+        withTransaction:<R>(work:(db:AppWiringMutationParticipant)=>Promise<R>)=>database.withTransaction(()=>work(domainParticipant)),
+      });
+      const outcome=await handler(domainParticipant,activeClaim,Object.freeze({operationId:operation.insertId}));
+      validateReadOnlyReplyDraft(outcome.reply);
+      const binding=receiptBinding(outcome.typedReceipt);
+      if(outcome.receipt.referenceId!==undefined&&outcome.receipt.referenceId!==binding.operationId)throw new Error("APP_WIRING_REPLY_REFERENCE_TYPED_RECEIPT_MISMATCH");
+      const reply=await this.persistIrisReply(database,activeClaim,outcome.reply,operation.insertId,outcome.receipt.status,outcome.receipt.resultFingerprint,binding.operationId);
+      persistedReply=reply;
+      expectedReceipt=Object.freeze({status:outcome.receipt.status,referenceId:binding.operationId,resultFingerprint:outcome.receipt.resultFingerprint});
+      return {...outcome,receipt:{...outcome.receipt,referenceId:binding.operationId}};
+    });
+    if(persistedReply===undefined||expectedReceipt===undefined)throw new Error("APP_WIRING_MUTATION_REPLY_NOT_PERSISTED");
+    const verifiedReply=await this.replayMutationReply({...claim.claim,claimState:"COMPLETED",result:expectedReceipt});
+    if(verifiedReply.outboxId!==persistedReply.outboxId||verifiedReply.room!==persistedReply.room||verifiedReply.data!==persistedReply.data)throw new Error("APP_WIRING_MUTATION_REPLY_RECONCILIATION_DRIFT");
+    return {value,reply:verifiedReply};
+  }
+
   async runReadOnly<T>(claim: ActivePreparedClaim, handler:(db:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<AppWiringHandlerOutcome<T>>):Promise<T>{
     const secret=getSecret(claim,"READ_ONLY"); if(claim.claim.route==="REJECT")throw new Error("APP_WIRING_REJECT_DATABASE_FORBIDDEN");
     const outcome=await this.database.withReadOnlySnapshot(tx=>handler(this.readParticipant(tx),claim.claim)); await this.complete(claim,secret,outcome.receipt); return outcome.value;
@@ -445,7 +484,15 @@ export class MariaAppWiringOperationProvider {
     }
   }
   async replayReadOnlyReply(claim:AppWiringReplayClaim):Promise<{readonly outboxId:string;readonly room:string;readonly data:string}>{
-    if(claim.claimState!=="COMPLETED"||claim.entrypointKind!=="IRIS"||!("effectMode" in claim)||claim.effectMode!=="READ_ONLY"||claim.result?.referenceId===undefined||claim.result.resultFingerprint===undefined)throw new Error("APP_WIRING_REPLY_REPLAY_RECEIPT_INVALID");
+    return this.replayIrisReply(claim,"READ_ONLY","app-wiring.read-only-reply");
+  }
+  async replayMutationReply(claim:AppWiringReplayClaim):Promise<{readonly outboxId:string;readonly room:string;readonly data:string}>{
+    return this.replayIrisReply(claim,"MUTATION","app-wiring.mutation-reply");
+  }
+  private async replayIrisReply(claim:AppWiringReplayClaim,effectMode:AppWiringEffectMode,idempotencyScope:string):Promise<{readonly outboxId:string;readonly room:string;readonly data:string}>{
+    if(claim.claimState!=="COMPLETED"||claim.entrypointKind!=="IRIS"||!("effectMode" in claim)||claim.effectMode!==effectMode||claim.result?.referenceId===undefined||claim.result.resultFingerprint===undefined)throw new Error("APP_WIRING_REPLY_REPLAY_RECEIPT_INVALID");
+    if(effectMode==="MUTATION"&&claim.route!=="MODERN")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
+    const lookupByOutbox=effectMode==="READ_ONLY";
     const rows=await this.database.withControlledTransaction(tx=>tx.query<ReadOnlyReplyRow[]>(
       `SELECT operation.id operation_id,operation.idempotency_scope,operation.idempotency_key,operation.status operation_status,
               operation.result_json operation_result_json,execution.event_id,execution.command_code,execution.execution_status,execution.result_code,
@@ -453,20 +500,21 @@ export class MariaAppWiringOperationProvider {
          FROM outbox_messages outbox
          JOIN operations operation ON operation.id=outbox.operation_id
          JOIN command_executions execution ON execution.operation_id=operation.id
-        WHERE outbox.id=? FOR UPDATE`,
-      [claim.result!.referenceId],
+        WHERE ${lookupByOutbox?"outbox.id=?":"operation.idempotency_scope=? AND operation.idempotency_key=?"} FOR UPDATE`,
+      lookupByOutbox?[claim.result!.referenceId]:[idempotencyScope,claim.appWiringOperationId],
     ));
     if(rows.length!==1)throw new Error("APP_WIRING_REPLY_REPLAY_CARDINALITY_INVALID");
     const row=rows[0]!;
     const operationResult=typeof row.operation_result_json==="string"?JSON.parse(row.operation_result_json) as Record<string,unknown>:row.operation_result_json;
     const data=readPayloadData(row.payload_json);
-    if(row.idempotency_scope!=="app-wiring.read-only-reply"||row.idempotency_key!==claim.appWiringOperationId||row.operation_status!=="completed"
+    if(row.idempotency_scope!==idempotencyScope||row.idempotency_key!==claim.appWiringOperationId||row.operation_status!=="completed"
       ||row.execution_status!=="completed"||row.result_code!=="reply_queued"||row.provider_code!=="iris"||row.message_type!=="text"
-      ||row.outbox_id.toString()!==claim.result.referenceId||operationResult===null
+      ||(lookupByOutbox&&row.outbox_id.toString()!==claim.result.referenceId)||operationResult===null
       ||operationResult.appWiringOperationId!==claim.appWiringOperationId||operationResult.eventId!==row.event_id.toString()
       ||operationResult.commandCode!==row.command_code||operationResult.destinationId!==row.destination_id||operationResult.data!==data
       ||operationResult.outboxId!==row.outbox_id.toString()||operationResult.status!==claim.result.status
-      ||operationResult.resultFingerprint!==claim.result.resultFingerprint)throw new Error("APP_WIRING_REPLY_REPLAY_DRIFT");
+      ||operationResult.resultFingerprint!==claim.result.resultFingerprint
+      ||(!lookupByOutbox&&operationResult.typedReceiptId!==claim.result.referenceId))throw new Error("APP_WIRING_REPLY_REPLAY_DRIFT");
     return Object.freeze({outboxId:row.outbox_id.toString(),room:row.destination_id,data});
   }
   async runReject<T>(claim:ActivePreparedClaim,handler:(claim:AppWiringClaim)=>Promise<AppWiringHandlerOutcome<T>>):Promise<T>{
@@ -479,6 +527,20 @@ export class MariaAppWiringOperationProvider {
     catch(error){if(attempted){const row=await this.database.withControlledTransaction(tx=>readClaim(tx,claim.claim.requestIdentityFingerprint));if(exactTerminalIdentity(row,claim.claim,secret)&&row.claim_state==="FAILED"&&row.error_code===errorCode&&row.lease_token===null)return;}throw error;}
   }
   private readParticipant(tx:Pick<ReadOnlySnapshotTransaction,"query">):AppWiringReadParticipant{return Object.freeze({query:async<T>(sql:string,values:readonly unknown[]=[])=>{assertReadOnlySqlStatement(sql,false);return tx.query<T>(sql,values);}});}
+  private async persistIrisReply<T>(database:AppWiringMutationParticipant,claim:AppWiringClaim,reply:AppWiringIrisReplyDraft,operationId:bigint,status:string,resultFingerprint:string,typedReceiptId:string):Promise<AppWiringPersistedReply<T>["reply"]>{
+    await database.execute(
+      "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+      [reply.eventId,reply.commandCode,operationId],
+    );
+    const outbox=await database.execute(
+      "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+      [operationId,reply.destinationId,JSON.stringify({data:reply.data})],
+    );
+    const operationResult=JSON.stringify({appWiringOperationId:claim.appWiringOperationId,commandCode:reply.commandCode,data:reply.data,destinationId:reply.destinationId,eventId:reply.eventId,outboxId:outbox.insertId.toString(),resultFingerprint,status,typedReceiptId});
+    const terminal=await database.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=? AND status='processing'",[operationResult,operationId]);
+    if(terminal.affectedRows!==1n)throw new Error("APP_WIRING_REPLY_OPERATION_TRANSITION_CONFLICT");
+    return Object.freeze({outboxId:outbox.insertId.toString(),room:reply.destinationId,data:reply.data});
+  }
   private async complete(claim:ActivePreparedClaim,secret:PreparedSecret,value:AppWiringReceiptResult):Promise<void>{const receipt=safeResult(value);let attempted=false;try{await this.database.withControlledTransaction(async tx=>{await this.assertLease(tx,claim,secret,true);const audit=createObjectAuditValues(secret.actor,this.now());attempted=true;const result=await tx.execute("UPDATE canonical_app_wiring_operations SET claim_state='COMPLETED',result_json=?,error_code=NULL,lease_token=NULL,lease_expires_time=NULL,recovery_status='NONE',recovery_code=NULL,UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='CLAIMED' AND lease_token=? AND lease_generation=?",[receipt.serialized,audit.UPDATE_USER,audit.UPDATE_TIME,claim.claim.appWiringOperationId,secret.leaseToken,secret.leaseGeneration]);if(result.affectedRows!==1n)throw new Error("APP_WIRING_TERMINAL_TRANSITION_CONFLICT");});}catch(error){if(attempted){const row=await this.database.withControlledTransaction(tx=>readClaim(tx,claim.claim.requestIdentityFingerprint));if(exactTerminalIdentity(row,claim.claim,secret)&&row.claim_state==="COMPLETED"&&row.result_json===receipt.serialized&&row.lease_token===null)return;}throw error;}}
   private async assertLease(tx:ControlledDatabaseTransaction,claim:ActivePreparedClaim,secret:PreparedSecret,unexpired:boolean):Promise<void>{const row=await readClaim(tx,claim.claim.requestIdentityFingerprint);if(row===undefined||row.app_wiring_operation_id!==claim.claim.appWiringOperationId||row.claim_state!=="CLAIMED"||row.lease_token!==secret.leaseToken||row.lease_generation===null||BigInt(row.lease_generation)!==secret.leaseGeneration)throw new Error("APP_WIRING_LEASE_FENCE_CONFLICT");const now=createObjectAuditValues(secret.actor,this.now()).UPDATE_TIME;if(unexpired&&(row.lease_expires_time===null||row.lease_expires_time<=now))throw new Error("APP_WIRING_LEASE_EXPIRED");}
   private async assertMutationLease(tx:ControlledDatabaseTransaction,claim:ActivePreparedClaim,secret:PreparedSecret,unexpired:boolean):Promise<void>{const row=await readClaim(tx,claim.claim.requestIdentityFingerprint);if(row===undefined||row.app_wiring_operation_id!==claim.claim.appWiringOperationId||row.claim_state!=="MUTATION_STARTED"||row.lease_token!==secret.leaseToken||row.lease_generation===null||BigInt(row.lease_generation)!==secret.leaseGeneration)throw new Error("APP_WIRING_LEASE_FENCE_CONFLICT");const now=createObjectAuditValues(secret.actor,this.now()).UPDATE_TIME;if(unexpired&&(row.lease_expires_time===null||row.lease_expires_time<=now))throw new Error("APP_WIRING_LEASE_EXPIRED");}

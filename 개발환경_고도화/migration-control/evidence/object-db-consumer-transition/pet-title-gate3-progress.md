@@ -19,7 +19,7 @@
 - 현재 PET-TITLE primary 소비자: 23개
 - 공용 CONTEXT-BRIDGE 소비자: 13개
 - 전체 소비자 매니페스트: 1,101개
-- 매니페스트 SHA-256: `78e22756d60ff62c14643184988b1fbc0556f468801407206311ba9c54ed052b`
+- 매니페스트 SHA-256: `fe072b6b893bf32dc5a5e9d174b7ce820eb4f0903c2eda3a602d80d54db77142`
 
 ## 구현된 경계
 
@@ -38,6 +38,10 @@
 - 대상 이름의 레거시 첫 4 UTF-16 code-unit 처리는 JavaScript `slice(0, 4)`에서 보존하고 SQL 문자열 절단으로 대체하지 않습니다.
 - 공용 `runReadOnlyReply`는 canonical 조회, legacy operation, command execution, Iris outbox, canonical claim 완료를 하나의 controlled transaction으로 저장합니다.
 - 응답 handler에는 query-only participant만 노출하며, 재실행은 저장된 outbox·operation·execution·fingerprint를 대사한 뒤 동일 outbox를 반환합니다.
+- 공용 `runMutationReply`는 typed domain receipt/link, legacy operation, command execution, Iris outbox, canonical claim 완료를 하나의 controlled transaction으로 저장합니다.
+- mutation 재실행은 typed receipt ID를 claim reference로 유지하고 app-wiring operation ID의 고유 reply graph를 대사해 동일 outbox만 반환합니다.
+- mutation handler는 coordinator 소유 `operations`, `command_executions`, `outbox_messages`를 직접 변경할 수 없으며 중복 응답 outbox 생성을 transaction 안에서 차단합니다.
+- mutation reply 재실행은 저장된 경로가 `MODERN/MUTATION`인지 콜백 전에 다시 검증합니다.
 - 재시작 후 미전송 outbox는 기존 `OutboxWorker`의 pending/failed 재전송 경로를 사용합니다.
 
 ## 확인된 레거시 차이
@@ -53,9 +57,10 @@
 - PET-TITLE 및 READ_ONLY app-wiring 집중 테스트: 35/35 통과
 - 실제 앱 통합 테스트: 41/41 통과
 - READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
+- MUTATION reply 원자성 테스트: 10/10 통과(정상 저장·동일 outbox replay·4개 실패 지점 전체 rollback·commit 결과 불명 복구·payload/typed reference drift 차단·중복 outbox 차단·legacy replay 차단)
 - 소비자 안정 ID 계약 테스트: 5/5 통과
 - 소비자 재도출·runtime boundary 계약: 18/18 통과
-- 전체 runtime 회귀: 2,084개 중 2,076 통과, 실패 0, 환경 의존 8개 건너뜀
+- 전체 runtime 회귀: 2,095개 중 2,087 통과, 실패 0, 환경 의존 8개 건너뜀(마지막 2개 보완 테스트는 별도 10/10 집중 검증)
 - TypeScript typecheck: 통과
 - JSON 계약 파싱: 14/14 통과
 - `git diff --check`: 통과(줄바꿈 경고만 존재)

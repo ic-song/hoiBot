@@ -3,6 +3,8 @@ import type {
   AppWiringClaimInput,
   AppWiringHandlerOutcome,
   AppWiringMutationHandlerOutcome,
+  AppWiringMutationReplyOutcome,
+  AppWiringMutationReplyContext,
   AppWiringMutationParticipant,
   AppWiringPersistedReply,
   AppWiringReadParticipant,
@@ -45,6 +47,15 @@ export interface AppWiringReadOnlyReplyEntrypointInput<T> {
   readonly errorCode: (error: unknown) => string;
 }
 
+export interface AppWiringMutationReplyEntrypointInput<T> {
+  readonly claim: AppWiringClaimInput;
+  readonly resolveRoute: () => AppWiringRouteDecision | Promise<AppWiringRouteDecision>;
+  readonly handler: (database: AppWiringMutationParticipant, claim: AppWiringClaim, context: AppWiringMutationReplyContext) => Promise<AppWiringMutationReplyOutcome<T>>;
+  readonly replayCompleted: (claim: AppWiringReplayClaim) => Promise<T>;
+  readonly replayFailed: (claim: AppWiringReplayClaim) => Promise<never>;
+  readonly errorCode: (error: unknown) => string;
+}
+
 // READ_ONLY/REJECT도 저장된 reason/handler route audit를 재사용하지만 typed mutation receipt는 요구하지 않습니다.
 // 저장된 route/effect만 실행하며 handler에는 해당 효과에 필요한 최소 DB capability만 제공합니다.
 export async function executeAppWiringEntrypoint<T>(provider: MariaAppWiringOperationProvider, input: AppWiringEntrypointInput<T>): Promise<T> {
@@ -76,6 +87,25 @@ export async function executeAppWiringReadOnlyReplyEntrypoint<T>(provider:MariaA
     return {value:await input.replayCompleted(prepared.claim),reply:await provider.replayReadOnlyReply(prepared.claim)};
   }
   try{return await provider.runReadOnlyReply(prepared,input.handler);}
+  catch(error){
+    try{await provider.fail(prepared,input.errorCode(error));}
+    catch(transitionError){throw new AggregateError([error,transitionError],"APP_WIRING_ENTRYPOINT_FAILURE_TRANSITION_FAILED");}
+    throw error;
+  }
+}
+
+// IRIS MODERN mutation은 도메인 typed receipt와 전송 outbox를 같은 claim transaction에서 확정합니다.
+export async function executeAppWiringMutationReplyEntrypoint<T>(provider:MariaAppWiringOperationProvider,input:AppWiringMutationReplyEntrypointInput<T>):Promise<AppWiringPersistedReply<T>>{
+  const prepared=await provider.prepare(input.claim,input.resolveRoute);
+  if(prepared.replayed){
+    if(prepared.claim.route!=="MODERN"||!("effectMode" in prepared.claim)||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
+    if(prepared.claim.claimState!=="COMPLETED")return input.replayFailed(prepared.claim);
+    return {value:await input.replayCompleted(prepared.claim),reply:await provider.replayMutationReply(prepared.claim)};
+  }
+  try{
+    if(prepared.claim.route!=="MODERN"||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
+    return await provider.runMutationReply(prepared,input.handler);
+  }
   catch(error){
     try{await provider.fail(prepared,input.errorCode(error));}
     catch(transitionError){throw new AggregateError([error,transitionError],"APP_WIRING_ENTRYPOINT_FAILURE_TRANSITION_FAILED");}

@@ -248,7 +248,7 @@
       "appSourceSha256": "43a8f867cb132321e8e7f80807fed96a746bb648efd7d34354a90c9c7f7998ce",
       "petExploreIngressSourceSha256": "d843190731458ce30f48a437d8930f99a5baeb86055df9f019a15f4518780262",
       "petExploreEventControlProviderSourceSha256": "c85d46d3bb4d7361837c6736e1e406025f7dd59af933c26ec9ef253374840c24",
-      "appWiringOperationProviderSourceSha256": "b42ed61e0eb5eabcbc3235c6e7292113946cdbcc9687ec26de99a1aa62fa6151",
+      "appWiringOperationProviderSourceSha256": "98105a7e913385d82c5e4011c40ba3844ab43f162a71939b35113b2bdd0deed4",
       "petExploreEventControlMigrationSourceSha256": "2ab904b3521cbf525f5165ee5d81b02da6f669a39fbc471aee84f3be01917ffa",
       "petExploreEventControlRollbackSourceSha256": "9dfc1104abf459c4e9a2a903bdb1fff63d4b134a0c7dd3e4a0386fb4cfdb47e8",
       "petDataCompareIngressSourceSha256": "10343fe9ee4f83b38090a861073a22b0a111758b10100d28847b09db260762cd",
@@ -287,13 +287,13 @@
     },
     {
       "file": "개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",
-      "observed": ["implements canonical request and payload fingerprints", "implements effect_mode, lease token and generation fencing, expired CLAIMED takeover, legacy metadata drain, and mutation recovery refusal", "implements T1 controlled mutation, typed receipt verification and link insertion, and terminal reconciliation"],
+      "observed": ["implements canonical request and payload fingerprints", "implements effect_mode, lease token and generation fencing, expired CLAIMED takeover, legacy metadata drain, and mutation recovery refusal", "implements T1 controlled mutation, typed receipt verification and link insertion, and terminal reconciliation", "implements a MODERN IRIS mutation-reply coordinator that preserves the typed receipt reference and replays one exact outbox through the app-wiring operation identity"],
       "missingRequired": ["production construction and calls from remaining IRIS, AUTOMATIC, ADMIN, and WEB paths", "typed receipt adapters for remaining mutation handlers"],
       "blockingReason": "PET_EXPLORE EVENT_CONTROL has one typed mutation receipt; SETTLEMENT, legacy handoff, and remaining ingress adoption are incomplete"
     },
     {
       "file": "개발환경_고도화/runtime/src/dispatch/app-wiring-entrypoint-runner.ts",
-      "observed": ["executes only the persisted route and effect through the minimum read or mutation capability", "replays terminal claims and records pre-terminal failures"],
+      "observed": ["executes only the persisted route and effect through the minimum read or mutation capability", "replays terminal claims and records pre-terminal failures", "provides a specialized IRIS MODERN MUTATION reply runner without opening LEGACY_FALLBACK mutation"],
       "missingRequired": ["production handler maps, replay loaders, normalized payload adapters, and error-code adapters for remaining families"],
       "blockingReason": "one audited PET_EXPLORE EVENT_CONTROL MODERN handler is accepted; SETTLEMENT MODERN, legacy handoff, and other ingress calls remain absent"
     },
