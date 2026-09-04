@@ -16,10 +16,10 @@
   - `PetTitleCanonicalReadProvider.listOwned`
   - `PetTitleCanonicalMutationProvider.select`
   - `PetTitleCanonicalMutationProvider.release`
-- 현재 PET-TITLE primary 소비자: 22개
-- 공용 CONTEXT-BRIDGE SQL 소비자: 2개
-- 전체 소비자 매니페스트: 1,100개
-- 매니페스트 SHA-256: `e0ac2219d271d29a94edfdb5033e89782b3565261c11d43c94d2f67c0f3bab6b`
+- 현재 PET-TITLE primary 소비자: 23개
+- 공용 CONTEXT-BRIDGE 소비자: 13개
+- 전체 소비자 매니페스트: 1,101개
+- 매니페스트 SHA-256: `78e22756d60ff62c14643184988b1fbc0556f468801407206311ba9c54ed052b`
 
 ## 구현된 경계
 
@@ -29,7 +29,8 @@
 - 선택·제거는 app-wiring mutation participant 안에서만 실행할 수 있습니다.
 - 선택·제거는 `canonical_pet_title_operations` 영수증과 `canonical_pet_title_operation_participants` OWNER 행을 남깁니다.
 - 기존 BIGINT 인스턴스와 전환 중 CHAR(8) 인스턴스는 사용자 응답에 노출하지 않습니다.
-- `PetTitleAppWiringIngress`는 목록 self/target의 MODERN·SHADOW·REJECT 경계를 구현했으며 `app.ts`에는 아직 연결하지 않았습니다.
+- `PetTitleAppWiringIngress`는 목록 self/target의 MODERN·SHADOW·REJECT 경계를 구현했고 `app.ts`의 실제 Iris 콜백에 연결했습니다.
+- self MODERN은 canonical 조회와 Iris outbox를 원자 저장한 뒤 저장된 응답만 전송하며, target MODERN은 정확한 room/principal 권한 parity가 완성될 때까지 `LEGACY_FALLBACK`으로 고정합니다.
 - PET-TITLE은 회원 컨텍스트 구현을 소유하지 않고, WBS746이 제공한 방/서버별 활성 계정 `PlayerContextPort`를 주입받습니다.
 - 활성 계정 행이 존재하지만 호출자 포털 연결이 누락·불일치하면 레거시 계정으로 후퇴하지 않고 `PLAYER_CONTEXT_MAPPING_DRIFT`로 차단합니다.
 - 포털에 연결된 게임계정은 인증되지 않은 방/서버에서 legacy crosswalk fallback 대상에서 제외하며, 해당 컨텍스트의 활성 계정 선택을 요구합니다.
@@ -47,12 +48,13 @@
 
 ## 검증
 
-- 집중 테스트: 30/30 통과
-- 최신 app-wiring/PET-TITLE/PlayerContext 집중 테스트: 42/42 통과
+- 계정/플랫폼 및 PlayerContext 집중 테스트: 38/38 통과
+- PET-TITLE 및 READ_ONLY app-wiring 집중 테스트: 32/32 통과
+- 실제 앱 통합 테스트: 41/41 통과
 - READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
-- 소비자 매니페스트·안정 ID 계약 테스트: 16/16 통과
-- 최신 소비자 재도출·stable ID·import disposition 계약: 22/22 통과
-- 전체 runtime 회귀: 2,033개 중 2,025 통과, 실패 0, 환경 의존 8개 건너뜀
+- 소비자 안정 ID 계약 테스트: 5/5 통과
+- 소비자 재도출·runtime boundary 계약: 18/18 통과
+- 전체 runtime 회귀: 2,084개 중 2,076 통과, 실패 0, 환경 의존 8개 건너뜀
 - TypeScript typecheck: 통과
 - JSON 계약 파싱: 14/14 통과
 - `git diff --check`: 통과(줄바꿈 경고만 존재)
@@ -60,8 +62,8 @@
 
 ## 남은 범위
 
-- WBS746 공용 PlayerContextPort 구현을 주입한 self/target 통합: 완료(운영 ingress 미연결)
-- PET_TITLE ingress를 `app.ts`에 연결하고 요청-local 즉시 전송과 재시작 outbox worker의 단일 전송 소유권을 검증
+- WBS746 공용 PlayerContextPort 구현을 주입한 self/target 통합: 완료
+- PET_TITLE ingress의 `app.ts` 연결, 요청-local 전송 및 재시작 outbox worker 경계: 완료
 - target 목록의 레거시 room/principal 권한을 안정 식별자로 확정한 authority provider 연결
 - 사용자 생성과 ITEM 티켓 차감을 한 트랜잭션으로 연결
 - 판매와 CURRENCY 포인트 지급을 한 트랜잭션으로 연결

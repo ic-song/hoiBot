@@ -171,14 +171,14 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(consumerManifest.audit.undeclaredSelectorCount, 0);
     assert.equal(consumerManifest.audit.registrySourceMismatchCount, 10);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.consumers.length, 1_100);
+    assert.equal(consumerManifest.consumers.length, 1_101);
     assert.deepEqual(consumerManifest.counts, {
       LEGACY_COMMAND: 684,
       AUTOMATIC_CALLBACK: 3,
       RUNTIME_DISPATCH: 199,
       ADMIN_COMMAND: 78,
       HTTP_WEB_ROUTE: 81,
-      APP_WIRING: 6,
+      APP_WIRING: 7,
       SQL_REPOSITORY: 49,
     });
     assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>

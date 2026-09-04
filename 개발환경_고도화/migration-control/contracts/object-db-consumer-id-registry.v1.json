@@ -5476,6 +5476,11 @@
       "state": "ACTIVE"
     },
     {
+      "logicalKey": "[\"APP_WIRING\",\"개발환경_고도화/runtime/src/app.ts\",\"dispatchAccountSwitchCommand\",\"dispatchAccountSwitchCommand\"]",
+      "consumerId": "app-wiring-9025c049bd98a75d",
+      "state": "ACTIVE"
+    },
+    {
       "logicalKey": "[\"APP_WIRING\",\"개발환경_고도화/runtime/src/app.ts\",\"dispatchPetTitleCommand\",\"dispatchPetTitleCommand\"]",
       "consumerId": "app-wiring-2dec8270b9d786b4",
       "state": "ACTIVE"
