@@ -134,6 +134,12 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
           rankEmoji: null, platformCode: "kakao", externalContextId: `room-a-${suffix}`, selectionSource: "ACTIVE_CONTEXT"
         }
       );
+      await assert.rejects(
+        playerContexts.resolveSelf(transaction, {
+          identityProviderCode: "kakao", externalUserId: `user-a-${suffix}`, externalContextId: `unverified-room-${suffix}`
+        }),
+        /PLAYER_CONTEXT_MAPPING_REQUIRED/
+      );
       assert.deepEqual(
         await playerContexts.resolveUniqueLegacyDisplayTarget(transaction, { targetKey: "레거시 대표" }),
         { canonicalPlayerId: representativeCanonicalId, legacyPlayerId: representative.playerId, displayName: "레거시 대표", rankEmoji: null }

@@ -61,6 +61,7 @@ describe("MariaPlayerContextProvider", () => {
     assert.equal(result.selectionSource, "LEGACY_CROSSWALK");
     assert.equal(result.externalIdentityId, "41");
     assert.deepEqual(scripted.statements[1]!.values, ["kakao", "legacy-user"]);
+    assert.match(scripted.statements[1]!.sql, /NOT EXISTS\s*\([\s\S]*portal_game_account_links linked_account/);
   });
 
   it("deduplicates multiple identities for the same legacy/canonical player pair", async () => {

@@ -200,7 +200,11 @@ export class MariaPlayerContextProvider implements PlayerContextPort {
          LEFT JOIN players player ON player.id=identity_row.player_id AND player.status='active' AND player.deleted_at IS NULL
          LEFT JOIN player_profiles profile ON profile.player_id=player.id
          LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id
-        WHERE identity_row.provider_code=? AND identity_row.external_user_id=? AND identity_row.status='linked'`,
+        WHERE identity_row.provider_code=? AND identity_row.external_user_id=? AND identity_row.status='linked'
+          AND NOT EXISTS (
+            SELECT 1 FROM portal_game_account_links linked_account
+             WHERE linked_account.player_id=identity_row.player_id AND linked_account.link_status='ACTIVE'
+          )`,
       [locator.providerCode, input.externalUserId]
     );
     return collapsePlayerContext(legacyRows, {
