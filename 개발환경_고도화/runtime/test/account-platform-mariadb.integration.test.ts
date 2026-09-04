@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { AccountPlatformChallengeService } from "../src/account-platform/account-platform-challenge-service.js";
+import { AccountPlatformActorContextResolver } from "../src/account-platform/account-platform-actor-context-resolver.js";
+import { AccountSwitchCommandService } from "../src/account-platform/account-switch-command-service.js";
 import { AccountPlatformService } from "../src/account-platform/account-platform-service.js";
 import { MariaAccountPlatformRepository } from "../src/account-platform/maria-account-platform-repository.js";
 import { loadConfig } from "../src/config.js";
@@ -71,7 +73,8 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
         "INSERT INTO user_accounts(login_id,password_hash,system_account_name,gender_code,status) VALUES (?,?,?,'unspecified','active')",
         [`amgp${suffix.slice(-12)}`, "synthetic", `AMGP 포털 ${suffix}`]
       );
-      const service = new AccountPlatformService(new MariaAccountPlatformRepository(createScopedDatabaseClient(transaction)));
+      const scoped = createScopedDatabaseClient(transaction);
+      const service = new AccountPlatformService(new MariaAccountPlatformRepository(scoped));
       const representative = await service.verifyGameAccount({
         platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-a-${suffix}`, externalUserKey: `user-a-${suffix}`,
         requestKey: `verify-representative-${suffix}`, legacyUserAccountId: account.insertId.toString(), purpose: "LEGACY_GAME_ACCOUNT_LINK",
@@ -102,6 +105,29 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       });
       assert.equal(switched.playerId, representative.playerId);
       assert.equal(replay.replayed, true);
+      assert.equal((await service.resolveActivePlayer({ platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-b-${suffix}`, externalUserKey: `user-b-${suffix}` }))?.playerId, representative.playerId);
+      assert.deepEqual(
+        await new AccountPlatformActorContextResolver(scoped).resolve({
+          platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-a-${suffix}`, externalUserKey: `user-a-${suffix}`
+        }),
+        {
+          playerId: representative.playerId,
+          source: "ACCOUNT_PLATFORM_CONTEXT",
+          portalAccountId: representative.portalAccountId,
+          platformContextMembershipId: representative.platformContextMembershipId,
+          selectionVersion: 3
+        }
+      );
+      const switchedByCommand = await new AccountSwitchCommandService(scoped).handleKakao({
+        eventId: `switch-command-${suffix}`,
+        externalUserId: `user-a-${suffix}`,
+        channelId: `room-a-${suffix}`,
+        message: `/계정변경 ${sub.playerId}`
+      });
+      assert.deepEqual(
+        { playerId: switchedByCommand.playerId, selectionVersion: switchedByCommand.selectionVersion, replayed: switchedByCommand.replayed },
+        { playerId: sub.playerId, selectionVersion: 4, replayed: false }
+      );
       assert.equal((await service.resolveActivePlayer({ platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-b-${suffix}`, externalUserKey: `user-b-${suffix}` }))?.playerId, representative.playerId);
 
       const discordA = await service.verifyGameAccount({
