@@ -6369,6 +6369,55 @@ Status: VERIFIED
 
 ---
 
+# /계정변경 [게임계정]
+
+Status: PARTIAL
+
+## Files
+
+- `개발환경_고도화/runtime/src/account-platform/account-platform-iris-context-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-actor-context-resolver.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-switch-command-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/maria-account-platform-repository.ts`
+
+## Related Helpers
+
+- `AccountPlatformIrisContextProvider.prepareKakao`
+- `AccountPlatformIrisContextProvider.dispatchAccountSwitch`
+- `AccountPlatformActorContextResolver.resolve`
+- `isAccountSwitchCommandCandidate`
+- `readAccountSwitchSelector`
+- `AccountSwitchCommandService.handleKakaoFromSnapshot`
+- `AccountPlatformService.switchActiveGameAccount`
+
+## Data Usage
+
+- Portal ownership: `canonical_portal_accounts`, `portal_game_account_links`
+- Kakao room context: `account_platform_identities`, `account_platform_contexts`, `account_platform_context_memberships`
+- Active account state: `account_platform_active_player_selections`
+- Replay and audit evidence: `account_platform_switch_receipts`, `operations`, `command_audit`, `command_executions`, `outbox_messages`
+
+## Save Flow
+
+- The exact command accepts only `/계정변경 [positive numeric player_id]`; multiline or suffix text does not execute the switch.
+- Iris event normalization supplies the event/user/room keys. `prepareKakao` resolves and freezes the room-scoped active player once at command start.
+- `dispatchAccountSwitch` passes the frozen membership and `selection_version` to the switch transaction without resolving the active player again.
+- The transaction verifies that the requested player belongs to the same portal account, applies optimistic selection-version locking, and records replay-safe receipt/audit/outbox evidence.
+
+## Related Commands
+
+- `/가입`
+- `/인증 [8자리 코드]`
+
+## AI Notes
+
+- The provider and transaction path are verified in isolation, including MariaDB restart/replay. `app.ts` Iris ingress and all game-command consumer propagation remain pending behind WBS743, so this command is not yet marked as an active runtime route.
+- Do not fall back to legacy `external_identities.player_id` for `/계정변경`; a verified modern room context is required.
+- Keep the event-start actor snapshot fixed through the transaction so a concurrent room selection change cannot alter command ownership mid-event.
+
+---
+
 # ㅊㅊ
 
 Status: VERIFIED

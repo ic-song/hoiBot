@@ -1,6 +1,6 @@
 import type { DatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
-import { AccountPlatformService, readAccountSwitchSelector } from "./account-platform-service.js";
+import { AccountPlatformService, readAccountSwitchSelector, type ActivePlayerSnapshot } from "./account-platform-service.js";
 import { MariaAccountPlatformRepository } from "./maria-account-platform-repository.js";
 
 export interface KakaoAccountSwitchCommandInput {
@@ -39,6 +39,14 @@ export class AccountSwitchCommandService {
       externalUserKey: input.externalUserId
     };
     const current = await this.accountPlatform.resolveActivePlayer(context);
+    return this.handleKakaoFromSnapshot(input, current);
+  }
+
+  // 이벤트 시작 시 고정한 selection snapshot으로 재조회 없이 계정변경을 수행합니다.
+  async handleKakaoFromSnapshot(
+    input: KakaoAccountSwitchCommandInput,
+    current: ActivePlayerSnapshot | null
+  ): Promise<AccountSwitchCommandResult> {
     if (current === null) {
       throw new ApplicationError(
         "PLATFORM_CONTEXT_AUTH_REQUIRED",
@@ -46,6 +54,12 @@ export class AccountSwitchCommandService {
         409
       );
     }
+    const context = {
+      platformCode: "KAKAO" as const,
+      contextType: "ROOM" as const,
+      externalContextKey: input.channelId,
+      externalUserKey: input.externalUserId
+    };
     const changed = await this.accountPlatform.switchActiveGameAccount({
       ...context,
       requestKey: input.eventId,

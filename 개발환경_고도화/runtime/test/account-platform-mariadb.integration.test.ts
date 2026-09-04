@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { AccountPlatformChallengeService } from "../src/account-platform/account-platform-challenge-service.js";
 import { AccountPlatformActorContextResolver } from "../src/account-platform/account-platform-actor-context-resolver.js";
+import { AccountPlatformIrisContextProvider } from "../src/account-platform/account-platform-iris-context-provider.js";
 import { AccountSwitchCommandService } from "../src/account-platform/account-switch-command-service.js";
 import { AccountPlatformService } from "../src/account-platform/account-platform-service.js";
 import { MariaAccountPlatformRepository } from "../src/account-platform/maria-account-platform-repository.js";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, createScopedDatabaseClient, type DatabaseClient } from "../src/database.js";
+import { normalizeIrisEvent } from "../src/integration/iris-normalizer.js";
 import { ProviderVerificationService } from "../src/user-auth/provider-verification-service.js";
 import { UserAuthService } from "../src/user-auth/user-auth-service.js";
 
@@ -262,13 +264,17 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       membershipId = representative.platformContextMembershipId;
       assert.equal(sub.playerRole, "SUB");
 
-      const switchInput = {
-        eventId: requestKeys[2]!, externalUserId: externalUserKey, channelId: externalContextKey,
-        message: `/계정변경 ${representative.playerId}`
-      };
-      const switched = await new AccountSwitchCommandService(firstClient).handleKakao(switchInput);
+      const switchEvent = normalizeIrisEvent({
+        msg: `/계정변경 ${representative.playerId}`, sender: "재시작 대표",
+        json: { _id: requestKeys[2]!, user_id: externalUserKey, chat_id: externalContextKey }
+      });
+      requestKeys[2] = switchEvent.eventId;
+      const firstProvider = new AccountPlatformIrisContextProvider(firstClient);
+      const firstContext = await firstProvider.prepareKakao(switchEvent);
+      assert.ok(firstContext !== null);
+      const switched = await firstProvider.dispatchAccountSwitch(firstContext);
       assert.deepEqual(
-        { playerId: switched.playerId, selectionVersion: switched.selectionVersion, replayed: switched.replayed },
+        { playerId: switched?.playerId, selectionVersion: switched?.selectionVersion, replayed: switched?.replayed },
         { playerId: representative.playerId, selectionVersion: 3, replayed: false }
       );
 
@@ -287,9 +293,12 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
           selectionVersion: 3
         }
       );
-      const replay = await new AccountSwitchCommandService(restartedClient).handleKakao(switchInput);
+      const restartedProvider = new AccountPlatformIrisContextProvider(restartedClient);
+      const restartedContext = await restartedProvider.prepareKakao(switchEvent);
+      assert.ok(restartedContext !== null);
+      const replay = await restartedProvider.dispatchAccountSwitch(restartedContext);
       assert.deepEqual(
-        { playerId: replay.playerId, selectionVersion: replay.selectionVersion, replayed: replay.replayed },
+        { playerId: replay?.playerId, selectionVersion: replay?.selectionVersion, replayed: replay?.replayed },
         { playerId: representative.playerId, selectionVersion: 3, replayed: true }
       );
     } finally {
