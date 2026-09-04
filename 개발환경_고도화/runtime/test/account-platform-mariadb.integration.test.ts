@@ -6,7 +6,7 @@ import { AccountSwitchCommandService } from "../src/account-platform/account-swi
 import { AccountPlatformService } from "../src/account-platform/account-platform-service.js";
 import { MariaAccountPlatformRepository } from "../src/account-platform/maria-account-platform-repository.js";
 import { loadConfig } from "../src/config.js";
-import { createDatabaseClient, createScopedDatabaseClient } from "../src/database.js";
+import { createDatabaseClient, createScopedDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { ProviderVerificationService } from "../src/user-auth/provider-verification-service.js";
 import { UserAuthService } from "../src/user-auth/user-auth-service.js";
 
@@ -219,6 +219,107 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       await database.execute("DELETE FROM user_accounts WHERE id=?", [account.insertId]);
       await database.execute("DELETE FROM player_profiles WHERE player_id=?", [player.insertId]);
       await database.execute("DELETE FROM players WHERE id=?", [player.insertId]);
+    }
+  });
+
+  it("restores the active account and replays the same switch after a database client restart", async () => {
+    assert.ok(database !== null);
+    const suffix = Date.now().toString();
+    const externalUserKey = `restart-user-${suffix}`;
+    const externalContextKey = `restart-room-${suffix}`;
+    const requestKeys = [
+      `restart-verify-representative-${suffix}`,
+      `restart-verify-sub-${suffix}`,
+      `restart-switch-${suffix}`
+    ];
+    const representativePlayer = await database.execute("INSERT INTO players(status,version) VALUES ('active',1)");
+    const subPlayer = await database.execute("INSERT INTO players(status,version) VALUES ('active',1)");
+    await database.execute(
+      "INSERT INTO player_profiles(player_id,current_display_name,terms_agreed,version) VALUES (?,'재시작 대표',TRUE,1),(?,'재시작 부계정',TRUE,1)",
+      [representativePlayer.insertId, subPlayer.insertId]
+    );
+    const account = await database.execute(
+      "INSERT INTO user_accounts(login_id,password_hash,system_account_name,gender_code,status) VALUES (?,?,?,'unspecified','active')",
+      [`amgr${suffix.slice(-12)}`, "synthetic", `AMGP 재시작 ${suffix}`]
+    );
+    let firstClient: DatabaseClient | null = createDatabaseClient(loadConfig().database);
+    let restartedClient: DatabaseClient | null = null;
+    let portalAccountId: string | undefined;
+    let membershipId: string | undefined;
+    try {
+      const service = new AccountPlatformService(new MariaAccountPlatformRepository(firstClient));
+      const representative = await service.verifyGameAccount({
+        platformCode: "KAKAO", contextType: "ROOM", externalContextKey, externalUserKey,
+        requestKey: requestKeys[0]!, legacyUserAccountId: account.insertId.toString(), purpose: "LEGACY_GAME_ACCOUNT_LINK",
+        targetPlayerId: representativePlayer.insertId.toString(), expectedDisplayName: "재시작 대표", observedDisplayName: "재시작 대표", actor: "개발자"
+      });
+      const sub = await service.verifyGameAccount({
+        platformCode: "KAKAO", contextType: "ROOM", externalContextKey, externalUserKey,
+        requestKey: requestKeys[1]!, legacyUserAccountId: account.insertId.toString(), purpose: "LEGACY_GAME_ACCOUNT_LINK",
+        targetPlayerId: subPlayer.insertId.toString(), expectedDisplayName: "재시작 부계정", observedDisplayName: "재시작 부계정", actor: "개발자"
+      });
+      portalAccountId = representative.portalAccountId;
+      membershipId = representative.platformContextMembershipId;
+      assert.equal(sub.playerRole, "SUB");
+
+      const switchInput = {
+        eventId: requestKeys[2]!, externalUserId: externalUserKey, channelId: externalContextKey,
+        message: `/계정변경 ${representative.playerId}`
+      };
+      const switched = await new AccountSwitchCommandService(firstClient).handleKakao(switchInput);
+      assert.deepEqual(
+        { playerId: switched.playerId, selectionVersion: switched.selectionVersion, replayed: switched.replayed },
+        { playerId: representative.playerId, selectionVersion: 3, replayed: false }
+      );
+
+      await firstClient.close();
+      firstClient = null;
+      restartedClient = createDatabaseClient(loadConfig().database);
+      assert.deepEqual(
+        await new AccountPlatformActorContextResolver(restartedClient).resolve({
+          platformCode: "KAKAO", contextType: "ROOM", externalContextKey, externalUserKey
+        }),
+        {
+          playerId: representative.playerId,
+          source: "ACCOUNT_PLATFORM_CONTEXT",
+          portalAccountId: representative.portalAccountId,
+          platformContextMembershipId: representative.platformContextMembershipId,
+          selectionVersion: 3
+        }
+      );
+      const replay = await new AccountSwitchCommandService(restartedClient).handleKakao(switchInput);
+      assert.deepEqual(
+        { playerId: replay.playerId, selectionVersion: replay.selectionVersion, replayed: replay.replayed },
+        { playerId: representative.playerId, selectionVersion: 3, replayed: true }
+      );
+    } finally {
+      if (firstClient !== null) await firstClient.close();
+      if (restartedClient !== null) await restartedClient.close();
+      const operations = await database.query<Array<{ id: bigint }>>(
+        `SELECT id FROM operations WHERE idempotency_key IN (${requestKeys.map(() => "?").join(",")})`, requestKeys
+      );
+      for (const operation of operations) {
+        await database.execute("DELETE FROM outbox_messages WHERE operation_id=?", [operation.id]);
+        await database.execute("DELETE FROM command_audit WHERE operation_id=?", [operation.id]);
+        await database.execute("DELETE FROM operations WHERE id=?", [operation.id]);
+      }
+      await database.execute(
+        `DELETE FROM account_platform_operation_receipts WHERE request_key IN (${requestKeys.map(() => "?").join(",")})`, requestKeys
+      );
+      if (membershipId !== undefined) {
+        await database.execute("DELETE FROM account_platform_active_player_selections WHERE platform_context_membership_id=?", [membershipId]);
+        await database.execute("DELETE FROM account_platform_nickname_observations WHERE platform_context_membership_id=?", [membershipId]);
+        await database.execute("DELETE FROM account_platform_context_memberships WHERE platform_context_membership_id=?", [membershipId]);
+      }
+      await database.execute("DELETE FROM account_platform_identities WHERE external_user_key=?", [externalUserKey]);
+      await database.execute("DELETE FROM account_platform_contexts WHERE external_context_key=?", [externalContextKey]);
+      if (portalAccountId !== undefined) {
+        await database.execute("DELETE FROM portal_game_account_links WHERE portal_account_id=?", [portalAccountId]);
+        await database.execute("DELETE FROM canonical_portal_accounts WHERE portal_account_id=?", [portalAccountId]);
+      }
+      await database.execute("DELETE FROM user_accounts WHERE id=?", [account.insertId]);
+      await database.execute("DELETE FROM player_profiles WHERE player_id IN (?,?)", [representativePlayer.insertId, subPlayer.insertId]);
+      await database.execute("DELETE FROM players WHERE id IN (?,?)", [representativePlayer.insertId, subPlayer.insertId]);
     }
   });
 });
