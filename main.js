@@ -13202,7 +13202,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             "월간상자🌕": 3,
             "만능상자🔐(/만능상자오픈 숫자)": 5,
             "땅문서📜": 100,
-            "캐슬코인🥇": 200,
             "탐험확률UP🗻(50%)": 150,
             "펫던전 입장권🌋": 100,
             "🥕당근이세요?": 50,
