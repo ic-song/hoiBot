@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { AccountPlatformChallengeService } from "../src/account-platform/account-platform-challenge-service.js";
 import { AccountPlatformActorContextResolver } from "../src/account-platform/account-platform-actor-context-resolver.js";
+import { AccountPlatformCommandContextProvider } from "../src/account-platform/account-platform-command-context-provider.js";
 import { AccountPlatformIrisContextProvider } from "../src/account-platform/account-platform-iris-context-provider.js";
 import { AccountSwitchCommandService } from "../src/account-platform/account-switch-command-service.js";
 import { AccountPlatformService } from "../src/account-platform/account-platform-service.js";
@@ -144,6 +145,24 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       });
       assert.equal(discordA.platformIdentityId, discordB.platformIdentityId);
       assert.notEqual(discordA.platformContextMembershipId, discordB.platformContextMembershipId);
+      await service.switchActiveGameAccount({
+        platformCode: "DISCORD", contextType: "SERVER", externalContextKey: `server-b-${suffix}`, externalUserKey: `discord-${suffix}`,
+        requestKey: `switch-discord-b-${suffix}`, message: `/계정변경 ${sub.playerId}`, expectedSelectionVersion: 1, actor: "개발자"
+      });
+      const platformContextProvider = new AccountPlatformCommandContextProvider(scoped);
+      const discordAContext = await platformContextProvider.prepare({
+        eventId: `discord-event-a-${suffix}`, platformCode: "DISCORD", contextType: "SERVER",
+        externalContextKey: `server-a-${suffix}`, externalUserKey: `discord-${suffix}`, message: "/가방"
+      });
+      const discordBContext = await platformContextProvider.prepare({
+        eventId: `discord-event-b-${suffix}`, platformCode: "DISCORD", contextType: "SERVER",
+        externalContextKey: `server-b-${suffix}`, externalUserKey: `discord-${suffix}`, message: "/가방"
+      });
+      assert.deepEqual(
+        [discordAContext.actor?.playerId, discordAContext.actor?.selectionVersion,
+          discordBContext.actor?.playerId, discordBContext.actor?.selectionVersion],
+        [representative.playerId, 1, sub.playerId, 2]
+      );
       assert.notEqual(representative.platformIdentityId, otherRoom.platformIdentityId);
 
       const extraPlayer = await transaction.execute("INSERT INTO players(status,version) VALUES ('active',1)");
