@@ -7,9 +7,11 @@ import { AccountPlatformIrisContextProvider } from "../src/account-platform/acco
 import { AccountSwitchCommandService } from "../src/account-platform/account-switch-command-service.js";
 import { AccountPlatformService } from "../src/account-platform/account-platform-service.js";
 import { MariaAccountPlatformRepository } from "../src/account-platform/maria-account-platform-repository.js";
+import { MariaPlayerContextProvider } from "../src/account-platform/player-context-provider.js";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, createScopedDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { normalizeIrisEvent } from "../src/integration/iris-normalizer.js";
+import { createObjectIdentityCandidate } from "../src/identity/object-identity-audit-provider.js";
 import { ProviderVerificationService } from "../src/user-auth/provider-verification-service.js";
 import { UserAuthService } from "../src/user-auth/user-auth-service.js";
 
@@ -92,6 +94,51 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       assert.equal(representative.playerRole, "REPRESENTATIVE");
       assert.equal(sub.playerRole, "SUB");
       assert.equal((await service.resolveActivePlayer({ platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-a-${suffix}`, externalUserKey: `user-a-${suffix}` }))?.playerId, sub.playerId);
+
+      const representativeIdentity = await transaction.execute(
+        "INSERT INTO external_identities(player_id,provider_code,external_user_id,display_name,status) VALUES (?,'kakao',?,'레거시 대표','linked')",
+        [representative.playerId, `user-a-${suffix}`]
+      );
+      await transaction.execute(
+        "INSERT INTO external_identities(player_id,provider_code,external_user_id,display_name,status) VALUES (?,'kakao',?,?,'linked')",
+        [sub.playerId, `sub-identity-${suffix}`, `신규 부계정 ${suffix}`]
+      );
+      const subIdentity = (await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM external_identities WHERE provider_code='kakao' AND external_user_id=?",
+        [`sub-identity-${suffix}`]
+      ))[0]!;
+      const representativeCanonicalId = createObjectIdentityCandidate();
+      const subCanonicalId = createObjectIdentityCandidate();
+      await transaction.execute(
+        `INSERT INTO canonical_players(player_id,source_system,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME)
+         VALUES (?,'RUNTIME_DB',?,'개발자','2026-09-05 01:40:00','개발자','2026-09-05 01:40:00'),
+                (?,'RUNTIME_DB',?,'개발자','2026-09-05 01:40:00','개발자','2026-09-05 01:40:00')`,
+        [representativeCanonicalId, `players:${representative.playerId}`, subCanonicalId, `players:${sub.playerId}`]
+      );
+      await transaction.execute(
+        `INSERT INTO canonical_player_identity_crosswalks
+           (canonical_player_identity_crosswalk_id,provider_code,external_user_id,player_id,crosswalk_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME)
+         VALUES (?,'kakao',?,?,'LINKED','개발자','2026-09-05 01:40:00','개발자','2026-09-05 01:40:00'),
+                (?,'kakao',?,?,'LINKED','개발자','2026-09-05 01:40:00','개발자','2026-09-05 01:40:00')`,
+        [createObjectIdentityCandidate(), `user-a-${suffix}`, representativeCanonicalId,
+          createObjectIdentityCandidate(), `sub-identity-${suffix}`, subCanonicalId]
+      );
+      const playerContexts = new MariaPlayerContextProvider();
+      assert.deepEqual(
+        await playerContexts.resolveSelf(transaction, {
+          identityProviderCode: "kakao", externalUserId: `user-a-${suffix}`, externalContextId: `room-a-${suffix}`
+        }),
+        {
+          canonicalPlayerId: subCanonicalId, legacyPlayerId: sub.playerId,
+          externalIdentityId: representativeIdentity.insertId.toString(), displayName: `신규 부계정 ${suffix}`,
+          rankEmoji: null, platformCode: "kakao", externalContextId: `room-a-${suffix}`, selectionSource: "ACTIVE_CONTEXT"
+        }
+      );
+      assert.deepEqual(
+        await playerContexts.resolveUniqueLegacyDisplayTarget(transaction, { targetKey: "레거시 대표" }),
+        { canonicalPlayerId: representativeCanonicalId, legacyPlayerId: representative.playerId, displayName: "레거시 대표", rankEmoji: null }
+      );
+      assert.notEqual(representativeIdentity.insertId, subIdentity.id);
 
       const otherRoom = await service.verifyGameAccount({
         platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-b-${suffix}`, externalUserKey: `user-b-${suffix}`,

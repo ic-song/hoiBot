@@ -6378,6 +6378,7 @@ Status: PARTIAL
 - `개발환경_고도화/runtime/src/account-platform/account-platform-command-context-provider.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-platform-iris-context-provider.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-platform-actor-context-resolver.ts`
+- `개발환경_고도화/runtime/src/account-platform/player-context-provider.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-switch-command-service.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-platform-service.ts`
 - `개발환경_고도화/runtime/src/account-platform/maria-account-platform-repository.ts`
@@ -6388,6 +6389,8 @@ Status: PARTIAL
 - `AccountPlatformIrisContextProvider.prepareKakao`
 - `AccountPlatformIrisContextProvider.dispatchAccountSwitch`
 - `AccountPlatformActorContextResolver.resolve`
+- `MariaPlayerContextProvider.resolveSelf`
+- `MariaPlayerContextProvider.resolveUniqueLegacyDisplayTarget`
 - `isAccountSwitchCommandCandidate`
 - `readAccountSwitchSelector`
 - `AccountSwitchCommandService.handleKakaoFromSnapshot`
@@ -6398,6 +6401,7 @@ Status: PARTIAL
 - Portal ownership: `canonical_portal_accounts`, `portal_game_account_links`
 - Kakao room context: `account_platform_identities`, `account_platform_contexts`, `account_platform_context_memberships`
 - Active account state: `account_platform_active_player_selections`
+- Canonical consumer identity bridge: `external_identities`, `canonical_player_identity_crosswalks`, `canonical_players`
 - Replay and audit evidence: `account_platform_switch_receipts`, `operations`, `command_audit`, `command_executions`, `outbox_messages`
 
 ## Save Flow
