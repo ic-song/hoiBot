@@ -2,9 +2,9 @@ import type { DatabaseClient } from "../database.js";
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { ApplicationError } from "../shared/application-error.js";
 import {
-  AccountPlatformActorContextResolver,
-  type ResolvedAccountPlatformActorContext
-} from "./account-platform-actor-context-resolver.js";
+  AccountPlatformCommandContextProvider,
+  type AccountPlatformCommandContext
+} from "./account-platform-command-context-provider.js";
 import {
   AccountSwitchCommandService,
   isAccountSwitchCommandCandidate,
@@ -17,16 +17,16 @@ export interface AccountPlatformKakaoEventContext {
   readonly externalUserId: string;
   readonly channelId: string;
   readonly message: string;
-  readonly actor: Readonly<ResolvedAccountPlatformActorContext> | null;
+  readonly actor: AccountPlatformCommandContext["actor"];
 }
 
 // Iris 명령 시작 시 방별 활성 player를 한 번 고정해 후속 consumer에 전달합니다.
 export class AccountPlatformIrisContextProvider {
-  private readonly resolver: AccountPlatformActorContextResolver;
+  private readonly contextProvider: AccountPlatformCommandContextProvider;
   private readonly switchCommand: AccountSwitchCommandService;
 
   constructor(database: DatabaseClient) {
-    this.resolver = new AccountPlatformActorContextResolver(database);
+    this.contextProvider = new AccountPlatformCommandContextProvider(database);
     this.switchCommand = new AccountSwitchCommandService(database);
   }
 
@@ -34,18 +34,20 @@ export class AccountPlatformIrisContextProvider {
     if (event.direction !== "incoming" || event.userId === undefined || event.channelId === undefined || event.message === undefined) {
       return null;
     }
-    const actor = await this.resolver.resolve({
+    const prepared = await this.contextProvider.prepare({
+      eventId: event.eventId,
       platformCode: "KAKAO",
       contextType: "ROOM",
       externalContextKey: event.channelId,
-      externalUserKey: event.userId
+      externalUserKey: event.userId,
+      message: event.message
     });
     return Object.freeze({
-      eventId: event.eventId,
+      eventId: prepared.eventId,
       externalUserId: event.userId,
       channelId: event.channelId,
-      message: event.message,
-      actor: actor === null ? null : Object.freeze({ ...actor })
+      message: prepared.message,
+      actor: prepared.actor
     });
   }
 
