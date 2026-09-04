@@ -18,7 +18,8 @@ suite("guild territory single authority MariaDB", () => {
   const operation = base + 3n;
   const war = base + 4n;
   const prefix = `territory-authority-${Date.now()}`;
-  let scopeBefore: { war_id: bigint; version: bigint } | undefined;
+  let scopeBefore: { war_id: bigint; version: bigint; updated_at: Date } | undefined;
+  let scopeOverwritten = false;
 
   before(async () => {
     db = createDatabaseClient({
@@ -31,13 +32,14 @@ suite("guild territory single authority MariaDB", () => {
       connectionLimit: 4,
       connectTimeoutMs: 5_000,
     });
-    scopeBefore = (await db.query<Array<{ war_id: bigint; version: bigint }>>("SELECT war_id,version FROM guild_territory_start_scopes WHERE scope_code='world'"))[0];
+    scopeBefore = (await db.query<Array<{ war_id: bigint; version: bigint; updated_at: Date }>>("SELECT war_id,version,updated_at FROM guild_territory_start_scopes WHERE scope_code='world'"))[0];
     await db.execute("INSERT INTO players(id,status,version) VALUES (?,'active',1)", [player]);
     await db.execute("INSERT INTO player_profiles(player_id,current_display_name,experience,version) VALUES (?,'합성 권위공격자',0,1)", [player]);
     await db.execute("INSERT INTO guilds(id,code,display_name,status,version) VALUES (?,?,?,'active',1)", [guild, `SYN-AUTH-${base}`, "합성 권위길드"]);
     await db.execute("INSERT INTO operations(id,operation_key,idempotency_scope,idempotency_key,actor_type,source_code,status,created_at,completed_at) VALUES (?,UUID(),'synthetic.territory.authority',?,'system','synthetic','completed',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [operation, prefix]);
     await db.execute("INSERT INTO guild_territory_wars(id,war_key,active,lifecycle_state,start_ready,pending_start_token,pending_start_due_at,opening_due_at,start_operation_id,rift_event_history_json,version) VALUES (?,?,FALSE,'PENDING_START',FALSE,'authority-token',DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 10 SECOND),DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 5 SECOND),?,JSON_ARRAY(),2)", [war, `${prefix}-war`, operation]);
     await db.execute("INSERT INTO guild_territory_start_scopes(scope_code,war_id,version) VALUES ('world',?,1) ON DUPLICATE KEY UPDATE war_id=VALUES(war_id),version=version+1", [war]);
+    scopeOverwritten = true;
     await db.execute("INSERT INTO guild_territory_start_destinations(destination_id,destination_kind,position_no,active) VALUES (?,'CASTLE',1,TRUE) ON DUPLICATE KEY UPDATE active=TRUE", [`${prefix}-room`]);
     await db.execute("INSERT INTO guild_territory_turns(war_id,generation_version,ordinal,guild_id,attacker_player_id,attack_limit,attacks_used,turn_state) VALUES (?,2,1,?,?,30,0,'PENDING')", [war, guild, player]);
     await db.execute("INSERT INTO guild_territory_scheduled_transitions(transition_key,war_id,transition_code,scheduled_for,status,operation_id,expected_war_version,payload_json,version) VALUES (?,?, 'START_OPENING',DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 10 SECOND),'PENDING',?,2,?,1)", [`${prefix}-opening`, war, operation, JSON.stringify({ token: "authority-token", generationVersion: "2" })]);
@@ -45,21 +47,27 @@ suite("guild territory single authority MariaDB", () => {
 
   after(async () => {
     if (db) {
-      await db.execute("DELETE FROM guild_territory_start_scopes WHERE scope_code='world' AND war_id=?", [war]);
-      await db.execute("DELETE FROM command_audit WHERE operation_id=?", [operation]);
-      await db.execute("DELETE FROM outbox_messages WHERE operation_id=?", [operation]);
-      await db.execute("DELETE FROM guild_territory_scheduled_transitions WHERE war_id=?", [war]);
-      await db.execute("DELETE FROM guild_territory_turns WHERE war_id=?", [war]);
-      await db.execute("DELETE FROM guild_territory_wars WHERE id=?", [war]);
-      await db.execute("DELETE FROM guild_territory_start_destinations WHERE destination_id=? AND destination_kind='CASTLE'", [`${prefix}-room`]);
-      await db.execute("DELETE FROM operations WHERE id=?", [operation]);
-      await db.execute("DELETE FROM player_profiles WHERE player_id=?", [player]);
-      await db.execute("DELETE FROM players WHERE id=?", [player]);
-      await db.execute("DELETE FROM guilds WHERE id=?", [guild]);
-      if (scopeBefore !== undefined) {
-        await db.execute("INSERT INTO guild_territory_start_scopes(scope_code,war_id,version) VALUES ('world',?,?)", [scopeBefore.war_id, scopeBefore.version]);
+      const errors: unknown[] = [];
+      const attempt = async (work: () => Promise<unknown>) => { try { await work(); } catch (error) { errors.push(error); } };
+      try {
+        if (scopeOverwritten) await attempt(() => db.execute("DELETE FROM guild_territory_start_scopes WHERE scope_code='world' AND war_id=?", [war]));
+        await attempt(() => db.execute("DELETE FROM command_audit WHERE operation_id=?", [operation]));
+        await attempt(() => db.execute("DELETE FROM outbox_messages WHERE operation_id=?", [operation]));
+        await attempt(() => db.execute("DELETE FROM guild_territory_scheduled_transitions WHERE war_id=?", [war]));
+        await attempt(() => db.execute("DELETE FROM guild_territory_turns WHERE war_id=?", [war]));
+        await attempt(() => db.execute("DELETE FROM guild_territory_wars WHERE id=?", [war]));
+        await attempt(() => db.execute("DELETE FROM guild_territory_start_destinations WHERE destination_id=? AND destination_kind='CASTLE'", [`${prefix}-room`]));
+        await attempt(() => db.execute("DELETE FROM operations WHERE id=?", [operation]));
+        await attempt(() => db.execute("DELETE FROM player_profiles WHERE player_id=?", [player]));
+        await attempt(() => db.execute("DELETE FROM players WHERE id=?", [player]));
+        await attempt(() => db.execute("DELETE FROM guilds WHERE id=?", [guild]));
+        if (scopeOverwritten && scopeBefore !== undefined) {
+          await attempt(() => db.execute("INSERT INTO guild_territory_start_scopes(scope_code,war_id,version,updated_at) VALUES ('world',?,?,?) ON DUPLICATE KEY UPDATE war_id=VALUES(war_id),version=VALUES(version),updated_at=VALUES(updated_at)", [scopeBefore!.war_id, scopeBefore!.version, scopeBefore!.updated_at]));
+        }
+      } finally {
+        try { await db.close(); } catch (error) { errors.push(error); }
       }
-      await db.close();
+      if (errors.length > 0) throw new AggregateError(errors, "guild territory authority MariaDB cleanup failed");
     }
   });
 
