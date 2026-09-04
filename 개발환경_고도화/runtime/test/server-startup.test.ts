@@ -56,19 +56,26 @@ describe("server startup database boundary", () => {
         events.push("create-outbox");
         return { runOnce: async () => 0 };
       },
-      setRecurring: () => {
-        events.push("start-outbox");
+      createGuildTerritoryTransitionRunner: () => {
+        events.push("create-territory-transition");
+        return { runDueTransitions: async () => { events.push("run-territory-transition"); return { processed: 0, skipped: 0 }; } };
+      },
+      setRecurring: (_callback, milliseconds) => {
+        events.push(milliseconds === 5_000 ? "start-outbox" : "start-territory-transition");
         return setInterval(() => undefined, 60_000);
       }
     });
 
-    assert.deepEqual(events.slice(0, 6), [
+    assert.deepEqual(events.slice(0, 9), [
       "create-database",
       "query:SELECT DATABASE() AS database_identity",
       "build-routes",
       "listen",
       "create-outbox",
-      "start-outbox"
+      "create-territory-transition",
+      "run-territory-transition",
+      "start-outbox",
+      "start-territory-transition"
     ]);
     assert.equal(started.environmentContext?.requestNamespace, "hoibot:dev:hoi_bot");
     await started.shutdown("TEST");
@@ -100,6 +107,75 @@ describe("server startup database boundary", () => {
       "query:SELECT DATABASE() AS database_identity",
       "close"
     ]);
+  });
+
+  it("fails startup before timers when due territory transition recovery fails", async () => {
+    const events: string[] = [];
+    const db = database("hoi_bot", events);
+    let recurringStarts = 0;
+
+    await assert.rejects(() => startServer(enabledConfig(), {
+      createDatabase: () => { events.push("create-database"); return db; },
+      buildRuntimeApp: (config, dependencies) => {
+        events.push("build-routes");
+        const app = buildApp(config, dependencies);
+        app.addHook("onListen", async () => { events.push("listen"); });
+        return app;
+      },
+      createOutboxRunner: () => ({ runOnce: async () => 0 }),
+      createGuildTerritoryTransitionRunner: () => ({
+        runDueTransitions: async () => { throw new Error("synthetic territory recovery failure"); }
+      }),
+      setRecurring: () => {
+        recurringStarts += 1;
+        return setInterval(() => undefined, 60_000);
+      }
+    }), /synthetic territory recovery failure/);
+
+    assert.equal(recurringStarts, 0);
+    assert.deepEqual(events, [
+      "create-database",
+      "query:SELECT DATABASE() AS database_identity",
+      "build-routes",
+      "listen",
+      "close"
+    ]);
+  });
+
+  it("does not overlap recurring territory transition runs", async () => {
+    const events: string[] = [];
+    const db = database("hoi_bot", events);
+    let transitionCalls = 0;
+    let releaseRecurring: (() => void) | undefined;
+    let territoryCallback: (() => void) | undefined;
+    const started = await startServer(enabledConfig(), {
+      createDatabase: () => db,
+      createOutboxRunner: () => ({ runOnce: async () => 0 }),
+      createGuildTerritoryTransitionRunner: () => ({
+        runDueTransitions: async () => {
+          transitionCalls += 1;
+          if (transitionCalls > 1) await new Promise<void>(resolve => { releaseRecurring = resolve; });
+          return { processed: 0, skipped: 0 };
+        }
+      }),
+      setRecurring: (callback, milliseconds) => {
+        if (milliseconds === 1_000) territoryCallback = callback;
+        return setInterval(() => undefined, 60_000);
+      }
+    });
+
+    assert.equal(transitionCalls, 1);
+    territoryCallback!();
+    territoryCallback!();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(transitionCalls, 2);
+    releaseRecurring!();
+    await new Promise(resolve => setImmediate(resolve));
+    territoryCallback!();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(transitionCalls, 3);
+    releaseRecurring!();
+    await started.shutdown("TEST");
   });
 
   it("rejects an unbranded verification result before app construction", async () => {
