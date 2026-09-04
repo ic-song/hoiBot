@@ -3,6 +3,7 @@ import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-re
 import { createScopedDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { GuildTerritoryWarFinishService, type GuildTerritoryWarFinishResult } from "./guild-territory-war-finish-service.js";
+import { resolveGuildTerritoryWarAuthority } from "./guild-territory-war-authority.js";
 
 const COMMAND_CODE = "GUILD_TERRITORY_ATTACK_EXECUTE";
 const IDEMPOTENCY_SCOPE = "guild.territory.attack.execute";
@@ -127,7 +128,11 @@ export class GuildTerritoryAttackService {
       const war = (await transaction.query<WarRow[]>(
         "SELECT id,war_key,active,lifecycle_state,start_ready,current_turn_no,CAST(instability_adjust AS CHAR) instability_adjust,CAST(rift_bias AS CHAR) rift_bias,rift_event_count,rift_event_history_json,version FROM guild_territory_wars WHERE id=? FOR UPDATE", [scope.war_id]
       ))[0];
-      if (war === undefined || war.active !== 1 || war.start_ready !== 1 || war.lifecycle_state !== "ACTIVE_READY") {
+      if (war === undefined) {
+        throw new ApplicationError("GUILD_TERRITORY_ATTACK_WAR_REQUIRED", "길드 영지전 상태를 확인할 수 없습니다.", 409);
+      }
+      const active = resolveGuildTerritoryWarAuthority(war.active, war.lifecycle_state);
+      if (!active || war.start_ready !== 1 || war.lifecycle_state !== "ACTIVE_READY") {
         throw new ApplicationError("GUILD_TERRITORY_ATTACK_NOT_ACTIVE", "현재 공격 가능한 길드 영지전이 없습니다.", 409);
       }
       const replayAfterWarLock = await this.findReplay(transaction, eventKey);

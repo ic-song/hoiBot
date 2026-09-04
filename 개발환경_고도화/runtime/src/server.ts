@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 import { buildApp } from "./app.js";
 import { loadConfig, type AppConfig } from "./config.js";
 import { createDatabaseClient, type DatabaseClient } from "./database.js";
+import { GuildTerritoryWarStateStartService } from "./guild/guild-territory-war-state-start-service.js";
 import { OutboxWorker } from "./integration/outbox-worker.js";
 import {
   assertVerifiedEnvironmentContext,
@@ -12,12 +13,14 @@ import {
 
 type RuntimeApp = ReturnType<typeof buildApp>;
 type OutboxRunner = Pick<OutboxWorker, "runOnce">;
+type GuildTerritoryTransitionRunner = Pick<GuildTerritoryWarStateStartService, "runDueTransitions">;
 
 export interface ServerStartupDependencies {
   createDatabase?: (config: AppConfig["database"]) => DatabaseClient;
   verifyDatabaseIdentity?: typeof verifyStartupDatabaseIdentity;
   buildRuntimeApp?: typeof buildApp;
   createOutboxRunner?: (database: DatabaseClient, deliver: (message: { room: string; data: string }) => Promise<void>) => OutboxRunner;
+  createGuildTerritoryTransitionRunner?: (database: DatabaseClient) => GuildTerritoryTransitionRunner;
   setRecurring?: (callback: () => void, milliseconds: number) => NodeJS.Timeout;
 }
 
@@ -53,12 +56,15 @@ export async function startServer(
   const buildRuntimeApp = dependencies.buildRuntimeApp ?? buildApp;
   const createOutboxRunner = dependencies.createOutboxRunner
     ?? ((database, deliver) => new OutboxWorker(database, deliver));
+  const createGuildTerritoryTransitionRunner = dependencies.createGuildTerritoryTransitionRunner
+    ?? ((database) => new GuildTerritoryWarStateStartService(database));
   const setRecurring = dependencies.setRecurring
     ?? ((callback: () => void, milliseconds: number) => setInterval(callback, milliseconds) as NodeJS.Timeout);
   let database: DatabaseClient | undefined;
   let environmentContext: VerifiedEnvironmentContext | undefined;
   let app: RuntimeApp | undefined;
   let outboxTimer: NodeJS.Timeout | undefined;
+  let guildTerritoryTransitionTimer: NodeJS.Timeout | undefined;
   let shuttingDown = false;
 
   try {
@@ -80,10 +86,26 @@ export async function startServer(
 
     if (database !== undefined) {
       const worker = createOutboxRunner(database, (message) => deliverIrisText(config, message));
+      const guildTerritoryTransitionWorker = createGuildTerritoryTransitionRunner(database);
+      let guildTerritoryTransitionRunning = false;
+      const runGuildTerritoryTransitions = async (): Promise<void> => {
+        if (guildTerritoryTransitionRunning) return;
+        guildTerritoryTransitionRunning = true;
+        try {
+          await guildTerritoryTransitionWorker.runDueTransitions();
+        } finally {
+          guildTerritoryTransitionRunning = false;
+        }
+      };
+      await runGuildTerritoryTransitions();
       outboxTimer = setRecurring(() => {
         void worker.runOnce().catch((error) => app!.log.error({ err: error }, "outbox.worker.failed"));
       }, 5_000);
       outboxTimer.unref();
+      guildTerritoryTransitionTimer = setRecurring(() => {
+        void runGuildTerritoryTransitions().catch((error) => app!.log.error({ err: error }, "guild-territory.transition-worker.failed"));
+      }, 1_000);
+      guildTerritoryTransitionTimer.unref();
     }
     app.log.info({ host: config.host, port: config.port, version: config.version }, "server.started");
   } catch (error) {
@@ -101,6 +123,7 @@ export async function startServer(
       if (shuttingDown) return;
       shuttingDown = true;
       if (outboxTimer !== undefined) clearInterval(outboxTimer);
+      if (guildTerritoryTransitionTimer !== undefined) clearInterval(guildTerritoryTransitionTimer);
       startedApp.log.info({ signal }, "server.shutdown.started");
       await startedApp.close();
       startedApp.log.info("server.shutdown.completed");
