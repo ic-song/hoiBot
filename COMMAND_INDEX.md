@@ -6321,6 +6321,8 @@ Status: VERIFIED
 - `개발환경_고도화/runtime/src/signup/site-signup-web-assets.ts`
 - `개발환경_고도화/runtime/src/user-auth/routes.ts`
 - `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-challenge-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/maria-account-platform-repository.ts`
 
 ## Related Helpers
 
@@ -6329,20 +6331,24 @@ Status: VERIFIED
 - `registerSiteSignupWebRoutes`
 - `UserAuthService.signup`
 - `ProviderVerificationService.verifyInitialKakao`
+- `AccountPlatformChallengeService.issue`
+- `AccountPlatformChallengeService.verify`
 - `createInitialPlayer`
 
 ## Data Usage
 
 - Modern DB: `user_accounts`, `user_terms_acceptances`, `user_verification_challenges`
-- Modern DB after Kakao verification: `external_identities`, `players`, `player_profiles`, `player_pets`, `currency_accounts`, `player_counters`
+- Account-platform DB after Kakao verification: `canonical_portal_accounts`, `portal_game_account_links`, `account_platform_identities`, `account_platform_contexts`, `account_platform_context_memberships`, `account_platform_active_player_selections`, `account_platform_nickname_observations`
+- New game-account verification creates `players`, `player_profiles`, `player_pets`, `currency_accounts`, and `player_counters`; legacy verification preserves the selected existing `player_id` and its game data.
 - Modern operation evidence: `operations`, `command_audit`, `command_executions`, `outbox_messages`
 - Legacy Gate 8 source remains in `main.js` and its JSON member flow is unchanged.
 
 ## Save Flow
 
 - The modern exact `/가입` command queues only the `/signup` web guidance reply; it does not create a legacy `player_signup_requests` row.
-- `POST /api/v1/user-accounts` creates the pending account, terms acceptance, and one-time challenge in the existing transaction.
-- Exact `/인증 [A-Z2-9 8자리]` links the Kakao identity and calls `createInitialPlayer` in the existing provider-verification transaction.
+- `POST /api/v1/user-accounts` creates the pending account, terms acceptance, and a hashed `NEW_GAME_ACCOUNT` or `LEGACY_GAME_ACCOUNT_LINK` challenge in one transaction. The web form requires an existing numeric `player_id` only for legacy linking.
+- A web-issued challenge intentionally leaves room context empty. Exact `/인증 [A-Z2-9 8자리]` binds it to the first Kakao room, then atomically creates or preserves the game account, assigns `REPRESENTATIVE`/`SUB`, records the room membership and active `player_id`, consumes the challenge, and writes audit/outbox evidence.
+- Pre-migration pending `initial_link` codes remain consumable through the compatibility verifier; reissue supersedes them with the new challenge model.
 - `/가입한다` remains the guild join confirmation command and is not treated as the web signup entry.
 
 ## Related Commands

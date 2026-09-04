@@ -38,7 +38,9 @@ export async function registerUserAuthRoutes(app: FastifyInstance, dependencies:
       loginId,
       password: readString(body.password, "password"),
       systemAccountName: readString(body.systemAccountName, "systemAccountName"),
-      acceptTerms: body.acceptTerms === true
+      acceptTerms: body.acceptTerms === true,
+      ...(body.gameAccountPurpose === undefined ? {} : { gameAccountPurpose: readString(body.gameAccountPurpose, "gameAccountPurpose") }),
+      ...(body.legacyPlayerId === undefined ? {} : { legacyPlayerId: readString(body.legacyPlayerId, "legacyPlayerId") })
     });
     return reply.code(201).send({ ok: true, signup: result, requestId: request.id });
   });

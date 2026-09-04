@@ -31,6 +31,16 @@ export const SITE_SIGNUP_HTML = String.raw`<!doctype html>
         <h2 id="form-title">호이월드 계정 만들기</h2>
         <p class="card-copy">모든 항목을 입력해 주세요.</p>
         <form id="signup-form" novalidate>
+          <fieldset class="account-purpose">
+            <legend>게임계정 가입 유형</legend>
+            <label><input type="radio" name="gameAccountPurpose" value="NEW_GAME_ACCOUNT" checked><span><strong>새 게임계정 만들기</strong><small>처음 연결하는 계정은 대표 게임계정이 됩니다.</small></span></label>
+            <label><input type="radio" name="gameAccountPurpose" value="LEGACY_GAME_ACCOUNT_LINK"><span><strong>기존 게임계정 연결하기</strong><small>기존 player_id와 게임 데이터를 그대로 연결합니다.</small></span></label>
+          </fieldset>
+          <div id="legacy-player-field" class="field" hidden>
+            <label for="legacy-player-id">기존 player_id</label>
+            <input id="legacy-player-id" name="legacyPlayerId" inputmode="numeric" pattern="[1-9][0-9]*" aria-describedby="legacy-player-help">
+            <small id="legacy-player-help">보존할 기존 게임계정의 숫자 ID</small>
+          </div>
           <div class="field">
             <label for="login-id">로그인 ID</label>
             <input id="login-id" name="loginId" autocomplete="username" inputmode="latin" autocapitalize="none" spellcheck="false" minlength="6" maxlength="20" required aria-describedby="login-help">
@@ -125,6 +135,14 @@ form { display: grid; gap: 20px; }
 .field { display: grid; gap: 8px; }
 .field label { font-size: 14px; font-weight: 750; }
 .field small { color: var(--muted); font-size: 12px; }
+.account-purpose { display: grid; gap: 10px; margin: 0; padding: 0; border: 0; }
+.account-purpose legend { margin-bottom: 8px; font-size: 14px; font-weight: 750; }
+.account-purpose label { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: center; min-height: 58px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+.account-purpose input { width: 20px; min-height: 20px; margin: 0; accent-color: var(--primary); }
+.account-purpose span { display: grid; gap: 3px; }
+.account-purpose strong { font-size: 14px; }
+.account-purpose small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.account-purpose label:has(input:checked) { border-color: var(--primary); background: var(--soft); }
 input { width: 100%; min-height: 48px; padding: 11px 13px; color: var(--ink); background: #fff; border: 1px solid #b9c5d3; border-radius: 9px; outline: none; }
 input:focus-visible, button:focus-visible, a:focus-visible { outline: 3px solid rgba(30,58,138,.24); outline-offset: 2px; border-color: var(--primary); }
 .terms { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; color: #334155; font-size: 13px; line-height: 1.5; }
@@ -168,6 +186,8 @@ export const SITE_SIGNUP_CLIENT = String.raw`
   var checkButton = document.getElementById("check-button");
   var reissueButton = document.getElementById("reissue-button");
   var copyButton = document.getElementById("copy-button");
+  var legacyPlayerField = document.getElementById("legacy-player-field");
+  var legacyPlayerInput = document.getElementById("legacy-player-id");
   var current = { loginId: "", password: "", challengeId: "", code: "" };
   var pollTimer = null;
 
@@ -179,6 +199,19 @@ export const SITE_SIGNUP_CLIENT = String.raw`
   function readError(payload, fallback) {
     return payload && payload.error && payload.error.message ? payload.error.message : fallback;
   }
+
+  function syncAccountPurpose() {
+    var selected = form.querySelector('input[name="gameAccountPurpose"]:checked');
+    var legacy = selected && selected.value === "LEGACY_GAME_ACCOUNT_LINK";
+    legacyPlayerField.hidden = !legacy;
+    legacyPlayerInput.required = Boolean(legacy);
+    if (!legacy) legacyPlayerInput.value = "";
+  }
+
+  form.querySelectorAll('input[name="gameAccountPurpose"]').forEach(function (input) {
+    input.addEventListener("change", syncAccountPurpose);
+  });
+  syncAccountPurpose();
 
   async function request(url, options) {
     var response = await fetch(url, options);
@@ -247,6 +280,8 @@ export const SITE_SIGNUP_CLIENT = String.raw`
           loginId: current.loginId,
           password: current.password,
           systemAccountName: String(data.get("systemAccountName") || ""),
+          gameAccountPurpose: String(data.get("gameAccountPurpose") || "NEW_GAME_ACCOUNT"),
+          legacyPlayerId: String(data.get("legacyPlayerId") || "") || undefined,
           acceptTerms: data.get("acceptTerms") === "on"
         })
       });
