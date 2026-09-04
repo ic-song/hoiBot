@@ -134,6 +134,19 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       assert.equal((await service.resolveActivePlayer({ platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-b-${suffix}`, externalUserKey: `user-b-${suffix}` }))?.playerId, representative.playerId);
 
       const roomAContext = { platformCode: "KAKAO" as const, contextType: "ROOM" as const, externalContextKey: `room-a-${suffix}`, externalUserKey: `user-a-${suffix}` };
+      await assert.rejects(
+        service.switchActiveGameAccount({
+          ...roomAContext, requestKey: `stale-switch-${suffix}`, message: `/계정변경 ${representative.playerId}`,
+          expectedSelectionVersion: 3, actor: "개발자"
+        }),
+        /활성 게임계정이 먼저 변경됐습니다/
+      );
+      assert.deepEqual(await service.resolveActivePlayer(roomAContext), {
+        portalAccountId: representative.portalAccountId,
+        playerId: sub.playerId,
+        platformContextMembershipId: representative.platformContextMembershipId,
+        selectionVersion: 4
+      });
       const beforeNicknameObservation = await service.resolveActivePlayer(roomAContext);
       await service.observeNickname({ ...roomAContext, observedDisplayName: `카카오 새 닉네임 ${suffix}`, actor: "개발자" });
       const afterNicknameObservation = await service.resolveActivePlayer(roomAContext);
