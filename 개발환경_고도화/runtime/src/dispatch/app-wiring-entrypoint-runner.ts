@@ -3,10 +3,12 @@ import type {
   AppWiringClaimInput,
   AppWiringHandlerOutcome,
   AppWiringMutationHandlerOutcome,
+  AppWiringMutationIrisOutcome,
   AppWiringMutationReplyOutcome,
   AppWiringMutationReplyContext,
   AppWiringMutationParticipant,
   AppWiringPersistedReply,
+  AppWiringPersistedMutationIrisOutcome,
   AppWiringReadParticipant,
   AppWiringReadOnlyReplyOutcome,
   AppWiringReplayClaim,
@@ -51,6 +53,15 @@ export interface AppWiringMutationReplyEntrypointInput<T> {
   readonly claim: AppWiringClaimInput;
   readonly resolveRoute: () => AppWiringRouteDecision | Promise<AppWiringRouteDecision>;
   readonly handler: (database: AppWiringMutationParticipant, claim: AppWiringClaim, context: AppWiringMutationReplyContext) => Promise<AppWiringMutationReplyOutcome<T>>;
+  readonly replayCompleted: (claim: AppWiringReplayClaim) => Promise<T>;
+  readonly replayFailed: (claim: AppWiringReplayClaim) => Promise<never>;
+  readonly errorCode: (error: unknown) => string;
+}
+
+export interface AppWiringMutationIrisEntrypointInput<T> {
+  readonly claim: AppWiringClaimInput;
+  readonly resolveRoute: () => AppWiringRouteDecision | Promise<AppWiringRouteDecision>;
+  readonly handler: (database: AppWiringMutationParticipant, claim: AppWiringClaim, context: AppWiringMutationReplyContext) => Promise<AppWiringMutationIrisOutcome<T>>;
   readonly replayCompleted: (claim: AppWiringReplayClaim) => Promise<T>;
   readonly replayFailed: (claim: AppWiringReplayClaim) => Promise<never>;
   readonly errorCode: (error: unknown) => string;
@@ -105,6 +116,27 @@ export async function executeAppWiringMutationReplyEntrypoint<T>(provider:MariaA
   try{
     if(prepared.claim.route!=="MODERN"||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
     return await provider.runMutationReply(prepared,input.handler);
+  }
+  catch(error){
+    try{await provider.fail(prepared,input.errorCode(error));}
+    catch(transitionError){throw new AggregateError([error,transitionError],"APP_WIRING_ENTRYPOINT_FAILURE_TRANSITION_FAILED");}
+    throw error;
+  }
+}
+
+// 기존 reply 전용 API를 보존하면서 명시적 typed NO_REPLY 결과도 동일한 mutation 경계에서 재생합니다.
+export async function executeAppWiringMutationIrisEntrypoint<T>(provider:MariaAppWiringOperationProvider,input:AppWiringMutationIrisEntrypointInput<T>):Promise<AppWiringPersistedMutationIrisOutcome<T>>{
+  const prepared=await provider.prepare(input.claim,input.resolveRoute);
+  if(prepared.replayed){
+    if(prepared.claim.route!=="MODERN"||!("effectMode" in prepared.claim)||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
+    if(prepared.claim.claimState!=="COMPLETED")return input.replayFailed(prepared.claim);
+    const value=await input.replayCompleted(prepared.claim);
+    const delivery=await provider.replayMutationIrisOutcome(prepared.claim);
+    return "reply" in delivery?{value,reply:delivery.reply}:{value,noReply:delivery.noReply};
+  }
+  try{
+    if(prepared.claim.route!=="MODERN"||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
+    return await provider.runMutationIrisOutcome(prepared,input.handler);
   }
   catch(error){
     try{await provider.fail(prepared,input.errorCode(error));}
