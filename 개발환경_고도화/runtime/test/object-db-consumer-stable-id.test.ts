@@ -37,12 +37,12 @@ describe("object DB consumer stable ID registry", () => {
     assert.equal(registry.sourceManifestConsumerSetSha256, OBJECT_DB_CONSUMER_ID_REGISTRY_SEED_SHA256);
     assert.equal(createHash("sha256").update(JSON.stringify(manifest.consumers)).digest("hex"), manifest.consumerSetSha256);
     assert.notEqual(manifest.consumerSetSha256, OBJECT_DB_CONSUMER_ID_REGISTRY_SEED_SHA256);
-    assert.equal(registry.entries.length, 1_102);
+    assert.equal(registry.entries.length, 1_104);
     assert.equal(registry.entries.every(({ state }) => state === "ACTIVE"), true);
     const registered = new Map(registry.entries.map(({ logicalKey, consumerId }) => [logicalKey, consumerId]));
     const current = new Map(manifest.consumers.map((consumer) => [deriveConsumerLogicalKey(consumer), consumer.consumerId]));
-    assert.equal(current.size, 1_102);
-    assert.equal(new Set(manifest.consumers.map(({ consumerId }) => consumerId)).size, 1_102);
+    assert.equal(current.size, 1_104);
+    assert.equal(new Set(manifest.consumers.map(({ consumerId }) => consumerId)).size, 1_104);
     assert.deepEqual(current, registered);
     const resolveId = createConsumerIdResolver(registry);
     for (const consumer of manifest.consumers) assert.equal(resolveId(consumer), consumer.consumerId, deriveConsumerLogicalKey(consumer));

@@ -8,7 +8,7 @@ import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { PetTitleCanonicalReadProvider } from "./pet-title-canonical-read-provider.js";
 import { PetTitleCanonicalMutationProvider } from "./pet-title-canonical-mutation-provider.js";
-import { formatPetTitleList, normalizePetTitleDispatchMessage, parsePetTitleCommand } from "./pet-title-lifecycle-service.js";
+import { formatPetTitleList, normalizePetTitleDispatchMessage, parsePetTitleCommand,parsePetTitleSaleCommand } from "./pet-title-lifecycle-service.js";
 
 export interface PetTitleReadAuthorityPort {
   canReadAny(database: AppWiringReadParticipant, actor: PlayerContext): Promise<boolean>;
@@ -122,12 +122,12 @@ export class PetTitleAppWiringIngress {
     private readonly dispatcher: Pick<CommandDispatcher, "resolveReadOnly">,
     private readonly evaluator: Pick<PetTitleShadowEvaluator, "preview">,
     private readonly contexts: PlayerContextPort,
-    private readonly mutations: Pick<PetTitleCanonicalMutationProvider, "create">,
+    private readonly mutations: Pick<PetTitleCanonicalMutationProvider,"create">&Partial<Pick<PetTitleCanonicalMutationProvider,"sell">>,
   ) {}
 
   async handle(event: NormalizedIrisEvent): Promise<PetTitleAppWiringIngressResult> {
-    const command = parsePetTitleCommand(event.message);
-    if ((command?.kind !== "list_self" && command?.kind !== "list_target" && command?.kind !== "select" && command?.kind !== "create")
+    const command = parsePetTitleCommand(event.message)??parsePetTitleSaleCommand(event.message);
+    if ((command?.kind !== "list_self" && command?.kind !== "list_target" && command?.kind !== "select" && command?.kind !== "create"&&command?.kind!=="sell")
       || event.direction !== "incoming" || event.userId === undefined || event.channelId === undefined) return { status: "ignored" };
     // 레거시 String.length(UTF-16 code unit) 검증과 오류 문구를 그대로 유지합니다.
     if(command.kind==="create"&&(command.titleName===""||command.titleName.length>20))return {status:"legacy_fallback"};
@@ -142,7 +142,9 @@ export class PetTitleAppWiringIngress {
     if(command.kind==="select"&&decision.route==="MODERN")return {status:"legacy_fallback"};
     // CREATE SHADOW는 정식 아이템과 타이틀을 변경하지 않고 기존 명령만 실행합니다.
     if(command.kind==="create"&&decision.route==="SHADOW")return {status:"legacy_fallback"};
-    const route = command.kind==="create"
+    // 레거시 공성전 중 완전 무응답을 typed no-reply claim으로 저장할 수 있을 때까지 판매는 강제 legacy입니다.
+    if(command.kind==="sell"&&(decision.route==="SHADOW"||decision.route==="MODERN"))return {status:"legacy_fallback"};
+    const route = command.kind==="create"||command.kind==="sell"
       ? { ...decision, effectMode: "MUTATION" as const } satisfies CommandDispatchDecision & { readonly effectMode: "MUTATION" }
       : { ...decision, effectMode: "READ_ONLY" as const } satisfies CommandDispatchDecision & { readonly effectMode: "READ_ONLY" };
     const claim = {
@@ -153,7 +155,7 @@ export class PetTitleAppWiringIngress {
         command: command.kind,
         message: event.message!,
         targetKey: command.kind === "list_target" ? command.targetName : null,
-        selectedIndex: command.kind === "select" ? command.index : null,
+        selectedIndex: command.kind === "select"||command.kind==="sell" ? command.index : null,
         titleName: command.kind === "create" ? command.titleName : null,
         trustedDisplayName: event.displayNameTrust === "trusted",
         userId: event.userId,

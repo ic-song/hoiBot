@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { formatPetTitleList, normalizePetTitleDispatchMessage, parsePetTitleCommand } from "../src/pet/pet-title-lifecycle-service.js";
+import { formatPetTitleList, isPetTitleCommandCandidate, normalizePetTitleDispatchMessage, parsePetTitleCommand,parsePetTitleSaleCommand } from "../src/pet/pet-title-lifecycle-service.js";
 
 describe("pet title lifecycle boundary", () => {
   it("classifies the five full legacy command forms", () => {
@@ -17,6 +17,11 @@ describe("pet title lifecycle boundary", () => {
     assert.equal(normalizePetTitleDispatchMessage("/펫타이틀목록 대상"), "/펫타이틀목록 [유저명]");
     assert.equal(normalizePetTitleDispatchMessage("/펫타이틀이름 나의 펫"), "/펫타이틀이름 [인자]");
     assert.equal(normalizePetTitleDispatchMessage("/펫타이틀제거 대상 1"), "/펫타이틀제거 [유저명] [타이틀번호]");
+    assert.deepEqual(parsePetTitleSaleCommand("/펫타이틀판매 2"),{kind:"sell",index:2});
+    assert.equal(normalizePetTitleDispatchMessage("/펫타이틀판매 2"),"/펫타이틀판매 [번호]");
+    assert.equal(isPetTitleCommandCandidate("/펫타이틀판매 2"),true);
+    assert.equal(parsePetTitleSaleCommand("/펫타이틀판매방법"),null);
+    assert.equal(parsePetTitleSaleCommand("/펫타이틀판매 1 알려줘"),null);
   });
 
   it("keeps current sequence, equipped marker, detail and allsee independently of instance IDs", () => {

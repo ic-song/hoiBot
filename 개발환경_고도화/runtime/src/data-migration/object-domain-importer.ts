@@ -10,6 +10,7 @@ export interface DomainImportSchemaColumn { table: string; column: string; sqlTy
 export interface DomainImportGeneratedBinding { targetTable: string; targetPkColumn: string; objectType: string; sourceNamespace: string; }
 export interface DomainImportReusedBinding { targetTable: string; targetPkColumn: string; sourceTable: string; sourceColumn: string; }
 export interface DomainImportForeignKey { table: string; column: string; referencesTable: string; referencesColumn: string; }
+export interface DomainImportExactDefinitionImport { table: string; definitionTable: string; definitionPkColumn: string; foreignKeyColumn: string; sourceSystem: string; sourceNamespace: string; sourceIdentifier: string; sourceIdentifierOrigin: "SOURCE_EXACT" | "CONSTANT_CONTRACT"; }
 export interface DomainImportPolicy {
   catalogVersion: "SC-20260902-1";
   targetSchemaSha256: string;
@@ -25,6 +26,7 @@ export interface DomainImportPolicy {
   definitionTargets: string[];
   domainTargets: Record<string, string[]>;
   quarantineReasons: string[];
+  exactDefinitionImports?: DomainImportExactDefinitionImport[];
 }
 
 interface ProjectionRunRow {
@@ -60,7 +62,7 @@ interface ProjectionRow {
   record_domain: string; decision_status: string;
 }
 
-interface ReferenceBinding {
+export interface ReferenceBinding {
   column: string; targetTable: string; targetPkColumn: string; identityLocatorSha256: string;
   bindingScope: "MANIFEST" | "APPROVED_CROSSWALK"; approvalSha256?: string;
 }
@@ -125,7 +127,17 @@ export function calculateObjectDomainImportSemanticSha256(documentText: string):
   return sha256(stableDomainImportJson(document));
 }
 
+export interface DomainImportExactDefinitionRow {
+  target_table_name: string;
+  target_pk_column_name: string;
+  identity_locator_sha256: string;
+  payload: Record<string, unknown>;
+  valueOrigins: Record<string, string>;
+  references: ReferenceBinding[];
+}
+
 export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION = "OBJECT_DOMAIN_IMPORT_RELEVANT_V1" as const;
+export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2 = "OBJECT_DOMAIN_IMPORT_RELEVANT_V2" as const;
 export const OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256 = "487f098d9d8357bbe636b91766dd07f24618b350e449510f52f266fd2b80a861" as const;
 export type ObjectDomainImportSemanticComponent = "identityBindings" | "objectModel" | "disposition" | "fieldMap";
 
@@ -136,8 +148,18 @@ function parseSemanticDocument(documentText: string): Record<string, unknown> {
   return document as Record<string, unknown>;
 }
 
+function preserveFrozenV1ObjectModel(table: Record<string, unknown>, projectionVersion: string): Record<string, unknown> {
+  if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION || table.table !== "canonical_currency_operations" || !Array.isArray(table.uniqueKeys)) return table;
+  return {
+    ...table,
+    // Migration 471 added this candidate key only to bind a runtime PET_TITLE sale
+    // receipt to the same player. It does not change the frozen V1 import payload.
+    uniqueKeys: table.uniqueKeys.filter((key) => !Array.isArray(key) || key.length !== 2 || key[0] !== "currency_operation_id" || key[1] !== "player_id")
+  };
+}
+
 // Runtime-only schema additions must not change the semantic identity of the frozen 45-table import.
-export function calculateObjectDomainImportComponentSemanticSha256(component: ObjectDomainImportSemanticComponent, documentText: string, directTargets: readonly string[]): string {
+export function calculateObjectDomainImportComponentSemanticSha256(component: ObjectDomainImportSemanticComponent, documentText: string, directTargets: readonly string[], projectionVersion: string = OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION): string {
   const document = parseSemanticDocument(documentText);
   let projection: unknown;
   if (component === "objectModel") {
@@ -145,13 +167,15 @@ export function calculateObjectDomainImportComponentSemanticSha256(component: Ob
     if (!Array.isArray(tables)) throw new Error("OBJECT_DOMAIN_IMPORT_COMPONENT_PROJECTION_INVALID");
     const direct = new Set(directTargets);
     projection = {
-      projectionVersion: OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION,
+      projectionVersion,
       component,
-      tables: tables.filter((table): table is Record<string, unknown> => table !== null && !Array.isArray(table) && typeof table === "object" && direct.has(String((table as Record<string, unknown>).table)))
+      tables: tables
+        .filter((table): table is Record<string, unknown> => table !== null && !Array.isArray(table) && typeof table === "object" && direct.has(String((table as Record<string, unknown>).table)))
+        .map((table) => preserveFrozenV1ObjectModel(table, projectionVersion))
     };
   } else if (component === "disposition") {
     projection = {
-      projectionVersion: OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION,
+      projectionVersion,
       component,
       definitionSeed: document.definitionSeed,
       stateImport: document.stateImport,
@@ -171,9 +195,11 @@ export function calculateObjectDomainImportContractSemanticSha256(documentText: 
   const projectionVersion = (policy as Record<string, unknown>).projectionVersion;
   const compatible = (policy as Record<string, unknown>).acceptedCompatibleImportContractSha256;
   const expectedProjectionSha256 = (policy as Record<string, unknown>).currentImportContractProjectionSha256;
-  if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256) || !Array.isArray(compatible) || compatible.length !== 1 || compatible[0] !== OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
+  const v1Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION && Array.isArray(compatible) && compatible.length === 1 && compatible[0] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
+  const v2Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2 && Array.isArray(compatible) && compatible.length === 0;
+  if ((!v1Compatible && !v2Compatible) || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
   const { semanticHashPolicy: _semanticHashPolicy, ...importRelevantContract } = document;
-  const actual = sha256(stableDomainImportJson({ projectionVersion: OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION, contract: importRelevantContract }));
+  const actual = sha256(stableDomainImportJson({ projectionVersion, contract: importRelevantContract }));
   if (actual !== expectedProjectionSha256 || actual === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_PROJECTION_DRIFT");
   return actual;
 }
@@ -250,15 +276,28 @@ function assertTypedValue(column: DomainImportSchemaColumn, value: unknown, orig
   throw new Error("OBJECT_DOMAIN_IMPORT_SQL_TYPE_UNKNOWN");
 }
 
-function assertPolicy(policy: DomainImportPolicy): void {
+export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void {
   if (policy.catalogVersion !== "SC-20260902-1" || !HASH.test(policy.targetSchemaSha256) || !HASH.test(policy.importContractSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_POLICY_INVALID");
-  if (policy.acceptedImportContractSha256.length !== 2 || policy.acceptedImportContractSha256[0] !== policy.importContractSha256 || policy.acceptedImportContractSha256[1] !== OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256 || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
+  const exactImports = policy.exactDefinitionImports ?? [];
+  const v1Compatibility = exactImports.length === 0 && policy.acceptedImportContractSha256.length === 2 && policy.acceptedImportContractSha256[0] === policy.importContractSha256 && policy.acceptedImportContractSha256[1] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
+  const v2Compatibility = exactImports.length === 2 && policy.acceptedImportContractSha256.length === 1 && policy.acceptedImportContractSha256[0] === policy.importContractSha256;
+  if ((!v1Compatibility && !v2Compatibility) || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
+  if (v2Compatibility) {
+    const expected = [
+      { table: "canonical_item_definition_imports", definitionTable: "canonical_item_definitions", definitionPkColumn: "item_id", foreignKeyColumn: "item_id", sourceSystem: "LEGACY_JSON", sourceNamespace: "member.bag", sourceIdentifier: "펫타이틀권🦊(/펫타이틀이름)", sourceIdentifierOrigin: "SOURCE_EXACT" },
+      { table: "canonical_currency_definition_imports", definitionTable: "canonical_currency_definitions", definitionPkColumn: "currency_id", foreignKeyColumn: "currency_id", sourceSystem: "LEGACY_JSON", sourceNamespace: "member.point", sourceIdentifier: "point", sourceIdentifierOrigin: "CONSTANT_CONTRACT" }
+    ].sort((left, right) => left.table.localeCompare(right.table, "en"));
+    if (stableDomainImportJson([...exactImports].sort((left, right) => left.table.localeCompare(right.table, "en"))) !== stableDomainImportJson(expected)) throw new Error("OBJECT_DOMAIN_IMPORT_EXACT_DEFINITION_IMPORT_POLICY_INVALID");
+  }
   for (const key of ["identityBindings", "objectModel", "disposition", "fieldMap"] as const) if (!HASH.test(policy.componentSemanticSha256[key]) || policy.componentSemanticSha256[key] !== policy.contractComponentSemanticSha256[key]) throw new Error("OBJECT_DOMAIN_IMPORT_COMPONENT_CONTRACT_DRIFT");
-  if (new Set(policy.directTargets).size !== 45 || policy.directTargets.length !== 45) throw new Error("OBJECT_DOMAIN_IMPORT_DIRECT_TARGET_SCOPE_MISMATCH");
-  if (new Set(policy.definitionTargets).size !== 23 || policy.definitionTargets.length !== 23) throw new Error("OBJECT_DOMAIN_IMPORT_DEFINITION_TARGET_SCOPE_MISMATCH");
-  if (policy.columns.length !== 241 || new Set(policy.columns.map((column) => `${column.table}.${column.column}`)).size !== 241) throw new Error("OBJECT_DOMAIN_IMPORT_COLUMN_SCOPE_MISMATCH");
+  const expectedDirectTargets = exactImports.length === 0 ? 45 : 47;
+  const expectedDefinitionTargets = exactImports.length === 0 ? 23 : 25;
+  const expectedColumns = exactImports.length === 0 ? 241 : 252;
+  if (new Set(policy.directTargets).size !== expectedDirectTargets || policy.directTargets.length !== expectedDirectTargets) throw new Error("OBJECT_DOMAIN_IMPORT_DIRECT_TARGET_SCOPE_MISMATCH");
+  if (new Set(policy.definitionTargets).size !== expectedDefinitionTargets || policy.definitionTargets.length !== expectedDefinitionTargets) throw new Error("OBJECT_DOMAIN_IMPORT_DEFINITION_TARGET_SCOPE_MISMATCH");
+  if (policy.columns.length !== expectedColumns || new Set(policy.columns.map((column) => `${column.table}.${column.column}`)).size !== expectedColumns) throw new Error("OBJECT_DOMAIN_IMPORT_COLUMN_SCOPE_MISMATCH");
   const identities = [...policy.generatedBindings.map((row) => row.targetTable), ...policy.reusedBindings.map((row) => row.targetTable)];
-  if (identities.length !== 45 || new Set(identities).size !== 45 || stableDomainImportJson([...identities].sort()) !== stableDomainImportJson([...policy.directTargets].sort())) throw new Error("OBJECT_DOMAIN_IMPORT_IDENTITY_SCOPE_MISMATCH");
+  if (identities.length !== expectedDirectTargets || new Set(identities).size !== expectedDirectTargets || stableDomainImportJson([...identities].sort()) !== stableDomainImportJson([...policy.directTargets].sort())) throw new Error("OBJECT_DOMAIN_IMPORT_IDENTITY_SCOPE_MISMATCH");
   if (policy.directTargets.some((table) => !policy.columns.some((column) => column.table === table)) || policy.definitionTargets.some((table) => !policy.directTargets.includes(table))) throw new Error("OBJECT_DOMAIN_IMPORT_TARGET_SCHEMA_MISMATCH");
   const identifiers = [...policy.directTargets, ...policy.columns.flatMap((column) => [column.table, column.column]), ...policy.generatedBindings.flatMap((binding) => [binding.targetTable, binding.targetPkColumn]), ...policy.reusedBindings.flatMap((binding) => [binding.targetTable, binding.targetPkColumn, binding.sourceTable, binding.sourceColumn]), ...policy.foreignKeys.flatMap((foreignKey) => [foreignKey.table, foreignKey.column, foreignKey.referencesTable, foreignKey.referencesColumn])];
   if (identifiers.some((identifier) => !SQL_IDENTIFIER.test(identifier))) throw new Error("OBJECT_DOMAIN_IMPORT_SQL_IDENTIFIER_INVALID");
@@ -386,6 +425,19 @@ function sortRows(rows: PreparedRow[], policy: DomainImportPolicy): PreparedRow[
   return ordered;
 }
 
+export function assertObjectDomainImportExactDefinitionRows(rows: readonly DomainImportExactDefinitionRow[], exactImports: readonly DomainImportExactDefinitionImport[]): void {
+  for (const exact of exactImports) {
+    const matches = rows.filter((row) => row.target_table_name === exact.table);
+    if (matches.length !== 1) throw new Error("OBJECT_DOMAIN_IMPORT_EXACT_DEFINITION_IMPORT_COUNT_INVALID");
+    const row = matches[0]!;
+    if (row.payload.source_system !== exact.sourceSystem || row.payload.source_namespace !== exact.sourceNamespace || row.payload.source_identifier !== exact.sourceIdentifier || row.valueOrigins.source_system !== "CONSTANT_CONTRACT" || row.valueOrigins.source_namespace !== "CONSTANT_CONTRACT" || row.valueOrigins.source_identifier !== exact.sourceIdentifierOrigin) throw new Error("OBJECT_DOMAIN_IMPORT_EXACT_DEFINITION_IMPORT_TUPLE_INVALID");
+    const references = row.references.filter((candidate) => candidate.column === exact.foreignKeyColumn);
+    if (row.references.length !== 1 || references.length !== 1 || references[0]!.bindingScope !== "MANIFEST" || references[0]!.targetTable !== exact.definitionTable || references[0]!.targetPkColumn !== exact.definitionPkColumn || references[0]!.approvalSha256 !== undefined) throw new Error("OBJECT_DOMAIN_IMPORT_EXACT_DEFINITION_IMPORT_FK_INVALID");
+    const definition = rows.filter((candidate) => candidate.target_table_name === exact.definitionTable && candidate.target_pk_column_name === exact.definitionPkColumn && candidate.identity_locator_sha256 === references[0]!.identityLocatorSha256);
+    if (definition.length !== 1) throw new Error("OBJECT_DOMAIN_IMPORT_EXACT_DEFINITION_IMPORT_FK_UNRESOLVED");
+  }
+}
+
 function validateCrossRecordRules(rows: PreparedRow[], policy: DomainImportPolicy): void {
   const rowByIdentity = new Map(rows.map((row) => [`${row.target_table_name}\0${row.target_pk_column_name}\0${row.identity_locator_sha256}`, row]));
   const manifests = new Set(rowByIdentity.keys());
@@ -394,6 +446,7 @@ function validateCrossRecordRules(rows: PreparedRow[], policy: DomainImportPolic
     const reused = policy.reusedBindings.find((binding) => binding.targetTable === row.target_table_name && binding.targetPkColumn === row.target_pk_column_name);
     if (reused !== undefined && !manifests.has(`${reused.sourceTable}\0${reused.sourceColumn}\0${row.identity_locator_sha256}`)) throw new Error("OBJECT_DOMAIN_IMPORT_REUSED_PRIMARY_KEY_SOURCE_UNRESOLVED");
   }
+  assertObjectDomainImportExactDefinitionRows(rows, policy.exactDefinitionImports ?? []);
   for (const row of rows) {
     const reusedOwner = policy.reusedBindings.some((binding) => binding.targetTable === row.target_table_name && binding.sourceTable === "canonical_players") ? row.identity_locator_sha256 : undefined;
     const owner = row.references.find((reference) => reference.column === "player_id")?.identityLocatorSha256 ?? reusedOwner;
@@ -474,7 +527,7 @@ function calculateImportPlanSha256(run: ProjectionRunRow, decisions: DecisionRow
 
 // COMPLETE projection의 전수 decision과 45개 direct target 계약을 쓰기 전에 검증합니다.
 export function buildObjectDomainImportPlan(run: ProjectionRunRow, decisions: DecisionRow[], projectionRows: ProjectionRow[], policy: DomainImportPolicy): DomainImportPlan {
-  assertPolicy(policy);
+  assertObjectDomainImportPolicy(policy);
   if (run.run_status !== "COMPLETE" || run.catalog_version !== policy.catalogVersion || run.target_schema_sha256 !== policy.targetSchemaSha256 || !HASH.test(run.projection_manifest_sha256) || !HASH.test(run.projection_sha256) || !HASH.test(run.upstream_envelope_sha256)) throw new Error("OBJECT_DOMAIN_IMPORT_PROJECTION_RUN_INVALID");
   if (decisions.length !== Number(run.expected_source_count) || new Set(decisions.map((row) => row.catalog_source_decision_id)).size !== decisions.length) throw new Error("OBJECT_DOMAIN_IMPORT_DECISION_COVERAGE_MISMATCH");
   const counts = { PROJECT: 0, QUARANTINE: 0, IGNORE: 0 };
@@ -591,7 +644,6 @@ export class MariaObjectDomainImporter {
     if (run !== undefined && !policy.acceptedImportContractSha256.includes(run.import_contract_sha256)) throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_IDENTITY_INCOMPATIBLE");
     return run;
   }
-
   async importProjection(catalogProjectionRunId: string, policy: DomainImportPolicy, actor: string): Promise<DomainImportResult> {
     if (!/^[a-z0-9]{8}$/.test(catalogProjectionRunId)) throw new Error("OBJECT_DOMAIN_IMPORT_RUN_ID_INVALID");
     const audit = createObjectAuditValues(actor, this.now());
@@ -641,7 +693,7 @@ export class MariaObjectDomainImporter {
   }
 
   async rollback(catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<number> {
-    assertPolicy(policy);
+    assertObjectDomainImportPolicy(policy);
     return this.database.withTransaction(async (transaction) => {
       const projectionRun = (await transaction.query<ProjectionRunRow[]>("SELECT catalog_projection_run_id,common_staging_run_id,catalog_version,projection_manifest_sha256,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,projected_file_count,ignored_file_count,target_schema_sha256,projection_sha256,upstream_envelope_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status FROM data_migration_catalog_projection_runs WHERE catalog_projection_run_id=? FOR UPDATE", [catalogProjectionRunId]))[0];
       if (projectionRun === undefined) throw new Error("OBJECT_DOMAIN_IMPORT_PROJECTION_RUN_NOT_FOUND");

@@ -48,6 +48,22 @@ class CreateMutationParticipant extends MutationParticipant {
   }
 }
 
+class SaleMutationParticipant extends MutationParticipant {
+  constructor(private readonly found=true,private readonly acquisitionPrice:bigint|null=100_000_000n){super();}
+  override async query<T>(sql:string,values:readonly unknown[]=[]):Promise<T>{
+    this.calls.push({kind:"query",sql,values});
+    if(sql.includes("FROM canonical_players"))return [{player_id:"player01"}] as T;
+    if(sql.includes("FROM canonical_owned_pet_title_instances owned"))return (this.found?[{owned_pet_title_id:"petown01",pet_title_id:"pettitl1",ownership_status:"owned",acquisition_price:this.acquisitionPrice,title_name:"별빛",base_sale_price:50_000_000n}]:[]) as T;
+    if(sql.includes("FROM canonical_currency_definition_imports"))return [{currency_id:"point001",decimal_places:3}] as T;
+    if(sql.includes("FROM canonical_currency_operations"))return [] as T;
+    if(sql.includes("FROM canonical_currency_definitions WHERE currency_id"))return [{currency_id:"point001",active_flag:1}] as T;
+    if(sql.includes("FROM canonical_player_currency_balances"))return [{player_currency_balance_id:"balance1",balance_minor_amount:2_000n}] as T;
+    if(sql.includes("FROM object_identity_crosswalks WHERE source_system"))return [] as T;
+    if(sql.includes("SELECT ownership_status FROM canonical_owned_pet_title_instances"))return [{ownership_status:this.ownershipStatus}] as T;
+    return [] as T;
+  }
+}
+
 describe("PET-TITLE canonical mutation participant", () => {
   it("debits the exact canonical ticket and creates a distinct definition plus owned occurrence", async () => {
     const database = new CreateMutationParticipant(2n);
@@ -133,5 +149,39 @@ describe("PET-TITLE canonical mutation participant", () => {
       /PET_TITLE_SELL_CURRENCY_PARTICIPANT_REQUIRED/,
     );
     assert.equal(database.calls.length, 0);
+  });
+
+  it("settles title ownership and point currency in one mutation participant",async()=>{
+    const database=new SaleMutationParticipant();
+    const ids=["petop003","petpart3"];
+    const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!).sell(database,claim,{actor:"pet_title",playerId:"player01",index:1});
+    assert.equal(result.outcomeCode,"SOLD");
+    if(result.outcomeCode!=="SOLD")return;
+    assert.equal(result.titleName,"별빛");
+    assert.equal(result.salePoint,30_000_000n);
+    const pointLookup=database.calls.find(({sql})=>sql.includes("FROM canonical_currency_definition_imports"));
+    assert.deepEqual(pointLookup?.values,["LEGACY_JSON","member.point","point"]);
+    const currencyOperation=database.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_currency_operations"));
+    assert.equal(currencyOperation?.values[8],30_000_000_000n.toString());
+    assert.ok(database.calls.some(({sql,values})=>sql.startsWith("UPDATE canonical_owned_pet_title_instances")&&values[0]==="sold"));
+    const receipt=database.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_operations"));
+    assert.equal(receipt?.values[4],result.currencyOperationId);
+  });
+
+  it("records a no-op SELL receipt when the requested sequence does not exist",async()=>{
+    const database=new SaleMutationParticipant(false);
+    const ids=["petop004","petpart4"];
+    const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!).sell(database,claim,{actor:"pet_title",playerId:"player01",index:2});
+    assert.equal(result.outcomeCode,"NOT_FOUND");
+    assert.equal(database.calls.some(({sql})=>/canonical_currency_operations|UPDATE canonical_owned_pet_title_instances/.test(sql)&&/^(?:INSERT|UPDATE)/.test(sql)),false);
+    assert.ok(database.calls.some(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_operations")));
+  });
+
+  it("rejects unsafe sale indexes before any database access",async()=>{
+    for(const index of [0,Number.MAX_SAFE_INTEGER+1]){
+      const database=new SaleMutationParticipant();
+      await assert.rejects(new PetTitleCanonicalMutationProvider().sell(database,claim,{actor:"pet_title",playerId:"player01",index}),/PET_TITLE_SALE_INDEX_INVALID/);
+      assert.equal(database.calls.length,0);
+    }
   });
 });

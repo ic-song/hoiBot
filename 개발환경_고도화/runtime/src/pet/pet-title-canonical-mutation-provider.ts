@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { ControlledDatabaseTransaction, DatabaseClient } from "../database.js";
 import type { AppWiringClaim, AppWiringMutationParticipant } from "../dispatch/app-wiring-operation-provider.js";
 import { CanonicalItemInventoryRepository } from "../inventory/canonical-item-inventory-repository.js";
+import { MariaCanonicalCurrencyRepository } from "../currency/maria-canonical-currency-repository.js";
 import {
   assertObjectIdentityCandidate,
   createObjectAuditValues,
@@ -10,6 +11,7 @@ import {
   type ObjectIdentityCandidateGenerator,
 } from "../identity/object-identity-audit-provider.js";
 import { MariaCanonicalTitleRepository, type CanonicalTitleReleaseStatus } from "../title/maria-canonical-title-repository.js";
+import { calculatePetTitleSaleMinorAmount } from "./pet-title-sale-policy.js";
 
 interface PetTitleCanonicalMutationBase {
   operationId: string;
@@ -23,6 +25,9 @@ export type PetTitleCanonicalMutationResult = PetTitleCanonicalCreateResult
   | (PetTitleCanonicalMutationBase & { operationType:"SELECT"|"REMOVE"|"SELL";ownedPetTitleId:string });
 export type PetTitleCanonicalSelectResult=PetTitleCanonicalMutationBase&{operationType:"SELECT";ownedPetTitleId:string};
 export type PetTitleCanonicalRemoveResult=PetTitleCanonicalMutationBase&{operationType:"REMOVE";ownedPetTitleId:string};
+export type PetTitleCanonicalSellResult=
+  | (PetTitleCanonicalMutationBase&{operationType:"SELL";outcomeCode:"SOLD";ownedPetTitleId:string;titleName:string;salePoint:bigint;currencyOperationId:string;balanceAfterMinorAmount:bigint})
+  | (PetTitleCanonicalMutationBase&{operationType:"SELL";outcomeCode:"NOT_FOUND";salePoint:0n});
 type PetTitleCanonicalOwnershipMutationResult=PetTitleCanonicalMutationBase&{operationType:"SELECT"|"REMOVE"|"SELL";ownedPetTitleId:string};
 
 interface OwnedTitleRow {
@@ -30,24 +35,39 @@ interface OwnedTitleRow {
   ownership_status: string;
 }
 
+interface SellTitleRow extends OwnedTitleRow {
+  owned_pet_title_id:string;
+  title_name:string;
+  acquisition_price:bigint|string|null;
+  base_sale_price:bigint|string;
+}
+
+interface PointCurrencyRow { currency_id:string;decimal_places:number|string; }
+
 interface TicketDefinitionRow { item_id: string; }
 interface TicketStackRow { quantity: bigint | string; }
 
 const TITLE_TICKET_NAME = "펫타이틀권🦊(/펫타이틀이름)";
 const CREATED_TITLE_PRICE = 100000000n;
+const POINT_SOURCE_SYSTEM="LEGACY_JSON";
+const POINT_SOURCE_NAMESPACE="member.point";
+const POINT_SOURCE_IDENTIFIER="point";
 
-function scopedDatabase(participant: AppWiringMutationParticipant): DatabaseClient {
-  const controlled=(current:AppWiringMutationParticipant):ControlledDatabaseTransaction=>({
+function controlledParticipant(current:AppWiringMutationParticipant):ControlledDatabaseTransaction{
+  return {
     query:<T>(sql:string,values:readonly unknown[]=[])=>(current.query<T>(sql,values)),
     execute:(sql:string,values:readonly unknown[]=[])=>current.execute(sql,values),
-    withSavepoint:<T>(work:(nested:ControlledDatabaseTransaction)=>Promise<T>)=>current.withTransaction(next=>work(controlled(next))),
-  });
+    withSavepoint:<T>(work:(nested:ControlledDatabaseTransaction)=>Promise<T>)=>current.withTransaction(next=>work(controlledParticipant(next))),
+  };
+}
+
+function scopedDatabase(participant: AppWiringMutationParticipant): DatabaseClient {
   return {
     ping: async () => { await participant.query("SELECT 1"); },
     verifyRollback: async () => true,
     query: <T>(sql: string, values: readonly unknown[] = []) => participant.query<T>(sql, values),
     execute: (sql: string, values: readonly unknown[] = []) => participant.execute(sql, values),
-    withTransaction: (work) => participant.withTransaction((nested)=>work(controlled(nested))),
+    withTransaction: (work) => participant.withTransaction((nested)=>work(controlledParticipant(nested))),
     close: async () => undefined,
   };
 }
@@ -144,6 +164,53 @@ export class PetTitleCanonicalMutationProvider {
     return this.mutate(database, claim, { ...input, operationType: "REMOVE", releaseStatus: input.status }) as Promise<PetTitleCanonicalRemoveResult>;
   }
 
+  async sell(database:AppWiringMutationParticipant,claim:AppWiringClaim,input:{actor:string;playerId:string;index:number}):Promise<PetTitleCanonicalSellResult>{
+    if(claim.route!=="MODERN"||claim.effectMode!=="MUTATION")throw new Error("PET_TITLE_APP_WIRING_MUTATION_CLAIM_REQUIRED");
+    assertObjectIdentityCandidate(input.playerId);
+    if(!Number.isSafeInteger(input.index)||input.index<1)throw new Error("PET_TITLE_SALE_INDEX_INVALID");
+    const player=(await database.query<Array<{player_id:string}>>("SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE",[input.playerId]))[0];
+    if(player===undefined)throw new Error("CANONICAL_PLAYER_NOT_FOUND");
+    const target=(await database.query<SellTitleRow[]>(
+      `SELECT owned.owned_pet_title_id,owned.pet_title_id,owned.ownership_status,owned.acquisition_price,definition.title_name,definition.base_sale_price
+         FROM canonical_owned_pet_title_instances owned
+         JOIN canonical_pet_title_definitions definition ON definition.pet_title_id=owned.pet_title_id
+        WHERE owned.player_id=? AND owned.ownership_status='owned'
+        ORDER BY owned.acquisition_sequence,owned.owned_pet_title_id LIMIT 1 OFFSET ? FOR UPDATE`,
+      [input.playerId,input.index-1],
+    ))[0];
+    if(target===undefined){
+      const projection={operationType:"SELL",outcomeCode:"NOT_FOUND",playerId:input.playerId,petTitleId:null,ownedPetTitleId:null,currencyOperationId:null,index:input.index,salePoint:"0"};
+      const resultFingerprint=fingerprint(projection);
+      const operationId=await this.insertReceipt(database,claim,input.actor,projection,resultFingerprint);
+      await this.insertParticipant(database,input.actor,operationId,input.playerId);
+      return {operationId,resultFingerprint,replayedDomainState:false,operationType:"SELL",outcomeCode:"NOT_FOUND",salePoint:0n};
+    }
+    const point=(await database.query<PointCurrencyRow[]>(
+      `SELECT definition.currency_id,definition.decimal_places
+         FROM canonical_currency_definition_imports import_row
+         JOIN canonical_currency_definitions definition ON definition.currency_id=import_row.currency_id
+        WHERE import_row.source_system=? AND import_row.source_namespace=? AND import_row.source_identifier=?
+          AND definition.active_flag=TRUE FOR UPDATE`,
+      [POINT_SOURCE_SYSTEM,POINT_SOURCE_NAMESPACE,POINT_SOURCE_IDENTIFIER],
+    ))[0];
+    if(point===undefined)throw new Error("PET_TITLE_POINT_CANONICAL_DEFINITION_NOT_FOUND");
+    const priceAmount=BigInt(target.acquisition_price??target.base_sale_price);
+    const sale=calculatePetTitleSaleMinorAmount(priceAmount,Number(point.decimal_places));
+    const scoped=scopedDatabase(database);
+    const currency=await new MariaCanonicalCurrencyRepository(scoped).adjustBalanceInTransaction(controlledParticipant(database),{
+      actor:input.actor,playerId:input.playerId,currencyId:point.currency_id,deltaMinorAmount:sale.deltaMinorAmount,
+      operationKind:"PET_TITLE_SELL",reasonKey:"PET_TITLE_SOLD",requestKey:claim.requestKey,
+    });
+    const replayedTitle=await new MariaCanonicalTitleRepository(scoped,this.now).release({
+      domain:"pet",actor:input.actor,playerId:input.playerId,ownedTitleId:target.owned_pet_title_id,status:"sold",
+    });
+    const projection={operationType:"SELL",outcomeCode:"SOLD",playerId:input.playerId,petTitleId:target.pet_title_id,ownedPetTitleId:target.owned_pet_title_id,currencyOperationId:currency.currencyOperationId,titleName:target.title_name,salePoint:sale.salePoint.toString(),deltaMinorAmount:sale.deltaMinorAmount.toString(),balanceAfterMinorAmount:currency.balanceAfterMinorAmount.toString()};
+    const resultFingerprint=fingerprint(projection);
+    const operationId=await this.insertReceipt(database,claim,input.actor,projection,resultFingerprint);
+    await this.insertParticipant(database,input.actor,operationId,input.playerId);
+    return {operationId,resultFingerprint,replayedDomainState:currency.replayed||replayedTitle,operationType:"SELL",outcomeCode:"SOLD",ownedPetTitleId:target.owned_pet_title_id,titleName:target.title_name,salePoint:sale.salePoint,currencyOperationId:currency.currencyOperationId,balanceAfterMinorAmount:currency.balanceAfterMinorAmount};
+  }
+
   private async mutate(database: AppWiringMutationParticipant, claim: AppWiringClaim, input: { actor: string; playerId: string; ownedPetTitleId: string; operationType: "SELECT"|"REMOVE"|"SELL"; releaseStatus?: CanonicalTitleReleaseStatus }): Promise<PetTitleCanonicalOwnershipMutationResult> {
     if (claim.route !== "MODERN" || claim.effectMode !== "MUTATION") throw new Error("PET_TITLE_APP_WIRING_MUTATION_CLAIM_REQUIRED");
     assertObjectIdentityCandidate(input.playerId);
@@ -167,15 +234,15 @@ export class PetTitleCanonicalMutationProvider {
     return { operationId, resultFingerprint, operationType: input.operationType, ownedPetTitleId: input.ownedPetTitleId, replayedDomainState };
   }
 
-  private async insertReceipt(database: AppWiringMutationParticipant, claim: AppWiringClaim, actor: string, projection: { operationType: string; playerId: string; petTitleId: string | null; ownedPetTitleId: string | null }, resultFingerprint: string): Promise<string> {
+  private async insertReceipt(database: AppWiringMutationParticipant, claim: AppWiringClaim, actor: string, projection: { operationType: string; playerId: string; petTitleId: string | null; ownedPetTitleId: string | null;currencyOperationId?:string|null }, resultFingerprint: string): Promise<string> {
     const audit = createObjectAuditValues(actor, this.now());
     for (let attempt = 0; attempt < this.maximumAttempts; attempt += 1) {
       const operationId = this.generate();
       assertObjectIdentityCandidate(operationId);
       try {
         const result = await database.execute(
-          "INSERT INTO canonical_pet_title_operations(pet_title_operation_id,player_id,pet_title_id,owned_pet_title_id,owned_pet_id,operation_type,replay_namespace,request_key,payload_fingerprint,result_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,NULL,?,?,?,?,?,'COMPLETED',?,?,?,?)",
-          [operationId, projection.playerId, projection.petTitleId, projection.ownedPetTitleId, projection.operationType, claim.requestNamespace, claim.requestKey, claim.payloadFingerprint, resultFingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME],
+          "INSERT INTO canonical_pet_title_operations(pet_title_operation_id,player_id,pet_title_id,owned_pet_title_id,owned_pet_id,currency_operation_id,operation_type,replay_namespace,request_key,payload_fingerprint,result_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,NULL,?,?,?,?,?,?,'COMPLETED',?,?,?,?)",
+          [operationId, projection.playerId, projection.petTitleId, projection.ownedPetTitleId,projection.currencyOperationId??null, projection.operationType, claim.requestNamespace, claim.requestKey, claim.payloadFingerprint, resultFingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME],
         );
         if (result.affectedRows !== 1n) throw new Error("PET_TITLE_OPERATION_RECEIPT_NOT_PERSISTED");
         return operationId;

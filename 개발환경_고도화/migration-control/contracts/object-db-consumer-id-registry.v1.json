@@ -5506,6 +5506,16 @@
       "state": "ACTIVE"
     },
     {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts\",\"sell\",\"SQL_METHOD:sell\"]",
+      "consumerId": "sql-repository-bbbffe051f8c4a8e",
+      "state": "ACTIVE"
+    },
+    {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/currency/maria-canonical-currency-repository.ts\",\"adjustBalanceInTransaction\",\"SQL_METHOD:adjustBalanceInTransaction\"]",
+      "consumerId": "sql-repository-5e64cc5bb960b2af",
+      "state": "ACTIVE"
+    },
+    {
       "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/account-platform/player-context-provider.ts\",\"resolveUniqueLegacyDisplayTarget\",\"SQL_METHOD:resolveUniqueLegacyDisplayTarget\"]",
       "consumerId": "sql-repository-261eb97022941f77",
       "state": "ACTIVE"

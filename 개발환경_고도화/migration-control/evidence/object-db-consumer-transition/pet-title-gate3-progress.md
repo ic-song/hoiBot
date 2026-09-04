@@ -19,8 +19,8 @@
   - `PetTitleCanonicalMutationProvider.release`
 - 현재 PET-TITLE primary 소비자: 24개
 - 공용 CONTEXT-BRIDGE 소비자: 13개
-- 전체 소비자 매니페스트: 1,102개
-- 매니페스트 SHA-256: `7586c8ebcc57873f0bfa6497e2e2fd04e7706f1e84dbda83d9a51d3a85fe5891`
+- 전체 소비자 매니페스트: 1,104개
+- 매니페스트 SHA-256: `0992cf9cdba5c7c520c0a4c3b74a0a86dbc408a543c70e86cbcf47be47dc4008`
 
 ## 구현된 경계
 
@@ -52,9 +52,10 @@
 ## 확인된 레거시 차이
 
 - `/펫타이틀판매`는 레거시 코드에서 포인트를 메모리상 증가시키지만 `member.json` 저장 호출이 없습니다.
-- canonical 전환에서는 이 동작을 정상 저장으로 오인하지 않고, CURRENCY-SHOP과의 단일 트랜잭션 작업으로 별도 구현해야 합니다.
-- currency participant가 연결되기 전 `sold` 해제 요청은 DB 접근 전에 `PET_TITLE_SELL_CURRENCY_PARTICIPANT_REQUIRED`로 거절합니다.
-- `canonical_item_definition_imports`의 `LEGACY_JSON/member.bag/펫타이틀권🦊(/펫타이틀이름)` exact binding을 만드는 승인된 WBS742 seed/import가 아직 없어 생성 MODERN rollout은 차단 상태입니다. 런타임 표시명 추론이나 임의 backfill은 사용하지 않습니다.
+- canonical 판매 provider는 획득가격 우선 판매가와 `LEGACY_JSON/member.point/point` exact 통화 정의를 사용하고, 소유 상태 `sold`, 선택 해제, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt/OWNER participant를 동일 app-wiring mutation transaction에 결합합니다.
+- migration 471은 PET_TITLE SELL receipt와 CURRENCY operation 사이의 nullable exact FK를 추가하고 `PET_TITLE_SELL`을 SHADOW로 등록합니다. 단독 `release(status='sold')`는 계속 DB 접근 전에 거절합니다.
+- WBS742 V2는 `canonical_item_definition_imports`의 `LEGACY_JSON/member.bag/펫타이틀권🦊(/펫타이틀이름)`과 `canonical_currency_definition_imports`의 `LEGACY_JSON/member.point/point` exact binding 계약을 제공합니다. 아직 실제 MariaDB 리허설·승인 적용 전이므로 생성·판매 MODERN rollout은 차단 상태입니다. 런타임 표시명 추론이나 임의 backfill은 사용하지 않습니다.
+- 판매 MODERN rollout은 WBS742 V2 실제 이관 리허설과 공성전 상태의 transaction 내부 잠금·재확인, replay-safe typed 무응답 claim, 무응답 시 outbox 0건 계약이 모두 검증될 때까지 차단합니다.
 - 현 스키마의 펫타이틀 선택은 `owned_pet_id`별이 아니라 플레이어별 1개 선택입니다.
 
 ## 검증
@@ -62,11 +63,13 @@
 - 계정/플랫폼 및 PlayerContext 집중 테스트: 38/38 통과
 - PET-TITLE 및 READ_ONLY app-wiring 집중 테스트: 35/35 통과
 - PET-TITLE 생성·동일명 분리·티켓 부족·활성계정 잠금 집중 테스트: 19/19 통과
+- PET-TITLE 판매 가격·minor-unit·원자 CURRENCY 결합·no-op receipt·정확 명령 guard와 WBS742 V1/V2 회귀를 포함한 현재 집중 묶음: 87/87 통과
 - 실제 앱 통합 테스트: 41/41 통과
 - READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
 - MUTATION reply 원자성 테스트: 10/10 통과(정상 저장·동일 outbox replay·4개 실패 지점 전체 rollback·commit 결과 불명 복구·payload/typed reference drift 차단·중복 outbox 차단·legacy replay 차단)
 - 소비자 안정 ID 계약 테스트: 5/5 통과
-- 소비자 재도출·runtime boundary 계약: 18/18 통과
+- 소비자 재도출·runtime boundary 계약: 18/18 통과(안정 ID 5건 포함 전체 23/23)
+- 오브젝트 데이터 모델 계약 검사: 등록 대상 94개, 통과
 - 전체 runtime 회귀: 2,095개 중 2,087 통과, 실패 0, 환경 의존 8개 건너뜀(마지막 2개 보완 테스트는 별도 10/10 집중 검증)
 - TypeScript typecheck: 통과
 - JSON 계약 파싱: 14/14 통과
@@ -78,8 +81,8 @@
 - WBS746 공용 PlayerContextPort 구현을 주입한 self/target 통합: 완료
 - PET_TITLE ingress의 `app.ts` 연결, 요청-local 전송 및 재시작 outbox worker 경계: 완료
 - target 목록의 레거시 room/principal 권한을 안정 식별자로 확정한 authority provider 연결
-- 사용자 생성과 ITEM 티켓 차감을 한 트랜잭션으로 연결: 구현·합성 검증 완료, exact ticket import binding seed 미완료로 rollout 차단
-- 판매와 CURRENCY 포인트 지급을 한 트랜잭션으로 연결
+- 사용자 생성과 ITEM 티켓 차감을 한 트랜잭션으로 연결: 구현·합성 검증 완료, V2 exact ticket import의 실제 MariaDB 리허설 전이라 rollout 차단
+- 판매와 CURRENCY 포인트 지급을 한 트랜잭션으로 연결: provider·스키마·합성 검증 완료, transaction 내부 공성전 재확인·replay-safe typed 무응답/outbox 0·실제 MariaDB 원자 rollback/replay 검증 전이라 ingress는 강제 legacy
 - 관리자 add/sync/reset의 canonical owner-graph 전환
 - sync/reset용 batch/global operation receipt additive migration
 - isolated MariaDB replay·payload drift·rollback·restart 검증

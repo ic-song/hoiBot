@@ -4437,9 +4437,9 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐습니다. `/펫타이틀이름 [인자]`는 MODERN에서 canonical ITEM 티켓 차감, 요청별 PET_TITLE 정의·소유 occurrence 생성, typed receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction으로 처리합니다. 동일 표시명도 요청별 정의 ID를 따로 만들며, 티켓은 `LEGACY_JSON/member.bag/정확한 원본 문자열` import binding으로만 찾습니다. 현재 등록 rollout이 SHADOW이므로 생성 명령은 레거시를 계속 실행하고, exact import binding seed가 WBS742에 추가되기 전에는 MODERN 전환하지 않습니다. `/펫타이틀 [번호]` 선택 MODERN도 무응답 reply 계약이 완성될 때까지 레거시로 고정합니다.
+Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐습니다. `/펫타이틀이름 [인자]`는 MODERN에서 canonical ITEM 티켓 차감, 요청별 PET_TITLE 정의·소유 occurrence 생성, typed receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction으로 처리합니다. 동일 표시명도 요청별 정의 ID를 따로 만들며, 티켓은 `LEGACY_JSON/member.bag/정확한 원본 문자열` import binding으로만 찾습니다. `/펫타이틀판매 [번호]`는 소유 occurrence의 획득가격 우선 판매가, `LEGACY_JSON/member.point/point` 통화 정의, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt를 같은 mutation transaction으로 처리하도록 준비됐습니다. 생성·판매 등록 rollout은 SHADOW이며 WBS742 V2 exact import와 공성전 무응답 경계 검증 전에는 MODERN 전환하지 않습니다. `/펫타이틀 [번호]` 선택 MODERN도 무응답 reply 계약이 완성될 때까지 레거시로 고정합니다.
 
-Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
+Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀판매 [번호]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
 
 ## Command Anchors
 

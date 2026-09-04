@@ -17,14 +17,15 @@ const migration452 = readFileSync(new URL("../migrations/452_canonical_currency_
 const migration451 = readFileSync(new URL("../migrations/451_canonical_package_reward.sql", import.meta.url), "utf8");
 const migration453 = readFileSync(new URL("../migrations/453_canonical_building_recipe.sql", import.meta.url), "utf8");
 const migration470 = readFileSync(new URL("../migrations/470_pet_explore_event_control_app_wiring.sql", import.meta.url), "utf8");
+const migration471 = readFileSync(new URL("../migrations/471_pet_title_sale_app_wiring.sql", import.meta.url), "utf8");
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql", "466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql"]);
-    assert.equal(contract.registeredMigrations.length, 25);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql", "466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "471_pet_title_sale_app_wiring.sql"]);
+    assert.equal(contract.registeredMigrations.length, 26);
     assert.equal(contract.tables.length, 94);
     const appWiring = contract.tables.find((entry) => entry.table === "canonical_app_wiring_operations");
     const receiptLinks = contract.tables.find((entry) => entry.table === "canonical_app_wiring_receipt_links");
@@ -69,6 +70,15 @@ describe("object data model standard contract", () => {
       "receipt_kind = 'PET_EXPLORE_EVENT_CONTROL' AND pet_explore_event_control_operation_id IS NOT NULL",
     ]) assert.ok(migration470.includes(token), token);
     assert.equal((migration470.match(/pet_explore_event_control_operation_id IS NOT NULL/g) ?? []).length, 2);
+  });
+
+  it("keeps migration471 PET_TITLE sale linked to one exact currency operation",()=>{
+    const receipt=contract.tables.find(({table})=>table==="canonical_pet_title_operations");
+    assert.ok(receipt);
+    assert.ok(receipt.columns.some(({name,type})=>name==="currency_operation_id"&&type==="CHAR(8)"));
+    assert.ok(receipt.foreignKeys.some((foreignKey)=>Array.isArray(foreignKey.columns)&&foreignKey.columns.join(",")==="currency_operation_id,player_id"&&foreignKey.referencesTable==="canonical_currency_operations"&&Array.isArray(foreignKey.referencesColumns)&&foreignKey.referencesColumns.join(",")==="currency_operation_id,player_id"));
+    assert.ok(receipt.uniqueKeys?.some((key)=>key.length===1&&key[0]==="currency_operation_id"));
+    for(const token of ["ADD UNIQUE KEY IF NOT EXISTS uq_odbt_471_00_01 (currency_operation_id,player_id)","ADD COLUMN IF NOT EXISTS currency_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL","ADD UNIQUE KEY IF NOT EXISTS uq_odbt_471_01_01 (currency_operation_id)","REFERENCES canonical_currency_operations (currency_operation_id,player_id)","('PET_TITLE_SELL','pet_title_lifecycle','VERIFIED_USER','SHADOW',1,1)"])assert.ok(migration471.includes(token),token);
   });
 
   it("keeps building and recipe definitions, typed targets, replay, and owner-bound ledgers explicit", () => {

@@ -1,0 +1,24 @@
+{
+  "format": "hoibot-object-domain-import-synthetic-fixture-v2",
+  "catalogVersion": "SC-20260902-1",
+  "profileVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V2",
+  "nonIdentifying": true,
+  "directTargetCount": 47,
+  "targetColumnCount": 252,
+  "definitionTargetCount": 25,
+  "syntheticProjectionRowCount": 49,
+  "exactDefinitionImports": [
+    { "table": "canonical_item_definition_imports", "sourceSystem": "LEGACY_JSON", "sourceNamespace": "member.bag", "sourceIdentifier": "펫타이틀권🦊(/펫타이틀이름)", "sourceIdentifierOrigin": "SOURCE_EXACT" },
+    { "table": "canonical_currency_definition_imports", "sourceSystem": "LEGACY_JSON", "sourceNamespace": "member.point", "sourceIdentifier": "point", "sourceIdentifierOrigin": "CONSTANT_CONTRACT" }
+  ],
+  "scenarios": [
+    "all-47-direct-targets-and-252-columns",
+    "definition-before-definition-import-before-ownership",
+    "item-definition-import-exact-ticket-tuple",
+    "currency-definition-import-exact-point-tuple",
+    "manifest-fk-to-definition-identity",
+    "v1-complete-replay-remains-v1-only",
+    "v2-exact-replay-zero-write",
+    "v2-contract-drift-fail-closed"
+  ]
+}

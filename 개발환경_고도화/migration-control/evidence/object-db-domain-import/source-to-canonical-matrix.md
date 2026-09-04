@@ -155,3 +155,11 @@
 - WBS724/725가 완료되기 전 WBS742 내부에 임시 staging/projector를 만들지 않는다.
 - Gate 5 입력도 명시 승인된 sealed RAW를 일회용 격리 DB에서만 사용하며 운영 DB와 저장소 snapshot에는 쓰지 않는다.
 - WBS743 소비자 전환, WBS744 Shadow, WBS745 운영 배포는 이 문서의 완료 범위가 아니다.
+
+## V2 정의 provenance 직접 이관
+
+- V1의 45개 직접 대상과 COMPLETE replay/rollback 계약은 변경하지 않는다.
+- V2 프로필은 `canonical_item_definition_imports`, `canonical_currency_definition_imports`를 정의 단계 직접 대상으로 추가한다(47개 대상, 비감사 컬럼 252개, 정의 대상 25개).
+- 펫타이틀권은 `LEGACY_JSON / member.bag / 펫타이틀권🦊(/펫타이틀이름)`을 사용한다. sealed `data/itemList.json#/nonItems/16`의 source order 17과 definition/source-row/file SHA-256을 프로필에 고정했다.
+- 포인트는 field-map의 `member.json#/member/{playerKey}/point` 원천에 맞춰 `LEGACY_JSON / member.point / point`를 사용하되, 사용자 잔액 scalar를 이름으로 해석하지 않고 `source_identifier=point`를 `CONSTANT_CONTRACT` 정의 매핑값으로 둔다. `memberCurrency`는 repository 단위테스트의 임의 입력이며 이관 계약이 아니다.
+- 두 import 행은 표시명 검색으로 정의를 찾지 않고 같은 catalog projection manifest의 정의 identity locator를 `MANIFEST` FK로 참조한다.

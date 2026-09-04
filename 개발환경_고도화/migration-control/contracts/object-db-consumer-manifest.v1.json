@@ -175263,7 +175263,8 @@
       "reachableHelpers": [
         "adjustBalance",
         "adjustInTransaction",
-        "findReplay"
+        "findReplay",
+        "validateAdjustment"
       ],
       "unresolvedDynamicCallCount": 0,
       "primarySlice": "CURRENCY-SHOP",
@@ -175271,8 +175272,8 @@
       "p1Bridges": [],
       "sourceSpan": {
         "start": 7449,
-        "end": 8697,
-        "sha256": "03bc6309a2ec6bba8237084891668bf92ac0803c7c0d36172bbc7d5937b66d01"
+        "end": 8193,
+        "sha256": "8684d62ceae2d4a398beb6a12900bda03d4bf8ab682b0abb20ea832dc190317e"
       },
       "status": "IN_SCOPE",
       "targetSelectorId": "selector:CURRENCY-SHOP",
@@ -175947,6 +175948,180 @@
       "transactionOwnerInterfaceId": null,
       "transactionParticipantInterfaceIds": [],
       "operationReceiptTables": [],
+      "targetUsageMode": "CURRENT_SQL"
+    },
+    {
+      "consumerId": "sql-repository-5e64cc5bb960b2af",
+      "kind": "SQL_REPOSITORY",
+      "file": "개발환경_고도화/runtime/src/currency/maria-canonical-currency-repository.ts",
+      "symbol": "adjustBalanceInTransaction",
+      "triggerOrPredicate": "SQL_METHOD:adjustBalanceInTransaction",
+      "access": "READ_WRITE",
+      "legacyPaths": [],
+      "sqlTables": [
+        "canonical_currency_definitions",
+        "canonical_player_currency_balances",
+        "canonical_currency_operations",
+        "canonical_currency_ledger_entries"
+      ],
+      "observedSqlReadTables": [
+        "canonical_currency_definitions",
+        "canonical_currency_operations",
+        "canonical_player_currency_balances"
+      ],
+      "observedSqlWriteTables": [
+        "canonical_currency_ledger_entries",
+        "canonical_currency_operations",
+        "canonical_player_currency_balances"
+      ],
+      "saveLoad": [],
+      "environmentResolver": "composition-root database",
+      "currentProviderImports": [
+        "../identity/object-identity-audit-provider.js"
+      ],
+      "reachableHelpers": [
+        "adjustBalanceInTransaction",
+        "adjustInTransaction",
+        "validateAdjustment"
+      ],
+      "unresolvedDynamicCallCount": 0,
+      "primarySlice": "CURRENCY-SHOP",
+      "dependentSlices": [],
+      "p1Bridges": [],
+      "sourceSpan": {
+        "start": 8195,
+        "end": 8443,
+        "sha256": "3666f1d1175c4560ea88fb4e4ab35764a182a9b90b3995d1917d8f602d8584be"
+      },
+      "status": "IN_SCOPE",
+      "targetSelectorId": "selector:CURRENCY-SHOP",
+      "usedTargetTables": [
+        "canonical_currency_definitions",
+        "canonical_currency_ledger_entries",
+        "canonical_currency_operations",
+        "canonical_player_currency_balances",
+        "canonical_players"
+      ],
+      "usedTargetColumns": [
+        "canonical_currency_definitions.INSERT_TIME",
+        "canonical_currency_definitions.INSERT_USER",
+        "canonical_currency_definitions.UPDATE_TIME",
+        "canonical_currency_definitions.UPDATE_USER",
+        "canonical_currency_definitions.active_flag",
+        "canonical_currency_definitions.currency_id",
+        "canonical_currency_ledger_entries.INSERT_TIME",
+        "canonical_currency_ledger_entries.INSERT_USER",
+        "canonical_currency_ledger_entries.UPDATE_TIME",
+        "canonical_currency_ledger_entries.UPDATE_USER",
+        "canonical_currency_ledger_entries.balance_after_minor_amount",
+        "canonical_currency_ledger_entries.currency_ledger_entry_id",
+        "canonical_currency_ledger_entries.currency_operation_id",
+        "canonical_currency_ledger_entries.delta_minor_amount",
+        "canonical_currency_ledger_entries.player_currency_balance_id",
+        "canonical_currency_ledger_entries.sequence_number",
+        "canonical_currency_operations.INSERT_TIME",
+        "canonical_currency_operations.INSERT_USER",
+        "canonical_currency_operations.UPDATE_TIME",
+        "canonical_currency_operations.UPDATE_USER",
+        "canonical_currency_operations.balance_after_minor_amount",
+        "canonical_currency_operations.currency_id",
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.delta_minor_amount",
+        "canonical_currency_operations.operation_kind",
+        "canonical_currency_operations.operation_status",
+        "canonical_currency_operations.payload_fingerprint",
+        "canonical_currency_operations.player_currency_balance_id",
+        "canonical_currency_operations.player_id",
+        "canonical_currency_operations.reason_key",
+        "canonical_currency_operations.request_key",
+        "canonical_player_currency_balances.INSERT_TIME",
+        "canonical_player_currency_balances.INSERT_USER",
+        "canonical_player_currency_balances.UPDATE_TIME",
+        "canonical_player_currency_balances.UPDATE_USER",
+        "canonical_player_currency_balances.balance_minor_amount",
+        "canonical_player_currency_balances.currency_id",
+        "canonical_player_currency_balances.player_currency_balance_id",
+        "canonical_player_currency_balances.player_id",
+        "canonical_players.player_id"
+      ],
+      "readTargetTables": [
+        "canonical_currency_definitions",
+        "canonical_currency_operations",
+        "canonical_player_currency_balances",
+        "canonical_players"
+      ],
+      "writeTargetTables": [
+        "canonical_currency_ledger_entries",
+        "canonical_currency_operations",
+        "canonical_player_currency_balances"
+      ],
+      "readTargetColumns": [
+        "canonical_currency_definitions.INSERT_TIME",
+        "canonical_currency_definitions.INSERT_USER",
+        "canonical_currency_definitions.UPDATE_TIME",
+        "canonical_currency_definitions.UPDATE_USER",
+        "canonical_currency_definitions.active_flag",
+        "canonical_currency_definitions.currency_id",
+        "canonical_currency_operations.INSERT_TIME",
+        "canonical_currency_operations.INSERT_USER",
+        "canonical_currency_operations.UPDATE_TIME",
+        "canonical_currency_operations.UPDATE_USER",
+        "canonical_currency_operations.balance_after_minor_amount",
+        "canonical_currency_operations.currency_id",
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.delta_minor_amount",
+        "canonical_currency_operations.operation_kind",
+        "canonical_currency_operations.operation_status",
+        "canonical_currency_operations.payload_fingerprint",
+        "canonical_currency_operations.player_currency_balance_id",
+        "canonical_currency_operations.player_id",
+        "canonical_currency_operations.reason_key",
+        "canonical_currency_operations.request_key",
+        "canonical_player_currency_balances.INSERT_TIME",
+        "canonical_player_currency_balances.INSERT_USER",
+        "canonical_player_currency_balances.UPDATE_TIME",
+        "canonical_player_currency_balances.UPDATE_USER",
+        "canonical_player_currency_balances.balance_minor_amount",
+        "canonical_player_currency_balances.currency_id",
+        "canonical_player_currency_balances.player_currency_balance_id",
+        "canonical_player_currency_balances.player_id",
+        "canonical_players.player_id"
+      ],
+      "writeTargetColumns": [
+        "canonical_currency_ledger_entries.INSERT_TIME",
+        "canonical_currency_ledger_entries.INSERT_USER",
+        "canonical_currency_ledger_entries.UPDATE_TIME",
+        "canonical_currency_ledger_entries.UPDATE_USER",
+        "canonical_currency_ledger_entries.balance_after_minor_amount",
+        "canonical_currency_ledger_entries.currency_ledger_entry_id",
+        "canonical_currency_ledger_entries.currency_operation_id",
+        "canonical_currency_ledger_entries.delta_minor_amount",
+        "canonical_currency_ledger_entries.player_currency_balance_id",
+        "canonical_currency_ledger_entries.sequence_number",
+        "canonical_currency_operations.currency_id",
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_currency_balance_id",
+        "canonical_currency_operations.player_id",
+        "canonical_player_currency_balances.currency_id",
+        "canonical_player_currency_balances.player_currency_balance_id",
+        "canonical_player_currency_balances.player_id"
+      ],
+      "transactionalPortDependencies": [
+        "command_audit",
+        "command_executions",
+        "operations",
+        "outbox_messages"
+      ],
+      "interfaceId": "currency-shop.repository.maria-canonical-currency-repository.adjustBalanceInTransaction",
+      "interfaceMethod": "EXECUTE",
+      "transactionOwnerInterfaceId": "currency-shop.repository.maria-canonical-currency-repository.adjustBalanceInTransaction",
+      "transactionParticipantInterfaceIds": [
+        "currency.balance.mutate"
+      ],
+      "operationReceiptTables": [
+        "canonical_currency_ledger_entries",
+        "canonical_currency_operations"
+      ],
       "targetUsageMode": "CURRENT_SQL"
     },
     {
@@ -176698,6 +176873,7 @@
       "saveLoad": [],
       "environmentResolver": "composition-root database",
       "currentProviderImports": [
+        "../currency/maria-canonical-currency-repository.js",
         "../dispatch/app-wiring-operation-provider.js",
         "../identity/object-identity-audit-provider.js",
         "../inventory/canonical-item-inventory-repository.js",
@@ -176712,17 +176888,19 @@
       "unresolvedDynamicCallCount": 0,
       "primarySlice": "PET-TITLE",
       "dependentSlices": [
+        "CURRENCY-SHOP",
         "PET-EQUIPMENT"
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 8749,
-        "end": 9063,
+        "start": 9684,
+        "end": 9998,
         "sha256": "67e7169429c184bc43172c6c091af23984d4dfab9bb4aa1245bf4a44b0c8cffc"
       },
       "status": "IN_SCOPE",
       "targetSelectorId": "selector:PET-TITLE",
       "usedTargetTables": [
+        "canonical_currency_operations",
         "canonical_owned_pet_instances",
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_definitions",
@@ -176731,6 +176909,8 @@
         "canonical_players"
       ],
       "usedTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.INSERT_TIME",
         "canonical_owned_pet_title_instances.INSERT_USER",
@@ -176753,6 +176933,7 @@
         "canonical_pet_title_operations.INSERT_USER",
         "canonical_pet_title_operations.UPDATE_TIME",
         "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
         "canonical_pet_title_operations.operation_status",
         "canonical_pet_title_operations.operation_type",
         "canonical_pet_title_operations.owned_pet_id",
@@ -176767,6 +176948,7 @@
         "canonical_players.player_id"
       ],
       "readTargetTables": [
+        "canonical_currency_operations",
         "canonical_owned_pet_instances",
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_definitions",
@@ -176777,6 +176959,8 @@
         "canonical_pet_title_operations"
       ],
       "readTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.INSERT_TIME",
         "canonical_owned_pet_title_instances.INSERT_USER",
@@ -176791,6 +176975,8 @@
         "canonical_players.player_id"
       ],
       "writeTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.owned_pet_title_id",
         "canonical_pet_title_definitions.pet_title_id",
@@ -176806,6 +176992,7 @@
         "canonical_pet_title_operations.INSERT_USER",
         "canonical_pet_title_operations.UPDATE_TIME",
         "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
         "canonical_pet_title_operations.operation_status",
         "canonical_pet_title_operations.operation_type",
         "canonical_pet_title_operations.owned_pet_id",
@@ -178734,6 +178921,255 @@
       "targetUsageMode": "CURRENT_SQL"
     },
     {
+      "consumerId": "sql-repository-bbbffe051f8c4a8e",
+      "kind": "SQL_REPOSITORY",
+      "file": "개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts",
+      "symbol": "sell",
+      "triggerOrPredicate": "SQL_METHOD:sell",
+      "access": "READ_WRITE",
+      "legacyPaths": [],
+      "sqlTables": [
+        "canonical_players",
+        "canonical_pet_title_definitions",
+        "canonical_owned_pet_title_instances",
+        "canonical_currency_definitions",
+        "canonical_currency_definition_imports",
+        "canonical_pet_title_operations",
+        "canonical_pet_title_operation_participants"
+      ],
+      "observedSqlReadTables": [
+        "canonical_currency_definition_imports",
+        "canonical_currency_definitions",
+        "canonical_owned_pet_title_instances",
+        "canonical_pet_title_definitions",
+        "canonical_players"
+      ],
+      "observedSqlWriteTables": [
+        "canonical_pet_title_operation_participants",
+        "canonical_pet_title_operations"
+      ],
+      "saveLoad": [],
+      "environmentResolver": "composition-root database",
+      "currentProviderImports": [
+        "../currency/maria-canonical-currency-repository.js",
+        "../dispatch/app-wiring-operation-provider.js",
+        "../identity/object-identity-audit-provider.js",
+        "../inventory/canonical-item-inventory-repository.js",
+        "../title/maria-canonical-title-repository.js"
+      ],
+      "reachableHelpers": [
+        "insertParticipant",
+        "insertReceipt",
+        "sell"
+      ],
+      "unresolvedDynamicCallCount": 0,
+      "primarySlice": "PET-TITLE",
+      "dependentSlices": [
+        "CONTEXT-BRIDGE",
+        "CURRENCY-SHOP",
+        "PET-EQUIPMENT"
+      ],
+      "p1Bridges": [],
+      "sourceSpan": {
+        "start": 10481,
+        "end": 14727,
+        "sha256": "b79d157cd89b394a1be9da4649c18f8c3b1031964c8d4e1132cd96d13f7ef925"
+      },
+      "status": "IN_SCOPE",
+      "targetSelectorId": "selector:PET-TITLE",
+      "usedTargetTables": [
+        "canonical_currency_definition_imports",
+        "canonical_currency_definitions",
+        "canonical_currency_operations",
+        "canonical_owned_pet_instances",
+        "canonical_owned_pet_title_instances",
+        "canonical_pet_title_definitions",
+        "canonical_pet_title_operation_participants",
+        "canonical_pet_title_operations",
+        "canonical_players"
+      ],
+      "usedTargetColumns": [
+        "canonical_currency_definition_imports.INSERT_TIME",
+        "canonical_currency_definition_imports.INSERT_USER",
+        "canonical_currency_definition_imports.UPDATE_TIME",
+        "canonical_currency_definition_imports.UPDATE_USER",
+        "canonical_currency_definition_imports.currency_definition_import_id",
+        "canonical_currency_definition_imports.currency_id",
+        "canonical_currency_definition_imports.payload_fingerprint",
+        "canonical_currency_definition_imports.source_identifier",
+        "canonical_currency_definition_imports.source_namespace",
+        "canonical_currency_definition_imports.source_system",
+        "canonical_currency_definitions.INSERT_TIME",
+        "canonical_currency_definitions.INSERT_USER",
+        "canonical_currency_definitions.UPDATE_TIME",
+        "canonical_currency_definitions.UPDATE_USER",
+        "canonical_currency_definitions.active_flag",
+        "canonical_currency_definitions.currency_id",
+        "canonical_currency_definitions.decimal_places",
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
+        "canonical_owned_pet_instances.owned_pet_id",
+        "canonical_owned_pet_title_instances.INSERT_TIME",
+        "canonical_owned_pet_title_instances.INSERT_USER",
+        "canonical_owned_pet_title_instances.UPDATE_TIME",
+        "canonical_owned_pet_title_instances.UPDATE_USER",
+        "canonical_owned_pet_title_instances.acquisition_price",
+        "canonical_owned_pet_title_instances.acquisition_sequence",
+        "canonical_owned_pet_title_instances.owned_pet_title_id",
+        "canonical_owned_pet_title_instances.ownership_status",
+        "canonical_owned_pet_title_instances.pet_title_id",
+        "canonical_owned_pet_title_instances.player_id",
+        "canonical_pet_title_definitions.INSERT_TIME",
+        "canonical_pet_title_definitions.INSERT_USER",
+        "canonical_pet_title_definitions.UPDATE_TIME",
+        "canonical_pet_title_definitions.UPDATE_USER",
+        "canonical_pet_title_definitions.active_flag",
+        "canonical_pet_title_definitions.base_sale_price",
+        "canonical_pet_title_definitions.pet_title_id",
+        "canonical_pet_title_definitions.title_name",
+        "canonical_pet_title_operation_participants.INSERT_TIME",
+        "canonical_pet_title_operation_participants.INSERT_USER",
+        "canonical_pet_title_operation_participants.UPDATE_TIME",
+        "canonical_pet_title_operation_participants.UPDATE_USER",
+        "canonical_pet_title_operation_participants.participant_role",
+        "canonical_pet_title_operation_participants.pet_title_operation_id",
+        "canonical_pet_title_operation_participants.pet_title_operation_participant_id",
+        "canonical_pet_title_operation_participants.player_id",
+        "canonical_pet_title_operations.INSERT_TIME",
+        "canonical_pet_title_operations.INSERT_USER",
+        "canonical_pet_title_operations.UPDATE_TIME",
+        "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
+        "canonical_pet_title_operations.operation_status",
+        "canonical_pet_title_operations.operation_type",
+        "canonical_pet_title_operations.owned_pet_id",
+        "canonical_pet_title_operations.owned_pet_title_id",
+        "canonical_pet_title_operations.payload_fingerprint",
+        "canonical_pet_title_operations.pet_title_id",
+        "canonical_pet_title_operations.pet_title_operation_id",
+        "canonical_pet_title_operations.player_id",
+        "canonical_pet_title_operations.replay_namespace",
+        "canonical_pet_title_operations.request_key",
+        "canonical_pet_title_operations.result_fingerprint",
+        "canonical_players.INSERT_TIME",
+        "canonical_players.INSERT_USER",
+        "canonical_players.UPDATE_TIME",
+        "canonical_players.UPDATE_USER",
+        "canonical_players.player_id",
+        "canonical_players.source_identifier",
+        "canonical_players.source_system"
+      ],
+      "readTargetTables": [
+        "canonical_currency_definition_imports",
+        "canonical_currency_definitions",
+        "canonical_currency_operations",
+        "canonical_owned_pet_instances",
+        "canonical_owned_pet_title_instances",
+        "canonical_pet_title_definitions",
+        "canonical_players"
+      ],
+      "writeTargetTables": [
+        "canonical_pet_title_operation_participants",
+        "canonical_pet_title_operations"
+      ],
+      "readTargetColumns": [
+        "canonical_currency_definition_imports.INSERT_TIME",
+        "canonical_currency_definition_imports.INSERT_USER",
+        "canonical_currency_definition_imports.UPDATE_TIME",
+        "canonical_currency_definition_imports.UPDATE_USER",
+        "canonical_currency_definition_imports.currency_definition_import_id",
+        "canonical_currency_definition_imports.currency_id",
+        "canonical_currency_definition_imports.payload_fingerprint",
+        "canonical_currency_definition_imports.source_identifier",
+        "canonical_currency_definition_imports.source_namespace",
+        "canonical_currency_definition_imports.source_system",
+        "canonical_currency_definitions.INSERT_TIME",
+        "canonical_currency_definitions.INSERT_USER",
+        "canonical_currency_definitions.UPDATE_TIME",
+        "canonical_currency_definitions.UPDATE_USER",
+        "canonical_currency_definitions.active_flag",
+        "canonical_currency_definitions.currency_id",
+        "canonical_currency_definitions.decimal_places",
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
+        "canonical_owned_pet_instances.owned_pet_id",
+        "canonical_owned_pet_title_instances.INSERT_TIME",
+        "canonical_owned_pet_title_instances.INSERT_USER",
+        "canonical_owned_pet_title_instances.UPDATE_TIME",
+        "canonical_owned_pet_title_instances.UPDATE_USER",
+        "canonical_owned_pet_title_instances.acquisition_price",
+        "canonical_owned_pet_title_instances.acquisition_sequence",
+        "canonical_owned_pet_title_instances.owned_pet_title_id",
+        "canonical_owned_pet_title_instances.ownership_status",
+        "canonical_owned_pet_title_instances.pet_title_id",
+        "canonical_owned_pet_title_instances.player_id",
+        "canonical_pet_title_definitions.INSERT_TIME",
+        "canonical_pet_title_definitions.INSERT_USER",
+        "canonical_pet_title_definitions.UPDATE_TIME",
+        "canonical_pet_title_definitions.UPDATE_USER",
+        "canonical_pet_title_definitions.active_flag",
+        "canonical_pet_title_definitions.base_sale_price",
+        "canonical_pet_title_definitions.pet_title_id",
+        "canonical_pet_title_definitions.title_name",
+        "canonical_pet_title_operations.pet_title_operation_id",
+        "canonical_players.INSERT_TIME",
+        "canonical_players.INSERT_USER",
+        "canonical_players.UPDATE_TIME",
+        "canonical_players.UPDATE_USER",
+        "canonical_players.player_id",
+        "canonical_players.source_identifier",
+        "canonical_players.source_system"
+      ],
+      "writeTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
+        "canonical_owned_pet_instances.owned_pet_id",
+        "canonical_owned_pet_title_instances.owned_pet_title_id",
+        "canonical_pet_title_definitions.pet_title_id",
+        "canonical_pet_title_operation_participants.INSERT_TIME",
+        "canonical_pet_title_operation_participants.INSERT_USER",
+        "canonical_pet_title_operation_participants.UPDATE_TIME",
+        "canonical_pet_title_operation_participants.UPDATE_USER",
+        "canonical_pet_title_operation_participants.participant_role",
+        "canonical_pet_title_operation_participants.pet_title_operation_id",
+        "canonical_pet_title_operation_participants.pet_title_operation_participant_id",
+        "canonical_pet_title_operation_participants.player_id",
+        "canonical_pet_title_operations.INSERT_TIME",
+        "canonical_pet_title_operations.INSERT_USER",
+        "canonical_pet_title_operations.UPDATE_TIME",
+        "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
+        "canonical_pet_title_operations.operation_status",
+        "canonical_pet_title_operations.operation_type",
+        "canonical_pet_title_operations.owned_pet_id",
+        "canonical_pet_title_operations.owned_pet_title_id",
+        "canonical_pet_title_operations.payload_fingerprint",
+        "canonical_pet_title_operations.pet_title_id",
+        "canonical_pet_title_operations.pet_title_operation_id",
+        "canonical_pet_title_operations.player_id",
+        "canonical_pet_title_operations.replay_namespace",
+        "canonical_pet_title_operations.request_key",
+        "canonical_pet_title_operations.result_fingerprint",
+        "canonical_players.player_id"
+      ],
+      "transactionalPortDependencies": [
+        "command_audit",
+        "command_executions",
+        "operations",
+        "outbox_messages"
+      ],
+      "interfaceId": "pet-title.repository.pet-title-canonical-mutation-provider.sell",
+      "interfaceMethod": "EXECUTE",
+      "transactionOwnerInterfaceId": "pet-title.repository.pet-title-canonical-mutation-provider.sell",
+      "transactionParticipantInterfaceIds": [
+        "pet-title.ownership.mutate"
+      ],
+      "operationReceiptTables": [
+        "canonical_pet_title_operations"
+      ],
+      "targetUsageMode": "CURRENT_SQL"
+    },
+    {
       "consumerId": "sql-repository-bce46212550d1391",
       "kind": "SQL_REPOSITORY",
       "file": "개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts",
@@ -178756,6 +179192,7 @@
       "saveLoad": [],
       "environmentResolver": "composition-root database",
       "currentProviderImports": [
+        "../currency/maria-canonical-currency-repository.js",
         "../dispatch/app-wiring-operation-provider.js",
         "../identity/object-identity-audit-provider.js",
         "../inventory/canonical-item-inventory-repository.js",
@@ -178775,13 +179212,14 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 9065,
-        "end": 9544,
+        "start": 10000,
+        "end": 10479,
         "sha256": "d4b29aaf82d2207997ffcef966499499d12b269e0573d0343e1579303f84eb72"
       },
       "status": "IN_SCOPE",
       "targetSelectorId": "selector:PET-TITLE",
       "usedTargetTables": [
+        "canonical_currency_operations",
         "canonical_owned_pet_instances",
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_definitions",
@@ -178790,6 +179228,8 @@
         "canonical_players"
       ],
       "usedTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.INSERT_TIME",
         "canonical_owned_pet_title_instances.INSERT_USER",
@@ -178812,6 +179252,7 @@
         "canonical_pet_title_operations.INSERT_USER",
         "canonical_pet_title_operations.UPDATE_TIME",
         "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
         "canonical_pet_title_operations.operation_status",
         "canonical_pet_title_operations.operation_type",
         "canonical_pet_title_operations.owned_pet_id",
@@ -178826,6 +179267,7 @@
         "canonical_players.player_id"
       ],
       "readTargetTables": [
+        "canonical_currency_operations",
         "canonical_owned_pet_instances",
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_definitions",
@@ -178836,6 +179278,8 @@
         "canonical_pet_title_operations"
       ],
       "readTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.INSERT_TIME",
         "canonical_owned_pet_title_instances.INSERT_USER",
@@ -178850,6 +179294,8 @@
         "canonical_players.player_id"
       ],
       "writeTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.owned_pet_title_id",
         "canonical_pet_title_definitions.pet_title_id",
@@ -178865,6 +179311,7 @@
         "canonical_pet_title_operations.INSERT_USER",
         "canonical_pet_title_operations.UPDATE_TIME",
         "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
         "canonical_pet_title_operations.operation_status",
         "canonical_pet_title_operations.operation_type",
         "canonical_pet_title_operations.owned_pet_id",
@@ -179266,6 +179713,7 @@
       "saveLoad": [],
       "environmentResolver": "composition-root database",
       "currentProviderImports": [
+        "../currency/maria-canonical-currency-repository.js",
         "../dispatch/app-wiring-operation-provider.js",
         "../identity/object-identity-audit-provider.js",
         "../inventory/canonical-item-inventory-repository.js",
@@ -179280,18 +179728,20 @@
       "primarySlice": "PET-TITLE",
       "dependentSlices": [
         "CONTEXT-BRIDGE",
+        "CURRENCY-SHOP",
         "ITEM",
         "PET-EQUIPMENT"
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 4000,
-        "end": 8747,
+        "start": 4935,
+        "end": 9682,
         "sha256": "640b528beb4a2b65c81f09859ba5ff12a54e1db45fe7ed4ab9c3a71368f040a1"
       },
       "status": "IN_SCOPE",
       "targetSelectorId": "selector:PET-TITLE",
       "usedTargetTables": [
+        "canonical_currency_operations",
         "canonical_item_definition_imports",
         "canonical_item_definitions",
         "canonical_owned_item_stacks",
@@ -179303,6 +179753,8 @@
         "canonical_players"
       ],
       "usedTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_item_definition_imports.INSERT_TIME",
         "canonical_item_definition_imports.INSERT_USER",
         "canonical_item_definition_imports.UPDATE_TIME",
@@ -179349,6 +179801,7 @@
         "canonical_pet_title_operations.INSERT_USER",
         "canonical_pet_title_operations.UPDATE_TIME",
         "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
         "canonical_pet_title_operations.operation_status",
         "canonical_pet_title_operations.operation_type",
         "canonical_pet_title_operations.owned_pet_id",
@@ -179369,6 +179822,7 @@
         "canonical_players.source_system"
       ],
       "readTargetTables": [
+        "canonical_currency_operations",
         "canonical_item_definition_imports",
         "canonical_item_definitions",
         "canonical_owned_item_stacks",
@@ -179382,6 +179836,8 @@
         "canonical_pet_title_operations"
       ],
       "readTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_item_definition_imports.INSERT_TIME",
         "canonical_item_definition_imports.INSERT_USER",
         "canonical_item_definition_imports.UPDATE_TIME",
@@ -179426,6 +179882,8 @@
         "canonical_players.source_system"
       ],
       "writeTargetColumns": [
+        "canonical_currency_operations.currency_operation_id",
+        "canonical_currency_operations.player_id",
         "canonical_owned_pet_instances.owned_pet_id",
         "canonical_owned_pet_title_instances.owned_pet_title_id",
         "canonical_pet_title_definitions.pet_title_id",
@@ -179441,6 +179899,7 @@
         "canonical_pet_title_operations.INSERT_USER",
         "canonical_pet_title_operations.UPDATE_TIME",
         "canonical_pet_title_operations.UPDATE_USER",
+        "canonical_pet_title_operations.currency_operation_id",
         "canonical_pet_title_operations.operation_status",
         "canonical_pet_title_operations.operation_type",
         "canonical_pet_title_operations.owned_pet_id",
@@ -180392,9 +180851,9 @@
     "ADMIN_COMMAND": 78,
     "HTTP_WEB_ROUTE": 81,
     "APP_WIRING": 7,
-    "SQL_REPOSITORY": 50
+    "SQL_REPOSITORY": 52
   },
-  "consumerSetSha256": "7586c8ebcc57873f0bfa6497e2e2fd04e7706f1e84dbda83d9a51d3a85fe5891",
+  "consumerSetSha256": "0992cf9cdba5c7c520c0a4c3b74a0a86dbc408a543c70e86cbcf47be47dc4008",
   "targetSelectors": {
     "selector:CONTEXT-BRIDGE": {
       "domains": [

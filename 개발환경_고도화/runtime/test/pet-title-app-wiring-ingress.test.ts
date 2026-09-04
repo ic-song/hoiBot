@@ -118,6 +118,7 @@ describe("PET-TITLE app-wiring shadow boundary", () => {
 function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false){
   let previewCalls=0;
   let createCalls=0;
+  let sellCalls=0;
   const baseClaim:AppWiringClaim={appWiringOperationId:"claim001",requestIdentityFingerprint:"a".repeat(64),requestNamespace:"hoibot:dev:hoi_bot",entrypointKind:"IRIS",externalRequestId:"pet-title-1",requestKey:"IRIS:pet-title-1",payloadFingerprint:"b".repeat(64),route,effectMode:"READ_ONLY",reasonCode:route==="REJECT"?"AUTH_SCOPE_NOT_SATISFIED":"CANARY",handlerKey:"pet_title_lifecycle",claimState:replay?"COMPLETED":"CLAIMED",...(replay?{result:{status:"REPLY_QUEUED",referenceId:"petop001",resultFingerprint:"c".repeat(64)}}:{})};
   const provider={
     prepare:async(_input:unknown,resolveRoute:()=>Promise<{effectMode?:"READ_ONLY"|"MUTATION"}>|{effectMode?:"READ_ONLY"|"MUTATION"})=>{const decision=await resolveRoute();const claim={...baseClaim,effectMode:decision.effectMode??"READ_ONLY"} as AppWiringClaim;return replay?{claim,replayed:true as const}:{claim,replayed:false as const};},
@@ -136,9 +137,12 @@ function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false){
     {resolveSelf:async()=>actor,resolveUniqueLegacyDisplayTarget:async()=>actor},
     {create:async(_database,_claim,input)=>{createCalls+=1;return input.titleName==="부족"
       ?{operationId:"petop001",operationType:"CREATE",outcomeCode:"INSUFFICIENT_TICKET",titleName:input.titleName,remainingTicketQuantity:0n,resultFingerprint:"c".repeat(64),replayedDomainState:false}
-      :{operationId:"petop001",operationType:"CREATE",outcomeCode:"CREATED",ownedPetTitleId:"petown01",titleName:input.titleName,remainingTicketQuantity:1n,resultFingerprint:"c".repeat(64),replayedDomainState:false};}},
+      :{operationId:"petop001",operationType:"CREATE",outcomeCode:"CREATED",ownedPetTitleId:"petown01",titleName:input.titleName,remainingTicketQuantity:1n,resultFingerprint:"c".repeat(64),replayedDomainState:false};},
+     sell:async(_database,_claim,input)=>{sellCalls+=1;return input.index===9
+       ?{operationId:"petop009",operationType:"SELL",outcomeCode:"NOT_FOUND",salePoint:0n,resultFingerprint:"c".repeat(64),replayedDomainState:false}
+       :{operationId:"petop002",operationType:"SELL",outcomeCode:"SOLD",ownedPetTitleId:"petown01",titleName:"별빛",salePoint:30_000_000n,currencyOperationId:"currop01",balanceAfterMinorAmount:30_000_000_000n,resultFingerprint:"c".repeat(64),replayedDomainState:false};}},
   );
-  return {ingress,previewCalls:()=>previewCalls,createCalls:()=>createCalls};
+  return {ingress,previewCalls:()=>previewCalls,createCalls:()=>createCalls,sellCalls:()=>sellCalls};
 }
 
 describe("PET-TITLE app-wiring ingress routes",()=>{
@@ -204,5 +208,16 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     const modern=ingressFor("MODERN");
     assert.deepEqual(await modern.ingress.handle(event(`/펫타이틀이름 ${"가".repeat(21)}`)),{status:"legacy_fallback"});
     assert.equal(modern.createCalls(),0);
+  });
+
+  it("keeps sale SHADOW and MODERN on legacy until castle silent claim parity exists",async()=>{
+    const shadow=ingressFor("SHADOW");
+    assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀판매 1")),{status:"legacy_fallback"});
+    assert.equal(shadow.sellCalls(),0);
+    const modern=ingressFor("MODERN");
+    assert.deepEqual(await modern.ingress.handle(event("/펫타이틀판매 1")),{status:"legacy_fallback"});
+    assert.equal(modern.sellCalls(),0);
+    assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀판매방법")),{status:"ignored"});
+    assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀판매 1 알려줘")),{status:"ignored"});
   });
 });
