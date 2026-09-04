@@ -272,6 +272,50 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
     }
   });
 
+  it("expires an overdue challenge without creating portal, player, or platform identity rows", async () => {
+    assert.ok(database !== null);
+    const suffix = Date.now().toString();
+    const account = await database.execute(
+      "INSERT INTO user_accounts(login_id,password_hash,system_account_name,gender_code,status) VALUES (?,?,?,'unspecified','active')",
+      [`amge${suffix.slice(-12)}`, "synthetic", `만료 계정 ${suffix}`]
+    );
+    try {
+      const service = new AccountPlatformChallengeService(database, "account-platform-expiry-pepper");
+      const challenge = await service.issue({
+        legacyUserAccountId: account.insertId.toString(), purpose: "NEW_GAME_ACCOUNT",
+        expectedDisplayName: `만료 게임계정 ${suffix}`, platformCode: "KAKAO"
+      });
+      await database.execute(
+        "UPDATE user_verification_challenges SET expires_at=DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 1 SECOND) WHERE public_id=?",
+        [challenge.challengeId]
+      );
+      await assert.rejects(
+        service.verify({
+          requestKey: `expired-${suffix}`, code: challenge.verificationCode, platformCode: "KAKAO", contextType: "ROOM",
+          externalContextKey: `expired-room-${suffix}`, externalUserKey: `expired-user-${suffix}`,
+          observedDisplayName: `만료 게임계정 ${suffix}`, actor: "개발자"
+        }),
+        /인증 코드가 만료됐습니다/
+      );
+      const challengeStatus = (await database.query<Array<{ status: string }>>(
+        "SELECT status FROM user_verification_challenges WHERE public_id=?", [challenge.challengeId]
+      ))[0]?.status;
+      const portalCount = (await database.query<Array<{ value: bigint }>>(
+        "SELECT COUNT(*) AS value FROM canonical_portal_accounts WHERE legacy_user_account_id=?", [account.insertId]
+      ))[0]?.value;
+      const playerCount = (await database.query<Array<{ value: bigint }>>(
+        "SELECT COUNT(*) AS value FROM player_profiles WHERE current_display_name=?", [`만료 게임계정 ${suffix}`]
+      ))[0]?.value;
+      const identityCount = (await database.query<Array<{ value: bigint }>>(
+        "SELECT COUNT(*) AS value FROM account_platform_identities WHERE external_user_key=?", [`expired-user-${suffix}`]
+      ))[0]?.value;
+      assert.deepEqual([challengeStatus, portalCount, playerCount, identityCount], ["expired", 0n, 0n, 0n]);
+    } finally {
+      await database.execute("DELETE FROM user_verification_challenges WHERE user_account_id=?", [account.insertId]);
+      await database.execute("DELETE FROM user_accounts WHERE id=?", [account.insertId]);
+    }
+  });
+
   it("restores the active account and replays the same switch after a database client restart", async () => {
     assert.ok(database !== null);
     const suffix = Date.now().toString();
