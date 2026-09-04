@@ -6402,7 +6402,7 @@ Status: PARTIAL
 
 ## Save Flow
 
-- The exact command accepts only `/계정변경 [positive numeric player_id]`; multiline or suffix text does not execute the switch.
+- The exact command accepts `/계정변경 [player_id 또는 현재 게임계정 닉네임]`; 닉네임은 공백을 포함할 수 있지만 선행 공백·빈 선택자·줄바꿈 입력은 실행하지 않는다.
 - Iris event normalization supplies the event/user/room keys. `prepareKakao` resolves and freezes the room-scoped active player once at command start.
 - The platform-neutral context provider uses the same snapshot contract for Kakao rooms and Discord servers; Discord keeps one platform identity while resolving a separate active player per server.
 - `dispatchAccountSwitch` passes the frozen membership and `selection_version` to the switch transaction without resolving the active player again.
