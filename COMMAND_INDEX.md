@@ -6422,6 +6422,7 @@ Status: PARTIAL
 - The provider and transaction path are verified in isolation, including MariaDB restart/replay. `app.ts` Iris ingress and all game-command consumer propagation remain pending behind WBS743, so this command is not yet marked as an active runtime route.
 - No Discord webhook ingress exists in the current runtime. The shared provider and service/DB tests cover Discord server scoping without inventing an unowned transport route.
 - Do not fall back to legacy `external_identities.player_id` for `/계정변경`; a verified modern room context is required.
+- When an active room/server selection exists, a missing or mismatched caller portal link is mapping drift and must fail closed instead of falling back to the legacy identity path.
 - Keep the event-start actor snapshot fixed through the transaction so a concurrent room selection change cannot alter command ownership mid-event.
 
 ---
