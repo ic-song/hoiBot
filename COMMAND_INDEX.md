@@ -4437,7 +4437,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-Modernization: `SL-PET-TITLE-SELECT` Gate 1~7 implementation uses `player_pet_title_instances` for stable KEY/order/equipped state while preserving current list sequence.
+Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐고, `/펫타이틀 [번호]`는 stable owned occurrence·공성전·번호 오류를 쓰기 없이 SHADOW 평가합니다. 선택 MODERN은 mutation reply 원자성이 완성될 때까지 레거시로 고정합니다.
 
 Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
 
@@ -4449,6 +4449,9 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/pet/pet-title-app-wiring-ingress.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-read-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/player-context-provider.ts`
 
 ## Related Helpers
 
@@ -4460,10 +4463,15 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 - `petTitleData.member[sender].title.list`
 - `petTitleData.member[sender].title.num`
 - `petTitleData.member[targetUser].title.list`
+- `canonical_owned_pet_title_instances` + `canonical_pet_title_definitions` (MODERN self 목록 및 선택 SHADOW)
+- `canonical_pet_title_selections` (현재 선택 표시)
+- `castle_battle_seasons` (선택 SHADOW의 레거시 무응답 조건)
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- 레거시 `Info.js` 목록은 read-only
+- canonical self 목록은 claim·조회 결과·outbox를 한 READ_ONLY transaction으로 저장
+- canonical 선택 SHADOW는 query-only이며 실제 선택 저장은 아직 레거시 경로가 담당
 
 ## Related Commands
 
@@ -4475,6 +4483,7 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 
 - Pet-title inventory viewer parallel to `/타이틀목록`
 - Useful when checking title-equip state mismatches between pet profile output and title storage
+- target 목록 MODERN은 레거시 room/principal 권한 parity가 완성될 때까지 fallback
 
 ---
 

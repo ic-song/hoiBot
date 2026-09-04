@@ -76,6 +76,43 @@ describe("PET-TITLE app-wiring shadow boundary", () => {
     assert.equal(readCount, 0);
     assert.deepEqual(fixture.calls.map(({ method }) => method), ["self", "authority"]);
   });
+
+  it("previews a stable owned occurrence for selection without mutating it", async () => {
+    const fixture = ports(false);
+    const queries: string[] = [];
+    const evaluator = new PetTitleShadowEvaluator(fixture.contexts, fixture.authority, {
+      listOwned: async (_database, playerId) => {
+        assert.equal(playerId, "player01");
+        return [
+          { instanceId: "owned001", displayName: "첫째", priceDigits: "100", acquiredAt: "2026-09-05 01:02:03", equipped: false },
+          { instanceId: "owned002", displayName: "둘째", priceDigits: "200", acquiredAt: "2026-09-05 01:02:04", equipped: false },
+        ];
+      },
+    });
+    const readOnlyDatabase: AppWiringReadParticipant = {
+      query: async <T>(sql: string) => { queries.push(sql); return [{ active_count: 0n }] as T; },
+    };
+    const result = await evaluator.preview(readOnlyDatabase, event("/펫타이틀 2"));
+    assert.equal(result.outcomeCode, "READY");
+    assert.equal(result.canonicalPlayerId, "player01");
+    assert.equal(result.reply, "[👑호이] 님의 **펫 타이틀**이\n[둘째] (으)로 적용되었습니다.");
+    assert.equal(queries.length, 1);
+    assert.deepEqual(fixture.calls.map(({ method }) => method), ["self"]);
+  });
+
+  it("records deterministic selection guard outcomes before any canonical mutation", async () => {
+    const fixture = ports(false);
+    let titleReads = 0;
+    const evaluator = new PetTitleShadowEvaluator(fixture.contexts, fixture.authority, {
+      listOwned: async () => { titleReads += 1; return []; },
+    });
+    const noCastle: AppWiringReadParticipant = { query: async <T>() => [{ active_count: 0n }] as T };
+    assert.equal((await evaluator.preview(noCastle, event("/펫타이틀 0"))).outcomeCode, "INDEX_INVALID");
+    assert.equal((await evaluator.preview(noCastle, event("/펫타이틀 9"))).outcomeCode, "NOT_FOUND");
+    const activeCastle: AppWiringReadParticipant = { query: async <T>() => [{ active_count: 1n }] as T };
+    assert.equal((await evaluator.preview(activeCastle, event("/펫타이틀 1"))).outcomeCode, "SILENT_CASTLE_ACTIVE");
+    assert.equal(titleReads, 1);
+  });
 });
 
 function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false){
@@ -107,6 +144,15 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     const fixture=ingressFor("MODERN");
     assert.deepEqual(await fixture.ingress.handle(event("/펫타이틀목록 대상회원")),{status:"legacy_fallback"});
     assert.equal(fixture.previewCalls(),0);
+  });
+
+  it("shadows selection but keeps MODERN selection on legacy until mutation reply atomicity is adopted",async()=>{
+    const shadow=ingressFor("SHADOW");
+    assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀 2")),{status:"shadow",replayed:false,resultFingerprint:"c".repeat(64)});
+    assert.equal(shadow.previewCalls(),1);
+    const modern=ingressFor("MODERN");
+    assert.deepEqual(await modern.ingress.handle(event("/펫타이틀 2")),{status:"legacy_fallback"});
+    assert.equal(modern.previewCalls(),0);
   });
 
   it("executes SHADOW read-only and claims REJECT without a reply",async()=>{

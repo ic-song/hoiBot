@@ -31,6 +31,7 @@
 - 기존 BIGINT 인스턴스와 전환 중 CHAR(8) 인스턴스는 사용자 응답에 노출하지 않습니다.
 - `PetTitleAppWiringIngress`는 목록 self/target의 MODERN·SHADOW·REJECT 경계를 구현했고 `app.ts`의 실제 Iris 콜백에 연결했습니다.
 - self MODERN은 canonical 조회와 Iris outbox를 원자 저장한 뒤 저장된 응답만 전송하며, target MODERN은 정확한 room/principal 권한 parity가 완성될 때까지 `LEGACY_FALLBACK`으로 고정합니다.
+- `/펫타이틀 [번호]`는 활성 계정의 stable owned occurrence, 번호 오류, 미존재, 공성전 무응답 조건을 query-only SHADOW로 평가합니다. 실제 MODERN 선택은 mutation reply 원자성이 완성될 때까지 `LEGACY_FALLBACK`으로 고정합니다.
 - PET-TITLE은 회원 컨텍스트 구현을 소유하지 않고, WBS746이 제공한 방/서버별 활성 계정 `PlayerContextPort`를 주입받습니다.
 - 활성 계정 행이 존재하지만 호출자 포털 연결이 누락·불일치하면 레거시 계정으로 후퇴하지 않고 `PLAYER_CONTEXT_MAPPING_DRIFT`로 차단합니다.
 - 포털에 연결된 게임계정은 인증되지 않은 방/서버에서 legacy crosswalk fallback 대상에서 제외하며, 해당 컨텍스트의 활성 계정 선택을 요구합니다.
@@ -49,7 +50,7 @@
 ## 검증
 
 - 계정/플랫폼 및 PlayerContext 집중 테스트: 38/38 통과
-- PET-TITLE 및 READ_ONLY app-wiring 집중 테스트: 32/32 통과
+- PET-TITLE 및 READ_ONLY app-wiring 집중 테스트: 35/35 통과
 - 실제 앱 통합 테스트: 41/41 통과
 - READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
 - 소비자 안정 ID 계약 테스트: 5/5 통과

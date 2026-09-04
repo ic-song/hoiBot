@@ -32,6 +32,7 @@ export class PetTitleShadowReadAuthorityProvider implements PetTitleReadAuthorit
 
 export interface PetTitleShadowPreview {
   readonly authorized: boolean;
+  readonly outcomeCode?: "READY" | "INDEX_INVALID" | "NOT_FOUND" | "SILENT_CASTLE_ACTIVE";
   readonly resultFingerprint: string;
   readonly canonicalPlayerId?: string;
   readonly reply?: string;
@@ -64,7 +65,7 @@ export class PetTitleShadowEvaluator {
 
   async preview(database: AppWiringReadParticipant, event: NormalizedIrisEvent): Promise<PetTitleShadowPreview> {
     const command = parsePetTitleCommand(event.message);
-    if ((command?.kind !== "list_self" && command?.kind !== "list_target") || event.userId === undefined || event.channelId === undefined) {
+    if ((command?.kind !== "list_self" && command?.kind !== "list_target" && command?.kind !== "select") || event.userId === undefined || event.channelId === undefined) {
       throw new Error("PET_TITLE_SHADOW_INPUT_INVALID");
     }
     const actor = await this.contexts.resolveSelf(database, {
@@ -72,6 +73,30 @@ export class PetTitleShadowEvaluator {
       externalUserId: event.userId,
       externalContextId: event.channelId,
     });
+    if (command.kind === "select") {
+      if (command.index < 1) {
+        return { authorized: true, outcomeCode: "INDEX_INVALID", resultFingerprint: fingerprint({ command: command.kind, index: command.index, outcome: "INDEX_INVALID", playerId: actor.canonicalPlayerId }) };
+      }
+      const active = await database.query<Array<{ active_count: bigint | number | string }>>(
+        "SELECT COUNT(*) AS active_count FROM castle_battle_seasons WHERE status='active' AND (starts_at IS NULL OR starts_at<=UTC_TIMESTAMP(3)) AND (ends_at IS NULL OR ends_at>=UTC_TIMESTAMP(3))",
+      );
+      if (BigInt(active[0]?.active_count ?? 0) > 0n) {
+        return { authorized: true, outcomeCode: "SILENT_CASTLE_ACTIVE", resultFingerprint: fingerprint({ command: command.kind, index: command.index, outcome: "SILENT_CASTLE_ACTIVE", playerId: actor.canonicalPlayerId }) };
+      }
+      const rows = await this.titles.listOwned(database, actor.canonicalPlayerId);
+      const selected = rows[command.index - 1];
+      if (selected === undefined) {
+        return { authorized: true, outcomeCode: "NOT_FOUND", resultFingerprint: fingerprint({ command: command.kind, index: command.index, outcome: "NOT_FOUND", playerId: actor.canonicalPlayerId }) };
+      }
+      const reply = `[${actor.rankEmoji ?? ""}${actor.displayName}] 님의 **펫 타이틀**이\n[${selected.displayName}] (으)로 적용되었습니다.`;
+      return {
+        authorized: true,
+        outcomeCode: "READY",
+        canonicalPlayerId: actor.canonicalPlayerId,
+        reply,
+        resultFingerprint: fingerprint({ command: command.kind, index: command.index, outcome: "READY", ownedPetTitleId: selected.instanceId, playerId: actor.canonicalPlayerId, reply }),
+      };
+    }
     if (command.kind === "list_target" && !await this.authority.canReadAny(database, actor)) {
       return { authorized: false, resultFingerprint: fingerprint({ command: command.kind, actor: actor.canonicalPlayerId, authorized: false }) };
     }
@@ -89,7 +114,7 @@ export class PetTitleShadowEvaluator {
   }
 }
 
-// 목록 조회는 공용 READ_ONLY reply coordinator를 통해 snapshot 결과와 outbox를 원자적으로 저장합니다.
+// 목록 조회는 공용 READ_ONLY reply coordinator로 저장하고, 선택은 쓰기 전 SHADOW parity만 평가합니다.
 export class PetTitleAppWiringIngress {
   constructor(
     private readonly provider: MariaAppWiringOperationProvider,
@@ -99,7 +124,7 @@ export class PetTitleAppWiringIngress {
 
   async handle(event: NormalizedIrisEvent): Promise<PetTitleAppWiringIngressResult> {
     const command = parsePetTitleCommand(event.message);
-    if ((command?.kind !== "list_self" && command?.kind !== "list_target")
+    if ((command?.kind !== "list_self" && command?.kind !== "list_target" && command?.kind !== "select")
       || event.direction !== "incoming" || event.userId === undefined || event.channelId === undefined) return { status: "ignored" };
     const decision = await this.dispatcher.resolveReadOnly({
       eventId: event.eventId,
@@ -109,6 +134,7 @@ export class PetTitleAppWiringIngress {
     });
     if (decision.route === "LEGACY_FALLBACK") return { status: "legacy_fallback" };
     if(command.kind==="list_target"&&decision.route==="MODERN")return {status:"legacy_fallback"};
+    if(command.kind==="select"&&decision.route==="MODERN")return {status:"legacy_fallback"};
     const route = { ...decision, effectMode: "READ_ONLY" as const } satisfies CommandDispatchDecision & { readonly effectMode: "READ_ONLY" };
     const claim = {
       entrypointKind: "IRIS" as const,
@@ -118,6 +144,7 @@ export class PetTitleAppWiringIngress {
         command: command.kind,
         message: event.message!,
         targetKey: command.kind === "list_target" ? command.targetName : null,
+        selectedIndex: command.kind === "select" ? command.index : null,
         trustedDisplayName: event.displayNameTrust === "trusted",
         userId: event.userId,
       },
