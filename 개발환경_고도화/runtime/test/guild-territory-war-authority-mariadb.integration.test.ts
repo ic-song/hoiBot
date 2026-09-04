@@ -18,6 +18,7 @@ suite("guild territory single authority MariaDB", () => {
   const operation = base + 3n;
   const war = base + 4n;
   const prefix = `territory-authority-${Date.now()}`;
+  let scopeBefore: { war_id: bigint; version: bigint } | undefined;
 
   before(async () => {
     db = createDatabaseClient({
@@ -30,6 +31,7 @@ suite("guild territory single authority MariaDB", () => {
       connectionLimit: 4,
       connectTimeoutMs: 5_000,
     });
+    scopeBefore = (await db.query<Array<{ war_id: bigint; version: bigint }>>("SELECT war_id,version FROM guild_territory_start_scopes WHERE scope_code='world'"))[0];
     await db.execute("INSERT INTO players(id,status,version) VALUES (?,'active',1)", [player]);
     await db.execute("INSERT INTO player_profiles(player_id,current_display_name,experience,version) VALUES (?,'합성 권위공격자',0,1)", [player]);
     await db.execute("INSERT INTO guilds(id,code,display_name,status,version) VALUES (?,?,?,'active',1)", [guild, `SYN-AUTH-${base}`, "합성 권위길드"]);
@@ -44,6 +46,19 @@ suite("guild territory single authority MariaDB", () => {
   after(async () => {
     if (db) {
       await db.execute("DELETE FROM guild_territory_start_scopes WHERE scope_code='world' AND war_id=?", [war]);
+      await db.execute("DELETE FROM command_audit WHERE operation_id=?", [operation]);
+      await db.execute("DELETE FROM outbox_messages WHERE operation_id=?", [operation]);
+      await db.execute("DELETE FROM guild_territory_scheduled_transitions WHERE war_id=?", [war]);
+      await db.execute("DELETE FROM guild_territory_turns WHERE war_id=?", [war]);
+      await db.execute("DELETE FROM guild_territory_wars WHERE id=?", [war]);
+      await db.execute("DELETE FROM guild_territory_start_destinations WHERE destination_id=? AND destination_kind='CASTLE'", [`${prefix}-room`]);
+      await db.execute("DELETE FROM operations WHERE id=?", [operation]);
+      await db.execute("DELETE FROM player_profiles WHERE player_id=?", [player]);
+      await db.execute("DELETE FROM players WHERE id=?", [player]);
+      await db.execute("DELETE FROM guilds WHERE id=?", [guild]);
+      if (scopeBefore !== undefined) {
+        await db.execute("INSERT INTO guild_territory_start_scopes(scope_code,war_id,version) VALUES ('world',?,?)", [scopeBefore.war_id, scopeBefore.version]);
+      }
       await db.close();
     }
   });
