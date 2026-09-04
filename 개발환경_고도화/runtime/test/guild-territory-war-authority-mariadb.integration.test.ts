@@ -20,6 +20,8 @@ suite("guild territory single authority MariaDB", () => {
   const prefix = `territory-authority-${Date.now()}`;
   let scopeBefore: { war_id: bigint; version: bigint; updated_at: Date } | undefined;
   let scopeOverwritten = false;
+  let destinationBefore: { destination_id: string; destination_kind: string; position_no: number; active: number } | undefined;
+  let destinationTouched = false;
 
   before(async () => {
     db = createDatabaseClient({
@@ -33,6 +35,7 @@ suite("guild territory single authority MariaDB", () => {
       connectTimeoutMs: 5_000,
     });
     scopeBefore = (await db.query<Array<{ war_id: bigint; version: bigint; updated_at: Date }>>("SELECT war_id,version,updated_at FROM guild_territory_start_scopes WHERE scope_code='world'"))[0];
+    destinationBefore = (await db.query<Array<{ destination_id: string; destination_kind: string; position_no: number; active: number }>>("SELECT destination_id,destination_kind,position_no,active FROM guild_territory_start_destinations WHERE destination_kind='CASTLE' AND position_no=1"))[0];
     await db.execute("INSERT INTO players(id,status,version) VALUES (?,'active',1)", [player]);
     await db.execute("INSERT INTO player_profiles(player_id,current_display_name,experience,version) VALUES (?,'합성 권위공격자',0,1)", [player]);
     await db.execute("INSERT INTO guilds(id,code,display_name,status,version) VALUES (?,?,?,'active',1)", [guild, `SYN-AUTH-${base}`, "합성 권위길드"]);
@@ -41,6 +44,7 @@ suite("guild territory single authority MariaDB", () => {
     await db.execute("INSERT INTO guild_territory_start_scopes(scope_code,war_id,version) VALUES ('world',?,1) ON DUPLICATE KEY UPDATE war_id=VALUES(war_id),version=version+1", [war]);
     scopeOverwritten = true;
     await db.execute("INSERT INTO guild_territory_start_destinations(destination_id,destination_kind,position_no,active) VALUES (?,'CASTLE',1,TRUE) ON DUPLICATE KEY UPDATE active=TRUE", [`${prefix}-room`]);
+    destinationTouched = true;
     await db.execute("INSERT INTO guild_territory_turns(war_id,generation_version,ordinal,guild_id,attacker_player_id,attack_limit,attacks_used,turn_state) VALUES (?,2,1,?,?,30,0,'PENDING')", [war, guild, player]);
     await db.execute("INSERT INTO guild_territory_scheduled_transitions(transition_key,war_id,transition_code,scheduled_for,status,operation_id,expected_war_version,payload_json,version) VALUES (?,?, 'START_OPENING',DATE_SUB(UTC_TIMESTAMP(3),INTERVAL 10 SECOND),'PENDING',?,2,?,1)", [`${prefix}-opening`, war, operation, JSON.stringify({ token: "authority-token", generationVersion: "2" })]);
   });
@@ -56,7 +60,12 @@ suite("guild territory single authority MariaDB", () => {
         await attempt(() => db.execute("DELETE FROM guild_territory_scheduled_transitions WHERE war_id=?", [war]));
         await attempt(() => db.execute("DELETE FROM guild_territory_turns WHERE war_id=?", [war]));
         await attempt(() => db.execute("DELETE FROM guild_territory_wars WHERE id=?", [war]));
-        await attempt(() => db.execute("DELETE FROM guild_territory_start_destinations WHERE destination_id=? AND destination_kind='CASTLE'", [`${prefix}-room`]));
+        if (destinationTouched) {
+          await attempt(() => db.execute("DELETE FROM guild_territory_start_destinations WHERE destination_id=? AND destination_kind='CASTLE'", [`${prefix}-room`]));
+          if (destinationBefore !== undefined) {
+            await attempt(() => db.execute("INSERT INTO guild_territory_start_destinations(destination_id,destination_kind,position_no,active) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE position_no=VALUES(position_no),active=VALUES(active)", [destinationBefore!.destination_id, destinationBefore!.destination_kind, destinationBefore!.position_no, destinationBefore!.active]));
+          }
+        }
         await attempt(() => db.execute("DELETE FROM operations WHERE id=?", [operation]));
         await attempt(() => db.execute("DELETE FROM player_profiles WHERE player_id=?", [player]));
         await attempt(() => db.execute("DELETE FROM players WHERE id=?", [player]));
