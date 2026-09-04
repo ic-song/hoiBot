@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { CapableDatabaseClient, ControlledDatabaseTransaction, DatabaseTransaction, DatabaseWriteResult, ReadOnlySnapshotTransaction } from "../src/database.js";
-import { executeAppWiringMutationReplyEntrypoint } from "../src/dispatch/app-wiring-entrypoint-runner.js";
+import { executeAppWiringMutationIrisEntrypoint, executeAppWiringMutationReplyEntrypoint } from "../src/dispatch/app-wiring-entrypoint-runner.js";
 import { MariaAppWiringOperationProvider, type AppWiringMutationParticipant } from "../src/dispatch/app-wiring-operation-provider.js";
 import { createEnvironmentContext, verifyStartupDatabaseIdentity } from "../src/runtime/environment-context.js";
 
@@ -76,13 +76,14 @@ class MutationReplyDatabase implements CapableDatabaseClient {
       const columns = ["canonical_app_wiring_receipt_link_id", "app_wiring_operation_id", "receipt_kind", "result_fingerprint", "daily_prayer_operation_id", "home_aggregate_operation_id", "market_operation_id", "member_title_operation_id", "mini_pet_title_operation_id", "package_use_operation_id", "pet_explore_operation_id", "pet_explore_event_control_operation_id", "pet_title_operation_id", "player_identity_operation_id"];
       return [Object.fromEntries(columns.map((column, index) => [column, this.receiptLink![index]]))] as T;
     }
-    if (sql.includes("FROM outbox_messages outbox")) {
+    if (sql.includes("FROM outbox_messages outbox") || sql.includes("FROM operations operation")) {
+      const fromOperation = sql.includes("FROM operations operation");
       const outbox = this.outbox;
       const matches = values.length === 1
         ? outbox?.id?.toString() === String(values[0])
         : this.operation?.idempotency_scope === values[0] && this.operation?.idempotency_key === values[1];
-      if (!matches || this.operation === undefined || this.execution === undefined || outbox === undefined) return [] as T;
-      return [{ operation_id: this.operation.id, idempotency_scope: this.operation.idempotency_scope, idempotency_key: this.operation.idempotency_key, operation_status: this.operation.status, operation_result_json: this.operation.result_json, event_id: this.execution.event_id, command_code: this.execution.command_code, execution_status: this.execution.execution_status, result_code: this.execution.result_code, outbox_id: outbox.id, provider_code: "iris", destination_id: outbox.destination_id, message_type: "text", payload_json: outbox.payload_json }] as T;
+      if (!matches || this.operation === undefined || this.execution === undefined || (!fromOperation && outbox === undefined)) return [] as T;
+      return [{ operation_id: this.operation.id, idempotency_scope: this.operation.idempotency_scope, idempotency_key: this.operation.idempotency_key, operation_status: this.operation.status, operation_result_json: this.operation.result_json, event_id: this.execution.event_id, command_code: this.execution.command_code, execution_status: this.execution.execution_status, result_code: this.execution.result_code, outbox_id: outbox?.id ?? null, provider_code: outbox === undefined ? null : "iris", destination_id: outbox?.destination_id ?? null, message_type: outbox === undefined ? null : "text", payload_json: outbox?.payload_json ?? null }] as T;
     }
     return [] as T;
   }
@@ -96,7 +97,7 @@ class MutationReplyDatabase implements CapableDatabaseClient {
     if (sql.startsWith("UPDATE pet_title_domain")) { this.domainWrites += 1; return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO canonical_pet_title_operations")) { this.typedReceipt = { pet_title_operation_id: values[0], result_fingerprint: values[1], operation_status: "COMPLETED" }; return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO operations")) { this.operation = { id: 11n, idempotency_scope: "app-wiring.mutation-reply", idempotency_key: values[1], status: "processing", result_json: null }; return { affectedRows: 1n, insertId: 11n }; }
-    if (sql.startsWith("INSERT INTO command_executions")) { if (this.failExecution) throw new Error("EXECUTION_INSERT_FAILED"); this.execution = { event_id: values[0], command_code: values[1], execution_status: "completed", result_code: "reply_queued" }; return { affectedRows: 1n, insertId: 12n }; }
+    if (sql.startsWith("INSERT INTO command_executions")) { if (this.failExecution) throw new Error("EXECUTION_INSERT_FAILED"); this.execution = { event_id: values[0], command_code: values[1], execution_status: "completed", result_code: sql.includes("'no_reply'") ? "no_reply" : "reply_queued" }; return { affectedRows: 1n, insertId: 12n }; }
     if (sql.startsWith("INSERT INTO outbox_messages")) { if (this.failOutbox) throw new Error("OUTBOX_INSERT_FAILED"); this.outbox = { id: 21n, destination_id: values[1], payload_json: values[2] }; return { affectedRows: 1n, insertId: 21n }; }
     if (sql.startsWith("UPDATE operations")) { Object.assign(this.operation!, { status: "completed", result_json: values[0] }); return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO canonical_app_wiring_receipt_links")) { if (this.failReceiptLink) throw new Error("RECEIPT_LINK_INSERT_FAILED"); this.receiptLink = values; return { affectedRows: 1n, insertId: 0n }; }
@@ -124,6 +125,21 @@ function input(calls: string[]) {
     replayCompleted: async () => "selected",
     replayFailed: async () => { throw new Error("PREVIOUSLY_FAILED"); },
     errorCode: () => "PET_TITLE_SELECT_FAILED",
+  };
+}
+
+function noReplyInput(calls: string[]) {
+  const base = input(calls);
+  return {
+    ...base,
+    claim: { ...base.claim, externalRequestId: "event-silent-1", normalizedPayload: { index: 2 } },
+    handler: async (database: AppWiringMutationParticipant) => {
+      calls.push("handler");
+      await database.execute("UPDATE pet_title_domain SET selected=TRUE");
+      await database.execute("INSERT INTO canonical_pet_title_operations VALUES (?,?)", [petTitleOperationId, resultFingerprint]);
+      return { value: "silent", noReply: { kind: "NO_REPLY" as const, eventId: "event-silent-1", commandCode: "PET_TITLE_SELL" }, receipt: { status: "NO_REPLY", resultFingerprint }, typedReceipt: { receiptKind: "PET_TITLE" as const, petTitleOperationId, resultFingerprint } };
+    },
+    replayCompleted: async () => "silent",
   };
 }
 
@@ -188,6 +204,18 @@ describe("app-wiring MUTATION Iris reply atomic boundary", () => {
     assert.equal(database.domainWrites, 1);
   });
 
+  it("replays a legacy REPLY operation that predates the outcome discriminator", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    const calls: string[] = [];
+    await executeAppWiringMutationReplyEntrypoint(service, input(calls));
+    const legacyResult = JSON.parse(String(database.operation?.result_json)) as Record<string, unknown>;
+    delete legacyResult.outcomeKind;
+    database.operation!.result_json = JSON.stringify(legacyResult);
+    assert.deepEqual(await executeAppWiringMutationReplyEntrypoint(service, input(calls)), { value: "selected", reply: { outboxId: "21", room: "room-1", data: "선택 완료" } });
+    assert.deepEqual(calls, ["handler"]);
+  });
+
   it("rejects a reply reference that is not the typed operation id and rolls back T1", async () => {
     const database = new MutationReplyDatabase();
     const service = await provider(database);
@@ -232,5 +260,105 @@ describe("app-wiring MUTATION Iris reply atomic boundary", () => {
       replayFailed: async () => { callbacks.push("failed"); throw new Error("PREVIOUSLY_FAILED"); },
     }), /APP_WIRING_MUTATION_REPLY_ROUTE_INVALID/);
     assert.deepEqual(callbacks, []);
+  });
+});
+
+describe("app-wiring MUTATION Iris typed no-reply boundary", () => {
+  it("persists a typed receipt with zero outboxes and replays without invoking the handler", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    const calls: string[] = [];
+    assert.deepEqual(await executeAppWiringMutationIrisEntrypoint(service, noReplyInput(calls)), { value: "silent", noReply: { kind: "NO_REPLY" } });
+    assert.equal(database.domainWrites, 1);
+    assert.equal(database.execution?.result_code, "no_reply");
+    assert.equal(database.outbox, undefined);
+    assert.equal(database.claim?.claim_state, "COMPLETED");
+    assert.deepEqual(await executeAppWiringMutationIrisEntrypoint(service, noReplyInput(calls)), { value: "silent", noReply: { kind: "NO_REPLY" } });
+    assert.deepEqual(calls, ["handler"]);
+  });
+
+  it("reconciles an unknown no-reply commit without repeating the mutation", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    database.uncertainCommit = true;
+    const calls: string[] = [];
+    assert.deepEqual(await executeAppWiringMutationIrisEntrypoint(service, noReplyInput(calls)), { value: "silent", noReply: { kind: "NO_REPLY" } });
+    assert.equal(database.domainWrites, 1);
+    assert.deepEqual(calls, ["handler"]);
+  });
+
+  it("fails closed when a no-reply operation gains an outbox", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    await executeAppWiringMutationIrisEntrypoint(service, noReplyInput([]));
+    database.outbox = { id: 21n, destination_id: "room-1", payload_json: JSON.stringify({ data: "unexpected" }) };
+    await assert.rejects(() => executeAppWiringMutationIrisEntrypoint(service, noReplyInput([])), /APP_WIRING_REPLY_REPLAY_DRIFT/);
+  });
+
+  it("rolls back the no-reply graph when execution persistence fails", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    database.failExecution = true;
+    await assert.rejects(() => executeAppWiringMutationIrisEntrypoint(service, noReplyInput([])), /EXECUTION_INSERT_FAILED/);
+    assert.equal(database.domainWrites, 0);
+    assert.equal(database.typedReceipt, undefined);
+    assert.equal(database.operation, undefined);
+    assert.equal(database.claim?.claim_state, "FAILED");
+  });
+
+  for (const [flag, error] of [["failReceiptLink", "RECEIPT_LINK_INSERT_FAILED"], ["failTerminal", "CLAIM_TERMINAL_FAILED"]] as const) {
+    it(`rolls back the complete no-reply graph on ${flag}`, async () => {
+      const database = new MutationReplyDatabase();
+      const service = await provider(database);
+      database[flag] = true;
+      await assert.rejects(() => executeAppWiringMutationIrisEntrypoint(service, noReplyInput([])), new RegExp(error));
+      assert.equal(database.domainWrites, 0);
+      assert.equal(database.typedReceipt, undefined);
+      assert.equal(database.operation, undefined);
+      assert.equal(database.execution, undefined);
+      assert.equal(database.outbox, undefined);
+      assert.equal(database.receiptLink, undefined);
+      assert.equal(database.claim?.claim_state, "FAILED");
+    });
+  }
+
+  it("fails closed when the persisted no-reply discriminator is missing", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    await executeAppWiringMutationIrisEntrypoint(service, noReplyInput([]));
+    const result = JSON.parse(String(database.operation?.result_json)) as Record<string, unknown>;
+    delete result.outcomeKind;
+    database.operation!.result_json = JSON.stringify(result);
+    await assert.rejects(() => executeAppWiringMutationIrisEntrypoint(service, noReplyInput([])), /APP_WIRING_REPLY_REPLAY_DRIFT/);
+  });
+
+  it("rejects an ambiguous reply plus no-reply outcome before commit", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    const invalid = noReplyInput([]);
+    await assert.rejects(() => executeAppWiringMutationIrisEntrypoint(service, {
+      ...invalid,
+      handler: async (participant) => ({
+        ...(await invalid.handler(participant)),
+        reply: { eventId: "event-silent-1", commandCode: "PET_TITLE_SELL", destinationId: "room-1", data: "unexpected" },
+      }),
+    }), /APP_WIRING_MUTATION_IRIS_OUTCOME_INVALID/);
+    assert.equal(database.domainWrites, 0);
+    assert.equal(database.typedReceipt, undefined);
+    assert.equal(database.operation, undefined);
+    assert.equal(database.claim?.claim_state, "FAILED");
+  });
+
+  it("rejects an inconsistent no-reply status before commit", async () => {
+    const database = new MutationReplyDatabase();
+    const service = await provider(database);
+    const invalid = noReplyInput([]);
+    await assert.rejects(() => executeAppWiringMutationIrisEntrypoint(service, {
+      ...invalid,
+      handler: async (participant) => ({ ...(await invalid.handler(participant)), receipt: { status: "REPLY_QUEUED", resultFingerprint } }),
+    }), /APP_WIRING_NO_REPLY_STATUS_INVALID/);
+    assert.equal(database.domainWrites, 0);
+    assert.equal(database.outbox, undefined);
+    assert.equal(database.claim?.claim_state, "FAILED");
   });
 });
