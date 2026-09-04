@@ -6371,7 +6371,7 @@ Status: VERIFIED
 
 # /계정변경 [게임계정]
 
-Status: PARTIAL
+Status: VERIFIED
 
 ## Files
 
@@ -6382,12 +6382,15 @@ Status: PARTIAL
 - `개발환경_고도화/runtime/src/account-platform/account-switch-command-service.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-platform-service.ts`
 - `개발환경_고도화/runtime/src/account-platform/maria-account-platform-repository.ts`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/test/account-platform-app-ingress.test.ts`
 
 ## Related Helpers
 
 - `AccountPlatformCommandContextProvider.prepare`
 - `AccountPlatformIrisContextProvider.prepareKakao`
 - `AccountPlatformIrisContextProvider.dispatchAccountSwitch`
+- `dispatchAccountSwitchCommand`
 - `AccountPlatformActorContextResolver.resolve`
 - `MariaPlayerContextProvider.resolveSelf`
 - `MariaPlayerContextProvider.resolveUniqueLegacyDisplayTarget`
@@ -6419,7 +6422,7 @@ Status: PARTIAL
 
 ## AI Notes
 
-- The provider and transaction path are verified in isolation, including MariaDB restart/replay. `app.ts` Iris ingress and all game-command consumer propagation remain pending behind WBS743, so this command is not yet marked as an active runtime route.
+- The provider, transaction path, and `app.ts` Iris ingress are verified, including MariaDB restart/replay and operational-channel/non-duplicate command gating. The broader active-player snapshot propagation to other game-command consumers remains pending behind WBS743.
 - No Discord webhook ingress exists in the current runtime. The shared provider and service/DB tests cover Discord server scoping without inventing an unowned transport route.
 - Do not fall back to legacy `external_identities.player_id` for `/계정변경`; a verified modern room context is required.
 - When an active room/server selection exists, a missing or mismatched caller portal link is mapping drift and must fail closed instead of falling back to the legacy identity path.

@@ -114,6 +114,11 @@ import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import { buildSiteSignupEntryMessage, isSiteSignupEntryCommand } from "./signup/site-signup-entry.js";
 import {
+  AccountPlatformIrisContextProvider,
+  type AccountPlatformKakaoEventContext
+} from "./account-platform/account-platform-iris-context-provider.js";
+import { isAccountSwitchCommandCandidate } from "./account-platform/account-switch-command-service.js";
+import {
   CommandDispatcher,
   MariaCommandDispatchRepository,
   MariaCommandRouteReader,
@@ -373,6 +378,7 @@ export interface AppDependencies {
   petDataCompareAppWiringIngress?: Pick<PetDataCompareAppWiringIngress, "handle">;
   petTitleAppWiringIngress?: Pick<PetTitleAppWiringIngress, "handle">;
   irisAdminCommandService?: Pick<IrisAdminCommandService, "changePlayerPoint">;
+  accountPlatformIrisContextProvider?: Pick<AccountPlatformIrisContextProvider, "prepareKakao" | "dispatchAccountSwitch">;
   dailyPrayerRandom?: () => number;
   runAccountCleanupMaintenance?: () => Promise<{
     pending: { processed: number; failed: number };
@@ -705,6 +711,34 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
   }
 }
 
+// 운영 Kakao 이벤트의 고정된 방별 player snapshot으로 /계정변경을 한 번만 실행합니다.
+export async function dispatchAccountSwitchCommand(
+  provider: Pick<AccountPlatformIrisContextProvider, "prepareKakao" | "dispatchAccountSwitch"> | undefined,
+  eventProcessor: Pick<ProcessIrisEventService, "queueCommandReply"> | undefined,
+  isOperationalChannel: boolean,
+  duplicate: boolean | undefined,
+  event: NormalizedIrisEvent,
+  replies: PendingReply[] | undefined,
+): Promise<AccountPlatformKakaoEventContext | null> {
+  if (provider === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+    || replies === undefined || !isAccountSwitchCommandCandidate(event.message)) return null;
+  const context = await provider.prepareKakao(event);
+  if (context === null) return null;
+  try {
+    const result = await provider.dispatchAccountSwitch(context);
+    if (result !== null) {
+      replies.push(await eventProcessor.queueCommandReply(event, "ACCOUNT_PLATFORM_SWITCH", result.data));
+    }
+  } catch (error) {
+    if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
+      replies.push(await eventProcessor.queueCommandReply(event, "account_platform_switch_error", error.message));
+    } else {
+      throw error;
+    }
+  }
+  return context;
+}
+
 // 펫탐험 정산 exact 명령을 app 본문 제어흐름과 분리해 registry consumer로 전달합니다.
 async function dispatchPetExploreSettlementCommand(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
   if (ingress === undefined || !isOperationalChannel || duplicate !== false
@@ -861,6 +895,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       :undefined);
   const irisAdminCommandService = dependencies.irisAdminCommandService
     ?? (database === undefined ? undefined : new IrisAdminCommandService(database, config.irisAllowedOpenChatIds));
+  const accountPlatformIrisContextProvider = dependencies.accountPlatformIrisContextProvider
+    ?? (database === undefined ? undefined : new AccountPlatformIrisContextProvider(database));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -1679,6 +1715,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                   }
             })
           : await eventProcessor.executeDiagnosticModeration(normalizedEvent);
+      await dispatchAccountSwitchCommand(
+        accountPlatformIrisContextProvider,
+        eventProcessor,
+        isOperationalChannel,
+        processing?.duplicate,
+        commandEvent,
+        processing?.replies,
+      );
       if (database !== undefined
         && eventProcessor !== undefined
         && processing !== undefined
