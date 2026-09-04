@@ -22,7 +22,7 @@ export interface PetTitleLifecycleResult {
 }
 
 export interface PetTitleListRow {
-  instanceId: bigint;
+  instanceId: bigint | string;
   displayName: string;
   priceDigits: string;
   acquiredAt: Date | string;
@@ -180,7 +180,7 @@ export class PetTitleLifecycleService {
         [randomUUID(), scope, key, operatorId === null ? "external_identity" : "admin_operator", operatorId ?? actor.identity_id],
       );
       let status: PetTitleLifecycleResult["status"] = "displayed";
-      let instanceId: bigint | undefined;
+      let instanceId: bigint | string | undefined;
       let data: string;
 
       if (command.kind === "list_self" || command.kind === "list_target") {

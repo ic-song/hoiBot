@@ -15,9 +15,16 @@
     "453_canonical_building_recipe.sql",
     "454_object_import_crosswalk_payload_fingerprint.sql",
     "455_title_instance_acquisition_price.sql",
-    "456_owned_object_state_hardening.sql"
+    "456_owned_object_state_hardening.sql",
+    "461_object_db_transition_identity_crosswalk.sql",
+    "462_object_db_transition_app_wiring_claim.sql",
+    "463_object_db_transition_operation_receipts.sql",
+    "464_object_db_transition_typed_asset_ledgers.sql",
+    "465_object_db_transition_operation_participants.sql",
+    "466_object_db_transition_recovery_receipt_links.sql",
+    "470_pet_explore_event_control_app_wiring.sql"
   ],
-  "domainTableSetSha256": "bfa83fc321128da748debeee5c4be7166e0cbd055f4ff18f70e33d30c8983a5d",
+  "domainTableSetSha256": "e8b5edbc69910da57565d426a63b09a68f983f4060c6a0131aff5641b39bd07b",
   "definitionSeed": [
     "canonical_item_definitions",
     "object_furniture_definitions",
@@ -73,7 +80,8 @@
     "canonical_currency_definition_imports",
     "canonical_package_definition_imports",
     "canonical_building_definition_imports",
-    "canonical_craft_recipe_definition_imports"
+    "canonical_craft_recipe_definition_imports",
+    "canonical_player_identity_crosswalks"
   ],
   "initialLedger": [
     "canonical_currency_operations",
@@ -93,7 +101,27 @@
     "canonical_package_definition_replays",
     "canonical_craft_operations",
     "canonical_craft_item_ledger_entries",
-    "canonical_craft_currency_ledger_entries"
+    "canonical_craft_currency_ledger_entries",
+    "canonical_app_wiring_operations",
+    "canonical_app_wiring_receipt_links",
+    "canonical_daily_prayer_operations",
+    "canonical_home_aggregate_operations",
+    "canonical_market_operations",
+    "canonical_member_title_operations",
+    "canonical_mini_pet_title_operations",
+    "canonical_package_use_operations",
+    "canonical_pet_explore_event_control_operations",
+    "canonical_pet_explore_operations",
+    "canonical_pet_title_operations",
+    "canonical_player_identity_operations",
+    "canonical_market_transfer_ledger_entries",
+    "canonical_package_use_reward_ledger_entries",
+    "canonical_home_aggregate_operation_participants",
+    "canonical_market_operation_participants",
+    "canonical_member_title_operation_participants",
+    "canonical_mini_pet_title_operation_participants",
+    "canonical_pet_title_operation_participants",
+    "canonical_player_identity_operation_participants"
   ],
   "sourceSystems": ["LEGACY_JSON", "CODE_SEED", "RUNTIME_DB"],
   "definitionBeforeOwnership": true,

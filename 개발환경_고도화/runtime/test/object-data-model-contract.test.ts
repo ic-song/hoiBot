@@ -16,16 +16,59 @@ const migration449 = readFileSync(new URL("../migrations/449_canonical_pet_skill
 const migration452 = readFileSync(new URL("../migrations/452_canonical_currency_ledger.sql", import.meta.url), "utf8");
 const migration451 = readFileSync(new URL("../migrations/451_canonical_package_reward.sql", import.meta.url), "utf8");
 const migration453 = readFileSync(new URL("../migrations/453_canonical_building_recipe.sql", import.meta.url), "utf8");
+const migration470 = readFileSync(new URL("../migrations/470_pet_explore_event_control_app_wiring.sql", import.meta.url), "utf8");
 const copy = (): ObjectDataModelContract => JSON.parse(JSON.stringify(fixture)) as ObjectDataModelContract;
 
 describe("object data model standard contract", () => {
   it("accepts the registered identity/audit, item, and furniture schema contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
-    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql"]);
+    assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql", "466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql"]);
+    assert.equal(contract.registeredMigrations.length, 25);
+    assert.equal(contract.tables.length, 94);
+    const appWiring = contract.tables.find((entry) => entry.table === "canonical_app_wiring_operations");
+    const receiptLinks = contract.tables.find((entry) => entry.table === "canonical_app_wiring_receipt_links");
+    const eventControl = contract.tables.find((entry) => entry.table === "canonical_pet_explore_event_control_operations");
+    assert.ok(appWiring);
+    assert.ok(receiptLinks);
+    assert.ok(eventControl);
+    assert.deepEqual(appWiring.columns.slice(14, 21).map(({ name }) => name), ["effect_mode", "lease_token", "lease_generation", "lease_expires_time", "attempt_count", "recovery_status", "recovery_code"]);
+    assert.deepEqual(eventControl.columns.map(({ name }) => name), ["pet_explore_event_control_operation_id", "event_code", "requested_active", "previous_active", "previous_version", "resulting_version", "relocated_participant_count", "replay_namespace", "request_key", "payload_fingerprint", "result_fingerprint", "operation_status", "INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]);
+    assert.deepEqual(eventControl.primaryKey, ["pet_explore_event_control_operation_id"]);
+    assert.deepEqual(eventControl.uniqueKeys, [["replay_namespace", "request_key"]]);
+    assert.equal(eventControl.auditTimeFormat, "KST_YYYY-MM-DD HH:MM:SS");
+    const eventChecks = (eventControl as typeof eventControl & { checks: Array<{ constraint: string; expression: string }> }).checks;
+    assert.deepEqual(eventChecks.map(({ constraint }) => constraint), ["chk_odbt_470_01_event", "chk_odbt_470_01_version", "chk_odbt_470_01_payload", "chk_odbt_470_01_result", "chk_odbt_470_01_status", "chk_odbt_470_01_insert_time", "chk_odbt_470_01_update_time"]);
+    assert.match(eventChecks.find(({ constraint }) => constraint === "chk_odbt_470_01_insert_time")?.expression ?? "", /2\[0-3\].*\[0-5\]\[0-9\]/);
+    assert.match(eventChecks.find(({ constraint }) => constraint === "chk_odbt_470_01_update_time")?.expression ?? "", /2\[0-3\].*\[0-5\]\[0-9\]/);
+    assert.equal(receiptLinks.columns.length, 18);
+    assert.equal(receiptLinks.foreignKeys.length, 11);
+    assert.equal(receiptLinks.uniqueKeys?.length, 11);
+    assert.ok(receiptLinks.columns.some(({ name }) => name === "pet_explore_event_control_operation_id"));
+    assert.ok(receiptLinks.foreignKeys.some(({ column, referencesTable, referencesColumn }) => column === "pet_explore_event_control_operation_id" && referencesTable === "canonical_pet_explore_event_control_operations" && referencesColumn === "pet_explore_event_control_operation_id"));
+    assert.ok(receiptLinks.uniqueKeys?.some((key) => key.length === 1 && key[0] === "pet_explore_event_control_operation_id"));
+    const receiptChecks = (receiptLinks as typeof receiptLinks & { checks: Array<{ constraint: string; expression: string }> }).checks;
+    assert.match(receiptChecks.find(({ constraint }) => constraint === "chk_odbt_470_02_rule_01")?.expression ?? "", /pet_explore_event_control_operation_id IS NOT NULL/);
+    assert.match(receiptChecks.find(({ constraint }) => constraint === "chk_odbt_470_02_rule_02")?.expression ?? "", /receipt_kind = 'PET_EXPLORE_EVENT_CONTROL' AND pet_explore_event_control_operation_id IS NOT NULL/);
     for (const table of ["data_migration_common_staging_runs", "data_migration_common_staging_records", "data_migration_catalog_projection_runs", "data_migration_catalog_source_decisions", "data_migration_catalog_projection_records", "data_migration_object_domain_import_runs", "data_migration_object_domain_import_decisions", "data_migration_object_domain_import_records"]) assert.ok(contract.tables.some((entry) => entry.table === table));
     for (const table of ["object_identities", "object_identity_crosswalks", "canonical_players", "canonical_item_definitions", "canonical_item_definition_imports", "canonical_owned_item_stacks", "canonical_owned_item_instances", "canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries", "object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_operation_replays", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment", "canonical_pet_equipment_operation_replays", "object_furniture_ownership_history", "object_furniture_market_listings", "object_furniture_active_market_listings", "canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances", "canonical_mini_pet_operation_replays", "canonical_member_title_definitions", "canonical_owned_member_title_instances", "canonical_member_title_selections", "canonical_pet_title_definitions", "canonical_owned_pet_title_instances", "canonical_pet_title_selections", "canonical_mini_pet_title_definitions", "canonical_owned_mini_pet_title_instances", "canonical_mini_pet_title_selections", "canonical_pet_skill_definitions", "canonical_pet_skill_definition_imports", "canonical_owned_pet_skill_stacks", "canonical_owned_pet_skill_equipments", "canonical_pet_skill_operation_replays", "canonical_package_definitions", "canonical_package_definition_imports", "canonical_package_reward_groups", "canonical_package_reward_entries", "canonical_package_item_rewards", "canonical_package_nested_rewards", "canonical_package_reward_quarantines", "canonical_package_definition_replays", "canonical_currency_definitions", "canonical_currency_definition_imports", "canonical_player_currency_balances", "canonical_currency_operations", "canonical_currency_ledger_entries"]) assert.ok(contract.tables.some((entry) => entry.table === table));
     for (const table of ["canonical_building_definitions", "canonical_building_definition_imports", "canonical_craft_recipe_definitions", "canonical_craft_recipe_definition_imports", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_building_craft_recipes", "canonical_craft_operations", "canonical_craft_item_ledger_entries", "canonical_craft_currency_ledger_entries"]) assert.ok(contract.tables.some((entry) => entry.table === table));
+  });
+
+  it("keeps migration470 event-control receipt schema and additive link discriminator exact", () => {
+    for (const token of [
+      "canonical_pet_explore_event_control_operations",
+      "pet_explore_event_control_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin",
+      "UNIQUE KEY uq_odbt_470_01_01 (replay_namespace, request_key)",
+      "event_code IN ('diamond_mine','guild_raid')",
+      "resulting_version = previous_version OR resulting_version = previous_version + 1",
+      "operation_status IN ('COMPLETED','FAILED')",
+      "ADD COLUMN IF NOT EXISTS pet_explore_event_control_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin NULL",
+      "ADD UNIQUE KEY IF NOT EXISTS uq_odbt_470_02_01 (pet_explore_event_control_operation_id)",
+      "REFERENCES canonical_pet_explore_event_control_operations (pet_explore_event_control_operation_id)",
+      "receipt_kind = 'PET_EXPLORE_EVENT_CONTROL' AND pet_explore_event_control_operation_id IS NOT NULL",
+    ]) assert.ok(migration470.includes(token), token);
+    assert.equal((migration470.match(/pet_explore_event_control_operation_id IS NOT NULL/g) ?? []).length, 2);
   });
 
   it("keeps building and recipe definitions, typed targets, replay, and owner-bound ledgers explicit", () => {
@@ -129,7 +172,7 @@ describe("object data model standard contract", () => {
     const uppercaseCode = copy();
     uppercaseCode.tables[1]!.columns = [...uppercaseCode.tables[1]!.columns, { name: "ITEM_CODE", type: "VARCHAR(20)" }];
     assert.throws(() => validateObjectDataModelContract(uppercaseCode), /OBJECT_CODE/);
-    for (const name of ["command_code", "environment_code", "error_code", "provider_code", "reason_code"]) {
+    for (const name of ["command_code", "environment_code", "error_code", "event_code", "provider_code", "reason_code"]) {
       const semanticCode = copy();
       semanticCode.tables[1]!.columns = [...semanticCode.tables[1]!.columns, { name, type: "VARCHAR(100)" }];
       assert.doesNotThrow(() => validateObjectDataModelContract(semanticCode), name);

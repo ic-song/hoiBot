@@ -14,6 +14,7 @@ export interface DomainImportPolicy {
   catalogVersion: "SC-20260902-1";
   targetSchemaSha256: string;
   importContractSha256: string;
+  acceptedImportContractSha256: readonly string[];
   componentSemanticSha256: Record<"identityBindings" | "objectModel" | "disposition" | "fieldMap", string>;
   contractComponentSemanticSha256: Record<"identityBindings" | "objectModel" | "disposition" | "fieldMap", string>;
   columns: DomainImportSchemaColumn[];
@@ -124,6 +125,59 @@ export function calculateObjectDomainImportSemanticSha256(documentText: string):
   return sha256(stableDomainImportJson(document));
 }
 
+export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION = "OBJECT_DOMAIN_IMPORT_RELEVANT_V1" as const;
+export const OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256 = "487f098d9d8357bbe636b91766dd07f24618b350e449510f52f266fd2b80a861" as const;
+export type ObjectDomainImportSemanticComponent = "identityBindings" | "objectModel" | "disposition" | "fieldMap";
+
+function parseSemanticDocument(documentText: string): Record<string, unknown> {
+  let document: unknown;
+  try { document = JSON.parse(documentText); } catch { throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_JSON_INVALID"); }
+  if (document === null || Array.isArray(document) || typeof document !== "object") throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_JSON_INVALID");
+  return document as Record<string, unknown>;
+}
+
+// Runtime-only schema additions must not change the semantic identity of the frozen 45-table import.
+export function calculateObjectDomainImportComponentSemanticSha256(component: ObjectDomainImportSemanticComponent, documentText: string, directTargets: readonly string[]): string {
+  const document = parseSemanticDocument(documentText);
+  let projection: unknown;
+  if (component === "objectModel") {
+    const tables = document.tables;
+    if (!Array.isArray(tables)) throw new Error("OBJECT_DOMAIN_IMPORT_COMPONENT_PROJECTION_INVALID");
+    const direct = new Set(directTargets);
+    projection = {
+      projectionVersion: OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION,
+      component,
+      tables: tables.filter((table): table is Record<string, unknown> => table !== null && !Array.isArray(table) && typeof table === "object" && direct.has(String((table as Record<string, unknown>).table)))
+    };
+  } else if (component === "disposition") {
+    projection = {
+      projectionVersion: OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION,
+      component,
+      definitionSeed: document.definitionSeed,
+      stateImport: document.stateImport,
+      initialLedger: document.initialLedger,
+      quarantineOnly: document.quarantineOnly
+    };
+  } else {
+    projection = document;
+  }
+  return sha256(stableDomainImportJson(projection));
+}
+
+export function calculateObjectDomainImportContractSemanticSha256(documentText: string): string {
+  const document = parseSemanticDocument(documentText);
+  const policy = document.semanticHashPolicy;
+  if (policy === null || Array.isArray(policy) || typeof policy !== "object") throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
+  const projectionVersion = (policy as Record<string, unknown>).projectionVersion;
+  const compatible = (policy as Record<string, unknown>).acceptedCompatibleImportContractSha256;
+  const expectedProjectionSha256 = (policy as Record<string, unknown>).currentImportContractProjectionSha256;
+  if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256) || !Array.isArray(compatible) || compatible.length !== 1 || compatible[0] !== OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
+  const { semanticHashPolicy: _semanticHashPolicy, ...importRelevantContract } = document;
+  const actual = sha256(stableDomainImportJson({ projectionVersion: OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION, contract: importRelevantContract }));
+  if (actual !== expectedProjectionSha256 || actual === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_PROJECTION_DRIFT");
+  return actual;
+}
+
 // Domain Import는 설계 또는 격리 리허설 DB에서만 실행할 수 있습니다.
 export function assertObjectDomainImportDatabaseName(databaseName: string): void {
   if (databaseName !== "hoibot_schema_design" && !/^hoibot_rehearsal_[a-z0-9_]+$/i.test(databaseName)) throw new Error("OBJECT_DOMAIN_IMPORT_OPERATIONAL_DATABASE_REFUSED");
@@ -198,6 +252,7 @@ function assertTypedValue(column: DomainImportSchemaColumn, value: unknown, orig
 
 function assertPolicy(policy: DomainImportPolicy): void {
   if (policy.catalogVersion !== "SC-20260902-1" || !HASH.test(policy.targetSchemaSha256) || !HASH.test(policy.importContractSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_POLICY_INVALID");
+  if (policy.acceptedImportContractSha256.length !== 2 || policy.acceptedImportContractSha256[0] !== policy.importContractSha256 || policy.acceptedImportContractSha256[1] !== OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256 || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
   for (const key of ["identityBindings", "objectModel", "disposition", "fieldMap"] as const) if (!HASH.test(policy.componentSemanticSha256[key]) || policy.componentSemanticSha256[key] !== policy.contractComponentSemanticSha256[key]) throw new Error("OBJECT_DOMAIN_IMPORT_COMPONENT_CONTRACT_DRIFT");
   if (new Set(policy.directTargets).size !== 45 || policy.directTargets.length !== 45) throw new Error("OBJECT_DOMAIN_IMPORT_DIRECT_TARGET_SCOPE_MISMATCH");
   if (new Set(policy.definitionTargets).size !== 23 || policy.definitionTargets.length !== 23) throw new Error("OBJECT_DOMAIN_IMPORT_DEFINITION_TARGET_SCOPE_MISMATCH");
@@ -413,6 +468,10 @@ function validateCrossRecordRules(rows: PreparedRow[], policy: DomainImportPolic
   }
 }
 
+function calculateImportPlanSha256(run: ProjectionRunRow, decisions: DecisionRow[], rows: PreparedRow[], targetSchemaSha256: string, importContractSha256: string): string {
+  return sha256(stableDomainImportJson({ catalogProjectionRunId: run.catalog_projection_run_id, projectionManifestSha256: run.projection_manifest_sha256, projectionSha256: run.projection_sha256, upstreamEnvelopeSha256: run.upstream_envelope_sha256, targetSchemaSha256, importContractSha256, decisions: decisions.map((row) => ({ id: row.catalog_source_decision_id, fingerprint: row.decision_fingerprint })).sort((a, b) => a.id.localeCompare(b.id, "en")), rows: rows.map((row) => ({ id: row.catalog_projection_record_id, fingerprint: row.bindingFingerprint })) }));
+}
+
 // COMPLETE projection의 전수 decision과 45개 direct target 계약을 쓰기 전에 검증합니다.
 export function buildObjectDomainImportPlan(run: ProjectionRunRow, decisions: DecisionRow[], projectionRows: ProjectionRow[], policy: DomainImportPolicy): DomainImportPlan {
   assertPolicy(policy);
@@ -467,7 +526,7 @@ export function buildObjectDomainImportPlan(run: ProjectionRunRow, decisions: De
   const rows = sortRows(prepared, policy);
   let ownershipSeen = false;
   for (const row of rows) { if (row.phase >= 2) ownershipSeen = true; if (ownershipSeen && row.phase === 0) throw new Error("OBJECT_DOMAIN_IMPORT_DEFINITION_ORDER_INVALID"); }
-  const importSha256 = sha256(stableDomainImportJson({ catalogProjectionRunId: run.catalog_projection_run_id, projectionManifestSha256: run.projection_manifest_sha256, projectionSha256: run.projection_sha256, upstreamEnvelopeSha256: run.upstream_envelope_sha256, targetSchemaSha256: policy.targetSchemaSha256, importContractSha256: policy.importContractSha256, decisions: decisions.map((row) => ({ id: row.catalog_source_decision_id, fingerprint: row.decision_fingerprint })).sort((a, b) => a.id.localeCompare(b.id, "en")), rows: rows.map((row) => ({ id: row.catalog_projection_record_id, fingerprint: row.bindingFingerprint })) }));
+  const importSha256 = calculateImportPlanSha256(run, decisions, rows, policy.targetSchemaSha256, policy.importContractSha256);
   return { importSha256, decisions, rows };
 }
 
@@ -525,6 +584,14 @@ function normalizeComparableValue(value: unknown, sqlType: string, stored: boole
 export class MariaObjectDomainImporter {
   constructor(private readonly database: DatabaseClient, private readonly now: () => Date = () => new Date()) {}
 
+  private async findCompatiblePriorRun(transaction: DatabaseTransaction, catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<PriorRunRow | undefined> {
+    const runs = await transaction.query<PriorRunRow[]>("SELECT object_domain_import_run_id,catalog_projection_sha256,upstream_envelope_sha256,target_schema_sha256,import_contract_sha256,import_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,expected_row_count,imported_row_count,run_status FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=? AND catalog_version=? FOR UPDATE", [catalogProjectionRunId, policy.catalogVersion]);
+    if (runs.length > 1) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_RUN_AMBIGUOUS");
+    const run = runs[0];
+    if (run !== undefined && !policy.acceptedImportContractSha256.includes(run.import_contract_sha256)) throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_IDENTITY_INCOMPATIBLE");
+    return run;
+  }
+
   async importProjection(catalogProjectionRunId: string, policy: DomainImportPolicy, actor: string): Promise<DomainImportResult> {
     if (!/^[a-z0-9]{8}$/.test(catalogProjectionRunId)) throw new Error("OBJECT_DOMAIN_IMPORT_RUN_ID_INVALID");
     const audit = createObjectAuditValues(actor, this.now());
@@ -537,7 +604,7 @@ export class MariaObjectDomainImporter {
       const decisions = await transaction.query<DecisionRow[]>("SELECT decision.catalog_source_decision_id,decision.source_locator_sha256,decision.source_payload_fingerprint,decision.record_domain,decision.decision_status,decision.decision_reason,decision.projected_row_count,decision.decision_fingerprint,staging.record_domain staging_record_domain,staging.record_kind,staging.projection_status staging_projection_status,staging.quarantine_reason staging_quarantine_reason,staging.source_locator_sha256 staging_source_locator_sha256,staging.payload_fingerprint staging_payload_fingerprint FROM data_migration_catalog_source_decisions decision JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id WHERE decision.catalog_projection_run_id=? ORDER BY decision.source_locator_sha256 FOR UPDATE", [catalogProjectionRunId]);
       const rows = await transaction.query<ProjectionRow[]>("SELECT record.catalog_projection_record_id,record.catalog_source_decision_id,record.projection_locator,record.identity_locator_sha256,record.identity_mode,record.target_table_name,record.target_pk_column_name,record.target_object_type,record.target_source_namespace,record.source_role,record.approval_kind,record.approval_sha256,CAST(record.target_payload_json AS CHAR) target_payload_json,record.target_payload_fingerprint,CAST(record.value_origins_json AS CHAR) value_origins_json,record.value_origins_fingerprint,CAST(record.reference_bindings_json AS CHAR) reference_bindings_json,record.reference_bindings_fingerprint,decision.record_domain,decision.decision_status FROM data_migration_catalog_projection_records record JOIN data_migration_catalog_source_decisions decision ON decision.catalog_source_decision_id=record.catalog_source_decision_id WHERE record.catalog_projection_run_id=? ORDER BY record.catalog_projection_record_id FOR UPDATE", [catalogProjectionRunId]);
       const plan = buildObjectDomainImportPlan(run, decisions, rows, policy);
-      const prior = (await transaction.query<PriorRunRow[]>("SELECT object_domain_import_run_id,catalog_projection_sha256,upstream_envelope_sha256,target_schema_sha256,import_contract_sha256,import_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,expected_row_count,imported_row_count,run_status FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=? AND catalog_version=? AND import_contract_sha256=? FOR UPDATE", [catalogProjectionRunId, policy.catalogVersion, policy.importContractSha256]))[0];
+      const prior = await this.findCompatiblePriorRun(transaction, catalogProjectionRunId, policy);
       if (prior !== undefined) {
         await this.verifyReplay(transaction, prior, run, plan, policy);
         return { objectDomainImportRunId: prior.object_domain_import_run_id, insertedCanonicalRows: 0, insertedDecisionReceipts: 0, replayed: true };
@@ -584,7 +651,7 @@ export class MariaObjectDomainImporter {
       const decisions = await transaction.query<DecisionRow[]>("SELECT decision.catalog_source_decision_id,decision.source_locator_sha256,decision.source_payload_fingerprint,decision.record_domain,decision.decision_status,decision.decision_reason,decision.projected_row_count,decision.decision_fingerprint,staging.record_domain staging_record_domain,staging.record_kind,staging.projection_status staging_projection_status,staging.quarantine_reason staging_quarantine_reason,staging.source_locator_sha256 staging_source_locator_sha256,staging.payload_fingerprint staging_payload_fingerprint FROM data_migration_catalog_source_decisions decision JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id WHERE decision.catalog_projection_run_id=? ORDER BY decision.source_locator_sha256 FOR UPDATE", [catalogProjectionRunId]);
       const projectionRows = await transaction.query<ProjectionRow[]>("SELECT record.catalog_projection_record_id,record.catalog_source_decision_id,record.projection_locator,record.identity_locator_sha256,record.identity_mode,record.target_table_name,record.target_pk_column_name,record.target_object_type,record.target_source_namespace,record.source_role,record.approval_kind,record.approval_sha256,CAST(record.target_payload_json AS CHAR) target_payload_json,record.target_payload_fingerprint,CAST(record.value_origins_json AS CHAR) value_origins_json,record.value_origins_fingerprint,CAST(record.reference_bindings_json AS CHAR) reference_bindings_json,record.reference_bindings_fingerprint,decision.record_domain,decision.decision_status FROM data_migration_catalog_projection_records record JOIN data_migration_catalog_source_decisions decision ON decision.catalog_source_decision_id=record.catalog_source_decision_id WHERE record.catalog_projection_run_id=? ORDER BY record.catalog_projection_record_id FOR UPDATE", [catalogProjectionRunId]);
       const plan = buildObjectDomainImportPlan(projectionRun, decisions, projectionRows, policy);
-      const run = (await transaction.query<PriorRunRow[]>("SELECT object_domain_import_run_id,catalog_projection_sha256,upstream_envelope_sha256,target_schema_sha256,import_contract_sha256,import_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,expected_row_count,imported_row_count,run_status FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=? AND catalog_version=? AND import_contract_sha256=? FOR UPDATE", [catalogProjectionRunId, policy.catalogVersion, policy.importContractSha256]))[0];
+      const run = await this.findCompatiblePriorRun(transaction, catalogProjectionRunId, policy);
       if (run === undefined) return 0;
       const receipts = await this.verifyReplay(transaction, run, projectionRun, plan, policy);
       for (const receipt of [...receipts].reverse()) {
@@ -636,7 +703,8 @@ export class MariaObjectDomainImporter {
   }
 
   private async verifyReplay(transaction: DatabaseTransaction, prior: PriorRunRow, run: ProjectionRunRow, plan: DomainImportPlan, policy: DomainImportPolicy): Promise<ReceiptRow[]> {
-    if (prior.run_status !== "COMPLETE" || prior.catalog_projection_sha256 !== run.projection_sha256 || prior.upstream_envelope_sha256 !== run.upstream_envelope_sha256 || prior.target_schema_sha256 !== policy.targetSchemaSha256 || prior.import_contract_sha256 !== policy.importContractSha256 || prior.import_sha256 !== plan.importSha256 || Number(prior.expected_source_count) !== plan.decisions.length || Number(prior.projected_source_count) !== Number(run.projected_source_count) || Number(prior.quarantined_source_count) !== Number(run.quarantined_source_count) || Number(prior.ignored_source_count) !== Number(run.ignored_source_count) || Number(prior.expected_row_count) !== plan.rows.length || Number(prior.imported_row_count) !== plan.rows.length) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_CONFLICT");
+    const compatibleImportSha256 = calculateImportPlanSha256(run, plan.decisions, plan.rows, policy.targetSchemaSha256, prior.import_contract_sha256);
+    if (prior.run_status !== "COMPLETE" || prior.catalog_projection_sha256 !== run.projection_sha256 || prior.upstream_envelope_sha256 !== run.upstream_envelope_sha256 || prior.target_schema_sha256 !== policy.targetSchemaSha256 || !policy.acceptedImportContractSha256.includes(prior.import_contract_sha256) || prior.import_sha256 !== compatibleImportSha256 || Number(prior.expected_source_count) !== plan.decisions.length || Number(prior.projected_source_count) !== Number(run.projected_source_count) || Number(prior.quarantined_source_count) !== Number(run.quarantined_source_count) || Number(prior.ignored_source_count) !== Number(run.ignored_source_count) || Number(prior.expected_row_count) !== plan.rows.length || Number(prior.imported_row_count) !== plan.rows.length) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_CONFLICT");
     const decisionReceipts = await transaction.query<DecisionReceiptRow[]>("SELECT catalog_source_decision_id,source_locator_sha256,decision_status,decision_reason,projected_row_count,decision_fingerprint FROM data_migration_object_domain_import_decisions WHERE object_domain_import_run_id=? ORDER BY source_locator_sha256", [prior.object_domain_import_run_id]);
     if (decisionReceipts.length !== plan.decisions.length) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_DECISION_RECEIPT_MISMATCH");
     if (new Set(decisionReceipts.map((receipt) => receipt.catalog_source_decision_id)).size !== decisionReceipts.length || new Set(decisionReceipts.map((receipt) => receipt.source_locator_sha256)).size !== decisionReceipts.length) throw new Error("OBJECT_DOMAIN_IMPORT_REPLAY_DECISION_RECEIPT_MISMATCH");

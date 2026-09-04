@@ -73,6 +73,12 @@ function isDuplicate(error: unknown): boolean {
   return code === "ER_DUP_ENTRY" || /duplicate entry/i.test(message);
 }
 
+function isRetryableTransactionConflict(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const record=error as { code?:unknown;errno?:unknown };
+  return record.code === "ER_LOCK_DEADLOCK" || record.code === "ER_LOCK_WAIT_TIMEOUT" || record.errno === 1213 || record.errno === 1205;
+}
+
 // source namespace와 식별자는 원문을 보존하되 저장 가능한 명시 입력만 허용합니다.
 function assertSourceLocator(input: Pick<ObjectIdentityCrosswalkInput, "sourceSystem" | "sourceNamespace" | "sourceIdentifier">): void {
   const asciiToken = (value: string, maxLength: number, code: string): void => {
@@ -132,6 +138,7 @@ export class MariaObjectIdentityAuditProvider {
   async registerCrosswalk(input: ObjectIdentityCrosswalkInput): Promise<ObjectIdentityCrosswalkResult> {
     assertCrosswalkInput(input);
     const audit = createObjectAuditValues(input.actor, this.now());
+    let retryableConflict=false;
     for (let transactionAttempt = 0; transactionAttempt < this.maxAttempts; transactionAttempt += 1) {
       try {
         return await this.database.withTransaction(async (transaction) => {
@@ -155,7 +162,10 @@ export class MariaObjectIdentityAuditProvider {
           return { objectIdentityId, objectIdentityCrosswalkId: crosswalkId, replayed: false, audit };
         });
       } catch (error) {
-        if (!isDuplicate(error)) throw error;
+        const duplicate=isDuplicate(error);
+        const retryable=isRetryableTransactionConflict(error);
+        if (!duplicate && !retryable) throw error;
+        retryableConflict ||= retryable;
         const concurrent = (await this.database.query<CrosswalkRow[]>(
           "SELECT object_identity_crosswalk_id,object_identity_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
           [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
@@ -163,6 +173,7 @@ export class MariaObjectIdentityAuditProvider {
         if (concurrent !== undefined) return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit: auditFrom(concurrent) };
       }
     }
+    if(retryableConflict)throw new Error("OBJECT_IDENTITY_TRANSACTION_RETRY_EXHAUSTED");
     throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
   }
 

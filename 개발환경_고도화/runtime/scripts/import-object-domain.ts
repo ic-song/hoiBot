@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient } from "../src/database.js";
-import { assertObjectDomainImportDatabaseName, calculateObjectDomainImportSemanticSha256, MariaObjectDomainImporter, type DomainImportPolicy } from "../src/data-migration/object-domain-importer.js";
+import { assertObjectDomainImportDatabaseName, calculateObjectDomainImportComponentSemanticSha256, calculateObjectDomainImportContractSemanticSha256, MariaObjectDomainImporter, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256, type DomainImportPolicy } from "../src/data-migration/object-domain-importer.js";
 import { calculateCatalogTargetSchemaSha256 } from "../src/data-migration/catalog-projection-provider.js";
 
 function argument(name: string): string | undefined {
@@ -26,23 +26,26 @@ const identity = JSON.parse(identityText) as { generatedCuidBindings: DomainImpo
 const objectModel = JSON.parse(objectModelText) as { tables: Array<{ table: string; foreignKeys?: Array<{ column: string; referencesTable: string; referencesColumn: string }> }> };
 const disposition = JSON.parse(dispositionText) as { definitionSeed: string[]; stateImport: string[]; initialLedger: string[]; quarantineOnly: string[] };
 const fieldMap = JSON.parse(fieldMapText) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
-const contract = JSON.parse(contractBytes.toString("utf8")) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"] };
+const contract = JSON.parse(contractBytes.toString("utf8")) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; semanticHashPolicy: { acceptedCompatibleImportContractSha256: string[] } };
+const directTargets = [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly];
+const importContractSha256 = calculateObjectDomainImportContractSemanticSha256(contractBytes.toString("utf8"));
 const policy: DomainImportPolicy = {
   catalogVersion: schema.catalogVersion,
   targetSchemaSha256: calculateCatalogTargetSchemaSha256(schemaBytes.toString("utf8")),
-  importContractSha256: calculateObjectDomainImportSemanticSha256(contractBytes.toString("utf8")),
+  importContractSha256,
+  acceptedImportContractSha256: [importContractSha256, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256],
   componentSemanticSha256: {
-    identityBindings: calculateObjectDomainImportSemanticSha256(identityText),
-    objectModel: calculateObjectDomainImportSemanticSha256(objectModelText),
-    disposition: calculateObjectDomainImportSemanticSha256(dispositionText),
-    fieldMap: calculateObjectDomainImportSemanticSha256(fieldMapText)
+    identityBindings: calculateObjectDomainImportComponentSemanticSha256("identityBindings", identityText, directTargets),
+    objectModel: calculateObjectDomainImportComponentSemanticSha256("objectModel", objectModelText, directTargets),
+    disposition: calculateObjectDomainImportComponentSemanticSha256("disposition", dispositionText, directTargets),
+    fieldMap: calculateObjectDomainImportComponentSemanticSha256("fieldMap", fieldMapText, directTargets)
   },
   contractComponentSemanticSha256: contract.componentSemanticSha256,
   columns: schema.columns,
   generatedBindings: identity.generatedCuidBindings,
   reusedBindings: identity.reusedPrimaryKeys,
   foreignKeys: objectModel.tables.flatMap((table) => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))),
-  directTargets: [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly],
+  directTargets,
   definitionTargets: disposition.definitionSeed,
   domainTargets: Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables])),
   quarantineReasons: fieldMap.recordQuarantine

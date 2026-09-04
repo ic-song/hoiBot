@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import type { ObjectDataModelContract } from "../src/catalog/object-data-model-contract.js";
+import { calculateObjectDomainImportComponentSemanticSha256 } from "../src/data-migration/object-domain-importer.js";
 
 interface ImportDisposition {
   catalogVersion: string;
@@ -25,6 +26,7 @@ interface ImportDisposition {
 
 const contract = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-data-model-standard.v1.json", import.meta.url), "utf8")) as ObjectDataModelContract;
 const disposition = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-domain-import-disposition.v1.json", import.meta.url), "utf8")) as ImportDisposition;
+const importContract = JSON.parse(readFileSync(new URL("../../migration-control/contracts/data-migration-object-domain-import.v1.json", import.meta.url), "utf8")) as { componentSemanticSha256: { disposition: string } };
 
 describe("object domain import disposition", () => {
   it("classifies every canonical contract table exactly once", () => {
@@ -36,7 +38,7 @@ describe("object domain import disposition", () => {
       ...disposition.quarantineOnly,
       ...disposition.runtimeOnly
     ];
-    assert.equal(classified.length, 65);
+    assert.equal(classified.length, 86);
     assert.equal(new Set(classified).size, classified.length);
     const frozenTables = [...classified].sort();
     const migrationTables = new Set<string>();
@@ -77,7 +79,48 @@ describe("object domain import disposition", () => {
   });
 
   it("creates only currency baseline history and never invents other historical operations", () => {
-    assert.deepEqual(disposition.initialLedger.sort(), ["canonical_currency_ledger_entries", "canonical_currency_operations"]);
+    assert.deepEqual(disposition.initialLedger.slice().sort(), ["canonical_currency_ledger_entries", "canonical_currency_operations"]);
     for (const table of disposition.runtimeOnly) assert.ok(!disposition.initialLedger.includes(table));
+  });
+
+  it("keeps the 461~466 identity crosswalk derived and all new operation history runtime-only", () => {
+    assert.ok(disposition.derived.includes("canonical_player_identity_crosswalks"));
+    const runtimeOnly = [
+      "canonical_app_wiring_operations",
+      "canonical_app_wiring_receipt_links",
+      "canonical_daily_prayer_operations",
+      "canonical_home_aggregate_operations",
+      "canonical_market_operations",
+      "canonical_member_title_operations",
+      "canonical_mini_pet_title_operations",
+      "canonical_package_use_operations",
+      "canonical_pet_explore_event_control_operations",
+      "canonical_pet_explore_operations",
+      "canonical_pet_title_operations",
+      "canonical_player_identity_operations",
+      "canonical_market_transfer_ledger_entries",
+      "canonical_package_use_reward_ledger_entries",
+      "canonical_home_aggregate_operation_participants",
+      "canonical_market_operation_participants",
+      "canonical_member_title_operation_participants",
+      "canonical_mini_pet_title_operation_participants",
+      "canonical_pet_title_operation_participants",
+      "canonical_player_identity_operation_participants"
+    ];
+    for (const table of runtimeOnly) assert.ok(disposition.runtimeOnly.includes(table), table);
+  });
+
+  it("excludes runtime-only migration growth from the frozen direct-import semantic identity", () => {
+    const directTargets = [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly];
+    const semanticHash = (value: ImportDisposition): string => calculateObjectDomainImportComponentSemanticSha256("disposition", JSON.stringify(value), directTargets);
+    assert.equal(semanticHash(disposition), importContract.componentSemanticSha256.disposition);
+    const runtimeGrowth = structuredClone(disposition);
+    runtimeGrowth.objectContractMigrationBaseline.push("999_runtime_only_probe.sql");
+    runtimeGrowth.runtimeOnly.push("canonical_runtime_only_probe");
+    runtimeGrowth.domainTableSetSha256 = "0".repeat(64);
+    assert.equal(semanticHash(runtimeGrowth), semanticHash(disposition));
+    const directDrift = structuredClone(disposition);
+    directDrift.definitionSeed = directDrift.definitionSeed.slice().reverse();
+    assert.notEqual(semanticHash(directDrift), semanticHash(disposition));
   });
 });

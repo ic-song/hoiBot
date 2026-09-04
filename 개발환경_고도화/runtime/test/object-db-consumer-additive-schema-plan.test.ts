@@ -14,7 +14,9 @@ type Table = {
   foreignKeys: ForeignKey[];
   checks?: Check[];
   supportTableBeyondRequiredReceipts?: boolean;
-  boundaryAlignment?: { contract: string; claimOwner: string; storageModel: string; requestKeyFormula: string; requestIdentityFingerprintFormula: string; requestNamespaceFormula: string; requestNamespaceFormulaEnforcement: string; identityFormulaEnforcement: string; identityFormulaLimitation: string; persistBeforeExecution: boolean; replay: string; stateTransitionEnforcement: string; stateTransitionLimitation: string };
+  requiredFor?: string;
+  linklessTerminalAllowedFor?: string[];
+  boundaryAlignment?: { contract: string; claimOwner: string; storageModel: string; requestKeyFormula: string; requestIdentityFingerprintFormula: string; requestNamespaceFormula: string; requestNamespaceFormulaEnforcement: string; identityFormulaEnforcement: string; identityFormulaLimitation: string; persistBeforeExecution: boolean; replay: string; stateTransitionEnforcement: string; stateTransitionLimitation: string; leaseAndFencing: string; recovery: string; atomicTypedReceipt: string };
   typedAssetReference?: { discriminator: string; referenceColumns: string[]; allowedMappings: Record<string, string>; cardinality: string };
   legacyIdentityResolution?: { legacyBigintColumnStored: boolean; joinPath: string[]; displayNameInference: string };
 };
@@ -22,6 +24,7 @@ type Plan = {
   format: string;
   status: string;
   migrationFiles: string[];
+  amendmentMigrations: Array<{ migration: string; rollback: string; kind: string; alters: string[]; creates: string[]; inputShape: string; resultingShape: string; createOnly: boolean; reentrantDdlRequired: boolean }>;
   ddlExecution: string;
   runtimeBoundaryContract: string;
   requiredAdditiveReceiptTables: string[];
@@ -109,12 +112,35 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
       "464_object_db_transition_typed_asset_ledgers.sql",
       "465_object_db_transition_operation_participants.sql"
     ]);
+    assert.deepEqual(plan.amendmentMigrations, [{
+      migration: "466_object_db_transition_recovery_receipt_links.sql",
+      rollback: "466_object_db_transition_recovery_receipt_links.rollback.sql",
+      kind: "ADDITIVE_ALTER_AND_RECOVERY_RECEIPT_LINK",
+      alters: ["canonical_app_wiring_operations"],
+      creates: ["canonical_app_wiring_receipt_links"],
+      inputShape: "MIGRATION_462_CLAIM_STORE",
+      resultingShape: "MIGRATION_466_BASE_RECEIPT_LINK",
+      createOnly: false,
+      reentrantDdlRequired: true
+    }, {
+      migration: "470_pet_explore_event_control_app_wiring.sql",
+      rollback: "470_pet_explore_event_control_app_wiring.rollback.sql",
+      kind: "ADDITIVE_EVENT_CONTROL_TYPED_RECEIPT_LINK",
+      alters: ["canonical_app_wiring_receipt_links"],
+      creates: ["canonical_pet_explore_event_control_operations"],
+      inputShape: "MIGRATION_466_BASE_RECEIPT_LINK",
+      resultingShape: "MIGRATION_470_FINAL_RECEIPT_LINK",
+      createOnly: false,
+      reentrantDdlRequired: true
+    }]);
     assert.equal(plan.ddlExecution, "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED");
     assert.deepEqual(plan.requiredAdditiveReceiptTables, transition.requiredAdditiveReceiptTables);
     assert.equal(plan.requiredAdditiveReceiptTables.length, 11);
     assert.deepEqual(plan.requiredAdditiveReceiptTables.filter((name) => !tables.has(name)), []);
     assert.ok(!plan.requiredAdditiveReceiptTables.includes("canonical_app_wiring_operations"));
     assert.ok(plan.supportTablesBeyondRequiredReceipts.includes("canonical_app_wiring_operations"));
+    assert.ok(plan.supportTablesBeyondRequiredReceipts.includes("canonical_app_wiring_receipt_links"));
+    assert.ok(plan.supportTablesBeyondRequiredReceipts.includes("canonical_pet_explore_event_control_operations"));
     assert.deepEqual(plan.supportTablesBeyondRequiredReceipts.filter((name) => !tables.has(name)), []);
     assert.equal(new Set(plan.tables.map(({ table }) => table)).size, plan.tables.length);
   });
@@ -296,6 +322,10 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
     assert.match(appWiring.boundaryAlignment?.identityFormulaLimitation ?? "", /shared provider must derive request_key and SHA-256/);
     assert.match(appWiring.boundaryAlignment?.stateTransitionEnforcement ?? "", /PROVIDER_OR_DATABASE_PROCEDURE_WITH_ROW_LOCK/);
     assert.match(appWiring.boundaryAlignment?.stateTransitionLimitation ?? "", /CHECK validates the current state only/);
+    assert.match(appWiring.boundaryAlignment?.leaseAndFencing ?? "", /stale generations fail closed/);
+    assert.match(appWiring.boundaryAlignment?.recovery ?? "", /READ_ONLY routes cannot enter MUTATION_STARTED/);
+    assert.match(appWiring.boundaryAlignment?.atomicTypedReceipt ?? "", /Only an effect_mode=MUTATION terminal/);
+    assert.match(appWiring.boundaryAlignment?.atomicTypedReceipt ?? "", /READ_ONLY and REJECT terminal outcomes are valid without a link/);
     for (const name of [
       "claim_state", "route", "environment_code", "database_identity", "request_namespace", "entrypoint_kind",
       "external_request_id", "request_key", "request_identity_fingerprint", "payload_fingerprint", "result_json", "error_code", "command_code", "handler_key"
@@ -311,8 +341,16 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
     assert.deepEqual({ type: column(appWiring, "reason_code").type, nullable: column(appWiring, "reason_code").nullable }, { type: "VARCHAR(100)", nullable: false });
     assert.deepEqual({ type: column(appWiring, "result_json").type, nullable: column(appWiring, "result_json").nullable }, { type: "LONGTEXT", nullable: true });
     assert.deepEqual({ type: column(appWiring, "error_code").type, nullable: column(appWiring, "error_code").nullable }, { type: "VARCHAR(100)", nullable: true });
-    assert.deepEqual(appWiring.columns.map(boundaryColumnDefinition), runtimeBoundary.claimReplayStore.requiredColumns,
-      "canonical_app_wiring_operations must exactly match claimReplayStore.requiredColumns");
+    const amendmentColumns = new Set(["effect_mode", "lease_token", "lease_generation", "lease_expires_time", "attempt_count", "recovery_status", "recovery_code"]);
+    const legacyCompatibilityNullable = new Set(["effect_mode", "lease_generation", "attempt_count", "recovery_status"]);
+    assert.deepEqual(appWiring.columns.map((candidate) => {
+      const definition = boundaryColumnDefinition(candidate);
+      return legacyCompatibilityNullable.has(candidate.name) ? definition.replace(/ NULL$/, "") : definition;
+    }), runtimeBoundary.claimReplayStore.requiredColumns,
+    "canonical_app_wiring_operations final columns must match required writer shape while the amendment keeps its legacy all-NULL bundle storage-compatible");
+    for (const name of legacyCompatibilityNullable) assert.equal(column(appWiring, name).nullable, true, `${name}: migration 466 legacy compatibility`);
+    assert.deepEqual(appWiring.columns.filter(({ name }) => amendmentColumns.has(name)).map(({ name }) => name), [...amendmentColumns]);
+    for (const constraint of ["app_wiring_effect_mode_allowed", "app_wiring_lease_pair", "app_wiring_live_lease_generation", "app_wiring_recovery_state"]) check(appWiring, constraint);
     assert.deepEqual([
       `PRIMARY KEY (${appWiring.primaryKey.join(", ")})`,
       ...appWiring.uniqueKeys.map((key) => `UNIQUE KEY (${key.join(", ")})`)
@@ -340,6 +378,24 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
     }, "unmatched REJECT may persist with command_code and handler_key both NULL");
     assert.match(appWiring.boundaryAlignment?.replay ?? "", /UNIQUE request_identity_fingerprint/);
     assert.match(appWiring.boundaryAlignment?.replay ?? "", /payload drift fails closed/);
+  });
+
+  it("models the app-wiring typed receipt link with one discriminated FK and atomic replay evidence", () => {
+    const link = tables.get("canonical_app_wiring_receipt_links");
+    assert.ok(link);
+    assert.equal(link.kind, "APP_WIRING_TYPED_RECEIPT_LINK");
+    assert.equal(link.supportTableBeyondRequiredReceipts, true);
+    assert.equal(link.requiredFor, "MUTATION_TERMINAL_ONLY");
+    assert.deepEqual(link.linklessTerminalAllowedFor, ["READ_ONLY", "REJECT"]);
+    assert.equal(link.columns.length, 18);
+    assert.equal(link.uniqueKeys.length, 11);
+    assert.equal(link.foreignKeys.length, 11);
+    assert.ok(link.foreignKeys.every(({ onDelete }) => onDelete === "RESTRICT"));
+    assert.equal(check(link, "app_wiring_receipt_result_fingerprint_shape").expression, "result_fingerprint REGEXP '^[0-9a-f]{64}$'");
+    assert.match(check(link, "chk_odbt_470_02_rule_01").expression, /= 1$/);
+    for (const kind of ["DAILY_PRAYER", "HOME_AGGREGATE", "MARKET", "MEMBER_TITLE", "MINI_PET_TITLE", "PACKAGE_USE", "PET_EXPLORE", "PET_EXPLORE_EVENT_CONTROL", "PET_TITLE", "PLAYER_IDENTITY"]) {
+      assert.match(check(link, "chk_odbt_470_02_rule_02").expression, new RegExp(`receipt_kind = '${kind}'`));
+    }
   });
 
   it("bridges external identity by the persisted composite key and canonical player FK without BIGINT or display-name inference", () => {

@@ -1,0 +1,29 @@
+-- Destructive rollback: use only before consumer cutover or after confirming transition receipts are dispensable.
+DROP TABLE IF EXISTS canonical_app_wiring_receipt_links;
+
+ALTER TABLE IF EXISTS canonical_app_wiring_operations
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_16,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_15,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_14,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_13,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_12,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_11,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_10,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_09,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_08,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_07,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_06,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_05,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_04,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_03,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_02,
+  DROP CONSTRAINT IF EXISTS chk_odbt_466_01_rule_01,
+  DROP INDEX IF EXISTS ix_odbt_466_01_02,
+  DROP INDEX IF EXISTS ix_odbt_466_01_01,
+  DROP COLUMN IF EXISTS recovery_code,
+  DROP COLUMN IF EXISTS recovery_status,
+  DROP COLUMN IF EXISTS attempt_count,
+  DROP COLUMN IF EXISTS lease_expires_time,
+  DROP COLUMN IF EXISTS lease_generation,
+  DROP COLUMN IF EXISTS lease_token,
+  DROP COLUMN IF EXISTS effect_mode;

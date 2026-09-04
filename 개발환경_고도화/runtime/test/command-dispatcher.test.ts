@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   CommandDispatcher,
+  MariaCommandRouteReader,
   type CommandDefinition,
   type CommandDispatchDecision,
   type CommandDispatchInput,
@@ -36,6 +37,39 @@ function createDispatcher(repository: MemoryRepository, allowAllCanaries = true)
 }
 
 describe("CommandDispatcher", () => {
+  it("supports a query-only Maria route reader and rejects an explicit record attempt", async () => {
+    const queries: string[] = [];
+    const reader = new MariaCommandRouteReader({
+      query: async <T>(sql: string) => {
+        queries.push(sql);
+        return [{ command_code: profile.commandCode, handler_key: profile.handlerKey, auth_scope: profile.authScope, rollout_state: "ACTIVE" }] as T;
+      }
+    });
+    const dispatcher = new CommandDispatcher(reader, {
+      enabled: true, allowAllCanaries: false, canaryUserIds: new Set()
+    });
+    const input = { eventId: "query-only", message: "/내정보", userId: "user-1", hasTrustedDisplayName: false };
+    const decision = await dispatcher.resolveReadOnly(input);
+    assert.equal(decision.route, "MODERN");
+    assert.equal(queries.length, 1);
+    await assert.rejects(() => dispatcher.recordDecision(input, decision), /COMMAND_DISPATCH_WRITER_REQUIRED/);
+  });
+
+  it("resolves a route without writing before the AppWiring claim", async () => {
+    const repository = new MemoryRepository(new Map([["/내정보", profile]]));
+    const dispatcher = createDispatcher(repository);
+    const input = {
+      eventId: "event-read-only", message: "/내정보", userId: "user-1", hasTrustedDisplayName: false
+    };
+
+    const decision = await dispatcher.resolveReadOnly(input);
+    assert.equal(decision.route, "MODERN");
+    assert.deepEqual(repository.recorded, []);
+
+    await dispatcher.recordDecision(input, decision);
+    assert.deepEqual(repository.recorded, [decision]);
+  });
+
   it("routes an exact canary command to the modern handler", async () => {
     const repository = new MemoryRepository(new Map([["/내정보", profile]]));
     const decision = await createDispatcher(repository).resolve({
@@ -43,6 +77,7 @@ describe("CommandDispatcher", () => {
     });
     assert.equal(decision.route, "MODERN");
     assert.equal(decision.handlerKey, "USER_PROFILE");
+    assert.deepEqual(repository.recorded, [decision]);
   });
 
   it("does not accept suffix text as the exact command", async () => {

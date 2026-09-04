@@ -1,0 +1,226 @@
+{
+  "format": "hoibot-object-db-shadow-validation-v1",
+  "catalogVersion": "SC-20260902-1",
+  "wbs": "WBS744",
+  "status": "GATE1_GATE5_VERIFIED",
+  "scope": "Authoritative read-only Shadow comparison contract for the WBS742 direct object-domain projections consumed by WBS743. It defines Gate 1-3 contracts and fixtures, the Gate 4 provider, and isolated MariaDB Gate 5 verification.",
+  "completionClaims": {
+    "gate1": "CONTRACTED",
+    "gate2": "CONTRACTED",
+    "gate3": "SYNTHETIC_CONTRACTED",
+    "gate4": "IMPLEMENTED",
+    "gate5": "VERIFIED_ISOLATED_MARIADB",
+    "gate6": "NOT_STARTED",
+    "gate7": "NOT_STARTED",
+    "shadowComplete": false,
+    "operationalReady": false
+  },
+  "authoritativeSources": {
+    "policy": "docs/database/OBJECT_DATA_MODEL_STANDARD.md",
+    "schemaManifest": "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json",
+    "fieldMap": "개발환경_고도화/migration-control/contracts/object-domain-import-field-map.v1.json",
+    "targetSchema": "개발환경_고도화/migration-control/contracts/object-domain-import-target-schema.v1.json",
+    "identityBindings": "개발환경_고도화/migration-control/contracts/object-domain-import-identity-bindings.v1.json",
+    "importContract": "개발환경_고도화/migration-control/contracts/data-migration-object-domain-import.v1.json",
+    "consumerContract": "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
+    "consumerSchemaPlan": "개발환경_고도화/migration-control/contracts/object-db-consumer-additive-schema-plan.v1.json"
+  },
+  "domainDerivation": {
+    "rule": "domains are exactly object-domain-import-field-map.v1.json mappings[].domain in source order; canonical tables are exactly each mapping.targetTables; migration ownership is derived from object-domain-import-target-schema.v1.json columns[].migration",
+    "derivedDomainCount": 12,
+    "derivedDirectTargetTableCount": 45,
+    "noManualExpansion": true
+  },
+  "identityPrerequisites": {
+    "wbs": ["WBS731", "WBS742", "WBS743"],
+    "requiredContracts": [
+      "개발환경_고도화/migration-control/contracts/object-domain-import-identity-bindings.v1.json",
+      "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json"
+    ],
+    "requiredMigrations": [
+      "443_object_identity_audit_provider.sql",
+      "461_object_db_transition_identity_crosswalk.sql"
+    ],
+    "requiredTables": [
+      "object_identities",
+      "object_identity_crosswalks",
+      "canonical_players",
+      "canonical_player_identity_crosswalks"
+    ],
+    "rules": [
+      "Resolve legacy source locators through persisted WBS731/WBS742 identity bindings and the WBS743 player crosswalk before comparing rows.",
+      "Never cast a legacy BIGINT actor or registry id to a canonical CHAR(8) key.",
+      "Never infer identity from display name, nickname, array proximity, or mutable presentation fields.",
+      "Unresolved, ambiguous, duplicate, or payload-drifted bindings are mismatches and are quarantined before comparison."
+    ]
+  },
+  "executionRules": {
+    "mode": "READ_ONLY_SHADOW",
+    "allowedSql": ["SELECT", "WITH", "EXPLAIN"],
+    "forbiddenSql": ["INSERT", "UPDATE", "DELETE", "REPLACE", "MERGE", "CREATE", "ALTER", "DROP", "TRUNCATE", "CALL", "LOCK TABLES", "SELECT FOR UPDATE", "GET_LOCK"],
+    "lockPolicy": "No explicit or implicit write lock, advisory lock, lease acquisition, claim transition, or SELECT FOR UPDATE is allowed.",
+    "writePolicy": "No legacy JSON, canonical row, import ledger, audit row, outbox row, receipt, quarantine table, migration, schema, or operational snapshot may be written.",
+    "environmentPolicy": "Gate 1-3 validation uses only the committed synthetic fixture and read-only contract/migration inspection. Production JSON, production DB, real room traffic, and feature/prod are out of scope.",
+    "writerSelection": "Neither LEGACY nor MODERN writer is invoked. Shadow adapters project already-observed read snapshots only.",
+    "failurePolicy": "Fail closed and suppress promotion on any mismatch, missing prerequisite, mutation evidence, or repeatability drift."
+  },
+  "gate4ImplementationEvidence": {
+    "provider": "개발환경_고도화/runtime/src/data-migration/object-db-shadow-validation-provider.ts",
+    "test": "개발환경_고도화/runtime/test/object-db-shadow-validation-provider.test.ts",
+    "sqlBoundary": "개발환경_고도화/runtime/src/database/read-only-sql-boundary.ts",
+    "sqlBoundaryTest": "개발환경_고도화/runtime/test/read-only-sql-boundary.test.ts",
+    "implemented": ["fixed 12-domain and 45-table SELECT-only plan", "deterministic canonical row comparison and ephemeral mismatch output", "identity, row, multiplicity, field, Unicode, BIGINT, reference closure, table coverage, restart drift, and mutation-evidence classification"],
+    "limitations": ["The provider receives already-projected legacy rows and does not replace the WBS742 projection importer.", "Mutation fingerprints are caller-supplied at Gate 4 and are not an isolated MariaDB before/after proof; that proof belongs to Gate 5."]
+  },
+  "gate5VerificationEvidence": {
+    "harness": "개발환경_고도화/runtime/scripts/rehearse-object-db-shadow-gate5.ps1",
+    "integrationTest": "개발환경_고도화/runtime/test/object-db-shadow-validation-mariadb.integration.test.ts",
+    "evidence": "개발환경_고도화/migration-control/evidence/object-db-shadow-validation/gate5-isolated-mariadb.md",
+    "database": "fresh isolated MariaDB 12.2 on loopback port 3326",
+    "principal": "SELECT-only wbs744_shadow@127.0.0.1",
+    "verified": ["all 455 migrations applied", "45-table projected parity", "exact Unicode and BIGINT values", "write rejection", "all-table schema/count/checksum stability", "side-effect table count stability", "database restart repeatability", "production port 3306 listener unchanged"],
+    "limitations": ["Only committed synthetic relational data was used.", "This is an isolated Gate 5 proof, not an approved operational Shadow observation window or cutover proof."]
+  },
+  "canonicalization": {
+    "version": "SHADOW-CANONICAL-JSON-V1",
+    "objectKeys": "sort recursively by Unicode scalar value; do not use locale collation",
+    "arrays": "preserve declared array order; row collections must first be sorted by table and the domain oracle identityKey",
+    "unicodeStrings": "serialize exact Unicode scalar sequences as UTF-8 JSON; do not NFC/NFD/NFKC/NFKD normalize, case-fold, trim, or rewrite emoji/variation selectors",
+    "bigint": "represent every BIGINT or BIGINT UNSIGNED value as {\"$bigint\":\"<canonical decimal>\"}; decimal is -?(0|[1-9][0-9]*), forbids -0, leading plus, leading zero, exponent, float, and JavaScript Number conversion",
+    "undefined": "forbidden; absence and JSON null are distinct",
+    "digest": "lowercase SHA-256 of canonical UTF-8 JSON bytes"
+  },
+  "mismatchCategories": [
+    {"category": "IDENTITY_UNRESOLVED", "scope": "record", "supportedAt": "GATE3_CLASSIFIER", "promotionBlocking": true},
+    {"category": "IDENTITY_AMBIGUOUS", "scope": "record", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "IDENTITY_PAYLOAD_DRIFT", "scope": "record", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "CANONICAL_ROW_MISSING", "scope": "record", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "LEGACY_ROW_MISSING", "scope": "record", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "ROW_MULTIPLICITY_MISMATCH", "scope": "domain", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "FIELD_VALUE_MISMATCH", "scope": "field", "supportedAt": "GATE3_CLASSIFIER", "promotionBlocking": true},
+    {"category": "UNICODE_BYTE_MISMATCH", "scope": "field", "supportedAt": "GATE3_CLASSIFIER", "promotionBlocking": true},
+    {"category": "BIGINT_ENCODING_INVALID", "scope": "field", "supportedAt": "GATE3_CLASSIFIER", "promotionBlocking": true},
+    {"category": "REFERENCE_CLOSURE_MISMATCH", "scope": "record", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "TABLE_COVERAGE_MISMATCH", "scope": "domain", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "RESTART_FINGERPRINT_DRIFT", "scope": "run", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true},
+    {"category": "MUTATION_DETECTED", "scope": "run", "supportedAt": "GATE4_REQUIRED", "promotionBlocking": true}
+  ],
+  "gate3ClassifierSupport": {
+    "implemented": ["IDENTITY_UNRESOLVED", "FIELD_VALUE_MISMATCH", "UNICODE_BYTE_MISMATCH", "BIGINT_ENCODING_INVALID"],
+    "gate4Required": ["IDENTITY_AMBIGUOUS", "IDENTITY_PAYLOAD_DRIFT", "CANONICAL_ROW_MISSING", "LEGACY_ROW_MISSING", "ROW_MULTIPLICITY_MISMATCH", "REFERENCE_CLOSURE_MISMATCH", "TABLE_COVERAGE_MISMATCH", "RESTART_FINGERPRINT_DRIFT", "MUTATION_DETECTED"],
+    "limitation": "Gate 3 supplies classification evidence only for implemented. gate4Required categories are taxonomy reservations with no current classifier execution evidence."
+  },
+  "quarantinePolicy": {
+    "gate1To3Sink": "in-memory test result only",
+    "durableWriteAllowed": false,
+    "recordFields": ["runFingerprint", "domain", "category", "identityLocatorSha256", "table", "field", "legacyFingerprint", "canonicalFingerprint"],
+    "payloadPolicy": "Store hashes and synthetic locators only; never copy operational payloads or identifying source keys.",
+    "resolution": "No automatic merge, fallback, default, or display-name reconciliation. A later gate must supply a reviewed resolution and rerun the full domain.",
+    "promotionRule": "Any quarantine count greater than zero blocks Gate 7 completion."
+  },
+  "restartRepeatability": {
+    "required": true,
+    "procedure": "Run the same sealed input twice in fresh adapter state and stable domain order; both canonical projection digests, mismatch categories, and quarantine records must be byte-identical.",
+    "clockPolicy": "Wall-clock time, process id, random value, DB row-return order, and insertion order are excluded from the comparison payload.",
+    "passCondition": "firstRunDigest equals restartRunDigest and both runs report zero mutation."
+  },
+  "zeroMutationProof": {
+    "requiredSurfaces": ["synthetic fixture", "authoritative contracts", "migration files", "legacy snapshot if a later gate is approved", "canonical DB if a later gate is approved"],
+    "fileProof": "Capture SHA-256 and byte length before and after; every pair must match.",
+    "databaseProof": "Gate 5 captures all base-table schema metadata, row counts, CHECKSUM TABLE values, and side-effect table counts before and after both Shadow runs using a SELECT-only DB identity; every value is unchanged.",
+    "gate1To3Limitation": "Gate 1-3 alone did not prove a DB session; Gate 5 now supplies that isolated MariaDB proof."
+  },
+  "domains": [
+    {
+      "domain": "player",
+      "wbsSources": ["WBS731 identity/audit provider", "WBS733 canonical player provider", "WBS742 domain field map", "WBS743 consumer context bridge"],
+      "legacySources": ["LEGACY_JSON:member.json#/member/{playerKey}"],
+      "canonicalTables": [{"table":"canonical_players","migrations":["444_canonical_item_inventory.sql"]}],
+      "oracle": {"legacyProjection":"Apply the WBS742 player field map to the sealed player source locator; hash the exact UTF-8 player key.","canonicalProjection":"Read canonical_players by the resolved player_id.","identityKey":["player_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "item",
+      "wbsSources": ["WBS733 item/bag", "WBS742 domain field map", "WBS743 ITEM consumers"],
+      "legacySources": ["LEGACY_JSON:member.json#/member/{playerKey}/bag/{itemDisplayName}","LEGACY_JSON:itemInfo.json","LEGACY_JSON:itemList.json","CODE_SEED:validated item catalogs"],
+      "canonicalTables": [{"table":"canonical_item_definitions","migrations":["444_canonical_item_inventory.sql"]},{"table":"canonical_owned_item_stacks","migrations":["444_canonical_item_inventory.sql"]},{"table":"canonical_owned_item_instances","migrations":["444_canonical_item_inventory.sql"]}],
+      "oracle": {"legacyProjection":"Apply the WBS742 item definition/stack/explicit-instance field map without expanding scalar stacks into invented instances.","canonicalProjection":"Read the three listed tables through exact item_id/player_id bindings.","identityKey":["table","player_id","item_id","owned_item_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "furniture",
+      "wbsSources": ["WBS734 furniture/home", "WBS742 domain field map and amendment", "WBS743 FURNITURE-HOME consumers"],
+      "legacySources": ["LEGACY_JSON:petSweetHomeInfo.json#/furniture/{index}","CODE_SEED:validated furniture catalogs","WBS725:approved historical and legacy-recovered furniture definition crosswalk","LEGACY_JSON:petSweetHomeData.json#/{playerKey}/furnitureBag/{index}","LEGACY_JSON:petSweetHomeData.json#/{playerKey}/placedFurniture/{index}","OPTIONAL_LEGACY_JSON:petHomePlacedFurniture.json#/{playerKey}/{index}","LEGACY_JSON:freeMarket.json"],
+      "canonicalTables": [{"table":"object_furniture_definitions","migrations":["445_object_furniture_home_canonical_model.sql"]},{"table":"object_owned_furniture_instances","migrations":["445_object_furniture_home_canonical_model.sql"]},{"table":"object_home_furniture_placements","migrations":["445_object_furniture_home_canonical_model.sql"]},{"table":"object_furniture_market_listings","migrations":["445_object_furniture_home_canonical_model.sql"]}],
+      "oracle": {"legacyProjection":"Apply exact WBS742 catalog-index and stable legacy furniture.id rules; never map draw rate to charm_per_enhancement.","canonicalProjection":"Read definition, owned instance, placement, and listing rows by resolved PK/FK closure.","identityKey":["table","furniture_id","owned_furniture_id","home_furniture_placement_id","furniture_market_listing_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "pet-equipment",
+      "wbsSources": ["WBS735 pet/equipment", "WBS742 domain field map", "WBS743 PET-EQUIPMENT consumers"],
+      "legacySources": ["LEGACY_JSON:member_pet.json#/{playerKey}","LEGACY_JSON:itemInfo.json#/elemental","LEGACY_JSON:itemInfo.json#/ring","CODE_SEED:validated pet catalogs"],
+      "canonicalTables": [{"table":"canonical_pet_definitions","migrations":["446_canonical_pet_equipment.sql"]},{"table":"canonical_owned_pet_instances","migrations":["446_canonical_pet_equipment.sql"]},{"table":"canonical_equipment_definitions","migrations":["446_canonical_pet_equipment.sql"]},{"table":"canonical_owned_equipment_instances","migrations":["446_canonical_pet_equipment.sql"]},{"table":"canonical_owned_pet_equipment","migrations":["446_canonical_pet_equipment.sql"]}],
+      "oracle": {"legacyProjection":"Apply the WBS742 pet, equipment occurrence, state, and owner-bound equipment relation map.","canonicalProjection":"Read the five listed tables by resolved pet/equipment occurrence identities.","identityKey":["table","pet_id","owned_pet_id","equipment_id","owned_equipment_id","owned_pet_equipment_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "mini-pet",
+      "wbsSources": ["WBS736 mini-pet", "WBS742 domain field map and state hardening", "WBS743 MINI-PET consumers"],
+      "legacySources": ["LEGACY_JSON:miniPetData.json#/miniPet/{index}","LEGACY_JSON:member_pet.json#/{playerKey}/miniPetBag/{index}","LEGACY_JSON:member_pet.json#/{playerKey}/miniPet","CODE_SEED:main.js validated mini-pet definitions/rewards and enhancement rules"],
+      "canonicalTables": [{"table":"canonical_mini_pet_definitions","migrations":["447_canonical_mini_pet.sql"]},{"table":"canonical_mini_pet_enhancement_rules","migrations":["447_canonical_mini_pet.sql"]},{"table":"canonical_owned_mini_pet_instances","migrations":["447_canonical_mini_pet.sql","456_owned_object_state_hardening.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 definition/rule and occurrence-level crosswalk rules; bag and equipped occurrences remain distinct.","canonicalProjection":"Read definition, enhancement rule, and owned occurrence rows by immutable bindings.","identityKey":["table","mini_pet_id","mini_pet_enhancement_rule_id","owned_mini_pet_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "member-title",
+      "wbsSources": ["WBS737 title domains", "WBS742 acquisition-price amendment and field map", "WBS743 MEMBER-TITLE consumers"],
+      "legacySources": ["LEGACY_JSON:member_title.json#/member/{playerKey}/title"],
+      "canonicalTables": [{"table":"canonical_member_title_definitions","migrations":["448_canonical_title_domains.sql"]},{"table":"canonical_owned_member_title_instances","migrations":["448_canonical_title_domains.sql","455_title_instance_acquisition_price.sql"]},{"table":"canonical_member_title_selections","migrations":["448_canonical_title_domains.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 one-based acquisition sequence and selection semantics with exact acquisition price/time.","canonicalProjection":"Read member-title definition, owned occurrence, and selection rows.","identityKey":["table","member_title_id","owned_member_title_id","player_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "pet-title",
+      "wbsSources": ["WBS737 title domains", "WBS742 acquisition-price amendment and field map", "WBS743 PET-TITLE consumers"],
+      "legacySources": ["LEGACY_JSON:pet_title.json#/member/{playerKey}/title"],
+      "canonicalTables": [{"table":"canonical_pet_title_definitions","migrations":["448_canonical_title_domains.sql"]},{"table":"canonical_owned_pet_title_instances","migrations":["448_canonical_title_domains.sql","455_title_instance_acquisition_price.sql"]},{"table":"canonical_pet_title_selections","migrations":["448_canonical_title_domains.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 player-scope pet-title occurrence and selection semantics without inventing owned_pet_id scope.","canonicalProjection":"Read pet-title definition, owned occurrence, and selection rows.","identityKey":["table","pet_title_id","owned_pet_title_id","player_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "mini-pet-title",
+      "wbsSources": ["WBS737 title domains", "WBS742 acquisition-price amendment and field map", "WBS743 MINI-PET-TITLE-COLLECTION consumers"],
+      "legacySources": ["LEGACY_JSON:miniPet_title.json#/member/{playerKey}/title","LEGACY_JSON:miniPetCollectionInfo.json","LEGACY_JSON:miniPet_collection.json"],
+      "canonicalTables": [{"table":"canonical_mini_pet_title_definitions","migrations":["448_canonical_title_domains.sql"]},{"table":"canonical_owned_mini_pet_title_instances","migrations":["448_canonical_title_domains.sql","455_title_instance_acquisition_price.sql"]},{"table":"canonical_mini_pet_title_selections","migrations":["448_canonical_title_domains.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 player-scope mini-pet-title occurrence and selection semantics; collection files are eligibility evidence only.","canonicalProjection":"Read mini-pet-title definition, owned occurrence, and selection rows.","identityKey":["table","mini_pet_title_id","owned_mini_pet_title_id","player_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "pet-skill",
+      "wbsSources": ["WBS738 pet-skill", "WBS742 domain field map", "WBS743 PET-SKILL consumers"],
+      "legacySources": ["LEGACY_JSON:petSkillData.json#/{playerKey}/petSkills","CODE_SEED:main.js validated pet skill definition catalog"],
+      "canonicalTables": [{"table":"canonical_pet_skill_definitions","migrations":["449_canonical_pet_skill.sql"]},{"table":"canonical_owned_pet_skill_stacks","migrations":["449_canonical_pet_skill.sql"]},{"table":"canonical_owned_pet_skill_equipments","migrations":["449_canonical_pet_skill.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 definition, quantity stack, and owner-bound equipment relation map; executable code is excluded.","canonicalProjection":"Read pet-skill definition, stack, and equipment rows by resolved keys.","identityKey":["table","pet_skill_id","owned_pet_skill_id","owned_pet_skill_equipment_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "currency",
+      "wbsSources": ["WBS740 currency/ledger", "WBS742 initial-ledger field map", "WBS743 CURRENCY-SHOP consumers"],
+      "legacySources": ["LEGACY_JSON:member.json#/member/{playerKey}/point","LEGACY_JSON:member.json#/member/{playerKey}/points","LEGACY_JSON:member.json#/member/{playerKey}/diamond","LEGACY_JSON:currencyLog.json (reconciliation only)"],
+      "canonicalTables": [{"table":"canonical_currency_definitions","migrations":["452_canonical_currency_ledger.sql"]},{"table":"canonical_player_currency_balances","migrations":["452_canonical_currency_ledger.sql"]},{"table":"canonical_currency_operations","migrations":["452_canonical_currency_ledger.sql"]},{"table":"canonical_currency_ledger_entries","migrations":["452_canonical_currency_ledger.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 point/points alias policy, minor-unit conversion, and one INITIAL_IMPORT ledger sequence.","canonicalProjection":"Read definition, balance, operation, and ledger rows by owner-bound keys.","identityKey":["table","currency_id","player_currency_balance_id","currency_operation_id","currency_ledger_entry_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "package",
+      "wbsSources": ["WBS739 package/reward", "WBS742 domain field map", "WBS743 PACKAGE-CATALOG and PACKAGE-USE consumers"],
+      "legacySources": ["LEGACY_JSON:packageInfo.json#/{packageIndex}","CODE_SEED:validated package reward catalog"],
+      "canonicalTables": [{"table":"canonical_package_definitions","migrations":["451_canonical_package_reward.sql"]},{"table":"canonical_package_reward_groups","migrations":["451_canonical_package_reward.sql"]},{"table":"canonical_package_reward_entries","migrations":["451_canonical_package_reward.sql"]},{"table":"canonical_package_item_rewards","migrations":["451_canonical_package_reward.sql"]},{"table":"canonical_package_nested_rewards","migrations":["451_canonical_package_reward.sql"]},{"table":"canonical_package_reward_quarantines","migrations":["451_canonical_package_reward.sql"]}],
+      "oracle": {"legacyProjection":"Apply the WBS742 typed package graph; unresolved targets remain typed quarantine records and cycles fail closed.","canonicalProjection":"Read the six listed package graph/quarantine tables by exact typed references.","identityKey":["table","package_id","package_reward_group_id","package_reward_entry_id","package_reward_quarantine_id"],"comparison":"canonical row set"}
+    },
+    {
+      "domain": "building-recipe",
+      "wbsSources": ["WBS741 building/recipe", "WBS742 domain field map", "WBS743 BUILDING-RECIPE consumers"],
+      "legacySources": ["LEGACY_JSON:petSweetHomeInfo.json#/homeInfo/{index}","CODE_SEED:validated craft recipe fixtures extracted from active command logic"],
+      "canonicalTables": [{"table":"canonical_building_definitions","migrations":["453_canonical_building_recipe.sql"]},{"table":"canonical_craft_recipe_definitions","migrations":["453_canonical_building_recipe.sql"]},{"table":"canonical_craft_recipe_item_inputs","migrations":["453_canonical_building_recipe.sql"]},{"table":"canonical_craft_recipe_currency_inputs","migrations":["453_canonical_building_recipe.sql"]},{"table":"canonical_craft_recipe_item_outputs","migrations":["453_canonical_building_recipe.sql"]},{"table":"canonical_craft_recipe_currency_outputs","migrations":["453_canonical_building_recipe.sql"]},{"table":"canonical_building_craft_recipes","migrations":["453_canonical_building_recipe.sql"]}],
+      "oracle": {"legacyProjection":"Apply WBS742 source-index building and typed recipe graph semantics, retaining duplicate floors with only the first active.","canonicalProjection":"Read building definitions and the six recipe definition/input/output/link tables by exact references.","identityKey":["table","building_id","craft_recipe_id","relation_id"],"comparison":"canonical row set"}
+    }
+  ],
+  "remainingGateRequirements": {
+    "gate4": [],
+    "gate5": [],
+    "gate6": ["Integrate every WBS743 consumer family only after its canonical provider is complete.", "Prove per-consumer legacy/canonical output parity, ordering, bigint exactness, Unicode byte preservation, transaction non-participation, and restart replay."],
+    "gate7": ["Execute the approved Shadow observation window with no legacy or canonical writer invocation by the comparator.", "Require zero unresolved quarantine, stable restart digests, no mutations, complete domain/consumer coverage, commit/push evidence, and foreman ACK before claiming Shadow complete."],
+    "gate8Excluded": ["Production snapshot reconciliation", "backup/restore rehearsal", "cutover", "rollback", "production smoke", "operator approval"]
+  }
+}

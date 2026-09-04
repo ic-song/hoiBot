@@ -16,15 +16,34 @@ describe("server configuration", () => {
 
   it("requires MariaDB connection values when enabled", () => {
     assert.throws(
-      () => loadConfig({ ...BASE_ENV, DATABASE_ENABLED: "true" }),
+      () => loadConfig({ ...BASE_ENV, DATABASE_ENABLED: "true", HOIBOT_ENVIRONMENT_CODE: "dev" }),
       /DATABASE_HOST/
     );
+  });
+
+  it("requires an explicit dev or prod environment for an enabled database without NODE_ENV inference", () => {
+    const database = {
+      DATABASE_ENABLED: "true",
+      DATABASE_HOST: "127.0.0.1",
+      DATABASE_USER: "hoibot_app",
+      DATABASE_PASSWORD: "test-password",
+      DATABASE_NAME: "hoibot"
+    };
+    assert.throws(() => loadConfig({ ...BASE_ENV, ...database }), /HOIBOT_ENVIRONMENT_CODE/);
+    assert.throws(() => loadConfig({
+      ...BASE_ENV,
+      ...database,
+      NODE_ENV: "production",
+      USER_VERIFICATION_PEPPER: "production-user-verification-pepper"
+    }), /HOIBOT_ENVIRONMENT_CODE/);
+    assert.throws(() => loadConfig({ ...BASE_ENV, ...database, HOIBOT_ENVIRONMENT_CODE: "development" }), /HOIBOT_ENVIRONMENT_CODE/);
   });
 
   it("loads explicit MariaDB connection values", () => {
     const config = loadConfig({
       ...BASE_ENV,
       DATABASE_ENABLED: "true",
+      HOIBOT_ENVIRONMENT_CODE: "dev",
       DATABASE_HOST: "127.0.0.1",
       DATABASE_PORT: "3308",
       DATABASE_USER: "hoibot_app",
@@ -33,6 +52,7 @@ describe("server configuration", () => {
     });
 
     assert.equal(config.database.enabled, true);
+    assert.equal(config.environmentCode, "dev");
     assert.equal(config.database.port, 3308);
     assert.equal(config.database.name, "hoibot");
   });

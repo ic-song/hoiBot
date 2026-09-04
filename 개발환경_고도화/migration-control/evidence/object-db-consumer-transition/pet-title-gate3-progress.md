@@ -1,0 +1,71 @@
+# WBS743 PET-TITLE Gate 3 진행 증거
+
+- 기준 카탈로그: `SC-20260902-1`
+- 상태: `PARTIAL_IMPLEMENTATION_NOT_CUTOVER`
+- 운영 경로 활성화: 아니요
+- 운영 DB/JSON 변경: 없음
+
+## 소비자 재검증
+
+- 기존 소비자: 19개
+  - 관리자 명령 3
+  - Rhino 명령 9
+  - runtime dispatch 1
+  - canonical repository SQL 메서드 6
+- 신규 canonical 포트 소비자: 3개
+  - `PetTitleCanonicalReadProvider.listOwned`
+  - `PetTitleCanonicalMutationProvider.select`
+  - `PetTitleCanonicalMutationProvider.release`
+- 현재 PET-TITLE primary 소비자: 22개
+- 공용 CONTEXT-BRIDGE SQL 소비자: 2개
+- 전체 소비자 매니페스트: 1,100개
+- 매니페스트 SHA-256: `e0ac2219d271d29a94edfdb5033e89782b3565261c11d43c94d2f67c0f3bab6b`
+
+## 구현된 경계
+
+- 정의 이름과 기준 판매가는 `canonical_pet_title_definitions`에서 읽을 때 조인합니다.
+- 개별 획득가격은 `canonical_owned_pet_title_instances.acquisition_price`에만 보존합니다.
+- 목록 순서는 `acquisition_sequence`, `owned_pet_title_id`로 고정합니다.
+- 선택·제거는 app-wiring mutation participant 안에서만 실행할 수 있습니다.
+- 선택·제거는 `canonical_pet_title_operations` 영수증과 `canonical_pet_title_operation_participants` OWNER 행을 남깁니다.
+- 기존 BIGINT 인스턴스와 전환 중 CHAR(8) 인스턴스는 사용자 응답에 노출하지 않습니다.
+- `PetTitleAppWiringIngress`는 목록 self/target의 MODERN·SHADOW·REJECT 경계를 구현했으며 `app.ts`에는 아직 연결하지 않았습니다.
+- PET-TITLE은 회원 컨텍스트 구현을 소유하지 않고, WBS746이 제공한 방/서버별 활성 계정 `PlayerContextPort`를 주입받습니다.
+- 활성 계정 행이 존재하지만 호출자 포털 연결이 누락·불일치하면 레거시 계정으로 후퇴하지 않고 `PLAYER_CONTEXT_MAPPING_DRIFT`로 차단합니다.
+- 포털에 연결된 게임계정은 인증되지 않은 방/서버에서 legacy crosswalk fallback 대상에서 제외하며, 해당 컨텍스트의 활성 계정 선택을 요구합니다.
+- 대상 이름의 레거시 첫 4 UTF-16 code-unit 처리는 JavaScript `slice(0, 4)`에서 보존하고 SQL 문자열 절단으로 대체하지 않습니다.
+- 공용 `runReadOnlyReply`는 canonical 조회, legacy operation, command execution, Iris outbox, canonical claim 완료를 하나의 controlled transaction으로 저장합니다.
+- 응답 handler에는 query-only participant만 노출하며, 재실행은 저장된 outbox·operation·execution·fingerprint를 대사한 뒤 동일 outbox를 반환합니다.
+- 재시작 후 미전송 outbox는 기존 `OutboxWorker`의 pending/failed 재전송 경로를 사용합니다.
+
+## 확인된 레거시 차이
+
+- `/펫타이틀판매`는 레거시 코드에서 포인트를 메모리상 증가시키지만 `member.json` 저장 호출이 없습니다.
+- canonical 전환에서는 이 동작을 정상 저장으로 오인하지 않고, CURRENCY-SHOP과의 단일 트랜잭션 작업으로 별도 구현해야 합니다.
+- currency participant가 연결되기 전 `sold` 해제 요청은 DB 접근 전에 `PET_TITLE_SELL_CURRENCY_PARTICIPANT_REQUIRED`로 거절합니다.
+- 현 스키마의 펫타이틀 선택은 `owned_pet_id`별이 아니라 플레이어별 1개 선택입니다.
+
+## 검증
+
+- 집중 테스트: 30/30 통과
+- 최신 app-wiring/PET-TITLE/PlayerContext 집중 테스트: 42/42 통과
+- READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
+- 소비자 매니페스트·안정 ID 계약 테스트: 16/16 통과
+- 최신 소비자 재도출·stable ID·import disposition 계약: 22/22 통과
+- 전체 runtime 회귀: 2,033개 중 2,025 통과, 실패 0, 환경 의존 8개 건너뜀
+- TypeScript typecheck: 통과
+- JSON 계약 파싱: 14/14 통과
+- `git diff --check`: 통과(줄바꿈 경고만 존재)
+- 운영 데이터 변경 확인: 없음
+
+## 남은 범위
+
+- WBS746 공용 PlayerContextPort 구현을 주입한 self/target 통합: 완료(운영 ingress 미연결)
+- PET_TITLE ingress를 `app.ts`에 연결하고 요청-local 즉시 전송과 재시작 outbox worker의 단일 전송 소유권을 검증
+- target 목록의 레거시 room/principal 권한을 안정 식별자로 확정한 authority provider 연결
+- 사용자 생성과 ITEM 티켓 차감을 한 트랜잭션으로 연결
+- 판매와 CURRENCY 포인트 지급을 한 트랜잭션으로 연결
+- 관리자 add/sync/reset의 canonical owner-graph 전환
+- sync/reset용 batch/global operation receipt additive migration
+- isolated MariaDB replay·payload drift·rollback·restart 검증
+- Gate 6/7 및 운영 cutover

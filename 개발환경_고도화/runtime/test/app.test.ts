@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { buildApp as buildRuntimeApp, type AppDependencies } from "../src/app.js";
+import { buildApp as buildRuntimeApp, dispatchPetDataCompareCommand, dispatchPetTitleCommand, type AppDependencies } from "../src/app.js";
 import type { AppConfig } from "../src/config.js";
-import type { DatabaseClient } from "../src/database.js";
+import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
 import type { IrisKakaoDatabaseSnapshot } from "../src/integration/iris-kakao-database-inspector.js";
+import type { NormalizedIrisEvent } from "../src/integration/iris-normalizer.js";
+import { ApplicationError } from "../src/shared/application-error.js";
 
 const TEST_TOKEN = "test-shared-token-1234";
 
@@ -75,6 +78,62 @@ function createKakaoSnapshot(overrides: Partial<IrisKakaoDatabaseSnapshot> = {})
   };
 }
 
+function createPetDataCompareEvent(overrides: Partial<NormalizedIrisEvent> = {}): NormalizedIrisEvent {
+  return {
+    eventId: "iris:pet-data-compare-app-1",
+    providerEventId: "pet-data-compare-app-1",
+    providerCode: "iris",
+    eventKind: "1",
+    direction: "incoming",
+    channelId: "123",
+    userId: "456",
+    displayName: "관리자",
+    displayNameSource: "iris_cache",
+    displayNameTrust: "untrusted",
+    message: "/펫데이터비교",
+    eventCode: "message.created",
+    eventCategory: "message",
+    monitoringGroup: "text",
+    eventMetadata: {},
+    payloadHash: "a".repeat(64),
+    ...overrides,
+  };
+}
+
+function createEventProcessingDatabase(duplicate = false): DatabaseClient {
+  let nextId = 10n;
+  const transaction: DatabaseTransaction = {
+    query: async <T>(sql: string): Promise<T> => {
+      if (sql.includes("SELECT id FROM channels")) return [{ id: 1n }] as T;
+      if (sql.includes("SELECT id FROM external_identities")) return [{ id: 2n }] as T;
+      if (sql.includes("FROM external_identity_names")) return [] as T;
+      return [] as T;
+    },
+    execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 1n, insertId: nextId++ }),
+  };
+  return createDatabaseStub({
+    withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>): Promise<T> => {
+      if (duplicate) throw Object.assign(new Error("duplicate event"), { code: "ER_DUP_ENTRY" });
+      return work(transaction);
+    },
+  });
+}
+
+function petDataComparePayload(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    msg: "/펫데이터비교",
+    sender: "관리자",
+    json: {
+      id: "pet-data-compare-http-1",
+      chat_id: "123",
+      user_id: "456",
+      type: "1",
+      v: JSON.stringify({ origin: "MSG", isMine: false }),
+    },
+    ...overrides,
+  };
+}
+
 // 앱 테스트의 기본 채널은 검증·지정된 오픈채팅으로 처리합니다.
 function buildApp(config: AppConfig, dependencies: AppDependencies = {}) {
   return buildRuntimeApp(config, {
@@ -102,6 +161,31 @@ describe("hoiBot Lite server", () => {
     assert.equal(response.statusCode, 200);
     assert.equal(response.json().status, "alive");
     assert.equal(response.headers["x-request-id"], response.json().requestId);
+    await app.close();
+  });
+
+  it("starts account and retained-content maintenance only after listen", async () => {
+    let accountRuns = 0;
+    let retainedRuns = 0;
+    const app = buildApp(createConfig({
+      nodeEnv: "development",
+      retainedEventContentEnabled: true
+    }), {
+      database: createDatabaseStub(),
+      runAccountCleanupMaintenance: async () => {
+        accountRuns += 1;
+        return { pending: { processed: 0, failed: 0 }, deleted: { processed: 0, failed: 0 } };
+      },
+      purgeRetainedEventContent: async () => {
+        retainedRuns += 1;
+        return 0;
+      }
+    });
+
+    await app.ready();
+    assert.deepEqual({ accountRuns, retainedRuns }, { accountRuns: 0, retainedRuns: 0 });
+    await app.listen({ host: "127.0.0.1", port: 0 });
+    assert.deepEqual({ accountRuns, retainedRuns }, { accountRuns: 1, retainedRuns: 1 });
     await app.close();
   });
 
@@ -911,5 +995,145 @@ describe("hoiBot Lite server", () => {
     assert.equal(response.statusCode, 413);
     assert.equal(response.json().error.code, "PAYLOAD_TOO_LARGE");
     await app.close();
+  });
+
+  it("blocks the real callback legacy service after one SHADOW or REJECT ingress claim", async () => {
+    for (const result of [
+      { status: "shadow", replayed: false, resultFingerprint: "c".repeat(64) } as const,
+      { status: "rejected", replayed: false, reasonCode: "AUTH_SCOPE_NOT_SATISFIED" } as const,
+    ]) {
+      let ingressCalls = 0;
+      let legacyCalls = 0;
+      const app = buildApp(createConfig(), {
+        database: createEventProcessingDatabase(),
+        petDataCompareAppWiringIngress: { handle: async () => { ingressCalls += 1; return result; } },
+        irisAdminCommandService: { changePlayerPoint: async () => { legacyCalls += 1; return { status: "shadow" }; } },
+      });
+      const response = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`, payload: petDataComparePayload() });
+      assert.equal(response.statusCode, 202);
+      assert.equal(ingressCalls, 1);
+      assert.equal(legacyCalls, 0);
+      await app.close();
+    }
+  });
+
+  it("preserves the real callback legacy service for LEGACY_FALLBACK and ignored ingress", async () => {
+    for (const result of [{ status: "legacy_fallback" } as const, { status: "ignored" } as const]) {
+      let ingressCalls = 0;
+      let legacyCalls = 0;
+      const app = buildApp(createConfig(), {
+        database: createEventProcessingDatabase(),
+        petDataCompareAppWiringIngress: { handle: async () => { ingressCalls += 1; return result; } },
+        irisAdminCommandService: { changePlayerPoint: async () => { legacyCalls += 1; return { status: "shadow" }; } },
+      });
+      const response = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`, payload: petDataComparePayload() });
+      assert.equal(response.statusCode, 202);
+      assert.equal(ingressCalls, 1);
+      assert.equal(legacyCalls, 1);
+      await app.close();
+    }
+  });
+
+  it("keeps a non-target point edit on the legacy service without calling pet-data ingress", async () => {
+    let ingressCalls = 0;
+    let legacyCalls = 0;
+    const app = buildApp(createConfig(), {
+      database: createEventProcessingDatabase(),
+      petDataCompareAppWiringIngress: { handle: async () => { ingressCalls += 1; return { status: "shadow", replayed: false, resultFingerprint: "c".repeat(64) }; } },
+      irisAdminCommandService: { changePlayerPoint: async () => { legacyCalls += 1; return { status: "shadow" }; } },
+    });
+    const response = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`, payload: petDataComparePayload({ msg: "/포인트수정 이름 1" }) });
+    assert.equal(response.statusCode, 202);
+    assert.equal(ingressCalls, 0);
+    assert.equal(legacyCalls, 1);
+    await app.close();
+  });
+
+  it("does not re-run either path when event processing reports a duplicate", async () => {
+    let ingressCalls = 0;
+    let legacyCalls = 0;
+    const app = buildApp(createConfig(), {
+      database: createEventProcessingDatabase(true),
+      petDataCompareAppWiringIngress: { handle: async () => { ingressCalls += 1; return { status: "shadow", replayed: false, resultFingerprint: "c".repeat(64) }; } },
+      irisAdminCommandService: { changePlayerPoint: async () => { legacyCalls += 1; return { status: "shadow" }; } },
+    });
+    const response = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`, payload: petDataComparePayload() });
+    assert.equal(response.statusCode, 202);
+    assert.equal(ingressCalls, 0);
+    assert.equal(legacyCalls, 0);
+    await app.close();
+  });
+
+  it("does not invoke pet-data app wiring outside the exact operational first-delivery identity boundary", async () => {
+    let ingressCalls = 0;
+    const ingress = { handle: async () => { ingressCalls += 1; return { status: "shadow", replayed: false, resultFingerprint: "c".repeat(64) } as const; } };
+    const cases: Array<{ operational: boolean; duplicate: boolean | undefined; event: NormalizedIrisEvent }> = [
+      { operational: true, duplicate: false, event: createPetDataCompareEvent({ message: "/펫데이터비교 " }) },
+      { operational: true, duplicate: true, event: createPetDataCompareEvent() },
+      { operational: true, duplicate: undefined, event: createPetDataCompareEvent() },
+      { operational: true, duplicate: false, event: createPetDataCompareEvent({ direction: "outgoing" }) },
+      { operational: false, duplicate: false, event: createPetDataCompareEvent() },
+      { operational: true, duplicate: false, event: createPetDataCompareEvent({ userId: undefined }) },
+      { operational: true, duplicate: false, event: createPetDataCompareEvent({ channelId: undefined }) },
+    ];
+    for (const candidate of cases) {
+      assert.equal(await dispatchPetDataCompareCommand(
+        ingress, candidate.operational, candidate.duplicate, candidate.event,
+      ), "not_applicable");
+    }
+    assert.equal(ingressCalls, 0);
+  });
+
+  it("fails the real callback closed for MODERN and ingress errors without running legacy", async () => {
+    for (const [failure, statusCode] of [
+      [new ApplicationError("PET_DATA_COMPARE_MODERN_MUTATION_NOT_ADOPTED", "modern disabled", 503), 503],
+      [new Error("ingress fault"), 500],
+    ] as const) {
+      let legacyCalls = 0;
+      const app = buildApp(createConfig(), {
+        database: createEventProcessingDatabase(),
+        petDataCompareAppWiringIngress: { handle: async () => { throw failure; } },
+        irisAdminCommandService: { changePlayerPoint: async () => { legacyCalls += 1; return { status: "shadow" }; } },
+      });
+      const response = await app.inject({ method: "POST", url: `/api/v1/integrations/iris/events?token=${TEST_TOKEN}`, payload: petDataComparePayload() });
+      assert.equal(response.statusCode, statusCode);
+      assert.equal(legacyCalls, 0);
+      await app.close();
+    }
+  });
+
+  it("wires the pet-data ingress into the callback once and gates the existing point-edit block by disposition", () => {
+    const source = readFileSync(new URL("../src/app.ts", import.meta.url), "utf8");
+    assert.equal(source.match(/await dispatchPetDataCompareCommand\(/g)?.length, 1);
+    assert.match(source, /new PetDataCompareAppWiringIngress\(\s*appWiringOperationProvider,\s*new CommandDispatcher\(new MariaCommandRouteReader\(database\)/s);
+    assert.match(source, /petDataCompareDisposition !== "claimed"\s*&& isPointEditCommandCandidate\(normalizedEvent\.message\)/s);
+  });
+
+  it("claims only a MODERN pet-title reply and leaves SHADOW or fallback to the legacy boundary",async()=>{
+    const event=createPetDataCompareEvent({message:"/펫타이틀목록"});
+    const modernReplies:Array<{outboxId:string;room:string;data:string}>=[];
+    assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"modern",replayed:false,resultFingerprint:"a".repeat(64),reply:{outboxId:"21",room:"room-a",data:"목록"}})},true,false,event,modernReplies),"claimed");
+    assert.deepEqual(modernReplies,[{outboxId:"21",room:"room-a",data:"목록"}]);
+    const shadowReplies:Array<{outboxId:string;room:string;data:string}>=[];
+    assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"shadow",replayed:false,resultFingerprint:"b".repeat(64)})},true,false,event,shadowReplies),"shadow");
+    assert.deepEqual(shadowReplies,[]);
+    assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"legacy_fallback"})},true,false,event,[]),"legacy_fallback");
+    assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"rejected",replayed:false,reasonCode:"AUTH_SCOPE_NOT_SATISFIED"})},true,false,event,[]),"claimed");
+  });
+
+  it("does not invoke pet-title ingress for duplicate or incomplete events",async()=>{
+    let calls=0;
+    const ingress={handle:async()=>{calls+=1;return {status:"shadow",replayed:false,resultFingerprint:"c".repeat(64)} as const;}};
+    const event=createPetDataCompareEvent({message:"/펫타이틀목록"});
+    assert.equal(await dispatchPetTitleCommand(ingress,true,true,event,[]),"not_applicable");
+    assert.equal(await dispatchPetTitleCommand(ingress,true,false,{...event,userId:undefined},[]),"not_applicable");
+    assert.equal(calls,0);
+  });
+
+  it("wires pet-title ingress once and gates the existing lifecycle block by claim disposition",()=>{
+    const source=readFileSync(new URL("../src/app.ts",import.meta.url),"utf8");
+    assert.equal(source.match(/await dispatchPetTitleCommand\(/g)?.length,1);
+    assert.match(source,/new PetTitleAppWiringIngress\(\s*appWiringOperationProvider,\s*new CommandDispatcher\(new MariaCommandRouteReader\(database\)/s);
+    assert.match(source,/petTitleDisposition!=="claimed"&&isOperationalChannel[\s\S]*isPetTitleCommandCandidate\(normalizedEvent\.message\)/);
   });
 });
