@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { resolveGuildTerritoryWarAuthority } from "./guild-territory-war-authority.js";
 
 const COMMAND_CODE="GUILD_TERRITORY_OCCUPATION_RESET",SCOPE_CODE="world",CASTLE_STATE_CODE="HOI_CASTLE";
 type Lifecycle="READY"|"PENDING_START"|"ACTIVE_OPENING"|"ACTIVE_READY";
@@ -52,10 +53,11 @@ export class GuildTerritoryOccupationResetService{
       if(scopeRow===undefined)throw new ApplicationError("GUILD_TERRITORY_RESET_SCOPE_REQUIRED","초기화할 길드 영지전 범위가 없습니다.",409);
       const war=(await tx.query<WarRow[]>("SELECT id,war_key,active,lifecycle_state,start_ready,pending_start_token,DATE_FORMAT(pending_start_due_at,'%Y-%m-%dT%H:%i:%s.%fZ') pending_start_due_at,opening_token,DATE_FORMAT(opening_due_at,'%Y-%m-%dT%H:%i:%s.%fZ') opening_due_at,castle_lord_player_id,CAST(castle_earnings AS CHAR) castle_earnings,castle_defense_count,version FROM guild_territory_wars WHERE id=? FOR UPDATE",[scopeRow.war_id]))[0];
       if(war===undefined)throw new ApplicationError("GUILD_TERRITORY_WAR_REQUIRED","길드 영지전 상태를 확인할 수 없습니다.",409);
+      const active=resolveGuildTerritoryWarAuthority(war.active,war.lifecycle_state);
       const occupations=await tx.query<OccupationRow[]>("SELECT territory_no,territory_name,owner_guild_id,owner_player_id,version FROM guild_territory_occupations WHERE war_id=? ORDER BY territory_no FOR UPDATE",[war.id]);
       if(occupations.length!==7||occupations.some((row,index)=>row.territory_no!==BigInt(index+1)))throw new ApplicationError("GUILD_TERRITORY_RESET_OCCUPATIONS_REQUIRED","1~7번 길드 영지 projection이 모두 필요합니다.",409);
       const castle=(await tx.query<CastleRow[]>("SELECT lord_player_id,lord_guild_name,tax_rate_basis_points,CAST(earnings AS CHAR) earnings,defense_count,version FROM castle_state WHERE state_code=? FOR UPDATE",[CASTLE_STATE_CODE]))[0];
-      const lifecycleAfter=resolveTerritoryResetLifecycle(war.active===1,war.lifecycle_state),cancelPending=war.active!==1&&war.lifecycle_state==="PENDING_START";
+      const lifecycleAfter=resolveTerritoryResetLifecycle(active,war.lifecycle_state),cancelPending=!active&&war.lifecycle_state==="PENDING_START";
       const operation=await tx.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",[randomUUID(),scope,key,operator.operator_id]);
       let pendingTransitionsSkipped=0;
       if(cancelPending){const skipped=await tx.execute("UPDATE guild_territory_scheduled_transitions SET status='SKIPPED',version=version+1,completed_at=UTC_TIMESTAMP(3),updated_at=UTC_TIMESTAMP(3) WHERE war_id=? AND status='PENDING'",[war.id]);pendingTransitionsSkipped=Number(skipped.affectedRows);}

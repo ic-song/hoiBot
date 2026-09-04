@@ -178,6 +178,40 @@ describe("server startup database boundary", () => {
     await started.shutdown("TEST");
   });
 
+  it("waits for an in-flight territory transition before closing the database", async () => {
+    const events: string[] = [];
+    const db = database("hoi_bot", events);
+    let transitionCalls = 0;
+    let releaseRecurring: (() => void) | undefined;
+    let territoryCallback: (() => void) | undefined;
+    const started = await startServer(enabledConfig(), {
+      createDatabase: () => db,
+      createOutboxRunner: () => ({ runOnce: async () => 0 }),
+      createGuildTerritoryTransitionRunner: () => ({
+        runDueTransitions: async () => {
+          transitionCalls += 1;
+          if (transitionCalls > 1) await new Promise<void>(resolve => { releaseRecurring = resolve; });
+          return { processed: 0, skipped: 0 };
+        }
+      }),
+      setRecurring: (callback, milliseconds) => {
+        if (milliseconds === 1_000) territoryCallback = callback;
+        return setInterval(() => undefined, 60_000);
+      }
+    });
+
+    territoryCallback!();
+    await new Promise(resolve => setImmediate(resolve));
+    let shutdownCompleted = false;
+    const shutdown = started.shutdown("TEST").then(() => { shutdownCompleted = true; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(shutdownCompleted, false);
+    assert.equal(events.includes("close"), false);
+    releaseRecurring!();
+    await shutdown;
+    assert.equal(events.at(-1), "close");
+  });
+
   it("rejects an unbranded verification result before app construction", async () => {
     const events: string[] = [];
     const db = database("hoi_bot", events);
