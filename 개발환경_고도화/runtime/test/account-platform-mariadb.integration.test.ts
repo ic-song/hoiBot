@@ -133,6 +133,22 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
       );
       assert.equal((await service.resolveActivePlayer({ platformCode: "KAKAO", contextType: "ROOM", externalContextKey: `room-b-${suffix}`, externalUserKey: `user-b-${suffix}` }))?.playerId, representative.playerId);
 
+      const roomAContext = { platformCode: "KAKAO" as const, contextType: "ROOM" as const, externalContextKey: `room-a-${suffix}`, externalUserKey: `user-a-${suffix}` };
+      const beforeNicknameObservation = await service.resolveActivePlayer(roomAContext);
+      await service.observeNickname({ ...roomAContext, observedDisplayName: `카카오 새 닉네임 ${suffix}`, actor: "개발자" });
+      const afterNicknameObservation = await service.resolveActivePlayer(roomAContext);
+      const nicknameRows = await transaction.query<Array<{ observed_nickname: string; observation_source: string }>>(
+        `SELECT observation.observed_nickname,observation.observation_source FROM account_platform_nickname_observations observation
+         WHERE observation.platform_context_membership_id=? AND observation.observed_nickname=?`,
+        [representative.platformContextMembershipId, `카카오 새 닉네임 ${suffix}`]
+      );
+      const subProfile = (await transaction.query<Array<{ current_display_name: string }>>(
+        "SELECT current_display_name FROM player_profiles WHERE player_id=?", [sub.playerId]
+      ))[0];
+      assert.deepEqual(afterNicknameObservation, beforeNicknameObservation);
+      assert.deepEqual(nicknameRows, [{ observed_nickname: `카카오 새 닉네임 ${suffix}`, observation_source: "EVENT_OBSERVATION" }]);
+      assert.equal(subProfile?.current_display_name, `신규 부계정 ${suffix}`);
+
       const discordA = await service.verifyGameAccount({
         platformCode: "DISCORD", contextType: "SERVER", externalContextKey: `server-a-${suffix}`, externalUserKey: `discord-${suffix}`,
         requestKey: `verify-discord-a-${suffix}`, legacyUserAccountId: account.insertId.toString(), purpose: "LEGACY_GAME_ACCOUNT_LINK",
