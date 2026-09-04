@@ -6375,6 +6375,7 @@ Status: PARTIAL
 
 ## Files
 
+- `개발환경_고도화/runtime/src/account-platform/account-platform-command-context-provider.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-platform-iris-context-provider.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-platform-actor-context-resolver.ts`
 - `개발환경_고도화/runtime/src/account-platform/account-switch-command-service.ts`
@@ -6383,6 +6384,7 @@ Status: PARTIAL
 
 ## Related Helpers
 
+- `AccountPlatformCommandContextProvider.prepare`
 - `AccountPlatformIrisContextProvider.prepareKakao`
 - `AccountPlatformIrisContextProvider.dispatchAccountSwitch`
 - `AccountPlatformActorContextResolver.resolve`
@@ -6402,6 +6404,7 @@ Status: PARTIAL
 
 - The exact command accepts only `/계정변경 [positive numeric player_id]`; multiline or suffix text does not execute the switch.
 - Iris event normalization supplies the event/user/room keys. `prepareKakao` resolves and freezes the room-scoped active player once at command start.
+- The platform-neutral context provider uses the same snapshot contract for Kakao rooms and Discord servers; Discord keeps one platform identity while resolving a separate active player per server.
 - `dispatchAccountSwitch` passes the frozen membership and `selection_version` to the switch transaction without resolving the active player again.
 - The transaction verifies that the requested player belongs to the same portal account, applies optimistic selection-version locking, and records replay-safe receipt/audit/outbox evidence.
 
@@ -6413,6 +6416,7 @@ Status: PARTIAL
 ## AI Notes
 
 - The provider and transaction path are verified in isolation, including MariaDB restart/replay. `app.ts` Iris ingress and all game-command consumer propagation remain pending behind WBS743, so this command is not yet marked as an active runtime route.
+- No Discord webhook ingress exists in the current runtime. The shared provider and service/DB tests cover Discord server scoping without inventing an unowned transport route.
 - Do not fall back to legacy `external_identities.player_id` for `/계정변경`; a verified modern room context is required.
 - Keep the event-start actor snapshot fixed through the transaction so a concurrent room selection change cannot alter command ownership mid-event.
 
