@@ -5,6 +5,8 @@ import { AccountPlatformService } from "../src/account-platform/account-platform
 import { MariaAccountPlatformRepository } from "../src/account-platform/maria-account-platform-repository.js";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, createScopedDatabaseClient } from "../src/database.js";
+import { ProviderVerificationService } from "../src/user-auth/provider-verification-service.js";
+import { UserAuthService } from "../src/user-auth/user-auth-service.js";
 
 const enabled = process.env.ACCOUNT_PLATFORM_MARIADB_TEST === "true";
 const database = enabled ? createDatabaseClient(loadConfig().database) : null;
@@ -12,6 +14,49 @@ const database = enabled ? createDatabaseClient(loadConfig().database) : null;
 after(async () => { if (database !== null) await database.close(); });
 
 describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
+  it("completes new and legacy web signup in the first Kakao room while preserving the legacy player_id", async () => {
+    assert.ok(database !== null);
+    const rollback = new Error("ACCOUNT_PLATFORM_SIGNUP_INTEGRATION_ROLLBACK");
+    await assert.rejects(database.withTransaction(async (transaction) => {
+      const suffix = Date.now().toString();
+      const scoped = createScopedDatabaseClient(transaction);
+      const pepper = "account-platform-signup-pepper";
+      const auth = new UserAuthService(scoped, pepper);
+      const provider = new ProviderVerificationService(scoped, pepper);
+
+      const newSignup = await auth.signup({
+        loginId: `amgn${suffix.slice(-12)}`, password: "password1", systemAccountName: "갸뇨 남", acceptTerms: true
+      });
+      const newVerified = await provider.verifyInitialKakao({
+        code: newSignup.verificationCode, externalUserId: `new-user-${suffix}`, displayName: "갸뇨 남",
+        channelId: `new-room-${suffix}`, requestKey: `new-signup-${suffix}`
+      });
+      assert.equal(newSignup.gameAccountPurpose, "NEW_GAME_ACCOUNT");
+      assert.match(newVerified.playerId, /^\d+$/);
+
+      const legacyPlayer = await transaction.execute("INSERT INTO players(status,version) VALUES ('active',1)");
+      await transaction.execute(
+        "INSERT INTO player_profiles(player_id,current_display_name,terms_agreed,version) VALUES (?,'댜료 여',TRUE,1)",
+        [legacyPlayer.insertId]
+      );
+      const legacySignup = await auth.signup({
+        loginId: `amgl${suffix.slice(-12)}`, password: "password2", systemAccountName: "댜료 여", acceptTerms: true,
+        gameAccountPurpose: "LEGACY_GAME_ACCOUNT_LINK", legacyPlayerId: legacyPlayer.insertId.toString()
+      });
+      const legacyVerified = await provider.verifyInitialKakao({
+        code: legacySignup.verificationCode, externalUserId: `legacy-user-${suffix}`, displayName: "댜료 여",
+        channelId: `legacy-room-${suffix}`, requestKey: `legacy-signup-${suffix}`
+      });
+      assert.equal(legacyVerified.playerId, legacyPlayer.insertId.toString());
+      const bound = (await transaction.query<Array<{ context_type: string; external_context_key: string }>>(
+        "SELECT context_type,external_context_key FROM user_verification_challenges WHERE public_id=?",
+        [legacySignup.challengeId]
+      ))[0];
+      assert.deepEqual(bound, { context_type: "ROOM", external_context_key: `legacy-room-${suffix}` });
+      throw rollback;
+    }), (error: unknown) => error === rollback);
+  });
+
   it("applies portal ownership and context-scoped selection invariants in one rollback-only fixture", async () => {
     assert.ok(database !== null);
     const rollback = new Error("ACCOUNT_PLATFORM_INTEGRATION_ROLLBACK");

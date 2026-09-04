@@ -1,12 +1,11 @@
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
-import { createScopedDatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { USER_CODE_MINUTES } from "../user-auth/policy.js";
 import { AccountPlatformService, deriveIdentityScopeKey, type AccountPlatformCode, type AccountPlatformContextType, type AccountVerificationPurpose, type VerifyGameAccountResult } from "./account-platform-service.js";
 import { MariaAccountPlatformRepository } from "./maria-account-platform-repository.js";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-const CODE_MINUTES = 15;
 const CODE_MAX_FAILURES = 5;
 
 interface AccountPlatformChallengeRow {
@@ -16,9 +15,9 @@ interface AccountPlatformChallengeRow {
   target_player_id: bigint | null;
   expected_display_name: string;
   platform_code: AccountPlatformCode;
-  identity_scope_key: string;
-  context_type: AccountPlatformContextType;
-  external_context_key: string;
+  identity_scope_key: string | null;
+  context_type: AccountPlatformContextType | null;
+  external_context_key: string | null;
   purpose_code: AccountVerificationPurpose;
   code_hash: string;
   failed_attempt_count: number;
@@ -52,6 +51,18 @@ function failed(error: ApplicationError): { error: ApplicationError } {
   return { error };
 }
 
+// 이미 열린 challenge transaction을 하위 repository가 같은 원자 경계로 재사용하게 합니다.
+function joinChallengeTransaction(transaction: DatabaseTransaction): DatabaseClient {
+  return {
+    ping: async () => { await transaction.query("SELECT 1"); },
+    verifyRollback: async () => true,
+    query: <T>(sql: string, values: readonly unknown[] = []) => transaction.query<T>(sql, values),
+    execute: (sql: string, values: readonly unknown[] = []) => transaction.execute(sql, values),
+    withTransaction: async <T>(work: (nested: DatabaseTransaction) => Promise<T>) => work(transaction),
+    close: async () => undefined
+  };
+}
+
 // 신규·레거시 challenge 발급과 원자적 플랫폼 인증 소비를 담당합니다.
 export class AccountPlatformChallengeService {
   constructor(
@@ -62,26 +73,32 @@ export class AccountPlatformChallengeService {
     if (pepper.length < 16) throw new Error("ACCOUNT_PLATFORM_VERIFICATION_PEPPER_TOO_SHORT");
   }
 
-  // 대상 포털·게임계정·플랫폼 context에 묶인 일회용 challenge를 발급합니다.
+  // 대상 포털·게임계정에 묶고 플랫폼 context는 실제 인증 시점에 확정할 수 있는 일회용 challenge를 발급합니다.
   async issue(input: {
     legacyUserAccountId: string;
     purpose: AccountVerificationPurpose;
     targetPlayerId?: string;
     expectedDisplayName: string;
     platformCode: AccountPlatformCode;
-    contextType: AccountPlatformContextType;
-    externalContextKey: string;
-  }): Promise<AccountPlatformChallengeIssueResult> {
-    const identityScopeKey = deriveIdentityScopeKey({ ...input, externalUserKey: "challenge-not-bound-to-user" });
-    if (input.expectedDisplayName.trim() === "" || input.expectedDisplayName.length > 191 || input.externalContextKey.trim() === "" || input.externalContextKey.length > 191) {
+    contextType?: AccountPlatformContextType;
+    externalContextKey?: string;
+  }, callerTransaction?: DatabaseTransaction): Promise<AccountPlatformChallengeIssueResult> {
+    const hasContextType = input.contextType !== undefined;
+    const hasContextKey = input.externalContextKey !== undefined;
+    if (hasContextType !== hasContextKey) throw new ApplicationError("ACCOUNT_PLATFORM_CHALLENGE_INPUT_INVALID", "인증 context 정보가 올바르지 않습니다.", 422);
+    if (input.expectedDisplayName.trim() === "" || input.expectedDisplayName.length > 191
+      || (input.externalContextKey !== undefined && (input.externalContextKey.trim() === "" || input.externalContextKey.length > 191))) {
       throw new ApplicationError("ACCOUNT_PLATFORM_CHALLENGE_INPUT_INVALID", "인증 대상 정보가 올바르지 않습니다.", 422);
     }
+    const identityScopeKey = hasContextType
+      ? deriveIdentityScopeKey({ ...input, contextType: input.contextType!, externalContextKey: input.externalContextKey!, externalUserKey: "challenge-not-bound-to-user" })
+      : null;
     if (input.purpose === "LEGACY_GAME_ACCOUNT_LINK" && input.targetPlayerId === undefined) throw new ApplicationError("LEGACY_PLAYER_REQUIRED", "연결할 기존 게임계정을 선택해 주세요.", 422);
     if (input.purpose === "NEW_GAME_ACCOUNT" && input.targetPlayerId !== undefined) throw new ApplicationError("NEW_PLAYER_TARGET_FORBIDDEN", "신규 게임계정 인증에는 기존 player_id를 지정할 수 없습니다.", 422);
     const code = generateCode();
     const publicId = randomUUID();
-    const expiresAt = new Date(this.now().getTime() + CODE_MINUTES * 60_000);
-    await this.database.withTransaction(async (transaction) => {
+    const expiresAt = new Date(this.now().getTime() + USER_CODE_MINUTES * 60_000);
+    const persist = async (transaction: DatabaseTransaction) => {
       const account = (await transaction.query<Array<{ id: bigint; status: string }>>(
         "SELECT id,status FROM user_accounts WHERE id=? FOR UPDATE", [input.legacyUserAccountId]
       ))[0];
@@ -89,16 +106,18 @@ export class AccountPlatformChallengeService {
       if (input.purpose === "LEGACY_GAME_ACCOUNT_LINK") await this.assertLegacyTarget(transaction, input.targetPlayerId!, input.expectedDisplayName);
       await transaction.execute(
         `UPDATE user_verification_challenges SET status='superseded',updated_at=UTC_TIMESTAMP(3)
-         WHERE user_account_id=? AND platform_code=? AND context_type=? AND external_context_key=? AND status='pending'`,
-        [account.id, input.platformCode, input.contextType, input.externalContextKey]
+         WHERE user_account_id=? AND platform_code=? AND context_type <=> ? AND external_context_key <=> ? AND status='pending'`,
+        [account.id, input.platformCode, input.contextType ?? null, input.externalContextKey ?? null]
       );
       await transaction.execute(
         `INSERT INTO user_verification_challenges
           (public_id,user_account_id,target_player_id,expected_display_name,provider_code,platform_code,identity_scope_key,context_type,external_context_key,purpose_code,code_hint,code_hash,status,failed_attempt_count,expires_at,created_at,updated_at)
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'pending',0,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))`,
-        [publicId, account.id, input.targetPlayerId ?? null, input.expectedDisplayName, input.platformCode.toLowerCase(), input.platformCode, identityScopeKey, input.contextType, input.externalContextKey, input.purpose, code.slice(0, 4), hashAccountPlatformVerificationCode(code, this.pepper), expiresAt]
+        [publicId, account.id, input.targetPlayerId ?? null, input.expectedDisplayName, input.platformCode.toLowerCase(), input.platformCode, identityScopeKey, input.contextType ?? null, input.externalContextKey ?? null, input.purpose, code.slice(0, 4), hashAccountPlatformVerificationCode(code, this.pepper), expiresAt]
       );
-    });
+    };
+    if (callerTransaction === undefined) await this.database.withTransaction(persist);
+    else await persist(callerTransaction);
     return { challengeId: publicId, verificationCode: code, purpose: input.purpose, expiresAt: expiresAt.toISOString() };
   }
 
@@ -121,7 +140,8 @@ export class AccountPlatformChallengeService {
       const candidates = await transaction.query<AccountPlatformChallengeRow[]>(
         `SELECT id,public_id,user_account_id,target_player_id,expected_display_name,platform_code,identity_scope_key,context_type,external_context_key,purpose_code,code_hash,failed_attempt_count,status,
           expires_at<=UTC_TIMESTAMP(3) AS challenge_expired,consumed_request_key
-         FROM user_verification_challenges WHERE code_hint=? AND platform_code=? AND context_type=? AND external_context_key=?
+         FROM user_verification_challenges WHERE code_hint=? AND platform_code=?
+           AND ((context_type IS NULL AND external_context_key IS NULL) OR (context_type=? AND external_context_key=?))
            AND purpose_code IN ('NEW_GAME_ACCOUNT','LEGACY_GAME_ACCOUNT_LINK') ORDER BY created_at DESC FOR UPDATE`,
         [input.code.slice(0, 4).toUpperCase(), input.platformCode, input.contextType, input.externalContextKey]
       );
@@ -140,8 +160,17 @@ export class AccountPlatformChallengeService {
         await transaction.execute("UPDATE user_verification_challenges SET status='expired',updated_at=UTC_TIMESTAMP(3) WHERE id=? AND status='pending'", [challenge.id]);
         return failed(new ApplicationError("VERIFICATION_CODE_EXPIRED", "인증 코드가 만료됐습니다. 다시 발급해 주세요.", 409));
       }
-      if (challenge.identity_scope_key !== identityScopeKey) return failed(new ApplicationError("VERIFICATION_CONTEXT_MISMATCH", "인증 코드를 발급한 방·서버에서 인증해 주세요.", 409));
-      const repository = new MariaAccountPlatformRepository(createScopedDatabaseClient(transaction));
+      if (challenge.identity_scope_key !== null && challenge.identity_scope_key !== identityScopeKey) {
+        return failed(new ApplicationError("VERIFICATION_CONTEXT_MISMATCH", "인증 코드를 발급한 방·서버에서 인증해 주세요.", 409));
+      }
+      if (challenge.identity_scope_key === null) {
+        await transaction.execute(
+          `UPDATE user_verification_challenges SET identity_scope_key=?,context_type=?,external_context_key=?,updated_at=UTC_TIMESTAMP(3)
+           WHERE id=? AND identity_scope_key IS NULL AND context_type IS NULL AND external_context_key IS NULL`,
+          [identityScopeKey, input.contextType, input.externalContextKey, challenge.id]
+        );
+      }
+      const repository = new MariaAccountPlatformRepository(joinChallengeTransaction(transaction));
       const result = await new AccountPlatformService(repository).verifyGameAccount({
         requestKey: input.requestKey, legacyUserAccountId: challenge.user_account_id.toString(), purpose: challenge.purpose_code,
         expectedDisplayName: challenge.expected_display_name, observedDisplayName: input.observedDisplayName,

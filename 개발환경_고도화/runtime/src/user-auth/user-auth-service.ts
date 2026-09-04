@@ -1,9 +1,10 @@
-import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { argon2id, hash, verify } from "argon2";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
+import { AccountPlatformChallengeService, hashAccountPlatformVerificationCode } from "../account-platform/account-platform-challenge-service.js";
+import type { AccountVerificationPurpose } from "../account-platform/account-platform-service.js";
 import { ApplicationError } from "../shared/application-error.js";
 import {
-  USER_CODE_MINUTES,
   USER_LOGIN_LOCK_MINUTES,
   USER_LOGIN_MAX_FAILURES,
   USER_PENDING_HOURS,
@@ -13,8 +14,6 @@ import {
   validateUserPassword
 } from "./policy.js";
 
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
 export interface SignupResult {
   accountId: string;
   status: "pending_kakao_link";
@@ -23,6 +22,8 @@ export interface SignupResult {
   verificationCode: string;
   codeExpiresAt: string;
   pendingExpiresAt: string;
+  gameAccountPurpose: AccountVerificationPurpose;
+  legacyPlayerId: string | null;
 }
 
 export interface UserSessionResult {
@@ -54,17 +55,9 @@ function hashSecret(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-// 사람이 옮겨 적기 쉬운 8자리 인증 코드를 생성합니다.
-function generateVerificationCode(): string {
-  const bytes = randomBytes(8);
-  let code = "";
-  for (const byte of bytes) code += CODE_ALPHABET[byte % CODE_ALPHABET.length];
-  return code;
-}
-
 // DB 유출 시 짧은 인증 코드 원문을 복원하기 어렵도록 pepper HMAC을 생성합니다.
 export function hashVerificationCode(code: string, pepper: string): string {
-  return createHmac("sha256", pepper).update(code.toUpperCase()).digest("hex");
+  return hashAccountPlatformVerificationCode(code, pepper);
 }
 
 function isDuplicateKeyError(error: unknown): boolean {
@@ -92,28 +85,20 @@ async function cleanupExpiredPendingAccounts(
   }
 }
 
-// 기존 challenge를 만료시키고 새 KakaoTalk 인증 코드를 생성합니다.
-async function createChallenge(
+// 가입 목적을 보존한 채 실제 방 context는 카카오톡 인증 시점에 묶는 challenge를 생성합니다.
+async function createSignupChallenge(
+  database: DatabaseClient,
   transaction: DatabaseTransaction,
   accountId: bigint,
-  pepper: string
-): Promise<{ publicId: string; code: string; expiresAt: Date }> {
-  await transaction.execute(
-    `UPDATE user_verification_challenges SET status = 'superseded', updated_at = UTC_TIMESTAMP(3)
-     WHERE user_account_id = ? AND provider_code = 'kakao' AND purpose_code = 'initial_link' AND status = 'pending'`,
-    [accountId]
-  );
-  const code = generateVerificationCode();
-  const publicId = randomUUID();
-  const expiresAt = new Date(Date.now() + USER_CODE_MINUTES * 60_000);
-  await transaction.execute(
-    `INSERT INTO user_verification_challenges
-      (public_id, user_account_id, provider_code, purpose_code, code_hint, code_hash, status,
-       failed_attempt_count, expires_at, created_at, updated_at)
-     VALUES (?, ?, 'kakao', 'initial_link', ?, ?, 'pending', 0, ?, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
-    [publicId, accountId, code.slice(0, 4), hashVerificationCode(code, pepper), expiresAt]
-  );
-  return { publicId, code, expiresAt };
+  pepper: string,
+  expectedDisplayName: string,
+  purpose: AccountVerificationPurpose,
+  legacyPlayerId?: string
+) {
+  return new AccountPlatformChallengeService(database, pepper).issue({
+    legacyUserAccountId: accountId.toString(), purpose, expectedDisplayName, platformCode: "KAKAO",
+    ...(legacyPlayerId === undefined ? {} : { targetPlayerId: legacyPlayerId })
+  }, transaction);
 }
 
 export class UserAuthService {
@@ -143,10 +128,25 @@ export class UserAuthService {
     password: string;
     systemAccountName: string;
     acceptTerms: boolean;
+    gameAccountPurpose?: string;
+    legacyPlayerId?: string;
   }): Promise<SignupResult> {
     const loginId = validateLoginId(input.loginId);
     const password = validateUserPassword(input.password);
     const name = validateUserAccountName(input.systemAccountName);
+    const purposeValue = input.gameAccountPurpose ?? "NEW_GAME_ACCOUNT";
+    if (!(["NEW_GAME_ACCOUNT", "LEGACY_GAME_ACCOUNT_LINK"] as string[]).includes(purposeValue)) {
+      throw new ApplicationError("GAME_ACCOUNT_PURPOSE_INVALID", "게임계정 가입 유형을 확인해 주세요.", 422);
+    }
+    const purpose = purposeValue as AccountVerificationPurpose;
+    const legacyPlayerIdValue = input.legacyPlayerId?.trim();
+    const legacyPlayerId = legacyPlayerIdValue === "" ? undefined : legacyPlayerIdValue;
+    if (purpose === "LEGACY_GAME_ACCOUNT_LINK" && (legacyPlayerId === undefined || !/^[1-9]\d*$/.test(legacyPlayerId))) {
+      throw new ApplicationError("LEGACY_PLAYER_REQUIRED", "연결할 기존 player_id를 입력해 주세요.", 422);
+    }
+    if (purpose === "NEW_GAME_ACCOUNT" && legacyPlayerId !== undefined && legacyPlayerId !== "") {
+      throw new ApplicationError("NEW_PLAYER_TARGET_FORBIDDEN", "새 게임계정 가입에는 기존 player_id를 입력할 수 없습니다.", 422);
+    }
     if (!input.acceptTerms) {
       throw new ApplicationError("REQUIRED_CONSENT_MISSING", "이용약관에 동의해 주세요.", 422);
     }
@@ -154,11 +154,11 @@ export class UserAuthService {
     try {
       return await this.database.withTransaction(async (transaction) => {
         await cleanupExpiredPendingAccounts(transaction, loginId, name.displayName);
-        const existing = await transaction.query<Array<{ id: bigint }>>(
-          `SELECT id FROM user_accounts WHERE login_id = ? OR system_account_name = ?
-           UNION ALL SELECT player_id AS id FROM player_profiles WHERE current_display_name = ? LIMIT 1`,
-          [loginId, name.displayName, name.displayName]
-        );
+        const existing = await transaction.query<Array<{ id: bigint }>>(purpose === "NEW_GAME_ACCOUNT"
+          ? `SELECT id FROM user_accounts WHERE login_id = ? OR system_account_name = ?
+             UNION ALL SELECT player_id AS id FROM player_profiles WHERE current_display_name = ? LIMIT 1`
+          : "SELECT id FROM user_accounts WHERE login_id = ? OR system_account_name = ? LIMIT 1",
+        purpose === "NEW_GAME_ACCOUNT" ? [loginId, name.displayName, name.displayName] : [loginId, name.displayName]);
         if (existing[0] !== undefined) {
           throw new ApplicationError("ACCOUNT_ALREADY_EXISTS", "이미 사용 중이거나 가입을 진행 중인 계정 정보입니다.", 409);
         }
@@ -173,12 +173,13 @@ export class UserAuthService {
            VALUES (?, 'terms_of_service', ?, UTC_TIMESTAMP(3))`,
           [account.insertId, USER_TERMS_VERSION]
         );
-        const challenge = await createChallenge(transaction, account.insertId, this.verificationPepper);
+        const challenge = await createSignupChallenge(this.database, transaction, account.insertId, this.verificationPepper, name.displayName, purpose, legacyPlayerId);
         return {
           accountId: account.insertId.toString(), status: "pending_kakao_link",
-          systemAccountName: name.displayName, challengeId: challenge.publicId,
-          verificationCode: challenge.code, codeExpiresAt: challenge.expiresAt.toISOString(),
-          pendingExpiresAt: new Date(Date.now() + USER_PENDING_HOURS * 3_600_000).toISOString()
+          systemAccountName: name.displayName, challengeId: challenge.challengeId,
+          verificationCode: challenge.verificationCode, codeExpiresAt: challenge.expiresAt,
+          pendingExpiresAt: new Date(Date.now() + USER_PENDING_HOURS * 3_600_000).toISOString(),
+          gameAccountPurpose: purpose, legacyPlayerId: legacyPlayerId ?? null
         };
       });
     } catch (error) {
@@ -214,12 +215,24 @@ export class UserAuthService {
       throw new ApplicationError("SIGNUP_NOT_PENDING", "KakaoTalk 인증을 재발급할 수 없는 계정입니다.", 409);
     }
     return this.database.withTransaction(async (transaction) => {
-      const challenge = await createChallenge(transaction, account.id, this.verificationPepper);
+      const previous = (await transaction.query<Array<{ purpose_code: AccountVerificationPurpose; target_player_id: bigint | null }>>(
+        `SELECT purpose_code,target_player_id FROM user_verification_challenges
+         WHERE user_account_id=? AND purpose_code IN ('NEW_GAME_ACCOUNT','LEGACY_GAME_ACCOUNT_LINK')
+         ORDER BY created_at DESC LIMIT 1 FOR UPDATE`, [account.id]
+      ))[0];
+      const purpose = previous?.purpose_code ?? "NEW_GAME_ACCOUNT";
+      const legacyPlayerId = previous?.target_player_id?.toString();
+      await transaction.execute(
+        `UPDATE user_verification_challenges SET status='superseded',updated_at=UTC_TIMESTAMP(3)
+         WHERE user_account_id=? AND provider_code='kakao' AND purpose_code='initial_link' AND status='pending'`, [account.id]
+      );
+      const challenge = await createSignupChallenge(this.database, transaction, account.id, this.verificationPepper, account.system_account_name, purpose, legacyPlayerId);
       return {
         accountId: account.id.toString(), status: "pending_kakao_link",
-        systemAccountName: account.system_account_name, challengeId: challenge.publicId,
-        verificationCode: challenge.code, codeExpiresAt: challenge.expiresAt.toISOString(),
-        pendingExpiresAt: new Date(Date.now() + USER_PENDING_HOURS * 3_600_000).toISOString()
+        systemAccountName: account.system_account_name, challengeId: challenge.challengeId,
+        verificationCode: challenge.verificationCode, codeExpiresAt: challenge.expiresAt,
+        pendingExpiresAt: new Date(Date.now() + USER_PENDING_HOURS * 3_600_000).toISOString(),
+        gameAccountPurpose: purpose, legacyPlayerId: legacyPlayerId ?? null
       };
     });
   }

@@ -18,12 +18,16 @@ describe("site signup web shell", () => {
     assert.equal(page.headers["x-frame-options"], "DENY");
     assert.match(page.body, /name="loginId"/);
     assert.match(page.body, /name="acceptTerms"/);
+    assert.match(page.body, /name="gameAccountPurpose" value="NEW_GAME_ACCOUNT"/);
+    assert.match(page.body, /name="gameAccountPurpose" value="LEGACY_GAME_ACCOUNT_LINK"/);
+    assert.match(page.body, /name="legacyPlayerId" inputmode="numeric"/);
     assert.match(page.body, /<h2 tabindex="-1">카카오톡에서 인증해 주세요<\/h2>/);
     assert.doesNotMatch(page.body, /<script[^>]*>[^<]+<\/script>/);
     assert.match(styles.body, /@media \(min-width: 820px\)/);
     assert.match(styles.body, /prefers-reduced-motion/);
     assert.match(client.body, /\/api\/v1\/verification-challenges/);
     assert.match(client.body, /setInterval\(checkStatus, 5000\)/);
+    assert.match(client.body, /legacyPlayerInput\.required = Boolean\(legacy\)/);
     assert.doesNotThrow(() => new Function(SITE_SIGNUP_CLIENT));
     await app.close();
   });

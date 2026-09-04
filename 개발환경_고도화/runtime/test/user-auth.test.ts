@@ -29,8 +29,15 @@ function createScriptedDatabase(queryResults: unknown[]) {
   const database: DatabaseClient = {
     ping: async () => undefined,
     verifyRollback: async () => true,
-    query: async () => { throw new Error("Unexpected non-transactional query."); },
-    execute: async () => { throw new Error("Unexpected non-transactional execute."); },
+    query: async <T>(statement: string): Promise<T> => {
+      sql.push(statement);
+      if (queries.length === 0) throw new Error(`Unexpected query: ${statement}`);
+      return queries.shift() as T;
+    },
+    execute: async (statement: string): Promise<DatabaseWriteResult> => {
+      sql.push(statement);
+      return { affectedRows: 1n, insertId: 0n };
+    },
     withTransaction: async <T>(work: (value: DatabaseTransaction) => Promise<T>) => work(transaction),
     close: async () => undefined
   };
@@ -57,21 +64,68 @@ describe("site user authentication", () => {
   });
 
   it("creates a pending site account, consent history, and one-time code without a player", async () => {
-    const scripted = createScriptedDatabase([[], []]);
+    const scripted = createScriptedDatabase([[], [], [{ id: 1n, status: "pending_kakao_link" }]]);
     const result = await new UserAuthService(scripted.database, "test-verification-pepper").signup({
       loginId: "hoibot01",
       password: "password1",
       systemAccountName: "호이 남",
-      acceptTerms: true
+      acceptTerms: true,
+      legacyPlayerId: ""
     });
 
     assert.equal(result.status, "pending_kakao_link");
     assert.equal(result.systemAccountName, "호이 남");
+    assert.equal(result.gameAccountPurpose, "NEW_GAME_ACCOUNT");
+    assert.equal(result.legacyPlayerId, null);
     assert.match(result.verificationCode, /^[A-Z2-9]{8}$/);
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_accounts")));
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_terms_acceptances")));
     assert.ok(scripted.sql.some((statement) => statement.includes("INSERT INTO user_verification_challenges")));
     assert.equal(scripted.sql.some((statement) => statement.includes("INSERT INTO players")), false);
+  });
+
+  it("issues a legacy-link challenge without creating a replacement player", async () => {
+    const scripted = createScriptedDatabase([
+      [], [], [{ id: 2n, status: "pending_kakao_link" }],
+      [{ status: "active", current_display_name: "기존 남" }]
+    ]);
+    const result = await new UserAuthService(scripted.database, "test-verification-pepper").signup({
+      loginId: "hoibot02", password: "password2", systemAccountName: "기존 남", acceptTerms: true,
+      gameAccountPurpose: "LEGACY_GAME_ACCOUNT_LINK", legacyPlayerId: "42"
+    });
+    assert.equal(result.gameAccountPurpose, "LEGACY_GAME_ACCOUNT_LINK");
+    assert.equal(result.legacyPlayerId, "42");
+    assert.equal(scripted.sql.some((statement) => statement.includes("INSERT INTO players")), false);
+    assert.ok(scripted.sql.some((statement) => statement.includes("FROM players player JOIN player_profiles")));
+  });
+
+  it("rejects a legacy signup without a numeric player_id before database work", async () => {
+    const scripted = createScriptedDatabase([]);
+    await assert.rejects(() => new UserAuthService(scripted.database, "test-verification-pepper").signup({
+      loginId: "hoibot03", password: "password3", systemAccountName: "기존 남", acceptTerms: true,
+      gameAccountPurpose: "LEGACY_GAME_ACCOUNT_LINK", legacyPlayerId: "not-a-player"
+    }), /player_id/);
+    assert.equal(scripted.sql.length, 0);
+  });
+
+  it("preserves the legacy player target when a pending signup code is reissued", async () => {
+    const passwordHash = await hash("password4", { type: argon2id });
+    const scripted = createScriptedDatabase([[
+      {
+        id: 4n, player_id: null, login_id: "hoibot04", password_hash: passwordHash,
+        system_account_name: "기존 남", status: "pending_kakao_link", pending_expired: 0, account_locked: 0
+      }
+    ], [
+      { purpose_code: "LEGACY_GAME_ACCOUNT_LINK", target_player_id: 42n }
+    ], [
+      { id: 4n, status: "pending_kakao_link" }
+    ], [
+      { status: "active", current_display_name: "기존 남" }
+    ]]);
+    const result = await new UserAuthService(scripted.database, "test-verification-pepper").reissueSignupCode("hoibot04", "password4");
+    assert.equal(result.gameAccountPurpose, "LEGACY_GAME_ACCOUNT_LINK");
+    assert.equal(result.legacyPlayerId, "42");
+    assert.ok(scripted.sql.some((statement) => statement.includes("purpose_code='initial_link'")));
   });
 
   it("rejects signup before database work when required consent is missing", async () => {
@@ -131,10 +185,14 @@ describe("site user authentication", () => {
     const pepper = "test-verification-pepper";
     const code = "ABCD2345";
     const scripted = createScriptedDatabase([[
+      { code_hash: hashVerificationCode(code, pepper), purpose_code: "NEW_GAME_ACCOUNT" }
+    ], [
       {
-        id: 1n, user_account_id: 2n, code_hash: hashVerificationCode(code, pepper),
-        failed_attempt_count: 0, challenge_expired: 0, account_status: "pending_kakao_link",
-        pending_expired: 0, system_account_name: "테스 남"
+        id: 1n, public_id: "challenge", user_account_id: 2n, target_player_id: null,
+        expected_display_name: "테스 남", platform_code: "KAKAO", identity_scope_key: null,
+        context_type: null, external_context_key: null, purpose_code: "NEW_GAME_ACCOUNT",
+        code_hash: hashVerificationCode(code, pepper), failed_attempt_count: 0,
+        status: "pending", challenge_expired: 0, consumed_request_key: null
       }
     ]]);
     await assert.rejects(

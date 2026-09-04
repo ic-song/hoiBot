@@ -29,6 +29,16 @@ function scriptedDatabase(queryResults: unknown[]) {
 }
 
 describe("WBS746 context-bound verification challenges", () => {
+  it("issues an unbound signup challenge so the Kakao room can be fixed at verification time", async () => {
+    const scripted = scriptedDatabase([[{ id: 7n, status: "pending_kakao_link" }]]);
+    const service = new AccountPlatformChallengeService(scripted.database, "test-account-platform-pepper", () => new Date("2026-09-04T07:00:00.000Z"));
+    const result = await service.issue({ legacyUserAccountId: "7", purpose: "NEW_GAME_ACCOUNT", expectedDisplayName: "신규 남", platformCode: "KAKAO" });
+    const insert = scripted.statements.find((entry) => entry.sql.includes("INSERT INTO user_verification_challenges"))!;
+    assert.deepEqual(insert.values.slice(6, 9), [null, null, null]);
+    assert.equal(result.purpose, "NEW_GAME_ACCOUNT");
+    assert.equal(result.expiresAt, "2026-09-04T07:30:00.000Z");
+  });
+
   it("issues a hashed legacy challenge bound to the preserved target player and Kakao room", async () => {
     const scripted = scriptedDatabase([[{ id: 7n, status: "active" }], [{ status: "active", current_display_name: "기존 남" }]]);
     const service = new AccountPlatformChallengeService(scripted.database, "test-account-platform-pepper", () => new Date("2026-09-04T07:00:00.000Z"));
@@ -50,6 +60,24 @@ describe("WBS746 context-bound verification challenges", () => {
     }]]);
     await assert.rejects(() => new AccountPlatformChallengeService(scripted.database, pepper).verify({ requestKey: "event-1", code, ...{ platformCode: "KAKAO", contextType: "ROOM", externalContextKey: "room-a", externalUserKey: "user-a" } as const, observedDisplayName: "신규 남", actor: "개발자" }), /만료/);
     assert.ok(scripted.statements.some((entry) => entry.sql.includes("SET status='expired'")));
+  });
+
+  it("binds an unbound challenge to the first verified Kakao room before account linking", async () => {
+    const code = "ABCD2345"; const pepper = "test-account-platform-pepper";
+    const database = scriptedDatabase([[
+      {
+        id: 1n, public_id: "challenge", user_account_id: 7n, target_player_id: null, expected_display_name: "기대 남",
+        platform_code: "KAKAO", identity_scope_key: null, context_type: null, external_context_key: null,
+        purpose_code: "NEW_GAME_ACCOUNT", code_hash: hashAccountPlatformVerificationCode(code, pepper), failed_attempt_count: 0,
+        status: "pending", challenge_expired: 0, consumed_request_key: null
+      }
+    ]]);
+    await assert.rejects(() => new AccountPlatformChallengeService(database.database, pepper).verify({
+      requestKey: "event-1", code, platformCode: "KAKAO", contextType: "ROOM", externalContextKey: "room-first",
+      externalUserKey: "user-a", observedDisplayName: "다름 남", actor: "사용자"
+    }), /닉네임/);
+    const binding = database.statements.find((entry) => entry.sql.includes("SET identity_scope_key=?"))!;
+    assert.deepEqual(binding.values.slice(0, 3), ["room-first", "ROOM", "room-first"]);
   });
 
   it("increments only the matching-hint pending challenge for an invalid code", async () => {
