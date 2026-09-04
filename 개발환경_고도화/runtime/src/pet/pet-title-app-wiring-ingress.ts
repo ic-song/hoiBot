@@ -2,11 +2,12 @@ import { createHash } from "node:crypto";
 
 import type { PlayerContext, PlayerContextPort } from "../account-platform/player-context-provider.js";
 import type { CommandDispatcher, CommandDispatchDecision } from "../dispatch/command-dispatcher.js";
-import { executeAppWiringEntrypoint, executeAppWiringReadOnlyReplyEntrypoint } from "../dispatch/app-wiring-entrypoint-runner.js";
+import { executeAppWiringEntrypoint, executeAppWiringMutationReplyEntrypoint, executeAppWiringReadOnlyReplyEntrypoint } from "../dispatch/app-wiring-entrypoint-runner.js";
 import type { AppWiringMutationParticipant, AppWiringReadParticipant, MariaAppWiringOperationProvider } from "../dispatch/app-wiring-operation-provider.js";
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { PetTitleCanonicalReadProvider } from "./pet-title-canonical-read-provider.js";
+import { PetTitleCanonicalMutationProvider } from "./pet-title-canonical-mutation-provider.js";
 import { formatPetTitleList, normalizePetTitleDispatchMessage, parsePetTitleCommand } from "./pet-title-lifecycle-service.js";
 
 export interface PetTitleReadAuthorityPort {
@@ -120,12 +121,16 @@ export class PetTitleAppWiringIngress {
     private readonly provider: MariaAppWiringOperationProvider,
     private readonly dispatcher: Pick<CommandDispatcher, "resolveReadOnly">,
     private readonly evaluator: Pick<PetTitleShadowEvaluator, "preview">,
+    private readonly contexts: PlayerContextPort,
+    private readonly mutations: Pick<PetTitleCanonicalMutationProvider, "create">,
   ) {}
 
   async handle(event: NormalizedIrisEvent): Promise<PetTitleAppWiringIngressResult> {
     const command = parsePetTitleCommand(event.message);
-    if ((command?.kind !== "list_self" && command?.kind !== "list_target" && command?.kind !== "select")
+    if ((command?.kind !== "list_self" && command?.kind !== "list_target" && command?.kind !== "select" && command?.kind !== "create")
       || event.direction !== "incoming" || event.userId === undefined || event.channelId === undefined) return { status: "ignored" };
+    // 레거시 String.length(UTF-16 code unit) 검증과 오류 문구를 그대로 유지합니다.
+    if(command.kind==="create"&&(command.titleName===""||command.titleName.length>20))return {status:"legacy_fallback"};
     const decision = await this.dispatcher.resolveReadOnly({
       eventId: event.eventId,
       message: normalizePetTitleDispatchMessage(event.message!),
@@ -135,7 +140,11 @@ export class PetTitleAppWiringIngress {
     if (decision.route === "LEGACY_FALLBACK") return { status: "legacy_fallback" };
     if(command.kind==="list_target"&&decision.route==="MODERN")return {status:"legacy_fallback"};
     if(command.kind==="select"&&decision.route==="MODERN")return {status:"legacy_fallback"};
-    const route = { ...decision, effectMode: "READ_ONLY" as const } satisfies CommandDispatchDecision & { readonly effectMode: "READ_ONLY" };
+    // CREATE SHADOW는 정식 아이템과 타이틀을 변경하지 않고 기존 명령만 실행합니다.
+    if(command.kind==="create"&&decision.route==="SHADOW")return {status:"legacy_fallback"};
+    const route = command.kind==="create"
+      ? { ...decision, effectMode: "MUTATION" as const } satisfies CommandDispatchDecision & { readonly effectMode: "MUTATION" }
+      : { ...decision, effectMode: "READ_ONLY" as const } satisfies CommandDispatchDecision & { readonly effectMode: "READ_ONLY" };
     const claim = {
       entrypointKind: "IRIS" as const,
       externalRequestId: externalRequestId(event.eventId),
@@ -145,11 +154,54 @@ export class PetTitleAppWiringIngress {
         message: event.message!,
         targetKey: command.kind === "list_target" ? command.targetName : null,
         selectedIndex: command.kind === "select" ? command.index : null,
+        titleName: command.kind === "create" ? command.titleName : null,
         trustedDisplayName: event.displayNameTrust === "trusted",
         userId: event.userId,
       },
       actor: "pet_title_app_wiring",
     };
+    if(command.kind==="create"&&decision.route==="MODERN"){
+      const persisted=await executeAppWiringMutationReplyEntrypoint<{readonly status:"modern";readonly replayed:boolean;readonly resultFingerprint:string}>(this.provider,{
+        claim,
+        resolveRoute:()=>route,
+        handler:async(database,activeClaim)=>{
+          // /계정변경과 같은 selection 행을 먼저 잠가 이 명령 전체가 하나의 활성 계정만 사용하게 합니다.
+          await database.query(
+            `SELECT selection.active_player_selection_id
+               FROM account_platform_identities platform_identity
+               JOIN account_platform_context_memberships membership
+                 ON membership.platform_identity_id=platform_identity.platform_identity_id AND membership.membership_status='ACTIVE'
+               JOIN account_platform_contexts context_row
+                 ON context_row.platform_context_id=membership.platform_context_id AND context_row.context_status='ACTIVE'
+               JOIN account_platform_active_player_selections selection
+                 ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.selection_status='ACTIVE'
+              WHERE platform_identity.platform_code='KAKAO' AND platform_identity.identity_scope_key=?
+                AND platform_identity.external_user_key=? AND platform_identity.identity_status='ACTIVE'
+                AND context_row.context_type='ROOM' AND context_row.external_context_key=? FOR UPDATE`,
+            [event.channelId!,event.userId!,event.channelId!],
+          );
+          const actor=await this.contexts.resolveSelf(database,{
+            identityProviderCode:"kakao",externalUserId:event.userId!,externalContextId:event.channelId!,
+          });
+          const result=await this.mutations.create(database,activeClaim,{
+            actor:"pet_title_app_wiring",playerId:actor.canonicalPlayerId,titleName:command.titleName,
+          });
+          const data=result.outcomeCode==="INSUFFICIENT_TICKET"
+            ?"❌ 펫타이틀권🦊(/펫타이틀이름) 아이템이 부족합니다."
+            :`[${actor.rankEmoji??""}${actor.displayName}] 님이 새로운 펫 타이틀을 생성완료!\n\n🎉 생성된 타이틀: [${command.titleName}]\n\n사용 아이템:\n 펫타이틀권🦊(/펫타이틀이름) -1 소모`;
+          return {
+            value:{status:"modern" as const,replayed:false,resultFingerprint:result.resultFingerprint},
+            reply:{eventId:event.eventId,commandCode:"PET_TITLE_NAME_CREATE",destinationId:event.channelId!,data},
+            receipt:{status:"REPLY_QUEUED",resultFingerprint:result.resultFingerprint},
+            typedReceipt:{receiptKind:"PET_TITLE",petTitleOperationId:result.operationId,resultFingerprint:result.resultFingerprint},
+          };
+        },
+        replayCompleted:async(stored)=>({status:"modern",replayed:true,resultFingerprint:stored.result?.resultFingerprint??""}),
+        replayFailed:async()=>{throw new Error("PET_TITLE_APP_WIRING_PREVIOUSLY_FAILED");},
+        errorCode:(error)=>error instanceof ApplicationError?error.code:"PET_TITLE_CREATE_FAILED",
+      });
+      return {...persisted.value,reply:persisted.reply};
+    }
     if(decision.route==="MODERN"){
       const persisted=await executeAppWiringReadOnlyReplyEntrypoint<{readonly status:"modern";readonly replayed:boolean;readonly resultFingerprint:string}>(this.provider,{
         claim,

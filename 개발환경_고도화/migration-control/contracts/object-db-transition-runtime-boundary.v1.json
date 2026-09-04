@@ -245,7 +245,7 @@
   "runtimeAdoptionAudit": {
     "helper": "개발환경_고도화/runtime/src/data-migration/object-db-runtime-adoption-audit.ts:auditObjectDbRuntimeAdoption",
     "reviewedSourceHashes": {
-      "appSourceSha256": "43a8f867cb132321e8e7f80807fed96a746bb648efd7d34354a90c9c7f7998ce",
+      "appSourceSha256": "9e8aa2d89ff9804e99e679d807c96664efa59ff8ea803f22130c2512db30ec72",
       "petExploreIngressSourceSha256": "d843190731458ce30f48a437d8930f99a5baeb86055df9f019a15f4518780262",
       "petExploreEventControlProviderSourceSha256": "c85d46d3bb4d7361837c6736e1e406025f7dd59af933c26ec9ef253374840c24",
       "appWiringOperationProviderSourceSha256": "98105a7e913385d82c5e4011c40ba3844ab43f162a71939b35113b2bdd0deed4",

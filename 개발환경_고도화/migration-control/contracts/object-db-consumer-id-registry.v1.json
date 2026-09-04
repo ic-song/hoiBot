@@ -5501,6 +5501,11 @@
       "state": "ACTIVE"
     },
     {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts\",\"create\",\"SQL_METHOD:create\"]",
+      "consumerId": "sql-repository-d6583f3ce352064a",
+      "state": "ACTIVE"
+    },
+    {
       "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/account-platform/player-context-provider.ts\",\"resolveUniqueLegacyDisplayTarget\",\"SQL_METHOD:resolveUniqueLegacyDisplayTarget\"]",
       "consumerId": "sql-repository-261eb97022941f77",
       "state": "ACTIVE"

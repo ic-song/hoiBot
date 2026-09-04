@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { AppWiringClaim, AppWiringReadParticipant, MariaAppWiringOperationProvider } from "../src/dispatch/app-wiring-operation-provider.js";
+import type { AppWiringClaim, AppWiringMutationParticipant, AppWiringReadParticipant, MariaAppWiringOperationProvider } from "../src/dispatch/app-wiring-operation-provider.js";
 import type { NormalizedIrisEvent } from "../src/integration/iris-normalizer.js";
 import type { PlayerContext, PlayerContextPort } from "../src/account-platform/player-context-provider.js";
 import {
@@ -117,17 +117,28 @@ describe("PET-TITLE app-wiring shadow boundary", () => {
 
 function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false){
   let previewCalls=0;
-  const claim:AppWiringClaim={appWiringOperationId:"claim001",requestIdentityFingerprint:"a".repeat(64),requestNamespace:"hoibot:dev:hoi_bot",entrypointKind:"IRIS",externalRequestId:"pet-title-1",requestKey:"IRIS:pet-title-1",payloadFingerprint:"b".repeat(64),route,effectMode:"READ_ONLY",reasonCode:route==="REJECT"?"AUTH_SCOPE_NOT_SATISFIED":"CANARY",handlerKey:"pet_title_lifecycle",claimState:replay?"COMPLETED":"CLAIMED",...(replay?{result:{status:"REPLY_QUEUED",referenceId:"21",resultFingerprint:"c".repeat(64)}}:{})};
+  let createCalls=0;
+  const baseClaim:AppWiringClaim={appWiringOperationId:"claim001",requestIdentityFingerprint:"a".repeat(64),requestNamespace:"hoibot:dev:hoi_bot",entrypointKind:"IRIS",externalRequestId:"pet-title-1",requestKey:"IRIS:pet-title-1",payloadFingerprint:"b".repeat(64),route,effectMode:"READ_ONLY",reasonCode:route==="REJECT"?"AUTH_SCOPE_NOT_SATISFIED":"CANARY",handlerKey:"pet_title_lifecycle",claimState:replay?"COMPLETED":"CLAIMED",...(replay?{result:{status:"REPLY_QUEUED",referenceId:"petop001",resultFingerprint:"c".repeat(64)}}:{})};
   const provider={
-    prepare:async()=>replay?{claim,replayed:true as const}:{claim,replayed:false as const},
-    runReadOnlyReply:async(_prepared:unknown,handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database,claim);return {value:outcome.value,reply:{outboxId:"21",room:outcome.reply.destinationId,data:outcome.reply.data}};},
-    runReadOnly:async(_prepared:unknown,handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(database,claim)).value,
-    runReject:async(_prepared:unknown,handler:(claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(claim)).value,
+    prepare:async(_input:unknown,resolveRoute:()=>Promise<{effectMode?:"READ_ONLY"|"MUTATION"}>|{effectMode?:"READ_ONLY"|"MUTATION"})=>{const decision=await resolveRoute();const claim={...baseClaim,effectMode:decision.effectMode??"READ_ONLY"} as AppWiringClaim;return replay?{claim,replayed:true as const}:{claim,replayed:false as const};},
+    runReadOnlyReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database,prepared.claim);return {value:outcome.value,reply:{outboxId:"21",room:outcome.reply.destinationId,data:outcome.reply.data}};},
+    runMutationReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return {value:outcome.value,reply:{outboxId:"22",room:outcome.reply.destinationId,data:outcome.reply.data}};},
+    runReadOnly:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(database,prepared.claim)).value,
+    runReject:async(prepared:{claim:AppWiringClaim},handler:(claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(prepared.claim)).value,
     replayReadOnlyReply:async()=>({outboxId:"21",room:"room-1",data:"목록"}),
+    replayMutationReply:async()=>({outboxId:"22",room:"room-1",data:"저장된 생성 응답"}),
     fail:async()=>{},
   } as unknown as MariaAppWiringOperationProvider;
-  const ingress=new PetTitleAppWiringIngress(provider,{resolveReadOnly:async()=>({route,effectMode:"READ_ONLY",reasonCode:claim.reasonCode,handlerKey:"pet_title_lifecycle"})},{preview:async()=>{previewCalls+=1;return {authorized:true,resultFingerprint:"c".repeat(64),canonicalPlayerId:"player01",reply:"목록"};}});
-  return {ingress,previewCalls:()=>previewCalls};
+  const ingress=new PetTitleAppWiringIngress(
+    provider,
+    {resolveReadOnly:async()=>({route,reasonCode:baseClaim.reasonCode,handlerKey:"pet_title_lifecycle"})},
+    {preview:async()=>{previewCalls+=1;return {authorized:true,resultFingerprint:"c".repeat(64),canonicalPlayerId:"player01",reply:"목록"};}},
+    {resolveSelf:async()=>actor,resolveUniqueLegacyDisplayTarget:async()=>actor},
+    {create:async(_database,_claim,input)=>{createCalls+=1;return input.titleName==="부족"
+      ?{operationId:"petop001",operationType:"CREATE",outcomeCode:"INSUFFICIENT_TICKET",titleName:input.titleName,remainingTicketQuantity:0n,resultFingerprint:"c".repeat(64),replayedDomainState:false}
+      :{operationId:"petop001",operationType:"CREATE",outcomeCode:"CREATED",ownedPetTitleId:"petown01",titleName:input.titleName,remainingTicketQuantity:1n,resultFingerprint:"c".repeat(64),replayedDomainState:false};}},
+  );
+  return {ingress,previewCalls:()=>previewCalls,createCalls:()=>createCalls};
 }
 
 describe("PET-TITLE app-wiring ingress routes",()=>{
@@ -162,5 +173,36 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     const rejected=ingressFor("REJECT");
     assert.deepEqual(await rejected.ingress.handle(event("/펫타이틀목록")),{status:"rejected",replayed:false,reasonCode:"AUTH_SCOPE_NOT_SATISFIED"});
     assert.equal(rejected.previewCalls(),0);
+  });
+
+  it("creates a title through the atomic MODERN mutation reply boundary",async()=>{
+    const fixture=ingressFor("MODERN");
+    const result=await fixture.ingress.handle(event("/펫타이틀이름 멋진 파트너"));
+    assert.equal(result.status,"modern");
+    if(result.status!=="modern")throw new Error("modern result required");
+    assert.equal(result.reply.outboxId,"22");
+    assert.equal(result.reply.data,"[👑호이] 님이 새로운 펫 타이틀을 생성완료!\n\n🎉 생성된 타이틀: [멋진 파트너]\n\n사용 아이템:\n 펫타이틀권🦊(/펫타이틀이름) -1 소모");
+    assert.equal(fixture.createCalls(),1);
+  });
+
+  it("preserves the exact shortage reply and replays without another title creation",async()=>{
+    const shortage=ingressFor("MODERN");
+    const result=await shortage.ingress.handle(event("/펫타이틀이름 부족"));
+    assert.equal(result.status,"modern");
+    if(result.status!=="modern")throw new Error("modern result required");
+    assert.equal(result.reply.data,"❌ 펫타이틀권🦊(/펫타이틀이름) 아이템이 부족합니다.");
+    assert.equal(shortage.createCalls(),1);
+    const replay=ingressFor("MODERN",true);
+    assert.deepEqual(await replay.ingress.handle(event("/펫타이틀이름 멋진 파트너")),{status:"modern",replayed:true,resultFingerprint:"c".repeat(64),reply:{outboxId:"22",room:"room-1",data:"저장된 생성 응답"}});
+    assert.equal(replay.createCalls(),0);
+  });
+
+  it("leaves SHADOW and overlength create requests on the exact legacy path",async()=>{
+    const shadow=ingressFor("SHADOW");
+    assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀이름 새 타이틀")),{status:"legacy_fallback"});
+    assert.equal(shadow.createCalls(),0);
+    const modern=ingressFor("MODERN");
+    assert.deepEqual(await modern.ingress.handle(event(`/펫타이틀이름 ${"가".repeat(21)}`)),{status:"legacy_fallback"});
+    assert.equal(modern.createCalls(),0);
   });
 });

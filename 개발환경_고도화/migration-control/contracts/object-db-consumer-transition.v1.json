@@ -43,7 +43,7 @@
       "개발환경_고도화/runtime/src/database.ts": "a6f887055b65d110b23fcd4cc563861feb0b56295849a25ffed3cf1b2c55a7c0",
       "개발환경_고도화/runtime/src/config.ts": "3b49c38e39905ffa4078c335d50afa7c49ad25cc15471a29068db699f185a1a0",
       "개발환경_고도화/runtime/src/server.ts": "517484b4d5b4945b676d7dc437908502163fdf4d70475ac3260eb03239bb8756",
-      "개발환경_고도화/runtime/src/app.ts": "43a8f867cb132321e8e7f80807fed96a746bb648efd7d34354a90c9c7f7998ce",
+      "개발환경_고도화/runtime/src/app.ts": "9e8aa2d89ff9804e99e679d807c96664efa59ff8ea803f22130c2512db30ec72",
       "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts": "c39d43817e7cdd430aeb8d30eca2c4aee40d0b8803e3290f941bfa908bd53f07",
       "개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts": "98105a7e913385d82c5e4011c40ba3844ab43f162a71939b35113b2bdd0deed4",
       "개발환경_고도화/runtime/src/dispatch/app-wiring-entrypoint-runner.ts": "9085afdf67a174d42f59df8a594bcd20567e71aee04a911803ad52b5e0a9d5e9",
@@ -54,6 +54,8 @@
       "개발환경_고도화/runtime/src/admin/pet-data-compare-app-wiring-ingress.ts": "10343fe9ee4f83b38090a861073a22b0a111758b10100d28847b09db260762cd",
       "개발환경_고도화/runtime/src/admin/pet-data-compare-shadow-snapshot-provider.ts": "51f0d2d4be3f68d6dfef1e0e7573cc564defa8637f74996e90e32162534b5b06",
       "개발환경_고도화/runtime/src/data-migration/object-db-runtime-adoption-audit.ts": "b7bb3ba36a15d74ad95458ca0c2c4530ec975643c445f055f38779abb8fe060e",
+      "개발환경_고도화/runtime/src/pet/pet-title-app-wiring-ingress.ts": "8a21794c8bfd9dc06a7f4da23264c5c341fbcf38ddd89bacb43b53468cbbc69f",
+      "개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts": "b72e4c898ccc5c4d3968c9a64115be06ea2ff82ab6c8aa64052c37c95c3c2c85",
       "개발환경_고도화/runtime/migrations/466_object_db_transition_recovery_receipt_links.sql": "73cf9ab51392ed0ed25c8cae32ae0a2d823bd7cd4a89a3355c35ae7823bb2609",
       "개발환경_고도화/runtime/migrations/470_pet_explore_event_control_app_wiring.sql": "2ab904b3521cbf525f5165ee5d81b02da6f669a39fbc471aee84f3be01917ffa",
       "개발환경_고도화/runtime/migrations/rollback/470_pet_explore_event_control_app_wiring.rollback.sql": "9dfc1104abf459c4e9a2a903bdb1fff63d4b134a0c7dd3e4a0386fb4cfdb47e8"
@@ -73,6 +75,8 @@
       { "file": "개발환경_고도화/runtime/src/admin/pet-data-compare-app-wiring-ingress.ts", "terms": ["PetDataCompareAppWiringIngress", "executeAppWiringEntrypoint", "pet_data_compare_app_wiring", "LEGACY_FALLBACK", "MODERN"] },
       { "file": "개발환경_고도화/runtime/src/admin/pet-data-compare-shadow-snapshot-provider.ts", "terms": ["MariaPetDataCompareShadowEvaluator", "AppWiringReadParticipant", "canonical_players", "canonical_owned_pet_instances"] },
       { "file": "개발환경_고도화/runtime/src/data-migration/object-db-runtime-adoption-audit.ts", "terms": ["auditObjectDbRuntimeAdoption", "productionSourceCallCount", "EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE"] },
+      { "file": "개발환경_고도화/runtime/src/pet/pet-title-app-wiring-ingress.ts", "terms": ["executeAppWiringMutationReplyEntrypoint", "PET_TITLE_NAME_CREATE", "account_platform_active_player_selections"] },
+      { "file": "개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts", "terms": ["canonical_item_definition_imports", "canonical_owned_pet_title_instances", "PET_TITLE_TICKET_USED"] },
       { "file": "개발환경_고도화/runtime/migrations/466_object_db_transition_recovery_receipt_links.sql", "terms": ["lease_generation", "recovery_status", "canonical_app_wiring_receipt_links"] }
     ]
   },
@@ -127,7 +131,7 @@
     "connectedIngressFamilies": ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE"],
     "pendingIngressFamilies": ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "ADMIN", "WEB"],
     "reviewedSourceHashes": {
-      "appSourceSha256": "43a8f867cb132321e8e7f80807fed96a746bb648efd7d34354a90c9c7f7998ce",
+      "appSourceSha256": "9e8aa2d89ff9804e99e679d807c96664efa59ff8ea803f22130c2512db30ec72",
       "petExploreIngressSourceSha256": "d843190731458ce30f48a437d8930f99a5baeb86055df9f019a15f4518780262",
       "petExploreEventControlProviderSourceSha256": "c85d46d3bb4d7361837c6736e1e406025f7dd59af933c26ec9ef253374840c24",
       "appWiringOperationProviderSourceSha256": "98105a7e913385d82c5e4011c40ba3844ab43f162a71939b35113b2bdd0deed4",

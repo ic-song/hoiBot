@@ -55,6 +55,7 @@ import { isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-comm
 import { isPetExploreEventControlCommand } from "./pet/pet-explore-event-control-command-service.js";
 import { PetExploreAppWiringIngress } from "./pet/pet-explore-app-wiring-ingress.js";
 import { PetTitleAppWiringIngress, PetTitleShadowEvaluator, PetTitleShadowReadAuthorityProvider } from "./pet/pet-title-app-wiring-ingress.js";
+import { PetTitleCanonicalMutationProvider } from "./pet/pet-title-canonical-mutation-provider.js";
 import { PetTitleCanonicalReadProvider } from "./pet/pet-title-canonical-read-provider.js";
 import { MariaPlayerContextProvider } from "./account-platform/player-context-provider.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
@@ -883,15 +884,20 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       : undefined);
   const petTitleAppWiringIngress=dependencies.petTitleAppWiringIngress
     ??(database!==undefined&&appWiringOperationProvider!==undefined
-      ?new PetTitleAppWiringIngress(
-        appWiringOperationProvider,
-        new CommandDispatcher(new MariaCommandRouteReader(database),{
-          enabled:true,
-          allowAllCanaries:config.nodeEnv!=="production",
-          canaryUserIds:parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
-        }),
-        new PetTitleShadowEvaluator(new MariaPlayerContextProvider(),new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
-      )
+      ?(()=>{
+        const contexts=new MariaPlayerContextProvider();
+        return new PetTitleAppWiringIngress(
+          appWiringOperationProvider,
+          new CommandDispatcher(new MariaCommandRouteReader(database),{
+            enabled:true,
+            allowAllCanaries:config.nodeEnv!=="production",
+            canaryUserIds:parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+          }),
+          new PetTitleShadowEvaluator(contexts,new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
+          contexts,
+          new PetTitleCanonicalMutationProvider(),
+        );
+      })()
       :undefined);
   const irisAdminCommandService = dependencies.irisAdminCommandService
     ?? (database === undefined ? undefined : new IrisAdminCommandService(database, config.irisAllowedOpenChatIds));

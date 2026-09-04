@@ -171,7 +171,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(consumerManifest.audit.undeclaredSelectorCount, 0);
     assert.equal(consumerManifest.audit.registrySourceMismatchCount, 10);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.consumers.length, 1_101);
+    assert.equal(consumerManifest.consumers.length, 1_102);
     assert.deepEqual(consumerManifest.counts, {
       LEGACY_COMMAND: 684,
       AUTOMATIC_CALLBACK: 3,
@@ -179,7 +179,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       ADMIN_COMMAND: 78,
       HTTP_WEB_ROUTE: 81,
       APP_WIRING: 7,
-      SQL_REPOSITORY: 49,
+      SQL_REPOSITORY: 50,
     });
     assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>
       kind === "APP_WIRING" && triggerOrPredicate === "dispatchPetDataCompareCommand"), false);
@@ -193,7 +193,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(playerContextConsumers.every(({ primarySlice }) => primarySlice === "CONTEXT-BRIDGE"), true);
     assert.equal(petTitleRead?.access, "READ");
     const petTitleMutations = consumerManifest.consumers.filter(({ file }) => file.endsWith("/pet/pet-title-canonical-mutation-provider.ts"));
-    assert.equal(petTitleMutations.length, 2);
+    assert.equal(petTitleMutations.length, 3);
     assert.equal(petTitleMutations.every(({ primarySlice, operationReceiptTables, transactionParticipantInterfaceIds }) => primarySlice === "PET-TITLE"
       && operationReceiptTables.includes("canonical_pet_title_operations")
       && transactionParticipantInterfaceIds.includes("pet-title.ownership.mutate")), true);
