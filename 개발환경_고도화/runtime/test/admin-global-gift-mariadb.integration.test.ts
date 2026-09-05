@@ -68,6 +68,27 @@ describe("admin global gift isolated MariaDB",{skip:!enabled},()=>{
     await database.execute("UPDATE outbox_messages SET status='pending' WHERE id=?",[outbox.outbox_message_id]);
   });
 
+  it("rejects same-count recipient substitution and quantity-pair drift",async()=>{
+    const recipient=(await database.query<Array<{admin_global_gift_recipient_id:string;player_id:string;quantity_before:bigint;quantity_after:bigint}>>("SELECT recipient.admin_global_gift_recipient_id,recipient.player_id,recipient.quantity_before,recipient.quantity_after FROM canonical_admin_global_gift_recipients recipient JOIN canonical_admin_global_gift_operations gift ON gift.admin_global_gift_operation_id=recipient.admin_global_gift_operation_id WHERE gift.request_key='wbs752-event-1' ORDER BY recipient.recipient_sequence LIMIT 1"))[0]!;
+    const inactiveLegacy=(await database.execute("INSERT INTO players(status) VALUES ('inactive')")).insertId;
+    await database.execute("INSERT INTO canonical_players(player_id,source_system,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES ('driftpl1','LEGACY_DB',?, ?,?,?,?)",[inactiveLegacy.toString(),...audit]);
+    await database.execute("UPDATE canonical_admin_global_gift_recipients SET player_id='driftpl1' WHERE admin_global_gift_recipient_id=?",[recipient.admin_global_gift_recipient_id]);
+    await assert.rejects(()=>new AdminGlobalGiftService(database).handle({eventId:"wbs752-event-1",externalUserId:"wbs752-admin",channelId:"synthetic-command-room",message:ADMIN_GLOBAL_GIFT_COMMAND}),error=>String(error).includes("ADMIN_GLOBAL_GIFT_REPLAY_EVIDENCE_DRIFT"));
+    await database.execute("UPDATE canonical_admin_global_gift_recipients SET player_id=?,quantity_before=?,quantity_after=? WHERE admin_global_gift_recipient_id=?",[recipient.player_id,recipient.quantity_before+1n,recipient.quantity_after+1n,recipient.admin_global_gift_recipient_id]);
+    await assert.rejects(()=>new AdminGlobalGiftService(database).handle({eventId:"wbs752-event-1",externalUserId:"wbs752-admin",channelId:"synthetic-command-room",message:ADMIN_GLOBAL_GIFT_COMMAND}),error=>String(error).includes("ADMIN_GLOBAL_GIFT_REPLAY_EVIDENCE_DRIFT"));
+    await database.execute("UPDATE canonical_admin_global_gift_recipients SET quantity_before=?,quantity_after=? WHERE admin_global_gift_recipient_id=?",[recipient.quantity_before,recipient.quantity_after,recipient.admin_global_gift_recipient_id]);
+    const stack=(await database.query<Array<{owned_item_stack_id:string;player_id:string}>>("SELECT owned_item_stack_id,player_id FROM canonical_admin_global_gift_recipients WHERE admin_global_gift_recipient_id=?",[recipient.admin_global_gift_recipient_id]))[0]!;
+    await database.execute("UPDATE canonical_owned_item_stacks SET player_id='driftpl1' WHERE owned_item_stack_id=?",[stack.owned_item_stack_id]);
+    await assert.rejects(()=>new AdminGlobalGiftService(database).handle({eventId:"wbs752-event-1",externalUserId:"wbs752-admin",channelId:"synthetic-command-room",message:ADMIN_GLOBAL_GIFT_COMMAND}),error=>String(error).includes("ADMIN_GLOBAL_GIFT_REPLAY_EVIDENCE_DRIFT"));
+    await database.execute("UPDATE canonical_owned_item_stacks SET player_id=? WHERE owned_item_stack_id=?",[stack.player_id,stack.owned_item_stack_id]);
+    const operation=(await database.query<Array<{admin_global_gift_operation_id:string;item_id:string}>>("SELECT admin_global_gift_operation_id,item_id FROM canonical_admin_global_gift_operations WHERE request_key='wbs752-event-1'"))[0]!;
+    await database.execute("INSERT INTO canonical_item_definitions(item_id,item_name,item_kind,stackable_flag,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES ('c4n7x2qa','합성대체아이템','TEST',TRUE,TRUE,?,?,?,?)",audit);
+    await database.execute("UPDATE canonical_admin_global_gift_operations SET item_id='c4n7x2qa' WHERE admin_global_gift_operation_id=?",[operation.admin_global_gift_operation_id]);
+    await assert.rejects(()=>new AdminGlobalGiftService(database).handle({eventId:"wbs752-event-1",externalUserId:"wbs752-admin",channelId:"synthetic-command-room",message:ADMIN_GLOBAL_GIFT_COMMAND}),error=>String(error).includes("ADMIN_GLOBAL_GIFT_REPLAY_EVIDENCE_DRIFT"));
+    await database.execute("UPDATE canonical_admin_global_gift_operations SET item_id=? WHERE admin_global_gift_operation_id=?",[operation.item_id,operation.admin_global_gift_operation_id]);
+    await database.execute("DELETE FROM canonical_item_definitions WHERE item_id='c4n7x2qa'");
+  });
+
   it("reconciles an ambiguous commit only after the same complete receipt and eleven outboxes verify",async()=>{
     const root=database as RootTransactionDatabaseClient;
     const ambiguous:DatabaseClient&RootTransactionDatabaseClient={
@@ -88,7 +109,7 @@ describe("admin global gift isolated MariaDB",{skip:!enabled},()=>{
   });
 
   it("rolls back snapshots and prior increments on an overflowing member",async()=>{
-    const player=(await database.query<Array<{player_id:string}>>("SELECT player_id FROM canonical_players ORDER BY player_id LIMIT 1"))[0]!;
+    const player=(await database.query<Array<{player_id:string}>>("SELECT stack.player_id FROM canonical_owned_item_stacks stack JOIN canonical_item_definition_imports binding ON binding.item_id=stack.item_id WHERE binding.source_system='LEGACY_JS' AND binding.source_namespace='member.bag' AND binding.source_identifier='호이응원패키지(무료)🐹[2]' ORDER BY stack.player_id LIMIT 1"))[0]!;
     await database.execute("UPDATE canonical_owned_item_stacks stack JOIN canonical_item_definition_imports binding ON binding.item_id=stack.item_id SET stack.quantity=18446744073709551615 WHERE stack.player_id=? AND binding.source_system='LEGACY_JS' AND binding.source_namespace='member.bag' AND binding.source_identifier='호이응원패키지(무료)🐹[2]'",[player.player_id]);
     const outboxBefore=(await database.query<Array<{count_value:bigint}>>("SELECT COUNT(*) count_value FROM outbox_messages WHERE destination_id LIKE 'synthetic-room-%'"))[0]!.count_value;
     await assert.rejects(()=>new AdminGlobalGiftService(database).handle({eventId:"wbs752-overflow",externalUserId:"wbs752-admin",channelId:"synthetic-command-room",message:ADMIN_GLOBAL_GIFT_COMMAND}));

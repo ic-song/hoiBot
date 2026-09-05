@@ -1,7 +1,8 @@
-SET @rollback_479_guard=IF(EXISTS(SELECT 1 FROM canonical_admin_global_gift_operations LIMIT 1),'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT=''ADMIN_GLOBAL_GIFT_RECEIPT_EXISTS''','DO 0');
+SET @rollback_479_guard=IF(EXISTS(SELECT 1 FROM canonical_admin_global_gift_operations LIMIT 1) OR (EXISTS(SELECT 1 FROM canonical_admin_global_gift_migration_provenance WHERE admin_global_gift_migration_provenance_id='n89yb2ye' AND catalog_seed_created_flag=TRUE) AND EXISTS(SELECT 1 FROM canonical_owned_item_stacks WHERE item_id='j7uyw6vc' LIMIT 1)),'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT=''ADMIN_GLOBAL_GIFT_DURABLE_STATE_EXISTS''','DO 0');
 PREPARE rollback_479_statement FROM @rollback_479_guard;
 EXECUTE rollback_479_statement;
 DEALLOCATE PREPARE rollback_479_statement;
+SET @rollback_479_created_seed=EXISTS(SELECT 1 FROM canonical_admin_global_gift_migration_provenance WHERE admin_global_gift_migration_provenance_id='n89yb2ye' AND catalog_seed_created_flag=TRUE);
 DELETE FROM command_aliases WHERE command_text='/선물전달' AND command_code='ADMIN_GLOBAL_GIFT';
 DELETE FROM command_registry WHERE command_code='ADMIN_GLOBAL_GIFT' AND handler_key='admin_global_gift';
 DELETE FROM admin_role_permissions WHERE permission_code='game.inventory.global_gift';
@@ -10,5 +11,6 @@ DROP TABLE IF EXISTS canonical_admin_global_gift_channel_snapshots;
 DROP TABLE IF EXISTS canonical_admin_global_gift_recipients;
 DROP TABLE IF EXISTS canonical_admin_global_gift_operations;
 DROP TABLE IF EXISTS canonical_admin_global_gift_channel_configs;
-DELETE FROM canonical_item_definition_imports WHERE item_definition_import_id='phk8c656' AND item_id='j7uyw6vc';
-DELETE FROM canonical_item_definitions WHERE item_id='j7uyw6vc' AND NOT EXISTS(SELECT 1 FROM canonical_owned_item_stacks WHERE item_id='j7uyw6vc');
+DROP TABLE IF EXISTS canonical_admin_global_gift_migration_provenance;
+DELETE FROM canonical_item_definition_imports WHERE @rollback_479_created_seed=TRUE AND item_definition_import_id='phk8c656' AND item_id='j7uyw6vc';
+DELETE FROM canonical_item_definitions WHERE @rollback_479_created_seed=TRUE AND item_id='j7uyw6vc' AND NOT EXISTS(SELECT 1 FROM canonical_owned_item_stacks WHERE item_id='j7uyw6vc');
