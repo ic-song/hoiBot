@@ -1328,6 +1328,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
         || isTierRewardPayoutCommand(normalizedEvent.message)
         || isMiniPetBindingReleaseCommand(normalizedEvent.message)
+        || isSpiritInfoCommand(normalizedEvent.message)
         || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCommand(normalizedEvent.message)
@@ -3282,7 +3283,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "spirit_info_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new SpiritInfoService(database!).read({ eventId: normalizedEvent.eventId,
-          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId,
+          displayName: commandEvent.displayName, displayNameTrust: commandEvent.displayNameTrust });
         for (const reply of result.replies) processing.replies.push({ outboxId: reply.outboxId, room: normalizedEvent.channelId, data: reply.data });
       }
 

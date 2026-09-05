@@ -4851,6 +4851,50 @@ Status: VERIFIED
 
 ---
 
+# /정령정보
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/정령정보`
+- Search in `개발환경_고도화/runtime/src/app.ts`: `isSpiritInfoCommand`, `spirit_info_read`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/spirit-info-service.ts`
+
+## Related Helpers
+
+- `isSpiritInfoCommand`
+- `isSpiritInfoOperator`
+- `formatSpiritInfoReplies`
+- `SpiritInfoService`
+
+## Data Usage
+
+- legacy pet state: `player_pet_elementals.grade_code`, `display_name`, `grade_display_name`, `enhancement_level`
+- bridge order: `elemental_enhancement_grades.grade_order` → `canonical_elemental_grade_definition_bridges.elemental_grade_order`
+- canonical CUID FK: `canonical_elemental_grade_definition_bridges.equipment_grade_definition_id` → `canonical_equipment_grade_definitions.equipment_grade_definition_id`
+- replay receipt: `operations`, `outbox_messages`
+
+## Save Flow
+
+- `partialDispatchCandidate`가 exact `/정령정보`를 현재 SHADOW rollout에서 MODERN route 대상 후보로 분류한다.
+- 서비스는 신뢰된 현재 이벤트 표시명과 stable external identity를 확인하며, `player_profiles.current_display_name`을 운영자 권한 식별에 사용하지 않는다.
+- 동일 이벤트는 caller actor, 요청 fingerprint, terminal result, 두 outbox 전달 메타데이터와 payload를 MariaDB transaction에서 먼저 검증하고 live pet/catalog 재조회 없이 exact replay한다.
+- 최초 실행만 canonical bridge/definition을 조회하며 operation, 두 outbox, command execution, audit, terminal result를 한 MariaDB 트랜잭션으로 저장한다.
+
+## AI Notes
+
+- 사용자 응답은 기존 JSON 속성 순서와 Unicode를 유지한 정확히 두 메시지다.
+- 표시명·alias는 canonical grade identity가 아니며 등급 계산값은 CUID FK로 연결된 canonical definition에서만 읽는다.
+- 비운영자는 silent이며 untrusted 표시명 provenance, replay actor/payload/outbox drift, 누락 bridge/definition은 fail-close한다.
+
+---
+
 # /반지순위
 
 Status: VERIFIED
