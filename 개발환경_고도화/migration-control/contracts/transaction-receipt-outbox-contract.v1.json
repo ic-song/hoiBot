@@ -1,0 +1,54 @@
+{
+  "contractVersion": "RFA02_TRANSACTION_RECEIPT_OUTBOX_V1",
+  "composition": {
+    "requestContract": "RFA01_REQUEST_REUSE_V1",
+    "rule": "RFA-02 delegates request identity, payload, request, result fingerprinting, canonical snapshots, and exact result replay to RFA-01 without re-hashing or translating them."
+  },
+  "atomicBoundary": {
+    "lockKey": "raw requestKey",
+    "requiredParticipants": [
+      "domain mutation",
+      "completed typed receipt",
+      "OUTBOX or explicit NO_OUTBOX delivery evidence",
+      "RFA-01 terminal receipt"
+    ],
+    "rule": "withLockedTransaction must serialize the same requestKey and commit or roll back every required participant together. Nested domain providers must join this transaction or a savepoint; they must not open an independent commit boundary."
+  },
+  "typedReceipt": ["receiptKind", "receiptId", "receiptStatus=COMPLETED", "resultFingerprint"],
+  "deliveryEvidence": {
+    "OUTBOX": ["deliveryKind", "outboxId", "payloadFingerprint", "resultFingerprint"],
+    "NO_OUTBOX": ["deliveryKind", "reasonCode", "resultFingerprint"],
+    "rule": "NO_OUTBOX is explicit terminal evidence for operations that intentionally emit no delivery; omission is not accepted."
+  },
+  "replay": "The adapter must re-read the RFA-01 terminal, typed receipt, and delivery evidence in one locked transaction. RFA-02 requires exact contract shape and result-fingerprint equality before RFA-01 verifies identity, payload, request, result, and returns its detached result snapshot.",
+  "uncertainCommit": "Only an exact base-constructor TransactionCommitAckAmbiguousError branded by the module-private WeakSet, as checked solely by isTransactionCommitAckAmbiguousError, activates reconciliation after persistence. Plain lookalikes, subclasses, Object.create prototype forgeries, proxies, and throwing prototype traps do not. Deterministic work, persistence, adapter, and RFA-01 errors are rethrown unchanged. readCommitted must use a fresh transaction and re-read every referenced evidence row; only an exact canonical match returns success, while missing, unreadable, or changed evidence fails closed.",
+  "adapterResponsibilities": [
+    "verify the typed receipt exists, is terminal, and has the declared result fingerprint",
+    "verify the outbox exists with the declared payload/result binding, or validate the explicit NO_OUTBOX reason",
+    "persist and load the complete RFA-02 terminal shape",
+    "never expose a partial terminal as undefined or execute work over partial evidence",
+    "preserve rollback, restart, and concurrent request-key locking semantics"
+  ],
+  "errorCodes": [
+    "RFA02_EVIDENCE_NOT_CANONICAL",
+    "RFA02_TYPED_RECEIPT_KIND_INVALID",
+    "RFA02_TYPED_RECEIPT_ID_INVALID",
+    "RFA02_TYPED_RECEIPT_NOT_COMPLETED",
+    "RFA02_TYPED_RECEIPT_FINGERPRINT_INVALID",
+    "RFA02_OUTBOX_ID_INVALID",
+    "RFA02_OUTBOX_PAYLOAD_FINGERPRINT_INVALID",
+    "RFA02_OUTBOX_RESULT_FINGERPRINT_INVALID",
+    "RFA02_NO_OUTBOX_REASON_INVALID",
+    "RFA02_NO_OUTBOX_RESULT_FINGERPRINT_INVALID",
+    "RFA02_DELIVERY_KIND_INVALID",
+    "RFA02_TYPED_RECEIPT_RESULT_DRIFT",
+    "RFA02_DELIVERY_RESULT_DRIFT",
+    "RFA02_CONTRACT_CONFLICT",
+    "RFA02_WORK_EVIDENCE_MISSING",
+    "RFA02_TERMINAL_EVIDENCE_MISSING",
+    "RFA02_COMMIT_ACK_AMBIGUOUS",
+    "RFA02_COMMIT_RECONCILIATION_READ_FAILED",
+    "RFA02_COMMIT_RECONCILIATION_MISSING",
+    "RFA02_COMMIT_RECONCILIATION_DRIFT"
+  ]
+}
