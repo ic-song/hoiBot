@@ -1,0 +1,13 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-elemental-grade-definition-bridge-amendment-v1",
+  "migration":"477_elemental_grade_definition_bridge.sql",
+  "objectModelAmendment":"object-data-model-elemental-grade-bridge-amendment.v1.json",
+  "dependencies":["119_spirit_enhance.sql","443_object_identity_audit_provider.sql","475_equipment_grade_definition_extension.sql"],
+  "legacySource":{"table":"elemental_enhancement_grades","orderColumn":"grade_order","identityColumn":"grade_code","numericColumns":["success_rate","drop_rate","item_cost","point_cost","max_level","battle_exp","battle_upgrade_exp","raid_exp","raid_upgrade_exp","castle_exp","castle_upgrade_exp"]},
+  "canonicalSource":{"table":"canonical_equipment_grade_definitions","identityBindingNamespace":"object-import.pet-equipment.canonical_equipment_grade_definitions","family":"elemental","numericColumns":["enhancement_success_probability","enhancement_drop_probability","item_cost_quantity","point_cost_amount","maximum_enhancement_level","battle_base_experience_amount","battle_experience_per_enhancement_amount","raid_base_experience_amount","raid_experience_per_enhancement_amount","castle_base_experience_amount","castle_experience_per_enhancement_amount"]},
+  "identityPolicy":"Only the sealed Common Staging derived source locator SHA-256 identifies a canonical row. Display names, aliases, emoji, equipment family and legacy grade_code are forbidden as bridge identity.",
+  "preDmlPolicy":"Exactly 61 contiguous orders, unique source identifiers, exact tuple hashes, one elemental canonical binding per source identifier, no ring-family match, and exact ordered aggregate hash are proven before any DML.",
+  "rollbackPolicy":"Delete only exact bridge rows and bridge-owned identity/crosswalk rows; preserve migrations 119 and 475 and their rows.",
+  "operationalDataAllowed":false
+}
