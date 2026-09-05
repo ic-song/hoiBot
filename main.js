@@ -6609,9 +6609,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                         replier.reply(replyMessageToRemove);
                         var titleData = loadJsonFile(memberTitlePath);
+                        var petTitleDeleteData = loadJsonFile(petTitlePath);
+                        var miniPetTitleDeleteData = loadJsonFile(miniPetTitlePath);
+                        var miniPetCollectionDeleteData = loadJsonFile(miniPetCollectionPath);
+                        var trialTowerDeleteData = loadJsonFile(trialTowerPath);
                         let homeData = loadJsonFile(homeDataFile);
                         var placedFurnitureDeleteData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                        var petHomeCommentsDeleteData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                         var petHomeActivityDeleteData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                        var petExploreDeleteData = loadJsonFile(petExplorePath);
+                        var attendanceLightDeleteData = loadJsonFile(attendanceLightPath);
+                        var punchRankDeleteData = ensurePunchRankData(loadJsonFile(punchRankPath));
+                        var freeMarketDeleteData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+                        var boardDeleteData = loadJsonFile(boardPath);
+                        var carrotBoardDeleteData = loadJsonFile(carrotBoardPath);
+                        var packageLogDeleteData = loadJsonFile(packageLogPath);
                         candidatesToRemove.forEach((targetUserToDelete) => {
                             // 길드데이터
                             removeUserFromGuildDataOnAccountDelete(data, guildData, targetUserToDelete);
@@ -6641,6 +6653,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             }
                             removePetHomeActivityUserOnAccountDelete(petHomeActivityDeleteData, targetUserToDelete);
                         });
+                        cleanupDeletedAccountResiduals(data, guildData, {
+                            memberTitleData: titleData,
+                            petTitleData: petTitleDeleteData,
+                            miniPetTitleData: miniPetTitleDeleteData,
+                            miniPetCollectionData: miniPetCollectionDeleteData,
+                            petData: petData,
+                            petSkillData: petSkillData,
+                            currencyLogData: currencyLogData,
+                            trialTowerData: trialTowerDeleteData,
+                            homeData: homeData,
+                            placedFurnitureData: placedFurnitureDeleteData,
+                            petHomeCommentsData: petHomeCommentsDeleteData,
+                            petHomeActivityData: petHomeActivityDeleteData,
+                            petExploreData: petExploreDeleteData,
+                            attendanceLightData: attendanceLightDeleteData,
+                            punchRankData: punchRankDeleteData,
+                            freeMarketData: freeMarketDeleteData,
+                            boardData: boardDeleteData,
+                            carrotBoardData: carrotBoardDeleteData,
+                            packageLogData: packageLogDeleteData
+                        }, candidatesToRemove);
                         data.checkcnt = getCurrentDate();
                         for (let userc in data.member) {
                             data.member[userc].chatcnt0 = 0;
@@ -6652,8 +6685,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(petSkillData, petSkillDataPath);
                         saveJsonFile(currencyLogData, currencyLogPath);
                         saveJsonFile(titleData, memberTitlePath);
+                        saveJsonFile(petTitleDeleteData, petTitlePath);
+                        saveJsonFile(miniPetTitleDeleteData, miniPetTitlePath);
+                        saveJsonFile(miniPetCollectionDeleteData, miniPetCollectionPath);
+                        saveJsonFile(trialTowerDeleteData, trialTowerPath);
                         saveJsonFile(data, filePath);
                         saveJsonFile(guildData, guildPath);
+                        saveJsonFile(petHomeCommentsDeleteData, petHomeCommentsFile);
+                        saveJsonFile(petExploreDeleteData, petExplorePath);
+                        saveJsonFile(attendanceLightDeleteData, attendanceLightPath);
+                        saveJsonFile(punchRankDeleteData, punchRankPath);
+                        saveJsonFile(freeMarketDeleteData, freeMarketPath);
+                        saveJsonFile(boardDeleteData, boardPath);
+                        saveJsonFile(carrotBoardDeleteData, carrotBoardPath);
+                        saveJsonFile(packageLogDeleteData, packageLogPath);
                         replier.reply("삭제완료");
                     }
                     return;
@@ -7384,13 +7429,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // 데이터 한번만 로드
                     var titleData = loadJsonFile(memberTitlePath);
                     var petTitleData = loadJsonFile(petTitlePath);
+                    var miniPetTitleDeleteData = loadJsonFile(miniPetTitlePath);
+                    var miniPetCollectionDeleteData = loadJsonFile(miniPetCollectionPath);
                     var trialTower = loadJsonFile(trialTowerPath);
                     var homeData = loadJsonFile(homeDataFile);
                     var placedFurnitureDeleteData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                    var petHomeCommentsDeleteData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
                     var petHomeActivityDeleteData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var petData = loadJsonFile(memberPetPath);
                     var petSkillDeleteData = loadJsonFile(petSkillDataPath);
                     var freeMarketData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+                    var petExploreDeleteData = loadJsonFile(petExplorePath);
+                    var attendanceLightDeleteData = loadJsonFile(attendanceLightPath);
+                    var punchRankDeleteData = ensurePunchRankData(loadJsonFile(punchRankPath));
+                    var boardDeleteData = loadJsonFile(boardPath);
+                    var carrotBoardDeleteData = loadJsonFile(carrotBoardPath);
+                    var packageLogDeleteData = loadJsonFile(packageLogPath);
 
                     var successList = [];
                     var failList = [];
@@ -7459,6 +7513,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             failList.push(target + "(오류)");
                         }
                     }
+                    cleanupDeletedAccountResiduals(data, guildData, {
+                        memberTitleData: titleData,
+                        petTitleData: petTitleData,
+                        miniPetTitleData: miniPetTitleDeleteData,
+                        miniPetCollectionData: miniPetCollectionDeleteData,
+                        petData: petData,
+                        petSkillData: petSkillDeleteData,
+                        currencyLogData: currencyLogData,
+                        trialTowerData: trialTower,
+                        homeData: homeData,
+                        placedFurnitureData: placedFurnitureDeleteData,
+                        petHomeCommentsData: petHomeCommentsDeleteData,
+                        petHomeActivityData: petHomeActivityDeleteData,
+                        petExploreData: petExploreDeleteData,
+                        attendanceLightData: attendanceLightDeleteData,
+                        punchRankData: punchRankDeleteData,
+                        freeMarketData: freeMarketData,
+                        boardData: boardDeleteData,
+                        carrotBoardData: carrotBoardDeleteData,
+                        packageLogData: packageLogDeleteData
+                    }, successList);
 
                     // 저장은 딱 1번씩만
                     saveJsonFile(guildData, guildPath);
@@ -7469,10 +7544,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(currencyLogData, currencyLogPath);
                     saveJsonFile(trialTower, trialTowerPath);
                     saveJsonFile(petTitleData, petTitlePath);
+                    saveJsonFile(miniPetTitleDeleteData, miniPetTitlePath);
+                    saveJsonFile(miniPetCollectionDeleteData, miniPetCollectionPath);
                     saveJsonFile(homeData, homeDataFile);
                     if (placedFurnitureDeleteData) saveJsonFile(placedFurnitureDeleteData, petHomePlacedFurniturePath);
+                    saveJsonFile(petHomeCommentsDeleteData, petHomeCommentsFile);
                     saveJsonFile(petHomeActivityDeleteData, petHomeActivityFile);
+                    saveJsonFile(petExploreDeleteData, petExplorePath);
+                    saveJsonFile(attendanceLightDeleteData, attendanceLightPath);
+                    saveJsonFile(punchRankDeleteData, punchRankPath);
                     saveJsonFile(freeMarketData, freeMarketPath);
+                    saveJsonFile(boardDeleteData, boardPath);
+                    saveJsonFile(carrotBoardDeleteData, carrotBoardPath);
+                    saveJsonFile(packageLogDeleteData, packageLogPath);
 
                     //결과 출력
                     var out = "✅ 계정삭제 완료\n";
@@ -28775,6 +28859,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeData = loadJsonFile(homeDataFile);
                     var placedFurnitureCleanupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                    var memberTitleCleanupData = loadJsonFile(memberTitlePath);
+                    var petTitleCleanupData = loadJsonFile(petTitlePath);
+                    var miniPetTitleCleanupData = loadJsonFile(miniPetTitlePath);
+                    var miniPetCollectionCleanupData = loadJsonFile(miniPetCollectionPath);
+                    var trialTowerCleanupData = loadJsonFile(trialTowerPath);
+                    var petHomeCommentsCleanupData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
+                    var petHomeActivityCleanupData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var petExploreCleanupData = loadJsonFile(petExplorePath);
+                    var attendanceLightCleanupData = loadJsonFile(attendanceLightPath);
+                    var punchRankCleanupData = ensurePunchRankData(loadJsonFile(punchRankPath));
+                    var freeMarketCleanupData = ensureFreeMarketData(loadJsonFile(freeMarketPath));
+                    var boardCleanupData = loadJsonFile(boardPath);
+                    var carrotBoardCleanupData = loadJsonFile(carrotBoardPath);
+                    var packageLogCleanupData = loadJsonFile(packageLogPath);
 
                     var totalDisplayRemoved = 0;
                     var totalNullRemoved = 0;
@@ -29030,12 +29128,49 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
 
+                    var residualAccountNames = cleanupDeletedAccountResiduals(data, guildData, {
+                        memberTitleData: memberTitleCleanupData,
+                        petTitleData: petTitleCleanupData,
+                        miniPetTitleData: miniPetTitleCleanupData,
+                        miniPetCollectionData: miniPetCollectionCleanupData,
+                        petData: petData,
+                        petSkillData: petSkillData,
+                        currencyLogData: currencyLogData,
+                        trialTowerData: trialTowerCleanupData,
+                        homeData: homeData,
+                        placedFurnitureData: placedFurnitureCleanupData,
+                        petHomeCommentsData: petHomeCommentsCleanupData,
+                        petHomeActivityData: petHomeActivityCleanupData,
+                        petExploreData: petExploreCleanupData,
+                        attendanceLightData: attendanceLightCleanupData,
+                        punchRankData: punchRankCleanupData,
+                        freeMarketData: freeMarketCleanupData,
+                        boardData: boardCleanupData,
+                        carrotBoardData: carrotBoardCleanupData,
+                        packageLogData: packageLogCleanupData
+                    });
+
                     saveJsonFile(homeData, homeDataFile);
                     if (placedFurnitureCleanupData) saveJsonFile(placedFurnitureCleanupData, petHomePlacedFurniturePath);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(petSkillData, petSkillDataPath);
+                    saveJsonFile(currencyLogData, currencyLogPath);
                     saveJsonFile(guildData, guildPath);
+                    saveJsonFile(memberTitleCleanupData, memberTitlePath);
+                    saveJsonFile(petTitleCleanupData, petTitlePath);
+                    saveJsonFile(miniPetTitleCleanupData, miniPetTitlePath);
+                    saveJsonFile(miniPetCollectionCleanupData, miniPetCollectionPath);
+                    saveJsonFile(trialTowerCleanupData, trialTowerPath);
+                    saveJsonFile(petHomeCommentsCleanupData, petHomeCommentsFile);
+                    saveJsonFile(petHomeActivityCleanupData, petHomeActivityFile);
+                    saveJsonFile(petExploreCleanupData, petExplorePath);
+                    saveJsonFile(attendanceLightCleanupData, attendanceLightPath);
+                    saveJsonFile(punchRankCleanupData, punchRankPath);
+                    saveJsonFile(freeMarketCleanupData, freeMarketPath);
+                    saveJsonFile(boardCleanupData, boardPath);
+                    saveJsonFile(carrotBoardCleanupData, carrotBoardPath);
+                    saveJsonFile(packageLogCleanupData, packageLogPath);
 
                     var out = "🧹 /데이터정리 완료\n";
                     out += allsee + "\n";
@@ -29115,6 +29250,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n[영지자동공격 데이터 정리 유저]\n" + invalidAutoAttackCleanupLogs.join("\n");
                     } else {
                         out += "\n수거할 영지자동공격 데이터 없음";
+                    }
+
+                    out += "\n\n[9] 삭제 계정 잔여 데이터 정리\n";
+                    out += "정리된 계정 : " + numberWithCommas(residualAccountNames.length) + "명";
+                    if (residualAccountNames.length > 0) {
+                        out += "\n※ 회원 목록에 없는 계정의 컬렉션·칭호·펫·홈·탐험·거래·게시판 데이터를 제거했습니다.";
+                    } else {
+                        out += "\n정리할 삭제 계정 잔여 데이터 없음";
                     }
 
                     replier.reply(out);
@@ -37636,6 +37779,299 @@ function removeAccountLifecycleEntriesOnDelete(data, userName) {
     var dormantAccounts = ensureDormantAccounts(data);
     if (suspendedAccounts[userName]) delete suspendedAccounts[userName];
     if (dormantAccounts[userName]) delete dormantAccounts[userName];
+}
+
+// 배열에서 삭제 계정과 일치하는 문자열을 모두 제거하는 함수
+function removeDeletedAccountNameFromArray(list, userName) {
+    if (!(list instanceof Array)) return;
+    for (var i = list.length - 1; i >= 0; i--) {
+        if (list[i] === userName) list.splice(i, 1);
+    }
+}
+
+// 삭제 계정이 남긴 게시판 글과 기록을 제거하는 함수
+function removeDeletedAccountBoardRows(boardData, invalidNames) {
+    if (!boardData || typeof boardData !== "object") return;
+    var listNames = ["memo", "record"];
+    for (var listIndex = 0; listIndex < listNames.length; listIndex++) {
+        var listName = listNames[listIndex];
+        if (!(boardData[listName] instanceof Array)) continue;
+        boardData[listName] = boardData[listName].filter(function (row) {
+            return !row || !invalidNames[row.user];
+        });
+    }
+}
+
+// 회원 목록에 없는 계정 식별자를 잔여 데이터에서 수집하는 함수
+function collectDeletedAccountNames(data, guildData, stores) {
+    var member = data && data.member ? data.member : {};
+    var invalidNames = {};
+    function addName(userName) {
+        if (typeof userName === "string" && userName && !member[userName]) invalidNames[userName] = true;
+    }
+    function addMapKeys(map) {
+        if (!map || typeof map !== "object") return;
+        for (var userName in map) {
+            if (map.hasOwnProperty(userName)) addName(userName);
+        }
+    }
+    var maps = [
+        stores.memberTitleData && stores.memberTitleData.member,
+        stores.petTitleData && stores.petTitleData.member,
+        stores.miniPetTitleData && stores.miniPetTitleData.member,
+        stores.miniPetCollectionData && stores.miniPetCollectionData.member,
+        stores.petData,
+        stores.petSkillData,
+        stores.currencyLogData && stores.currencyLogData.user,
+        stores.trialTowerData && stores.trialTowerData.user,
+        stores.homeData,
+        stores.placedFurnitureData,
+        stores.punchRankData && stores.punchRankData.member
+    ];
+    for (var mapIndex = 0; mapIndex < maps.length; mapIndex++) addMapKeys(maps[mapIndex]);
+    addMapKeys(data && data.admin);
+    addMapKeys(data && data.matzangField && data.matzangField.participants);
+    addMapKeys(data && data.petMusou && data.petMusou.participants);
+    addMapKeys(data && data.petMusou && data.petMusou.nextParticipants);
+    addMapKeys(data && data.petMusou && data.petMusou.players);
+    var attendanceNames = data && data.attend_list instanceof Array ? data.attend_list : [];
+    for (var attendanceIndex = 0; attendanceIndex < attendanceNames.length; attendanceIndex++) addName(attendanceNames[attendanceIndex]);
+    var directUserFields = ["petbattlewinner", "toplv", "topgame", "topCarrotGive", "topThermo", "miniPetTop", "intimacyTop"];
+    for (var directFieldIndex = 0; directFieldIndex < directUserFields.length; directFieldIndex++) addName(data && data[directUserFields[directFieldIndex]]);
+    addName(data && data.HoiCastle && data.HoiCastle.lord);
+    addName(data && data.hoiHappyFoundation && data.hoiHappyFoundation.captain);
+    addName(data && data.petMusou && data.petMusou.currentHolder);
+    addName(data && data.petMusou && data.petMusou.currentChampion && data.petMusou.currentChampion.user);
+    addName(data && data.petMusou && data.petMusou.realFlagDiscovery && data.petMusou.realFlagDiscovery.user);
+    var commentsData = stores.petHomeCommentsData || {};
+    var commentMaps = [commentsData.comments, commentsData.pinnedComments];
+    for (var commentMapIndex = 0; commentMapIndex < commentMaps.length; commentMapIndex++) {
+        var commentMap = commentMaps[commentMapIndex] || {};
+        addMapKeys(commentMap);
+        for (var commentOwner in commentMap) {
+            if (!commentMap.hasOwnProperty(commentOwner) || !(commentMap[commentOwner] instanceof Array)) continue;
+            for (var commentIndex = 0; commentIndex < commentMap[commentOwner].length; commentIndex++) {
+                if (commentMap[commentOwner][commentIndex]) addName(commentMap[commentOwner][commentIndex].from);
+            }
+        }
+    }
+    var activityData = stores.petHomeActivityData || {};
+    addMapKeys(activityData.petHomeSocial);
+    addMapKeys(activityData.alerts);
+    addMapKeys(activityData.recentVisitors);
+    for (var socialOwner in activityData.petHomeSocial) {
+        if (!activityData.petHomeSocial.hasOwnProperty(socialOwner)) continue;
+        var social = activityData.petHomeSocial[socialOwner] || {};
+        var relationLists = [social.followers, social.following];
+        for (var relationIndex = 0; relationIndex < relationLists.length; relationIndex++) {
+            var relationList = relationLists[relationIndex] || [];
+            for (var relationUserIndex = 0; relationUserIndex < relationList.length; relationUserIndex++) addName(relationList[relationUserIndex]);
+        }
+    }
+    for (var alertOwner in activityData.alerts) {
+        if (!activityData.alerts.hasOwnProperty(alertOwner) || !(activityData.alerts[alertOwner] instanceof Array)) continue;
+        for (var alertIndex = 0; alertIndex < activityData.alerts[alertOwner].length; alertIndex++) {
+            if (activityData.alerts[alertOwner][alertIndex]) addName(activityData.alerts[alertOwner][alertIndex].actorId);
+        }
+    }
+    for (var visitorOwner in activityData.recentVisitors) {
+        if (!activityData.recentVisitors.hasOwnProperty(visitorOwner) || !(activityData.recentVisitors[visitorOwner] instanceof Array)) continue;
+        for (var visitorIndex = 0; visitorIndex < activityData.recentVisitors[visitorOwner].length; visitorIndex++) {
+            if (activityData.recentVisitors[visitorOwner][visitorIndex]) addName(activityData.recentVisitors[visitorOwner][visitorIndex].visitorId);
+        }
+    }
+    var petExploreData = stores.petExploreData || {};
+    addMapKeys(petExploreData.userBet);
+    addMapKeys(petExploreData.autoFixedDungeon);
+    addMapKeys(petExploreData.record);
+    if (petExploreData.bet) {
+        for (var dungeonKey in petExploreData.bet) {
+            if (!petExploreData.bet.hasOwnProperty(dungeonKey) || !(petExploreData.bet[dungeonKey] instanceof Array)) continue;
+            for (var betIndex = 0; betIndex < petExploreData.bet[dungeonKey].length; betIndex++) {
+                if (petExploreData.bet[dungeonKey][betIndex]) addName(petExploreData.bet[dungeonKey][betIndex].user);
+            }
+        }
+    }
+    var freeMarketData = stores.freeMarketData || {};
+    var marketLists = [freeMarketData.listings, freeMarketData.completedLogs];
+    for (var marketListIndex = 0; marketListIndex < marketLists.length; marketListIndex++) {
+        var marketList = marketLists[marketListIndex] || [];
+        for (var marketIndex = 0; marketIndex < marketList.length; marketIndex++) {
+            if (!marketList[marketIndex]) continue;
+            addName(marketList[marketIndex].seller);
+            addName(marketList[marketIndex].buyer);
+        }
+    }
+    var boards = [stores.boardData, stores.carrotBoardData];
+    for (var boardIndex = 0; boardIndex < boards.length; boardIndex++) {
+        var boardData = boards[boardIndex] || {};
+        var boardLists = [boardData.memo, boardData.record];
+        for (var boardListIndex = 0; boardListIndex < boardLists.length; boardListIndex++) {
+            var boardList = boardLists[boardListIndex] || [];
+            for (var boardRowIndex = 0; boardRowIndex < boardList.length; boardRowIndex++) {
+                if (boardList[boardRowIndex]) addName(boardList[boardRowIndex].user);
+            }
+        }
+    }
+    var accountLogNames = ["supportPassPayoutLogs", "guildTerritoryAutomationLogs", "territoryPassAuditLogs", "petMusouAutomationLogs"];
+    for (var accountLogIndex = 0; accountLogIndex < accountLogNames.length; accountLogIndex++) {
+        var accountLogs = data && data[accountLogNames[accountLogIndex]];
+        if (!(accountLogs instanceof Array)) continue;
+        for (var accountLogRowIndex = 0; accountLogRowIndex < accountLogs.length; accountLogRowIndex++) {
+            if (accountLogs[accountLogRowIndex]) addName(accountLogs[accountLogRowIndex].user);
+        }
+    }
+    if (guildData && guildData.guilds) {
+        for (var guildId in guildData.guilds) {
+            if (guildData.guilds.hasOwnProperty(guildId) && guildData.guilds[guildId]) addMapKeys(guildData.guilds[guildId].members);
+        }
+    }
+    if (stores.packageLogData && stores.packageLogData.logs instanceof Array) {
+        for (var packageLogIndex = 0; packageLogIndex < stores.packageLogData.logs.length; packageLogIndex++) {
+            if (stores.packageLogData.logs[packageLogIndex]) addName(stores.packageLogData.logs[packageLogIndex].target);
+        }
+    }
+    return invalidNames;
+}
+
+// 회원 목록을 기준으로 모든 계정 귀속 저장소의 잔여 데이터를 일괄 제거하는 함수
+function cleanupDeletedAccountResiduals(data, guildData, stores, forcedUserNames) {
+    stores = stores || {};
+    var invalidNames = collectDeletedAccountNames(data, guildData, stores);
+    if (forcedUserNames instanceof Array) {
+        for (var forcedIndex = 0; forcedIndex < forcedUserNames.length; forcedIndex++) {
+            if (forcedUserNames[forcedIndex] && (!data.member || !data.member[forcedUserNames[forcedIndex]])) invalidNames[forcedUserNames[forcedIndex]] = true;
+        }
+    }
+    var userNames = Object.keys(invalidNames);
+    var nestedMaps = [
+        stores.memberTitleData && stores.memberTitleData.member,
+        stores.petTitleData && stores.petTitleData.member,
+        stores.miniPetTitleData && stores.miniPetTitleData.member,
+        stores.miniPetCollectionData && stores.miniPetCollectionData.member,
+        stores.currencyLogData && stores.currencyLogData.user,
+        stores.trialTowerData && stores.trialTowerData.user,
+        stores.attendanceLightData && stores.attendanceLightData.users,
+        stores.punchRankData && stores.punchRankData.member
+    ];
+    var directMaps = [stores.petData, stores.petSkillData, stores.homeData, stores.placedFurnitureData];
+    var userIndex;
+    var mapIndex;
+    for (userIndex = 0; userIndex < userNames.length; userIndex++) {
+        var userName = userNames[userIndex];
+        removeUserFromGuildDataOnAccountDelete(data, guildData, userName);
+        removeAccountLifecycleEntriesOnDelete(data, userName);
+        removeDeletedAccountNameFromArray(data.attend_list, userName);
+        if (data.admin) delete data.admin[userName];
+        if (data.matzangField && data.matzangField.participants) delete data.matzangField.participants[userName];
+        if (data.petMusou) {
+            if (data.petMusou.participants) delete data.petMusou.participants[userName];
+            if (data.petMusou.nextParticipants) delete data.petMusou.nextParticipants[userName];
+            if (data.petMusou.players) delete data.petMusou.players[userName];
+            removeDeletedAccountNameFromArray(data.petMusou.turnQueue, userName);
+            if (data.petMusou.currentHolder === userName) data.petMusou.currentHolder = "";
+            if (data.petMusou.currentChampion && data.petMusou.currentChampion.user === userName) delete data.petMusou.currentChampion;
+            if (data.petMusou.realFlagDiscovery && data.petMusou.realFlagDiscovery.user === userName) delete data.petMusou.realFlagDiscovery;
+        }
+        for (mapIndex = 0; mapIndex < nestedMaps.length; mapIndex++) {
+            if (nestedMaps[mapIndex]) delete nestedMaps[mapIndex][userName];
+        }
+        for (mapIndex = 0; mapIndex < directMaps.length; mapIndex++) {
+            if (directMaps[mapIndex]) delete directMaps[mapIndex][userName];
+        }
+    }
+    if (data.auction instanceof Array) {
+        for (var auctionIndex = 0; auctionIndex < data.auction.length; auctionIndex++) {
+            var auctionItem = data.auction[auctionIndex];
+            if (auctionItem && invalidNames[auctionItem.highestBidder]) {
+                auctionItem.highestBidder = "";
+                auctionItem.highestBid = 0;
+            }
+        }
+    }
+    var directUserFields = ["petbattlewinner", "toplv", "topgame", "topCarrotGive", "topThermo", "miniPetTop", "intimacyTop"];
+    for (var fieldIndex = 0; fieldIndex < directUserFields.length; fieldIndex++) {
+        if (invalidNames[data[directUserFields[fieldIndex]]]) data[directUserFields[fieldIndex]] = "";
+    }
+    if (data.HoiCastle && invalidNames[data.HoiCastle.lord]) data.HoiCastle.lord = "";
+    if (data.hoiHappyFoundation && invalidNames[data.hoiHappyFoundation.captain]) data.hoiHappyFoundation.captain = "";
+    var accountLogNames = ["supportPassPayoutLogs", "guildTerritoryAutomationLogs", "territoryPassAuditLogs", "petMusouAutomationLogs"];
+    for (var logNameIndex = 0; logNameIndex < accountLogNames.length; logNameIndex++) {
+        var accountLogs = data[accountLogNames[logNameIndex]];
+        if (!(accountLogs instanceof Array)) continue;
+        data[accountLogNames[logNameIndex]] = accountLogs.filter(function (log) {
+            return !log || (!invalidNames[log.user] && !invalidNames[log.operator]);
+        });
+    }
+
+    var commentsData = initPetHomeCommentsData(stores.petHomeCommentsData);
+    var commentMaps = [commentsData.comments, commentsData.pinnedComments];
+    for (mapIndex = 0; mapIndex < commentMaps.length; mapIndex++) {
+        var commentMap = commentMaps[mapIndex];
+        for (userIndex = 0; userIndex < userNames.length; userIndex++) delete commentMap[userNames[userIndex]];
+        for (var commentOwner in commentMap) {
+            if (!commentMap.hasOwnProperty(commentOwner) || !(commentMap[commentOwner] instanceof Array)) continue;
+            commentMap[commentOwner] = commentMap[commentOwner].filter(function (comment) {
+                return !comment || !invalidNames[comment.from];
+            });
+        }
+    }
+
+    var activityData = requirePetHomeActivityData(stores.petHomeActivityData);
+    for (userIndex = 0; userIndex < userNames.length; userIndex++) {
+        delete activityData.petHomeSocial[userNames[userIndex]];
+        delete activityData.alerts[userNames[userIndex]];
+        delete activityData.recentVisitors[userNames[userIndex]];
+    }
+    for (var socialOwner in activityData.petHomeSocial) {
+        if (!activityData.petHomeSocial.hasOwnProperty(socialOwner)) continue;
+        var social = activityData.petHomeSocial[socialOwner];
+        social.followers = social.followers.filter(function (name) { return !invalidNames[name]; });
+        social.following = social.following.filter(function (name) { return !invalidNames[name]; });
+    }
+    for (var alertOwner in activityData.alerts) {
+        if (!activityData.alerts.hasOwnProperty(alertOwner)) continue;
+        activityData.alerts[alertOwner] = activityData.alerts[alertOwner].filter(function (alert) {
+            return !alert || !invalidNames[alert.actorId];
+        });
+    }
+    for (var visitorOwner in activityData.recentVisitors) {
+        if (!activityData.recentVisitors.hasOwnProperty(visitorOwner)) continue;
+        activityData.recentVisitors[visitorOwner] = activityData.recentVisitors[visitorOwner].filter(function (visitor) {
+            return !visitor || !invalidNames[visitor.visitorId];
+        });
+    }
+
+    var petExploreData = stores.petExploreData || {};
+    var exploreMaps = [petExploreData.userBet, petExploreData.autoFixedDungeon, petExploreData.record];
+    for (mapIndex = 0; mapIndex < exploreMaps.length; mapIndex++) {
+        if (!exploreMaps[mapIndex]) continue;
+        for (userIndex = 0; userIndex < userNames.length; userIndex++) delete exploreMaps[mapIndex][userNames[userIndex]];
+    }
+    if (petExploreData.bet) {
+        for (var dungeonKey in petExploreData.bet) {
+            if (!petExploreData.bet.hasOwnProperty(dungeonKey) || !(petExploreData.bet[dungeonKey] instanceof Array)) continue;
+            petExploreData.bet[dungeonKey] = petExploreData.bet[dungeonKey].filter(function (entry) {
+                return !entry || !invalidNames[entry.user];
+            });
+        }
+    }
+
+    var freeMarketData = ensureFreeMarketData(stores.freeMarketData);
+    freeMarketData.listings = freeMarketData.listings.filter(function (listing) {
+        return !listing || !invalidNames[listing.seller];
+    });
+    freeMarketData.completedLogs = freeMarketData.completedLogs.filter(function (log) {
+        return !log || (!invalidNames[log.seller] && !invalidNames[log.buyer]);
+    });
+    removeDeletedAccountBoardRows(stores.boardData, invalidNames);
+    removeDeletedAccountBoardRows(stores.carrotBoardData, invalidNames);
+    if (stores.packageLogData && stores.packageLogData.logs instanceof Array) {
+        stores.packageLogData.logs = stores.packageLogData.logs.filter(function (log) {
+            return !log || (!invalidNames[log.target] && !invalidNames[log.by]);
+        });
+    }
+    return userNames;
 }
 
 // 특정 유저가 계정정지 상태인지 확인하는 함수
