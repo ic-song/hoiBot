@@ -12,12 +12,12 @@
 
 | 검증 | 결과 |
 | --- | --- |
-| 신규 RFA-01 + item/currency/furniture/app-wiring/typed-receipt 영향 7파일 | 115/115 PASS, suites 9, skip 0 |
+| 신규 RFA-01 + item/currency/furniture/app-wiring/typed-receipt 영향 7파일 | 118/118 PASS, suites 9, skip 0 (자체 23 + 영향 회귀 95) |
 | `npm.cmd run typecheck` | PASS |
 | `npm.cmd run build` | PASS |
 | `npm.cmd run object-data:validate` | PASS, 등록 대상 98개 |
 | 신규 JSON parse | 2/2 PASS |
-| 독립 review | P0=0, P1=0, P2=0; reviewer focused 20/20 + typecheck PASS |
+| 독립 review | REVIEW0 — P0 0, P1 0, P2 0; boundary single-read/data-only snapshot 보완 독립 재검토 완료 |
 | 변경 경계 | 신규 shared provider/contract/test/evidence만; consumer/dispatch/schema/migration/app/main/Info 변경 0 |
 | DDL/DML | provider source와 test에 SQL/DDL/DML 0 |
 
@@ -27,7 +27,7 @@
 node --import tsx --test test/request-reuse-contract.test.ts test/canonical-item-inventory-repository.test.ts test/maria-canonical-currency-repository.test.ts test/canonical-furniture-home-repository.test.ts test/app-wiring-operation-provider.test.ts test/app-wiring-entrypoint-runner.test.ts test/pet-title-canonical-mutation-provider.test.ts
 ```
 
-원본 focused log: `focused-test.log`, SHA-256 `953b5afc9518e49d35e65597fc13c043ca2f7f1653ea33bdfc1849b09ad0782b`.
+원본 focused log: `focused-test.log`, SHA-256 `489d0ceba329adc67c04ef11b894b4ad3e980e384f8143609219ea488f3c3de2`.
 
 ## 시나리오 증거
 
@@ -38,6 +38,7 @@ node --import tsx --test test/request-reuse-contract.test.ts test/canonical-item
 - concurrency: 동일 요청 두 개를 동시에 호출해 실행 1, replay 1.
 - restart/failure: 실패 attempt의 effect/receipt 0, 완료 뒤 새 provider instance에서 effect 0 replay.
 - integrity: 첫 실행과 replay 모두 detached deep-frozen receipt result를 반환하고 저장 result fingerprint drift를 차단.
+- boundary snapshot: input/actor/target/player/receipt/result를 own descriptor로 1회 data-only snapshot하고 그 snapshot만 지문/비교/저장/반환에 사용. accessor·nested accessor·symbol·extra fixed field·Proxy는 getter/trap 실행 없이 차단(`resultReads`/`actorReads`/nested reads 0).
 - legacy: currency/furniture/app-wiring 기존 공식과 byte-exact hash 일치. fingerprint 없는 item/operations receipt shape는 provider API에서 effect 0으로 거절.
 
 ## 실행하지 않은 검증

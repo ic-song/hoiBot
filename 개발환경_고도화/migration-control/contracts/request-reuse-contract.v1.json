@@ -16,7 +16,8 @@
     "targetType",
     "targetId"
   ],
-  "payloadRule": "Object keys are sorted; array order is preserved; null, boolean, safe number, bigint and string have distinct type tags; unsupported prototypes, accessors, holes, symbols, undefined, unsafe integers, non-finite numbers, cycles and depth above 64 fail closed.",
+  "payloadRule": "Object keys are sorted; array order is preserved; null, boolean, safe number, bigint and string have distinct type tags; proxies, unsupported prototypes, accessors, holes, symbols, undefined, unsafe integers, non-finite numbers, cycles and depth above 64 fail closed.",
+  "boundarySnapshotRule": "Input, actor, receipt and result boundaries accept only exact plain data objects, arrays and canonical primitives. Each boundary is descriptor-snapshotted once before fingerprinting, comparison or return; proxies, accessors, symbols and noncanonical extra fields fail closed, including nested actor, player, target and result data.",
   "terminalReceipt": [
     "contractVersion",
     "requestKey",

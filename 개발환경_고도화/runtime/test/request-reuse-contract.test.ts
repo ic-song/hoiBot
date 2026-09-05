@@ -95,6 +95,74 @@ describe("RFA-01 request reuse canonical contract", () => {
     }
   });
 
+  it("rejects changing actor and result getters without invoking them", async () => {
+    let actorReads = 0;
+    const hostileInput = { ...request() } as Record<string, unknown>;
+    Object.defineProperty(hostileInput, "actor", { enumerable: true, get: () => {
+      actorReads += 1;
+      return actorReads === 1 ? request().actor : { ...request().actor, actorId: "evil" };
+    } });
+    await assert.rejects(() => new RequestReuseProvider().execute(hostileInput as unknown as RequestReuseInput, new AtomicMemoryStore(), effect), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(actorReads, 0);
+
+    let resultReads = 0;
+    const hostileResult: Record<string, unknown> = { quantity: 7n };
+    Object.defineProperty(hostileResult, "status", { enumerable: true, get: () => ++resultReads === 1 ? "COMPLETED" : "EVIL" });
+    const store = new AtomicMemoryStore();
+    await assert.rejects(() => new RequestReuseProvider().execute(request(), store, async (context) => { context.addEffect(); return hostileResult as unknown as Result; }), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(resultReads, 0);
+    assert.equal(store.effectCount, 0);
+    assert.equal(store.receipts.size, 0);
+
+    let playerReads = 0;
+    const hostileActor = { actorType: "platform_user", actorId: "actor" } as Record<string, unknown>;
+    Object.defineProperty(hostileActor, "playerId", { enumerable: true, get: () => { playerReads += 1; return playerReads === 1 ? "player01" : "player99"; } });
+    await assert.rejects(() => new RequestReuseProvider().execute({ ...request(), actor: hostileActor as unknown as RequestReuseInput["actor"] }, new AtomicMemoryStore(), effect), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(playerReads, 0);
+
+    let targetReads = 0;
+    const hostileTarget = { ...request() } as Record<string, unknown>;
+    Object.defineProperty(hostileTarget, "targetId", { enumerable: true, get: () => { targetReads += 1; return targetReads === 1 ? "item0001" : "item9999"; } });
+    await assert.rejects(() => new RequestReuseProvider().execute(hostileTarget as unknown as RequestReuseInput, new AtomicMemoryStore(), effect), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(targetReads, 0);
+  });
+
+  it("rejects receipt result getters before reading or replaying them", () => {
+    let resultReads = 0;
+    const hostileReceipt = { ...createRequestReuseTerminalReceipt(request(), { status: "COMPLETED", quantity: 7n }) } as Record<string, unknown>;
+    Object.defineProperty(hostileReceipt, "result", { enumerable: true, get: () => {
+      resultReads += 1;
+      return resultReads === 1 ? { status: "COMPLETED", quantity: 7n } : { status: "EVIL", quantity: 999n };
+    } });
+    assert.throws(() => replayRequestReuseTerminal(request(), hostileReceipt as unknown as RequestReuseTerminalReceipt<Result>), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(resultReads, 0);
+
+    let nestedReads = 0;
+    const nestedResult: Record<string, unknown> = { quantity: 7n };
+    Object.defineProperty(nestedResult, "status", { enumerable: true, get: () => { nestedReads += 1; return "COMPLETED"; } });
+    const nestedReceipt = { ...createRequestReuseTerminalReceipt(request(), { status: "COMPLETED", quantity: 7n }), result: nestedResult };
+    assert.throws(() => replayRequestReuseTerminal(request(), nestedReceipt as unknown as RequestReuseTerminalReceipt<Result>), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(nestedReads, 0);
+  });
+
+  it("rejects nested accessors, symbols, extra boundary fields and proxies", () => {
+    let nestedReads = 0;
+    const nested: Record<string, unknown> = {};
+    Object.defineProperty(nested, "value", { enumerable: true, get: () => { nestedReads += 1; return "EVIL"; } });
+    assert.throws(() => createRequestReuseEnvelope(request({ payload: { nested: nested as unknown as RequestReuseValue } })), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(nestedReads, 0);
+
+    const symbolPayload = { value: "ok", [Symbol("hidden")]: "evil" } as unknown as RequestReuseValue;
+    assert.throws(() => createRequestReuseEnvelope(request({ payload: symbolPayload })), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.throws(() => createRequestReuseEnvelope({ ...request(), unexpected: "field" } as unknown as RequestReuseInput), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.throws(() => createRequestReuseEnvelope({ ...request(), actor: { ...request().actor, unexpected: "field" } } as unknown as RequestReuseInput), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+
+    let proxyReads = 0;
+    const proxy = new Proxy({ value: "ok" }, { getOwnPropertyDescriptor(target, key) { proxyReads += 1; return Reflect.getOwnPropertyDescriptor(target, key); } });
+    assert.throws(() => createRequestReuseEnvelope(request({ payload: proxy as unknown as RequestReuseValue })), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
+    assert.equal(proxyReads, 0);
+  });
+
   it("replays the exact terminal result without a second effect", async () => {
     const store = new AtomicMemoryStore();
     const provider = new RequestReuseProvider();
@@ -127,7 +195,7 @@ describe("RFA-01 request reuse canonical contract", () => {
       const store = new AtomicMemoryStore();
       store.receipts.set(request().requestKey, legacy as unknown as RequestReuseTerminalReceipt<Result>);
       let effects = 0;
-      await assert.rejects(() => new RequestReuseProvider().execute(request(), store, async () => { effects += 1; return { status: "COMPLETED", quantity: 7n }; }), /REQUEST_REUSE_CONTRACT_CONFLICT/);
+      await assert.rejects(() => new RequestReuseProvider().execute(request(), store, async () => { effects += 1; return { status: "COMPLETED", quantity: 7n }; }), /REQUEST_REUSE_VALUE_NOT_CANONICAL/);
       assert.equal(effects, 0);
       assert.equal(store.effectCount, 0);
     }
