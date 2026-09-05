@@ -27,7 +27,7 @@
 node --import tsx --test test/request-reuse-contract.test.ts test/canonical-item-inventory-repository.test.ts test/maria-canonical-currency-repository.test.ts test/canonical-furniture-home-repository.test.ts test/app-wiring-operation-provider.test.ts test/app-wiring-entrypoint-runner.test.ts test/pet-title-canonical-mutation-provider.test.ts
 ```
 
-원본 focused log: `focused-test.log`, SHA-256 `489d0ceba329adc67c04ef11b894b4ad3e980e384f8143609219ea488f3c3de2`.
+원본 focused log: `focused-test.log`, CRLF와 단독 CR을 LF로 정규화한 canonical SHA-256 `489d0ceba329adc67c04ef11b894b4ad3e980e384f8143609219ea488f3c3de2` (Windows checkout raw SHA-256은 줄바꿈 정책에 따라 달라질 수 있음).
 
 ## 시나리오 증거
 
