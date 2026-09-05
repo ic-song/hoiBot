@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, it } from "node:test";
 import { createDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { deterministicGuildTerritoryDrawBps, GuildTerritoryAttackService } from "../src/guild/guild-territory-attack-service.js";
+import { GuildTerritoryAttackRuntime4PolicyProvider } from "../src/guild/guild-territory-attack-runtime4-policy-provider.js";
 
 const suite = process.env.RUN_MARIADB_INTEGRATION === "true" ? describe : describe.skip;
 const required = (name: string) => {
@@ -83,6 +84,17 @@ suite("guild territory attack MariaDB integration", () => {
 
   before(async () => {
     db = createDatabaseClient({ enabled: true, host: required("DATABASE_HOST"), port: Number(required("DATABASE_PORT")), user: required("DATABASE_USER"), password: required("DATABASE_PASSWORD"), name: required("DATABASE_NAME"), connectionLimit: 12, connectTimeoutMs: 5_000 });
+    const policyProvider = new GuildTerritoryAttackRuntime4PolicyProvider(db);
+    await db.execute("DELETE FROM guild_territory_attack_item_candidates");
+    const provisioned = await Promise.all([policyProvider.apply("wbs756-mariadb-fixture"), policyProvider.apply("wbs756-mariadb-fixture")]);
+    assert.deepEqual(provisioned.reduce((sum, result) => ({ inserted: sum.inserted + result.inserted, replayed: sum.replayed + result.replayed }), { inserted: 0, replayed: 0 }), { inserted: 4, replayed: 4 });
+    assert.deepEqual(await policyProvider.apply("wbs756-mariadb-fixture"), { inserted: 0, replayed: 4 });
+    await db.execute("UPDATE guild_territory_attack_item_candidates SET success_bps=4999 WHERE candidate_role='DEFENSE' AND priority_order=1");
+    await assert.rejects(() => policyProvider.apply("wbs756-mariadb-fixture"), /GUILD_TERRITORY_RUNTIME4_POLICY_DRIFT/);
+    await db.execute("UPDATE guild_territory_attack_item_candidates SET success_bps=5000 WHERE candidate_role='DEFENSE' AND priority_order=1");
+    await db.execute("UPDATE item_definitions SET display_name='합성 drift' WHERE code='ITEM-TERRITORY-AMBUSH-10'");
+    await assert.rejects(() => policyProvider.apply("wbs756-mariadb-fixture"), /GUILD_TERRITORY_RUNTIME4_LEGACY_CROSSWALK_DRIFT/);
+    await db.execute("UPDATE item_definitions SET display_name='영지기습공격권🔥(10%)' WHERE code='ITEM-TERRITORY-AMBUSH-10'");
     await db.execute("UPDATE guild_territory_attack_policy_versions SET status='ACTIVE',contribution_medal_bps=10000,contribution_medal_quantity=2,evidence_label='synthetic-fixture-only',rift_event_base_bps=0,instability_bps_per_point=0,normal_rift_base_bps=10000,rift_bias_bps_per_point=0,rift_evidence_label='synthetic-fixture-only',activated_at=UTC_TIMESTAMP(3) WHERE policy_scope_code='world-attack' AND policy_version=1");
     await db.execute("UPDATE command_registry SET rollout_state='ACTIVE',enabled=TRUE WHERE command_code='GUILD_TERRITORY_ATTACK_EXECUTE'");
     await db.execute("UPDATE guild_territory_war_control SET dimension_gate_enabled=TRUE WHERE control_code='current'");
@@ -105,7 +117,7 @@ suite("guild territory attack MariaDB integration", () => {
     const operationId = await operationIdFor(eventId);
     const counts = (await db.query<Array<{ runs: bigint; draws: bigint; audits: bigint; outbox: bigint }>>("SELECT (SELECT COUNT(*) FROM guild_territory_attack_runs WHERE operation_id=?) runs,(SELECT COUNT(*) FROM guild_territory_attack_random_draws WHERE operation_id=?) draws,(SELECT COUNT(*) FROM command_audit WHERE operation_id=?) audits,(SELECT COUNT(*) FROM outbox_messages WHERE operation_id=?) outbox", [operationId, operationId, operationId, operationId]))[0]!;
     assert.deepEqual(Object.values(counts).map(Number), [1, 2, 1, 1]);
-    assert.equal(String((await db.query<Array<{ balance: string }>>("SELECT balance FROM guild_resource_accounts WHERE guild_id=? AND currency_code='POINT'", [arena.actorGuild]))[0]!.balance), "50000000.000");
+    assert.equal(String((await db.query<Array<{ balance: string }>>("SELECT balance FROM guild_resource_accounts WHERE guild_id=? AND currency_code='guild_fund'", [arena.actorGuild]))[0]!.balance), "50000000.000");
     assert.equal(Number((await db.query<Array<{ attacks_used: number }>>("SELECT attacks_used FROM guild_territory_player_attack_states WHERE war_id=? AND player_id=?", [arena.war, arena.actor]))[0]!.attacks_used), 1);
     assert.equal(String((await db.query<Array<{ quantity: bigint }>>("SELECT stack.quantity FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND item.code='guild_contribution_medal'", [arena.actor]))[0]!.quantity), "2");
   });
@@ -118,7 +130,7 @@ suite("guild territory attack MariaDB integration", () => {
     assert.equal(result.status, "blocked_max_owned");
     assert.equal(result.playerAttacksUsed, 1);
     assert.equal(result.guildAttacksUsed, 1);
-    assert.equal(String((await db.query<Array<{ balance: string }>>("SELECT balance FROM guild_resource_accounts WHERE guild_id=? AND currency_code='POINT'", [arena.actorGuild]))[0]!.balance), "100000000.000");
+    assert.equal(String((await db.query<Array<{ balance: string }>>("SELECT balance FROM guild_resource_accounts WHERE guild_id=? AND currency_code='guild_fund'", [arena.actorGuild]))[0]!.balance), "100000000.000");
   });
 
   it("covers both deterministic dimension branches", async () => {
@@ -154,12 +166,12 @@ suite("guild territory attack MariaDB integration", () => {
       const candidate = `${prefix}-combat-chain-${index}`;
       const defense = deterministicGuildTerritoryDrawBps(`${candidate}|${arena.war}|${arena.generation}|defense_ticket`);
       const attack = deterministicGuildTerritoryDrawBps(`${candidate}|${arena.war}|${arena.generation}|attack_ticket`);
-      if (defense >= 2_000 && attack >= 1_000) { eventId = candidate; break; }
+      if (defense > 5_000 && attack > 4_000) { eventId = candidate; break; }
     }
     assert.notEqual(eventId, "");
-    const items = await db.query<Array<{ id: bigint; code: string }>>("SELECT id,code FROM item_definitions WHERE code IN ('territory_defense_ticket','territory_attack_ticket')");
+    const items = await db.query<Array<{ id: bigint; code: string }>>("SELECT id,code FROM item_definitions WHERE code IN ('ITEM-TERRITORY-DEFENSE-50','ITEM-TERRITORY-AMBUSH-40')");
     const idByCode = new Map(items.map((row) => [row.code, row.id]));
-    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1),(?,?,1,1)", [arena.defender, idByCode.get("territory_defense_ticket"), arena.actor, idByCode.get("territory_attack_ticket")]);
+    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1),(?,?,1,1)", [arena.defender, idByCode.get("ITEM-TERRITORY-DEFENSE-50"), arena.actor, idByCode.get("ITEM-TERRITORY-AMBUSH-40")]);
     await seedEvent(arena, eventId);
     const result = await new GuildTerritoryAttackService(db).attack({ eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 1 });
     assert.equal(result.resultCode, "snapshot_defender_win");
@@ -171,15 +183,78 @@ suite("guild territory attack MariaDB integration", () => {
   it("checks contribution-cube defense separately after a surprise attack activates", async () => {
     const arena = await seedArena({ occupied: [1] });
     await db.execute("UPDATE guild_territory_combat_snapshots SET surprise_defense_bonus_bps=10000 WHERE war_id=? AND player_id=?", [arena.war, arena.defender]);
-    const attackItem = (await db.query<Array<{ id: bigint }>>("SELECT id FROM item_definitions WHERE code='territory_attack_ticket'"))[0]!.id;
-    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1)", [arena.actor, attackItem]);
-    const eventId = findEvent(arena, "attack_ticket", (draw) => draw < 1_000);
+    const attackItems = await db.query<Array<{ id: bigint; code: string }>>("SELECT id,code FROM item_definitions WHERE code IN ('ITEM-TERRITORY-AMBUSH-40','ITEM-TERRITORY-AMBUSH-10')");
+    const attackIdByCode = new Map(attackItems.map((row) => [row.code, row.id]));
+    const attackItem = attackIdByCode.get("ITEM-TERRITORY-AMBUSH-40")!;
+    const lowerAttackItem = attackIdByCode.get("ITEM-TERRITORY-AMBUSH-10")!;
+    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1),(?,?,1,1)", [arena.actor, attackItem, arena.actor, lowerAttackItem]);
+    const eventId = findEvent(arena, "attack_ticket", (draw) => draw <= 4_000);
     await seedEvent(arena, eventId);
     const result = await new GuildTerritoryAttackService(db).attack({ eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 1 });
     assert.equal(result.resultCode, "contribution_cube_defense_win");
     const operationId = await operationIdFor(eventId);
     const draws = await db.query<Array<{ draw_code: string }>>("SELECT draw_code FROM guild_territory_attack_random_draws WHERE operation_id=? ORDER BY sequence_no", [operationId]);
     assert.deepEqual(draws.map((row) => row.draw_code), ["contribution_medal", "attack_ticket", "contribution_cube_defense", "rift_event"]);
+    assert.equal(String((await db.query<Array<{ quantity: bigint }>>("SELECT quantity FROM inventory_stacks WHERE player_id=? AND item_id=?", [arena.actor, attackItem]))[0]!.quantity), "0");
+    assert.equal(String((await db.query<Array<{ quantity: bigint }>>("SELECT quantity FROM inventory_stacks WHERE player_id=? AND item_id=?", [arena.actor, lowerAttackItem]))[0]!.quantity), "1");
+  });
+
+  it("selects defense 50 before 20 and decrements only the successful selected item", async () => {
+    const arena = await seedArena({ occupied: [1] });
+    const eventId = findEvent(arena, "defense_ticket", (draw) => draw > 2_000 && draw <= 5_000);
+    const items = await db.query<Array<{ id: bigint; code: string }>>("SELECT id,code FROM item_definitions WHERE code IN ('ITEM-TERRITORY-DEFENSE-50','ITEM-TERRITORY-DEFENSE-20')");
+    const idByCode = new Map(items.map((row) => [row.code, row.id]));
+    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1),(?,?,1,1)", [arena.defender, idByCode.get("ITEM-TERRITORY-DEFENSE-50"), arena.defender, idByCode.get("ITEM-TERRITORY-DEFENSE-20")]);
+    await seedEvent(arena, eventId);
+    const result = await new GuildTerritoryAttackService(db).attack({ eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 1 });
+    assert.equal(result.resultCode, "defense_ticket_win");
+    const balances = await db.query<Array<{ code: string; quantity: bigint }>>("SELECT item.code,stack.quantity FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND item.code IN ('ITEM-TERRITORY-DEFENSE-50','ITEM-TERRITORY-DEFENSE-20') ORDER BY item.code", [arena.defender]);
+    assert.deepEqual(balances.map((row) => [row.code, String(row.quantity)]), [["ITEM-TERRITORY-DEFENSE-20", "1"], ["ITEM-TERRITORY-DEFENSE-50", "0"]]);
+  });
+
+  it("uses the lower defense 20 candidate when defense 50 is not owned", async () => {
+    const arena = await seedArena({ occupied: [1] });
+    const eventId = findEvent(arena, "defense_ticket", (draw) => draw <= 2_000);
+    const itemId = (await db.query<Array<{ id: bigint }>>("SELECT id FROM item_definitions WHERE code='ITEM-TERRITORY-DEFENSE-20'"))[0]!.id;
+    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1)", [arena.defender, itemId]);
+    await seedEvent(arena, eventId);
+    const result = await new GuildTerritoryAttackService(db).attack({ eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 1 });
+    assert.equal(result.resultCode, "defense_ticket_win");
+    assert.equal(String((await db.query<Array<{ quantity: bigint }>>("SELECT quantity FROM inventory_stacks WHERE player_id=? AND item_id=?", [arena.defender, itemId]))[0]!.quantity), "0");
+  });
+
+  it("uses the lower attack 10 candidate when attack 40 is not owned", async () => {
+    const arena = await seedArena({ occupied: [1] });
+    const eventId = findEvent(arena, "attack_ticket", (draw) => draw <= 1_000);
+    const itemId = (await db.query<Array<{ id: bigint }>>("SELECT id FROM item_definitions WHERE code='ITEM-TERRITORY-AMBUSH-10'"))[0]!.id;
+    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1)", [arena.actor, itemId]);
+    await seedEvent(arena, eventId);
+    const result = await new GuildTerritoryAttackService(db).attack({ eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 1 });
+    assert.equal(result.resultCode, "attack_ticket_win");
+    assert.equal(String((await db.query<Array<{ quantity: bigint }>>("SELECT quantity FROM inventory_stacks WHERE player_id=? AND item_id=?", [arena.actor, itemId]))[0]!.quantity), "0");
+  });
+
+  it("does not decrement failed defense or attack item rolls before normal fallback", async () => {
+    const arena = await seedArena({ occupied: [1] });
+    let eventId = "";
+    for (let index = 0; index < 200_000; index += 1) {
+      const candidate = `${prefix}-item-miss-${index}`;
+      const defense = deterministicGuildTerritoryDrawBps(`${candidate}|${arena.war}|${arena.generation}|defense_ticket`);
+      const attack = deterministicGuildTerritoryDrawBps(`${candidate}|${arena.war}|${arena.generation}|attack_ticket`);
+      if (defense > 5_000 && attack > 4_000) { eventId = candidate; break; }
+    }
+    assert.notEqual(eventId, "");
+    const items = await db.query<Array<{ id: bigint; code: string }>>("SELECT id,code FROM item_definitions WHERE code IN ('ITEM-TERRITORY-DEFENSE-50','ITEM-TERRITORY-DEFENSE-20','ITEM-TERRITORY-AMBUSH-40','ITEM-TERRITORY-AMBUSH-10')");
+    const idByCode = new Map(items.map((row) => [row.code, row.id]));
+    await db.execute("INSERT INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,1,1),(?,?,1,1),(?,?,1,1),(?,?,1,1)", [arena.defender, idByCode.get("ITEM-TERRITORY-DEFENSE-50"), arena.defender, idByCode.get("ITEM-TERRITORY-DEFENSE-20"), arena.actor, idByCode.get("ITEM-TERRITORY-AMBUSH-40"), arena.actor, idByCode.get("ITEM-TERRITORY-AMBUSH-10")]);
+    await seedEvent(arena, eventId);
+    const result = await new GuildTerritoryAttackService(db).attack({ eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 1 });
+    assert.equal(result.resultCode, "snapshot_defender_win");
+    const quantities = await db.query<Array<{ quantity: bigint }>>("SELECT quantity FROM inventory_stacks WHERE player_id IN (?,?) AND item_id IN (?,?,?,?) ORDER BY player_id,item_id", [arena.actor, arena.defender, idByCode.get("ITEM-TERRITORY-AMBUSH-40"), idByCode.get("ITEM-TERRITORY-AMBUSH-10"), idByCode.get("ITEM-TERRITORY-DEFENSE-50"), idByCode.get("ITEM-TERRITORY-DEFENSE-20")]);
+    assert.deepEqual(quantities.map((row) => String(row.quantity)), ["1", "1", "1", "1"]);
+    const operationId = await operationIdFor(eventId);
+    const itemDraws = await db.query<Array<{ draw_code: string }>>("SELECT draw_code FROM guild_territory_attack_random_draws WHERE operation_id=? AND draw_code IN ('defense_ticket','attack_ticket') ORDER BY sequence_no", [operationId]);
+    assert.deepEqual(itemDraws.map((row) => row.draw_code), ["defense_ticket", "attack_ticket"]);
   });
 
   it("persists a policy-driven great rift and resets instability after combat", async () => {

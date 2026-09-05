@@ -1,8 +1,39 @@
 {
   "standardVersion": "object-data-model-standard.v1",
   "scope": "new_object_schema_only",
-  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql", "466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "471_pet_title_sale_app_wiring.sql", "472_pet_title_admin_batch_app_wiring.sql", "474_pet_title_batch_member_key_snapshot.sql"],
+  "registeredMigrations": ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql", "466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "471_pet_title_sale_app_wiring.sql", "472_pet_title_admin_batch_app_wiring.sql", "474_pet_title_batch_member_key_snapshot.sql", "478_guild_territory_attack_runtime_item_policy.sql"],
   "tables": [
+    {
+      "table": "guild_territory_attack_item_candidates", "role": "relation",
+      "columns": [
+        { "name": "guild_territory_attack_item_candidate_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "policy_scope_code", "type": "VARCHAR(64)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "policy_version", "type": "BIGINT UNSIGNED" },
+        { "name": "candidate_role", "type": "VARCHAR(16)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "priority_order", "type": "INT UNSIGNED" },
+        { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "success_bps", "type": "INT UNSIGNED" },
+        { "name": "active_flag", "type": "BOOLEAN" },
+        { "name": "source_locator", "type": "VARCHAR(255)" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ],
+      "primaryKey": ["guild_territory_attack_item_candidate_id"],
+      "foreignKeys": [
+        { "columns": ["policy_scope_code", "policy_version"], "referencesTable": "guild_territory_attack_policy_versions", "referencesColumns": ["policy_scope_code", "policy_version"] },
+        { "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" }
+      ],
+      "uniqueKeys": [["policy_scope_code", "policy_version", "candidate_role", "priority_order"], ["policy_scope_code", "policy_version", "candidate_role", "item_id"]],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS",
+      "checks": [
+        { "constraint": "chk_guild_territory_attack_item_candidate_role", "expression": "candidate_role IN ('DEFENSE','ATTACK')" },
+        { "constraint": "chk_guild_territory_attack_item_candidate_id", "expression": "guild_territory_attack_item_candidate_id REGEXP '^[a-z][a-z0-9]{7}$'" },
+        { "constraint": "chk_guild_territory_attack_item_candidate_priority", "expression": "priority_order BETWEEN 1 AND 2" },
+        { "constraint": "chk_guild_territory_attack_item_candidate_bps", "expression": "success_bps BETWEEN 0 AND 10000" },
+        { "constraint": "chk_guild_territory_attack_item_candidate_insert_time", "expression": "INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" },
+        { "constraint": "chk_guild_territory_attack_item_candidate_update_time", "expression": "UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }
+      ]
+    },
     {
       "table": "object_identities",
       "role": "identity",
@@ -451,6 +482,16 @@
     {"table":"canonical_mini_pet_title_operation_participants","role":"relation","columns":[{"name":"mini_pet_title_operation_participant_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"mini_pet_title_operation_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"player_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"participant_role","type":"VARCHAR(32)","charset":"ascii","collation":"ascii_bin"},{"name":"INSERT_USER","type":"VARCHAR(100)"},{"name":"INSERT_TIME","type":"CHAR(19)"},{"name":"UPDATE_USER","type":"VARCHAR(100)"},{"name":"UPDATE_TIME","type":"CHAR(19)"}],"primaryKey":["mini_pet_title_operation_participant_id"],"foreignKeys":[{"column":"mini_pet_title_operation_id","referencesTable":"canonical_mini_pet_title_operations","referencesColumn":"mini_pet_title_operation_id"},{"column":"player_id","referencesTable":"canonical_players","referencesColumn":"player_id"}],"uniqueKeys":[["mini_pet_title_operation_id","player_id","participant_role"]],"auditTimeFormat":"KST_YYYY-MM-DD HH:MM:SS"},
     {"table":"canonical_pet_title_operation_participants","role":"relation","columns":[{"name":"pet_title_operation_participant_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"pet_title_operation_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"player_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"participant_role","type":"VARCHAR(32)","charset":"ascii","collation":"ascii_bin"},{"name":"INSERT_USER","type":"VARCHAR(100)"},{"name":"INSERT_TIME","type":"CHAR(19)"},{"name":"UPDATE_USER","type":"VARCHAR(100)"},{"name":"UPDATE_TIME","type":"CHAR(19)"}],"primaryKey":["pet_title_operation_participant_id"],"foreignKeys":[{"column":"pet_title_operation_id","referencesTable":"canonical_pet_title_operations","referencesColumn":"pet_title_operation_id"},{"column":"player_id","referencesTable":"canonical_players","referencesColumn":"player_id"}],"uniqueKeys":[["pet_title_operation_id","player_id","participant_role"]],"auditTimeFormat":"KST_YYYY-MM-DD HH:MM:SS"},
     {"table":"canonical_player_identity_operation_participants","role":"relation","columns":[{"name":"player_identity_operation_participant_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"player_identity_operation_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"player_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},{"name":"participant_role","type":"VARCHAR(32)","charset":"ascii","collation":"ascii_bin"},{"name":"INSERT_USER","type":"VARCHAR(100)"},{"name":"INSERT_TIME","type":"CHAR(19)"},{"name":"UPDATE_USER","type":"VARCHAR(100)"},{"name":"UPDATE_TIME","type":"CHAR(19)"}],"primaryKey":["player_identity_operation_participant_id"],"foreignKeys":[{"column":"player_identity_operation_id","referencesTable":"canonical_player_identity_operations","referencesColumn":"player_identity_operation_id"},{"column":"player_id","referencesTable":"canonical_players","referencesColumn":"player_id"}],"uniqueKeys":[["player_identity_operation_id","player_id","participant_role"]],"auditTimeFormat":"KST_YYYY-MM-DD HH:MM:SS"}
+  ],
+  "integrationOnlyTables": [
+    {
+      "table": "guild_territory_attack_policy_versions", "role": "relation", "integrationMigration": "353_guild_territory_attack_execute.sql",
+      "columns": [
+        { "name": "policy_scope_code", "type": "VARCHAR(64)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "policy_version", "type": "BIGINT UNSIGNED" }
+      ],
+      "primaryKey": ["policy_scope_code", "policy_version"], "foreignKeys": []
+    }
   ],
   "externalDependencies": [
     {

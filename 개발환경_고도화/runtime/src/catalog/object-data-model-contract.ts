@@ -9,14 +9,24 @@ const SEMANTIC_CODE_COLUMN_ALLOWLIST = new Set([
   "error_code",
   "event_code",
   "provider_code",
+  "policy_scope_code",
   "reason_code",
   "recovery_code",
 ]);
-const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: string; primaryKey: readonly string[]; requiredUniqueKeys: readonly (readonly string[])[] }>> = {
-  canonical_players: { migration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"], requiredUniqueKeys: [] },
-  canonical_owned_pet_instances: { migration: "446_canonical_pet_equipment.sql", primaryKey: ["owned_pet_id"], requiredUniqueKeys: [["owned_pet_id", "player_id"]] },
-  canonical_currency_definitions: { migration: "452_canonical_currency_ledger.sql", primaryKey: ["currency_id"], requiredUniqueKeys: [] },
-  canonical_player_currency_balances: { migration: "452_canonical_currency_ledger.sql", primaryKey: ["player_currency_balance_id"], requiredUniqueKeys: [["player_id", "currency_id"], ["player_currency_balance_id", "player_id", "currency_id"]] },
+const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: string; primaryKey: readonly string[]; requiredUniqueKeys: readonly (readonly string[])[]; cuidPrimaryKey?: boolean; columns?: readonly ObjectDataModelColumn[] }>> = {
+  canonical_players: { migration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"], requiredUniqueKeys: [], cuidPrimaryKey: true },
+  canonical_owned_pet_instances: { migration: "446_canonical_pet_equipment.sql", primaryKey: ["owned_pet_id"], requiredUniqueKeys: [["owned_pet_id", "player_id"]], cuidPrimaryKey: true },
+  canonical_currency_definitions: { migration: "452_canonical_currency_ledger.sql", primaryKey: ["currency_id"], requiredUniqueKeys: [], cuidPrimaryKey: true },
+  canonical_player_currency_balances: { migration: "452_canonical_currency_ledger.sql", primaryKey: ["player_currency_balance_id"], requiredUniqueKeys: [["player_id", "currency_id"], ["player_currency_balance_id", "player_id", "currency_id"]], cuidPrimaryKey: true },
+  guild_territory_attack_policy_versions: {
+    migration: "353_guild_territory_attack_execute.sql",
+    primaryKey: ["policy_scope_code", "policy_version"],
+    requiredUniqueKeys: [],
+    columns: [
+      { name: "policy_scope_code", type: "VARCHAR(64)", charset: "ascii", collation: "ascii_bin" },
+      { name: "policy_version", type: "BIGINT UNSIGNED" },
+    ],
+  },
 };
 const EXTERNAL_DEPENDENCY_REGISTRY: Readonly<Record<string, ObjectDataModelExternalDependency>> = {
   external_identities: {
@@ -174,10 +184,11 @@ export function validateObjectDataModelContract(contract: ObjectDataModelContrac
     const dependency = INTEGRATION_DEPENDENCY_REGISTRY[table.table];
     if (dependency === undefined || dependency.migration !== table.integrationMigration) fail("INTEGRATION_DEPENDENCY_NOT_PINNED", table.table);
     if (JSON.stringify(table.primaryKey) !== JSON.stringify(dependency.primaryKey)) fail("INTEGRATION_PRIMARY_KEY_MISMATCH", table.table);
+    if (dependency.columns !== undefined && !sameColumns(table.columns, dependency.columns)) fail("INTEGRATION_COLUMNS_MISMATCH", table.table);
     const names = table.columns.map((entry) => entry.name);
     if (new Set(names).size !== names.length) fail("INTEGRATION_COLUMN_DUPLICATE", table.table);
     validateCandidateKeys(table);
-    for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
+    if (dependency.cuidPrimaryKey === true) for (const primaryKey of table.primaryKey) validateIdentifier(column(table, primaryKey), `${table.table}.${primaryKey}`);
     for (const requiredKey of dependency.requiredUniqueKeys) {
       if (!(table.uniqueKeys ?? []).some((key) => JSON.stringify(key) === JSON.stringify(requiredKey))) fail("INTEGRATION_UNIQUE_KEY_MISSING", `${table.table}.${requiredKey.join(",")}`);
       for (const keyColumn of requiredKey) validateIdentifier(column(table, keyColumn), `${table.table}.${keyColumn}`);
