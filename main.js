@@ -7739,26 +7739,32 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 }
 
-                if (msg === "/부방상여") {
+                if (msg === "/부방상여" || /^\/부방상여\s+.+\/\d+$/.test(msg)) {
                     const authorizedUser = "호이 남"; // 명령어를 사용할 수 있는 유일한 관리자
                     if (sender == authorizedUser) {
+                        var bonusMatch = msg.match(/^\/부방상여\s+(.+)\/(\d+)$/);
+                        if (!bonusMatch) {
+                            replier.reply("사용법: /부방상여 아이템이름/갯수\n예시: /부방상여 미니펫뽑기🐹(/미니펫오픈)/1000");
+                            return;
+                        }
+                        var bonusItemName = bonusMatch[1].trim();
+                        var bonusItemCount = parseInt(bonusMatch[2], 10);
+                        if (!bonusItemName || !isFinite(bonusItemCount) || bonusItemCount < 1) {
+                            replier.reply("❌ 아이템이름과 1개 이상의 지급 수량을 확인해주세요.");
+                            return;
+                        }
                         // 명령어 사용 권한 확인
                         let rewardedUsers = [];
                         getAdminPayoutUsers(data).forEach((targetUsername9) => {
                             if (data.member[targetUsername9]) {
                                 // 사용자 존재 확인
-                                const itemName = "미니펫뽑기🐹(/미니펫오픈)";
-                                if (data.member[targetUsername9].bag[itemName]) {
-                                    data.member[targetUsername9].bag[itemName] += 1000;
-                                } else {
-                                    data.member[targetUsername9].bag[itemName] = 1000;
-                                }
+                                addItem(data, targetUsername9, bonusItemName, bonusItemCount);
                                 rewardedUsers.push(targetUsername9);
                             }
                         });
                         if (rewardedUsers.length > 0) {
                             saveJsonFile(data, filePath);
-                            const rewardMessage9 = "다음 관리자 " + rewardedUsers.length + "명에게 미니펫뽑기🐹(/미니펫오픈) 1000개 이(가) 지급되었습니다: " + rewardedUsers.join(", ");
+                            const rewardMessage9 = "다음 관리자 " + rewardedUsers.length + "명에게 " + bonusItemName + " " + numberWithCommas(bonusItemCount) + "개 이(가) 지급되었습니다: " + rewardedUsers.join(", ");
                             replier.reply(rewardMessage9);
                         } else {
                             replier.reply("지급 가능한 사용자가 없습니다.");

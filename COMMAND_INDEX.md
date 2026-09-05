@@ -3979,17 +3979,17 @@ Status: VERIFIED
 ## Data Usage
 - `data.admin`
 - `data.member[*].point`
-- `data.member[*].bag["미니펫뽑기🐹(/미니펫오픈)"]`
+- `data.member[*].bag[입력한 아이템이름]`
 ## Save Flow
 - `/관리자추가` and `/관리자삭제` mutate `data.admin` and save `filePath`
 - `/관리자일당` reads `data.admin`, gives existing members `GLOBAL_CONFIG.admin.dailyPayoutPoint` (10억) points, reports actual paid count, and saves `filePath`
-- `/부방상여` reads `data.admin`, gives existing members 미니펫뽑기 1000개, reports actual rewarded count, and saves `filePath`
+- `/부방상여 아이템이름/갯수`는 마지막 `/숫자`를 수량으로 해석하고, `data.admin`의 실제 가입 유저에게 입력 아이템을 지급한 뒤 대상 수와 지급 내역을 출력하고 `filePath`를 저장한다.
 ## Related Commands
 - `/관리자명단`
 - `/관리자추가`
 - `/관리자삭제`
 - `/관리자일당`
-- `/부방상여`
+- `/부방상여 아이템이름/갯수`
 ## AI Notes
 - Payout commands no longer keep separate hardcoded recipient arrays
 - `isAdmin` requires both `data.admin` membership and execution in `호이월드 GM 관리자방`, `팻 테스트방`, `통합스텝`, or `서버관리자`
@@ -3997,6 +3997,7 @@ Status: VERIFIED
 - `/주기리셋` and `/자동탐험시작` additionally allow an Admin or `오픈채팅봇` in `호이월드 GM 관리자방`; their existing Master access remains available in Master-authorized rooms
 - `/관리자일당` authorization remains `호이 남` and `오픈채팅봇`
 - `/부방상여` authorization remains `호이 남`
+- 인자 없는 `/부방상여`는 사용법만 출력하며 지급하지 않는다. 아이템명 내부의 `/관련명령어` 표기는 유지하고 마지막 `/숫자`만 지급 수량으로 분리한다.
 
 ---
 
