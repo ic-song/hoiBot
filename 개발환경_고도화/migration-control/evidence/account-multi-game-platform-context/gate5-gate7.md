@@ -32,8 +32,9 @@
 - `pet-title-admin-batch-app-wiring-mariadb.integration.test.ts`: 3/3 PASS, fail 0, duration 8.797초.
 - MariaDB 증적: SHADOW business/receipt/outbox DML 0, child-evidence drift 실패, provider 재구성 후 replay, PET_TITLE mutex 대기, ACCOUNT_AUTHORITY mutex 대기, 실제 `/계정변경` writer와 sync 병렬 완료, 활성 REPRESENTATIVE/SUB 보존, 비활성 owner만 제거, 권위 ambiguity 시 FAILED claim만 1건 기록하고 batch/target/receipt-link/outbox/ownership DML은 0건이다.
 - 테스트 종료 후 전용 schema는 guard가 확인한 정확한 이름만 제거했다. 운영 DB/운영 JSON은 조회·변경하지 않았다.
-- 최종 전체 suite 1회를 실행해 stable-ID 계약의 이전 consumer 고정 수치 `1,108/4`가 현재 manifest `1,111/7`과 다른 1건을 발견했다. 기존 registry 1,104개 ID 불변 검사는 유지하고 현재 consumer 수와 신규 logical key 수만 현행화했다.
-- 실패한 `object-db-consumer-stable-id.test.ts`만 표적 재실행해 5/5 PASS, fail 0, duration 3.126초를 확인했으며 전체 suite는 반복 실행하지 않았다.
+- commit `8f788e750f082aaf6c45d8a14532178336389c14`에서 최종 전체 suite 1회를 끝까지 실행했다: total 2,165 / pass 2,156 / fail 1 / skip 8 / duration 948.245초. 유일한 실패는 stable-ID 계약의 이전 consumer 고정 수치 `1,108/4`가 현재 manifest `1,111/7`과 다른 세 assertion이었다.
+- 보정 commit `4697bc2adc0db7f9bf47134c55610370ed7e4a07`은 위 세 assertion 숫자만 `1,111/7`로 바꿨다. 기존 registry 1,104개 ID 불변 검사와 나머지 계약은 유지했다.
+- clean HEAD `6439680d63fa12514ae137b95ea05b6c43c86e54`에서 실패한 `object-db-consumer-stable-id.test.ts`만 독립 표적 재실행해 5/5 PASS, fail 0, skip 0, duration 2.604초를 확인했으며 전체 suite는 반복 실행하지 않았다.
 - 총괄 최종 정적 리뷰: P0 0건, P1 0건, Gate 5~7 차단 없음. 추가 테스트 없이 승인 범위 커밋·푸시를 진행한다.
 
 ## 고도화_보완기준 재개 체크포인트
