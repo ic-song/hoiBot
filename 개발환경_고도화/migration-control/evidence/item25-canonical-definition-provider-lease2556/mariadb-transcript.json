@@ -1,0 +1,188 @@
+{
+  "format": "hoibot-item25-provider-mariadb-transcript-v2",
+  "generatedAtUtc": "2026-09-05T17:09:46.5567944Z",
+  "powershell": {
+    "edition": "Core",
+    "major": 7
+  },
+  "reproducibility": {
+    "prerequisite": "PowerShell Core 7+",
+    "workingDirectory": "repository root",
+    "commands": [
+      "pwsh -NoProfile -File \"./개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/rehearse-item25-provider.ps1\"",
+      "pwsh -NoProfile -File \"./개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/rehearse-item25-provider.ps1\" -ValidateTranscriptOnly"
+    ]
+  },
+  "migrations": {
+    "range": "001..477",
+    "fileCount": 465,
+    "filenameAggregateSha256": "f2066135b2a26a3a99dd8ae56fc52522056562f7e1a5f713258bd1d4e662bf41",
+    "contentAggregateSha256": "9fc0223d024e6688efabee079f1776136d14cfb75eb14d3ee5675737212a6456"
+  },
+  "source": {
+    "path": "data/itemInfo.json",
+    "aggregateSha256": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc"
+  },
+  "commands": [
+    {
+      "name": "mariadb-initialize",
+      "command": "mariadb-install-db --datadir=<temporary> --password=<redacted>",
+      "startedAtUtc": "2026-09-05T17:07:43.9935912Z",
+      "exitCode": 0,
+      "outputSha256": "ea67a3399f59c8034ff36c876595233b6f72c3282cb7ac89c6bf8aa6e0b3c6f6"
+    },
+    {
+      "name": "database-create",
+      "command": "mariadb --execute=<isolated database create>",
+      "startedAtUtc": "2026-09-05T17:07:54.1340024Z",
+      "exitCode": 0,
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "migrations-001-477",
+      "command": "npm.cmd run db:migrate",
+      "startedAtUtc": "2026-09-05T17:07:55.4604359Z",
+      "exitCode": 0,
+      "outputSha256": "a9d35f3ab880fd2d38efe7bad2cd1b0e4cc20c65d222da1bbe916014ccea68be"
+    },
+    {
+      "name": "item25-mariadb-integration",
+      "command": "node --import tsx --test test/item25-canonical-definition-provider-mariadb.integration.test.ts",
+      "startedAtUtc": "2026-09-05T17:08:28.8638145Z",
+      "exitCode": 0,
+      "outputSha256": "d145118b3c3c0e140d436fee892a538121f0e7361e5791179797e78441c37cee"
+    },
+    {
+      "name": "focused-26",
+      "command": "node --import tsx --test iteminfo/provider/inventory focused files",
+      "startedAtUtc": "2026-09-05T17:08:56.3915664Z",
+      "exitCode": 0,
+      "outputSha256": "051b0fb1ce8fc3bdc94a623eb5af9777e0509e7d8c1873ea960d5c89e7f41ee1"
+    },
+    {
+      "name": "typecheck",
+      "command": "npm.cmd run typecheck",
+      "startedAtUtc": "2026-09-05T17:08:59.0469148Z",
+      "exitCode": 0,
+      "outputSha256": "450fc5ce8f561e2e92d6450dfdf22c86ac73b129b9c5b38edcfccf9e6d0b7f4d"
+    },
+    {
+      "name": "build",
+      "command": "npm.cmd run build",
+      "startedAtUtc": "2026-09-05T17:09:09.9916688Z",
+      "exitCode": 0,
+      "outputSha256": "33562dd5c52499c01e6ad90c32c18a7b8a58845c667f93d4e858b02204b2da08"
+    },
+    {
+      "name": "object-validator-98",
+      "command": "npm.cmd run object-data:validate",
+      "startedAtUtc": "2026-09-05T17:09:44.0934028Z",
+      "exitCode": 0,
+      "outputSha256": "3dcea8172cdf21f21f23d4e38f4b105474e36b03f006ff8cb1673b4fa59894a5"
+    },
+    {
+      "name": "json-parse",
+      "command": "node -e <parse item25 contract>",
+      "startedAtUtc": "2026-09-05T17:09:46.2044337Z",
+      "exitCode": 0,
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "diff-check",
+      "command": "git diff --check",
+      "startedAtUtc": "2026-09-05T17:09:46.3378386Z",
+      "exitCode": 0,
+      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "results": {
+    "focused26": {
+      "testCount": 26,
+      "pass": 26,
+      "fail": 0,
+      "status": "PASS"
+    },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "objectValidator": {
+      "registeredTargets": 98,
+      "pass": 98,
+      "fail": 0,
+      "status": "PASS"
+    },
+    "json": "PASS",
+    "diff": "PASS"
+  },
+  "integration": {
+    "passed": true,
+    "poolCount": 2,
+    "singleWinner": true,
+    "applyInsertedBindings": 25,
+    "replayDml": 0
+  },
+  "cleanup": {
+    "databaseCounts": {
+      "canonical_item_definitions": 0,
+      "canonical_item_definition_imports": 0,
+      "object_identities": 0,
+      "object_identity_crosswalks": 0,
+      "data_migration_common_staging_runs": 0,
+      "data_migration_common_staging_records": 0,
+      "data_migration_catalog_projection_runs": 0,
+      "data_migration_catalog_source_decisions": 0,
+      "data_migration_catalog_projection_records": 0,
+      "data_migration_object_domain_import_runs": 0,
+      "data_migration_object_domain_import_decisions": 0,
+      "data_migration_object_domain_import_records": 0,
+      "canonical_owned_item_stacks": 0,
+      "canonical_item_inventory_operations": 0,
+      "canonical_item_inventory_ledger_entries": 0,
+      "canonical_players": 0
+    },
+    "serverProcessRunning": false,
+    "listenerPresent": false,
+    "temporaryPathPresent": false,
+    "environmentRestored": true
+  },
+  "secretScan": {
+    "occurrences": 0,
+    "rule": "ephemeral credential exact-value scan; raw output not persisted"
+  },
+  "negativeValidationCases": {
+    "commands-empty": true,
+    "cleanup-empty": true,
+    "migration-aggregate": true,
+    "artifact-hash": true,
+    "timestamp": true,
+    "integration": true,
+    "focused-spoof-260": true,
+    "object-spoof-98": true,
+    "repro-command": true
+  },
+  "artifacts": [
+    {
+      "path": "개발환경_고도화/migration-control/contracts/item25-canonical-definition-binding.v1.json",
+      "sha256": "493e8659072f5445828e0292fca21786a98e1c88659012538c8ff7babe374e4e"
+    },
+    {
+      "path": "개발환경_고도화/runtime/src/data-migration/item25-canonical-definition-provider.ts",
+      "sha256": "cf55f1524e18459ba539e64501f3658ae4460e944feb95f90f8e457a7e6b21de"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/item25-canonical-definition-provider.test.ts",
+      "sha256": "e28547f3f7f6d841c2374ef9f1130bc8ae4ab1db7f29cac2c316d2a21d6e28ff"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/item25-canonical-definition-provider-mariadb.integration.test.ts",
+      "sha256": "09ff53efc31604b2c19c17e887ae37bebfc4b037164fa733aa1f1980559549bd"
+    },
+    {
+      "path": "개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/rehearse-item25-provider.ps1",
+      "sha256": "1a048c648a9f238d8f0797e98046a3e21655c1e160df954173655c383f7b32e6"
+    },
+    {
+      "path": "개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/validation.md",
+      "sha256": "f7a299afac84f8db0f7685f405e34a096cb080198b65cdd656880af469c0d7c8"
+    }
+  ]
+}
