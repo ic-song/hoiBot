@@ -13,11 +13,15 @@
 | 재시작 후 same event | 최초 11 outbox DTO replay, 추가 DML 0 | Maria PASS |
 | same event/actor + 다른 inbound channel | RFA01 payload conflict | Maria PASS |
 | replay outbox payload/status drift | fail closed | Maria PASS |
+| recipient player 단일행 치환(행수 동일) | recipient aggregate drift로 fail closed | Maria PASS |
+| recipient before/after 동시 변조(관계식 유지) | recipient aggregate drift로 fail closed | Maria PASS |
+| stack owner만 다른 player로 치환(aggregate 동일) | recipient↔stack 관계 drift로 fail closed | Maria PASS |
+| operation item만 다른 canonical item으로 치환(aggregate 동일) | operation↔stack↔terminal 관계 drift로 fail closed | Maria PASS |
 | commit ACK ambiguous | 전체 receipt/snapshot/outbox 재검산 후 reconcile | Maria PASS |
 | 수량 overflow | recipient/stack/outbox/receipt 전량 rollback | Maria PASS |
 | 적용된 receipt 존재 시 rollback | fail closed | Maria PASS |
-| empty-state rollback/reapply | 4개 전용 table 제거/재생성 | Maria PASS |
-| 선재 exact source binding | 재귀속 0, rollback 후에도 보존 | Maria PASS |
+| empty-state rollback/reapply | 5개 전용 table 제거/재생성 | Maria PASS |
+| 선재 exact source binding(예약 ID 포함) | provenance=false, 재귀속 0, rollback 후에도 원행 불변 | Maria PASS |
 | 선재 source binding drift | migration 전 fail closed | Maria PASS |
 
 채널 설정은 합성 `synthetic-room-1..11`만 사용했다. 실제 room ID는 읽거나 기록하지 않았다.
