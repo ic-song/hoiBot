@@ -34,7 +34,7 @@ export type PetTitleCanonicalAdminGrantResult=PetTitleCanonicalMutationBase&{
   operationType:"ADMIN_GRANT";ownedPetTitleId:string;petTitleId:string;titleName:string;acquisitionSequence:bigint;
 };
 export type PetTitleCanonicalBatchResult=PetTitleCanonicalMutationBase&{
-  operationType:"ADMIN_SYNC"|"ADMIN_RESET";affectedPlayerCount:number;affectedTitleCount:number;affectedPlayerIds:string[];
+  operationType:"ADMIN_SYNC"|"ADMIN_RESET";affectedPlayerCount:number;affectedTitleCount:number;affectedPlayerIds:string[];affectedMemberKeys:string[];
 };
 type PetTitleCanonicalOwnershipMutationResult=PetTitleCanonicalMutationBase&{operationType:"SELECT"|"REMOVE"|"SELL";ownedPetTitleId:string};
 
@@ -54,7 +54,7 @@ interface PointCurrencyRow { currency_id:string;decimal_places:number|string; }
 
 interface TicketDefinitionRow { item_id: string; }
 interface TicketStackRow { quantity: bigint | string; }
-interface BatchOwnedTitleRow { owned_pet_title_id:string;player_id:string;acquisition_sequence:bigint|string;selected_flag:number|string; }
+interface BatchOwnedTitleRow { owned_pet_title_id:string;player_id:string;member_key_before:string|null;acquisition_sequence:bigint|string;selected_flag:number|string; }
 
 const TITLE_TICKET_NAME = "펫타이틀권🦊(/펫타이틀이름)";
 const CREATED_TITLE_PRICE = 100000000n;
@@ -63,6 +63,9 @@ const POINT_SOURCE_NAMESPACE="member.point";
 const POINT_SOURCE_IDENTIFIER="point";
 const GUILD_TERRITORY_WORLD_SCOPE="world";
 const PET_TITLE_GLOBAL_SCOPE="PET_TITLE";
+const PET_TITLE_BATCH_MEMBER_KEY_CONTRACT="MEMBER_KEY_V1";
+const PET_TITLE_BATCH_RESET_CONTRACT="RESET_V1";
+const codePointLength=(value:string):number=>Array.from(value).length;
 
 // 모든 PET_TITLE mutation이 동일한 전역 scope를 가장 먼저 잠그도록 강제합니다.
 async function lockPetTitleGlobalScope(database:AppWiringMutationParticipant):Promise<void>{
@@ -369,11 +372,24 @@ export class PetTitleCanonicalMutationProvider {
         WHERE EXISTS (SELECT 1 FROM canonical_owned_pet_title_instances owned WHERE owned.player_id=canonical_player.player_id AND owned.ownership_status='owned')
         ORDER BY canonical_player.player_id FOR UPDATE`,
     );
-    const ownedRows=await database.query<BatchOwnedTitleRow[]>(`SELECT owned.owned_pet_title_id,owned.player_id,owned.acquisition_sequence,CASE WHEN selection.owned_pet_title_id IS NULL THEN 0 ELSE 1 END selected_flag
-          FROM canonical_owned_pet_title_instances owned LEFT JOIN canonical_pet_title_selections selection
+    const ownedRows=await database.query<BatchOwnedTitleRow[]>(`SELECT owned.owned_pet_title_id,owned.player_id,
+            COALESCE(CASE WHEN CHAR_LENGTH(profile.current_display_name) BETWEEN 1 AND 255 THEN profile.current_display_name END,
+              (SELECT MAX(identity_row.display_name) FROM canonical_player_identity_crosswalks crosswalk
+                JOIN external_identities identity_row ON identity_row.provider_code=crosswalk.provider_code
+                 AND identity_row.external_user_id=crosswalk.external_user_id AND identity_row.status='linked'
+                 AND CHAR_LENGTH(identity_row.display_name) BETWEEN 1 AND 255
+               WHERE crosswalk.player_id=owned.player_id AND crosswalk.crosswalk_status='LINKED')) member_key_before,
+            owned.acquisition_sequence,CASE WHEN selection.owned_pet_title_id IS NULL THEN 0 ELSE 1 END selected_flag
+          FROM canonical_owned_pet_title_instances owned
+          JOIN canonical_players canonical_player ON canonical_player.player_id=owned.player_id
+          LEFT JOIN player_profiles profile ON profile.player_id=CASE
+            WHEN canonical_player.source_system='LEGACY_DB' AND canonical_player.source_identifier REGEXP '^(0|[1-9][0-9]{0,19})$'
+            THEN CAST(canonical_player.source_identifier AS UNSIGNED) ELSE NULL END
+          LEFT JOIN canonical_pet_title_selections selection
             ON selection.player_id=owned.player_id AND selection.owned_pet_title_id=owned.owned_pet_title_id
          WHERE owned.ownership_status='owned' ORDER BY owned.player_id,owned.acquisition_sequence,owned.owned_pet_title_id FOR UPDATE`);
     const rows=operationType==="ADMIN_SYNC"?ownedRows.filter(row=>!activePlayerIds?.has(row.player_id)):ownedRows;
+    if(operationType==="ADMIN_SYNC"&&rows.some(row=>typeof row.member_key_before!=="string"||codePointLength(row.member_key_before)<1||codePointLength(row.member_key_before)>255))throw new Error("PET_TITLE_BATCH_MEMBER_KEY_UNRESOLVED");
     const counts=new Map<string,number>();
     for(const row of rows)counts.set(row.player_id,(counts.get(row.player_id)??0)+1);
     if(rows.length>0){
@@ -385,24 +401,34 @@ export class PetTitleCanonicalMutationProvider {
       }
     }
     const affectedPlayerIds=[...counts.keys()].sort();
-    const targets=rows.map(row=>({playerId:row.player_id,acquisitionSequence:String(row.acquisition_sequence),ownedPetTitleId:row.owned_pet_title_id,selected:Number(row.selected_flag)===1}))
+    const memberKeys=new Map<string,string>();
+    if(operationType==="ADMIN_SYNC")for(const row of rows){
+      const current=memberKeys.get(row.player_id);
+      if(current!==undefined&&current!==row.member_key_before)throw new Error("PET_TITLE_BATCH_MEMBER_KEY_DRIFT");
+      memberKeys.set(row.player_id,row.member_key_before!);
+    }
+    const affectedMemberKeys=operationType==="ADMIN_SYNC"?affectedPlayerIds.map(playerId=>memberKeys.get(playerId)!):[];
+    const targets=rows.map(row=>({playerId:row.player_id,memberKeyBefore:operationType==="ADMIN_SYNC"?row.member_key_before!:null,acquisitionSequence:String(row.acquisition_sequence),ownedPetTitleId:row.owned_pet_title_id,selected:Number(row.selected_flag)===1}))
       .sort((left,right)=>left.playerId.localeCompare(right.playerId)||(BigInt(left.acquisitionSequence)<BigInt(right.acquisitionSequence)?-1:BigInt(left.acquisitionSequence)>BigInt(right.acquisitionSequence)?1:left.ownedPetTitleId.localeCompare(right.ownedPetTitleId)));
-    const targetSetFingerprint=fingerprint({targets});
-    const projection={operationType,affectedPlayerIds,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:rows.length,targetSetFingerprint};
+    const fingerprintTargets=operationType==="ADMIN_SYNC"?targets:targets.map(({memberKeyBefore:_,...target})=>target);
+    const targetSetFingerprint=fingerprint({targets:fingerprintTargets});
+    const projection=operationType==="ADMIN_SYNC"
+      ?{operationType,affectedPlayerIds,affectedMemberKeys,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:rows.length,targetSetFingerprint}
+      :{operationType,affectedPlayerIds,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:rows.length,targetSetFingerprint};
     const resultFingerprint=fingerprint(projection);
     const operationId=await this.insertBatchReceipt(database,claim,actor,projection,resultFingerprint,counts,targets);
-    return {operationId,resultFingerprint,replayedDomainState:false,operationType,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:rows.length,affectedPlayerIds};
+    return {operationId,resultFingerprint,replayedDomainState:false,operationType,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:rows.length,affectedPlayerIds,affectedMemberKeys};
   }
 
-  private async insertBatchReceipt(database:AppWiringMutationParticipant,claim:AppWiringClaim,actor:string,projection:{operationType:"ADMIN_SYNC"|"ADMIN_RESET";affectedPlayerIds:string[];affectedPlayerCount:number;affectedTitleCount:number;targetSetFingerprint:string},resultFingerprint:string,counts:Map<string,number>,targets:Array<{playerId:string;acquisitionSequence:string;ownedPetTitleId:string;selected:boolean}>):Promise<string>{
+  private async insertBatchReceipt(database:AppWiringMutationParticipant,claim:AppWiringClaim,actor:string,projection:{operationType:"ADMIN_SYNC"|"ADMIN_RESET";affectedPlayerIds:string[];affectedMemberKeys?:string[];affectedPlayerCount:number;affectedTitleCount:number;targetSetFingerprint:string},resultFingerprint:string,counts:Map<string,number>,targets:Array<{playerId:string;memberKeyBefore:string|null;acquisitionSequence:string;ownedPetTitleId:string;selected:boolean}>):Promise<string>{
     const audit=createObjectAuditValues(actor,this.now());
     let operationId:string|undefined;
     for(let attempt=0;attempt<this.maximumAttempts;attempt+=1){
       const candidate=this.generate();assertObjectIdentityCandidate(candidate);
       try{
         const inserted=await database.execute(
-          "INSERT INTO canonical_pet_title_batch_operations(pet_title_batch_operation_id,operation_type,replay_namespace,request_key,payload_fingerprint,affected_player_count,affected_title_count,target_count,target_set_fingerprint,result_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,'COMPLETED',?,?,?,?)",
-          [candidate,projection.operationType,claim.requestNamespace,claim.requestKey,claim.payloadFingerprint,projection.affectedPlayerCount,projection.affectedTitleCount,targets.length,projection.targetSetFingerprint,resultFingerprint,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME],
+          "INSERT INTO canonical_pet_title_batch_operations(pet_title_batch_operation_id,operation_type,result_contract_version,replay_namespace,request_key,payload_fingerprint,affected_player_count,affected_title_count,target_count,target_set_fingerprint,result_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,'COMPLETED',?,?,?,?)",
+          [candidate,projection.operationType,projection.operationType==="ADMIN_SYNC"?PET_TITLE_BATCH_MEMBER_KEY_CONTRACT:PET_TITLE_BATCH_RESET_CONTRACT,claim.requestNamespace,claim.requestKey,claim.payloadFingerprint,projection.affectedPlayerCount,projection.affectedTitleCount,targets.length,projection.targetSetFingerprint,resultFingerprint,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME],
         );
         if(inserted.affectedRows!==1n)throw new Error("PET_TITLE_BATCH_RECEIPT_NOT_PERSISTED");
         operationId=candidate;break;
@@ -414,7 +440,7 @@ export class PetTitleCanonicalMutationProvider {
       for(let attempt=0;attempt<this.maximumAttempts;attempt+=1){
         const candidate=this.generate();assertObjectIdentityCandidate(candidate);
         try{
-          const result=await database.execute("INSERT INTO canonical_pet_title_batch_operation_targets(pet_title_batch_operation_target_id,pet_title_batch_operation_id,player_id,owned_pet_title_id,acquisition_sequence,ownership_status_before,selection_status_before,ownership_status_after,action_type,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,'owned',?,'removed','SOFT_REMOVE',?,?,?,?,?)",[candidate,operationId,target.playerId,target.ownedPetTitleId,target.acquisitionSequence,target.selected?"SELECTED":"NOT_SELECTED",projection.operationType,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
+          const result=await database.execute("INSERT INTO canonical_pet_title_batch_operation_targets(pet_title_batch_operation_target_id,pet_title_batch_operation_id,player_id,member_key_before,owned_pet_title_id,acquisition_sequence,ownership_status_before,selection_status_before,ownership_status_after,action_type,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'owned',?,'removed','SOFT_REMOVE',?,?,?,?,?)",[candidate,operationId,target.playerId,target.memberKeyBefore,target.ownedPetTitleId,target.acquisitionSequence,target.selected?"SELECTED":"NOT_SELECTED",projection.operationType,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
           if(result.affectedRows!==1n)throw new Error("PET_TITLE_BATCH_TARGET_NOT_PERSISTED");inserted=true;break;
         }catch(error){if(!primaryDuplicate(error))throw error;}
       }

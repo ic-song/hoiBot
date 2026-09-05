@@ -142,6 +142,17 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
       resultingShape: "MIGRATION_472_FINAL_RECEIPT_LINK",
       createOnly: false,
       reentrantDdlRequired: true
+    }, {
+      migration: "474_pet_title_batch_member_key_snapshot.sql",
+      rollback: "474_pet_title_batch_member_key_snapshot.rollback.sql",
+      kind: "ADDITIVE_PET_TITLE_BATCH_MEMBER_KEY_SNAPSHOT_AND_RESULT_CONTRACT",
+      alters: ["canonical_pet_title_batch_operations", "canonical_pet_title_batch_operation_targets"],
+      creates: [],
+      inputShape: "MIGRATION_472_FINAL_RECEIPT_LINK",
+      resultingShape: "MIGRATION_474_REPLAY_SAFE_MEMBER_KEY_SNAPSHOT",
+      operationalDataDependency: "SEPARATE_WBS_REQUIRED: import each LEGACY_JSON display value into player_profiles or a linked external identity before migration 474; player_id and source_identifier are never nickname fallbacks",
+      createOnly: false,
+      reentrantDdlRequired: true
     }]);
     assert.equal(plan.ddlExecution, "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED");
     assert.deepEqual(plan.requiredAdditiveReceiptTables, transition.requiredAdditiveReceiptTables);

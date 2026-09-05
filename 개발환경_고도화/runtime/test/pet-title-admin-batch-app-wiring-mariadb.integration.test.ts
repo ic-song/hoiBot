@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { after, before, describe, it } from "node:test";
 import mariadb from "mariadb";
 import { MariaPlayerContextProvider } from "../src/account-platform/player-context-provider.js";
@@ -7,6 +8,7 @@ import { AccountSwitchCommandService } from "../src/account-platform/account-swi
 import { PetTitleAdminAppWiringIngress } from "../src/admin/pet-title-admin-app-wiring-ingress.js";
 import { createDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { MariaAppWiringOperationProvider } from "../src/dispatch/app-wiring-operation-provider.js";
+import { executeAppWiringMutationReplyEntrypoint } from "../src/dispatch/app-wiring-entrypoint-runner.js";
 import { CommandDispatcher, MariaCommandRouteReader } from "../src/dispatch/command-dispatcher.js";
 import { PetTitleCanonicalMutationProvider } from "../src/pet/pet-title-canonical-mutation-provider.js";
 import { createEnvironmentContext, verifyStartupDatabaseIdentity } from "../src/runtime/environment-context.js";
@@ -22,9 +24,11 @@ const ids = {
   subCanonicalPlayer: stableId("sub-canonical-player"), subLink: stableId("sub-link"), subOwned: stableId("sub-owned"),
   inactiveCanonicalPlayer: stableId("inactive-canonical-player"), inactiveCrosswalk: stableId("inactive-crosswalk"), inactiveOwned: stableId("inactive-owned"),
   inactiveOwnedRace: stableId("inactive-owned-race"),
+  orphanCanonicalPlayer: stableId("orphan-canonical-player"), orphanOwned: stableId("orphan-owned"),
 };
 const room = `${prefix}-room`, external = `${prefix}-operator`;
-const eventIds = [`${prefix}-shadow`, `${prefix}-reset`, `${prefix}-fault`, `${prefix}-sync`, `${prefix}-sync-drift`, `${prefix}-sync-race`, `${prefix}-switch-parallel`, `${prefix}-sync-parallel`];
+const legacyUpgradeEvent=`upgrade-${randomBytes(6).toString("hex")}`,legacyUpgradeRoom=`upgrade-${room}`;
+const eventIds = [`${prefix}-shadow`, `${prefix}-reset`, `${prefix}-fault`, `${prefix}-sync`, `${prefix}-sync-drift`, `${prefix}-sync-race`, `${prefix}-switch-parallel`, `${prefix}-sync-parallel`, `${prefix}-sync-orphan`, `${prefix}-reset-orphan`];
 let db: DatabaseClient;
 let operatorId: bigint;
 let originalAddRollout: { rollout_state: string; enabled: number } | undefined;
@@ -68,6 +72,8 @@ describe("PET-TITLE admin batch app-wiring MariaDB", { skip: !enabled }, () => {
   before(async () => {
     assert.match(process.env.DATABASE_NAME ?? "", /^hoibot_wbs743_(?:it|test)[a-z0-9_]*$/, "PET_TITLE batch test requires a dedicated WBS743 schema");
     db = createDatabaseClient({ enabled: true, host: process.env.DATABASE_HOST!, port: Number(process.env.DATABASE_PORT), user: process.env.DATABASE_USER!, password: process.env.DATABASE_PASSWORD!, name: process.env.DATABASE_NAME!, connectionLimit: 6, connectTimeoutMs: 5000 });
+    const migrationConnection=await mariadb.createConnection({host:process.env.DATABASE_HOST!,port:Number(process.env.DATABASE_PORT),user:process.env.DATABASE_USER!,password:process.env.DATABASE_PASSWORD!,database:process.env.DATABASE_NAME!,multipleStatements:true,bigIntAsNumber:false});
+    try{await migrationConnection.query(readFileSync(new URL("../migrations/rollback/474_pet_title_batch_member_key_snapshot.rollback.sql",import.meta.url),"utf8"));}finally{await migrationConnection.end();}
     originalAddRollout = (await db.query<Array<{ rollout_state: string; enabled: number }>>("SELECT rollout_state,enabled FROM command_registry WHERE command_code='ADMIN_PET_TITLE_ADD'"))[0];
     originalResetRollout = (await db.query<Array<{ rollout_state: string; enabled: number }>>("SELECT rollout_state,enabled FROM command_registry WHERE command_code='ADMIN_PET_TITLE_STORE_RESET'"))[0];
     originalSyncRollout = (await db.query<Array<{ rollout_state: string; enabled: number }>>("SELECT rollout_state,enabled FROM command_registry WHERE command_code='ADMIN_PET_TITLE_SYNC'"))[0];
@@ -96,6 +102,41 @@ describe("PET-TITLE admin batch app-wiring MariaDB", { skip: !enabled }, () => {
     await db.execute("INSERT INTO canonical_owned_pet_title_instances(owned_pet_title_id,player_id,pet_title_id,acquisition_sequence,acquired_time,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,1,'2026-09-05 12:00:00','owned',?,?,?,?)", [ids.ownedOne, ids.canonicalPlayer, ids.title, ...audit]);
     await db.execute("INSERT INTO canonical_pet_title_selections(player_id,owned_pet_title_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)", [ids.canonicalPlayer, ids.ownedOne, ...audit]);
     for (const eventId of eventIds) await db.execute("INSERT INTO event_inbox(event_id,provider_event_id,external_channel_id,external_user_id,event_kind,direction,payload_hash,processing_status,received_at) VALUES (?,?,?,?,'message','incoming',REPEAT('a',64),'processed',UTC_TIMESTAMP(3))", [eventId, eventId, room, external]);
+    await db.execute("INSERT INTO event_inbox(event_id,provider_event_id,external_channel_id,external_user_id,event_kind,direction,payload_hash,processing_status,received_at) VALUES (?,?,?,?,'message','incoming',REPEAT('b',64),'processed',UTC_TIMESTAMP(3))",[legacyUpgradeEvent,legacyUpgradeEvent,legacyUpgradeRoom,external]);
+
+    const legacyBatchId=stableId("legacy-batch"),legacyTargetId=stableId("legacy-target"),legacyParticipantId=stableId("legacy-participant");
+    const legacyTargets=[{playerId:ids.canonicalPlayer,acquisitionSequence:"1",ownedPetTitleId:ids.ownedOne,selected:true}];
+    const legacyTargetFingerprint=createHash("sha256").update(JSON.stringify({targets:legacyTargets})).digest("hex");
+    const legacyResultFingerprint=createHash("sha256").update(JSON.stringify({operationType:"ADMIN_SYNC",affectedPlayerIds:[ids.canonicalPlayer],affectedPlayerCount:1,affectedTitleCount:1,targetSetFingerprint:legacyTargetFingerprint})).digest("hex");
+    const environment=await verifyStartupDatabaseIdentity(db,createEnvironmentContext({environmentCode:"dev",databaseIdentity:process.env.DATABASE_NAME!}));
+    const legacyProvider=new MariaAppWiringOperationProvider(db as never,environment);
+    const legacyInput={
+      claim:{entrypointKind:"IRIS" as const,externalRequestId:legacyUpgradeEvent,normalizedPayload:{command:"ADMIN_PET_TITLE_SYNC"},actor:"migration-upgrade-test"},
+      resolveRoute:()=>({route:"MODERN" as const,effectMode:"MUTATION" as const,reasonCode:"MIGRATION_UPGRADE_TEST",handlerKey:"pet_title_admin_sync"}),
+      handler:async(database:import("../src/dispatch/app-wiring-operation-provider.js").AppWiringMutationParticipant)=>{
+        await database.execute("INSERT INTO canonical_pet_title_batch_operations(pet_title_batch_operation_id,operation_type,replay_namespace,request_key,payload_fingerprint,affected_player_count,affected_title_count,target_count,target_set_fingerprint,result_fingerprint,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,'ADMIN_SYNC',?,?,?,1,1,1,?,?,'COMPLETED','legacy_writer','2026-09-05 11:00:00','legacy_writer','2026-09-05 11:00:00')",[legacyBatchId,environment.requestNamespace,`IRIS:${legacyUpgradeEvent}`,"c".repeat(64),legacyTargetFingerprint,legacyResultFingerprint]);
+        await database.execute("INSERT INTO canonical_pet_title_batch_operation_targets(pet_title_batch_operation_target_id,pet_title_batch_operation_id,player_id,owned_pet_title_id,acquisition_sequence,ownership_status_before,selection_status_before,ownership_status_after,action_type,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,1,'owned','SELECTED','removed','SOFT_REMOVE','ADMIN_SYNC','legacy_writer','2026-09-05 11:00:00','legacy_writer','2026-09-05 11:00:00')",[legacyTargetId,legacyBatchId,ids.canonicalPlayer,ids.ownedOne]);
+        await database.execute("INSERT INTO canonical_pet_title_batch_operation_participants(pet_title_batch_operation_participant_id,pet_title_batch_operation_id,player_id,participant_role,affected_title_count,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'AFFECTED_OWNER',1,'legacy_writer','2026-09-05 11:00:00','legacy_writer','2026-09-05 11:00:00')",[legacyParticipantId,legacyBatchId,ids.canonicalPlayer]);
+        return {value:"legacy",reply:{eventId:legacyUpgradeEvent,commandCode:"ADMIN_PET_TITLE_SYNC",destinationId:legacyUpgradeRoom,data:"원응답회원: 배치운영자"},receipt:{status:"REPLY_QUEUED" as const,resultFingerprint:legacyResultFingerprint},typedReceipt:{receiptKind:"PET_TITLE_BATCH" as const,petTitleBatchOperationId:legacyBatchId,resultFingerprint:legacyResultFingerprint}};
+      },
+      replayCompleted:async()=>"legacy",replayFailed:async()=>{throw new Error("LEGACY_UPGRADE_FAILED")},errorCode:()=>"LEGACY_UPGRADE_FAILED",
+    };
+    const originalLegacyReply=await executeAppWiringMutationReplyEntrypoint(legacyProvider,legacyInput);
+    const preMigration=(await db.query<Array<{target_user:string;target_time:string;header_user:string;header_time:string}>>("SELECT target.UPDATE_USER target_user,target.UPDATE_TIME target_time,batch.UPDATE_USER header_user,batch.UPDATE_TIME header_time FROM canonical_pet_title_batch_operation_targets target JOIN canonical_pet_title_batch_operations batch ON batch.pet_title_batch_operation_id=target.pet_title_batch_operation_id WHERE target.pet_title_batch_operation_target_id=?",[legacyTargetId]))[0]!;
+    const applyConnection=await mariadb.createConnection({host:process.env.DATABASE_HOST!,port:Number(process.env.DATABASE_PORT),user:process.env.DATABASE_USER!,password:process.env.DATABASE_PASSWORD!,database:process.env.DATABASE_NAME!,multipleStatements:true,bigIntAsNumber:false});
+    try{await applyConnection.query(readFileSync(new URL("../migrations/474_pet_title_batch_member_key_snapshot.sql",import.meta.url),"utf8"));}finally{await applyConnection.end();}
+    const postMigration=(await db.query<Array<{member_key_before:string;result_contract_version:string;target_user:string;target_time:string;header_user:string;header_time:string}>>("SELECT target.member_key_before,batch.result_contract_version,target.UPDATE_USER target_user,target.UPDATE_TIME target_time,batch.UPDATE_USER header_user,batch.UPDATE_TIME header_time FROM canonical_pet_title_batch_operation_targets target JOIN canonical_pet_title_batch_operations batch ON batch.pet_title_batch_operation_id=target.pet_title_batch_operation_id WHERE target.pet_title_batch_operation_target_id=?",[legacyTargetId]))[0]!;
+    assert.deepEqual([preMigration.target_user,preMigration.header_user],["legacy_writer","legacy_writer"]);
+    assert.deepEqual([postMigration.member_key_before,postMigration.result_contract_version,postMigration.target_user,postMigration.header_user],["배치운영자","LEGACY","migration_474","migration_474"]);
+    assert.notEqual(postMigration.target_time,preMigration.target_time);assert.notEqual(postMigration.header_time,preMigration.header_time);
+    const graphBefore=(await db.query<Array<{claims:bigint;batches:bigint;targets:bigint;outbox:bigint}>>("SELECT (SELECT COUNT(*) FROM canonical_app_wiring_operations WHERE external_request_id=?) claims,(SELECT COUNT(*) FROM canonical_pet_title_batch_operations WHERE pet_title_batch_operation_id=?) batches,(SELECT COUNT(*) FROM canonical_pet_title_batch_operation_targets WHERE pet_title_batch_operation_id=?) targets,(SELECT COUNT(*) FROM outbox_messages WHERE destination_id=?) outbox",[legacyUpgradeEvent,legacyBatchId,legacyBatchId,legacyUpgradeRoom]))[0]!;
+    const replayedLegacyReply=await executeAppWiringMutationReplyEntrypoint(new MariaAppWiringOperationProvider(db as never,environment),legacyInput);
+    assert.deepEqual(replayedLegacyReply,originalLegacyReply);assert.deepEqual((await db.query<Array<typeof graphBefore>>("SELECT (SELECT COUNT(*) FROM canonical_app_wiring_operations WHERE external_request_id=?) claims,(SELECT COUNT(*) FROM canonical_pet_title_batch_operations WHERE pet_title_batch_operation_id=?) batches,(SELECT COUNT(*) FROM canonical_pet_title_batch_operation_targets WHERE pet_title_batch_operation_id=?) targets,(SELECT COUNT(*) FROM outbox_messages WHERE destination_id=?) outbox",[legacyUpgradeEvent,legacyBatchId,legacyBatchId,legacyUpgradeRoom]))[0],graphBefore);
+    const rollbackBefore=JSON.stringify(postMigration);
+    const guardedRollback=await mariadb.createConnection({host:process.env.DATABASE_HOST!,port:Number(process.env.DATABASE_PORT),user:process.env.DATABASE_USER!,password:process.env.DATABASE_PASSWORD!,database:process.env.DATABASE_NAME!,multipleStatements:true,bigIntAsNumber:false});
+    try{await assert.rejects(()=>guardedRollback.query(readFileSync(new URL("../migrations/rollback/474_pet_title_batch_member_key_snapshot.rollback.sql",import.meta.url),"utf8")));}finally{await guardedRollback.end();}
+    const rollbackAfter=(await db.query<Array<typeof postMigration>>("SELECT target.member_key_before,batch.result_contract_version,target.UPDATE_USER target_user,target.UPDATE_TIME target_time,batch.UPDATE_USER header_user,batch.UPDATE_TIME header_time FROM canonical_pet_title_batch_operation_targets target JOIN canonical_pet_title_batch_operations batch ON batch.pet_title_batch_operation_id=target.pet_title_batch_operation_id WHERE target.pet_title_batch_operation_target_id=?",[legacyTargetId]))[0]!;
+    assert.equal(JSON.stringify(rollbackAfter),rollbackBefore);
   });
 
   after(async () => {
@@ -127,7 +168,8 @@ describe("PET-TITLE admin batch app-wiring MariaDB", { skip: !enabled }, () => {
     assert.equal(first.status, "changed");
     const afterFirst = await counts();
     assert.deepEqual([afterFirst.batches, afterFirst.targets, afterFirst.links, afterFirst.owned], [1n, 2n, 1n, 0n]);
-    const batch = (await db.query<Array<{ pet_title_batch_operation_id: string }>>("SELECT pet_title_batch_operation_id FROM canonical_pet_title_batch_operations WHERE request_key=?", [`IRIS:${eventIds[1]}`]))[0]!;
+    const batch = (await db.query<Array<{ pet_title_batch_operation_id: string; result_contract_version:string }>>("SELECT pet_title_batch_operation_id,result_contract_version FROM canonical_pet_title_batch_operations WHERE request_key=?", [`IRIS:${eventIds[1]}`]))[0]!;
+    assert.equal(batch.result_contract_version,"RESET_V1");
     const target = (await db.query<Array<{ selection_status_before: string; reason_type: string }>>("SELECT selection_status_before,reason_type FROM canonical_pet_title_batch_operation_targets WHERE pet_title_batch_operation_id=? AND owned_pet_title_id=?", [batch.pet_title_batch_operation_id, ids.ownedOne]))[0]!;
     assert.deepEqual(target, { selection_status_before: "SELECTED", reason_type: "ADMIN_RESET" });
     await db.execute("UPDATE canonical_pet_title_batch_operation_targets SET selection_status_before='NOT_SELECTED' WHERE pet_title_batch_operation_id=? AND owned_pet_title_id=?", [batch.pet_title_batch_operation_id, ids.ownedOne]);
@@ -143,6 +185,9 @@ describe("PET-TITLE admin batch app-wiring MariaDB", { skip: !enabled }, () => {
     const replay = await (await ingress()).reset({ eventId: eventIds[1]!, externalUserId: external, channelId: room, message: "/펫타이틀파일생성" });
     assert.equal(replay.status, "changed");
     assert.deepEqual(await counts(), afterFirst);
+    await db.execute("UPDATE canonical_pet_title_batch_operation_targets SET member_key_before=? WHERE pet_title_batch_operation_id=? AND owned_pet_title_id=?", ["😀".repeat(255),batch.pet_title_batch_operation_id,ids.ownedOne]);
+    await assert.rejects(()=>db.execute("UPDATE canonical_pet_title_batch_operation_targets SET member_key_before=? WHERE pet_title_batch_operation_id=? AND owned_pet_title_id=?",["😀".repeat(256),batch.pet_title_batch_operation_id,ids.ownedOne]),/CONSTRAINT|chk_odbt_474_01_member_key|Data too long/i);
+    await db.execute("UPDATE canonical_pet_title_batch_operation_targets SET member_key_before='배치운영자' WHERE pet_title_batch_operation_id=? AND owned_pet_title_id=?",[batch.pet_title_batch_operation_id,ids.ownedOne]);
   });
 
   it("serializes reset on the shared PET_TITLE scope before selection and ownership", async () => {
@@ -180,14 +225,18 @@ describe("PET-TITLE admin batch app-wiring MariaDB", { skip: !enabled }, () => {
     await db.execute("UPDATE command_registry SET rollout_state='ACTIVE',enabled=1 WHERE command_code='ADMIN_PET_TITLE_SYNC'");
     const first = await (await ingress()).sync({ eventId: eventIds[3]!, externalUserId: external, channelId: room, message: "/펫타이틀동기화" });
     assert.equal(first.status, "changed");
-    if (first.status === "changed") assert.match(first.data, /펫타이틀데이터 동기화완료 \(1\)/);
+    if (first.status === "changed") assert.match(first.data, /펫타이틀데이터 동기화완료 \(1\).*비활성회원/s);
     const ownership = await db.query<Array<{ owned_pet_title_id: string; ownership_status: string }>>("SELECT owned_pet_title_id,ownership_status FROM canonical_owned_pet_title_instances WHERE owned_pet_title_id IN (?,?,?) ORDER BY owned_pet_title_id", [ids.activeOwned, ids.subOwned, ids.inactiveOwned]);
     assert.deepEqual(new Map(ownership.map((row) => [row.owned_pet_title_id, row.ownership_status])), new Map([[ids.activeOwned, "owned"], [ids.subOwned, "owned"], [ids.inactiveOwned, "removed"]]));
     const auditActor = (await db.query<Array<{ insert_user: string }>>("SELECT participant.INSERT_USER insert_user FROM canonical_pet_title_batch_operation_participants participant JOIN canonical_pet_title_batch_operations batch ON batch.pet_title_batch_operation_id=participant.pet_title_batch_operation_id WHERE batch.request_key=?", [`IRIS:${eventIds[3]}`]))[0]!;
     assert.equal(auditActor.insert_user, `pet_title_admin_operator_${operatorId.toString()}`);
+    const snapshot = (await db.query<Array<{ member_key_before: string }>>("SELECT target.member_key_before FROM canonical_pet_title_batch_operation_targets target JOIN canonical_pet_title_batch_operations batch ON batch.pet_title_batch_operation_id=target.pet_title_batch_operation_id WHERE batch.request_key=?", [`IRIS:${eventIds[3]}`]))[0]!;
+    assert.equal(snapshot.member_key_before, "비활성회원");
     const beforeReplay = await counts();
+    await db.execute("UPDATE player_profiles SET current_display_name='변경후회원' WHERE player_id=?", [inactivePlayer.insertId]);
     const replay = await (await ingress()).sync({ eventId: eventIds[3]!, externalUserId: external, channelId: room, message: "/펫타이틀동기화" });
     assert.equal(replay.status, "changed");
+    if (first.status === "changed" && replay.status === "changed") assert.equal(replay.data, first.data);
     assert.deepEqual(await counts(), beforeReplay);
 
     await db.execute("UPDATE canonical_player_identity_crosswalks SET player_id=? WHERE canonical_player_identity_crosswalk_id=?", [ids.subCanonicalPlayer, ids.activeCrosswalk]);
@@ -222,5 +271,21 @@ describe("PET-TITLE admin batch app-wiring MariaDB", { skip: !enabled }, () => {
     const completed = await Promise.race([parallel, new Promise<never>((_, reject) => setTimeout(() => reject(new Error("ACCOUNT_AUTHORITY_MUTEX_DEADLOCK")), 3_000))]);
     assert.equal(completed[0].status, "changed");
     assert.equal(completed[1].status, "changed");
+
+    const orphanPlayer=await db.execute("INSERT INTO players(status,version) VALUES ('inactive',1)");
+    await db.execute("INSERT INTO player_profiles(player_id,current_display_name,terms_agreed,version) VALUES (?,'',TRUE,1)",[orphanPlayer.insertId]);
+    await db.execute("INSERT INTO canonical_players(player_id,source_system,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,'LEGACY_DB',?,?,?,?,?)",[ids.orphanCanonicalPlayer,orphanPlayer.insertId.toString(),...audit]);
+    await db.execute("INSERT INTO canonical_owned_pet_title_instances(owned_pet_title_id,player_id,pet_title_id,acquisition_sequence,acquired_time,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,1,'2026-09-05 13:40:00','owned',?,?,?,?)",[ids.orphanOwned,ids.orphanCanonicalPlayer,ids.title,...audit]);
+    await assert.rejects(()=>(ingress().then(current=>current.sync({eventId:eventIds[8]!,externalUserId:external,channelId:room,message:"/펫타이틀동기화"}))),/PET_TITLE_BATCH_MEMBER_KEY_UNRESOLVED/);
+    const orphanState=(await db.query<Array<{ownership_status:string}>>("SELECT ownership_status FROM canonical_owned_pet_title_instances WHERE owned_pet_title_id=?",[ids.orphanOwned]))[0]!;
+    assert.equal(orphanState.ownership_status,"owned");
+    assert.equal((await db.query<Array<{count:bigint}>>("SELECT COUNT(*) count FROM outbox_messages WHERE operation_id IN (SELECT id FROM operations WHERE idempotency_key IN (SELECT app_wiring_operation_id FROM canonical_app_wiring_operations WHERE external_request_id=?))",[eventIds[8]]))[0]!.count,0n);
+    const resetWithoutDisplay=await (await ingress()).reset({eventId:eventIds[9]!,externalUserId:external,channelId:room,message:"/펫타이틀파일생성"});
+    assert.equal(resetWithoutDisplay.status,"changed");
+    const resetCounts=await counts();
+    const resetReplay=await (await ingress()).reset({eventId:eventIds[9]!,externalUserId:external,channelId:room,message:"/펫타이틀파일생성"});
+    assert.deepEqual({...resetReplay,replayed:false},resetWithoutDisplay);assert.equal(resetReplay.status,"changed");if(resetReplay.status==="changed")assert.equal(resetReplay.replayed,true);assert.deepEqual(await counts(),resetCounts);
+    const resetContract=(await db.query<Array<{result_contract_version:string;member_key_before:string|null}>>("SELECT batch.result_contract_version,target.member_key_before FROM canonical_pet_title_batch_operations batch JOIN canonical_pet_title_batch_operation_targets target ON target.pet_title_batch_operation_id=batch.pet_title_batch_operation_id WHERE batch.request_key=? AND target.owned_pet_title_id=?",[`IRIS:${eventIds[9]}`,ids.orphanOwned]))[0]!;
+    assert.deepEqual(resetContract,{result_contract_version:"RESET_V1",member_key_before:null});
   });
 });

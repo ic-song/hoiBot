@@ -107,7 +107,7 @@ export class PetTitleAdminAppWiringIngress {
       if(actor.selectionSource!=="ACTIVE_CONTEXT")throw new ApplicationError("PET_TITLE_ADMIN_CONTEXT_REQUIRED","활성 게임계정이 선택된 운영방에서 실행해 주세요.",409);
       const authority=await this.activeMembers.lockSnapshot(database);
       const result=await this.mutations.adminSync(database,claim,{actor:`pet_title_admin_operator_${operatorId}`,activePlayerIds:authority.activeCanonicalPlayerIds});
-      return {operationId:result.operationId,resultFingerprint:result.resultFingerprint,receiptKind:"PET_TITLE_BATCH" as const,data:`펫타이틀데이터 동기화완료 (${result.affectedPlayerCount})${"\u200b".repeat(500)}${result.affectedPlayerIds.toString()}`};
+      return {operationId:result.operationId,resultFingerprint:result.resultFingerprint,receiptKind:"PET_TITLE_BATCH" as const,data:`펫타이틀데이터 동기화완료 (${result.affectedPlayerCount})${"\u200b".repeat(500)}${result.affectedMemberKeys.toString()}`};
     });
   }
 

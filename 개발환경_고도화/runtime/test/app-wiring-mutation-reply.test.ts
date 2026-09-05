@@ -11,10 +11,12 @@ type Row = Record<string, unknown>;
 const resultFingerprint = "d".repeat(64);
 const petTitleOperationId = "petop001";
 const petTitleBatchOperationId = "petba001";
-const batchTargets = [{ player_id: "player01", acquisition_sequence: 1n, owned_pet_title_id: "title001", selection_status_before: "NOT_SELECTED", reason_type: "ADMIN_SYNC" }];
+const batchTargets = [{ player_id: "player01", member_key_before: "삭제회원", acquisition_sequence: 1n, owned_pet_title_id: "title001", selection_status_before: "NOT_SELECTED", reason_type: "ADMIN_SYNC" }];
 const batchParticipants = [{ player_id: "player01", participant_role: "AFFECTED_OWNER", affected_title_count: 1n }];
-const batchTargetSetFingerprint = createHash("sha256").update(JSON.stringify({ targets: [{ playerId: "player01", acquisitionSequence: "1", ownedPetTitleId: "title001", selected: false }] })).digest("hex");
-const batchResultFingerprint = createHash("sha256").update(JSON.stringify({ operationType: "ADMIN_SYNC", affectedPlayerIds: ["player01"], affectedPlayerCount: 1, affectedTitleCount: 1, targetSetFingerprint: batchTargetSetFingerprint })).digest("hex");
+const batchTargetSetFingerprint = createHash("sha256").update(JSON.stringify({ targets: [{ playerId: "player01", memberKeyBefore: "삭제회원", acquisitionSequence: "1", ownedPetTitleId: "title001", selected: false }] })).digest("hex");
+const batchResultFingerprint = createHash("sha256").update(JSON.stringify({ operationType: "ADMIN_SYNC", affectedPlayerIds: ["player01"], affectedMemberKeys: ["삭제회원"], affectedPlayerCount: 1, affectedTitleCount: 1, targetSetFingerprint: batchTargetSetFingerprint })).digest("hex");
+const legacyBatchTargetSetFingerprint = createHash("sha256").update(JSON.stringify({ targets: [{ playerId: "player01", acquisitionSequence: "1", ownedPetTitleId: "title001", selected: false }] })).digest("hex");
+const legacyBatchResultFingerprint = createHash("sha256").update(JSON.stringify({ operationType: "ADMIN_SYNC", affectedPlayerIds: ["player01"], affectedPlayerCount: 1, affectedTitleCount: 1, targetSetFingerprint: legacyBatchTargetSetFingerprint })).digest("hex");
 
 class MutationReplyDatabase implements CapableDatabaseClient {
   claim?: Row;
@@ -109,7 +111,7 @@ class MutationReplyDatabase implements CapableDatabaseClient {
     if (sql.includes("SET claim_state='MUTATION_STARTED'")) { Object.assign(this.claim!, { claim_state: "MUTATION_STARTED", recovery_status: "PENDING" }); return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("UPDATE pet_title_domain")) { this.domainWrites += 1; return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO canonical_pet_title_operations")) { this.typedReceipt = { pet_title_operation_id: values[0], result_fingerprint: values[1], operation_status: "COMPLETED" }; return { affectedRows: 1n, insertId: 0n }; }
-    if (sql.startsWith("INSERT INTO canonical_pet_title_batch_operations")) { this.typedReceipt = { pet_title_batch_operation_id: values[0], operation_type: "ADMIN_SYNC", affected_player_count: 1n, affected_title_count: 1n, target_count: 1n, target_set_fingerprint: batchTargetSetFingerprint, result_fingerprint: values[1], operation_status: "COMPLETED" }; return { affectedRows: 1n, insertId: 0n }; }
+    if (sql.startsWith("INSERT INTO canonical_pet_title_batch_operations")) { this.typedReceipt = { pet_title_batch_operation_id: values[0], operation_type: "ADMIN_SYNC", result_contract_version: "MEMBER_KEY_V1", affected_player_count: 1n, affected_title_count: 1n, target_count: 1n, target_set_fingerprint: batchTargetSetFingerprint, result_fingerprint: values[1], operation_status: "COMPLETED" }; return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO operations")) { this.operation = { id: 11n, idempotency_scope: "app-wiring.mutation-reply", idempotency_key: values[1], status: "processing", result_json: null }; return { affectedRows: 1n, insertId: 11n }; }
     if (sql.startsWith("INSERT INTO command_executions")) { if (this.failExecution) throw new Error("EXECUTION_INSERT_FAILED"); this.execution = { event_id: values[0], command_code: values[1], execution_status: "completed", result_code: sql.includes("'no_reply'") ? "no_reply" : "reply_queued" }; return { affectedRows: 1n, insertId: 12n }; }
     if (sql.startsWith("INSERT INTO outbox_messages")) { if (this.failOutbox) throw new Error("OUTBOX_INSERT_FAILED"); this.outbox = { id: 21n, destination_id: values[1], payload_json: values[2] }; return { affectedRows: 1n, insertId: 21n }; }
@@ -181,6 +183,14 @@ describe("app-wiring MUTATION Iris reply atomic boundary", () => {
     assert.equal(database.receiptLink?.[14],null);
     assert.deepEqual(await executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),{value:"synced",reply:{outboxId:"21",room:"room-1",data:"동기화 완료"}});
     assert.deepEqual(calls,["handler"]);
+    database.batchTargetRows[0]!.member_key_before="변조회원";
+    await assert.rejects(()=>executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),/APP_WIRING_REPLAY_PET_TITLE_BATCH_(TARGET|RESULT)_DRIFT/);
+    database.batchTargetRows[0]!.member_key_before="삭제회원";
+    Object.assign(database.typedReceipt!,{result_contract_version:"LEGACY",target_set_fingerprint:legacyBatchTargetSetFingerprint,result_fingerprint:legacyBatchResultFingerprint});
+    database.receiptLink=database.receiptLink!.map((value,index)=>index===3?legacyBatchResultFingerprint:value);
+    database.claim!.result_json=JSON.stringify({...JSON.parse(String(database.claim!.result_json)),resultFingerprint:legacyBatchResultFingerprint});
+    database.operation!.result_json=JSON.stringify({...JSON.parse(String(database.operation!.result_json)),resultFingerprint:legacyBatchResultFingerprint});
+    assert.deepEqual(await executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),{value:"synced",reply:{outboxId:"21",room:"room-1",data:"동기화 완료"}});
     database.batchTargetRows[0]!.selection_status_before="SELECTED";
     await assert.rejects(()=>executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),/APP_WIRING_REPLAY_PET_TITLE_BATCH_(TARGET|RESULT)_DRIFT/);
     database.batchTargetRows[0]!.selection_status_before="NOT_SELECTED";

@@ -54,8 +54,27 @@ function sourceFor(table: string): string {
 }
 
 function bodyFor(table: string): string {
-  const body = new RegExp(`^CREATE TABLE IF NOT EXISTS ${escapeRegExp(table)} \\(([\\s\\S]*?)\\n\\) ENGINE=InnoDB`, "m").exec(sourceFor(table))?.[1];
+  let body = new RegExp(`^CREATE TABLE IF NOT EXISTS ${escapeRegExp(table)} \\(([\\s\\S]*?)\\n\\) ENGINE=InnoDB`, "m").exec(sourceFor(table))?.[1];
   assert.ok(body, `${table}: CREATE TABLE body`);
+  if(table==="canonical_pet_title_batch_operations"){
+    const snapshot=amendmentSources.get("474_pet_title_batch_member_key_snapshot.sql");assert.ok(snapshot);
+    assert.match(snapshot,/ADD COLUMN IF NOT EXISTS result_contract_version VARCHAR\(32\) CHARACTER SET ascii COLLATE ascii_bin NULL/);
+    assert.match(snapshot,/result_contract_version='MEMBER_KEY_V1' AND operation_type='ADMIN_SYNC'/);
+    assert.match(snapshot,/result_contract_version='RESET_V1' AND operation_type='ADMIN_RESET'/);
+    body=body.replace(/^(  operation_type .*),$/m,"$1,\n  result_contract_version VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,")
+      .replace(/^(  CONSTRAINT chk_odbt_472_01_rule_04 .*)$/m,"$1\n  CONSTRAINT chk_odbt_474_00_contract CHECK ((result_contract_version='LEGACY' AND operation_type IN ('ADMIN_SYNC','ADMIN_RESET')) OR (result_contract_version='MEMBER_KEY_V1' AND operation_type='ADMIN_SYNC') OR (result_contract_version='RESET_V1' AND operation_type='ADMIN_RESET')),");
+  }
+  if(table==="canonical_pet_title_batch_operation_targets"){
+    const snapshot=amendmentSources.get("474_pet_title_batch_member_key_snapshot.sql");assert.ok(snapshot);
+    assert.match(snapshot,/ADD COLUMN IF NOT EXISTS member_key_before VARCHAR\(255\) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL/);
+    assert.match(snapshot,/MODIFY COLUMN member_key_before VARCHAR\(255\) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL/);
+    assert.match(snapshot,/ADD CONSTRAINT IF NOT EXISTS chk_odbt_474_01_member_key CHECK \(member_key_before IS NULL OR CHAR_LENGTH\(member_key_before\) BETWEEN 1 AND 255\)/);
+    assert.match(snapshot,/UPDATE_USER='migration_474'/);
+    assert.match(snapshot,/UPDATE_TIME=DATE_FORMAT\(CONVERT_TZ\(UTC_TIMESTAMP\(\),'\+00:00','\+09:00'\)/);
+    assert.doesNotMatch(snapshot,/,\s*target_row\.player_id\)\s*\nWHERE target_row\.member_key_before/);
+    body=body.replace(/^(  player_id .*),$/m,"$1,\n  member_key_before VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,")
+      .replace(/^(  CONSTRAINT chk_odbt_472_04_rule_03 .*)$/m,"$1\n  CONSTRAINT chk_odbt_474_01_member_key CHECK (member_key_before IS NULL OR CHAR_LENGTH(member_key_before) BETWEEN 1 AND 255),");
+  }
   return body;
 }
 
@@ -177,8 +196,8 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
     assert.deepEqual([...local].sort(), plan.migrationFiles);
   });
 
-  it("keeps amendments 466, 470, and 472 separate from the CREATE-only migration set", () => {
-    assert.deepEqual(plan.amendmentMigrations.map(({ migration }) => migration), ["466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "472_pet_title_admin_batch_app_wiring.sql"]);
+  it("keeps amendments 466, 470, 472, and 474 separate from the CREATE-only migration set", () => {
+    assert.deepEqual(plan.amendmentMigrations.map(({ migration }) => migration), ["466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "472_pet_title_admin_batch_app_wiring.sql", "474_pet_title_batch_member_key_snapshot.sql"]);
     const amendment = plan.amendmentMigrations.find(({ migration }) => migration.startsWith("466_"))!;
     assert.deepEqual(amendment.alters, ["canonical_app_wiring_operations"]);
     assert.deepEqual(amendment.creates, ["canonical_app_wiring_receipt_links"]);
@@ -200,6 +219,8 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
     assert.match(eventSource, /ALTER TABLE canonical_app_wiring_receipt_links/);
     const petTitleBatch=plan.amendmentMigrations.find(({migration})=>migration.startsWith("472_"))!;
     assert.equal(petTitleBatch.inputShape,eventControl.resultingShape);assert.equal(petTitleBatch.resultingShape,"MIGRATION_472_FINAL_RECEIPT_LINK");
+    const memberKeySnapshot=plan.amendmentMigrations.find(({migration})=>migration.startsWith("474_"))!;
+    assert.equal(memberKeySnapshot.inputShape,petTitleBatch.resultingShape);assert.equal(memberKeySnapshot.resultingShape,"MIGRATION_474_REPLAY_SAFE_MEMBER_KEY_SNAPSHOT");
   });
 
   it("preserves the migration466 base receipt-link shape before applying migration470", () => {
@@ -295,5 +316,16 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
     assert.match(rollback, /canonical_pet_title_batch_operation_targets/);
     assert.match(rollback, /DROP COLUMN IF EXISTS pet_title_batch_operation_id/);
     assert.match(rollback, /DROP TABLE IF EXISTS canonical_pet_title_batch_operation_targets;[\s\S]*DROP TABLE IF EXISTS canonical_pet_title_batch_operation_participants;[\s\S]*DROP TABLE IF EXISTS canonical_pet_title_batch_operations;[\s\S]*DROP TABLE IF EXISTS canonical_pet_title_global_locks;/);
+  });
+
+  it("provides a re-entry-safe 474 rollback for the member display snapshot", () => {
+    const amendment = plan.amendmentMigrations.find(({ migration }) => migration.startsWith("474_"))!;
+    const rollback = readFileSync(new URL(amendment.rollback, rollbackRoot), "utf8");
+    assert.match(rollback, /rollback_preflight_guard/);
+    assert.match(rollback, /receipt_kind='PET_TITLE_BATCH'/);
+    assert.match(rollback, /DROP CONSTRAINT IF EXISTS chk_odbt_474_01_member_key/);
+    assert.match(rollback, /DROP COLUMN IF EXISTS member_key_before/);
+    assert.match(rollback, /DROP CONSTRAINT IF EXISTS chk_odbt_474_00_contract/);
+    assert.match(rollback, /DROP COLUMN IF EXISTS result_contract_version/);
   });
 });

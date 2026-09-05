@@ -7632,7 +7632,11 @@ Status: VERIFIED
 - 활성 legacy `players`와 `player_profiles`를 회원 권위로 사용
 - canonical player source/crosswalk를 양방향 대사
 - `canonical_owned_pet_title_instances`의 비활성 회원 보유 행만 soft remove
+- ADMIN_SYNC 대상은 `canonical_pet_title_batch_operation_targets.member_key_before`에 실행 당시 회원 표시명을 스냅샷으로 보존하고, 표시명을 쓰지 않는 ADMIN_RESET 대상은 `NULL` 유지
+- ADMIN_SYNC에서 profile/linked identity 표시값이 없으면 내부 CUID를 닉네임으로 대체하지 않고 명시적으로 실패하며, LEGACY_JSON 표시값 적재는 별도 운영 데이터 이관 WBS가 선행
 
 ## Save Flow
 - legacy 경로는 기존 JSON load/save 흐름 유지
 - MODERN 경로는 account-authority mutex → PET_TITLE mutex → context/회원 권위 → typed receipt/outbox를 한 transaction으로 처리
+- typed receipt의 target/result fingerprint와 outbox 응답은 실행 당시 표시명을 사용하며, 재시작 뒤 닉네임이 바뀌어도 최초 응답을 그대로 replay
+- `result_contract_version`의 `LEGACY`/`MEMBER_KEY_V1`/`RESET_V1`별 fingerprint 계약을 검증해 migration 474 이전 완료 receipt와 reset 원응답도 그대로 replay

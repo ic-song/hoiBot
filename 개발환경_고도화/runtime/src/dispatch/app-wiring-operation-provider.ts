@@ -291,19 +291,23 @@ async function assertStoredMutationReceipt(tx:ControlledDatabaseTransaction,row:
 
 // PET_TITLE batch 재생 전에 header와 정확 대상·참여자 집합을 다시 해시해 하위 증거 변조를 차단합니다.
 async function assertStoredPetTitleBatchReceipt(tx:ControlledDatabaseTransaction,operationId:string,resultFingerprint:string):Promise<void>{
-  const header=(await tx.query<Array<{operation_type:string;affected_player_count:bigint|string;affected_title_count:bigint|string;target_count:bigint|string;target_set_fingerprint:string;result_fingerprint:string;operation_status:string}>>(
-    "SELECT operation_type,affected_player_count,affected_title_count,target_count,target_set_fingerprint,result_fingerprint,operation_status FROM canonical_pet_title_batch_operations WHERE pet_title_batch_operation_id=? FOR UPDATE",
+  const header=(await tx.query<Array<{operation_type:string;result_contract_version:string;affected_player_count:bigint|string;affected_title_count:bigint|string;target_count:bigint|string;target_set_fingerprint:string;result_fingerprint:string;operation_status:string}>>(
+    "SELECT operation_type,result_contract_version,affected_player_count,affected_title_count,target_count,target_set_fingerprint,result_fingerprint,operation_status FROM canonical_pet_title_batch_operations WHERE pet_title_batch_operation_id=? FOR UPDATE",
     [operationId],
   ))[0];
   if(header===undefined||header.operation_status!=="COMPLETED"||header.result_fingerprint!==resultFingerprint)throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_HEADER_INVALID");
   if(header.operation_type!=="ADMIN_RESET"&&header.operation_type!=="ADMIN_SYNC")throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_OPERATION_INVALID");
-  const targetRows=await tx.query<Array<{player_id:string;acquisition_sequence:bigint|string;owned_pet_title_id:string;selection_status_before:string;reason_type:string}>>(
-    "SELECT player_id,acquisition_sequence,owned_pet_title_id,selection_status_before,reason_type FROM canonical_pet_title_batch_operation_targets WHERE pet_title_batch_operation_id=? ORDER BY player_id,acquisition_sequence,owned_pet_title_id FOR UPDATE",
+  if(!((header.result_contract_version==="LEGACY")
+    ||(header.result_contract_version==="MEMBER_KEY_V1"&&header.operation_type==="ADMIN_SYNC")
+    ||(header.result_contract_version==="RESET_V1"&&header.operation_type==="ADMIN_RESET")))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_CONTRACT_INVALID");
+  const targetRows=await tx.query<Array<{player_id:string;member_key_before:string|null;acquisition_sequence:bigint|string;owned_pet_title_id:string;selection_status_before:string;reason_type:string}>>(
+    "SELECT player_id,member_key_before,acquisition_sequence,owned_pet_title_id,selection_status_before,reason_type FROM canonical_pet_title_batch_operation_targets WHERE pet_title_batch_operation_id=? ORDER BY player_id,acquisition_sequence,owned_pet_title_id FOR UPDATE",
     [operationId],
   );
-  const targets=targetRows.map(target=>({playerId:target.player_id,acquisitionSequence:String(target.acquisition_sequence),ownedPetTitleId:target.owned_pet_title_id,selected:target.selection_status_before==="SELECTED"}));
-  if(targetRows.some(target=>(target.selection_status_before!=="SELECTED"&&target.selection_status_before!=="NOT_SELECTED")||target.reason_type!==header.operation_type))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_TARGET_INVALID");
-  const targetSetFingerprint=sha(JSON.stringify({targets}));
+  const targets=targetRows.map(target=>({playerId:target.player_id,memberKeyBefore:target.member_key_before,acquisitionSequence:String(target.acquisition_sequence),ownedPetTitleId:target.owned_pet_title_id,selected:target.selection_status_before==="SELECTED"}));
+  if(targetRows.some(target=>(target.member_key_before!==null&&(Array.from(target.member_key_before).length===0||Array.from(target.member_key_before).length>255))||(header.result_contract_version==="MEMBER_KEY_V1"&&target.member_key_before===null)||(target.selection_status_before!=="SELECTED"&&target.selection_status_before!=="NOT_SELECTED")||target.reason_type!==header.operation_type))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_TARGET_INVALID");
+  const fingerprintTargets=header.result_contract_version==="MEMBER_KEY_V1"?targets:targets.map(({memberKeyBefore:_,...legacyTarget})=>legacyTarget);
+  const targetSetFingerprint=sha(JSON.stringify({targets:fingerprintTargets}));
   if(BigInt(header.target_count)!==BigInt(targets.length)||BigInt(header.affected_title_count)!==BigInt(targets.length)||header.target_set_fingerprint!==targetSetFingerprint)throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_TARGET_DRIFT");
   const expectedCounts=new Map<string,bigint>();
   for(const target of targets)expectedCounts.set(target.playerId,(expectedCounts.get(target.playerId)??0n)+1n);
@@ -312,9 +316,16 @@ async function assertStoredPetTitleBatchReceipt(tx:ControlledDatabaseTransaction
     [operationId],
   );
   const affectedPlayerIds=[...expectedCounts.keys()].sort();
+  const affectedMemberKeys=header.result_contract_version==="MEMBER_KEY_V1"?affectedPlayerIds.map(playerId=>{
+    const memberKeys=new Set(targets.filter(target=>target.playerId===playerId).map(target=>target.memberKeyBefore));
+    if(memberKeys.size!==1||memberKeys.has(null))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_MEMBER_KEY_DRIFT");
+    return [...memberKeys][0]!;
+  }):[];
   if(BigInt(header.affected_player_count)!==BigInt(affectedPlayerIds.length)||participants.length!==affectedPlayerIds.length
     ||participants.some((participant,index)=>participant.player_id!==affectedPlayerIds[index]||participant.participant_role!=="AFFECTED_OWNER"||BigInt(participant.affected_title_count)!==expectedCounts.get(participant.player_id)))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_PARTICIPANT_DRIFT");
-  const projection={operationType:header.operation_type,affectedPlayerIds,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:targets.length,targetSetFingerprint};
+  const projection=header.result_contract_version==="MEMBER_KEY_V1"
+    ?{operationType:header.operation_type,affectedPlayerIds,affectedMemberKeys,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:targets.length,targetSetFingerprint}
+    :{operationType:header.operation_type,affectedPlayerIds,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:targets.length,targetSetFingerprint};
   if(sha(JSON.stringify(projection))!==resultFingerprint)throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_RESULT_DRIFT");
 }
 

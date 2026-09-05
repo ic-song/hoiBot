@@ -31,7 +31,7 @@ function fixture(route:"MODERN"|"SHADOW"|"LEGACY_FALLBACK"){
   const contexts:PlayerContextPort={resolveSelf:async()=>({canonicalPlayerId:"player01",legacyPlayerId:"17",externalIdentityId:"identity-1",displayName:"운영자",rankEmoji:null,platformCode:"kakao",externalContextId:"room-1",selectionSource:"ACTIVE_CONTEXT"}),resolveUniqueLegacyDisplayTarget:async()=>({canonicalPlayerId:"player01",legacyPlayerId:"17",displayName:"대상",rankEmoji:null})};
   const ingress=new PetTitleAdminAppWiringIngress(provider,dispatcher,contexts,{
     adminGrant:async(_db,_claim,value)=>{mutationCalls+=1;actor=value.actor;return{operationId:"petop001",resultFingerprint:"c".repeat(64),replayedDomainState:false,operationType:"ADMIN_GRANT",ownedPetTitleId:"owned001",petTitleId:"title001",titleName:value.titleName,acquisitionSequence:1n};},
-    adminSync:async(_db,_claim,value)=>{mutationCalls+=1;actor=value.actor;activePlayerIds=value.activePlayerIds;return{operationId:"batch001",resultFingerprint:"d".repeat(64),replayedDomainState:false,operationType:"ADMIN_SYNC",affectedPlayerCount:1,affectedTitleCount:2,affectedPlayerIds:["orphan01"]};},adminReset:async()=>{throw new Error("unused");},
+    adminSync:async(_db,_claim,value)=>{mutationCalls+=1;actor=value.actor;activePlayerIds=value.activePlayerIds;return{operationId:"batch001",resultFingerprint:"d".repeat(64),replayedDomainState:false,operationType:"ADMIN_SYNC",affectedPlayerCount:1,affectedTitleCount:2,affectedPlayerIds:["orphan01"],affectedMemberKeys:["삭제회원"]};},adminReset:async()=>{throw new Error("unused");},
   },{lockSnapshot:async()=>({activeCanonicalPlayerIds:["player01","player02"]})});
   return{ingress,writes,queries,mutationCalls:()=>mutationCalls,actor:()=>actor,activePlayerIds:()=>activePlayerIds};
 }
@@ -55,7 +55,7 @@ describe("PET-TITLE admin app-wiring ingress",()=>{
     const current=fixture("MODERN");const result=await current.ingress.sync({...input,message:"/펫타이틀동기화"});
     assert.equal(result.status,"changed");assert.equal(current.mutationCalls(),1);
     assert.equal(current.actor(),"pet_title_admin_operator_7");assert.deepEqual(current.activePlayerIds(),["player01","player02"]);
-    if(result.status==="changed")assert.match(result.data,/펫타이틀데이터 동기화완료 \(1\)/);
+    if(result.status==="changed")assert.match(result.data,/펫타이틀데이터 동기화완료 \(1\).*삭제회원/s);
   });
 
   it("keeps SHADOW and legacy sync outside authority and mutation work",async()=>{

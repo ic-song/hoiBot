@@ -71,14 +71,15 @@ class SaleMutationParticipant extends MutationParticipant {
 }
 
 class BatchMutationParticipant extends MutationParticipant{
+  constructor(private readonly batchRows:Array<Record<string,unknown>>=[
+    {owned_pet_title_id:"owned001",player_id:"player01",member_key_before:"회원가",acquisition_sequence:1n,selected_flag:1},
+    {owned_pet_title_id:"owned002",player_id:"player02",member_key_before:"회원나",acquisition_sequence:2n,selected_flag:0},
+  ]){super();}
   override async query<T>(sql:string,values:readonly unknown[]=[]):Promise<T>{
     this.calls.push({kind:"query",sql,values});
     if(sql.includes("canonical_pet_title_global_locks"))return[{lock_key:"PET_TITLE"}] as T;
     if(sql.includes("SELECT canonical_player.player_id"))return[{player_id:"player01"},{player_id:"player02"}] as T;
-    if(sql.includes("FROM canonical_owned_pet_title_instances owned"))return[
-      {owned_pet_title_id:"owned001",player_id:"player01",acquisition_sequence:1n,selected_flag:1},
-      {owned_pet_title_id:"owned002",player_id:"player02",acquisition_sequence:2n,selected_flag:0},
-    ] as T;
+    if(sql.includes("FROM canonical_owned_pet_title_instances owned"))return this.batchRows as T;
     return[] as T;
   }
 }
@@ -92,20 +93,20 @@ describe("PET-TITLE canonical mutation participant", () => {
     const reads=database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("global_locks")?"scope":sql.includes("SELECT canonical_player.player_id")?"players":"owned");
     assert.deepEqual(reads.slice(0,3),["scope","players","owned"]);
     const targets=database.calls.filter(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operation_targets"));
-    assert.equal(targets.length,2);assert.deepEqual(targets.map(({values})=>values.slice(2,6)),[["player01","owned001","1","SELECTED"],["player02","owned002","2","NOT_SELECTED"]]);
+    assert.equal(targets.length,2);assert.deepEqual(targets.map(({values})=>values.slice(2,7)),[["player01",null,"owned001","1","SELECTED"],["player02",null,"owned002","2","NOT_SELECTED"]]);
     const header=database.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operations"));
-    assert.equal(header?.values[7],2);assert.match(String(header?.values[8]),/^[0-9a-f]{64}$/);assert.equal(header?.values[10],"pet_title_admin_operator_7");
+    assert.equal(header?.values[2],"RESET_V1");assert.equal(header?.values[8],2);assert.match(String(header?.values[9]),/^[0-9a-f]{64}$/);assert.equal(header?.values[11],"pet_title_admin_operator_7");
   });
 
   it("sync removes only owned titles outside the exact active-member authority set",async()=>{
     const database=new BatchMutationParticipant();
     const ids=["batch001","target01","part0001"];
     const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!,8,()=>new Date("2026-09-05T01:02:03Z")).adminSync(database,claim,{actor:"pet_title_admin_operator_7",activePlayerIds:["player01"]});
-    assert.deepEqual([result.affectedPlayerCount,result.affectedTitleCount,result.affectedPlayerIds],[1,1,["player02"]]);
+    assert.deepEqual([result.affectedPlayerCount,result.affectedTitleCount,result.affectedPlayerIds,result.affectedMemberKeys],[1,1,["player02"],["회원나"]]);
     const ownershipChanges=database.calls.filter(({sql})=>sql.startsWith("UPDATE canonical_owned_pet_title_instances"));
     assert.deepEqual(ownershipChanges.map(({values})=>values.slice(2,4)),[["owned002","player02"]]);
     const targets=database.calls.filter(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operation_targets"));
-    assert.deepEqual(targets.map(({values})=>values.slice(2,5)),[["player02","owned002","2"]]);
+    assert.deepEqual(targets.map(({values})=>values.slice(2,6)),[["player02","회원나","owned002","2"]]);
   });
 
   it("rejects a duplicate or malformed active-member authority before database access",async()=>{
@@ -114,6 +115,28 @@ describe("PET-TITLE canonical mutation participant", () => {
       await assert.rejects(()=>new PetTitleCanonicalMutationProvider().adminSync(database,claim,{actor:"pet_title_admin_operator_7",activePlayerIds}),/PET_TITLE_ACTIVE_MEMBER_AUTHORITY_INVALID/);
       assert.equal(database.calls.length,0);
     }
+  });
+
+  it("allows reset without a display value but fails sync closed before ownership DML",async()=>{
+    const row={owned_pet_title_id:"owned001",player_id:"player01",member_key_before:null,acquisition_sequence:1n,selected_flag:0};
+    const resetDatabase=new BatchMutationParticipant([row]),ids=["batch001","target01","part0001"];
+    const reset=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!).adminReset(resetDatabase,claim,{actor:"pet_title_admin_operator_7"});
+    assert.deepEqual(reset.affectedMemberKeys,[]);
+    assert.equal(resetDatabase.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operations"))?.values[2],"RESET_V1");
+    assert.equal(resetDatabase.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operation_targets"))?.values[3],null);
+    const syncDatabase=new BatchMutationParticipant([row]);
+    await assert.rejects(()=>new PetTitleCanonicalMutationProvider().adminSync(syncDatabase,claim,{actor:"pet_title_admin_operator_7",activePlayerIds:[]}),/PET_TITLE_BATCH_MEMBER_KEY_UNRESOLVED/);
+    assert.equal(syncDatabase.calls.some(({kind,sql})=>kind==="execute"&&(sql.startsWith("UPDATE canonical_owned_pet_title_instances")||sql.startsWith("DELETE FROM canonical_pet_title_selections"))),false);
+  });
+
+  it("matches MariaDB CHAR_LENGTH at the 255/256 supplementary-code-point boundary",async()=>{
+    const accepted="😀".repeat(255),rejected="😀".repeat(256);
+    const acceptedDatabase=new BatchMutationParticipant([{owned_pet_title_id:"owned001",player_id:"player01",member_key_before:accepted,acquisition_sequence:1n,selected_flag:0}]);
+    const ids=["batch001","target01","part0001"];
+    const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!).adminSync(acceptedDatabase,claim,{actor:"pet_title_admin_operator_7",activePlayerIds:[]});
+    assert.deepEqual(result.affectedMemberKeys,[accepted]);
+    const rejectedDatabase=new BatchMutationParticipant([{owned_pet_title_id:"owned001",player_id:"player01",member_key_before:rejected,acquisition_sequence:1n,selected_flag:0}]);
+    await assert.rejects(()=>new PetTitleCanonicalMutationProvider().adminSync(rejectedDatabase,claim,{actor:"pet_title_admin_operator_7",activePlayerIds:[]}),/PET_TITLE_BATCH_MEMBER_KEY_UNRESOLVED/);
   });
 
   it("debits the exact canonical ticket and creates a distinct definition plus owned occurrence", async () => {
