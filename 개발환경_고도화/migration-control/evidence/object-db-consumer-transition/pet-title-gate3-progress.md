@@ -1,11 +1,19 @@
-# WBS743 PET-TITLE Gate 3·4 진행 증거
+# WBS743 PET-TITLE Gate 3~7 증분 증거
 
 - 기준 카탈로그: `SC-20260902-1`
-- 상태: `IMPLEMENTED_AWAITING_INDEPENDENT_REREVIEW_NOT_CUTOVER`
+- 상태: `PET_TITLE_ADMIN_SYNC_GATE7_P1_BLOCKED_NOT_CUTOVER`
 - 운영 경로 활성화: 아니요
 - 운영 DB/JSON 변경: 없음
-- 전체 소비자 매니페스트: 1,108개
-- 매니페스트 SHA-256: `a3ba6e7a7a49b6107b5fb3d609aff71567e0fa0e78b574a9cb108e519255612e`
+- 전체 소비자 매니페스트: 1,111개
+- 매니페스트 SHA-256: `669c0f3926735f2cbc26d9643c3465574722973b250cb78a9fe077f875d61826`
+
+## Gate 5 통합 기준
+
+- 기준 카탈로그와 계약 형식은 `SC-20260902-1`, `hoibot-object-db-consumer-transition-v1`, `hoibot-object-db-transition-runtime-boundary-v1`입니다.
+- WBS743 선행 checkpoint `15abb95203e7eb375c9f0bd4294a0ec7100aa1a6`에 WBS746 권위 checkpoint `6fa79f613876ffb494e056175f098e528f2c24a3`를 fast-forward로 통합했습니다.
+- 공용 app-wiring migration `461~466`과 PET_TITLE migration `471~472`, 계정 권위 mutex migration `473`을 하나의 검증 묶음으로 고정했습니다.
+- migration SHA-256은 `461=26dfe93d7fc020f48ae9a6d8555e694786bdb75b5cf7fefcb922757b23120736`, `462=739bcf98faf68eb8b300c8760a28950e1d832557f159f9e02bfe8538e8faab57`, `463=09149b60389f779e210ec4d572897641d24f0f4bd16363d8564c5e5930adf3f8`, `464=e824fb900f93323b4a457a117f2f5c432c049cb921f3df670223a764cd426001`, `465=f045d174b769d64acd88522a90244e822d3698645e1596461b0618d967c98430`, `466=73cf9ab51392ed0ed25c8cae32ae0a2d823bd7cd4a89a3355c35ae7823bb2609`, `471=e00e128170babae9daa02fcf8dd35161a261387da1bc584ce274933ae7ff692b`, `472=28d303c8abe1b152b6afaa9ed44f3b5a75c262cbdf898398a284d4a3ed7eb3af`, `473=8109127520b5d890585fd05b0a8d2a0d8398042206b895e568fdaa2f1b7349bf`입니다.
+- `ADMIN_PET_TITLE_SYNC` 잠금 순서는 `ACCOUNT_AUTHORITY` mutex → `PET_TITLE` mutex → 호출자 room context/super_admin → 전역 회원 권위 행 → canonical player/owned title 행입니다.
 
 ## 사용자 PET-TITLE 경계
 
@@ -32,8 +40,8 @@
 - 이 TypeScript/Fastify runtime은 Iris·MariaDB 전환 검증 서버이며 기존 MessengerBot R `main.js`/`Info.js` 실행 경로를 대체하지 않습니다.
 - `LEGACY`와 `SHADOW`에서 관리자 add/reset은 Node claim·mutation runner에 진입하지 않고 `LEGACY_FALLBACK`을 반환합니다. Node business table, typed receipt, command execution, outbox DML은 0건이며 Node 응답도 생성하지 않습니다. 따라서 외부 Rhino 경로만 legacy writer입니다.
 - `ADMIN_PET_TITLE_SYNC`는 WBS746의 선택 context·super_admin 호출 권위와 전역 active-member authority snapshot을 같은 transaction에서 확인한 뒤에만 `MODERN` mutation을 실행합니다. SHADOW/LEGACY 경로는 business/receipt/outbox DML을 수행하지 않습니다.
-- SYNC용 schema/replay validator는 향후 승격을 위해 `ADMIN_SYNC` evidence를 해석할 수 있지만 현재 runtime은 이를 실행하지 않습니다.
-- MODERN 승격은 WBS746 authority 주입, 독립 재검토, Gate 6/7 검증 뒤에만 가능합니다.
+- `MODERN`에서는 actual Iris ingress가 `ADMIN_SYNC` batch mutation, typed receipt, command execution과 outbox 예약을 하나의 controlled transaction에서 실행합니다. 같은 event replay는 저장된 target·participant·result fingerprint를 대사하고 handler를 다시 호출하지 않습니다.
+- 이 증거는 개발·Shadow 검증이며 운영 rollout 승격이나 기존 MessengerBot R writer 중단을 뜻하지 않습니다.
 
 ## 최신 검증 증거
 
@@ -49,13 +57,41 @@
 - TypeScript typecheck: 통과
 - TypeScript build: 통과
 - `object-data:validate`: 통과
-- 소비자 매니페스트 재생성: 1,108개, 현재 해시와 일치
-- 전체 runtime 회귀: 2,155개 중 2,147 통과, 실패 0, 환경 의존 8개 건너뜀
+- 소비자 매니페스트 재생성: 1,111개, SHA-256 `669c0f3926735f2cbc26d9643c3465574722973b250cb78a9fe077f875d61826`
+- WBS746 통합 집중 검증: active-member authority, account mutex schema, account switch/context, admin ingress, canonical mutation 통과
+- 격리 MariaDB `hoibot_wbs743_it746g5`: migration 001~473 총 461개 적용, `pet-title-admin-batch-app-wiring-mariadb.integration.test.ts` 3/3 통과, 실패 0, 8.797초
+- MariaDB에서 SHADOW business/receipt/outbox DML 0, authority·child evidence drift fail-closed rollback, restart replay, PET_TITLE/ACCOUNT_AUTHORITY mutex 대기, 실제 `/계정변경` writer와 sync 병렬 완료, 활성 REPRESENTATIVE/SUB 보존과 비활성 owner만 제거를 확인했습니다.
+- 전체 runtime 회귀 1회: 2,165개 중 2,156 통과, 환경 의존 8개 건너뜀, 실패 1건은 이전 consumer 고정 수치 `1,108/4`와 현재 `1,111/7`의 차이뿐이었습니다. 숫자 계약만 현행화한 뒤 실패 파일을 독립 재실행해 5/5 통과했습니다.
+- 최종 checkpoint `6fa79f613876ffb494e056175f098e528f2c24a3`에서 합성·계약 근거를 고정했고 WBS746 독립 정적 리뷰는 P0/P1 0건입니다. 이 문서 현행화 때문에 전체 suite를 중복 실행하지 않습니다.
+- WBS743 재개 독립 검증: 계정 권위·schema·계정변경·ADMIN ingress·canonical mutation·consumer 계약·stable ID 표적 테스트 50/50 통과, typecheck·build·오브젝트 데이터 모델 98개 검증 통과, 정적 재검토 P0/P1 0건입니다.
+
+## Gate 6 parity와 Gate 7 Shadow
+
+- 활성 회원의 canonical PET_TITLE occurrence는 보존하고 명시적 inactive/deleted 회원의 occurrence만 제거하는 레거시 핵심 의미를 유지합니다.
+- 독립 리뷰에서 레거시는 제거 회원의 닉네임 목록을 출력하지만 MODERN은 내부 canonical `player_id` 목록을 출력하는 UI parity 차이를 확인했습니다. 제거 시점 표시명을 receipt와 fingerprint에 고정하는 additive 보완 전까지 Gate 7은 차단합니다.
+- player/profile 유실, crosswalk 역매핑 중복, portal 연결 모순은 임의 삭제로 보정하지 않고 첫 title mutation 전에 전체 실패합니다.
+- 별도 event 두 건은 별도 claim으로 실행하고 같은 event·payload는 terminal receipt를 재생합니다. 같은 키의 payload drift는 실패하며 outbox 재시도는 게임 mutation을 다시 실행하지 않습니다.
+- SHADOW/LEGACY는 authority snapshot과 canonical title mutation에 진입하지 않고 business/receipt/command execution/outbox DML 및 외부 응답을 모두 0건으로 유지합니다.
+- actual ingress, mutation provider와 authority provider는 도메인 모듈에 있고 `app.ts` 대규모 재구성이나 Rhino `main.js`/`Info.js` 변경은 하지 않았습니다.
+
+## 고도화_보완기준 대사
+
+| 기준 | 판정 | 근거 |
+| --- | --- | --- |
+| `BC-01` | 충족 | 위 exact commit·migration checksum·계약 형식·manifest hash·전용 MariaDB 묶음 |
+| `BC-02` | 충족 | Kakao room `ACTIVE_CONTEXT`, 단일 `super_admin`, 고정 active-member authority와 mapping drift 차단 |
+| `BC-03` | 충족 | authority/title 잠금, ownership·batch target/participant·typed receipt·execution·outbox 단일 transaction과 실패 rollback |
+| `BC-04` | 충족(현행 유지) | 별도 event/동일 event replay/payload drift/outbox retry 분리; 미확정 재전송 정책은 변경하지 않음 |
+| `BC-05` | 충족 | SHADOW/LEGACY authority·business·receipt·outbox DML 및 send 0 |
+| `BC-07` | 보완 필요 | 도메인 분리와 중앙 조립부 경계는 유지되지만 제거 회원 닉네임 목록 응답 parity 보완이 필요 |
+| `BC-08` | 충족 | 최신 결정·schema 계약·현재 코드·WBS746 checkpoint·WBS743 증분 근거를 exact SHA로 연결 |
+| `BC-09` | 충족(격리 범위) | authority/schema/drift 실패는 FAILED claim과 무업무 DML로 식별되며 outbox 재실행은 terminal receipt와 분리; 운영 readiness는 Gate 8로 유보 |
 
 ## 남은 범위
 
-- 총괄 운영자의 독립 재검토 및 P1 해소 판정
-- WBS746 active-member authority 연결과 `ADMIN_PET_TITLE_SYNC` MODERN 구현은 Gate 5~7 증거에서 검증
-- Gate 5~7 및 운영 cutover
+- 제거 회원 닉네임을 batch receipt·replay fingerprint·응답에 고정하는 P1 보완과 복수 사용자 focused 검증
+- 보완 후 WBS743 ADMIN SYNC 증분 독립 재검토와 Gate 7 ACK
+- WBS743의 나머지 소비자 inventory·전환 범위
+- Gate 8 운영 준비와 cutover
 
-현재 변경은 격리 개발 worktree와 테스트 DB에서 검증한 뒤 `15abb95203e7eb375c9f0bd4294a0ec7100aa1a6`로 커밋·push되어 origin exact·clean을 확인했습니다. `feature/prod`에는 반영하지 않았습니다.
+현재 구현 checkpoint는 `6fa79f613876ffb494e056175f098e528f2c24a3`이며, 이 작업은 해당 exact evidence를 WBS743 관점으로 현행화했습니다. 운영 DB/JSON, 실운영방과 `feature/prod`에는 접근하거나 반영하지 않았습니다.
