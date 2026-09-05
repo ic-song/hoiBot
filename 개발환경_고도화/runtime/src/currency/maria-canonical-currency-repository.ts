@@ -123,12 +123,7 @@ export class MariaCanonicalCurrencyRepository {
   }
 
   public async adjustBalance(input: CanonicalCurrencyAdjustmentInput): Promise<CanonicalCurrencyAdjustmentResult> {
-    identifier(input.playerId); identifier(input.currencyId);
-    text(input.requestKey, 182, "CANONICAL_CURRENCY_REQUEST_KEY_INVALID");
-    asciiKey(input.operationKind, 50, "CANONICAL_CURRENCY_OPERATION_KIND_INVALID");
-    asciiKey(input.reasonKey, 100, "CANONICAL_CURRENCY_REASON_KEY_INVALID");
-    assertCanonicalCurrencyDelta(input.deltaMinorAmount);
-    const payload = fingerprint([["currencyId", input.currencyId], ["deltaMinorAmount", input.deltaMinorAmount.toString()], ["operationKind", input.operationKind], ["reasonKey", input.reasonKey]]);
+    const payload=this.validateAdjustment(input);
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try { return await this.database.withTransaction((transaction) => this.adjustInTransaction(transaction, input, payload)); }
       catch (error) {
@@ -139,6 +134,19 @@ export class MariaCanonicalCurrencyRepository {
       }
     }
     throw new Error("CANONICAL_CURRENCY_OPERATION_RETRY_EXHAUSTED");
+  }
+
+  public async adjustBalanceInTransaction(transaction:DatabaseTransaction,input:CanonicalCurrencyAdjustmentInput):Promise<CanonicalCurrencyAdjustmentResult>{
+    return this.adjustInTransaction(transaction,input,this.validateAdjustment(input));
+  }
+
+  private validateAdjustment(input:CanonicalCurrencyAdjustmentInput):string{
+    identifier(input.playerId); identifier(input.currencyId);
+    text(input.requestKey, 182, "CANONICAL_CURRENCY_REQUEST_KEY_INVALID");
+    asciiKey(input.operationKind, 50, "CANONICAL_CURRENCY_OPERATION_KIND_INVALID");
+    asciiKey(input.reasonKey, 100, "CANONICAL_CURRENCY_REASON_KEY_INVALID");
+    assertCanonicalCurrencyDelta(input.deltaMinorAmount);
+    return fingerprint([["currencyId", input.currencyId], ["deltaMinorAmount", input.deltaMinorAmount.toString()], ["operationKind", input.operationKind], ["reasonKey", input.reasonKey]]);
   }
 
   private async findReplay(playerId: string, requestKey: string): Promise<ReplayRow | undefined> {

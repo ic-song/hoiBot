@@ -10,9 +10,28 @@
   "fieldMapContract": "object-domain-import-field-map.v1.json",
   "componentSemanticSha256": {
     "identityBindings": "283278b9d9e0f99c452da8bac8a3c3318575ff78853d2da301ea6266597e4696",
-    "objectModel": "8fba17a16bab6f85a68cfbe91a3802ed263484a5544e0073f4173b93277b7243",
-    "disposition": "e479e1f9531ed3221500d7c8cf211435c176461c70fac19b03ca1c93a45c6335",
+    "objectModel": "1236776eed887851f27d39eda214979c68a1343c66a6382ada0a048cb84d6c1b",
+    "disposition": "d8d34b782f0b5c64dc0ae486184760a0d3b4a435a8250ccf6e5f1f55330b525a",
     "fieldMap": "7d42a8f3afdb6133293a60604f2a0b55ab3484b853e305f9f5b2316137db812d"
+  },
+  "semanticHashPolicy": {
+    "projectionVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V1",
+    "importContractProjection": "all top-level import behavior fields except semanticHashPolicy",
+    "currentImportContractProjectionSha256": "67cf9e7c3d5811148e78a2b3eb87db768692aa85ac30b5bc58f7315dad4cb73b",
+    "componentProjection": {
+      "identityBindings": "whole canonical identity binding contract",
+      "objectModel": "only the 45 direct target table declarations selected by disposition",
+      "disposition": "definitionSeed, stateImport, initialLedger and quarantineOnly; derived/runtimeOnly and migration baseline do not affect import identity",
+      "fieldMap": "whole canonical field-map contract"
+    },
+    "acceptedCompatibleImportContractSha256": [
+      "487f098d9d8357bbe636b91766dd07f24618b350e449510f52f266fd2b80a861"
+    ],
+    "preservedPre466FullDocumentComponentSha256": {
+      "objectModel": "3243e74e6e444dcb57c5c592cadb8d3f439663d60fdc76b383aa376ace747647",
+      "disposition": "9a7aeee6a699e1d17b0a4223a00379dea3b893954b8ad94d8bec003ffe246609"
+    },
+    "compatibilityBoundary": "Only the explicitly listed pre-466 contract identity is compatible. Arbitrary historical hashes fail closed. Compatibility is valid only while projected component hashes, catalogVersion, target schema, projection evidence and row fingerprints match exactly."
   },
   "directTargetCount": 45,
   "targetColumnCount": 241,

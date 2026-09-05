@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-resolver.js";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { resolveGuildTerritoryWarAuthority } from "./guild-territory-war-authority.js";
 
 const COMMAND="/길드영지종료",COMMAND_CODE="GUILD_TERRITORY_WAR_FINISH",SCOPE="world",RULE_SCOPE="world-finish",RULE_VERSION=1n;
 type Trigger="manual"|"auto"|"event";
@@ -21,7 +22,7 @@ export type GuildTerritoryWarFinishIrisResult=null|{status:"shadow"}|{status:"ha
 export function isGuildTerritoryWarFinishCommand(message:string|undefined):boolean{return message===COMMAND;}
 
 // 현재 영지전 상태를 정산·대기취소·무변화 중 하나로 분류합니다.
-export function classifyGuildTerritoryWarFinish(active:boolean,lifecycle:string):LifecycleAction{return active?"settle":lifecycle==="PENDING_START"?"cancel_pending":"inactive";}
+export function classifyGuildTerritoryWarFinish(active:boolean|number,lifecycle:string):LifecycleAction{return resolveGuildTerritoryWarAuthority(active,lifecycle)?"settle":lifecycle==="PENDING_START"?"cancel_pending":"inactive";}
 
 // 수동·자동·전투 종료를 하나의 회차 키와 DB transaction으로 정산합니다.
 export class GuildTerritoryWarFinishService{
@@ -52,7 +53,7 @@ export class GuildTerritoryWarFinishService{
       if(input.expectedWarVersion!==undefined&&war.version!==input.expectedWarVersion)throw new ApplicationError("GUILD_TERRITORY_FINISH_VERSION_CONFLICT","길드 영지전 상태가 먼저 변경되었습니다.",409);
       const actorType=input.trigger==="manual"?"admin_operator":"system",actorId=input.trigger==="manual"?input.operatorId??null:null;
       const operation=await tx.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,?,?,'iris','processing',UTC_TIMESTAMP(3))",[randomUUID(),`guild.territory.finish:${input.trigger}`,key,actorType,actorId]);
-      const action=classifyGuildTerritoryWarFinish(war.active===1,war.lifecycle_state);
+      const action=classifyGuildTerritoryWarFinish(war.active,war.lifecycle_state);
       if(action!=="settle")return this.completeNonSettlement(tx,input,war,finishKey,operation.insertId,action,actorType,actorId);
       const occupations=await tx.query<Occupation[]>("SELECT territory_no,territory_name,owner_guild_id,owner_player_id FROM guild_territory_occupations WHERE war_id=? ORDER BY territory_no FOR UPDATE",[war.id]);
       if(occupations.length!==7||occupations.some((row,index)=>row.territory_no!==BigInt(index+1)))throw new ApplicationError("GUILD_TERRITORY_FINISH_OCCUPATIONS_INVALID","영지 7곳의 상태가 완전하지 않습니다.",409);

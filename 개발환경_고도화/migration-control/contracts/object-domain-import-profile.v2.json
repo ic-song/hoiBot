@@ -1,0 +1,44 @@
+{
+  "format": "hoibot-object-domain-import-profile-v2",
+  "profileVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V2",
+  "catalogVersion": "SC-20260902-1",
+  "baseProfile": "data-migration-object-domain-import.v1.json",
+  "directTargetAdditions": [
+    {
+      "domain": "item",
+      "table": "canonical_item_definition_imports",
+      "primaryKey": "item_definition_import_id",
+      "objectType": "CANONICAL_ITEM_DEFINITION_IMPORTS",
+      "sourceNamespace": "object-import.item.canonical_item_definition_imports",
+      "columns": [
+        { "table": "canonical_item_definition_imports", "column": "item_definition_import_id", "sqlType": "CHAR(8)", "nullable": false },
+        { "table": "canonical_item_definition_imports", "column": "item_id", "sqlType": "CHAR(8)", "nullable": false },
+        { "table": "canonical_item_definition_imports", "column": "source_system", "sqlType": "VARCHAR(50)", "nullable": false },
+        { "table": "canonical_item_definition_imports", "column": "source_namespace", "sqlType": "VARCHAR(100)", "nullable": false },
+        { "table": "canonical_item_definition_imports", "column": "source_identifier", "sqlType": "VARCHAR(191)", "nullable": false }
+      ],
+      "foreignKey": { "table": "canonical_item_definition_imports", "column": "item_id", "referencesTable": "canonical_item_definitions", "referencesColumn": "item_id" },
+      "exactSource": { "sourceSystem": "LEGACY_JSON", "sourceNamespace": "member.bag", "sourceIdentifier": "펫타이틀권🦊(/펫타이틀이름)", "sourceIdentifierOrigin": "SOURCE_EXACT", "sourceBindingPointer": "" },
+      "sourceProvenance": { "logicalSource": "data/itemList.json", "jsonPointer": "/nonItems/16", "sourceOrder": 17, "definitionSha256": "01c34af9927b5637819a05c99fe39e39186c6d6b3552e95e72a9f7c6150c7743", "sourceRowSha256": "35a45eda88719f0a7a791b9db0bb66c452b13b0dd787a714055e4b0e9efa970b", "sealedFileSha256": "b6f4751f2faf7588c2e41c032bac4fc5b05ff6bd2c105ea0c57a0e072c60c402" }
+    },
+    {
+      "domain": "currency",
+      "table": "canonical_currency_definition_imports",
+      "primaryKey": "currency_definition_import_id",
+      "objectType": "CANONICAL_CURRENCY_DEFINITION_IMPORTS",
+      "sourceNamespace": "object-import.currency.canonical_currency_definition_imports",
+      "columns": [
+        { "table": "canonical_currency_definition_imports", "column": "currency_definition_import_id", "sqlType": "CHAR(8)", "nullable": false },
+        { "table": "canonical_currency_definition_imports", "column": "currency_id", "sqlType": "CHAR(8)", "nullable": false },
+        { "table": "canonical_currency_definition_imports", "column": "source_system", "sqlType": "VARCHAR(50)", "nullable": false },
+        { "table": "canonical_currency_definition_imports", "column": "source_namespace", "sqlType": "VARCHAR(100)", "nullable": false },
+        { "table": "canonical_currency_definition_imports", "column": "source_identifier", "sqlType": "VARCHAR(191)", "nullable": false },
+        { "table": "canonical_currency_definition_imports", "column": "payload_fingerprint", "sqlType": "CHAR(64)", "nullable": false }
+      ],
+      "foreignKey": { "table": "canonical_currency_definition_imports", "column": "currency_id", "referencesTable": "canonical_currency_definitions", "referencesColumn": "currency_id" },
+      "exactSource": { "sourceSystem": "LEGACY_JSON", "sourceNamespace": "member.point", "sourceIdentifier": "point", "sourceIdentifierOrigin": "CONSTANT_CONTRACT" },
+      "sourceProvenance": { "logicalSource": "data/member.json", "jsonPointer": "/member/{playerKey}/point", "definitionRule": "object-domain-import-field-map.v1.json#currency-fixed-point-catalog" }
+    }
+  ],
+  "compatibility": "v1 COMPLETE replay and rollback continue to use the v1 profile; v2 runs accept only the v2 semantic contract"
+}

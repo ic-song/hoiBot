@@ -102,6 +102,7 @@ export class MariaAccountPlatformRepository implements AccountPlatformRepository
   async linkVerifiedGameAccount(input: ScopedVerifyInput): Promise<VerifyGameAccountResult> {
     assertLocator(input);
     return this.database.withTransaction(async (transaction) => {
+      await transaction.query("SELECT lock_key FROM canonical_account_authority_global_locks WHERE lock_key='ACCOUNT_AUTHORITY' FOR UPDATE");
       const replay = (await transaction.query<Array<{ result_json: string | VerifyGameAccountResult }>>(
         "SELECT result_json FROM account_platform_operation_receipts WHERE operation_kind='VERIFY_GAME_ACCOUNT' AND request_key=? FOR UPDATE",
         [input.requestKey]
@@ -187,6 +188,7 @@ export class MariaAccountPlatformRepository implements AccountPlatformRepository
   async switchActiveGameAccount(input: ScopedSwitchInput): Promise<SwitchActiveGameAccountResult> {
     assertLocator(input);
     return this.database.withTransaction(async (transaction) => {
+      await transaction.query("SELECT lock_key FROM canonical_account_authority_global_locks WHERE lock_key='ACCOUNT_AUTHORITY' FOR UPDATE");
       const replay = (await transaction.query<Array<{ result_json: string | SwitchActiveGameAccountResult }>>(
         "SELECT result_json FROM account_platform_operation_receipts WHERE operation_kind='SWITCH_ACTIVE_PLAYER' AND request_key=? FOR UPDATE", [input.requestKey]
       ))[0];

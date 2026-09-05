@@ -2,7 +2,8 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import cookie from "@fastify/cookie";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
-import type { DatabaseClient } from "./database.js";
+import { hasDatabaseTransactionCapabilities, type DatabaseClient } from "./database.js";
+import type { VerifiedEnvironmentContext } from "./runtime/environment-context.js";
 import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
 import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
@@ -50,9 +51,13 @@ import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { AutoExploreFixedConfigService, isAutoExploreFixedConfigCommand } from "./pet/auto-explore-fixed-config-service.js";
-import { PetExploreSettlementCommandConsumer, isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
-import { PetExploreSettlementInputSnapshotProvider } from "./pet/pet-explore-settlement-input-snapshot-provider.js";
-import { isPetExploreEventControlCommand, PetExploreEventControlCommandService } from "./pet/pet-explore-event-control-command-service.js";
+import { isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
+import { isPetExploreEventControlCommand } from "./pet/pet-explore-event-control-command-service.js";
+import { PetExploreAppWiringIngress } from "./pet/pet-explore-app-wiring-ingress.js";
+import { PetTitleAppWiringIngress, PetTitleShadowEvaluator, PetTitleShadowReadAuthorityProvider } from "./pet/pet-title-app-wiring-ingress.js";
+import { PetTitleCanonicalMutationProvider } from "./pet/pet-title-canonical-mutation-provider.js";
+import { PetTitleCanonicalReadProvider } from "./pet/pet-title-canonical-read-provider.js";
+import { MariaPlayerContextProvider } from "./account-platform/player-context-provider.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { InventoryCleanupIrisHandler } from "./inventory/inventory-cleanup-iris-handler.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
@@ -94,6 +99,9 @@ import { ManagedBackupCommandService } from "./admin/managed-backup-command-serv
 import { DataBackupService } from "./admin/data-backup-service.js";
 import { DataRestoreService } from "./admin/data-restore-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
+import { PetTitleAdminAppWiringIngress } from "./admin/pet-title-admin-app-wiring-ingress.js";
+import { PetDataCompareAppWiringIngress } from "./admin/pet-data-compare-app-wiring-ingress.js";
+import { isPetDataCompareCommand } from "./admin/pet-data-compare-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
 
 import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand, normalizeAdminAccountSuspensionDispatchMessage } from "./admin/admin-account-suspension-service.js";
@@ -115,8 +123,10 @@ import { isAccountSwitchCommandCandidate } from "./account-platform/account-swit
 import {
   CommandDispatcher,
   MariaCommandDispatchRepository,
+  MariaCommandRouteReader,
   parseCanaryUserIds
 } from "./dispatch/command-dispatcher.js";
+import { MariaAppWiringOperationProvider } from "./dispatch/app-wiring-operation-provider.js";
 import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
@@ -364,8 +374,19 @@ export interface AppDependencies {
   inspectIrisChannel?: (event: NormalizedIrisEvent) => Promise<IrisChannelAccessDecision>;
   retainIrisEventContent?: (payload: IrisPayload, event: NormalizedIrisEvent) => Promise<number>;
   database?: DatabaseClient;
+  environmentContext?: VerifiedEnvironmentContext;
+  appWiringOperationProvider?: MariaAppWiringOperationProvider;
+  petExploreAppWiringIngress?: Pick<PetExploreAppWiringIngress, "handle">;
+  petDataCompareAppWiringIngress?: Pick<PetDataCompareAppWiringIngress, "handle">;
+  petTitleAppWiringIngress?: Pick<PetTitleAppWiringIngress, "handle">;
+  irisAdminCommandService?: Pick<IrisAdminCommandService, "changePlayerPoint">;
   accountPlatformIrisContextProvider?: Pick<AccountPlatformIrisContextProvider, "prepareKakao" | "dispatchAccountSwitch">;
   dailyPrayerRandom?: () => number;
+  runAccountCleanupMaintenance?: () => Promise<{
+    pending: { processed: number; failed: number };
+    deleted: { processed: number; failed: number };
+  }>;
+  purgeRetainedEventContent?: () => Promise<number>;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -721,47 +742,64 @@ export async function dispatchAccountSwitchCommand(
 }
 
 // 펫탐험 정산 exact 명령을 app 본문 제어흐름과 분리해 registry consumer로 전달합니다.
-async function dispatchPetExploreSettlementCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
-  if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+async function dispatchPetExploreSettlementCommand(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false
     || event.direction !== "incoming" || !isPetExploreSettlementCommand(event.message)
-    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
-  try {
-    const result = await new PetExploreSettlementCommandConsumer(database, new PetExploreSettlementInputSnapshotProvider(database)).handleIris(event);
-    if ("message" in result) replies.push({ outboxId: result.outboxId ?? "", room: result.room, data: result.message });
-  } catch (error) {
-    if (error instanceof ApplicationError && [403,404,409,422].includes(error.statusCode)) replies.push(await eventProcessor.queueCommandReply(event,"pet_explore_settlement_error",error.message));
-    else throw error;
-  }
+    || event.userId === undefined || event.channelId === undefined) return;
+  await ingress.handle(event);
 }
 
 // 펫탐험 이벤트 제어 exact 명령을 공용 provider 소비자로 전달합니다.
-async function dispatchPetExploreEventControlCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
-  if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+async function dispatchPetExploreEventControlCommand(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false
     || event.direction !== "incoming" || !isPetExploreEventControlCommand(event.message)
-    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
-  try {
-    const result = await new PetExploreEventControlCommandService(database).handleDispatchedIris({
-      eventId: event.eventId,
-      externalUserId: event.userId,
-      channelId: event.channelId,
-      message: event.message!,
-    });
-    if (result.status === "changed") {
-      replies.push(await eventProcessor.queueCommandReply(event, "PET_EXPLORE_EVENT_CONTROL", result.data));
-    }
-  } catch (error) {
-    if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
-      replies.push(await eventProcessor.queueCommandReply(event, "pet_explore_event_control_error", error.message));
-    } else {
-      throw error;
-    }
-  }
+    || event.userId === undefined || event.channelId === undefined) return;
+  await ingress.handle(event);
 }
 
 // 펫탐험 명령 소비자들을 app 본문의 단일 호출 경계로 묶습니다.
-async function dispatchPetExploreCommandConsumers(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
-  await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,duplicate,event,replies);
-  await dispatchPetExploreEventControlCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
+async function dispatchPetExploreCommandConsumers(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
+  await dispatchPetExploreSettlementCommand(ingress,isOperationalChannel,duplicate,event);
+  await dispatchPetExploreEventControlCommand(ingress,isOperationalChannel,duplicate,event);
+}
+
+export type PetDataCompareAppWiringDisposition = "not_applicable" | "legacy_fallback" | "claimed";
+
+// exact ADMIN 명령만 app-wiring에 전달하고 claim 여부를 레거시 실행 경계에 반환합니다.
+export async function dispatchPetDataCompareCommand(
+  ingress: Pick<PetDataCompareAppWiringIngress, "handle"> | undefined,
+  isOperationalChannel: boolean,
+  duplicate: boolean | undefined,
+  event: NormalizedIrisEvent,
+): Promise<PetDataCompareAppWiringDisposition> {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || !isPetDataCompareCommand(event.message)
+    || event.userId === undefined || event.channelId === undefined) return "not_applicable";
+  const result = await ingress.handle(event);
+  if (result.status === "ignored") return "not_applicable";
+  if (result.status === "legacy_fallback") return "legacy_fallback";
+  return "claimed";
+}
+
+export type PetTitleAppWiringDisposition = "not_applicable" | "legacy_fallback" | "shadow" | "claimed";
+
+// SHADOW는 기존 명령을 계속 실행하고, MODERN/NO_REPLY/REJECT claim만 레거시 실행을 차단합니다.
+export async function dispatchPetTitleCommand(
+  ingress:Pick<PetTitleAppWiringIngress,"handle">|undefined,
+  isOperationalChannel:boolean,
+  duplicate:boolean|undefined,
+  event:NormalizedIrisEvent,
+  replies:PendingReply[]|undefined,
+):Promise<PetTitleAppWiringDisposition>{
+  if(ingress===undefined||!isOperationalChannel||duplicate!==false||replies===undefined
+    ||event.direction!=="incoming"||!isPetTitleCommandCandidate(event.message)
+    ||event.userId===undefined||event.channelId===undefined)return "not_applicable";
+  const result=await ingress.handle(event);
+  if(result.status==="ignored")return "not_applicable";
+  if(result.status==="legacy_fallback")return "legacy_fallback";
+  if(result.status==="shadow")return "shadow";
+  if(result.status==="modern")replies.push(result.reply);
+  return "claimed";
 }
 
 // 후원패스 registry 후보 판정과 alias 정규화를 app 본문 밖의 단일 경계로 묶습니다.
@@ -819,6 +857,63 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((event: NormalizedIrisEvent) => new IrisChannelPolicyInspector(config.irisBaseUrl)
       .inspect(event, designatedChannelIds, diagnosticChannelIds, config.irisOpenChatObservationMode));
   const database = dependencies.database;
+  const appWiringOperationProvider = dependencies.appWiringOperationProvider
+    ?? (database !== undefined && dependencies.environmentContext !== undefined && hasDatabaseTransactionCapabilities(database)
+      ? new MariaAppWiringOperationProvider(database, dependencies.environmentContext)
+      : undefined);
+  const petExploreAppWiringIngress = dependencies.petExploreAppWiringIngress
+    ?? (database !== undefined && appWiringOperationProvider !== undefined
+      ? new PetExploreAppWiringIngress(
+        appWiringOperationProvider,
+        new CommandDispatcher(new MariaCommandRouteReader(database), {
+          enabled: true,
+          allowAllCanaries: config.nodeEnv !== "production",
+          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+        }),
+      )
+      : undefined);
+  const petDataCompareAppWiringIngress = dependencies.petDataCompareAppWiringIngress
+    ?? (database !== undefined && appWiringOperationProvider !== undefined
+      ? new PetDataCompareAppWiringIngress(
+        appWiringOperationProvider,
+        new CommandDispatcher(new MariaCommandRouteReader(database), {
+          enabled: true,
+          allowAllCanaries: config.nodeEnv !== "production",
+          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+        }),
+      )
+      : undefined);
+  const petTitleContextProvider=new MariaPlayerContextProvider();
+  const petTitleAppWiringIngress=dependencies.petTitleAppWiringIngress
+    ??(database!==undefined&&appWiringOperationProvider!==undefined
+      ?(()=>{
+        return new PetTitleAppWiringIngress(
+          appWiringOperationProvider,
+          new CommandDispatcher(new MariaCommandRouteReader(database),{
+            enabled:true,
+            allowAllCanaries:config.nodeEnv!=="production",
+            canaryUserIds:parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+          }),
+          new PetTitleShadowEvaluator(petTitleContextProvider,new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
+          petTitleContextProvider,
+          new PetTitleCanonicalMutationProvider(),
+        );
+      })()
+      :undefined);
+  const petTitleAdminAppWiringIngress=database!==undefined&&appWiringOperationProvider!==undefined
+    ?new PetTitleAdminAppWiringIngress(
+      appWiringOperationProvider,
+      new CommandDispatcher(new MariaCommandRouteReader(database),{
+        enabled:true,
+        allowAllCanaries:false,
+        canaryUserIds:new Set(),
+      }),
+      petTitleContextProvider,
+      new PetTitleCanonicalMutationProvider(),
+    )
+    :undefined;
+  const irisAdminCommandService = dependencies.irisAdminCommandService
+    ?? (database === undefined ? undefined : new IrisAdminCommandService(database, config.irisAllowedOpenChatIds,petTitleAdminAppWiringIngress));
   const accountPlatformIrisContextProvider = dependencies.accountPlatformIrisContextProvider
     ?? (database === undefined ? undefined : new AccountPlatformIrisContextProvider(database));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
@@ -899,33 +994,38 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       secureCookies: config.nodeEnv === "production"
     });
     if (config.nodeEnv !== "test") {
-      const cleanup = new AccountCleanupService(database);
-      void cleanup.runMaintenance().then((result) => {
-        if (result.pending.processed > 0 || result.pending.failed > 0
-          || result.deleted.processed > 0 || result.deleted.failed > 0) {
-          app.log.info(result, "account_cleanup.completed");
-        }
-      }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
-      accountCleanupTimer = setInterval(() => {
-        void cleanup.runMaintenance().then((result) => {
+      const cleanup = dependencies.runAccountCleanupMaintenance
+        ?? (() => new AccountCleanupService(database).runMaintenance());
+      const purgeRetainedContent = dependencies.purgeRetainedEventContent
+        ?? (retainedEventContents === undefined ? undefined : () => retainedEventContents.purgeExpired());
+      app.addHook("onListen", async () => {
+        void cleanup().then((result) => {
           if (result.pending.processed > 0 || result.pending.failed > 0
             || result.deleted.processed > 0 || result.deleted.failed > 0) {
             app.log.info(result, "account_cleanup.completed");
           }
         }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
-      }, 3_600_000);
-      accountCleanupTimer.unref();
-      if (config.retainedEventContentEnabled && retainedEventContents !== undefined) {
-        void retainedEventContents.purgeExpired()
-          .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
-          .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
-        retainedContentCleanupTimer = setInterval(() => {
-          void retainedEventContents.purgeExpired()
+        accountCleanupTimer = setInterval(() => {
+          void cleanup().then((result) => {
+            if (result.pending.processed > 0 || result.pending.failed > 0
+              || result.deleted.processed > 0 || result.deleted.failed > 0) {
+              app.log.info(result, "account_cleanup.completed");
+            }
+          }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
+        }, 3_600_000);
+        accountCleanupTimer.unref();
+        if (config.retainedEventContentEnabled && purgeRetainedContent !== undefined) {
+          void purgeRetainedContent()
             .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
             .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
-        }, 3_600_000);
-        retainedContentCleanupTimer.unref();
-      }
+          retainedContentCleanupTimer = setInterval(() => {
+            void purgeRetainedContent()
+              .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
+              .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
+          }, 3_600_000);
+          retainedContentCleanupTimer.unref();
+        }
+      });
     }
   }
 
@@ -2049,7 +2149,13 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      await dispatchPetExploreCommandConsumers(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
+      await dispatchPetExploreCommandConsumers(petExploreAppWiringIngress,isOperationalChannel,processing?.duplicate,normalizedEvent);
+      const petDataCompareDisposition = await dispatchPetDataCompareCommand(
+        petDataCompareAppWiringIngress,
+        isOperationalChannel,
+        processing?.duplicate,
+        normalizedEvent,
+      );
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAttributeCommandCandidate(normalizedEvent.message)
@@ -2117,10 +2223,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && petDataCompareDisposition !== "claimed"
         && isPointEditCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
-          const result = await new IrisAdminCommandService(database!, config.irisAllowedOpenChatIds).changePlayerPoint({
+          const result = await irisAdminCommandService!.changePlayerPoint({
             externalUserId: normalizedEvent.userId,
             channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!,
@@ -2508,7 +2615,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      const petTitleDisposition=await dispatchPetTitleCommand(
+        petTitleAppWiringIngress,
+        isOperationalChannel,
+        processing?.duplicate,
+        normalizedEvent,
+        processing?.replies,
+      );
+
+      if (petTitleDisposition!=="claimed"&&isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetTitleCommandCandidate(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "pet_title_lifecycle"

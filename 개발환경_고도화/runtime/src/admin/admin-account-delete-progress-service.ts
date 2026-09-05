@@ -174,6 +174,7 @@ export class AdminAccountDeleteProgressService {
     const requested = command.kind === "usage" ? [] : command.targetNames;
     const requestHash = hashText(JSON.stringify({ command: COMMAND, targets: requested }));
     return this.database.withTransaction(async (tx) => {
+      await tx.query("SELECT lock_key FROM canonical_account_authority_global_locks WHERE lock_key='ACCOUNT_AUTHORITY' FOR UPDATE");
       const eventKey = stableKey(input.eventId);
       const previous = (await tx.query<Array<{ result_json: string | AdminAccountDeleteProgressResult | null; request_hash: string | null }>>(
         `SELECT operation.result_json,run_row.request_hash FROM operations operation

@@ -7,8 +7,10 @@ const SEMANTIC_CODE_COLUMN_ALLOWLIST = new Set([
   "command_code",
   "environment_code",
   "error_code",
+  "event_code",
   "provider_code",
   "reason_code",
+  "recovery_code",
 ]);
 const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: string; primaryKey: readonly string[]; requiredUniqueKeys: readonly (readonly string[])[] }>> = {
   canonical_players: { migration: "444_canonical_item_inventory.sql", primaryKey: ["player_id"], requiredUniqueKeys: [] },

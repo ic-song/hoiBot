@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
+import {
+  OBJECT_DB_CONSUMER_BASELINE_COMMIT,
+  canonicalizeObjectDbConsumerSourceText,
+  readCanonicalObjectDbConsumerSource
+} from "../src/data-migration/object-db-consumer-baseline.js";
 import { deriveConsumerManifest, rawAppMessageGuardKinds } from "../src/data-migration/object-db-consumer-transition-audit.js";
+import { auditObjectDbRuntimeAdoption } from "../src/data-migration/object-db-runtime-adoption-audit.js";
 
 type SourceSurface = { file: string; terms: string[] };
 type Slice = {
@@ -24,13 +30,49 @@ type Slice = {
 type Condition = { conditionId: string; status: string; ownerSlices: string[]; affectedConsumerRule: string; requirement: string; additivePlan: string };
 type Contract = {
   format: string;
+  status: string;
   baseCommit: string;
+  baselinePolicy: { baseCommitRole: string; baselinePin: string; headEqualityRequired: boolean; verification: string };
+  sourceTextNormalization: { rule: string; implementation: string; manifestValue: string };
   globalRules: Record<string, string>;
   frozenSourceHashes: Record<string, string>;
+  implementationEvidence: {
+    checkpointDate: string;
+    status: string;
+    acceptedPhases: string[];
+    p2MariaVerification: string;
+    runtimeEntrypointCallCount: number;
+    ingressAdoption: string;
+    hashNormalization: string;
+    currentImplementationSourceHashes: Record<string, string>;
+    sourceSurfaces: SourceSurface[];
+  };
   sliceTargetDomains: Record<string, string[]>;
   consumerManifestContract: string;
   canonicalBindingPolicy: string;
   sourceSurfaces: SourceSurface[];
+  runtimeAdoption: {
+    status: string;
+    entrypointRunner: string;
+    productionSourceCallCount: number;
+    connectedIngressFamilies: string[];
+    pendingIngressFamilies: string[];
+    reviewedSourceHashes: {
+      appSourceSha256: string;
+      petExploreIngressSourceSha256: string;
+      petExploreEventControlProviderSourceSha256: string;
+      appWiringOperationProviderSourceSha256: string;
+      petExploreEventControlMigrationSourceSha256: string;
+      petExploreEventControlRollbackSourceSha256: string;
+      petDataCompareIngressSourceSha256: string;
+      petDataCompareShadowEvaluatorSourceSha256: string;
+      petTitleIngressSourceSha256: string;
+      petTitleMutationProviderSourceSha256: string;
+    };
+    auditHelper: string;
+    currentAppBoundary: string;
+    cutoverClaimed: boolean;
+  };
   slices: Slice[];
   gate2P1Conditions: Condition[];
   requiredAdditiveReceiptTables: string[];
@@ -39,8 +81,8 @@ type Contract = {
 };
 
 const contractUrl = new URL("../../migration-control/contracts/object-db-consumer-transition.v1.json", import.meta.url);
-const contract = JSON.parse(readFileSync(contractUrl, "utf8")) as Contract;
-const consumerManifest = JSON.parse(readFileSync(new URL("../../migration-control/contracts/object-db-consumer-manifest.v1.json", import.meta.url), "utf8")) as ReturnType<typeof deriveConsumerManifest>;
+const contract = JSON.parse(readCanonicalObjectDbConsumerSource(contractUrl)) as Contract;
+const consumerManifest = JSON.parse(readCanonicalObjectDbConsumerSource(new URL("../../migration-control/contracts/object-db-consumer-manifest.v1.json", import.meta.url))) as ReturnType<typeof deriveConsumerManifest>;
 const repoUrl = new URL("../../../", import.meta.url);
 const targetSchema = JSON.parse(readRepoFile("개발환경_고도화/migration-control/contracts/object-domain-import-target-schema.v1.json")) as {
   columns: Array<{ table: string; column: string; sqlType: string; nullable: boolean; migration: string }>;
@@ -52,11 +94,22 @@ const targetColumnTypes = new Map(targetSchema.columns.map((entry) => [`${entry.
 const migrationsUrl = new URL("../migrations/", import.meta.url);
 const migrationEntries = readdirSync(migrationsUrl)
   .filter((name) => name.endsWith(".sql"))
-  .map((name) => ({ name, text: readFileSync(new URL(name, migrationsUrl), "utf8") }));
+  .map((name) => ({ name, text: readCanonicalObjectDbConsumerSource(new URL(name, migrationsUrl)) }));
 const migrationCorpus = migrationEntries.map(({ text }) => text).join("\n");
-const standard = JSON.parse(readRepoFile("개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json")) as {
-  tables: Array<{ table: string; columns: Array<{ name: string; type: string; charset?: string; collation?: string }>; primaryKey: string[]; foreignKeys: Array<{ column: string; referencesTable: string; referencesColumn: string }> }>;
+type StandardForeignKey = { column?: string; columns?: string[]; referencesTable: string; referencesColumn?: string; referencesColumns?: string[] };
+type StandardTable = { table: string; columns: Array<{ name: string; type: string; charset?: string; collation?: string }>; primaryKey: string[]; foreignKeys?: StandardForeignKey[] };
+const parsedStandard = JSON.parse(readRepoFile("개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json")) as {
+  tables: StandardTable[];
+  externalDependencies?: StandardTable[];
 };
+const standard = { ...parsedStandard, tables: [...parsedStandard.tables, ...(parsedStandard.externalDependencies ?? [])] };
+
+function foreignKeyPairs(foreignKey: StandardForeignKey): Array<{ column: string; referencesColumn: string }> {
+  const columns = foreignKey.column === undefined ? foreignKey.columns ?? [] : [foreignKey.column];
+  const referencesColumns = foreignKey.referencesColumn === undefined ? foreignKey.referencesColumns ?? [] : [foreignKey.referencesColumn];
+  assert.equal(columns.length, referencesColumns.length, `${foreignKey.referencesTable}:FK-ARITY`);
+  return columns.map((column, index) => ({ column, referencesColumn: referencesColumns[index]! }));
+}
 const ddlMetadata = new Map<string, { tableOwners: string[]; columnOwners: string[]; line: string; nullable: boolean }>();
 for (const table of standard.tables) {
   const tablePattern = new RegExp("(?:CREATE|ALTER) TABLE(?: IF NOT EXISTS)? `?" + table.table + "`?", "i");
@@ -70,13 +123,23 @@ for (const table of standard.tables) {
 }
 
 function readRepoFile(path: string): string {
-  return readFileSync(new URL(path.replaceAll("\\", "/"), repoUrl), "utf8");
+  return readCanonicalObjectDbConsumerSource(new URL(path.replaceAll("\\", "/"), repoUrl));
+}
+
+function readGitBlob(commit: string, path: string): Buffer {
+  return execFileSync("git", ["show", `${commit}:${path}`], {
+    cwd: fileURLToPath(repoUrl),
+    maxBuffer: 16 * 1024 * 1024
+  });
 }
 
 describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
   it("freezes exactly the classified 17 slices in stable order", () => {
     assert.equal(contract.format, "hoibot-object-db-consumer-transition-v1");
-    assert.match(contract.baseCommit, /^[0-9a-f]{40}$/);
+    assert.equal(OBJECT_DB_CONSUMER_BASELINE_COMMIT, "f97be62292c3f7e8ea79b2d6f302dd25517584d4");
+    assert.equal(contract.baseCommit, OBJECT_DB_CONSUMER_BASELINE_COMMIT);
+    assert.equal(consumerManifest.baseCommit, OBJECT_DB_CONSUMER_BASELINE_COMMIT);
+    assert.equal(consumerManifest.sourceTextNormalization, "CRLF_AND_CR_TO_LF_BEFORE_SPAN_AND_HASH");
     assert.deepEqual(contract.slices.map(({ ordinal }) => ordinal), Array.from({ length: 17 }, (_, index) => index + 1));
     assert.deepEqual(contract.slices.map(({ sliceId }) => sliceId), [
       "CONTEXT-BRIDGE", "ITEM", "CURRENCY-SHOP", "BUILDING-RECIPE", "FURNITURE-HOME",
@@ -85,6 +148,20 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       "PACKAGE-USE", "ADMIN-LIFECYCLE", "ADMIN-WEB-APP-WIRING"
     ]);
     assert.equal(new Set(contract.slices.map(({ sliceId }) => sliceId)).size, 17);
+  });
+
+  it("canonicalizes source bytes to LF before span and source hash derivation", () => {
+    const lf = "alpha\nbeta\ngamma\n";
+    const crlf = "alpha\r\nbeta\r\ngamma\r\n";
+    const legacyCr = "alpha\rbeta\rgamma\r";
+    assert.equal(canonicalizeObjectDbConsumerSourceText(crlf), lf);
+    assert.equal(canonicalizeObjectDbConsumerSourceText(legacyCr), lf);
+    assert.match(contract.sourceTextNormalization.rule, /CRLF.*bare CR.*LF/);
+    assert.equal(contract.sourceTextNormalization.manifestValue, "CRLF_AND_CR_TO_LF_BEFORE_SPAN_AND_HASH");
+    assert.equal(contract.implementationEvidence.hashNormalization, "CRLF_AND_CR_TO_LF_BEFORE_SHA256");
+    const hash = (value: string): string => createHash("sha256").update(canonicalizeObjectDbConsumerSourceText(value)).digest("hex");
+    assert.equal(hash(crlf), hash(lf));
+    assert.equal(hash(legacyCr), hash(lf));
   });
 
   it("re-derives the complete consumer manifest with exact-one primary slice and no inventory drift", () => {
@@ -96,16 +173,47 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(consumerManifest.audit.undeclaredSelectorCount, 0);
     assert.equal(consumerManifest.audit.registrySourceMismatchCount, 10);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.audit.operationReceiptTableCount, 30);
-    assert.deepEqual(consumerManifest.audit.missingOperationReceiptTables, [
-      "canonical_daily_prayer_operations", "canonical_home_aggregate_operations", "canonical_market_operations", "canonical_market_transfer_ledger_entries", "canonical_member_title_operations",
-      "canonical_mini_pet_title_operations", "canonical_package_use_operations", "canonical_package_use_reward_ledger_entries",
-      "canonical_pet_explore_operations", "canonical_pet_title_operations", "canonical_player_identity_operations"
-    ]);
-    assert.deepEqual(contract.requiredAdditiveReceiptTables, consumerManifest.audit.missingOperationReceiptTables);
+    assert.equal(consumerManifest.consumers.length, 1_111);
+    assert.deepEqual(consumerManifest.counts, {
+      LEGACY_COMMAND: 684,
+      AUTOMATIC_CALLBACK: 3,
+      RUNTIME_DISPATCH: 199,
+      ADMIN_COMMAND: 78,
+      HTTP_WEB_ROUTE: 81,
+      APP_WIRING: 7,
+      SQL_REPOSITORY: 59,
+    });
+    assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>
+      kind === "APP_WIRING" && triggerOrPredicate === "dispatchPetDataCompareCommand"), false);
+    assert.equal(consumerManifest.consumers.some(({ kind, file }) => kind === "SQL_REPOSITORY"
+      && file === "개발환경_고도화/runtime/src/admin/pet-data-compare-shadow-snapshot-provider.ts"), false);
+    assert.ok(consumerManifest.audit.operationReceiptTableCount >= contract.requiredAdditiveReceiptTables.length);
+    const petTitleRead = consumerManifest.consumers.find(({ file, symbol }) => file.endsWith("/pet/pet-title-canonical-read-provider.ts") && symbol === "listOwned");
+    assert.equal(petTitleRead?.primarySlice, "PET-TITLE");
+    const playerContextConsumers = consumerManifest.consumers.filter(({ file }) => file.endsWith("/account-platform/player-context-provider.ts"));
+    assert.equal(playerContextConsumers.length, 2);
+    assert.equal(playerContextConsumers.every(({ primarySlice }) => primarySlice === "CONTEXT-BRIDGE"), true);
+    assert.equal(petTitleRead?.access, "READ");
+    const petTitleMutations = consumerManifest.consumers.filter(({ file }) => file.endsWith("/pet/pet-title-canonical-mutation-provider.ts"));
+    assert.equal(petTitleMutations.length, 7);
+    assert.equal(petTitleMutations.every(({ primarySlice, operationReceiptTables, transactionParticipantInterfaceIds }) => primarySlice === "PET-TITLE"
+      && operationReceiptTables.includes("canonical_pet_title_operations")
+      && transactionParticipantInterfaceIds.includes("pet-title.ownership.mutate")), true);
+    assert.deepEqual(consumerManifest.audit.missingOperationReceiptTables, []);
+    const authoritativeTables = new Set(standard.tables.map(({ table }) => table));
+    for (const table of contract.requiredAdditiveReceiptTables) assert.ok(authoritativeTables.has(table), `required-receipt:${table}`);
     assert.ok(consumerManifest.audit.activeRegistryObjectRows > 0);
     const ids = consumerManifest.consumers.map(({ consumerId }) => consumerId);
     assert.equal(new Set(ids).size, ids.length);
+    assert.equal(consumerManifest.consumers.some(({ usedTargetColumns }) => usedTargetColumns.some((column) => column.endsWith(".undefined"))), false);
+    const bagShadowConsumers = consumerManifest.consumers.filter(({ file }) => file === "개발환경_고도화/runtime/src/inventory/bag-shadow-parity-provider.ts");
+    assert.ok(bagShadowConsumers.length > 0, "bag-shadow consumer must be audited");
+    assert.ok(bagShadowConsumers.some(({ usedTargetColumns }) => [
+      "canonical_player_identity_crosswalks.provider_code",
+      "canonical_player_identity_crosswalks.external_user_id",
+      "external_identities.provider_code",
+      "external_identities.external_user_id",
+    ].every((column) => usedTargetColumns.includes(column))), "bag-shadow composite FK columns must preserve positional mapping");
     const slices = new Set(contract.slices.map(({ sliceId }) => sliceId));
     for (const consumer of consumerManifest.consumers) {
       assert.ok(slices.has(consumer.primarySlice), consumer.consumerId);
@@ -189,7 +297,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       ["handlerKey=legacy_social_like", "CURRENCY-SHOP"]
     ]);
     for (const [trigger, expected] of exactPrimary) assert.equal(runtimeApp.find(({ triggerOrPredicate }) => triggerOrPredicate === trigger)?.primarySlice, expected, trigger);
-    for (const unreachable of ["home_badge_inventory_read", "inventory_fortune_pouch_open", "home_heart_expression", "support_premium_notice_send", "home_badge_equip", "home_badge_permanent_delete"]) {
+    for (const unreachable of ["home_badge_inventory_read", "inventory_fortune_pouch_open", "home_heart_expression", "support_premium_notice_send", "home_badge_equip", "home_badge_permanent_delete", "guild_joinable_list_read", "guild_profile_read", "guild_recruitment_toggle"]) {
       assert.equal(runtimeApp.some(({ triggerOrPredicate }) => triggerOrPredicate === `handlerKey=${unreachable}`), false, `unreachable:${unreachable}`);
     }
     for (const reachable of ["handlerKey=letter_board", "handlerKey=castle_battle_execute", "handlerKey=castle_kingdom_status_read", "handlerKey=admin_account_suspension", "handlerKey=mini_pet_bulk_cleanup"]) {
@@ -405,37 +513,28 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
         if (consumer.sqlTables.includes(tableName) || consumer.targetUsageMode === "ADDITIVE_PLAN") {
           for (const column of table!.primaryKey) assert.ok(selected.has(`${tableName}.${column}`), `${consumer.consumerId}:PK:${tableName}.${column}`);
         }
-        for (const foreignKey of table!.foreignKeys) {
-          if (!selected.has(`${tableName}.${foreignKey.column}`)) continue;
-          assert.ok(usedTables.has(foreignKey.referencesTable), `${consumer.consumerId}:REF-TABLE:${foreignKey.referencesTable}`);
-          assert.ok(selected.has(`${foreignKey.referencesTable}.${foreignKey.referencesColumn}`), `${consumer.consumerId}:REF-PK:${foreignKey.referencesTable}.${foreignKey.referencesColumn}`);
-          const sourceType: string | undefined = table!.columns.find(({ name }) => name === foreignKey.column)?.type;
-          const targetType: string | undefined = tableMap.get(foreignKey.referencesTable)?.columns.find(({ name }) => name === foreignKey.referencesColumn)?.type;
-          assert.equal(sourceType, targetType, `${consumer.consumerId}:FK-TYPE:${tableName}.${foreignKey.column}`);
+        for (const foreignKey of table!.foreignKeys ?? []) {
+          for (const pair of foreignKeyPairs(foreignKey)) {
+            if (!selected.has(`${tableName}.${pair.column}`)) continue;
+            assert.ok(usedTables.has(foreignKey.referencesTable), `${consumer.consumerId}:REF-TABLE:${foreignKey.referencesTable}`);
+            assert.ok(selected.has(`${foreignKey.referencesTable}.${pair.referencesColumn}`), `${consumer.consumerId}:REF-PK:${foreignKey.referencesTable}.${pair.referencesColumn}`);
+            const sourceType: string | undefined = table!.columns.find(({ name }) => name === pair.column)?.type;
+            const targetType: string | undefined = tableMap.get(foreignKey.referencesTable)?.columns.find(({ name }) => name === pair.referencesColumn)?.type;
+            assert.equal(sourceType, targetType, `${consumer.consumerId}:FK-TYPE:${tableName}.${pair.column}`);
+          }
         }
       }
     }
   });
 
-  it("proves the legacy, index, runtime, app and SQL source surfaces still contain every frozen search anchor", () => {
+  it("separates the immutable Gate1 source baseline from current Gate2 implementation evidence", () => {
     const repoPath = fileURLToPath(repoUrl);
-    assert.equal(execFileSync("git", ["rev-parse", "HEAD"], { cwd: repoPath, encoding: "utf8" }).trim(), contract.baseCommit);
-    const allowedChanges = new Set([
-      "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
-      "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-      "개발환경_고도화/migration-control/evidence/object-db-consumer-transition/gate1-gate2-validation.md",
-      "개발환경_고도화/runtime/scripts/build-object-db-consumer-transition-manifest.ts",
-      "개발환경_고도화/runtime/src/data-migration/object-db-consumer-transition-audit.ts",
-      "개발환경_고도화/runtime/test/object-db-consumer-transition-contract.test.ts",
-      "개발환경_고도화/runtime/src/data-migration/http-route-surface-audit.ts",
-      "개발환경_고도화/runtime/test/http-route-surface-audit.test.ts",
-      "개발환경_고도화/migration-control/contracts/object-db-consumer-additive-schema-plan.v1.json",
-      "개발환경_고도화/runtime/test/object-db-consumer-additive-schema-plan.test.ts",
-      "개발환경_고도화/migration-control/contracts/object-db-transition-runtime-boundary.v1.json",
-      "개발환경_고도화/runtime/test/object-db-transition-runtime-boundary.test.ts"
-    ]);
-    const changed = execFileSync("git", ["-c", "core.quotepath=false", "diff", "--name-only", "HEAD"], { cwd: repoPath, encoding: "utf8" }).trim().split(/\r?\n/).filter(Boolean);
-    for (const file of changed) assert.ok(allowedChanges.has(file.replaceAll("\\", "/")), `unexpected-base-drift:${file}`);
+    assert.equal(contract.baselinePolicy.baseCommitRole, "IMMUTABLE_GATE1_CLASSIFICATION_BASELINE");
+    assert.equal(contract.baselinePolicy.baselinePin, "runtime/src/data-migration/object-db-consumer-baseline.ts:OBJECT_DB_CONSUMER_BASELINE_COMMIT");
+    assert.equal(contract.baselinePolicy.headEqualityRequired, false);
+    assert.match(contract.baselinePolicy.verification, /exact immutable pin.*ancestor of HEAD/);
+    assert.equal(contract.baseCommit, OBJECT_DB_CONSUMER_BASELINE_COMMIT);
+    execFileSync("git", ["merge-base", "--is-ancestor", contract.baseCommit, "HEAD"], { cwd: repoPath });
     assert.deepEqual(new Set(contract.sourceSurfaces.map(({ file }) => file)), new Set([
       "main.js", "Info.js", "COMMAND_INDEX.md",
       "개발환경_고도화/runtime/src/app.ts",
@@ -444,14 +543,47 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       "개발환경_고도화/runtime/migrations/444_canonical_item_inventory.sql"
     ]));
     for (const surface of contract.sourceSurfaces) {
-      const text = readRepoFile(surface.file);
+      const text = canonicalizeObjectDbConsumerSourceText(readGitBlob(contract.baseCommit, surface.file).toString("utf8"));
       assert.ok(surface.terms.length > 0, surface.file);
       for (const term of surface.terms) assert.ok(text.includes(term), `${surface.file}: missing ${term}`);
     }
     for (const [file, expectedSha256] of Object.entries(contract.frozenSourceHashes)) {
-      const actual = createHash("sha256").update(readRepoFile(file)).digest("hex");
-      assert.equal(actual, expectedSha256, file);
+      const blob = canonicalizeObjectDbConsumerSourceText(readGitBlob(contract.baseCommit, file).toString("utf8"));
+      const actual = createHash("sha256").update(blob).digest("hex");
+      assert.equal(actual, expectedSha256, `baseline:${file}`);
     }
+    assert.equal(contract.implementationEvidence.checkpointDate, "2026-09-04");
+    assert.equal(contract.implementationEvidence.status, "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION");
+    assert.deepEqual(contract.implementationEvidence.acceptedPhases, ["P0", "P1", "P2"]);
+    assert.equal(contract.implementationEvidence.p2MariaVerification, "VERIFIED_ISOLATED_MARIADB_FORWARD_REPLAY_ROLLBACK_RESTART");
+    for (const surface of contract.implementationEvidence.sourceSurfaces) {
+      const text = readRepoFile(surface.file);
+      assert.ok(surface.terms.length > 0, surface.file);
+      for (const term of surface.terms) assert.ok(text.includes(term), `${surface.file}: missing ${term}`);
+    }
+    for (const [file, expectedSha256] of Object.entries(contract.implementationEvidence.currentImplementationSourceHashes)) {
+      const actual = createHash("sha256").update(readRepoFile(file)).digest("hex");
+      assert.equal(actual, expectedSha256, `implementation:${file}`);
+    }
+    const builder = readRepoFile("개발환경_고도화/runtime/scripts/build-object-db-consumer-transition-manifest.ts");
+    assert.match(builder, /OBJECT_DB_CONSUMER_BASELINE_COMMIT/);
+    assert.doesNotMatch(builder, /object-db-consumer-transition\.v1\.json/);
+  });
+
+  it("derives EVENT_CONTROL and PET_TITLE_SELL MODERN plus accepted IRIS read-only callsites while keeping Gate2 blocked", () => {
+    assert.equal(contract.status, "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION");
+    assert.equal(contract.runtimeAdoption.status, "PARTIAL_IRIS_PET_EXPLORE_EVENT_CONTROL_PET_TITLE_SELL_ADMIN_SYNC_MODERN_AND_READ_ONLY_ADOPTION");
+    const runtimeRoot = fileURLToPath(new URL("../", import.meta.url));
+    const adoption = auditObjectDbRuntimeAdoption(runtimeRoot, contract.runtimeAdoption.reviewedSourceHashes);
+    assert.deepEqual(adoption.failures, []);
+    assert.equal(adoption.productionSourceCallCount, 3);
+    assert.equal(contract.runtimeAdoption.productionSourceCallCount, adoption.productionSourceCallCount);
+    assert.equal(contract.implementationEvidence.runtimeEntrypointCallCount, adoption.productionSourceCallCount);
+    assert.deepEqual(contract.runtimeAdoption.connectedIngressFamilies, adoption.connectedIngressFamilies);
+    assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "REMAINING_ADMIN", "WEB"]);
+    assert.equal(contract.runtimeAdoption.cutoverClaimed, false);
+    assert.match(contract.runtimeAdoption.currentAppBoundary, /EVENT_CONTROL and PET_TITLE SELL reach typed MODERN\/MUTATION handlers/);
+    assert.match(contract.runtimeAdoption.auditHelper, /auditObjectDbRuntimeAdoption$/);
   });
 
   it("derives each named slice selector exactly from the authoritative field map", () => {
@@ -531,7 +663,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     ]);
     const sliceIds = new Set(contract.slices.map(({ sliceId }) => sliceId));
     for (const condition of contract.gate2P1Conditions) {
-      assert.equal(condition.status, "BLOCKING_UNTIL_IMPLEMENTED");
+      assert.match(condition.status, /BLOCKING/);
       assert.ok(condition.ownerSlices.length > 0);
       for (const sliceId of condition.ownerSlices) assert.ok(sliceIds.has(sliceId), `${condition.conditionId}:${sliceId}`);
       assert.ok(condition.affectedConsumerRule.length > 20);
@@ -551,12 +683,12 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     }
   });
 
-  it("records the actual source differences and forbids unsafe inference or premature implementation", () => {
+  it("records the actual source differences and forbids unsafe inference or premature cutover", () => {
     assert.ok(contract.observedDifferences.some((entry) => entry.includes("no active /가구조합 trigger was found")));
     assert.ok(contract.observedDifferences.some((entry) => entry.includes("BIGINT") && entry.includes("CHAR(8)")));
     assert.ok(contract.forbidden.includes("display-name identity inference"));
     assert.ok(contract.forbidden.includes("generic object CODE"));
     assert.ok(contract.forbidden.includes("definition value copies in ownership tables"));
-    assert.ok(contract.forbidden.includes("runtime/src/app.ts modification"));
+    assert.ok(contract.forbidden.some((entry) => entry.includes("Gate2 cutover claim") && entry.includes("P2 MariaDB")));
   });
 });

@@ -22,7 +22,7 @@ export interface PetTitleLifecycleResult {
 }
 
 export interface PetTitleListRow {
-  instanceId: bigint;
+  instanceId: bigint | string;
   displayName: string;
   priceDigits: string;
   acquiredAt: Date | string;
@@ -52,8 +52,14 @@ export function parsePetTitleCommand(message: string | undefined): PetTitleComma
   return null;
 }
 
+export function parsePetTitleSaleCommand(message:string|undefined):{kind:"sell";index:number}|null{
+  const match=/^\/펫타이틀판매\s+(\d+)\s*$/.exec(message??"");
+  return match===null?null:{kind:"sell",index:Number(match[1]!)};
+}
+
 // 공용 dispatch가 인자형 명령을 등록된 별칭으로 조회할 수 있게 정규화합니다.
 export function normalizePetTitleDispatchMessage(message: string): string {
+  if(parsePetTitleSaleCommand(message)!==null)return "/펫타이틀판매 [번호]";
   const command = parsePetTitleCommand(message);
   if (command?.kind === "list_self") return "/펫타이틀목록";
   if (command?.kind === "list_target") return "/펫타이틀목록 [유저명]";
@@ -65,7 +71,7 @@ export function normalizePetTitleDispatchMessage(message: string): string {
 
 // 유효한 펫 타이틀 명령만 부분 dispatch 후보로 올립니다.
 export function isPetTitleCommandCandidate(message: string | undefined): boolean {
-  return parsePetTitleCommand(message) !== null;
+  return parsePetTitleCommand(message) !== null||parsePetTitleSaleCommand(message)!==null;
 }
 
 // 목록의 현재 순번과 영구 instance ID를 분리한 채 레거시 UI를 만듭니다.
@@ -180,7 +186,7 @@ export class PetTitleLifecycleService {
         [randomUUID(), scope, key, operatorId === null ? "external_identity" : "admin_operator", operatorId ?? actor.identity_id],
       );
       let status: PetTitleLifecycleResult["status"] = "displayed";
-      let instanceId: bigint | undefined;
+      let instanceId: bigint | string | undefined;
       let data: string;
 
       if (command.kind === "list_self" || command.kind === "list_target") {

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   CommandDispatcher,
+  MariaCommandRouteReader,
   type CommandDefinition,
   type CommandDispatchDecision,
   type CommandDispatchInput,
@@ -14,6 +15,9 @@ class MemoryRepository implements CommandDispatchRepository {
   constructor(private readonly definitions: Map<string, CommandDefinition>) {}
   async findExact(message: string): Promise<CommandDefinition | undefined> {
     return this.definitions.get(message);
+  }
+  async findByCode(commandCode:string):Promise<CommandDefinition|undefined>{
+    return [...this.definitions.values()].find(definition=>definition.commandCode===commandCode);
   }
   async record(_input: CommandDispatchInput, decision: CommandDispatchDecision): Promise<void> {
     this.recorded.push(decision);
@@ -36,6 +40,44 @@ function createDispatcher(repository: MemoryRepository, allowAllCanaries = true)
 }
 
 describe("CommandDispatcher", () => {
+  it("resolves dynamic-argument commands by their fixed registry code",async()=>{
+    const repository=new MemoryRepository(new Map([["/동적",{...profile,commandCode:"ADMIN_DYNAMIC",rolloutState:"SHADOW"}]]));
+    const decision=await createDispatcher(repository,false).resolveByCodeReadOnly({message:"/동적 인수",userId:"operator",hasTrustedDisplayName:true},"ADMIN_DYNAMIC");
+    assert.deepEqual([decision.route,decision.commandCode],["SHADOW","ADMIN_DYNAMIC"]);assert.deepEqual(repository.recorded,[]);
+  });
+  it("supports a query-only Maria route reader and rejects an explicit record attempt", async () => {
+    const queries: string[] = [];
+    const reader = new MariaCommandRouteReader({
+      query: async <T>(sql: string) => {
+        queries.push(sql);
+        return [{ command_code: profile.commandCode, handler_key: profile.handlerKey, auth_scope: profile.authScope, rollout_state: "ACTIVE" }] as T;
+      }
+    });
+    const dispatcher = new CommandDispatcher(reader, {
+      enabled: true, allowAllCanaries: false, canaryUserIds: new Set()
+    });
+    const input = { eventId: "query-only", message: "/내정보", userId: "user-1", hasTrustedDisplayName: false };
+    const decision = await dispatcher.resolveReadOnly(input);
+    assert.equal(decision.route, "MODERN");
+    assert.equal(queries.length, 1);
+    await assert.rejects(() => dispatcher.recordDecision(input, decision), /COMMAND_DISPATCH_WRITER_REQUIRED/);
+  });
+
+  it("resolves a route without writing before the AppWiring claim", async () => {
+    const repository = new MemoryRepository(new Map([["/내정보", profile]]));
+    const dispatcher = createDispatcher(repository);
+    const input = {
+      eventId: "event-read-only", message: "/내정보", userId: "user-1", hasTrustedDisplayName: false
+    };
+
+    const decision = await dispatcher.resolveReadOnly(input);
+    assert.equal(decision.route, "MODERN");
+    assert.deepEqual(repository.recorded, []);
+
+    await dispatcher.recordDecision(input, decision);
+    assert.deepEqual(repository.recorded, [decision]);
+  });
+
   it("routes an exact canary command to the modern handler", async () => {
     const repository = new MemoryRepository(new Map([["/내정보", profile]]));
     const decision = await createDispatcher(repository).resolve({
@@ -43,6 +85,7 @@ describe("CommandDispatcher", () => {
     });
     assert.equal(decision.route, "MODERN");
     assert.equal(decision.handlerKey, "USER_PROFILE");
+    assert.deepEqual(repository.recorded, [decision]);
   });
 
   it("does not accept suffix text as the exact command", async () => {

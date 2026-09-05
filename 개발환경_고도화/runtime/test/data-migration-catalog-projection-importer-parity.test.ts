@@ -13,7 +13,9 @@ import {
 } from "../src/data-migration/catalog-projection-provider.js";
 import {
   buildObjectDomainImportPlan,
-  calculateObjectDomainImportSemanticSha256,
+  calculateObjectDomainImportComponentSemanticSha256,
+  calculateObjectDomainImportContractSemanticSha256,
+  OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256,
   stableDomainImportJson,
   type DomainImportPolicy
 } from "../src/data-migration/object-domain-importer.js";
@@ -41,6 +43,7 @@ const importContractText = read("data-migration-object-domain-import.v1.json");
 const importContract = JSON.parse(importContractText) as {
   directTargetCount: number; targetColumnCount: number; definitionTargetCount: number;
   componentSemanticSha256: DomainImportPolicy["componentSemanticSha256"];
+  semanticHashPolicy: { acceptedCompatibleImportContractSha256: string[] };
 };
 const fixture = JSON.parse(readFileSync(new URL("data-migration-catalog-projection-v1.json", fixtureRoot), "utf8")) as CatalogProjectionManifest;
 const importFixture = JSON.parse(readFileSync(new URL("data-migration-object-domain-import-v1.json", fixtureRoot), "utf8")) as {
@@ -51,10 +54,10 @@ const directTargets = [...disposition.definitionSeed, ...disposition.stateImport
 const domainTargets = Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables]));
 const targetSchemaSha256 = calculateCatalogTargetSchemaSha256(schemaText);
 const componentSemanticSha256 = {
-  identityBindings: calculateObjectDomainImportSemanticSha256(identityText),
-  objectModel: calculateObjectDomainImportSemanticSha256(objectModelText),
-  disposition: calculateObjectDomainImportSemanticSha256(dispositionText),
-  fieldMap: calculateObjectDomainImportSemanticSha256(fieldMapText)
+  identityBindings: calculateObjectDomainImportComponentSemanticSha256("identityBindings", identityText, directTargets),
+  objectModel: calculateObjectDomainImportComponentSemanticSha256("objectModel", objectModelText, directTargets),
+  disposition: calculateObjectDomainImportComponentSemanticSha256("disposition", dispositionText, directTargets),
+  fieldMap: calculateObjectDomainImportComponentSemanticSha256("fieldMap", fieldMapText, directTargets)
 };
 const catalogPolicy: CatalogProjectionPolicy = {
   targetSchemaSha256,
@@ -69,7 +72,8 @@ const catalogPolicy: CatalogProjectionPolicy = {
 const importPolicy: DomainImportPolicy = {
   catalogVersion: "SC-20260902-1",
   targetSchemaSha256,
-  importContractSha256: calculateObjectDomainImportSemanticSha256(importContractText),
+  importContractSha256: calculateObjectDomainImportContractSemanticSha256(importContractText),
+  acceptedImportContractSha256: [calculateObjectDomainImportContractSemanticSha256(importContractText), OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256],
   componentSemanticSha256,
   contractComponentSemanticSha256: importContract.componentSemanticSha256,
   columns: schema.columns,

@@ -60,6 +60,7 @@
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
 | `git diff --check` | PASS |
+| V2 profile + V1 importer/catalog regression (`object-domain-import-profile-v2`, `data-migration-object-domain-import`, `data-migration-catalog-projection`) | `42/42 PASS` |
 
 ## Gate 판정 경계
 

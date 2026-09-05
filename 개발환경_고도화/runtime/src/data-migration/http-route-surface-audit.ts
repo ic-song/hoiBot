@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readCanonicalObjectDbConsumerSource } from "./object-db-consumer-baseline.js";
 
 export type HttpRouteMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
@@ -168,7 +169,7 @@ export function extractHttpRouteSurface(options: { runtimeRoot?: string } = {}):
   const dynamicRegistrations: DynamicHttpRouteRegistration[] = [];
   for (const spec of HTTP_ROUTE_MODULE_SPECS) {
     const absoluteModule = resolve(runtimeRoot, spec.module);
-    const source = readFileSync(absoluteModule, "utf8");
+    const source = readCanonicalObjectDbConsumerSource(absoluteModule);
     const tokens = tokenize(source);
     const bounds = registrarBounds(tokens, spec.registrar);
     for (let index = bounds.start; index < bounds.end - 2; index += 1) {

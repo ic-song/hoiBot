@@ -1,6 +1,7 @@
 import { createHash,randomUUID } from "node:crypto";
 import type { DatabaseClient,DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { resolveGuildTerritoryWarAuthority } from "./guild-territory-war-authority.js";
 
 const COMMAND_CODE="GUILD_TERRITORY_WAR_STATE_START",SCOPE_CODE="world",PREPARE_MS=20_000,OPENING_MS=5_000,TURN_MS=5_000;
 const PREPARE_MESSAGE="[🏰 길드 영지전 준비 🏰]\n[길드 영지전 20초뒤 시작🏰]\n\n길드영지전쟁에 참여해주신\n길드 여러분 환영합니다.\n\n※ 20초뒤 길드영지전이 시작됩니다.\nhttps://open.kakao.com/o/gaP4Xybh";
@@ -58,9 +59,10 @@ export class GuildTerritoryWarStateStartService{
       if(scope===undefined)throw new ApplicationError("GUILD_TERRITORY_START_SCOPE_REQUIRED","길드 영지전 시작 범위가 설정되지 않았습니다.",409);
       const war=(await tx.query<WarRow[]>("SELECT id,war_key,active,lifecycle_state,start_ready,pending_start_token,opening_token,version FROM guild_territory_wars WHERE id=? FOR UPDATE",[scope.war_id]))[0];
       if(war===undefined)throw new ApplicationError("GUILD_TERRITORY_WAR_REQUIRED","길드 영지전 상태를 확인할 수 없습니다.",409);
+      const active=resolveGuildTerritoryWarAuthority(war.active,war.lifecycle_state);
       const replay=(await tx.query<ReplayRow[]>("SELECT operator_id,result_json FROM guild_territory_start_runs WHERE request_key=? FOR UPDATE",[key]))[0];
       if(replay!==undefined){if(replay.operator_id!==operator.operator_id)throw new ApplicationError("GUILD_TERRITORY_START_REPLAY_ACTOR_MISMATCH","동일 요청의 실행자가 다릅니다.",409);return stored(replay.result_json);}
-      if(war.active===1||war.lifecycle_state!=="READY")throw new ApplicationError("GUILD_TERRITORY_START_ALREADY_RUNNING","이미 진행 또는 시작 대기 중인 길드 영지전이 있습니다.",409);
+      if(active||war.lifecycle_state!=="READY")throw new ApplicationError("GUILD_TERRITORY_START_ALREADY_RUNNING","이미 진행 또는 시작 대기 중인 길드 영지전이 있습니다.",409);
       const destinations=await tx.query<DestinationRow[]>("SELECT destination_id,destination_kind FROM guild_territory_start_destinations WHERE active=TRUE ORDER BY destination_kind,position_no FOR UPDATE");
       if(!destinations.some(row=>row.destination_kind==="NOTICE")||!destinations.some(row=>row.destination_kind==="CASTLE"))throw new ApplicationError("GUILD_TERRITORY_START_DESTINATIONS_REQUIRED","길드 영지전 공지 대상 방 설정이 필요합니다.",409);
       const attackers=await this.loadAttackers(tx,war.id);
@@ -91,9 +93,14 @@ export class GuildTerritoryWarStateStartService{
 
   private async advanceOne(at:Date):Promise<"processed"|"skipped"|"none">{
     return this.database.withTransaction(async tx=>{
-      const transition=(await tx.query<TransitionRow[]>("SELECT transition_key,war_id,transition_code,operation_id,expected_war_version,payload_json FROM guild_territory_scheduled_transitions WHERE status='PENDING' AND scheduled_for<=? ORDER BY scheduled_for,transition_key LIMIT 1 FOR UPDATE",[at]))[0];
+      const scope=(await tx.query<ScopeRow[]>("SELECT war_id FROM guild_territory_start_scopes WHERE scope_code=? FOR UPDATE",[SCOPE_CODE]))[0];
+      if(scope===undefined)throw new ApplicationError("GUILD_TERRITORY_TRANSITION_SCOPE_REQUIRED","길드 영지전 전이 범위가 설정되지 않았습니다.",409);
+      const war=(await tx.query<WarRow[]>("SELECT id,war_key,active,lifecycle_state,start_ready,pending_start_token,opening_token,version FROM guild_territory_wars WHERE id=? FOR UPDATE",[scope.war_id]))[0];
+      if(war===undefined)throw new ApplicationError("GUILD_TERRITORY_TRANSITION_WAR_REQUIRED","길드 영지전 전이 상태를 확인할 수 없습니다.",409);
+      resolveGuildTerritoryWarAuthority(war.active,war.lifecycle_state);
+      const transition=(await tx.query<TransitionRow[]>("SELECT transition_key,war_id,transition_code,operation_id,expected_war_version,payload_json FROM guild_territory_scheduled_transitions WHERE war_id=? AND status='PENDING' AND scheduled_for<=? ORDER BY scheduled_for,transition_key LIMIT 1 FOR UPDATE",[war.id,at]))[0];
       if(transition===undefined)return"none";
-      const payload=parsePayload(transition.payload_json),war=(await tx.query<WarRow[]>("SELECT id,war_key,active,lifecycle_state,start_ready,pending_start_token,opening_token,version FROM guild_territory_wars WHERE id=? FOR UPDATE",[transition.war_id]))[0];
+      const payload=parsePayload(transition.payload_json);
       const expectedState=transition.transition_code==="START_OPENING"?"PENDING_START":"ACTIVE_OPENING",expectedToken=transition.transition_code==="START_OPENING"?war?.pending_start_token:war?.opening_token;
       if(war===undefined||war.version!==transition.expected_war_version||war.lifecycle_state!==expectedState||expectedToken!==payload.token){await tx.execute("UPDATE guild_territory_scheduled_transitions SET status='SKIPPED',version=version+1,completed_at=?,updated_at=? WHERE transition_key=?",[at,at,transition.transition_key]);return"skipped";}
       const destinations=await tx.query<DestinationRow[]>("SELECT destination_id,destination_kind FROM guild_territory_start_destinations WHERE active=TRUE AND destination_kind='CASTLE' ORDER BY position_no FOR UPDATE");

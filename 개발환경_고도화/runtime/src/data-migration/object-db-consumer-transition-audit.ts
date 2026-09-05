@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { basename, dirname, relative, resolve } from "node:path";
 import { extractHttpRouteSurface, type HttpRouteMethod } from "./http-route-surface-audit.js";
+import { readCanonicalObjectDbConsumerSource } from "./object-db-consumer-baseline.js";
+import { createConsumerIdResolver, deriveConsumerLogicalKey, loadConsumerIdRegistry } from "./object-db-consumer-id-registry.js";
 
 // OBJECT_DATA_MODEL_STANDARD_CANONICAL_PROVIDER: this canonical transition
 // audit names legacy currency tables as evidence; it is not a legacy provider.
@@ -48,11 +50,42 @@ export interface DerivedConsumer {
 export interface ConsumerManifest {
   format: "hoibot-object-db-consumer-manifest-v1";
   baseCommit: string;
+  sourceTextNormalization: "CRLF_AND_CR_TO_LF_BEFORE_SPAN_AND_HASH";
   consumers: DerivedConsumer[];
   counts: Record<ConsumerKind, number>;
   consumerSetSha256: string;
   targetSelectors: Record<string, { domains: string[]; tables: string[]; columns: string[]; infrastructureTables: string[] }>;
   audit: { orphanCount: number; extraCount: number; duplicatePrimaryCount: number; undeclaredSelectorCount: number; excludedNegativeGuardCount: number; activeRegistryObjectRows: number; registrySourceMismatchCount: number; registrySourceMismatches: string[]; appSourceCandidateCount: number; appRawGuardCount: number; adminSourceCandidateCount: number; adminOrphanKeys: string[]; adminExtraKeys: string[]; operationReceiptTableCount: number; missingOperationReceiptTableCount: number; missingOperationReceiptTables: string[]; legacyOrphanKeys: string[]; legacyExtraKeys: string[]; appOrphanKeys: string[]; appExtraKeys: string[] };
+}
+
+type StandardForeignKey = {
+  column?: string;
+  columns?: string[];
+  referencesTable: string;
+  referencesColumn?: string;
+  referencesColumns?: string[];
+};
+
+type StandardTable = {
+  table: string;
+  columns: Array<{ name: string }>;
+  primaryKey: string[];
+  foreignKeys?: StandardForeignKey[];
+};
+
+function standardForeignKeyPairs(foreignKey: StandardForeignKey): Array<{ column: string; referencesColumn: string }> {
+  const scalarDeclared = foreignKey.column !== undefined || foreignKey.referencesColumn !== undefined;
+  const compositeDeclared = foreignKey.columns !== undefined || foreignKey.referencesColumns !== undefined;
+  const columns = scalarDeclared && !compositeDeclared && foreignKey.column !== undefined && foreignKey.referencesColumn !== undefined
+    ? [foreignKey.column]
+    : !scalarDeclared && compositeDeclared ? foreignKey.columns ?? [] : [];
+  const referencesColumns = scalarDeclared && !compositeDeclared && foreignKey.column !== undefined && foreignKey.referencesColumn !== undefined
+    ? [foreignKey.referencesColumn]
+    : !scalarDeclared && compositeDeclared ? foreignKey.referencesColumns ?? [] : [];
+  if (columns.length === 0 || columns.length !== referencesColumns.length) {
+    throw new Error(`OBJECT_DB_CONSUMER_STANDARD_FK_INVALID:${foreignKey.referencesTable}`);
+  }
+  return columns.map((column, index) => ({ column, referencesColumn: referencesColumns[index]! }));
 }
 
 const SLICE_P1: Record<string, string[]> = {
@@ -96,6 +129,23 @@ const TABLE_SLICE: Array<[RegExp, string]> = [
 ];
 
 const OBJECT_MARKER = /가방|아이템|포인트|다이아|상점|조합|건설|건물|가구|펫|타이틀|칭호|스킬|자유시장|거래|패키지|오픈|판매|동기화|전체정리|데이터정리|계정|휴면|가입인증|계급|순위|통계|백업|서버이동|미출석|글자수통계|bag|inventory|currency|balance|configuration|shop|craft|building|furniture|object|pet|miniPet|mini_pet|petTitle|pet_title|playerTitle|player_title|memberTitle|member_title|petSkill|pet_skill|pet_feed|package|market/i;
+
+// These helpers only attach the shared app-wiring runner to an already frozen
+// external consumer. They are runtime-adoption evidence, not new consumers.
+const ADOPTION_ONLY_CONSUMER_SURFACES = new Set([
+  "dispatchPetDataCompareCommand",
+  "개발환경_고도화/runtime/src/admin/pet-data-compare-shadow-snapshot-provider.ts",
+]);
+
+function isAdoptionOnlyConsumerSurface(value: string): boolean {
+  return ADOPTION_ONLY_CONSUMER_SURFACES.has(value);
+}
+
+function preserveAdoptionConsumerTrigger(trigger: string): string {
+  return trigger === "predicate=isPointEditCommandCandidate"
+    ? "predicate=isPointEditCommandCandidate;service=IrisAdminCommandService|IrisAdminCommandService.changePlayerPoint"
+    : trigger;
+}
 
 const APP_BINDING_SLICE: Array<[RegExp, string]> = [
   [/DailyPrayer|daily.?prayer|\b기도\b/i, "PET-SKILL"],
@@ -143,7 +193,7 @@ function appBindingSlice(value: string): string | undefined {
 }
 
 function isExcludedNonObjectAppBinding(trigger: string): boolean {
-  return /handlerKey=(?:guild_board|social_board_read|social_punch_reaction|record_board|operation_notice_mutate)$/.test(trigger);
+  return /handlerKey=(?:guild_board|guild_joinable_list_read|guild_profile_read|guild_recruitment_toggle|social_board_read|social_punch_reaction|record_board|operation_notice_mutate)$/.test(trigger);
 }
 
 function isExcludedNonObjectAppPredicate(predicate: string): boolean {
@@ -472,11 +522,11 @@ function consumerInterfaceContract(consumer: DerivedConsumer, writeTargetTables:
     [/canonical_owned_(?:pet_instances|pet_equipment|equipment_instances)|canonical_pet_equipment_operation_/, "pet-equipment.ownership.mutate"],
     [/canonical_owned_pet_skill_|canonical_pet_skill_(?:equipments|operation_)/, "pet-skill.ownership.mutate"],
     [/canonical_member_title_definitions/, "member-title.catalog.mutate"],
-    [/canonical_owned_member_title_|canonical_member_title_selections/, "member-title.ownership.mutate"],
+    [/canonical_owned_member_title_|canonical_member_title_(?:selections|operations|operation_participants)/, "member-title.ownership.mutate"],
     [/canonical_pet_title_definitions/, "pet-title.catalog.mutate"],
-    [/canonical_owned_pet_title_|canonical_pet_title_selections/, "pet-title.ownership.mutate"],
+    [/canonical_owned_pet_title_|canonical_pet_title_(?:selections|operations|operation_participants)/, "pet-title.ownership.mutate"],
     [/canonical_mini_pet_title_definitions/, "mini-pet-title.catalog.mutate"],
-    [/canonical_owned_mini_pet_title_|canonical_mini_pet_title_selections/, "mini-pet-title.ownership.mutate"],
+    [/canonical_owned_mini_pet_title_|canonical_mini_pet_title_(?:selections|operations|operation_participants)/, "mini-pet-title.ownership.mutate"],
     [/canonical_package_/, consumer.primarySlice === "PACKAGE-USE" ? "package.inventory.consume" : "package.catalog.mutate"],
     [/canonical_(?:craft|building)_/, "building-recipe.mutate"]
   ];
@@ -496,9 +546,9 @@ function consumerInterfaceContract(consumer: DerivedConsumer, writeTargetTables:
       if (/canonical_owned_mini_pet_(?!title_)|canonical_mini_pet_operation_/.test(table)) receipts.add("canonical_mini_pet_operation_replays");
       if (/canonical_owned_(?:pet_instances|pet_equipment|equipment_instances)|canonical_pet_equipment_operation_/.test(table)) receipts.add("canonical_pet_equipment_operation_replays");
       if (/canonical_owned_pet_skill_|canonical_pet_skill_(?:equipments|operation_)/.test(table)) receipts.add("canonical_pet_skill_operation_replays");
-      if (/canonical_member_title_definitions|canonical_owned_member_title_|canonical_member_title_selections/.test(table)) receipts.add("canonical_member_title_operations");
-      if (/canonical_pet_title_definitions|canonical_owned_pet_title_|canonical_pet_title_selections/.test(table)) receipts.add("canonical_pet_title_operations");
-      if (/canonical_mini_pet_title_definitions|canonical_owned_mini_pet_title_|canonical_mini_pet_title_selections/.test(table)) receipts.add("canonical_mini_pet_title_operations");
+      if (/canonical_member_title_definitions|canonical_owned_member_title_|canonical_member_title_(?:selections|operations|operation_participants)/.test(table)) receipts.add("canonical_member_title_operations");
+      if (/canonical_pet_title_definitions|canonical_owned_pet_title_|canonical_pet_title_(?:selections|operations|operation_participants)/.test(table)) receipts.add("canonical_pet_title_operations");
+      if (/canonical_mini_pet_title_definitions|canonical_owned_mini_pet_title_|canonical_mini_pet_title_(?:selections|operations|operation_participants)/.test(table)) receipts.add("canonical_mini_pet_title_operations");
       if (/canonical_package_/.test(table) && consumer.primarySlice !== "PACKAGE-USE") receipts.add("canonical_package_definition_replays");
       if (/definition_imports$/.test(table)) receipts.add(table);
     }
@@ -829,7 +879,7 @@ function legacyCandidateKeys(root: string): Set<string> {
   const keys = new Set<string>();
   const independentObjectMarker = /가방|아이템|포인트|다이아|상점|조합|건설|건물|가구|펫|타이틀|칭호|스킬|시장|거래|패키지|오픈|판매|동기화|정리|계정|휴면|가입인증|계급|순위|통계|티어|길드영지|백업|서버이동|미출석|bag|inventory|currency|shop|craft|building|furniture|pet|title|skill|package|market/i;
   for (const relativeFile of ["main.js", "Info.js"]) {
-    const text = readFileSync(resolve(root, relativeFile), "utf8");
+    const text = readCanonicalObjectDbConsumerSource(resolve(root, relativeFile));
     const responseSpan = namedFunctionSpan(text, "response");
     if (responseSpan === undefined) continue;
     const scanText = responseSpan.body;
@@ -887,7 +937,7 @@ function legacyConsumers(root: string, tableNames: string[]): DerivedConsumer[] 
   const output: DerivedConsumer[] = [];
   for (const relativeFile of ["main.js", "Info.js"]) {
     const file = resolve(root, relativeFile);
-    const text = readFileSync(file, "utf8");
+    const text = readCanonicalObjectDbConsumerSource(file);
     const responseSpan = namedFunctionSpan(text, "response");
     if (responseSpan === undefined) continue;
     for (const statement of legacyEntryStatements(responseSpan.body)) {
@@ -902,10 +952,9 @@ function legacyConsumers(root: string, tableNames: string[]): DerivedConsumer[] 
           const saveLoad = unique([...(closure.text.match(/\b(?:saveJsonFile|savebackupJsonFile|loadJsonFile|resolveActiveDataPath)\b/g) ?? [])]);
           const sourceStart = responseSpan.bodyStart + statement.index;
           const sourceEnd = responseSpan.bodyStart + statement.end;
-          const value = `${relativeFile}|${sourceStart}|${predicate}`;
           const access = legacyAccessFor(branch);
           output.push({
-            consumerId: `legacy-${sha(value).slice(0, 16)}`,
+            consumerId: "",
             kind: "LEGACY_COMMAND",
             file: relativeFile,
             symbol: "response",
@@ -948,7 +997,7 @@ function legacyConsumers(root: string, tableNames: string[]): DerivedConsumer[] 
 
 function legacyDynamicConsumers(root: string): DerivedConsumer[] {
   const file = resolve(root, "main.js");
-  const text = readFileSync(file, "utf8");
+  const text = readCanonicalObjectDbConsumerSource(file);
   const responseSpan = namedFunctionSpan(text, "response");
   if (responseSpan === undefined) return [];
   const arrayMatch = /var\s+로켓명령\s*=\s*\[([^\]]+)\]/.exec(responseSpan.body);
@@ -962,7 +1011,7 @@ function legacyDynamicConsumers(root: string): DerivedConsumer[] {
   return [...arrayMatch[1]!.matchAll(/["'](\/로켓\d+,\s*)["']/g)].map((match) => {
     const trigger = match[1]!.trimEnd();
     return {
-      consumerId: `legacy-${sha(`main.js|${sourceStart}|${trigger}`).slice(0, 16)}`,
+      consumerId: "",
       kind: "LEGACY_COMMAND" as const,
       file: "main.js",
       symbol: "response",
@@ -992,7 +1041,7 @@ function legacyDynamicConsumers(root: string): DerivedConsumer[] {
 
 function excludedNegativeGuardCount(root: string): number {
   return ["main.js", "Info.js"].flatMap((file) => {
-    const text = readFileSync(resolve(root, file), "utf8");
+    const text = readCanonicalObjectDbConsumerSource(resolve(root, file));
     return ifStatements(namedFunctionSpan(text, "response")?.body ?? "");
   })
     .filter(({ predicate, branch }) => isNegativeCommandGuard(predicate) && OBJECT_MARKER.test(`${predicate}\n${branch.slice(0, 12000)}`)).length;
@@ -1000,12 +1049,12 @@ function excludedNegativeGuardCount(root: string): number {
 
 function legacyAutomaticConsumers(root: string): DerivedConsumer[] {
   const file = resolve(root, "main.js");
-  const text = readFileSync(file, "utf8");
+  const text = readCanonicalObjectDbConsumerSource(file);
   const make = (statement: { index: number; end: number; predicate: string; branch: string }, trigger: string, primary: string, dependencies: string[], extraP1: string[] = []): DerivedConsumer => {
     const closure = expandHelperClosure(text, statement.branch);
     const access = legacyAccessFor(closure.text);
     return {
-    consumerId: `automatic-callback-${sha(`main.js|${statement.index}|${trigger}`).slice(0, 16)}`,
+    consumerId: "",
     kind: "AUTOMATIC_CALLBACK",
     file: "main.js",
     symbol: "response",
@@ -1082,12 +1131,12 @@ function expandRuntimeDependencyClosure(file: string, seedText: string): Runtime
   const visited = new Set<string>();
   const chunks: string[] = [seedText];
   const visit = (currentFile: string, referencedText: string): void => {
-    const currentText = readFileSync(currentFile, "utf8");
+    const currentText = readCanonicalObjectDbConsumerSource(currentFile);
     for (const entry of localImportBindings(currentFile, currentText)) {
       if (!entry.bindings.some((binding) => new RegExp(`\\b${binding}\\b`).test(referencedText))) continue;
       if (visited.has(entry.target)) continue;
       visited.add(entry.target);
-      const dependencyText = readFileSync(entry.target, "utf8");
+      const dependencyText = readCanonicalObjectDbConsumerSource(entry.target);
       chunks.push(dependencyText);
       visit(entry.target, dependencyText);
     }
@@ -1165,7 +1214,8 @@ function appCommandStatements(file: string, text: string, tableNames: string[]):
       ...ordinaryNamed.map((name) => `predicate=${name}${serviceCalls.length > 0 ? `;service=${serviceCalls.join("|")}` : ""}`),
       ...(predicateHandlers.length === 0 && namedPredicates.length === 0 && semantic.length === 0 ? raw.map((value) => `predicate=${value}${serviceCalls.length > 0 ? `;service=${serviceCalls.join("|")}` : ""}`) : [])
     ]);
-    for (const trigger of triggers) {
+    for (const discoveredTrigger of triggers) {
+      const trigger = preserveAdoptionConsumerTrigger(discoveredTrigger);
       if (isExcludedNonObjectAppBinding(trigger)) continue;
       const handlerValue = trigger.includes("handlerKey=") ? trigger.slice(trigger.indexOf("=") + 1) : "";
       const explicitService = appHandlerEvidenceSymbol(handlerValue);
@@ -1237,7 +1287,7 @@ function fallthroughHandlerConsumers(file: string, text: string): Array<{ trigge
 
 function appSourceCandidateKeys(root: string, tableNames: string[]): { keys: Set<string>; rawGuardCount: number } {
   const file = resolve(root, "개발환경_고도화/runtime/src/app.ts");
-  const text = readFileSync(file, "utf8");
+  const text = readCanonicalObjectDbConsumerSource(file);
   const keys = new Set<string>();
   let rawGuardCount = 0;
   const imports = localImportBindings(file, text);
@@ -1273,7 +1323,7 @@ function appSourceCandidateKeys(root: string, tableNames: string[]): { keys: Set
         if (name in APP_NAMED_PRIMARY) continue;
         const imported = imports.find(({ bindings }) => bindings.includes(name));
         if (imported !== undefined) {
-          const importedText = readFileSync(imported.target, "utf8");
+          const importedText = readCanonicalObjectDbConsumerSource(imported.target);
           const importedSpan = namedFunctionSpan(importedText, name);
           for (const entry of (importedSpan?.body ?? importedText).matchAll(/handlerKey\s*===?\s*["']([A-Za-z0-9_]+)["']/g)) predicateKeys.add(entry[1]!);
         }
@@ -1304,6 +1354,7 @@ function appSourceCandidateKeys(root: string, tableNames: string[]): { keys: Set
   for (const match of wiringMasked.matchAll(/\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)) {
     const name = match[1]!;
     if (/^dispatch[A-Za-z0-9]+$/.test(name)) {
+      if (isAdoptionOnlyConsumerSurface(name)) continue;
       if (name === "dispatchPetExploreCommandConsumers") {
         keys.add("APP_WIRING|dispatchPetExploreSettlementCommand");
         keys.add("APP_WIRING|dispatchPetExploreEventControlCommand");
@@ -1318,7 +1369,7 @@ function appSourceCandidateKeys(root: string, tableNames: string[]): { keys: Set
 }
 
 function adminSourceCandidateKeys(root: string): Set<string> {
-  const text = readFileSync(resolve(root, "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts"), "utf8");
+  const text = readCanonicalObjectDbConsumerSource(resolve(root, "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts"));
   const start = text.indexOf("async changePlayerPoint(");
   const end = text.indexOf("async handleMiniPetDuelResetGrant(", start);
   if (start < 0 || end < 0) return new Set();
@@ -1333,11 +1384,13 @@ function adminSourceCandidateKeys(root: string): Set<string> {
 }
 
 function runtimePrimarySlice(relativeFile: string, trigger: string, kind: ConsumerKind, tables: string[], classificationBody: string): string {
+  if (relativeFile.includes("/account-platform/player-context-provider")) return "CONTEXT-BRIDGE";
   if (relativeFile.includes("/inventory/")) return "ITEM";
   if (relativeFile.includes("/home/canonical-furniture-home-repository")) return "FURNITURE-HOME";
   if (relativeFile.includes("/currency/")) return "CURRENCY-SHOP";
   if (relativeFile.includes("/mini-pet/")) return "MINI-PET";
   if (relativeFile.includes("/title/")) return "MEMBER-TITLE";
+  if (relativeFile.includes("/pet/pet-title-")) return "PET-TITLE";
   if (relativeFile.includes("/pet/maria-canonical-pet-skill")) return "PET-SKILL";
   if (relativeFile.includes("/pet/")) return "PET-EQUIPMENT";
   if (relativeFile.includes("/crafting/")) return "BUILDING-RECIPE";
@@ -1350,15 +1403,15 @@ function runtimePrimarySlice(relativeFile: string, trigger: string, kind: Consum
 function knownMigrationSqlTables(root: string): Set<string> {
   const migrationRoot = resolve(root, "개발환경_고도화/runtime/migrations");
   return new Set(unique(readdirSync(migrationRoot).filter((name) => name.endsWith(".sql")).flatMap((name) =>
-    [...readFileSync(resolve(migrationRoot, name), "utf8").matchAll(/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`?([a-z][a-z0-9_]*)`?/gi)].map((match) => match[1]!))));
+    [...readCanonicalObjectDbConsumerSource(resolve(migrationRoot, name)).matchAll(/CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+`?([a-z][a-z0-9_]*)`?/gi)].map((match) => match[1]!))));
 }
 
 function httpRouteConsumers(root: string, tableNames: string[]): DerivedConsumer[] {
   const runtimeRoot = resolve(root, "개발환경_고도화/runtime");
   const knownSqlTables = knownMigrationSqlTables(root);
-  return extractHttpRouteSurface({ runtimeRoot }).endpoints.map((endpoint, index) => {
+  return extractHttpRouteSurface({ runtimeRoot }).endpoints.map((endpoint) => {
     const file = resolve(runtimeRoot, endpoint.module);
-    const text = readFileSync(file, "utf8");
+    const text = readCanonicalObjectDbConsumerSource(file);
     const direct = text.slice(endpoint.sourceSpan.start, endpoint.sourceSpan.end);
     // A route span proves only its direct body. Interface-property calls such as
     // dependencies.auth.refreshSession cannot be resolved to one implementation
@@ -1370,7 +1423,7 @@ function httpRouteConsumers(root: string, tableNames: string[]): DerivedConsumer
     const dependent = unique([...registrarSlices, ...inferredSlices].filter((slice) => slice !== "ADMIN-WEB-APP-WIRING"));
     const access = httpEndpointAccess(endpoint.method, endpoint.path);
     return {
-      consumerId: `http-web-route-${sha(`${endpoint.module}|${endpoint.key}|${index}`).slice(0, 16)}`,
+      consumerId: "",
       kind: "HTTP_WEB_ROUTE",
       file: repoPath(root, file),
       symbol: endpoint.registrar,
@@ -1405,12 +1458,12 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
   for (const file of walkTs(runtimeSrc)) {
     const relativeFile = repoPath(root, file);
     if (relativeFile.endsWith("object-db-consumer-transition-audit.ts")) continue;
-    const text = readFileSync(file, "utf8");
+    if (isAdoptionOnlyConsumerSurface(relativeFile)) continue;
+    const text = readCanonicalObjectDbConsumerSource(file);
     const imports = unique([...text.matchAll(/from\s+["']([^"']*(?:repository|provider|service)[^"']*)["']/gi)].map((match) => match[1]!));
     const tables = tableNames.filter((table) => new RegExp(`\\b${table}\\b`, "i").test(text));
     const base = basename(file);
     const classOrFunction = text.match(/(?:class|function)\s+([A-Za-z0-9_]+)/)?.[1] ?? base.replace(/\.ts$/, "");
-    let addSequence = 0;
     const logicalKeys = new Set<string>();
     const add = (kind: ConsumerKind, trigger: string, body = text, spanStart = 0, spanEnd = spanStart + body.length, classificationBody = body, primaryOverride?: string, dependentOverride?: string[], providerImportsOverride?: string[], helpersOverride?: string[], symbolOverride?: string, accessOverride?: DerivedConsumer["access"]): void => {
       const logicalKey = `${kind}|${trigger}`;
@@ -1421,7 +1474,7 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
       const primary = primaryOverride ?? runtimePrimarySlice(relativeFile, trigger, kind, consumerTables, classificationBody);
       const access = accessOverride ?? (READ_ONLY_APP_TRIGGER.test(trigger) ? "READ" : accessFor(body));
       output.push({
-        consumerId: `${kind.toLowerCase().replaceAll("_", "-")}-${sha(`${relativeFile}|${kind}|${trigger}|${addSequence++}`).slice(0, 16)}`,
+        consumerId: "",
         kind,
         file: relativeFile,
         symbol: symbolOverride ?? classOrFunction,
@@ -1534,6 +1587,7 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
       const wiringText = buildSpan?.body ?? "";
       const wiringOffset = buildSpan?.bodyStart ?? 0;
       for (const match of wiringText.matchAll(/\b(dispatch[A-Za-z0-9]+)\s*\(/g)) {
+        if (isAdoptionOnlyConsumerSurface(match[1]!)) continue;
         const sourceStart = wiringOffset + (match.index ?? 0);
         if (match[1] === "dispatchPetExploreCommandConsumers") {
           for (const logicalName of ["dispatchPetExploreSettlementCommand", "dispatchPetExploreEventControlCommand"]) {
@@ -1567,9 +1621,9 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
 }
 
 export function deriveConsumerManifest(repoRoot: string, baseCommit: string): ConsumerManifest {
-  const standard = JSON.parse(readFileSync(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"), "utf8")) as { tables: Array<{ table: string; columns: Array<{ name: string }>; primaryKey: string[]; foreignKeys: Array<{ column: string; referencesTable: string; referencesColumn: string }> }> };
+  const standard = JSON.parse(readCanonicalObjectDbConsumerSource(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"))) as { tables: StandardTable[]; externalDependencies?: StandardTable[] };
   const tableNames = standard.tables.map(({ table }) => table);
-  const tableMap = new Map(standard.tables.map((table) => [table.table, table]));
+  const tableMap = new Map([...standard.tables, ...(standard.externalDependencies ?? [])].map((table) => [table.table, table]));
   const targetSelectors = deriveTargetSelectors(repoRoot);
   const closeUsage = (seedTables: string[], seedColumns: string[]): { tables: string[]; columns: string[] } => {
     const tables = new Set(seedTables);
@@ -1578,10 +1632,12 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
       const table = tableMap.get(tableName);
       if (!table) continue;
       for (const column of table.primaryKey) columns.add(`${tableName}.${column}`);
-      for (const foreignKey of table.foreignKeys) {
-        if (!columns.has(`${tableName}.${foreignKey.column}`)) continue;
-        tables.add(foreignKey.referencesTable);
-        columns.add(`${foreignKey.referencesTable}.${foreignKey.referencesColumn}`);
+      for (const foreignKey of table.foreignKeys ?? []) {
+        for (const pair of standardForeignKeyPairs(foreignKey)) {
+          if (!columns.has(`${tableName}.${pair.column}`)) continue;
+          tables.add(foreignKey.referencesTable);
+          columns.add(`${foreignKey.referencesTable}.${pair.referencesColumn}`);
+        }
       }
     }
     return { tables: [...tables].sort(), columns: [...columns].sort() };
@@ -1597,10 +1653,12 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
       const table = tableMap.get(tableName);
       if (!table) continue;
       for (const column of table.primaryKey) writeColumns.add(`${tableName}.${column}`);
-      for (const foreignKey of table.foreignKeys) {
-        writeColumns.add(`${tableName}.${foreignKey.column}`);
-        if (!writeTables.has(foreignKey.referencesTable)) readTables.add(foreignKey.referencesTable);
-        readColumns.add(`${foreignKey.referencesTable}.${foreignKey.referencesColumn}`);
+      for (const foreignKey of table.foreignKeys ?? []) {
+        for (const pair of standardForeignKeyPairs(foreignKey)) {
+          writeColumns.add(`${tableName}.${pair.column}`);
+          if (!writeTables.has(foreignKey.referencesTable)) readTables.add(foreignKey.referencesTable);
+          readColumns.add(`${foreignKey.referencesTable}.${pair.referencesColumn}`);
+        }
       }
     }
     const closedRead = closeUsage([...readTables], [...readColumns]);
@@ -1616,7 +1674,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
     if (selectorList.length === 0) return { tables: [], columns: [], readTables: [], writeTables: [], readColumns: [], writeColumns: [] };
     const availableTables = unique(selectorList.flatMap(({ tables }) => tables));
     const availableColumns = unique(selectorList.flatMap(({ columns }) => columns));
-    const sourceText = readFileSync(resolve(repoRoot, consumer.file), "utf8");
+    const sourceText = readCanonicalObjectDbConsumerSource(resolve(repoRoot, consumer.file));
     const directValue = sourceText.slice(consumer.sourceSpan.start, consumer.sourceSpan.end);
     const value = consumer.kind === "LEGACY_COMMAND"
       ? `${directValue}\n${consumer.reachableHelpers.join("\n")}`
@@ -1690,7 +1748,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
     const relevantColumn = (qualified: string, forWrite: boolean): boolean => {
       const [tableName, columnName] = qualified.split(".") as [string, string];
       const table = tableMap.get(tableName);
-      if (table?.primaryKey.includes(columnName) || table?.foreignKeys.some(({ column }) => column === columnName)) return true;
+      if (table?.primaryKey.includes(columnName) || table?.foreignKeys?.some((foreignKey) => standardForeignKeyPairs(foreignKey).some(({ column }) => column === columnName))) return true;
       if (forWrite && (/^(?:INSERT|UPDATE)_(?:USER|TIME)$/.test(columnName) || operationTable(tableName))) return true;
       if (/name|description|grade|active|quantity|balance|amount|price|charm|enhancement|experience|status|selected|equipped|bound|slot|handler_key|options_json|target_kind|probability|max_open|selection_mode|reward_order/.test(columnName)) return true;
       return false;
@@ -1705,6 +1763,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
       readColumns: directional.readColumns, writeColumns: directional.writeColumns
     };
   };
+  const resolveConsumerId = createConsumerIdResolver(loadConsumerIdRegistry(repoRoot, baseCommit));
   const consumers = [...legacyConsumers(repoRoot, tableNames), ...legacyDynamicConsumers(repoRoot), ...legacyAutomaticConsumers(repoRoot), ...runtimeConsumers(repoRoot, tableNames), ...httpRouteConsumers(repoRoot, tableNames)]
     .map(normalizeConsumerSemantics)
     .map((consumer) => ({
@@ -1735,7 +1794,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
           transactionalPortDependencies: unique(infrastructure)
         };
       }
-      const text = readFileSync(resolve(repoRoot, consumer.file), "utf8");
+      const text = readCanonicalObjectDbConsumerSource(resolve(repoRoot, consumer.file));
       const methodName = consumer.symbol.split(".").at(-1)!;
       const method = classMethodSpans(text).find(({ name }) => name === methodName);
       const sqlEvidence = method === undefined ? text.slice(consumer.sourceSpan.start, consumer.sourceSpan.end) : expandClassMethodClosure(text, method).text;
@@ -1787,9 +1846,11 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
         const selected = readTables.has(tableName) ? readColumns : writeColumns;
         for (const column of table.columns) if (new RegExp(`\\b${column.name}\\b`).test(sqlEvidence)) selected.add(`${tableName}.${column.name}`);
         for (const column of table.primaryKey) selected.add(`${tableName}.${column}`);
-        for (const foreignKey of table.foreignKeys) {
-          selected.add(`${tableName}.${foreignKey.column}`);
-          selected.add(`${foreignKey.referencesTable}.${foreignKey.referencesColumn}`);
+        for (const foreignKey of table.foreignKeys ?? []) {
+          for (const pair of standardForeignKeyPairs(foreignKey)) {
+            selected.add(`${tableName}.${pair.column}`);
+            selected.add(`${foreignKey.referencesTable}.${pair.referencesColumn}`);
+          }
         }
       }
       const directional = closeDirectionalUsage([...readTables], [...writeTables], [...readColumns], [...writeColumns]);
@@ -1811,15 +1872,16 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
         transactionalPortDependencies: consumer.access === "READ" ? [] : unique(targetSelectors[consumer.targetSelectorId]?.infrastructureTables ?? [])
       };
     })
+    .map((consumer) => ({ ...consumer, consumerId: resolveConsumerId(consumer) }))
     .sort((left, right) => left.consumerId.localeCompare(right.consumerId));
   const ids = consumers.map(({ consumerId }) => consumerId);
   if (new Set(ids).size !== ids.length) throw new Error("duplicate consumerId");
-  const registryText = readFileSync(resolve(repoRoot, "COMMAND_REGISTRY.md"), "utf8");
+  const registryText = readCanonicalObjectDbConsumerSource(resolve(repoRoot, "COMMAND_REGISTRY.md"));
   const registryObjectCommands = [...registryText.matchAll(/^\|\s*`([^`]+)`\s*\|\s*`(main\.js|Info\.js)`\s*\|\s*\[ \]\s*\|\s*\[ \]\s*\|/gm)]
     .map((match) => ({ command: match[1]!.split(/\s|\[/)[0]!.replace(/[,，]+$/, ""), file: match[2]! }))
     .filter(({ command }) => OBJECT_MARKER.test(command));
   const registrySourceMismatches = registryObjectCommands.filter(({ command, file }) => {
-    if (!readFileSync(resolve(repoRoot, file), "utf8").includes(command)) return true;
+    if (!readCanonicalObjectDbConsumerSource(resolve(repoRoot, file)).includes(command)) return true;
     const commandName = command.replace(/^\//, "");
     return !consumers.some((consumer) => consumer.kind === "LEGACY_COMMAND" && consumer.file === file
       && (consumer.triggerOrPredicate.includes(command)
@@ -1827,7 +1889,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
         || consumer.triggerOrPredicate.includes(`|${commandName})`)
         || consumer.triggerOrPredicate.includes(`|${commandName}|`)));
   }).map(({ command, file }) => `${file}:${command}`).sort();
-  const logicalKeys = consumers.map((entry) => `${entry.file}|${entry.symbol}|${entry.triggerOrPredicate}`);
+  const logicalKeys = consumers.map(deriveConsumerLogicalKey);
   const logicalDuplicateCount = logicalKeys.length - new Set(logicalKeys).size;
   const sliceIds = new Set(Object.keys(SLICE_P1));
   const positiveLegacyCandidateKeys = legacyCandidateKeys(repoRoot);
@@ -1853,6 +1915,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
   return {
     format: "hoibot-object-db-consumer-manifest-v1",
     baseCommit,
+    sourceTextNormalization: "CRLF_AND_CR_TO_LF_BEFORE_SPAN_AND_HASH",
     consumers,
     counts,
     consumerSetSha256: sha(JSON.stringify(consumers)),
@@ -1883,13 +1946,14 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
 }
 
 export function deriveTargetSelectors(repoRoot: string): Record<string, { domains: string[]; tables: string[]; columns: string[]; infrastructureTables: string[] }> {
-  const fieldMap = JSON.parse(readFileSync(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-domain-import-field-map.v1.json"), "utf8")) as {
+  const fieldMap = JSON.parse(readCanonicalObjectDbConsumerSource(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-domain-import-field-map.v1.json"))) as {
     mappings: Array<{ domain: string; targetTables: string[]; fields: Array<{ targetColumns: string[] }> }>;
   };
-  const standard = JSON.parse(readFileSync(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"), "utf8")) as {
-    tables: Array<{ table: string; columns: Array<{ name: string }>; foreignKeys: Array<{ column: string; referencesTable: string; referencesColumn: string }> }>;
+  const standard = JSON.parse(readCanonicalObjectDbConsumerSource(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"))) as {
+    tables: StandardTable[];
+    externalDependencies?: StandardTable[];
   };
-  const standardTables = new Map(standard.tables.map((table) => [table.table, table]));
+  const standardTables = new Map([...standard.tables, ...(standard.externalDependencies ?? [])].map((table) => [table.table, table]));
   const mappings = new Map(fieldMap.mappings.map((entry) => [entry.domain, entry]));
   return Object.fromEntries(Object.entries(SLICE_DOMAINS).map(([slice, domains]) => {
     const entries = domains.map((domain) => mappings.get(domain)).filter((entry): entry is NonNullable<typeof entry> => entry !== undefined);
@@ -1900,9 +1964,11 @@ export function deriveTargetSelectors(repoRoot: string): Record<string, { domain
       for (const column of standardTables.get(tableName)?.columns ?? []) columns.add(`${tableName}.${column.name}`);
     }
     for (const tableName of [...tables]) for (const foreignKey of standardTables.get(tableName)?.foreignKeys ?? []) {
-      if (!columns.has(`${tableName}.${foreignKey.column}`)) continue;
-      tables.add(foreignKey.referencesTable);
-      columns.add(`${foreignKey.referencesTable}.${foreignKey.referencesColumn}`);
+      for (const pair of standardForeignKeyPairs(foreignKey)) {
+        if (!columns.has(`${tableName}.${pair.column}`)) continue;
+        tables.add(foreignKey.referencesTable);
+        columns.add(`${foreignKey.referencesTable}.${pair.referencesColumn}`);
+      }
     }
     return [`selector:${slice}`, {
       domains,

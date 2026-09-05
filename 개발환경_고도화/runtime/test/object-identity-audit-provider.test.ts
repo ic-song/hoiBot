@@ -48,6 +48,16 @@ describe("object identity and audit provider", () => {
     await assert.rejects(provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" }), /COLLISION_RETRY_EXHAUSTED/);
   });
 
+  it("retries MariaDB deadlock and lock-timeout conflicts before allocating once", async () => {
+    for(const conflict of [Object.assign(new Error("deadlock"),{code:"ER_LOCK_DEADLOCK",errno:1213}),Object.assign(new Error("timeout"),{code:"ER_LOCK_WAIT_TIMEOUT",errno:1205})]){
+      let transactions=0;
+      const database=scriptedDatabase([[],[],[]],(sql)=>{if(sql.includes("object_identities")&&transactions++===0)return conflict;return {affectedRows:1n,insertId:0n};});
+      const candidates=["a1234567","b1234567","c1234567"];
+      const result=await new MariaObjectIdentityAuditProvider(database,()=>candidates.shift()!,3).registerCrosswalk({actor:"migration",objectType:"ITEM",sourceSystem:"LEGACY_JSON",sourceNamespace:"itemInfo",sourceIdentifier:String(conflict.code)});
+      assert.equal(result.replayed,false);
+    }
+  });
+
   it("returns an existing source mapping without creating another canonical identity", async () => {
     let writes = 0;
     const database = scriptedDatabase([[{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567", INSERT_USER: "persisted", INSERT_TIME: "2026-06-22 23:00:00", UPDATE_USER: "persisted", UPDATE_TIME: "2026-06-22 23:00:00" }]], () => { writes += 1; return { affectedRows: 1n, insertId: 0n }; });

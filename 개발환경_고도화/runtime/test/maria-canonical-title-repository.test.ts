@@ -38,7 +38,7 @@ class GrantReplayDatabase extends RecordingDatabase {
     }] as T;
     if (sql.includes("FROM canonical_owned_pet_title_instances")) return [{
       player_id: "player01", title_definition_id: "petttl01", acquisition_sequence: 1n,
-      acquired_time: "2026-09-03 10:02:00", ownership_status: "owned"
+      acquired_time: "2026-09-03 10:02:00", acquisition_price: 100000000n, ownership_status: "owned"
     }] as T;
     return [] as T;
   }
@@ -64,7 +64,7 @@ describe("MariaCanonicalTitleRepository", () => {
       const grant = await repository.grant({
         domain, actor: "wbs737", sourceSystem: "SYNTHETIC", requestKey: `${domain}-grant-1`,
         playerId: "player01", titleDefinitionId: definition.titleDefinitionId,
-        acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:00:00"
+        acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:00:00", acquisitionPrice: 100000000n
       });
       assert.equal(grant.replayed, false);
       assert.equal(grant.ownedTitleId.length, 8);
@@ -98,13 +98,13 @@ describe("MariaCanonicalTitleRepository", () => {
     const database = new RecordingDatabase();
     database.listRows = [{
       owned_title_id: "ownmem01", title_definition_id: "memttl01", title_name: "변경된 타이틀✨",
-      base_sale_price: 300000000n, acquisition_sequence: 1n, acquired_time: "2026-09-03 10:00:00", selected_flag: 1
+      base_sale_price: 300000000n, acquisition_price: 100000000n, acquisition_sequence: 1n, acquired_time: "2026-09-03 10:00:00", selected_flag: 1
     }];
     const repository = new MariaCanonicalTitleRepository(database);
     const rows = await repository.listOwned("member", "player01");
     assert.deepEqual(rows, [{
       ownedTitleId: "ownmem01", titleDefinitionId: "memttl01", titleName: "변경된 타이틀✨",
-      baseSalePrice: 300000000n, acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:00:00", selected: true
+      baseSalePrice: 300000000n, acquisitionPrice: 100000000n, acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:00:00", selected: true
     }]);
     assert.match(database.calls[0]!.sql, /JOIN canonical_member_title_definitions/);
   });
@@ -123,10 +123,11 @@ describe("MariaCanonicalTitleRepository", () => {
     const repository = new MariaCanonicalTitleRepository(database);
     const input = {
       domain: "pet" as const, actor: "wbs737", sourceSystem: "SYNTHETIC", requestKey: "pet-grant-1",
-      playerId: "player01", titleDefinitionId: "petttl01", acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:02:00"
+      playerId: "player01", titleDefinitionId: "petttl01", acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:02:00", acquisitionPrice: 100000000n
     };
     assert.deepEqual(await repository.grant(input), { ownedTitleId: "ownpet01", replayed: true });
     await assert.rejects(repository.grant({ ...input, acquisitionSequence: 2n }), /CANONICAL_TITLE_GRANT_REQUEST_CONFLICT/);
+    await assert.rejects(repository.grant({ ...input, acquisitionPrice: 200000000n }), /CANONICAL_TITLE_GRANT_REQUEST_CONFLICT/);
     assert.equal(database.calls.filter((call) => call.sql.includes("INSERT INTO canonical_owned_pet_title_instances")).length, 0);
   });
 
@@ -136,6 +137,10 @@ describe("MariaCanonicalTitleRepository", () => {
     await assert.rejects(
       repository.grant({ domain: "member", actor: "wbs737", sourceSystem: "SYNTHETIC", requestKey: "bad-time", playerId: "player01", titleDefinitionId: "memttl01", acquisitionSequence: 0n, acquiredTime: "2026-09-03 25:00:00" }),
       /CANONICAL_TITLE_SEQUENCE_INVALID/
+    );
+    await assert.rejects(
+      repository.grant({ domain: "member", actor: "wbs737", sourceSystem: "SYNTHETIC", requestKey: "bad-price", playerId: "player01", titleDefinitionId: "memttl01", acquisitionSequence: 1n, acquiredTime: "2026-09-03 10:00:00", acquisitionPrice: -1n }),
+      /CANONICAL_TITLE_ACQUISITION_PRICE_INVALID/
     );
     assert.equal(database.calls.length, 0);
   });

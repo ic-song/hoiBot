@@ -4437,9 +4437,9 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-Modernization: `SL-PET-TITLE-SELECT` Gate 1~7 implementation uses `player_pet_title_instances` for stable KEY/order/equipped state while preserving current list sequence.
+Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐습니다. `/펫타이틀이름 [인자]`는 MODERN에서 canonical ITEM 티켓 차감, 요청별 PET_TITLE 정의·소유 occurrence 생성, typed receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction으로 처리합니다. 동일 표시명도 요청별 정의 ID를 따로 만들며, 티켓은 `LEGACY_JSON/member.bag/정확한 원본 문자열` import binding으로만 찾습니다. `/펫타이틀판매 [번호]`는 방의 활성 계정 selection을 먼저 잠근 뒤 world scope→영지전 권위를 잠그고, 비활성일 때 소유 occurrence의 획득가격 우선 판매가, `LEGACY_JSON/member.point/point` 통화 정의, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt와 Iris 응답을 같은 mutation transaction으로 처리합니다. ACTIVE_OPENING/ACTIVE_READY에서는 타이틀·통화를 변경하지 않고 typed PET_TITLE no-op receipt와 `NO_REPLY` execution만 저장하며 outbox는 만들지 않습니다. 생성·판매 등록 rollout은 SHADOW이며 WBS742 V2 exact import 승인 전에는 MODERN 전환하지 않습니다. `/펫타이틀 [번호]` 선택 MODERN도 mutation reply 계약이 완성될 때까지 레거시로 고정합니다.
 
-Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
+Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀판매 [번호]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
 
 ## Command Anchors
 
@@ -4449,6 +4449,10 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/pet/pet-title-app-wiring-ingress.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-read-provider.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/player-context-provider.ts`
 
 ## Related Helpers
 
@@ -4460,10 +4464,21 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 - `petTitleData.member[sender].title.list`
 - `petTitleData.member[sender].title.num`
 - `petTitleData.member[targetUser].title.list`
+- `canonical_owned_pet_title_instances` + `canonical_pet_title_definitions` (MODERN self 목록 및 선택 SHADOW)
+- `canonical_pet_title_selections` (현재 선택 표시)
+- `canonical_item_definition_imports` + `canonical_owned_item_stacks` + `canonical_item_inventory_ledger_entries` (생성 티켓 exact ID 해석·차감)
+- `canonical_pet_title_operations` + `canonical_pet_title_operation_participants` (생성 typed receipt·OWNER)
+- `guild_territory_start_scopes` → `guild_territory_wars` (선택 SHADOW와 판매 MODERN의 공용 world 영지전 권위)
+- `canonical_currency_definition_imports` + `canonical_player_currency_balances` + `canonical_currency_operations` + `canonical_currency_ledger_entries` (판매 포인트 정산)
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- 레거시 `Info.js` 목록은 read-only
+- canonical self 목록은 claim·조회 결과·outbox를 한 READ_ONLY transaction으로 저장
+- canonical 선택 SHADOW는 query-only이며 실제 선택 저장은 아직 레거시 경로가 담당
+- canonical 생성 MODERN은 활성 계정 selection을 잠근 뒤 도메인 변경·응답 outbox를 원자 저장하며 replay에서 다시 차감·생성하지 않음
+- canonical 판매 MODERN은 selection→world scope→war→player→owned title→currency 순으로 잠그고, 판매·포인트·typed receipt·응답을 원자 저장하며 replay에서 중복 적립하지 않음
+- 영지전 활성 판매는 PET_TITLE no-op receipt·OWNER participant·`NO_REPLY` command execution을 저장하고 outbox 0건을 유지
 
 ## Related Commands
 
@@ -4475,6 +4490,7 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 
 - Pet-title inventory viewer parallel to `/타이틀목록`
 - Useful when checking title-equip state mismatches between pet profile output and title storage
+- target 목록 MODERN은 레거시 room/principal 권한 parity가 완성될 때까지 fallback
 
 ---
 
@@ -7597,3 +7613,26 @@ Status: VERIFIED
 - 신규 Runtime의 단일 MariaDB transaction과 동일 event·동시 전달·재시작 결과 replay
 - outbox 실패 시 quota·반응·배지·알림·원장 전체 rollback
 - 레거시 `main.js`와 운영 JSON은 변경하지 않음
+# /펫타이틀동기화
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/pet-title-admin-app-wiring-ingress.ts`
+- `개발환경_고도화/runtime/src/account-platform/active-member-authority-provider.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts`
+
+## Related Helpers
+- `PetTitleAdminAppWiringIngress.sync`
+- `AccountPlatformActiveMemberAuthorityProvider.lockSnapshot`
+- `PetTitleCanonicalMutationProvider.adminSync`
+
+## Data Usage
+- 활성 legacy `players`와 `player_profiles`를 회원 권위로 사용
+- canonical player source/crosswalk를 양방향 대사
+- `canonical_owned_pet_title_instances`의 비활성 회원 보유 행만 soft remove
+
+## Save Flow
+- legacy 경로는 기존 JSON load/save 흐름 유지
+- MODERN 경로는 account-authority mutex → PET_TITLE mutex → context/회원 권위 → typed receipt/outbox를 한 transaction으로 처리

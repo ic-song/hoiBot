@@ -4,8 +4,12 @@ import { describe, it } from "node:test";
 
 // 예약된 migration 파일을 UTF-8 원문으로 읽습니다.
 const migration = (name: string) => readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8");
+const rollback = (name: string) => readFileSync(new URL(`../migrations/rollback/${name}`, import.meta.url), "utf8");
 // 계정 플랫폼 Maria repository 원문을 읽습니다.
 const repository = readFileSync(new URL("../src/account-platform/maria-account-platform-repository.ts", import.meta.url), "utf8");
+const suspension = readFileSync(new URL("../src/admin/admin-account-suspension-service.ts", import.meta.url), "utf8");
+const deletion = readFileSync(new URL("../src/admin/admin-account-delete-progress-service.ts", import.meta.url), "utf8");
+const cleanup = readFileSync(new URL("../src/user-auth/account-cleanup-service.ts", import.meta.url), "utf8");
 
 describe("WBS746 account platform additive schema", () => {
   it("uses reserved migrations, descriptive CUID2 PKs, audit columns, and DB uniqueness guards", () => {
@@ -46,5 +50,20 @@ describe("WBS746 account platform additive schema", () => {
     assert.match(repository, /INSERT INTO command_audit/);
     assert.match(repository, /INSERT INTO outbox_messages/);
     assert.match(repository, /withTransaction/);
+  });
+
+  it("serializes every account-authority writer with one seeded additive mutex", () => {
+    const sql = migration("473_account_authority_global_lock.sql");
+    assert.match(sql, /CREATE TABLE IF NOT EXISTS canonical_account_authority_global_locks/);
+    assert.match(sql, /account_authority_global_lock_id CHAR\(8\) CHARACTER SET ascii COLLATE ascii_bin NOT NULL/);
+    assert.match(sql, /UNIQUE KEY uq_account_473_00_01 \(lock_key\)/);
+    assert.match(sql, /CHECK \(lock_key='ACCOUNT_AUTHORITY'\)/);
+    for (const audit of ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]) assert.match(sql, new RegExp(audit));
+    assert.match(sql, /VALUES \('aalock01','ACCOUNT_AUTHORITY',1/);
+    assert.match(rollback("473_account_authority_global_lock.rollback.sql"), /DROP TABLE IF EXISTS canonical_account_authority_global_locks/);
+    assert.equal((repository.match(/canonical_account_authority_global_locks/g) ?? []).length, 2);
+    assert.equal((suspension.match(/canonical_account_authority_global_locks/g) ?? []).length, 1);
+    assert.equal((deletion.match(/canonical_account_authority_global_locks/g) ?? []).length, 1);
+    assert.equal((cleanup.match(/canonical_account_authority_global_locks/g) ?? []).length, 1);
   });
 });

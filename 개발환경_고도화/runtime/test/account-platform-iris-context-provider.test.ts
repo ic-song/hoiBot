@@ -12,6 +12,7 @@ function createContextDatabase(modern = true): { database: DatabaseClient; queri
   const writeResult: DatabaseWriteResult = { affectedRows: 1n, insertId: 1n };
   const query = async <T>(sql: string, values: readonly unknown[] = []): Promise<T> => {
     queries.push({ sql, values });
+    if (sql.includes("canonical_account_authority_global_locks")) return [{ lock_key: "ACCOUNT_AUTHORITY" }] as T;
     if (sql.includes("JOIN account_platform_active_player_selections selection")) {
       return (modern ? [{ portal_account_id: "portal01", active_player_id: 101n, platform_context_membership_id: "member01", selection_version: 4n }] : []) as T;
     }
