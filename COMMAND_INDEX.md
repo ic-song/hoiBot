@@ -118,6 +118,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts`
+- `개발환경_고도화/runtime/src/guild/guild-territory-attack-runtime4-policy-provider.ts`
+- `개발환경_고도화/runtime/migrations/478_guild_territory_attack_runtime_item_policy.sql`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-command.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-service.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-iris-handler.ts`
@@ -1101,6 +1104,8 @@ Status: VERIFIED
 - `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
 - `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
 - `GLOBAL_CONFIG.guildTerritory.scores.pointMine`
+- `guild_territory_attack_item_candidates`: canonical `item_id`를 참조해 DB runtime의 방어 50→20, 공격 40→10 후보 PK·우선순위·확률을 관리
+- `canonical_item_definition_imports`: `RUNTIME_DB/item_definitions` source identifier를 기존 legacy item definition으로 해석하는 crosswalk
 
 ## Save Flow
 
@@ -1147,6 +1152,8 @@ Status: VERIFIED
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
 - 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
 - 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
+- DB runtime도 보유 중인 첫 후보 하나만 판정하며 아이템 RNG는 `<=`, 성공한 후보만 차감한다. 공격권 성공 차감 뒤 길드공헌 큐브는 strict `<`로 별도 판정하고 차단되어도 공격권을 환불하지 않는다.
+- DB runtime ACTIVE 공격은 command transaction 전에 canonical import/crosswalk와 runtime4 후보 네 행을 멱등 ensure하며, SHADOW에서는 이 provisioning을 실행하지 않는다.
 - `/디버깅모드`가 켜진 상태에서 `/영지공격 [1-7]`을 실행하면 방어자의 영지절대방어권 확률, 길드공헌 큐브 기습방어 증가분, 두 수치의 단순 합산값을 테스트방에 표시한다. 실제 전투는 합산 확률 한 번이 아니라 절대방어권 선판정 후 기습공격 발동 시 큐브를 별도로 판정한다.
 - 일반 캐슬매력 대결 상세보기에는 영지, 공격·방어 길드, 유저·펫, 기본·최종 매력, 크리 발동, 비교식과 점령 결과를 카드형 UI로 표시한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.

@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS guild_territory_attack_item_candidates;

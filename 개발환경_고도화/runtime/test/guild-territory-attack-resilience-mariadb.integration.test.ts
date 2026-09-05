@@ -5,6 +5,7 @@ import { GuildTerritoryAttackService } from "../src/guild/guild-territory-attack
 
 const suite = process.env.RUN_MARIADB_INTEGRATION === "true" ? describe : describe.skip;
 const required = (name: string) => { const value = process.env[name]; if (!value) throw new Error(`${name} is required`); return value; };
+const createTestDatabase = () => createDatabaseClient({ enabled: true, host: required("DATABASE_HOST"), port: Number(required("DATABASE_PORT")), user: required("DATABASE_USER"), password: required("DATABASE_PASSWORD"), name: required("DATABASE_NAME"), connectionLimit: 12, connectTimeoutMs: 5_000 });
 
 suite("guild territory attack MariaDB resilience", () => {
   let db: DatabaseClient;
@@ -37,7 +38,8 @@ suite("guild territory attack MariaDB resilience", () => {
   const mutationCount = async (eventId: string) => Number((await db.query<Array<{ count_value: bigint }>>("SELECT COUNT(*) count_value FROM operations WHERE idempotency_scope='guild.territory.attack.execute' AND idempotency_key=?", [eventId]))[0]!.count_value);
 
   before(async () => {
-    db = createDatabaseClient({ enabled: true, host: required("DATABASE_HOST"), port: Number(required("DATABASE_PORT")), user: required("DATABASE_USER"), password: required("DATABASE_PASSWORD"), name: required("DATABASE_NAME"), connectionLimit: 12, connectTimeoutMs: 5_000 });
+    db = createTestDatabase();
+    await db.execute("DELETE FROM guild_territory_attack_item_candidates");
     await db.execute("UPDATE guild_territory_attack_policy_versions SET status='ACTIVE',contribution_medal_bps=10000,contribution_medal_quantity=1,evidence_label='synthetic-resilience-fixture',rift_event_base_bps=0,instability_bps_per_point=0,normal_rift_base_bps=10000,rift_bias_bps_per_point=0,rift_evidence_label='synthetic-resilience-fixture',activated_at=UTC_TIMESTAMP(3) WHERE policy_scope_code='world-attack' AND policy_version=1");
     for (const [code, name] of [["territory_defense_ticket", "합성 방어권"], ["territory_attack_ticket", "합성 공격권"], ["guild_contribution_medal", "합성 공헌훈장"]]) await db.execute("INSERT INTO item_definitions(code,display_name,asset_type_code,stackable,metadata_json,active,version) VALUES (?,?,'ITEM',TRUE,JSON_OBJECT('fixture',TRUE),TRUE,1) ON DUPLICATE KEY UPDATE active=TRUE", [code, name]);
   });
@@ -51,6 +53,7 @@ suite("guild territory attack MariaDB resilience", () => {
     const result = await new GuildTerritoryAttackService(db).handleIris({ eventId, externalUserId: arena.external, channelId: arena.room, message: "/영지공격 2" });
     assert.deepEqual(result, { status: "shadow" });
     assert.equal(await mutationCount(eventId), 0);
+    assert.equal(Number((await db.query<Array<{ count_value: bigint }>>("SELECT COUNT(*) count_value FROM guild_territory_attack_item_candidates"))[0]!.count_value), 0);
     await db.execute("UPDATE command_registry SET rollout_state='ACTIVE' WHERE command_code='GUILD_TERRITORY_ATTACK_EXECUTE'");
   });
 
@@ -63,6 +66,7 @@ suite("guild territory attack MariaDB resilience", () => {
     assert.deepEqual(second, first);
     assert.equal(await mutationCount(eventId), 1);
     assert.equal(Number((await db.query<Array<{ count_value: bigint }>>("SELECT COUNT(*) count_value FROM guild_territory_attack_runs WHERE event_key=?", [eventId]))[0]!.count_value), 1);
+    assert.equal(Number((await db.query<Array<{ count_value: bigint }>>("SELECT COUNT(*) count_value FROM guild_territory_attack_item_candidates"))[0]!.count_value), 4);
   });
 
   it("rolls back counts, fund, draw, audit, and outbox after a forced late failure", async () => {
@@ -85,8 +89,13 @@ suite("guild territory attack MariaDB resilience", () => {
     await seedEvent(arena, eventId);
     const input = { eventId, externalUserId: arena.external, channelId: arena.room, targetNo: 2 };
     const first = await new GuildTerritoryAttackService(db).attack(input);
-    const replay = await new GuildTerritoryAttackService(db).attack(input);
-    assert.deepEqual(replay, first);
-    assert.equal(await mutationCount(eventId), 1);
+    const restartedDatabase = createTestDatabase();
+    try {
+      const replay = await new GuildTerritoryAttackService(restartedDatabase).attack(input);
+      assert.deepEqual(replay, first);
+      assert.equal(await mutationCount(eventId), 1);
+    } finally {
+      await restartedDatabase.close();
+    }
   });
 });
