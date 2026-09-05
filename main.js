@@ -27843,7 +27843,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     petSkillCollectionResult += "등록한 컬렉션📙 [" + petSkillCollectionRegisteredCount + "칸]\n";
                     petSkillCollectionResult += GLOBAL_CONFIG.petSkillCollection.rewardItemName + " 총 " + numberWithCommas(petSkillCollectionTotalReward) + "개 획득\n";
                     petSkillCollectionResult += "이미지링크:https://ibb.co/WvFJhfvZ\n━━━━━━━━━━━━━━━\n";
-                    petSkillCollectionResult += "등록 성공✅ [" + petSkillCollectionRegisteredCount + "개]\n" + allsee + "\n" + petSkillCollectionRegisteredLines.join("\n\n");
+                    petSkillCollectionResult += "등록 성공✅ [" + petSkillCollectionRegisteredCount + "개]\n" + petSkillCollectionRegisteredLines.join("\n\n");
                     if (petSkillCollectionSkippedLines.length > 0) {
                         petSkillCollectionResult += "\n\n━━━━━━━━━━━━━━━\n등록 제외❌ [" + petSkillCollectionSkippedLines.length + "개]\n\n" + petSkillCollectionSkippedLines.join("\n\n");
                     }
