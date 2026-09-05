@@ -9,6 +9,7 @@ import { createEnvironmentContext, verifyStartupDatabaseIdentity } from "../src/
 type Row = Record<string, unknown>;
 const resultFingerprint = "d".repeat(64);
 const petTitleOperationId = "petop001";
+const petTitleBatchOperationId = "petba001";
 
 class MutationReplyDatabase implements CapableDatabaseClient {
   claim?: Row;
@@ -70,10 +71,11 @@ class MutationReplyDatabase implements CapableDatabaseClient {
   private async txQuery<T>(sql: string, values: readonly unknown[]): Promise<T> {
     if (sql.includes("FROM canonical_app_wiring_operations")) return (this.claim?.request_identity_fingerprint === values[0] ? [this.claim] : []) as T;
     if (sql.includes("FROM canonical_pet_title_operations")) return (this.typedReceipt?.pet_title_operation_id === values[0] ? [this.typedReceipt] : []) as T;
+    if (sql.includes("FROM canonical_pet_title_batch_operations")) return (this.typedReceipt?.pet_title_batch_operation_id === values[0] ? [this.typedReceipt] : []) as T;
     if (sql.includes("FROM canonical_app_wiring_receipt_links WHERE")) {
       const expected = sql.includes("WHERE app_wiring_operation_id=") ? this.receiptLink?.[1] : this.receiptLink?.[0];
       if (expected !== values[0]) return [] as T;
-      const columns = ["canonical_app_wiring_receipt_link_id", "app_wiring_operation_id", "receipt_kind", "result_fingerprint", "daily_prayer_operation_id", "home_aggregate_operation_id", "market_operation_id", "member_title_operation_id", "mini_pet_title_operation_id", "package_use_operation_id", "pet_explore_operation_id", "pet_explore_event_control_operation_id", "pet_title_operation_id", "player_identity_operation_id"];
+      const columns = ["canonical_app_wiring_receipt_link_id", "app_wiring_operation_id", "receipt_kind", "result_fingerprint", "daily_prayer_operation_id", "home_aggregate_operation_id", "market_operation_id", "member_title_operation_id", "mini_pet_title_operation_id", "package_use_operation_id", "pet_explore_operation_id", "pet_explore_event_control_operation_id", "pet_title_operation_id", "pet_title_batch_operation_id", "player_identity_operation_id"];
       return [Object.fromEntries(columns.map((column, index) => [column, this.receiptLink![index]]))] as T;
     }
     if (sql.includes("FROM outbox_messages outbox") || sql.includes("FROM operations operation")) {
@@ -96,6 +98,7 @@ class MutationReplyDatabase implements CapableDatabaseClient {
     if (sql.includes("SET claim_state='MUTATION_STARTED'")) { Object.assign(this.claim!, { claim_state: "MUTATION_STARTED", recovery_status: "PENDING" }); return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("UPDATE pet_title_domain")) { this.domainWrites += 1; return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO canonical_pet_title_operations")) { this.typedReceipt = { pet_title_operation_id: values[0], result_fingerprint: values[1], operation_status: "COMPLETED" }; return { affectedRows: 1n, insertId: 0n }; }
+    if (sql.startsWith("INSERT INTO canonical_pet_title_batch_operations")) { this.typedReceipt = { pet_title_batch_operation_id: values[0], result_fingerprint: values[1], operation_status: "COMPLETED" }; return { affectedRows: 1n, insertId: 0n }; }
     if (sql.startsWith("INSERT INTO operations")) { this.operation = { id: 11n, idempotency_scope: "app-wiring.mutation-reply", idempotency_key: values[1], status: "processing", result_json: null }; return { affectedRows: 1n, insertId: 11n }; }
     if (sql.startsWith("INSERT INTO command_executions")) { if (this.failExecution) throw new Error("EXECUTION_INSERT_FAILED"); this.execution = { event_id: values[0], command_code: values[1], execution_status: "completed", result_code: sql.includes("'no_reply'") ? "no_reply" : "reply_queued" }; return { affectedRows: 1n, insertId: 12n }; }
     if (sql.startsWith("INSERT INTO outbox_messages")) { if (this.failOutbox) throw new Error("OUTBOX_INSERT_FAILED"); this.outbox = { id: 21n, destination_id: values[1], payload_json: values[2] }; return { affectedRows: 1n, insertId: 21n }; }
@@ -143,7 +146,40 @@ function noReplyInput(calls: string[]) {
   };
 }
 
+function batchInput(calls:string[]){
+  const base=input(calls);
+  return {
+    ...base,
+    claim:{...base.claim,externalRequestId:"event-admin-sync-1",normalizedPayload:{command:"ADMIN_PET_TITLE_SYNC"}},
+    handler:async(database:AppWiringMutationParticipant)=>{
+      calls.push("handler");
+      await database.execute("UPDATE pet_title_domain SET selected=TRUE");
+      await database.execute("INSERT INTO canonical_pet_title_batch_operations VALUES (?,?)",[petTitleBatchOperationId,resultFingerprint]);
+      return {value:"synced",reply:{eventId:"event-admin-sync-1",commandCode:"ADMIN_PET_TITLE_SYNC",destinationId:"room-1",data:"동기화 완료"},receipt:{status:"REPLY_QUEUED",resultFingerprint},typedReceipt:{receiptKind:"PET_TITLE_BATCH" as const,petTitleBatchOperationId,resultFingerprint}};
+    },
+    replayCompleted:async()=>"synced",
+  };
+}
+
 describe("app-wiring MUTATION Iris reply atomic boundary", () => {
+  it("persists, replays and validates the global PET_TITLE_BATCH typed receipt without a fake player",async()=>{
+    const database=new MutationReplyDatabase(),service=await provider(database),calls:string[]=[];
+    assert.deepEqual(await executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),{value:"synced",reply:{outboxId:"21",room:"room-1",data:"동기화 완료"}});
+    assert.equal(database.receiptLink?.[2],"PET_TITLE_BATCH");
+    assert.equal(database.receiptLink?.[13],petTitleBatchOperationId);
+    assert.equal(database.receiptLink?.[14],null);
+    assert.deepEqual(await executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),{value:"synced",reply:{outboxId:"21",room:"room-1",data:"동기화 완료"}});
+    assert.deepEqual(calls,["handler"]);
+    database.typedReceipt!.result_fingerprint="e".repeat(64);
+    await assert.rejects(()=>executeAppWiringMutationReplyEntrypoint(service,batchInput(calls)),/APP_WIRING_REPLAY_TYPED_RECEIPT_FINGERPRINT_MISMATCH/);
+  });
+
+  it("rolls back PET_TITLE_BATCH domain, typed receipt and delivery graph together",async()=>{
+    const database=new MutationReplyDatabase(),service=await provider(database);database.failOutbox=true;
+    await assert.rejects(()=>executeAppWiringMutationReplyEntrypoint(service,batchInput([])),/OUTBOX_INSERT_FAILED/);
+    assert.equal(database.domainWrites,0);assert.equal(database.typedReceipt,undefined);assert.equal(database.receiptLink,undefined);assert.equal(database.claim?.claim_state,"FAILED");
+  });
+
   it("persists domain mutation, typed receipt, outbox and terminal claim together and replays one outbox", async () => {
     const database = new MutationReplyDatabase();
     const service = await provider(database);

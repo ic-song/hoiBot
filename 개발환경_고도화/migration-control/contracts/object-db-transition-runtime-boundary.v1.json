@@ -248,7 +248,7 @@
       "appSourceSha256": "50eb22bf60cc6ac1d9467f9ea242c1c9ac42b087a46e16bbdfed614e709f4156",
       "petExploreIngressSourceSha256": "d843190731458ce30f48a437d8930f99a5baeb86055df9f019a15f4518780262",
       "petExploreEventControlProviderSourceSha256": "c85d46d3bb4d7361837c6736e1e406025f7dd59af933c26ec9ef253374840c24",
-      "appWiringOperationProviderSourceSha256": "7ed135a65085c4e26032427234792bcb3f46857476a78a35656531851398b7bf",
+      "appWiringOperationProviderSourceSha256": "4a04ae5abcff1dc27132ecb9bea9de233f29d3fac622292f3e6e59b991adfe78",
       "petExploreEventControlMigrationSourceSha256": "2ab904b3521cbf525f5165ee5d81b02da6f669a39fbc471aee84f3be01917ffa",
       "petExploreEventControlRollbackSourceSha256": "9dfc1104abf459c4e9a2a903bdb1fff63d4b134a0c7dd3e4a0386fb4cfdb47e8",
       "petDataCompareIngressSourceSha256": "10343fe9ee4f83b38090a861073a22b0a111758b10100d28847b09db260762cd",

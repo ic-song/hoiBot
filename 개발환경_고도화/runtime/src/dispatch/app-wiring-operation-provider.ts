@@ -51,6 +51,7 @@ export type AppWiringTypedReceipt =
   | { readonly receiptKind: "PET_EXPLORE"; readonly petExploreOperationId: string; readonly resultFingerprint: string }
   | { readonly receiptKind: "PET_EXPLORE_EVENT_CONTROL"; readonly petExploreEventControlOperationId: string; readonly resultFingerprint: string }
   | { readonly receiptKind: "PET_TITLE"; readonly petTitleOperationId: string; readonly resultFingerprint: string }
+  | { readonly receiptKind: "PET_TITLE_BATCH"; readonly petTitleBatchOperationId: string; readonly resultFingerprint: string }
   | { readonly receiptKind: "PLAYER_IDENTITY"; readonly playerIdentityOperationId: string; readonly resultFingerprint: string };
 export interface AppWiringMutationHandlerOutcome<T> {
   readonly value: T;
@@ -253,7 +254,8 @@ const RECEIPT_BINDINGS = {
   PET_EXPLORE: ["pet_explore_operation_id","canonical_pet_explore_operations","operation_status","petExploreOperationId",6],
   PET_EXPLORE_EVENT_CONTROL: ["pet_explore_event_control_operation_id","canonical_pet_explore_event_control_operations","operation_status","petExploreEventControlOperationId",7],
   PET_TITLE: ["pet_title_operation_id","canonical_pet_title_operations","operation_status","petTitleOperationId",8],
-  PLAYER_IDENTITY: ["player_identity_operation_id","canonical_player_identity_operations","operation_status","playerIdentityOperationId",9]
+  PET_TITLE_BATCH: ["pet_title_batch_operation_id","canonical_pet_title_batch_operations","operation_status","petTitleBatchOperationId",9],
+  PLAYER_IDENTITY: ["player_identity_operation_id","canonical_player_identity_operations","operation_status","playerIdentityOperationId",10]
 } as const;
 const RECEIPT_ID_COLUMNS = Object.values(RECEIPT_BINDINGS).map((binding) => binding[0]);
 function receiptBinding(receipt: AppWiringTypedReceipt): ReceiptBinding {
@@ -379,10 +381,10 @@ export class MariaAppWiringOperationProvider {
         if(typed===undefined)throw new Error("APP_WIRING_TYPED_RECEIPT_NOT_FOUND");
         if(typed.operation_status!=="COMPLETED")throw new Error("APP_WIRING_TYPED_RECEIPT_NOT_COMPLETED");
         if(typed.result_fingerprint!==binding.fingerprint)throw new Error("APP_WIRING_TYPED_RECEIPT_FINGERPRINT_MISMATCH");
-        const typedIds:Array<string|null>=Array(10).fill(null);typedIds[binding.position]=binding.operationId;
+        const typedIds:Array<string|null>=Array(11).fill(null);typedIds[binding.position]=binding.operationId;
         const audit=createObjectAuditValues(secret.actor,this.now());
         let linkId:string|undefined;
-        for(let attempt=0;attempt<this.maxAttempts;attempt+=1){const candidate=this.generate();assertObjectIdentityCandidate(candidate);try{const linked=await tx.execute("INSERT INTO canonical_app_wiring_receipt_links(canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,daily_prayer_operation_id,home_aggregate_operation_id,market_operation_id,member_title_operation_id,mini_pet_title_operation_id,package_use_operation_id,pet_explore_operation_id,pet_explore_event_control_operation_id,pet_title_operation_id,player_identity_operation_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",[candidate,claim.claim.appWiringOperationId,binding.kind,binding.fingerprint,...typedIds,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);if(linked.affectedRows!==1n)throw new Error("APP_WIRING_RECEIPT_LINK_NOT_PERSISTED");linkId=candidate;break;}catch(error){if(!isDuplicate(error))throw error;if(!isPrimaryKeyDuplicate(error))throw new Error("APP_WIRING_RECEIPT_LINK_BUSINESS_CONFLICT");}}
+        for(let attempt=0;attempt<this.maxAttempts;attempt+=1){const candidate=this.generate();assertObjectIdentityCandidate(candidate);try{const linked=await tx.execute("INSERT INTO canonical_app_wiring_receipt_links(canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,daily_prayer_operation_id,home_aggregate_operation_id,market_operation_id,member_title_operation_id,mini_pet_title_operation_id,package_use_operation_id,pet_explore_operation_id,pet_explore_event_control_operation_id,pet_title_operation_id,pet_title_batch_operation_id,player_identity_operation_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",[candidate,claim.claim.appWiringOperationId,binding.kind,binding.fingerprint,...typedIds,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);if(linked.affectedRows!==1n)throw new Error("APP_WIRING_RECEIPT_LINK_NOT_PERSISTED");linkId=candidate;break;}catch(error){if(!isDuplicate(error))throw error;if(!isPrimaryKeyDuplicate(error))throw new Error("APP_WIRING_RECEIPT_LINK_BUSINESS_CONFLICT");}}
         if(linkId===undefined)throw new Error("APP_WIRING_RECEIPT_LINK_ID_COLLISION_RETRY_EXHAUSTED");
         completedOutcome=outcome;expectedResultJson=receipt.serialized;expectedBinding=binding;expectedLinkId=linkId;terminalAttempted=true;
         const result=await tx.execute("UPDATE canonical_app_wiring_operations SET claim_state='COMPLETED',result_json=?,error_code=NULL,lease_token=NULL,lease_expires_time=NULL,recovery_status='NONE',recovery_code=NULL,UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='MUTATION_STARTED' AND lease_token=? AND lease_generation=? AND lease_expires_time>?",[receipt.serialized,audit.UPDATE_USER,audit.UPDATE_TIME,claim.claim.appWiringOperationId,secret.leaseToken,secret.leaseGeneration,audit.UPDATE_TIME]);
@@ -392,8 +394,8 @@ export class MariaAppWiringOperationProvider {
       if(terminalAttempted&&completedOutcome!==undefined&&expectedResultJson!==undefined&&expectedBinding!==undefined&&expectedLinkId!==undefined){
         const reconciled=await this.database.withControlledTransaction(async tx=>readClaim(tx,claim.claim.requestIdentityFingerprint));
         if(exactTerminalIdentity(reconciled,claim.claim,secret)&&reconciled.claim_state==="COMPLETED"&&reconciled.result_json===expectedResultJson&&reconciled.lease_token===null){
-          const link=(await this.database.withControlledTransaction(tx=>tx.query<Array<Record<string,unknown>>>("SELECT canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,daily_prayer_operation_id,home_aggregate_operation_id,market_operation_id,member_title_operation_id,mini_pet_title_operation_id,package_use_operation_id,pet_explore_operation_id,pet_explore_event_control_operation_id,pet_title_operation_id,player_identity_operation_id FROM canonical_app_wiring_receipt_links WHERE canonical_app_wiring_receipt_link_id=? FOR UPDATE",[expectedLinkId!])))[0];
-          const columns=["daily_prayer_operation_id","home_aggregate_operation_id","market_operation_id","member_title_operation_id","mini_pet_title_operation_id","package_use_operation_id","pet_explore_operation_id","pet_explore_event_control_operation_id","pet_title_operation_id","player_identity_operation_id"];
+          const link=(await this.database.withControlledTransaction(tx=>tx.query<Array<Record<string,unknown>>>(`SELECT canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,${RECEIPT_ID_COLUMNS.join(",")} FROM canonical_app_wiring_receipt_links WHERE canonical_app_wiring_receipt_link_id=? FOR UPDATE`,[expectedLinkId!])))[0];
+          const columns=RECEIPT_ID_COLUMNS;
           if(link?.canonical_app_wiring_receipt_link_id===expectedLinkId&&link.app_wiring_operation_id===claim.claim.appWiringOperationId&&link.receipt_kind===expectedBinding.kind&&link.result_fingerprint===expectedBinding.fingerprint&&columns.every((column,index)=>link[column]===(index===expectedBinding!.position?expectedBinding!.operationId:null)))return completedOutcome.value;
         }
       }
