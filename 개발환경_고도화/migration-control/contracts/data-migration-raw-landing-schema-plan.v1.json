@@ -1,0 +1,25 @@
+{
+  "format": "hoibot-data-migration-raw-landing-schema-plan-v1",
+  "migration": "476_data_migration_raw_landing_standard_correction.sql",
+  "mode": "APPLIED_BASELINE_AMENDMENT",
+  "tables": [
+    {
+      "table": "data_migration_raw_runs",
+      "primaryKey": "raw_landing_run_id",
+      "retainedProvenance": ["legacy_raw_run_sequence", "legacy_created_at_utc", "legacy_completed_at_utc"],
+      "removedColumns": ["id", "created_at", "completed_at"],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    },
+    {
+      "table": "data_migration_raw_files",
+      "primaryKey": "raw_landing_file_id",
+      "retainedProvenance": ["legacy_imported_at_utc"],
+      "foreignKeys": [{"column":"raw_landing_run_id","references":"data_migration_raw_runs.raw_landing_run_id","onDelete":"CASCADE"}],
+      "unique": [["raw_landing_run_id", "source_path_sha256"]],
+      "removedColumns": ["run_id", "imported_at"],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    }
+  ],
+  "transactionBoundary": "one RAW run row; each payload file is hash-verified and inserted transactionally; completion rechecks the complete bundle",
+  "commonStagingHandoff": "raw_landing_run_id is selected and used to retrieve every source file"
+}

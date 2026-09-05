@@ -3,6 +3,7 @@
   "format": "hoibot-data-migration-common-staging-contract-v1",
   "migration": "457_data_migration_common_staging.sql",
   "rawProviderMigration": "442_data_migration_raw_landing.sql",
+  "rawProviderAmendmentMigration": "476_data_migration_raw_landing_standard_correction.sql",
   "inputFormat": "hoibot-common-staging-extraction-manifest-v1",
   "sourceCoveragePolicy": "every RAW file appears exactly once as PROJECT with records or IGNORE with a reason",
   "identityPolicy": {

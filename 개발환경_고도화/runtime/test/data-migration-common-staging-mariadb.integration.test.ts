@@ -5,13 +5,14 @@ import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { assertCommonStagingDatabaseName, calculateCommonStagingManifestSha256, MariaCommonStagingRepository, type CommonStagingExtractionManifest } from "../src/data-migration/common-staging-extractor.js";
 import { calculateRawLandingBundleSha256 } from "../src/data-migration/maria-raw-landing-repository.js";
+import { createObjectAuditValues, createObjectIdentityCandidate } from "../src/identity/object-identity-audit-provider.js";
 
 const integration = process.env.RUN_MARIADB_INTEGRATION === "true" ? describe : describe.skip;
 const sha = (value: string | Buffer): string => createHash("sha256").update(value).digest("hex");
 
 integration("data migration common staging MariaDB", () => {
   let database: DatabaseClient;
-  let rawRunId: bigint;
+  let rawRunId: string;
   const nonce = `${Date.now()}-${Math.random()}`;
   const payload = Buffer.from(JSON.stringify({ member: { alpha: { owner: "synthetic-owner", bag: { item: "9007199254740993" } } }, capturedAt: "2026-09-03 15:30:00" }));
   const sourcePathSha256 = sha(`common-staging-${nonce}`);
@@ -36,14 +37,16 @@ integration("data migration common staging MariaDB", () => {
     const config = loadConfig();
     assertCommonStagingDatabaseName(config.database.name);
     database = createDatabaseClient(config.database);
-    const run = await database.execute("INSERT INTO data_migration_raw_runs(run_key,snapshot_manifest_sha256,bundle_sha256,expected_file_count,expected_total_bytes,run_status,created_at,completed_at) VALUES (?,?,?,?,?,'COMPLETE',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))", [rawBundleSha256, manifest.snapshotManifestSha256, rawBundleSha256, 1, payload.byteLength]);
-    rawRunId = run.insertId;
-    await database.execute("INSERT INTO data_migration_raw_files(run_id,source_path_sha256,source_content_sha256,size_bytes,payload,imported_at) VALUES (?,?,?,?,?,UTC_TIMESTAMP(3))", [rawRunId, sourcePathSha256, sourceContentSha256, payload.byteLength, payload]);
+    rawRunId = createObjectIdentityCandidate();
+    const rawFileId = createObjectIdentityCandidate();
+    const audit = createObjectAuditValues("common-staging-integration");
+    await database.execute("INSERT INTO data_migration_raw_runs(raw_landing_run_id,run_key,snapshot_manifest_sha256,bundle_sha256,expected_file_count,expected_total_bytes,run_status,raw_landing_completed_time,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'COMPLETE',?,?,?,?,?)", [rawRunId, rawBundleSha256, manifest.snapshotManifestSha256, rawBundleSha256, 1, payload.byteLength, audit.UPDATE_TIME, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+    await database.execute("INSERT INTO data_migration_raw_files(raw_landing_file_id,raw_landing_run_id,source_path_sha256,source_content_sha256,size_bytes,payload,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)", [rawFileId, rawRunId, sourcePathSha256, sourceContentSha256, payload.byteLength, payload, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
   });
 
   after(async () => {
     await new MariaCommonStagingRepository(database).rollback(rawBundleSha256, calculateCommonStagingManifestSha256(manifest));
-    await database.execute("DELETE FROM data_migration_raw_runs WHERE id=?", [rawRunId]);
+    await database.execute("DELETE FROM data_migration_raw_runs WHERE raw_landing_run_id=?", [rawRunId]);
     await database.close();
   });
 
