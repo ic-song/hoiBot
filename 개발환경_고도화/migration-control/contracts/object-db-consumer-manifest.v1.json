@@ -184492,16 +184492,14 @@
     "undeclaredSelectorCount": 0,
     "excludedNegativeGuardCount": 6,
     "activeRegistryObjectRows": 367,
-    "registrySourceMismatchCount": 10,
+    "registrySourceMismatchCount": 8,
     "registrySourceMismatches": [
-      "main.js:/길드계급표",
       "main.js:/길드스타터오픈4",
       "main.js:/길드스타터오픈5",
       "main.js:/길드영지오픈1",
-      "main.js:/다이아패스삭제",
-      "main.js:/다이아패스추가",
       "main.js:/오픈하면어른이됩니다",
       "main.js:/창세오픈",
+      "main.js:/펫먹",
       "main.js:/펫탐험시작",
       "main.js:/호월오픈"
     ],

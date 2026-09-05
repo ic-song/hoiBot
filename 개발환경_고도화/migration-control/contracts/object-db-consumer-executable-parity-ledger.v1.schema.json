@@ -69,8 +69,8 @@
         "manifestConsumers": { "const": 1111 }, "ledgerEntries": { "const": 1111 }, "missingConsumerIds": { "const": 0 },
         "duplicateConsumerIds": { "const": 0 }, "unknownConsumerIds": { "const": 0 }, "readConsumers": { "const": 499 },
         "mutationConsumers": { "const": 612 }, "unresolvedDynamicConsumers": { "const": 552 }, "unresolvedDynamicCallCount": { "const": 790 },
-        "registrySourceMismatchCount": { "const": 10 }, "registrySourceMismatchAttributedCount": { "const": 7 },
-        "registrySourceMismatchUnattributedCount": { "const": 3 }, "provenConsumers": { "type": "integer", "minimum": 0, "maximum": 1111 },
+        "registrySourceMismatchCount": { "const": 8 }, "registrySourceMismatchAttributedCount": { "const": 0 },
+        "registrySourceMismatchUnattributedCount": { "const": 8 }, "provenConsumers": { "type": "integer", "minimum": 0, "maximum": 1111 },
         "unprovenConsumers": { "type": "integer", "minimum": 0, "maximum": 1111 }, "directPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1111 },
         "equivalentPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1111 }, "verdicts": { "$ref": "#/$defs/verdictCounts" }
       }

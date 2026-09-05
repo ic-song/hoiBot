@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { canonicalizeObjectDbConsumerSourceText } from "./object-db-consumer-baseline.js";
+import { predicateAcceptsRegistryCommand } from "./object-db-consumer-transition-audit.js";
 import {
   createConsumerIdResolver,
   parseConsumerIdRegistry,
@@ -602,6 +603,7 @@ function deriveRegistrySourceMismatchResolution(
     const candidates = new Map<string, ConsumerManifestInput["consumers"][number]>();
     for (const index of indexes) for (const consumer of manifest.consumers) {
       if (consumer.kind !== "LEGACY_COMMAND" || consumer.file !== file || consumer.sourceSpan === undefined) continue;
+      if (!predicateAcceptsRegistryCommand(consumer.triggerOrPredicate, command)) continue;
       const fullConsumer = consumer as ConsumerManifestInput["consumers"][number] & { sourceSpan: { start?: number; end?: number; sha256: string } };
       if (!Number.isSafeInteger(fullConsumer.sourceSpan.start) || !Number.isSafeInteger(fullConsumer.sourceSpan.end)) continue;
       if (fullConsumer.sourceSpan.start! <= index && index < fullConsumer.sourceSpan.end!) {

@@ -7,7 +7,7 @@
   "sources": {
     "ledgerSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.schema.json",
-      "sha256": "917dc31618a15e78036dcf31ea18b6585bb42e99e454bc34c9b1371079c3632c"
+      "sha256": "ca8cda281946533405d9d179eb906638ace0671f899d442b2462bd8c05b57a05"
     },
     "executionReceiptSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-execution-receipt.v1.schema.json",
@@ -15,7 +15,7 @@
     },
     "consumerManifest": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
-      "sha256": "ce2d0c6a9ff8b5fecf3a69ff0187fa3c747801937e0bc1bbc6f5acd69557f233",
+      "sha256": "bac5cfebd63e31cada18f0903fd5f8bd215cd34ac764c4ab2c91c245e9fa0f7a",
       "consumerSetSha256": "f103c427a8e632ada272149529c3dcc740734832c8fadb89c7bd254ae59ff0a1"
     },
     "consumerIdRegistry": {
@@ -38,47 +38,16 @@
     ]
   },
   "registrySourceMismatchResolution": {
-    "bindings": [
-      {
-        "registrySourceMismatch": "main.js:/길드계급표",
-        "consumerId": "legacy-cced6ba5b0ef1a67",
-        "sourceSpanSha256": "1fbeb69e4855dbb10bcb0945a8e0ff4626d06016fe99112d710145b867218954"
-      },
-      {
-        "registrySourceMismatch": "main.js:/길드스타터오픈4",
-        "consumerId": "legacy-087facddbd40db28",
-        "sourceSpanSha256": "906fbbb829d1dd5213539b21dc99a573917095bcf512a8ae2252ed646ab0a2ed"
-      },
-      {
-        "registrySourceMismatch": "main.js:/길드스타터오픈5",
-        "consumerId": "legacy-74d424c6915e7261",
-        "sourceSpanSha256": "eeb941581724ca51862d0f9e6a80b9b90c00ff7add6501cba6e17c6df13f79c7"
-      },
-      {
-        "registrySourceMismatch": "main.js:/길드영지오픈1",
-        "consumerId": "legacy-634cb8d65b374de7",
-        "sourceSpanSha256": "03ac01ca3414f2eb5aae8aff8fd1116819c6c4617121aaa519c1cb558f84d70c"
-      },
-      {
-        "registrySourceMismatch": "main.js:/오픈하면어른이됩니다",
-        "consumerId": "legacy-05edca05085147b3",
-        "sourceSpanSha256": "a98abb35b0487cf8926e66ee53682b39329d93eb73f74670b48806a72f2fc896"
-      },
-      {
-        "registrySourceMismatch": "main.js:/펫탐험시작",
-        "consumerId": "legacy-82eb4de33cc75c91",
-        "sourceSpanSha256": "81f40323075df9fa765e3d588f285ea304e8edacb24bbc028357d99e82f9bcee"
-      },
-      {
-        "registrySourceMismatch": "main.js:/호월오픈",
-        "consumerId": "legacy-5bd5da114889cf1b",
-        "sourceSpanSha256": "9e83503cce6516d2043c2d4e3e93084d861f8c4846358793db5eae7c7865eefd"
-      }
-    ],
+    "bindings": [],
     "unattributed": [
-      "main.js:/다이아패스삭제",
-      "main.js:/다이아패스추가",
-      "main.js:/창세오픈"
+      "main.js:/길드스타터오픈4",
+      "main.js:/길드스타터오픈5",
+      "main.js:/길드영지오픈1",
+      "main.js:/오픈하면어른이됩니다",
+      "main.js:/창세오픈",
+      "main.js:/펫먹",
+      "main.js:/펫탐험시작",
+      "main.js:/호월오픈"
     ]
   },
   "coverage": {
@@ -91,17 +60,17 @@
     "mutationConsumers": 612,
     "unresolvedDynamicConsumers": 552,
     "unresolvedDynamicCallCount": 790,
-    "registrySourceMismatchCount": 10,
-    "registrySourceMismatchAttributedCount": 7,
-    "registrySourceMismatchUnattributedCount": 3,
+    "registrySourceMismatchCount": 8,
+    "registrySourceMismatchAttributedCount": 0,
+    "registrySourceMismatchUnattributedCount": 8,
     "provenConsumers": 0,
     "unprovenConsumers": 1111,
     "directPassConsumers": 0,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 558,
-      "BLOCKED_DYNAMIC": 546,
-      "BLOCKED_REGISTRY_MISMATCH": 7,
+      "STATIC_ONLY": 559,
+      "BLOCKED_DYNAMIC": 552,
+      "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
       "DIRECT_PASS": 0,
       "EQUIVALENT_PASS": 0
@@ -16111,13 +16080,11 @@
         "accessClass": "READ",
         "interfaceId": "package-use.legacy-command.49d5c1dd48b0",
         "unresolvedDynamicCallCount": 5,
-        "registrySourceMismatchLabels": [
-          "main.js:/오픈하면어른이됩니다"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "a98abb35b0487cf8926e66ee53682b39329d93eb73f74670b48806a72f2fc896",
-        "classificationSha256": "ad87280fa32dd063c5b568a178b203ec5b767b553a57f134aff5cec7c2d56ca3"
+        "classificationSha256": "d20a48fe5196f7c50c96b1b79b9b2aff72c562bbdf453339f2c8a71c689df194"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "BLOCKED_DYNAMIC",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -16152,7 +16119,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "ad87280fa32dd063c5b568a178b203ec5b767b553a57f134aff5cec7c2d56ca3"
+            "sourceEvidenceSha256": "d20a48fe5196f7c50c96b1b79b9b2aff72c562bbdf453339f2c8a71c689df194"
           }
         },
         {
@@ -16162,7 +16129,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "ad87280fa32dd063c5b568a178b203ec5b767b553a57f134aff5cec7c2d56ca3"
+            "sourceEvidenceSha256": "d20a48fe5196f7c50c96b1b79b9b2aff72c562bbdf453339f2c8a71c689df194"
           }
         },
         {
@@ -16543,13 +16510,11 @@
         "accessClass": "READ",
         "interfaceId": "package-use.legacy-command.83ef9019c849",
         "unresolvedDynamicCallCount": 4,
-        "registrySourceMismatchLabels": [
-          "main.js:/길드스타터오픈4"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "906fbbb829d1dd5213539b21dc99a573917095bcf512a8ae2252ed646ab0a2ed",
-        "classificationSha256": "b77ba7d89ffec7f87feee86f6121aa4e8e48bc2e40a36157ddad4c6e90203140"
+        "classificationSha256": "feb0da10d1217d7da6f23d9d3dcf69bc65a4317ca93bdbc08450e75a7986dfdf"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "BLOCKED_DYNAMIC",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -16584,7 +16549,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "b77ba7d89ffec7f87feee86f6121aa4e8e48bc2e40a36157ddad4c6e90203140"
+            "sourceEvidenceSha256": "feb0da10d1217d7da6f23d9d3dcf69bc65a4317ca93bdbc08450e75a7986dfdf"
           }
         },
         {
@@ -16594,7 +16559,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "b77ba7d89ffec7f87feee86f6121aa4e8e48bc2e40a36157ddad4c6e90203140"
+            "sourceEvidenceSha256": "feb0da10d1217d7da6f23d9d3dcf69bc65a4317ca93bdbc08450e75a7986dfdf"
           }
         },
         {
@@ -34742,13 +34707,11 @@
         "accessClass": "READ",
         "interfaceId": "package-use.legacy-command.76d884755580",
         "unresolvedDynamicCallCount": 0,
-        "registrySourceMismatchLabels": [
-          "main.js:/호월오픈"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "9e83503cce6516d2043c2d4e3e93084d861f8c4846358793db5eae7c7865eefd",
-        "classificationSha256": "ed23653cf46dbe4411879e99b62371977d624ab3531a75b234c0bef40653fdf0"
+        "classificationSha256": "0c0f4c7db40c6e966d2305f779c3bee70beb9aa5119cbfbe2d03a73ea24b36e7"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "STATIC_ONLY",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -34783,7 +34746,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "ed23653cf46dbe4411879e99b62371977d624ab3531a75b234c0bef40653fdf0"
+            "sourceEvidenceSha256": "0c0f4c7db40c6e966d2305f779c3bee70beb9aa5119cbfbe2d03a73ea24b36e7"
           }
         },
         {
@@ -34793,7 +34756,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "ed23653cf46dbe4411879e99b62371977d624ab3531a75b234c0bef40653fdf0"
+            "sourceEvidenceSha256": "0c0f4c7db40c6e966d2305f779c3bee70beb9aa5119cbfbe2d03a73ea24b36e7"
           }
         },
         {
@@ -36223,13 +36186,11 @@
         "accessClass": "READ",
         "interfaceId": "package-use.legacy-command.4cd848989887",
         "unresolvedDynamicCallCount": 4,
-        "registrySourceMismatchLabels": [
-          "main.js:/길드영지오픈1"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "03ac01ca3414f2eb5aae8aff8fd1116819c6c4617121aaa519c1cb558f84d70c",
-        "classificationSha256": "73e20a22fc79f7904843ddc909885798753470e0e729a78a3a791c909674290e"
+        "classificationSha256": "a714329217efeb4fb49617c2f83968b1d81e75348658647e2cb0ccef3b9afca5"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "BLOCKED_DYNAMIC",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -36264,7 +36225,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "73e20a22fc79f7904843ddc909885798753470e0e729a78a3a791c909674290e"
+            "sourceEvidenceSha256": "a714329217efeb4fb49617c2f83968b1d81e75348658647e2cb0ccef3b9afca5"
           }
         },
         {
@@ -36274,7 +36235,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "73e20a22fc79f7904843ddc909885798753470e0e729a78a3a791c909674290e"
+            "sourceEvidenceSha256": "a714329217efeb4fb49617c2f83968b1d81e75348658647e2cb0ccef3b9afca5"
           }
         },
         {
@@ -41008,13 +40969,11 @@
         "accessClass": "READ",
         "interfaceId": "package-use.legacy-command.d83b3fc57fbf",
         "unresolvedDynamicCallCount": 4,
-        "registrySourceMismatchLabels": [
-          "main.js:/길드스타터오픈5"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "eeb941581724ca51862d0f9e6a80b9b90c00ff7add6501cba6e17c6df13f79c7",
-        "classificationSha256": "7c3348308ebe41bec4b891cc414eb8bef7341fbb37f28076c02f24781b2b5287"
+        "classificationSha256": "8f0f3d290a1dd253e1f65f82576428992d17419656370e0fd35e54c86439b389"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "BLOCKED_DYNAMIC",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -41049,7 +41008,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "7c3348308ebe41bec4b891cc414eb8bef7341fbb37f28076c02f24781b2b5287"
+            "sourceEvidenceSha256": "8f0f3d290a1dd253e1f65f82576428992d17419656370e0fd35e54c86439b389"
           }
         },
         {
@@ -41059,7 +41018,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "7c3348308ebe41bec4b891cc414eb8bef7341fbb37f28076c02f24781b2b5287"
+            "sourceEvidenceSha256": "8f0f3d290a1dd253e1f65f82576428992d17419656370e0fd35e54c86439b389"
           }
         },
         {
@@ -44289,13 +44248,11 @@
         "accessClass": "MUTATION",
         "interfaceId": "pet-explore.settlement.execute",
         "unresolvedDynamicCallCount": 2,
-        "registrySourceMismatchLabels": [
-          "main.js:/펫탐험시작"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "81f40323075df9fa765e3d588f285ea304e8edacb24bbc028357d99e82f9bcee",
-        "classificationSha256": "9aec106c9a5e83c5416fd0b1a05d0227966af2873744415d643e0d1271bb1c26"
+        "classificationSha256": "9908eccf1a0e2b9b3e470c79709c60ee424c7ef43ce41b3d75d5fe3be5f296ed"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "BLOCKED_DYNAMIC",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -44355,7 +44312,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "9aec106c9a5e83c5416fd0b1a05d0227966af2873744415d643e0d1271bb1c26"
+            "sourceEvidenceSha256": "9908eccf1a0e2b9b3e470c79709c60ee424c7ef43ce41b3d75d5fe3be5f296ed"
           }
         }
       ],
@@ -61715,13 +61672,11 @@
         "accessClass": "READ",
         "interfaceId": "home-aggregate-rank.legacy-command.405b6a5b29d3",
         "unresolvedDynamicCallCount": 2,
-        "registrySourceMismatchLabels": [
-          "main.js:/길드계급표"
-        ],
+        "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "1fbeb69e4855dbb10bcb0945a8e0ff4626d06016fe99112d710145b867218954",
-        "classificationSha256": "daaa659fcea746c04060d8df041ee19f86c6b24df5c879a27a508e8005d09940"
+        "classificationSha256": "2b542c73aea750c7f0faa1b95b54c41cd91e0997e852f8c90e6865fdaffb6237"
       },
-      "verdict": "BLOCKED_REGISTRY_MISMATCH",
+      "verdict": "BLOCKED_DYNAMIC",
       "harness": {
         "harnessId": null,
         "runner": null,
@@ -61756,7 +61711,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "daaa659fcea746c04060d8df041ee19f86c6b24df5c879a27a508e8005d09940"
+            "sourceEvidenceSha256": "2b542c73aea750c7f0faa1b95b54c41cd91e0997e852f8c90e6865fdaffb6237"
           }
         },
         {
@@ -61766,7 +61721,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "daaa659fcea746c04060d8df041ee19f86c6b24df5c879a27a508e8005d09940"
+            "sourceEvidenceSha256": "2b542c73aea750c7f0faa1b95b54c41cd91e0997e852f8c90e6865fdaffb6237"
           }
         },
         {
@@ -98200,5 +98155,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "766787db79485f9c92b03c4f8ca58a3869288889166a00b7d96ba66b54772cfe"
+  "entrySetSha256": "aed8cfa936cd03f0ca86e168156b8eaa7ac789d1dc3a2ca308e2d35580c3ec40"
 }
