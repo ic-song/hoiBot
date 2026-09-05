@@ -1,0 +1,324 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+  "bindings": [
+    {
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    },
+    {
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    },
+    {
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    },
+    {
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    },
+    {
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    },
+    {
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "harnessId": "harness:object-db-executable-parity:wave1",
+      "harnessCaseId": "case:canonical-title-list-owned",
+      "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    }
+  ],
+  "payload": {
+    "cases": [
+      {
+        "caseId": "case:canonical-title-list-owned",
+        "executablePath": "MariaCanonicalTitleRepository.listOwned",
+        "transactionPath": "DatabaseClient.query:READ_ONLY",
+        "requiredScenarios": [
+          "READ_POSITIVE",
+          "NEGATIVE_GUARD",
+          "EXACT_OUTPUT",
+          "SOURCE_DOMAIN_DML_ZERO",
+          "RESTART_CONSISTENCY"
+        ],
+        "consumers": [
+          {
+            "consumerId": "sql-repository-0dc3c380c54081a2",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/title/maria-canonical-title-repository.ts",
+              "symbol": "member.listOwned",
+              "triggerOrPredicate": "SQL_METHOD:member:listOwned",
+              "interfaceId": "member-title.repository.maria-canonical-title-repository.member.listOwned",
+              "start": 12944,
+              "end": 14646,
+              "sha256": "e24e0ffe24a927f79d74ca18dd3cdc5deba9631de158acaf78e1da31e8101b98"
+            },
+            "trustedConfig": {
+              "domain": "member",
+              "definitionTable": "canonical_member_title_definitions",
+              "definitionId": "member_title_id",
+              "ownershipTable": "canonical_owned_member_title_instances",
+              "ownedId": "owned_member_title_id",
+              "selectionTable": "canonical_member_title_selections"
+            },
+            "input": {
+              "domain": "member",
+              "playerId": "player01"
+            },
+            "negativeInput": {
+              "domain": "member",
+              "playerId": "bad"
+            },
+            "expectedGuardError": "OBJECT_IDENTITY_CANDIDATE_INVALID",
+            "expectedNormalizedSql": "SELECT owned.owned_member_title_id AS owned_title_id,owned.member_title_id AS title_definition_id,definition_row.title_name,definition_row.base_sale_price,owned.acquisition_price,owned.acquisition_sequence,owned.acquired_time,CASE WHEN selection_row.owned_member_title_id IS NULL THEN 0 ELSE 1 END AS selected_flag FROM canonical_owned_member_title_instances owned JOIN canonical_member_title_definitions definition_row ON definition_row.member_title_id=owned.member_title_id LEFT JOIN canonical_member_title_selections selection_row ON selection_row.player_id=owned.player_id AND selection_row.owned_member_title_id=owned.owned_member_title_id WHERE owned.player_id=? AND owned.ownership_status='owned' ORDER BY owned.acquisition_sequence,owned.owned_member_title_id",
+            "mockRows": [
+              {
+                "ownedTitleId": "ownmem01",
+                "titleDefinitionId": "memttl01",
+                "titleName": "변경된 회원 타이틀✨",
+                "baseSalePrice": "300000000",
+                "acquisitionPrice": "100000000",
+                "acquisitionSequence": "1",
+                "acquiredTime": "2026-09-03 10:00:00",
+                "selected": true
+              }
+            ],
+            "expectedRow": {
+              "ownedTitleId": "ownmem01",
+              "titleDefinitionId": "memttl01",
+              "titleName": "변경된 회원 타이틀✨",
+              "baseSalePrice": "300000000",
+              "acquisitionPrice": "100000000",
+              "acquisitionSequence": "1",
+              "acquiredTime": "2026-09-03 10:00:00",
+              "selected": true
+            },
+            "assertions": [
+              "canonical_owned_member_title_instances",
+              "canonical_member_title_definitions",
+              "canonical_member_title_selections",
+              "owned.player_id=?",
+              "owned.ownership_status='owned'",
+              "ORDER BY owned.acquisition_sequence,owned.owned_member_title_id"
+            ]
+          },
+          {
+            "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/title/maria-canonical-title-repository.ts",
+              "symbol": "pet.listOwned",
+              "triggerOrPredicate": "SQL_METHOD:pet:listOwned",
+              "interfaceId": "pet-title.repository.maria-canonical-title-repository.pet.listOwned",
+              "start": 12944,
+              "end": 14646,
+              "sha256": "e24e0ffe24a927f79d74ca18dd3cdc5deba9631de158acaf78e1da31e8101b98"
+            },
+            "trustedConfig": {
+              "domain": "pet",
+              "definitionTable": "canonical_pet_title_definitions",
+              "definitionId": "pet_title_id",
+              "ownershipTable": "canonical_owned_pet_title_instances",
+              "ownedId": "owned_pet_title_id",
+              "selectionTable": "canonical_pet_title_selections"
+            },
+            "input": {
+              "domain": "pet",
+              "playerId": "player01"
+            },
+            "negativeInput": {
+              "domain": "pet",
+              "playerId": "bad"
+            },
+            "expectedGuardError": "OBJECT_IDENTITY_CANDIDATE_INVALID",
+            "expectedNormalizedSql": "SELECT owned.owned_pet_title_id AS owned_title_id,owned.pet_title_id AS title_definition_id,definition_row.title_name,definition_row.base_sale_price,owned.acquisition_price,owned.acquisition_sequence,owned.acquired_time,CASE WHEN selection_row.owned_pet_title_id IS NULL THEN 0 ELSE 1 END AS selected_flag FROM canonical_owned_pet_title_instances owned JOIN canonical_pet_title_definitions definition_row ON definition_row.pet_title_id=owned.pet_title_id LEFT JOIN canonical_pet_title_selections selection_row ON selection_row.player_id=owned.player_id AND selection_row.owned_pet_title_id=owned.owned_pet_title_id WHERE owned.player_id=? AND owned.ownership_status='owned' ORDER BY owned.acquisition_sequence,owned.owned_pet_title_id",
+            "mockRows": [
+              {
+                "ownedTitleId": "ownpet01",
+                "titleDefinitionId": "petttl01",
+                "titleName": "변경된 펫 타이틀✨",
+                "baseSalePrice": "400000000",
+                "acquisitionPrice": null,
+                "acquisitionSequence": "2",
+                "acquiredTime": "2026-09-03 10:01:00",
+                "selected": false
+              }
+            ],
+            "expectedRow": {
+              "ownedTitleId": "ownpet01",
+              "titleDefinitionId": "petttl01",
+              "titleName": "변경된 펫 타이틀✨",
+              "baseSalePrice": "400000000",
+              "acquisitionPrice": null,
+              "acquisitionSequence": "2",
+              "acquiredTime": "2026-09-03 10:01:00",
+              "selected": false
+            },
+            "assertions": [
+              "canonical_owned_pet_title_instances",
+              "canonical_pet_title_definitions",
+              "canonical_pet_title_selections",
+              "owned.player_id=?",
+              "owned.ownership_status='owned'",
+              "ORDER BY owned.acquisition_sequence,owned.owned_pet_title_id"
+            ]
+          },
+          {
+            "consumerId": "sql-repository-6a1bdfaafba10749",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/title/maria-canonical-title-repository.ts",
+              "symbol": "mini-pet.listOwned",
+              "triggerOrPredicate": "SQL_METHOD:mini-pet:listOwned",
+              "interfaceId": "mini-pet-title-collection.repository.maria-canonical-title-repository.mini-pet.listOwned",
+              "start": 12944,
+              "end": 14646,
+              "sha256": "e24e0ffe24a927f79d74ca18dd3cdc5deba9631de158acaf78e1da31e8101b98"
+            },
+            "trustedConfig": {
+              "domain": "mini_pet",
+              "definitionTable": "canonical_mini_pet_title_definitions",
+              "definitionId": "mini_pet_title_id",
+              "ownershipTable": "canonical_owned_mini_pet_title_instances",
+              "ownedId": "owned_mini_pet_title_id",
+              "selectionTable": "canonical_mini_pet_title_selections"
+            },
+            "input": {
+              "domain": "mini_pet",
+              "playerId": "player01"
+            },
+            "negativeInput": {
+              "domain": "mini_pet",
+              "playerId": "bad"
+            },
+            "expectedGuardError": "OBJECT_IDENTITY_CANDIDATE_INVALID",
+            "expectedNormalizedSql": "SELECT owned.owned_mini_pet_title_id AS owned_title_id,owned.mini_pet_title_id AS title_definition_id,definition_row.title_name,definition_row.base_sale_price,owned.acquisition_price,owned.acquisition_sequence,owned.acquired_time,CASE WHEN selection_row.owned_mini_pet_title_id IS NULL THEN 0 ELSE 1 END AS selected_flag FROM canonical_owned_mini_pet_title_instances owned JOIN canonical_mini_pet_title_definitions definition_row ON definition_row.mini_pet_title_id=owned.mini_pet_title_id LEFT JOIN canonical_mini_pet_title_selections selection_row ON selection_row.player_id=owned.player_id AND selection_row.owned_mini_pet_title_id=owned.owned_mini_pet_title_id WHERE owned.player_id=? AND owned.ownership_status='owned' ORDER BY owned.acquisition_sequence,owned.owned_mini_pet_title_id",
+            "mockRows": [
+              {
+                "ownedTitleId": "ownmini1",
+                "titleDefinitionId": "minttl01",
+                "titleName": "변경된 미니펫 타이틀✨",
+                "baseSalePrice": "500000000",
+                "acquisitionPrice": "200000000",
+                "acquisitionSequence": "3",
+                "acquiredTime": "2026-09-03 10:02:00",
+                "selected": true
+              }
+            ],
+            "expectedRow": {
+              "ownedTitleId": "ownmini1",
+              "titleDefinitionId": "minttl01",
+              "titleName": "변경된 미니펫 타이틀✨",
+              "baseSalePrice": "500000000",
+              "acquisitionPrice": "200000000",
+              "acquisitionSequence": "3",
+              "acquiredTime": "2026-09-03 10:02:00",
+              "selected": true
+            },
+            "assertions": [
+              "canonical_owned_mini_pet_title_instances",
+              "canonical_mini_pet_title_definitions",
+              "canonical_mini_pet_title_selections",
+              "owned.player_id=?",
+              "owned.ownership_status='owned'",
+              "ORDER BY owned.acquisition_sequence,owned.owned_mini_pet_title_id"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

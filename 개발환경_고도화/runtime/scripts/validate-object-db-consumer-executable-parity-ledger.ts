@@ -17,7 +17,7 @@ const paths = {
   consumerManifest: "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
   consumerIdRegistry: "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
   transitionContract: "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave0-v1.json",
+  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave1-v1.json",
 } as const;
 const ledgerPath = resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");
 const manifestText = readFileSync(resolve(repoRoot, paths.consumerManifest), "utf8");
@@ -58,4 +58,12 @@ const expected = buildObjectDbConsumerExecutableParityLedger({
   evidenceFileTexts,
 });
 if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error("executable parity ledger is not the deterministic build output");
-console.log(JSON.stringify({ status: "PASS", schemaValidation: "AJV2020_STRICT_PASS", receiptSchemaValidation: "AJV2020_STRICT_PASS", entrySetSha256: actual.entrySetSha256, coverage: actual.coverage }));
+const attestedPaths = [...new Set(executionReceipts.receipts.flatMap((receipt: { harness: { path: string }; fixture: { path: string }; invocation: { targetPath: string } }) => [receipt.harness.path, receipt.fixture.path, receipt.invocation.targetPath]))].sort();
+console.log(JSON.stringify({
+  status: "PASS",
+  schemaValidation: "AJV2020_STRICT_PASS",
+  receiptSchemaValidation: "AJV2020_STRICT_PASS",
+  evidenceAttestation: { evidenceCommit: executionReceipts.evidenceCommit, ancestorOfCurrentHead: true, committedTrustedInputPaths: attestedPaths },
+  entrySetSha256: actual.entrySetSha256,
+  coverage: actual.coverage,
+}));

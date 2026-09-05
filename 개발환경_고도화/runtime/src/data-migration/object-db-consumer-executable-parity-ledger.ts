@@ -17,6 +17,12 @@ export const OBJECT_DB_EXECUTABLE_PARITY_LEDGER_FORMAT = "hoibot-object-db-consu
 export const OBJECT_DB_EXECUTABLE_PARITY_WAVE0_EVIDENCE_COMMIT = "f07021701d2f058531512b0e805dc0d9c4b2a3fb" as const;
 const OBJECT_DB_PARITY_RUNNER = "NODE_OBJECT_DB_PARITY_V1" as const;
 const OBJECT_DB_PARITY_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs" as const;
+const OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs" as const;
+const TRUSTED_WAVE1_TITLE_READS = {
+  "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
+  "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
+  "sql-repository-6a1bdfaafba10749": { domain: "mini_pet", symbol: "mini-pet.listOwned", triggerOrPredicate: "SQL_METHOD:mini-pet:listOwned", interfaceId: "mini-pet-title-collection.repository.maria-canonical-title-repository.mini-pet.listOwned", definitionTable: "canonical_mini_pet_title_definitions", definitionId: "mini_pet_title_id", ownershipTable: "canonical_owned_mini_pet_title_instances", ownedId: "owned_mini_pet_title_id", selectionTable: "canonical_mini_pet_title_selections" },
+} as const;
 
 export const OBJECT_DB_EXECUTABLE_PARITY_VERDICTS = [
   "STATIC_ONLY",
@@ -461,6 +467,89 @@ function sha256Raw(value: Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function gitRepositoryRoot(): string {
+  return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+}
+
+function readCommitBlob(repositoryRoot: string, commit: string, path: string): string {
+  try {
+    return execFileSync("git", ["show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
+  } catch {
+    throw new Error(`evidenceCommit does not contain trusted input: ${path}`);
+  }
+}
+
+function assertEvidenceCommitAncestry(repositoryRoot: string, evidenceCommit: string): void {
+  try { execFileSync("git", ["cat-file", "-e", `${evidenceCommit}^{commit}`], { cwd: repositoryRoot, stdio: "ignore" }); }
+  catch { throw new Error(`evidenceCommit does not exist: ${evidenceCommit}`); }
+  try { execFileSync("git", ["merge-base", "--is-ancestor", evidenceCommit, "HEAD"], { cwd: repositoryRoot, stdio: "ignore" }); }
+  catch { throw new Error(`evidenceCommit is not an ancestor of current HEAD: ${evidenceCommit}`); }
+}
+
+export function assertTrustedWave1ConsumerFixtureMapping(
+  consumerId: string,
+  consumer: Record<string, unknown>,
+  manifestConsumer: ConsumerManifestInput["consumers"][number],
+): void {
+  const trusted = TRUSTED_WAVE1_TITLE_READS[consumerId as keyof typeof TRUSTED_WAVE1_TITLE_READS];
+  if (trusted === undefined) return;
+  const locator = consumer.sourceLocator as Record<string, unknown> | undefined;
+  const trustedConfig = consumer.trustedConfig as Record<string, unknown> | undefined;
+  const input = consumer.input as Record<string, unknown> | undefined;
+  const negativeInput = consumer.negativeInput as Record<string, unknown> | undefined;
+  if (locator === undefined || trustedConfig === undefined || input === undefined || negativeInput === undefined) throw new Error(`${consumerId} trusted Wave1 locator/config/input missing`);
+  const exactLocator = { file: manifestConsumer.file, symbol: manifestConsumer.symbol, triggerOrPredicate: manifestConsumer.triggerOrPredicate, interfaceId: manifestConsumer.interfaceId, start: manifestConsumer.sourceSpan.start, end: manifestConsumer.sourceSpan.end, sha256: manifestConsumer.sourceSpan.sha256 };
+  if (JSON.stringify(locator) !== JSON.stringify(exactLocator)) throw new Error(`${consumerId} exact manifest locator drift`);
+  if (locator.symbol !== trusted.symbol || locator.triggerOrPredicate !== trusted.triggerOrPredicate || locator.interfaceId !== trusted.interfaceId) throw new Error(`${consumerId} trusted symbol/trigger/interface drift`);
+  const exactTrustedConfig = { domain: trusted.domain, definitionTable: trusted.definitionTable, definitionId: trusted.definitionId, ownershipTable: trusted.ownershipTable, ownedId: trusted.ownedId, selectionTable: trusted.selectionTable };
+  if (JSON.stringify(trustedConfig) !== JSON.stringify(exactTrustedConfig) || input.domain !== trusted.domain || negativeInput.domain !== trusted.domain || input.playerId !== "player01") throw new Error(`${consumerId} trusted domain/table/ID config drift`);
+  const assertions = consumer.assertions as unknown;
+  if (!Array.isArray(assertions) || JSON.stringify(assertions) !== JSON.stringify([trusted.ownershipTable, trusted.definitionTable, trusted.selectionTable, "owned.player_id=?", "owned.ownership_status='owned'", `ORDER BY owned.acquisition_sequence,owned.${trusted.ownedId}`])) throw new Error(`${consumerId} exact SQL semantics assertion drift`);
+  const expectedSql = consumer.expectedNormalizedSql;
+  for (const token of [trusted.ownershipTable, trusted.definitionTable, trusted.selectionTable, `definition_row.${trusted.definitionId}=owned.${trusted.definitionId}`, `selection_row.${trusted.ownedId}=owned.${trusted.ownedId}`, "owned.player_id=?", "owned.ownership_status='owned'", `ORDER BY owned.acquisition_sequence,owned.${trusted.ownedId}`]) if (typeof expectedSql !== "string" || !expectedSql.includes(token)) throw new Error(`${consumerId} exact normalized SQL/AST semantics drift`);
+}
+
+function assertTrustedWave1FixtureBinding(
+  receipt: ObjectDbConsumerExecutionReceipt,
+  fixtureText: string,
+  manifestConsumer: ConsumerManifestInput["consumers"][number],
+  repositoryRoot: string,
+  evidenceCommit: string,
+): void {
+  const trusted = TRUSTED_WAVE1_TITLE_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE1_TITLE_READS];
+  if (trusted === undefined) return;
+  if (receipt.invocation.targetPath !== OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH || receipt.invocation.exportName !== "executeWave1TitleListOwned") throw new Error(`${receipt.receiptId} trusted Wave1 invocation target drift`);
+  const fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as { payload?: { cases?: Array<{ caseId?: string; executablePath?: string; transactionPath?: string; consumers?: Array<Record<string, unknown>> }> } };
+  const parityCase = fixture.payload?.cases?.find(({ caseId }) => caseId === receipt.harness.harnessCaseId);
+  const consumer = parityCase?.consumers?.find((candidate) => candidate.consumerId === receipt.consumerId);
+  if (parityCase?.executablePath !== "MariaCanonicalTitleRepository.listOwned" || parityCase.transactionPath !== "DatabaseClient.query:READ_ONLY" || consumer === undefined) throw new Error(`${receipt.receiptId} trusted Wave1 case/path binding drift`);
+  assertTrustedWave1ConsumerFixtureMapping(receipt.consumerId, consumer, manifestConsumer);
+  const locator = consumer.sourceLocator as Record<string, unknown>;
+  const sourceBlob = readCommitBlob(repositoryRoot, evidenceCommit, locator.file as string);
+  const normalizedSource = canonicalizeObjectDbConsumerSourceText(sourceBlob);
+  const sourceSpan = normalizedSource.slice(locator.start as number, locator.end as number);
+  if (sha256CanonicalText(sourceSpan) !== locator.sha256) throw new Error(`${receipt.receiptId} evidenceCommit source span hash drift`);
+}
+
+function assertReceiptGitProvenance(
+  receipt: ObjectDbConsumerExecutionReceipt,
+  evidenceCommit: string,
+  manifestConsumer: ConsumerManifestInput["consumers"][number],
+): void {
+  const repositoryRoot = gitRepositoryRoot();
+  assertEvidenceCommitAncestry(repositoryRoot, evidenceCommit);
+  for (const evidence of [
+    { path: receipt.harness.path, sha256: receipt.harness.sourceSha256 },
+    { path: receipt.fixture.path, sha256: receipt.fixture.sha256 },
+    { path: receipt.invocation.targetPath, sha256: receipt.invocation.targetSourceSha256 },
+  ]) {
+    const blob = readCommitBlob(repositoryRoot, evidenceCommit, evidence.path);
+    if (sha256CanonicalText(blob) !== evidence.sha256) throw new Error(`${receipt.receiptId} evidenceCommit blob hash drift: ${evidence.path}`);
+  }
+  const fixtureBlob = readCommitBlob(repositoryRoot, evidenceCommit, receipt.fixture.path);
+  assertTrustedWave1FixtureBinding(receipt, fixtureBlob, manifestConsumer, repositoryRoot, evidenceCommit);
+}
+
 function assertReceiptExecutableBinding(
   receipt: ObjectDbConsumerExecutionReceipt,
   evidenceFileTexts: Readonly<Record<string, string>>,
@@ -533,6 +622,7 @@ function validateExecutionReceipt(
   manifestById: ReadonlyMap<string, ConsumerManifestInput["consumers"][number]>,
   evidenceFileTexts: Readonly<Record<string, string>>,
   executionReceiptsPath: string,
+  evidenceCommit: string,
 ): ObjectDbConsumerExecutionReceipt {
   if (!isRecord(value)) throw new Error("execution receipt must be an object");
   assertExactKeys(value, ["receiptId", "consumerId", "proofMode", "harness", "fixture", "invocation", "scenario", "expectedActual", "equivalenceRule", "verdict", "receiptSha256"], "execution receipt");
@@ -581,6 +671,7 @@ function validateExecutionReceipt(
   } else if (zeroDmlMutationKinds.has(receipt.scenario.scenarioKind) && (dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0)) {
     throw new Error(`${receipt.receiptId} ${receipt.scenario.scenarioKind} must have business DML0`);
   }
+  assertReceiptGitProvenance(receipt, evidenceCommit, manifestConsumer);
   assertReceiptExecutableBinding(receipt, evidenceFileTexts, executionReceiptsPath);
   return receipt;
 }
@@ -671,7 +762,7 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
   const receiptScenarioKeys = new Set<string>();
   const receiptsByConsumer = new Map<string, ObjectDbConsumerExecutionReceipt[]>();
   for (const rawReceipt of receiptBundle.receipts) {
-    const receipt = validateExecutionReceipt(rawReceipt, manifestById, input.evidenceFileTexts ?? {}, input.sourcePaths.executionReceipts);
+    const receipt = validateExecutionReceipt(rawReceipt, manifestById, input.evidenceFileTexts ?? {}, input.sourcePaths.executionReceipts, receiptBundle.evidenceCommit);
     if (receiptIds.has(receipt.receiptId)) throw new Error(`duplicate execution receiptId: ${receipt.receiptId}`);
     receiptIds.add(receipt.receiptId);
     const scenarioKey = `${receipt.consumerId}|${receipt.scenario.scenarioKind}`;
@@ -1057,7 +1148,7 @@ export function validateObjectDbConsumerExecutableParityLedger(
       const ledgerReceiptIds = new Set(entries.flatMap(({ scenarios }) => scenarios.map(({ receiptId }) => receiptId)));
       const bundleReceiptIds = new Set<string>();
       for (const rawReceipt of bundle.receipts) {
-        const receipt = validateExecutionReceipt(rawReceipt, new Map(inputs.manifest.consumers.map((consumer) => [consumer.consumerId, consumer])), inputs.evidenceFileTexts ?? {}, inputs.executionReceiptsPath);
+        const receipt = validateExecutionReceipt(rawReceipt, new Map(inputs.manifest.consumers.map((consumer) => [consumer.consumerId, consumer])), inputs.evidenceFileTexts ?? {}, inputs.executionReceiptsPath, bundle.evidenceCommit);
         if (bundleReceiptIds.has(receipt.receiptId)) throw new Error(`duplicate execution receiptId: ${receipt.receiptId}`);
         bundleReceiptIds.add(receipt.receiptId);
         const entry = byId.get(receipt.consumerId);
