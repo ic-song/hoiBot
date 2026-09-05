@@ -108,6 +108,7 @@ import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand, normali
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
 import { createTierCommandService, isTierCommandCandidate, isTierCommandDispatch, isTierCommandHandler } from "./player/tier-command-dispatch.js";
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
+import { dispatchAdminGlobalGiftCommand, isAdminGlobalGiftCommand, normalizeAdminGlobalGiftDispatchMessage } from "./admin/admin-global-gift-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
 import { TierRewardPayoutService, isTierRewardPayoutCommand, normalizeTierRewardPayoutDispatchMessage } from "./player/tier-reward-payout-service.js";
 import { MiniPetBindingReleaseService, isMiniPetBindingReleaseCommand, normalizeMiniPetBindingReleaseDispatchMessage } from "./mini-pet/mini-pet-binding-release-service.js";
@@ -1325,6 +1326,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isTierCommandCandidate(normalizedEvent.message)
         || isAdminPackageDeleteCommand(normalizedEvent.message)
+        || isAdminGlobalGiftCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
         || isTierRewardPayoutCommand(normalizedEvent.message)
         || isMiniPetBindingReleaseCommand(normalizedEvent.message)
@@ -1697,6 +1699,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeAdminDiamondResetAllDispatchMessage(normalizedEvent.message ?? "")
               : isAdminPackageDeleteCommand(normalizedEvent.message)
                 ? normalizeAdminPackageDeleteDispatchMessage(normalizedEvent.message ?? "")
+              : isAdminGlobalGiftCommand(normalizedEvent.message)
+                ? normalizeAdminGlobalGiftDispatchMessage(normalizedEvent.message ?? "")
               : isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
                 ? normalizeMiniPetRankRewardPayoutDispatchMessage(normalizedEvent.message ?? "")
               : isTierRewardPayoutCommand(normalizedEvent.message)
@@ -2298,6 +2302,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else throw error;
         }
       }
+
+      processing?.replies.push(...await dispatchAdminGlobalGiftCommand({database:database!,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,message:normalizedEvent.message,queueError:(code,message)=>eventProcessor!.queueCommandReply(normalizedEvent,code,message)}));
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && ((isAdminDiamondResetAllCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_diamond_reset_all")
