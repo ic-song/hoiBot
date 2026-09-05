@@ -8,4 +8,4 @@
 - result: Gate 1~7 preservation evidence ready for independent review
 - preserved: exact8 source/payload/active/options/CUID/crosswalk/generic ownership
 - excluded: acquisition/effect/consumer, name/CODE identity, migration rewrite, operating data, Gate8
-- next: independent review, then Korean commit and push only after review P0/P1/P2=0
+- status: independent review P0/P1/P2=0 completed; source commit and push recorded, with final integration tracked separately
