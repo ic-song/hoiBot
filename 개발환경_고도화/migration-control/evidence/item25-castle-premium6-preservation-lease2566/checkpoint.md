@@ -9,4 +9,4 @@
 - preserved: exact6 pointers/names/rates/active/options/CUID/crosswalk
 - independent boundary: no source-six to runtime-four mapping; WBS756 remains separate
 - excluded: probability change, consumer change, migration rewrite, operating data, Gate8
-- next: independent review, then Korean commit and push only after review P0/P1/P2=0
+- status: independent review P0/P1/P2=0 completed; source commit and push recorded, with final integration tracked separately
