@@ -27,7 +27,7 @@
 ## Scope verification
 
 - No changes to consumers, `app.ts`, `dispatch/**`, `main.js`, `Info.js`, package files, migrations/schema/database, operational data, Gate state, Sheets, or `feature/prod`.
-- No commit or push performed.
+- Source changes were committed and pushed after this independent validation; final integration is tracked separately.
 
 ## Residual compatibility
 
