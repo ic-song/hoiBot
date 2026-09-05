@@ -41,10 +41,10 @@ describe("object DB consumer stable ID registry", () => {
     assert.equal(registry.entries.every(({ state }) => state === "ACTIVE"), true);
     const registered = new Map(registry.entries.map(({ logicalKey, consumerId }) => [logicalKey, consumerId]));
     const current = new Map(manifest.consumers.map((consumer) => [deriveConsumerLogicalKey(consumer), consumer.consumerId]));
-    assert.equal(current.size, 1_108);
-    assert.equal(new Set(manifest.consumers.map(({ consumerId }) => consumerId)).size, 1_108);
+    assert.equal(current.size, 1_111);
+    assert.equal(new Set(manifest.consumers.map(({ consumerId }) => consumerId)).size, 1_111);
     for (const [logicalKey, consumerId] of registered) assert.equal(current.get(logicalKey), consumerId, logicalKey);
-    assert.equal([...current.keys()].filter((logicalKey) => !registered.has(logicalKey)).length, 4);
+    assert.equal([...current.keys()].filter((logicalKey) => !registered.has(logicalKey)).length, 7);
     const resolveId = createConsumerIdResolver(registry);
     for (const consumer of manifest.consumers) assert.equal(resolveId(consumer), consumer.consumerId, deriveConsumerLogicalKey(consumer));
   });
