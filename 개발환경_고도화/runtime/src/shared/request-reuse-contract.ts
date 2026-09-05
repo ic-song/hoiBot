@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { types as nodeTypes } from "node:util";
 
 export const REQUEST_REUSE_CONTRACT_VERSION = "RFA01_REQUEST_REUSE_V1" as const;
 
@@ -59,69 +60,95 @@ function failCanonical(): never {
   throw new Error("REQUEST_REUSE_VALUE_NOT_CANONICAL");
 }
 
-// 타입 태그로 bigint/string/number/null을 구별하고 object key만 정렬합니다. 배열 순서는 업무 의미이므로 보존합니다.
-export function serializeRequestReuseValue(value: RequestReuseValue): string {
-  const ancestors = new WeakSet<object>();
-  const visit = (current: RequestReuseValue, depth: number): string => {
-    if (depth > 64) return failCanonical();
-    if (current === null) return '["null"]';
-    if (typeof current === "string") return `["string",${JSON.stringify(current)}]`;
-    if (typeof current === "boolean") return `["boolean",${current ? "true" : "false"}]`;
-    if (typeof current === "bigint") return `["bigint",${JSON.stringify(current.toString())}]`;
-    if (typeof current === "number") {
-      if (!Number.isFinite(current) || (Number.isInteger(current) && !Number.isSafeInteger(current))) return failCanonical();
-      return `["number",${JSON.stringify(Object.is(current, -0) ? 0 : current)}]`;
-    }
-    if (typeof current !== "object") return failCanonical();
-    if (ancestors.has(current)) return failCanonical();
-    ancestors.add(current);
-    try {
-      if (Array.isArray(current)) {
-        if (Object.getPrototypeOf(current) !== Array.prototype) return failCanonical();
-        const keys = Reflect.ownKeys(current);
-        if (keys.some((key) => key !== "length" && (typeof key !== "string" || !/^(0|[1-9][0-9]*)$/.test(key) || Number(key) >= current.length))) return failCanonical();
-        const items: string[] = [];
-        for (let index = 0; index < current.length; index += 1) {
-          const descriptor = Object.getOwnPropertyDescriptor(current, String(index));
-          if (descriptor === undefined || !("value" in descriptor) || !descriptor.enumerable) return failCanonical();
-          items.push(visit(descriptor.value as RequestReuseValue, depth + 1));
-        }
-        return `["array",[${items.join(",")}]]`;
-      }
-      const prototype = Object.getPrototypeOf(current);
-      if (prototype !== Object.prototype && prototype !== null) return failCanonical();
-      const keys = Reflect.ownKeys(current);
+type DataFields = ReadonlyMap<string, unknown>;
+
+function exactDataFields(value: unknown, expectedKeys: readonly string[]): DataFields {
+  if (typeof value !== "object" || value === null || nodeTypes.isProxy(value) || Array.isArray(value)) return failCanonical();
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return failCanonical();
+  const keys = Reflect.ownKeys(value);
+  if (keys.some((key) => typeof key !== "string")) return failCanonical();
+  const actual = (keys as string[]).sort();
+  const expected = [...expectedKeys].sort();
+  if (actual.length !== expected.length || actual.some((key, index) => key !== expected[index])) return failCanonical();
+  const fields = new Map<string, unknown>();
+  for (const key of actual) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor === undefined || !("value" in descriptor) || !descriptor.enumerable) return failCanonical();
+    fields.set(key, descriptor.value);
+  }
+  return fields;
+}
+
+function snapshotCanonicalValue(value: unknown, ancestors = new WeakSet<object>(), depth = 0, allowUnsafeInteger = false): RequestReuseValue {
+  if (depth > 64) return failCanonical();
+  if (value === null || typeof value === "string" || typeof value === "boolean" || typeof value === "bigint") return value;
+  if (typeof value === "number") {
+    if (!Number.isFinite(value) || (!allowUnsafeInteger && Number.isInteger(value) && !Number.isSafeInteger(value))) return failCanonical();
+    return Object.is(value, -0) ? 0 : value;
+  }
+  if (typeof value !== "object" || nodeTypes.isProxy(value) || ancestors.has(value)) return failCanonical();
+  ancestors.add(value);
+  try {
+    if (Array.isArray(value)) {
+      if (Object.getPrototypeOf(value) !== Array.prototype) return failCanonical();
+      const keys = Reflect.ownKeys(value);
       if (keys.some((key) => typeof key !== "string")) return failCanonical();
-      const entries: string[] = [];
-      for (const key of (keys as string[]).sort()) {
-        const descriptor = Object.getOwnPropertyDescriptor(current, key);
+      const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+      if (lengthDescriptor === undefined || !("value" in lengthDescriptor) || typeof lengthDescriptor.value !== "number") return failCanonical();
+      const length = lengthDescriptor.value;
+      if (!Number.isSafeInteger(length) || length < 0 || keys.length !== length + 1) return failCanonical();
+      const copy: RequestReuseValue[] = [];
+      for (let index = 0; index < length; index += 1) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
         if (descriptor === undefined || !("value" in descriptor) || !descriptor.enumerable) return failCanonical();
-        entries.push(`[${JSON.stringify(key)},${visit(descriptor.value as RequestReuseValue, depth + 1)}]`);
+        copy.push(snapshotCanonicalValue(descriptor.value, ancestors, depth + 1, allowUnsafeInteger));
       }
-      return `["object",[${entries.join(",")}]]`;
-    } finally {
-      ancestors.delete(current);
+      return Object.freeze(copy);
     }
-  };
-  return visit(value, 0);
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return failCanonical();
+    const keys = Reflect.ownKeys(value);
+    if (keys.some((key) => typeof key !== "string")) return failCanonical();
+    const copy = Object.create(prototype) as Record<string, RequestReuseValue>;
+    for (const key of (keys as string[]).sort()) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (descriptor === undefined || !("value" in descriptor) || !descriptor.enumerable) return failCanonical();
+      Object.defineProperty(copy, key, { value: snapshotCanonicalValue(descriptor.value, ancestors, depth + 1, allowUnsafeInteger), enumerable: true, configurable: false, writable: false });
+    }
+    return Object.freeze(copy);
+  } finally { ancestors.delete(value); }
+}
+
+function serializeSnapshot(value: RequestReuseValue): string {
+  if (value === null) return '["null"]';
+  if (typeof value === "string") return `["string",${JSON.stringify(value)}]`;
+  if (typeof value === "boolean") return `["boolean",${value ? "true" : "false"}]`;
+  if (typeof value === "bigint") return `["bigint",${JSON.stringify(value.toString())}]`;
+  if (typeof value === "number") return `["number",${JSON.stringify(value)}]`;
+  if (Array.isArray(value)) return `["array",[${value.map((entry) => serializeSnapshot(entry)).join(",")}]]`;
+  const record = value as { readonly [key: string]: RequestReuseValue };
+  return `["object",[${Object.keys(record).sort().map((key) => `[${JSON.stringify(key)},${serializeSnapshot(record[key]!)}]`).join(",")}]]`;
+}
+
+// 외부 value를 정확히 한 번 data-only snapshot한 뒤 타입 태그 canonical form을 생성합니다.
+export function serializeRequestReuseValue(value: RequestReuseValue): string {
+  return serializeSnapshot(snapshotCanonicalValue(value));
 }
 
 function requiredText(value: string, name: string, maximum: number): string {
-  if (value.trim() === "" || value.length > maximum) throw new Error(`REQUEST_REUSE_${name}_INVALID`);
+  if (typeof value !== "string" || value.trim() === "" || value.length > maximum) throw new Error(`REQUEST_REUSE_${name}_INVALID`);
   return value;
 }
 
 function identityValue(input: RequestReuseInput): RequestReuseValue {
+  const actor = input.actor;
   return {
     contractVersion: REQUEST_REUSE_CONTRACT_VERSION,
     scope: requiredText(input.scope, "SCOPE", 191),
     requestKey: requiredText(input.requestKey, "REQUEST_KEY", 191),
     sourceEventId: requiredText(input.sourceEventId, "SOURCE_EVENT_ID", 191),
-    actor: {
-      actorType: requiredText(input.actor.actorType, "ACTOR_TYPE", 100),
-      actorId: requiredText(input.actor.actorId, "ACTOR_ID", 191),
-      playerId: input.actor.playerId === null ? null : requiredText(input.actor.playerId, "PLAYER_ID", 191),
-    },
+    actor: { actorType: actor.actorType, actorId: actor.actorId, playerId: actor.playerId },
     operationKind: requiredText(input.operationKind, "OPERATION_KIND", 100),
     targetType: requiredText(input.targetType, "TARGET_TYPE", 100),
     targetId: input.targetId === null ? null : requiredText(input.targetId, "TARGET_ID", 191),
@@ -129,48 +156,79 @@ function identityValue(input: RequestReuseInput): RequestReuseValue {
 }
 
 function snapshotRequestReuseInput(input: RequestReuseInput): RequestReuseInput {
-  // 모든 필드를 첫 await 전에 한 번 읽고 검증해 caller mutation이 lock 대기 중 계약을 바꾸지 못하게 합니다.
-  const identity = identityValue(input) as {
-    scope: string; requestKey: string; sourceEventId: string;
-    actor: { actorType: string; actorId: string; playerId: string | null };
-    operationKind: string; targetType: string; targetId: string | null;
-  };
+  const fields = exactDataFields(input, ["scope", "requestKey", "sourceEventId", "actor", "operationKind", "targetType", "targetId", "payload"]);
+  const actorFields = exactDataFields(fields.get("actor"), ["actorType", "actorId", "playerId"]);
+  const scope = requiredText(fields.get("scope") as string, "SCOPE", 191);
+  const requestKey = requiredText(fields.get("requestKey") as string, "REQUEST_KEY", 191);
+  const sourceEventId = requiredText(fields.get("sourceEventId") as string, "SOURCE_EVENT_ID", 191);
+  const actorType = requiredText(actorFields.get("actorType") as string, "ACTOR_TYPE", 100);
+  const actorId = requiredText(actorFields.get("actorId") as string, "ACTOR_ID", 191);
+  const rawPlayerId = actorFields.get("playerId");
+  const playerId = rawPlayerId === null ? null : requiredText(rawPlayerId as string, "PLAYER_ID", 191);
+  const operationKind = requiredText(fields.get("operationKind") as string, "OPERATION_KIND", 100);
+  const targetType = requiredText(fields.get("targetType") as string, "TARGET_TYPE", 100);
+  const rawTargetId = fields.get("targetId");
+  const targetId = rawTargetId === null ? null : requiredText(rawTargetId as string, "TARGET_ID", 191);
   return Object.freeze({
-    scope: identity.scope,
-    requestKey: identity.requestKey,
-    sourceEventId: identity.sourceEventId,
-    actor: Object.freeze({ ...identity.actor }),
-    operationKind: identity.operationKind,
-    targetType: identity.targetType,
-    targetId: identity.targetId,
-    payload: cloneFrozenValue(input.payload),
+    scope, requestKey, sourceEventId,
+    actor: Object.freeze({ actorType, actorId, playerId }),
+    operationKind, targetType, targetId,
+    payload: snapshotCanonicalValue(fields.get("payload")),
   });
 }
 
-export function createRequestReuseEnvelope(input: RequestReuseInput): RequestReuseEnvelope {
-  const identityFingerprint = sha256(serializeRequestReuseValue(identityValue(input)));
-  const payloadFingerprint = sha256(serializeRequestReuseValue(input.payload));
+function createEnvelopeFromSnapshot(input: RequestReuseInput): RequestReuseEnvelope {
+  const identityFingerprint = sha256(serializeSnapshot(identityValue(input)));
+  const payloadFingerprint = sha256(serializeSnapshot(input.payload));
   return Object.freeze({
     contractVersion: REQUEST_REUSE_CONTRACT_VERSION,
     requestKey: input.requestKey,
     identityFingerprint,
     payloadFingerprint,
-    requestFingerprint: sha256(serializeRequestReuseValue({ contractVersion: REQUEST_REUSE_CONTRACT_VERSION, identityFingerprint, payloadFingerprint })),
+    requestFingerprint: sha256(serializeSnapshot({ contractVersion: REQUEST_REUSE_CONTRACT_VERSION, identityFingerprint, payloadFingerprint })),
   });
 }
 
+export function createRequestReuseEnvelope(input: RequestReuseInput): RequestReuseEnvelope {
+  return createEnvelopeFromSnapshot(snapshotRequestReuseInput(input));
+}
+
+function createReceiptFromSnapshots<TResult extends RequestReuseValue>(input: RequestReuseInput, result: TResult): RequestReuseTerminalReceipt<TResult> {
+  return Object.freeze({ ...createEnvelopeFromSnapshot(input), resultFingerprint: sha256(serializeSnapshot(result)), result });
+}
+
 export function createRequestReuseTerminalReceipt<TResult extends RequestReuseValue>(input: RequestReuseInput, result: TResult): RequestReuseTerminalReceipt<TResult> {
-  const storedResult = cloneFrozenValue(result) as TResult;
-  return Object.freeze({ ...createRequestReuseEnvelope(input), resultFingerprint: sha256(serializeRequestReuseValue(storedResult)), result: storedResult });
+  return createReceiptFromSnapshots(snapshotRequestReuseInput(input), snapshotCanonicalValue(result) as TResult);
+}
+
+function snapshotTerminalReceipt<TResult extends RequestReuseValue>(receipt: RequestReuseTerminalReceipt<TResult>): RequestReuseTerminalReceipt<TResult> {
+  const fields = exactDataFields(receipt, ["contractVersion", "requestKey", "identityFingerprint", "payloadFingerprint", "requestFingerprint", "resultFingerprint", "result"]);
+  const text = (key: string): string => {
+    const value = fields.get(key);
+    if (typeof value !== "string") return failCanonical();
+    return value;
+  };
+  return Object.freeze({
+    contractVersion: text("contractVersion") as typeof REQUEST_REUSE_CONTRACT_VERSION,
+    requestKey: text("requestKey"), identityFingerprint: text("identityFingerprint"),
+    payloadFingerprint: text("payloadFingerprint"), requestFingerprint: text("requestFingerprint"),
+    resultFingerprint: text("resultFingerprint"), result: snapshotCanonicalValue(fields.get("result")) as TResult,
+  });
+}
+
+function verifyReplaySnapshots<TResult extends RequestReuseValue>(input: RequestReuseInput, receipt: RequestReuseTerminalReceipt<TResult>): void {
+  if (receipt.contractVersion !== REQUEST_REUSE_CONTRACT_VERSION || receipt.requestKey !== input.requestKey) throw new Error("REQUEST_REUSE_CONTRACT_CONFLICT");
+  const expected = createEnvelopeFromSnapshot(input);
+  if (receipt.identityFingerprint !== expected.identityFingerprint) throw new Error("REQUEST_REUSE_IDENTITY_CONFLICT");
+  if (receipt.payloadFingerprint !== expected.payloadFingerprint || receipt.requestFingerprint !== expected.requestFingerprint) throw new Error("REQUEST_REUSE_PAYLOAD_CONFLICT");
+  if (receipt.resultFingerprint !== sha256(serializeSnapshot(receipt.result))) throw new Error("REQUEST_REUSE_RESULT_CONFLICT");
 }
 
 export function replayRequestReuseTerminal<TResult extends RequestReuseValue>(input: RequestReuseInput, receipt: RequestReuseTerminalReceipt<TResult>): TResult {
-  if (receipt.contractVersion !== REQUEST_REUSE_CONTRACT_VERSION || receipt.requestKey !== input.requestKey) throw new Error("REQUEST_REUSE_CONTRACT_CONFLICT");
-  const expected = createRequestReuseEnvelope(input);
-  if (receipt.identityFingerprint !== expected.identityFingerprint) throw new Error("REQUEST_REUSE_IDENTITY_CONFLICT");
-  if (receipt.payloadFingerprint !== expected.payloadFingerprint || receipt.requestFingerprint !== expected.requestFingerprint) throw new Error("REQUEST_REUSE_PAYLOAD_CONFLICT");
-  if (receipt.resultFingerprint !== sha256(serializeRequestReuseValue(receipt.result))) throw new Error("REQUEST_REUSE_RESULT_CONFLICT");
-  return cloneFrozenValue(receipt.result) as TResult;
+  const stableInput = snapshotRequestReuseInput(input);
+  const stableReceipt = snapshotTerminalReceipt(receipt);
+  verifyReplaySnapshots(stableInput, stableReceipt);
+  return stableReceipt.result;
 }
 
 export class RequestReuseProvider {
@@ -184,26 +242,16 @@ export class RequestReuseProvider {
     return store.withLockedRequestKey(stableInput.requestKey, async (session) => {
       const prior = await session.readTerminal();
       if (prior !== undefined) {
-        const result = replayRequestReuseTerminal(stableInput, prior);
-        return Object.freeze({ result, receipt: createRequestReuseTerminalReceipt(stableInput, result), replayed: true });
+        const receipt = snapshotTerminalReceipt(prior);
+        verifyReplaySnapshots(stableInput, receipt);
+        return Object.freeze({ result: receipt.result, receipt, replayed: true });
       }
-      const result = await effect(session.context);
-      const receipt = createRequestReuseTerminalReceipt(stableInput, result);
+      const result = snapshotCanonicalValue(await effect(session.context)) as TResult;
+      const receipt = createReceiptFromSnapshots(stableInput, result);
       await session.persistTerminal(receipt);
       return Object.freeze({ result: receipt.result, receipt, replayed: false });
     });
   }
-}
-
-function cloneFrozenValue(value: RequestReuseValue): RequestReuseValue {
-  // serialize 검증을 먼저 수행해 accessor, sparse array, symbol, cycle과 지원하지 않는 prototype을 차단합니다.
-  serializeRequestReuseValue(value);
-  if (value === null || typeof value !== "object") return value;
-  if (Array.isArray(value)) return Object.freeze(value.map((entry) => cloneFrozenValue(entry)));
-  const record = value as { readonly [key: string]: RequestReuseValue };
-  const copy = Object.create(Object.getPrototypeOf(record)) as Record<string, RequestReuseValue>;
-  for (const key of Object.keys(record).sort()) Object.defineProperty(copy, key, { value: cloneFrozenValue(record[key]!), enumerable: true, configurable: false, writable: false });
-  return Object.freeze(copy);
 }
 
 function legacyCanonicalJson(value: unknown): string {
@@ -246,6 +294,17 @@ function legacyCanonicalJson(value: unknown): string {
 
 // 아래 함수는 기존 저장 지문을 검산하는 한정 호환 경계이며 RFA01 V1 전체 identity 증거로 승격하지 않습니다.
 export function createLegacyCurrencyPayloadFingerprint(input: { readonly currencyId: string; readonly deltaMinorAmount: bigint; readonly operationKind: string; readonly reasonKey: string }): string {
+  return legacyCurrencyFingerprint(snapshotLegacyCurrencyInput(input));
+}
+
+type LegacyCurrencyInput = { readonly currencyId: string; readonly deltaMinorAmount: bigint; readonly operationKind: string; readonly reasonKey: string };
+function snapshotLegacyCurrencyInput(input: LegacyCurrencyInput): LegacyCurrencyInput {
+  const fields = exactDataFields(input, ["currencyId", "deltaMinorAmount", "operationKind", "reasonKey"]);
+  const currencyId = fields.get("currencyId"), deltaMinorAmount = fields.get("deltaMinorAmount"), operationKind = fields.get("operationKind"), reasonKey = fields.get("reasonKey");
+  if (typeof currencyId !== "string" || typeof deltaMinorAmount !== "bigint" || typeof operationKind !== "string" || typeof reasonKey !== "string") return failCanonical();
+  return Object.freeze({ currencyId, deltaMinorAmount, operationKind, reasonKey });
+}
+function legacyCurrencyFingerprint(input: LegacyCurrencyInput): string {
   return sha256(JSON.stringify([["currencyId", input.currencyId], ["deltaMinorAmount", input.deltaMinorAmount.toString()], ["operationKind", input.operationKind], ["reasonKey", input.reasonKey]]));
 }
 
@@ -253,7 +312,9 @@ export function assertLegacyCurrencyReplay(
   stored: { readonly operationKind: string; readonly payloadFingerprint: string },
   input: { readonly currencyId: string; readonly deltaMinorAmount: bigint; readonly operationKind: string; readonly reasonKey: string },
 ): void {
-  if (stored.operationKind !== input.operationKind || stored.payloadFingerprint !== createLegacyCurrencyPayloadFingerprint(input)) throw new Error("REQUEST_REUSE_LEGACY_CURRENCY_CONFLICT");
+  const storedFields = exactDataFields(stored, ["operationKind", "payloadFingerprint"]);
+  const stableInput = snapshotLegacyCurrencyInput(input);
+  if (storedFields.get("operationKind") !== stableInput.operationKind || storedFields.get("payloadFingerprint") !== legacyCurrencyFingerprint(stableInput)) throw new Error("REQUEST_REUSE_LEGACY_CURRENCY_CONFLICT");
 }
 
 const LEGACY_FURNITURE_OPERATION_KINDS = new Set([
@@ -264,22 +325,31 @@ const LEGACY_FURNITURE_OPERATION_KINDS = new Set([
 ]);
 
 export function createLegacyFurniturePayloadFingerprint(operationKind: string, orderedValues: readonly string[]): string {
-  if (!LEGACY_FURNITURE_OPERATION_KINDS.has(operationKind) || orderedValues.length !== 3 || orderedValues[0]?.length === 0 || orderedValues[1]?.length === 0) throw new Error("REQUEST_REUSE_LEGACY_FURNITURE_SHAPE_INVALID");
-  return sha256(JSON.stringify([operationKind, ...orderedValues]));
+  if (typeof operationKind !== "string") return failCanonical();
+  const stableValues = snapshotCanonicalValue(orderedValues);
+  if (!Array.isArray(stableValues) || !LEGACY_FURNITURE_OPERATION_KINDS.has(operationKind) || stableValues.length !== 3 || stableValues.some((value) => typeof value !== "string") || stableValues[0]?.length === 0 || stableValues[1]?.length === 0) throw new Error("REQUEST_REUSE_LEGACY_FURNITURE_SHAPE_INVALID");
+  return sha256(JSON.stringify([operationKind, ...stableValues]));
 }
 
 export function assertLegacyFurnitureReplay(
   stored: { readonly operationKind: string; readonly payloadFingerprint: string },
   input: { readonly operationKind: string; readonly orderedValues: readonly string[] },
 ): void {
-  if (stored.operationKind !== input.operationKind || stored.payloadFingerprint !== createLegacyFurniturePayloadFingerprint(input.operationKind, input.orderedValues)) throw new Error("REQUEST_REUSE_LEGACY_FURNITURE_CONFLICT");
+  const storedFields = exactDataFields(stored, ["operationKind", "payloadFingerprint"]);
+  const inputFields = exactDataFields(input, ["operationKind", "orderedValues"]);
+  const operationKind = inputFields.get("operationKind"), orderedValues = inputFields.get("orderedValues");
+  if (typeof operationKind !== "string" || !Array.isArray(orderedValues)) return failCanonical();
+  if (storedFields.get("operationKind") !== operationKind || storedFields.get("payloadFingerprint") !== createLegacyFurniturePayloadFingerprint(operationKind, orderedValues as readonly string[])) throw new Error("REQUEST_REUSE_LEGACY_FURNITURE_CONFLICT");
 }
 
 export function createLegacyAppWiringFingerprints(input: { readonly requestNamespace: string; readonly entrypointKind: string; readonly externalRequestId: string; readonly normalizedPayload: unknown }): { readonly requestIdentityFingerprint: string; readonly payloadFingerprint: string } {
-  if (input.requestNamespace.length === 0 || !/^(IRIS|AUTOMATIC|ADMIN|WEB)$/.test(input.entrypointKind) || input.externalRequestId.length === 0) throw new Error("REQUEST_REUSE_LEGACY_APP_WIRING_SHAPE_INVALID");
+  const fields = exactDataFields(input, ["requestNamespace", "entrypointKind", "externalRequestId", "normalizedPayload"]);
+  const requestNamespace = fields.get("requestNamespace"), entrypointKind = fields.get("entrypointKind"), externalRequestId = fields.get("externalRequestId");
+  if (typeof requestNamespace !== "string" || typeof entrypointKind !== "string" || typeof externalRequestId !== "string" || requestNamespace.length === 0 || !/^(IRIS|AUTOMATIC|ADMIN|WEB)$/.test(entrypointKind) || externalRequestId.length === 0) throw new Error("REQUEST_REUSE_LEGACY_APP_WIRING_SHAPE_INVALID");
+  const normalizedPayload = snapshotCanonicalValue(fields.get("normalizedPayload"), new WeakSet<object>(), 0, true);
   return Object.freeze({
-    requestIdentityFingerprint: sha256(JSON.stringify([input.requestNamespace, input.entrypointKind, input.externalRequestId])),
-    payloadFingerprint: sha256(legacyCanonicalJson(input.normalizedPayload)),
+    requestIdentityFingerprint: sha256(JSON.stringify([requestNamespace, entrypointKind, externalRequestId])),
+    payloadFingerprint: sha256(legacyCanonicalJson(normalizedPayload)),
   });
 }
 
@@ -287,6 +357,7 @@ export function assertLegacyAppWiringReplay(
   stored: { readonly requestIdentityFingerprint: string; readonly payloadFingerprint: string },
   input: { readonly requestNamespace: string; readonly entrypointKind: string; readonly externalRequestId: string; readonly normalizedPayload: unknown },
 ): void {
+  const storedFields = exactDataFields(stored, ["requestIdentityFingerprint", "payloadFingerprint"]);
   const expected = createLegacyAppWiringFingerprints(input);
-  if (stored.requestIdentityFingerprint !== expected.requestIdentityFingerprint || stored.payloadFingerprint !== expected.payloadFingerprint) throw new Error("REQUEST_REUSE_LEGACY_APP_WIRING_CONFLICT");
+  if (storedFields.get("requestIdentityFingerprint") !== expected.requestIdentityFingerprint || storedFields.get("payloadFingerprint") !== expected.payloadFingerprint) throw new Error("REQUEST_REUSE_LEGACY_APP_WIRING_CONFLICT");
 }
