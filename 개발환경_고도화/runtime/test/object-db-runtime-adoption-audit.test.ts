@@ -37,16 +37,27 @@ async function dispatchPetDataCompareCommand(ingress: any, isOperationalChannel:
   if (result.status === "legacy_fallback") return "legacy_fallback";
   return "claimed";
 }
+async function dispatchPetTitleCommand(ingress: any, isOperationalChannel: boolean, duplicate: boolean, event: any, replies: any[]) {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false) return "not_applicable";
+  const result = await ingress.handle(event);
+  if (result.status === "ignored") return "not_applicable";
+  if (result.status === "legacy_fallback") return "legacy_fallback";
+  if (result.status === "shadow") return "shadow";
+  if (result.status === "modern" && result.reply !== undefined) replies.push(result.reply);
+  return "claimed";
+}
 export function buildApp() {
   const appWiringOperationProvider = new MariaAppWiringOperationProvider(database, dependencies.environmentContext);
   const petExploreAppWiringIngress = new PetExploreAppWiringIngress(appWiringOperationProvider, new CommandDispatcher(new MariaCommandRouteReader(database)));
   const petDataCompareAppWiringIngress = new PetDataCompareAppWiringIngress(appWiringOperationProvider, new CommandDispatcher(new MariaCommandRouteReader(database)));
+  const petTitleAppWiringIngress = new PetTitleAppWiringIngress(appWiringOperationProvider, new CommandDispatcher(new MariaCommandRouteReader(database)), evaluator, contexts, mutations);
   const irisAdminCommandService = new IrisAdminCommandService(database);
   app.post<{ Body: IrisPayload }>("/api/v1/integrations/iris/events", {}, async (request, reply) => {
     const normalizedEvent = normalizeIrisEvent(request.body);
     const processing = eventProcessor === undefined ? undefined : await eventProcessor.execute(normalizedEvent);
     await dispatchPetExploreCommandConsumers(petExploreAppWiringIngress, isOperationalChannel, processing?.duplicate, normalizedEvent);
     const petDataCompareDisposition = await dispatchPetDataCompareCommand(petDataCompareAppWiringIngress, isOperationalChannel, processing?.duplicate, normalizedEvent);
+    const petTitleDisposition = await dispatchPetTitleCommand(petTitleAppWiringIngress, isOperationalChannel, processing?.duplicate, normalizedEvent, processing?.replies);
     if (isOperationalChannel && processing !== undefined && !processing.duplicate
       && petDataCompareDisposition !== "claimed" && isPointEditCommandCandidate(normalizedEvent.message)) {
       await irisAdminCommandService.changePlayerPoint(normalizedEvent);
@@ -131,6 +142,34 @@ export class MariaPetDataCompareShadowEvaluator {
 }
 `;
 
+const validPetTitleIngress = `
+import { executeAppWiringMutationIrisEntrypoint } from "../dispatch/app-wiring-entrypoint-runner.js";
+export class PetTitleAppWiringIngress {
+  async handle(event: any) {
+    const command = parsePetTitleSaleCommand(event.message);
+    const decision = await this.dispatcher.resolveReadOnly(event);
+    if (command.kind === "sell" && decision.route === "MODERN") {
+      return executeAppWiringMutationIrisEntrypoint<{ readonly status: "modern" | "handled_no_reply" }>(this.provider, {
+        handler: async (database, activeClaim) => {
+          await lockActivePlayerSelection(database, event);
+          const result = await this.mutations.sell(database, activeClaim, { playerId: "player-1", index: command.index });
+          const typedReceipt = { receiptKind: "PET_TITLE", petTitleOperationId: result.operationId };
+          if (result.outcomeCode === "SILENT_CASTLE_ACTIVE") return { value: { status: "handled_no_reply" }, typedReceipt };
+          return { value: { status: "modern" }, typedReceipt };
+        },
+      });
+    }
+    return { status: "legacy_fallback" };
+  }
+}
+`;
+
+const validPetTitleMutationProvider = `
+export class PetTitleCanonicalMutationProvider {
+  async sell(database: unknown, claim: unknown, input: unknown) { return { operationId: "sale001" }; }
+}
+`;
+
 const canonicalHash = (value: string): string => createHash("sha256").update(value.replace(/\r\n?/g, "\n"), "utf8").digest("hex");
 
 function actualRepositoryHashes(): ObjectDbRuntimeAdoptionExpectedHashes {
@@ -144,6 +183,8 @@ function actualRepositoryHashes(): ObjectDbRuntimeAdoptionExpectedHashes {
     petExploreEventControlRollbackSourceSha256: canonicalHash(read("../migrations/rollback/470_pet_explore_event_control_app_wiring.rollback.sql")),
     petDataCompareIngressSourceSha256: canonicalHash(read("../src/admin/pet-data-compare-app-wiring-ingress.ts")),
     petDataCompareShadowEvaluatorSourceSha256: canonicalHash(read("../src/admin/pet-data-compare-shadow-snapshot-provider.ts")),
+    petTitleIngressSourceSha256: canonicalHash(read("../src/pet/pet-title-app-wiring-ingress.ts")),
+    petTitleMutationProviderSourceSha256: canonicalHash(read("../src/pet/pet-title-canonical-mutation-provider.ts")),
   };
 }
 
@@ -156,6 +197,8 @@ const REVIEWED_FIXTURE_HASHES: ObjectDbRuntimeAdoptionExpectedHashes = Object.fr
   petExploreEventControlRollbackSourceSha256: canonicalHash(validPetExploreEventControlRollback),
   petDataCompareIngressSourceSha256: canonicalHash(validPetDataCompareIngress),
   petDataCompareShadowEvaluatorSourceSha256: canonicalHash(validPetDataCompareShadowEvaluator),
+  petTitleIngressSourceSha256: canonicalHash(validPetTitleIngress),
+  petTitleMutationProviderSourceSha256: canonicalHash(validPetTitleMutationProvider),
 });
 
 function sources(overrides: Partial<ObjectDbRuntimeAdoptionSources> = {}): ObjectDbRuntimeAdoptionSources {
@@ -168,6 +211,8 @@ function sources(overrides: Partial<ObjectDbRuntimeAdoptionSources> = {}): Objec
     petExploreEventControlRollbackSource: validPetExploreEventControlRollback,
     petDataCompareIngressSource: validPetDataCompareIngress,
     petDataCompareShadowEvaluatorSource: validPetDataCompareShadowEvaluator,
+    petTitleIngressSource: validPetTitleIngress,
+    petTitleMutationProviderSource: validPetTitleMutationProvider,
     ...overrides,
   };
 }
@@ -177,12 +222,12 @@ function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdoptionSourc
 }
 
 describe("object DB runtime production adoption audit", () => {
-  it("derives EVENT_CONTROL MODERN and both reachable IRIS read-only callsites as one adoption unit", () => {
+  it("derives EVENT_CONTROL, read-only, and PET_TITLE_SELL production IRIS callsites as one adoption unit", () => {
     const result = auditObjectDbRuntimeAdoptionSources(sources());
     assert.deepEqual(result.failures, []);
     assert.equal(result.compliant, true);
-    assert.equal(result.productionSourceCallCount, 2);
-    assert.deepEqual(result.connectedIngressFamilies, ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE"]);
+    assert.equal(result.productionSourceCallCount, 3);
+    assert.deepEqual(result.connectedIngressFamilies, ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE", "PET_TITLE_SELL"]);
     assert.deepEqual(result.callSites, [
       {
         sourceFile: "src/pet/pet-explore-app-wiring-ingress.ts",
@@ -198,6 +243,13 @@ describe("object DB runtime production adoption audit", () => {
         domain: "ADMIN_PET_DATA_COMPARE",
         effectModes: ["SHADOW", "REJECT"],
       },
+      {
+        sourceFile: "src/pet/pet-title-app-wiring-ingress.ts",
+        functionName: "PetTitleAppWiringIngress.handle",
+        entrypointKind: "IRIS",
+        domain: "PET_TITLE",
+        effectModes: ["MODERN_MUTATION", "SHADOW", "REJECT"],
+      },
     ]);
   });
 
@@ -211,9 +263,11 @@ describe("object DB runtime production adoption audit", () => {
       petExploreEventControlRollbackSource: validPetExploreEventControlRollback.replaceAll("\n", "\r\n"),
       petDataCompareIngressSource: validPetDataCompareIngress.replaceAll("\n", "\r\n"),
       petDataCompareShadowEvaluatorSource: validPetDataCompareShadowEvaluator.replaceAll("\n", "\r\n"),
+      petTitleIngressSource: validPetTitleIngress.replaceAll("\n", "\r\n"),
+      petTitleMutationProviderSource: validPetTitleMutationProvider.replaceAll("\n", "\r\n"),
     });
     assert.equal(result.compliant, true);
-    assert.equal(result.productionSourceCallCount, 2);
+    assert.equal(result.productionSourceCallCount, 3);
   });
 
   it("does not count dead string-only fixtures as a reachable call graph", () => {
@@ -222,6 +276,7 @@ describe("object DB runtime production adoption audit", () => {
       petExploreIngressSource: `const dead = ${JSON.stringify(validIngress)};`,
       petDataCompareIngressSource: `const dead = ${JSON.stringify(validPetDataCompareIngress)};`,
       petDataCompareShadowEvaluatorSource: `const dead = ${JSON.stringify(validPetDataCompareShadowEvaluator)};`,
+      petTitleIngressSource: `const dead = ${JSON.stringify(validPetTitleIngress)};`,
     }));
     assert.equal(result.compliant, false);
     assert.equal(result.productionSourceCallCount, 0);
@@ -445,6 +500,8 @@ describe("object DB runtime production adoption audit", () => {
       ["appWiringOperationProviderSourceSha256", "APP_WIRING_OPERATION_PROVIDER_SOURCE_HASH_MISMATCH"],
       ["petExploreEventControlMigrationSourceSha256", "PET_EXPLORE_EVENT_CONTROL_MIGRATION_SOURCE_HASH_MISMATCH"],
       ["petExploreEventControlRollbackSourceSha256", "PET_EXPLORE_EVENT_CONTROL_ROLLBACK_SOURCE_HASH_MISMATCH"],
+      ["petTitleIngressSourceSha256", "PET_TITLE_INGRESS_SOURCE_HASH_MISMATCH"],
+      ["petTitleMutationProviderSourceSha256", "PET_TITLE_MUTATION_PROVIDER_SOURCE_HASH_MISMATCH"],
     ] as const) {
       const result = runObjectDbRuntimeAdoptionSourceAudit(sources(), { ...REVIEWED_FIXTURE_HASHES, [field]: "c".repeat(64) });
       assert.equal(result.productionSourceCallCount, 0);
@@ -458,6 +515,31 @@ describe("object DB runtime production adoption audit", () => {
     assert.equal(missingAdminHashes.productionSourceCallCount, 0);
     assert.ok(missingAdminHashes.failures.includes("PET_DATA_COMPARE_INGRESS_SOURCE_HASH_MISMATCH"));
     assert.ok(missingAdminHashes.failures.includes("PET_DATA_COMPARE_SHADOW_EVALUATOR_SOURCE_HASH_MISMATCH"));
+    assert.ok(missingAdminHashes.failures.includes("PET_TITLE_INGRESS_SOURCE_HASH_MISMATCH"));
+    assert.ok(missingAdminHashes.failures.includes("PET_TITLE_MUTATION_PROVIDER_SOURCE_HASH_MISMATCH"));
+  });
+
+  it("fails closed when the PET_TITLE SELL composition, dispatch, or mutation runner is disconnected", () => {
+    const missingComposition = auditObjectDbRuntimeAdoptionSources(sources({
+      appSource: validApp.replace("new PetTitleAppWiringIngress(appWiringOperationProvider, new CommandDispatcher(new MariaCommandRouteReader(database))", "new PetTitleAppWiringIngress(otherProvider, new CommandDispatcher(otherRouteReader)"),
+    }));
+    assert.ok(missingComposition.failures.includes("PET_TITLE_INGRESS_COMPOSITION_MISSING"));
+
+    const missingDispatch = auditObjectDbRuntimeAdoptionSources(sources({
+      appSource: validApp.replace("const petTitleDisposition = await dispatchPetTitleCommand(petTitleAppWiringIngress, isOperationalChannel, processing?.duplicate, normalizedEvent, processing?.replies);", "const petTitleDisposition = 'not_applicable';"),
+    }));
+    assert.ok(missingDispatch.failures.includes("PET_TITLE_BUILD_APP_DISPATCH_PATH_MISSING_OR_DUPLICATE"));
+
+    for (const petTitleIngressSource of [
+      validPetTitleIngress.replace("executeAppWiringMutationIrisEntrypoint<", "executeAppWiringMutationReplyEntrypoint<"),
+      validPetTitleIngress.replace("await lockActivePlayerSelection(database, event);", "await observeSelection(event);"),
+      validPetTitleIngress.replace("this.mutations.sell(database, activeClaim,", "this.mutations.create(database, activeClaim,"),
+      validPetTitleIngress.replace('receiptKind: "PET_TITLE"', 'receiptKind: "PET_EXPLORE"'),
+      validPetTitleIngress.replace('status: "handled_no_reply"', 'status: "modern"'),
+    ]) {
+      const result = auditObjectDbRuntimeAdoptionSources(sources({ petTitleIngressSource }));
+      assert.ok(result.failures.includes("PET_TITLE_SELL_MODERN_HANDLER_NOT_ADOPTED"));
+    }
   });
 
   it("requires each wrapper's actual family guard and the wired ingress argument at buildApp", () => {
@@ -698,7 +780,7 @@ describe("object DB runtime production adoption audit", () => {
     const runtimeRoot = fileURLToPath(new URL("../", import.meta.url));
     const result = auditObjectDbRuntimeAdoption(runtimeRoot, actualRepositoryHashes());
     assert.deepEqual(result.failures, []);
-    assert.equal(result.productionSourceCallCount, 2);
-    assert.deepEqual(result.connectedIngressFamilies, ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE"]);
+    assert.equal(result.productionSourceCallCount, 3);
+    assert.deepEqual(result.connectedIngressFamilies, ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE", "PET_TITLE_SELL"]);
   });
 });

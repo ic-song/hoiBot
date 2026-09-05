@@ -76,6 +76,8 @@ type Contract = {
       petExploreEventControlRollbackSourceSha256: string;
       petDataCompareIngressSourceSha256: string;
       petDataCompareShadowEvaluatorSourceSha256: string;
+      petTitleIngressSourceSha256: string;
+      petTitleMutationProviderSourceSha256: string;
     };
     productionSourceCallCount: number;
     entrypointKind: string;
@@ -349,14 +351,14 @@ describe("WBS743 Gate2 object DB transition runtime boundary", () => {
     assert.deepEqual(adoption.failures, []);
     assert.equal(contract.runtimeAdoptionAudit.productionSourceCallCount, adoption.productionSourceCallCount);
     assert.equal(contract.gate2Decision.runtimeEntrypointCallCount, adoption.productionSourceCallCount);
-    assert.equal(adoption.productionSourceCallCount, 2);
+    assert.equal(adoption.productionSourceCallCount, 3);
     assert.deepEqual(contract.runtimeAdoptionAudit.connectedIngressFamilies, adoption.connectedIngressFamilies);
     assert.deepEqual(contract.runtimeAdoptionAudit.effectModes, ["MODERN_MUTATION", "SHADOW", "REJECT"]);
     assert.equal(contract.runtimeAdoptionAudit.entrypointKind, "IRIS");
-    assert.deepEqual(contract.runtimeAdoptionAudit.domains, ["PET_EXPLORE", "ADMIN_PET_DATA_COMPARE"]);
+    assert.deepEqual(contract.runtimeAdoptionAudit.domains, ["PET_EXPLORE", "ADMIN_PET_DATA_COMPARE", "PET_TITLE"]);
     assert.equal(contract.gate2Decision.acceptedEvidence.P2, "VERIFIED_ISOLATED_MARIADB_FORWARD_REPLAY_ROLLBACK_RESTART");
     assert.doesNotMatch(contract.gate2Decision.promotionRequirement, /complete P2 isolated MariaDB validation/);
-    assert.match(contract.scope, /PET_EXPLORE EVENT_CONTROL alone has MODERN\/MUTATION adoption/);
+    assert.match(contract.scope, /PET_EXPLORE EVENT_CONTROL and PET_TITLE SELL have MODERN\/MUTATION adoption/);
     assert.match(contract.scope, /isolated MariaDB P2 validation are implemented/);
   });
 });

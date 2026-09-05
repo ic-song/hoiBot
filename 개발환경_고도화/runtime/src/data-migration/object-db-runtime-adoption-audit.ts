@@ -10,6 +10,8 @@ const PET_EXPLORE_EVENT_CONTROL_MIGRATION_FILE = "migrations/470_pet_explore_eve
 const PET_EXPLORE_EVENT_CONTROL_ROLLBACK_FILE = "migrations/rollback/470_pet_explore_event_control_app_wiring.rollback.sql";
 const PET_DATA_COMPARE_INGRESS_FILE = "src/admin/pet-data-compare-app-wiring-ingress.ts";
 const PET_DATA_COMPARE_SHADOW_EVALUATOR_FILE = "src/admin/pet-data-compare-shadow-snapshot-provider.ts";
+const PET_TITLE_INGRESS_FILE = "src/pet/pet-title-app-wiring-ingress.ts";
+const PET_TITLE_MUTATION_PROVIDER_FILE = "src/pet/pet-title-canonical-mutation-provider.ts";
 const RUNNER_NAME = "executeAppWiringEntrypoint";
 const WRAPPER_NAMES = ["dispatchPetExploreSettlementCommand", "dispatchPetExploreEventControlCommand"] as const;
 
@@ -22,6 +24,8 @@ export interface ObjectDbRuntimeAdoptionSources {
   readonly petExploreEventControlRollbackSource: string;
   readonly petDataCompareIngressSource: string;
   readonly petDataCompareShadowEvaluatorSource: string;
+  readonly petTitleIngressSource: string;
+  readonly petTitleMutationProviderSource: string;
 }
 
 export interface ObjectDbRuntimeAdoptionExpectedHashes {
@@ -34,13 +38,15 @@ export interface ObjectDbRuntimeAdoptionExpectedHashes {
   // Optional at the type boundary for old persisted contracts; omission still fails closed below.
   readonly petDataCompareIngressSourceSha256?: string;
   readonly petDataCompareShadowEvaluatorSourceSha256?: string;
+  readonly petTitleIngressSourceSha256?: string;
+  readonly petTitleMutationProviderSourceSha256?: string;
 }
 
 export type ObjectDbRuntimeAdoptionCallSite = {
   readonly sourceFile: string;
-  readonly functionName: "PetExploreAppWiringIngress.handle" | "PetDataCompareAppWiringIngress.handle";
+  readonly functionName: "PetExploreAppWiringIngress.handle" | "PetDataCompareAppWiringIngress.handle" | "PetTitleAppWiringIngress.handle";
   readonly entrypointKind: "IRIS";
-  readonly domain: "PET_EXPLORE" | "ADMIN_PET_DATA_COMPARE";
+  readonly domain: "PET_EXPLORE" | "ADMIN_PET_DATA_COMPARE" | "PET_TITLE";
   readonly effectModes: readonly ("MODERN_MUTATION" | "SHADOW" | "REJECT")[];
 };
 
@@ -400,12 +406,19 @@ function propertyCallArguments(span: SourceSpan | undefined, receiver: string, m
   return value.length === 0 ? [] : [value];
 }
 
-function hasExactComposition(span: SourceSpan | undefined): { provider: boolean; routeReader: boolean; petExploreIngress: boolean; petDataCompareIngress: boolean } {
+function hasExactComposition(span: SourceSpan | undefined): {
+  provider: boolean;
+  routeReader: boolean;
+  petExploreIngress: boolean;
+  petDataCompareIngress: boolean;
+  petTitleIngress: boolean;
+} {
   const code = executableCode(span);
   const provider = /\bconst\s+appWiringOperationProvider\s*=[^;]*\bnew\s+MariaAppWiringOperationProvider\s*\(\s*database\s*,\s*dependencies\.environmentContext\s*\)/.test(code);
   const petExploreIngress = /\bconst\s+petExploreAppWiringIngress\s*=[^;]*\bnew\s+PetExploreAppWiringIngress\s*\(\s*appWiringOperationProvider\s*,\s*new\s+CommandDispatcher\s*\(\s*new\s+MariaCommandRouteReader\s*\(\s*database\s*\)/.test(code);
   const petDataCompareIngress = /\bconst\s+petDataCompareAppWiringIngress\s*=[^;]*\bnew\s+PetDataCompareAppWiringIngress\s*\(\s*appWiringOperationProvider\s*,\s*new\s+CommandDispatcher\s*\(\s*new\s+MariaCommandRouteReader\s*\(\s*database\s*\)/.test(code);
-  return { provider, routeReader: petExploreIngress && petDataCompareIngress, petExploreIngress, petDataCompareIngress };
+  const petTitleIngress = /\bconst\s+petTitleAppWiringIngress\s*=[\s\S]*?\bnew\s+PetTitleAppWiringIngress\s*\(\s*appWiringOperationProvider\s*,\s*new\s+CommandDispatcher\s*\(\s*new\s+MariaCommandRouteReader\s*\(\s*database\s*\)/.test(code);
+  return { provider, routeReader: petExploreIngress && petDataCompareIngress && petTitleIngress, petExploreIngress, petDataCompareIngress, petTitleIngress };
 }
 
 function irisRouteCallback(buildApp: SourceSpan | undefined): SourceSpan | undefined {
@@ -482,6 +495,26 @@ function hasDirectPetDataCompareDispatch(callback: SourceSpan | undefined): bool
     /\bconst\s+petDataCompareDisposition\s*=\s*await\s+dispatchPetDataCompareCommand\s*\(\s*petDataCompareAppWiringIngress\s*,\s*isOperationalChannel\s*,\s*processing\?\.duplicate\s*,\s*normalizedEvent\s*,?\s*\)\s*;/g,
   ) === 1;
   return dispatch;
+}
+
+function hasDirectPetTitleDispatch(callback: SourceSpan | undefined): boolean {
+  if (callback === undefined) return false;
+  return directTopLevelMatchCount(
+    callback,
+    /\bconst\s+petTitleDisposition\s*=\s*await\s+dispatchPetTitleCommand\s*\(\s*petTitleAppWiringIngress\s*,\s*isOperationalChannel\s*,\s*processing\?\.duplicate\s*,\s*normalizedEvent\s*,\s*processing\?\.replies\s*,?\s*\)\s*;/g,
+  ) === 1;
+}
+
+function petTitleSellAdopted(handle: SourceSpan | undefined): boolean {
+  if (handle === undefined) return false;
+  const source = handle.source;
+  const mutationRunnerCalls = executableCode(handle).match(/\bexecuteAppWiringMutationIrisEntrypoint\s*</g)?.length ?? 0;
+  return /command\.kind\s*===\s*["']sell["']\s*&&\s*decision\.route\s*===\s*["']MODERN["']/.test(source)
+    && mutationRunnerCalls === 1
+    && /lockActivePlayerSelection\(\s*database\s*,\s*event\s*\)/.test(source)
+    && /this\.mutations\.sell\(\s*database\s*,\s*activeClaim\s*,/.test(source)
+    && /receiptKind\s*:\s*["']PET_TITLE["']/.test(source)
+    && /status\s*:\s*["']handled_no_reply["']/.test(source);
 }
 
 function claimedOnlyBlocksLegacyAdmin(callback: SourceSpan | undefined): boolean {
@@ -702,6 +735,8 @@ export function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdopti
   const eventControlRollbackSource = canonicalLf(input.petExploreEventControlRollbackSource);
   const adminIngressSource = canonicalLf(input.petDataCompareIngressSource);
   const adminEvaluatorSource = canonicalLf(input.petDataCompareShadowEvaluatorSource);
+  const petTitleIngressSource = canonicalLf(input.petTitleIngressSource);
+  const petTitleMutationProviderSource = canonicalLf(input.petTitleMutationProviderSource);
   const failures: string[] = [];
   const buildApp = namedFunction(appSource, "buildApp");
   const dispatcher = namedFunction(appSource, "dispatchPetExploreCommandConsumers");
@@ -709,6 +744,7 @@ export function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdopti
   const handle = namedClassMethod(ingressSource, "PetExploreAppWiringIngress", "handle");
   const adminWrapper = namedFunction(appSource, "dispatchPetDataCompareCommand");
   const adminHandle = namedClassMethod(adminIngressSource, "PetDataCompareAppWiringIngress", "handle");
+  const petTitleHandle = namedClassMethod(petTitleIngressSource, "PetTitleAppWiringIngress", "handle");
   const composition = hasExactComposition(buildApp);
   const invocation = runnerInvocation(handle);
   const options = parseTopLevelObject(invocation?.options);
@@ -728,6 +764,8 @@ export function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdopti
   if (sha256(eventControlRollbackSource) !== expectedHashes.petExploreEventControlRollbackSourceSha256) failures.push("PET_EXPLORE_EVENT_CONTROL_ROLLBACK_SOURCE_HASH_MISMATCH");
   if (sha256(adminIngressSource) !== expectedHashes.petDataCompareIngressSourceSha256) failures.push("PET_DATA_COMPARE_INGRESS_SOURCE_HASH_MISMATCH");
   if (sha256(adminEvaluatorSource) !== expectedHashes.petDataCompareShadowEvaluatorSourceSha256) failures.push("PET_DATA_COMPARE_SHADOW_EVALUATOR_SOURCE_HASH_MISMATCH");
+  if (sha256(petTitleIngressSource) !== expectedHashes.petTitleIngressSourceSha256) failures.push("PET_TITLE_INGRESS_SOURCE_HASH_MISMATCH");
+  if (sha256(petTitleMutationProviderSource) !== expectedHashes.petTitleMutationProviderSourceSha256) failures.push("PET_TITLE_MUTATION_PROVIDER_SOURCE_HASH_MISMATCH");
 
   const expectedParameters = ["ingress", "isOperationalChannel", "duplicate", "event"];
   if (functionParameterNames(dispatcher)?.join(",") !== expectedParameters.join(",")) failures.push("DISPATCH_PARAMETER_CONTRACT_INVALID");
@@ -751,6 +789,7 @@ export function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdopti
   if (!composition.routeReader) failures.push("READ_ONLY_ROUTE_READER_COMPOSITION_MISSING");
   if (!composition.petExploreIngress) failures.push("PET_EXPLORE_INGRESS_COMPOSITION_MISSING");
   if (!composition.petDataCompareIngress) failures.push("PET_DATA_COMPARE_INGRESS_COMPOSITION_MISSING");
+  if (!composition.petTitleIngress) failures.push("PET_TITLE_INGRESS_COMPOSITION_MISSING");
   if (!hasRunnerImport(ingressSource)) failures.push("RUNNER_IMPORT_MISSING");
   if (callCount(handle, RUNNER_NAME) !== 1) failures.push("RUNNER_CALLSITE_NOT_EXACTLY_ONCE");
   if (invocation?.firstArgument !== "this.provider") failures.push("RUNNER_PROVIDER_ARGUMENT_INVALID");
@@ -792,6 +831,8 @@ export function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdopti
   if (!exactStringProperty(adminClaim, "actor", "pet_data_compare_app_wiring")) failures.push("PET_DATA_COMPARE_DOMAIN_CLAIM_MISSING");
   if (!petDataCompareTrustForwarded(adminHandle, adminClaim)) failures.push("PET_DATA_COMPARE_TRUST_FORWARDING_INVALID");
   if (!readOnlyRouteBoundToRunner(adminHandle, adminOptions)) failures.push("PET_DATA_COMPARE_READ_ONLY_EFFECT_NOT_BOUND");
+  if (!hasDirectPetTitleDispatch(irisCallback)) failures.push("PET_TITLE_BUILD_APP_DISPATCH_PATH_MISSING_OR_DUPLICATE");
+  if (!petTitleSellAdopted(petTitleHandle)) failures.push("PET_TITLE_SELL_MODERN_HANDLER_NOT_ADOPTED");
 
   const compliant = failures.length === 0;
   const callSites: ObjectDbRuntimeAdoptionCallSite[] = compliant ? [
@@ -809,12 +850,19 @@ export function auditObjectDbRuntimeAdoptionSources(input: ObjectDbRuntimeAdopti
       domain: "ADMIN_PET_DATA_COMPARE",
       effectModes: ["SHADOW", "REJECT"],
     },
+    {
+      sourceFile: PET_TITLE_INGRESS_FILE,
+      functionName: "PetTitleAppWiringIngress.handle",
+      entrypointKind: "IRIS",
+      domain: "PET_TITLE",
+      effectModes: ["MODERN_MUTATION", "SHADOW", "REJECT"],
+    },
   ] : [];
   return Object.freeze({
     compliant,
-    productionSourceCallCount: compliant ? 2 : 0,
+    productionSourceCallCount: compliant ? 3 : 0,
     callSites: Object.freeze(callSites),
-    connectedIngressFamilies: Object.freeze(compliant ? ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE"] : []),
+    connectedIngressFamilies: Object.freeze(compliant ? ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE", "PET_TITLE_SELL"] : []),
     failures: Object.freeze(failures),
   });
 }
@@ -830,5 +878,7 @@ export function auditObjectDbRuntimeAdoption(runtimeRoot: string, expectedHashes
     petExploreEventControlRollbackSource: readCanonical(PET_EXPLORE_EVENT_CONTROL_ROLLBACK_FILE),
     petDataCompareIngressSource: readCanonical(PET_DATA_COMPARE_INGRESS_FILE),
     petDataCompareShadowEvaluatorSource: readCanonical(PET_DATA_COMPARE_SHADOW_EVALUATOR_FILE),
+    petTitleIngressSource: readCanonical(PET_TITLE_INGRESS_FILE),
+    petTitleMutationProviderSource: readCanonical(PET_TITLE_MUTATION_PROVIDER_FILE),
   }, expectedHashes);
 }

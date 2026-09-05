@@ -3,9 +3,14 @@ import { readdirSync,readFileSync } from "node:fs";
 import { describe,it } from "node:test";
 import mariadb from "mariadb";
 
+import { dispatchPetTitleCommand } from "../src/app.js";
+import { MariaPlayerContextProvider } from "../src/account-platform/player-context-provider.js";
 import { createDatabaseClient,type CapableDatabaseClient,type ControlledDatabaseTransaction } from "../src/database.js";
-import { executeAppWiringEntrypoint,executeAppWiringMutationIrisEntrypoint } from "../src/dispatch/app-wiring-entrypoint-runner.js";
+import { CommandDispatcher,MariaCommandRouteReader } from "../src/dispatch/command-dispatcher.js";
 import { MariaAppWiringOperationProvider } from "../src/dispatch/app-wiring-operation-provider.js";
+import type { NormalizedIrisEvent } from "../src/integration/iris-normalizer.js";
+import { PetTitleAppWiringIngress,PetTitleShadowEvaluator,PetTitleShadowReadAuthorityProvider } from "../src/pet/pet-title-app-wiring-ingress.js";
+import { PetTitleCanonicalReadProvider } from "../src/pet/pet-title-canonical-read-provider.js";
 import { PetTitleCanonicalMutationProvider } from "../src/pet/pet-title-canonical-mutation-provider.js";
 import { createEnvironmentContext,verifyStartupDatabaseIdentity } from "../src/runtime/environment-context.js";
 
@@ -14,7 +19,7 @@ const enabled=phase==="prepare"||phase==="restart-rollback";
 const migrationRoot=new URL("../migrations/",import.meta.url);
 const migration471=readFileSync(new URL("471_pet_title_sale_app_wiring.sql",migrationRoot),"utf8");
 const rollback471=readFileSync(new URL("rollback/471_pet_title_sale_app_wiring.rollback.sql",migrationRoot),"utf8");
-const eventIds=["ptsale-ready","ptsale-pending","ptsale-silent","ptsale-fault","ptsale-shadow"];
+const eventIds=["ptsale-ready","ptsale-pending","ptsale-silent","ptsale-fault","ptsale-lock","ptsale-shadow"];
 
 async function rawConnection(){return mariadb.createConnection({host:process.env.DATABASE_HOST??"127.0.0.1",port:Number(process.env.DATABASE_PORT??"3324"),user:process.env.DATABASE_USER??"root",password:process.env.DATABASE_PASSWORD??"",database:process.env.DATABASE_NAME,charset:"utf8mb4",timezone:"Z",multipleStatements:true,bigIntAsNumber:false});}
 
@@ -48,23 +53,43 @@ function failingOutboxDatabase(database:ReturnType<typeof runtimeDatabase>):Capa
   return {ping:()=>database.ping(),verifyRollback:()=>database.verifyRollback(),query:<T>(sql:string,values?:readonly unknown[])=>database.query<T>(sql,values),execute:(sql:string,values?:readonly unknown[])=>database.execute(sql,values),withTransaction:work=>database.withTransaction(work),close:async()=>{},withReadOnlySnapshot:work=>database.withReadOnlySnapshot(work),withControlledTransaction:work=>database.withControlledTransaction(transaction=>work(wrap(transaction)))};
 }
 
-async function runSale(database:ReturnType<typeof runtimeDatabase>|CapableDatabaseClient,eventId:string,index:number,handlerCalls:{value:number}){
-  const appProvider=await provider(database);
-  return executeAppWiringMutationIrisEntrypoint(appProvider,{
-    claim:{entrypointKind:"IRIS",externalRequestId:eventId,normalizedPayload:{channelId:"ptsale-room",command:"sell",message:`/펫타이틀판매 ${index}`,selectedIndex:String(index),userId:"ptsale-user"},actor:"test:pet-title-sale"},
-    resolveRoute:()=>({route:"MODERN",effectMode:"MUTATION",reasonCode:"MODERN_ROUTE_ALLOWED",commandCode:"PET_TITLE_SELL",handlerKey:"pet_title_lifecycle"}),
-    handler:async(databaseParticipant,claim)=>{
-      handlerCalls.value+=1;
-      const result=await new PetTitleCanonicalMutationProvider().sell(databaseParticipant,claim,{actor:"test:pet-title-sale",playerId:"ptplayer",index});
-      const typedReceipt={receiptKind:"PET_TITLE" as const,petTitleOperationId:result.operationId,resultFingerprint:result.resultFingerprint};
-      if(result.outcomeCode==="SILENT_CASTLE_ACTIVE")return {value:{status:"handled_no_reply" as const,resultFingerprint:result.resultFingerprint},noReply:{kind:"NO_REPLY" as const,eventId,commandCode:"PET_TITLE_SELL"},receipt:{status:"NO_REPLY",resultFingerprint:result.resultFingerprint},typedReceipt};
-      const data=result.outcomeCode==="NOT_FOUND"?"해당 번호의 펫 타이틀이 존재하지 않습니다.":`sold:${result.titleName}:${result.salePoint}`;
-      return {value:{status:"modern" as const,resultFingerprint:result.resultFingerprint},reply:{eventId,commandCode:"PET_TITLE_SELL",destinationId:"ptsale-room",data},receipt:{status:"REPLY_QUEUED",resultFingerprint:result.resultFingerprint},typedReceipt};
-    },
-    replayCompleted:async claim=>({status:claim.result?.status==="NO_REPLY"?"handled_no_reply" as const:"modern" as const,resultFingerprint:claim.result?.resultFingerprint??""}),
-    replayFailed:async()=>{throw new Error("PET_TITLE_PREVIOUSLY_FAILED");},
-    errorCode:()=>"PET_TITLE_SELL_FAILED",
+interface SqlGate{match:(sql:string)=>boolean;reached:Promise<void>;released:Promise<void>;release:()=>void;signal:()=>void;used:boolean;}
+function sqlGate(match:(sql:string)=>boolean):SqlGate{let signal!:()=>void,release!:()=>void;const reached=new Promise<void>(resolve=>{signal=resolve;}),released=new Promise<void>(resolve=>{release=resolve;});return {match,reached,released,release,signal,used:false};}
+
+function observingDatabase(database:ReturnType<typeof runtimeDatabase>,statements:string[],gates:SqlGate[]=[]):CapableDatabaseClient{
+  const wrap=(transaction:ControlledDatabaseTransaction):ControlledDatabaseTransaction=>({
+    query:async<T>(sql:string,values?:readonly unknown[])=>{statements.push(sql);const result=await transaction.query<T>(sql,values);const gate=gates.find(candidate=>!candidate.used&&candidate.match(sql));if(gate!==undefined){gate.used=true;gate.signal();await gate.released;}return result;},
+    execute:(sql:string,values?:readonly unknown[])=>{statements.push(sql);return transaction.execute(sql,values);},
+    withSavepoint:<T>(work:(nested:ControlledDatabaseTransaction)=>Promise<T>)=>transaction.withSavepoint(nested=>work(wrap(nested))),
   });
+  return {ping:()=>database.ping(),verifyRollback:()=>database.verifyRollback(),query:<T>(sql:string,values?:readonly unknown[])=>{statements.push(sql);return database.query<T>(sql,values);},execute:(sql:string,values?:readonly unknown[])=>{statements.push(sql);return database.execute(sql,values);},withTransaction:work=>database.withTransaction(work),close:async()=>{},withReadOnlySnapshot:work=>database.withReadOnlySnapshot(work),withControlledTransaction:work=>database.withControlledTransaction(transaction=>work(wrap(transaction)))};
+}
+
+async function mutationCounts(database:ReturnType<typeof runtimeDatabase>){return (await database.query<Array<{claims:bigint;title_operations:bigint;currency_operations:bigint;outbox:bigint;executions:bigint;owned:bigint;balance:bigint}>>(`SELECT
+  (SELECT COUNT(*) FROM canonical_app_wiring_operations) claims,
+  (SELECT COUNT(*) FROM canonical_pet_title_operations) title_operations,
+  (SELECT COUNT(*) FROM canonical_currency_operations) currency_operations,
+  (SELECT COUNT(*) FROM outbox_messages) outbox,
+  (SELECT COUNT(*) FROM command_executions) executions,
+  (SELECT COUNT(*) FROM canonical_owned_pet_title_instances WHERE ownership_status='owned') owned,
+  (SELECT balance_minor_amount FROM canonical_player_currency_balances WHERE player_currency_balance_id='ptbal001') balance`))[0]!;}
+
+async function assertStillWaiting(work:Promise<unknown>):Promise<void>{const state=await Promise.race([work.then(()=>"settled",()=>"rejected"),new Promise<string>(resolve=>setTimeout(()=>resolve("waiting"),200))]);assert.equal(state,"waiting");}
+
+function saleEvent(eventId:string,index:number):NormalizedIrisEvent{return {eventId,providerEventId:eventId,providerCode:"iris",eventKind:"1",direction:"incoming",channelId:"ptsale-room",userId:"ptsale-user",displayName:"호이",displayNameSource:"kakao_db",displayNameTrust:"trusted",message:`/펫타이틀판매 ${index}`,eventCode:"message.created",eventCategory:"message",monitoringGroup:"text",eventMetadata:{},payloadHash:"9".repeat(64)};}
+
+async function runSale(database:ReturnType<typeof runtimeDatabase>|CapableDatabaseClient,eventId:string,index:number,handlerCalls:{value:number}){
+  const contexts=new MariaPlayerContextProvider(),mutation=new PetTitleCanonicalMutationProvider();
+  const ingress=new PetTitleAppWiringIngress(
+    await provider(database),
+    new CommandDispatcher(new MariaCommandRouteReader(database),{enabled:true,allowAllCanaries:true,canaryUserIds:new Set()}),
+    new PetTitleShadowEvaluator(contexts,new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
+    contexts,
+    {create:(participant,claim,input)=>mutation.create(participant,claim,input),sell:async(participant,claim,input)=>{handlerCalls.value+=1;return mutation.sell(participant,claim,input);}},
+  );
+  const replies:Array<{outboxId:string;room:string;data:string}>=[];
+  const disposition=await dispatchPetTitleCommand(ingress,true,false,saleEvent(eventId,index),replies);
+  return {disposition,replies};
 }
 
 async function seedFixture(database:ReturnType<typeof runtimeDatabase>):Promise<void>{
@@ -106,33 +131,66 @@ describe("PET-TITLE sale app-wiring isolated MariaDB",{skip:!enabled},()=>{
           const registry=(await database.query<Array<{rollout_state:string}>>("SELECT rollout_state FROM command_registry WHERE command_code='PET_TITLE_SELL'"))[0];assert.equal(registry?.rollout_state,"SHADOW");
           const shape=(await database.query<Array<{value:bigint}>>("SELECT COUNT(*) value FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='canonical_pet_title_operations' AND column_name='currency_operation_id'"))[0];assert.equal(shape?.value,1n);
 
-          const shadowBefore=await balance(database);let shadowQueries=0;
-          await executeAppWiringEntrypoint(await provider(database),{claim:{entrypointKind:"IRIS",externalRequestId:"ptsale-shadow",normalizedPayload:{command:"sell",selectedIndex:"1"},actor:"test:pet-title-sale"},resolveRoute:()=>({route:"SHADOW",effectMode:"READ_ONLY",reasonCode:"ROLLOUT_SHADOW",commandCode:"PET_TITLE_SELL",handlerKey:"pet_title_lifecycle"}),handlers:{MODERN:{READ_ONLY:async()=>{throw new Error("unexpected");},MUTATION:async()=>{throw new Error("unexpected");}},LEGACY_FALLBACK:{READ_ONLY:async()=>{throw new Error("unexpected");},MUTATION:async()=>{throw new Error("unexpected");}},SHADOW:async participant=>{shadowQueries+=1;await participant.query("SELECT war_id FROM guild_territory_start_scopes WHERE scope_code='world'");return{value:"shadow",receipt:{status:"SHADOW_EVALUATED",referenceId:"PET_TITLE_SELL"}};},REJECT:async()=>{throw new Error("unexpected");}},replayCompleted:async()=>"shadow-replay",replayFailed:async()=>{throw new Error("unexpected");},errorCode:()=>"SHADOW_FAILED"});
-          assert.equal(shadowQueries,1);assert.equal(await balance(database),shadowBefore);
+          const shadowBefore=await mutationCounts(database),shadowCalls={value:0};
+          const shadow=await runSale(database,"ptsale-shadow",1,shadowCalls);
+          assert.deepEqual(shadow,{disposition:"legacy_fallback",replies:[]});assert.equal(shadowCalls.value,0);assert.deepEqual(await mutationCounts(database),shadowBefore);
+          await database.execute("UPDATE command_registry SET rollout_state='ACTIVE' WHERE command_code='PET_TITLE_SELL'");
 
-          const readyCalls={value:0};const ready=await runSale(database,"ptsale-ready",1,readyCalls);assert.ok("reply" in ready);assert.equal(readyCalls.value,1);assert.equal(await balance(database),30_000_001_000n);
-          const readyReplay=await runSale(database,"ptsale-ready",1,readyCalls);assert.ok("reply" in readyReplay);assert.equal(readyCalls.value,1);assert.equal((readyReplay as {reply:{outboxId:string}}).reply.outboxId,(ready as {reply:{outboxId:string}}).reply.outboxId);assert.equal(await balance(database),30_000_001_000n);
+          const readyCalls={value:0},statements:string[]=[];const ready=await runSale(observingDatabase(database,statements),"ptsale-ready",1,readyCalls);assert.equal(ready.disposition,"claimed");assert.equal(ready.replies.length,1);assert.match(ready.replies[0]!.data,/타이틀1.*30,000,000 포인트/s);assert.equal(readyCalls.value,1);assert.equal(await balance(database),30_000_001_000n);
+          const lockOrder=[
+            statements.findIndex(sql=>sql.includes("FROM account_platform_identities platform_identity")&&sql.includes("FOR UPDATE")),
+            statements.findIndex(sql=>sql.includes("FROM guild_territory_start_scopes WHERE scope_code=? FOR UPDATE")),
+            statements.findIndex(sql=>sql.includes("FROM guild_territory_wars WHERE id=? FOR UPDATE")),
+            statements.findIndex(sql=>sql.includes("FROM canonical_players WHERE player_id=? FOR UPDATE")),
+            statements.findIndex(sql=>sql.includes("FROM canonical_owned_pet_title_instances owned")&&sql.includes("FOR UPDATE")),
+            statements.findIndex(sql=>sql.includes("FROM canonical_currency_definition_imports")&&sql.includes("FOR UPDATE")),
+          ];
+          assert.ok(lockOrder.every(index=>index>=0));assert.deepEqual([...lockOrder].sort((left,right)=>left-right),lockOrder);
+          const readyAfterFirst=await mutationCounts(database);
+          const readyReplay=await runSale(database,"ptsale-ready",1,readyCalls);assert.equal(readyReplay.disposition,"claimed");assert.equal(readyCalls.value,1);assert.equal(readyReplay.replies[0]!.outboxId,ready.replies[0]!.outboxId);assert.equal(await balance(database),30_000_001_000n);assert.deepEqual(await mutationCounts(database),readyAfterFirst);
 
           await database.execute("UPDATE guild_territory_wars war JOIN guild_territory_start_scopes scope_row ON scope_row.war_id=war.id SET war.active=FALSE,war.lifecycle_state='PENDING_START' WHERE scope_row.scope_code='world'");
           const pendingCalls={value:0};await runSale(database,"ptsale-pending",1,pendingCalls);assert.equal(pendingCalls.value,1);assert.equal(await balance(database),60_000_001_000n);
 
           await database.execute("UPDATE guild_territory_wars war JOIN guild_territory_start_scopes scope_row ON scope_row.war_id=war.id SET war.active=TRUE,war.lifecycle_state='ACTIVE_OPENING' WHERE scope_row.scope_code='world'");
-          const silentBefore=await balance(database),silentCalls={value:0};const silent=await runSale(database,"ptsale-silent",1,silentCalls);assert.ok("noReply" in silent);if("noReply" in silent)assert.deepEqual(silent.noReply,{kind:"NO_REPLY"});assert.equal(silentCalls.value,1);assert.equal(await balance(database),silentBefore);
-          const silentCounts=(await database.query<Array<{outbox_count:bigint;execution_count:bigint;owned_count:bigint}>>("SELECT (SELECT COUNT(*) FROM outbox_messages message JOIN operations operation ON operation.id=message.operation_id WHERE operation.idempotency_key='ptsale-silent') outbox_count,(SELECT COUNT(*) FROM command_executions WHERE event_id='ptsale-silent' AND result_code='no_reply') execution_count,(SELECT COUNT(*) FROM canonical_owned_pet_title_instances WHERE owned_pet_title_id='ptown003' AND ownership_status='owned') owned_count"))[0]!;assert.deepEqual([silentCounts.outbox_count,silentCounts.execution_count,silentCounts.owned_count],[0n,1n,1n]);
+          const silentBefore=await balance(database),silentCalls={value:0};const silent=await runSale(database,"ptsale-silent",1,silentCalls);assert.deepEqual(silent,{disposition:"claimed",replies:[]});assert.equal(silentCalls.value,1);assert.equal(await balance(database),silentBefore);
+          const silentLink=(await database.query<Array<{pet_title_operation_id:string;result_fingerprint:string}>>("SELECT link.pet_title_operation_id,link.result_fingerprint FROM canonical_app_wiring_receipt_links link JOIN canonical_app_wiring_operations claim ON claim.app_wiring_operation_id=link.app_wiring_operation_id WHERE claim.external_request_id='ptsale-silent' AND link.receipt_kind='PET_TITLE'"))[0]!;
+          const silentAfterFirst=await mutationCounts(database);
+          const silentReplay=await runSale(database,"ptsale-silent",1,silentCalls);assert.deepEqual(silentReplay,{disposition:"claimed",replies:[]});assert.equal(silentCalls.value,1);
+          assert.deepEqual(await mutationCounts(database),silentAfterFirst);
+          const silentCounts=(await database.query<Array<{outbox_count:bigint;execution_count:bigint;owned_count:bigint;link_count:bigint}>>("SELECT (SELECT COUNT(*) FROM outbox_messages message JOIN operations operation ON operation.id=message.operation_id WHERE operation.idempotency_key='ptsale-silent') outbox_count,(SELECT COUNT(*) FROM command_executions WHERE event_id='ptsale-silent' AND result_code='no_reply') execution_count,(SELECT COUNT(*) FROM canonical_owned_pet_title_instances WHERE owned_pet_title_id='ptown003' AND ownership_status='owned') owned_count,(SELECT COUNT(*) FROM canonical_app_wiring_receipt_links link JOIN canonical_app_wiring_operations claim ON claim.app_wiring_operation_id=link.app_wiring_operation_id WHERE claim.external_request_id='ptsale-silent' AND link.pet_title_operation_id=? AND link.result_fingerprint=?) link_count",[silentLink.pet_title_operation_id,silentLink.result_fingerprint]))[0]!;assert.deepEqual([silentCounts.outbox_count,silentCounts.execution_count,silentCounts.owned_count,silentCounts.link_count],[0n,1n,1n,1n]);
 
           await database.execute("UPDATE guild_territory_wars war JOIN guild_territory_start_scopes scope_row ON scope_row.war_id=war.id SET war.active=FALSE,war.lifecycle_state='READY' WHERE scope_row.scope_code='world'");
           const beforeFault=await balance(database),faultCalls={value:0};const faultDatabase=failingOutboxDatabase(database);
           await assert.rejects(runSale(faultDatabase,"ptsale-fault",1,faultCalls),/PET_TITLE_FORCED_OUTBOX_FAILURE/);assert.equal(faultCalls.value,1);assert.equal(await balance(database),beforeFault);
           const fault=(await database.query<Array<{claim_state:string;owned_status:string;typed_count:bigint;currency_count:bigint}>>("SELECT claim.claim_state,(SELECT ownership_status FROM canonical_owned_pet_title_instances WHERE owned_pet_title_id='ptown003') owned_status,(SELECT COUNT(*) FROM canonical_pet_title_operations operation_row WHERE operation_row.request_key='IRIS:ptsale-fault') typed_count,(SELECT COUNT(*) FROM canonical_currency_operations operation_row WHERE operation_row.request_key='IRIS:ptsale-fault') currency_count FROM canonical_app_wiring_operations claim WHERE claim.external_request_id='ptsale-fault'"))[0]!;assert.deepEqual([fault.claim_state,fault.owned_status,fault.typed_count,fault.currency_count],["FAILED","owned",0n,0n]);
-          await database.execute("INSERT INTO pet_title_sale_rehearsal_evidence(evidence_key,evidence_value) VALUES ('prepare_complete','true'),('ready_balance',?) ON DUPLICATE KEY UPDATE evidence_value=VALUES(evidence_value)",[(await balance(database)).toString()]);
+
+          const selectionGate=sqlGate(sql=>sql.includes("FROM account_platform_identities platform_identity")&&sql.includes("FOR UPDATE"));
+          const warGate=sqlGate(sql=>sql.includes("FROM guild_territory_wars WHERE id=? FOR UPDATE"));
+          const lockCalls={value:0},lockRun=runSale(observingDatabase(database,[],[selectionGate,warGate]),"ptsale-lock",1,lockCalls);
+          const selectionCompetitor=await rawConnection(),warCompetitor=await rawConnection();
+          try{
+            await selectionCompetitor.query("SET SESSION innodb_lock_wait_timeout=5");await warCompetitor.query("SET SESSION innodb_lock_wait_timeout=5");
+            await selectionGate.reached;
+            const selectionUpdate=selectionCompetitor.query("UPDATE account_platform_active_player_selections SET selection_version=selection_version+1 WHERE active_player_selection_id='ptselec1'");
+            await assertStillWaiting(selectionUpdate);selectionGate.release();
+            await warGate.reached;
+            const warUpdate=warCompetitor.query("UPDATE guild_territory_wars war JOIN guild_territory_start_scopes scope_row ON scope_row.war_id=war.id SET war.lifecycle_state=war.lifecycle_state WHERE scope_row.scope_code='world'");
+            await assertStillWaiting(warUpdate);warGate.release();
+            const lockResult=await lockRun;assert.equal(lockResult.disposition,"claimed");assert.equal(lockCalls.value,1);await selectionUpdate;await warUpdate;
+          }finally{selectionGate.release();warGate.release();await selectionCompetitor.end();await warCompetitor.end();}
+          await database.execute("INSERT INTO pet_title_sale_rehearsal_evidence(evidence_key,evidence_value) VALUES ('prepare_complete','true'),('ready_balance',?),('silent_operation_id',?),('silent_result_fingerprint',?) ON DUPLICATE KEY UPDATE evidence_value=VALUES(evidence_value)",[(await balance(database)).toString(),silentLink.pet_title_operation_id,silentLink.result_fingerprint]);
         }finally{await database.close();}
         return;
       }
 
       const database=runtimeDatabase();
       try{
-        const expected=(await database.query<Array<{evidence_value:string}>>("SELECT evidence_value FROM pet_title_sale_rehearsal_evidence WHERE evidence_key='ready_balance'"))[0]!.evidence_value;
-        const replayCalls={value:0};const replay=await runSale(database,"ptsale-ready",1,replayCalls);assert.ok("reply" in replay);assert.equal(replayCalls.value,0);assert.equal((await balance(database)).toString(),expected);
+        const evidenceRows=await database.query<Array<{evidence_key:string;evidence_value:string}>>("SELECT evidence_key,evidence_value FROM pet_title_sale_rehearsal_evidence WHERE evidence_key IN ('ready_balance','silent_operation_id','silent_result_fingerprint')");const evidence=new Map(evidenceRows.map(row=>[row.evidence_key,row.evidence_value]));const expected=evidence.get("ready_balance")!;
+        const replayCalls={value:0};const replay=await runSale(database,"ptsale-ready",1,replayCalls);assert.equal(replay.disposition,"claimed");assert.equal(replay.replies.length,1);assert.equal(replayCalls.value,0);assert.equal((await balance(database)).toString(),expected);
+        const silentBeforeRestartReplay=await mutationCounts(database),silentReplayCalls={value:0};const silentReplay=await runSale(database,"ptsale-silent",1,silentReplayCalls);assert.deepEqual(silentReplay,{disposition:"claimed",replies:[]});assert.equal(silentReplayCalls.value,0);assert.deepEqual(await mutationCounts(database),silentBeforeRestartReplay);
+        const silentRestartLink=(await database.query<Array<{pet_title_operation_id:string;result_fingerprint:string}>>("SELECT link.pet_title_operation_id,link.result_fingerprint FROM canonical_app_wiring_receipt_links link JOIN canonical_app_wiring_operations claim ON claim.app_wiring_operation_id=link.app_wiring_operation_id WHERE claim.external_request_id='ptsale-silent' AND link.receipt_kind='PET_TITLE'"))[0]!;assert.deepEqual(silentRestartLink,{pet_title_operation_id:evidence.get("silent_operation_id"),result_fingerprint:evidence.get("silent_result_fingerprint")});
+        const silentRestartCounts=(await database.query<Array<{outbox_count:bigint;link_count:bigint;typed_count:bigint}>>("SELECT (SELECT COUNT(*) FROM outbox_messages message JOIN operations operation ON operation.id=message.operation_id WHERE operation.idempotency_key='ptsale-silent') outbox_count,(SELECT COUNT(*) FROM canonical_app_wiring_receipt_links link JOIN canonical_app_wiring_operations claim ON claim.app_wiring_operation_id=link.app_wiring_operation_id WHERE claim.external_request_id='ptsale-silent' AND link.receipt_kind='PET_TITLE') link_count,(SELECT COUNT(*) FROM canonical_pet_title_operations operation_row WHERE operation_row.request_key='IRIS:ptsale-silent') typed_count"))[0]!;assert.deepEqual([silentRestartCounts.outbox_count,silentRestartCounts.link_count,silentRestartCounts.typed_count],[0n,1n,1n]);
         await assert.rejects(()=>raw.query(rollback471),/Subquery returns more than 1 row|ER_SUBQUERY_NO_1_ROW/i);
         const columnStillPresent=(await database.query<Array<{value:bigint}>>("SELECT COUNT(*) value FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='canonical_pet_title_operations' AND column_name='currency_operation_id'"))[0]!.value;assert.equal(columnStillPresent,1n);
         await database.execute("DELETE link FROM canonical_app_wiring_receipt_links link WHERE link.receipt_kind='PET_TITLE'");

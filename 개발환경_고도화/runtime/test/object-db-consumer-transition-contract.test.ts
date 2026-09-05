@@ -66,6 +66,8 @@ type Contract = {
       petExploreEventControlRollbackSourceSha256: string;
       petDataCompareIngressSourceSha256: string;
       petDataCompareShadowEvaluatorSourceSha256: string;
+      petTitleIngressSourceSha256: string;
+      petTitleMutationProviderSourceSha256: string;
     };
     auditHelper: string;
     currentAppBoundary: string;
@@ -568,19 +570,19 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.doesNotMatch(builder, /object-db-consumer-transition\.v1\.json/);
   });
 
-  it("derives EVENT_CONTROL MODERN plus both accepted IRIS read-only ingress callsites while keeping Gate2 blocked", () => {
+  it("derives EVENT_CONTROL and PET_TITLE_SELL MODERN plus accepted IRIS read-only callsites while keeping Gate2 blocked", () => {
     assert.equal(contract.status, "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION");
-    assert.equal(contract.runtimeAdoption.status, "PARTIAL_IRIS_PET_EXPLORE_EVENT_CONTROL_MODERN_AND_READ_ONLY_ADOPTION");
+    assert.equal(contract.runtimeAdoption.status, "PARTIAL_IRIS_PET_EXPLORE_EVENT_CONTROL_PET_TITLE_SELL_MODERN_AND_READ_ONLY_ADOPTION");
     const runtimeRoot = fileURLToPath(new URL("../", import.meta.url));
     const adoption = auditObjectDbRuntimeAdoption(runtimeRoot, contract.runtimeAdoption.reviewedSourceHashes);
     assert.deepEqual(adoption.failures, []);
-    assert.equal(adoption.productionSourceCallCount, 2);
+    assert.equal(adoption.productionSourceCallCount, 3);
     assert.equal(contract.runtimeAdoption.productionSourceCallCount, adoption.productionSourceCallCount);
     assert.equal(contract.implementationEvidence.runtimeEntrypointCallCount, adoption.productionSourceCallCount);
     assert.deepEqual(contract.runtimeAdoption.connectedIngressFamilies, adoption.connectedIngressFamilies);
     assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "ADMIN", "WEB"]);
     assert.equal(contract.runtimeAdoption.cutoverClaimed, false);
-    assert.match(contract.runtimeAdoption.currentAppBoundary, /EVENT_CONTROL alone reaches a typed MODERN\/MUTATION handler/);
+    assert.match(contract.runtimeAdoption.currentAppBoundary, /EVENT_CONTROL and PET_TITLE SELL reach typed MODERN\/MUTATION handlers/);
     assert.match(contract.runtimeAdoption.auditHelper, /auditObjectDbRuntimeAdoption$/);
   });
 

@@ -59,8 +59,8 @@
 - canonical 판매 provider는 획득가격 우선 판매가와 `LEGACY_JSON/member.point/point` exact 통화 정의를 사용하고, 소유 상태 `sold`, 선택 해제, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt/OWNER participant를 동일 app-wiring mutation transaction에 결합합니다.
 - migration 471은 PET_TITLE SELL receipt와 CURRENCY operation 사이의 nullable exact FK를 추가하고 `PET_TITLE_SELL`을 SHADOW로 등록합니다. 단독 `release(status='sold')`는 계속 DB 접근 전에 거절합니다.
 - WBS742 V2는 `canonical_item_definition_imports`의 `LEGACY_JSON/member.bag/펫타이틀권🦊(/펫타이틀이름)`과 `canonical_currency_definition_imports`의 `LEGACY_JSON/member.point/point` exact binding 계약을 제공합니다. 아직 실제 MariaDB 리허설·승인 적용 전이므로 생성·판매 MODERN rollout은 차단 상태입니다. 런타임 표시명 추론이나 임의 backfill은 사용하지 않습니다.
-- 판매 transaction 내부 권위 잠금, replay-safe typed 무응답 claim, 무응답 outbox 0건, 강제 outbox 실패 전체 rollback은 격리 MariaDB에서 검증했습니다. rollout은 WBS742 V2 실제 이관 승인 전까지 SHADOW로 유지합니다.
-- migration 471은 새 스키마 forward·재진입과 live SELL receipt rollback preflight, 빈 스키마 rollback을 통과했습니다. MariaDB 12.2에서는 rollback 직후 동일 스키마에 재적용할 때 중복 복합 인덱스 최적화로 FK 재생성이 실패하므로, 기존 적용 migration은 수정하지 않고 clean schema re-forward로 검증했습니다.
+- 실제 `PetTitleAppWiringIngress.handle` → `dispatchPetTitleCommand` → `MariaPlayerContextProvider` → 판매 provider 경계에서 SHADOW legacy fallback·canonical DML 0건, selection→scope→war→player→owned title→currency 잠금 순서와 selection/war 경쟁 차단, replay-safe typed 무응답 claim, 무응답 outbox 0건, 강제 outbox 실패 전체 rollback을 격리 MariaDB에서 검증했습니다. rollout은 WBS742 V2 실제 이관 승인 전까지 SHADOW로 유지합니다.
+- migration 471은 새 스키마 forward·재진입과 live SELL receipt rollback preflight, SELL receipt·연결 제거 후 rollback을 통과했습니다. MariaDB 12.2에서는 rollback 직후 동일 스키마에 재적용할 때 중복 복합 인덱스 최적화로 FK 재생성이 실패하므로, 기존 적용 migration은 수정하지 않고 clean schema re-forward로 검증했습니다.
 - 현 스키마의 펫타이틀 선택은 `owned_pet_id`별이 아니라 플레이어별 1개 선택입니다.
 
 ## 검증
@@ -73,11 +73,11 @@
 - READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
 - MUTATION reply 원자성 테스트: 10/10 통과(정상 저장·동일 outbox replay·4개 실패 지점 전체 rollback·commit 결과 불명 복구·payload/typed reference drift 차단·중복 outbox 차단·legacy replay 차단)
 - PET-TITLE 판매 앱 진입·공용 권위·잠금 순서·READY/PENDING_START·ACTIVE_OPENING/ACTIVE_READY·typed NO_REPLY 집중 테스트: 27/27 통과
-- PET-TITLE 판매 격리 MariaDB: prepare 1/1, 재시작·rollback·clean re-forward 1/1 통과(중복 적립 0, silent outbox 0, 강제 outbox 실패 전롤백, 3306 불변, 3324·임시 DB 정리)
+- PET-TITLE 판매 격리 MariaDB: prepare 1/1, 재시작·rollback·clean re-forward 1/1 통과(실제 ingress/dispatcher/PlayerContext, SHADOW legacy fallback·DML 0, selection/war 잠금 경쟁, READY 즉시 replay handler 0, silent 즉시·재시작 replay handler 0·outbox 0·동일 typed receipt link, 중복 적립 0, 강제 outbox 실패 전롤백, 3306 불변, 3324·임시 DB 정리)
 - 소비자 안정 ID 계약 테스트: 5/5 통과
-- 소비자 재도출·runtime boundary 계약: 18/18 통과(안정 ID 5건 포함 전체 23/23)
+- 소비자 재도출·runtime boundary·production adoption audit 계약: 54/54 통과
 - 오브젝트 데이터 모델 계약 검사: 등록 대상 94개, 통과
-- 전체 runtime 회귀: 2,146개 중 2,138 통과, 실패 0, 환경 의존 8개 건너뜀
+- 전체 runtime 회귀: 2,147개 중 2,139 통과, 실패 0, 환경 의존 8개 건너뜀
 - TypeScript typecheck: 통과
 - JSON 계약 파싱: 14/14 통과
 - `git diff --check`: 통과(줄바꿈 경고만 존재)
