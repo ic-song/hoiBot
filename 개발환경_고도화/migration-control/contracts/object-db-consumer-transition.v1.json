@@ -43,7 +43,7 @@
       "개발환경_고도화/runtime/src/database.ts": "a6f887055b65d110b23fcd4cc563861feb0b56295849a25ffed3cf1b2c55a7c0",
       "개발환경_고도화/runtime/src/config.ts": "3b49c38e39905ffa4078c335d50afa7c49ad25cc15471a29068db699f185a1a0",
       "개발환경_고도화/runtime/src/server.ts": "ff8b8a58172b015d9973ae31c79fded394d607c9c9470293cff6cf7b7c373592",
-      "개발환경_고도화/runtime/src/app.ts": "316d22f02d1d477eda9fec9e3d0148f412d42f9b7a6f3e19d231845540168df5",
+      "개발환경_고도화/runtime/src/app.ts": "ceb68305f560a8ea47b924694f6dc579a847ce9f93e2271a0fed56d3238da3f9",
       "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts": "002f5b7d01b24028a5b87620af49a785b1463bb754f94705b0d0ce1d3d4a4bb7",
       "개발환경_고도화/runtime/src/admin/pet-title-admin-app-wiring-ingress.ts": "3573f6c9f97560b5f99f2370184e311646c9f4367a14315c9adfd5599b568f8f",
       "개발환경_고도화/runtime/src/account-platform/active-member-authority-provider.ts": "e67fa5234a51c13e9833a7088af45ee377f6d5a7e590af815c8302b0476f0c05",
@@ -142,7 +142,7 @@
     "additionalConnectedIngressFamilies": ["ADMIN_PET_TITLE_ADD", "ADMIN_PET_TITLE_STORE_RESET", "ADMIN_PET_TITLE_SYNC"],
     "pendingIngressFamilies": ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "REMAINING_ADMIN", "WEB"],
     "reviewedSourceHashes": {
-      "appSourceSha256": "316d22f02d1d477eda9fec9e3d0148f412d42f9b7a6f3e19d231845540168df5",
+      "appSourceSha256": "ceb68305f560a8ea47b924694f6dc579a847ce9f93e2271a0fed56d3238da3f9",
       "petExploreIngressSourceSha256": "d843190731458ce30f48a437d8930f99a5baeb86055df9f019a15f4518780262",
       "petExploreEventControlProviderSourceSha256": "c85d46d3bb4d7361837c6736e1e406025f7dd59af933c26ec9ef253374840c24",
       "appWiringOperationProviderSourceSha256": "d55f0a2acf023e944186cda5ac6e213d2148c10d4940974c7f7c1f6821e37037",
