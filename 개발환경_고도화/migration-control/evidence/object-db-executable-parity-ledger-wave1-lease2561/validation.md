@@ -6,7 +6,7 @@
 - Trusted-input phase1 commit: `25669eb87fa1e26131063379dc92e7e342ee8e2e`
 - Phase1 commit message: `실행 패리티 신뢰 입력과 검증 경계를 강화`
 - The validator confirmed that the commit exists, is an ancestor of current `HEAD`, and contains the fixture, runner, target, and repository source blobs used by every receipt.
-- Generated receipts, ledger, and this validation record are phase2 outputs and intentionally remain uncommitted for independent review.
+- Generated receipts, ledger, and this validation record are phase2 outputs that were independently reviewed while uncommitted, then recorded in the separate phase2 evidence commit.
 
 ## Proven cohort
 
