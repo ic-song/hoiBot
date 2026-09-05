@@ -7,7 +7,7 @@
 - branch: `codex/guild-territory-attack-runtime4-parity-v1-20260906`
 - baseline: `a397e2dc6cb810404efc812ab0c4ee33c43b369b`
 - state: final focused T1/T2 complete; latest-diff independent review APPROVED (P0/P1/P2=0); isolated Maria cleanup 0
-- commit/push: prohibited until independent review, therefore none
+- commit/push: recorded on the source branch after independent approval; final integration is tracked separately
 
 ## changed scope
 
@@ -30,5 +30,5 @@
 
 ## next action
 
-1. foreman이 최신 증빙과 독립 승인 결과를 확인한다.
-2. foreman 승인 없이는 commit/push하지 않는다.
+1. foreman이 source commit을 최종 통합 기준선에 반영한다.
+2. WBS/Lease 승인 기록 후 운영 데이터 이관과 Gate8은 별도 WBS로 유지한다.
