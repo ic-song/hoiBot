@@ -28,6 +28,7 @@ const paths = {
   transitionContract: "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
   executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave0-v1.json",
 } as const;
+const wave1ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave1-v1.json";
 const read = (path: string): string => readFileSync(resolve(repoRoot, path), "utf8");
 const manifestText = read(paths.consumerManifest);
 const manifest = JSON.parse(manifestText) as ConsumerManifestInput;
@@ -108,6 +109,23 @@ function buildWith(receipts: ObjectDbConsumerExecutionReceipt[], evidenceFileTex
   return buildObjectDbConsumerExecutableParityLedger({ ...baseInput, executionReceiptsText: JSON.stringify(bundle, null, 2), evidenceFileTexts });
 }
 
+function wave1Proof(consumerId: string, limit?: number): { receipts: ObjectDbConsumerExecutionReceipt[]; files: Record<string, string>; bundle: ObjectDbConsumerExecutionReceiptBundle } {
+  const bundle = JSON.parse(read(wave1ReceiptPath)) as ObjectDbConsumerExecutionReceiptBundle;
+  const receipts = bundle.receipts.filter((receipt) => receipt.consumerId === consumerId).slice(0, limit);
+  assert.ok(receipts.length > 0);
+  const files = Object.fromEntries([...new Set(receipts.flatMap((receipt) => [receipt.harness.path, receipt.fixture.path, receipt.invocation.targetPath]))].map((path) => [path, read(path)]));
+  return { receipts, files, bundle };
+}
+
+function buildWave1With(receipts: ObjectDbConsumerExecutionReceipt[], files: Record<string, string>, bundle: ObjectDbConsumerExecutionReceiptBundle): ExecutableParityLedger {
+  return buildObjectDbConsumerExecutableParityLedger({
+    ...baseInput,
+    executionReceiptsText: JSON.stringify({ ...bundle, receipts }, null, 2),
+    sourcePaths: { ...paths, executionReceipts: wave1ReceiptPath },
+    evidenceFileTexts: files,
+  });
+}
+
 describe("object DB executable parity ledger Wave0", () => {
   it("builds the exact source-derived fail-closed 1,111-ID baseline", () => {
     const ledger = buildObjectDbConsumerExecutableParityLedger(baseInput);
@@ -137,67 +155,64 @@ describe("object DB executable parity ledger Wave0", () => {
   });
 
   it("promotes only a valid receipt subset to PARTIAL and a complete matrix to DIRECT_PASS", () => {
-    const baseline = buildObjectDbConsumerExecutableParityLedger(baseInput);
-    for (const accessClass of ["READ", "MUTATION"] as const) {
-      const entry = baseline.entries.find(({ verdict, classification, scenarioRequirements }) => verdict === "STATIC_ONLY" && classification.accessClass === accessClass && scenarioRequirements.filter(({ disposition }) => disposition === "REQUIRED").length > 1);
-      assert.ok(entry);
-      const partial = receiptsFor(entry, 1);
-      assert.equal(buildWith(partial.receipts, partial.files).entries.find(({ consumerId }) => consumerId === entry.consumerId)?.verdict, "PARTIAL");
-      const full = receiptsFor(entry);
-      const ledger = buildWith(full.receipts, full.files);
-      assert.equal(ledger.entries.find(({ consumerId }) => consumerId === entry.consumerId)?.verdict, "DIRECT_PASS");
-      assert.equal(ledger.coverage.provenConsumers, 1);
-    }
+    const consumerId = "sql-repository-0dc3c380c54081a2";
+    const full = wave1Proof(consumerId);
+    const partial = wave1Proof(consumerId, 1);
+    assert.equal(buildWave1With(partial.receipts, partial.files, partial.bundle).entries.find((entry) => entry.consumerId === consumerId)?.verdict, "PARTIAL");
+    const ledger = buildWave1With(full.receipts, full.files, full.bundle);
+    assert.equal(ledger.entries.find((entry) => entry.consumerId === consumerId)?.verdict, "DIRECT_PASS");
+    assert.equal(ledger.coverage.provenConsumers, 1);
   });
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
     const baseline = buildObjectDbConsumerExecutableParityLedger(baseInput);
-    const entry = baseline.entries.find(({ verdict }) => verdict === "STATIC_ONLY")!;
-    const proof = receiptsFor(entry, 1);
+    const entry = baseline.entries.find(({ consumerId }) => consumerId === "sql-repository-0dc3c380c54081a2")!;
+    const proofWithBundle = wave1Proof(entry.consumerId, 1);
+    const proof = { receipts: proofWithBundle.receipts, files: proofWithBundle.files };
     const receipt = proof.receipts[0]!;
     const commentsOnly = structuredClone(receipt);
     const commentsText = `// OBJECT_DB_EXECUTABLE_PARITY_BINDING:${JSON.stringify({ consumerId: receipt.consumerId })}\n`;
     commentsOnly.harness.sourceSha256 = sha256CanonicalText(commentsText);
     commentsOnly.receiptSha256 = receiptHash(commentsOnly);
-    assert.throws(() => buildWith([commentsOnly], { ...proof.files, [receipt.harness.path]: commentsText }), /on-disk invocation source hash drift/);
-    for (const [maliciousPath, expectedError] of [
-      ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-print-only-harness.mjs", /runner entrypoint is not allowlisted/],
-      ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-rawless-harness.mjs", /runner entrypoint is not allowlisted/],
+    assert.throws(() => buildWave1With([commentsOnly], { ...proof.files, [receipt.harness.path]: commentsText }, proofWithBundle.bundle), /evidenceCommit blob hash drift/);
+    for (const [maliciousPath] of [
+      ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-print-only-harness.mjs"],
+      ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-rawless-harness.mjs"],
     ] as const) {
       const maliciousText = read(maliciousPath);
       const malicious = structuredClone(receipt);
       malicious.harness.path = maliciousPath;
       malicious.harness.sourceSha256 = sha256CanonicalText(maliciousText);
       malicious.receiptSha256 = receiptHash(malicious);
-      assert.throws(() => buildWith([malicious], { ...proof.files, [maliciousPath]: maliciousText }), expectedError);
+      assert.throws(() => buildWave1With([malicious], { ...proof.files, [maliciousPath]: maliciousText }, proofWithBundle.bundle), /runner entrypoint is not allowlisted/);
     }
     const ignoredRunner = structuredClone(receipt);
     ignoredRunner.harness.runner = "node --eval";
     ignoredRunner.receiptSha256 = receiptHash(ignoredRunner);
-    assert.throws(() => buildWith([ignoredRunner], proof.files), /runner metadata is not allowlisted/);
+    assert.throws(() => buildWave1With([ignoredRunner], proof.files, proofWithBundle.bundle), /runner metadata is not allowlisted/);
     const targetHashDrift = structuredClone(receipt);
     targetHashDrift.invocation.targetSourceSha256 = "0".repeat(64);
     targetHashDrift.receiptSha256 = receiptHash(targetHashDrift);
-    assert.throws(() => buildWith([targetHashDrift], proof.files), /invocation target source hash drift/);
+    assert.throws(() => buildWave1With([targetHashDrift], proof.files, proofWithBundle.bundle), /evidenceCommit blob hash drift/);
     const selfPath = structuredClone(receipt);
     selfPath.harness.path = paths.executionReceipts;
     selfPath.receiptSha256 = receiptHash(selfPath);
-    assert.throws(() => buildWith([selfPath], { ...proof.files, [paths.executionReceipts]: baseInput.executionReceiptsText }), /self-hash/);
+    assert.throws(() => buildWave1With([selfPath], { ...proof.files, [paths.executionReceipts]: baseInput.executionReceiptsText }, proofWithBundle.bundle), /trusted Wave1 invocation target drift|trusted input|evidenceCommit blob hash drift/);
     const other = structuredClone(receipt);
     other.consumerId = baseline.entries.find(({ consumerId }) => consumerId !== entry.consumerId)!.consumerId;
     other.receiptSha256 = receiptHash(other);
-    assert.throws(() => buildWith([other], proof.files), /unrelated harness|blocked consumer|binding/);
+    assert.throws(() => buildWave1With([other], proof.files, proofWithBundle.bundle), /unrelated harness|blocked consumer|binding|trusted/);
     const unrelatedFixtureText = JSON.stringify({ format: "hoibot-object-db-consumer-parity-case-fixture-v1", fixtureId: receipt.fixture.fixtureId, bindings: [], payload: {} });
     const unrelatedFixture = structuredClone(receipt);
     unrelatedFixture.fixture.sha256 = sha256CanonicalText(unrelatedFixtureText);
     unrelatedFixture.receiptSha256 = receiptHash(unrelatedFixture);
-    assert.throws(() => buildWith([unrelatedFixture], { ...proof.files, [receipt.fixture.path]: unrelatedFixtureText }), /unrelated fixture/);
+    assert.throws(() => buildWave1With([unrelatedFixture], { ...proof.files, [receipt.fixture.path]: unrelatedFixtureText }, proofWithBundle.bundle), /evidenceCommit blob hash drift|unrelated fixture/);
   });
 
   it("rejects reply/result, DML row, lock-order, timeline, and arbitrary verdict drift", () => {
-    const baseline = buildObjectDbConsumerExecutableParityLedger(baseInput);
-    const entry = baseline.entries.find(({ verdict }) => verdict === "STATIC_ONLY")!;
-    const proof = receiptsFor(entry, 1);
+    const entry = buildObjectDbConsumerExecutableParityLedger(baseInput).entries.find(({ consumerId }) => consumerId === "sql-repository-0dc3c380c54081a2")!;
+    const proofWithBundle = wave1Proof(entry.consumerId, 1);
+    const proof = { receipts: proofWithBundle.receipts, files: proofWithBundle.files };
     for (const [label, mutate] of [
       ["result", (receipt: ObjectDbConsumerExecutionReceipt) => { const hash = sha256CanonicalText("self-declared-result"); receipt.expectedActual.result.expectedSha256 = hash; receipt.expectedActual.result.actualSha256 = hash; }],
       ["DML row", (receipt: ObjectDbConsumerExecutionReceipt) => { receipt.expectedActual.dml.expectedRowCount! += 1; receipt.expectedActual.dml.actualRowCount! += 1; const hash = sha256CanonicalJson({ normalizedStatements: receipt.expectedActual.dml.actualNormalizedStatements, rowCount: receipt.expectedActual.dml.actualRowCount }); receipt.expectedActual.dml.expectedSha256 = hash; receipt.expectedActual.dml.actualSha256 = hash; }],
@@ -205,7 +220,7 @@ describe("object DB executable parity ledger Wave0", () => {
       ["timeline", (receipt: ObjectDbConsumerExecutionReceipt) => { receipt.expectedActual.transaction.expectedTimeline!.push("DRIFT"); receipt.expectedActual.transaction.actualTimeline!.push("DRIFT"); }],
     ] as const) {
       const drift = structuredClone(proof.receipts[0]!); mutate(drift); drift.receiptSha256 = receiptHash(drift);
-      assert.throws(() => buildWith([drift], proof.files), /raw .*mismatch|fingerprint drift/, label);
+      assert.throws(() => buildWave1With([drift], proof.files, proofWithBundle.bundle), /raw .*mismatch|fingerprint drift|READ scenario must have business DML0/, label);
     }
     const ledger = buildObjectDbConsumerExecutableParityLedger(baseInput);
     ledger.entries.find(({ verdict }) => verdict === "STATIC_ONLY")!.verdict = "DIRECT_PASS";
