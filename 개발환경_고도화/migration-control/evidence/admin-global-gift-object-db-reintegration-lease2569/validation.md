@@ -11,5 +11,6 @@
 - outbox 무결성: FK처럼 보이는 논리 `outbox_message_id`는 두지 않는다. canonical operation의 `operation_key`가 applied `operations(operation_key)` UNIQUE를 동일명·동일형 실제 FK로 참조한다. replay/RFA02 ambiguous-commit 재조회는 이 operation 아래 outbox 11개를 생성 순서로 channel snapshot의 sequence/destination/payload hash와 대조하고 delivery status 허용 집합 및 terminal receipt까지 검산한다. INFORMATION_SCHEMA에서 해당 FK와 신규 schema FK 총 7개를 확인했다.
 - external dependency: validator에는 applied migration 002의 `operations(id PK, operation_key UNIQUE)` 실제 최소 shape만 pin했고 신규 권위나 공용 DB/runtime 동작은 추가하지 않았다. shape drift 계약 테스트 PASS.
 - legacy `main.js`, `Info.js`, `data/`는 수정하지 않았다.
+- 독립 읽기전용 재리뷰: P0=0/P1=0/P2=0, APPROVED.
 
 검증 이력 주의: 개발 중 실수로 full test 명령을 한 번 시작했으나 즉시 중단했으며 의존성 미연결 출력만 발생했다. 해당 실행은 T3 또는 성공 증거로 주장하지 않는다. 이후 허용된 focused test만 별도로 실행해 위 결과를 얻었다.
