@@ -1,0 +1,48 @@
+{
+  "format": "hoibot-item25-preservation-audit-v1",
+  "sliceId": "SL-ITEM25-RAID-DEPT1-PRESERVATION-VALIDATION-01",
+  "wbs": 753,
+  "lease": 2565,
+  "catalogVersion": "SC-20260902-1",
+  "baselineCommit": "2911301991c8630ab8cf097a9820179adf2f9a0f",
+  "result": "PASS",
+  "set": {
+    "recordKind": "RAID_ITEM_DEFINITION",
+    "sourcePrefix": "/raidSpecialItem/dept1/",
+    "expectedCount": 8,
+    "validatedCount": 8,
+    "active": true,
+    "exactPointers": [
+      "/raidSpecialItem/dept1/item_0",
+      "/raidSpecialItem/dept1/item_1",
+      "/raidSpecialItem/dept1/item_2",
+      "/raidSpecialItem/dept1/item_3",
+      "/raidSpecialItem/dept1/item_4",
+      "/raidSpecialItem/dept1/item_5",
+      "/raidSpecialItem/dept1/item_6",
+      "/raidSpecialItem/dept1/item_7"
+    ]
+  },
+  "validated": [
+    "source pointer and record kind",
+    "exact payload and payload fingerprint",
+    "active definition state",
+    "definition_options fingerprint",
+    "existing CUID2 CHAR(8) canonical item identity and crosswalk path",
+    "generic conditional ownership by player_id and item_id"
+  ],
+  "negative": [
+    "unknown pointer rejected",
+    "payload drift rejected",
+    "bare auction name equivalence not inferred",
+    "deletion and deactivation not authorized"
+  ],
+  "scope": {
+    "newAcquisition": false,
+    "newEffect": false,
+    "newConsumer": false,
+    "migrationChanged": false,
+    "operationalDataMigration": false,
+    "gate8": false
+  }
+}

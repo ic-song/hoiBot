@@ -1,0 +1,14 @@
+{
+  "format": "hoibot-item25-preservation-dependencies-v1",
+  "sliceId": "SL-ITEM25-RAID-DEPT1-PRESERVATION-VALIDATION-01",
+  "dependencies": [
+    { "path": "data/itemInfo.json", "sha256": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc", "mode": "read-only source seal" },
+    { "path": "개발환경_고도화/runtime/migrations/386_iteminfo_raid_definitions.sql", "sha256": "662fe199796eb270d8fe16696c81116e688779293146ff933454e1574cbc9273", "mode": "already-applied migration, unchanged" },
+    { "path": "개발환경_고도화/runtime/src/data-migration/item25-canonical-definition-provider.ts", "sha256": "816466f8cb13a906d005cbd99f2d19ffaf3da393e04a6988ab82cfc153930a39", "mode": "shared canonical provider, unchanged" },
+    { "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts", "sha256": "bd5ce7bc44c4e10ef7d10f294779657023efc876dc349fada77ba77d711b4d86", "mode": "generic ownership path, unchanged" },
+    { "path": "개발환경_고도화/migration-control/contracts/item25-canonical-definition-binding.v1.json", "sha256": "55b3171bac1998a5584874426371143de79439fc0790445c6270164fec9456bb", "mode": "canonical binding contract, unchanged" },
+    { "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/iteminfo-raid-definitions-v1.json", "sha256": "66a04716600b3b94868c6cd760ca56123e0fb620f7dd438c433df691efdc83c0", "mode": "exact catalog fixture, unchanged" },
+    { "path": "개발환경_고도화/migration-control/evidence/item25-raid-territory-source-audit-lease2562-2563/audit.json", "sha256": "9a2cf88a7bfb2297efd1fb5ad27638b11494a7f41c36fed58054af9480f7667c", "mode": "source audit, unchanged" },
+    { "path": "개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/mariadb-transcript.json", "sha256": "1a736f41ac202e31fd9c2456b76e736353a2bbe0d5b018c9d0a4d6336e28b324", "mode": "existing isolated MariaDB evidence, unchanged" }
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "format": "hoibot-item25-preservation-audit-v1",
+  "sliceId": "SL-ITEM25-CASTLE-PREMIUM6-PRESERVATION-VALIDATION-01",
+  "wbs": 755,
+  "lease": 2566,
+  "catalogVersion": "SC-20260902-1",
+  "baselineCommit": "2911301991c8630ab8cf097a9820179adf2f9a0f",
+  "result": "PASS",
+  "set": {
+    "recordKind": "TERRITORY_ITEM_DEFINITION",
+    "sourcePrefix": "/castlePremiumItem/",
+    "expectedCount": 6,
+    "validatedCount": 6,
+    "active": true,
+    "exactPointers": [
+      "/castlePremiumItem/offense/item_0",
+      "/castlePremiumItem/offense/item_1",
+      "/castlePremiumItem/offense/item_2",
+      "/castlePremiumItem/defense/item_0",
+      "/castlePremiumItem/defense/item_1",
+      "/castlePremiumItem/defense/item_2"
+    ],
+    "successRates": [1, 0.6, 0.2, 1, 0.5, 0.25]
+  },
+  "validated": [
+    "six independent source pointers",
+    "exact display names and stored successRate payloads",
+    "active definition state and definition_options",
+    "existing CUID2 CHAR(8) canonical item identity and crosswalk path"
+  ],
+  "negative": [
+    "duplicate or collapsed pointer rejected",
+    "rate rewrite rejected",
+    "runtime-four mapping not inferred"
+  ],
+  "scope": {
+    "runtimeFourMapping": false,
+    "probabilityChange": false,
+    "newConsumer": false,
+    "migrationChanged": false,
+    "operationalDataMigration": false,
+    "gate8": false
+  }
+}
