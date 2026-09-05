@@ -25,7 +25,7 @@ function event(message: string): NormalizedIrisEvent {
   };
 }
 
-const database: AppWiringReadParticipant = { query: async <T>() => [] as T };
+const database: AppWiringReadParticipant = { query: async <T>(sql:string) => (sql.includes("account_platform_active_player_selections")?[{active_player_selection_id:"sel00001"}]:[]) as T };
 
 function ports(allowed: boolean) {
   const calls: Array<{ method: string; value: unknown }> = [];
@@ -90,7 +90,7 @@ describe("PET-TITLE app-wiring shadow boundary", () => {
       },
     });
     const readOnlyDatabase: AppWiringReadParticipant = {
-      query: async <T>(sql: string) => { queries.push(sql); return [{ active_count: 0n }] as T; },
+      query: async <T>(sql: string) => { queries.push(sql); return [{ active: 0, lifecycle_state: "READY" }] as T; },
     };
     const result = await evaluator.preview(readOnlyDatabase, event("/펫타이틀 2"));
     assert.equal(result.outcomeCode, "READY");
@@ -106,28 +106,30 @@ describe("PET-TITLE app-wiring shadow boundary", () => {
     const evaluator = new PetTitleShadowEvaluator(fixture.contexts, fixture.authority, {
       listOwned: async () => { titleReads += 1; return []; },
     });
-    const noCastle: AppWiringReadParticipant = { query: async <T>() => [{ active_count: 0n }] as T };
+    const noCastle: AppWiringReadParticipant = { query: async <T>() => [{ active: 0, lifecycle_state: "READY" }] as T };
     assert.equal((await evaluator.preview(noCastle, event("/펫타이틀 0"))).outcomeCode, "INDEX_INVALID");
     assert.equal((await evaluator.preview(noCastle, event("/펫타이틀 9"))).outcomeCode, "NOT_FOUND");
-    const activeCastle: AppWiringReadParticipant = { query: async <T>() => [{ active_count: 1n }] as T };
+    const activeCastle: AppWiringReadParticipant = { query: async <T>() => [{ active: 1, lifecycle_state: "ACTIVE_READY" }] as T };
     assert.equal((await evaluator.preview(activeCastle, event("/펫타이틀 1"))).outcomeCode, "SILENT_CASTLE_ACTIVE");
     assert.equal(titleReads, 1);
   });
 });
 
-function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false){
+function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false,replayStatus="REPLY_QUEUED"){
   let previewCalls=0;
   let createCalls=0;
   let sellCalls=0;
-  const baseClaim:AppWiringClaim={appWiringOperationId:"claim001",requestIdentityFingerprint:"a".repeat(64),requestNamespace:"hoibot:dev:hoi_bot",entrypointKind:"IRIS",externalRequestId:"pet-title-1",requestKey:"IRIS:pet-title-1",payloadFingerprint:"b".repeat(64),route,effectMode:"READ_ONLY",reasonCode:route==="REJECT"?"AUTH_SCOPE_NOT_SATISFIED":"CANARY",handlerKey:"pet_title_lifecycle",claimState:replay?"COMPLETED":"CLAIMED",...(replay?{result:{status:"REPLY_QUEUED",referenceId:"petop001",resultFingerprint:"c".repeat(64)}}:{})};
+  const baseClaim:AppWiringClaim={appWiringOperationId:"claim001",requestIdentityFingerprint:"a".repeat(64),requestNamespace:"hoibot:dev:hoi_bot",entrypointKind:"IRIS",externalRequestId:"pet-title-1",requestKey:"IRIS:pet-title-1",payloadFingerprint:"b".repeat(64),route,effectMode:"READ_ONLY",reasonCode:route==="REJECT"?"AUTH_SCOPE_NOT_SATISFIED":"CANARY",handlerKey:"pet_title_lifecycle",claimState:replay?"COMPLETED":"CLAIMED",...(replay?{result:{status:replayStatus,referenceId:"petop001",resultFingerprint:"c".repeat(64)}}:{})};
   const provider={
     prepare:async(_input:unknown,resolveRoute:()=>Promise<{effectMode?:"READ_ONLY"|"MUTATION"}>|{effectMode?:"READ_ONLY"|"MUTATION"})=>{const decision=await resolveRoute();const claim={...baseClaim,effectMode:decision.effectMode??"READ_ONLY"} as AppWiringClaim;return replay?{claim,replayed:true as const}:{claim,replayed:false as const};},
     runReadOnlyReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database,prepared.claim);return {value:outcome.value,reply:{outboxId:"21",room:outcome.reply.destinationId,data:outcome.reply.data}};},
     runMutationReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return {value:outcome.value,reply:{outboxId:"22",room:outcome.reply.destinationId,data:outcome.reply.data}};},
+    runMutationIrisOutcome:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply?:{destinationId:string;data:string};noReply?:{kind:"NO_REPLY"}}>)=>{const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return outcome.reply===undefined?{value:outcome.value,noReply:{kind:"NO_REPLY"}}:{value:outcome.value,reply:{outboxId:"23",room:outcome.reply.destinationId,data:outcome.reply.data}};},
     runReadOnly:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(database,prepared.claim)).value,
     runReject:async(prepared:{claim:AppWiringClaim},handler:(claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(prepared.claim)).value,
     replayReadOnlyReply:async()=>({outboxId:"21",room:"room-1",data:"목록"}),
     replayMutationReply:async()=>({outboxId:"22",room:"room-1",data:"저장된 생성 응답"}),
+    replayMutationIrisOutcome:async()=>replayStatus==="NO_REPLY"?{noReply:{kind:"NO_REPLY"}}:{reply:{outboxId:"23",room:"room-1",data:"저장된 판매 응답"}},
     fail:async()=>{},
   } as unknown as MariaAppWiringOperationProvider;
   const ingress=new PetTitleAppWiringIngress(
@@ -140,6 +142,8 @@ function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false){
       :{operationId:"petop001",operationType:"CREATE",outcomeCode:"CREATED",ownedPetTitleId:"petown01",titleName:input.titleName,remainingTicketQuantity:1n,resultFingerprint:"c".repeat(64),replayedDomainState:false};},
      sell:async(_database,_claim,input)=>{sellCalls+=1;return input.index===9
        ?{operationId:"petop009",operationType:"SELL",outcomeCode:"NOT_FOUND",salePoint:0n,resultFingerprint:"c".repeat(64),replayedDomainState:false}
+       :input.index===8
+       ?{operationId:"petop008",operationType:"SELL",outcomeCode:"SILENT_CASTLE_ACTIVE",salePoint:0n,resultFingerprint:"c".repeat(64),replayedDomainState:false}
        :{operationId:"petop002",operationType:"SELL",outcomeCode:"SOLD",ownedPetTitleId:"petown01",titleName:"별빛",salePoint:30_000_000n,currencyOperationId:"currop01",balanceAfterMinorAmount:30_000_000_000n,resultFingerprint:"c".repeat(64),replayedDomainState:false};}},
   );
   return {ingress,previewCalls:()=>previewCalls,createCalls:()=>createCalls,sellCalls:()=>sellCalls};
@@ -210,13 +214,27 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     assert.equal(modern.createCalls(),0);
   });
 
-  it("keeps sale SHADOW and MODERN on legacy until castle silent claim parity exists",async()=>{
+  it("keeps sale SHADOW on legacy and adopts MODERN sale with exact reply and typed no-reply parity",async()=>{
     const shadow=ingressFor("SHADOW");
     assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀판매 1")),{status:"legacy_fallback"});
     assert.equal(shadow.sellCalls(),0);
     const modern=ingressFor("MODERN");
-    assert.deepEqual(await modern.ingress.handle(event("/펫타이틀판매 1")),{status:"legacy_fallback"});
-    assert.equal(modern.sellCalls(),0);
+    assert.deepEqual(await modern.ingress.handle(event("/펫타이틀판매 1")),{status:"modern",replayed:false,resultFingerprint:"c".repeat(64),reply:{outboxId:"23",room:"room-1",data:"[👑호이] 님의 펫 타이틀 [별빛] \n🅟30,000,000 포인트에 판매되었습니다."}});
+    assert.equal(modern.sellCalls(),1);
+    const soldReplay=ingressFor("MODERN",true);
+    assert.deepEqual(await soldReplay.ingress.handle(event("/펫타이틀판매 1")),{status:"modern",replayed:true,resultFingerprint:"c".repeat(64),reply:{outboxId:"23",room:"room-1",data:"저장된 판매 응답"}});
+    assert.equal(soldReplay.sellCalls(),0);
+    const missing=ingressFor("MODERN");
+    const missingResult=await missing.ingress.handle(event("/펫타이틀판매 9"));
+    assert.equal(missingResult.status,"modern");
+    if(missingResult.status!=="modern")throw new Error("modern result required");
+    assert.equal(missingResult.reply.data,"해당 번호의 펫 타이틀이 존재하지 않습니다.");
+    const silent=ingressFor("MODERN");
+    assert.deepEqual(await silent.ingress.handle(event("/펫타이틀판매 8")),{status:"handled_no_reply",replayed:false,resultFingerprint:"c".repeat(64)});
+    assert.equal(silent.sellCalls(),1);
+    const silentReplay=ingressFor("MODERN",true,"NO_REPLY");
+    assert.deepEqual(await silentReplay.ingress.handle(event("/펫타이틀판매 8")),{status:"handled_no_reply",replayed:true,resultFingerprint:"c".repeat(64)});
+    assert.equal(silentReplay.sellCalls(),0);
     assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀판매방법")),{status:"ignored"});
     assert.deepEqual(await shadow.ingress.handle(event("/펫타이틀판매 1 알려줘")),{status:"ignored"});
   });

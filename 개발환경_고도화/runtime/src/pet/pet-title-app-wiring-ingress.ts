@@ -2,9 +2,10 @@ import { createHash } from "node:crypto";
 
 import type { PlayerContext, PlayerContextPort } from "../account-platform/player-context-provider.js";
 import type { CommandDispatcher, CommandDispatchDecision } from "../dispatch/command-dispatcher.js";
-import { executeAppWiringEntrypoint, executeAppWiringMutationReplyEntrypoint, executeAppWiringReadOnlyReplyEntrypoint } from "../dispatch/app-wiring-entrypoint-runner.js";
+import { executeAppWiringEntrypoint, executeAppWiringMutationIrisEntrypoint, executeAppWiringMutationReplyEntrypoint, executeAppWiringReadOnlyReplyEntrypoint } from "../dispatch/app-wiring-entrypoint-runner.js";
 import type { AppWiringMutationParticipant, AppWiringReadParticipant, MariaAppWiringOperationProvider } from "../dispatch/app-wiring-operation-provider.js";
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
+import { resolveGuildTerritoryWarAuthority } from "../guild/guild-territory-war-authority.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { PetTitleCanonicalReadProvider } from "./pet-title-canonical-read-provider.js";
 import { PetTitleCanonicalMutationProvider } from "./pet-title-canonical-mutation-provider.js";
@@ -41,6 +42,7 @@ export interface PetTitleShadowPreview {
 
 export type PetTitleAppWiringIngressResult =
   | { readonly status: "ignored" | "legacy_fallback" }
+  | { readonly status: "handled_no_reply"; readonly replayed: boolean; readonly resultFingerprint: string }
   | { readonly status: "modern"; readonly replayed: boolean; readonly resultFingerprint: string; readonly reply: { readonly outboxId: string; readonly room: string; readonly data: string } }
   | { readonly status: "shadow"; readonly replayed: boolean; readonly resultFingerprint: string }
   | { readonly status: "rejected"; readonly replayed: boolean; readonly reasonCode: string; readonly resultFingerprint?: string };
@@ -53,8 +55,30 @@ function externalRequestId(value: string): string {
   return /^[A-Za-z0-9._:@/-]{1,172}$/.test(value) ? value : `sha256:${createHash("sha256").update(value, "utf8").digest("hex")}`;
 }
 
+// 레거시 판매 응답과 같은 세 자리 구분 포인트 문자열을 반환합니다.
+function formatPoint(value:bigint):string{return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+
 function forbiddenMutation(): Promise<never> {
   return Promise.reject(new Error("PET_TITLE_APP_WIRING_MUTATION_NOT_ADOPTED"));
+}
+
+// 호출 방의 활성 게임계정 선택 한 건을 잠가 명령 도중 계정 전환을 차단합니다.
+async function lockActivePlayerSelection(database:AppWiringMutationParticipant,event:NormalizedIrisEvent):Promise<void>{
+  const rows=await database.query<Array<{active_player_selection_id:string}>>(
+    `SELECT selection.active_player_selection_id
+       FROM account_platform_identities platform_identity
+       JOIN account_platform_context_memberships membership
+         ON membership.platform_identity_id=platform_identity.platform_identity_id AND membership.membership_status='ACTIVE'
+       JOIN account_platform_contexts context_row
+         ON context_row.platform_context_id=membership.platform_context_id AND context_row.context_status='ACTIVE'
+       JOIN account_platform_active_player_selections selection
+         ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.selection_status='ACTIVE'
+      WHERE platform_identity.platform_code='KAKAO' AND platform_identity.identity_scope_key=?
+        AND platform_identity.external_user_key=? AND platform_identity.identity_status='ACTIVE'
+        AND context_row.context_type='ROOM' AND context_row.external_context_key=? FOR UPDATE`,
+    [event.channelId!,event.userId!,event.channelId!],
+  );
+  if(rows.length!==1)throw new Error("PET_TITLE_ACTIVE_PLAYER_SELECTION_DRIFT");
 }
 
 export class PetTitleShadowEvaluator {
@@ -78,10 +102,15 @@ export class PetTitleShadowEvaluator {
       if (command.index < 1) {
         return { authorized: true, outcomeCode: "INDEX_INVALID", resultFingerprint: fingerprint({ command: command.kind, index: command.index, outcome: "INDEX_INVALID", playerId: actor.canonicalPlayerId }) };
       }
-      const active = await database.query<Array<{ active_count: bigint | number | string }>>(
-        "SELECT COUNT(*) AS active_count FROM castle_battle_seasons WHERE status='active' AND (starts_at IS NULL OR starts_at<=UTC_TIMESTAMP(3)) AND (ends_at IS NULL OR ends_at>=UTC_TIMESTAMP(3))",
+      const wars = await database.query<Array<{ active: boolean | number; lifecycle_state: string }>>(
+        `SELECT war.active,war.lifecycle_state
+           FROM guild_territory_start_scopes scope_row
+           JOIN guild_territory_wars war ON war.id=scope_row.war_id
+          WHERE scope_row.scope_code=?`,
+        ["world"],
       );
-      if (BigInt(active[0]?.active_count ?? 0) > 0n) {
+      if(wars[0]===undefined)throw new Error("GUILD_TERRITORY_WORLD_AUTHORITY_NOT_FOUND");
+      if (resolveGuildTerritoryWarAuthority(wars[0].active,wars[0].lifecycle_state)) {
         return { authorized: true, outcomeCode: "SILENT_CASTLE_ACTIVE", resultFingerprint: fingerprint({ command: command.kind, index: command.index, outcome: "SILENT_CASTLE_ACTIVE", playerId: actor.canonicalPlayerId }) };
       }
       const rows = await this.titles.listOwned(database, actor.canonicalPlayerId);
@@ -122,7 +151,7 @@ export class PetTitleAppWiringIngress {
     private readonly dispatcher: Pick<CommandDispatcher, "resolveReadOnly">,
     private readonly evaluator: Pick<PetTitleShadowEvaluator, "preview">,
     private readonly contexts: PlayerContextPort,
-    private readonly mutations: Pick<PetTitleCanonicalMutationProvider,"create">&Partial<Pick<PetTitleCanonicalMutationProvider,"sell">>,
+    private readonly mutations: Pick<PetTitleCanonicalMutationProvider,"create"|"sell">,
   ) {}
 
   async handle(event: NormalizedIrisEvent): Promise<PetTitleAppWiringIngressResult> {
@@ -142,8 +171,8 @@ export class PetTitleAppWiringIngress {
     if(command.kind==="select"&&decision.route==="MODERN")return {status:"legacy_fallback"};
     // CREATE SHADOW는 정식 아이템과 타이틀을 변경하지 않고 기존 명령만 실행합니다.
     if(command.kind==="create"&&decision.route==="SHADOW")return {status:"legacy_fallback"};
-    // 레거시 공성전 중 완전 무응답을 typed no-reply claim으로 저장할 수 있을 때까지 판매는 강제 legacy입니다.
-    if(command.kind==="sell"&&(decision.route==="SHADOW"||decision.route==="MODERN"))return {status:"legacy_fallback"};
+    // 판매 SHADOW는 정식 타이틀과 포인트를 변경하지 않고 기존 명령만 실행합니다.
+    if(command.kind==="sell"&&decision.route==="SHADOW")return {status:"legacy_fallback"};
     const route = command.kind==="create"||command.kind==="sell"
       ? { ...decision, effectMode: "MUTATION" as const } satisfies CommandDispatchDecision & { readonly effectMode: "MUTATION" }
       : { ...decision, effectMode: "READ_ONLY" as const } satisfies CommandDispatchDecision & { readonly effectMode: "READ_ONLY" };
@@ -155,7 +184,7 @@ export class PetTitleAppWiringIngress {
         command: command.kind,
         message: event.message!,
         targetKey: command.kind === "list_target" ? command.targetName : null,
-        selectedIndex: command.kind === "select"||command.kind==="sell" ? command.index : null,
+        selectedIndex: command.kind === "select" ? command.index : command.kind==="sell" ? /^\/펫타이틀판매\s+(\d+)\s*$/.exec(event.message!)![1] : null,
         titleName: command.kind === "create" ? command.titleName : null,
         trustedDisplayName: event.displayNameTrust === "trusted",
         userId: event.userId,
@@ -168,20 +197,7 @@ export class PetTitleAppWiringIngress {
         resolveRoute:()=>route,
         handler:async(database,activeClaim)=>{
           // /계정변경과 같은 selection 행을 먼저 잠가 이 명령 전체가 하나의 활성 계정만 사용하게 합니다.
-          await database.query(
-            `SELECT selection.active_player_selection_id
-               FROM account_platform_identities platform_identity
-               JOIN account_platform_context_memberships membership
-                 ON membership.platform_identity_id=platform_identity.platform_identity_id AND membership.membership_status='ACTIVE'
-               JOIN account_platform_contexts context_row
-                 ON context_row.platform_context_id=membership.platform_context_id AND context_row.context_status='ACTIVE'
-               JOIN account_platform_active_player_selections selection
-                 ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.selection_status='ACTIVE'
-              WHERE platform_identity.platform_code='KAKAO' AND platform_identity.identity_scope_key=?
-                AND platform_identity.external_user_key=? AND platform_identity.identity_status='ACTIVE'
-                AND context_row.context_type='ROOM' AND context_row.external_context_key=? FOR UPDATE`,
-            [event.channelId!,event.userId!,event.channelId!],
-          );
+          await lockActivePlayerSelection(database,event);
           const actor=await this.contexts.resolveSelf(database,{
             identityProviderCode:"kakao",externalUserId:event.userId!,externalContextId:event.channelId!,
           });
@@ -203,6 +219,40 @@ export class PetTitleAppWiringIngress {
         errorCode:(error)=>error instanceof ApplicationError?error.code:"PET_TITLE_CREATE_FAILED",
       });
       return {...persisted.value,reply:persisted.reply};
+    }
+    if(command.kind==="sell"&&decision.route==="MODERN"){
+      const persisted=await executeAppWiringMutationIrisEntrypoint<{readonly status:"modern"|"handled_no_reply";readonly replayed:boolean;readonly resultFingerprint:string}>(this.provider,{
+        claim,
+        resolveRoute:()=>route,
+        handler:async(database,activeClaim)=>{
+          // /계정변경과 같은 selection 행을 가장 먼저 잠가 판매 전체가 하나의 활성 계정만 사용하게 합니다.
+          await lockActivePlayerSelection(database,event);
+          const actor=await this.contexts.resolveSelf(database,{
+            identityProviderCode:"kakao",externalUserId:event.userId!,externalContextId:event.channelId!,
+          });
+          const result=await this.mutations.sell(database,activeClaim,{
+            actor:"pet_title_app_wiring",playerId:actor.canonicalPlayerId,index:command.index,
+          });
+          const typedReceipt={receiptKind:"PET_TITLE" as const,petTitleOperationId:result.operationId,resultFingerprint:result.resultFingerprint};
+          if(result.outcomeCode==="SILENT_CASTLE_ACTIVE")return {
+            value:{status:"handled_no_reply" as const,replayed:false,resultFingerprint:result.resultFingerprint},noReply:{kind:"NO_REPLY" as const,eventId:event.eventId,commandCode:"PET_TITLE_SELL"},
+            receipt:{status:"NO_REPLY",resultFingerprint:result.resultFingerprint},typedReceipt,
+          };
+          const data=result.outcomeCode==="NOT_FOUND"
+            ?"해당 번호의 펫 타이틀이 존재하지 않습니다."
+            :`[${actor.rankEmoji??""}${actor.displayName}] 님의 펫 타이틀 [${result.titleName}] \n🅟${formatPoint(result.salePoint)} 포인트에 판매되었습니다.`;
+          return {
+            value:{status:"modern" as const,replayed:false,resultFingerprint:result.resultFingerprint},reply:{eventId:event.eventId,commandCode:"PET_TITLE_SELL",destinationId:event.channelId!,data},
+            receipt:{status:"REPLY_QUEUED",resultFingerprint:result.resultFingerprint},typedReceipt,
+          };
+        },
+        replayCompleted:async(stored)=>({status:stored.result?.status==="NO_REPLY"?"handled_no_reply":"modern",replayed:true,resultFingerprint:stored.result?.resultFingerprint??""}),
+        replayFailed:async()=>{throw new Error("PET_TITLE_APP_WIRING_PREVIOUSLY_FAILED");},
+        errorCode:(error)=>error instanceof ApplicationError?error.code:"PET_TITLE_SELL_FAILED",
+      });
+      return "reply" in persisted
+        ?{status:"modern",replayed:persisted.value.replayed,resultFingerprint:persisted.value.resultFingerprint,reply:persisted.reply}
+        :{status:"handled_no_reply",replayed:persisted.value.replayed,resultFingerprint:persisted.value.resultFingerprint};
     }
     if(decision.route==="MODERN"){
       const persisted=await executeAppWiringReadOnlyReplyEntrypoint<{readonly status:"modern";readonly replayed:boolean;readonly resultFingerprint:string}>(this.provider,{

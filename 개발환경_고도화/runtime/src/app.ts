@@ -782,7 +782,7 @@ export async function dispatchPetDataCompareCommand(
 
 export type PetTitleAppWiringDisposition = "not_applicable" | "legacy_fallback" | "shadow" | "claimed";
 
-// SHADOW는 기존 명령을 계속 실행하고, MODERN/REJECT claim만 레거시 실행을 차단합니다.
+// SHADOW는 기존 명령을 계속 실행하고, MODERN/NO_REPLY/REJECT claim만 레거시 실행을 차단합니다.
 export async function dispatchPetTitleCommand(
   ingress:Pick<PetTitleAppWiringIngress,"handle">|undefined,
   isOperationalChannel:boolean,

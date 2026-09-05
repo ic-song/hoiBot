@@ -3,6 +3,7 @@ import type { ControlledDatabaseTransaction, DatabaseClient } from "../database.
 import type { AppWiringClaim, AppWiringMutationParticipant } from "../dispatch/app-wiring-operation-provider.js";
 import { CanonicalItemInventoryRepository } from "../inventory/canonical-item-inventory-repository.js";
 import { MariaCanonicalCurrencyRepository } from "../currency/maria-canonical-currency-repository.js";
+import { resolveGuildTerritoryWarAuthority } from "../guild/guild-territory-war-authority.js";
 import {
   assertObjectIdentityCandidate,
   createObjectAuditValues,
@@ -27,7 +28,8 @@ export type PetTitleCanonicalSelectResult=PetTitleCanonicalMutationBase&{operati
 export type PetTitleCanonicalRemoveResult=PetTitleCanonicalMutationBase&{operationType:"REMOVE";ownedPetTitleId:string};
 export type PetTitleCanonicalSellResult=
   | (PetTitleCanonicalMutationBase&{operationType:"SELL";outcomeCode:"SOLD";ownedPetTitleId:string;titleName:string;salePoint:bigint;currencyOperationId:string;balanceAfterMinorAmount:bigint})
-  | (PetTitleCanonicalMutationBase&{operationType:"SELL";outcomeCode:"NOT_FOUND";salePoint:0n});
+  | (PetTitleCanonicalMutationBase&{operationType:"SELL";outcomeCode:"NOT_FOUND";salePoint:0n})
+  | (PetTitleCanonicalMutationBase&{operationType:"SELL";outcomeCode:"SILENT_CASTLE_ACTIVE";salePoint:0n});
 type PetTitleCanonicalOwnershipMutationResult=PetTitleCanonicalMutationBase&{operationType:"SELECT"|"REMOVE"|"SELL";ownedPetTitleId:string};
 
 interface OwnedTitleRow {
@@ -52,6 +54,7 @@ const CREATED_TITLE_PRICE = 100000000n;
 const POINT_SOURCE_SYSTEM="LEGACY_JSON";
 const POINT_SOURCE_NAMESPACE="member.point";
 const POINT_SOURCE_IDENTIFIER="point";
+const GUILD_TERRITORY_WORLD_SCOPE="world";
 
 function controlledParticipant(current:AppWiringMutationParticipant):ControlledDatabaseTransaction{
   return {
@@ -167,9 +170,27 @@ export class PetTitleCanonicalMutationProvider {
   async sell(database:AppWiringMutationParticipant,claim:AppWiringClaim,input:{actor:string;playerId:string;index:number}):Promise<PetTitleCanonicalSellResult>{
     if(claim.route!=="MODERN"||claim.effectMode!=="MUTATION")throw new Error("PET_TITLE_APP_WIRING_MUTATION_CLAIM_REQUIRED");
     assertObjectIdentityCandidate(input.playerId);
-    if(!Number.isSafeInteger(input.index)||input.index<1)throw new Error("PET_TITLE_SALE_INDEX_INVALID");
+    const scope=(await database.query<Array<{war_id:bigint}>>(
+      "SELECT war_id FROM guild_territory_start_scopes WHERE scope_code=? FOR UPDATE",
+      [GUILD_TERRITORY_WORLD_SCOPE],
+    ))[0];
+    if(scope===undefined)throw new Error("GUILD_TERRITORY_WORLD_SCOPE_NOT_FOUND");
+    const war=(await database.query<Array<{active:boolean|number;lifecycle_state:string}>>(
+      "SELECT active,lifecycle_state FROM guild_territory_wars WHERE id=? FOR UPDATE",
+      [scope.war_id],
+    ))[0];
+    if(war===undefined)throw new Error("GUILD_TERRITORY_WORLD_WAR_NOT_FOUND");
+    const castleActive=resolveGuildTerritoryWarAuthority(war.active,war.lifecycle_state);
     const player=(await database.query<Array<{player_id:string}>>("SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE",[input.playerId]))[0];
     if(player===undefined)throw new Error("CANONICAL_PLAYER_NOT_FOUND");
+    if(castleActive){
+      const projection={operationType:"SELL",outcomeCode:"SILENT_CASTLE_ACTIVE",playerId:input.playerId,petTitleId:null,ownedPetTitleId:null,currencyOperationId:null,index:String(input.index),salePoint:"0"};
+      const resultFingerprint=fingerprint(projection);
+      const operationId=await this.insertReceipt(database,claim,input.actor,projection,resultFingerprint);
+      await this.insertParticipant(database,input.actor,operationId,input.playerId);
+      return {operationId,resultFingerprint,replayedDomainState:false,operationType:"SELL",outcomeCode:"SILENT_CASTLE_ACTIVE",salePoint:0n};
+    }
+    if(!Number.isSafeInteger(input.index)||input.index<1)throw new Error("PET_TITLE_SALE_INDEX_INVALID");
     const target=(await database.query<SellTitleRow[]>(
       `SELECT owned.owned_pet_title_id,owned.pet_title_id,owned.ownership_status,owned.acquisition_price,definition.title_name,definition.base_sale_price
          FROM canonical_owned_pet_title_instances owned

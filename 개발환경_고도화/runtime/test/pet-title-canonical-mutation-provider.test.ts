@@ -49,9 +49,11 @@ class CreateMutationParticipant extends MutationParticipant {
 }
 
 class SaleMutationParticipant extends MutationParticipant {
-  constructor(private readonly found=true,private readonly acquisitionPrice:bigint|null=100_000_000n){super();}
+  constructor(private readonly found=true,private readonly acquisitionPrice:bigint|null=100_000_000n,private readonly castleActive=false,private readonly lifecycleState=castleActive?"ACTIVE_READY":"READY",private readonly scopeFound=true,private readonly warFound=true){super();}
   override async query<T>(sql:string,values:readonly unknown[]=[]):Promise<T>{
     this.calls.push({kind:"query",sql,values});
+    if(sql.includes("FROM guild_territory_start_scopes"))return (this.scopeFound?[{war_id:1n}]:[]) as T;
+    if(sql.includes("FROM guild_territory_wars"))return (this.warFound?[{active:this.castleActive?1:0,lifecycle_state:this.lifecycleState}]:[]) as T;
     if(sql.includes("FROM canonical_players"))return [{player_id:"player01"}] as T;
     if(sql.includes("FROM canonical_owned_pet_title_instances owned"))return (this.found?[{owned_pet_title_id:"petown01",pet_title_id:"pettitl1",ownership_status:"owned",acquisition_price:this.acquisitionPrice,title_name:"별빛",base_sale_price:50_000_000n}]:[]) as T;
     if(sql.includes("FROM canonical_currency_definition_imports"))return [{currency_id:"point001",decimal_places:3}] as T;
@@ -166,6 +168,44 @@ describe("PET-TITLE canonical mutation participant", () => {
     assert.ok(database.calls.some(({sql,values})=>sql.startsWith("UPDATE canonical_owned_pet_title_instances")&&values[0]==="sold"));
     const receipt=database.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_operations"));
     assert.equal(receipt?.values[4],result.currencyOperationId);
+    assert.deepEqual(database.calls.filter(({kind})=>kind==="query").slice(0,3).map(({sql})=>
+      sql.includes("guild_territory_start_scopes")?"scope":sql.includes("guild_territory_wars")?"war":"player"
+    ),["scope","war","player"]);
+  });
+
+  it("records a typed silent receipt without title or currency mutation while the shared world war authority is active",async()=>{
+    const database=new SaleMutationParticipant(true,100_000_000n,true);
+    const ids=["petop005","petpart5"];
+    const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!).sell(database,claim,{actor:"pet_title",playerId:"player01",index:1});
+    assert.equal(result.outcomeCode,"SILENT_CASTLE_ACTIVE");
+    assert.equal(database.calls.some(({sql})=>sql.includes("FROM canonical_owned_pet_title_instances owned")),false);
+    assert.equal(database.calls.some(({sql})=>/canonical_currency_operations|UPDATE canonical_owned_pet_title_instances/.test(sql)&&/^(?:INSERT|UPDATE)/.test(sql)),false);
+    assert.ok(database.calls.some(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_operations")));
+  });
+
+  it("allows PENDING_START sales and treats ACTIVE_OPENING as the same silent authority",async()=>{
+    const pending=new SaleMutationParticipant(true,100_000_000n,false,"PENDING_START");
+    const sold=await new PetTitleCanonicalMutationProvider(()=>"pndsale1").sell(pending,claim,{actor:"pet_title",playerId:"player01",index:1});
+    assert.equal(sold.outcomeCode,"SOLD");
+    const opening=new SaleMutationParticipant(true,100_000_000n,true,"ACTIVE_OPENING");
+    const silent=await new PetTitleCanonicalMutationProvider(()=>"opnsale1").sell(opening,claim,{actor:"pet_title",playerId:"player01",index:1});
+    assert.equal(silent.outcomeCode,"SILENT_CASTLE_ACTIVE");
+  });
+
+  it("fails closed on a contradictory world war authority before player, title, or currency access",async()=>{
+    const database=new SaleMutationParticipant(true,100_000_000n,false,"ACTIVE_READY");
+    await assert.rejects(new PetTitleCanonicalMutationProvider().sell(database,claim,{actor:"pet_title",playerId:"player01",index:1}),(error:unknown)=>typeof error==="object"&&error!==null&&"code" in error&&error.code==="GUILD_TERRITORY_AUTHORITY_CONFLICT");
+    assert.deepEqual(database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("guild_territory_start_scopes")?"scope":"war"),["scope","war"]);
+    assert.equal(database.calls.some(({kind})=>kind==="execute"),false);
+  });
+
+  it("fails closed when the world scope or referenced war is missing",async()=>{
+    const missingScope=new SaleMutationParticipant(true,100_000_000n,false,"READY",false,true);
+    await assert.rejects(new PetTitleCanonicalMutationProvider().sell(missingScope,claim,{actor:"pet_title",playerId:"player01",index:1}),/GUILD_TERRITORY_WORLD_SCOPE_NOT_FOUND/);
+    assert.equal(missingScope.calls.some(({kind})=>kind==="execute"),false);
+    const missingWar=new SaleMutationParticipant(true,100_000_000n,false,"READY",true,false);
+    await assert.rejects(new PetTitleCanonicalMutationProvider().sell(missingWar,claim,{actor:"pet_title",playerId:"player01",index:1}),/GUILD_TERRITORY_WORLD_WAR_NOT_FOUND/);
+    assert.equal(missingWar.calls.some(({kind})=>kind==="execute"),false);
   });
 
   it("records a no-op SELL receipt when the requested sequence does not exist",async()=>{
@@ -177,11 +217,20 @@ describe("PET-TITLE canonical mutation participant", () => {
     assert.ok(database.calls.some(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_operations")));
   });
 
-  it("rejects unsafe sale indexes before any database access",async()=>{
+  it("rejects unsafe sale indexes only after the inactive world authority and player locks",async()=>{
     for(const index of [0,Number.MAX_SAFE_INTEGER+1]){
       const database=new SaleMutationParticipant();
       await assert.rejects(new PetTitleCanonicalMutationProvider().sell(database,claim,{actor:"pet_title",playerId:"player01",index}),/PET_TITLE_SALE_INDEX_INVALID/);
-      assert.equal(database.calls.length,0);
+      assert.deepEqual(database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("guild_territory_start_scopes")?"scope":sql.includes("guild_territory_wars")?"war":"player"),["scope","war","player"]);
+      assert.equal(database.calls.some(({kind})=>kind==="execute"),false);
     }
+  });
+
+  it("keeps an unsafe sale index silent while the shared authority is active",async()=>{
+    const database=new SaleMutationParticipant(true,100_000_000n,true);
+    const ids=["petop006","petpart6"];
+    const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!).sell(database,claim,{actor:"pet_title",playerId:"player01",index:Number.POSITIVE_INFINITY});
+    assert.equal(result.outcomeCode,"SILENT_CASTLE_ACTIVE");
+    assert.equal(database.calls.some(({sql})=>sql.includes("FROM canonical_owned_pet_title_instances owned")),false);
   });
 });

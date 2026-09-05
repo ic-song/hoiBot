@@ -4437,7 +4437,7 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐습니다. `/펫타이틀이름 [인자]`는 MODERN에서 canonical ITEM 티켓 차감, 요청별 PET_TITLE 정의·소유 occurrence 생성, typed receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction으로 처리합니다. 동일 표시명도 요청별 정의 ID를 따로 만들며, 티켓은 `LEGACY_JSON/member.bag/정확한 원본 문자열` import binding으로만 찾습니다. `/펫타이틀판매 [번호]`는 소유 occurrence의 획득가격 우선 판매가, `LEGACY_JSON/member.point/point` 통화 정의, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt를 같은 mutation transaction으로 처리하도록 준비됐습니다. 생성·판매 등록 rollout은 SHADOW이며 WBS742 V2 exact import와 공성전 무응답 경계 검증 전에는 MODERN 전환하지 않습니다. `/펫타이틀 [번호]` 선택 MODERN도 무응답 reply 계약이 완성될 때까지 레거시로 고정합니다.
+Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐습니다. `/펫타이틀이름 [인자]`는 MODERN에서 canonical ITEM 티켓 차감, 요청별 PET_TITLE 정의·소유 occurrence 생성, typed receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction으로 처리합니다. 동일 표시명도 요청별 정의 ID를 따로 만들며, 티켓은 `LEGACY_JSON/member.bag/정확한 원본 문자열` import binding으로만 찾습니다. `/펫타이틀판매 [번호]`는 방의 활성 계정 selection을 먼저 잠근 뒤 world scope→영지전 권위를 잠그고, 비활성일 때 소유 occurrence의 획득가격 우선 판매가, `LEGACY_JSON/member.point/point` 통화 정의, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt와 Iris 응답을 같은 mutation transaction으로 처리합니다. ACTIVE_OPENING/ACTIVE_READY에서는 타이틀·통화를 변경하지 않고 typed PET_TITLE no-op receipt와 `NO_REPLY` execution만 저장하며 outbox는 만들지 않습니다. 생성·판매 등록 rollout은 SHADOW이며 WBS742 V2 exact import 승인 전에는 MODERN 전환하지 않습니다. `/펫타이틀 [번호]` 선택 MODERN도 mutation reply 계약이 완성될 때까지 레거시로 고정합니다.
 
 Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀판매 [번호]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
 
@@ -4468,7 +4468,8 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 - `canonical_pet_title_selections` (현재 선택 표시)
 - `canonical_item_definition_imports` + `canonical_owned_item_stacks` + `canonical_item_inventory_ledger_entries` (생성 티켓 exact ID 해석·차감)
 - `canonical_pet_title_operations` + `canonical_pet_title_operation_participants` (생성 typed receipt·OWNER)
-- `castle_battle_seasons` (선택 SHADOW의 레거시 무응답 조건)
+- `guild_territory_start_scopes` → `guild_territory_wars` (선택 SHADOW와 판매 MODERN의 공용 world 영지전 권위)
+- `canonical_currency_definition_imports` + `canonical_player_currency_balances` + `canonical_currency_operations` + `canonical_currency_ledger_entries` (판매 포인트 정산)
 
 ## Save Flow
 
@@ -4476,6 +4477,8 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 - canonical self 목록은 claim·조회 결과·outbox를 한 READ_ONLY transaction으로 저장
 - canonical 선택 SHADOW는 query-only이며 실제 선택 저장은 아직 레거시 경로가 담당
 - canonical 생성 MODERN은 활성 계정 selection을 잠근 뒤 도메인 변경·응답 outbox를 원자 저장하며 replay에서 다시 차감·생성하지 않음
+- canonical 판매 MODERN은 selection→world scope→war→player→owned title→currency 순으로 잠그고, 판매·포인트·typed receipt·응답을 원자 저장하며 replay에서 중복 적립하지 않음
+- 영지전 활성 판매는 PET_TITLE no-op receipt·OWNER participant·`NO_REPLY` command execution을 저장하고 outbox 0건을 유지
 
 ## Related Commands
 

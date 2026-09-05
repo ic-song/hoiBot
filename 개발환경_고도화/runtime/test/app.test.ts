@@ -1117,6 +1117,9 @@ describe("hoiBot Lite server", () => {
     const shadowReplies:Array<{outboxId:string;room:string;data:string}>=[];
     assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"shadow",replayed:false,resultFingerprint:"b".repeat(64)})},true,false,event,shadowReplies),"shadow");
     assert.deepEqual(shadowReplies,[]);
+    const silentReplies:typeof modernReplies=[];
+    assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"handled_no_reply",replayed:false,resultFingerprint:"c".repeat(64)})},true,false,event,silentReplies),"claimed");
+    assert.deepEqual(silentReplies,[]);
     assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"legacy_fallback"})},true,false,event,[]),"legacy_fallback");
     assert.equal(await dispatchPetTitleCommand({handle:async()=>({status:"rejected",replayed:false,reasonCode:"AUTH_SCOPE_NOT_SATISFIED"})},true,false,event,[]),"claimed");
   });

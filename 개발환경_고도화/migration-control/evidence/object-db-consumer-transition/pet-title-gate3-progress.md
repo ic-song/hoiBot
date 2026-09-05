@@ -20,7 +20,7 @@
 - 현재 PET-TITLE primary 소비자: 24개
 - 공용 CONTEXT-BRIDGE 소비자: 13개
 - 전체 소비자 매니페스트: 1,104개
-- 매니페스트 SHA-256: `0992cf9cdba5c7c520c0a4c3b74a0a86dbc408a543c70e86cbcf47be47dc4008`
+- 매니페스트 SHA-256: `d457fb7b4af2a3b39886b61c5e0bf8fa5b2bcdf54fdbdb5fe624074d64a1d63e`
 
 ## 구현된 경계
 
@@ -32,6 +32,10 @@
 - `/펫타이틀이름 [인자]` MODERN handler는 활성 계정 selection을 잠근 뒤 exact canonical ITEM 티켓을 1개 차감하고, 요청별 PET_TITLE 정의와 소유 occurrence를 생성합니다.
 - 사용자 지정 타이틀은 표시명이 같아도 `appWiringOperationId`별 별도 정의 ID와 소유 ID를 생성합니다.
 - 생성 결과의 typed PET_TITLE receipt/link, OWNER participant, legacy operation, command execution, Iris outbox, canonical claim 완료는 공용 mutation-reply transaction 하나에서 확정합니다.
+- `/펫타이틀판매 [번호]` MODERN handler는 활성 계정 selection을 먼저 잠근 뒤 `world` scope와 참조 영지전을 순서대로 잠그고 공용 `resolveGuildTerritoryWarAuthority`로 단일 활성 권위를 판정합니다.
+- READY/PENDING_START 판매는 stable occurrence의 소유 상태·선택, exact point 통화 잔액·operation·ledger, PET_TITLE SELL receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction에서 확정합니다.
+- ACTIVE_OPENING/ACTIVE_READY 판매는 타이틀·통화를 변경하지 않고 PET_TITLE no-op receipt/OWNER participant와 typed `NO_REPLY` execution만 저장하며 outbox 0건을 유지합니다.
+- scope/war 누락과 active/lifecycle 모순은 player/title/currency 변경 전 fail-closed rollback합니다.
 - 티켓 부족도 PET_TITLE no-op receipt와 동일 응답 outbox를 저장해 replay에서 재차감·재생성하지 않습니다.
 - 기존 BIGINT 인스턴스와 전환 중 CHAR(8) 인스턴스는 사용자 응답에 노출하지 않습니다.
 - `PetTitleAppWiringIngress`는 목록 self/target의 MODERN·SHADOW·REJECT 경계를 구현했고 `app.ts`의 실제 Iris 콜백에 연결했습니다.
@@ -55,7 +59,8 @@
 - canonical 판매 provider는 획득가격 우선 판매가와 `LEGACY_JSON/member.point/point` exact 통화 정의를 사용하고, 소유 상태 `sold`, 선택 해제, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt/OWNER participant를 동일 app-wiring mutation transaction에 결합합니다.
 - migration 471은 PET_TITLE SELL receipt와 CURRENCY operation 사이의 nullable exact FK를 추가하고 `PET_TITLE_SELL`을 SHADOW로 등록합니다. 단독 `release(status='sold')`는 계속 DB 접근 전에 거절합니다.
 - WBS742 V2는 `canonical_item_definition_imports`의 `LEGACY_JSON/member.bag/펫타이틀권🦊(/펫타이틀이름)`과 `canonical_currency_definition_imports`의 `LEGACY_JSON/member.point/point` exact binding 계약을 제공합니다. 아직 실제 MariaDB 리허설·승인 적용 전이므로 생성·판매 MODERN rollout은 차단 상태입니다. 런타임 표시명 추론이나 임의 backfill은 사용하지 않습니다.
-- 판매 MODERN rollout은 WBS742 V2 실제 이관 리허설과 공성전 상태의 transaction 내부 잠금·재확인, replay-safe typed 무응답 claim, 무응답 시 outbox 0건 계약이 모두 검증될 때까지 차단합니다.
+- 판매 transaction 내부 권위 잠금, replay-safe typed 무응답 claim, 무응답 outbox 0건, 강제 outbox 실패 전체 rollback은 격리 MariaDB에서 검증했습니다. rollout은 WBS742 V2 실제 이관 승인 전까지 SHADOW로 유지합니다.
+- migration 471은 새 스키마 forward·재진입과 live SELL receipt rollback preflight, 빈 스키마 rollback을 통과했습니다. MariaDB 12.2에서는 rollback 직후 동일 스키마에 재적용할 때 중복 복합 인덱스 최적화로 FK 재생성이 실패하므로, 기존 적용 migration은 수정하지 않고 clean schema re-forward로 검증했습니다.
 - 현 스키마의 펫타이틀 선택은 `owned_pet_id`별이 아니라 플레이어별 1개 선택입니다.
 
 ## 검증
@@ -67,10 +72,12 @@
 - 실제 앱 통합 테스트: 41/41 통과
 - READ_ONLY reply 원자성 테스트: 5/5 통과(정상 저장·동일 outbox replay·outbox 실패 전체 rollback·query-only 차단·commit 결과 불명 복구·payload drift 차단)
 - MUTATION reply 원자성 테스트: 10/10 통과(정상 저장·동일 outbox replay·4개 실패 지점 전체 rollback·commit 결과 불명 복구·payload/typed reference drift 차단·중복 outbox 차단·legacy replay 차단)
+- PET-TITLE 판매 앱 진입·공용 권위·잠금 순서·READY/PENDING_START·ACTIVE_OPENING/ACTIVE_READY·typed NO_REPLY 집중 테스트: 27/27 통과
+- PET-TITLE 판매 격리 MariaDB: prepare 1/1, 재시작·rollback·clean re-forward 1/1 통과(중복 적립 0, silent outbox 0, 강제 outbox 실패 전롤백, 3306 불변, 3324·임시 DB 정리)
 - 소비자 안정 ID 계약 테스트: 5/5 통과
 - 소비자 재도출·runtime boundary 계약: 18/18 통과(안정 ID 5건 포함 전체 23/23)
 - 오브젝트 데이터 모델 계약 검사: 등록 대상 94개, 통과
-- 전체 runtime 회귀: 2,095개 중 2,087 통과, 실패 0, 환경 의존 8개 건너뜀(마지막 2개 보완 테스트는 별도 10/10 집중 검증)
+- 전체 runtime 회귀: 2,146개 중 2,138 통과, 실패 0, 환경 의존 8개 건너뜀
 - TypeScript typecheck: 통과
 - JSON 계약 파싱: 14/14 통과
 - `git diff --check`: 통과(줄바꿈 경고만 존재)
@@ -82,7 +89,7 @@
 - PET_TITLE ingress의 `app.ts` 연결, 요청-local 전송 및 재시작 outbox worker 경계: 완료
 - target 목록의 레거시 room/principal 권한을 안정 식별자로 확정한 authority provider 연결
 - 사용자 생성과 ITEM 티켓 차감을 한 트랜잭션으로 연결: 구현·합성 검증 완료, V2 exact ticket import의 실제 MariaDB 리허설 전이라 rollout 차단
-- 판매와 CURRENCY 포인트 지급을 한 트랜잭션으로 연결: provider·스키마·합성 검증 완료, transaction 내부 공성전 재확인·replay-safe typed 무응답/outbox 0·실제 MariaDB 원자 rollback/replay 검증 전이라 ingress는 강제 legacy
+- 판매와 CURRENCY 포인트 지급을 한 트랜잭션으로 연결: provider·ingress·스키마·합성 및 격리 MariaDB 검증 완료, 등록 rollout은 SHADOW 유지
 - 관리자 add/sync/reset의 canonical owner-graph 전환
 - sync/reset용 batch/global operation receipt additive migration
 - isolated MariaDB replay·payload drift·rollback·restart 검증
