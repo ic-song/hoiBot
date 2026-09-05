@@ -29,6 +29,16 @@ const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: stri
   },
 };
 const EXTERNAL_DEPENDENCY_REGISTRY: Readonly<Record<string, ObjectDataModelExternalDependency>> = {
+  operations: {
+    table: "operations",
+    integrationMigration: "002_event_processing.sql",
+    columns: [
+      { name: "id", type: "BIGINT UNSIGNED" },
+      { name: "operation_key", type: "CHAR(36)", charset: "ascii", collation: "ascii_bin" },
+    ],
+    primaryKey: ["id"],
+    uniqueKeys: [["operation_key"]],
+  },
   external_identities: {
     table: "external_identities",
     integrationMigration: "003_identity_import.sql",

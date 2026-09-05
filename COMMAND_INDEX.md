@@ -7691,3 +7691,27 @@ Status: VERIFIED
 - MODERN 경로는 account-authority mutex → PET_TITLE mutex → context/회원 권위 → typed receipt/outbox를 한 transaction으로 처리
 - typed receipt의 target/result fingerprint와 outbox 응답은 실행 당시 표시명을 사용하며, 재시작 뒤 닉네임이 바뀌어도 최초 응답을 그대로 replay
 - `result_contract_version`의 `LEGACY`/`MEMBER_KEY_V1`/`RESET_V1`별 fingerprint 계약을 검증해 migration 474 이전 완료 receipt와 reset 원응답도 그대로 replay
+
+# /선물전달
+
+Status: VERIFIED
+
+## Files
+- `개발환경_고도화/runtime/src/admin/admin-global-gift-service.ts`
+- `개발환경_고도화/runtime/src/app.ts`
+
+## Related Helpers
+- `isAdminGlobalGiftCommand`
+- `dispatchAdminGlobalGiftCommand`
+- `AdminGlobalGiftService.handle`
+
+## Data Usage
+- `LEGACY_JS/member.bag/호이응원패키지(무료)🐹[2]` source binding으로 canonical `item_id`를 해석
+- 실행 시작 시 활성 legacy 회원과 연결된 canonical `player_id`를 잠그고 수신자 snapshot 고정
+- `canonical_owned_item_stacks`에 대상별 정확히 1개 증가
+- 합성 설정된 11개 채널을 `channel_sequence` 순서로 snapshot하고 동일 원문을 outbox에 저장
+
+## Save Flow
+- RFA01 request/result fingerprint, 전용 typed receipt, 수신자/채널 snapshot, ownership 증가, 11건 outbox를 한 transaction으로 commit
+- 같은 event replay와 재시작 replay는 저장된 terminal을 검증하고 추가 지급·추가 outbox를 만들지 않음
+- SHADOW route는 service에 진입하지 않아 mutation/outbox가 없음

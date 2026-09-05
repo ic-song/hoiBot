@@ -1,0 +1,13 @@
+{
+  "wbs":"WBS752","lease":2569,
+  "reused":[
+    "RFA01_REQUEST_REUSE_V1","RFA02_TRANSACTION_RECEIPT_OUTBOX_V1","RFA03_MARIA_ERROR_RETRY_V1",
+    "canonical_item_definitions","canonical_item_definition_imports","canonical_owned_item_stacks","canonical_players",
+    "operations(operation_key applied UNIQUE/FK target)","command_executions","outbox_messages","admin RBAC"
+  ],
+  "additiveMigration":"479_admin_global_gift_object_db.sql",
+  "rollback":"rollback/479_admin_global_gift_object_db.rollback.sql",
+  "newSharedProvider":false,
+  "operationalDataRequired":["canonical_admin_global_gift_channel_configs: 11 active rows in legacy order; destination IDs supplied only by a separate operational migration WBS"],
+  "deferred":["Gate8","feature/prod reflection","production room data","full T3 suite"]
+}

@@ -1,0 +1,23 @@
+# WBS752 scenario matrix
+
+| 시나리오 | 기대 | 결과 |
+|---|---|---|
+| exact `/선물전달` | 후보 인정 | PASS |
+| 공백·접미·인자·개행 | 후보 거부 | PASS |
+| SHADOW | 지급/outbox 0 | PASS |
+| 권한 없는 identity | 403, 지급 0 | Maria PASS |
+| active channel 11 미만/순서 gap | 409, 지급 0 | Maria PASS |
+| active legacy 회원의 canonical mapping 누락 | 409, 지급/outbox 0 | Maria PASS |
+| 신규/기존 stack 혼합 | 각 active snapshot 대상 +1 | Maria PASS |
+| same event 동시 2회 | 1회 실행+1회 replay | Maria PASS |
+| 재시작 후 same event | 최초 11 outbox DTO replay, 추가 DML 0 | Maria PASS |
+| same event/actor + 다른 inbound channel | RFA01 payload conflict | Maria PASS |
+| replay outbox payload/status drift | fail closed | Maria PASS |
+| commit ACK ambiguous | 전체 receipt/snapshot/outbox 재검산 후 reconcile | Maria PASS |
+| 수량 overflow | recipient/stack/outbox/receipt 전량 rollback | Maria PASS |
+| 적용된 receipt 존재 시 rollback | fail closed | Maria PASS |
+| empty-state rollback/reapply | 4개 전용 table 제거/재생성 | Maria PASS |
+| 선재 exact source binding | 재귀속 0, rollback 후에도 보존 | Maria PASS |
+| 선재 source binding drift | migration 전 fail closed | Maria PASS |
+
+채널 설정은 합성 `synthetic-room-1..11`만 사용했다. 실제 room ID는 읽거나 기록하지 않았다.
