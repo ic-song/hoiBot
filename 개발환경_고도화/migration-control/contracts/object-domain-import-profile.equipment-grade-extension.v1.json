@@ -1,0 +1,18 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-object-domain-import-profile-equipment-grade-extension-v1",
+  "baseProfile":"data-migration-object-domain-import.v1.json",
+  "objectModelContract":"object-data-model-equipment-grade-extension.v1.json",
+  "targetSchemaContract":"object-domain-import-target-schema.equipment-grade-extension.v1.json",
+  "fieldMapContract":"object-domain-import-field-map.equipment-grade-extension.v1.json",
+  "catalogProjectionContract":"equipment-grade-catalog-projection.v1.json",
+  "directTargetAdditions":["canonical_equipment_grade_definitions","canonical_equipment_grade_aliases"],
+  "definitionTargetAdditions":["canonical_equipment_grade_definitions"],
+  "domainTargetAdditions":{"pet-equipment":["canonical_equipment_grade_definitions","canonical_equipment_grade_aliases"]},
+  "generatedCuidBindings":[
+    {"targetTable":"canonical_equipment_grade_definitions","targetPkColumn":"equipment_grade_definition_id","objectType":"CANONICAL_EQUIPMENT_GRADE_DEFINITION","sourceNamespace":"object-import.pet-equipment.canonical_equipment_grade_definitions"},
+    {"targetTable":"canonical_equipment_grade_aliases","targetPkColumn":"equipment_grade_alias_id","objectType":"CANONICAL_EQUIPMENT_GRADE_ALIAS","sourceNamespace":"object-import.pet-equipment.canonical_equipment_grade_aliases"}
+  ],
+  "foreignKeys":[{"table":"canonical_equipment_grade_aliases","column":"equipment_grade_definition_id","referencesTable":"canonical_equipment_grade_definitions","referencesColumn":"equipment_grade_definition_id"}],
+  "compositionPolicy":"append-only to v1 effective schema and policies; existing v1/v2 contracts and migration446 remain immutable"
+}

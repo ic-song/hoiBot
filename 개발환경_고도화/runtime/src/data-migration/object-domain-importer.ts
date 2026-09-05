@@ -27,6 +27,7 @@ export interface DomainImportPolicy {
   domainTargets: Record<string, string[]>;
   quarantineReasons: string[];
   exactDefinitionImports?: DomainImportExactDefinitionImport[];
+  equipmentGradeExtension?: { profile: "EQUIPMENT_GRADE_EXTENSION_V1"; semanticSha256: string };
 }
 
 interface ProjectionRunRow {
@@ -279,6 +280,8 @@ function assertTypedValue(column: DomainImportSchemaColumn, value: unknown, orig
 export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void {
   if (policy.catalogVersion !== "SC-20260902-1" || !HASH.test(policy.targetSchemaSha256) || !HASH.test(policy.importContractSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_POLICY_INVALID");
   const exactImports = policy.exactDefinitionImports ?? [];
+  const equipmentGradeExtension = policy.equipmentGradeExtension;
+  if (equipmentGradeExtension !== undefined && (equipmentGradeExtension.profile !== "EQUIPMENT_GRADE_EXTENSION_V1" || !HASH.test(equipmentGradeExtension.semanticSha256))) throw new Error("OBJECT_DOMAIN_IMPORT_EQUIPMENT_GRADE_EXTENSION_INVALID");
   const v1Compatibility = exactImports.length === 0 && policy.acceptedImportContractSha256.length === 2 && policy.acceptedImportContractSha256[0] === policy.importContractSha256 && policy.acceptedImportContractSha256[1] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
   const v2Compatibility = exactImports.length === 2 && policy.acceptedImportContractSha256.length === 1 && policy.acceptedImportContractSha256[0] === policy.importContractSha256;
   if ((!v1Compatibility && !v2Compatibility) || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
@@ -290,9 +293,9 @@ export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void
     if (stableDomainImportJson([...exactImports].sort((left, right) => left.table.localeCompare(right.table, "en"))) !== stableDomainImportJson(expected)) throw new Error("OBJECT_DOMAIN_IMPORT_EXACT_DEFINITION_IMPORT_POLICY_INVALID");
   }
   for (const key of ["identityBindings", "objectModel", "disposition", "fieldMap"] as const) if (!HASH.test(policy.componentSemanticSha256[key]) || policy.componentSemanticSha256[key] !== policy.contractComponentSemanticSha256[key]) throw new Error("OBJECT_DOMAIN_IMPORT_COMPONENT_CONTRACT_DRIFT");
-  const expectedDirectTargets = exactImports.length === 0 ? 45 : 47;
-  const expectedDefinitionTargets = exactImports.length === 0 ? 23 : 25;
-  const expectedColumns = exactImports.length === 0 ? 241 : 252;
+  const expectedDirectTargets = (exactImports.length === 0 ? 45 : 47) + (equipmentGradeExtension === undefined ? 0 : 2);
+  const expectedDefinitionTargets = (exactImports.length === 0 ? 23 : 25) + (equipmentGradeExtension === undefined ? 0 : 1);
+  const expectedColumns = (exactImports.length === 0 ? 241 : 252) + (equipmentGradeExtension === undefined ? 0 : 21);
   if (new Set(policy.directTargets).size !== expectedDirectTargets || policy.directTargets.length !== expectedDirectTargets) throw new Error("OBJECT_DOMAIN_IMPORT_DIRECT_TARGET_SCOPE_MISMATCH");
   if (new Set(policy.definitionTargets).size !== expectedDefinitionTargets || policy.definitionTargets.length !== expectedDefinitionTargets) throw new Error("OBJECT_DOMAIN_IMPORT_DEFINITION_TARGET_SCOPE_MISMATCH");
   if (policy.columns.length !== expectedColumns || new Set(policy.columns.map((column) => `${column.table}.${column.column}`)).size !== expectedColumns) throw new Error("OBJECT_DOMAIN_IMPORT_COLUMN_SCOPE_MISMATCH");

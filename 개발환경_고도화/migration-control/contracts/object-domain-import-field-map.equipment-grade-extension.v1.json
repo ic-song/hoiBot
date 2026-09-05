@@ -1,0 +1,25 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-object-domain-import-field-map-equipment-grade-extension-v1",
+  "domain":"pet-equipment",
+  "sources":["LEGACY_JSON:itemInfo.json#/elemental/{gradeKey}","LEGACY_JSON:itemInfo.json#/ring/{gradeKey}"],
+  "identityPolicy":"equipment_grade_definition_id is generated CUID2 from the exact structural grade pointer; source_definition_pointer is unique provenance, never the PK; equipment_family and equipment_grade_name are catalog attributes, never CODE or identity",
+  "aliasPolicy":"nameList is an ordered alias/reference relation only; duplicate names are allowed and never identify or merge definitions",
+  "numericPolicy":"lossless lexical decimal normalization under immutable RULE_PROVENANCE; numeric value is unchanged and probability units remain the source fraction without conversion",
+  "expectedCoverage":{"definitionCount":106,"aliasCount":124,"elementalDefinitions":61,"elementalAliases":79,"ringDefinitions":45,"ringAliases":45,"sourcePrimitiveKeyCount":13,"unmapped":0,"extra":0,"duplicateMapping":0},
+  "fields":[
+    {"source":"nameList","targetColumns":["canonical_equipment_grade_aliases.equipment_name","canonical_equipment_grade_aliases.alias_order","canonical_equipment_grade_aliases.equipment_grade_definition_id"],"conversion":"ordered leaf rows; exact UTF-8 name, zero-based derived order, manifest FK"},
+    {"source":"emoji","targetColumns":["canonical_equipment_grade_definitions.equipment_grade_emoji"],"conversion":"exact UTF-8 string"},
+    {"source":"upgrade","targetColumns":["canonical_equipment_grade_definitions.enhancement_success_probability"],"conversion":"lossless decimal; source fraction unchanged"},
+    {"source":"drop","targetColumns":["canonical_equipment_grade_definitions.enhancement_drop_probability"],"conversion":"lossless decimal; source fraction unchanged"},
+    {"source":"itemCost","targetColumns":["canonical_equipment_grade_definitions.item_cost_quantity"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"pointCost","targetColumns":["canonical_equipment_grade_definitions.point_cost_amount"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"maxLevel","targetColumns":["canonical_equipment_grade_definitions.maximum_enhancement_level"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"battleExp","targetColumns":["canonical_equipment_grade_definitions.battle_base_experience_amount"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"battleUpgradeExp","targetColumns":["canonical_equipment_grade_definitions.battle_experience_per_enhancement_amount"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"raidExp","targetColumns":["canonical_equipment_grade_definitions.raid_base_experience_amount"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"raidUpgradeExp","targetColumns":["canonical_equipment_grade_definitions.raid_experience_per_enhancement_amount"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"castleExp","targetColumns":["canonical_equipment_grade_definitions.castle_base_experience_amount"],"conversion":"lossless nonnegative integer decimal"},
+    {"source":"castleUpgradeExp","targetColumns":["canonical_equipment_grade_definitions.castle_experience_per_enhancement_amount"],"conversion":"lossless nonnegative integer decimal"}
+  ]
+}

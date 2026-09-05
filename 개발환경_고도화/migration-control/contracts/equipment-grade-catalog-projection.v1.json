@@ -1,0 +1,28 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-equipment-grade-catalog-projection-v1",
+  "migration":"475_equipment_grade_definition_extension.sql",
+  "source":"itemInfo.json elemental/ring grade objects",
+  "sourceIdentity":"exact RFC 6901 structural grade pointer",
+  "definitionIdentity":"generated descriptive equipment_grade_definition_id CUID2 CHAR(8); display names, aliases, family and grade attributes are forbidden as identity",
+  "projectionTargets":["canonical_equipment_grade_definitions","canonical_equipment_grade_aliases"],
+  "sourcePrimitiveKeys":["nameList","emoji","upgrade","drop","itemCost","pointCost","maxLevel","battleExp","battleUpgradeExp","raidExp","raidUpgradeExp","castleExp","castleUpgradeExp"],
+  "numericRuleBindings":{
+    "upgrade":"canonical_equipment_grade_definitions.enhancement_success_probability",
+    "drop":"canonical_equipment_grade_definitions.enhancement_drop_probability",
+    "itemCost":"canonical_equipment_grade_definitions.item_cost_quantity",
+    "pointCost":"canonical_equipment_grade_definitions.point_cost_amount",
+    "maxLevel":"canonical_equipment_grade_definitions.maximum_enhancement_level",
+    "battleExp":"canonical_equipment_grade_definitions.battle_base_experience_amount",
+    "battleUpgradeExp":"canonical_equipment_grade_definitions.battle_experience_per_enhancement_amount",
+    "raidExp":"canonical_equipment_grade_definitions.raid_base_experience_amount",
+    "raidUpgradeExp":"canonical_equipment_grade_definitions.raid_experience_per_enhancement_amount",
+    "castleExp":"canonical_equipment_grade_definitions.castle_base_experience_amount",
+    "castleUpgradeExp":"canonical_equipment_grade_definitions.castle_experience_per_enhancement_amount"
+  },
+  "numericRuleOrigin":"EXPLICIT_RULE with immutable RULE_PROVENANCE; every value is read from its named source key only after the full Common Staging canonical payload fingerprint matches",
+  "coverage":{"definitions":106,"aliases":124,"sourcePrimitiveKeys":13,"unmapped":0,"extra":0,"duplicateMapping":0},
+  "replay":"same exact source locator and payload fingerprint produces the same generated identity and zero-write replay; locator payload drift fails closed",
+  "restart":"definition and alias rows are one outer import transaction; a failed attempt rolls back the complete graph",
+  "operationalDataAllowed":false
+}
