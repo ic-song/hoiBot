@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
+import { RaidStrikeSealCanonicalOwnershipProvider } from "./raid-strike-seal-canonical-ownership-provider.js";
 
 const ALL_SEE = "\u200b".repeat(500);
 const PERCENT_SCALE = 100000n;
@@ -53,7 +54,7 @@ export function formatRaidCharmRanking(rows: readonly RaidCharmRankingRow[]): st
 
 // 활성 회원의 레이드 매력 구성요소를 한 snapshot으로 읽고 감사·outbox를 원자 기록합니다.
 export class RaidCharmRankingReadService {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: DatabaseClient,private readonly raidSealOwnership=new RaidStrikeSealCanonicalOwnershipProvider()) {}
 
   async handle(input:{eventId:string;externalUserId:string;channelId:string;message:string}):Promise<RaidCharmRankingResult|null>{
     if (!isRaidCharmRankingReadCommand(input.message)) return null;
@@ -80,7 +81,11 @@ export class RaidCharmRankingReadService {
                             FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id AND item.active=TRUE
                             JOIN player_overall_charm_skill_rules rule ON rule.display_name=item.display_name AND rule.active=TRUE
                               AND rule.condition_code IS NULL AND rule.home_charm_percent=0
-                           WHERE stack.player_id=player.id),0) item_raid_charm,
+                           WHERE stack.player_id=player.id AND NOT EXISTS (
+                             SELECT 1 FROM raid_item_bonus_definitions exact_bonus
+                              WHERE exact_bonus.item_id=item.id AND exact_bonus.department_code='dept2'
+                                AND exact_bonus.source_item_key='item_0' AND exact_bonus.active=TRUE)
+                           ),0) item_raid_charm,
                 pet.experience pet_experience,COALESCE(mini.raid_experience,0) mini_pet_raid_charm,
                 COALESCE(home.base_experience,0)+COALESCE((SELECT SUM(instance.charm_snapshot) FROM furniture_inventory_instances instance WHERE instance.player_id=player.id AND instance.status='placed'),0) home_charm,
                 CAST(COALESCE(cube.raid_percent,0) AS CHAR) personal_cube_percent,COALESCE(guild_cube.raid_units,0) guild_cube_units,
@@ -100,9 +105,11 @@ export class RaidCharmRankingReadService {
           WHERE player.status='active' AND player.deleted_at IS NULL AND pet.display_name IS NOT NULL AND pet.display_name<>''
        ORDER BY player.id`
       );
-      const mapped=source.map(row=>mapSource(row)).filter(row=>row.finalRaidCharm>5n);
+      const sealCharm=await this.raidSealOwnership.charmByLegacyPlayer(transaction);
+      const canonicalSource=source.map(row=>({...row,item_raid_charm:BigInt(row.item_raid_charm)+ (sealCharm.get(BigInt(row.player_id).toString())??0n)}));
+      const mapped=canonicalSource.map(row=>mapSource(row)).filter(row=>row.finalRaidCharm>5n);
       mapped.sort(compareRows);
-      const sourceVersion=createHash("sha256").update(source.map(versionLine).join("|")).digest("hex");
+      const sourceVersion=createHash("sha256").update(canonicalSource.map(versionLine).join("|")).digest("hex");
       const snapshot=(await transaction.execute(
         "INSERT INTO raid_charm_rank_snapshots(operation_id,source_version,eligible_count) VALUES(?,?,?)",
         [operation,sourceVersion,mapped.length]

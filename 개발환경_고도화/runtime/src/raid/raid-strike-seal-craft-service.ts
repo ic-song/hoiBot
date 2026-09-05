@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { createRequestReuseEnvelope, type RequestReuseEnvelope } from "../shared/request-reuse-contract.js";
+import { RaidStrikeSealCanonicalOwnershipProvider, RAID_STRIKE_SEAL_SOURCE_LOCATOR } from "./raid-strike-seal-canonical-ownership-provider.js";
 
 const JUNK_ITEM_CODE = "legacy-junk-item";
-const RAID_SEAL_ITEM_CODE = "legacy-raid-strike-seal-600";
 const JUNK_PER_SEAL = 1000n;
 const POINT_PER_SEAL = 1000000000n;
 
@@ -24,11 +25,13 @@ export interface RaidStrikeSealCraftResult {
   outboxId?: string;
   data?: string;
   auditId?: string;
+  requestReuse?: RequestReuseEnvelope;
 }
 
 interface CraftOwnerRow {
   identity_id: bigint;
   player_id: bigint;
+  canonical_player_id: string;
   current_display_name: string;
   tier_code: string | null;
 }
@@ -52,6 +55,11 @@ function parseCraftQuantity(message: string): bigint {
 // 긴 event ID를 operations idempotency 길이에 맞게 정규화합니다.
 function normalizeEventKey(eventId: string): string {
   return eventId.length <= 191 ? eventId : `sha256:${createHash("sha256").update(eventId).digest("hex")}`;
+}
+
+// 공용 canonical inventory의 191자 request key 한계를 source event 전체 해시로 고정합니다.
+function canonicalInventoryRequestKey(eventId: string): string {
+  return `raid-strike-seal:${createHash("sha256").update(eventId).digest("hex")}`;
 }
 
 // MariaDB JSON 컬럼에서 재시도 결과를 복원합니다.
@@ -78,7 +86,7 @@ function withCommas(value: bigint): string {
 
 // 잡템·포인트 차감과 레이드 인장 지급을 양쪽 원장과 함께 저장합니다.
 export class RaidStrikeSealCraftService {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: DatabaseClient,private readonly sealOwnership=new RaidStrikeSealCanonicalOwnershipProvider()) {}
 
   async handle(command: RaidStrikeSealCraftCommand): Promise<RaidStrikeSealCraftResult> {
     if (!isRaidStrikeSealCraftCommand(command.message)) {
@@ -97,9 +105,14 @@ export class RaidStrikeSealCraftService {
       if ((activeSieges[0]?.active_count ?? 0n) > 0n) return { status: "blocked_by_castle_siege" };
 
       const owners = await transaction.query<CraftOwnerRow[]>(
-        `SELECT identity.id AS identity_id, identity.player_id, profile.current_display_name, profile.tier_code
+        `SELECT identity.id AS identity_id, identity.player_id, crosswalk.player_id AS canonical_player_id,
+                profile.current_display_name, profile.tier_code
          FROM external_identities identity
          JOIN player_profiles profile ON profile.player_id = identity.player_id
+         JOIN canonical_player_identity_crosswalks crosswalk
+           ON crosswalk.provider_code=identity.provider_code
+          AND crosswalk.external_user_id=identity.external_user_id AND crosswalk.crosswalk_status='LINKED'
+         JOIN canonical_players canonical_player ON canonical_player.player_id=crosswalk.player_id
          WHERE identity.provider_code = 'kakao' AND identity.external_user_id = ?
            AND identity.status = 'linked' AND identity.player_id IS NOT NULL
          FOR UPDATE`,
@@ -110,26 +123,45 @@ export class RaidStrikeSealCraftService {
 
       const scope = `raid.strike-seal.craft:${owner.identity_id}`;
       const eventKey = normalizeEventKey(command.eventId);
+      const requestReuse = createRequestReuseEnvelope({
+        scope, requestKey: eventKey, sourceEventId: eventKey,
+        actor: { actorType: "external_identity", actorId: owner.identity_id.toString(), playerId: owner.canonical_player_id },
+        operationKind: "RAID_STRIKE_SEAL_CRAFT", targetType: "ITEM_SOURCE_LOCATOR", targetId: RAID_STRIKE_SEAL_SOURCE_LOCATOR,
+        payload: { channelId: command.channelId, message: command.message, craftQuantity: craftQuantity.toString() }
+      });
       const prior = await transaction.query<Array<{ result_json: string | RaidStrikeSealCraftResult | null }>>(
         "SELECT result_json FROM operations WHERE idempotency_scope = ? AND idempotency_key = ? FOR UPDATE",
         [scope, eventKey]
       );
-      if (prior[0]?.result_json !== undefined && prior[0].result_json !== null) return parseStoredResult(prior[0].result_json);
+      if (prior[0]?.result_json !== undefined && prior[0].result_json !== null) {
+        const stored = parseStoredResult(prior[0].result_json);
+        if (stored.requestReuse === undefined || stored.requestReuse.contractVersion !== requestReuse.contractVersion
+          || stored.requestReuse.requestKey !== requestReuse.requestKey
+          || stored.requestReuse.identityFingerprint !== requestReuse.identityFingerprint
+          || stored.requestReuse.payloadFingerprint !== requestReuse.payloadFingerprint
+          || stored.requestReuse.requestFingerprint !== requestReuse.requestFingerprint) {
+          throw new ApplicationError("RAID_STRIKE_SEAL_REQUEST_REUSE_CONFLICT", "같은 요청의 조합 정보가 변경되었습니다.", 409);
+        }
+        return stored;
+      }
+
+      let sealDefinition:{itemId:string;raidCharmPerItem:600n};
+      try{sealDefinition=await this.sealOwnership.resolve(transaction);}catch{
+        throw new ApplicationError("RAID_STRIKE_SEAL_DEFINITION_DRIFT", "레이드타격대인장 설정값을 확인할 수 없습니다.", 409);
+      }
 
       const stacks = await transaction.query<Array<{ item_id: bigint; code: string; quantity: bigint; version: bigint }>>(
         `SELECT stack.item_id, item.code, stack.quantity, stack.version
          FROM item_definitions item
          JOIN inventory_stacks stack ON stack.item_id = item.id AND stack.player_id = ?
-         WHERE item.code IN (?, ?) AND item.active = TRUE AND item.stackable = TRUE
+         WHERE item.code = ? AND item.active = TRUE AND item.stackable = TRUE
          ORDER BY item.code FOR UPDATE`,
-        [owner.player_id, JUNK_ITEM_CODE, RAID_SEAL_ITEM_CODE]
+        [owner.player_id, JUNK_ITEM_CODE]
       );
       const junk = stacks.find((row) => row.code === JUNK_ITEM_CODE);
-      const seal = stacks.find((row) => row.code === RAID_SEAL_ITEM_CODE);
       if (junk === undefined || junk.quantity < requiredJunk) {
         throw new ApplicationError("JUNK_ITEM_REQUIRED", `잡템☠️ ${requiredJunk}개가 필요합니다!`, 409);
       }
-      if (seal === undefined) throw new ApplicationError("RAID_STRIKE_SEAL_ITEM_REQUIRED", "레이드타격대인장 설정을 찾을 수 없습니다.", 409);
 
       const accounts = await transaction.query<Array<{ balance: string; version: bigint }>>(
         "SELECT CAST(balance AS CHAR) AS balance, version FROM currency_accounts WHERE player_id = ? AND currency_code = 'point' FOR UPDATE",
@@ -148,30 +180,31 @@ export class RaidStrikeSealCraftService {
         [randomUUID(), scope, eventKey, owner.identity_id]
       );
       const junkQuantity = junk.quantity - requiredJunk;
-      const sealQuantity = seal.quantity + craftQuantity;
       const remainingPoint = pointBalance - requiredPoint;
       const junkUpdate = await transaction.execute(
         "UPDATE inventory_stacks SET quantity = ?, version = version + 1 WHERE player_id = ? AND item_id = ? AND version = ?",
         [junkQuantity, owner.player_id, junk.item_id, junk.version]
       );
-      const sealUpdate = await transaction.execute(
-        "UPDATE inventory_stacks SET quantity = ?, version = version + 1 WHERE player_id = ? AND item_id = ? AND version = ?",
-        [sealQuantity, owner.player_id, seal.item_id, seal.version]
-      );
       const pointUpdate = await transaction.execute(
         "UPDATE currency_accounts SET balance = ?, version = version + 1 WHERE player_id = ? AND currency_code = 'point' AND version = ?",
         [remainingPoint.toString(), owner.player_id, account.version]
       );
-      if (junkUpdate.affectedRows !== 1n || sealUpdate.affectedRows !== 1n || pointUpdate.affectedRows !== 1n) {
+      if (junkUpdate.affectedRows !== 1n || pointUpdate.affectedRows !== 1n) {
         throw new ApplicationError("RAID_STRIKE_SEAL_CRAFT_CONFLICT", "재화 정보가 먼저 변경되었습니다.", 409);
       }
+      const sealResult = await this.sealOwnership.changeResolved(transaction,{
+        actor: "raid-strike-seal-craft",
+        playerId: owner.canonical_player_id,itemId:sealDefinition.itemId,
+        requestKey: canonicalInventoryRequestKey(command.eventId),
+        quantityDelta: craftQuantity,
+        reasonType: "RAID_STRIKE_SEAL_CRAFTED"
+      });
+      const sealQuantity = sealResult.quantity;
       await transaction.execute(
         `INSERT INTO inventory_ledger
           (operation_id, sequence_no, player_id, item_id, quantity_delta, reason_code)
-         VALUES (?, 1, ?, ?, ?, 'raid_strike_seal_craft_material'),
-                (?, 2, ?, ?, ?, 'raid_strike_seal_crafted')`,
-        [operation.insertId, owner.player_id, junk.item_id, (-requiredJunk).toString(),
-          operation.insertId, owner.player_id, seal.item_id, craftQuantity.toString()]
+         VALUES (?, 1, ?, ?, ?, 'raid_strike_seal_craft_material')`,
+        [operation.insertId, owner.player_id, junk.item_id, (-requiredJunk).toString()]
       );
       await transaction.execute(
         `INSERT INTO currency_ledger
@@ -205,7 +238,7 @@ export class RaidStrikeSealCraftService {
       const result: RaidStrikeSealCraftResult = {
         status: "crafted", playerId: owner.player_id.toString(), craftQuantity: craftQuantity.toString(),
         junkQuantity: junkQuantity.toString(), pointBalance: remainingPoint.toString(), sealQuantity: sealQuantity.toString(),
-        outboxId: outbox.insertId.toString(), data, auditId: audit.insertId.toString()
+        outboxId: outbox.insertId.toString(), data, auditId: audit.insertId.toString(), requestReuse
       };
       await transaction.execute(
         "UPDATE operations SET status = 'completed', result_json = ?, completed_at = UTC_TIMESTAMP(3) WHERE id = ?",

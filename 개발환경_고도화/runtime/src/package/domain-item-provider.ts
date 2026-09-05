@@ -1,4 +1,5 @@
 import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-resolver.js";
+import { asDatabaseTransaction, RaidStrikeSealCanonicalOwnershipProvider } from "../raid/raid-strike-seal-canonical-ownership-provider.js";
 
 export type PackageDomainItemType =
   | "STACK"
@@ -52,6 +53,7 @@ interface QuantityRow {
 
 // 공용 ItemProvider가 위임한 현재 도메인 변경을 저장합니다.
 export class PackageDomainItemMutationStore {
+  public constructor(private readonly raidSealOwnership=new RaidStrikeSealCanonicalOwnershipProvider()){}
   public async add(
     transaction: PackageDomainTransaction,
     definition: PackageDomainItemDefinition,
@@ -170,6 +172,14 @@ export class PackageDomainItemMutationStore {
 
   // 수량형 가방 아이템 변경
   private async mutateStack(transaction: PackageDomainTransaction, code: string, mutation: PackageDomainMutation, delta: number): Promise<void> {
+    if(this.raidSealOwnership.isLegacyCompatibilityInput(code)){
+      await this.raidSealOwnership.change(asDatabaseTransaction(transaction),{
+        actor:"package-domain-item",legacyPlayerId:mutation.playerId,
+        requestKey:`package:${mutation.operationId}:${mutation.sequenceNo}:${mutation.reasonCode}`,
+        quantityDelta:BigInt(delta),reasonType:mutation.reasonCode
+      });
+      return;
+    }
     const itemId = await this.requireDefinitionId(transaction, "item_definitions", code);
     await transaction.execute(
       `INSERT INTO inventory_stacks (player_id, item_id, quantity, version)
@@ -316,6 +326,7 @@ export class PackageDomainItemMutationStore {
 
   // 스택형 아이템 잔액 조회
   private async getStackBalance(transaction: PackageDomainTransaction, code: string, playerId: string): Promise<number> {
+    if(this.raidSealOwnership.isLegacyCompatibilityInput(code))return Number(await this.raidSealOwnership.balance(asDatabaseTransaction(transaction),playerId));
     const rows = await transaction.query<QuantityRow>(
       `SELECT inventory_stacks.quantity
        FROM inventory_stacks
