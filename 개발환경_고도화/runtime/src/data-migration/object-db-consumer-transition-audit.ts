@@ -881,6 +881,55 @@ function isExcludedLegacyObjectSurface(predicate: string): boolean {
   return /msg\s*===?\s*["']\/(?:길드계급표|길드영지준비확인|길드영지확인|길드영지초기화|길드영지)["']/.test(predicate);
 }
 
+function registryCommandSamples(command: string): string[] {
+  return unique([
+    command,
+    `${command} 1`,
+    `${command} 1 1`,
+    `${command} 1 1 1`,
+    `${command} 테스트 1`,
+    `${command} 테스트 1 1`,
+    `${command} 1 | 1 | 1`,
+    `${command}, 1`,
+    `${command}, 테스트`,
+    `${command}1`,
+    `${command}10, 테스트`,
+  ]);
+}
+
+export function predicateAcceptsRegistryCommand(predicate: string, command: string): boolean {
+  const samples = registryCommandSamples(command);
+  for (const match of predicate.matchAll(/\/(\^(?:\\.|[^/\n])+)\/([dgimsuvy]*)\s*\.\s*(?:test|exec)\s*\(\s*(?:msg|msg\.trim\(\))/g)) {
+    try {
+      const flags = (match[2] ?? "").replace(/[dgyv]/g, "");
+      const expression = new RegExp(match[1]!, flags);
+      const accepts = (sample: string): boolean => { expression.lastIndex = 0; return expression.test(sample); };
+      const descendantSamples = [`${command}임의`, `${command}다른명령`, `${command}/하위`];
+      if (samples.some(accepts) && descendantSamples.every((sample) => !accepts(sample))) return true;
+    } catch {
+      // Invalid or runtime-specific regular expressions are not promoted by
+      // registry text alone. The normal source mismatch path remains closed.
+    }
+  }
+  const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const exactMessage = new RegExp(`(?<![\\w$.])msg(?:\\.trim\\(\\))?\\s*===?\\s*["']${escaped}["']`);
+  if (exactMessage.test(predicate)) return true;
+  for (const match of predicate.matchAll(/(?<![\w$.])msg(?:\.trim\(\))?\.(?:startsWith|indexOf|includes)\s*\(\s*["']([^"']+)["']/g)) {
+    const literal = match[1]!;
+    if (literal === command || literal.startsWith(`${command} `) || literal.startsWith(`${command},`)) return true;
+  }
+  return false;
+}
+
+export function registryCommandHasConsumerBinding(
+  consumers: readonly Pick<DerivedConsumer, "kind" | "file" | "triggerOrPredicate">[],
+  file: string,
+  command: string,
+): boolean {
+  return consumers.some((consumer) => consumer.kind === "LEGACY_COMMAND" && consumer.file === file
+    && predicateAcceptsRegistryCommand(consumer.triggerOrPredicate, command));
+}
+
 function legacyCandidateKeys(root: string): Set<string> {
   const keys = new Set<string>();
   const independentObjectMarker = /가방|아이템|포인트|다이아|상점|조합|건설|건물|가구|펫|타이틀|칭호|스킬|시장|거래|패키지|오픈|판매|동기화|정리|계정|휴면|가입인증|계급|순위|통계|티어|길드영지|백업|서버이동|미출석|bag|inventory|currency|shop|craft|building|furniture|pet|title|skill|package|market/i;
@@ -1886,14 +1935,22 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
   const registryObjectCommands = [...registryText.matchAll(/^\|\s*`([^`]+)`\s*\|\s*`(main\.js|Info\.js)`\s*\|\s*\[ \]\s*\|\s*\[ \]\s*\|/gm)]
     .map((match) => ({ command: match[1]!.split(/\s|\[/)[0]!.replace(/[,，]+$/, ""), file: match[2]! }))
     .filter(({ command }) => OBJECT_MARKER.test(command));
+  const registryCommandPredicates = new Map<string, string[]>();
+  for (const file of ["main.js", "Info.js"] as const) {
+    const text = readCanonicalObjectDbConsumerSource(resolve(repoRoot, file));
+    const responseSpan = namedFunctionSpan(text, "response");
+    registryCommandPredicates.set(file, responseSpan === undefined ? [] : legacyEntryStatements(responseSpan.body)
+      .filter(({ predicate }) => isCommandPredicate(predicate) && !isNegativeCommandGuard(predicate))
+      .map(({ predicate }) => predicate));
+  }
   const registrySourceMismatches = registryObjectCommands.filter(({ command, file }) => {
-    if (!readCanonicalObjectDbConsumerSource(resolve(repoRoot, file)).includes(command)) return true;
-    const commandName = command.replace(/^\//, "");
-    return !consumers.some((consumer) => consumer.kind === "LEGACY_COMMAND" && consumer.file === file
-      && (consumer.triggerOrPredicate.includes(command)
-        || consumer.triggerOrPredicate.includes(`(${commandName}|`)
-        || consumer.triggerOrPredicate.includes(`|${commandName})`)
-        || consumer.triggerOrPredicate.includes(`|${commandName}|`)));
+    const sourcePredicates = (registryCommandPredicates.get(file) ?? []).filter((predicate) => predicateAcceptsRegistryCommand(predicate, command));
+    // Display names, comments and nested result checks are not executable
+    // command consumers. Keep their COMMAND_REGISTRY review separate instead
+    // of binding an unrelated consumer merely because its source span happens
+    // to contain the same text.
+    if (sourcePredicates.length > 0 && sourcePredicates.every(isExcludedLegacyObjectSurface)) return false;
+    return !registryCommandHasConsumerBinding(consumers, file, command);
   }).map(({ command, file }) => `${file}:${command}`).sort();
   const logicalKeys = consumers.map(deriveConsumerLogicalKey);
   const logicalDuplicateCount = logicalKeys.length - new Set(logicalKeys).size;

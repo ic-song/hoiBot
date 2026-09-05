@@ -114,9 +114,9 @@ describe("object DB executable parity ledger Wave0", () => {
     assert.deepEqual(ledger.coverage, {
       manifestConsumers: 1_111, ledgerEntries: 1_111, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
       readConsumers: 499, mutationConsumers: 612, unresolvedDynamicConsumers: 552, unresolvedDynamicCallCount: 790,
-      registrySourceMismatchCount: 10, registrySourceMismatchAttributedCount: 7, registrySourceMismatchUnattributedCount: 3,
+      registrySourceMismatchCount: 8, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 8,
       provenConsumers: 0, unprovenConsumers: 1_111, directPassConsumers: 0, equivalentPassConsumers: 0,
-      verdicts: { STATIC_ONLY: 558, BLOCKED_DYNAMIC: 546, BLOCKED_REGISTRY_MISMATCH: 7, PARTIAL: 0, DIRECT_PASS: 0, EQUIVALENT_PASS: 0 },
+      verdicts: { STATIC_ONLY: 559, BLOCKED_DYNAMIC: 552, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 0, EQUIVALENT_PASS: 0 },
     });
     assert.equal(new Set(ledger.entries.map(({ consumerId }) => consumerId)).size, 1_111);
     assert.equal(ledger.entrySetSha256, sha256CanonicalJson(ledger.entries));

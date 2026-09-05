@@ -9,7 +9,7 @@ import {
   canonicalizeObjectDbConsumerSourceText,
   readCanonicalObjectDbConsumerSource
 } from "../src/data-migration/object-db-consumer-baseline.js";
-import { deriveConsumerManifest, rawAppMessageGuardKinds } from "../src/data-migration/object-db-consumer-transition-audit.js";
+import { deriveConsumerManifest, predicateAcceptsRegistryCommand, rawAppMessageGuardKinds, registryCommandHasConsumerBinding } from "../src/data-migration/object-db-consumer-transition-audit.js";
 import { auditObjectDbRuntimeAdoption } from "../src/data-migration/object-db-runtime-adoption-audit.js";
 
 type SourceSurface = { file: string; terms: string[] };
@@ -164,6 +164,34 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(hash(legacyCr), hash(lf));
   });
 
+  it("binds registry commands only to executable leaf guards", () => {
+    assert.equal(predicateAcceptsRegistryCommand('/^\\/다이아패스(추가|삭제),\\s*.+$/.test(msg)', "/다이아패스추가"), true);
+    assert.equal(predicateAcceptsRegistryCommand('/^\\/다이아패스(추가|삭제),\\s*.+$/.test(msg)', "/다이아패스삭제"), true);
+    assert.equal(predicateAcceptsRegistryCommand('msg === "/길드계급표"', "/길드계급표"), true);
+    assert.equal(predicateAcceptsRegistryCommand('msg.startsWith("/길드")', "/길드스타터오픈4"), false);
+    assert.equal(predicateAcceptsRegistryCommand('/^\\/길드/.test(msg)', "/길드스타터오픈4"), false);
+    assert.equal(predicateAcceptsRegistryCommand('/^\\/foo/.test(msg)', "/foobar"), false);
+    assert.equal(predicateAcceptsRegistryCommand('msg.startsWith("/foo")', "/foo"), true);
+    assert.equal(predicateAcceptsRegistryCommand('msg.startsWith("/foobar")', "/foo"), false);
+    assert.equal(predicateAcceptsRegistryCommand('msg.startsWith("/foo ")', "/foo"), true);
+    assert.equal(predicateAcceptsRegistryCommand('msg === "/실행" && result === "/호월오픈"', "/호월오픈"), false);
+    assert.equal(predicateAcceptsRegistryCommand('result.msg === "/호월오픈"', "/호월오픈"), false);
+    assert.equal(predicateAcceptsRegistryCommand('result.msg.startsWith("/호월오픈")', "/호월오픈"), false);
+    assert.equal(predicateAcceptsRegistryCommand('bag["호월🐹(/호월오픈)"]', "/호월오픈"), false);
+  });
+
+  it("does not bind a registry command to a longer command consumer", () => {
+    const consumers = [
+      { kind: "LEGACY_COMMAND" as const, file: "main.js", triggerOrPredicate: 'msg === "/포인트확인"' },
+      { kind: "LEGACY_COMMAND" as const, file: "main.js", triggerOrPredicate: 'msg.startsWith("/가방추가")' },
+      { kind: "LEGACY_COMMAND" as const, file: "main.js", triggerOrPredicate: '/^\\/계정정지해제,\\s*.+$/.test(msg)' },
+    ];
+    assert.equal(registryCommandHasConsumerBinding(consumers, "main.js", "/포인트"), false);
+    assert.equal(registryCommandHasConsumerBinding(consumers, "main.js", "/가방"), false);
+    assert.equal(registryCommandHasConsumerBinding(consumers, "main.js", "/계정정지"), false);
+    assert.equal(registryCommandHasConsumerBinding(consumers, "main.js", "/포인트확인"), true);
+  });
+
   it("re-derives the complete consumer manifest with exact-one primary slice and no inventory drift", () => {
     const derived = deriveConsumerManifest(fileURLToPath(repoUrl), contract.baseCommit);
     assert.deepEqual(consumerManifest, derived);
@@ -171,7 +199,17 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(consumerManifest.audit.extraCount, 0);
     assert.equal(consumerManifest.audit.duplicatePrimaryCount, 0);
     assert.equal(consumerManifest.audit.undeclaredSelectorCount, 0);
-    assert.equal(consumerManifest.audit.registrySourceMismatchCount, 10);
+    assert.equal(consumerManifest.audit.registrySourceMismatchCount, 8);
+    assert.deepEqual(consumerManifest.audit.registrySourceMismatches, [
+      "main.js:/길드스타터오픈4",
+      "main.js:/길드스타터오픈5",
+      "main.js:/길드영지오픈1",
+      "main.js:/오픈하면어른이됩니다",
+      "main.js:/창세오픈",
+      "main.js:/펫먹",
+      "main.js:/펫탐험시작",
+      "main.js:/호월오픈",
+    ]);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
     assert.equal(consumerManifest.consumers.length, 1_111);
     assert.deepEqual(consumerManifest.counts, {
@@ -210,6 +248,12 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.ok(consumerManifest.audit.activeRegistryObjectRows > 0);
     const ids = consumerManifest.consumers.map(({ consumerId }) => consumerId);
     assert.equal(new Set(ids).size, ids.length);
+    const diamondPassAdmin = consumerManifest.consumers.find(({ consumerId }) => consumerId === "legacy-2cf2f61871447ec9");
+    assert.equal(diamondPassAdmin?.triggerOrPredicate,
+      'sender == "호이 남" && (/^\\/원데이패스(추가|삭제),\\s*.+$/.test(msg) || /^\\/공헌패스(추가|삭제),\\s*.+$/.test(msg) || /^\\/초보(패스)?(추가|삭제),\\s*.+$/.test(msg) || /^\\/호이패스(추가|삭제),\\s*.+$/.test(msg) || /^\\/다이아패스(추가|삭제),\\s*.+$/.test(msg))');
+    for (const displayOnly of ["/길드스타터오픈4", "/길드스타터오픈5", "/길드영지오픈1", "/오픈하면어른이됩니다", "/창세오픈", "/펫먹", "/펫탐험시작", "/호월오픈"]) {
+      assert.equal(consumerManifest.consumers.some(({ triggerOrPredicate }) => predicateAcceptsRegistryCommand(triggerOrPredicate, displayOnly)), false, displayOnly);
+    }
     assert.equal(consumerManifest.consumers.some(({ usedTargetColumns }) => usedTargetColumns.some((column) => column.endsWith(".undefined"))), false);
     const bagShadowConsumers = consumerManifest.consumers.filter(({ file }) => file === "개발환경_고도화/runtime/src/inventory/bag-shadow-parity-provider.ts");
     assert.ok(bagShadowConsumers.length > 0, "bag-shadow consumer must be audited");
