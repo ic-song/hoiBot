@@ -201,7 +201,7 @@ export function createRequestReuseTerminalReceipt<TResult extends RequestReuseVa
   return createReceiptFromSnapshots(snapshotRequestReuseInput(input), snapshotCanonicalValue(result) as TResult);
 }
 
-function snapshotTerminalReceipt<TResult extends RequestReuseValue>(receipt: RequestReuseTerminalReceipt<TResult>): RequestReuseTerminalReceipt<TResult> {
+export function snapshotRequestReuseTerminalReceipt<TResult extends RequestReuseValue>(receipt: RequestReuseTerminalReceipt<TResult>): RequestReuseTerminalReceipt<TResult> {
   const fields = exactDataFields(receipt, ["contractVersion", "requestKey", "identityFingerprint", "payloadFingerprint", "requestFingerprint", "resultFingerprint", "result"]);
   const text = (key: string): string => {
     const value = fields.get(key);
@@ -226,7 +226,7 @@ function verifyReplaySnapshots<TResult extends RequestReuseValue>(input: Request
 
 export function replayRequestReuseTerminal<TResult extends RequestReuseValue>(input: RequestReuseInput, receipt: RequestReuseTerminalReceipt<TResult>): TResult {
   const stableInput = snapshotRequestReuseInput(input);
-  const stableReceipt = snapshotTerminalReceipt(receipt);
+  const stableReceipt = snapshotRequestReuseTerminalReceipt(receipt);
   verifyReplaySnapshots(stableInput, stableReceipt);
   return stableReceipt.result;
 }
@@ -242,7 +242,7 @@ export class RequestReuseProvider {
     return store.withLockedRequestKey(stableInput.requestKey, async (session) => {
       const prior = await session.readTerminal();
       if (prior !== undefined) {
-        const receipt = snapshotTerminalReceipt(prior);
+        const receipt = snapshotRequestReuseTerminalReceipt(prior);
         verifyReplaySnapshots(stableInput, receipt);
         return Object.freeze({ result: receipt.result, receipt, replayed: true });
       }

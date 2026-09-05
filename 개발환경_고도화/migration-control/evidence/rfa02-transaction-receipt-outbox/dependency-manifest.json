@@ -1,0 +1,42 @@
+{
+  "contractVersion": "RFA02_TRANSACTION_RECEIPT_OUTBOX_V1",
+  "catalogVersion": "SC-20260902-1",
+  "leaseRow": 2560,
+  "baselineSha": "b586e5f9c88731536f2770d5beda8abae7d3e88c",
+  "rfa01BaselineProviderBlobSha": "0f33975b313533d94ea8aae3ff75f7da7c8cdadd",
+  "rfa01Change": "Exports the existing terminal receipt snapshot primitive; fingerprint and replay formulas are unchanged.",
+  "dependencyLockSha256": "d42aefb62bea066d46db205e9e2d624ec6da20e997405f6560b46fb93f7c6dda",
+  "focusedTestLogCanonicalization": "CRLF/CR -> LF, UTF-8 without BOM",
+  "focusedTestLogCanonicalLfSha256": "a2b51de15a1dc2f66b86b31a3364ecfc0ff19f3defe85c83cd5995153e05611e",
+  "ownedFiles": [
+    "개발환경_고도화/runtime/src/shared/request-reuse-contract.ts",
+    "개발환경_고도화/runtime/src/shared/transaction-receipt-outbox-contract.ts",
+    "개발환경_고도화/runtime/test/transaction-receipt-outbox-contract.test.ts",
+    "개발환경_고도화/migration-control/contracts/transaction-receipt-outbox-contract.v1.json",
+    "개발환경_고도화/migration-control/evidence/rfa02-transaction-receipt-outbox/current-source-audit.md",
+    "개발환경_고도화/migration-control/evidence/rfa02-transaction-receipt-outbox/dependency-manifest.json",
+    "개발환경_고도화/migration-control/evidence/rfa02-transaction-receipt-outbox/scenario-matrix.md",
+    "개발환경_고도화/migration-control/evidence/rfa02-transaction-receipt-outbox/focused-test.log",
+    "개발환경_고도화/migration-control/evidence/rfa02-transaction-receipt-outbox/validation.md",
+    "개발환경_고도화/migration-control/evidence/rfa02-transaction-receipt-outbox/checkpoint.md"
+  ],
+  "readOnlyDependencies": [
+    "개발환경_고도화/runtime/src/shared/transactional-operation.ts",
+    "개발환경_고도화/runtime/src/database.ts",
+    "개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",
+    "개발환경_고도화/runtime/src/integration/outbox-worker.ts",
+    "개발환경_고도화/runtime/migrations/463_object_db_transition_operation_receipts.sql",
+    "개발환경_고도화/runtime/migrations/466_object_db_transition_recovery_receipt_links.sql"
+  ],
+  "forbiddenUnchanged": [
+    "main.js",
+    "Info.js",
+    "개발환경_고도화/runtime/src/app.ts",
+    "개발환경_고도화/runtime/src/dispatch/**",
+    "개발환경_고도화/runtime/migrations/**",
+    "package files",
+    "operational data",
+    "feature/prod",
+    "Gate and Sheets state"
+  ]
+}
