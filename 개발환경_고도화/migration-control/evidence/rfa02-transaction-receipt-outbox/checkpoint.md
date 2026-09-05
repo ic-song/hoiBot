@@ -9,4 +9,4 @@
 
 Implemented a shared RFA-02 coordinator that composes the existing RFA-01 request-reuse provider. The existing RFA-01 terminal snapshot primitive is now exported without changing fingerprint formulas. RFA-02 adds typed receipt and explicit delivery evidence to the caller-owned locked transaction and performs exact fresh-read reconciliation only for the explicit commit-ACK ambiguity error.
 
-Next action: root reviews source, tests, scope, and residual adapter responsibilities before authorizing any commit or consumer adoption.
+Next action: final integration provenance/evidence review and WBS acknowledgement; consumer adoption remains a separate lease.
