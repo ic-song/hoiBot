@@ -54,7 +54,7 @@ interface PointCurrencyRow { currency_id:string;decimal_places:number|string; }
 
 interface TicketDefinitionRow { item_id: string; }
 interface TicketStackRow { quantity: bigint | string; }
-interface BatchOwnedTitleRow { owned_pet_title_id:string;player_id:string;member_key_before:string|null;acquisition_sequence:bigint|string;selected_flag:number|string; }
+interface BatchOwnedTitleRow { owned_pet_title_id:string;player_id:string;member_key_before:string|null;linked_display_name_count:number|string;acquisition_sequence:bigint|string;selected_flag:number|string; }
 
 const TITLE_TICKET_NAME = "펫타이틀권🦊(/펫타이틀이름)";
 const CREATED_TITLE_PRICE = 100000000n;
@@ -374,11 +374,18 @@ export class PetTitleCanonicalMutationProvider {
     );
     const ownedRows=await database.query<BatchOwnedTitleRow[]>(`SELECT owned.owned_pet_title_id,owned.player_id,
             COALESCE(CASE WHEN CHAR_LENGTH(profile.current_display_name) BETWEEN 1 AND 255 THEN profile.current_display_name END,
-              (SELECT MAX(identity_row.display_name) FROM canonical_player_identity_crosswalks crosswalk
-                JOIN external_identities identity_row ON identity_row.provider_code=crosswalk.provider_code
-                 AND identity_row.external_user_id=crosswalk.external_user_id AND identity_row.status='linked'
-                 AND CHAR_LENGTH(identity_row.display_name) BETWEEN 1 AND 255
-               WHERE crosswalk.player_id=owned.player_id AND crosswalk.crosswalk_status='LINKED')) member_key_before,
+              (SELECT CASE WHEN COUNT(DISTINCT BINARY TRIM(identity_row.display_name))=1 THEN MIN(TRIM(identity_row.display_name)) END
+                 FROM canonical_player_identity_crosswalks crosswalk
+                 JOIN external_identities identity_row ON identity_row.provider_code=crosswalk.provider_code
+                  AND identity_row.external_user_id=crosswalk.external_user_id AND identity_row.status='linked'
+                  AND CHAR_LENGTH(TRIM(identity_row.display_name)) BETWEEN 1 AND 255
+                WHERE crosswalk.player_id=owned.player_id AND crosswalk.crosswalk_status='LINKED')) member_key_before,
+            (SELECT COUNT(DISTINCT BINARY TRIM(identity_row.display_name))
+               FROM canonical_player_identity_crosswalks crosswalk
+               JOIN external_identities identity_row ON identity_row.provider_code=crosswalk.provider_code
+                AND identity_row.external_user_id=crosswalk.external_user_id AND identity_row.status='linked'
+                AND CHAR_LENGTH(TRIM(identity_row.display_name)) BETWEEN 1 AND 255
+              WHERE crosswalk.player_id=owned.player_id AND crosswalk.crosswalk_status='LINKED') linked_display_name_count,
             owned.acquisition_sequence,CASE WHEN selection.owned_pet_title_id IS NULL THEN 0 ELSE 1 END selected_flag
           FROM canonical_owned_pet_title_instances owned
           JOIN canonical_players canonical_player ON canonical_player.player_id=owned.player_id
@@ -389,6 +396,7 @@ export class PetTitleCanonicalMutationProvider {
             ON selection.player_id=owned.player_id AND selection.owned_pet_title_id=owned.owned_pet_title_id
          WHERE owned.ownership_status='owned' ORDER BY owned.player_id,owned.acquisition_sequence,owned.owned_pet_title_id FOR UPDATE`);
     const rows=operationType==="ADMIN_SYNC"?ownedRows.filter(row=>!activePlayerIds?.has(row.player_id)):ownedRows;
+    if(operationType==="ADMIN_SYNC"&&rows.some(row=>Number(row.linked_display_name_count)>1&&row.member_key_before===null))throw new Error("PET_TITLE_BATCH_MEMBER_KEY_AMBIGUOUS");
     if(operationType==="ADMIN_SYNC"&&rows.some(row=>typeof row.member_key_before!=="string"||codePointLength(row.member_key_before)<1||codePointLength(row.member_key_before)>255))throw new Error("PET_TITLE_BATCH_MEMBER_KEY_UNRESOLVED");
     const counts=new Map<string,number>();
     for(const row of rows)counts.set(row.player_id,(counts.get(row.player_id)??0)+1);

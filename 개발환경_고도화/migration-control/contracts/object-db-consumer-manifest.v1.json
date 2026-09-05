@@ -175815,6 +175815,7 @@
         "canonical_players",
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_selections",
+        "canonical_player_identity_crosswalks",
         "canonical_pet_title_batch_operations",
         "canonical_pet_title_batch_operation_targets",
         "canonical_pet_title_batch_operation_participants"
@@ -175822,7 +175823,10 @@
       "observedSqlReadTables": [
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_selections",
-        "canonical_players"
+        "canonical_player_identity_crosswalks",
+        "canonical_players",
+        "external_identities",
+        "player_profiles"
       ],
       "observedSqlWriteTables": [
         "canonical_owned_pet_title_instances",
@@ -175853,8 +175857,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 9585,
-        "end": 9797,
+        "start": 9862,
+        "end": 10074,
         "sha256": "2e070db4ada308444da3b627251d257a4cd1c6186d3e132678e8cddc90c87698"
       },
       "status": "IN_SCOPE",
@@ -175866,7 +175870,9 @@
         "canonical_pet_title_batch_operations",
         "canonical_pet_title_definitions",
         "canonical_pet_title_selections",
-        "canonical_players"
+        "canonical_player_identity_crosswalks",
+        "canonical_players",
+        "external_identities"
       ],
       "usedTargetColumns": [
         "canonical_owned_pet_title_instances.INSERT_TIME",
@@ -175893,6 +175899,7 @@
         "canonical_pet_title_batch_operation_targets.UPDATE_USER",
         "canonical_pet_title_batch_operation_targets.acquisition_sequence",
         "canonical_pet_title_batch_operation_targets.action_type",
+        "canonical_pet_title_batch_operation_targets.member_key_before",
         "canonical_pet_title_batch_operation_targets.owned_pet_title_id",
         "canonical_pet_title_batch_operation_targets.ownership_status_after",
         "canonical_pet_title_batch_operation_targets.ownership_status_before",
@@ -175913,6 +175920,7 @@
         "canonical_pet_title_batch_operations.pet_title_batch_operation_id",
         "canonical_pet_title_batch_operations.replay_namespace",
         "canonical_pet_title_batch_operations.request_key",
+        "canonical_pet_title_batch_operations.result_contract_version",
         "canonical_pet_title_batch_operations.result_fingerprint",
         "canonical_pet_title_batch_operations.target_count",
         "canonical_pet_title_batch_operations.target_set_fingerprint",
@@ -175923,17 +175931,32 @@
         "canonical_pet_title_selections.UPDATE_USER",
         "canonical_pet_title_selections.owned_pet_title_id",
         "canonical_pet_title_selections.player_id",
+        "canonical_player_identity_crosswalks.INSERT_TIME",
+        "canonical_player_identity_crosswalks.INSERT_USER",
+        "canonical_player_identity_crosswalks.UPDATE_TIME",
+        "canonical_player_identity_crosswalks.UPDATE_USER",
+        "canonical_player_identity_crosswalks.canonical_player_identity_crosswalk_id",
+        "canonical_player_identity_crosswalks.crosswalk_status",
+        "canonical_player_identity_crosswalks.external_user_id",
+        "canonical_player_identity_crosswalks.player_id",
+        "canonical_player_identity_crosswalks.provider_code",
         "canonical_players.INSERT_TIME",
         "canonical_players.INSERT_USER",
         "canonical_players.UPDATE_TIME",
         "canonical_players.UPDATE_USER",
-        "canonical_players.player_id"
+        "canonical_players.player_id",
+        "canonical_players.source_identifier",
+        "canonical_players.source_system",
+        "external_identities.external_user_id",
+        "external_identities.provider_code"
       ],
       "readTargetTables": [
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_definitions",
         "canonical_pet_title_selections",
-        "canonical_players"
+        "canonical_player_identity_crosswalks",
+        "canonical_players",
+        "external_identities"
       ],
       "writeTargetTables": [
         "canonical_owned_pet_title_instances",
@@ -175960,11 +175983,24 @@
         "canonical_pet_title_selections.UPDATE_USER",
         "canonical_pet_title_selections.owned_pet_title_id",
         "canonical_pet_title_selections.player_id",
+        "canonical_player_identity_crosswalks.INSERT_TIME",
+        "canonical_player_identity_crosswalks.INSERT_USER",
+        "canonical_player_identity_crosswalks.UPDATE_TIME",
+        "canonical_player_identity_crosswalks.UPDATE_USER",
+        "canonical_player_identity_crosswalks.canonical_player_identity_crosswalk_id",
+        "canonical_player_identity_crosswalks.crosswalk_status",
+        "canonical_player_identity_crosswalks.external_user_id",
+        "canonical_player_identity_crosswalks.player_id",
+        "canonical_player_identity_crosswalks.provider_code",
         "canonical_players.INSERT_TIME",
         "canonical_players.INSERT_USER",
         "canonical_players.UPDATE_TIME",
         "canonical_players.UPDATE_USER",
-        "canonical_players.player_id"
+        "canonical_players.player_id",
+        "canonical_players.source_identifier",
+        "canonical_players.source_system",
+        "external_identities.external_user_id",
+        "external_identities.provider_code"
       ],
       "writeTargetColumns": [
         "canonical_owned_pet_title_instances.owned_pet_title_id",
@@ -175985,6 +176021,7 @@
         "canonical_pet_title_batch_operation_targets.UPDATE_USER",
         "canonical_pet_title_batch_operation_targets.acquisition_sequence",
         "canonical_pet_title_batch_operation_targets.action_type",
+        "canonical_pet_title_batch_operation_targets.member_key_before",
         "canonical_pet_title_batch_operation_targets.owned_pet_title_id",
         "canonical_pet_title_batch_operation_targets.ownership_status_after",
         "canonical_pet_title_batch_operation_targets.ownership_status_before",
@@ -176005,6 +176042,7 @@
         "canonical_pet_title_batch_operations.pet_title_batch_operation_id",
         "canonical_pet_title_batch_operations.replay_namespace",
         "canonical_pet_title_batch_operations.request_key",
+        "canonical_pet_title_batch_operations.result_contract_version",
         "canonical_pet_title_batch_operations.result_fingerprint",
         "canonical_pet_title_batch_operations.target_count",
         "canonical_pet_title_batch_operations.target_set_fingerprint",
@@ -176025,7 +176063,7 @@
         "pet-title.ownership.mutate"
       ],
       "operationReceiptTables": [
-        "canonical_pet_title_operations"
+        "canonical_pet_title_batch_operations"
       ],
       "targetUsageMode": "CURRENT_SQL"
     },
@@ -177680,8 +177718,8 @@
         "P1-OWNER-GRAPH"
       ],
       "sourceSpan": {
-        "start": 57105,
-        "end": 58408,
+        "start": 58570,
+        "end": 59873,
         "sha256": "a801ff2466024b856065bba55fd84989e390689fc536661111b7f56720dc6bd0"
       },
       "status": "IN_SCOPE",
@@ -177779,8 +177817,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 14593,
-        "end": 14907,
+        "start": 14870,
+        "end": 15184,
         "sha256": "67e7169429c184bc43172c6c091af23984d4dfab9bb4aa1245bf4a44b0c8cffc"
       },
       "status": "IN_SCOPE",
@@ -178346,8 +178384,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 6176,
-        "end": 9049,
+        "start": 6453,
+        "end": 9326,
         "sha256": "798d8d001d7f5172882425745c74412c09b054701b2223587b67cc1f160f22d6"
       },
       "status": "IN_SCOPE",
@@ -179740,8 +179778,8 @@
         "P1-MISSING-PORTS"
       ],
       "sourceSpan": {
-        "start": 27725,
-        "end": 33254,
+        "start": 29190,
+        "end": 34719,
         "sha256": "e173c7b0886b32b608e25534722bd257c7679efb251d0787121864dacdfbcbd7"
       },
       "status": "IN_SCOPE",
@@ -180252,8 +180290,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 15390,
-        "end": 20967,
+        "start": 15667,
+        "end": 21244,
         "sha256": "bcf1dac6bcbcdf26215cc94c45b563fbe769ae08672d53e70c15143f49a2067a"
       },
       "status": "IN_SCOPE",
@@ -180496,8 +180534,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 14909,
-        "end": 15388,
+        "start": 15186,
+        "end": 15665,
         "sha256": "d4b29aaf82d2207997ffcef966499499d12b269e0573d0343e1579303f84eb72"
       },
       "status": "IN_SCOPE",
@@ -180770,8 +180808,8 @@
       ],
       "sourceSpan": {
         "start": 6749,
-        "end": 8083,
-        "sha256": "e0dd4bb2913997de40639253a05d09de4216f753f55015c2c111a12fc0f32e96"
+        "end": 8084,
+        "sha256": "49fa14688548dffb11aa5f24625e7b7d0fb2c55a2fe49569ea07f440bb6fc549"
       },
       "status": "IN_SCOPE",
       "targetSelectorId": "selector:PET-TITLE",
@@ -181061,6 +181099,7 @@
         "canonical_players",
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_selections",
+        "canonical_player_identity_crosswalks",
         "canonical_pet_title_batch_operations",
         "canonical_pet_title_batch_operation_targets",
         "canonical_pet_title_batch_operation_participants"
@@ -181068,7 +181107,10 @@
       "observedSqlReadTables": [
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_selections",
-        "canonical_players"
+        "canonical_player_identity_crosswalks",
+        "canonical_players",
+        "external_identities",
+        "player_profiles"
       ],
       "observedSqlWriteTables": [
         "canonical_owned_pet_title_instances",
@@ -181099,8 +181141,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 9051,
-        "end": 9583,
+        "start": 9328,
+        "end": 9860,
         "sha256": "690068e39eb853e8c8afc1ce4861098facfec88e97b92317da50069e2d0df520"
       },
       "status": "IN_SCOPE",
@@ -181112,7 +181154,9 @@
         "canonical_pet_title_batch_operations",
         "canonical_pet_title_definitions",
         "canonical_pet_title_selections",
-        "canonical_players"
+        "canonical_player_identity_crosswalks",
+        "canonical_players",
+        "external_identities"
       ],
       "usedTargetColumns": [
         "canonical_owned_pet_title_instances.INSERT_TIME",
@@ -181139,6 +181183,7 @@
         "canonical_pet_title_batch_operation_targets.UPDATE_USER",
         "canonical_pet_title_batch_operation_targets.acquisition_sequence",
         "canonical_pet_title_batch_operation_targets.action_type",
+        "canonical_pet_title_batch_operation_targets.member_key_before",
         "canonical_pet_title_batch_operation_targets.owned_pet_title_id",
         "canonical_pet_title_batch_operation_targets.ownership_status_after",
         "canonical_pet_title_batch_operation_targets.ownership_status_before",
@@ -181159,6 +181204,7 @@
         "canonical_pet_title_batch_operations.pet_title_batch_operation_id",
         "canonical_pet_title_batch_operations.replay_namespace",
         "canonical_pet_title_batch_operations.request_key",
+        "canonical_pet_title_batch_operations.result_contract_version",
         "canonical_pet_title_batch_operations.result_fingerprint",
         "canonical_pet_title_batch_operations.target_count",
         "canonical_pet_title_batch_operations.target_set_fingerprint",
@@ -181169,17 +181215,32 @@
         "canonical_pet_title_selections.UPDATE_USER",
         "canonical_pet_title_selections.owned_pet_title_id",
         "canonical_pet_title_selections.player_id",
+        "canonical_player_identity_crosswalks.INSERT_TIME",
+        "canonical_player_identity_crosswalks.INSERT_USER",
+        "canonical_player_identity_crosswalks.UPDATE_TIME",
+        "canonical_player_identity_crosswalks.UPDATE_USER",
+        "canonical_player_identity_crosswalks.canonical_player_identity_crosswalk_id",
+        "canonical_player_identity_crosswalks.crosswalk_status",
+        "canonical_player_identity_crosswalks.external_user_id",
+        "canonical_player_identity_crosswalks.player_id",
+        "canonical_player_identity_crosswalks.provider_code",
         "canonical_players.INSERT_TIME",
         "canonical_players.INSERT_USER",
         "canonical_players.UPDATE_TIME",
         "canonical_players.UPDATE_USER",
-        "canonical_players.player_id"
+        "canonical_players.player_id",
+        "canonical_players.source_identifier",
+        "canonical_players.source_system",
+        "external_identities.external_user_id",
+        "external_identities.provider_code"
       ],
       "readTargetTables": [
         "canonical_owned_pet_title_instances",
         "canonical_pet_title_definitions",
         "canonical_pet_title_selections",
-        "canonical_players"
+        "canonical_player_identity_crosswalks",
+        "canonical_players",
+        "external_identities"
       ],
       "writeTargetTables": [
         "canonical_owned_pet_title_instances",
@@ -181206,11 +181267,24 @@
         "canonical_pet_title_selections.UPDATE_USER",
         "canonical_pet_title_selections.owned_pet_title_id",
         "canonical_pet_title_selections.player_id",
+        "canonical_player_identity_crosswalks.INSERT_TIME",
+        "canonical_player_identity_crosswalks.INSERT_USER",
+        "canonical_player_identity_crosswalks.UPDATE_TIME",
+        "canonical_player_identity_crosswalks.UPDATE_USER",
+        "canonical_player_identity_crosswalks.canonical_player_identity_crosswalk_id",
+        "canonical_player_identity_crosswalks.crosswalk_status",
+        "canonical_player_identity_crosswalks.external_user_id",
+        "canonical_player_identity_crosswalks.player_id",
+        "canonical_player_identity_crosswalks.provider_code",
         "canonical_players.INSERT_TIME",
         "canonical_players.INSERT_USER",
         "canonical_players.UPDATE_TIME",
         "canonical_players.UPDATE_USER",
-        "canonical_players.player_id"
+        "canonical_players.player_id",
+        "canonical_players.source_identifier",
+        "canonical_players.source_system",
+        "external_identities.external_user_id",
+        "external_identities.provider_code"
       ],
       "writeTargetColumns": [
         "canonical_owned_pet_title_instances.owned_pet_title_id",
@@ -181231,6 +181305,7 @@
         "canonical_pet_title_batch_operation_targets.UPDATE_USER",
         "canonical_pet_title_batch_operation_targets.acquisition_sequence",
         "canonical_pet_title_batch_operation_targets.action_type",
+        "canonical_pet_title_batch_operation_targets.member_key_before",
         "canonical_pet_title_batch_operation_targets.owned_pet_title_id",
         "canonical_pet_title_batch_operation_targets.ownership_status_after",
         "canonical_pet_title_batch_operation_targets.ownership_status_before",
@@ -181251,6 +181326,7 @@
         "canonical_pet_title_batch_operations.pet_title_batch_operation_id",
         "canonical_pet_title_batch_operations.replay_namespace",
         "canonical_pet_title_batch_operations.request_key",
+        "canonical_pet_title_batch_operations.result_contract_version",
         "canonical_pet_title_batch_operations.result_fingerprint",
         "canonical_pet_title_batch_operations.target_count",
         "canonical_pet_title_batch_operations.target_set_fingerprint",
@@ -181271,7 +181347,7 @@
         "pet-title.ownership.mutate"
       ],
       "operationReceiptTables": [
-        "canonical_pet_title_operations"
+        "canonical_pet_title_batch_operations"
       ],
       "targetUsageMode": "CURRENT_SQL"
     },
@@ -181327,8 +181403,8 @@
       ],
       "p1Bridges": [],
       "sourceSpan": {
-        "start": 9799,
-        "end": 14591,
+        "start": 10076,
+        "end": 14868,
         "sha256": "88c6ca1f1c037389dc81d84a580c89d5302c266f9a39f8c3d633e21d308f3f23"
       },
       "status": "IN_SCOPE",
@@ -181558,8 +181634,8 @@
         "P1-MISSING-PORTS"
       ],
       "sourceSpan": {
-        "start": 8085,
-        "end": 8798,
+        "start": 8086,
+        "end": 8799,
         "sha256": "1080639dbb7f6b2694de9b3469db8031b5c96d46ca4d4e63083db51594655d86"
       },
       "status": "IN_SCOPE",
@@ -182520,7 +182596,7 @@
     "APP_WIRING": 7,
     "SQL_REPOSITORY": 59
   },
-  "consumerSetSha256": "669c0f3926735f2cbc26d9643c3465574722973b250cb78a9fe077f875d61826",
+  "consumerSetSha256": "aa543be346efc6916c66c2867a3904dfd39c09409eb9cfa71f3219fee1dab6e0",
   "targetSelectors": {
     "selector:CONTEXT-BRIDGE": {
       "domains": [
@@ -184431,7 +184507,7 @@
     "adminSourceCandidateCount": 78,
     "adminOrphanKeys": [],
     "adminExtraKeys": [],
-    "operationReceiptTableCount": 30,
+    "operationReceiptTableCount": 31,
     "missingOperationReceiptTableCount": 0,
     "missingOperationReceiptTables": [],
     "legacyOrphanKeys": [],

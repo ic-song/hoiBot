@@ -196,9 +196,14 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(petTitleRead?.access, "READ");
     const petTitleMutations = consumerManifest.consumers.filter(({ file }) => file.endsWith("/pet/pet-title-canonical-mutation-provider.ts"));
     assert.equal(petTitleMutations.length, 7);
-    assert.equal(petTitleMutations.every(({ primarySlice, operationReceiptTables, transactionParticipantInterfaceIds }) => primarySlice === "PET-TITLE"
-      && operationReceiptTables.includes("canonical_pet_title_operations")
+    assert.equal(petTitleMutations.every(({ primarySlice, transactionParticipantInterfaceIds }) => primarySlice === "PET-TITLE"
       && transactionParticipantInterfaceIds.includes("pet-title.ownership.mutate")), true);
+    const petTitleBatchMutations=petTitleMutations.filter(({symbol})=>symbol==="adminSync"||symbol==="adminReset");
+    assert.equal(petTitleBatchMutations.length,2);
+    assert.equal(petTitleBatchMutations.every(({operationReceiptTables})=>operationReceiptTables.length===1
+      && operationReceiptTables[0]==="canonical_pet_title_batch_operations"),true);
+    assert.equal(petTitleMutations.filter(({symbol})=>symbol!=="adminSync"&&symbol!=="adminReset")
+      .every(({operationReceiptTables})=>operationReceiptTables.includes("canonical_pet_title_operations")),true);
     assert.deepEqual(consumerManifest.audit.missingOperationReceiptTables, []);
     const authoritativeTables = new Set(standard.tables.map(({ table }) => table));
     for (const table of contract.requiredAdditiveReceiptTables) assert.ok(authoritativeTables.has(table), `required-receipt:${table}`);

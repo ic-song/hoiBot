@@ -71,6 +71,14 @@ function bodyFor(table: string): string {
     assert.match(snapshot,/ADD CONSTRAINT IF NOT EXISTS chk_odbt_474_01_member_key CHECK \(member_key_before IS NULL OR CHAR_LENGTH\(member_key_before\) BETWEEN 1 AND 255\)/);
     assert.match(snapshot,/UPDATE_USER='migration_474'/);
     assert.match(snapshot,/UPDATE_TIME=DATE_FORMAT\(CONVERT_TZ\(UTC_TIMESTAMP\(\),'\+00:00','\+09:00'\)/);
+    assert.match(snapshot,/COUNT\(DISTINCT BINARY TRIM\(identity_row\.display_name\)\)=1/);
+    assert.match(snapshot,/THEN MIN\(TRIM\(identity_row\.display_name\)\)/);
+    assert.match(snapshot,/COUNT\(DISTINCT BINARY TRIM\(identity_row\.display_name\)\)[\s\S]*\) > 1/);
+    assert.match(snapshot,/COUNT\(DISTINCT BINARY TRIM\(identity_row\.display_name\)\)[\s\S]*\) = 0/);
+    assert.match(snapshot,/PET_TITLE_BATCH_MEMBER_KEY_AMBIGUOUS/);
+    assert.match(snapshot,/PET_TITLE_BATCH_MEMBER_KEY_UNRESOLVED/);
+    assert.ok(snapshot.indexOf("EXECUTE migration_474_preflight_statement") < snapshot.indexOf("ALTER TABLE canonical_pet_title_batch_operation_targets"));
+    assert.doesNotMatch(snapshot,/MAX\(identity_row\.display_name\)/);
     assert.doesNotMatch(snapshot,/,\s*target_row\.player_id\)\s*\nWHERE target_row\.member_key_before/);
     body=body.replace(/^(  player_id .*),$/m,"$1,\n  member_key_before VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,")
       .replace(/^(  CONSTRAINT chk_odbt_472_04_rule_03 .*)$/m,"$1\n  CONSTRAINT chk_odbt_474_01_member_key CHECK (member_key_before IS NULL OR CHAR_LENGTH(member_key_before) BETWEEN 1 AND 255),");

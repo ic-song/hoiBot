@@ -566,6 +566,12 @@ function consumerInterfaceContract(consumer: DerivedConsumer, writeTargetTables:
       receipts.delete("canonical_currency_ledger_entries");
       ["canonical_craft_operations", "canonical_craft_item_ledger_entries", "canonical_craft_currency_ledger_entries"].forEach((name) => receipts.add(name));
     }
+    if (consumer.kind === "SQL_REPOSITORY"
+      && consumer.file === "개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts"
+      && (consumer.symbol === "adminSync" || consumer.symbol === "adminReset")) {
+      receipts.delete("canonical_pet_title_operations");
+      receipts.add("canonical_pet_title_batch_operations");
+    }
     if (consumer.targetUsageMode !== "CURRENT_SQL" && consumer.targetUsageMode !== "PORT_ONLY" && receipts.size === 0) {
       const primaryReceipt: Record<string, string[]> = {
         ITEM: ["canonical_item_inventory_operations", "canonical_item_inventory_ledger_entries"],
