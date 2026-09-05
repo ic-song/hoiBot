@@ -36,6 +36,24 @@ export interface DatabaseTransactionCapabilities {
   withControlledTransaction<T>(work: (transaction: ControlledDatabaseTransaction) => Promise<T>): Promise<T>;
 }
 
+// savepoint 기반 scoped client와 구분되는 새 root transaction 시작 capability입니다.
+export interface RootTransactionDatabaseClient extends DatabaseClient {
+  withRootTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T>;
+}
+
+// 이미 열린 transaction을 savepoint 없이 한 번 사용하는 scoped-client capability입니다.
+export interface CurrentTransactionDatabaseClient extends DatabaseClient {
+  withCurrentTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T>;
+}
+
+export function hasRootTransactionCapability(database: DatabaseClient): database is RootTransactionDatabaseClient {
+  return typeof (database as Partial<RootTransactionDatabaseClient>).withRootTransaction === "function";
+}
+
+export function hasCurrentTransactionCapability(database: DatabaseClient): database is CurrentTransactionDatabaseClient {
+  return typeof (database as Partial<CurrentTransactionDatabaseClient>).withCurrentTransaction === "function";
+}
+
 export type CapableDatabaseClient = DatabaseClient & DatabaseTransactionCapabilities;
 
 export function hasDatabaseTransactionCapabilities(database: DatabaseClient): database is CapableDatabaseClient {
@@ -164,7 +182,7 @@ function createControlledQueryExecutor(connection: CapabilityConnection): {
 }
 
 // 상위 트랜잭션 안에서 기존 provider의 중첩 transaction을 savepoint로 재사용합니다.
-export function createScopedDatabaseClient(transaction: DatabaseTransaction): DatabaseClient {
+export function createScopedDatabaseClient(transaction: DatabaseTransaction): DatabaseClient & CurrentTransactionDatabaseClient {
   let savepointSequence = 0;
   return {
     ping: async () => { await transaction.query("SELECT 1"); },
@@ -187,6 +205,7 @@ export function createScopedDatabaseClient(transaction: DatabaseTransaction): Da
         throw error;
       }
     },
+    withCurrentTransaction: <T>(work: (current: DatabaseTransaction) => Promise<T>) => work(transaction),
     close: async () => undefined
   };
 }
@@ -210,7 +229,7 @@ function createQueryExecutor(connection: Pick<PoolConnection, "query">): Databas
 }
 
 // MariaDB 연결 풀을 통해 서버 데이터베이스 접근을 관리합니다.
-class MariaDatabaseClient implements CapableDatabaseClient {
+class MariaDatabaseClient implements CapableDatabaseClient, RootTransactionDatabaseClient {
   readonly #pool: Pool;
   readonly #transactionCapabilities: DatabaseTransactionCapabilities;
 
@@ -289,6 +308,10 @@ class MariaDatabaseClient implements CapableDatabaseClient {
     } finally {
       await connection.release();
     }
+  }
+
+  async withRootTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> {
+    return this.withTransaction(work);
   }
 
   async withReadOnlySnapshot<T>(work: (transaction: ReadOnlySnapshotTransaction) => Promise<T>): Promise<T> {

@@ -69,7 +69,7 @@ describe("object import crosswalk binding", () => {
   });
 
   it("retries only a crosswalk primary-key collision", async () => {
-    const duplicate = Object.assign(new Error("Duplicate entry 'b1234567' for key 'PRIMARY'"), { code: "ER_DUP_ENTRY" });
+    const duplicate = Object.assign(new Error("Duplicate entry 'b1234567' for key 'PRIMARY'"), { code: "ER_DUP_ENTRY", errno: 1062 });
     const crosswalkCandidates: string[] = [];
     let crosswalkAttempts = 0;
     const transaction: DatabaseTransaction = {

@@ -1,5 +1,10 @@
 import { init, isCuid } from "@paralleldrive/cuid2";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
+import {
+  insertWithCuid8CollisionRetry,
+  isMariaBusinessUniqueConflict,
+  withMariaTransactionRetry
+} from "../shared/maria-database-error-policy.js";
 
 export const OBJECT_IDENTITY_LENGTH = 8;
 export const OBJECT_IDENTITY_MAX_ATTEMPTS = 8;
@@ -66,19 +71,6 @@ export function createObjectAuditValues(actor: string, now: Date = new Date()): 
 interface CrosswalkRow extends ObjectAuditValues { object_identity_crosswalk_id: string; object_identity_id: string; }
 interface ImportCrosswalkRow extends CrosswalkRow { object_type: string; payload_fingerprint: string | null; }
 
-function isDuplicate(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const code = "code" in error ? String(error.code) : "";
-  const message = "message" in error ? String(error.message) : "";
-  return code === "ER_DUP_ENTRY" || /duplicate entry/i.test(message);
-}
-
-function isRetryableTransactionConflict(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const record=error as { code?:unknown;errno?:unknown };
-  return record.code === "ER_LOCK_DEADLOCK" || record.code === "ER_LOCK_WAIT_TIMEOUT" || record.errno === 1213 || record.errno === 1205;
-}
-
 // source namespace와 식별자는 원문을 보존하되 저장 가능한 명시 입력만 허용합니다.
 function assertSourceLocator(input: Pick<ObjectIdentityCrosswalkInput, "sourceSystem" | "sourceNamespace" | "sourceIdentifier">): void {
   const asciiToken = (value: string, maxLength: number, code: string): void => {
@@ -94,11 +86,6 @@ function assertCrosswalkInput(input: ObjectIdentityCrosswalkInput): void {
   if (!/^[A-Z][A-Z0-9_]{0,49}$/.test(input.objectType)) throw new Error("OBJECT_IDENTITY_TYPE_INVALID");
 }
 
-function isPrimaryKeyDuplicate(error: unknown): boolean {
-  if (!isDuplicate(error) || typeof error !== "object" || error === null || !("message" in error)) return false;
-  return /for key ['`"]?(?:[a-z0-9_]+\.)?primary['`"]?/i.test(String(error.message));
-}
-
 function assertImportBindingInput(input: ObjectImportBindingInput): void {
   assertCrosswalkInput({ ...input, sourceIdentifier: input.sourceLocatorSha256 });
   if (!/^[0-9a-f]{64}$/.test(input.sourceLocatorSha256)) throw new Error("OBJECT_IDENTITY_IMPORT_SOURCE_LOCATOR_INVALID");
@@ -111,17 +98,10 @@ async function reserveIdentity(
   generate: ObjectIdentityCandidateGenerator,
   maxAttempts: number
 ): Promise<string> {
-  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const candidate = generate();
+  return insertWithCuid8CollisionRetry(async (candidate) => {
     assertObjectIdentityCandidate(candidate);
-    try {
-      await insert(candidate);
-      return candidate;
-    } catch (error) {
-      if (!isDuplicate(error)) throw error;
-    }
-  }
-  throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
+    await insert(candidate);
+  }, { generate, maxAttempts, exhaustedErrorCode: "OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED" });
 }
 
 // 레거시/source 식별자를 canonical object identity PK로 멱등 연결합니다.
@@ -132,16 +112,18 @@ export class MariaObjectIdentityAuditProvider {
     private readonly maxAttempts = OBJECT_IDENTITY_MAX_ATTEMPTS,
     private readonly now: () => Date = () => new Date()
   ) {
-    if (!Number.isInteger(maxAttempts) || maxAttempts < 1) throw new Error("OBJECT_IDENTITY_MAX_ATTEMPTS_INVALID");
+    if (!Number.isInteger(maxAttempts) || maxAttempts < 1 || maxAttempts > OBJECT_IDENTITY_MAX_ATTEMPTS) throw new Error("OBJECT_IDENTITY_MAX_ATTEMPTS_INVALID");
   }
 
   async registerCrosswalk(input: ObjectIdentityCrosswalkInput): Promise<ObjectIdentityCrosswalkResult> {
     assertCrosswalkInput(input);
     const audit = createObjectAuditValues(input.actor, this.now());
-    let retryableConflict=false;
-    for (let transactionAttempt = 0; transactionAttempt < this.maxAttempts; transactionAttempt += 1) {
-      try {
-        return await this.database.withTransaction(async (transaction) => {
+    try {
+      return await withMariaTransactionRetry(this.database, {
+        maxAttempts: this.maxAttempts,
+        allowRetry: () => true,
+        exhaustedErrorCode: "OBJECT_IDENTITY_TRANSACTION_RETRY_EXHAUSTED"
+      }, async (transaction) => {
           const existing = (await transaction.query<CrosswalkRow[]>(
             "SELECT object_identity_crosswalk_id,object_identity_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=? FOR UPDATE",
             [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
@@ -153,28 +135,21 @@ export class MariaObjectIdentityAuditProvider {
           [candidate, input.objectType, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
         ).then(() => undefined), this.generate, this.maxAttempts
           );
-          const crosswalkId = this.generate();
-          assertObjectIdentityCandidate(crosswalkId);
-          await transaction.execute(
+          const crosswalkId = await reserveIdentity((candidate) => transaction.execute(
             "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
-            [crosswalkId, objectIdentityId, input.sourceSystem, input.sourceNamespace, input.sourceIdentifier, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
-          );
+            [candidate, objectIdentityId, input.sourceSystem, input.sourceNamespace, input.sourceIdentifier, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+          ).then(() => undefined), this.generate, this.maxAttempts);
           return { objectIdentityId, objectIdentityCrosswalkId: crosswalkId, replayed: false, audit };
-        });
-      } catch (error) {
-        const duplicate=isDuplicate(error);
-        const retryable=isRetryableTransactionConflict(error);
-        if (!duplicate && !retryable) throw error;
-        retryableConflict ||= retryable;
-        const concurrent = (await this.database.query<CrosswalkRow[]>(
-          "SELECT object_identity_crosswalk_id,object_identity_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
-          [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
-        ))[0];
-        if (concurrent !== undefined) return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit: auditFrom(concurrent) };
-      }
+      });
+    } catch (error) {
+      if (!isMariaBusinessUniqueConflict(error, "uq_object_identity_crosswalk_source")) throw error;
+      const concurrent = (await this.database.query<CrosswalkRow[]>(
+        "SELECT object_identity_crosswalk_id,object_identity_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM object_identity_crosswalks WHERE source_system=? AND source_namespace=? AND source_identifier=?",
+        [input.sourceSystem, input.sourceNamespace, input.sourceIdentifier]
+      ))[0];
+      if (concurrent !== undefined) return { objectIdentityId: concurrent.object_identity_id, objectIdentityCrosswalkId: concurrent.object_identity_crosswalk_id, replayed: true, audit: auditFrom(concurrent) };
+      throw error;
     }
-    if(retryableConflict)throw new Error("OBJECT_IDENTITY_TRANSACTION_RETRY_EXHAUSTED");
-    throw new Error("OBJECT_IDENTITY_COLLISION_RETRY_EXHAUSTED");
   }
 
   // 호출자가 소유한 transaction 안에서 locator와 payload fingerprint를 canonical identity에 결합합니다.
@@ -201,23 +176,13 @@ export class MariaObjectIdentityAuditProvider {
       this.generate,
       this.maxAttempts
     );
-    let objectIdentityCrosswalkId: string | undefined;
-    for (let attempt = 0; attempt < this.maxAttempts; attempt += 1) {
-      const candidate = this.generate();
-      assertObjectIdentityCandidate(candidate);
-      try {
+    const objectIdentityCrosswalkId = await insertWithCuid8CollisionRetry(async (candidate) => {
+        assertObjectIdentityCandidate(candidate);
         await transaction.execute(
           "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)",
           [candidate, objectIdentityId, input.sourceSystem, input.sourceNamespace, input.sourceLocatorSha256, input.payloadFingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
         );
-        objectIdentityCrosswalkId = candidate;
-        break;
-      } catch (error) {
-        // locator UNIQUE 충돌은 concurrent/drift 재판정이 필요하므로 caller transaction 전체를 실패시킵니다.
-        if (!isPrimaryKeyDuplicate(error)) throw error;
-      }
-    }
-    if (objectIdentityCrosswalkId === undefined) throw new Error("OBJECT_IDENTITY_CROSSWALK_COLLISION_RETRY_EXHAUSTED");
+      }, { generate: this.generate, maxAttempts: this.maxAttempts, exhaustedErrorCode: "OBJECT_IDENTITY_CROSSWALK_COLLISION_RETRY_EXHAUSTED" });
     return { objectIdentityId, objectIdentityCrosswalkId, replayed: false, audit };
   }
 

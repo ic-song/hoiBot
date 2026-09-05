@@ -1,0 +1,37 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "lease": 2564,
+  "baselineCommit": "2911301991c8630ab8cf097a9820179adf2f9a0f",
+  "contractVersion": "RFA03_MARIA_ERROR_RETRY_V1",
+  "dependencies": [
+    {
+      "path": "개발환경_고도화/runtime/src/database.ts",
+      "baselineBlob": "fe29ee4dd31902805da08b3588f3f3d6edd98080",
+      "use": "explicit root transaction capability; scoped clients remain savepoint-only"
+    },
+    {
+      "path": "개발환경_고도화/runtime/src/identity/object-identity-audit-provider.ts",
+      "baselineBlob": "867614007cba5739261568f67b59f984eff15077",
+      "use": "canonical CUID2-8 and KST audit provider"
+    },
+    {
+      "path": "개발환경_고도화/runtime/src/shared/request-reuse-contract.ts",
+      "baselineBlob": "e82affaf35b824570a5bcee27d36daf77d045f56",
+      "use": "RFA-01 compatibility, unchanged"
+    },
+    {
+      "path": "개발환경_고도화/runtime/src/shared/transaction-receipt-outbox-contract.ts",
+      "baselineBlob": "f20d8c564788ebf13d69e81d9287b6172a320a42",
+      "use": "RFA-02 compatibility, unchanged"
+    }
+  ],
+  "forbiddenChanges": {
+    "mainJs": false,
+    "infoJs": false,
+    "operationalData": false,
+    "appliedMigrations": false,
+    "consumerAdoption": false,
+    "featureProd": false,
+    "gate8": false
+  }
+}
