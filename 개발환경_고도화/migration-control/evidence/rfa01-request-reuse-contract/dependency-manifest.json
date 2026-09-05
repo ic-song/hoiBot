@@ -5,7 +5,7 @@
   "leaseRow": 2558,
   "executionId": "요청재사용계약DB-SL-COMMON-RUNTIME-INTEGRATION-01-RFA01-202609060240",
   "baselineSha": "f31d4a206d36e0125b7735a6911fc1142e785612",
-  "providerSha": "PENDING_IMPLEMENTATION_COMMIT",
+  "providerSha": "953f118e4f583c422b0f2964fd4430406f686cb8",
   "providerFileGitBlobSha": "b31244c68ae822c2590f315fc9570bafd4fa456a",
   "dependencyLockSha256": "d42aefb62bea066d46db205e9e2d624ec6da20e997405f6560b46fb93f7c6dda",
   "migrationBundleSha256": "8a7e260102b1f2c849945bf2e7fe7ca2a5b2e8118b7872099fcb29e80f07fea1",
