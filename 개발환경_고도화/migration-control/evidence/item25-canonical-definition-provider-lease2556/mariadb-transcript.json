@@ -1,9 +1,16 @@
 {
   "format": "hoibot-item25-provider-mariadb-transcript-v2",
-  "generatedAtUtc": "2026-09-05T17:09:46.5567944Z",
+  "generatedAtUtc": "2026-09-05T17:26:16.7616086Z",
   "powershell": {
     "edition": "Core",
     "major": 7
+  },
+  "canonicalization": {
+    "encoding": "UTF-8",
+    "bomPolicy": "strip UTF-8 BOM",
+    "lineEndings": "LF",
+    "lfCrLfBomEquivalent": true,
+    "contentByteDriftRejected": true
   },
   "reproducibility": {
     "prerequisite": "PowerShell Core 7+",
@@ -17,82 +24,82 @@
     "range": "001..477",
     "fileCount": 465,
     "filenameAggregateSha256": "f2066135b2a26a3a99dd8ae56fc52522056562f7e1a5f713258bd1d4e662bf41",
-    "contentAggregateSha256": "9fc0223d024e6688efabee079f1776136d14cfb75eb14d3ee5675737212a6456"
+    "contentAggregateSha256": "0c8ca1efded2e96683e5db1b439d783bad733c2bea9025587fe9f305e01a8e55"
   },
   "source": {
     "path": "data/itemInfo.json",
-    "aggregateSha256": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc"
+    "aggregateSha256": "244c56cf238f4e4f2da38e5130481d7e3c64d2c4f6498b749edbbaa9b5c5a29a"
   },
   "commands": [
     {
       "name": "mariadb-initialize",
       "command": "mariadb-install-db --datadir=<temporary> --password=<redacted>",
-      "startedAtUtc": "2026-09-05T17:07:43.9935912Z",
+      "startedAtUtc": "2026-09-05T17:24:19.0490666Z",
       "exitCode": 0,
       "outputSha256": "ea67a3399f59c8034ff36c876595233b6f72c3282cb7ac89c6bf8aa6e0b3c6f6"
     },
     {
       "name": "database-create",
       "command": "mariadb --execute=<isolated database create>",
-      "startedAtUtc": "2026-09-05T17:07:54.1340024Z",
+      "startedAtUtc": "2026-09-05T17:24:29.2768026Z",
       "exitCode": 0,
       "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "name": "migrations-001-477",
       "command": "npm.cmd run db:migrate",
-      "startedAtUtc": "2026-09-05T17:07:55.4604359Z",
+      "startedAtUtc": "2026-09-05T17:24:30.3965203Z",
       "exitCode": 0,
       "outputSha256": "a9d35f3ab880fd2d38efe7bad2cd1b0e4cc20c65d222da1bbe916014ccea68be"
     },
     {
       "name": "item25-mariadb-integration",
       "command": "node --import tsx --test test/item25-canonical-definition-provider-mariadb.integration.test.ts",
-      "startedAtUtc": "2026-09-05T17:08:28.8638145Z",
+      "startedAtUtc": "2026-09-05T17:25:02.5255963Z",
       "exitCode": 0,
-      "outputSha256": "d145118b3c3c0e140d436fee892a538121f0e7361e5791179797e78441c37cee"
+      "outputSha256": "eaf7cb05c089232dd8cc7d72f135b9ecbce309d50d78b049a37dc7f2d393ea90"
     },
     {
       "name": "focused-26",
       "command": "node --import tsx --test iteminfo/provider/inventory focused files",
-      "startedAtUtc": "2026-09-05T17:08:56.3915664Z",
+      "startedAtUtc": "2026-09-05T17:25:27.2003570Z",
       "exitCode": 0,
-      "outputSha256": "051b0fb1ce8fc3bdc94a623eb5af9777e0509e7d8c1873ea960d5c89e7f41ee1"
+      "outputSha256": "8ec0bc1689bf782df752fee6f35d49cfeba2999d1b4bbec195e693c773f70951"
     },
     {
       "name": "typecheck",
       "command": "npm.cmd run typecheck",
-      "startedAtUtc": "2026-09-05T17:08:59.0469148Z",
+      "startedAtUtc": "2026-09-05T17:25:29.7397517Z",
       "exitCode": 0,
       "outputSha256": "450fc5ce8f561e2e92d6450dfdf22c86ac73b129b9c5b38edcfccf9e6d0b7f4d"
     },
     {
       "name": "build",
       "command": "npm.cmd run build",
-      "startedAtUtc": "2026-09-05T17:09:09.9916688Z",
+      "startedAtUtc": "2026-09-05T17:25:41.1955654Z",
       "exitCode": 0,
       "outputSha256": "33562dd5c52499c01e6ad90c32c18a7b8a58845c667f93d4e858b02204b2da08"
     },
     {
       "name": "object-validator-98",
       "command": "npm.cmd run object-data:validate",
-      "startedAtUtc": "2026-09-05T17:09:44.0934028Z",
+      "startedAtUtc": "2026-09-05T17:26:14.2184380Z",
       "exitCode": 0,
       "outputSha256": "3dcea8172cdf21f21f23d4e38f4b105474e36b03f006ff8cb1673b4fa59894a5"
     },
     {
       "name": "json-parse",
       "command": "node -e <parse item25 contract>",
-      "startedAtUtc": "2026-09-05T17:09:46.2044337Z",
+      "startedAtUtc": "2026-09-05T17:26:16.3880659Z",
       "exitCode": 0,
       "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     {
       "name": "diff-check",
       "command": "git diff --check",
-      "startedAtUtc": "2026-09-05T17:09:46.3378386Z",
+      "startedAtUtc": "2026-09-05T17:26:16.5010256Z",
       "exitCode": 0,
-      "outputSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "outputSha256": "6b8cde372bbaaba7f3a9918d5f63c6c38a2b890deb0c5b06c0c086b656600303"
     }
   ],
   "results": {
@@ -157,7 +164,8 @@
     "integration": true,
     "focused-spoof-260": true,
     "object-spoof-98": true,
-    "repro-command": true
+    "repro-command": true,
+    "content-byte-drift": true
   },
   "artifacts": [
     {
@@ -178,11 +186,11 @@
     },
     {
       "path": "개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/rehearse-item25-provider.ps1",
-      "sha256": "1a048c648a9f238d8f0797e98046a3e21655c1e160df954173655c383f7b32e6"
+      "sha256": "23daf735a6c65e45cdba7be659e8958d1c36e1375fc9bd7d647b46e2fc12c8b6"
     },
     {
       "path": "개발환경_고도화/migration-control/evidence/item25-canonical-definition-provider-lease2556/validation.md",
-      "sha256": "f7a299afac84f8db0f7685f405e34a096cb080198b65cdd656880af469c0d7c8"
+      "sha256": "44852b2cfc3fe112db1071faa343bcc0115428770fbf2c1d32d948d73a6a10af"
     }
   ]
 }

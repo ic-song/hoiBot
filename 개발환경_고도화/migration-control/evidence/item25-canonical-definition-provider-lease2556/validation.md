@@ -56,6 +56,7 @@
 ## 재현 명령
 
 사전 조건은 PowerShell Core 7 이상이며 repository root로 이동한 뒤 아래 명령을 그대로 실행한다. 실제 작업 PC의 절대경로는 증빙에 저장하지 않는다.
+증빙 artifact, source와 migration 내용 hash는 UTF-8 BOM을 제거하고 CRLF/CR을 LF로 정규화한 canonical UTF-8 bytes를 기준으로 계산하므로 checkout의 줄바꿈 설정과 무관하다. LF·CRLF·BOM 입력의 동일 hash와 실제 1바이트 내용 변경의 불일치를 함께 검증한다.
 
 ```powershell
 cd <repository-root>
