@@ -74,6 +74,15 @@ const AUTHORITATIVE_ENTRIES: readonly AuthoritativeEntry[] = [
 ].map(([sourcePointer,sourceLocatorSha256,sourcePayloadFingerprint,itemKind]) => ({ sourcePointer,sourceLocatorSha256,sourcePayloadFingerprint,itemKind: itemKind as Item25Kind })) as readonly AuthoritativeEntry[];
 const AUTHORITATIVE_BY_POINTER = new Map(AUTHORITATIVE_ENTRIES.map((entry) => [entry.sourcePointer, entry]));
 
+// 소비자가 동일 sealed payload/options를 다시 구현하지 않고 exact pointer 기준으로 검증하게 합니다.
+export function assertItem25CanonicalDefinitionOptions(sourcePointer: string, options: unknown): void {
+  const entry = AUTHORITATIVE_BY_POINTER.get(sourcePointer);
+  if (entry === undefined || options === null || typeof options !== "object" || Array.isArray(options)
+    || sha256(stable(normalizeLossless(options))) !== entry.sourcePayloadFingerprint) {
+    throw new Error("ITEM25_DEFINITION_OPTIONS_DRIFT");
+  }
+}
+
 export interface Item25CanonicalDefinitionManifestEntry {
   sourcePointer: string;
   sourceLocatorSha256: string;
