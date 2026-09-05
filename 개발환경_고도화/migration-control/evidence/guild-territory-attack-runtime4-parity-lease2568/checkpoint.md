@@ -30,5 +30,5 @@
 
 ## next action
 
-1. foreman이 source commit을 최종 통합 기준선에 반영한다.
-2. WBS/Lease 승인 기록 후 운영 데이터 이관과 Gate8은 별도 WBS로 유지한다.
+1. source commit을 최종 통합 v6 기준선에 반영하고 통합 검증을 완료했다.
+2. WBS/Lease 승인 기록을 현행화하며 운영 데이터 이관과 Gate8은 별도 WBS로 유지한다.

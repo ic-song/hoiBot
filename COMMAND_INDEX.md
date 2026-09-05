@@ -118,9 +118,6 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
-- `개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts`
-- `개발환경_고도화/runtime/src/guild/guild-territory-attack-runtime4-policy-provider.ts`
-- `개발환경_고도화/runtime/migrations/478_guild_territory_attack_runtime_item_policy.sql`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-command.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-service.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-iris-handler.ts`
@@ -1051,6 +1048,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts`
+- `개발환경_고도화/runtime/src/guild/guild-territory-attack-runtime4-policy-provider.ts`
+- `개발환경_고도화/runtime/migrations/478_guild_territory_attack_runtime_item_policy.sql`
 
 ## Related Helpers
 
