@@ -132,6 +132,16 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
       resultingShape: "MIGRATION_470_FINAL_RECEIPT_LINK",
       createOnly: false,
       reentrantDdlRequired: true
+    }, {
+      migration: "472_pet_title_admin_batch_app_wiring.sql",
+      rollback: "472_pet_title_admin_batch_app_wiring.rollback.sql",
+      kind: "ADDITIVE_PET_TITLE_ADMIN_BATCH_TYPED_RECEIPT_LINK",
+      alters: ["canonical_app_wiring_receipt_links"],
+      creates: ["canonical_pet_title_global_locks", "canonical_pet_title_batch_operations", "canonical_pet_title_batch_operation_targets", "canonical_pet_title_batch_operation_participants"],
+      inputShape: "MIGRATION_470_FINAL_RECEIPT_LINK",
+      resultingShape: "MIGRATION_472_FINAL_RECEIPT_LINK",
+      createOnly: false,
+      reentrantDdlRequired: true
     }]);
     assert.equal(plan.ddlExecution, "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED");
     assert.deepEqual(plan.requiredAdditiveReceiptTables, transition.requiredAdditiveReceiptTables);
@@ -387,14 +397,14 @@ describe("WBS743 Gate 2 additive consumer schema proposal", () => {
     assert.equal(link.supportTableBeyondRequiredReceipts, true);
     assert.equal(link.requiredFor, "MUTATION_TERMINAL_ONLY");
     assert.deepEqual(link.linklessTerminalAllowedFor, ["READ_ONLY", "REJECT"]);
-    assert.equal(link.columns.length, 18);
-    assert.equal(link.uniqueKeys.length, 11);
-    assert.equal(link.foreignKeys.length, 11);
+    assert.equal(link.columns.length, 19);
+    assert.equal(link.uniqueKeys.length, 12);
+    assert.equal(link.foreignKeys.length, 12);
     assert.ok(link.foreignKeys.every(({ onDelete }) => onDelete === "RESTRICT"));
     assert.equal(check(link, "app_wiring_receipt_result_fingerprint_shape").expression, "result_fingerprint REGEXP '^[0-9a-f]{64}$'");
-    assert.match(check(link, "chk_odbt_470_02_rule_01").expression, /= 1$/);
-    for (const kind of ["DAILY_PRAYER", "HOME_AGGREGATE", "MARKET", "MEMBER_TITLE", "MINI_PET_TITLE", "PACKAGE_USE", "PET_EXPLORE", "PET_EXPLORE_EVENT_CONTROL", "PET_TITLE", "PLAYER_IDENTITY"]) {
-      assert.match(check(link, "chk_odbt_470_02_rule_02").expression, new RegExp(`receipt_kind = '${kind}'`));
+    assert.match(check(link, "chk_odbt_472_03_rule_01").expression, /= 1$/);
+    for (const kind of ["DAILY_PRAYER", "HOME_AGGREGATE", "MARKET", "MEMBER_TITLE", "MINI_PET_TITLE", "PACKAGE_USE", "PET_EXPLORE", "PET_EXPLORE_EVENT_CONTROL", "PET_TITLE", "PET_TITLE_BATCH", "PLAYER_IDENTITY"]) {
+      assert.match(check(link, "chk_odbt_472_03_rule_02").expression, new RegExp(`receipt_kind = '${kind}'`));
     }
   });
 

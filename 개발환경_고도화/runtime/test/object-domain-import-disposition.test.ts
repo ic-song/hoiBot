@@ -38,7 +38,7 @@ describe("object domain import disposition", () => {
       ...disposition.quarantineOnly,
       ...disposition.runtimeOnly
     ];
-    assert.equal(classified.length, 86);
+    assert.equal(classified.length, 90);
     assert.equal(new Set(classified).size, classified.length);
     const frozenTables = [...classified].sort();
     const migrationTables = new Set<string>();

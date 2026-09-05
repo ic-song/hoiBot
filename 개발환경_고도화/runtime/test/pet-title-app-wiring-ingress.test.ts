@@ -25,7 +25,7 @@ function event(message: string): NormalizedIrisEvent {
   };
 }
 
-const database: AppWiringReadParticipant = { query: async <T>(sql:string) => (sql.includes("account_platform_active_player_selections")?[{active_player_selection_id:"sel00001"}]:[]) as T };
+const database: AppWiringReadParticipant = { query: async <T>(sql:string) => (sql.includes("canonical_pet_title_global_locks")?[{lock_key:"PET_TITLE"}]:sql.includes("account_platform_active_player_selections")?[{active_player_selection_id:"sel00001"}]:[]) as T };
 
 function ports(allowed: boolean) {
   const calls: Array<{ method: string; value: unknown }> = [];

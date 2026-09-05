@@ -193,7 +193,7 @@ function appBindingSlice(value: string): string | undefined {
 }
 
 function isExcludedNonObjectAppBinding(trigger: string): boolean {
-  return /handlerKey=(?:guild_board|social_board_read|social_punch_reaction|record_board|operation_notice_mutate)$/.test(trigger);
+  return /handlerKey=(?:guild_board|guild_joinable_list_read|guild_profile_read|guild_recruitment_toggle|social_board_read|social_punch_reaction|record_board|operation_notice_mutate)$/.test(trigger);
 }
 
 function isExcludedNonObjectAppPredicate(predicate: string): boolean {

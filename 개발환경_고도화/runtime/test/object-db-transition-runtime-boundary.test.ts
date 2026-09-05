@@ -259,8 +259,8 @@ describe("WBS743 Gate2 object DB transition runtime boundary", () => {
     assert.match(contract.claimReplayStore.ownership, /entrypoint boundary only/);
     assert.match(contract.claimReplayStore.migrationRule, /migration 462.*migration 466/);
     assert.equal(contract.typedReceiptLinkStore.table, "canonical_app_wiring_receipt_links");
-    assert.equal(contract.typedReceiptLinkStore.schemaStatus, "MIGRATIONS_466_470_EVENT_CONTROL_ADOPTED_P2_VERIFIED");
-    assert.deepEqual(contract.typedReceiptLinkStore.receiptKinds, ["DAILY_PRAYER", "HOME_AGGREGATE", "MARKET", "MEMBER_TITLE", "MINI_PET_TITLE", "PACKAGE_USE", "PET_EXPLORE", "PET_EXPLORE_EVENT_CONTROL", "PET_TITLE", "PLAYER_IDENTITY"]);
+    assert.equal(contract.typedReceiptLinkStore.schemaStatus, "MIGRATIONS_466_470_472_TYPED_RECEIPTS_ADOPTED_P2_VERIFIED");
+    assert.deepEqual(contract.typedReceiptLinkStore.receiptKinds, ["DAILY_PRAYER", "HOME_AGGREGATE", "MARKET", "MEMBER_TITLE", "MINI_PET_TITLE", "PACKAGE_USE", "PET_EXPLORE", "PET_EXPLORE_EVENT_CONTROL", "PET_TITLE", "PET_TITLE_BATCH", "PLAYER_IDENTITY"]);
     assert.match(contract.typedReceiptLinkStore.cardinality, /exactly one typed operation FK/);
     assert.match(contract.typedReceiptLinkStore.transaction, /T1.*FOR UPDATE.*COMPLETED/);
   });

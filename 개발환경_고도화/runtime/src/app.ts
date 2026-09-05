@@ -99,6 +99,7 @@ import { ManagedBackupCommandService } from "./admin/managed-backup-command-serv
 import { DataBackupService } from "./admin/data-backup-service.js";
 import { DataRestoreService } from "./admin/data-restore-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
+import { PetTitleAdminAppWiringIngress } from "./admin/pet-title-admin-app-wiring-ingress.js";
 import { PetDataCompareAppWiringIngress } from "./admin/pet-data-compare-app-wiring-ingress.js";
 import { isPetDataCompareCommand } from "./admin/pet-data-compare-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
@@ -882,10 +883,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }),
       )
       : undefined);
+  const petTitleContextProvider=new MariaPlayerContextProvider();
   const petTitleAppWiringIngress=dependencies.petTitleAppWiringIngress
     ??(database!==undefined&&appWiringOperationProvider!==undefined
       ?(()=>{
-        const contexts=new MariaPlayerContextProvider();
         return new PetTitleAppWiringIngress(
           appWiringOperationProvider,
           new CommandDispatcher(new MariaCommandRouteReader(database),{
@@ -893,14 +894,26 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             allowAllCanaries:config.nodeEnv!=="production",
             canaryUserIds:parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
           }),
-          new PetTitleShadowEvaluator(contexts,new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
-          contexts,
+          new PetTitleShadowEvaluator(petTitleContextProvider,new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
+          petTitleContextProvider,
           new PetTitleCanonicalMutationProvider(),
         );
       })()
       :undefined);
+  const petTitleAdminAppWiringIngress=database!==undefined&&appWiringOperationProvider!==undefined
+    ?new PetTitleAdminAppWiringIngress(
+      appWiringOperationProvider,
+      new CommandDispatcher(new MariaCommandRouteReader(database),{
+        enabled:true,
+        allowAllCanaries:false,
+        canaryUserIds:new Set(),
+      }),
+      petTitleContextProvider,
+      new PetTitleCanonicalMutationProvider(),
+    )
+    :undefined;
   const irisAdminCommandService = dependencies.irisAdminCommandService
-    ?? (database === undefined ? undefined : new IrisAdminCommandService(database, config.irisAllowedOpenChatIds));
+    ?? (database === undefined ? undefined : new IrisAdminCommandService(database, config.irisAllowedOpenChatIds,petTitleAdminAppWiringIngress));
   const accountPlatformIrisContextProvider = dependencies.accountPlatformIrisContextProvider
     ?? (database === undefined ? undefined : new AccountPlatformIrisContextProvider(database));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {

@@ -95,21 +95,23 @@ function parseTableBody(body: string): ParsedTableBody {
 }
 
 function expectedChecks(table: Table): string[] {
-  if (table.kind === "APP_WIRING_EVENT_CONTROL_RECEIPT") return (table.checks ?? []).map((check) => check.expression);
+  const declared = (table.checks ?? []).map((check) => check.expression);
+  if (declared.some((expression) => expression.startsWith("INSERT_TIME REGEXP"))) return declared;
+  if (table.kind === "APP_WIRING_EVENT_CONTROL_RECEIPT") return declared;
   const checks = [
     `INSERT_TIME REGEXP '${plan.globalPolicies.audit.kstRegexp}'`,
     `UPDATE_TIME REGEXP '${plan.globalPolicies.audit.kstRegexp}'`
   ];
   if (table.kind === "OPERATION_RECEIPT") checks.push("operation_status IN ('COMPLETED','FAILED')");
-  checks.push(...(table.checks ?? []).map((check) => check.expression));
+  checks.push(...declared);
   return checks;
 }
 
 function applyReceiptLinkAmendment(parsed: ParsedTableBody): void {
-  const source = amendmentSources.get("470_pet_explore_event_control_app_wiring.sql");
-  assert.ok(source);
-  parsed.checks = parsed.checks.filter((expression) => !expression.includes("pet_explore_operation_id IS NOT NULL") || expression.includes("result_fingerprint"));
-  for (const rawLine of source.split("\n")) {
+  for(const migration of ["470_pet_explore_event_control_app_wiring.sql","472_pet_title_admin_batch_app_wiring.sql"]){
+    const source=amendmentSources.get(migration);assert.ok(source);
+    parsed.checks=parsed.checks.filter(expression=>!expression.includes("daily_prayer_operation_id IS NOT NULL"));
+    for (const rawLine of source.split("\n")) {
     const line = rawLine.trim().replace(/[,;]$/, "");
     let match = /^ADD COLUMN IF NOT EXISTS (.+) AFTER ([a-z0-9_]+)$/.exec(line);
     if (match) {
@@ -120,18 +122,22 @@ function applyReceiptLinkAmendment(parsed: ParsedTableBody): void {
     }
     match = /^ADD UNIQUE KEY IF NOT EXISTS [a-z0-9_]+ \(([^)]+)\)$/.exec(line);
     if (match) {
-      const afterIndex = parsed.uniqueKeys.findIndex((key) => key[0] === "pet_explore_operation_id");
+      const afterColumn=match[1]!;
+      const predecessor=afterColumn.includes("pet_title_batch")?"pet_title_operation_id":"pet_explore_operation_id";
+      const afterIndex = parsed.uniqueKeys.findIndex((key) => key[0] === predecessor);
       parsed.uniqueKeys.splice(afterIndex + 1, 0, splitColumns(match[1]!));
       continue;
     }
     match = /^ADD CONSTRAINT [a-z0-9_]+ FOREIGN KEY IF NOT EXISTS \(([^)]+)\) REFERENCES ([a-z0-9_]+) \(([^)]+)\) ON DELETE ([A-Z]+)$/.exec(line);
     if (match) {
-      const afterIndex = parsed.foreignKeys.findIndex(({ columns }) => columns[0] === "pet_explore_operation_id");
+      const predecessor=match[1]!.includes("pet_title_batch")?"pet_title_operation_id":"pet_explore_operation_id";
+      const afterIndex = parsed.foreignKeys.findIndex(({ columns }) => columns[0] === predecessor);
       parsed.foreignKeys.splice(afterIndex + 1, 0, { columns: splitColumns(match[1]!), referencesTable: match[2]!, referencesColumns: splitColumns(match[3]!), onDelete: match[4]! });
       continue;
     }
-    match = /^ADD CONSTRAINT IF NOT EXISTS [a-z0-9_]+ CHECK \((.*)\)$/.exec(line);
+    match = /^ADD CONSTRAINT (?:IF NOT EXISTS )?[a-z0-9_]+ CHECK \((.*)\)$/.exec(line);
     if (match) parsed.checks.push(match[1]!);
+    }
   }
 }
 
@@ -171,8 +177,8 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
     assert.deepEqual([...local].sort(), plan.migrationFiles);
   });
 
-  it("keeps amendments 466 and 470 separate from the CREATE-only migration set", () => {
-    assert.deepEqual(plan.amendmentMigrations.map(({ migration }) => migration), ["466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql"]);
+  it("keeps amendments 466, 470, and 472 separate from the CREATE-only migration set", () => {
+    assert.deepEqual(plan.amendmentMigrations.map(({ migration }) => migration), ["466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "472_pet_title_admin_batch_app_wiring.sql"]);
     const amendment = plan.amendmentMigrations.find(({ migration }) => migration.startsWith("466_"))!;
     assert.deepEqual(amendment.alters, ["canonical_app_wiring_operations"]);
     assert.deepEqual(amendment.creates, ["canonical_app_wiring_receipt_links"]);
@@ -192,6 +198,8 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
     const eventSource = amendmentSources.get(eventControl.migration)!;
     assert.match(eventSource, /CREATE TABLE IF NOT EXISTS canonical_pet_explore_event_control_operations/);
     assert.match(eventSource, /ALTER TABLE canonical_app_wiring_receipt_links/);
+    const petTitleBatch=plan.amendmentMigrations.find(({migration})=>migration.startsWith("472_"))!;
+    assert.equal(petTitleBatch.inputShape,eventControl.resultingShape);assert.equal(petTitleBatch.resultingShape,"MIGRATION_472_FINAL_RECEIPT_LINK");
   });
 
   it("preserves the migration466 base receipt-link shape before applying migration470", () => {
@@ -223,7 +231,7 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
   });
 
   it("keeps migration checks and standard-manifest checks exactly synchronized", () => {
-    for (const tableName of ["canonical_market_transfer_ledger_entries", "canonical_package_use_reward_ledger_entries", "canonical_pet_explore_event_control_operations", "canonical_app_wiring_receipt_links"]) {
+    for (const tableName of ["canonical_market_transfer_ledger_entries", "canonical_package_use_reward_ledger_entries", "canonical_pet_explore_event_control_operations", "canonical_app_wiring_receipt_links", "canonical_pet_title_global_locks", "canonical_pet_title_batch_operations", "canonical_pet_title_batch_operation_targets", "canonical_pet_title_batch_operation_participants"]) {
       const planned = plan.tables.find((table) => table.table === tableName);
       const registered = standardManifest.tables.find((table) => table.table === tableName);
       assert.ok(planned, `${tableName}: plan`);
@@ -277,5 +285,15 @@ describe("WBS743 Gate 2 additive transition migrations", () => {
     assert.match(rollback, /WHERE EXISTS[\s\S]*receipt_kind = 'PET_EXPLORE_EVENT_CONTROL'/);
     assert.match(rollback, /DROP COLUMN IF EXISTS pet_explore_event_control_operation_id/);
     assert.match(rollback, /DROP TABLE IF EXISTS canonical_pet_explore_event_control_operations/);
+  });
+
+  it("provides a guarded re-entry-safe 472 rollback for exact PET_TITLE batch evidence", () => {
+    const amendment = plan.amendmentMigrations.find(({ migration }) => migration.startsWith("472_"))!;
+    const rollback = readFileSync(new URL(amendment.rollback, rollbackRoot), "utf8");
+    assert.match(rollback, /rollback_preflight_guard/);
+    assert.match(rollback, /receipt_kind='PET_TITLE_BATCH'/);
+    assert.match(rollback, /canonical_pet_title_batch_operation_targets/);
+    assert.match(rollback, /DROP COLUMN IF EXISTS pet_title_batch_operation_id/);
+    assert.match(rollback, /DROP TABLE IF EXISTS canonical_pet_title_batch_operation_targets;[\s\S]*DROP TABLE IF EXISTS canonical_pet_title_batch_operation_participants;[\s\S]*DROP TABLE IF EXISTS canonical_pet_title_batch_operations;[\s\S]*DROP TABLE IF EXISTS canonical_pet_title_global_locks;/);
   });
 });

@@ -22,9 +22,10 @@
     "464_object_db_transition_typed_asset_ledgers.sql",
     "465_object_db_transition_operation_participants.sql",
     "466_object_db_transition_recovery_receipt_links.sql",
-    "470_pet_explore_event_control_app_wiring.sql"
+    "470_pet_explore_event_control_app_wiring.sql",
+    "472_pet_title_admin_batch_app_wiring.sql"
   ],
-  "domainTableSetSha256": "e8b5edbc69910da57565d426a63b09a68f983f4060c6a0131aff5641b39bd07b",
+  "domainTableSetSha256": "c55faef532d9be19d67014f309eefc852b63e832a68c79f931957b9caa87223b",
   "definitionSeed": [
     "canonical_item_definitions",
     "object_furniture_definitions",
@@ -112,6 +113,10 @@
     "canonical_package_use_operations",
     "canonical_pet_explore_event_control_operations",
     "canonical_pet_explore_operations",
+    "canonical_pet_title_global_locks",
+    "canonical_pet_title_batch_operations",
+    "canonical_pet_title_batch_operation_targets",
+    "canonical_pet_title_batch_operation_participants",
     "canonical_pet_title_operations",
     "canonical_player_identity_operations",
     "canonical_market_transfer_ledger_entries",

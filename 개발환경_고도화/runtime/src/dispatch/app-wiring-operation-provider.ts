@@ -286,6 +286,36 @@ async function assertStoredMutationReceipt(tx:ControlledDatabaseTransaction,row:
   if(typed===undefined)throw new Error("APP_WIRING_REPLAY_TYPED_RECEIPT_NOT_FOUND");
   if(typed.operation_status!=="COMPLETED")throw new Error("APP_WIRING_REPLAY_TYPED_RECEIPT_NOT_COMPLETED");
   if(typed.result_fingerprint!==result.resultFingerprint)throw new Error("APP_WIRING_REPLAY_TYPED_RECEIPT_FINGERPRINT_MISMATCH");
+  if(kind==="PET_TITLE_BATCH")await assertStoredPetTitleBatchReceipt(tx,operationId,result.resultFingerprint);
+}
+
+// PET_TITLE batch 재생 전에 header와 정확 대상·참여자 집합을 다시 해시해 하위 증거 변조를 차단합니다.
+async function assertStoredPetTitleBatchReceipt(tx:ControlledDatabaseTransaction,operationId:string,resultFingerprint:string):Promise<void>{
+  const header=(await tx.query<Array<{operation_type:string;affected_player_count:bigint|string;affected_title_count:bigint|string;target_count:bigint|string;target_set_fingerprint:string;result_fingerprint:string;operation_status:string}>>(
+    "SELECT operation_type,affected_player_count,affected_title_count,target_count,target_set_fingerprint,result_fingerprint,operation_status FROM canonical_pet_title_batch_operations WHERE pet_title_batch_operation_id=? FOR UPDATE",
+    [operationId],
+  ))[0];
+  if(header===undefined||header.operation_status!=="COMPLETED"||header.result_fingerprint!==resultFingerprint)throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_HEADER_INVALID");
+  if(header.operation_type!=="ADMIN_RESET"&&header.operation_type!=="ADMIN_SYNC")throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_OPERATION_INVALID");
+  const targetRows=await tx.query<Array<{player_id:string;acquisition_sequence:bigint|string;owned_pet_title_id:string;selection_status_before:string;reason_type:string}>>(
+    "SELECT player_id,acquisition_sequence,owned_pet_title_id,selection_status_before,reason_type FROM canonical_pet_title_batch_operation_targets WHERE pet_title_batch_operation_id=? ORDER BY player_id,acquisition_sequence,owned_pet_title_id FOR UPDATE",
+    [operationId],
+  );
+  const targets=targetRows.map(target=>({playerId:target.player_id,acquisitionSequence:String(target.acquisition_sequence),ownedPetTitleId:target.owned_pet_title_id,selected:target.selection_status_before==="SELECTED"}));
+  if(targetRows.some(target=>(target.selection_status_before!=="SELECTED"&&target.selection_status_before!=="NOT_SELECTED")||target.reason_type!==header.operation_type))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_TARGET_INVALID");
+  const targetSetFingerprint=sha(JSON.stringify({targets}));
+  if(BigInt(header.target_count)!==BigInt(targets.length)||BigInt(header.affected_title_count)!==BigInt(targets.length)||header.target_set_fingerprint!==targetSetFingerprint)throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_TARGET_DRIFT");
+  const expectedCounts=new Map<string,bigint>();
+  for(const target of targets)expectedCounts.set(target.playerId,(expectedCounts.get(target.playerId)??0n)+1n);
+  const participants=await tx.query<Array<{player_id:string;participant_role:string;affected_title_count:bigint|string}>>(
+    "SELECT player_id,participant_role,affected_title_count FROM canonical_pet_title_batch_operation_participants WHERE pet_title_batch_operation_id=? ORDER BY player_id FOR UPDATE",
+    [operationId],
+  );
+  const affectedPlayerIds=[...expectedCounts.keys()].sort();
+  if(BigInt(header.affected_player_count)!==BigInt(affectedPlayerIds.length)||participants.length!==affectedPlayerIds.length
+    ||participants.some((participant,index)=>participant.player_id!==affectedPlayerIds[index]||participant.participant_role!=="AFFECTED_OWNER"||BigInt(participant.affected_title_count)!==expectedCounts.get(participant.player_id)))throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_PARTICIPANT_DRIFT");
+  const projection={operationType:header.operation_type,affectedPlayerIds,affectedPlayerCount:affectedPlayerIds.length,affectedTitleCount:targets.length,targetSetFingerprint};
+  if(sha(JSON.stringify(projection))!==resultFingerprint)throw new Error("APP_WIRING_REPLAY_PET_TITLE_BATCH_RESULT_DRIFT");
 }
 
 export class MariaAppWiringOperationProvider {

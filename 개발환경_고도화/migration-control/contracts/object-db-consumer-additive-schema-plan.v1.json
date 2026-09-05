@@ -33,6 +33,17 @@
       "resultingShape": "MIGRATION_470_FINAL_RECEIPT_LINK",
       "createOnly": false,
       "reentrantDdlRequired": true
+    },
+    {
+      "migration": "472_pet_title_admin_batch_app_wiring.sql",
+      "rollback": "472_pet_title_admin_batch_app_wiring.rollback.sql",
+      "kind": "ADDITIVE_PET_TITLE_ADMIN_BATCH_TYPED_RECEIPT_LINK",
+      "alters": ["canonical_app_wiring_receipt_links"],
+      "creates": ["canonical_pet_title_global_locks", "canonical_pet_title_batch_operations", "canonical_pet_title_batch_operation_targets", "canonical_pet_title_batch_operation_participants"],
+      "inputShape": "MIGRATION_470_FINAL_RECEIPT_LINK",
+      "resultingShape": "MIGRATION_472_FINAL_RECEIPT_LINK",
+      "createOnly": false,
+      "reentrantDdlRequired": true
     }
   ],
   "ddlExecution": "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED",
@@ -55,6 +66,10 @@
     "canonical_app_wiring_operations",
     "canonical_app_wiring_receipt_links",
     "canonical_pet_explore_event_control_operations",
+    "canonical_pet_title_global_locks",
+    "canonical_pet_title_batch_operations",
+    "canonical_pet_title_batch_operation_targets",
+    "canonical_pet_title_batch_operation_participants",
     "canonical_home_aggregate_operation_participants",
     "canonical_market_operation_participants",
     "canonical_member_title_operation_participants",
@@ -269,6 +284,7 @@
         { "name": "pet_explore_operation_id", "type": "CHAR(8)", "nullable": true, "charset": "ascii", "collation": "ascii_bin" },
         { "name": "pet_explore_event_control_operation_id", "type": "CHAR(8)", "nullable": true, "charset": "ascii", "collation": "ascii_bin" },
         { "name": "pet_title_operation_id", "type": "CHAR(8)", "nullable": true, "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "pet_title_batch_operation_id", "type": "CHAR(8)", "nullable": true, "charset": "ascii", "collation": "ascii_bin" },
         { "name": "player_identity_operation_id", "type": "CHAR(8)", "nullable": true, "charset": "ascii", "collation": "ascii_bin" },
         { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false },
         { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false },
@@ -287,6 +303,7 @@
         ["pet_explore_operation_id"],
         ["pet_explore_event_control_operation_id"],
         ["pet_title_operation_id"],
+        ["pet_title_batch_operation_id"],
         ["player_identity_operation_id"]
       ],
       "foreignKeys": [
@@ -300,12 +317,13 @@
         { "columns": ["pet_explore_operation_id"], "referencesTable": "canonical_pet_explore_operations", "referencesColumns": ["pet_explore_operation_id"], "onDelete": "RESTRICT" },
         { "columns": ["pet_explore_event_control_operation_id"], "referencesTable": "canonical_pet_explore_event_control_operations", "referencesColumns": ["pet_explore_event_control_operation_id"], "onDelete": "RESTRICT" },
         { "columns": ["pet_title_operation_id"], "referencesTable": "canonical_pet_title_operations", "referencesColumns": ["pet_title_operation_id"], "onDelete": "RESTRICT" },
+        { "columns": ["pet_title_batch_operation_id"], "referencesTable": "canonical_pet_title_batch_operations", "referencesColumns": ["pet_title_batch_operation_id"], "onDelete": "RESTRICT" },
         { "columns": ["player_identity_operation_id"], "referencesTable": "canonical_player_identity_operations", "referencesColumns": ["player_identity_operation_id"], "onDelete": "RESTRICT" }
       ],
       "checks": [
         { "constraint": "app_wiring_receipt_result_fingerprint_shape", "expression": "result_fingerprint REGEXP '^[0-9a-f]{64}$'" },
-        { "constraint": "chk_odbt_470_02_rule_01", "expression": "(daily_prayer_operation_id IS NOT NULL) + (home_aggregate_operation_id IS NOT NULL) + (market_operation_id IS NOT NULL) + (member_title_operation_id IS NOT NULL) + (mini_pet_title_operation_id IS NOT NULL) + (package_use_operation_id IS NOT NULL) + (pet_explore_operation_id IS NOT NULL) + (pet_explore_event_control_operation_id IS NOT NULL) + (pet_title_operation_id IS NOT NULL) + (player_identity_operation_id IS NOT NULL) = 1" },
-        { "constraint": "chk_odbt_470_02_rule_02", "expression": "(receipt_kind = 'DAILY_PRAYER' AND daily_prayer_operation_id IS NOT NULL) OR (receipt_kind = 'HOME_AGGREGATE' AND home_aggregate_operation_id IS NOT NULL) OR (receipt_kind = 'MARKET' AND market_operation_id IS NOT NULL) OR (receipt_kind = 'MEMBER_TITLE' AND member_title_operation_id IS NOT NULL) OR (receipt_kind = 'MINI_PET_TITLE' AND mini_pet_title_operation_id IS NOT NULL) OR (receipt_kind = 'PACKAGE_USE' AND package_use_operation_id IS NOT NULL) OR (receipt_kind = 'PET_EXPLORE' AND pet_explore_operation_id IS NOT NULL) OR (receipt_kind = 'PET_EXPLORE_EVENT_CONTROL' AND pet_explore_event_control_operation_id IS NOT NULL) OR (receipt_kind = 'PET_TITLE' AND pet_title_operation_id IS NOT NULL) OR (receipt_kind = 'PLAYER_IDENTITY' AND player_identity_operation_id IS NOT NULL)" }
+        { "constraint": "chk_odbt_472_03_rule_01", "expression": "(daily_prayer_operation_id IS NOT NULL) + (home_aggregate_operation_id IS NOT NULL) + (market_operation_id IS NOT NULL) + (member_title_operation_id IS NOT NULL) + (mini_pet_title_operation_id IS NOT NULL) + (package_use_operation_id IS NOT NULL) + (pet_explore_operation_id IS NOT NULL) + (pet_explore_event_control_operation_id IS NOT NULL) + (pet_title_operation_id IS NOT NULL) + (pet_title_batch_operation_id IS NOT NULL) + (player_identity_operation_id IS NOT NULL) = 1" },
+        { "constraint": "chk_odbt_472_03_rule_02", "expression": "(receipt_kind = 'DAILY_PRAYER' AND daily_prayer_operation_id IS NOT NULL) OR (receipt_kind = 'HOME_AGGREGATE' AND home_aggregate_operation_id IS NOT NULL) OR (receipt_kind = 'MARKET' AND market_operation_id IS NOT NULL) OR (receipt_kind = 'MEMBER_TITLE' AND member_title_operation_id IS NOT NULL) OR (receipt_kind = 'MINI_PET_TITLE' AND mini_pet_title_operation_id IS NOT NULL) OR (receipt_kind = 'PACKAGE_USE' AND package_use_operation_id IS NOT NULL) OR (receipt_kind = 'PET_EXPLORE' AND pet_explore_operation_id IS NOT NULL) OR (receipt_kind = 'PET_EXPLORE_EVENT_CONTROL' AND pet_explore_event_control_operation_id IS NOT NULL) OR (receipt_kind = 'PET_TITLE' AND pet_title_operation_id IS NOT NULL) OR (receipt_kind = 'PET_TITLE_BATCH' AND pet_title_batch_operation_id IS NOT NULL) OR (receipt_kind = 'PLAYER_IDENTITY' AND player_identity_operation_id IS NOT NULL)" }
       ]
     },
     {
@@ -619,6 +637,41 @@
     ], "primaryKey": ["pet_title_operation_participant_id"], "uniqueKeys": [["pet_title_operation_id", "player_id", "participant_role"]], "foreignKeys": [
       { "columns": ["pet_title_operation_id"], "referencesTable": "canonical_pet_title_operations", "referencesColumns": ["pet_title_operation_id"], "onDelete": "RESTRICT" }, { "columns": ["player_id"], "referencesTable": "canonical_players", "referencesColumns": ["player_id"], "onDelete": "RESTRICT" }
     ], "checks": [{ "constraint": "pet_title_participant_role_allowed", "expression": "participant_role IN ('OWNER','RECIPIENT')" }] },
+    { "table": "canonical_pet_title_global_locks", "kind": "GLOBAL_SCOPE_LOCK", "columns": [
+      { "name": "pet_title_global_lock_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "lock_key", "type": "VARCHAR(32)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "lock_version", "type": "BIGINT UNSIGNED", "nullable": false },
+      { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false }, { "name": "UPDATE_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "UPDATE_TIME", "type": "CHAR(19)", "nullable": false }
+    ], "primaryKey": ["pet_title_global_lock_id"], "uniqueKeys": [["lock_key"]], "foreignKeys": [], "checks": [
+      { "constraint": "chk_odbt_472_00_rule_01", "expression": "lock_key='PET_TITLE'" },
+      { "constraint": "chk_odbt_472_00_insert_time", "expression": "INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" },
+      { "constraint": "chk_odbt_472_00_update_time", "expression": "UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }
+    ] },
+    { "table": "canonical_pet_title_batch_operations", "kind": "BATCH_OPERATION_RECEIPT", "columns": [
+      { "name": "pet_title_batch_operation_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "operation_type", "type": "VARCHAR(64)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "replay_namespace", "type": "VARCHAR(100)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "request_key", "type": "VARCHAR(191)", "nullable": false, "charset": "utf8mb4", "collation": "utf8mb4_bin" }, { "name": "payload_fingerprint", "type": "CHAR(64)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" },
+      { "name": "affected_player_count", "type": "BIGINT UNSIGNED", "nullable": false }, { "name": "affected_title_count", "type": "BIGINT UNSIGNED", "nullable": false }, { "name": "target_count", "type": "BIGINT UNSIGNED", "nullable": false }, { "name": "target_set_fingerprint", "type": "CHAR(64)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "result_fingerprint", "type": "CHAR(64)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "operation_status", "type": "VARCHAR(32)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" },
+      { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false }, { "name": "UPDATE_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "UPDATE_TIME", "type": "CHAR(19)", "nullable": false }
+    ], "primaryKey": ["pet_title_batch_operation_id"], "uniqueKeys": [["replay_namespace", "request_key"]], "foreignKeys": [], "checks": [
+      { "constraint": "chk_odbt_472_01_rule_01", "expression": "operation_type IN ('ADMIN_SYNC','ADMIN_RESET')" }, { "constraint": "chk_odbt_472_01_rule_02", "expression": "operation_status IN ('COMPLETED','FAILED')" }, { "constraint": "chk_odbt_472_01_rule_03", "expression": "payload_fingerprint REGEXP '^[0-9a-f]{64}$' AND target_set_fingerprint REGEXP '^[0-9a-f]{64}$' AND result_fingerprint REGEXP '^[0-9a-f]{64}$'" }, { "constraint": "chk_odbt_472_01_rule_04", "expression": "target_count=affected_title_count" },
+      { "constraint": "chk_odbt_472_01_insert_time", "expression": "INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }, { "constraint": "chk_odbt_472_01_update_time", "expression": "UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }
+    ] },
+    { "table": "canonical_pet_title_batch_operation_targets", "kind": "BATCH_OPERATION_TARGET", "columns": [
+      { "name": "pet_title_batch_operation_target_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "pet_title_batch_operation_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "owned_pet_title_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "acquisition_sequence", "type": "BIGINT UNSIGNED", "nullable": false },
+      { "name": "ownership_status_before", "type": "VARCHAR(16)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "selection_status_before", "type": "VARCHAR(16)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "ownership_status_after", "type": "VARCHAR(16)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "action_type", "type": "VARCHAR(32)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "reason_type", "type": "VARCHAR(64)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" },
+      { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false }, { "name": "UPDATE_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "UPDATE_TIME", "type": "CHAR(19)", "nullable": false }
+    ], "primaryKey": ["pet_title_batch_operation_target_id"], "uniqueKeys": [["pet_title_batch_operation_id", "owned_pet_title_id"]], "foreignKeys": [
+      { "columns": ["pet_title_batch_operation_id"], "referencesTable": "canonical_pet_title_batch_operations", "referencesColumns": ["pet_title_batch_operation_id"], "onDelete": "RESTRICT" }, { "columns": ["owned_pet_title_id", "player_id"], "referencesTable": "canonical_owned_pet_title_instances", "referencesColumns": ["owned_pet_title_id", "player_id"], "onDelete": "RESTRICT" }
+    ], "checks": [
+      { "constraint": "chk_odbt_472_04_rule_01", "expression": "ownership_status_before='owned' AND ownership_status_after='removed'" }, { "constraint": "chk_odbt_472_04_rule_02", "expression": "selection_status_before IN ('SELECTED','NOT_SELECTED') AND action_type='SOFT_REMOVE'" }, { "constraint": "chk_odbt_472_04_rule_03", "expression": "acquisition_sequence > 0" },
+      { "constraint": "chk_odbt_472_04_insert_time", "expression": "INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }, { "constraint": "chk_odbt_472_04_update_time", "expression": "UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }
+    ] },
+    { "table": "canonical_pet_title_batch_operation_participants", "kind": "BATCH_OPERATION_PARTICIPANT", "columns": [
+      { "name": "pet_title_batch_operation_participant_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "pet_title_batch_operation_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "participant_role", "type": "VARCHAR(32)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "affected_title_count", "type": "BIGINT UNSIGNED", "nullable": false },
+      { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false }, { "name": "UPDATE_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "UPDATE_TIME", "type": "CHAR(19)", "nullable": false }
+    ], "primaryKey": ["pet_title_batch_operation_participant_id"], "uniqueKeys": [["pet_title_batch_operation_id", "player_id", "participant_role"]], "foreignKeys": [
+      { "columns": ["pet_title_batch_operation_id"], "referencesTable": "canonical_pet_title_batch_operations", "referencesColumns": ["pet_title_batch_operation_id"], "onDelete": "RESTRICT" }, { "columns": ["player_id"], "referencesTable": "canonical_players", "referencesColumns": ["player_id"], "onDelete": "RESTRICT" }
+    ], "checks": [
+      { "constraint": "chk_odbt_472_02_rule_01", "expression": "participant_role='AFFECTED_OWNER'" }, { "constraint": "chk_odbt_472_02_rule_02", "expression": "affected_title_count > 0" },
+      { "constraint": "chk_odbt_472_02_insert_time", "expression": "INSERT_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }, { "constraint": "chk_odbt_472_02_update_time", "expression": "UPDATE_TIME REGEXP '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01]) ([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$'" }
+    ] },
     { "table": "canonical_player_identity_operation_participants", "kind": "OPERATION_PARTICIPANT", "columns": [
       { "name": "player_identity_operation_participant_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_identity_operation_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "player_id", "type": "CHAR(8)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" }, { "name": "participant_role", "type": "VARCHAR(32)", "nullable": false, "charset": "ascii", "collation": "ascii_bin" },
       { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false }, { "name": "UPDATE_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "UPDATE_TIME", "type": "CHAR(19)", "nullable": false }

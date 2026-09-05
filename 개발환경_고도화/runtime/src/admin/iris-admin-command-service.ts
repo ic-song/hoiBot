@@ -94,10 +94,15 @@ import { AutoExploreSchedulerService, isAutoExploreSchedulerStartCommand } from 
 import { GuildShopCatalogService, isGuildShopCatalogCommandCandidate } from "../guild/guild-shop-catalog-service.js";
 import { DiamondShopCatalogAdminService, isDiamondShopCatalogAdminCommandCandidate } from "../shop/diamond-shop-catalog-admin-service.js";
 import { isSupportGrantManualCommandCandidate, SupportGrantManualService } from "./support-grant-manual-service.js";
+import type { PetTitleAdminAppWiringIngress } from "./pet-title-admin-app-wiring-ingress.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
-  constructor(private readonly database: DatabaseClient, private readonly broadcastIds: string[] = []) {}
+  constructor(
+    private readonly database: DatabaseClient,
+    private readonly broadcastIds: string[] = [],
+    private readonly petTitleAdminAppWiringIngress?: Pick<PetTitleAdminAppWiringIngress,"add"|"sync"|"reset">,
+  ) {}
 
   async changePlayerServer(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<{ data: string; outboxId: string }> {
     if (!/^\/서버이동\s+\S.+$/.test(input.message)) {
@@ -224,9 +229,21 @@ export class IrisAdminCommandService {
     if (isServerStatsCommand(input.message)) return new ServerStatsService(this.database).handleIris(input);
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
-    if (isPetTitleAddCommandCandidate(input.message)) return this.handlePetTitleAdd(input);
-    if (isPetTitleStoreResetCommand(input.message)) return this.handlePetTitleStoreReset(input);
-    if (isPetTitleSyncCommand(input.message)) return this.handlePetTitleSync(input);
+    if (isPetTitleAddCommandCandidate(input.message)) {
+      if (this.petTitleAdminAppWiringIngress === undefined) return this.handlePetTitleAdd(input);
+      const result=await this.petTitleAdminAppWiringIngress.add(input,parsePetTitleAddCommand(input.message)!);
+      return result.status==="changed"?{status:"changed" as const,data:result.data,outboxId:result.outboxId}:result;
+    }
+    if (isPetTitleStoreResetCommand(input.message)) {
+      if (this.petTitleAdminAppWiringIngress === undefined) return this.handlePetTitleStoreReset(input);
+      const result=await this.petTitleAdminAppWiringIngress.reset(input);
+      return result.status==="changed"?{status:"changed" as const,data:result.data,outboxId:result.outboxId}:result;
+    }
+    if (isPetTitleSyncCommand(input.message)) {
+      if (this.petTitleAdminAppWiringIngress === undefined) return this.handlePetTitleSync(input);
+      const result=await this.petTitleAdminAppWiringIngress.sync(input);
+      return result.status==="changed"?{status:"changed" as const,data:result.data,outboxId:result.outboxId}:result;
+    }
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
     if (isTrialTowerSyncCommand(input.message)) return this.handleTrialTowerSync(input);
     if (isTrialTowerAdminModifyCommandCandidate(input.message)) return this.handleTrialTowerAdminModify(input);

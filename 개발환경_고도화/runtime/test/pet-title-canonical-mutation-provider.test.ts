@@ -15,6 +15,8 @@ class MutationParticipant implements AppWiringMutationParticipant {
   ownershipStatus = "owned";
   async query<T>(sql: string, values: readonly unknown[] = []): Promise<T> {
     this.calls.push({ kind: "query", sql, values });
+    if(sql.includes("canonical_pet_title_global_locks"))return [{lock_key:"PET_TITLE"}] as T;
+    if(sql.includes("FROM canonical_players"))return [{player_id:"player01"}] as T;
     if (sql.includes("SELECT pet_title_id,ownership_status")) return [{ pet_title_id: "pettitl1", ownership_status: this.ownershipStatus }] as T;
     if (sql.includes("SELECT owned_pet_title_id AS owned_title_id")) return [{ owned_title_id: "petown01" }] as T;
     if (sql.includes("SELECT ownership_status FROM canonical_owned_pet_title_instances")) return [{ ownership_status: this.ownershipStatus }] as T;
@@ -33,6 +35,7 @@ class CreateMutationParticipant extends MutationParticipant {
   constructor(readonly ticketQuantity: bigint | undefined) { super(); }
   override async query<T>(sql: string, values: readonly unknown[] = []): Promise<T> {
     this.calls.push({ kind: "query", sql, values });
+    if(sql.includes("canonical_pet_title_global_locks"))return [{lock_key:"PET_TITLE"}] as T;
     if (sql.includes("FROM canonical_players")) return [{ player_id: "player01" }] as T;
     if (sql.includes("FROM canonical_item_definition_imports")) return [{ item_id: "itemtick" }] as T;
     if (sql.includes("SELECT quantity FROM canonical_owned_item_stacks")) {
@@ -52,6 +55,7 @@ class SaleMutationParticipant extends MutationParticipant {
   constructor(private readonly found=true,private readonly acquisitionPrice:bigint|null=100_000_000n,private readonly castleActive=false,private readonly lifecycleState=castleActive?"ACTIVE_READY":"READY",private readonly scopeFound=true,private readonly warFound=true){super();}
   override async query<T>(sql:string,values:readonly unknown[]=[]):Promise<T>{
     this.calls.push({kind:"query",sql,values});
+    if(sql.includes("canonical_pet_title_global_locks"))return [{lock_key:"PET_TITLE"}] as T;
     if(sql.includes("FROM guild_territory_start_scopes"))return (this.scopeFound?[{war_id:1n}]:[]) as T;
     if(sql.includes("FROM guild_territory_wars"))return (this.warFound?[{active:this.castleActive?1:0,lifecycle_state:this.lifecycleState}]:[]) as T;
     if(sql.includes("FROM canonical_players"))return [{player_id:"player01"}] as T;
@@ -66,7 +70,33 @@ class SaleMutationParticipant extends MutationParticipant {
   }
 }
 
+class BatchMutationParticipant extends MutationParticipant{
+  override async query<T>(sql:string,values:readonly unknown[]=[]):Promise<T>{
+    this.calls.push({kind:"query",sql,values});
+    if(sql.includes("canonical_pet_title_global_locks"))return[{lock_key:"PET_TITLE"}] as T;
+    if(sql.includes("SELECT canonical_player.player_id"))return[{player_id:"player01"},{player_id:"player02"}] as T;
+    if(sql.includes("FROM canonical_owned_pet_title_instances owned"))return[
+      {owned_pet_title_id:"owned001",player_id:"player01",acquisition_sequence:1n,selected_flag:1},
+      {owned_pet_title_id:"owned002",player_id:"player02",acquisition_sequence:2n,selected_flag:0},
+    ] as T;
+    return[] as T;
+  }
+}
+
 describe("PET-TITLE canonical mutation participant", () => {
+  it("locks global scope, players, then owned rows and records exact batch targets",async()=>{
+    const database=new BatchMutationParticipant();
+    const ids=["batch001","target01","target02","part0001","part0002"];
+    const result=await new PetTitleCanonicalMutationProvider(()=>ids.shift()!,8,()=>new Date("2026-09-05T01:02:03Z")).adminReset(database,claim,{actor:"pet_title_admin_operator_7"});
+    assert.deepEqual([result.affectedPlayerCount,result.affectedTitleCount],[2,2]);
+    const reads=database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("global_locks")?"scope":sql.includes("SELECT canonical_player.player_id")?"players":"owned");
+    assert.deepEqual(reads.slice(0,3),["scope","players","owned"]);
+    const targets=database.calls.filter(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operation_targets"));
+    assert.equal(targets.length,2);assert.deepEqual(targets.map(({values})=>values.slice(2,6)),[["player01","owned001","1","SELECTED"],["player02","owned002","2","NOT_SELECTED"]]);
+    const header=database.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_batch_operations"));
+    assert.equal(header?.values[7],2);assert.match(String(header?.values[8]),/^[0-9a-f]{64}$/);assert.equal(header?.values[10],"pet_title_admin_operator_7");
+  });
+
   it("debits the exact canonical ticket and creates a distinct definition plus owned occurrence", async () => {
     const database = new CreateMutationParticipant(2n);
     const ids = ["itemop01", "itemled1", "petop001", "petpart1"];
@@ -168,9 +198,9 @@ describe("PET-TITLE canonical mutation participant", () => {
     assert.ok(database.calls.some(({sql,values})=>sql.startsWith("UPDATE canonical_owned_pet_title_instances")&&values[0]==="sold"));
     const receipt=database.calls.find(({sql})=>sql.startsWith("INSERT INTO canonical_pet_title_operations"));
     assert.equal(receipt?.values[4],result.currencyOperationId);
-    assert.deepEqual(database.calls.filter(({kind})=>kind==="query").slice(0,3).map(({sql})=>
-      sql.includes("guild_territory_start_scopes")?"scope":sql.includes("guild_territory_wars")?"war":"player"
-    ),["scope","war","player"]);
+    assert.deepEqual(database.calls.filter(({kind})=>kind==="query").slice(0,4).map(({sql})=>
+      sql.includes("global_locks")?"pet-title-scope":sql.includes("guild_territory_start_scopes")?"scope":sql.includes("guild_territory_wars")?"war":"player"
+    ),["pet-title-scope","scope","war","player"]);
   });
 
   it("records a typed silent receipt without title or currency mutation while the shared world war authority is active",async()=>{
@@ -195,7 +225,7 @@ describe("PET-TITLE canonical mutation participant", () => {
   it("fails closed on a contradictory world war authority before player, title, or currency access",async()=>{
     const database=new SaleMutationParticipant(true,100_000_000n,false,"ACTIVE_READY");
     await assert.rejects(new PetTitleCanonicalMutationProvider().sell(database,claim,{actor:"pet_title",playerId:"player01",index:1}),(error:unknown)=>typeof error==="object"&&error!==null&&"code" in error&&error.code==="GUILD_TERRITORY_AUTHORITY_CONFLICT");
-    assert.deepEqual(database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("guild_territory_start_scopes")?"scope":"war"),["scope","war"]);
+    assert.deepEqual(database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("global_locks")?"pet-title-scope":sql.includes("guild_territory_start_scopes")?"scope":"war"),["pet-title-scope","scope","war"]);
     assert.equal(database.calls.some(({kind})=>kind==="execute"),false);
   });
 
@@ -221,7 +251,7 @@ describe("PET-TITLE canonical mutation participant", () => {
     for(const index of [0,Number.MAX_SAFE_INTEGER+1]){
       const database=new SaleMutationParticipant();
       await assert.rejects(new PetTitleCanonicalMutationProvider().sell(database,claim,{actor:"pet_title",playerId:"player01",index}),/PET_TITLE_SALE_INDEX_INVALID/);
-      assert.deepEqual(database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("guild_territory_start_scopes")?"scope":sql.includes("guild_territory_wars")?"war":"player"),["scope","war","player"]);
+      assert.deepEqual(database.calls.filter(({kind})=>kind==="query").map(({sql})=>sql.includes("global_locks")?"pet-title-scope":sql.includes("guild_territory_start_scopes")?"scope":sql.includes("guild_territory_wars")?"war":"player"),["pet-title-scope","scope","war","player"]);
       assert.equal(database.calls.some(({kind})=>kind==="execute"),false);
     }
   });

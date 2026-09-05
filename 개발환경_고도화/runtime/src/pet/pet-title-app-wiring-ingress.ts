@@ -81,6 +81,12 @@ async function lockActivePlayerSelection(database:AppWiringMutationParticipant,e
   if(rows.length!==1)throw new Error("PET_TITLE_ACTIVE_PLAYER_SELECTION_DRIFT");
 }
 
+// 관리자 batch와 동일한 PET_TITLE 전역 scope를 selection보다 먼저 잠급니다.
+async function lockPetTitleGlobalScope(database:AppWiringMutationParticipant):Promise<void>{
+  const rows=await database.query<Array<{lock_key:string}>>("SELECT lock_key FROM canonical_pet_title_global_locks WHERE lock_key='PET_TITLE' FOR UPDATE");
+  if(rows.length!==1)throw new Error("PET_TITLE_GLOBAL_SCOPE_NOT_FOUND");
+}
+
 export class PetTitleShadowEvaluator {
   constructor(
     private readonly contexts: PlayerContextPort,
@@ -196,7 +202,8 @@ export class PetTitleAppWiringIngress {
         claim,
         resolveRoute:()=>route,
         handler:async(database,activeClaim)=>{
-          // /계정변경과 같은 selection 행을 먼저 잠가 이 명령 전체가 하나의 활성 계정만 사용하게 합니다.
+          // PET_TITLE 전역 scope 뒤 /계정변경과 같은 selection 행을 잠가 하나의 활성 계정만 사용하게 합니다.
+          await lockPetTitleGlobalScope(database);
           await lockActivePlayerSelection(database,event);
           const actor=await this.contexts.resolveSelf(database,{
             identityProviderCode:"kakao",externalUserId:event.userId!,externalContextId:event.channelId!,
@@ -225,7 +232,8 @@ export class PetTitleAppWiringIngress {
         claim,
         resolveRoute:()=>route,
         handler:async(database,activeClaim)=>{
-          // /계정변경과 같은 selection 행을 가장 먼저 잠가 판매 전체가 하나의 활성 계정만 사용하게 합니다.
+          // PET_TITLE 전역 scope 뒤 /계정변경과 같은 selection 행을 잠가 판매 전체가 하나의 활성 계정만 사용하게 합니다.
+          await lockPetTitleGlobalScope(database);
           await lockActivePlayerSelection(database,event);
           const actor=await this.contexts.resolveSelf(database,{
             identityProviderCode:"kakao",externalUserId:event.userId!,externalContextId:event.channelId!,

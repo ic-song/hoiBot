@@ -29,6 +29,7 @@ export interface CommandDispatchDecision {
 
 export interface CommandDefinitionReader {
   findExact(message: string): Promise<CommandDefinition | undefined>;
+  findByCode?(commandCode: string): Promise<CommandDefinition | undefined>;
 }
 
 export interface CommandDecisionWriter {
@@ -70,6 +71,19 @@ export class MariaCommandRouteReader implements CommandDefinitionReader {
       authScope: row.auth_scope,
       rolloutState: row.rollout_state
     };
+  }
+
+  // 인수를 포함한 관리자 명령도 고정 command code의 rollout 정의를 사용합니다.
+  async findByCode(commandCode: string): Promise<CommandDefinition | undefined> {
+    const rows = await this.database.query<CommandRow[]>(
+      `SELECT command_code,handler_key,auth_scope,rollout_state
+         FROM command_registry
+        WHERE command_code=? AND enabled=1
+        LIMIT 1`,
+      [commandCode]
+    );
+    const row=rows[0];
+    return row===undefined?undefined:{commandCode:row.command_code,handlerKey:row.handler_key,authScope:row.auth_scope,rolloutState:row.rollout_state};
   }
 }
 
@@ -117,6 +131,17 @@ export class CommandDispatcher {
     }
 
     const definition = await this.reader.findExact(input.message);
+    return this.resolveDefinition(input,definition);
+  }
+
+  // 동적 인수 명령은 alias 문자열 대신 고정 command code로 동일한 rollout 정책을 판정합니다.
+  async resolveByCodeReadOnly(input:CommandDispatchInput,commandCode:string):Promise<CommandDispatchDecision>{
+    if(!this.options.enabled)return{route:"LEGACY_FALLBACK",reasonCode:"PARTIAL_DISPATCH_DISABLED"};
+    if(this.reader.findByCode===undefined)throw new Error("COMMAND_CODE_ROUTE_READER_REQUIRED");
+    return this.resolveDefinition(input,await this.reader.findByCode(commandCode));
+  }
+
+  private resolveDefinition(input:CommandDispatchInput,definition:CommandDefinition|undefined):CommandDispatchDecision{
     let decision: CommandDispatchDecision;
     if (definition === undefined) {
       decision = { route: "LEGACY_FALLBACK", reasonCode: "COMMAND_NOT_REGISTERED" };

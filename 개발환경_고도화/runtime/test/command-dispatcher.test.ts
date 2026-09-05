@@ -16,6 +16,9 @@ class MemoryRepository implements CommandDispatchRepository {
   async findExact(message: string): Promise<CommandDefinition | undefined> {
     return this.definitions.get(message);
   }
+  async findByCode(commandCode:string):Promise<CommandDefinition|undefined>{
+    return [...this.definitions.values()].find(definition=>definition.commandCode===commandCode);
+  }
   async record(_input: CommandDispatchInput, decision: CommandDispatchDecision): Promise<void> {
     this.recorded.push(decision);
   }
@@ -37,6 +40,11 @@ function createDispatcher(repository: MemoryRepository, allowAllCanaries = true)
 }
 
 describe("CommandDispatcher", () => {
+  it("resolves dynamic-argument commands by their fixed registry code",async()=>{
+    const repository=new MemoryRepository(new Map([["/동적",{...profile,commandCode:"ADMIN_DYNAMIC",rolloutState:"SHADOW"}]]));
+    const decision=await createDispatcher(repository,false).resolveByCodeReadOnly({message:"/동적 인수",userId:"operator",hasTrustedDisplayName:true},"ADMIN_DYNAMIC");
+    assert.deepEqual([decision.route,decision.commandCode],["SHADOW","ADMIN_DYNAMIC"]);assert.deepEqual(repository.recorded,[]);
+  });
   it("supports a query-only Maria route reader and rejects an explicit record attempt", async () => {
     const queries: string[] = [];
     const reader = new MariaCommandRouteReader({

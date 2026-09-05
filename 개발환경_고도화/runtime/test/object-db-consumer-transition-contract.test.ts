@@ -173,7 +173,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(consumerManifest.audit.undeclaredSelectorCount, 0);
     assert.equal(consumerManifest.audit.registrySourceMismatchCount, 10);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.consumers.length, 1_104);
+    assert.equal(consumerManifest.consumers.length, 1_108);
     assert.deepEqual(consumerManifest.counts, {
       LEGACY_COMMAND: 684,
       AUTOMATIC_CALLBACK: 3,
@@ -181,7 +181,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       ADMIN_COMMAND: 78,
       HTTP_WEB_ROUTE: 81,
       APP_WIRING: 7,
-      SQL_REPOSITORY: 52,
+      SQL_REPOSITORY: 56,
     });
     assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>
       kind === "APP_WIRING" && triggerOrPredicate === "dispatchPetDataCompareCommand"), false);
@@ -195,7 +195,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(playerContextConsumers.every(({ primarySlice }) => primarySlice === "CONTEXT-BRIDGE"), true);
     assert.equal(petTitleRead?.access, "READ");
     const petTitleMutations = consumerManifest.consumers.filter(({ file }) => file.endsWith("/pet/pet-title-canonical-mutation-provider.ts"));
-    assert.equal(petTitleMutations.length, 4);
+    assert.equal(petTitleMutations.length, 6);
     assert.equal(petTitleMutations.every(({ primarySlice, operationReceiptTables, transactionParticipantInterfaceIds }) => primarySlice === "PET-TITLE"
       && operationReceiptTables.includes("canonical_pet_title_operations")
       && transactionParticipantInterfaceIds.includes("pet-title.ownership.mutate")), true);
@@ -297,7 +297,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       ["handlerKey=legacy_social_like", "CURRENCY-SHOP"]
     ]);
     for (const [trigger, expected] of exactPrimary) assert.equal(runtimeApp.find(({ triggerOrPredicate }) => triggerOrPredicate === trigger)?.primarySlice, expected, trigger);
-    for (const unreachable of ["home_badge_inventory_read", "inventory_fortune_pouch_open", "home_heart_expression", "support_premium_notice_send", "home_badge_equip", "home_badge_permanent_delete"]) {
+    for (const unreachable of ["home_badge_inventory_read", "inventory_fortune_pouch_open", "home_heart_expression", "support_premium_notice_send", "home_badge_equip", "home_badge_permanent_delete", "guild_joinable_list_read", "guild_profile_read", "guild_recruitment_toggle"]) {
       assert.equal(runtimeApp.some(({ triggerOrPredicate }) => triggerOrPredicate === `handlerKey=${unreachable}`), false, `unreachable:${unreachable}`);
     }
     for (const reachable of ["handlerKey=letter_board", "handlerKey=castle_battle_execute", "handlerKey=castle_kingdom_status_read", "handlerKey=admin_account_suspension", "handlerKey=mini_pet_bulk_cleanup"]) {
@@ -580,7 +580,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(contract.runtimeAdoption.productionSourceCallCount, adoption.productionSourceCallCount);
     assert.equal(contract.implementationEvidence.runtimeEntrypointCallCount, adoption.productionSourceCallCount);
     assert.deepEqual(contract.runtimeAdoption.connectedIngressFamilies, adoption.connectedIngressFamilies);
-    assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "ADMIN", "WEB"]);
+    assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "ADMIN_PET_TITLE_SYNC_MODERN", "REMAINING_ADMIN", "WEB"]);
     assert.equal(contract.runtimeAdoption.cutoverClaimed, false);
     assert.match(contract.runtimeAdoption.currentAppBoundary, /EVENT_CONTROL and PET_TITLE SELL reach typed MODERN\/MUTATION handlers/);
     assert.match(contract.runtimeAdoption.auditHelper, /auditObjectDbRuntimeAdoption$/);
