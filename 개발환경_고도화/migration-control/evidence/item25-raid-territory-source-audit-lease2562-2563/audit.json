@@ -1,0 +1,143 @@
+{
+  "format": "hoibot-item25-raid-territory-source-audit-v1",
+  "leases": [2562, 2563],
+  "commit": "b586e5f9c88731536f2770d5beda8abae7d3e88c",
+  "branch": "codex/item25-raid-territory-source-audit-v1-20260906",
+  "hashMethod": {
+    "payload": "sha256(recursively-key-sorted compact JSON, UTF-8)",
+    "locator": "sha256(logicalSourceName + NUL + sourcePointer + NUL + recordKind + NUL + sourcePointer, UTF-8)",
+    "span": "sha256(inclusive UTF-8 source lines normalized to LF, no added trailing LF)"
+  },
+  "sourceSeals": {
+    "data/itemInfo.json": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+    "main.js": "91bd1c772aeb0979359ff2af86320850b77a738c1ddee295ae843ca5bcb10495",
+    "Info.js": "03e4914d8747712eeceb169409414729723af4e4d9eac41365f73bbdb7ae09a1",
+    "data/member.json": "130b31e1f852c466f7e648a6fa41ed6afe8b3d2898d2a05dc58a970a951672a4",
+    "data/memberBagCheck/memberBagCheck.json": {
+      "contentSha256": "8a717e104660c3ec70c49bd795f17259c26d624a8f8d1c26b9a43dcf3c451dcc",
+      "gitBlobSha1": "9b65d0f5616996951e2332f8592cb01713a5899e"
+    },
+    "data/freeMarket.json": "54e2d3f80b349121eef684310288d08e2115296bacdbd7900a246a1e580310d0",
+    "data/itemList.json": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+    "data/petSweetHomeInfo.json": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+    "data/trialTowerBoss.json": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76"
+  },
+  "raidDept1": {
+    "sourceLine": "data/itemInfo.json:113",
+    "recordKind": "RAID_ITEM_DEFINITION",
+    "entries": [
+      {"pointer":"/raidSpecialItem/dept1/item_0","recordKind":"RAID_ITEM_DEFINITION","name":"항생제💊(+50👾)","exp":50,"locatorSha256":"6c1e631db44a4a93eec500a74f9bd8d4e3cffd3d3c941c6353c2f99bf268333d","payloadSha256":"1dd1e9404b18b44aeff91cf4c13c7f9fe0d1e7bf1aa2d5ed09d9a47b4179184f","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_1","recordKind":"RAID_ITEM_DEFINITION","name":"마늘🧄(+50🧛‍♂)","exp":50,"locatorSha256":"1803017a1c2adc07c593a048ceaecab4a611c36ec663ab622791ba6a32543243","payloadSha256":"8e70c62fcf4045f0aefaea4990631729fbdd0927d12eee2ac41ee5a828a201a1","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_2","recordKind":"RAID_ITEM_DEFINITION","name":"거울🪞(+50🤬)","exp":50,"locatorSha256":"2f8341032ef44269f7c11b782312c0669e9ec1863a35435ebc2bae3f595b1a50","payloadSha256":"17f4a0a8a9c167057e386dde71fb4a0b40f706ff1750c620dfcaa30a4f6daaf6","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_3","recordKind":"RAID_ITEM_DEFINITION","name":"에프킬라💦(+50🪳)","exp":50,"locatorSha256":"861226c471b6c4f2ebeea0b718da2beff2f0095653af8e7383fd36a4d26b0fab","payloadSha256":"cf59d7f65a51b3ea565d4bb68137e8efda606d453841188e2cbffa6df37bc147","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_4","recordKind":"RAID_ITEM_DEFINITION","name":"도깨비가면👹(+50🧌)","exp":50,"locatorSha256":"6957b1cb101cfb69e3f13be1a9f8795abbf4a2ab5bb3cb1945484d9f51530581","payloadSha256":"af0fa690ad85cc69a02b1a91e18607c1d34f05238f81805ba8329a926d43e304","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_5","recordKind":"RAID_ITEM_DEFINITION","name":"곰팡이🍄(+50🍄)","exp":50,"locatorSha256":"534059111229846d641c3f3b47a96374167151838cb5d101efb97efa9332b96e","payloadSha256":"531c2d3ba7bafa8f7a624fbd62d0f80c8e3c9b057871fa89c3f6a41506616652","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_6","recordKind":"RAID_ITEM_DEFINITION","name":"트롤심장💓(+50🪅)","exp":50,"locatorSha256":"d53bbe01c983c85b35e0856ef599a7a1105e30ec7d4a97055a46fe9c32926162","payloadSha256":"554608eb810cec1743038aff55422d5b76de316204d9fadd3a21cf8a770f82f9","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0},
+      {"pointer":"/raidSpecialItem/dept1/item_7","recordKind":"RAID_ITEM_DEFINITION","name":"하리보🪼(+50🌝)","exp":50,"locatorSha256":"56ee841f78b109d2539d823a189ee797c8b5de62efd824d482a2189b9d085fc9","payloadSha256":"16bd07b5a914e70d037b567da396af2bf04febceb2f0c4949c8f737736de7678","memberOwnerCount":0,"memberTotalQuantity":0,"activeBagListingCount":0}
+    ],
+    "confirmedExactRuntimeConsumer": false,
+    "confirmedSpecificAcquisition": false,
+    "genericHandlingIsConditional": true,
+    "legacyRhinoLifecycleIntent": "NOT_CONFIRMED",
+    "databaseDefinitionActiveEvidence": {
+      "migration386ActiveEqualsOne": true,
+      "migration386DefinitionSpanSha256Lf": "3fdf25c8b4b457d865f935b37073fb07b1b4a0addfdf1573d59a7522c1266367",
+      "item25ProviderRequiresActiveFlagTrue": true,
+      "providerSpanSha256Lf": "d2d26ad37e3b16129e238855dc5dcd30688d96e7507f6e2b2e012c4dbb647cb5",
+      "deletionOrDeactivationAuthorized": false
+    },
+    "auctionBareNamesAreEquivalent": "NOT_CONFIRMED"
+  },
+  "raidDept2": {
+    "pointer": "/raidSpecialItem/dept2/item_0",
+    "recordKind": "RAID_ITEM_DEFINITION",
+    "name": "레이드타격대인장👑(+600👾)",
+    "exp": 600,
+    "locatorSha256": "064bcb1971ffce549b2d5f00810b58d3bcc0bec937d89b5bb232f40037c9f8bf",
+    "payloadSha256": "77cb001679d3e915622e91a872848c4c53b388479d4c88ca68760361e18c6ee9",
+    "consumerSpans": [
+      {"file":"main.js","start":36944,"end":36964,"sha256Lf":"52ed22994b30aec5dfb310c7ac1c2fc5806e5684d6282ab25e98ca733ff9071a"},
+      {"file":"Info.js","start":2957,"end":2964,"sha256Lf":"360a4c1c298fcc766d0e71b41be453555c07aa1f89a52fe296a1aeead586fc17"},
+      {"file":"Info.js","start":3084,"end":3107,"sha256Lf":"561102b2e986c35ffa4b9a4d2e9579449fb37bf2d01a4627348e0e39036619cd"}
+    ],
+    "memberOwnerCount": 308,
+    "memberTotalQuantity": 7342,
+    "memberBagCheckOwnerCount": 292,
+    "memberBagCheckTotalQuantity": 5251,
+    "activeBagListingCount": 0,
+    "completedLogNameOccurrences": 1,
+    "homeRequirementOccurrences": 140,
+    "trialTowerRewardPointer": "/0/reward/15/item"
+  },
+  "castlePremiumMetadata": {
+    "sourceLine": "data/itemInfo.json:113",
+    "recordKind": "TERRITORY_ITEM_DEFINITION",
+    "entries": [
+      {"pointer":"/castlePremiumItem/offense/item_0","recordKind":"TERRITORY_ITEM_DEFINITION","name":"영지기습공격권🔥(90%)","successRate":1,"locatorSha256":"d11654782bf9215265ec5634cde659f19b40c3ed2ff66fe33aa9e2abc9713cfa","payloadSha256":"6cfc7c7f7cf86cdaebe460f643a0141ad986f14412b7f9b82021bab6915bb931","memberOwnerCount":67,"memberTotalQuantity":4349},
+      {"pointer":"/castlePremiumItem/offense/item_1","recordKind":"TERRITORY_ITEM_DEFINITION","name":"영지기습공격권🔥(60%)","successRate":0.6,"locatorSha256":"ee39bf2d9fbc9c26180f31723bbda8304f053665053f421853ae1900d5b45452","payloadSha256":"7566199a8dc3c413d3da321f1ff3b260df97fdbd0613c8fb268ee7863a15a7db","memberOwnerCount":161,"memberTotalQuantity":43094},
+      {"pointer":"/castlePremiumItem/offense/item_2","recordKind":"TERRITORY_ITEM_DEFINITION","name":"영지기습공격권🔥(20%)","successRate":0.2,"locatorSha256":"31425b80cf2f78ead7d5b69e4589c63c6d3690a32f5cc37811f373aa4cb17f1d","payloadSha256":"6de70ebe9a02990925a456a7902fd8cf3097382e7e123fa1a5d07776dcd5ed4c","memberOwnerCount":0,"memberTotalQuantity":0},
+      {"pointer":"/castlePremiumItem/defense/item_0","recordKind":"TERRITORY_ITEM_DEFINITION","name":"영지절대방어권🛡(80%)","successRate":1,"locatorSha256":"8113260064cee82167ecc082a2cc8721e98663ae53de461a6d01a92a89275350","payloadSha256":"ffffee0a42417d74619adeaa75eb0519ac16bf9d7cde2a0751c37ba285ac4f0b","memberOwnerCount":45,"memberTotalQuantity":10280},
+      {"pointer":"/castlePremiumItem/defense/item_1","recordKind":"TERRITORY_ITEM_DEFINITION","name":"영지절대방어권🛡(50%)","successRate":0.5,"locatorSha256":"9fefd5cb6aa6dbf7debfc5100c8995ab10845874f9b51ea0cbad3ec37a2a891a","payloadSha256":"12bf5336112b4190bcb3bc76293bf9cd85ef7bdaab50a4292d8634468cf0b839","memberOwnerCount":162,"memberTotalQuantity":32640},
+      {"pointer":"/castlePremiumItem/defense/item_2","recordKind":"TERRITORY_ITEM_DEFINITION","name":"영지절대방어권🛡(25%)","successRate":0.25,"locatorSha256":"a03a4f429b886ef466df22d97fe2b921dead90abcef4e395ab1fe8cedb73d29d","payloadSha256":"6372dcff989691209c40806d94f435f414c0e1bff459ee717f3eb96c7d1363ac","memberOwnerCount":0,"memberTotalQuantity":0}
+    ],
+    "runtimeSixToFourMapping": "NOT_CONFIRMED",
+    "rateOverwriteAuthorized": false
+  },
+  "territoryAttackRuntime": {
+    "authoritativeSpan": {"file":"main.js","start":31496,"end":31541,"sha256Lf":"b21160a3ea9b5a4fb6decdcf067eb0e7ac4017741ada9bf22a6411e4d113f4bf"},
+    "defensePriority": [
+      {"name":"영지절대방어권🛡(50%)","successRate":0.5},
+      {"name":"영지절대방어권🛡(20%)","successRate":0.2}
+    ],
+    "offensePriority": [
+      {"name":"영지기습공격권🔥(40%)","successRate":0.4},
+      {"name":"영지기습공격권🔥(10%)","successRate":0.1}
+    ],
+    "itemRollComparator": "<=",
+    "cubeRollComparator": "<",
+    "sequence": [
+      "resolve defense candidate",
+      "read guild cube ambush-defense percent",
+      "roll defense item; decrement only on success; early return",
+      "resolve offense candidate",
+      "roll offense item; decrement only on success",
+      "roll guild cube defense after offense decrement; early return without refund on success",
+      "transfer ownership on unblocked offense success",
+      "otherwise fall through to automatic occupation or strict-greater normal castle battle"
+    ],
+    "sourceIdentityBindingToCastlePremiumMetadata": "NOT_CONFIRMED"
+  },
+  "existingDatabaseTerritoryService": {
+    "policySeed": {
+      "file": "개발환경_고도화/runtime/migrations/353_guild_territory_attack_execute.sql",
+      "start": 163,
+      "end": 180,
+      "sha256Lf": "95e9f2bbe056302177523183c1d448849aced2861cfbe763d832df11dd4fb175",
+      "defense": {"name":"영지절대방어권🛡(20%)","bps":2000},
+      "attack": {"name":"영지기습공격권🔥(10%)","bps":1000},
+      "hasDefense50PolicySlot": false,
+      "hasAttack40PolicySlot": false
+    },
+    "resolutionSpan": {"file":"개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts","start":469,"end":505,"sha256Lf":"57a7cda21ac381e400e4e3ce00c121d1b1bb36a2ba2b97b3a0639f0bd51591a2"},
+    "consumeSpan": {"file":"개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts","start":538,"end":548,"sha256Lf":"cf142ecf16319781624c97296f3e771ddcf35347c16987a2fa4d4e8b31e33ffb"},
+    "drawSpan": {"file":"개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts","start":561,"end":573,"sha256Lf":"4dbd833305a20ff4442851059ee32c207e48ead897d305e745c1d8c8bd5aa869"},
+    "consumesBeforeItemRng": true,
+    "consumesOnMiss": true,
+    "itemRollComparator": "<",
+    "legacyParityGaps": ["four exact keys and 50/20 defense plus 40/10 attack priority", "<= item comparator", "decrement only after successful item roll"],
+    "attackConsumptionBeforeCubeMatchesLegacyRelativeOrder": true,
+    "appliedMigrationsMustRemainUnchanged": [353, 386, 387],
+    "correctionMode": "NEW_ADDITIVE_MIGRATION_POLICY_VERSION_PLUS_MINIMAL_SERVICE_AND_TEST_REMEDIATION"
+  },
+  "followUpSlices": [
+    "additive validation of existing migration386 and item25 provider; no duplicate provider or new dept1 consumer",
+    "additive validation/remediation of existing dept2 item25 plus craft/package/home/tower and charm-read implementations",
+    "additive validation of existing migration387 and item25 provider while preserving six independent identities",
+    "additive correction of existing guild-territory-attack service through a new migration/policy version and minimal service/tests"
+  ],
+  "decisionBoundary": {
+    "requiredForIndependentPreservation": false,
+    "requiredForAnyDept1AcquisitionOrEffect": true,
+    "requiredForAnyCastleMetadataToRuntimeMapping": true
+  }
+}
