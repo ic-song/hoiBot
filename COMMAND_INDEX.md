@@ -3737,7 +3737,7 @@ Status: VERIFIED
 - `VIP블랙카드📙` 장착 성공 시 귀속 안내 대신 `“가격표는 보지 않습니다. 직원이 알아서 낮출 테니까요.”` 전용 문구를 표시한다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
-- `/계삭진행`과 `/계정잠수삭제`는 공통 `cleanupDeletedAccountResiduals` 흐름으로 펫스킬·미니펫 컬렉션/칭호·펫/홈·시련의탑·펀치·펫탐험·소셜/방명록·시장·게시판·계정 식별 로그를 함께 제거하고 각 저장소를 명령 흐름에서 한 번씩 저장한다.
+- `/계삭진행`과 `/계정잠수삭제`는 공통 `cleanupDeletedAccountResiduals` 흐름에 실제 삭제 성공 대상을 명시해, 해당 계정의 펫스킬·미니펫 컬렉션/칭호·펫/홈·시련의탑·펀치·펫탐험·소셜/방명록·시장·게시판·계정 식별 로그를 함께 제거하고 각 저장소를 명령 흐름에서 한 번씩 저장한다. 이때 다른 회원 목록 외 식별자를 함께 자동 정리하지 않는다.
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
@@ -6075,7 +6075,7 @@ Status: VERIFIED
 - Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
 - Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Step 8 removes every mistakenly issued `영지자동공격권⚔️` from member bags and deletes the obsolete first-grant/permanent-entitlement flags. Re-running the cleanup is idempotent and does not disable a valid `영지기습패스` user's current auto-attack setting.
-- Step 9 detects identifiers absent from `data.member` and removes their current account-owned data and cross-user references. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too.
+- Step 9 detects identifiers absent from `data.member` only from current account-owned data and removes their account data and cross-user references. Historical-only references such as comment authors, social actors/visitors, completed market logs, board records, automation/audit logs, and package logs do not independently make an identifier a cleanup target. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too. The result count is shown as `잔여 식별자` rather than an actual deleted-account count.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---

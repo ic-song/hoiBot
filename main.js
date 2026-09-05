@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.461"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.462"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -29258,12 +29258,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "\n수거할 영지자동공격 데이터 없음";
                     }
 
-                    out += "\n\n[9] 삭제 계정 잔여 데이터 정리\n";
-                    out += "정리된 계정 : " + numberWithCommas(residualAccountNames.length) + "명";
+                    out += "\n\n[9] 회원 목록 외 잔여 데이터 정리\n";
+                    out += "정리된 잔여 식별자 : " + numberWithCommas(residualAccountNames.length) + "개";
                     if (residualAccountNames.length > 0) {
-                        out += "\n※ 회원 목록에 없는 계정의 컬렉션·칭호·펫·홈·탐험·거래·게시판 데이터를 제거했습니다.";
+                        out += "\n※ 실제 삭제 계정 수가 아니라 회원 목록에 없는 닉네임 식별자 수입니다.";
+                        out += "\n※ 과거 기록에만 등장한 닉네임은 자동 정리 대상으로 판정하지 않습니다.";
                     } else {
-                        out += "\n정리할 삭제 계정 잔여 데이터 없음";
+                        out += "\n정리할 회원 목록 외 잔여 데이터 없음";
                     }
 
                     replier.reply(out);
@@ -37808,7 +37809,7 @@ function removeDeletedAccountBoardRows(boardData, invalidNames) {
     }
 }
 
-// 회원 목록에 없는 계정 식별자를 잔여 데이터에서 수집하는 함수
+// 회원 목록에 없는 계정 식별자를 현재 계정 귀속 데이터에서 수집하는 함수
 function collectDeletedAccountNames(data, guildData, stores) {
     var member = data && data.member ? data.member : {};
     var invalidNames = {};
@@ -37854,38 +37855,11 @@ function collectDeletedAccountNames(data, guildData, stores) {
     for (var commentMapIndex = 0; commentMapIndex < commentMaps.length; commentMapIndex++) {
         var commentMap = commentMaps[commentMapIndex] || {};
         addMapKeys(commentMap);
-        for (var commentOwner in commentMap) {
-            if (!commentMap.hasOwnProperty(commentOwner) || !(commentMap[commentOwner] instanceof Array)) continue;
-            for (var commentIndex = 0; commentIndex < commentMap[commentOwner].length; commentIndex++) {
-                if (commentMap[commentOwner][commentIndex]) addName(commentMap[commentOwner][commentIndex].from);
-            }
-        }
     }
     var activityData = stores.petHomeActivityData || {};
     addMapKeys(activityData.petHomeSocial);
     addMapKeys(activityData.alerts);
     addMapKeys(activityData.recentVisitors);
-    for (var socialOwner in activityData.petHomeSocial) {
-        if (!activityData.petHomeSocial.hasOwnProperty(socialOwner)) continue;
-        var social = activityData.petHomeSocial[socialOwner] || {};
-        var relationLists = [social.followers, social.following];
-        for (var relationIndex = 0; relationIndex < relationLists.length; relationIndex++) {
-            var relationList = relationLists[relationIndex] || [];
-            for (var relationUserIndex = 0; relationUserIndex < relationList.length; relationUserIndex++) addName(relationList[relationUserIndex]);
-        }
-    }
-    for (var alertOwner in activityData.alerts) {
-        if (!activityData.alerts.hasOwnProperty(alertOwner) || !(activityData.alerts[alertOwner] instanceof Array)) continue;
-        for (var alertIndex = 0; alertIndex < activityData.alerts[alertOwner].length; alertIndex++) {
-            if (activityData.alerts[alertOwner][alertIndex]) addName(activityData.alerts[alertOwner][alertIndex].actorId);
-        }
-    }
-    for (var visitorOwner in activityData.recentVisitors) {
-        if (!activityData.recentVisitors.hasOwnProperty(visitorOwner) || !(activityData.recentVisitors[visitorOwner] instanceof Array)) continue;
-        for (var visitorIndex = 0; visitorIndex < activityData.recentVisitors[visitorOwner].length; visitorIndex++) {
-            if (activityData.recentVisitors[visitorOwner][visitorIndex]) addName(activityData.recentVisitors[visitorOwner][visitorIndex].visitorId);
-        }
-    }
     var petExploreData = stores.petExploreData || {};
     addMapKeys(petExploreData.userBet);
     addMapKeys(petExploreData.autoFixedDungeon);
@@ -37899,7 +37873,7 @@ function collectDeletedAccountNames(data, guildData, stores) {
         }
     }
     var freeMarketData = stores.freeMarketData || {};
-    var marketLists = [freeMarketData.listings, freeMarketData.completedLogs];
+    var marketLists = [freeMarketData.listings];
     for (var marketListIndex = 0; marketListIndex < marketLists.length; marketListIndex++) {
         var marketList = marketLists[marketListIndex] || [];
         for (var marketIndex = 0; marketIndex < marketList.length; marketIndex++) {
@@ -37911,7 +37885,7 @@ function collectDeletedAccountNames(data, guildData, stores) {
     var boards = [stores.boardData, stores.carrotBoardData];
     for (var boardIndex = 0; boardIndex < boards.length; boardIndex++) {
         var boardData = boards[boardIndex] || {};
-        var boardLists = [boardData.memo, boardData.record];
+        var boardLists = [boardData.memo];
         for (var boardListIndex = 0; boardListIndex < boardLists.length; boardListIndex++) {
             var boardList = boardLists[boardListIndex] || [];
             for (var boardRowIndex = 0; boardRowIndex < boardList.length; boardRowIndex++) {
@@ -37919,22 +37893,9 @@ function collectDeletedAccountNames(data, guildData, stores) {
             }
         }
     }
-    var accountLogNames = ["supportPassPayoutLogs", "guildTerritoryAutomationLogs", "territoryPassAuditLogs", "petMusouAutomationLogs"];
-    for (var accountLogIndex = 0; accountLogIndex < accountLogNames.length; accountLogIndex++) {
-        var accountLogs = data && data[accountLogNames[accountLogIndex]];
-        if (!(accountLogs instanceof Array)) continue;
-        for (var accountLogRowIndex = 0; accountLogRowIndex < accountLogs.length; accountLogRowIndex++) {
-            if (accountLogs[accountLogRowIndex]) addName(accountLogs[accountLogRowIndex].user);
-        }
-    }
     if (guildData && guildData.guilds) {
         for (var guildId in guildData.guilds) {
             if (guildData.guilds.hasOwnProperty(guildId) && guildData.guilds[guildId]) addMapKeys(guildData.guilds[guildId].members);
-        }
-    }
-    if (stores.packageLogData && stores.packageLogData.logs instanceof Array) {
-        for (var packageLogIndex = 0; packageLogIndex < stores.packageLogData.logs.length; packageLogIndex++) {
-            if (stores.packageLogData.logs[packageLogIndex]) addName(stores.packageLogData.logs[packageLogIndex].target);
         }
     }
     return invalidNames;
@@ -37943,11 +37904,13 @@ function collectDeletedAccountNames(data, guildData, stores) {
 // 회원 목록을 기준으로 모든 계정 귀속 저장소의 잔여 데이터를 일괄 제거하는 함수
 function cleanupDeletedAccountResiduals(data, guildData, stores, forcedUserNames) {
     stores = stores || {};
-    var invalidNames = collectDeletedAccountNames(data, guildData, stores);
+    var invalidNames = {};
     if (forcedUserNames instanceof Array) {
         for (var forcedIndex = 0; forcedIndex < forcedUserNames.length; forcedIndex++) {
             if (forcedUserNames[forcedIndex] && (!data.member || !data.member[forcedUserNames[forcedIndex]])) invalidNames[forcedUserNames[forcedIndex]] = true;
         }
+    } else {
+        invalidNames = collectDeletedAccountNames(data, guildData, stores);
     }
     var userNames = Object.keys(invalidNames);
     var nestedMaps = [
