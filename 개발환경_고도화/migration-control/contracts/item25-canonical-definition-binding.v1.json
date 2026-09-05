@@ -1,0 +1,108 @@
+{
+  "format": "hoibot-item25-canonical-definition-binding-contract-v1",
+  "catalogVersion": "SC-20260902-1",
+  "executionScope": "WBS747_LEASE2556_NON_OPERATIONAL_PROVIDER",
+  "schemaChange": false,
+  "migration": null,
+  "dependencies": [
+    "443_object_identity_audit_provider.sql",
+    "444_canonical_item_inventory.sql",
+    "454_object_import_crosswalk_payload_fingerprint.sql",
+    "458_data_migration_catalog_projection.sql",
+    "460_data_migration_object_domain_import.sql"
+  ],
+  "reusedTables": [
+    "canonical_item_definitions",
+    "canonical_item_definition_imports",
+    "object_identities",
+    "object_identity_crosswalks",
+    "data_migration_common_staging_runs",
+    "data_migration_common_staging_records",
+    "data_migration_catalog_projection_runs",
+    "data_migration_catalog_source_decisions",
+    "data_migration_catalog_projection_records",
+    "data_migration_object_domain_import_runs",
+    "data_migration_object_domain_import_decisions",
+    "data_migration_object_domain_import_records",
+    "canonical_owned_item_stacks"
+  ],
+  "source": {
+    "sourceSystem": "LEGACY_JSON",
+    "sourceNamespace": "itemInfo.json",
+    "logicalSourceName": "data/itemInfo.json",
+    "identityPolicy": "EXACT_RFC6901_SOURCE_POINTER_NOT_DISPLAY_NAME_OR_CODE",
+    "identityCrosswalkNamespace": "object-import.item.canonical_item_definitions"
+  },
+  "authoritativeSeal": {
+    "sourcePathSha256": "7345a0090df04e40e3d40478622d4ee246d179c03367c960df6b2de19fb78478",
+    "sourceContentSha256": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+    "item25ManifestSha256": "20fbb0ff6e780968c19b1fd94ecf2608f1f9a0567527bfd77b28fab5f6f9a1fd",
+    "targetSchemaSha256": "2d0229891ffaaf486ec9fe7f786d362b90d219bfb915ed2cdf54c1937fe4cf3a",
+    "acceptedImportContractSha256": [
+      "67cf9e7c3d5811148e78a2b3eb87db768692aa85ac30b5bc58f7315dad4cb73b",
+      "487f098d9d8357bbe636b91766dd07f24618b350e449510f52f266fd2b80a861"
+    ],
+    "approvedScopeSha256": {
+      "RAID_SPECIAL": "d505b493502a08173763c86f6d3b9fc3048bfa6fcf34cebe9915bb04c14b8259",
+      "TERRITORY_TICKET": "b73af65e9e0545c2d44a38c95b23466726b02febfff81332af230a160dbb027a",
+      "CASTLE_UNIT": "329b2cab1cee71cc558606312d871a747c2b51f6a1effd9c932f0db24d22f9c3"
+    },
+    "pointerAllowlistLocation": "runtime/src/data-migration/item25-canonical-definition-provider.ts#AUTHORITATIVE_ENTRIES",
+    "selfDeclaredHashAccepted": false
+  },
+  "schemaBinding": {
+    "authoritativeContract": "object-data-model-standard.v1.json plus object-domain-import-target-schema.v1.json",
+    "informationSchemaPreflight": true,
+    "allReadWriteTables": [
+      "canonical_item_definitions",
+      "canonical_item_definition_imports",
+      "object_identities",
+      "object_identity_crosswalks",
+      "data_migration_common_staging_runs",
+      "data_migration_common_staging_records",
+      "data_migration_catalog_projection_runs",
+      "data_migration_catalog_source_decisions",
+      "data_migration_catalog_projection_records",
+      "data_migration_object_domain_import_runs",
+      "data_migration_object_domain_import_decisions",
+      "data_migration_object_domain_import_records"
+    ],
+    "allUsedColumnsRequired": true,
+    "primaryAndBusinessUniqueAndForeignKeyRequired": true,
+    "columnEncoding": "name|COLUMN_TYPE|IS_NULLABLE|CHARACTER_SET_NAME|null|COLLATION_NAME|null",
+    "tables": [
+      {"table":"canonical_item_definitions","columns":["item_id|char(8)|NO|ascii|ascii_bin","item_name|varchar(255)|NO|utf8mb4|utf8mb4_bin","item_description|text|YES|utf8mb4|utf8mb4_unicode_ci","item_kind|varchar(50)|NO|ascii|ascii_bin","item_grade|varchar(50)|YES|ascii|ascii_bin","price_amount|decimal(30,3)|YES|null|null","price_currency_source_identifier|varchar(191)|YES|utf8mb4|utf8mb4_bin","stackable_flag|tinyint(1)|NO|null|null","active_flag|tinyint(1)|NO|null|null","definition_options|longtext|YES|utf8mb4|utf8mb4_bin"],"keySignatures":["PRIMARY:item_id"]},
+      {"table":"canonical_item_definition_imports","columns":["item_definition_import_id|char(8)|NO|ascii|ascii_bin","item_id|char(8)|NO|ascii|ascii_bin","source_system|varchar(50)|NO|ascii|ascii_bin","source_namespace|varchar(100)|NO|ascii|ascii_bin","source_identifier|varchar(191)|NO|utf8mb4|utf8mb4_bin","INSERT_USER|varchar(100)|NO|utf8mb4|utf8mb4_unicode_ci","INSERT_TIME|char(19)|NO|utf8mb4|utf8mb4_unicode_ci","UPDATE_USER|varchar(100)|NO|utf8mb4|utf8mb4_unicode_ci","UPDATE_TIME|char(19)|NO|utf8mb4|utf8mb4_unicode_ci"],"keySignatures":["PRIMARY:item_definition_import_id","UNIQUE:source_system,source_namespace,source_identifier","FOREIGN:item_id->canonical_item_definitions(item_id)"]},
+      {"table":"object_identities","columns":["object_identity_id|char(8)|NO|ascii|ascii_bin","object_type|varchar(50)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:object_identity_id"]},
+      {"table":"object_identity_crosswalks","columns":["object_identity_crosswalk_id|char(8)|NO|ascii|ascii_bin","object_identity_id|char(8)|NO|ascii|ascii_bin","source_system|varchar(50)|NO|ascii|ascii_bin","source_namespace|varchar(100)|NO|ascii|ascii_bin","source_identifier|varchar(191)|NO|utf8mb4|utf8mb4_bin","payload_fingerprint|char(64)|YES|ascii|ascii_bin"],"keySignatures":["PRIMARY:object_identity_crosswalk_id","UNIQUE:source_system,source_namespace,source_identifier","FOREIGN:object_identity_id->object_identities(object_identity_id)"]},
+      {"table":"data_migration_common_staging_runs","columns":["common_staging_run_id|char(8)|NO|ascii|ascii_bin","raw_bundle_sha256|char(64)|NO|ascii|ascii_bin","snapshot_manifest_sha256|char(64)|NO|ascii|ascii_bin","extraction_manifest_sha256|char(64)|NO|ascii|ascii_bin","staging_sha256|char(64)|NO|ascii|ascii_bin","expected_file_count|int(10) unsigned|NO|null|null","expected_total_bytes|bigint(20) unsigned|NO|null|null","projected_file_count|int(10) unsigned|NO|null|null","ignored_file_count|int(10) unsigned|NO|null|null","run_status|varchar(16)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:common_staging_run_id","UNIQUE:raw_bundle_sha256,extraction_manifest_sha256"]},
+      {"table":"data_migration_common_staging_records","columns":["common_staging_record_id|char(8)|NO|ascii|ascii_bin","common_staging_run_id|char(8)|NO|ascii|ascii_bin","source_system|varchar(50)|NO|ascii|ascii_bin","source_namespace|varchar(100)|NO|ascii|ascii_bin","source_path_sha256|char(64)|NO|ascii|ascii_bin","source_content_sha256|char(64)|NO|ascii|ascii_bin","logical_source_name|varchar(191)|NO|utf8mb4|utf8mb4_bin","source_pointer|varchar(1024)|NO|utf8mb4|utf8mb4_bin","identity_pointer|varchar(1024)|NO|utf8mb4|utf8mb4_bin","source_locator_sha256|char(64)|NO|ascii|ascii_bin","projection_status|varchar(16)|NO|ascii|ascii_bin","record_domain|varchar(50)|NO|ascii|ascii_bin","record_kind|varchar(50)|NO|ascii|ascii_bin","payload_json|longtext|NO|utf8mb4|utf8mb4_bin","payload_fingerprint|char(64)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:common_staging_record_id","UNIQUE:common_staging_run_id,source_locator_sha256","FOREIGN:common_staging_run_id->data_migration_common_staging_runs(common_staging_run_id)"]},
+      {"table":"data_migration_catalog_projection_runs","columns":["catalog_projection_run_id|char(8)|NO|ascii|ascii_bin","common_staging_run_id|char(8)|NO|ascii|ascii_bin","catalog_version|varchar(50)|NO|ascii|ascii_bin","projection_manifest_sha256|char(64)|NO|ascii|ascii_bin","target_schema_sha256|char(64)|NO|ascii|ascii_bin","projection_sha256|char(64)|NO|ascii|ascii_bin","upstream_envelope_sha256|char(64)|NO|ascii|ascii_bin","expected_source_count|int(10) unsigned|NO|null|null","projected_source_count|int(10) unsigned|NO|null|null","quarantined_source_count|int(10) unsigned|NO|null|null","ignored_source_count|int(10) unsigned|NO|null|null","projected_row_count|int(10) unsigned|NO|null|null","run_status|varchar(16)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:catalog_projection_run_id","UNIQUE:common_staging_run_id,catalog_version,projection_manifest_sha256","FOREIGN:common_staging_run_id->data_migration_common_staging_runs(common_staging_run_id)"]},
+      {"table":"data_migration_catalog_source_decisions","columns":["catalog_source_decision_id|char(8)|NO|ascii|ascii_bin","catalog_projection_run_id|char(8)|NO|ascii|ascii_bin","common_staging_record_id|char(8)|NO|ascii|ascii_bin","source_locator_sha256|char(64)|NO|ascii|ascii_bin","source_payload_fingerprint|char(64)|NO|ascii|ascii_bin","record_domain|varchar(50)|NO|ascii|ascii_bin","decision_status|varchar(16)|NO|ascii|ascii_bin","decision_reason|varchar(191)|YES|ascii|ascii_bin","projected_row_count|int(10) unsigned|NO|null|null","decision_fingerprint|char(64)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:catalog_source_decision_id","UNIQUE:catalog_source_decision_id,catalog_projection_run_id","UNIQUE:catalog_projection_run_id,common_staging_record_id","UNIQUE:catalog_projection_run_id,source_locator_sha256","FOREIGN:catalog_projection_run_id->data_migration_catalog_projection_runs(catalog_projection_run_id)","FOREIGN:common_staging_record_id->data_migration_common_staging_records(common_staging_record_id)"]},
+      {"table":"data_migration_catalog_projection_records","columns":["catalog_projection_record_id|char(8)|NO|ascii|ascii_bin","catalog_projection_run_id|char(8)|NO|ascii|ascii_bin","catalog_source_decision_id|char(8)|NO|ascii|ascii_bin","projection_locator|varchar(191)|NO|utf8mb4|utf8mb4_bin","identity_locator_sha256|char(64)|NO|ascii|ascii_bin","identity_mode|varchar(16)|NO|ascii|ascii_bin","target_table_name|varchar(100)|NO|ascii|ascii_bin","target_pk_column_name|varchar(100)|NO|ascii|ascii_bin","target_object_type|varchar(50)|NO|ascii|ascii_bin","target_source_namespace|varchar(100)|NO|ascii|ascii_bin","source_role|varchar(50)|YES|ascii|ascii_bin","approval_kind|varchar(32)|YES|ascii|ascii_bin","approval_sha256|char(64)|YES|ascii|ascii_bin","target_payload_json|longtext|NO|utf8mb4|utf8mb4_bin","target_payload_fingerprint|char(64)|NO|ascii|ascii_bin","value_origins_json|longtext|NO|utf8mb4|utf8mb4_bin","value_origins_fingerprint|char(64)|NO|ascii|ascii_bin","reference_bindings_json|longtext|NO|utf8mb4|utf8mb4_bin","reference_bindings_fingerprint|char(64)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:catalog_projection_record_id","UNIQUE:catalog_source_decision_id,projection_locator,target_table_name","UNIQUE:catalog_projection_run_id,target_source_namespace,identity_locator_sha256","FOREIGN:catalog_projection_run_id->data_migration_catalog_projection_runs(catalog_projection_run_id)","FOREIGN:catalog_source_decision_id->data_migration_catalog_source_decisions(catalog_source_decision_id)","FOREIGN:catalog_source_decision_id,catalog_projection_run_id->data_migration_catalog_source_decisions(catalog_source_decision_id,catalog_projection_run_id)"]},
+      {"table":"data_migration_object_domain_import_runs","columns":["object_domain_import_run_id|char(8)|NO|ascii|ascii_bin","catalog_projection_run_id|char(8)|NO|ascii|ascii_bin","catalog_version|varchar(50)|NO|ascii|ascii_bin","catalog_projection_sha256|char(64)|NO|ascii|ascii_bin","upstream_envelope_sha256|char(64)|NO|ascii|ascii_bin","target_schema_sha256|char(64)|NO|ascii|ascii_bin","import_contract_sha256|char(64)|NO|ascii|ascii_bin","import_sha256|char(64)|NO|ascii|ascii_bin","expected_source_count|int(10) unsigned|NO|null|null","projected_source_count|int(10) unsigned|NO|null|null","quarantined_source_count|int(10) unsigned|NO|null|null","ignored_source_count|int(10) unsigned|NO|null|null","expected_row_count|int(10) unsigned|NO|null|null","imported_row_count|int(10) unsigned|NO|null|null","run_status|varchar(16)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:object_domain_import_run_id","UNIQUE:catalog_projection_run_id,catalog_version,import_contract_sha256","FOREIGN:catalog_projection_run_id->data_migration_catalog_projection_runs(catalog_projection_run_id)"]},
+      {"table":"data_migration_object_domain_import_decisions","columns":["object_domain_import_decision_id|char(8)|NO|ascii|ascii_bin","object_domain_import_run_id|char(8)|NO|ascii|ascii_bin","catalog_source_decision_id|char(8)|NO|ascii|ascii_bin","source_locator_sha256|char(64)|NO|ascii|ascii_bin","decision_status|varchar(16)|NO|ascii|ascii_bin","decision_reason|varchar(191)|YES|ascii|ascii_bin","projected_row_count|int(10) unsigned|NO|null|null","decision_fingerprint|char(64)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:object_domain_import_decision_id","UNIQUE:object_domain_import_run_id,catalog_source_decision_id","FOREIGN:object_domain_import_run_id->data_migration_object_domain_import_runs(object_domain_import_run_id)","FOREIGN:catalog_source_decision_id->data_migration_catalog_source_decisions(catalog_source_decision_id)"]},
+      {"table":"data_migration_object_domain_import_records","columns":["object_domain_import_record_id|char(8)|NO|ascii|ascii_bin","object_domain_import_run_id|char(8)|NO|ascii|ascii_bin","catalog_projection_record_id|char(8)|NO|ascii|ascii_bin","target_table_name|varchar(100)|NO|ascii|ascii_bin","target_pk_column_name|varchar(100)|NO|ascii|ascii_bin","target_pk_value|char(8)|NO|ascii|ascii_bin","identity_locator_sha256|char(64)|NO|ascii|ascii_bin","import_order|int(10) unsigned|NO|null|null","binding_fingerprint|char(64)|NO|ascii|ascii_bin","imported_row_fingerprint|char(64)|NO|ascii|ascii_bin"],"keySignatures":["PRIMARY:object_domain_import_record_id","UNIQUE:object_domain_import_run_id,catalog_projection_record_id","UNIQUE:object_domain_import_run_id,import_order","UNIQUE:object_domain_import_run_id,target_table_name,target_pk_value","FOREIGN:object_domain_import_run_id->data_migration_object_domain_import_runs(object_domain_import_run_id)","FOREIGN:catalog_projection_record_id->data_migration_catalog_projection_records(catalog_projection_record_id)"]}
+    ]
+  },
+  "expectedCount": 25,
+  "expectedKinds": {
+    "RAID_SPECIAL": 9,
+    "TERRITORY_TICKET": 6,
+    "CASTLE_UNIT": 10
+  },
+  "writeBoundary": "after all 25 schema, staging, projection, domain receipt, definition_options and crosswalk rows pass exact validation, insert only 25 canonical_item_definition_imports rows in one transaction",
+  "replay": "the same 25 exact source tuples must resolve to the same existing item_id values and produce zero DML; partial, ambiguous, drifted or conflicting state fails closed",
+  "rollback": "delete only the provider-owned LEGACY_JSON/itemInfo.json/exact-source-pointer import tuples; preserve canonical definitions, object identities, crosswalks, upstream receipts and owned stacks",
+  "shadow": "repeatable-read read-only snapshot with no DML capability validates all 25 exact bindings",
+  "inventoryPath": "CanonicalItemInventoryRepository consumes the existing CHAR(8) item_id and canonical_owned_item_stacks(player_id,item_id,quantity); name and CODE comparison are forbidden",
+  "excludedDecisions": [
+    "RAID_ORPHAN_8",
+    "TERRITORY_6_SEMANTIC_DECISION",
+    "APPLICATION_COMMAND_CONSUMER_ADOPTION",
+    "OPERATING_DATA_MIGRATION",
+    "GATE8"
+  ],
+  "operationalDataAllowed": false,
+  "featureProdAllowed": false
+}
