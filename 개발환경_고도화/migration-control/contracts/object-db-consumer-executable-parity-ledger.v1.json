@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "794aba882696290426863a3b312ca6c546e5108e",
+  "evidenceCommit": "ab606ad154cb5ac26c6045ba36cc5263ec74c046",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -28,7 +28,7 @@
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave7-v1.json",
-      "sha256": "f010e1213f4bc6f428c431fa6a51a8a391568a4268afb5402646db22eb089834"
+      "sha256": "67e782282a8f3e39cfeb1c1bd7dd0ce5be8a688de789ee6edf810d3acbeab416"
     },
     "classificationSources": [
       {
@@ -90954,16 +90954,16 @@
         "harnessId": "harness:object-db-executable-parity:wave7",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave7-service-chain-v1.json",
-        "sha256": "e1320ac1e76d4326d6146f28825b20a1d564fd5c4386acf2bd7e89ba664b7e73"
+        "sha256": "1d582b0e41ab310c1c9b94157b853747e1191a66a76a3c6a55493f2936797d40"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs",
-        "targetSourceSha256": "e531a8eb76253a5e83393de1b268e5c706047e05f0326e7ab4fadf59d0c30b43",
+        "targetSourceSha256": "1d27dfb7da43a01350d4e62ee717e37e264fc90ce7baa8a1f0d8e247f7d70570",
         "exportName": "executeWave7ServiceChain"
       },
       "scenarioRequirements": [
@@ -91024,13 +91024,13 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "e9b93c2384a98fbe64ea34409b039eb20e6ae8f33bc634d6f257e96555ac7619",
-              "actualSha256": "e9b93c2384a98fbe64ea34409b039eb20e6ae8f33bc634d6f257e96555ac7619",
+              "expectedSha256": "4a4880169a4d4cb71cb3c93079dd15ee7f5c823077cf493693f01044c8bc211c",
+              "actualSha256": "4a4880169a4d4cb71cb3c93079dd15ee7f5c823077cf493693f01044c8bc211c",
               "match": true
             },
             "result": {
-              "expectedSha256": "e9b93c2384a98fbe64ea34409b039eb20e6ae8f33bc634d6f257e96555ac7619",
-              "actualSha256": "e9b93c2384a98fbe64ea34409b039eb20e6ae8f33bc634d6f257e96555ac7619",
+              "expectedSha256": "4a4880169a4d4cb71cb3c93079dd15ee7f5c823077cf493693f01044c8bc211c",
+              "actualSha256": "4a4880169a4d4cb71cb3c93079dd15ee7f5c823077cf493693f01044c8bc211c",
               "match": true
             },
             "dml": {
@@ -91072,13 +91072,13 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "17ef5f169af98993c9fc791660007fd1c299cb5f9592ffd3367c7f5a6d57b046",
-              "actualSha256": "17ef5f169af98993c9fc791660007fd1c299cb5f9592ffd3367c7f5a6d57b046",
+              "expectedSha256": "70946dff4a1e224689feea7da240ab99d2c69071e1c01a78a7bf19091dd60bae",
+              "actualSha256": "70946dff4a1e224689feea7da240ab99d2c69071e1c01a78a7bf19091dd60bae",
               "match": true
             },
             "result": {
-              "expectedSha256": "d23fe42c3ce9256b455f30a6d6284ad3c332f980d7480d0b88d082112c3ef987",
-              "actualSha256": "d23fe42c3ce9256b455f30a6d6284ad3c332f980d7480d0b88d082112c3ef987",
+              "expectedSha256": "638bfc31c8a72a50cc671728e5fd168bc089f71e1560a1003a75132ca679ff4a",
+              "actualSha256": "638bfc31c8a72a50cc671728e5fd168bc089f71e1560a1003a75132ca679ff4a",
               "match": true
             },
             "dml": {
@@ -91118,23 +91118,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
-              "actualSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
+              "expectedSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
+              "actualSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
               "match": true
             },
             "result": {
-              "expectedSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
-              "actualSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
+              "expectedSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
+              "actualSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -91142,16 +91150,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -91166,23 +91174,37 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
-              "actualSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
+              "expectedSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
+              "actualSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
               "match": true
             },
             "result": {
-              "expectedSha256": "925cda9bf9426a4bb75649a56333159821768ca54025c058a4e7f5e84ca984d8",
-              "actualSha256": "925cda9bf9426a4bb75649a56333159821768ca54025c058a4e7f5e84ca984d8",
+              "expectedSha256": "ea9d7e532b5b97a1a6a799549192b4d71930cd3c8da908ac7e8e02568ecc210f",
+              "actualSha256": "ea9d7e532b5b97a1a6a799549192b4d71930cd3c8da908ac7e8e02568ecc210f",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "215e3ee73a3c8ecab3dccac816cbf778d9b2dd4142d83f67a9eb5d963dba09a2",
+              "actualSha256": "215e3ee73a3c8ecab3dccac816cbf778d9b2dd4142d83f67a9eb5d963dba09a2",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 6,
+              "actualRowCount": 6
             },
             "lockOrder": {
               "expected": [],
@@ -91190,18 +91212,18 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "CHILD_PROCESS_1:READ",
+                "CHILD_PROCESS_1:COMMIT",
                 "RESTART",
-                "CHILD_PROCESS_2:READ"
+                "CHILD_PROCESS_2:COMMIT"
               ],
               "actualTimeline": [
-                "CHILD_PROCESS_1:READ",
+                "CHILD_PROCESS_1:COMMIT",
                 "RESTART",
-                "CHILD_PROCESS_2:READ"
+                "CHILD_PROCESS_2:COMMIT"
               ]
             }
           }
@@ -91216,23 +91238,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
-              "actualSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
+              "expectedSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
+              "actualSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
               "match": true
             },
             "result": {
-              "expectedSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
-              "actualSha256": "567cf7ce2ee1862507f423ac8a7459e8df34de88ea2f0c220e641bffe5e5087f",
+              "expectedSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
+              "actualSha256": "a18af19358cd0cc609f903ab3292505d85b1a2f22514e0131248d0fe9a8cf9c4",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -91240,16 +91270,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -91269,15 +91299,15 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave7-service-chain-v1.json",
-            "sha256": "e1320ac1e76d4326d6146f28825b20a1d564fd5c4386acf2bd7e89ba664b7e73"
+            "sha256": "1d582b0e41ab310c1c9b94157b853747e1191a66a76a3c6a55493f2936797d40"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs",
-            "sha256": "e531a8eb76253a5e83393de1b268e5c706047e05f0326e7ab4fadf59d0c30b43"
+            "sha256": "1d27dfb7da43a01350d4e62ee717e37e264fc90ce7baa8a1f0d8e247f7d70570"
           }
         ]
       },
@@ -91748,16 +91778,16 @@
         "harnessId": "harness:object-db-executable-parity:wave7",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave7-service-chain-v1.json",
-        "sha256": "e1320ac1e76d4326d6146f28825b20a1d564fd5c4386acf2bd7e89ba664b7e73"
+        "sha256": "1d582b0e41ab310c1c9b94157b853747e1191a66a76a3c6a55493f2936797d40"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs",
-        "targetSourceSha256": "e531a8eb76253a5e83393de1b268e5c706047e05f0326e7ab4fadf59d0c30b43",
+        "targetSourceSha256": "1d27dfb7da43a01350d4e62ee717e37e264fc90ce7baa8a1f0d8e247f7d70570",
         "exportName": "executeWave7ServiceChain"
       },
       "scenarioRequirements": [
@@ -91818,23 +91848,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "492bc1fb5a7a319ac8dd3d2d946c02064c851f2354ce3465b6d2f8af2a0c6b69",
-              "actualSha256": "492bc1fb5a7a319ac8dd3d2d946c02064c851f2354ce3465b6d2f8af2a0c6b69",
+              "expectedSha256": "3bfb2098aae02445d087aec2fd8f0d1edffb0a3596224190698a359fb05f7b41",
+              "actualSha256": "3bfb2098aae02445d087aec2fd8f0d1edffb0a3596224190698a359fb05f7b41",
               "match": true
             },
             "result": {
-              "expectedSha256": "492bc1fb5a7a319ac8dd3d2d946c02064c851f2354ce3465b6d2f8af2a0c6b69",
-              "actualSha256": "492bc1fb5a7a319ac8dd3d2d946c02064c851f2354ce3465b6d2f8af2a0c6b69",
+              "expectedSha256": "3bfb2098aae02445d087aec2fd8f0d1edffb0a3596224190698a359fb05f7b41",
+              "actualSha256": "3bfb2098aae02445d087aec2fd8f0d1edffb0a3596224190698a359fb05f7b41",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -91842,14 +91880,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -91864,13 +91904,13 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "85a320dff50e078626e3d7dffeaadcd8bb9b2735e1e1c04d1456098909c90868",
-              "actualSha256": "85a320dff50e078626e3d7dffeaadcd8bb9b2735e1e1c04d1456098909c90868",
+              "expectedSha256": "70946dff4a1e224689feea7da240ab99d2c69071e1c01a78a7bf19091dd60bae",
+              "actualSha256": "70946dff4a1e224689feea7da240ab99d2c69071e1c01a78a7bf19091dd60bae",
               "match": true
             },
             "result": {
-              "expectedSha256": "4624f31f21a813f360d06366524f34de37785971ef26a66aa3e9b6703d9a29a9",
-              "actualSha256": "4624f31f21a813f360d06366524f34de37785971ef26a66aa3e9b6703d9a29a9",
+              "expectedSha256": "638bfc31c8a72a50cc671728e5fd168bc089f71e1560a1003a75132ca679ff4a",
+              "actualSha256": "638bfc31c8a72a50cc671728e5fd168bc089f71e1560a1003a75132ca679ff4a",
               "match": true
             },
             "dml": {
@@ -91910,23 +91950,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
-              "actualSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
+              "expectedSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
+              "actualSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
               "match": true
             },
             "result": {
-              "expectedSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
-              "actualSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
+              "expectedSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
+              "actualSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -91934,16 +91982,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -91958,23 +92006,37 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
-              "actualSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
+              "expectedSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
+              "actualSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
               "match": true
             },
             "result": {
-              "expectedSha256": "0ce021ea6b033962e47a1e12fc9e8112272c060fe2fc571cb3a377991d7d42d0",
-              "actualSha256": "0ce021ea6b033962e47a1e12fc9e8112272c060fe2fc571cb3a377991d7d42d0",
+              "expectedSha256": "da554a9363de0e7f3dfd35f34e32ee0ec2a41a9c04a647c5223c908fda30c4ae",
+              "actualSha256": "da554a9363de0e7f3dfd35f34e32ee0ec2a41a9c04a647c5223c908fda30c4ae",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "215e3ee73a3c8ecab3dccac816cbf778d9b2dd4142d83f67a9eb5d963dba09a2",
+              "actualSha256": "215e3ee73a3c8ecab3dccac816cbf778d9b2dd4142d83f67a9eb5d963dba09a2",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 6,
+              "actualRowCount": 6
             },
             "lockOrder": {
               "expected": [],
@@ -91982,18 +92044,18 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "CHILD_PROCESS_1:READ",
+                "CHILD_PROCESS_1:COMMIT",
                 "RESTART",
-                "CHILD_PROCESS_2:READ"
+                "CHILD_PROCESS_2:COMMIT"
               ],
               "actualTimeline": [
-                "CHILD_PROCESS_1:READ",
+                "CHILD_PROCESS_1:COMMIT",
                 "RESTART",
-                "CHILD_PROCESS_2:READ"
+                "CHILD_PROCESS_2:COMMIT"
               ]
             }
           }
@@ -92008,23 +92070,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
-              "actualSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
+              "expectedSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
+              "actualSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
               "match": true
             },
             "result": {
-              "expectedSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
-              "actualSha256": "8991b868fc1d2ad4a4ba5a85cc8b4623f4495ef544890ce4336814c6056647d8",
+              "expectedSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
+              "actualSha256": "430ebbcb43b44e8ed03a3c30d99d75200255046d531c195007140de487eec1f7",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -92032,16 +92102,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -92061,15 +92131,15 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave7-service-chain-v1.json",
-            "sha256": "e1320ac1e76d4326d6146f28825b20a1d564fd5c4386acf2bd7e89ba664b7e73"
+            "sha256": "1d582b0e41ab310c1c9b94157b853747e1191a66a76a3c6a55493f2936797d40"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs",
-            "sha256": "e531a8eb76253a5e83393de1b268e5c706047e05f0326e7ab4fadf59d0c30b43"
+            "sha256": "1d27dfb7da43a01350d4e62ee717e37e264fc90ce7baa8a1f0d8e247f7d70570"
           }
         ]
       },
@@ -92627,16 +92697,16 @@
         "harnessId": "harness:object-db-executable-parity:wave7",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave7-service-chain-v1.json",
-        "sha256": "e1320ac1e76d4326d6146f28825b20a1d564fd5c4386acf2bd7e89ba664b7e73"
+        "sha256": "1d582b0e41ab310c1c9b94157b853747e1191a66a76a3c6a55493f2936797d40"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs",
-        "targetSourceSha256": "e531a8eb76253a5e83393de1b268e5c706047e05f0326e7ab4fadf59d0c30b43",
+        "targetSourceSha256": "1d27dfb7da43a01350d4e62ee717e37e264fc90ce7baa8a1f0d8e247f7d70570",
         "exportName": "executeWave7ServiceChain"
       },
       "scenarioRequirements": [
@@ -92697,23 +92767,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "5ec30fa93e4adc6c8146a9524cc16d936843fd333e8df2998b29b68cdd3f1295",
-              "actualSha256": "5ec30fa93e4adc6c8146a9524cc16d936843fd333e8df2998b29b68cdd3f1295",
+              "expectedSha256": "d81cfef646755fe1b4622635ab1702148bcec5e41e528c9f566e81b3ef5d6583",
+              "actualSha256": "d81cfef646755fe1b4622635ab1702148bcec5e41e528c9f566e81b3ef5d6583",
               "match": true
             },
             "result": {
-              "expectedSha256": "5ec30fa93e4adc6c8146a9524cc16d936843fd333e8df2998b29b68cdd3f1295",
-              "actualSha256": "5ec30fa93e4adc6c8146a9524cc16d936843fd333e8df2998b29b68cdd3f1295",
+              "expectedSha256": "d81cfef646755fe1b4622635ab1702148bcec5e41e528c9f566e81b3ef5d6583",
+              "actualSha256": "d81cfef646755fe1b4622635ab1702148bcec5e41e528c9f566e81b3ef5d6583",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -92721,18 +92799,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -92747,13 +92823,13 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "b2cc3586988edccc776d221bcaaecb55ae074b1d831ebeb7b83af45830d7ce35",
-              "actualSha256": "b2cc3586988edccc776d221bcaaecb55ae074b1d831ebeb7b83af45830d7ce35",
+              "expectedSha256": "70946dff4a1e224689feea7da240ab99d2c69071e1c01a78a7bf19091dd60bae",
+              "actualSha256": "70946dff4a1e224689feea7da240ab99d2c69071e1c01a78a7bf19091dd60bae",
               "match": true
             },
             "result": {
-              "expectedSha256": "af96d018560e1b685c4416a960d6a5d52156f77b5613020d81be4be93771343d",
-              "actualSha256": "af96d018560e1b685c4416a960d6a5d52156f77b5613020d81be4be93771343d",
+              "expectedSha256": "638bfc31c8a72a50cc671728e5fd168bc089f71e1560a1003a75132ca679ff4a",
+              "actualSha256": "638bfc31c8a72a50cc671728e5fd168bc089f71e1560a1003a75132ca679ff4a",
               "match": true
             },
             "dml": {
@@ -92793,23 +92869,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
-              "actualSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
+              "expectedSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
+              "actualSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
               "match": true
             },
             "result": {
-              "expectedSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
-              "actualSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
+              "expectedSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
+              "actualSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -92817,18 +92901,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -92843,23 +92925,37 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
-              "actualSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
+              "expectedSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
+              "actualSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
               "match": true
             },
             "result": {
-              "expectedSha256": "cb299c6796d0d84bec3f77f1c706266cbf97836814d9879c180375a8aa0d07da",
-              "actualSha256": "cb299c6796d0d84bec3f77f1c706266cbf97836814d9879c180375a8aa0d07da",
+              "expectedSha256": "61bcbf74ce9c65b0c23bc6d02ab14152cc4a39b8a3c35ff17fa0401dc0649da5",
+              "actualSha256": "61bcbf74ce9c65b0c23bc6d02ab14152cc4a39b8a3c35ff17fa0401dc0649da5",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "215e3ee73a3c8ecab3dccac816cbf778d9b2dd4142d83f67a9eb5d963dba09a2",
+              "actualSha256": "215e3ee73a3c8ecab3dccac816cbf778d9b2dd4142d83f67a9eb5d963dba09a2",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 6,
+              "actualRowCount": 6
             },
             "lockOrder": {
               "expected": [],
@@ -92867,18 +92963,18 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "CHILD_PROCESS_1:READ",
+                "CHILD_PROCESS_1:COMMIT",
                 "RESTART",
-                "CHILD_PROCESS_2:READ"
+                "CHILD_PROCESS_2:COMMIT"
               ],
               "actualTimeline": [
-                "CHILD_PROCESS_1:READ",
+                "CHILD_PROCESS_1:COMMIT",
                 "RESTART",
-                "CHILD_PROCESS_2:READ"
+                "CHILD_PROCESS_2:COMMIT"
               ]
             }
           }
@@ -92893,23 +92989,31 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
-              "actualSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
+              "expectedSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
+              "actualSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
               "match": true
             },
             "result": {
-              "expectedSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
-              "actualSha256": "ede6562f4b1c990a416a122bfcbc7527438a3116fd64bd7620975d0bdb15f190",
+              "expectedSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
+              "actualSha256": "b611a48dd63722def93cbb2f3adc13476470f8c5377434288fccc688676063f6",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
+              "actualSha256": "4a1ff923feed17e2d4e3607facf0d73be2a8f7497cd96c7e1940f08e93531083",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 3,
+              "actualRowCount": 3
             },
             "lockOrder": {
               "expected": [],
@@ -92917,18 +93021,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ",
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ",
-                "READ",
-                "READ"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -92948,15 +93050,15 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave7-service-chain-v1.json",
-            "sha256": "e1320ac1e76d4326d6146f28825b20a1d564fd5c4386acf2bd7e89ba664b7e73"
+            "sha256": "1d582b0e41ab310c1c9b94157b853747e1191a66a76a3c6a55493f2936797d40"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs",
-            "sha256": "e531a8eb76253a5e83393de1b268e5c706047e05f0326e7ab4fadf59d0c30b43"
+            "sha256": "1d27dfb7da43a01350d4e62ee717e37e264fc90ce7baa8a1f0d8e247f7d70570"
           }
         ]
       },
@@ -93800,7 +93902,7 @@
         "harnessId": "harness:object-db-executable-parity:wave1",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -94113,7 +94215,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
@@ -94143,7 +94245,7 @@
         "harnessId": "harness:object-db-executable-parity:wave5",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
@@ -94456,7 +94558,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs",
@@ -94486,7 +94588,7 @@
         "harnessId": "harness:object-db-executable-parity:wave3",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
@@ -94799,7 +94901,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
@@ -94921,7 +95023,7 @@
         "harnessId": "harness:object-db-executable-parity:wave6",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -95252,7 +95354,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave6-multi-query.mjs",
@@ -96018,7 +96120,7 @@
         "harnessId": "harness:object-db-executable-parity:wave2",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -96331,7 +96433,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
@@ -96821,7 +96923,7 @@
         "harnessId": "harness:object-db-executable-parity:wave1",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -97134,7 +97236,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
@@ -97614,7 +97716,7 @@
         "harnessId": "harness:object-db-executable-parity:wave6",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -97929,7 +98031,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave6-multi-query.mjs",
@@ -98782,7 +98884,7 @@
         "harnessId": "harness:object-db-executable-parity:wave4",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
@@ -99095,7 +99197,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs",
@@ -99125,7 +99227,7 @@
         "harnessId": "harness:object-db-executable-parity:wave1",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -99438,7 +99540,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
@@ -99468,7 +99570,7 @@
         "harnessId": "harness:object-db-executable-parity:wave2",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -99781,7 +99883,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
@@ -101273,7 +101375,7 @@
         "harnessId": "harness:object-db-executable-parity:wave2",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+        "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -101586,7 +101688,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "47012241eb4bf0a42a8021f62f4232102da81bbc9eb39c4a98b5de74fb9968cb"
+            "sha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
@@ -101781,5 +101883,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "a41c1b3b91a82c375bfa1a8c71fb3ee6aadce7a481a8e79917d72ad16debf063"
+  "entrySetSha256": "877d24c6147427cef51a81c9356d99a3c405ba09d07a580570e80c48c1502827"
 }
