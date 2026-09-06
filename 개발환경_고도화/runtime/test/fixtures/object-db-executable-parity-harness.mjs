@@ -218,7 +218,10 @@ async function runMain(inputPath, outputDirectory, targetPath) {
     const { moduleExecutionId: _firstModule, ...firstComparable } = first;
     const { moduleExecutionId: _secondModule, ...secondComparable } = second.execution;
     check(JSON.stringify(firstComparable) === JSON.stringify(secondComparable), "restart execution result drift");
-    first.result = JSON.stringify({ result: JSON.parse(first.result), restartEvidence: { processExecutions: 2, distinctProcessIds: true, distinctModuleExecutions: true } });
+    const operationKeys=workerResults.map(({transcript})=>transcript.calls.find(({channel,normalizedSql})=>channel==="execute"&&normalizedSql.startsWith("INSERT INTO operations "))?.values?.[0]).filter((value)=>value!==undefined);
+    let distinctOperationKeys;
+    if(operationKeys.length>0){check(operationKeys.length===2,"restart operation key capture missing");check(operationKeys.every((value)=>typeof value==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)),"restart operation key UUIDv4 drift");check(operationKeys[0]!==operationKeys[1],"restart reused operation key");distinctOperationKeys=true;}
+    first.result = JSON.stringify({ result: JSON.parse(first.result), restartEvidence: { processExecutions: 2, distinctProcessIds: true, distinctModuleExecutions: true, ...(distinctOperationKeys===true?{distinctOperationKeys:true}:{}) } });
   }
   const trace = deriveTrace(workerResults, input.binding.scenarioKind);
   writeFileSync(join(outputDirectory, "reply.raw"), Buffer.from(first.reply, "utf8"));

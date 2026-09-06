@@ -158,7 +158,8 @@ describe("object DB executable parity Wave7 service-chain cohort", () => {
         assert.deepEqual(trace.lockOrder, []);
         assert.equal(trace.transaction,queues?"COMMIT":"READ_ONLY");
         assert.equal(trace.dmlTrace.length,repeatedStatements.length);
-        for(let offset=0;offset<trace.dmlTrace.length;offset+=3){const operations=trace.dmlTrace[offset],execution=trace.dmlTrace[offset+1],outbox=trace.dmlTrace[offset+2];assert.match(operations.values[0],/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);assert.deepEqual(execution.values,[consumer.input.eventId,handlerResult.commandCode,"501"]);assert.deepEqual(outbox.values,["501",consumer.input.channelId,JSON.stringify({data:handlerResult.message})]);}
+        const operationKeys:string[]=[];
+        for(let offset=0;offset<trace.dmlTrace.length;offset+=3){const operations=trace.dmlTrace[offset],execution=trace.dmlTrace[offset+1],outbox=trace.dmlTrace[offset+2];assert.match(operations.values[0],/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);operationKeys.push(operations.values[0]);assert.deepEqual(execution.values,[consumer.input.eventId,handlerResult.commandCode,"501"]);assert.deepEqual(outbox.values,["501",consumer.input.channelId,JSON.stringify({data:handlerResult.message})]);}
         if (binding.scenarioKind === "NEGATIVE_GUARD")
           {assert.deepEqual(trace.timeline, ["GUARD_REJECTED"]);assert.deepEqual(trace.queryTrace,[]);assert.deepEqual(trace.dmlTrace,[]);}
         if (binding.scenarioKind === "RESTART_CONSISTENCY") {
@@ -169,7 +170,9 @@ describe("object DB executable parity Wave7 service-chain cohort", () => {
             processExecutions: 2,
             distinctProcessIds: true,
             distinctModuleExecutions: true,
+            ...(queues?{distinctOperationKeys:true}:{}),
           });
+          if(queues){assert.equal(operationKeys.length,2);assert.notEqual(operationKeys[0],operationKeys[1]);}
         }
       } finally {
         rmSync(run.outputDirectory, { recursive: true, force: true });
