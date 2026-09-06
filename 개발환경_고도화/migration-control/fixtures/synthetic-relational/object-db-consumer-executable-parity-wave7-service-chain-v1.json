@@ -37,7 +37,8 @@
         ],
         "input": {"eventId":"event-point-1","userId":"user-1","channelId":"room-1","message":"/상점"},
         "negativeInput": {"eventId":"event-point-negative","channelId":"room-1","message":"/상점"},
-        "negativeDispatch": {"duplicate":true,"route":"MODERN","handlerKey":"POINT_SHOP_CATALOG_READ"},
+        "dispatch": {"database":true,"eventProcessor":true,"processing":true,"duplicate":false,"route":"MODERN","handlerKey":"POINT_SHOP_CATALOG_READ"},
+        "negativeDispatch": {"database":true,"eventProcessor":true,"processing":true,"duplicate":true,"route":"MODERN","handlerKey":"POINT_SHOP_CATALOG_READ"},
         "expectedGuardError": "DISPATCH_SKIPPED_DUPLICATE",
         "queueReplyContract": {"queueScenarios":["READ_POSITIVE","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"operationInsertId":"501","outboxInsertId":"601","operationKeyMatcher":"UUID_V4","operationSql":"INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","commandExecutionSql":"INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","outboxSql":"INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"},
         "orderedQueries": [
@@ -77,7 +78,8 @@
         ],
         "input": {"eventId":"event-package-1","userId":"user-1","channelId":"room-1","message":"/패키지가방"},
         "negativeInput": {"eventId":"event-package-negative","channelId":"room-1","message":"/패키지가방"},
-        "negativeDispatch": {"duplicate":true,"route":"MODERN","handlerKey":"PACKAGE_BAG"},
+        "dispatch": {"database":true,"eventProcessor":true,"processing":true,"duplicate":false,"route":"MODERN","handlerKey":"PACKAGE_BAG"},
+        "negativeDispatch": {"database":true,"eventProcessor":true,"processing":true,"duplicate":true,"route":"MODERN","handlerKey":"PACKAGE_BAG"},
         "expectedGuardError": "DISPATCH_SKIPPED_DUPLICATE",
         "queueReplyContract": {"queueScenarios":["READ_POSITIVE","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"operationInsertId":"501","outboxInsertId":"601","operationKeyMatcher":"UUID_V4","operationSql":"INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","commandExecutionSql":"INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","outboxSql":"INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"},
         "orderedQueries": [
@@ -117,7 +119,8 @@
         ],
         "input": {"eventId":"event-wizard-1","userId":"admin-1","channelId":"room-1","message":"/패키지추가방법"},
         "negativeInput": {"eventId":"event-wizard-negative","channelId":"room-1","message":"/패키지추가방법"},
-        "negativeDispatch": {"duplicate":true,"route":"MODERN","handlerKey":"PACKAGE_CATALOG_WIZARD_GUIDE"},
+        "dispatch": {"database":true,"eventProcessor":true,"processing":true,"duplicate":false,"route":"MODERN","handlerKey":"PACKAGE_CATALOG_WIZARD_GUIDE","wizardHandler":true},
+        "negativeDispatch": {"database":true,"eventProcessor":true,"processing":true,"duplicate":true,"route":"MODERN","handlerKey":"PACKAGE_CATALOG_WIZARD_GUIDE","wizardHandler":true},
         "expectedGuardError": "DISPATCH_SKIPPED_DUPLICATE",
         "queueReplyContract": {"queueScenarios":["READ_POSITIVE","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"operationInsertId":"501","outboxInsertId":"601","operationKeyMatcher":"UUID_V4","operationSql":"INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","commandExecutionSql":"INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","outboxSql":"INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"},
         "orderedQueries": [
