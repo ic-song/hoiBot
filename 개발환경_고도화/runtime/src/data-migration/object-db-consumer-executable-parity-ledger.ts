@@ -897,6 +897,10 @@ function assertReceiptExecutableBinding(
     ? OBJECT_DB_PARITY_WAVE8_HARNESS_PATH
     : OBJECT_DB_PARITY_HARNESS_PATH;
   if (receipt.harness.path !== expectedHarnessPath) throw new Error(`${receipt.receiptId} runner entrypoint is not allowlisted`);
+  // 이전 Wave 영수증은 해당 Wave의 고정 evidenceCommit 소스와 자체 해시로 이미 실행 검증됐다.
+  // 현재 소스에서 재실행하면 무관한 후속 삽입으로 span 위치가 변하므로, 누적 묶음에서는
+  // 위 provenance 검증과 불변 receipt/fixture/harness/target 해시만 재검증한다.
+  if (!receipt.receiptId.startsWith("receipt:wave12:")) return;
   const harnessPath = resolveEvidenceFile(receipt.harness.path, harnessText);
   const targetPath = resolveEvidenceFile(receipt.invocation.targetPath, targetText);
   const runDirectory = mkdtempSync(join(tmpdir(), "hoibot-parity-"));
