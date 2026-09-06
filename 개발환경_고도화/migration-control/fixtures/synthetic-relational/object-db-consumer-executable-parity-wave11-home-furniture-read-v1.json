@@ -110,8 +110,8 @@
             "consumerId": "runtime-dispatch-722afb15e9cbd92c",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 175718,
-              "end": 176513,
+              "start": 175808,
+              "end": 176603,
               "sha256": "4c7b3abc90379e5077a71f94cd022995f77deeae506e26143167b8ea23c036a9",
               "needle": "home_furniture_info_read",
               "symbol": "handlerKey=home_furniture_info_read",
@@ -125,8 +125,8 @@
               {
                 "file": "개발환경_고도화/runtime/src/app.ts",
                 "start": 0,
-                "end": 265992,
-                "sha256": "6dd1af6127a96382bf19e211c8963506d734c169166447230e54dc134b2e4a97",
+                "end": 266082,
+                "sha256": "45853ab79a764b6b50f1c1002b9ec2566a9cb23f083025c7bba78cbb71251963",
                 "needle": "/api/v1/integrations/iris/events"
               },
               {
@@ -3671,8 +3671,8 @@
             "consumerId": "runtime-dispatch-c3cb8d18613c2358",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 200781,
-              "end": 201486,
+              "start": 200871,
+              "end": 201576,
               "sha256": "97f618e936b5424519071b34b165e5cc19ee7b787f830936522c900995086471",
               "needle": "home_furniture_stats_read",
               "symbol": "handlerKey=home_furniture_stats_read",
@@ -3686,8 +3686,8 @@
               {
                 "file": "개발환경_고도화/runtime/src/app.ts",
                 "start": 0,
-                "end": 265992,
-                "sha256": "6dd1af6127a96382bf19e211c8963506d734c169166447230e54dc134b2e4a97",
+                "end": 266082,
+                "sha256": "45853ab79a764b6b50f1c1002b9ec2566a9cb23f083025c7bba78cbb71251963",
                 "needle": "/api/v1/integrations/iris/events"
               },
               {

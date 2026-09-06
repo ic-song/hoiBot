@@ -450,11 +450,13 @@ function normalizeHomeFurnitureMutationDispatchMessage(message: string): string 
   return message;
 }
 
+// 가구정보 서비스의 실제 진입점을 테스트 관찰과 함께 한 경계로 유지합니다.
 async function invokeHomeFurnitureInfoRead(database: DatabaseClient, observe: AppDependencies["observeServiceInvocation"], input: Parameters<HomeFurnitureInfoReadService["read"]>[0]) {
   observe?.("home_furniture_info_read");
   return new HomeFurnitureInfoReadService(database).read(input);
 }
 
+// 가구통계 서비스의 실제 진입점을 테스트 관찰과 함께 한 경계로 유지합니다.
 async function invokeHomeFurnitureStatsRead(database: DatabaseClient, observe: AppDependencies["observeServiceInvocation"], input: Parameters<HomeFurnitureStatsReadService["read"]>[0]) {
   observe?.("home_furniture_stats_read");
   return new HomeFurnitureStatsReadService(database).read(input);
