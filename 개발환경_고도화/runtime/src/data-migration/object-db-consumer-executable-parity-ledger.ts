@@ -20,6 +20,8 @@ const OBJECT_DB_PARITY_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtu
 const OBJECT_DB_PARITY_WAVE8_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE9_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE10_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs" as const;
+const OBJECT_DB_PARITY_CHILD_TIMEOUT_MS = 10_000;
+export const OBJECT_DB_PARITY_WAVE10_CHILD_TIMEOUT_MS = 30_000;
 const OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs" as const;
 const OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs" as const;
 const OBJECT_DB_PARITY_WAVE3_PLAYER_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs" as const;
@@ -49,6 +51,17 @@ export const OBJECT_DB_EXECUTABLE_PARITY_VERDICTS = [
   "DIRECT_PASS",
   "EQUIVALENT_PASS",
 ] as const;
+
+export function objectDbParityHarnessTimeoutMs(harnessPath: string): number {
+  return harnessPath === OBJECT_DB_PARITY_WAVE10_HARNESS_PATH
+    ? OBJECT_DB_PARITY_WAVE10_CHILD_TIMEOUT_MS
+    : OBJECT_DB_PARITY_CHILD_TIMEOUT_MS;
+}
+
+export function executeObjectDbParityHarnessChild(args: readonly string[], timeoutMs: number): string {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) throw new Error("object DB parity child timeout invalid");
+  return execFileSync(process.execPath, [...args], { encoding: "utf8", timeout: timeoutMs, maxBuffer: 1024 * 1024 });
+}
 
 export type ObjectDbExecutableParityVerdict = typeof OBJECT_DB_EXECUTABLE_PARITY_VERDICTS[number];
 export type ConsumerAccess = "READ" | "WRITE" | "READ_WRITE";
@@ -829,7 +842,10 @@ function assertReceiptExecutableBinding(
   try {
     const inputPath = join(runDirectory, "input.json");
     writeFileSync(inputPath, `${JSON.stringify({ binding, fixturePayload: fixture.payload, invocation: receipt.invocation }, null, 2)}\n`, "utf8");
-    const stdout = execFileSync(process.execPath, [harnessPath, inputPath, runDirectory, targetPath], { encoding: "utf8", timeout: 10_000, maxBuffer: 1024 * 1024 });
+    const stdout = executeObjectDbParityHarnessChild(
+      [harnessPath, inputPath, runDirectory, targetPath],
+      objectDbParityHarnessTimeoutMs(receipt.harness.path),
+    );
     if (stdout.length !== 0) throw new Error(`${receipt.receiptId} print-only/stdout harness is forbidden`);
     const caseResult = JSON.parse(readFileSync(join(runDirectory, "case-result.json"), "utf8")) as unknown;
     if (!isRecord(caseResult)) throw new Error(`${receipt.receiptId} machine case-result invalid`);
