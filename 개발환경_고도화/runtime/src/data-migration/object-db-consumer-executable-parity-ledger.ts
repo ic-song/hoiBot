@@ -19,6 +19,7 @@ const OBJECT_DB_PARITY_RUNNER = "NODE_OBJECT_DB_PARITY_V1" as const;
 const OBJECT_DB_PARITY_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs" as const;
 const OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs" as const;
+const OBJECT_DB_PARITY_WAVE3_PLAYER_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs" as const;
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
   "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
@@ -541,6 +542,18 @@ export function assertTrustedWave2ConsumerFixtureMapping(
   if (JSON.stringify(consumer.mockRows) !== JSON.stringify(expectedMock) || JSON.stringify(consumer.expectedRow) !== JSON.stringify(expectedRow)) throw new Error(`${consumerId} trusted Wave2 result fixture drift`);
 }
 
+export function assertTrustedWave3ConsumerFixtureMapping(
+  consumerId: string,
+  consumer: Record<string, unknown>,
+  manifestConsumer: ConsumerManifestInput["consumers"][number],
+): void {
+  if (consumerId !== "sql-repository-261eb97022941f77") return;
+  const locator = consumer.sourceLocator as Record<string, unknown> | undefined;
+  const exactLocator = { file: manifestConsumer.file, symbol: manifestConsumer.symbol, triggerOrPredicate: manifestConsumer.triggerOrPredicate, interfaceId: manifestConsumer.interfaceId, start: manifestConsumer.sourceSpan.start, end: manifestConsumer.sourceSpan.end, sha256: manifestConsumer.sourceSpan.sha256 };
+  if (locator === undefined || JSON.stringify(locator) !== JSON.stringify(exactLocator) || consumer.consumerId !== consumerId || JSON.stringify(consumer.input) !== JSON.stringify({ targetKey: "대상" }) || JSON.stringify(consumer.negativeInput) !== JSON.stringify({ targetKey: "" }) || JSON.stringify(consumer.expectedQueryValues) !== JSON.stringify(["대상"]) || consumer.expectedGuardError !== "PLAYER_CONTEXT_TARGET_INVALID" || consumer.databaseRowShape !== "player-target-row") throw new Error(`${consumerId} trusted Wave3 fixture drift`);
+  if (typeof consumer.expectedNormalizedSql !== "string" || sha256CanonicalText(consumer.expectedNormalizedSql) !== "40c9e38957fa73a1295859c7d8a3c096c8512b18b350c4797fed07fa86b68199" || JSON.stringify(consumer.mockRows) !== JSON.stringify([{ legacyPlayerId: "42", canonicalPlayerId: "player01", externalIdentityId: "7", displayName: "대상유저", rankEmoji: "🏆", providerCode: "kakao" }]) || JSON.stringify(consumer.expectedRow) !== JSON.stringify({ canonicalPlayerId: "player01", legacyPlayerId: "42", displayName: "대상유저", rankEmoji: "🏆" })) throw new Error(`${consumerId} trusted Wave3 SQL/result drift`);
+}
+
 function assertTrustedWave1FixtureBinding(
   receipt: ObjectDbConsumerExecutionReceipt,
   fixtureText: string,
@@ -551,7 +564,19 @@ function assertTrustedWave1FixtureBinding(
   const trusted = TRUSTED_WAVE1_TITLE_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE1_TITLE_READS];
   if (trusted === undefined) {
     const wave2 = TRUSTED_WAVE2_COMPATIBILITY_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE2_COMPATIBILITY_READS];
-    if (wave2 === undefined) return;
+    if (wave2 === undefined) {
+      if (receipt.consumerId !== "sql-repository-261eb97022941f77") return;
+      if (receipt.invocation.targetPath !== OBJECT_DB_PARITY_WAVE3_PLAYER_TARGET_PATH || receipt.invocation.exportName !== "executeWave3PlayerTarget") throw new Error(`${receipt.receiptId} trusted Wave3 invocation target drift`);
+      const fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as { payload?: { cases?: Array<{ caseId?: string; executablePath?: string; transactionPath?: string; consumers?: Array<Record<string, unknown>> }> } };
+      const parityCase = fixture.payload?.cases?.find(({ caseId }) => caseId === receipt.harness.harnessCaseId);
+      const consumer = parityCase?.consumers?.find((candidate) => candidate.consumerId === receipt.consumerId);
+      if (parityCase?.executablePath !== "MariaPlayerContextProvider.resolveUniqueLegacyDisplayTarget" || parityCase.transactionPath !== "DatabaseClient.query:READ_ONLY" || consumer === undefined) throw new Error(`${receipt.receiptId} trusted Wave3 case/path binding drift`);
+      const locator = consumer.sourceLocator as Record<string, unknown>;
+      assertTrustedWave3ConsumerFixtureMapping(receipt.consumerId, consumer, manifestConsumer);
+      const sourceBlob = readCommitBlob(repositoryRoot, evidenceCommit, locator.file as string);
+      if (sha256CanonicalText(canonicalizeObjectDbConsumerSourceText(sourceBlob).slice(locator.start as number, locator.end as number)) !== locator.sha256) throw new Error(`${receipt.receiptId} evidenceCommit source span hash drift`);
+      return;
+    }
     if (receipt.invocation.targetPath !== OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH || receipt.invocation.exportName !== "executeWave2CompatibilityResolver") throw new Error(`${receipt.receiptId} trusted Wave2 invocation target drift`);
     const fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as { payload?: { cases?: Array<{ caseId?: string; executablePath?: string; transactionPath?: string; consumers?: Array<Record<string, unknown>> }> } };
     const parityCase = fixture.payload?.cases?.find(({ caseId }) => caseId === receipt.harness.harnessCaseId);
