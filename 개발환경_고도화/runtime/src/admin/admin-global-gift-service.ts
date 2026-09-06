@@ -66,7 +66,7 @@ class MariaGlobalGiftRfaStore implements TransactionReceiptOutboxStore<Context,A
     });
   }
   async readCommitted(requestKey:string):Promise<TransactionReceiptOutboxTerminal<AdminGlobalGiftResult>|undefined>{
-    return (await this.readVerifiedTerminal(this.database,requestKey,false))?.terminal;
+    return this.database.withTransaction(async tx=>(await this.readVerifiedTerminal(tx,requestKey,false))?.terminal);
   }
 }
 

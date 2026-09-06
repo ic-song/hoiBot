@@ -18,8 +18,10 @@
 | stack owner만 다른 player로 치환(aggregate 동일) | recipient↔stack 관계 drift로 fail closed | Maria PASS |
 | operation item만 다른 canonical item으로 치환(aggregate 동일) | operation↔stack↔terminal 관계 drift로 fail closed | Maria PASS |
 | commit ACK ambiguous | 전체 receipt/snapshot/outbox 재검산 후 reconcile | Maria PASS |
+| ambiguous ACK 재조회 첫 SELECT 직후 별도 connection recipient drift commit | 단일 fresh transaction의 일관된 snapshot만 검산, pool autocommit read 0 | Maria PASS |
 | 수량 overflow | recipient/stack/outbox/receipt 전량 rollback | Maria PASS |
 | 적용된 receipt 존재 시 rollback | fail closed | Maria PASS |
+| provenance=true + 무관 owned instance FK 참조 | rollback 시작 전 fail closed, table/item/instance DDL·DML 0 | Maria PASS |
 | empty-state rollback/reapply | 5개 전용 table 제거/재생성 | Maria PASS |
 | 선재 exact source binding(예약 ID 포함) | provenance=false, 재귀속 0, rollback 후에도 원행 불변 | Maria PASS |
 | 선재 source binding drift | migration 전 fail closed | Maria PASS |
