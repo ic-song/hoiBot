@@ -44,15 +44,31 @@ export async function executeWave9RankChain(args) {
   const dispatcher = new dispatchModule.CommandDispatcher(reader, { enabled: true, allowAllCanaries: false, canaryUserIds: new Set() }, undefined);
   const decision = await dispatcher.resolveReadOnly({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true });
   check(decision.route === "MODERN" && decision.handlerKey === target[3], "Wave9 partial dispatch drift");
+  // app.ts 분기의 모든 outer gate와 processing.replies projection을 동일 순서로 실행합니다.
+  const normalizedEvent = { eventId: input.eventId, message: input.message, userId: input.externalUserId, channelId: input.destinationId };
+  const processing = { duplicate: input.duplicate === true, replies: [] };
+  const isOperationalChannel = input.isOperationalChannel !== false;
   let result;
   try {
-    result = await new serviceModule[target[2]](args.database).read({ eventId: input.eventId, externalUserId: input.externalUserId, destinationId: input.destinationId });
+    if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      && guard(normalizedEvent.message)
+      && decision.route === "MODERN" && decision.handlerKey === target[3]
+      && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+      result = await new serviceModule[target[2]](args.database).read({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+      if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+    }
   } catch (error) {
     if (!consumer.errorScenarios.includes(args.scenarioKind)) throw error;
     const raw = `ERROR:${error.code ?? error.message}`;
     check(raw === consumer.expectedResultsByScenario[args.scenarioKind], "Wave9 error result drift");
     return { executedConsumerId: args.consumerId, executedCaseId: args.harnessCaseId, moduleExecutionId: MODULE_EXECUTION_ID, assertionCount, reply: raw, result: raw };
   }
+  if (args.scenarioKind === "APP_GATE_REJECTED") {
+    check(processing.replies.length === 0, "Wave9 rejected app gate emitted reply");
+    return { executedConsumerId: args.consumerId, executedCaseId: args.harnessCaseId, moduleExecutionId: MODULE_EXECUTION_ID, assertionCount, reply: "APP_GATE_REJECTED_NO_CALL", result: "APP_GATE_REJECTED_NO_CALL" };
+  }
+  check(processing.replies.length === 1, "Wave9 app reply projection drift");
+  check(processing.replies[0].room === input.destinationId && processing.replies[0].data === result?.data, "Wave9 app reply bytes drift");
   const raw = JSON.stringify(result);
   check(raw === consumer.expectedResultsByScenario[args.scenarioKind], "Wave9 service result drift");
   return { executedConsumerId: args.consumerId, executedCaseId: args.harnessCaseId, moduleExecutionId: MODULE_EXECUTION_ID, assertionCount, reply: result?.data ?? raw, result: raw };

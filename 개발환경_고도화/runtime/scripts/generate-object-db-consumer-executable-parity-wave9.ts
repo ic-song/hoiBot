@@ -16,6 +16,14 @@ const evidenceCommit = process.argv[2] ?? execFileSync("git", ["rev-parse", "HEA
 const hashes = { harness: sha256CanonicalText(read(harnessPath)), fixture: sha256CanonicalText(read(fixturePath)), target: sha256CanonicalText(read(targetPath)) };
 const preserved: ObjectDbConsumerExecutionReceipt[] = prior.receipts;
 const added: ObjectDbConsumerExecutionReceipt[] = [];
+if (preserved.length !== 94) throw new Error(`Wave9 prior receipt count drift: ${preserved.length}`);
+const priorIds = new Set<string>();
+for (const receipt of preserved) {
+  const { receiptSha256, ...payload } = receipt;
+  if (receiptSha256 !== sha256CanonicalJson(payload)) throw new Error(`Wave9 prior receipt hash drift: ${receipt.receiptId}`);
+  if (priorIds.has(receipt.receiptId)) throw new Error(`Wave9 prior receipt duplicate: ${receipt.receiptId}`);
+  priorIds.add(receipt.receiptId);
+}
 for (const binding of fixture.bindings) {
   const dir = mkdtempSync(join(tmpdir(), "wave9-receipt-"));
   try {
@@ -47,5 +55,8 @@ for (const binding of fixture.bindings) {
     added.push({ ...payload, receiptSha256: sha256CanonicalJson(payload) });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
-writeFileSync(resolve(root, outputPath), JSON.stringify({ format: prior.format, catalogVersion: prior.catalogVersion, classificationBaseCommit: prior.classificationBaseCommit, evidenceCommit, receipts: [...preserved, ...added] }, null, 2) + "\n");
+const receipts = [...preserved, ...added];
+if (new Set(receipts.map((receipt) => receipt.receiptId)).size !== receipts.length) throw new Error("Wave9 receiptId uniqueness drift");
+if (JSON.stringify(receipts.slice(0, preserved.length)) !== JSON.stringify(preserved)) throw new Error("Wave9 prior receipt prefix drift");
+writeFileSync(resolve(root, outputPath), JSON.stringify({ format: prior.format, catalogVersion: prior.catalogVersion, classificationBaseCommit: prior.classificationBaseCommit, evidenceCommit, receipts }, null, 2) + "\n");
 console.log(JSON.stringify({ status: "PASS", prior: preserved.length, added: added.length, total: preserved.length + added.length }));

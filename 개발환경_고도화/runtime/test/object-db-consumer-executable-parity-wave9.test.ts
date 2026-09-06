@@ -34,7 +34,7 @@ const ALLOWED_DML = new Set(["operations", "outbox_messages", "command_execution
 describe("object DB executable parity Wave9 rank chain", () => {
   it("executes 25 receipts and rollback/replay risks through exact production services", () => {
     assert.equal(fixture.bindings.length, 25);
-    assert.equal(fixture.payload.riskBindings.length, 10);
+    assert.equal(fixture.payload.riskBindings.length, 15);
     for (const binding of [...fixture.bindings, ...fixture.payload.riskBindings]) {
       const result = run(binding);
       try {
@@ -51,6 +51,12 @@ describe("object DB executable parity Wave9 rank chain", () => {
           assert.equal(trace.transaction, "COMMIT");
           assert.deepEqual(trace.dmlTrace, []);
           assert.deepEqual(trace.timeline, ["BEGIN", "COMMIT"]);
+          continue;
+        }
+        if (binding.scenarioKind === "APP_GATE_REJECTED") {
+          assert.equal(trace.transaction, "READ_ONLY");
+          assert.equal(trace.queryTrace.length, 1);
+          assert.deepEqual(trace.dmlTrace, []);
           continue;
         }
         if (binding.scenarioKind === "ROLLBACK") {
@@ -89,15 +95,24 @@ describe("object DB executable parity Wave9 rank chain", () => {
     };
     for (const consumer of allConsumers()) {
       const servicePlan = consumer.queryPlanByScenario.READ_POSITIVE.slice(1);
-      let stored: any = null, writes = 0, queue = Promise.resolve();
+      let stored: any = null, writes = 0, lockTail = Promise.resolve();
       const db: any = {
-        withTransaction(work: any) {
-          const runLocked = async () => {
+        async withTransaction(work: any) {
+          let releaseLock: (() => void) | undefined;
+          let lockAcquired = false;
+          try {
             let queryIndex = 0;
             const transaction = {
               query: async (sql: string) => {
                 const normalized = normalize(sql);
-                if (normalized.startsWith("SELECT result_json FROM operations")) return stored === null ? [] : [{ result_json: stored }];
+                if (normalized.startsWith("SELECT result_json FROM operations")) {
+                  assert.match(normalized, / FOR UPDATE$/);
+                  const previous = lockTail;
+                  lockTail = new Promise<void>((resolve) => { releaseLock = resolve; });
+                  await previous;
+                  lockAcquired = true;
+                  return stored === null ? [] : [{ result_json: stored }];
+                }
                 const step = servicePlan.find((entry: any, index: number) => index >= queryIndex && entry.expectedNormalizedSql === normalized);
                 assert.ok(step, `${consumer.consumerId}: concurrent query drift`);
                 queryIndex = servicePlan.indexOf(step) + 1;
@@ -112,10 +127,9 @@ describe("object DB executable parity Wave9 rank chain", () => {
               },
             };
             return work(transaction);
-          };
-          const result = queue.then(runLocked, runLocked);
-          queue = result.then(() => undefined, () => undefined);
-          return result;
+          } finally {
+            if (lockAcquired) releaseLock?.();
+          }
         },
       };
       const Service = classes[consumer.consumerId];
@@ -125,6 +139,59 @@ describe("object DB executable parity Wave9 rank chain", () => {
       assert.deepEqual(second, first);
       assert.equal(writes, 5);
     }
+  });
+
+  it("discards every staged effect when the middle DML fails", async () => {
+    const classes: Record<string, any> = {
+      "runtime-dispatch-465e4b3a15c003dc": PlayerCumulativeLevelRankReadService,
+      "runtime-dispatch-9db5e3e6c256b5fa": PlayerCumulativeLikeRankReadService,
+      "runtime-dispatch-eaa906ea249408a5": PlayerOverallRankReadService,
+      "runtime-dispatch-e02f58bf27070ab0": HomeRankingReadService,
+      "runtime-dispatch-e54fc7fbded287c6": HomeFurnitureRankReadService,
+    };
+    for (const consumer of allConsumers()) {
+      const plan = consumer.queryPlanByScenario.READ_POSITIVE.slice(1);
+      const persisted: string[] = [];
+      const revive = (value: any): any => Array.isArray(value) ? value.map(revive) : value && typeof value === "object" ? Object.keys(value).length === 1 && typeof value.$bigint === "string" ? BigInt(value.$bigint) : Object.fromEntries(Object.entries(value).map(([key, child]) => [key, revive(child)])) : value;
+      const db: any = {
+        async withTransaction(work: any) {
+          const staged: string[] = [];
+          try {
+            const transaction = {
+              query: async (sql: string) => {
+                const step = plan.find((entry: any) => entry.expectedNormalizedSql === normalize(sql));
+                assert.ok(step, `${consumer.consumerId}: rollback query drift`);
+                return revive(step.rows);
+              },
+              execute: async (sql: string) => {
+                const normalized = normalize(sql);
+                staged.push(normalized);
+                if (normalized.startsWith("INSERT INTO command_executions")) throw Object.assign(new Error("forced middle DML"), { code: "ER_SIGNAL_EXCEPTION" });
+                return { affectedRows: 1n, insertId: normalized.startsWith("INSERT INTO operations") ? 501n : normalized.startsWith("INSERT INTO outbox_messages") ? 601n : 1n };
+              },
+            };
+            const result = await work(transaction);
+            persisted.push(...staged);
+            return result;
+          } catch (error) {
+            assert.equal(staged.length, 3);
+            throw error;
+          }
+        },
+      };
+      const Service = classes[consumer.consumerId];
+      await assert.rejects(new Service(db).read(consumer.scenarioInputsByScenario.READ_POSITIVE), /forced middle DML/);
+      assert.deepEqual(persisted, []);
+    }
+  });
+
+  it("preserves all 94 prior receipts by hash, identity and exact prefix", () => {
+    const prior = JSON.parse(readFileSync(resolve(repositoryRoot, "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave8-v1.json"), "utf8"));
+    const current = JSON.parse(readFileSync(resolve(repositoryRoot, "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave9-v1.json"), "utf8"));
+    assert.equal(prior.receipts.length, 94);
+    assert.equal(current.receipts.length, 119);
+    assert.deepEqual(current.receipts.slice(0, 94), prior.receipts);
+    assert.equal(new Set(current.receipts.map((receipt: any) => receipt.receiptId)).size, 119);
   });
 
   it("fails closed on app span, SQL, parameters, rows and output drift", () => {

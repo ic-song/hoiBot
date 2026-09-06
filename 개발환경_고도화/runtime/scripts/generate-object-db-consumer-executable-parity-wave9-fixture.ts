@@ -15,7 +15,7 @@ const normalize = (sql: string) => sql.replace(/\s+/g, " ").trim();
 const manifest = JSON.parse(read("개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json"));
 const output = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json";
 const receiptScenarios = ["READ_POSITIVE", "NEGATIVE_GUARD", "EXACT_OUTPUT", "SOURCE_DOMAIN_DML_ZERO", "RESTART_CONSISTENCY"];
-const riskScenarios = ["ROLLBACK", "SAME_EVENT_REPLAY"];
+const riskScenarios = ["ROLLBACK", "SAME_EVENT_REPLAY", "APP_GATE_REJECTED"];
 const definitions = [
   ["runtime-dispatch-465e4b3a15c003dc", "case:rank-cumulative-level", "/누렙순위", "/누렙순위 안내", "PLAYER_CUMULATIVE_LEVEL_RANK_READ", "player_cumulative_level_rank_read", "개발환경_고도화/runtime/src/player/player-cumulative-level-rank-read-service.ts", PlayerCumulativeLevelRankReadService],
   ["runtime-dispatch-9db5e3e6c256b5fa", "case:rank-cumulative-like", "/누좋순위", "/누좋순위 안내", "PLAYER_CUMULATIVE_LIKE_RANK_READ", "player_cumulative_like_rank_read", "개발환경_고도화/runtime/src/player/player-cumulative-like-rank-read-service.ts", PlayerCumulativeLikeRankReadService],
@@ -28,6 +28,14 @@ function locate(file: string, needle: string) {
   const source = read(file);
   if (!source.includes(needle)) throw new Error(`${file} missing ${needle}`);
   return { file, start: 0, end: source.length, sha256: sha(source), needle };
+}
+function locateAppBranch(file: string, handlerKey: string) {
+  const source = read(file), anchor = `partialDispatchDecision.handlerKey === "${handlerKey}"`, anchorIndex = source.indexOf(anchor);
+  if (anchorIndex < 0) throw new Error(`${file} missing ${anchor}`);
+  const start = source.lastIndexOf("      if (isOperationalChannel", anchorIndex), endMarker = source.indexOf("\n      }", anchorIndex);
+  if (start < 0 || endMarker < 0) throw new Error(`${file} branch boundaries missing ${handlerKey}`);
+  const end = endMarker + "\n      }".length, span = source.slice(start, end);
+  return { file, start, end, sha256: sha(span), needle: handlerKey };
 }
 function replayResult(def: typeof definitions[number]) {
   const data = `저장된 ${def[5]}`;
@@ -47,8 +55,9 @@ function rowsFor(def: typeof definitions[number], scenario: string, sql: string)
 }
 function insertId(sql: string) { if (sql.startsWith("INSERT INTO operations")) return 501n; if (sql.startsWith("INSERT INTO outbox_messages")) return 601n; if (sql.startsWith("INSERT INTO command_executions")) return 701n; if (sql.startsWith("INSERT INTO command_audit")) return 801n; return 0n; }
 async function capture(def: typeof definitions[number], scenario: string) {
-  const input = { eventId: `wave9-${def[0]}-${scenario.toLowerCase()}`, externalUserId: "rank-user", destinationId: "rank-room", message: scenario === "NEGATIVE_GUARD" ? def[3] : def[2] };
+  const input: any = { eventId: `wave9-${def[0]}-${scenario.toLowerCase()}`, externalUserId: "rank-user", destinationId: "rank-room", message: scenario === "NEGATIVE_GUARD" ? def[3] : def[2] };
   if (scenario === "NEGATIVE_GUARD") return { queries: [], mutations: [], result: "INVALID_COMMAND_NO_CALL", input };
+  if (scenario === "APP_GATE_REJECTED") input.duplicate = true;
   const queries: any[] = [], mutations: any[] = [];
   const db: any = {
     withTransaction: async (work: any) => work(db),
@@ -64,6 +73,7 @@ async function capture(def: typeof definitions[number], scenario: string) {
   const dispatcher = new CommandDispatcher(new MariaCommandRouteReader(db), { enabled: true, allowAllCanaries: false, canaryUserIds: new Set() }, undefined);
   const decision = await dispatcher.resolveReadOnly({ eventId: input.eventId, message: input.message, userId: input.externalUserId, hasTrustedDisplayName: true });
   if (decision.route !== "MODERN" || decision.handlerKey !== def[5]) throw new Error(`${def[0]} dispatch drift`);
+  if (scenario === "APP_GATE_REJECTED") return { queries, mutations, result: "APP_GATE_REJECTED_NO_CALL", input };
   try { return { queries, mutations, result: JSON.stringify(await new def[7](db).read(input)), input }; }
   catch (error) { if (scenario !== "ROLLBACK") throw error; const caught = error as any; return { queries, mutations, result: `ERROR:${caught.code ?? caught.message}`, input }; }
 }
@@ -75,7 +85,7 @@ for (const def of definitions) {
   for (const scenario of [...receiptScenarios, ...riskScenarios]) captured[scenario] = await capture(def, scenario);
   const consumer = {
     consumerId: def[0],
-    sourceLocator: { ...locate(source.file, def[5]), symbol: source.symbol, triggerOrPredicate: source.triggerOrPredicate, interfaceId: source.interfaceId, catalogSourceSpanSha256: source.sourceSpan.sha256, catalogSourceSpanStatus: "STALE_RELOCATED_AT_WAVE9" },
+    sourceLocator: { ...locateAppBranch(source.file, def[5]), symbol: source.symbol, triggerOrPredicate: source.triggerOrPredicate, interfaceId: source.interfaceId, catalogSourceSpanSha256: source.sourceSpan.sha256, catalogSourceSpanStatus: "STALE_RELOCATED_AT_WAVE9" },
     frozenSourceCommit: "15abb95203e7eb375c9f0bd4294a0ec7100aa1a6",
     chainLocators: [locate("개발환경_고도화/runtime/src/app.ts", def[5]), locate("개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts", "async resolveReadOnly("), locate(def[6], "this.db.withTransaction".replace("this.db", def[0].includes("eaa906") ? "this.database" : "this.db"))],
     errorScenarios: ["ROLLBACK"],

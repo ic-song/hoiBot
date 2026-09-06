@@ -218,16 +218,17 @@
         ],
         "riskScenarios": [
           "ROLLBACK",
-          "SAME_EVENT_REPLAY"
+          "SAME_EVENT_REPLAY",
+          "APP_GATE_REJECTED"
         ],
         "consumers": [
           {
             "consumerId": "runtime-dispatch-465e4b3a15c003dc",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 0,
-              "end": 265287,
-              "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+              "start": 180150,
+              "end": 180904,
+              "sha256": "d85c7d7a3bc9e6c337be0448db4ac66ae66f2487a8c1a3ec01383d398de8def8",
               "needle": "player_cumulative_level_rank_read",
               "symbol": "handlerKey=player_cumulative_level_rank_read",
               "triggerOrPredicate": "handlerKey=player_cumulative_level_rank_read",
@@ -304,6 +305,13 @@
                 "externalUserId": "rank-user",
                 "destinationId": "rank-room",
                 "message": "/누렙순위"
+              },
+              "APP_GATE_REJECTED": {
+                "eventId": "wave9-runtime-dispatch-465e4b3a15c003dc-app_gate_rejected",
+                "externalUserId": "rank-user",
+                "destinationId": "rank-room",
+                "message": "/누렙순위",
+                "duplicate": true
               }
             },
             "queryPlanByScenario": {
@@ -520,6 +528,22 @@
                         "outboxId": "601",
                         "rowCount": 1
                       }
+                    }
+                  ]
+                }
+              ],
+              "APP_GATE_REJECTED": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/누렙순위"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PLAYER_CUMULATIVE_LEVEL_RANK_READ",
+                      "handler_key": "player_cumulative_level_rank_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
                     }
                   ]
                 }
@@ -800,7 +824,8 @@
                   }
                 }
               ],
-              "SAME_EVENT_REPLAY": []
+              "SAME_EVENT_REPLAY": [],
+              "APP_GATE_REJECTED": []
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"data\":\"🏆 누적 레벨 순위 🏆\\n\\n🥇🥇호이 - LV.123\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1}",
@@ -809,7 +834,8 @@
               "SOURCE_DOMAIN_DML_ZERO": "{\"data\":\"🏆 누적 레벨 순위 🏆\\n\\n🥇🥇호이 - LV.123\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1}",
               "RESTART_CONSISTENCY": "{\"data\":\"🏆 누적 레벨 순위 🏆\\n\\n🥇🥇호이 - LV.123\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1}",
               "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
-              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 player_cumulative_level_rank_read\",\"outboxId\":\"601\",\"rowCount\":1}"
+              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 player_cumulative_level_rank_read\",\"outboxId\":\"601\",\"rowCount\":1}",
+              "APP_GATE_REJECTED": "APP_GATE_REJECTED_NO_CALL"
             }
           }
         ]
@@ -827,16 +853,17 @@
         ],
         "riskScenarios": [
           "ROLLBACK",
-          "SAME_EVENT_REPLAY"
+          "SAME_EVENT_REPLAY",
+          "APP_GATE_REJECTED"
         ],
         "consumers": [
           {
             "consumerId": "runtime-dispatch-9db5e3e6c256b5fa",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 0,
-              "end": 265287,
-              "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+              "start": 180906,
+              "end": 181657,
+              "sha256": "9dc547d5a1e6c25fa60ec98e6060a4b5c6392f97cb43d2ee0d824d3e3d1c2346",
               "needle": "player_cumulative_like_rank_read",
               "symbol": "handlerKey=player_cumulative_like_rank_read",
               "triggerOrPredicate": "handlerKey=player_cumulative_like_rank_read",
@@ -913,6 +940,13 @@
                 "externalUserId": "rank-user",
                 "destinationId": "rank-room",
                 "message": "/누좋순위"
+              },
+              "APP_GATE_REJECTED": {
+                "eventId": "wave9-runtime-dispatch-9db5e3e6c256b5fa-app_gate_rejected",
+                "externalUserId": "rank-user",
+                "destinationId": "rank-room",
+                "message": "/누좋순위",
+                "duplicate": true
               }
             },
             "queryPlanByScenario": {
@@ -1129,6 +1163,22 @@
                         "outboxId": "601",
                         "rowCount": 1
                       }
+                    }
+                  ]
+                }
+              ],
+              "APP_GATE_REJECTED": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/누좋순위"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PLAYER_CUMULATIVE_LIKE_RANK_READ",
+                      "handler_key": "player_cumulative_like_rank_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
                     }
                   ]
                 }
@@ -1409,7 +1459,8 @@
                   }
                 }
               ],
-              "SAME_EVENT_REPLAY": []
+              "SAME_EVENT_REPLAY": [],
+              "APP_GATE_REJECTED": []
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"data\":\"💓 누적 좋아요 순위 💓\\n\\n🥇🥇호이 - 💕:456\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1}",
@@ -1418,7 +1469,8 @@
               "SOURCE_DOMAIN_DML_ZERO": "{\"data\":\"💓 누적 좋아요 순위 💓\\n\\n🥇🥇호이 - 💕:456\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1}",
               "RESTART_CONSISTENCY": "{\"data\":\"💓 누적 좋아요 순위 💓\\n\\n🥇🥇호이 - 💕:456\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1}",
               "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
-              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 player_cumulative_like_rank_read\",\"outboxId\":\"601\",\"rowCount\":1}"
+              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 player_cumulative_like_rank_read\",\"outboxId\":\"601\",\"rowCount\":1}",
+              "APP_GATE_REJECTED": "APP_GATE_REJECTED_NO_CALL"
             }
           }
         ]
@@ -1436,16 +1488,17 @@
         ],
         "riskScenarios": [
           "ROLLBACK",
-          "SAME_EVENT_REPLAY"
+          "SAME_EVENT_REPLAY",
+          "APP_GATE_REJECTED"
         ],
         "consumers": [
           {
             "consumerId": "runtime-dispatch-eaa906ea249408a5",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 0,
-              "end": 265287,
-              "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+              "start": 195549,
+              "end": 196261,
+              "sha256": "ea4cd7d15effc1e6524959cfb1a32d13b0e414c997ad43f7884d459494ce37d2",
               "needle": "player_overall_rank_read",
               "symbol": "handlerKey=player_overall_rank_read",
               "triggerOrPredicate": "handlerKey=player_overall_rank_read",
@@ -1522,6 +1575,13 @@
                 "externalUserId": "rank-user",
                 "destinationId": "rank-room",
                 "message": "/종합순위"
+              },
+              "APP_GATE_REJECTED": {
+                "eventId": "wave9-runtime-dispatch-eaa906ea249408a5-app_gate_rejected",
+                "externalUserId": "rank-user",
+                "destinationId": "rank-room",
+                "message": "/종합순위",
+                "duplicate": true
               }
             },
             "queryPlanByScenario": {
@@ -2118,6 +2178,22 @@
                     }
                   ]
                 }
+              ],
+              "APP_GATE_REJECTED": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/종합순위"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PLAYER_OVERALL_RANK_READ",
+                      "handler_key": "player_overall_rank_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
               ]
             },
             "mutationPlanByScenario": {
@@ -2422,7 +2498,8 @@
                   }
                 }
               ],
-              "SAME_EVENT_REPLAY": []
+              "SAME_EVENT_REPLAY": [],
+              "APP_GATE_REJECTED": []
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"data\":\"👑 종합 순위 👑\\n[\\\"/펫정보\\\"에 있는 매력+강화로 합산]\\n[캐슬⚔️+레이드👾+펫강화⭐️1강*1,000]\\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\\n(/종합순위보상) 참조\\n\\n🥇🥇호이 - 👑 3,220\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1,\"requesterRank\":1}",
@@ -2431,7 +2508,8 @@
               "SOURCE_DOMAIN_DML_ZERO": "{\"data\":\"👑 종합 순위 👑\\n[\\\"/펫정보\\\"에 있는 매력+강화로 합산]\\n[캐슬⚔️+레이드👾+펫강화⭐️1강*1,000]\\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\\n(/종합순위보상) 참조\\n\\n🥇🥇호이 - 👑 3,220\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1,\"requesterRank\":1}",
               "RESTART_CONSISTENCY": "{\"data\":\"👑 종합 순위 👑\\n[\\\"/펫정보\\\"에 있는 매력+강화로 합산]\\n[캐슬⚔️+레이드👾+펫강화⭐️1강*1,000]\\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\\n(/종합순위보상) 참조\\n\\n🥇🥇호이 - 👑 3,220\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\",\"outboxId\":\"601\",\"rowCount\":1,\"requesterRank\":1}",
               "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
-              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 player_overall_rank_read\",\"outboxId\":\"601\",\"rowCount\":1,\"requesterRank\":1}"
+              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 player_overall_rank_read\",\"outboxId\":\"601\",\"rowCount\":1,\"requesterRank\":1}",
+              "APP_GATE_REJECTED": "APP_GATE_REJECTED_NO_CALL"
             }
           }
         ]
@@ -2449,16 +2527,17 @@
         ],
         "riskScenarios": [
           "ROLLBACK",
-          "SAME_EVENT_REPLAY"
+          "SAME_EVENT_REPLAY",
+          "APP_GATE_REJECTED"
         ],
         "consumers": [
           {
             "consumerId": "runtime-dispatch-e02f58bf27070ab0",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 0,
-              "end": 265287,
-              "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+              "start": 179487,
+              "end": 180148,
+              "sha256": "460a22b854d4c669f93211d77cbcc7fc84ae7eab05bc730193768764a01f2a40",
               "needle": "home_ranking_read",
               "symbol": "handlerKey=home_ranking_read",
               "triggerOrPredicate": "handlerKey=home_ranking_read",
@@ -2535,6 +2614,13 @@
                 "externalUserId": "rank-user",
                 "destinationId": "rank-room",
                 "message": "/펫홈순위"
+              },
+              "APP_GATE_REJECTED": {
+                "eventId": "wave9-runtime-dispatch-e02f58bf27070ab0-app_gate_rejected",
+                "externalUserId": "rank-user",
+                "destinationId": "rank-room",
+                "message": "/펫홈순위",
+                "duplicate": true
               }
             },
             "queryPlanByScenario": {
@@ -2781,6 +2867,22 @@
                         "outboxId": "601",
                         "rowCount": 1
                       }
+                    }
+                  ]
+                }
+              ],
+              "APP_GATE_REJECTED": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펫홈순위"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "HOME_RANKING_READ",
+                      "handler_key": "home_ranking_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
                     }
                   ]
                 }
@@ -3061,7 +3163,8 @@
                   }
                 }
               ],
-              "SAME_EVENT_REPLAY": []
+              "SAME_EVENT_REPLAY": [],
+              "APP_GATE_REJECTED": []
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"data\":\"🏡 펫스윗홈 순위 🏡\\n따라 따라 다~🎵 따라 라리 라라~🎵\\n(펫스윗 홈의 평수 순위입니다)\\n\\n1위 [🥇호이] : 🏡 호이집(+7💕)[+30평]\",\"outboxId\":\"601\",\"rowCount\":1}",
@@ -3070,7 +3173,8 @@
               "SOURCE_DOMAIN_DML_ZERO": "{\"data\":\"🏡 펫스윗홈 순위 🏡\\n따라 따라 다~🎵 따라 라리 라라~🎵\\n(펫스윗 홈의 평수 순위입니다)\\n\\n1위 [🥇호이] : 🏡 호이집(+7💕)[+30평]\",\"outboxId\":\"601\",\"rowCount\":1}",
               "RESTART_CONSISTENCY": "{\"data\":\"🏡 펫스윗홈 순위 🏡\\n따라 따라 다~🎵 따라 라리 라라~🎵\\n(펫스윗 홈의 평수 순위입니다)\\n\\n1위 [🥇호이] : 🏡 호이집(+7💕)[+30평]\",\"outboxId\":\"601\",\"rowCount\":1}",
               "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
-              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 home_ranking_read\",\"outboxId\":\"601\",\"rowCount\":1}"
+              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 home_ranking_read\",\"outboxId\":\"601\",\"rowCount\":1}",
+              "APP_GATE_REJECTED": "APP_GATE_REJECTED_NO_CALL"
             }
           }
         ]
@@ -3088,16 +3192,17 @@
         ],
         "riskScenarios": [
           "ROLLBACK",
-          "SAME_EVENT_REPLAY"
+          "SAME_EVENT_REPLAY",
+          "APP_GATE_REJECTED"
         ],
         "consumers": [
           {
             "consumerId": "runtime-dispatch-e54fc7fbded287c6",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 0,
-              "end": 265287,
-              "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+              "start": 178809,
+              "end": 179485,
+              "sha256": "bd175c60511b8ffd6d7403da42eeba5b5e9ef1f0b5a3195ec8d985425c992e98",
               "needle": "home_furniture_rank_read",
               "symbol": "handlerKey=home_furniture_rank_read",
               "triggerOrPredicate": "handlerKey=home_furniture_rank_read",
@@ -3174,6 +3279,13 @@
                 "externalUserId": "rank-user",
                 "destinationId": "rank-room",
                 "message": "/가구순위"
+              },
+              "APP_GATE_REJECTED": {
+                "eventId": "wave9-runtime-dispatch-e54fc7fbded287c6-app_gate_rejected",
+                "externalUserId": "rank-user",
+                "destinationId": "rank-room",
+                "message": "/가구순위",
+                "duplicate": true
               }
             },
             "queryPlanByScenario": {
@@ -3410,6 +3522,22 @@
                         "outboxId": "601",
                         "rowCount": 1
                       }
+                    }
+                  ]
+                }
+              ],
+              "APP_GATE_REJECTED": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/가구순위"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "HOME_FURNITURE_RANK_READ",
+                      "handler_key": "home_furniture_rank_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
                     }
                   ]
                 }
@@ -3690,7 +3818,8 @@
                   }
                 }
               ],
-              "SAME_EVENT_REPLAY": []
+              "SAME_EVENT_REPLAY": [],
+              "APP_GATE_REJECTED": []
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"data\":\"🛌 펫스윗홈 배치가구 순위 🛌\\n(펫하우스 배치 가구매력 기준입니다.)\\n\\n🥇. [🥇호이] : 별빛침대(+9,000💕)[로열 루미에르]\",\"outboxId\":\"601\",\"rowCount\":1}",
@@ -3699,7 +3828,8 @@
               "SOURCE_DOMAIN_DML_ZERO": "{\"data\":\"🛌 펫스윗홈 배치가구 순위 🛌\\n(펫하우스 배치 가구매력 기준입니다.)\\n\\n🥇. [🥇호이] : 별빛침대(+9,000💕)[로열 루미에르]\",\"outboxId\":\"601\",\"rowCount\":1}",
               "RESTART_CONSISTENCY": "{\"data\":\"🛌 펫스윗홈 배치가구 순위 🛌\\n(펫하우스 배치 가구매력 기준입니다.)\\n\\n🥇. [🥇호이] : 별빛침대(+9,000💕)[로열 루미에르]\",\"outboxId\":\"601\",\"rowCount\":1}",
               "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
-              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 home_furniture_rank_read\",\"outboxId\":\"601\",\"rowCount\":1}"
+              "SAME_EVENT_REPLAY": "{\"data\":\"저장된 home_furniture_rank_read\",\"outboxId\":\"601\",\"rowCount\":1}",
+              "APP_GATE_REJECTED": "APP_GATE_REJECTED_NO_CALL"
             }
           }
         ]
@@ -3723,6 +3853,14 @@
         "scenarioKind": "SAME_EVENT_REPLAY"
       },
       {
+        "consumerId": "runtime-dispatch-465e4b3a15c003dc",
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "harnessCaseId": "case:rank-cumulative-level",
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "scenarioId": "scenario:app-gate-rejected",
+        "scenarioKind": "APP_GATE_REJECTED"
+      },
+      {
         "consumerId": "runtime-dispatch-9db5e3e6c256b5fa",
         "harnessId": "harness:object-db-executable-parity:wave9",
         "harnessCaseId": "case:rank-cumulative-like",
@@ -3737,6 +3875,14 @@
         "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
         "scenarioId": "scenario:same-event-replay",
         "scenarioKind": "SAME_EVENT_REPLAY"
+      },
+      {
+        "consumerId": "runtime-dispatch-9db5e3e6c256b5fa",
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "harnessCaseId": "case:rank-cumulative-like",
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "scenarioId": "scenario:app-gate-rejected",
+        "scenarioKind": "APP_GATE_REJECTED"
       },
       {
         "consumerId": "runtime-dispatch-eaa906ea249408a5",
@@ -3755,6 +3901,14 @@
         "scenarioKind": "SAME_EVENT_REPLAY"
       },
       {
+        "consumerId": "runtime-dispatch-eaa906ea249408a5",
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "harnessCaseId": "case:rank-overall",
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "scenarioId": "scenario:app-gate-rejected",
+        "scenarioKind": "APP_GATE_REJECTED"
+      },
+      {
         "consumerId": "runtime-dispatch-e02f58bf27070ab0",
         "harnessId": "harness:object-db-executable-parity:wave9",
         "harnessCaseId": "case:rank-home",
@@ -3771,6 +3925,14 @@
         "scenarioKind": "SAME_EVENT_REPLAY"
       },
       {
+        "consumerId": "runtime-dispatch-e02f58bf27070ab0",
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "harnessCaseId": "case:rank-home",
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "scenarioId": "scenario:app-gate-rejected",
+        "scenarioKind": "APP_GATE_REJECTED"
+      },
+      {
         "consumerId": "runtime-dispatch-e54fc7fbded287c6",
         "harnessId": "harness:object-db-executable-parity:wave9",
         "harnessCaseId": "case:rank-furniture",
@@ -3785,6 +3947,14 @@
         "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
         "scenarioId": "scenario:same-event-replay",
         "scenarioKind": "SAME_EVENT_REPLAY"
+      },
+      {
+        "consumerId": "runtime-dispatch-e54fc7fbded287c6",
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "harnessCaseId": "case:rank-furniture",
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "scenarioId": "scenario:app-gate-rejected",
+        "scenarioKind": "APP_GATE_REJECTED"
       }
     ],
     "riskNotes": [
