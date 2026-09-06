@@ -84,16 +84,16 @@ describe("object DB executable parity Wave7 service-chain cohort", () => {
       );
     assert.equal(ledger.coverage.manifestConsumers, 1111);
     assert.equal(ledger.coverage.ledgerEntries, 1111);
-    assert.equal(ledger.coverage.provenConsumers, 14);
-    assert.equal(ledger.coverage.unprovenConsumers, 1097);
-    assert.equal(ledger.coverage.directPassConsumers, 14);
+    assert.equal(ledger.coverage.provenConsumers, 18);
+    assert.equal(ledger.coverage.unprovenConsumers, 1093);
+    assert.equal(ledger.coverage.directPassConsumers, 18);
     assert.equal(ledger.coverage.equivalentPassConsumers, 0);
     assert.deepEqual(ledger.coverage.verdicts, {
-      STATIC_ONLY: 545,
+      STATIC_ONLY: 541,
       BLOCKED_DYNAMIC: 552,
       BLOCKED_REGISTRY_MISMATCH: 0,
       PARTIAL: 0,
-      DIRECT_PASS: 14,
+      DIRECT_PASS: 18,
       EQUIVALENT_PASS: 0,
     });
     assert.equal(ledger.coverage.registrySourceMismatchCount, 8);
