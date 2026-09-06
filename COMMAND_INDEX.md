@@ -1416,6 +1416,9 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/src/admin/server-stats-service.ts`
 - `개발환경_고도화/runtime/src/player/player-overall-rank-read-service.ts`
 - `개발환경_고도화/runtime/src/player/admin-player-info-read-service.ts`
 - `개발환경_고도화/runtime/src/player/maria-profile-repository.ts`
@@ -1664,7 +1667,9 @@ Status: VERIFIED
 ## Related Helpers
 
 - `ensureGuildShop`
-- `numberWithCommas`
+- `isServerStatsCommand`
+- `projectLegacyMemberStats`
+- `formatServerStats`
 
 ## Data Usage
 
@@ -5279,10 +5284,13 @@ Status: VERIFIED
 ## Data Usage
 
 - `data.member[*].server`
+- 활성 `legacy_snapshot_sets`의 `legacy_source_snapshots(source_code='member')`
+- `admin_server_stat_snapshot_sets`, `admin_server_stat_snapshot_rows`
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- 원본 member snapshot은 읽기 전용
+- 결과 snapshot, operation, command audit, outbox는 한 transaction에서 기록
 
 ## Related Commands
 
@@ -5293,6 +5301,9 @@ Status: VERIFIED
 
 - Aggregates server-name distribution from member profiles
 - Missing or blank `member.server` values are folded into unknown counts
+- 실제 Iris HTTP ingress에서 정확한 `/서버통계`만 후보로 등록하며 주입된 `prod`/`dev` 환경을 사용
+- 현대 경로는 레거시보다 강한 `stats.server.read` 활성 역할 및 deny override 권한을 적용
+- event replay fingerprint는 환경·메시지·actor·channel·destination을 고정
 
 ---
 
