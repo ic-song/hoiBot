@@ -69,7 +69,7 @@ try {
   } finally { Pop-Location }
   $productionAfter = @(Get-NetTCPConnection -State Listen -LocalPort 3306 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
   if (Compare-Object $productionBefore $productionAfter) { throw "Production 3306 listener changed" }
-  $success = "WAVE10_ISOLATED_MARIADB_PASS consumers=3 actualHttpIngress=true concurrency=3 rollback=3 pendingForUpdateObserved=true oneWriterReplay=true persistedRollbackZero=true production3306Unchanged=true"
+  $success = "WAVE10_ISOLATED_MARIADB_PASS consumers=3 actualHttpIngress=true concurrency=3 rollback=3 pendingForUpdateObserved=true secondCallBlocked=true singleWriterPersisted=true persistedRollbackZero=true production3306Unchanged=true"
 } finally {
   $errors = [Collections.Generic.List[string]]::new()
   try { Stop-Isolated } catch { $errors.Add($_.Exception.Message) }

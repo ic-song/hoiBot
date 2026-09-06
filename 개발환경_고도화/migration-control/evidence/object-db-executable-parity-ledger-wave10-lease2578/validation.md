@@ -2,6 +2,9 @@
 
 - fixture generation: PASS (3 consumer, 15 receipt binding, 18 risk binding)
 - focused Wave10: 6/6 PASS
+- strict ledger: AJV 2020-12 schema/receipt strict PASS, 1,111/1,111 ID, missing·duplicate·unknown 0, direct PASS 26
+- strict entry set: `067012414cc94318e9e3ad28eefcc458dc8bc73837cfe6418d52563fba65a48f`
+- combined Wave0~10 (`--test-concurrency=1`): 11 suites, 39/39 PASS
 - prior receipt: 119 exact prefix/hash/identity 보존, total 134 unique
 - transaction: 정상 DML5, restart DML10, BEGIN/COMMIT 및 lockOrder 비교
 - negative: query/DML0, app duplicate·wrong channel은 routing 이후 service DML0
@@ -10,4 +13,10 @@
 - probability: 13종, 합계 100
 - BIGINT: 64-bit 초과 listing/instance 식별자 보존
 - typecheck: PASS
+- object data model contract: 등록 대상 103개 PASS
+- build / diff check: PASS
+- independent canonical oracle: committed SQL/params/raw rows/result/output vector와 실제 service capture byte-exact PASS
+- isolated MariaDB 3330: 실제 Fastify Iris HTTP ingress 및 3 consumer InnoDB concurrency/rollback 7/7 PASS
+- 실제 lock: 첫 transaction audit trigger 보유 중 둘째 동일 event 호출이 완료되지 않음을 관찰, 최종 operation/execution 각 1행
+- 실제 rollback: audit 중간 실패 뒤 operations/outbox/executions/audit 모두 0행, 3306 listener 불변
 - full suite/T3: 최종 단계 전이므로 실행하지 않음

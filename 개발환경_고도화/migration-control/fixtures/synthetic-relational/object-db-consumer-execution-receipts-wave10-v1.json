@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "91e266f03b170baaa1d5ca80ebbac305796514af",
+  "evidenceCommit": "bcaedf23af156cb4d26f3983d2e7eca15ed573e2",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -8987,7 +8987,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:read-positive",
@@ -9054,7 +9054,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "a140c4efbc8c877342e683a813bfab5904f8ceb341714b6565ad66a673b65f7f"
+      "receiptSha256": "7382393f437f0569f6be7f61b5f48047cc8a0eb13a8eaddcfd707ed0a907076b"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:negative_guard",
@@ -9075,7 +9075,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:negative-guard",
@@ -9120,7 +9120,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "869e1b2362938833e19a369e6d5b8f11f2047aed20c5f6910f8a67577fcb1953"
+      "receiptSha256": "8d78a1c773101008a37b05ba8ec66848c2ad899b499d242ce2b654477f6db773"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:exact_output",
@@ -9141,7 +9141,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:exact-output",
@@ -9208,7 +9208,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "9a57ec33884867eee96899b2cf2a69a4350aa9844a1c9d61b40def46c61139b8"
+      "receiptSha256": "0b0cf63035daa1644db78882f6024afbe04982129dd1cb7769af969399aab2d7"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:source_domain_dml_zero",
@@ -9229,7 +9229,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:source-domain-dml-zero",
@@ -9296,7 +9296,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "b81fbbd3629c7c0ac05c6a11b78ffeb398a3d2f5b431ecead368226348342039"
+      "receiptSha256": "aaeb5890ec023d2dab9de1493b1355e717352af28df54835a4b892115df0a233"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:restart_consistency",
@@ -9317,7 +9317,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:restart-consistency",
@@ -9396,7 +9396,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "9056e1287ee88eddead62cd890b3fb26e6d1fdcf64a626ab3d9e4501f9e12a8c"
+      "receiptSha256": "4efd4f9933e4c68e699d2cd14f607959ebfd8761e4fe7a3e9356eeecb0388561"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:read_positive",
@@ -9417,7 +9417,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:read-positive",
@@ -9494,7 +9494,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "e77ad3adaa1a305acca7874aa475fe725bd3e5005027f726245ccfd545263031"
+      "receiptSha256": "a1860f9bce4201bb0efd6be7676583ded9a058edccbb46e6882e796025372214"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:negative_guard",
@@ -9515,7 +9515,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:negative-guard",
@@ -9560,7 +9560,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "1c608f2e8da8a2afc1ea43f2358edbaa7163fa94d005f7456b6a592ec2f1e1c7"
+      "receiptSha256": "c8a944036b57c22b8040d06905426bc2d2e231e4bbd7bb76ea2a3983e5c2d8fb"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:exact_output",
@@ -9581,7 +9581,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:exact-output",
@@ -9658,7 +9658,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d8f41fb49ad65f03db724fec2751dcb26a486d9bd5515a91f2d4f8fe45a91e65"
+      "receiptSha256": "de105d3fded4ac3de39e23caa0fceff1da3bc20558725ce5dcdca2513f949f09"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:source_domain_dml_zero",
@@ -9679,7 +9679,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:source-domain-dml-zero",
@@ -9756,7 +9756,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "ebe9dd7120a3d9bb0dda9284f84b2248520069885c6835ad8241f203847b91f4"
+      "receiptSha256": "f4270fc71e6de92bd7659769ee0ab295d68c07013bd0fc312225e1c9ea0af675"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:restart_consistency",
@@ -9777,7 +9777,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:restart-consistency",
@@ -9866,7 +9866,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f34b91793f15582aa81911e7705a493130add85cef5161d74c412d4739b5c257"
+      "receiptSha256": "35ecc7a411e399af04293820c3621b5cb5604e8263d3ef37d49726f6e50fd967"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:read_positive",
@@ -9887,7 +9887,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:read-positive",
@@ -9950,7 +9950,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "022c961f7a86296b23263df9a6491fa8db90c706eb9f6b99f9793dab5a7ff11e"
+      "receiptSha256": "2d8ef6968fcf1d1979353b402c8f1e601900bb04105188b93abb2fc3928a02ae"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:negative_guard",
@@ -9971,7 +9971,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:negative-guard",
@@ -10016,7 +10016,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "3ede9ae303f717b3ebbacd948e1cefbbb544327247cde6f474436d9b83efca4d"
+      "receiptSha256": "46366c7613aab1dbc7e6c4ea06cf7e62a4468a5ccff5a93985fbbf375edc69d6"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:exact_output",
@@ -10037,7 +10037,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:exact-output",
@@ -10100,7 +10100,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d8cedf8a1474455444da1f508abe1e0f89889d7b7b5eec0bd8600fc2fb3168a0"
+      "receiptSha256": "3a8684ac64c959546fd85ddc72273183f08283c4c599c81c1a5d485aa03b4e64"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:source_domain_dml_zero",
@@ -10121,7 +10121,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:source-domain-dml-zero",
@@ -10184,7 +10184,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "b2c8f3ff9b5c896b3beb4a772c77275f0475790c03788375626598c5e0db9837"
+      "receiptSha256": "c8d36347c586eff15b2a16bc1abd0b8cb8b321f0c9a42685748c87852afd93dc"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:restart_consistency",
@@ -10205,7 +10205,7 @@
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
         "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
-        "exportName": "executeWave9RankChain"
+        "exportName": "executeWave10PendantRead"
       },
       "scenario": {
         "scenarioId": "scenario:restart-consistency",
@@ -10280,7 +10280,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "39966715f78cd1c192d8b084a9e1fd369edb02c1f861d9ab1c0f245db0e69cd7"
+      "receiptSha256": "d89fe37928763f55955482aff999d7921ed15e3fac3446f2b26149ba52489e9b"
     }
   ]
 }

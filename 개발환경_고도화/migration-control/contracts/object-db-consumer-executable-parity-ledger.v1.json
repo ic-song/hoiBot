@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "e22cfdf87f24f3e41b1ce3584749b4a99438adc3",
+  "evidenceCommit": "bcaedf23af156cb4d26f3983d2e7eca15ed573e2",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "b11b60649e12bb63bc7cb6ab5d58f2c1bb260e3b786ca4eb736822e20118483e"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave9-v1.json",
-      "sha256": "42d1a445a295a15a57b77003c08476bade3d2208473933bbcceeb0b8b9b10525"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave10-v1.json",
+      "sha256": "ac69ab484fac33e4b540335d54b3c8ef45153c60461de116a36a965cd3aa87dd"
     },
     "classificationSources": [
       {
@@ -63,16 +63,16 @@
     "registrySourceMismatchCount": 8,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 8,
-    "provenConsumers": 23,
-    "unprovenConsumers": 1088,
-    "directPassConsumers": 23,
+    "provenConsumers": 26,
+    "unprovenConsumers": 1085,
+    "directPassConsumers": 26,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 536,
+      "STATIC_ONLY": 533,
       "BLOCKED_DYNAMIC": 552,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 23,
+      "DIRECT_PASS": 26,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -78534,22 +78534,22 @@
         "sourceSpanSha256": "6b87546eb5fbf51168d5e1576658c286b47aa7635709ee60ccea5cbe08d3543d",
         "classificationSha256": "99a17c5507bb4d435951791c1cfe6f883c5f2fd6fc646526c21f278745baaa9a"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
+        "sha256": "9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
+        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
+        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "exportName": "executeWave10PendantRead"
       },
       "scenarioRequirements": [
         {
@@ -78598,11 +78598,347 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:pendant-probability",
+          "attributedConsumerIds": [
+            "runtime-dispatch-19076db78c2eefb9"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "actualSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+              "actualSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+              "actualSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:pendant-probability",
+          "attributedConsumerIds": [
+            "runtime-dispatch-19076db78c2eefb9"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:pendant-probability",
+          "attributedConsumerIds": [
+            "runtime-dispatch-19076db78c2eefb9"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "actualSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+              "actualSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+              "actualSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:pendant-probability",
+          "attributedConsumerIds": [
+            "runtime-dispatch-19076db78c2eefb9"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "actualSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b5861fb41b9498d7a99e77b922eba7713699b88aee08d1da542c758f06d64b14",
+              "actualSha256": "b5861fb41b9498d7a99e77b922eba7713699b88aee08d1da542c758f06d64b14",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "7d9bf525c8b5a05fb2bae8ed96f8f50d0d8db7a74692e98e3247190844cf4bd9",
+              "actualSha256": "7d9bf525c8b5a05fb2bae8ed96f8f50d0d8db7a74692e98e3247190844cf4bd9",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:pendant-probability",
+          "attributedConsumerIds": [
+            "runtime-dispatch-19076db78c2eefb9"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "actualSha256": "0d945015a35530c4b97fc466c18e76452937b4e5603cff54821a51efb0553af3",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+              "actualSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+              "actualSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave10:runtime-dispatch-19076db78c2eefb9:exact_output",
+          "receipt:wave10:runtime-dispatch-19076db78c2eefb9:negative_guard",
+          "receipt:wave10:runtime-dispatch-19076db78c2eefb9:read_positive",
+          "receipt:wave10:runtime-dispatch-19076db78c2eefb9:restart_consistency",
+          "receipt:wave10:runtime-dispatch-19076db78c2eefb9:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-19076db78c2eefb9"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
+            "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
+            "sha256": "9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
+            "sha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -80431,22 +80767,22 @@
         "sourceSpanSha256": "226be8e3cc0cf28907c0432137aaec9ba917462a9efb7c582837711879fbff62",
         "classificationSha256": "f4ade743192c0a74b4c62b36af858074447504ab4b3d8bf1660d6a4af0f55a9e"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
+        "sha256": "9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
+        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
+        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "exportName": "executeWave10PendantRead"
       },
       "scenarioRequirements": [
         {
@@ -80495,11 +80831,363 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:pendant-market-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-36d6721ade0707a6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "actualSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+              "actualSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+              "actualSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:pendant-market-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-36d6721ade0707a6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:pendant-market-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-36d6721ade0707a6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "actualSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+              "actualSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+              "actualSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:pendant-market-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-36d6721ade0707a6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "actualSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "16680d8a60ab24258d60236e007e83c60b3f4649ceaaa56bf2b8fee7d7373cc3",
+              "actualSha256": "16680d8a60ab24258d60236e007e83c60b3f4649ceaaa56bf2b8fee7d7373cc3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "8f4c441dbd1e72697f60bf896f053771c1c8999f5bb738eb820dfb3da08fcd05",
+              "actualSha256": "8f4c441dbd1e72697f60bf896f053771c1c8999f5bb738eb820dfb3da08fcd05",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:pendant-market-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-36d6721ade0707a6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "actualSha256": "323c8417e4ccc79827a0d3c0c31e7641cf266b4f2ab7ecb557c2586098be67ea",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+              "actualSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+              "actualSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave10:runtime-dispatch-36d6721ade0707a6:exact_output",
+          "receipt:wave10:runtime-dispatch-36d6721ade0707a6:negative_guard",
+          "receipt:wave10:runtime-dispatch-36d6721ade0707a6:read_positive",
+          "receipt:wave10:runtime-dispatch-36d6721ade0707a6:restart_consistency",
+          "receipt:wave10:runtime-dispatch-36d6721ade0707a6:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-36d6721ade0707a6"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
+            "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
+            "sha256": "9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
+            "sha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -86472,22 +87160,22 @@
         "sourceSpanSha256": "6fa942e55a7bc77355edec1459e824b7c2820b1bd79e379a2914402ba01505d4",
         "classificationSha256": "b86dabd47ddf741fdf552a5f31757fab145253730c8781a06db56117dd6be9f0"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
+        "sha256": "9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
+        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
+        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "exportName": "executeWave10PendantRead"
       },
       "scenarioRequirements": [
         {
@@ -86536,11 +87224,403 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:pendant-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-8c6c3c3d598fe078"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "actualSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+              "actualSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+              "actualSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:pendant-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-8c6c3c3d598fe078"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:pendant-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-8c6c3c3d598fe078"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "actualSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+              "actualSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+              "actualSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:pendant-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-8c6c3c3d598fe078"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "actualSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "6d826a5614eb90c637719d10fe926d3974a8d041bd70cf18aa1aa0df94f472f9",
+              "actualSha256": "6d826a5614eb90c637719d10fe926d3974a8d041bd70cf18aa1aa0df94f472f9",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "9497c21d7bb92602e03482a7ff9235e04d555ee18981a4c12508c13835d71d9c",
+              "actualSha256": "9497c21d7bb92602e03482a7ff9235e04d555ee18981a4c12508c13835d71d9c",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:pendant-info",
+          "attributedConsumerIds": [
+            "runtime-dispatch-8c6c3c3d598fe078"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "actualSha256": "3b1cb9bf7b12c7689387c07963ad62c5e42a34cf048d67a3088a3e9542b8ac09",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+              "actualSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+              "actualSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles",
+                "operations",
+                "inventory_instances",
+                "item_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:exact_output",
+          "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:negative_guard",
+          "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:read_positive",
+          "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:restart_consistency",
+          "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-8c6c3c3d598fe078"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
+            "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
+            "sha256": "9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
+            "sha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -105249,5 +106329,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "7a955fff591285d0c087f6884f50e89f1d40108fbe69a0780834be0585c7a2e9"
+  "entrySetSha256": "067012414cc94318e9e3ad28eefcc458dc8bc73837cfe6418d52563fba65a48f"
 }
