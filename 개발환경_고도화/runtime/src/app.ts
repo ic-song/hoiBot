@@ -388,7 +388,6 @@ export interface AppDependencies {
     deleted: { processed: number; failed: number };
   }>;
   purgeRetainedEventContent?: () => Promise<number>;
-  observeServiceInvocation?: (handlerKey: string) => void;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -448,18 +447,6 @@ function normalizeHomeFurnitureMutationDispatchMessage(message: string): string 
   if (isHomeFurnitureAddCandidate(message)) return normalizeHomeFurnitureAddDispatchMessage(message);
   if (isHomeFurnitureRemoveCandidate(message)) return normalizeHomeFurnitureRemoveDispatchMessage(message);
   return message;
-}
-
-// 가구정보 서비스의 실제 진입점을 테스트 관찰과 함께 한 경계로 유지합니다.
-async function invokeHomeFurnitureInfoRead(database: DatabaseClient, observe: AppDependencies["observeServiceInvocation"], input: Parameters<HomeFurnitureInfoReadService["read"]>[0]) {
-  observe?.("home_furniture_info_read");
-  return new HomeFurnitureInfoReadService(database).read(input);
-}
-
-// 가구통계 서비스의 실제 진입점을 테스트 관찰과 함께 한 경계로 유지합니다.
-async function invokeHomeFurnitureStatsRead(database: DatabaseClient, observe: AppDependencies["observeServiceInvocation"], input: Parameters<HomeFurnitureStatsReadService["read"]>[0]) {
-  observe?.("home_furniture_stats_read");
-  return new HomeFurnitureStatsReadService(database).read(input);
 }
 
 function createTokenGuard(config: AppConfig) {
@@ -2792,7 +2779,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_info_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result=await invokeHomeFurnitureInfoRead(database!,dependencies.observeServiceInvocation,{eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        const result=await new HomeFurnitureInfoReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
         if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
@@ -3111,7 +3098,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureStatsReadCommand(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_stats_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result=await invokeHomeFurnitureStatsRead(database!,dependencies.observeServiceInvocation,{eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
+        const result=await new HomeFurnitureStatsReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
 
