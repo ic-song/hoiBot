@@ -54,9 +54,9 @@ describe("object DB executable parity Wave6 ordered multi-query cohort", () => {
     const receipts = readJson("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave6-v1.json");
     assert.equal(ledger.coverage.manifestConsumers, 1111);
     assert.equal(ledger.coverage.ledgerEntries, 1111);
-    assert.equal(ledger.coverage.provenConsumers, 11);
-    assert.equal(ledger.coverage.unprovenConsumers, 1100);
-    assert.equal(ledger.coverage.directPassConsumers, 11);
+    assert.equal(ledger.coverage.provenConsumers, 14);
+    assert.equal(ledger.coverage.unprovenConsumers, 1097);
+    assert.equal(ledger.coverage.directPassConsumers, 14);
     assert.equal(ledger.coverage.registrySourceMismatchCount, 8);
     assert.equal(receipts.receipts.length, 55);
     for (const consumerId of consumerIds) {

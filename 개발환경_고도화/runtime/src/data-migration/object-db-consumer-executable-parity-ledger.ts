@@ -23,6 +23,7 @@ const OBJECT_DB_PARITY_WAVE3_PLAYER_TARGET_PATH = "개발환경_고도화/runtim
 const OBJECT_DB_PARITY_WAVE4_PET_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs" as const;
 const OBJECT_DB_PARITY_WAVE5_PLACED_FURNITURE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs" as const;
 const OBJECT_DB_PARITY_WAVE6_MULTI_QUERY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave6-multi-query.mjs" as const;
+const OBJECT_DB_PARITY_WAVE7_SERVICE_CHAIN_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave7-service-chain.mjs" as const;
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
   "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
@@ -581,6 +582,20 @@ export function assertTrustedWave6ConsumerFixtureMapping(consumerId:string,consu
   if(sha256CanonicalJson(consumer.queryRowsByScenario)!==trusted.rows||sha256CanonicalJson(consumer.expectedResultsByScenario)!==trusted.results)throw new Error(`${consumerId} trusted Wave6 rows/result drift`);
 }
 
+const TRUSTED_WAVE7_SERVICE_CHAINS = {
+  "runtime-dispatch-f53934feccdd6d39": { caseId:"case:point-shop-catalog-read-chain", executablePath:"PointShopCatalogIrisHandler.execute→PointShopCatalogService.read→MariaPointShopCatalogRepository.readSnapshot", hash:"bb9ac2a46f058c6d176c55bfee0d49752dec4fd8b6e3531750489c9db1ae4ae3" },
+  "runtime-dispatch-f024a0ae45b58a2a": { caseId:"case:package-bag-chain", executablePath:"PackageIrisCommandHandler.execute→PackageCommandService.execute→CurrentPackageHubApplication.listBag", hash:"0f74e8f8d9e5ff1a184711947e4e9d98cf45c5a2250e291cae6ffcd5d18eb1fb" },
+  "runtime-dispatch-e45c1c15e08c165a": { caseId:"case:package-wizard-guide-chain", executablePath:"PackageCatalogAddWizardIrisHandler.execute→PackageCatalogAddWizardService.execute→MariaDbPackageCatalogAddWizardRepository.findReplay", hash:"dfaae37f4513d77aa4e1e88275648ed2ce4b5f8a798b0cb40a928cfee5c5f5aa" },
+} as const;
+
+export function assertTrustedWave7ConsumerFixtureMapping(consumerId:string,consumer:Record<string,unknown>,manifestConsumer:ConsumerManifestInput["consumers"][number]):void{
+  const trusted=TRUSTED_WAVE7_SERVICE_CHAINS[consumerId as keyof typeof TRUSTED_WAVE7_SERVICE_CHAINS];
+  if(!trusted)return;
+  const locator=consumer.sourceLocator as Record<string,unknown>|undefined;
+  const exact={file:manifestConsumer.file,symbol:manifestConsumer.symbol,triggerOrPredicate:manifestConsumer.triggerOrPredicate,interfaceId:manifestConsumer.interfaceId,start:manifestConsumer.sourceSpan.start,end:manifestConsumer.sourceSpan.end,sha256:manifestConsumer.sourceSpan.sha256};
+  if(!locator||JSON.stringify(locator)!==JSON.stringify(exact)||consumer.consumerId!==consumerId||consumer.frozenSourceCommit!=="3e5cbd48ba94f23277adbb2327fab6c93c6a25b9"||sha256CanonicalJson(consumer)!==trusted.hash)throw new Error(`${consumerId} trusted Wave7 service-chain contract drift`);
+}
+
 function assertTrustedWave1FixtureBinding(
   receipt: ObjectDbConsumerExecutionReceipt,
   fixtureText: string,
@@ -592,6 +607,22 @@ function assertTrustedWave1FixtureBinding(
   if (trusted === undefined) {
     const wave2 = TRUSTED_WAVE2_COMPATIBILITY_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE2_COMPATIBILITY_READS];
     if (wave2 === undefined) {
+      const wave7=TRUSTED_WAVE7_SERVICE_CHAINS[receipt.consumerId as keyof typeof TRUSTED_WAVE7_SERVICE_CHAINS];
+      if(wave7!==undefined){
+        if(receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE7_SERVICE_CHAIN_TARGET_PATH||receipt.invocation.exportName!=="executeWave7ServiceChain")throw new Error(`${receipt.receiptId} trusted Wave7 invocation target drift`);
+        const fixture=JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as {payload?:{cases?:Array<{caseId?:string;executablePath?:string;transactionPath?:string;consumers?:Array<Record<string,unknown>>}>}};
+        const parityCase=fixture.payload?.cases?.find(({caseId})=>caseId===receipt.harness.harnessCaseId),consumer=parityCase?.consumers?.find(candidate=>candidate.consumerId===receipt.consumerId);
+        if(parityCase?.caseId!==wave7.caseId||parityCase.executablePath!==wave7.executablePath||parityCase.transactionPath!=="DatabaseClient.query:READ_ONLY"||!consumer)throw new Error(`${receipt.receiptId} trusted Wave7 case/path binding drift`);
+        assertTrustedWave7ConsumerFixtureMapping(receipt.consumerId,consumer,manifestConsumer);
+        const frozenCommit=consumer.frozenSourceCommit as string,locator=consumer.sourceLocator as Record<string,unknown>,current=consumer.currentDispatchLocator as Record<string,unknown>,chains=consumer.chainLocators as Array<Record<string,unknown>>;
+        try{execFileSync("git",["merge-base","--is-ancestor",frozenCommit,evidenceCommit],{cwd:repositoryRoot,stdio:"ignore"});}catch{throw new Error(`${receipt.receiptId} frozen source commit is not evidence ancestor`);}
+        const frozenBlob=readCommitBlob(repositoryRoot,frozenCommit,locator.file as string);
+        if(sha256CanonicalText(canonicalizeObjectDbConsumerSourceText(frozenBlob).slice(locator.start as number,locator.end as number))!==locator.sha256)throw new Error(`${receipt.receiptId} frozen dispatch span hash drift`);
+        const currentBlob=readCommitBlob(repositoryRoot,evidenceCommit,current.file as string);
+        if(sha256CanonicalText(canonicalizeObjectDbConsumerSourceText(currentBlob).slice(current.start as number,current.end as number))!==current.sha256||current.sha256!==locator.sha256)throw new Error(`${receipt.receiptId} current dispatch span hash drift`);
+        for(const chain of chains){const blob=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,evidenceCommit,chain.file as string)),span=blob.slice(chain.start as number,chain.end as number);if(sha256CanonicalText(span)!==chain.sha256||typeof chain.needle!=="string"||!span.includes(chain.needle))throw new Error(`${receipt.receiptId} downstream service-chain span drift`);}
+        return;
+      }
       if(receipt.consumerId==="sql-repository-7367fce7053551f3"||receipt.consumerId==="sql-repository-3001ad9fc2f36d01"){
         const expectedExport=receipt.consumerId==="sql-repository-7367fce7053551f3"?"executeWave6ResolveSelf":"executeWave6BagCompare",expectedCase=receipt.consumerId==="sql-repository-7367fce7053551f3"?"MariaPlayerContextProvider.resolveSelf":"BagShadowParityProvider.compare";if(receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE6_MULTI_QUERY_TARGET_PATH||receipt.invocation.exportName!==expectedExport)throw new Error(`${receipt.receiptId} trusted Wave6 invocation target drift`);const fixture=JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as {payload?:{cases?:Array<{caseId?:string;executablePath?:string;transactionPath?:string;consumers?:Array<Record<string,unknown>>}>}},parityCase=fixture.payload?.cases?.find(({caseId})=>caseId===receipt.harness.harnessCaseId),consumer=parityCase?.consumers?.find(candidate=>candidate.consumerId===receipt.consumerId);if(parityCase?.executablePath!==expectedCase||parityCase.transactionPath!=="DatabaseClient.query:READ_ONLY"||!consumer)throw new Error(`${receipt.receiptId} trusted Wave6 case/path binding drift`);assertTrustedWave6ConsumerFixtureMapping(receipt.consumerId,consumer,manifestConsumer);const locator=consumer.sourceLocator as Record<string,unknown>,sourceBlob=readCommitBlob(repositoryRoot,evidenceCommit,locator.file as string);if(sha256CanonicalText(canonicalizeObjectDbConsumerSourceText(sourceBlob).slice(locator.start as number,locator.end as number))!==locator.sha256)throw new Error(`${receipt.receiptId} evidenceCommit source span hash drift`);return;
       }
@@ -716,23 +747,23 @@ function assertReceiptExecutableBinding(
       assertExactKeys(query, ["channel", "normalizedSql", "values", "rowCount"], `${receipt.receiptId}.trace.queryTrace[${index}]`);
       if (query.channel !== "query" || typeof query.normalizedSql !== "string" || !Array.isArray(query.values) || !Number.isSafeInteger(query.rowCount) || (query.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
     }
-    if (receipt.consumerId === "sql-repository-7367fce7053551f3" || receipt.consumerId === "sql-repository-3001ad9fc2f36d01") {
+    if (receipt.consumerId === "sql-repository-7367fce7053551f3" || receipt.consumerId === "sql-repository-3001ad9fc2f36d01" || receipt.consumerId in TRUSTED_WAVE7_SERVICE_CHAINS) {
       const fixturePayload = isRecord(fixture.payload) ? fixture.payload : undefined;
       const cases = fixturePayload !== undefined && Array.isArray(fixturePayload.cases) ? fixturePayload.cases : [];
       const parityCase = cases.find((candidate) => isRecord(candidate) && candidate.caseId === receipt.harness.harnessCaseId);
       const consumers = isRecord(parityCase) && Array.isArray(parityCase.consumers) ? parityCase.consumers : [];
       const consumer = consumers.find((candidate) => isRecord(candidate) && candidate.consumerId === receipt.consumerId);
-      if (!isRecord(consumer) || !Array.isArray(consumer.orderedQueries) || !isRecord(consumer.queryRowsByScenario)) throw new Error(`${receipt.receiptId} trusted Wave6 query trace fixture invalid`);
+      if (!isRecord(consumer) || !Array.isArray(consumer.orderedQueries) || !isRecord(consumer.queryRowsByScenario)) throw new Error(`${receipt.receiptId} trusted ordered-query trace fixture invalid`);
       const orderedQueries = consumer.orderedQueries;
       const scenarioRows = consumer.queryRowsByScenario[receipt.scenario.scenarioKind];
-      if (!Array.isArray(scenarioRows)) throw new Error(`${receipt.receiptId} trusted Wave6 scenario rows invalid`);
+      if (!Array.isArray(scenarioRows)) throw new Error(`${receipt.receiptId} trusted ordered-query scenario rows invalid`);
       const oneExecution = scenarioRows.map((rows, index) => {
         const query = orderedQueries[index];
-        if (!Array.isArray(rows) || !isRecord(query) || typeof query.expectedNormalizedSql !== "string" || !Array.isArray(query.expectedQueryValues)) throw new Error(`${receipt.receiptId} trusted Wave6 query trace plan invalid`);
+        if (!Array.isArray(rows) || !isRecord(query) || typeof query.expectedNormalizedSql !== "string" || !Array.isArray(query.expectedQueryValues)) throw new Error(`${receipt.receiptId} trusted ordered-query trace plan invalid`);
         return { channel: "query", normalizedSql: query.expectedNormalizedSql, values: query.expectedQueryValues, rowCount: rows.length };
       });
       const expectedTrace = receipt.scenario.scenarioKind === "RESTART_CONSISTENCY" ? [...oneExecution, ...oneExecution] : oneExecution;
-      if (JSON.stringify(trace.queryTrace) !== JSON.stringify(expectedTrace)) throw new Error(`${receipt.receiptId} trusted Wave6 exact query trace mismatch`);
+      if (JSON.stringify(trace.queryTrace) !== JSON.stringify(expectedTrace)) throw new Error(`${receipt.receiptId} trusted ordered-query exact query trace mismatch`);
     }
     assertStringArray(trace.normalizedStatements, `${receipt.receiptId}.trace.normalizedStatements`);
     if (!Number.isSafeInteger(trace.rowCount) || (trace.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace rowCount invalid`);

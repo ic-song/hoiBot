@@ -17,8 +17,8 @@ describe("object DB executable parity Wave1 title list-owned cohort", () => {
       manifestConsumers: 1111, ledgerEntries: 1111, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
       readConsumers: 499, mutationConsumers: 612, unresolvedDynamicConsumers: 552, unresolvedDynamicCallCount: 790,
       registrySourceMismatchCount: 8, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 8,
-      provenConsumers: 11, unprovenConsumers: 1100, directPassConsumers: 11, equivalentPassConsumers: 0,
-      verdicts: { STATIC_ONLY: 548, BLOCKED_DYNAMIC: 552, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 11, EQUIVALENT_PASS: 0 },
+      provenConsumers: 14, unprovenConsumers: 1097, directPassConsumers: 14, equivalentPassConsumers: 0,
+      verdicts: { STATIC_ONLY: 545, BLOCKED_DYNAMIC: 552, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 14, EQUIVALENT_PASS: 0 },
     });
     assert.deepEqual(ledger.entries.filter((entry: any) => entry.verdict === "DIRECT_PASS" && cohort.includes(entry.consumerId)).map((entry: any) => entry.consumerId).sort(), cohort);
     assert.equal(receipts.receipts.length, 15);

@@ -108,6 +108,13 @@ function createRunnerDatabase(consumer, scenarioKind) {
 }
 
 function mapOrderedRows(shape, rows) {
+  if (shape === "point-shop-head-row") return rows.map((row) => ({ version: BigInt(row.version) }));
+  if (shape === "point-shop-entry-row") return rows.map((row) => ({ product_id: row.productId, product_key: row.productKey, display_name: row.displayName, display_order: row.displayOrder, price: BigInt(row.price), row_version: BigInt(row.rowVersion) }));
+  if (shape === "point-shop-state-row") return rows.map((row) => ({ tax_rate_basis_points: row.taxRateBasisPoints, lord_guild_name: row.lordGuildName }));
+  if (shape === "package-player-row") return rows.map((row) => ({ player_id: row.playerId }));
+  if (shape === "package-bag-row") return rows.map((row) => ({ package_id: row.packageId, display_name: row.displayName, quantity: row.quantity, max_open_count: row.maxOpenCount }));
+  if (shape === "wizard-operator-row") return rows.map((row) => ({ operator_id: BigInt(row.operatorId) }));
+  if (shape === "wizard-replay-row") return rows.map((row) => ({ result_json: row.resultJson }));
   if (shape === "player-context-row") return rows.map((row) => ({ legacy_player_id: BigInt(row.legacyPlayerId), canonical_player_id: row.canonicalPlayerId, external_identity_id: BigInt(row.externalIdentityId), display_name: row.displayName, rank_emoji: row.rankEmoji, provider_code: row.providerCode, caller_link_id: row.callerLinkId ?? null }));
   if (shape === "bag-identity-row") return rows.map((row) => ({ legacy_player_id: BigInt(row.legacyPlayerId), display_name: row.displayName, legacy_identity_status: row.legacyIdentityStatus, canonical_player_id: row.canonicalPlayerId, crosswalk_status: row.crosswalkStatus }));
   if (shape === "legacy-stack-row") return rows.map((row) => ({ record_id: BigInt(row.recordId), display_name: row.displayName, quantity: BigInt(row.quantity), legacy_bag_order: row.legacyBagOrder === null ? null : BigInt(row.legacyBagOrder), stackable_flag: row.stackableFlag ? 1 : 0 }));
