@@ -21,9 +21,12 @@ function jsonSafe(value) {
   return value;
 }
 
-function createRunnerDatabase(consumer) {
+function createRunnerDatabase(consumer, scenarioKind) {
   const calls = [];
   const transactionEvents = [];
+  const orderedRows = consumer.queryRowsByScenario?.[scenarioKind];
+  const orderedPlan = Array.isArray(orderedRows) ? orderedRows.map((mockRows, index) => ({ ...consumer.orderedQueries[index], mockRows })) : undefined;
+  let orderedQueryIndex = 0;
   const record = (channel, sql, values, rowCount) => {
     const normalizedSql = normalizeSql(sql);
     calls.push({ channel, normalizedSql, values: jsonSafe(values), rowCount });
@@ -50,6 +53,14 @@ function createRunnerDatabase(consumer) {
       if (DML_KEYWORDS.has(keyword)) {
         record("query", sql, values, 1);
         return { affectedRows: 1n };
+      }
+      if (Array.isArray(orderedPlan)) {
+        const step = orderedPlan[orderedQueryIndex++];
+        assert(step !== undefined, `${consumer.consumerId}: unexpected extra SELECT`);
+        assert(normalizedSql === step.expectedNormalizedSql, `${consumer.consumerId}: ordered SELECT SQL drift`);
+        assert(JSON.stringify(jsonSafe(values)) === JSON.stringify(step.expectedQueryValues), `${consumer.consumerId}: ordered SELECT values drift`);
+        record("query", sql, values, step.mockRows.length);
+        return mapOrderedRows(step.rowShape, step.mockRows);
       }
       assert(normalizedSql === consumer.expectedNormalizedSql, `${consumer.consumerId}: unexpected SELECT SQL`);
       const expectedValues = consumer.expectedQueryValues ?? [consumer.input.playerId];
@@ -93,7 +104,16 @@ function createRunnerDatabase(consumer) {
       return { affectedRows: 1n, insertId: 0n };
     },
   };
-  return { database, transcript: { calls, transactionEvents } };
+  return { database, transcript: { calls, transactionEvents }, assertComplete() { if (Array.isArray(orderedPlan)) assert(orderedQueryIndex === orderedPlan.length, `${consumer.consumerId}: ordered SELECT count drift`); } };
+}
+
+function mapOrderedRows(shape, rows) {
+  if (shape === "player-context-row") return rows.map((row) => ({ legacy_player_id: BigInt(row.legacyPlayerId), canonical_player_id: row.canonicalPlayerId, external_identity_id: BigInt(row.externalIdentityId), display_name: row.displayName, rank_emoji: row.rankEmoji, provider_code: row.providerCode, caller_link_id: row.callerLinkId ?? null }));
+  if (shape === "bag-identity-row") return rows.map((row) => ({ legacy_player_id: BigInt(row.legacyPlayerId), display_name: row.displayName, legacy_identity_status: row.legacyIdentityStatus, canonical_player_id: row.canonicalPlayerId, crosswalk_status: row.crosswalkStatus }));
+  if (shape === "legacy-stack-row") return rows.map((row) => ({ record_id: BigInt(row.recordId), display_name: row.displayName, quantity: BigInt(row.quantity), legacy_bag_order: row.legacyBagOrder === null ? null : BigInt(row.legacyBagOrder), stackable_flag: row.stackableFlag ? 1 : 0 }));
+  if (shape === "canonical-stack-row") return rows.map((row) => ({ record_id: row.recordId, display_name: row.displayName, quantity: BigInt(row.quantity), legacy_bag_order: row.legacyBagOrder === null ? null : BigInt(row.legacyBagOrder), stackable_flag: row.stackableFlag ? 1 : 0 }));
+  if (shape === "canonical-instance-row") return rows.map((row) => ({ record_id: row.recordId, display_name: row.displayName }));
+  throw new Error(`unsupported ordered row shape: ${shape}`);
 }
 
 async function runWorker(inputPath, targetPath) {
@@ -108,7 +128,7 @@ async function runWorker(inputPath, targetPath) {
   const target = await import(`${pathToFileURL(targetPath).href}?worker=${process.pid}-${randomUUID()}`);
   const invoke = target[input.invocation.exportName];
   assert(typeof invoke === "function", "target export is not callable");
-  const instrumentation = createRunnerDatabase(consumer);
+  const instrumentation = createRunnerDatabase(consumer, input.binding.scenarioKind);
   const execution = await invoke({
     consumerId: input.binding.consumerId,
     harnessCaseId: input.binding.harnessCaseId,
@@ -118,6 +138,7 @@ async function runWorker(inputPath, targetPath) {
     fixturePayload: input.fixturePayload,
     database: instrumentation.database,
   });
+  instrumentation.assertComplete();
   assert(execution && typeof execution === "object", "execution result missing");
   assert(!Object.prototype.hasOwnProperty.call(execution, "trace"), "target-declared trace is forbidden");
   process.stdout.write(JSON.stringify({ execution: jsonSafe(execution), transcript: instrumentation.transcript, processId: process.pid, moduleExecutionId: execution.moduleExecutionId }));
@@ -125,6 +146,7 @@ async function runWorker(inputPath, targetPath) {
 
 function deriveTrace(workerResults, scenarioKind) {
   const allCalls = workerResults.flatMap(({ transcript }) => transcript.calls);
+  const queryTrace = allCalls.filter(({ normalizedSql }) => !DML_KEYWORDS.has(normalizedSql.split(" ", 1)[0].toUpperCase())).map(({ channel, normalizedSql, values, rowCount }) => ({ channel, normalizedSql, values, rowCount }));
   const dmlCalls = allCalls.filter(({ normalizedSql }) => DML_KEYWORDS.has(normalizedSql.split(" ", 1)[0].toUpperCase()));
   const normalizedStatements = dmlCalls.map(({ normalizedSql }) => normalizedSql);
   const rowCount = dmlCalls.reduce((sum, { rowCount: rows }) => sum + rows, 0);
@@ -140,7 +162,7 @@ function deriveTrace(workerResults, scenarioKind) {
   else if (scenarioKind === "RESTART_CONSISTENCY") timeline = ["CHILD_PROCESS_1:READ", "RESTART", "CHILD_PROCESS_2:READ"];
   else if (transactionEvents.length > 0) timeline = transactionEvents.slice();
   else timeline = allCalls.map(({ normalizedSql }) => DML_KEYWORDS.has(normalizedSql.split(" ", 1)[0].toUpperCase()) ? "DML" : "READ");
-  return { normalizedStatements, rowCount, lockOrder, transaction, timeline };
+  return { queryTrace, normalizedStatements, rowCount, lockOrder, transaction, timeline };
 }
 
 function invokeWorker(harnessPath, workerInputPath, targetPath) {
