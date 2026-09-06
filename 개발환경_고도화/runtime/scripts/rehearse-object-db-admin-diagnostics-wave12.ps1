@@ -1,0 +1,70 @@
+$ErrorActionPreference = "Stop"
+$runtimeRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$worktreeRoot = [IO.Path]::GetFullPath((Join-Path $runtimeRoot "..\.."))
+$temporaryRoot = [IO.Path]::GetFullPath((Join-Path $worktreeRoot ".tmp\wave12-admin-diagnostics-mariadb"))
+$expectedRoot = [IO.Path]::GetFullPath((Join-Path $worktreeRoot ".tmp\wave12-admin-diagnostics-mariadb"))
+$dataDirectory = Join-Path $temporaryRoot "data"
+$mariaBin = "C:\Program Files\MariaDB 12.2\bin"
+$installDatabase = Join-Path $mariaBin "mariadb-install-db.exe"
+$serverBinary = Join-Path $mariaBin "mariadbd.exe"
+$clientBinary = Join-Path $mariaBin "mariadb.exe"
+$port = 3330
+$databaseName = "hoibot_wave12_admin_diagnostics"
+$password = "wave12-isolated-root-only"
+$serverProcess = $null
+$success = $null
+$productionBefore = @(Get-NetTCPConnection -State Listen -LocalPort 3306 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
+$names = @("DATABASE_ENABLED", "DATABASE_HOST", "DATABASE_PORT", "DATABASE_USER", "DATABASE_PASSWORD", "DATABASE_NAME", "HOIBOT_ENVIRONMENT_CODE", "IRIS_SHARED_TOKEN", "USER_VERIFICATION_PEPPER", "RUN_MARIADB_INTEGRATION", "WAVE12_ISOLATED_MARIADB_TEST")
+$saved = @{}
+foreach ($name in $names) { $saved[$name] = [Environment]::GetEnvironmentVariable($name, "Process") }
+function Assert-SafeRoot { if ($temporaryRoot -ne $expectedRoot -or -not $temporaryRoot.StartsWith($worktreeRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw "Unsafe Wave12 temporary path: $temporaryRoot" } }
+function Start-Isolated {
+  $script:serverProcess = Start-Process -FilePath $serverBinary -ArgumentList @("--no-defaults", "--datadir=$dataDirectory", "--port=$port", "--bind-address=127.0.0.1", "--skip-networking=0", "--pid-file=$(Join-Path $temporaryRoot 'mariadbd.pid')", "--log-error=$(Join-Path $temporaryRoot 'mariadbd.err')") -PassThru -WindowStyle Hidden
+  for ($attempt = 0; $attempt -lt 150; $attempt += 1) { if ($script:serverProcess.HasExited) { throw "Wave12 MariaDB exited early" }; $listener = Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue; if ($null -ne $listener) { $owners = @($listener | Select-Object -ExpandProperty OwningProcess -Unique); if ($owners.Count -ne 1 -or $owners[0] -ne $script:serverProcess.Id) { throw "Wave12 listener ownership mismatch" }; return }; Start-Sleep -Milliseconds 200 }
+  throw "Wave12 MariaDB startup timeout"
+}
+function Stop-Isolated { if ($null -eq $script:serverProcess) { return }; if (-not $script:serverProcess.HasExited) { Stop-Process -Id $script:serverProcess.Id; $script:serverProcess.WaitForExit(10000) | Out-Null }; for ($attempt = 0; $attempt -lt 50; $attempt += 1) { if ($null -eq (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)) { return }; Start-Sleep -Milliseconds 200 }; throw "Wave12 listener did not clear" }
+function Invoke-Checked([scriptblock]$command) { & $command; if ($LASTEXITCODE -ne 0) { throw "Wave12 child command failed: $LASTEXITCODE" } }
+function Assert-StatusAll([string]$expected) { $actual = (& $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" --skip-column-names --batch "--execute=SELECT CONCAT(rollout_state,':',enabled) FROM $databaseName.command_registry WHERE command_code='ADMIN_STATUS_ALL'").Trim(); if ($LASTEXITCODE -ne 0 -or $actual -ne $expected) { throw "ADMIN_STATUS_ALL expected $expected, got $actual" } }
+try {
+  Assert-SafeRoot
+  if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { throw "Wave12 port already in use" }
+  foreach ($binary in @($installDatabase, $serverBinary, $clientBinary)) { if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw "Missing MariaDB binary: $binary" } }
+  if (Test-Path -LiteralPath $temporaryRoot) { Assert-SafeRoot; Remove-Item -LiteralPath $temporaryRoot -Recurse -Force }
+  New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
+  Invoke-Checked { & $installDatabase "--datadir=$dataDirectory" "--password=$password" "--port=$port" --allow-remote-root-access --silent }
+  Start-Isolated
+  Invoke-Checked { & $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" "--execute=CREATE DATABASE $databaseName CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci" }
+  $env:DATABASE_ENABLED="true"; $env:DATABASE_HOST="127.0.0.1"; $env:DATABASE_PORT=[string]$port; $env:DATABASE_USER="root"; $env:DATABASE_PASSWORD=$password; $env:DATABASE_NAME=$databaseName; $env:HOIBOT_ENVIRONMENT_CODE="dev"; $env:IRIS_SHARED_TOKEN="wave12-isolated-token"; $env:USER_VERIFICATION_PEPPER="wave12-isolated-pepper"; $env:RUN_MARIADB_INTEGRATION="true"; $env:WAVE12_ISOLATED_MARIADB_TEST="true"
+  Push-Location $runtimeRoot
+  try {
+    Invoke-Checked { & node --import tsx scripts/migrate.ts }
+    Assert-StatusAll "LEGACY_ONLY:1"
+    $rollbackSql = Get-Content -Raw -Encoding utf8 (Join-Path $runtimeRoot "migrations\rollback\480_admin_diagnostic_ingress_correction.rollback.sql")
+    Invoke-Checked { & $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" "--database=$databaseName" "--execute=$rollbackSql" }
+    Assert-StatusAll "SHADOW:1"
+    $forwardSql = Get-Content -Raw -Encoding utf8 (Join-Path $runtimeRoot "migrations\480_admin_diagnostic_ingress_correction.sql")
+    Invoke-Checked { & $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" "--database=$databaseName" "--execute=$forwardSql" }
+    Assert-StatusAll "LEGACY_ONLY:1"
+    Invoke-Checked { & node --import tsx --test test/character-count-stats-mariadb.integration.test.ts }
+    Invoke-Checked { & node --import tsx --test test/status-all-mariadb.integration.test.ts }
+    Invoke-Checked { & node --import tsx --test test/admin-diagnostics-wave12-http-mariadb.integration.test.ts }
+    $env:MATZZANG_TIME_CHECK_EVENT_ID="wave12-matzang-probe"
+    Invoke-Checked { & node --import tsx scripts/probe-matzang-time-check-synthetic.ts }
+    Invoke-Checked { & node --import tsx scripts/probe-matzang-time-check-synthetic.ts --verify-restart }
+  } finally { Pop-Location }
+  $productionAfter=@(Get-NetTCPConnection -State Listen -LocalPort 3306 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique)
+  if (Compare-Object $productionBefore $productionAfter) { throw "Production 3306 listener changed" }
+  $success="WAVE12_ISOLATED_MARIADB_PASS consumers=2 migrations=all restart=true rollback=true production3306Unchanged=true"
+}
+finally {
+  $errors=[Collections.Generic.List[string]]::new()
+  try { Stop-Isolated } catch { $errors.Add($_.Exception.Message) }
+  $remaining=Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue
+  if ($null -ne $remaining) { $errors.Add("Wave12 listener remained") }
+  if ($null -eq $remaining) { try { Assert-SafeRoot; if (Test-Path -LiteralPath $temporaryRoot) { Remove-Item -LiteralPath $temporaryRoot -Recurse -Force } } catch { $errors.Add($_.Exception.Message) } }
+  foreach ($name in $names) { if ($null -eq $saved[$name]) { Remove-Item -LiteralPath "Env:$name" -ErrorAction SilentlyContinue } else { Set-Item -LiteralPath "Env:$name" -Value $saved[$name] } }
+  Remove-Item -LiteralPath Env:MATZZANG_TIME_CHECK_EVENT_ID -ErrorAction SilentlyContinue
+  if ($errors.Count -gt 0) { throw "Wave12 cleanup failed: $($errors -join ' | ')" }
+}
+Write-Output $success

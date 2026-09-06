@@ -275,6 +275,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/admin/character-count-stats-service.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/src/app.ts`
 
 ## Data Usage
 
@@ -297,6 +300,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Read-only command. It reads active DEV/PROD-resolved files through `resolveActiveDataPath` and does not save data.
+- 현대 경로는 주입된 DEV/PROD 환경의 활성 `legacy_snapshot_sets`와 15개 `legacy_source_snapshots` 원문을 한 transaction에서 읽고, 응답·실행·감사 receipt만 저장한다.
 
 ## AI Notes
 
@@ -306,6 +310,8 @@ Status: VERIFIED
 - 출력은 핵심 데이터, 칭호·성장 데이터, 운영 데이터 구역으로 나눠 표시한다.
 - 펜던트 글자수와 유저 수는 `member_pet.json`에서 `pendant`와 `pendantBag` 데이터가 있는 유저만 추출해 계산한다.
 - 연결된 동기화 명령어가 있으면 해당 항목 바로 아래 줄에 `/장착가구동기화`, `/펫데이터동기화`, `/펫타이틀동기화`, `/시련의탑동기화`, `/길드데이터동기화`, `/전체동기화`를 표시한다.
+- 현대 경로도 원문 JSON의 UTF-16 code unit 길이와 파일별 레거시 고유 인원 계산을 독립 검산하며, 개별 파일 누락은 `❌ 파일 없음`으로 계속 표시한다. 펜던트 projection은 빈 배열·빈 객체도 레거시 JavaScript truthiness와 동일하게 포함한다.
+- 실제 Iris HTTP 진입은 운영 채널, 활성 관리자 권한, ACTIVE rollout에서만 현대 응답을 만들며 환경·event·actor·channel·message fingerprint로 replay 불일치를 차단한다.
 
 ---
 
@@ -5797,6 +5803,7 @@ Status: VERIFIED
 - `/다이아상점구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
 - `/맞짱시간체크 [닉네임]` loads `homeDataFile` and measures the named user's 종합매력 runtime with detailed component timings
+- 현대 경로는 `MatzangTimeCheckService`가 활성 관리자 권한과 안정 player ID를 확인하고, 진단 source·receipt를 하나의 MariaDB transaction에서 처리한다.
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
 - 고도화 `/참여` provider는 `/참여`·`ㅊㅇ` 정확 일치 별칭, rollout, 참여 시점 종합매력·펫 타입·강화 수치 스냅샷, 멱등 replay, outbox·감사 원장을 하나의 MariaDB transaction으로 처리한다.
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
@@ -5831,6 +5838,8 @@ Status: VERIFIED
 - 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
+- 현대 진단도 캐슬 공격아이템·장비·펫·미니펫·홈·친밀도·비티어 펫스킬, 레이드 장비·펫·미니펫·홈·비티어 펫스킬, 강화 보너스를 같은 레거시 식으로 합산한다. 캐슬/레이드 큐브·티어 스킬·레이드 친밀도는 진단 합계에서 제외한다.
+- 동일 닉네임이 둘 이상이면 fail closed하며, 환경·event·actor·channel·message가 다른 operation replay를 거부한다.
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`

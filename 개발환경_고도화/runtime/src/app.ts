@@ -383,6 +383,7 @@ export interface AppDependencies {
   irisAdminCommandService?: Pick<IrisAdminCommandService, "changePlayerPoint">;
   accountPlatformIrisContextProvider?: Pick<AccountPlatformIrisContextProvider, "prepareKakao" | "dispatchAccountSwitch">;
   dailyPrayerRandom?: () => number;
+  adminDiagnosticNow?: () => number;
   runAccountCleanupMaintenance?: () => Promise<{
     pending: { processed: number; failed: number };
     deleted: { processed: number; failed: number };
@@ -913,8 +914,13 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       new PetTitleCanonicalMutationProvider(),
     )
     :undefined;
+  const diagnosticRuntime=config.environmentCode===undefined?undefined:{
+    environmentCode:config.environmentCode,
+    ...(dependencies.environmentContext===undefined?{}:{databaseIdentity:dependencies.environmentContext.databaseIdentity}),
+    ...(dependencies.adminDiagnosticNow===undefined?{}:{now:dependencies.adminDiagnosticNow})
+  };
   const irisAdminCommandService = dependencies.irisAdminCommandService
-    ?? (database === undefined ? undefined : new IrisAdminCommandService(database, config.irisAllowedOpenChatIds,petTitleAdminAppWiringIngress));
+    ?? (database === undefined ? undefined : new IrisAdminCommandService(database,config.irisAllowedOpenChatIds,petTitleAdminAppWiringIngress,diagnosticRuntime));
   const accountPlatformIrisContextProvider = dependencies.accountPlatformIrisContextProvider
     ?? (database === undefined ? undefined : new AccountPlatformIrisContextProvider(database));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {

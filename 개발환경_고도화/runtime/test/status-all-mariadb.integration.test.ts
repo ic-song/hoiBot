@@ -32,13 +32,13 @@ integration("admin status all MariaDB integration", () => {
     return BigInt((await database.query<Array<{ value: bigint | string }>>(sql, values))[0]?.value ?? 0);
   }
 
-  it("preserves permission, replay, Shadow, rollback and restart-loss contracts", async () => {
+  it("preserves permission, replay, LEGACY_ONLY fallback, rollback and restart-loss contracts", async () => {
     const store = new TransientCommandStateStore();
     store.set("member", { phase: "pending", password: "must-not-leak" });
     const service = new StatusAllService(database, store);
     const shadowEvent = `${prefix}-shadow`; await event(shadowEvent);
     const shadow = await new CommandDispatcher(new MariaCommandDispatchRepository(database), { enabled: true, allowAllCanaries: true, canaryUserIds: new Set() }).resolve({ eventId: shadowEvent, message: "/상태전체", userId: externalUserId, hasTrustedDisplayName: true });
-    assert.deepEqual([shadow.route, shadow.handlerKey], ["SHADOW", "admin_status_all"]);
+    assert.deepEqual([shadow.route, shadow.handlerKey], ["LEGACY_FALLBACK", "admin_status_all"]);
 
     const readEvent = `${prefix}-read`; await event(readEvent);
     const result = await service.read({ eventId: readEvent, externalUserId, destinationId });
