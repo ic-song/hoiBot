@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.463"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.464"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -42063,7 +42063,6 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push("📙[" + checkRank(data, petData, guildData, user) + "]의 펫스킬 컬렉션📙");
     lines.push("");
     lines.push("각 펫스킬은 등급별 최대 등록 수량까지 등록 가능합니다.");
-    lines.push("SS 5개 / S 10개 / A 20개 / B 50개 / C 100개 / D 200개 / 한정판 10개");
     lines.push("펫스킬북📙 1개 등록 시 등급에 따라");
     lines.push(config.rewardItemName + "가 즉시 지급됩니다.");
     lines.push("");
